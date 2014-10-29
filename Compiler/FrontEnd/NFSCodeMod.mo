@@ -176,7 +176,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeMod.applyModifications failed on modifier " +&
+        Debug.traceln("- NFSCodeMod.applyModifications failed on modifier " +
           printMod(inMod));
       then
         fail();
@@ -738,7 +738,7 @@ algorithm
 
     case (NFInstTypesOld.MODIFIER(name = id1), _, _, _)
       equation
-        id1 = inElementName +& "." +& id1;
+        id1 = inElementName + "." + id1;
         mod = mergeModsInSameScope(inExistingMod, inNewMod, id1, inPrefix);
       then
         (mod, true);

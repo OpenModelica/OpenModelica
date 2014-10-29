@@ -100,8 +100,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeFlattenImports.flattenClass failed on " +&
-          SCode.elementName(inClass) +& " in " +& NFSCodeEnv.getEnvName(inEnv));
+        Debug.traceln("- NFSCodeFlattenImports.flattenClass failed on " +
+          SCode.elementName(inClass) + " in " + NFSCodeEnv.getEnvName(inEnv));
       then
         fail();
   end matchcontinue;

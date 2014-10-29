@@ -167,20 +167,20 @@ algorithm
       equation
         els = DAEUtil.daeElements(inDAE);
         sstr = ClassInf.printStateStr(inState);
-        sstr = "'" +& sstr +& "'";
+        sstr = "'" + sstr + "'";
         comp = DAE.COMP(sstr, els, DAE.emptyElementSource, NONE());
         dae = DAE.DAE({comp});
         str = if System.getPartialInstantiation() then " partial" else " full";
-        print("DAE: parent: " +& FGraph.getGraphNameStr(inParentEnv) +&
-              " class: " +& FGraph.getGraphNameStr(inClassEnv) +& " state: " +& sstr +& str +& "\n" +&
-              DAEDump.dumpStr(dae, DAE.emptyFuncTree) +& "\n");
+        print("DAE: parent: " + FGraph.getGraphNameStr(inParentEnv) +
+              " class: " + FGraph.getGraphNameStr(inClassEnv) + " state: " + sstr + str + "\n" +
+              DAEDump.dumpStr(dae, DAE.emptyFuncTree) + "\n");
       then
         ();
 
     case (_, _, _, _, _)
       equation
         str = if System.getPartialInstantiation() then " partial" else " full";
-        print("DAE: " +& ClassInf.printStateStr(inState) +& str +& " - could not print\n");
+        print("DAE: " + ClassInf.printStateStr(inState) + str + " - could not print\n");
       then ();
 
     else ();

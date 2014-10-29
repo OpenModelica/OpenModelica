@@ -202,7 +202,7 @@ algorithm
       //get SCC to simEqSys-mappping
       //----------------------------
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
-      //print("All components size: " +& intString(listLength(allComps)) +& "\n");
+      //print("All components size: " + intString(listLength(allComps)) + "\n");
       highestSccIdx = findHighestSccIdxInMapping(equationSccMapping,-1);
       compCountPlusDummy = listLength(allComps)+1;
       equationSccMapping1 = removeDummyStateFromMapping(equationSccMapping);
@@ -220,7 +220,7 @@ algorithm
       //-----------------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
 
-      fileName = ("taskGraph"+&filenamePrefix+&".graphml");
+      fileName = ("taskGraph"+filenamePrefix+".graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
 
@@ -228,7 +228,7 @@ algorithm
       //taskGraphDataDAE = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       //(taskGraphDAE,taskGraphDataDAE) = HpcOmTaskGraph.appendRemovedEquations(inBackendDAE,taskGraphDAE,taskGraphDataDAE);
 
-      //fileName = ("taskGraph"+&filenamePrefix+&"DAE.graphml");
+      //fileName = ("taskGraph"+filenamePrefix+"DAE.graphml");
       //daeSccMapping = listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCode),List.create));
       //daeSccMapping = Array.append(sccSimEqMapping,daeSccMapping);
       //schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
@@ -246,7 +246,7 @@ algorithm
       taskGraphDataEvent = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphEvent,taskGraphDataEvent) = HpcOmTaskGraph.getEventSystem(taskGraphEvent,taskGraphDataEvent,inBackendDAE, zeroCrossings, simeqCompMapping);
 
-      fileName = ("taskGraph"+&filenamePrefix+&"_event.graphml");
+      fileName = ("taskGraph"+filenamePrefix+"_event.graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraphEvent), (-1,-1,-1.0));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphEvent, taskGraphDataEvent,inBackendDAE, fileName, "", {}, {}, sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
       SimCodeUtil.execStat("hpcom create and dump event TaskGraph");
@@ -256,7 +256,7 @@ algorithm
 
       //Create Costs
       //------------
-      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_eqs_prof" , simeqCompMapping, taskGraphData);
+      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix + "_eqs_prof" , simeqCompMapping, taskGraphData);
       SimCodeUtil.execStat("hpcom create costs");
 
       //Get ODE System
@@ -281,8 +281,8 @@ algorithm
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
       ((graphOps,graphCosts)) = HpcOmTaskGraph.sumUpExeCosts(taskGraphOde,taskGraphDataOde);
       graphCosts = HpcOmTaskGraph.roundReal(graphCosts,2);
-      criticalPathInfo = criticalPathInfo +& " sum: (" +& realString(graphCosts) +& " ; " +& intString(graphOps) +& ")";
-      fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");
+      criticalPathInfo = criticalPathInfo + " sum: (" + realString(graphCosts) + " ; " + intString(graphOps) + ")";
+      fileName = ("taskGraph"+filenamePrefix+"ODE.graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1,-1.0));
       SimCodeUtil.execStat("hpcom assign levels / get crit. path");
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde,inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
@@ -310,7 +310,7 @@ algorithm
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraphSimplified);
       //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphDataSimplified);
 
-      fileName = ("taskGraph"+&filenamePrefix+&"ODE_merged.graphml");
+      fileName = ("taskGraph"+filenamePrefix+"ODE_merged.graphml");
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       SimCodeUtil.execStat("hpcom dump simplified TaskGraph");
 
@@ -334,7 +334,7 @@ algorithm
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraphScheduled));
       SimCodeUtil.execStat("hpcom create schedule");
 
-      fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");
+      fileName = ("taskGraph"+filenamePrefix+"ODE_schedule.graphml");
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphScheduled, taskGraphDataScheduled, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       //HpcOmScheduler.printSchedule(schedule);
 
@@ -387,7 +387,7 @@ algorithm
     case(SOME(initDAE), _)
       equation
         (tmpTaskGraph, tmpTaskGraphMeta) = HpcOmTaskGraph.createTaskGraph(initDAE,iFileNamePrefix);
-        fileName = ("taskGraph"+&iFileNamePrefix+&"_init.graphml");
+        fileName = ("taskGraph"+iFileNamePrefix+"_init.graphml");
         schedulerInfo = arrayCreate(arrayLength(tmpTaskGraph), (-1,-1,-1.0));
         sccSimEqMapping = arrayCreate(arrayLength(tmpTaskGraph), {});
         HpcOmTaskGraph.dumpAsGraphMLSccLevel(tmpTaskGraph, tmpTaskGraphMeta, initDAE, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
@@ -419,8 +419,8 @@ algorithm
         numProcSched = realInt(realAdd(maxSpeedUp,1.0));
         numProcSys = System.numProcessors();
         numProc = intMin(numProcSched,numProcSys);
-        string1 = "Your system provides only "+&intString(numProcSys)+&" processors!\n";
-        string2 = intString(numProcSched)+&" processors might be a reasonable number of processors.\n";
+        string1 = "Your system provides only "+intString(numProcSys)+" processors!\n";
+        string2 = intString(numProcSched)+" processors might be a reasonable number of processors.\n";
         string1 = if intGt(numProcSched,numProcSys) then string1 else string2;
         print("Please set the number of processors you want to use!\n");
         print(string1);
@@ -432,7 +432,7 @@ algorithm
         numProcSys = System.numProcessors();
         numProc = if intGt(numProcFlag,numProcSys) then numProcSys else numProcFlag; // the system does not provide so many cores
         if intGt(numProcFlag,numProcSys) and Flags.isSet(Flags.HPCOM_DUMP) then
-          print("Warning: Your system provides only "+&intString(numProcSys)+&" processors!\n");
+          print("Warning: Your system provides only "+intString(numProcSys)+" processors!\n");
         end if;
       then
         (numProcFlag,true);
@@ -480,7 +480,7 @@ algorithm
         (taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
 
         if Flags.isSet(Flags.HPCOM_DUMP) then
-          print("Handling filter iteration " +& intString(iIterationIdx) +& "\n");
+          print("Handling filter iteration " + intString(iIterationIdx) + "\n");
         end if;
         (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,changed1 or changed2 or changed3,doNotMergeIn,iIterationIdx+1);
       then (taskGraph1,taskGraphMeta1);
@@ -546,7 +546,7 @@ algorithm
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "ext");
         print("Using external Scheduler\n");
-        schedule = HpcOmScheduler.createExtSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping, iSimVarMapping, "taskGraph" +& iFilenamePrefix +& "_ext.graphml");
+        schedule = HpcOmScheduler.createExtSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping, iSimVarMapping, "taskGraph" + iFilenamePrefix + "_ext.graphml");
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_,_,_)
       equation
@@ -614,7 +614,7 @@ algorithm
     case(_,_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
-        print("HpcOmScheduler.createSchedule warning: The scheduler '" +& flagValue +& "' is unknown. The list-scheduling algorithm is used instead.\n");
+        print("HpcOmScheduler.createSchedule warning: The scheduler '" + flagValue + "' is unknown. The list-scheduling algorithm is used instead.\n");
         schedule = HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping,iSimVarMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     else
@@ -636,7 +636,7 @@ protected
 
 algorithm
   tmpMapping := arrayCreate(numOfSccs,{});
-  //print("convertToSccSimEqMapping with " +& intString(numOfSccs) +& " sccs.\n");
+  //print("convertToSccSimEqMapping with " + intString(numOfSccs) + " sccs.\n");
   _ := List.fold(iMapping, convertToSccSimEqMapping1, tmpMapping);
   oMapping := tmpMapping;
 
@@ -655,7 +655,7 @@ protected
 
 algorithm
   (i1,i2) := iMapping;
-  //print("convertToSccSimEqMapping1 accessing index " +& intString(i2) +& ".\n");
+  //print("convertToSccSimEqMapping1 accessing index " + intString(i2) + ".\n");
   tmpList := arrayGet(iSccMapping,i2);
   tmpList := i1 :: tmpList;
   oSccMapping := arrayUpdate(iSccMapping,i2,tmpList);
@@ -689,7 +689,7 @@ protected
 
 algorithm
   (simEqIdx,sccIdx) := iSimEqTuple;
-  //print("convertToSimeqCompMapping1 " +& intString(simEqIdx) +& " .. " +& intString(sccIdx) +& " iMapping_len: " +& intString(arrayLength(iMapping)) +& "\n");
+  //print("convertToSimeqCompMapping1 " + intString(simEqIdx) + " .. " + intString(sccIdx) + " iMapping_len: " + intString(arrayLength(iMapping)) + "\n");
   oMapping := arrayUpdate(iMapping,simEqIdx,sccIdx);
 end convertToSimeqCompMapping1;
 
@@ -723,7 +723,7 @@ algorithm
     else
       equation
         simEqIdx = getIndexBySimCodeEq(iEquation);
-        //print("getSimEqIdxSimEqMapping1: Can't access idx " +& intString(simEqIdx) +& "\n");
+        //print("getSimEqIdxSimEqMapping1: Can't access idx " + intString(simEqIdx) + "\n");
       then iMapping;
   end matchcontinue;
 end getSimEqIdxSimEqMapping1;
@@ -736,7 +736,7 @@ protected
 algorithm
   text := "SimEqToSCCMapping";
   ((_,text)) := Array.fold(iSccMapping, dumpSimEqSCCMapping1, (1,text));
-  print(text +& "\n");
+  print(text + "\n");
 end dumpSimEqSCCMapping;
 
 protected function dumpSimEqSCCMapping1 "author: marcusw
@@ -750,7 +750,7 @@ protected
 algorithm
   (iIndex,iText) := iIndexText;
   text := intString(iMapping);
-  text := iText +& "\nSimEq " +& intString(iIndex) +& ": {" +& text +& "}";
+  text := iText + "\nSimEq " + intString(iIndex) + ": {" + text + "}";
   oIndexText := (iIndex+1,text);
 end dumpSimEqSCCMapping1;
 
@@ -763,7 +763,7 @@ protected
 algorithm
   text := "SccToSimEqMapping";
   ((_,text)) := Array.fold(iSccMapping, dumpSccSimEqMapping1, (1,text));
-  print(text +& "\n");
+  print(text + "\n");
 end dumpSccSimEqMapping;
 
 protected function dumpSccSimEqMapping1 "function dumpSccSimEqMapping1
@@ -778,7 +778,7 @@ protected
 algorithm
   (iIndex,iText) := iIndexText;
   text := List.fold(iMapping, dumpSccSimEqMapping2, " ");
-  text := iText +& "\nSCC " +& intString(iIndex) +& ": {" +& text +& "}";
+  text := iText + "\nSCC " + intString(iIndex) + ": {" + text + "}";
   oIndexText := (iIndex+1,text);
 end dumpSccSimEqMapping1;
 
@@ -790,7 +790,7 @@ protected function dumpSccSimEqMapping2 "function dumpSccSimEqMapping2
   output String oText;
 
 algorithm
-  oText := iText +& intString(iIndex) +& " ";
+  oText := iText + intString(iIndex) + " ";
 
 end dumpSccSimEqMapping2;
 
@@ -853,8 +853,8 @@ algorithm
       then tmpSys;
     else
       equation
-        print("getSimCodeEqByIndexAndMapping1 failed. Looking for Index " +& intString(iIdx) +& "\n");
-        //print(" -- available indices: " +& stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") +& "\n");
+        print("getSimCodeEqByIndexAndMapping1 failed. Looking for Index " + intString(iIdx) + "\n");
+        //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
       then fail();
   end match;
 end getSimCodeEqByIndexAndMapping1;
@@ -876,14 +876,14 @@ algorithm
     case(head::rest,_)
       equation
         headIdx = getIndexBySimCodeEq(head);
-        //print("getSimCodeEqByIndex listLength: " +& intString(listLength(iEqs)) +& " head idx: " +& intString(headIdx) +& "\n");
+        //print("getSimCodeEqByIndex listLength: " + intString(listLength(iEqs)) + " head idx: " + intString(headIdx) + "\n");
         true = intEq(headIdx,iIdx);
       then head;
     case(head::rest,_) then getSimCodeEqByIndex(rest,iIdx);
     else
       equation
-        print("getSimCodeEqByIndex failed. Looking for Index " +& intString(iIdx) +& "\n");
-        //print(" -- available indices: " +& stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") +& "\n");
+        print("getSimCodeEqByIndex failed. Looking for Index " + intString(iIdx) + "\n");
+        //print(" -- available indices: " + stringDelimitList(List.map(List.map(iEqs,getIndexBySimCodeEq), intString), ",") + "\n");
       then fail();
   end matchcontinue;
 end getSimCodeEqByIndex;
@@ -989,7 +989,7 @@ algorithm
         targetSize = listLength(List.flatten(odeEqsIn));
         actualSize = arrayLength(taskGraphOdeIn);
         true = intEq(targetSize,actualSize);
-        print("the ODE-system size is correct("+&intString(actualSize)+&")\n");
+        print("the ODE-system size is correct("+intString(actualSize)+")\n");
         then
           ();
     case(_,_)
@@ -1005,7 +1005,7 @@ algorithm
       equation
         targetSize = listLength(List.flatten(odeEqsIn));
         actualSize = arrayLength(taskGraphOdeIn);
-        print("the size should be "+&intString(targetSize)+&" but it is "+&intString(actualSize)+&" !\n");
+        print("the size should be "+intString(targetSize)+" but it is "+intString(actualSize)+" !\n");
         print("the ODE-system is NOT correct\n");
       then
         ();
@@ -1075,7 +1075,7 @@ algorithm
       equation
         (_,_,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
         diff = speedUpMax -. speedUp;
-        //print("the new speedUp with "+&intString(numProcIn)+&" processors: "+&realString(speedUp)+&"\n");
+        //print("the new speedUp with "+intString(numProcIn)+" processors: "+realString(speedUp)+"\n");
         true = diff <. maxDiff;
         //print("the schedule is fine\n");
       then
@@ -1147,7 +1147,7 @@ algorithm
         comp = listGet(allComps,idx);
         cycles = listGet(numCycles,idx);
         eqSystem = Util.tuple21(arrayGet(systemCompEqSysMapping,idx));
-        print("\n"+&intString(idx)+&" : ");
+        print("\n"+intString(idx)+" : ");
         outputTimeBenchmark3(comp,cycles,eqSystem,shared);
         outputTimeBenchmark2(rest,allComps,numCycles,systemCompEqSysMapping,shared);
       then ();
@@ -1183,7 +1183,7 @@ algorithm
         density = -1;
         size = -1;
         others = -1;
-        print("\tSE\t"+&intString(numAdd)+&"\t"+&intString(numMul)+&"\t"+&intString(numTrig)+&"\t"+&intString(size)+&"\t"+&intString(density)+&"\t"+&intString(others)+&"\t"+&intString(cycles)+&"\n");
+        print("\tSE\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
       then ();
    case(BackendDAE.EQUATIONSYSTEM(eqns=eqs,vars=_,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac)),jacType=_),_,_,_)
       equation
@@ -1194,7 +1194,7 @@ algorithm
         size = listLength(eqs);
         density = realInt(realMul(realDiv(intReal(listLength(jac)),intReal(intMul(size,size))),100.0));
         others = -1;
-        print("\tEQS\t"+&intString(numAdd)+&"\t"+&intString(numMul)+&"\t"+&intString(numTrig)+&"\t"+&intString(size)+&"\t"+&intString(density)+&"\t"+&intString(others)+&"\t"+&intString(cycles)+&"\n");
+        print("\tEQS\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
       then ();
     case(BackendDAE.TORNSYSTEM(tearingvars=_,residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac))),_,_,_)
       equation
@@ -1205,7 +1205,7 @@ algorithm
         size = listLength(resEqs);
         density = realInt(realMul(realDiv(intReal(listLength(jac)),intReal(intMul(size,size))),100.0));
         others = listLength(otherEqnVarTpl);
-        print("\tTLS1\t"+&intString(numAdd)+&"\t"+&intString(numMul)+&"\t"+&intString(numTrig)+&"\t"+&intString(size)+&"\t"+&intString(density)+&"\t"+&intString(others)+&"\t"+&intString(cycles)+&"\n");
+        print("\tTLS1\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
       then ();
     case(BackendDAE.TORNSYSTEM(tearingvars=_,residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.GENERIC_JACOBIAN(jacobian = _,sparsePattern=_,coloring=_)),_,_,_)
       equation
@@ -1216,11 +1216,11 @@ algorithm
         density = 0;
         size = listLength(resEqs);
         others = listLength(otherEqnVarTpl);
-        print("\tTLS2\t"+&intString(numAdd)+&"\t"+&intString(numMul)+&"\t"+&intString(numTrig)+&"\t"+&intString(size)+&"\t"+&intString(density)+&"\t"+&intString(others)+&"\t"+&intString(cycles)+&"\n");
+        print("\tTLS2\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
       then ();
     else
       equation
-        print("\tSTUSS\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\t"+&intString(-1)+&"\n");
+        print("\tSTUSS\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\n");
       then ();
   end matchcontinue;
 end outputTimeBenchmark3;

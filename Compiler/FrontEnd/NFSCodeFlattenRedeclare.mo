@@ -142,9 +142,9 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeFlattenRedeclare.addElementRedeclarationsToEnv failed for " +&
-          SCode.elementName(inRedeclare) +& " in " +&
-          NFSCodeEnv.getEnvName(inEnv) +& "\n");
+        Debug.traceln("- NFSCodeFlattenRedeclare.addElementRedeclarationsToEnv failed for " +
+          SCode.elementName(inRedeclare) + " in " +
+          NFSCodeEnv.getEnvName(inEnv) + "\n");
       then
         fail();
   end matchcontinue;
@@ -264,9 +264,9 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeFlattenRedeclare.processRedeclare failed on " +&
-          SCodeDump.unparseElementStr(NFSCodeEnv.getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions) +&
-          " in " +& Absyn.pathString(NFSCodeEnv.getEnvPath(inEnv)));
+        Debug.traceln("- NFSCodeFlattenRedeclare.processRedeclare failed on " +
+          SCodeDump.unparseElementStr(NFSCodeEnv.getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions) +
+          " in " + Absyn.pathString(NFSCodeEnv.getEnvPath(inEnv)));
       then
         fail();
   end matchcontinue;
@@ -350,9 +350,9 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for:\n\t");
-        Debug.traceln("redeclares: " +&
-          stringDelimitList(List.map(inRedeclares, NFSCodeEnv.printRedeclarationStr), "\n---------\n") +&
-          "\n\titem: " +& NFSCodeEnv.itemStr(inItem) +& "\n\tin scope:" +& NFSCodeEnv.getEnvName(inElementEnv));
+        Debug.traceln("redeclares: " +
+          stringDelimitList(List.map(inRedeclares, NFSCodeEnv.printRedeclarationStr), "\n---------\n") +
+          "\n\titem: " + NFSCodeEnv.itemStr(inItem) + "\n\tin scope:" + NFSCodeEnv.getEnvName(inElementEnv));
       then
         fail();
   end matchcontinue;
@@ -556,7 +556,7 @@ algorithm
         bc_strl = List.map(inBaseClasses, Absyn.pathString);
         bcl_str = stringDelimitList(bc_strl, ", ");
         err_msg = "NFSCodeFlattenRedeclare.pushRedeclareIntoExtends2 couldn't find the base classes {"
-          +& bcl_str +& "} for " +& inName;
+          + bcl_str + "} for " + inName;
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
         fail();
@@ -841,17 +841,17 @@ algorithm
   _ := matchcontinue(inElementName, inOldItem, inNewItem, inEnv)
     case (_, _, _, _)
       equation
-        print("replacing element: " +& inElementName +& " env: " +& NFSCodeEnv.getEnvName(inEnv) +& "\n\t");
-        print("Old Element:" +& NFSCodeEnv.itemStr(inOldItem) +&
-              " env: " +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(inOldItem)) +& "\n\t");
-        print("New Element:" +& NFSCodeEnv.itemStr(inNewItem) +&
-              " env: " +& NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(inNewItem)) +&
+        print("replacing element: " + inElementName + " env: " + NFSCodeEnv.getEnvName(inEnv) + "\n\t");
+        print("Old Element:" + NFSCodeEnv.itemStr(inOldItem) +
+              " env: " + NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(inOldItem)) + "\n\t");
+        print("New Element:" + NFSCodeEnv.itemStr(inNewItem) +
+              " env: " + NFSCodeEnv.getEnvName(NFSCodeEnv.getItemEnvNoFail(inNewItem)) +
               "\n===============\n");
       then ();
 
     else
       equation
-        print("traceReplaceElementInScope failed on element: " +& inElementName +& "\n");
+        print("traceReplaceElementInScope failed on element: " + inElementName + "\n");
       then ();
   end matchcontinue;
 end traceReplaceElementInScope;
@@ -870,15 +870,15 @@ algorithm
   _ := matchcontinue(inName, inRedeclare, inBaseClasses, inEnv, inEtNew, inEtOld)
     case (_, _, _, _, _, _)
       equation
-        print("pushing: " +& inName +& " redeclare: " +& NFSCodeEnv.itemStr(inRedeclare) +& "\n\t");
-        print("into baseclases: " +& stringDelimitList(List.map(inBaseClasses, Absyn.pathString), ", ") +& "\n\t");
-        print("called from env: " +& NFSCodeEnv.getEnvName(inEnv) +& "\n");
+        print("pushing: " + inName + " redeclare: " + NFSCodeEnv.itemStr(inRedeclare) + "\n\t");
+        print("into baseclases: " + stringDelimitList(List.map(inBaseClasses, Absyn.pathString), ", ") + "\n\t");
+        print("called from env: " + NFSCodeEnv.getEnvName(inEnv) + "\n");
         print("-----------------\n");
       then ();
 
     else
       equation
-        print("tracePushRedeclareIntoExtends failed on element: " +& inName +& "\n");
+        print("tracePushRedeclareIntoExtends failed on element: " + inName + "\n");
       then ();
 
   end matchcontinue;

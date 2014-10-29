@@ -111,7 +111,7 @@ protected function printKey
   input Key tpl;
   output String res;
 algorithm
-  res := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& "," +& intString(Util.tuple22(tpl));
+  res := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + "," + intString(Util.tuple22(tpl));
 end printKey;
 
 public function emptyHashTable

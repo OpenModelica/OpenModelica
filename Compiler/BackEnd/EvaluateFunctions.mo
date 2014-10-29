@@ -298,7 +298,7 @@ algorithm
     case(DAE.CALL(path=path, expLst=exps, attr=attr1),_,_,_)
       equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("\nStart evaluation of:\n"+&ExpressionDump.printExpStr(lhsExpIn)+&" := "+&ExpressionDump.printExpStr(rhsExpIn)+&"\n\n");
+          print("\nStart evaluation of:\n"+ExpressionDump.printExpStr(lhsExpIn)+" := "+ExpressionDump.printExpStr(rhsExpIn)+"\n\n");
         end if;
 
         // get the elements of the function and the algorithms
@@ -312,26 +312,26 @@ algorithm
         allInputs = List.filterOnTrue(elements,DAEUtil.isInputVar);
         scalarInputs = List.map(allInputs,expandComplexElementsToCrefs);
         allInputCrefs = List.flatten(scalarInputs);
-        //print("\nallInputCrefs\n"+&stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("\nallInputCrefs\n"+stringDelimitList(List.map(allInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         scalarExp = List.map(exps,expandComplexEpressions);
         allInputExps = List.flatten(scalarExp);
-        //print("\nallInputExps\n"+&stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+&"\n");
+        //print("\nallInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
 
         // get all output crefs (complex and scalar)
         allOutputs = List.filterOnTrue(elements,DAEUtil.isOutputVar);
         outputCrefs = List.map(allOutputs,DAEUtil.varCref);
         scalarOutputs = List.map(allOutputs,getScalarsForComplexVar);
         allOutputCrefs = listAppend(outputCrefs,List.flatten(scalarOutputs));
-        //print("\ncomplex OutputCrefs\n"+&stringDelimitList(List.map(outputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("\nOutputCrefs\n"+&stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("\ncomplex OutputCrefs\n"+stringDelimitList(List.map(outputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("\nOutputCrefs\n"+stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         // get the constant inputs
         (constInputExps,constInputCrefs) = List.filterOnTrueSync(allInputExps,Expression.isConst,allInputCrefs);
-        //print("\nallInputExps\n"+&stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+&"\n");
-        //print("\nconstInputExps\n"+&stringDelimitList(List.map(constInputExps,ExpressionDump.printExpStr),"\n")+&"\n");
-        //print("\naconstInputCrefs\n"+&stringDelimitList(List.map(constInputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("\nall algs "+&intString(listLength(algs))+&"\n"+&DAEDump.dumpElementsStr(algs)+&"\n");
+        //print("\nallInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+        //print("\nconstInputExps\n"+stringDelimitList(List.map(constInputExps,ExpressionDump.printExpStr),"\n")+"\n");
+        //print("\naconstInputCrefs\n"+stringDelimitList(List.map(constInputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("\nall algs "+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
 
         //build replacement rules
         repl = BackendVarTransform.emptyReplacements();
@@ -348,7 +348,7 @@ algorithm
 
         // go through all algorithms and replace the variables with constants if possible, extend the ht after each algorithm
         (algs,(funcs,repl,idx)) = List.mapFold(algs,evaluateFunctions_updateAlgorithms,(funcsIn,repl,eqIdx));
-          //print("\nall algs after"+&intString(listLength(algs))+&"\n"+&DAEDump.dumpElementsStr(algs)+&"\n");
+          //print("\nall algs after"+intString(listLength(algs))+"\n"+DAEDump.dumpElementsStr(algs)+"\n");
           //BackendVarTransform.dumpReplacements(repl);
 
         //get all replacements in order to check for constant outputs
@@ -356,18 +356,18 @@ algorithm
         (constCrefs,constExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,allOutputCrefs,constExps); // extract outputs
         (constExps,constCrefs) = List.filterOnTrueSync(constExps,Expression.isConst,constCrefs); // extract constant outputs
 
-        //print("all constant crefs \n"+&stringDelimitList(List.map(constCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("all constant exps:\n"+&ExpressionDump.printExpListStr(constExps)+&"\n");
+        //print("all constant crefs \n"+stringDelimitList(List.map(constCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("all constant exps:\n"+ExpressionDump.printExpListStr(constExps)+"\n");
 
         // get the completely constant complex outputs, the constant parts of complex outputs and the variable parts of complex outputs and the expressions
         (constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs) = checkIfOutputIsEvaluatedConstant(allOutputs,constCrefs,{},{},{},{});
         (constScalarCrefs,constScalarExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constScalarCrefs,constExps);
         (constComplexCrefs,constComplexExps) = List.filter1OnTrueSync(constCrefs,ComponentReference.crefInLst,constComplexCrefs,constExps);
 
-        //print("constComplexCrefs\n"+&stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("varComplexCrefs\n"+&stringDelimitList(List.map(varComplexCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("constScalarCrefs 1\n"+&stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("varScalarCrefs 1\n"+&stringDelimitList(List.map(varScalarCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("constComplexCrefs\n"+stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("varComplexCrefs\n"+stringDelimitList(List.map(varComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("constScalarCrefs 1\n"+stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("varScalarCrefs 1\n"+stringDelimitList(List.map(varScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         // is it completely constant or partially?
         funcIsConst = List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs);
@@ -404,8 +404,8 @@ algorithm
           constEqs = {};
         end if;
 
-        //print("constScalarCrefsOut\n"+&stringDelimitList(List.map(constScalarCrefsOut,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("constComplexCrefs\n"+&stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("constScalarCrefsOut\n"+stringDelimitList(List.map(constScalarCrefsOut,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("constComplexCrefs\n"+stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         // build the new partial function
         elements = listAppend(allInputs,updatedVarOutputs);
@@ -442,7 +442,7 @@ algorithm
         //print("RHS EXP:\n");
         //ExpressionDump.dumpExp(exp);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("Finish evaluation in:\n"+&ExpressionDump.printExpStr(outputExp)+&" := "+&ExpressionDump.printExpStr(exp)+&"\n");
+          print("Finish evaluation in:\n"+ExpressionDump.printExpStr(outputExp)+" := "+ExpressionDump.printExpStr(exp)+"\n");
           if List.isNotEmpty(constEqs) then
             BackendDump.dumpEquationList(constEqs,"including the additional equations:\n");
           end if;
@@ -711,8 +711,8 @@ algorithm
         allOutputCrefs2 = List.map(allOutputCrefs,scalarRecCrefsForOneDimRec);
         (_,_,varScalarCrefsInFunc) = List.intersection1OnTrue(allOutputCrefs,allOutputCrefs2,ComponentReference.crefEqual);
         allOutputCrefs = allOutputCrefs2;
-        //print("\n allOutputCrefs \n"+&stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("\n varScalarCrefsInFunc \n"+&stringDelimitList(List.map(varScalarCrefsInFunc,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("\n allOutputCrefs \n"+stringDelimitList(List.map(allOutputCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("\n varScalarCrefsInFunc \n"+stringDelimitList(List.map(varScalarCrefsInFunc,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(listAppend(constComplexCrefs,constScalarCrefs),allOutputCrefs,ComponentReference.crefEqual);
         funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
@@ -778,10 +778,10 @@ algorithm
     else
       equation
         print("buildVariableFunctionParts failed!\n");
-        print("\n scalarOutputs \n"+&stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+&"\n");
-        print("\n constScalarCrefs \n"+&stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        print("\n allOutputs "+&"\n"+&DAEDump.dumpElementsStr(allOutputs)+&"\n");
-        print("\n lhsExpIn "+&"\n"+&ExpressionDump.dumpExpStr(lhsExpIn,0)+&"\n");
+        print("\n scalarOutputs \n"+stringDelimitList(List.map(List.flatten(scalarOutputs),ComponentReference.printComponentRefStr),"\n")+"\n");
+        print("\n constScalarCrefs \n"+stringDelimitList(List.map(constScalarCrefs,ComponentReference.printComponentRefStr),"\n")+"\n");
+        print("\n allOutputs "+"\n"+DAEDump.dumpElementsStr(allOutputs)+"\n");
+        print("\n lhsExpIn "+"\n"+ExpressionDump.dumpExpStr(lhsExpIn,0)+"\n");
       then
         fail();
   end matchcontinue;
@@ -851,12 +851,12 @@ algorithm
         cref = DAEUtil.varCref(elem);
         scalars = getScalarsForComplexVar(elem);
         // function outputs a record, its either constCompl or constScalar and varScalar
-        //print("the cref\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("scalars to check\n"+&stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("the cref\n"+stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("scalars to check\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         true = List.isNotEmpty(scalars);
         (constVars,_,_) = List.intersection1OnTrue(scalars,constCrefs,ComponentReference.crefEqual);
-        //print("constVars\n"+&stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("constVars\n"+stringDelimitList(List.map(constVars,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         const = intEq(listLength(scalars),listLength(constVars));
         constScalarCrefs = List.filter1OnTrue(constCrefs,ComponentReference.crefInLst,constVars);
@@ -923,18 +923,18 @@ algorithm
         // its not possible to use qualified output crefs
         i1 = ComponentReference.crefFirstIdent(cref);
         i2 = ComponentReference.crefLastIdent(cref);
-        //print("the idents_ "+&i1+&"  and  "+&i2+&"\n");
-        i1 = i1+&"_"+&i2;
+        //print("the idents_ "+i1+"  and  "+i2+"\n");
+        i1 = i1+"_"+i2;
         cref1 = ComponentReference.makeCrefIdent(i1,typ,sl);
 
-        //print("the inFuncOutputs \n"+&DAEDump.dumpElementsStr(inFuncOutputs)+&"\n");
+        //print("the inFuncOutputs \n"+DAEDump.dumpElementsStr(inFuncOutputs)+"\n");
         //vars = List.map(inFuncOutputs,DAEUtil.varCref);
-        //print("all the crefs of the oldoutputs\n"+&stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr),",")+&"\n");
+        //print("all the crefs of the oldoutputs\n"+stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr),",")+"\n");
         //(vars,oldOutputs2) = List.filter1OnTrueSync(vars,ComponentReference.crefEqual,cref1,inFuncOutputs);
         //var = List.first(oldOutputs2);
         var = List.first(inFuncOutputs);
         var = DAEUtil.replaceCrefandTypeInVar(cref1,typ,var);
-        //print("the new var id \n"+&DAEDump.dumpElementsStr({var})+&"\n");
+        //print("the new var id \n"+DAEDump.dumpElementsStr({var})+"\n");
       then
         var;
     case(DAE.CREF_IDENT(ident=_,identType=typ,subscriptLst=_),_,_)
@@ -972,7 +972,7 @@ algorithm
         _ = Expression.crefExp(cref);
         i1 = ComponentReference.crefFirstIdent(cref);
         i2 = ComponentReference.crefLastIdent(cref);
-        i1 = i1+&"_"+&i2;
+        i1 = i1+"_"+i2;
         cref1 = ComponentReference.makeCrefIdent(i1,typ,sl);
         var = List.first(inFuncOutputs);
         var = DAEUtil.replaceCrefandTypeInVar(cref1,typ,var);
@@ -1020,21 +1020,21 @@ algorithm
       SCode.Visibility visibility;
     case (DAE.FUNCTION(path,_,typ,visibility,pP,iI,iType,source,comment),_,_,_,_)
       equation
-        //print("the pathname before: "+&Absyn.pathString(path)+&"\n");
-        //print("THE FUNCTION BEFORE \n"+&DAEDump.dumpFunctionStr(funcIn)+&"\n");
+        //print("the pathname before: "+Absyn.pathString(path)+"\n");
+        //print("THE FUNCTION BEFORE \n"+DAEDump.dumpFunctionStr(funcIn)+"\n");
         // assemble the path-name
         s = Absyn.pathString(path);
         chars = stringListStringChar(s);
         chars = listDelete(chars, 1);
         s = stringCharListString(chars);
-        path = Absyn.stringPath(s+&"_eval"+&intString(idx));
+        path = Absyn.stringPath(s+"_eval"+intString(idx));
         // update the type
-        //print("the old type: "+&Types.unparseType(typ)+&"\n");
+        //print("the old type: "+Types.unparseType(typ)+"\n");
         typ = updateFunctionType(typ,outputs,origOutputs);
-        //print("the new type: "+&Types.unparseType(typ)+&"\n");
+        //print("the new type: "+Types.unparseType(typ)+"\n");
         func = DAE.FUNCTION(path,{DAE.FUNCTION_DEF(body)},typ,visibility,pP,iI,iType,source,comment);
-        //print("THE FUNCTION AFTER \n"+&DAEDump.dumpFunctionStr(func)+&"\n");
-        //print("the pathname after: "+&Absyn.pathString(path)+&"\n");
+        //print("THE FUNCTION AFTER \n"+DAEDump.dumpFunctionStr(func)+"\n");
+        //print("the pathname after: "+Absyn.pathString(path)+"\n");
       then (func,path);
     else
       equation
@@ -1060,11 +1060,11 @@ algorithm
       list<DAE.FuncArg> inputs;
   case(DAE.T_FUNCTION(funcArg = inputs, funcResultType = outType, functionAttributes = atts, source = source),_,_)
     equation
-      //print("the out types1: "+&Types.unparseType(outType)+&"\n");
+      //print("the out types1: "+Types.unparseType(outType)+"\n");
       outTypeLst = List.map(outputs,DAEUtil.getVariableType);
       outType = if intEq(listLength(outTypeLst),1) then List.first(outTypeLst) else DAE.T_TUPLE(outTypeLst,DAE.emptyTypeSource);
       outType = DAE.T_FUNCTION(inputs,outType,atts,source);
-      //print("the out types2: "+&Types.unparseType(outType)+&"\n");
+      //print("the out types2: "+Types.unparseType(outType)+"\n");
     then
       outType;
   else
@@ -1264,7 +1264,7 @@ algorithm
       equation
         true = List.isMemberOnTrue(cref1,changeTheseCrefs,ComponentReference.crefEqual);
         i2 = ComponentReference.crefFirstIdent(cref2);
-        i1 = i1+&"_"+&i2;
+        i1 = i1+"_"+i2;
         cref2 = replaceCrefIdent(cref2,i1);
         cref2 = makeIdentCref2(cref2,changeTheseCrefs);
       then
@@ -1433,9 +1433,9 @@ algorithm
     case(DAE.STMT_ASSIGN(type_=typ, exp1=exp1, exp=exp2, source=source)::rest,(funcTree,replIn,idx),_)
       equation
         // replace, evaluate, simplify the assignment
-       //print("the STMT_ASSIGN before: "+&DAEDump.ppStatementStr(List.first(algsIn)));
+       //print("the STMT_ASSIGN before: "+DAEDump.ppStatementStr(List.first(algsIn)));
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("assignment:\n"+&DAEDump.ppStatementStr(List.first(algsIn)));
+          print("assignment:\n"+DAEDump.ppStatementStr(List.first(algsIn)));
         end if;
         cref = Expression.expCref(exp1);
         scalars = getRecordScalars(cref);
@@ -1444,7 +1444,7 @@ algorithm
         // (exp2,changed) = bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed); This does nothing useful with the statement below...
         (exp2,_) = ExpressionSimplify.simplify(exp2);
         expLst = Expression.getComplexContents(exp2);
-        //print("SIMPLIFIED\n"+&stringDelimitList(List.map({exp2},ExpressionDump.printExpStr),"\n")+&"\n");
+        //print("SIMPLIFIED\n"+stringDelimitList(List.map({exp2},ExpressionDump.printExpStr),"\n")+"\n");
 
         // add the replacements for the addStmts and remove the replacements for the variable outputs
         repl = List.fold(addStmts,addReplacementRuleForAssignment,replIn);
@@ -1458,16 +1458,16 @@ algorithm
         isRec = ComponentReference.isRecord(cref);
         isTpl = Expression.isTuple(exp1) and Expression.isTuple(exp2);
         isCall = Expression.isCall(exp2);
-        //print("is it const? "+&boolString(isCon)+&" ,is it rec: "+&boolString(isRec)+&" ,is it tpl: "+&boolString(isTpl)+&" ,is it call: "+&boolString(isCall)+&"\n");
+        //print("is it const? "+boolString(isCon)+" ,is it rec: "+boolString(isRec)+" ,is it tpl: "+boolString(isTpl)+" ,is it call: "+boolString(isCall)+"\n");
 
         // remove the variable crefs and add the constant crefs to the replacements
-        //print("scalars\n"+&stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
-        //print("expLst\n"+&stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+&"\n");
+        //print("scalars\n"+stringDelimitList(List.map(scalars,ComponentReference.printComponentRefStr),"\n")+"\n");
+        //print("expLst\n"+stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+"\n");
         scalars = if isRec and eqDim then scalars else {};
         expLst = if isRec and eqDim then expLst else {};
         (_,varScalars) = List.filterOnTrueSync(expLst,Expression.isNotConst,scalars);
         (expLst,constScalars) = List.filterOnTrueSync(expLst,Expression.isConst,scalars);
-        //print("variable scalars\n"+&stringDelimitList(List.map(varScalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("variable scalars\n"+stringDelimitList(List.map(varScalars,ComponentReference.printComponentRefStr),"\n")+"\n");
         //BackendVarTransform.dumpReplacements(replIn);
 
         repl = if isCon and not isRec then BackendVarTransform.addReplacement(repl,cref,exp2,NONE()) else repl;
@@ -1476,8 +1476,8 @@ algorithm
         repl = if not isCon and isRec then BackendVarTransform.removeReplacements(repl,varScalars,NONE()) else repl;
         repl = if not isCon and isRec then BackendVarTransform.addReplacements(repl,constScalars,expLst,NONE()) else repl;
 
-        //bcall(isCon and not isRec,print,"add the replacement: "+&ComponentReference.crefStr(cref)+&" --> "+&ExpressionDump.printExpStr(exp2)+&"\n");
-        //bcall(not isCon,print,"update the replacement for: "+&ComponentReference.crefStr(cref)+&"\n");
+        //bcall(isCon and not isRec,print,"add the replacement: "+ComponentReference.crefStr(cref)+" --> "+ExpressionDump.printExpStr(exp2)+"\n");
+        //bcall(not isCon,print,"update the replacement for: "+ComponentReference.crefStr(cref)+"\n");
         //BackendVarTransform.dumpReplacements(repl);
 
         // build the new statements
@@ -1488,18 +1488,18 @@ algorithm
         //alg = if_(isTpl,DAE.STMT_TUPLE_ASSIGN(typ,tplExpsLHS,exp2,source),alg);
         stmts1 = if isTpl then tplStmts else {alg};
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("evaluated assignment to:\n"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
+          print("evaluated assignment to:\n"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         end if;
 
         //stmts1 = listAppend({alg},lstIn);
         stmts1 = listAppend(stmts1,lstIn);
-        //print("\nthe traverse LIST after :"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
+        //print("\nthe traverse LIST after :"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
       then (rest,(funcTree,repl,idx));
     case (DAE.STMT_ASSIGN_ARR(type_=_, componentRef=_, exp=_)::rest,(funcTree,_,idx),_)
       equation
         //print("STMT_ASSIGN_ARR");
-        //print("the STMT_ASSIGN_ARR: "+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
+        //print("the STMT_ASSIGN_ARR: "+DAEDump.ppStatementStr(List.first(algsIn))+"\n");
         alg = List.first(algsIn);
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,tplIn,alg::lstIn);
       then (rest,(funcTree,repl,idx));
@@ -1507,7 +1507,7 @@ algorithm
       equation
         alg = List.first(algsIn);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("IF-statement:\n"+&DAEDump.ppStatementStr(alg));
+          print("IF-statement:\n"+DAEDump.ppStatementStr(alg));
         end if;
 
         // get all stmts in the function and the assigned crefs (need the outputs in order to remove the replacements if nothing can be evaluated)
@@ -1535,12 +1535,12 @@ algorithm
         end if;
         predicted = List.isNotEmpty(addStmts) or List.isEmpty(stmtsNew) and not isEval;
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval then
-          print("could it be predicted? "+&boolString(predicted)+&"\n");
+          print("could it be predicted? "+boolString(predicted)+"\n");
         end if;
 
         // if nothing can be done, remove the replacements for the variables assigned in the if stmt
         repl = if not predicted and not isEval then BackendVarTransform.removeReplacements(repl,outputs,NONE()) else repl;
-        //print("REMOVE THE REPLACEMENTS\n"+&stringDelimitList(List.map(outputs,ComponentReference.printComponentRefStr),"\n")+&"\n");
+        //print("REMOVE THE REPLACEMENTS\n"+stringDelimitList(List.map(outputs,ComponentReference.printComponentRefStr),"\n")+"\n");
 
         //stmts1 = if_(simplified and isCon, listAppend(stmts1,addStmts), stmts1);
 
@@ -1549,30 +1549,30 @@ algorithm
 
         //BackendVarTransform.dumpReplacements(repl);
 
-        //print("the STMT_IF after: \n"+&stringDelimitList(List.map(listAppend(stmts1,addStmts),DAEDump.ppStatementStr),"\n")+&"\n");
-        //print("\nthe REST if after :"+&stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+&"\n");
+        //print("the STMT_IF after: \n"+stringDelimitList(List.map(listAppend(stmts1,addStmts),DAEDump.ppStatementStr),"\n")+"\n");
+        //print("\nthe REST if after :"+stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+"\n");
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("evaluated IF-statements to:\n"+&stringDelimitList(List.map(listAppend(stmts1,addStmts),DAEDump.ppStatementStr),"\n")+&"\n\n");
+          print("evaluated IF-statements to:\n"+stringDelimitList(List.map(listAppend(stmts1,addStmts),DAEDump.ppStatementStr),"\n")+"\n\n");
         end if;
 
         stmts1 = listAppend(stmts1,lstIn);
-        //print("\nthe traverse LIST after :"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
+        //print("\nthe traverse LIST after :"+stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts1);
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_TUPLE_ASSIGN(type_=_, expExpLst=expLst, exp=exp0)::rest,(funcTree,replIn,idx),_)
       equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("Tuple-statement:\n"+&DAEDump.ppStatementStr(List.first(algsIn)));
+          print("Tuple-statement:\n"+DAEDump.ppStatementStr(List.first(algsIn)));
         end if;
-        //print("idx: "+&intString(idx)+&"\n");
-        //print("\nthe traverse LIST tpl before :"+&stringDelimitList(List.map(lstIn,DAEDump.ppStatementStr),"\n")+&"\n");
+        //print("idx: "+intString(idx)+"\n");
+        //print("\nthe traverse LIST tpl before :"+stringDelimitList(List.map(lstIn,DAEDump.ppStatementStr),"\n")+"\n");
         //print("the LHS before\n");
-        //print(stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+&"\n");
+        //print(stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+"\n");
         //print("the RHS before\n");
-        //print(ExpressionDump.printExpStr(exp1)+&"\n");
+        //print(ExpressionDump.printExpStr(exp1)+"\n");
         (exp1,_) = BackendVarTransform.replaceExp(exp0,replIn,NONE());
         //print("the RHS replaced\n");
-        //print(ExpressionDump.printExpStr(exp1)+&"\n");
+        //print(ExpressionDump.printExpStr(exp1)+"\n");
 
         exp2 = DAE.TUPLE(expLst);
         ((exp1,exp2,addEqs,funcTree2,idx,_)) = evaluateConstantFunction(exp1,exp2,funcTree,idx);
@@ -1585,7 +1585,7 @@ algorithm
         isCon = Expression.isConst(exp1);
         exp1 = if isCon then exp1 else exp0;
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("--> is the tuple const? "+&boolString(isCon)+&"\n");
+          print("--> is the tuple const? "+boolString(isCon)+"\n");
         end if;
 
         // add the replacements
@@ -1611,13 +1611,13 @@ algorithm
         stmts1 = List.map(addEqs,equationToStatement);
         stmts2 = listAppend(stmts2,stmts1);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("evaluated Tuple-statements to (incl. addEqs):\n"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
+          print("evaluated Tuple-statements to (incl. addEqs):\n"+stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+"\n");
         end if;
         stmts2 = listReverse(stmts2);
         stmts2 = listAppend(stmts2,lstIn);
-        //print("idx: "+&intString(idx)+&"\n");
-        //print("\nthe traverse LIST tpl after :"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
-        //print("\nthe REST tpl after :"+&stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+&"\n");
+        //print("idx: "+intString(idx)+"\n");
+        //print("\nthe traverse LIST tpl after :"+stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+"\n");
+        //print("\nthe REST tpl after :"+stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+"\n");
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree2,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
 
@@ -1626,7 +1626,7 @@ algorithm
         alg = List.first(algsIn);
         // TODO: evaluate for-loops
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("For-statement:\n"+&DAEDump.ppStatementStr(alg));
+          print("For-statement:\n"+DAEDump.ppStatementStr(alg));
         end if;
         // at least remove the replacements for the lhs
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
@@ -1640,7 +1640,7 @@ algorithm
         // lets see if we can evaluate it
 
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("evaluated For-statement to:\n"+&DAEDump.ppStatementStr(alg));
+          print("evaluated For-statement to:\n"+DAEDump.ppStatementStr(alg));
         end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
@@ -1651,14 +1651,14 @@ algorithm
         alg = List.first(algsIn);
         // TODO: evaluate while-loops
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("While-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+          print("While-statement (not evaluated):\n"+DAEDump.ppStatementStr(alg));
         end if;
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
         lhsExps = List.unique(lhsExps);
         outputs = List.map(lhsExps,Expression.expCref);
         repl = if true then BackendVarTransform.removeReplacements(replIn,outputs,NONE()) else replIn;
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("evaluated While-statement to:\n"+&DAEDump.ppStatementStr(alg));
+          print("evaluated While-statement to:\n"+DAEDump.ppStatementStr(alg));
         end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
@@ -1667,7 +1667,7 @@ algorithm
       equation
         alg = List.first(algsIn);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("assert-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+          print("assert-statement (not evaluated):\n"+DAEDump.ppStatementStr(alg));
         end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
@@ -1676,7 +1676,7 @@ algorithm
       equation
         alg = List.first(algsIn);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("terminate-statement:\n"+&DAEDump.ppStatementStr(alg));
+          print("terminate-statement:\n"+DAEDump.ppStatementStr(alg));
         end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
@@ -1685,7 +1685,7 @@ algorithm
       equation
         alg = List.first(algsIn);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("reinit-statement:\n"+&DAEDump.ppStatementStr(alg));
+          print("reinit-statement:\n"+DAEDump.ppStatementStr(alg));
         end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
@@ -1694,7 +1694,7 @@ algorithm
       equation
         alg = List.first(algsIn);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("noretcall-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+          print("noretcall-statement (not evaluated):\n"+DAEDump.ppStatementStr(alg));
         end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
@@ -1703,7 +1703,7 @@ algorithm
       equation
         alg = List.first(algsIn);
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("return-statement:\n"+&DAEDump.ppStatementStr(alg));
+          print("return-statement:\n"+DAEDump.ppStatementStr(alg));
         end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
@@ -1711,7 +1711,7 @@ algorithm
     else
       equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("evaluateFunctions_updateStatement failed for!\n"+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
+          print("evaluateFunctions_updateStatement failed for!\n"+DAEDump.ppStatementStr(List.first(algsIn))+"\n");
         end if;
       then
         fail();
@@ -1748,7 +1748,7 @@ algorithm
 
         // check if its the IF case, if true then evaluate:
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("-->is the if const? "+&boolString(isCon)+&" and is it the if case ? "+&boolString(isIf)+&"\n");
+          print("-->is the if const? "+boolString(isCon)+" and is it the if case ? "+boolString(isIf)+"\n");
         end if;
         //(stmts1,(funcTree,repl,idx)) = bcallret3_2(isIf and isCon,evaluateFunctions_updateStatement,stmtsIf,(funcTree,replIn,idx),lstIn,stmtsIf,(funcTree,replIn,idx));
         if isIf and isCon then
@@ -1768,7 +1768,7 @@ algorithm
           isElse = false;
         end if;
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf then
-          print("-->is it an other case? "+&boolString(isElse)+&"\n");
+          print("-->is it an other case? "+boolString(isElse)+"\n");
         end if;
         if isCon and isElse then
           (stmts1,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(stmtsElse,(funcTree,replIn,idx),{});
@@ -1849,7 +1849,7 @@ algorithm
         tplLHS = DAEUtil.getTupleExps(e2);
         crefs = List.map(tplLHS,Expression.expCref);
         repl = BackendVarTransform.addReplacements(replIn,crefs,tplRHS,NONE());
-        //print("add the tpl  replacements: "+&stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),",")+&stringDelimitList(List.map(tplRHS,ExpressionDump.printExpStr),",")+&"\n");
+        //print("add the tpl  replacements: "+stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),",")+stringDelimitList(List.map(tplRHS,ExpressionDump.printExpStr),",")+"\n");
       then
         repl;
    else
@@ -1938,7 +1938,7 @@ algorithm
   case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=stmtLst1,elseWhen=SOME(stmt1),source=_),_)
     equation
       if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-        print(" check getStatementLHS for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
+        print(" check getStatementLHS for WHEN!\n"+DAEDump.ppStatementStr(stmt));
       end if;
       expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
       expLst = List.fold({stmt1},getStatementLHS,expLst);
@@ -1946,24 +1946,24 @@ algorithm
   case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=stmtLst1,elseWhen=NONE(),source=_),_)
     equation
       if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-        print(" check getStatementLHS for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
+        print(" check getStatementLHS for WHEN!\n"+DAEDump.ppStatementStr(stmt));
       end if;
       expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
     then expLst;
   case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_),_)
     equation
-      //bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
+      //bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for ASSERT!\n"+DAEDump.ppStatementStr(stmt));
     then expsIn;
   case(DAE.STMT_TERMINATE(msg=_,source=_),_)
     equation
       if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-        print("getStatementLHS update for TERMINATE!\n"+&DAEDump.ppStatementStr(stmt));
+        print("getStatementLHS update for TERMINATE!\n"+DAEDump.ppStatementStr(stmt));
       end if;
     then fail();
   case(DAE.STMT_REINIT(var=_,value=_,source=_),_)
     equation
       if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-        print("getStatementLHS update for REINIT!\n"+&DAEDump.ppStatementStr(stmt));
+        print("getStatementLHS update for REINIT!\n"+DAEDump.ppStatementStr(stmt));
       end if;
     then fail();
   case(DAE.STMT_NORETCALL(exp=exp,source=_),_)
@@ -1972,24 +1972,24 @@ algorithm
   case(DAE.STMT_RETURN(source=_),_)
     equation
       if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-        print("getStatementLHS update for RETURN!\n"+&DAEDump.ppStatementStr(stmt));
+        print("getStatementLHS update for RETURN!\n"+DAEDump.ppStatementStr(stmt));
       end if;
     then fail();
   case(DAE.STMT_BREAK(source=_),_)
     equation
       if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-        print("getStatementLHS update for BREAK!\n"+&DAEDump.ppStatementStr(stmt));
+        print("getStatementLHS update for BREAK!\n"+DAEDump.ppStatementStr(stmt));
       end if;
     then fail();
   case(DAE.STMT_ARRAY_INIT(name=_,ty=_,source=_),_)
     equation
       if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-        print("getStatementLHS update for ARRAY_INIT!\n"+&DAEDump.ppStatementStr(stmt));
+        print("getStatementLHS update for ARRAY_INIT!\n"+DAEDump.ppStatementStr(stmt));
       end if;
     then fail();
   else
     equation
-      print("getStatementLHS update for !\n"+&DAEDump.ppStatementStr(stmt));
+      print("getStatementLHS update for !\n"+DAEDump.ppStatementStr(stmt));
     then fail();
   end match;
 end getStatementLHS;
@@ -2133,7 +2133,7 @@ algorithm
           DAE.STMT_ASSIGN(typ,lhs,rhs,source);
       else
         equation
-          print("equationToStmt failed for: "+&BackendDump.dumpEqnsStr({eqIn})+&"\n");
+          print("equationToStmt failed for: "+BackendDump.dumpEqnsStr({eqIn})+"\n");
         then fail();
   end matchcontinue;
 end equationToStmt;
@@ -2151,7 +2151,7 @@ algorithm
         t;
     else
       equation
-      print("expType failed for: "+&ExpressionDump.printExpStr(eIn)+&"\n");
+      print("expType failed for: "+ExpressionDump.printExpStr(eIn)+"\n");
       then
         fail();
   end matchcontinue;
@@ -2192,7 +2192,7 @@ algorithm
         // check if this could be evaluated
         const = Expression.isConst(exp);
         isElseIf = if const then Expression.getBoolConst(exp) else false;
-        //print("do we have to use the elseif: "+&boolString(isElseIf)+&"\n");
+        //print("do we have to use the elseif: "+boolString(isElseIf)+"\n");
         if const and isElseIf then
           (stmts,(funcs,repl,idx)) = evaluateFunctions_updateStatement(stmts,(funcs,replIn,idx),{});  // is this elseif case
         elseif not isElseIf then
@@ -2204,10 +2204,10 @@ algorithm
         (stmts,(funcs,repl,idx,isElseIf));
     case(DAE.ELSE(statementLst=stmts),(funcs,repl,idx))
         equation
-           //print("the STMT_ELSE before: "+&stringDelimitList(List.map(stmts,DAEDump.ppStatementStr),"\n")+&"\n");
+           //print("the STMT_ELSE before: "+stringDelimitList(List.map(stmts,DAEDump.ppStatementStr),"\n")+"\n");
          repl = BackendVarTransform.emptyReplacements();
          (stmts,(funcs,repl,idx)) = evaluateFunctions_updateStatementLst(stmts,(funcs,repl,idx));  // is this elseif case
-           //print("the STMT_ELSE simplified: "+&stringDelimitList(List.map(stmts,DAEDump.ppStatementStr),"\n")+&"\n");
+           //print("the STMT_ELSE simplified: "+stringDelimitList(List.map(stmts,DAEDump.ppStatementStr),"\n")+"\n");
       then
          (stmts,(funcs,repl,idx,false));
     else
@@ -2242,7 +2242,7 @@ algorithm
     case(DAE.VAR(componentRef = cref,ty=DAE.T_COMPLEX(varLst = varLst)))
       equation
         names = List.map(varLst,DAEUtil.typeVarIdent);
-        //print("the names for the scalar complex crefs: "+&stringDelimitList(names,"\n;")+&"\n");
+        //print("the names for the scalar complex crefs: "+stringDelimitList(names,"\n;")+"\n");
         types = List.map(varLst,DAEUtil.VarType);
         crefs = List.map1(names,ComponentReference.appendStringCref,cref);
         crefs = setTypesForScalarCrefs(crefs,types,{});
@@ -2267,7 +2267,7 @@ algorithm
     case(DAE.VAR(componentRef=cref,ty=DAE.T_ARRAY(ty=_,dims=dimensions,source=_)))
       equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("the array cref before\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+          print("the array cref before\n"+stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+"\n");
         end if;
         crefs = ComponentReference.expandArrayCref(cref,dimensions);
       then
@@ -2275,14 +2275,14 @@ algorithm
     case(DAE.VAR(componentRef=cref,ty=DAE.T_ENUMERATION(index=_,path=_,names=_,literalVarLst=_,attributeLst=_,source=_)))
       equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("update getScalarsForComplexVar for enumerations: the enum cref is :"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+          print("update getScalarsForComplexVar for enumerations: the enum cref is :"+stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+"\n");
         end if;
       then
         {};
     case(DAE.VAR(componentRef=cref,ty=DAE.T_TUPLE(tupleType=_,source=_)))
       equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-          print("update getScalarsForComplexVar for tuple types: the tupl cref is :\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+          print("update getScalarsForComplexVar for tuple types: the tupl cref is :\n"+stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+"\n");
         end if;
       then
         {};
@@ -2522,9 +2522,9 @@ protected
 algorithm
   (funcTree,idx) := foldTplIn;
   repl := BackendVarTransform.emptyReplacements();
-  //print("start new evaluation with empty replacement\n"+&stringDelimitList(List.map(algsIn,DAEDump.ppStatementStr),"\n")+&"\n");
+  //print("start new evaluation with empty replacement\n"+stringDelimitList(List.map(algsIn,DAEDump.ppStatementStr),"\n")+"\n");
   (algsOut,(funcTree,repl,idx)) := evaluateFunctions_updateStatement(algsIn,(funcTree,repl,idx),{});
-  //print("the new evaluated stmts wit empty repl \n"+&stringDelimitList(List.map(algsOut,DAEDump.ppStatementStr),"\n")+&"\n");
+  //print("the new evaluated stmts wit empty repl \n"+stringDelimitList(List.map(algsOut,DAEDump.ppStatementStr),"\n")+"\n");
   foldTplOut := (funcTree,idx);
   mapTplOut := (algsOut,repl);
 end evaluateFunctions_updateStatementEmptyRepl;
@@ -2561,15 +2561,15 @@ algorithm
          stmtsLst = getDAEelseStatemntLsts(else_,{});
          stmtsLst = listReverse(stmtsLst);
          stmtsLst = stmts1::stmtsLst;
-         //print("all stmts to predict: \n"+&stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"\n")+&"\n");
+         //print("all stmts to predict: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"\n")+"\n");
 
          // replace with the already known stuff and build the new replacements
          repl = getOnlyConstantReplacements(replIn);
          (stmtsLst,_) = List.map4_2(stmtsLst,BackendVarTransform.replaceStatementLstRHS,repl,NONE(),{},false);
-         //print("al stmts replaced: \n"+&stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"\n")+&"\n");
+         //print("al stmts replaced: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"\n")+"\n");
          (tplLst,(funcTree,idx)) = List.mapFold(stmtsLst,evaluateFunctions_updateStatementEmptyRepl,(funcTree,idx));
          stmtsLst = List.map(tplLst,Util.tuple21);
-         //print("all evaled stmts1: \n"+&stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"---------\n")+&"\n");
+         //print("all evaled stmts1: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"---------\n")+"\n");
          replLst = List.map(stmtsLst,collectReplacements);
          //replLst = List.map(replLst,getOnlyConstantReplacements);
          //List.map_0(replLst,BackendVarTransform.dumpReplacements);
@@ -2578,32 +2578,32 @@ algorithm
          expLst = List.fold(List.flatten(stmtsLst),getStatementLHS,{});
          expLst = List.unique(expLst);
          allLHS = listReverse(expLst);
-         //print("the outputs: "+&stringDelimitList(List.map(allLHS,ExpressionDump.printExpStr),"\n")+&"\n");
+         //print("the outputs: "+stringDelimitList(List.map(allLHS,ExpressionDump.printExpStr),"\n")+"\n");
          expLstLst = List.map1(replLst,replaceExps,allLHS);
-         //print("the outputs replaced: \n"+&stringDelimitList(List.map(expLstLst,ExpressionDump.printExpListStr),"\n")+&"\n\n");
+         //print("the outputs replaced: \n"+stringDelimitList(List.map(expLstLst,ExpressionDump.printExpListStr),"\n")+"\n\n");
 
          // compare the constant outputs
          constantOutputs = compareConstantExps(expLstLst);
          outExps = List.map1(constantOutputs,List.getIndexFirst,allLHS);
          _ = List.map(outExps,Expression.expCref);
-         //print("constantOutputs: "+&stringDelimitList(List.map(constantOutputs,intString),",")+&"\n");
+         //print("constantOutputs: "+stringDelimitList(List.map(constantOutputs,intString),",")+"\n");
          expLst = List.map1(constantOutputs,List.getIndexFirst,List.first(expLstLst));
-         //print("the constant shared outputs: "+&stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+&"\n");
-         //print("the constant shared output crefs: "+&stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n")+&"\n");
+         //print("the constant shared outputs: "+stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+"\n");
+         //print("the constant shared output crefs: "+stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n")+"\n");
          if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
-           print("--> the predicted const outputs:\n"+&stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n"));
+           print("--> the predicted const outputs:\n"+stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n"));
          end if;
          (constOutExps,_,varOutExps) = List.intersection1OnTrue(outExps,allLHS,Expression.expEqual);
 
          predicted = List.isNotEmpty(constOutExps) and List.isEmpty(varOutExps);
          //repl = bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);
-         //bcall(not predicted,print,"remove the replacement for: "+&stringDelimitList(List.map(varCrefs,ComponentReference.crefStr),"\n")+&"\n");
+         //bcall(not predicted,print,"remove the replacement for: "+stringDelimitList(List.map(varCrefs,ComponentReference.crefStr),"\n")+"\n");
          repl = replIn;
          // build the additional statements and update the old one
          addStmts = List.map2(List.intRange(listLength(outExps)),makeAssignmentMap,outExps,expLst);
          stmtNew = updateStatementsInIfStmt(stmtsLst,stmtIn);
 
-         //print("the new predicted stmts: \n"+&stringDelimitList(List.map({stmtNew},DAEDump.ppStatementStr),"\n")+&"\nAnd the additional "+&stringDelimitList(List.map(addStmts,DAEDump.ppStatementStr),"\n")+&"\n");
+         //print("the new predicted stmts: \n"+stringDelimitList(List.map({stmtNew},DAEDump.ppStatementStr),"\n")+"\nAnd the additional "+stringDelimitList(List.map(addStmts,DAEDump.ppStatementStr),"\n")+"\n");
 
          //repl = BackendVarTransform.addReplacements(replIn,crefs,expLst,NONE());
        then
@@ -2848,10 +2848,10 @@ algorithm
   states := List.filterOnTrue(varLst,BackendVariable.isStateorStateDerVar);
   ((_,derVarsInit)) := BackendDAEUtil.traverseBackendDAEExpsEqns(initEqs,Expression.traverseSubexpressionsHelper,(findDerVarCrefs,{}));
   ((_,derVars)) := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,Expression.traverseSubexpressionsHelper,(findDerVarCrefs,derVarsInit));
-    //print("derVars\n"+&stringDelimitList(List.map(derVars,ComponentReference.printComponentRefStr),"\n")+&"\n\n");
+    //print("derVars\n"+stringDelimitList(List.map(derVars,ComponentReference.printComponentRefStr),"\n")+"\n\n");
   ssVarLst := List.filterOnTrue(varLst,varSSisPreferOrHigher);
   ssVars := List.map(ssVarLst,BackendVariable.varCref);
-    //print("ssVars\n"+&stringDelimitList(List.map(ssVars,ComponentReference.printComponentRefStr),"\n")+&"\n\n");
+    //print("ssVars\n"+stringDelimitList(List.map(ssVars,ComponentReference.printComponentRefStr),"\n")+"\n\n");
   derVars := listAppend(derVars,ssVars);
   derVars := List.unique(derVars);
   (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKindForStates,derVars);

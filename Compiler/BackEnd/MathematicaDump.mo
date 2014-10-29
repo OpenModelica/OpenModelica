@@ -62,23 +62,23 @@ algorithm
         (params,inputs) = printMmaParamsStr(knvars);
         //inputs = listAppend(inputs,inputsStates); This should not happen, if a input is used as a state, index reduction should be active!
         s1_1 = Util.stringDelimitListNonEmptyElts(states,",");
-        //print(" states: " +& s1_1 +& "\n");
+        //print(" states: " + s1_1 + "\n");
         s1_2 = Util.stringDelimitListNonEmptyElts(algs,",");
-        //print(" algs: " +& s1_2 +& "\n");
+        //print(" algs: " + s1_2 + "\n");
         s1_3 = Util.stringDelimitListNonEmptyElts(outputs,",");
-        //print(" outputs: " +& s1_3 +& "\n");
+        //print(" outputs: " + s1_3 + "\n");
         s1_4 = Util.stringDelimitListNonEmptyElts(inputs,",");
-        //print(" inputs: " +& s1_4 +& "\n");
+        //print(" inputs: " + s1_4 + "\n");
         s1_5 = Util.stringDelimitListNonEmptyElts(params,",");
-        //print(" params: " +& s1_5 +& "\n");
-        allVarStr = "{{" +& s1_1 +& "},{" +& s1_2 +& "},{" +& s1_3 +& "},{" +& s1_4 +& "},{" +& s1_5 +& "}}";
-        //print(" vars: " +& allVarStr +& "\n");
+        //print(" params: " + s1_5 + "\n");
+        allVarStr = "{{" + s1_1 + "},{" + s1_2 + "},{" + s1_3 + "},{" + s1_4 + "},{" + s1_5 + "}}";
+        //print(" vars: " + allVarStr + "\n");
 
         s3 = printMmaEqnsStr(eqns,(vars,knvars));
         s4 = printMmaEqnsStr(ieqns,(vars,knvars));
         res = stringAppendList({"{",allVarStr,",",s3,",",s4,"}"});
-        //print(" Eqns-1-: " +& s3 +& "\n");
-        //print(" Eqns-2-: " +& s4 +& "\n");
+        //print(" Eqns-1-: " + s3 + "\n");
+        //print(" Eqns-2-: " + s4 + "\n");
     then res;
   end match;
 end dumpMmaDAEStr;
@@ -137,10 +137,10 @@ algorithm
     then str;
 
     case (BackendDAE.ALGORITHM(alg=alg),(_,_)) equation
-      str = "Missing[\"Algorithm\",\""+&escapeMmaString(dumpSingleAlgorithmStr(alg))+&"\"]";
+      str = "Missing[\"Algorithm\",\""+escapeMmaString(dumpSingleAlgorithmStr(alg))+"\"]";
     then str;
     case (BackendDAE.WHEN_EQUATION(whenEquation = whenEq),(_,_)) equation
-      str = "Missing[\"When\",\""+&escapeMmaString(whenEquationStr(whenEq))+&"\"]";
+      str = "Missing[\"When\",\""+escapeMmaString(whenEquationStr(whenEq))+"\"]";
     then str;
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),(vars,knvars))
       equation
@@ -344,7 +344,7 @@ algorithm
       equation
         fs = Absyn.pathString(fcn);
         argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");
-        s_2 = "FunctionCall[\""+& fs +&"\"]["+&argstr+&"]";
+        s_2 = "FunctionCall[\""+ fs +"\"]["+argstr+"]";
       then
         s_2;
 
@@ -416,7 +416,7 @@ algorithm
         s1 = printExp2MmaStr(e1,vars,knvars);
         s1_1 = ExpressionDump.parenthesize(s1, pe1, p,false);
         s4 = stringDelimitList(List.map2(ae1,printExp2MmaStr,vars,knvars),", ");
-        s_4 ="Index["+& s1_1+&",{" +&s4 +& "}]";
+        s_4 ="Index["+ s1_1+",{" +s4 + "}]";
       then
         s_4;
 
@@ -444,11 +444,11 @@ algorithm
 
     case(DAE.ENUM_LITERAL(name=path),_,_) equation
       str = Absyn.pathString(path);
-      str = "Missing[\"ModelicaName\",\""+&str+&"\"]";
+      str = "Missing[\"ModelicaName\",\""+str+"\"]";
     then str;
 
     case (e,_,_) equation
-      str = "Missing[\"UnknownExpression\",\""+&ExpressionDump.printExpStr(e)+&"\"]";
+      str = "Missing[\"UnknownExpression\",\""+ExpressionDump.printExpStr(e)+"\"]";
     then str;
   end matchcontinue;
 end printExp2MmaStr;
@@ -554,7 +554,7 @@ algorithm
   res := matchcontinue(name)
     case _ equation
       false = -1 == System.stringFind(name,"'");
-      res = "Missing[\"QuotedName\",\""+&System.stringReplace(name,"\\","\\\\")+&"\"]";
+      res = "Missing[\"QuotedName\",\""+System.stringReplace(name,"\\","\\\\")+"\"]";
     then res;
     case _ then name;
   end matchcontinue;
@@ -698,11 +698,11 @@ algorithm
     BackendDAE.WhenEquation elseEqn;
 
     case(BackendDAE.WHEN_EQ(cond,cr,eqn,NONE())) equation
-      str = "when "+&ExpressionDump.printExpStr(cond)+&" then\n"+&ComponentReference.crefStr(cr)+&":="+&ExpressionDump.printExpStr(eqn)+&"\nend when"; //TODO: I'm not sure if the WHEN_EQ data is the same still
+      str = "when "+ExpressionDump.printExpStr(cond)+" then\n"+ComponentReference.crefStr(cr)+":="+ExpressionDump.printExpStr(eqn)+"\nend when"; //TODO: I'm not sure if the WHEN_EQ data is the same still
     then str;
 
     case(BackendDAE.WHEN_EQ(cond,cr,eqn,SOME(elseEqn))) equation
-      str = "when "+&ExpressionDump.printExpStr(cond)+&" then\n"+&ComponentReference.crefStr(cr)+&":="+&ExpressionDump.printExpStr(eqn)+&"\n else"+&whenEquationStr(elseEqn);
+      str = "when "+ExpressionDump.printExpStr(cond)+" then\n"+ComponentReference.crefStr(cr)+":="+ExpressionDump.printExpStr(eqn)+"\n else"+whenEquationStr(elseEqn);
     then str;
   end match;
 end whenEquationStr;

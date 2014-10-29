@@ -252,7 +252,7 @@ algorithm
     case (NFInstTypes.ENTRY(name = name), _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFEnv.mergeEntry failed on entry " +& name);
+        Debug.traceln("- NFEnv.mergeEntry failed on entry " + name);
       then
         fail();
 

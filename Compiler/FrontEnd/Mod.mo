@@ -162,7 +162,7 @@ algorithm
     case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,false)), info=info)),impl,_,_)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, inModScope, info);
-        // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& FGraph.printGraphPathStr(env) +& "\n");
+        // print("Mod.elabMod: calling elabExp on mod exp: " + Dump.printExpStr(e) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), Config.splitArrays(), pre, info); // Vectorize only if arrays are expanded
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_val) = elabModValue(cache, env, e_1, prop, impl, info);
@@ -175,7 +175,7 @@ algorithm
     // Delayed type checking
     case (cache,env,ih,pre,(SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)), info = info)),impl,_,_)
       equation
-        // print("Mod.elabMod: delayed mod : " +& Dump.printExpStr(e) +& " in env: " +& FGraph.printGraphPathStr(env) +& "\n");
+        // print("Mod.elabMod: delayed mod : " + Dump.printExpStr(e) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, inModScope, info);
       then
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e,info))));
@@ -191,9 +191,9 @@ algorithm
     /*/ failure
     case (cache,env,ih,pre,m,impl,info)
       equation
-        str = "- Mod.elabMod  failed: " +&
-              SCodeDump.printModStr(m) +&
-              " in env: " +&
+        str = "- Mod.elabMod  failed: " +
+              SCodeDump.printModStr(m) +
+              " in env: " +
               FGraph.printGraphStr(env);
         fprintln(Flags.FAILTRACE, str);
       then
@@ -349,7 +349,7 @@ algorithm
     // redeclare failure?
     case(_,_,_,_,_,element,_,_,_)
       equation
-        print("Unhandled element redeclare (we keep it as it is!): " +& SCodeDump.unparseElementStr(element,SCodeDump.defaultOptions) +& "\n");
+        print("Unhandled element redeclare (we keep it as it is!): " + SCodeDump.unparseElementStr(element,SCodeDump.defaultOptions) + "\n");
       then
         ((element,DAE.NOMOD()));
 
@@ -496,7 +496,7 @@ algorithm
 
     case (mod)
       equation
-        str = "Mod.elabUntypedMod failed: " +& printModStr(mod) +& "\n";
+        str = "Mod.elabUntypedMod failed: " + printModStr(mod) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -631,7 +631,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = printModStr(m);
-        Debug.traceln("- Mod.updateMod failed mod: " +& str);
+        Debug.traceln("- Mod.updateMod failed mod: " + str);
       then fail();
   end matchcontinue;
 end updateMod;
@@ -936,9 +936,9 @@ algorithm
       String name;
       Absyn.Path path;
 
-    case COMPONENT(name = name) then System.gettext("component ") +& name;
-    case EXTENDS(path = path) then System.gettext("extends ") +& Absyn.pathString(path);
-    case DERIVED(path = path) then System.gettext("inherited class ") +& Absyn.pathString(path);
+    case COMPONENT(name = name) then System.gettext("component ") + name;
+    case EXTENDS(path = path) then System.gettext("extends ") + Absyn.pathString(path);
+    case DERIVED(path = path) then System.gettext("inherited class ") + Absyn.pathString(path);
 
   end match;
 end printModScope;
@@ -1281,8 +1281,8 @@ algorithm
 
     case(v::_,name1::_,DAE.TYPES_VAR(name=name2,ty=tp)::_,_,_,_,_)
       equation
-        true = (name1 ==& name2);
-        true = (name2 ==& name);
+        true = (name1 == name2);
+        true = (name2 == name);
         e = ValuesUtil.valueExp(v);
         ae = Expression.unelabExp(e);
       then
@@ -1322,8 +1322,8 @@ algorithm
       equation
         s1 = printModStr(mod1);
         s2 = printModStr(mod2);
-        s = s1 +& " and " +& s2;
-        n2 = "component " +& n;
+        s = s1 + " and " + s2;
+        n2 = "component " + n;
         Error.addMessage(Error.DUPLICATE_MODIFICATIONS,{s,n2});
       then
         mod2;
@@ -1396,7 +1396,7 @@ public function printSubsStr
   output String s;
 algorithm
   s := stringDelimitList(List.map(inSubMods, prettyPrintSubmod), ", ");
-  s := (if addParan then "(" else "") +& s +& (if addParan then ")" else "");
+  s := (if addParan then "(" else "") + s + (if addParan then ")" else "");
 end printSubsStr;
 
 protected function lookupCompModification2
@@ -1537,8 +1537,8 @@ algorithm
     case (_,idx)
       equation
       true = Flags.isSet(Flags.FAILTRACE);
-      Debug.traceln("- Mod.lookupIdxModification3 failed for mod: \n" +&
-                     printModStr(inMod) +& "\n for index:" +& intString(idx));
+      Debug.traceln("- Mod.lookupIdxModification3 failed for mod: \n" +
+                     printModStr(inMod) + "\n for index:" + intString(idx));
     then fail();
   end matchcontinue;
 end lookupIdxModification3;
@@ -1608,8 +1608,8 @@ algorithm
     case (SOME(eq),_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Mod.indexEqmod failed for mod:\n " +&
-               Types.unparseEqMod(eq) +& "\n indexes:" +&
+        Debug.traceln("- Mod.indexEqmod failed for mod:\n " +
+               Types.unparseEqMod(eq) + "\n indexes:" +
                stringDelimitList(List.map(inIntegerLst, intString), ", "));
       then fail();
   end matchcontinue;
@@ -1742,7 +1742,7 @@ algorithm
     /*
     case (inModOuter,inModInner,_,_)
       equation
-        print("Merging: " +& printModStr(inModOuter) +& " with " +& printModStr(inModInner) +& "\n");
+        print("Merging: " + printModStr(inModOuter) + " with " + printModStr(inModInner) + "\n");
       then
         fail();*/
 
@@ -2352,7 +2352,7 @@ algorithm
     case DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = eachPrefix,tplSCodeElementModLst = elist)
       equation
         elist_1 = List.map(elist, Util.tuple21);
-        prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
+        prefix =  SCodeDump.finalStr(finalPrefix) + SCodeDump.eachStr(eachPrefix);
         str_lst = List.map1(elist_1, SCodeDump.unparseElementStr, SCodeDump.defaultOptions);
         str = stringDelimitList(str_lst, ", ");
         res = stringAppendList({"(",prefix,str,")"});
@@ -2361,10 +2361,10 @@ algorithm
 
     case DAE.MOD(finalPrefix = finalPrefix,eachPrefix = eachPrefix,subModLst = subs,eqModOption = eq)
       equation
-        prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
+        prefix =  SCodeDump.finalStr(finalPrefix) + SCodeDump.eachStr(eachPrefix);
         s1 = printSubs1Str(subs);
         s1_1 = stringDelimitList(s1, ", ");
-        s1_1 = if List.isNotEmpty(subs) then " {" +& s1_1 +& "} " else s1_1;
+        s1_1 = if List.isNotEmpty(subs) then " {" + s1_1 + "} " else s1_1;
         s2 = printEqmodStr(eq);
         str = stringAppendList({prefix,s1_1,s2});
       then
@@ -2406,7 +2406,7 @@ algorithm
 
     case(DAE.MOD(finalPrefix = fp, eqModOption=SOME(eq)),_)
       equation
-        str = (if SCode.finalBool(fp) then "final " else "") +& " = " +& Types.unparseEqMod(eq);
+        str = (if SCode.finalBool(fp) then "final " else "") + " = " + Types.unparseEqMod(eq);
       then
         str;
 
@@ -2445,14 +2445,14 @@ algorithm
     case({},_) then "";
     case((DAE.NAMEMOD(id,(DAE.REDECL(finalPrefix=_))))::_,_)
       equation
-        s2 = " redeclare(" +& id +&  "), class or component " +& id;
+        s2 = " redeclare(" + id +  "), class or component " + id;
       then
         s2;
     case((DAE.NAMEMOD(id,m))::_,_)
       equation
         s2  = prettyPrintMod(m,depth+1);
         s2 = if stringLength(s2) == 0 then "" else s2;
-        s2 = "(" +& id +& s2 +& "), class or component " +& id;
+        s2 = "(" + id + s2 + "), class or component " + id;
       then
         s2;
     end match;
@@ -2475,9 +2475,9 @@ algorithm
     case(DAE.NAMEMOD(id,(DAE.REDECL(fp, ep, elist))))
       equation
         s1 = stringDelimitList(List.map1(List.map(elist, Util.tuple21), SCodeDump.unparseElementStr, SCodeDump.defaultOptions), ", ");
-        s2 = id +& "(redeclare " +&
-             (if SCode.eachBool(ep) then "each " else "") +&
-             (if SCode.finalBool(fp) then "final " else "") +& s1 +& ")";
+        s2 = id + "(redeclare " +
+             (if SCode.eachBool(ep) then "each " else "") +
+             (if SCode.finalBool(fp) then "final " else "") + s1 + ")";
       then
         s2;
 
@@ -2485,7 +2485,7 @@ algorithm
       equation
         s2  = prettyPrintMod(m,0);
         s2 = if stringLength(s2) == 0 then "" else s2;
-        s2 = id +& s2;
+        s2 = id + s2;
       then
         s2;
 
@@ -2525,7 +2525,7 @@ algorithm
     case DAE.NAMEMOD(ident = n,mod = mod)
       equation
         mod_str = printModStr(mod);
-        res = stringAppend(n +& " ", mod_str);
+        res = stringAppend(n + " ", mod_str);
       then
         res;
   end match;
@@ -2677,7 +2677,7 @@ protected function intStringDot
   input Integer i;
   output String str;
 algorithm
-  str := intString(i) +& ".";
+  str := intString(i) + ".";
 end intStringDot;
 
 protected function isPrefixOf
@@ -2874,13 +2874,13 @@ algorithm
 
     case (MOD(cr, mod),        _)
       equation
-        str = ComponentReference.printComponentRefStr(cr) +& ": " +& prettyPrintMod(mod, inDepth);
+        str = ComponentReference.printComponentRefStr(cr) + ": " + prettyPrintMod(mod, inDepth);
       then
         str;
 
     case (SUB_MOD(cr, subMod), _)
       equation
-        str = ComponentReference.printComponentRefStr(cr) +& ": " +& prettyPrintSubmod(subMod);
+        str = ComponentReference.printComponentRefStr(cr) + ": " + prettyPrintSubmod(subMod);
       then
         str;
 
@@ -3106,19 +3106,19 @@ algorithm
 
     case((DAE.REDECL(f,e,redecls)),_)
       equation
-        //fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
+        //fprint(Flags.REDECL,"Removing redeclare mods: " + componentModified +" before" + Mod.printModStr(inmod) + "\n");
         redecls = removeRedeclareMods(redecls,componentModified);
         outmod = if List.isNotEmpty(redecls) then DAE.REDECL(f,e,redecls) else DAE.NOMOD();
-        //fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+        //fprint(Flags.REDECL,"Removing redeclare mods: " + componentModified +" after" + Mod.printModStr(outmod) + "\n");
       then
         outmod;
 
     case(DAE.MOD(f,e,subs,oem),_)
       equation
-        //fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
+        //fprint(Flags.REDECL,"Removing redeclare mods: " + componentModified +" before" + Mod.printModStr(inmod) + "\n");
         subs = removeModInSubs(subs,componentModified);
         outmod = DAE.MOD(f,e,subs,oem);
-        //fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+        //fprint(Flags.REDECL,"Removing redeclare mods: " + componentModified +" after" + Mod.printModStr(outmod) + "\n");
       then
         outmod;
   end match;
@@ -3220,7 +3220,7 @@ algorithm
 
     else
       equation
-        print("Mod.addEachIfNeeded failed on: " +& printModStr(inMod) +& "\n");
+        print("Mod.addEachIfNeeded failed on: " + printModStr(inMod) + "\n");
       then
         fail();
 
@@ -3253,7 +3253,7 @@ algorithm
 
     else
       equation
-        print("Mod.addEachOneLevel failed on: " +& printModStr(inMod) +& "\n");
+        print("Mod.addEachOneLevel failed on: " + printModStr(inMod) + "\n");
       then
         fail();
 

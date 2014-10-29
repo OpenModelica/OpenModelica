@@ -97,7 +97,7 @@ algorithm
         (gi,(_,g)) = GraphML.addGraph("G",false,gi);
         nr = FGraph.top(inGraph);
         ((gi,g)) = addNodes((gi,g), {nr});
-        print("Dumping graph file: " +& fileName +& " ....\n");
+        print("Dumping graph file: " + fileName + " ....\n");
         GraphML.dumpGraph(gi, fileName);
         print("Dumped\n");
       then
@@ -166,7 +166,7 @@ algorithm
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
 
         (gi, _) = GraphML.addNode(
-              "n" +& intString(FNode.id(node)),
+              "n" + intString(FNode.id(node)),
               color, {label}, shape, NONE(), {}, i, gi);
 
         nrefs = List.map(FNode.getAvlTreeValues({SOME(kids)}, {}), FNode.getAvlValue);
@@ -185,13 +185,13 @@ algorithm
         elabel = GraphML.EDGELABEL(nds, NONE(), GraphML.FONTSIZE_SMALL);
 
         (gi, _) = GraphML.addNode(
-              "n" +& intString(FNode.id(node)),
+              "n" + intString(FNode.id(node)),
               color, {label}, shape, NONE(), {}, i, gi);
 
         (gi, _) = GraphML.addEdge(
-                   "r" +& intString(FNode.id(node)),
-                   "n" +& intString(FNode.id(node)),
-                   "n" +& intString(FNode.id(FNode.fromRef(nr))),
+                   "r" + intString(FNode.id(node)),
+                   "n" + intString(FNode.id(node)),
+                   "n" + intString(FNode.id(FNode.fromRef(nr))),
                    GraphML.COLOR_RED,
                    GraphML.LINE(),
                    GraphML.LINEWIDTH_STANDARD,
@@ -203,9 +203,9 @@ algorithm
 
         /*/ add ref edge
         (gi, _) = GraphML.addEdge(
-                   "r" +& intString(FNode.id(node)),
-                   "n" +& intString(FNode.id(FNode.fromRef(target))),
-                   "n" +& intString(FNode.id(FNode.fromRef(nr))),
+                   "r" + intString(FNode.id(node)),
+                   "n" + intString(FNode.id(FNode.fromRef(target))),
+                   "n" + intString(FNode.id(FNode.fromRef(nr))),
                    GraphML.COLOR_RED,
                    GraphML.DASHED(),
                    GraphML.LINEWIDTH_STANDARD,
@@ -231,13 +231,13 @@ algorithm
         elabel = GraphML.EDGELABEL(nds, NONE(), GraphML.FONTSIZE_SMALL);
 
         (gi, _) = GraphML.addNode(
-              "n" +& intString(FNode.id(node)),
+              "n" + intString(FNode.id(node)),
               color, {label}, shape, NONE(), {}, i, gi);
 
         (gi, _) = GraphML.addEdge(
-                   "r" +& intString(FNode.id(node)),
-                   "n" +& intString(FNode.id(node)),
-                   "n" +& intString(FNode.id(FNode.fromRef(nr))),
+                   "r" + intString(FNode.id(node)),
+                   "n" + intString(FNode.id(node)),
+                   "n" + intString(FNode.id(FNode.fromRef(nr))),
                    GraphML.COLOR_GREEN,
                    GraphML.LINE(),
                    GraphML.LINEWIDTH_STANDARD,
@@ -249,9 +249,9 @@ algorithm
 
         /*/ add ref edge
         (gi, _) = GraphML.addEdge(
-                   "r" +& intString(FNode.id(node)),
-                   "n" +& intString(FNode.id(FNode.fromRef(target))),
-                   "n" +& intString(FNode.id(FNode.fromRef(nr))),
+                   "r" + intString(FNode.id(node)),
+                   "n" + intString(FNode.id(FNode.fromRef(target))),
+                   "n" + intString(FNode.id(FNode.fromRef(nr))),
                    GraphML.COLOR_RED,
                    GraphML.DASHED(),
                    GraphML.LINEWIDTH_STANDARD,
@@ -280,13 +280,13 @@ algorithm
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
 
         (gi, _) = GraphML.addNode(
-              "n" +& intString(FNode.id(node)),
+              "n" + intString(FNode.id(node)),
               color, {label}, shape, NONE(), {}, i, gi);
 
         (gi, _) = GraphML.addEdge(
-                   "e" +& intString(FNode.id(node)),
-                   "n" +& intString(FNode.id(node)),
-                   "n" +& intString(FNode.id(FNode.fromRef(nr))),
+                   "e" + intString(FNode.id(node)),
+                   "n" + intString(FNode.id(node)),
+                   "n" + intString(FNode.id(FNode.fromRef(nr))),
                    GraphML.COLOR_BLACK,
                    GraphML.LINE(),
                    GraphML.LINEWIDTH_STANDARD,
@@ -334,7 +334,7 @@ algorithm
         true = SCode.isElementReplaceable(e);
         b = FNode.isClassExtends(node);
         s = if b then "rdrpCE:" else "rdrpC:";
-        s = s +& FNode.name(node);
+        s = s + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.HEXAGON(), s);
 
@@ -344,7 +344,7 @@ algorithm
         true = SCode.isElementRedeclare(e);
         b = FNode.isClassExtends(node);
         s = if b then "rdCE:" else "rdC:";
-        s = s +& FNode.name(node);
+        s = s + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.HEXAGON(), s);
 
@@ -352,7 +352,7 @@ algorithm
     case (FCore.N(_, _, _, _, FCore.CL(e = e)), _)
       equation
         true = SCode.isElementReplaceable(e);
-        s = "rpC:" +& FNode.name(node);
+        s = "rpC:" + FNode.name(node);
       then
         (GraphML.COLOR_RED, GraphML.RECTANGLE(), s);
 
@@ -361,7 +361,7 @@ algorithm
       equation
         true = SCode.isElementRedeclare(e);
         true = SCode.isElementReplaceable(e);
-        s = "rdrpc:" +& FNode.name(node);
+        s = "rdrpc:" + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.ELLIPSE(), s);
 
@@ -369,7 +369,7 @@ algorithm
     case (FCore.N(_, _, _, _, FCore.CO(e = e)), _)
       equation
         true = SCode.isElementRedeclare(e);
-        s = "rdc:" +& FNode.name(node);
+        s = "rdc:" + FNode.name(node);
       then
         (GraphML.COLOR_YELLOW, GraphML.ELLIPSE(), s);
 
@@ -377,28 +377,28 @@ algorithm
     case (FCore.N(_, _, _, _, FCore.CO(e = e)), _)
       equation
         true = SCode.isElementReplaceable(e);
-        s = "rpc:" +& FNode.name(node);
+        s = "rpc:" + FNode.name(node);
       then
         (GraphML.COLOR_RED, GraphML.ELLIPSE(), s);
 
     // class
     case (FCore.N(_, _, _, _, nd as FCore.CL(e = _)), _)
       equation
-        s = FNode.dataStr(nd) +& ":" +& FNode.name(node);
+        s = FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_GRAY, GraphML.RECTANGLE(), s);
 
     // component
     case (FCore.N(_, _, _, _, nd as FCore.CO(e =_ )), _)
       equation
-        s = FNode.dataStr(nd) +& ":" +& FNode.name(node);
+        s = FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_WHITE, GraphML.ELLIPSE(), s);
 
     // extends
     case (FCore.N(_, _, _, _, nd as FCore.EX(e = _)), _)
       equation
-        s = FNode.dataStr(nd) +& ":" +& FNode.name(node);
+        s = FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_GREEN, GraphML.ROUNDRECTANGLE(), s);
 
@@ -406,7 +406,7 @@ algorithm
     case (FCore.N(_, _, _, _, nd as FCore.EXP(e = exp)), _)
       equation
         s = Dump.printExpStr(exp);
-        s = FNode.dataStr(nd) +& ":" +& (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
+        s = FNode.dataStr(nd) + ":" + (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
       then
         (GraphML.COLOR_PURPLE, GraphML.HEXAGON(), s);
 
@@ -414,42 +414,42 @@ algorithm
     case (FCore.N(name, _, _, _, nd as FCore.DIMS(name = _, dims = dims)), _)
       equation
         s = Dump.printArraydimStr(dims);
-        s = FNode.dataStr(nd) +& ":" +& (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
+        s = FNode.dataStr(nd) + ":" + (if escape then Util.escapeModelicaStringToXmlString(s) else Util.stringTrunc(s, 100));
       then
         (GraphML.COLOR_PINK, GraphML.TRIANGLE(), s);
 
     // component references
     case (FCore.N(_, _, _, _, nd as FCore.CR(r = r)), _)
       equation
-        s = FNode.dataStr(nd) +& ":" +& Absyn.printComponentRefStr(r);
+        s = FNode.dataStr(nd) + ":" + Absyn.printComponentRefStr(r);
       then
         (GraphML.COLOR_PURPLE, GraphML.OCTAGON(), s);
 
     // ASSERT nodes
     case (FCore.N(_, _, _, _, nd as FCore.ASSERT(s)), _)
       equation
-        s = FNode.dataStr(nd) +& ":" +& FNode.name(node);
+        s = FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_RED, GraphML.PARALLELOGRAM(), s);
 
     // empty REF nodes
     case (FCore.N(_, _, _, _, nd as FCore.REF({})), _)
       equation
-        s = FNode.dataStr(nd) +& ":" +& "UNRESOLVED";
+        s = FNode.dataStr(nd) + ":" + "UNRESOLVED";
       then
         (GraphML.COLOR_RED, GraphML.PARALLELOGRAM(), s);
 
     // non empty REF nodes
     case (FCore.N(_, _, _, _, nd as FCore.REF(target::_)), _)
       equation
-        s = FNode.dataStr(nd) +& ":" +& FNode.toPathStr(FNode.fromRef(target));
+        s = FNode.dataStr(nd) + ":" + FNode.toPathStr(FNode.fromRef(target));
       then
         (GraphML.COLOR_GREEN, GraphML.TRAPEZOID(), s);
 
     // all others
     case (FCore.N(_, _, _, _, nd), _)
       equation
-        s = FNode.dataStr(nd) +& ":" +& FNode.name(node);
+        s = FNode.dataStr(nd) + ":" + FNode.name(node);
       then
         (GraphML.COLOR_BLUE, GraphML.ELLIPSE(), s);
   end matchcontinue;

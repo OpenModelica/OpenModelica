@@ -264,12 +264,12 @@ protected
   Tags head,body;
 algorithm
   DOCUMENT(docType=str,head=head,body=body) := inDoc;
-  str := str +& "\n<html>\n<head>";
+  str := str + "\n<html>\n<head>";
   str := List.fold(listReverse(head),dumpTag,str);
-  str := str +& "\n</head>";
-  str := str +& "\n<body>";
+  str := str + "\n</head>";
+  str := str + "\n<body>";
   str := List.fold(listReverse(body),dumpTag,str);
-  str := str +& "\n</body>\n</html>";
+  str := str + "\n</body>\n</html>";
   System.writeFile(name,str);
 end dumpDocument;
 
@@ -320,34 +320,34 @@ algorithm
       Tags tags;
     case (HEADING(stage=i,text=t),_)
       equation
-        str = iBuffer +& "\n<h" +& intString(i) +& ">" +& t +& "</h" +& intString(i) +& ">";
+        str = iBuffer + "\n<h" + intString(i) + ">" + t + "</h" + intString(i) + ">";
       then
         str;
     case (HYPERLINK(href=t,title=t1,text=t2),_)
       equation
-        str = iBuffer +& "\n<a href=\"" +& t +& "\" title=\"" +& t1 +& "\">" +& t2 +& "</a>";
+        str = iBuffer + "\n<a href=\"" + t + "\" title=\"" + t1 + "\">" + t2 + "</a>";
       then
         str;
     case (ANKER(name=t),_)
       equation
-        str = iBuffer +& "\n<a name=\"" +& t +& "\"/>";
+        str = iBuffer + "\n<a name=\"" + t + "\"/>";
       then
         str;
     case (LINE(text=t),_)
       equation
-        str = iBuffer +& "\n" +& t +& "<br>";
+        str = iBuffer + "\n" + t + "<br>";
       then
         str;
     case (DIVISION(id=t,style=style,tags=tags),_)
       equation
         t1 = stringDelimitList(List.map(style,dumpStyle),"; ");
         t2 = List.fold(tags,dumpTag,"");
-        str = iBuffer +& "\n<div id=\"" +& t +& "\" style=\"" +& t1 +& "\">\n" +& t2 +& "\n</div>";
+        str = iBuffer + "\n<div id=\"" + t + "\" style=\"" + t1 + "\">\n" + t2 + "\n</div>";
       then
         str;
     case (SCRIPT(type_=t1,text=t2),_)
       equation
-        str = iBuffer +& "\n<script type=\"" +& t1 +& "\">\n" +& t2 +& "\n</script>";
+        str = iBuffer + "\n<script type=\"" + t1 + "\">\n" + t2 + "\n</script>";
       then
         str;
   end match;
@@ -362,7 +362,7 @@ protected
   String name,value;
 algorithm
   (name,value) := st;
-  oBuffer := name +& ": " +& value;
+  oBuffer := name + ": " + value;
 end dumpStyle;
 
 annotation(__OpenModelica_Interface="backend");

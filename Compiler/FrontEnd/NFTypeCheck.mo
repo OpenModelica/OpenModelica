@@ -139,7 +139,7 @@ algorithm
     case (NFInstTypes.ELEMENT(NFInstTypes.UNTYPED_COMPONENT(name = name, info = info), _),
         _, _, _)
       equation
-        str = "Found untyped component: " +& Absyn.pathString(name);
+        str = "Found untyped component: " + Absyn.pathString(name);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
         fail();
@@ -180,7 +180,7 @@ algorithm
     case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = _,  info = info),
         _, _, _)
       equation
-        str = "Found untyped component: " +& Absyn.pathString(name);
+        str = "Found untyped component: " + Absyn.pathString(name);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
         fail();
@@ -210,7 +210,7 @@ algorithm
 
     case (NFInstTypes.CONDITIONAL_COMPONENT(name = name), _, _, _)
       equation
-        print("Trying to type conditional component " +& Absyn.pathString(name) +& "\n");
+        print("Trying to type conditional component " + Absyn.pathString(name) + "\n");
       then
         fail();
 
@@ -271,7 +271,7 @@ algorithm
         nStr = Absyn.pathString(name);
         eStr = ExpressionDump.printExpStr(bindingExp);
         etStr = Types.unparseTypeNoAttr(propagatedTy);
-        etStr = etStr +& " propDim: " +& intString(propagatedDims);
+        etStr = etStr + " propDim: " + intString(propagatedDims);
         btStr = Types.unparseTypeNoAttr(bindingType);
         Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
         {nStr, eStr, etStr, btStr}, info);
@@ -281,7 +281,7 @@ algorithm
     else
       equation
         //name = NFInstUtil.getComponentName(inC);
-        //nStr = "Found untyped component: " +& Absyn.pathString(name);
+        //nStr = "Found untyped component: " + Absyn.pathString(name);
         //Error.addMessage(Error.INTERNAL_ERROR, {nStr});
       then
         fail();
@@ -404,7 +404,7 @@ algorithm
         s2 = stringAppendList({t1Str,"=",t2Str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, inInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
+        Debug.traceln("- NFTypeCheck.checkExpEquality failed with type mismatch: " + s1 + " tys: " + s2);
       then
         fail();
 
@@ -418,7 +418,7 @@ algorithm
         s2 = stringAppendList({t1Str,":=",t2Str});
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, {e1Str,e2Str,t1Str,t2Str}, inInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
+        Debug.traceln("- NFTypeCheck.checkExpEquality failed with type mismatch: " + s1 + " tys: " + s2);
       then
         fail();
   end matchcontinue;
@@ -487,11 +487,11 @@ algorithm
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
         sugg = "\n: Logical operations involving non-boolean types are not valid in Modelica.";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        Debug.traceln("- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         fail();
 
@@ -502,11 +502,11 @@ algorithm
         t1Str = Types.unparseType(inType1);
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        Debug.traceln("- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         fail();
 
@@ -568,11 +568,11 @@ algorithm
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
         sugg = "\n: Relational operations involving array types are not valid in Modelica.";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        Debug.traceln("- NFTypeCheck.checkRelationOperation failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         fail();
 
@@ -583,11 +583,11 @@ algorithm
         t1Str = Types.unparseType(inType1);
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        Debug.traceln("- NFTypeCheck.checkRelationOperation failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         fail();
 
@@ -729,11 +729,11 @@ algorithm
         t1Str = Types.unparseType(inType1);
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.checkBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        Debug.traceln("- NFTypeCheck.checkBinaryOperation failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         fail();
 
@@ -781,8 +781,8 @@ algorithm
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
         sugg = "\n: Addition operations involving an array and a scalar are not valid in Modelica. Try using elementwise operator '.+'";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
       then
         fail();
@@ -802,8 +802,8 @@ algorithm
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
         sugg = "\n: Subtraction operations involving an array and a scalar are not valid in Modelica. Try using elementwise operator '.-'";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
       then
         fail();
@@ -845,8 +845,8 @@ algorithm
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
         sugg = "\n: Dividing a sclar by array or array by array is not a valid operation in Modelica. Try using elementwise operator './'";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
       then
         fail();
@@ -882,8 +882,8 @@ algorithm
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
         sugg = "\n: Exponentiation involving arrays is only valid for square matrices with integer exponents. Try using elementwise operator '.^'";
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
       then
         fail();
@@ -1046,8 +1046,8 @@ algorithm
         t1Str = Types.unparseType(inType1);
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
       then
         fail();
@@ -1107,11 +1107,11 @@ algorithm
         t1Str = Types.unparseType(inType1);
         e2Str = ExpressionDump.printExpStr(inExp2);
         t2Str = Types.unparseType(inType2);
-        s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
-        s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
+        s1 = "' " + e1Str + DAEDump.dumpOperatorSymbol(inOp) + e2Str + " '";
+        s2 = "' " + t1Str + DAEDump.dumpOperatorString(inOp) + t2Str + " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.checkBinaryOperationArrays failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        Debug.traceln("- NFTypeCheck.checkBinaryOperationArrays failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         fail();
 
@@ -1182,7 +1182,7 @@ algorithm
         s2 = DAEDump.dumpOperatorString(inOp);
         Error.addSourceMessage(Error.FOUND_NON_NUMERIC_TYPES, {s2,t1Str,t2Str}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.bothTypesSimpleNumeric failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        Debug.traceln("- NFTypeCheck.bothTypesSimpleNumeric failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         false;
 
@@ -1240,8 +1240,8 @@ algorithm
         true;
     case (_, _)
       equation
-        msg = "Dimension mismatch in Vector/Matrix multiplication operation: " +&
-              ExpressionDump.dimensionString(dim1) +& "x" +& ExpressionDump.dimensionString(dim2);
+        msg = "Dimension mismatch in Vector/Matrix multiplication operation: " +
+              ExpressionDump.dimensionString(dim1) + "x" + ExpressionDump.dimensionString(dim2);
         Error.addSourceMessage(Error.COMPILER_ERROR, {msg}, Absyn.dummyInfo);
       then false;
   end matchcontinue;
@@ -1311,11 +1311,11 @@ algorithm
         e1Str = ExpressionDump.printExpStr(e);
         t1Str = Types.unparseType(t1);
         t2Str = Types.unparseType(t2);
-        s1 = "Failed to match or convert '" +& e1Str +& "' of type '" +& t1Str +&
-             "' to type '" +& t2Str +& "'";
+        s1 = "Failed to match or convert '" + e1Str + "' of type '" + t1Str +
+             "' to type '" + t2Str + "'";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.matchCallArgs failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        Debug.traceln("- NFTypeCheck.matchCallArgs failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         fail();
 
@@ -1439,11 +1439,11 @@ algorithm
         e1Str = ExpressionDump.printExpStr(e);
         t1Str = Types.unparseType(e_type);
         t2Str = Types.unparseType(expected_type);
-        s1 = "Failed to match or convert '" +& e1Str +& "' of type '" +& t1Str +&
-             "' to type '" +& t2Str +& "'";
+        s1 = "Failed to match or convert '" + e1Str + "' of type '" + t1Str +
+             "' to type '" + t2Str + "'";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.matchCallArg failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        Debug.traceln("- NFTypeCheck.matchCallArg failed with type mismatch: " + t1Str + " tys: " + t2Str);
       then
         fail();
   end matchcontinue;
@@ -1529,10 +1529,10 @@ algorithm
         e1Str = ExpressionDump.printExpStr(inArg);
         t1Str = Types.unparseType(inArgType);
         t2Str = Types.unparseType(inExpectedType);
-        s1 = "Vectorization can not continue matching '" +& e1Str +& "' of type '" +& t1Str +&
-             "' to type '" +& t2Str +& "'. Expected dimensions [" +&
-             ExpressionDump.printListStr(expectedDims,ExpressionDump.dimensionString,",") +& "], found [" +&
-             ExpressionDump.printListStr(argDims,ExpressionDump.dimensionString,",") +& "]";
+        s1 = "Vectorization can not continue matching '" + e1Str + "' of type '" + t1Str +
+             "' to type '" + t2Str + "'. Expected dimensions [" +
+             ExpressionDump.printListStr(expectedDims,ExpressionDump.dimensionString,",") + "], found [" +
+             ExpressionDump.printListStr(argDims,ExpressionDump.dimensionString,",") + "]";
 
         Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
         true = Flags.isSet(Flags.FAILTRACE);
@@ -1581,9 +1581,9 @@ algorithm
     case(_::_, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTypeCheck.findVectorizationDim failed with dimensions: [" +&
-         ExpressionDump.printListStr(inGivenDims,ExpressionDump.dimensionString,",") +& "] vs [" +&
-         ExpressionDump.printListStr(inExpectedDims,ExpressionDump.dimensionString,",") +& "].");
+        Debug.traceln("- NFTypeCheck.findVectorizationDim failed with dimensions: [" +
+         ExpressionDump.printListStr(inGivenDims,ExpressionDump.dimensionString,",") + "] vs [" +
+         ExpressionDump.printListStr(inExpectedDims,ExpressionDump.dimensionString,",") + "].");
       then
         fail();
 

@@ -188,7 +188,7 @@ algorithm
     case(cache,_,_,_,_,_,eq,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("Inst.instEEquation failed for " +& SCodeDump.equationStr(eq,SCodeDump.defaultOptions));
+        Debug.traceln("Inst.instEEquation failed for " + SCodeDump.equationStr(eq,SCodeDump.defaultOptions));
     then fail();
 
   end matchcontinue;
@@ -369,7 +369,7 @@ algorithm
     else
       equation
         true = errorCount == Error.getNumErrorMessages();
-        s = "\n" +& SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
+        s = "\n" + SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
         Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
       then
         fail();
@@ -611,7 +611,7 @@ algorithm
         lhsCrefsRec = DAEUtil.verifyWhenEquation(daeElts3);
         i1 = listLength(lhsCrefs);
         lhsCrefs = List.unionOnTrue(lhsCrefs,lhsCrefsRec,ComponentReference.crefEqual);
-        //TODO: fix error reporting print(" listLength pre:" +& intString(i1) +& " post: " +& intString(listLength(lhsCrefs)) +& "\n");
+        //TODO: fix error reporting print(" listLength pre:" + intString(i1) + " post: " + intString(listLength(lhsCrefs)) + "\n");
         true = intEq(listLength(lhsCrefs),i1);
         ci_state_2 = instEquationCommonCiTrans(ci_state_1, initial_);
         dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,SOME(daeElt2),source)});
@@ -631,7 +631,7 @@ algorithm
 
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
         _ = DAEUtil.verifyWhenEquation(daeElts1);
-        // TODO: fix error reporting, print(" exps: " +& stringDelimitList(List.map(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
+        // TODO: fix error reporting, print(" exps: " + stringDelimitList(List.map(lhsCrefs,ComponentReference.printComponentRefStr),", ") + "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
         dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE(),source)});
       then
@@ -792,8 +792,8 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         s = SCodeDump.equationStr(eqn,SCodeDump.defaultOptions);
         Debug.trace("- instEquationCommonWork failed for eqn: ");
-        Debug.traceln(s +& " in scope:" +& FGraph.getGraphNameStr(env));
-        //print("ENV: " +& FGraph.printGraphStr(env) +& "\n");
+        Debug.traceln(s + " in scope:" + FGraph.getGraphNameStr(env));
+        //print("ENV: " + FGraph.printGraphStr(env) + "\n");
       then
         fail();
   end matchcontinue;
@@ -992,7 +992,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         s = SCodeDump.equationStr(eqn,SCodeDump.defaultOptions);
         Debug.trace("- handleConnectionsOperators failed for eqn: ");
-        Debug.traceln(s +& " in scope:" +& FGraph.getGraphNameStr(env));
+        Debug.traceln(s + " in scope:" + FGraph.getGraphNameStr(env));
       then
         fail();
   end matchcontinue;
@@ -1390,7 +1390,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- InstSection.unroll failed: " +& ValuesUtil.valString(inValue));
+        Debug.traceln("- InstSection.unroll failed: " + ValuesUtil.valString(inValue));
       then
         fail();
   end matchcontinue;
@@ -1800,7 +1800,7 @@ algorithm
 
     case(_,cr,_)
       equation
-        print(" failure to assign: "  +& ComponentReference.printComponentRefStr(cr) +& " to " +& ValuesUtil.valString(constantValue) +& "\n");
+        print(" failure to assign: "  + ComponentReference.printComponentRefStr(cr) + " to " + ValuesUtil.valString(constantValue) + "\n");
       then
         fail();
   end matchcontinue;
@@ -2131,7 +2131,7 @@ algorithm
                SCode.statementToAlgorithmItem(SCode.ALG_FOR(iterator, range, sl,SCode.noComment,info)));
         Error.addSourceMessage(Error.UNROLL_LOOP_CONTAINING_WHEN, {str}, info);
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- InstSection.unrollForLoop failed on: " +& str);
+        Debug.traceln("- InstSection.unrollForLoop failed on: " + str);
       then
         fail();
   end matchcontinue;
@@ -2315,7 +2315,7 @@ algorithm
     else
       equation
         false = Types.isRecord(tp);
-        s = ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs);
+        s = ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs);
         info = DAEUtil.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.ILLEGAL_EQUATION_TYPE, {s}, info);
       then fail();
@@ -3017,7 +3017,7 @@ algorithm
     case (_,_,_,_,_,_,v,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- InstSection.loopOverRange failed to loop over range: " +& ValuesUtil.valString(v));
+        Debug.traceln("- InstSection.loopOverRange failed to loop over range: " + ValuesUtil.valString(v));
       then
         fail();
   end matchcontinue;
@@ -3380,11 +3380,11 @@ algorithm
         crefs1 = Absyn.getCrefsFromSubs(subs1,true,true);
         subs2 = Absyn.getSubsFromCref(c2,true,true);
         crefs2 = Absyn.getCrefsFromSubs(subs2,true,true);
-        //print("Crefs in " +& Dump.printComponentRefStr(c1) +& ": " +& stringDelimitList(List.map(crefs1,Dump.printComponentRefStr),", ") +& "\n");
-        //print("Crefs in " +& Dump.printComponentRefStr(c2) +& ": " +& stringDelimitList(List.map(crefs2,Dump.printComponentRefStr),", ") +& "\n");
+        //print("Crefs in " + Dump.printComponentRefStr(c1) + ": " + stringDelimitList(List.map(crefs1,Dump.printComponentRefStr),", ") + "\n");
+        //print("Crefs in " + Dump.printComponentRefStr(c2) + ": " + stringDelimitList(List.map(crefs2,Dump.printComponentRefStr),", ") + "\n");
         s1 = Dump.printComponentRefStr(c1);
         s2 = Dump.printComponentRefStr(c2);
-        s1 = "connect("+&s1+&", "+&s2+&")";
+        s1 = "connect("+s1+", "+s2+")";
         checkConstantVariability(crefs1,cache,env,s1,pre,info);
         checkConstantVariability(crefs2,cache,env,s1,pre,info);
       then
@@ -3393,9 +3393,9 @@ algorithm
     case (_,_,_,_,_,c1,c2,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- InstSection.instConnect failed for: connect(" +&
-          Dump.printComponentRefStr(c1) +& ", " +&
-          Dump.printComponentRefStr(c2) +& ")");
+        Debug.traceln("- InstSection.instConnect failed for: connect(" +
+          Dump.printComponentRefStr(c1) + ", " +
+          Dump.printComponentRefStr(c2) + ")");
       then
         fail();
   end matchcontinue;
@@ -3476,7 +3476,7 @@ algorithm
       (_,SOME((_,prop,_))) = Static.elabCref(cache,env,cr,false,false,pre,info);
       const = Types.propertiesListToConst({prop});
       false = Types.isParameterOrConstant(const);
-      //print(" error for: " +& affectedConnector +& " subscript: " +& Dump.printComponentRefStr(cr) +& " non constant \n");
+      //print(" error for: " + affectedConnector + " subscript: " + Dump.printComponentRefStr(cr) + " non constant \n");
       s1 = Dump.printComponentRefStr(cr);
       Error.addSourceMessage(Error.CONNECTOR_ARRAY_NONCONSTANT, {affectedConnector,s1}, info);
     then
@@ -3553,35 +3553,35 @@ algorithm
 
         // do the union of the connectors by adding the missing
         // components from one to the other and vice-versa.
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, ">>>> connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")" );
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, ">>>> connect(expandable, expandable)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")" );
 
         // get the environments of the expandable connectors
         // which contain all the virtual components.
         (_,_,_,_,_,_,_,env1,_) = Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,env2,_) = Lookup.lookupVar(cache, env, c2_2);
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "1 connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")" );
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "1 connect(expandable, expandable)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")" );
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env ===>\n" +& FGraph.printGraphStr(env));
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env(c1) ===>\n" +& FGraph.printGraphStr(env1));
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env(c2) ===>\n" +& FGraph.printGraphStr(env2));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env ===>\n" + FGraph.printGraphStr(env));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env(c1) ===>\n" + FGraph.printGraphStr(env1));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env(c2) ===>\n" + FGraph.printGraphStr(env2));
 
         // get the virtual components
         variables1 = FGraph.getVariablesFromGraphScope(env1);
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "Variables1: " +& stringDelimitList(variables1, ", "));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "Variables1: " + stringDelimitList(variables1, ", "));
         variables2 = FGraph.getVariablesFromGraphScope(env2);
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "Variables2: " +& stringDelimitList(variables2, ", "));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "Variables2: " + stringDelimitList(variables2, ", "));
         variablesUnion = List.union(variables1, variables2);
         // sort so we have them in order
         variablesUnion = List.sort(variablesUnion, Util.strcmpBool);
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "Union of expandable connector variables: " +& stringDelimitList(variablesUnion, ", "));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "Union of expandable connector variables: " + stringDelimitList(variablesUnion, ", "));
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, expandable)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // then connect each of the components normally.
         (cache,env,ih,sets,dae,graph) = connectExpandableVariables(cache,env,ih,sets,pre,c1,c2,variablesUnion,impl,graph,info);
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, expandable)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
       then
         (cache,env,ih,sets,dae,graph);
@@ -3592,7 +3592,7 @@ algorithm
         // c2 is expandable
         (cache,NONE()) = Static.elabCref(cache, env, c2, impl, false, pre, info);
         (cache,SOME((DAE.CREF(_,_),_,_))) = Static.elabCref(cache, env, c1, impl, false, pre, info);
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "connect(existing, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "connect(existing, expandable)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
         (cache,env,ih,sets,dae,graph) = connectExpandableConnectors(cache,env,ih,sets,pre,c2,c1,impl,graph,info);
       then
         (cache,env,ih,sets,dae,graph);
@@ -3603,9 +3603,9 @@ algorithm
         // c1 is expandable
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
         // adrpo: TODO! FIXME! add this as an Error not as a print!
-        print("Error: The marked virtual expandable component reference in connect([" +&
-         PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Absyn.printComponentRefStr(c1) +& "], " +&
-         PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Absyn.printComponentRefStr(c2) +& "); should be qualified, i.e. expandableConnectorName.virtualName!\n");
+        print("Error: The marked virtual expandable component reference in connect([" +
+         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Absyn.printComponentRefStr(c1) + "], " +
+         PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Absyn.printComponentRefStr(c2) + "); should be qualified, i.e. expandableConnectorName.virtualName!\n");
       then
         fail();
 
@@ -3617,7 +3617,7 @@ algorithm
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
         (cache,SOME((DAE.CREF(c2_1,_),_,attr2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, ">>>> connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, ">>>> connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
@@ -3625,7 +3625,7 @@ algorithm
         // bind the attributes
         DAE.ATTR(ct2,prl2,vt2,_,io2,vis2) = attr2;
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "1 connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
@@ -3646,9 +3646,9 @@ algorithm
         variablesUnion = FGraph.getVariablesFromGraphScope(envComponent);
         // more than 1 variables
         true = listLength(variablesUnion) > 1;
-        // print("VARS MULTIPLE: [" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "/" +& ComponentReference.printComponentRefStr(c2_2) +& "] " +& stringDelimitList(variablesUnion, ", ") +& "\n");
+        // print("VARS MULTIPLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReference.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[MULTIPLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[MULTIPLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
@@ -3705,7 +3705,7 @@ algorithm
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
         (cache,SOME((DAE.CREF(c2_1,_),_,attr2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, ">>>> connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, ">>>> connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
@@ -3713,7 +3713,7 @@ algorithm
         // bind the attributes
         DAE.ATTR(ct2,prl2,vt2,_,io2,vis2) = attr2;
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "1 connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
@@ -3734,9 +3734,9 @@ algorithm
         variablesUnion = FGraph.getVariablesFromGraphScope(envComponent);
         // max 1 variable, should check for empty!
         false = listLength(variablesUnion) > 1;
-        // print("VARS SINGLE: [" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "/" +& ComponentReference.printComponentRefStr(c2_2) +& "] " +& stringDelimitList(variablesUnion, ", ") +& "\n");
+        // print("VARS SINGLE: [" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" + ComponentReference.printComponentRefStr(c2_2) + "] " + stringDelimitList(variablesUnion, ", ") + "\n");
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[SINGLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "2 connect(expandable, existing[SINGLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
@@ -3778,11 +3778,11 @@ algorithm
                     envExpandable);
         // ******************************************************************************
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "3 connect(expandable, existing[SINGLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "3 connect(expandable, existing[SINGLE])(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")");
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env expandable: " +& FGraph.printGraphStr(envExpandable));
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env component: " +& FGraph.printGraphStr(envComponent));
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env: " +& FGraph.printGraphStr(env));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env expandable: " + FGraph.printGraphStr(envExpandable));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env component: " + FGraph.printGraphStr(envComponent));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "env: " + FGraph.printGraphStr(env));
 
         // use the cannon cref here as we will NOT find [i] in this environment!!!!
         // c1 = Absyn.joinCrefs(ComponentReference.unelabCref(c1_2), Absyn.CREF_IDENT(componentName, {}));
@@ -3817,7 +3817,7 @@ algorithm
           source);
 
         dae = DAEUtil.joinDaes(dae, daeExpandable);
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")"); // \nDAE:" +& DAEDump.dumpStr(daeExpandable, DAE.emptyFuncTree));
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "<<<< connect(expandable, existing)(" + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c1) + ", " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "." + Dump.printComponentRefStr(c2) + ")"); // \nDAE:" + DAEDump.dumpStr(daeExpandable, DAE.emptyFuncTree));
       then
         (cache,env,ih,sets,dae,graph);
 
@@ -3837,7 +3837,7 @@ algorithm
         false = isExpandableConnectorType(ty1);
         false = isExpandableConnectorType(ty2);
 
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "connect(non-expandable, non-expandable)(" +& Dump.printComponentRefStr(c1) +& ", " +& Dump.printComponentRefStr(c2) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "connect(non-expandable, non-expandable)(" + Dump.printComponentRefStr(c1) + ", " + Dump.printComponentRefStr(c2) + ")");
         // then connect the components normally.
       then
         fail(); // fail to enter connect normally
@@ -3850,9 +3850,9 @@ algorithm
         (cache,_) = Static.elabCref(cache, env, c2, impl, false, pre, info);
 
         fprintln(Flags.SHOW_EXPANDABLE_INFO,
-           "connect(?, ?)(" +&
-             Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
+           "connect(?, ?)(" +
+             Dump.printComponentRefStr(c1) + ", " +
+             Dump.printComponentRefStr(c2) + ")"
            );
       then
         fail();*/
@@ -3904,7 +3904,7 @@ algorithm
         (daeDims as _::_) = Types.getDimensions(ty);
         _ = List.map(daeDims,Expression.unelabDimension);
         crefs = ComponentReference.expandCref(cref, false);
-        // print(" crefs: " +& stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr),", ") +& "\n");
+        // print(" crefs: " + stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr),", ") + "\n");
         daeExpandable = daeDeclareList(inCache, inParentEnv, inClassEnv, listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
       then
         daeExpandable;
@@ -4085,7 +4085,7 @@ algorithm
         // add name to both c1 and c2, then connect normally
         c1_full = Absyn.joinCrefs(c1, Absyn.CREF_IDENT(name, {}));
         c2_full = Absyn.joinCrefs(c2, Absyn.CREF_IDENT(name, {}));
-        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "connect(full_expandable, full_expandable)(" +& Dump.printComponentRefStr(c1_full) +& ", " +& Dump.printComponentRefStr(c2_full) +& ")");
+        // fprintln(Flags.SHOW_EXPANDABLE_INFO, "connect(full_expandable, full_expandable)(" + Dump.printComponentRefStr(c1_full) + ", " + Dump.printComponentRefStr(c2_full) + ")");
 
         (cache,env,ih,sets,dae1,graph) = instConnect(cache,env,ih,sets,pre,c1_full,c2_full,impl,graph,info);
 
@@ -4297,9 +4297,9 @@ algorithm
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
         str1 = stringDelimitList(List.map(dims1, intString), ", ");
-        str1 = "[" +& str1 +& "]";
+        str1 = "[" + str1 + "]";
         str2 = stringDelimitList(List.map(dims2, intString), ", ");
-        str2 = "[" +& str2 +& "]";
+        str2 = "[" + str2 + "]";
         Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT,
           {cref_str1, cref_str2, str1, str2}, inInfo);
       then
@@ -4482,9 +4482,9 @@ algorithm
     case(cache,env,ih,sets,pre,c1,f1,_,_,c2,f2,_,_,ct,_,_,graph,_)
       equation
         false = SCode.streamBool(ct);
-        // print("Connecting components: " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "/" +&
-        //    ComponentReference.printComponentRefStr(c1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +&
-        //    ComponentReference.printComponentRefStr(c2) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
+        // print("Connecting components: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
+        //    ComponentReference.printComponentRefStr(c1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
+        //    ComponentReference.printComponentRefStr(c2) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
         true = InnerOuter.outerConnection(io1,io2);
 
 
@@ -4497,9 +4497,9 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, FGraph.getScopePath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
-        // print("CONNECT: " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "/" +&
-        //    ComponentReference.printComponentRefStr(c1_1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +&
-        //    ComponentReference.printComponentRefStr(c2_1) +& "[" +& Dump.unparseInnerouterStr(io2) +& "]\n");
+        // print("CONNECT: " + PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "/" +
+        //    ComponentReference.printComponentRefStr(c1_1) + "[" + Dump.unparseInnerouterStr(io1) + "]" + " = " +
+        //    ComponentReference.printComponentRefStr(c2_1) + "[" + Dump.unparseInnerouterStr(io2) + "]\n");
 
         sets = ConnectUtil.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2,source);
       then
@@ -4561,10 +4561,10 @@ algorithm
         0 = Expression.dimensionSize(dim2);
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c1);
         (cache,_) = PrefixUtil.prefixCref(cache,env,ih,pre,c2);
-        c1_str = Types.connectorTypeStr(ct) +& ComponentReference.printComponentRefStr(c1);
+        c1_str = Types.connectorTypeStr(ct) + ComponentReference.printComponentRefStr(c1);
         (t1, _) = Types.stripTypeVars(t1);
         t1_str = Types.unparseType(t1);
-        c2_str = Types.connectorTypeStr(ct) +& ComponentReference.printComponentRefStr(c2);
+        c2_str = Types.connectorTypeStr(ct) + ComponentReference.printComponentRefStr(c2);
         (t2, _) = Types.stripTypeVars(t2);
         t2_str = Types.unparseType(t2);
         c1_str = stringAppendList({c1_str," type: ",t1_str});
@@ -5725,9 +5725,9 @@ algorithm
 
     case((cref,info),_,_)
       equation
-        errorString = "\n" +&
-        "- Component '" +& Absyn.pathString(ComponentReference.crefToPath(cref)) +&
-        "' is used in a parallel for loop." +& "\n" +&
+        errorString = "\n" +
+        "- Component '" + Absyn.pathString(ComponentReference.crefToPath(cref)) +
+        "' is used in a parallel for loop." + "\n" +
         "- Parallel for loops can only contain references to parglobal variables."
         ;
         Error.addSourceMessage(Error.PARMODELICA_ERROR,

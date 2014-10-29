@@ -1024,7 +1024,7 @@ algorithm
       String name,rename;
     case Absyn.GROUP_IMPORT_NAME(name=name) then name;
     case Absyn.GROUP_IMPORT_RENAME(rename=rename,name=name)
-      then rename +& " = " +& name;
+      then rename + " = " + name;
   end match;
 end unparseGroupImport;
 
@@ -1443,7 +1443,7 @@ algorithm
     case (Absyn.EQ_NORETCALL(functionName = cr,functionArgs = fargs)) /* EQ_NORETCALL */
       equation
         Print.printBuf("EQ_NORETCALL(");
-        Print.printBuf(printComponentRefStr(cr) +& "(");
+        Print.printBuf(printComponentRefStr(cr) + "(");
         Print.printBuf(printFunctionArgsStr(fargs));
         Print.printBuf(")");
       then
@@ -1598,7 +1598,7 @@ algorithm
     case (Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs)) /* ALG_NORETCALL */
       equation
         Print.printBuf("ALG_NORETCALL(");
-        Print.printBuf(printComponentRefStr(cr) +& "(");
+        Print.printBuf(printComponentRefStr(cr) + "(");
         Print.printBuf(printFunctionArgsStr(fargs));
         Print.printBuf(")");
       then

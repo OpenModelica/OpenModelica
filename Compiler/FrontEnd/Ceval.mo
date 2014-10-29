@@ -214,7 +214,7 @@ algorithm
 
     // uncomment for debugging
     // case (cache,env,inExp,_,st,_,_)
-    //   equation print("Ceval.ceval: " +& ExpressionDump.printExpStr(inExp) +& " in env: " +& FGraph.printGraphPathStr(env) +& "\n");
+    //   equation print("Ceval.ceval: " + ExpressionDump.printExpStr(inExp) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
     //   then fail();
 
     case (cache,_,DAE.ICONST(integer = i),_,stOpt,_,_) then (cache,Values.INTEGER(i),stOpt);
@@ -250,9 +250,9 @@ algorithm
         (cache,value,stOpt) = ceval(cache, env, e, impl, stOpt, msg, numIter+1);
         Values.RECORD(recName, orderd, comp, index) = value;
         value = Values.RECORD(name, orderd, comp, index);
-        print("DAE.CAST: " +&
-          Absyn.pathString(name) +& " -> " +&
-          Absyn.pathString(recName) +& "\n");
+        print("DAE.CAST: " +
+          Absyn.pathString(name) + " -> " +
+          Absyn.pathString(recName) + "\n");
       then
         (cache,value,stOpt);*/
 
@@ -355,14 +355,14 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cr),(false),SOME(st),msg,_)
       equation
         (cache,v) = cevalCref(cache, env, cr, false, msg, numIter+1) "When in interactive mode, always evaluate crefs, i.e non-implicit mode.." ;
-        //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& FGraph.printGraphPathStr(env) +& " v:" +& ValuesUtil.valString(v));
+        //Debug.traceln("cevalCref cr: " + ComponentReference.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesUtil.valString(v));
       then
         (cache,v,SOME(st));
 
     case (cache,env,DAE.CREF(componentRef = cr),impl,stOpt,msg,_)
       equation
         (cache,v) = cevalCref(cache,env, cr, impl,msg,numIter+1);
-        //Debug.traceln("cevalCref cr: " +& ComponentReference.printComponentRefStr(c) +& " in s: " +& FGraph.printGraphPathStr(env) +& " v:" +& ValuesUtil.valString(v));
+        //Debug.traceln("cevalCref cr: " + ComponentReference.printComponentRefStr(c) + " in s: " + FGraph.printGraphPathStr(env) + " v:" + ValuesUtil.valString(v));
       then
         (cache,v,stOpt);
 
@@ -437,7 +437,7 @@ algorithm
       equation
         (cache,Values.REAL(lhvReal),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.REAL(rhvReal),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
-        sum = lhvReal +. rhvReal;
+        sum = lhvReal + rhvReal;
       then
         (cache,Values.REAL(sum),stOpt);
 
@@ -761,7 +761,7 @@ algorithm
       equation
         (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
         (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt,msg,numIter+1);
-        // diff = realStop1 -. realStart1;
+        // diff = realStop1 - realStart1;
         realStep1 = intReal(1);
         arr = List.map(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
       then
@@ -850,10 +850,10 @@ algorithm
       equation
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
         (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt,msg,numIter+1);
-        // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
+        // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") + "\n");
         valMatrix = makeReductionAllCombinations(valMatrix,iterType);
-        // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
-        // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
+        // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") + "\n");
+        // print("Start cevalReduction: " + Absyn.pathString(path) + " " + ExpressionDump.printExpStr(daeExp) + "\n");
         (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldName, resultName, foldExp, names, listReverse(valMatrix), tys, impl, stOpt,msg,numIter+1);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
         value = backpatchArrayReduction(path, iterType, value, dims);
@@ -863,9 +863,9 @@ algorithm
     case (_,env,e,_,_,_,_) // Absyn.MSG())
       equation
         true = Flags.isSet(Flags.CEVAL);
-        Debug.traceln("- Ceval.ceval failed: " +& ExpressionDump.printExpStr(e));
-        Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
-        // Debug.traceln("  Env:" +& FGraph.printGraphStr(env));
+        Debug.traceln("- Ceval.ceval failed: " + ExpressionDump.printExpStr(e));
+        Debug.traceln("  Scope: " + FGraph.printGraphPathStr(env));
+        // Debug.traceln("  Env:" + FGraph.printGraphStr(env));
       then
         fail();
   end matchcontinue;
@@ -1182,7 +1182,7 @@ algorithm
     case id
       equation
         true = Flags.isSet(Flags.CEVAL);
-        Debug.traceln("No cevalBuiltinHandler found for " +& id);
+        Debug.traceln("No cevalBuiltinHandler found for " + id);
       then
         fail();
   end match;
@@ -1330,7 +1330,7 @@ algorithm
       equation
         sv = realSin(rv);
         cv = realCos(rv);
-        rv_1 = sv/. cv;
+        rv_1 = sv / cv;
       then
         Values.REAL(rv_1);
     case ("tanh",{Values.REAL(real = rv)},_)
@@ -1724,7 +1724,7 @@ algorithm
       equation
         (cache,v,_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         (b1, b2, b3) = match(v)
-          case (Values.REAL(rv)) then ((rv >. 0.0), (rv <. 0.0), (rv ==. 0.0));
+          case (Values.REAL(rv)) then ((rv > 0.0), (rv < 0.0), (rv == 0.0));
           case (Values.INTEGER(iv)) then ((iv > 0), (iv < 0), (iv == 0));
         end match;
         {(_,iv_1)} = List.select({(b1,1),(b2,-1),(b3,0)}, Util.tuple21);
@@ -2023,7 +2023,7 @@ algorithm
         (cache,Values.INTEGER(len),_) = ceval(cache,env, len_exp, impl, st,msg,numIter+1);
         (cache,Values.BOOL(left_just),_) = ceval(cache,env, justified_exp, impl, st,msg,numIter+1);
         (cache,Values.INTEGER(sig),_) = ceval(cache,env, sig_dig, impl, st,msg,numIter+1);
-        format = "%" +& (if left_just then "-" else "") +& intString(len) +& "." +& intString(sig) +& "g";
+        format = "%" + (if left_just then "-" else "") + intString(len) + "." + intString(sig) + "g";
         str = System.snprintff(format,len+20,r);
       then
         (cache,Values.STRING(str),st);
@@ -2942,7 +2942,7 @@ algorithm
         ri_1 = ri + 1;
         realRet = intReal(ri_1);
 
-        v = if (rvt ==. rv) then Values.REAL(rvt) else Values.REAL(realRet);
+        v = if (rvt == rv) then Values.REAL(rvt) else Values.REAL(realRet);
       then
         (cache,v,st);
 
@@ -2977,7 +2977,7 @@ algorithm
     case (cache,env,{exp},impl,st, msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
-        if (rv <. 0.0)
+        if (rv < 0.0)
         then
           Absyn.MSG(info = info) = msg;
           Error.addSourceMessage(Error.NEGATIVE_SQRT, {}, info);
@@ -3210,7 +3210,7 @@ algorithm
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         sv = realSin(rv);
         cv = realCos(rv);
-        rv_1 = sv /. cv;
+        rv_1 = sv / cv;
       then
         (cache,Values.REAL(rv_1),st);
   end match;
@@ -3407,8 +3407,8 @@ algorithm
       equation
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
-        rv_1 = rv1/. rv2;
-        b = rv_1 <. 0.0;
+        rv_1 = rv1 / rv2;
+        b = rv_1 < 0.0;
         rv_2 = if b then realCeil(rv_1) else realFloor(rv_1);
       then
         (cache,Values.REAL(rv_2),st);
@@ -3418,8 +3418,8 @@ algorithm
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         Error.addInternalError("cevalBuiltinDiv got Integer and Real (type error)\n");
-        rv_1 = rv1/. rv2;
-         b = rv_1 <. 0.0;
+        rv_1 = rv1 / rv2;
+         b = rv_1 < 0.0;
         rv_2 = if b then realCeil(rv_1) else realFloor(rv_1);
       then
         (cache,Values.REAL(rv_2),st);
@@ -3429,8 +3429,8 @@ algorithm
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         Error.addInternalError("cevalBuiltinDiv got Real and Integer (type error)\n");
         rv2 = intReal(ri);
-        rv_1 = rv1/. rv2;
-        b = rv_1 <. 0.0;
+        rv_1 = rv1 / rv2;
+        b = rv_1 < 0.0;
         rv_2 = if b then realCeil(rv_1) else realFloor(rv_1);
       then
         (cache,Values.REAL(rv_2),st);
@@ -3444,7 +3444,7 @@ algorithm
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
-        (rv2 ==. 0.0) = true;
+        (rv2 == 0.0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.DIVISION_BY_ZERO, {exp1_str,exp2_str}, info);
@@ -3453,7 +3453,7 @@ algorithm
     case (cache,env,{_,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
-        (rv2 ==. 0.0) = true;
+        (rv2 == 0.0) = true;
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
@@ -3505,10 +3505,10 @@ algorithm
       equation
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
-        rva = rv1/. rv2;
+        rva = rv1 / rv2;
         rvb = realFloor(rva);
-        rvc = rvb*. rv2;
-        rvd = rv1 -. rvc;
+        rvc = rvb * rv2;
+        rvd = rv1 - rvc;
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3516,10 +3516,10 @@ algorithm
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
-        rva = rv1 /. rv2;
+        rva = rv1 / rv2;
         rvb = realFloor(rva);
-        rvc = rvb *. rv2;
-        rvd = rv1 -. rvc;
+        rvc = rvb * rv2;
+        rvd = rv1 - rvc;
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3527,10 +3527,10 @@ algorithm
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv2 = intReal(ri);
-        rva = rv1 /. rv2;
+        rva = rv1 / rv2;
         rvb = realFloor(rva);
-        rvc = rvb *. rv2;
-        rvd = rv1 -. rvc;
+        rvc = rvb * rv2;
+        rvd = rv1 - rvc;
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3539,17 +3539,17 @@ algorithm
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv1 = intReal(ri1);
         rv2 = intReal(ri2);
-        rva = rv1 /. rv2;
+        rva = rv1 / rv2;
         rvb = realFloor(rva);
-        rvc = rvb *. rv2;
-        rvd = rv1 -. rvc;
+        rvc = rvb * rv2;
+        rvd = rv1 - rvc;
         ri_1 = realInt(rvd);
       then
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
-        (rv2 ==. 0.0) = true;
+        (rv2 == 0.0) = true;
         lhs_str = ExpressionDump.printExpStr(exp1);
         rhs_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
@@ -3558,7 +3558,7 @@ algorithm
     case (cache,env,{_,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
-        (rv2 ==. 0.0) = true;
+        (rv2 == 0.0) = true;
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
@@ -3863,7 +3863,7 @@ algorithm
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,msg,numIter+1);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg,numIter+1);
-        rvd = rv1 -. rv2 *. dr;
+        rvd = rv1 - rv2 * dr;
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3872,7 +3872,7 @@ algorithm
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg,numIter+1);
-        rvd = rv1 -. rv2 *. dr;
+        rvd = rv1 - rv2 * dr;
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3881,7 +3881,7 @@ algorithm
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st,msg,numIter+1);
         rv2 = intReal(ri);
         (cache,Values.REAL(dr),_) = cevalBuiltinDiv(cache,env,{exp1,exp2},impl,st,msg,numIter+1);
-        rvd = rv1 -. rv2 *. dr;
+        rvd = rv1 - rv2 * dr;
       then
         (cache,Values.REAL(rvd),st);
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -3895,7 +3895,7 @@ algorithm
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env,exp2,impl,st,inMsg,numIter+1);
-        (rv2 ==. 0.0) = true;
+        (rv2 == 0.0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str}, info);
@@ -4198,7 +4198,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.CEVAL);
         str = Error.infoStr(info);
-        Debug.traceln(str +& " Ceval.cevalBuiltinDiagonal2 failed");
+        Debug.traceln(str + " Ceval.cevalBuiltinDiagonal2 failed");
       then
         fail();
   end matchcontinue;
@@ -4240,7 +4240,7 @@ algorithm
         (cache,res,st);
     case (_,_,_,_,_,Absyn.MSG(info = info),_)
       equation
-        str = "cross" +& ExpressionDump.printExpStr(DAE.TUPLE(inExpExpLst));
+        str = "cross" + ExpressionDump.printExpStr(DAE.TUPLE(inExpExpLst));
         Error.addSourceMessage(Error.FAILED_TO_EVALUATE_EXPRESSION, {str}, info);
       then
         fail();
@@ -4450,9 +4450,9 @@ algorithm
     case (v1, op, v2)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Ceval.cevalRelation failed on: " +&
-          ValuesUtil.printValStr(v1) +&
-          ExpressionDump.binopSymbol(op) +&
+        Debug.traceln("- Ceval.cevalRelation failed on: " +
+          ValuesUtil.printValStr(v1) +
+          ExpressionDump.binopSymbol(op) +
           ValuesUtil.printValStr(v2));
       then
         fail();
@@ -4475,7 +4475,7 @@ algorithm
     case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
       then (i1 < i2);
     case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 <. r2);
+      then (r1 < r2);
     case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
       then true;
     case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
@@ -4505,7 +4505,7 @@ algorithm
     case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
       then (i1 <= i2);
     case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 <=. r2);
+      then (r1 <= r2);
     case (Values.BOOL(boolean = true), Values.BOOL(boolean = false))
       then false;
     case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
@@ -4535,7 +4535,7 @@ algorithm
     case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
       then (i1 >= i2);
     case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 >=. r2);
+      then (r1 >= r2);
     case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
       then false;
     case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
@@ -4566,7 +4566,7 @@ algorithm
     case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
       then (i1 == i2);
     case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 ==. r2);
+      then (r1 == r2);
     case (Values.BOOL(boolean = b1), Values.BOOL(boolean = b2))
       then boolEq(b1, b2);
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
@@ -4595,7 +4595,7 @@ algorithm
     case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
       then (i1 <> i2);
     case (Values.REAL(real = r1), Values.REAL(real = r2))
-      then (r1 <>. r2);
+      then (r1 <> r2);
     case (Values.BOOL(boolean = b1), Values.BOOL(boolean = b2))
       then not boolEq(b1, b2);
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
@@ -4771,7 +4771,7 @@ algorithm
         scope_str = FGraph.printGraphPathStr(inEnv);
         // Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {str, scope_str}, info);
         if Flags.isSet(Flags.CEVAL) then
-          Debug.traceln("- Ceval.cevalCref on: " +& str +& " failed with no constant binding in scope: " +& scope_str);
+          Debug.traceln("- Ceval.cevalCref on: " + str + " failed with no constant binding in scope: " + scope_str);
         end if;
         // build a default binding for it!
         s1 = FGraph.printGraphPathStr(inEnv);
@@ -4794,7 +4794,7 @@ algorithm
         true = SCode.isParameterOrConst(variability) or inImpl or FGraph.inForLoopScope(inEnv);
         false = crefEqualValue(inCref, inBinding);
         (cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg, numIter);
-        // print("Eval cref: " +& ComponentReference.printComponentRefStr(inCref) +& "\n  in scope " +& FGraph.printGraphPathStr(inEnv) +& "\n");
+        // print("Eval cref: " + ComponentReference.printComponentRefStr(inCref) + "\n  in scope " + FGraph.printGraphPathStr(inEnv) + "\n");
         cache = FCore.addEvaluatedCref(cache,variability,ComponentReference.crefStripLastSubs(inCref));
       then
         (cache, v);
@@ -4834,10 +4834,10 @@ algorithm
     /*
     case (cache,env,cr,_,impl,msg)
       equation
-        print("Ceval: " +&
-          ComponentReference.printComponentRefStr(cr) +& " | " +&
-          FGraph.printGraphPathStr(env) +& " | " +&
-          DAEUtil.printBindingExpStr(inBinding) +&
+        print("Ceval: " +
+          ComponentReference.printComponentRefStr(cr) + " | " +
+          FGraph.printGraphPathStr(env) + " | " +
+          DAEUtil.printBindingExpStr(inBinding) +
           "\n");
       then
         fail();*/
@@ -4937,7 +4937,7 @@ algorithm
         str = stringAppendList({"- Ceval.cevalCrefBinding: ",
                 s1, " = [", s2, "] in env:", str, " failed"});
         Debug.traceln(str);
-        //print("ENV: " +& FGraph.printGraphStr(inEnv) +& "\n");
+        //print("ENV: " + FGraph.printGraphStr(inEnv) + "\n");
       then
         fail();
   end matchcontinue;
@@ -5021,11 +5021,11 @@ algorithm
     case (cache, env, subs, inValue, dims, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Ceval.cevalSubscriptValue failed on:" +&
-          "\n env: " +& FGraph.printGraphPathStr(env) +&
-          "\n subs: " +& stringDelimitList(List.map(subs, ExpressionDump.printSubscriptStr), ", ") +&
-          "\n value: " +& ValuesUtil.printValStr(inValue) +&
-          "\n dim sizes: " +& stringDelimitList(List.map(dims, intString), ", ")
+        Debug.traceln("- Ceval.cevalSubscriptValue failed on:" +
+          "\n env: " + FGraph.printGraphPathStr(env) +
+          "\n subs: " + stringDelimitList(List.map(subs, ExpressionDump.printSubscriptStr), ", ") +
+          "\n value: " + ValuesUtil.printValStr(inValue) +
+          "\n dim sizes: " + stringDelimitList(List.map(dims, intString), ", ")
         );
       then
         fail();*/
@@ -5300,9 +5300,9 @@ algorithm
     case (cache,env,_,curValue,_,_,_,_,_,_,st,_,_)
       equation
         (cache, value, st) = ceval(cache, env, exp, impl, st,msg,numIter+1);
-        // print("cevalReductionEval: " +& ExpressionDump.printExpStr(exp) +& " => " +& ValuesUtil.valString(value) +& "\n");
+        // print("cevalReductionEval: " + ExpressionDump.printExpStr(exp) + " => " + ValuesUtil.valString(value) + "\n");
         (cache, result, st) = cevalReductionFold(cache, env, opPath, curValue, value, foldName, resultName, foldExp, exprType, impl, st,msg,numIter);
-        // print("cevalReductionEval => " +& Util.applyOptionOrDefault(result, ValuesUtil.valString, "") +& "\n");
+        // print("cevalReductionEval => " + Util.applyOptionOrDefault(result, ValuesUtil.valString, "") + "\n");
       then (cache, result, st);
   end match;
 end cevalReductionEvalAndFold;
@@ -5351,7 +5351,7 @@ algorithm
 
     case (cache,env,_,SOME(value),_,_,_,SOME(exp),_,_,st,_,_)
       equation
-        // print("cevalReductionFold " +& ExpressionDump.printExpStr(exp) +& ", " +& ValuesUtil.valString(inValue) +& ", " +& ValuesUtil.valString(value) +& "\n");
+        // print("cevalReductionFold " + ExpressionDump.printExpStr(exp) + ", " + ValuesUtil.valString(inValue) + ", " + ValuesUtil.valString(value) + "\n");
         /* TODO: Store the actual types somewhere... */
         env = FGraph.addForIterator(env, foldName, exprType, DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         env = FGraph.addForIterator(env, resultName, exprType, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
@@ -5558,9 +5558,9 @@ algorithm
     case (vals,dim::dims,_)
       equation
         // Split into the smallest of the arrays
-        // print("into sublists of length: " +& intString(dim) +& " from length=" +& intString(listLength(vals)) +& "\n");
+        // print("into sublists of length: " + intString(dim) + " from length=" + intString(listLength(vals)) + "\n");
         valMatrix = List.partition(vals,dim);
-        // print("output has length=" +& intString(listLength(valMatrix)) +& "\n");
+        // print("output has length=" + intString(listLength(valMatrix)) + "\n");
         vals = List.map(valMatrix,makeSequence);
         value = backpatchArrayReduction3(vals,dims,makeSequence);
       then value;

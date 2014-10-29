@@ -219,7 +219,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFMod.addModToEnv failed on modifier " +& printMod(inMod));
+        Debug.traceln("- NFMod.addModToEnv failed on modifier " + printMod(inMod));
       then
         fail();
 
@@ -843,7 +843,7 @@ algorithm
       equation
         info1 = modifierInfo(inMod1);
         info2 = modifierInfo(inMod2);
-        comp_str = "component " +& NFInstPrefix.prefixStr(comp_str, prefix);
+        comp_str = "component " + NFInstPrefix.prefixStr(comp_str, prefix);
         Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
           {inElementName, comp_str}, {info2, info1});
       then
@@ -891,7 +891,7 @@ algorithm
 
     case (NFInstTypes.MODIFIER(name = id1), _, _, _)
       equation
-        id1 = inElementName +& "." +& id1;
+        id1 = inElementName + "." + id1;
         mod = mergeModsInSameScope(inExistingMod, inNewMod, id1, inModName);
       then
         (mod, true);
@@ -1002,7 +1002,7 @@ algorithm
         submod_str = stringDelimitList(List.map(submods, printSubMod), ", ");
         bind_str = NFInstDump.bindingStr(binding);
       then
-        "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
+        "MOD(" + fstr + estr + "{" + submod_str + "})" + bind_str;
 
     case NFInstTypes.REDECLARE(fp, ep, el, _, _, _)
       equation
@@ -1010,7 +1010,7 @@ algorithm
         estr = SCodeDump.eachStr(ep);
         el_str = SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions);
       then
-        "REDECL(" +& fstr +& estr +& el_str +& ")";
+        "REDECL(" + fstr + estr + el_str + ")";
 
     case NFInstTypes.NOMOD() then "NOMOD()";
   end match;
@@ -1025,7 +1025,7 @@ algorithm
       String id;
 
     case NFInstTypes.MODIFIER(name = id)
-      then id +& " = " +& printMod(inSubMod);
+      then id + " = " + printMod(inSubMod);
 
     else "";
   end match;

@@ -548,7 +548,7 @@ algorithm
           s;
     case(_,false)
       equation
-        res_str = "$"+& modelicaStringToCStr1(str, replaceStringPatterns);
+        res_str = "$"+ modelicaStringToCStr1(str, replaceStringPatterns);
         // debug_print("prefix$", res_str);
       then res_str;
     case(s,true) equation
@@ -575,12 +575,12 @@ algorithm
       // of $der$der$x. Changed to the following 2 lines below!
       _::names = (System.strtok(derName,"()"));
       names = List.map1(names, modelicaStringToCStr, false);
-      name = derivativeNamePrefix +& stringAppendList(names);
+      name = derivativeNamePrefix + stringAppendList(names);
     then name;
     case(derName) equation
       0 = System.strncmp(derName,"pre(",4);
       _::name::_= System.strtok(derName,"()");
-      name = "pre(" +& modelicaStringToCStr(name,false) +& ")";
+      name = "pre(" + modelicaStringToCStr(name,false) + ")";
     then name;
     case(derName) then modelicaStringToCStr(derName,false);
   end matchcontinue;
@@ -605,7 +605,7 @@ algorithm
         res_str;
     case (str,_)
       equation
-        print("- Util.modelicaStringToCStr1 failed for str:"+&str+&"\n");
+        print("- Util.modelicaStringToCStr1 failed for str:"+str+"\n");
       then
         fail();
   end matchcontinue;
@@ -1598,7 +1598,7 @@ public function realRangeSize
   input Real inStop;
   output Integer outSize;
 algorithm
-  outSize := realInt(realFloor(((inStop -. inStart) /. inStep) +. 5e-15)) + 1;
+  outSize := realInt(realFloor(((inStop - inStart) / inStep) + 5e-15)) + 1;
   outSize := intMax(outSize, 0);
 end realRangeSize;
 
@@ -1655,7 +1655,7 @@ algorithm
         false = System.directoryExists(inPath);
         false = System.regularFileExists(inPath);
         // prefix the path
-        path = "../" +& inPath;
+        path = "../" + inPath;
         true = System.directoryExists(path) or System.regularFileExists(path);
       then
         path;

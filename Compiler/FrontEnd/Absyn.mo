@@ -1772,7 +1772,7 @@ algorithm
     else
       equation
         error_msg = "in traverseExpBidirSubExps - Unknown expression: ";
-        error_msg = error_msg +& Dump.printExpStr(inExp);
+        error_msg = error_msg + Dump.printExpStr(inExp);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -2545,12 +2545,12 @@ algorithm
     case(CREF_QUAL(s1,_,child))
       equation
         s2 = printComponentRefStr(child);
-        s1 = s1 +& "." +& s2;
+        s1 = s1 + "." + s2;
       then s1;
     case(CREF_FULLYQUALIFIED(child))
       equation
         s2 = printComponentRefStr(child);
-        s1 = "." +& s2;
+        s1 = "." + s2;
       then s1;
     case (ALLWILD()) then "__";
     case (WILD()) then "_";
@@ -2740,7 +2740,7 @@ public function pathHashMod "Hashes a path."
   output Integer hash;
 algorithm
 // hash := valueHashMod(path,mod);
-// print(pathString(path) +& " => " +& intString(hash) +& "\n");
+// print(pathString(path) + " => " + intString(hash) + "\n");
 // hash := stringHashDjb2Mod(pathString(path),mod);
 // TODO: stringHashDjb2 is missing a default value for the seed; add this once we bootstrapped omc so we can use that function instead of our own hack
   hash := intAbs(intMod(pathHashModWork(path,5381),mod));
@@ -2786,7 +2786,7 @@ public function pathString2 "Tail-recursive version, with string builder (string
 algorithm
   outString := match (path,delimiter)
     case (FULLYQUALIFIED(path=_),_)
-      then "." +& stringDelimitList(pathToStringList(path),delimiter);
+      then "." + stringDelimitList(pathToStringList(path),delimiter);
     else
       then stringDelimitList(pathToStringList(path),delimiter);
   end match;
@@ -2813,7 +2813,7 @@ protected
   list<String> strlst;
   String rep_rep;
 algorithm
-  rep_rep := repStr +& repStr;
+  rep_rep := repStr + repStr;
   strlst := pathToStringList(inPath);
   strlst := List.map2(strlst,System.stringReplace, repStr, rep_rep);
   strlst := List.map(strlst,System.unquoteIdentifier);
@@ -3578,7 +3578,7 @@ algorithm
 
     case (e1,_,_)
       equation
-        print("Internal error: getCrefFromExp failed " +& Dump.printExpStr(e1) +& "\n");
+        print("Internal error: getCrefFromExp failed " + Dump.printExpStr(e1) + "\n");
       then fail();
   end matchcontinue;
 end getCrefFromExp;
@@ -5206,7 +5206,7 @@ algorithm
          // if list is empty (no crefs were added)
          b = List.isEmpty(lst);
          // debugging:
-         // print("Crefs in annotations: (" +& stringDelimitList(List.map(lst, Dump.printExpStr), ", ") +& ")\n");
+         // print("Crefs in annotations: (" + stringDelimitList(List.map(lst, Dump.printExpStr), ", ") + ")\n");
       then
         b;
   end match;
@@ -5350,7 +5350,7 @@ algorithm
     local
       Path p1;
     case (TOP()) then "within ;";
-    case (WITHIN(p1)) then "within " +& pathString(p1) +& ";";
+    case (WITHIN(p1)) then "within " + pathString(p1) + ";";
   end match;
 end withinString;
 

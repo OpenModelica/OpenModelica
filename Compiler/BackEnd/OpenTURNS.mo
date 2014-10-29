@@ -118,7 +118,7 @@ algorithm
   _ := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND); // Is this necessary?
   (_,libs,fileDir,_,_) := SimCodeMain.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
 
-  //print("..compiling, fileNamePrefix = "+&fileNamePrefix+&"\n");
+  //print("..compiling, fileNamePrefix = "+fileNamePrefix+"\n");
   CevalScript.compileModel(fileNamePrefix , libs, fileDir, "");
 
   generateXMLFile(cname_last_str,strippedDae);
@@ -147,22 +147,22 @@ algorithm
   // read the wrapper_template.c template, replace the extension points
   strCWrapperContents := System.readFile(getFullShareFileName(cStrCWrapperTemplate));
   strCWrapperContents := System.stringReplace(strCWrapperContents,"<%fullModelName%>", fullClassName);
-  strCWrapperContents := System.stringReplace(strCWrapperContents,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
+  strCWrapperContents := System.stringReplace(strCWrapperContents,"<%wrapperName%>", lastClassName + cStrWrapperSuffix);
   // dump the result into ModelName_wrapper.c
-  System.writeFile(lastClassName +& cStrWrapperSuffix +& ".c", strCWrapperContents);
+  System.writeFile(lastClassName + cStrWrapperSuffix + ".c", strCWrapperContents);
 
   // read the wrapper_template.makefile template, replace the extension points
   strMakefileContents := System.readFile(getFullShareFileName(cStrMakefileWrapperTemplate));
   strMakefileContents := System.stringReplace(strMakefileContents,"<%fullModelName%>", fullClassName);
-  strMakefileContents := System.stringReplace(strMakefileContents,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
+  strMakefileContents := System.stringReplace(strMakefileContents,"<%wrapperName%>", lastClassName + cStrWrapperSuffix);
   // dump the result into ModelName_wrapper.makefile
-  System.writeFile(lastClassName +& cStrWrapperSuffix +& ".makefile",strMakefileContents);
+  System.writeFile(lastClassName + cStrWrapperSuffix + ".makefile",strMakefileContents);
 
   // we should check if it works fine!
   compileWrapperCommand := System.readFile(getFullShareFileName(cStrWrapperCompileCmd));
-  compileWrapperCommand := System.stringReplace(compileWrapperCommand,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
+  compileWrapperCommand := System.stringReplace(compileWrapperCommand,"<%wrapperName%>", lastClassName + cStrWrapperSuffix);
   compileWrapperCommand := System.stringReplace(compileWrapperCommand,"<%currentDirectory%>", System.pwd());
-  runCommand(compileWrapperCommand, lastClassName +& cStrWrapperSuffix +& ".log");
+  runCommand(compileWrapperCommand, lastClassName + cStrWrapperSuffix + ".log");
 end generateWrapperLibrary;
 
 protected function generateXMLFile "generates the xml file for the OpenTURNS wrapper"
@@ -172,7 +172,7 @@ protected
   String xmlFileContent;
 algorithm
   xmlFileContent := generateXMLFileContent(className,dae);
-  System.writeFile(className +& cStrWrapperSuffix +& ".xml", xmlFileContent);
+  System.writeFile(className + cStrWrapperSuffix + ".xml", xmlFileContent);
 end generateXMLFile;
 
 protected function generateXMLFileContent "help function"
@@ -180,14 +180,14 @@ protected function generateXMLFileContent "help function"
   input BackendDAE.BackendDAE dae;
   output String content;
 algorithm
-  content := generateXMLHeader(className) +& "<wrapper>\n" +& generateXMLLibrary(className,dae)+&"\n"+&generateXMLExternalCode(className,dae)+& "\n</wrapper>";
+  content := generateXMLHeader(className) + "<wrapper>\n" + generateXMLLibrary(className,dae)+"\n"+generateXMLExternalCode(className,dae)+ "\n</wrapper>";
 end generateXMLFileContent;
 
 protected function generateXMLHeader "help function"
   input String className;
   output String header;
 algorithm
-  header := "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n<!--\n"+&className+&".xml\n-->\n"+&
+  header := "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n<!--\n"+className+".xml\n-->\n"+
   "<!DOCTYPE wrapper SYSTEM \"wrapper.dtd\">\n";
 end generateXMLHeader;
 
@@ -224,8 +224,8 @@ algorithm
   // varLst := listReverse(varLst);
   inputs := stringDelimitList(generateXMLLibraryInputs(varLst),"\n");
   outputs := stringDelimitList(generateXMLLibraryOutputs(varLst),"\n");
-  dllStr := " <path>" +& className +& cStrWrapperSuffix +& System.getDllExt() +& "</path>";
-  funcStr := "   <function provided=\"yes\">" +& className +& cStrWrapperSuffix +& "</function>";
+  dllStr := " <path>" + className + cStrWrapperSuffix + System.getDllExt() + "</path>";
+  funcStr := "   <function provided=\"yes\">" + className + cStrWrapperSuffix + "</function>";
 
   content :=stringDelimitList({
    "<library>",
@@ -268,14 +268,14 @@ algorithm
       equation
        DAE.GIVEN() = BackendVariable.varUncertainty(v);
        varName = ComponentReference.crefStr(BackendVariable.varCref(v));
-       varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
+       varStr =  "    <variable id=\""+varName+"\" type=\"in\" />";
        strLst = generateXMLLibraryInputs(rest);
       then varStr::strLst;
     case (v::rest)
       equation
        DAE.REFINE() = BackendVariable.varUncertainty(v);
        varName = ComponentReference.crefStr(BackendVariable.varCref(v));
-       varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
+       varStr =  "    <variable id=\""+varName+"\" type=\"in\" />";
        strLst = generateXMLLibraryInputs(rest);
       then varStr::strLst;
     case (_::rest)
@@ -298,7 +298,7 @@ algorithm
   case(v::rest) equation
      DAE.SOUGHT() = BackendVariable.varUncertainty(v);
      varName = ComponentReference.crefStr(BackendVariable.varCref(v));
-     varStr =  "    <variable id=\""+&varName+&"\" type=\"out\" />";
+     varStr =  "    <variable id=\""+varName+"\" type=\"out\" />";
      strLst = generateXMLLibraryOutputs(rest);
     then varStr::strLst;
     case(_::rest) equation
@@ -336,10 +336,10 @@ algorithm
   pythonFileContent := System.stringReplace(pythonFileContent,"<%correlationMatrix%>",correlationMatrix);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%collectionDistributions%>",collectionDistributions);
   pythonFileContent := System.stringReplace(pythonFileContent,"<%inputDescriptions%>",inputDescriptions);
-  pythonFileContent := System.stringReplace(pythonFileContent,"<%wrapperName%>",modelLastName +& cStrWrapperSuffix);
+  pythonFileContent := System.stringReplace(pythonFileContent,"<%wrapperName%>",modelLastName + cStrWrapperSuffix);
 
   //Write file
-  //print("writing python script to file "+&pythonFileName+&"\n");
+  //print("writing python script to file "+pythonFileName+"\n");
   System.writeFile(pythonFileName,pythonFileContent);
 end generatePythonScript;
 
@@ -388,7 +388,7 @@ algorithm
   distributionVarLst := listReverse(distributionVarLst);
   sLst := listReverse(sLst);
 
-  header := "# "+&intString(listLength(sLst))+&" distributions from Modelica model";
+  header := "# "+intString(listLength(sLst))+" distributions from Modelica model";
   distributions := stringDelimitList(header::sLst,"\n");
 end generateDistributions;
 
@@ -413,9 +413,9 @@ algorithm
         // keep the variable name EXACTLY as it is
         varName = ComponentReference.crefStr(cr);
         // use the variable name with "." replaced by "_"
-        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr);
+        distVar = "distribution" + ComponentReference.crefModelicaStr(cr);
         // add LogNormal.MUSIGMA!
-        str = distVar+& " = " +& name +& "(" +& args+& ", " +& "LogNormal.MUSIGMA)";
+        str = distVar+ " = " + name + "(" + args+ ", " + "LogNormal.MUSIGMA)";
       then
         (str,(varName,distVar));
 
@@ -427,8 +427,8 @@ algorithm
         // keep the variable name EXACTLY as it is
         varName = ComponentReference.crefStr(cr);
         // use the variable name with "." replaced by "_"
-        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr);
-        str = distVar+& " = " +& name +& "("+&args+&")";
+        distVar = "distribution" + ComponentReference.crefModelicaStr(cr);
+        str = distVar+ " = " + name + "("+args+")";
       then
         (str,(varName,distVar));
 
@@ -438,8 +438,8 @@ algorithm
         (e3_1,_) = Expression.extendArrExp(e3,false);
         false = Expression.expEqual(e2,e2_1); // Prevent infinte recursion
         false = Expression.expEqual(e3,e3_1);
-        //print("extended arr="+&ExpressionDump.printExpStr(e2_1)+&"\n");
-        //print("extended sarr="+&ExpressionDump.printExpStr(e3_1)+&"\n");
+        //print("extended arr="+ExpressionDump.printExpStr(e2_1)+"\n");
+        //print("extended sarr="+ExpressionDump.printExpStr(e3_1)+"\n");
         (str,distributionVar) = generateDistributionVariable((DAE.DISTRIBUTION(e1,e2_1,e3_1),cr),dae);
       then
         (str,distributionVar);
@@ -461,16 +461,16 @@ algorithm
     case (_, _, _)
       equation
         algs = BackendDAEUtil.getAlgorithms(dae);
-        header = "RS = CorrelationMatrix("+&intString(numDists)+&")\n";
+        header = "RS = CorrelationMatrix("+intString(numDists)+")\n";
         SOME(correlationAlg) = Array.findFirstOnTrue(algs,hasCorrelationStatement);
-        correlationMatrix = header +& generateCorrelationMatrix2(correlationAlg,uncertainVars);
+        correlationMatrix = header + generateCorrelationMatrix2(correlationAlg,uncertainVars);
      then
        correlationMatrix;
 
     case (_, _, _)
       equation
         algs = BackendDAEUtil.getAlgorithms(dae);
-        header = "RS = CorrelationMatrix("+&intString(numDists)+&")\n";
+        header = "RS = CorrelationMatrix("+intString(numDists)+")\n";
         NONE() = Array.findFirstOnTrue(algs,hasCorrelationStatement);
         Error.addInternalError("OpenTURNS.generateCorrelationMatrix failed because it could not find any correlation statement in algorithm.");
      then
@@ -640,7 +640,7 @@ algorithm
   p2 := List.position(ComponentReference.crefStr(cr2),uncertainVars)-1 "TODO: remove shift if possible";
   plow := intMin(p1,p2);
   phigh := intMax(p1,p2);
-  str := "RS["+&intString(plow)+&","+&intString(phigh)+&"] = "+&valStr;
+  str := "RS["+intString(plow)+","+intString(phigh)+"] = "+valStr;
 end generateCorrelationMatrix3;
 
 protected function generateCollectionDistributions
@@ -653,15 +653,15 @@ protected
 algorithm
   collectionVarName := "collectionMarginals";
   collectionDistributions := "# Initialization of the distribution collection:\n"
-  +& collectionVarName+&" = DistributionCollection()\n"
-  +& stringDelimitList(List.map1(distributionVarLst,generateCollectionDistributions2,(collectionVarName,dae)),"\n");
+  + collectionVarName+" = DistributionCollection()\n"
+  + stringDelimitList(List.map1(distributionVarLst,generateCollectionDistributions2,(collectionVarName,dae)),"\n");
 end generateCollectionDistributions;
 
 protected function getName "help function"
   input tuple<String,String> distVarTpl;
   output String outStr;
 algorithm
- outStr := "\"" +& Util.tuple21(distVarTpl) +& "\"";
+ outStr := "\"" + Util.tuple21(distVarTpl) + "\"";
 end getName;
 
 protected function generateCollectionDistributions2 "help function"
@@ -669,7 +669,7 @@ protected function generateCollectionDistributions2 "help function"
   input tuple<String,BackendDAE.BackendDAE> tpl;
   output String str;
 algorithm
-  str := Util.tuple21(tpl)+& ".add(Distribution(" +& Util.tuple22(distVarTpl) +& ",\"" +&Util.tuple21(distVarTpl)+&"\"))";
+  str := Util.tuple21(tpl)+ ".add(Distribution(" + Util.tuple22(distVarTpl) + ",\"" +Util.tuple21(distVarTpl)+"\"))";
 end generateCollectionDistributions2;
 
 protected function generateInputDescriptions
@@ -686,9 +686,9 @@ public function getFullSharePath
  output String strFullSharePath;
 algorithm
  strFullSharePath :=
-   Settings.getInstallationDirectoryPath() +&
-   System.pathDelimiter() +&
-   cStrSharePath +&
+   Settings.getInstallationDirectoryPath() +
+   System.pathDelimiter() +
+   cStrSharePath +
    System.pathDelimiter();
 end getFullSharePath;
 
@@ -699,7 +699,7 @@ public function getFullShareFileName
  input String strFileName;
  output String strFullShareFileName;
 algorithm
- strFullShareFileName := getFullSharePath() +& strFileName;
+ strFullShareFileName := getFullSharePath() + strFileName;
 end getFullShareFileName;
 
 public function runPythonScript
@@ -716,9 +716,9 @@ algorithm
       equation
         cmdContents = System.readFile(getFullShareFileName(cStrInvokeOpenTurnsCmd));
         cmdContents = System.stringReplace(cmdContents, "<%pythonScriptOpenModelica%>", inStrPythonScriptFile);
-        cmdFile = inStrPythonScriptFile +& ".bat";
+        cmdFile = inStrPythonScriptFile + ".bat";
         System.writeFile(cmdFile, cmdContents);
-        logFile = inStrPythonScriptFile +& ".log";
+        logFile = inStrPythonScriptFile + ".log";
         runCommand(cmdFile, logFile);
       then
         logFile;
@@ -732,13 +732,13 @@ algorithm
   _ := matchcontinue(cmd,logFile)
     case (_,_)
       equation
-        print("running: " +& cmd +& " to logFile: " +& logFile +& "\n");
+        print("running: " + cmd + " to logFile: " + logFile + "\n");
         0 = System.systemCall(cmd,logFile);
       then
         ();
     else
       equation
-        print("running: " +& cmd +& "\n\tfailed!\nCheck the log file!\n");
+        print("running: " + cmd + "\n\tfailed!\nCheck the log file!\n");
       then
         ();
   end matchcontinue;

@@ -211,7 +211,7 @@ protected
   BackendDAE.Variables v, kv;
 algorithm
   if Flags.isSet(Flags.JAC_DUMP2) then
-    print("analytical Jacobians -> start generate system for matrix A time : " +& realString(clock()) +& "\n");
+    print("analytical Jacobians -> start generate system for matrix A time : " + realString(clock()) + "\n");
   end if;
 
   backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
@@ -229,7 +229,7 @@ algorithm
   paramvars := List.select(knvarlst, BackendVariable.isParam);
 
   if Flags.isSet(Flags.JAC_DUMP2) then
-    print("analytical Jacobians -> prepared vars for symbolic matrix A time: " +& realString(clock()) +& "\n");
+    print("analytical Jacobians -> prepared vars for symbolic matrix A time: " + realString(clock()) + "\n");
   end if;
   (outJacobian, outSparsePattern, outSparseColoring, outFunctionTree) := createJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,"A");
 end createSymbolicJacobianforStates;
@@ -694,7 +694,7 @@ algorithm
     case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}),indiffVars,indiffedVars)
       equation
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
-          print(" start getting sparsity pattern diff Vars : " +& intString(listLength(indiffedVars))  +& " diffed vars: " +& intString(listLength(indiffVars)) +&"\n");
+          print(" start getting sparsity pattern diff Vars : " + intString(listLength(indiffedVars))  + " diffed vars: " + intString(listLength(indiffVars)) +"\n");
         end if;
         // prepare crefs
         diffCompRefs = List.map(indiffVars, BackendVariable.varCref);
@@ -728,7 +728,7 @@ algorithm
           print("nodesEqnsIndexs: ");
           BackendDump.dumpIncidenceRow(nodesEqnsIndex);
           print("\n");
-          print("analytical Jacobians[SPARSE] -> build sparse graph: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians[SPARSE] -> build sparse graph: " + realString(clock()) + "\n");
         end if;
 
         // prepare data for getSparsePattern
@@ -744,7 +744,7 @@ algorithm
         // debug dump
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
           BackendDump.dumpSparsePatternArray(eqnSparse);
-          print("analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " + realString(clock()) + "\n");
         end if;
 
         // select nodesEqnsIndex and map index to incoming vars
@@ -767,7 +767,7 @@ algorithm
           BackendDump.dumpSparsePattern(sparsepattern);
           BackendDump.dumpSparsePattern(sparsepatternT);
         end if;
-        //execStat("generateSparsePattern -> nonZeroElements: " +& intString(nonZeroElements) +& " " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //execStat("generateSparsePattern -> nonZeroElements: " + intString(nonZeroElements) + " " ,ClockIndexes.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // translated to DAE.ComRefs
         translated = List.mapList1_1(sparsepattern, List.getIndexFirst, diffCompRefs);
@@ -817,7 +817,7 @@ algorithm
         //without coloring
         //coloring = List.transposeList({diffCompRefs});
         if Flags.isSet(Flags.DUMP_SPARSE_VERBOSE) then
-          print("analytical Jacobians[SPARSE] -> ready! " +& realString(clock()) +& "\n");
+          print("analytical Jacobians[SPARSE] -> ready! " + realString(clock()) + "\n");
         end if;
       then ((sparsetupleT, sparsetuple, (diffCompRefs, diffedCompRefs)), coloring);
         else
@@ -840,7 +840,7 @@ algorithm
     case (true,_,_)
       equation
         (_, maxdegree) = List.mapFold(sparsepatternT, findDegrees, 1);
-        print("analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
+        print("analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+ intString(nonZeroElements) + " maxNodeDegree: " + intString(maxdegree) + " time : " + realString(clock()) + "\n");
       then ();
     else ();
   end match;
@@ -1185,7 +1185,7 @@ algorithm
         backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated system for matrix A time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t inputs for matrices B
@@ -1194,7 +1194,7 @@ algorithm
         backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t states for matrices C
@@ -1203,7 +1203,7 @@ algorithm
         backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t inputs for matrices D
@@ -1211,7 +1211,7 @@ algorithm
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated system for matrix D time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated system for matrix D time: " + realString(clock()) + "\n");
         end if;
 
       then
@@ -1264,7 +1264,7 @@ algorithm
         backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated system for matrix A time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t states&inputs for matrices B
@@ -1278,7 +1278,7 @@ algorithm
         backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t states for matrices C
@@ -1290,7 +1290,7 @@ algorithm
         backendDAE2 = BackendDAEUtil.addBackendDAEFunctionTree(functionTree, backendDAE2);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
         end if;
 
         // Differentiate the System w.r.t inputs for matrices D
@@ -1301,7 +1301,7 @@ algorithm
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated system for matrix D time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated system for matrix D time: " + realString(clock()) + "\n");
         end if;
 
       then
@@ -1358,34 +1358,34 @@ algorithm
         _ = List.map(seedlst, BackendVariable.varCref);
         s1 =  intString(listLength(inVars));
 
-        SimCodeUtil.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:" +& s +& " diffed equations: " +&  s1);
+        SimCodeUtil.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:" + s + " diffed equations: " +  s1);
 
         // Differentiate the ODE system w.r.t states for jacobian
         (backendDAE as BackendDAE.DAE(shared=shared), funcs) = generateSymbolicJacobian(inBackendDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated equations for Jacobian " +& inName +& " time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;
         SimCodeUtil.execStat("analytical Jacobians -> generated jacobian equations");
 
         knvars1 = BackendVariable.daeKnVars(shared);
         knvarsTmp = BackendVariable.varList(knvars1);
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> sorted know temp vars(" +& intString(listLength(knvarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> sorted know temp vars(" + intString(listLength(knvarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
 
         (backendDAE as BackendDAE.DAE(shared=shared)) = optimizeJacobianMatrix(backendDAE,comref_differentiatedVars,comref_vars);
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> generated Jacobian DAE time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> generated Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
 
         knvars = BackendVariable.daeKnVars(shared);
         diffVarsTmp = BackendVariable.varList(knvars);
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> sorted know diff vars(" +& intString(listLength(diffVarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> sorted know diff vars(" + intString(listLength(diffVarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
         (_,knvarsTmp,_) = List.intersection1OnTrue(diffVarsTmp, knvarsTmp, BackendVariable.varEqual);
         if Flags.isSet(Flags.JAC_DUMP2) then
-          print("analytical Jacobians -> sorted know vars(" +& intString(listLength(knvarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
+          print("analytical Jacobians -> sorted know vars(" + intString(listLength(knvarsTmp)) + ") for Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
         knvars = BackendVariable.listVar1(knvarsTmp);
         backendDAE = BackendDAEUtil.addBackendDAEKnVars(knvars,backendDAE);
@@ -1438,7 +1438,7 @@ algorithm
       case (backendDAE,_,_)
         equation
           if Flags.isSet(Flags.JAC_DUMP2) then
-            print("analytical Jacobians -> optimize jacobians time: " +& realString(clock()) +& "\n");
+            print("analytical Jacobians -> optimize jacobians time: " + realString(clock()) + "\n");
           end if;
 
           b = Flags.disableDebug(Flags.EXEC_STAT);
@@ -1539,12 +1539,12 @@ algorithm
 
     case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, cache=cache,graph=graph,  functionTree=functions, info=ei)), diffVars, diffedVars, _, _, _, _, matrixName) equation
       // Generate tmp varibales
-      dummyVarName = ("dummyVar" +& matrixName);
+      dummyVarName = ("dummyVar" + matrixName);
       x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
 
       // differentiate the equation system
       if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> derived all algorithms time: " +& realString(clock()) +& "\n");
+        print("*** analytical Jacobians -> derived all algorithms time: " + realString(clock()) + "\n");
       end if;
       diffVarsArr = BackendVariable.listVar1(diffVars);
       _ = BackendVariable.varList(diffedVars);
@@ -1557,7 +1557,7 @@ algorithm
       // replace all der(x), since ExpressionSolve can't handle der(x) proper
       derivedEquations = BackendEquation.replaceDerOpInEquationList(derivedEquations);
       if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> created all derived equation time: " +& realString(clock()) +& "\n");
+        print("*** analytical Jacobians -> created all derived equation time: " + realString(clock()) + "\n");
       end if;
 
       // create BackendDAE.DAE with derivied vars and equations
@@ -1588,12 +1588,12 @@ algorithm
     case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars,   functionTree=functions, info=_)), diffVars, diffedVars, _, _, _, _, matrixName) equation
 
       // Generate tmp varibales
-      dummyVarName = ("dummyVar" +& matrixName);
+      dummyVarName = ("dummyVar" + matrixName);
       x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
 
       // differentiate the equation system
       if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> derived all algorithms time: " +& realString(clock()) +& "\n");
+        print("*** analytical Jacobians -> derived all algorithms time: " + realString(clock()) + "\n");
       end if;
       diffVarsArr = BackendVariable.listVar1(diffVars);
       _ = BackendVariable.varList(diffedVars);
@@ -1606,12 +1606,12 @@ algorithm
       diffvars = BackendVariable.varList(orderedVars);
       (derivedVariables,comref_diffvars) = generateJacobianVars(diffvars, comref_diffvars, (inMatrixName,false));
       if Flags.isSet(Flags.JAC_DUMP2) then
-        print("*** analytical Jacobians -> created all derived vars: " +& "No. :" +& intString(listLength(comref_diffvars)) +& "time: " +& realString(clock()) +& "\n");
+        print("*** analytical Jacobians -> created all derived vars: " + "No. :" + intString(listLength(comref_diffvars)) + "time: " + realString(clock()) + "\n");
       end if;
       (derivedEquations, functions) = deriveAll(BackendEquation.equationList(orderedEqs), arrayList(ass2), x, diffData, {}, functions);
       false = (listLength(derivedVariables) == listLength(derivedEquations));
       if Flags.isSet(Flags.JAC_WARNINGS) then
-        print("*** analytical Jacobians -> failed vars are not equal to equations: " +& intString(listLength(derivedEquations)) +& " time: " +& realString(clock()) +& "\n");
+        print("*** analytical Jacobians -> failed vars are not equal to equations: " + intString(listLength(derivedEquations)) + " time: " + realString(clock()) + "\n");
       end if;
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSymbolicJacobian failed"});
     then fail();
@@ -1800,11 +1800,11 @@ algorithm
 
     case(currEquation::restEquations, _, _, BackendDAE.DIFFINPUTDATA(allVars=SOME(allVars)), _, _)
       equation
-      //fcall(Flags.JAC_DUMP_EQN, print, "Derive Equation! Left on Stack: " +& intString(listLength(restEquations)) +& "\n");
+      //fcall(Flags.JAC_DUMP_EQN, print, "Derive Equation! Left on Stack: " + intString(listLength(restEquations)) + "\n");
       //fcall(Flags.JAC_DUMP_EQN, BackendDump.printEquationList, {currEquation});
       //fcall(Flags.JAC_DUMP_EQN, print, "\n");
       //dummycref = ComponentReference.makeCrefIdent("$pDERdummy", DAE.T_REAL_DEFAULT, {});
-      //fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> derive one equation: " +& realString(clock()) +& "\n" );
+      //fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> derive one equation: " + realString(clock()) + "\n" );
 
       // filter discrete equataions
       (solvedfor,ass2_1) = List.split(ass2, BackendEquation.equationSize(currEquation));
@@ -1818,7 +1818,7 @@ algorithm
       (derivedEquations, functions) = deriveAll(restEquations, ass2_1, inDiffCref, inDiffData, derivedEquations, functions);
       //fcall(Flags.JAC_DUMP_EQN, BackendDump.printEquationList, currDerivedEquations);
       //fcall(Flags.JAC_DUMP_EQN, print, "\n");
-      //fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> created other equations from that: " +& realString(clock()) +& "\n" );
+      //fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> created other equations from that: " + realString(clock()) + "\n" );
      then
        (derivedEquations, functions);
 
@@ -2001,7 +2001,7 @@ algorithm
           ovars = BackendVariable.listVar1(ovarsLst);
 
           //generate jacobian name
-          name = "NLSJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+          name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
@@ -2037,7 +2037,7 @@ algorithm
           ovars =  BackendVariable.emptyVars();
 
           //generate jacobian name
-          name = "NLSJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+          name = "NLSJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
@@ -2311,7 +2311,7 @@ algorithm
         oEqns = BackendEquation.listEquation(oeqns);
 
         //generate jacobian name
-        name = "StateSetJac" +& intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
+        name = "StateSetJac" + intString(System.tmpTickIndex(Global.backendDAE_jacobianSeq));
 
         // generate generic jacobian backend dae
         (jacobian, shared) = getSymbolicJacobian(diffVars, cEqns, resVars, oEqns, oVars, inShared, allvars, name);
@@ -2446,7 +2446,7 @@ algorithm
         createResidualSetEquations(rest, crJ, index+1, applySubs, eqn::iAcc);
     case (eqn::_, _, _, _, _)
       equation
-        errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function createResidualSetEquations failed for equation: " +& BackendDump.equationString(eqn);
+        errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function createResidualSetEquations failed for equation: " + BackendDump.equationString(eqn);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {errorMessage}, BackendEquation.equationInfo(eqn));
     then
        fail();

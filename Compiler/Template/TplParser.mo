@@ -237,10 +237,10 @@ algorithm
                            ), errMsg, isfatal)
       equation
         (_, colnum) = getPosition(chars, linfo);
-        locStr = intString(lnum) +& "." +& intString(colnum);
-        errMsg = fname +& ":" +& locStr +& "-" +& locStr +& " Error:(parser)" +& errMsg +& "(col "+&intString(colnum)+& ")";     //TplParser.mo:126.38-126.55 Error:
+        locStr = intString(lnum) + "." + intString(colnum);
+        errMsg = fname + ":" + locStr + "-" + locStr + " Error:(parser)" + errMsg + "(col "+intString(colnum)+ ")";     //TplParser.mo:126.38-126.55 Error:
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln("TplParser.parseError msg: " +& errMsg);
+          Debug.traceln("TplParser.parseError msg: " + errMsg);
         end if;
       then (LINE_INFO(PARSE_INFO(fname, errMsg :: errLst, isfatal), lnum,llen, solchars));
 
@@ -406,8 +406,8 @@ algorithm
       equation
         //failure(equality(c = ec));
         //or chars = {}
-        (linfo) = parseError(chars, linfo, "Expected character '" +& ec +& "' at the position.", false);
-        //fprint(Flags.FAILTRACE, "???Expected character '" +& ec +& "'\n");
+        (linfo) = parseError(chars, linfo, "Expected character '" + ec + "' at the position.", false);
+        //fprint(Flags.FAILTRACE, "???Expected character '" + ec + "'\n");
       then (chars, linfo);
 
     case (_,_,_)
@@ -445,7 +445,7 @@ algorithm
       equation
         //failure(equality(c = ec));
         //or chars = {}
-        (linfo) = parseError(chars, linfo, "Expected character '" +& ec +& "' after the position.",false);
+        (linfo) = parseError(chars, linfo, "Expected character '" + ec + "' after the position.",false);
       then (chars, linfo);
 
     case (_,_,_)
@@ -530,7 +530,7 @@ algorithm
         (chars, linfo) = interleave(chars, linfo);
         (_, false) = isKeyword(chars, kwchars);
         kw = stringCharListString(kwchars);
-        (linfo) = parseError(chars, linfo, "Expected keyword '" +& kw +& "' at the position.", isfatal);
+        (linfo) = parseError(chars, linfo, "Expected keyword '" + kw + "' at the position.", isfatal);
       then (chars, linfo);
 
     case (_,_,_,_)
@@ -599,13 +599,13 @@ algorithm
         false = System.regularFileExists(file);
         chars = {};
         linfo = makeStartLineInfo(chars, file);
-        errStr = "No such file '" +& file +& "'.";
+        errStr = "No such file '" + file + "'.";
       then (chars, linfo, SOME(errStr));
 
     case (file)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.openFile failed for file '" +& file +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.openFile failed for file '" + file + "'.\n");
       then fail();
 
   end matchcontinue;
@@ -635,7 +635,7 @@ algorithm
     case (file)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.templPackageFromFile failed for file '" +& file +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.templPackageFromFile failed for file '" + file + "'.\n");
       then fail();
 
   end matchcontinue;
@@ -661,7 +661,7 @@ algorithm
 
     case (_, astDefs)
       equation
-        file = TplAbsyn.pathIdentString(interfaceName) +& ".mo";
+        file = TplAbsyn.pathIdentString(interfaceName) + ".mo";
         (chars, linfo, errOpt) = openFile(file);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo,_, astDefs) = interfacePackage(chars, linfo, astDefs);
@@ -699,7 +699,7 @@ algorithm
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> astTypes;
     case (_, _, astDefs)
       equation
-        file = TplAbsyn.pathIdentString(packageName) +& ".tpl";
+        file = TplAbsyn.pathIdentString(packageName) + ".tpl";
         (chars, linfo, errOpt) = openFile(file);
         (chars, linfo, tplPackage) = templPackage(chars, linfo);
         (_, linfo) = interleaveExpectEndOfFile(chars, linfo);
@@ -1635,7 +1635,7 @@ algorithm
       equation
         strErr = "Unmatched \" \" comment - reached end of file.";
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("Parse error - TplParser.stringCommentRest - " +& strErr +& "\n");
+          Debug.trace("Parse error - TplParser.stringCommentRest - " + strErr + "\n");
         end if;
       then ( {}, linfo, SOME(strErr) );
 
@@ -1837,9 +1837,9 @@ algorithm
         (chars, linfo,pid) = pathIdentNoOpt(startChars, startLinfo);
         failure(equality(pid = pidToMatch));
         linfo = parseErrorPrevPosition(startChars, startLinfo, linfo,
-                   "Unmatched ident for 'end'. Expected '" +& TplAbsyn.pathIdentString(pidToMatch) +& "', but '" +& TplAbsyn.pathIdentString(pid) +& "' found instead.",
+                   "Unmatched ident for 'end'. Expected '" + TplAbsyn.pathIdentString(pidToMatch) + "', but '" + TplAbsyn.pathIdentString(pid) + "' found instead.",
                    false);
-        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse warning - TplParser.endDefPathIdent - unmatched ident for 'end' of the definition of '" +& TplAbsyn.pathIdentString(pidToMatch) +& "' ... 'end " +& TplAbsyn.pathIdentString(pid) +& "' found instead.\n");
+        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse warning - TplParser.endDefPathIdent - unmatched ident for 'end' of the definition of '" + TplAbsyn.pathIdentString(pidToMatch) + "' ... 'end " + TplAbsyn.pathIdentString(pid) + "' found instead.\n");
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = semicolon(chars, linfo);
       then (chars, linfo);
@@ -1898,9 +1898,9 @@ algorithm
         (chars,linfo,id) = identifierNoOpt(startChars,startLinfo);
         failure(equality(id = idToMatch));
         linfo = parseErrorPrevPosition(startChars, startLinfo, linfo,
-                   "Unmatched ident for 'end'. Expected '" +& idToMatch +& "', but '" +& id +& "' found instead.",
+                   "Unmatched ident for 'end'. Expected '" + idToMatch + "', but '" + id + "' found instead.",
                    false);
-        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse warning - TplParser.endDefIdent - unmatched ident for 'end' of the definition of " +& idToMatch +& " ... end " +& id +& " found instead.\n");
+        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse warning - TplParser.endDefIdent - unmatched ident for 'end' of the definition of " + idToMatch + " ... end " + id + " found instead.\n");
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = semicolon(chars, linfo);
       then (chars, linfo);
@@ -3836,7 +3836,7 @@ end stringConstant;
 literalConstant:
   //(+|-)?d*(.d+)?(('e'|'E')(+|-)?d+)?
   plusMinus:pm digits:ds dotNumber:(dn,ts) exponent(ts):(ex,ts)
-  => (pm+& stringCharListString(ds)+&dn+&ex, ts)  //validate the number - must have integer part or dotpart
+  => (pm+ stringCharListString(ds)+dn+ex, ts)  //validate the number - must have integer part or dotpart
   |
   'true' => ("true", BOOLEAN_TYPE())
   |
@@ -3865,10 +3865,10 @@ algorithm
         (chars, ds) = digits(chars);
         (chars, dn, ts) = dotNumber(chars);
         //validate the number - must have integer part or dotpart
-        num = stringCharListString(ds)+&dn;
+        num = stringCharListString(ds)+dn;
         true = stringLength(num) > 0;
         (chars, ex, ts) = exponent(chars,ts);
-        num = pm +& num +& ex;
+        num = pm + num + ex;
       then (chars, linfo, num, ts);
 
     case ("t"::"r"::"u"::"e" :: chars, linfo)
@@ -3991,7 +3991,7 @@ algorithm
         str = stringCharListString(listReverse(accChars));
         errStr = "Unmatched \" \" quotes for a string constant - reached end of file.";
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("Parse error - TplParser.doubleQuoteConst - " +& errStr +& "\n");
+          Debug.trace("Parse error - TplParser.doubleQuoteConst - " + errStr + "\n");
         end if;
       then ({}, linfo, str :: accStrList, SOME(errStr));
 
@@ -4101,8 +4101,8 @@ algorithm
     case ( {}, linfo, rquot, accChars, accStrList)
       equation
         str = stringCharListString(listReverse(accChars));
-        errStr = "Unmatched %"+&rquot+&" "+&rquot+&"% quotes for a verbatim string constant - reached end of file.";
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.verbatimConst - " +& errStr +& "\n");
+        errStr = "Unmatched %"+rquot+" "+rquot+"% quotes for a verbatim string constant - reached end of file.";
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.verbatimConst - " + errStr + "\n");
       then ({}, linfo, str :: accStrList, SOME(errStr));
 
   end matchcontinue;
@@ -4276,7 +4276,7 @@ algorithm
       equation
         (chars,ds) = digits(chars);
         (_::_) = ds; //some digits must be there
-        dn = "." +& stringCharListString(ds);
+        dn = "." + stringCharListString(ds);
       then (chars, dn, TplAbsyn.REAL_TYPE());
 
     case (chars)
@@ -4287,9 +4287,9 @@ end dotNumber;
 
 /*
 exponent(typ):
-  'e' plusMinus:pm  digits:ds => ("e"+&pm+&stringCharListString(ds), REAL_TYPE())
+  'e' plusMinus:pm  digits:ds => ("e"+pm+stringCharListString(ds), REAL_TYPE())
   |
-  'E' plusMinus:pm  digits:ds => ("E"+&pm+&stringCharListString(ds), REAL_TYPE())
+  'E' plusMinus:pm  digits:ds => ("E"+pm+stringCharListString(ds), REAL_TYPE())
   |
   => ("",typ)
 */
@@ -4312,7 +4312,7 @@ algorithm
         (chars,pm) = plusMinus(chars);
         (chars,ds) = digits(chars);
         (_::_) = ds; //some digits must be there
-        ex = "e" +& pm +& stringCharListString(ds);
+        ex = "e" + pm + stringCharListString(ds);
       then (chars, ex, TplAbsyn.REAL_TYPE());
 
     case ("E" :: chars, _)
@@ -4320,7 +4320,7 @@ algorithm
         (chars,pm) = plusMinus(chars);
         (chars,ds) = digits(chars);
         (_::_) = ds; //some digits must be there
-        ex = "E" +& pm +& stringCharListString(ds);
+        ex = "E" + pm + stringCharListString(ds);
       then (chars, ex, TplAbsyn.REAL_TYPE());
 
     case (chars, litType)
@@ -4654,7 +4654,7 @@ algorithm
    // \ will be taken literally,  '\\' and <<\\>> are both double-backslash !
    case ("\\":: c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
-        true = (c ==& "\\" or c ==& "'" or c ==& lesc or c ==& resc);
+        true = (c == "\\" or c == "'" or c == lesc or c == resc);
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
       then (chars, linfo, exp);
    */
@@ -4843,7 +4843,7 @@ algorithm
    case (exp, expLst, {}, baseInd, lineInd, accChars)
       equation
         true = ( lineInd < baseInd );
-        errStr = "Indent level is under the level of the '<<' determined level (by "+& intString(baseInd - lineInd)+& " chars).";
+        errStr = "Indent level is under the level of the '<<' determined level (by "+ intString(baseInd - lineInd)+ " chars).";
         errOpt = SOME(errStr);
         //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse warning onEscapedExp() - indent level is under the level of the '<<' determined level.\n");
         //call again as  lineInd = baseInd
@@ -4894,7 +4894,7 @@ algorithm
    //drop invisible space before new line
    case (expLst, indStack, actInd, lineInd, c :: accChars)
       equation
-        true = (c ==& " " or c ==& "\t");
+        true = (c == " " or c == "\t");
         (expLst, indStack,  actInd, errOpt)
          = onNewLine(expLst, indStack, actInd, lineInd, accChars);
       then (expLst, indStack, actInd, errOpt);
@@ -4963,7 +4963,7 @@ algorithm
    case (expLst, {}, baseInd, lineInd, accChars as (_ :: _))
       equation
         true = ( lineInd < baseInd );
-        errStr = "Indent level is under the level of the '<<' determined level (by "+& intString(baseInd - lineInd)+& " chars).";
+        errStr = "Indent level is under the level of the '<<' determined level (by "+ intString(baseInd - lineInd)+ " chars).";
         errOpt = SOME(errStr);
         //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse warning onNewLine() - indent level is under the level of the '<<' determined level.\n");
         //call again as  lineInd = baseInd
@@ -5174,7 +5174,7 @@ algorithm
       equation
         failure("\n" = stringGetStringChar(strNonNl, stringLength(strNonNl)));
         // push the disposable new line
-        strNonNl = strNonNl +& "\n";
+        strNonNl = strNonNl + "\n";
         str = stringCharListString(listReverse(accChars));
         expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST("" :: str :: strNonNl :: strLst, false)), dummySourceInfo) :: expLst;
       then expLst;
@@ -5240,7 +5240,7 @@ algorithm
       equation
         failure("\n" = stringGetStringChar(strNonNl, stringLength(strNonNl)));
         // push the disposable new line
-        str = strNonNl +& "\n";
+        str = strNonNl + "\n";
         expLst = finalizeLastStringToken( (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST( ""::str::strLst, false)), dummySourceInfo) :: expLst);
       then expLst;
 
@@ -5288,7 +5288,7 @@ algorithm
    // make it a ST_STRING_LIST with properly set lastHasNewLine
    case ( (TplAbsyn.STR_TOKEN(value = Tpl.ST_STRING_LIST( strList = ("" :: (strLst as (str :: _))), lastHasNewLine = false)),_) :: expLst )
       equation
-        hasNL = ("\n" ==& stringGetStringChar(str, stringLength(str)));
+        hasNL = ("\n" == stringGetStringChar(str, stringLength(str)));
         strLst = listReverse(strLst);
         expLst = (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST( strLst, hasNL)), dummySourceInfo) :: expLst;
       then expLst;

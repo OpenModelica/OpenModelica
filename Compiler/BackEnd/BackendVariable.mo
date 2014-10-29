@@ -1926,7 +1926,7 @@ algorithm
         (cond,_) = ExpressionSimplify.simplify(cond);
         // do not add if const true
         false = Expression.isConstTrue(cond);
-        str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
+        str = str + ExpressionDump.printExpStr(cond) + " has value: ";
         // if is real use %g otherwise use %d (ints and enums)
         format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
         msg = DAE.BINARY(
@@ -1990,7 +1990,7 @@ algorithm
         (cond,_) = ExpressionSimplify.simplify(cond);
         // do not add if const true
         false = Expression.isConstTrue(cond);
-        str = str +& ExpressionDump.printExpStr(cond) +& " has value: ";
+        str = str + ExpressionDump.printExpStr(cond) + " has value: ";
         // if is real use %g otherwise use %d (ints and enums)
         format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
         msg = DAE.BINARY(
@@ -2168,7 +2168,7 @@ algorithm
       equation
         (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4";
         rsize = intReal(size);
-        rexpandsize = rsize*. 0.4;
+        rexpandsize = rsize * 0.4;
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
@@ -2179,7 +2179,7 @@ algorithm
         BackendDAE.VARIABLE_ARRAY(n_1,newsize,arr_2);
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
-        print("- vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& " arraysize: " +& intString(arrayLength(arr)) +& "\n");
+        print("- vararrayAdd failed\nn: " + intString(n) + ", size: " + intString(size) + " arraysize: " + intString(arrayLength(arr)) + "\n");
       then
         fail();
     else
@@ -2214,7 +2214,7 @@ algorithm
 
     else
       equation
-        print("- vararraySetnth failed at " +& intString(pos)  +& "\n");
+        print("- vararraySetnth failed at " + intString(pos)  + "\n");
       then
         fail();
   end matchcontinue;
@@ -2244,7 +2244,7 @@ algorithm
       equation
         (pos < n) = true;
         NONE() = arr[pos + 1];
-        print("- BackendVariable.vararrayNth " +& intString(pos +1 ) +& " has NONE!!!\n");
+        print("- BackendVariable.vararrayNth " + intString(pos +1 ) + " has NONE!!!\n");
       then
         fail();
   end matchcontinue;
@@ -2790,7 +2790,7 @@ algorithm
         (v,BackendDAE.VARIABLE_ARRAY(n,size,arr_1));
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
-        print("- removeVar1 failed\n Pos " +& intString(inInteger) +& " numberOfElements " +& intString(n) +& " size " +& intString(size) +& " arraySize " +& intString(arrayLength(arr)) +& "\n");
+        print("- removeVar1 failed\n Pos " + intString(inInteger) + " numberOfElements " + intString(n) + " size " + intString(size) + " arraySize " + intString(arrayLength(arr)) + "\n");
       then
         fail();
   end matchcontinue;
@@ -2868,7 +2868,7 @@ algorithm
         iVars;
     else
       equation
-        print("BackendVariable.compressVariables1 failed for index " +& intString(index) +& " and Number of Variables " +& intString(nVars) +& "\n");
+        print("BackendVariable.compressVariables1 failed for index " + intString(index) + " and Number of Variables " + intString(nVars) + "\n");
       then
         fail();
   end matchcontinue;
@@ -3225,7 +3225,7 @@ algorithm
     case (BackendDAE.VARIABLES(varArr = _),_)
       equation
         BackendDump.printVariables(inVariables);
-        Error.addInternalError("BackendVariable.getVarAt failed to get the variable at index: " +& intString(inInteger));
+        Error.addInternalError("BackendVariable.getVarAt failed to get the variable at index: " + intString(inInteger));
       then
         fail();
   end matchcontinue;
@@ -3262,7 +3262,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("setVarAt failed to set the variable at index:" +& intString(pos));
+        Debug.traceln("setVarAt failed to set the variable at index:" + intString(pos));
       then
         fail();
   end matchcontinue;
@@ -3368,7 +3368,7 @@ algorithm
     /* failure
     case (_,_)
       equation
-        fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
+        fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " + ComponentReference.printComponentRefStr(cr));
       then
         fail();
      */

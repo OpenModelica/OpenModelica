@@ -84,8 +84,8 @@ algorithm
     case Prefix.PREFIX(Prefix.PRE(str,_,{},Prefix.NOCOMPPRE(),_),_) then str;
     case Prefix.PREFIX(Prefix.PRE(str,_,ss,Prefix.NOCOMPPRE(),_),_)
       equation
-        s = stringAppend(str, "[" +& stringDelimitList(
-          List.map(ss, ExpressionDump.subscriptString), ", ") +& "]");
+        s = stringAppend(str, "[" + stringDelimitList(
+          List.map(ss, ExpressionDump.subscriptString), ", ") + "]");
       then
         s;
     case Prefix.PREFIX(Prefix.PRE(str,_,{},rest,_),cp)
@@ -100,8 +100,8 @@ algorithm
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
-        s_2 = stringAppend(s_1, "[" +& stringDelimitList(
-          List.map(ss, ExpressionDump.subscriptString), ", ") +& "]");
+        s_2 = stringAppend(s_1, "[" + stringDelimitList(
+          List.map(ss, ExpressionDump.subscriptString), ", ") + "]");
       then
         s_2;
   end matchcontinue;
@@ -116,7 +116,7 @@ algorithm
     Prefix.Prefix p;
   case Prefix.NOPRE() then "";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
-  case p then printPrefixStr(p)+&".";
+  case p then printPrefixStr(p)+".";
   end matchcontinue;
 end printPrefixStr2;
 
@@ -603,14 +603,14 @@ algorithm
     case (cache,env,ih,cref,pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
-        //   if_(Absyn.isOuter(io), " [outer] ", " ") +&
+        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(cref) +
+        //   if_(Absyn.isOuter(io), " [outer] ", " ") +
         //   if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isInner(io);
         false = Absyn.isOuter(io);
         // prefix normally
         newCref = prefixCref(pre, cref);
-        // fprintln(Flags.INNER_OUTER, "INNER normally prefixed: " +& ComponentReference.printComponentRefStr(newCref));
+        // fprintln(Flags.INNER_OUTER, "INNER normally prefixed: " + ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
 
@@ -618,8 +618,8 @@ algorithm
     case (cache,env,ih,cref as DAE.CREF_IDENT(ident=_),pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
-        //   if_(Absyn.isOuter(io), " [outer] ", " ") +&
+        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) + "/" + ComponentReference.printComponentRefStr(cref) +
+        //   if_(Absyn.isOuter(io), " [outer] ", " ") +
         //   if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isOuter(io);
         n = ComponentReference.crefLastIdent(cref);
@@ -631,7 +631,7 @@ algorithm
 
         newCref = prefixCref(innerPrefix, lastCref);
 
-        // fprintln(Flags.INNER_OUTER, "OUTER IDENT prefixed INNER : " +& ComponentReference.printComponentRefStr(newCref));
+        // fprintln(Flags.INNER_OUTER, "OUTER IDENT prefixed INNER : " + ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
 
@@ -643,7 +643,7 @@ algorithm
         true = Absyn.isOuter(io);
         (cache,innerPrefix) = searchForInnerPrefix(cache,env,ih,cref,pre,io);
         newCref = prefixCref(innerPrefix, cref);
-        // fprintln(Flags.INNER_OUTER, "OUTER QUAL prefixed INNER: " +& ComponentReference.printComponentRefStr(newCref));
+        // fprintln(Flags.INNER_OUTER, "OUTER QUAL prefixed INNER: " + ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
     */
@@ -1252,7 +1252,7 @@ algorithm
     case(Prefix.NOPRE()) then "from top scope";
     case _
       equation
-        str = "from calling scope: " +& printPrefixStr(pre);
+        str = "from calling scope: " + printPrefixStr(pre);
       then str;
   end matchcontinue;
 end makePrefixString;

@@ -175,7 +175,7 @@ encapsulated package HpcOmMemory
           //notOptimizedVars = listAppend(notOptimizedVars, aliasVars);
           if Flags.isSet(Flags.HPCOM_DUMP) then
             print("Not optimized vars:\n\t");
-            print(stringDelimitList(List.map(notOptimizedVars, dumpSimCodeVar), ",") +& "\n");
+            print(stringDelimitList(List.map(notOptimizedVars, dumpSimCodeVar), ",") + "\n");
           end if;
 
           //Append cache line nodes to graph
@@ -189,7 +189,7 @@ encapsulated package HpcOmMemory
           SOME((_,threadAttIdx)) = GraphML.getAttributeByNameAndTarget("ThreadId", GraphML.TARGET_NODE(), graphInfo);
           (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(List.first(iEqSystems), BackendDAE.ABSOLUTE(), NONE());
           graphInfo = appendCacheLinesToGraph(cacheMap, arrayLength(iTaskGraph), nodeSimCodeVarMapping, eqSimCodeVarMapping, iEqSystems, hashTable, eqCompMapping, scVarTaskMapping, iSchedulerInfo, threadAttIdx, sccNodeMapping, graphInfo);
-          fileName = ("taskGraph"+&iFileNamePrefix+&"ODE_schedule_CL.graphml");
+          fileName = ("taskGraph"+iFileNamePrefix+"ODE_schedule_CL.graphml");
           GraphML.dumpGraph(graphInfo, fileName);
           tmpMemoryMap = convertCacheMapToMemoryMap(cacheMap,hashTable,notOptimizedVars);
           //print cache map
@@ -334,20 +334,20 @@ encapsulated package HpcOmMemory
     (cacheLinesPrevLevel, cacheMap, cacheMapMeta, numCL) := iInfo;
     allCL := List.intRange(numCL);
     CACHEMAP(cacheLinesFloat=cacheLinesFloat,cacheLineSize=cacheLineSize) := cacheMap;
-    //print("createCacheMapLevelOptimized0: Handling new level. CL used by previous layer: " +& stringDelimitList(List.map(cacheLinesPrevLevel,intString), ",") +& " Number of CL: " +& intString(numCL) +& "\n");
+    //print("createCacheMapLevelOptimized0: Handling new level. CL used by previous layer: " + stringDelimitList(List.map(cacheLinesPrevLevel,intString), ",") + " Number of CL: " + intString(numCL) + "\n");
     availableCLold := List.setDifferenceIntN(allCL,cacheLinesPrevLevel,numCL);
     //append free space to available cache lines and remove full cache lines
     detailedCacheLineInfo := createDetailedCacheMapInformations(availableCLold, cacheLinesFloat, cacheLineSize);
     detailedCacheLineInfo := listReverse(detailedCacheLineInfo);
-    //print("createCacheMapLevelOptimized0: clCandidates: " +& stringDelimitList(List.map(List.map(detailedCacheLineInfo,Util.tuple21),intString), ",") +& "\n");
+    //print("createCacheMapLevelOptimized0: clCandidates: " + stringDelimitList(List.map(List.map(detailedCacheLineInfo,Util.tuple21),intString), ",") + "\n");
     ((cacheMap,cacheMapMeta,createdCL,detailedCacheLineInfo)) := List.fold1(getTaskListTasks(iLevelTasks), createCacheMapLevelOptimizedForTask, iNodeSimCodeVarMapping, (cacheMap,cacheMapMeta, 0,detailedCacheLineInfo));
     availableCL := List.map(detailedCacheLineInfo, Util.tuple21);
     //append the used cachelines to the writtenCL-list
-    //print("createCacheMapLevelOptimized0: New cacheLines created: " +& intString(createdCL) +& "\n");
+    //print("createCacheMapLevelOptimized0: New cacheLines created: " + intString(createdCL) + "\n");
     writtenCL := List.setDifferenceIntN(availableCLold,availableCL,numCL);
-    //print("createCacheMapLevelOptimized0: Written CL_0: " +& stringDelimitList(List.map(writtenCL,intString), ",") +& " -- numCL: " +& intString(numCL) +& "\n");
+    //print("createCacheMapLevelOptimized0: Written CL_0: " + stringDelimitList(List.map(writtenCL,intString), ",") + " -- numCL: " + intString(numCL) + "\n");
     writtenCL := listAppend(writtenCL, if intLe(numCL+1, numCL+createdCL) then List.intRange2(numCL+1, numCL+createdCL) else {});
-    //print("createCacheMapLevelOptimized0: Written CL_1: " +& stringDelimitList(List.map(writtenCL,intString), ",") +& "\n");
+    //print("createCacheMapLevelOptimized0: Written CL_1: " + stringDelimitList(List.map(writtenCL,intString), ",") + "\n");
     //print("======================================\n");
     //printCacheMap(cacheMap);
     //print("======================================\n");
@@ -410,7 +410,7 @@ encapsulated package HpcOmMemory
     simCodeVars := arrayGet(iNodeSimCodeVarMapping, iNodeIdx);
     (iCacheMap,iCacheMapMeta,iNumNewCL,clCandidates) := iInfo;
     varsString := stringDelimitList(List.map(simCodeVars, intString), ",");
-    //print("appendNodeVarsToCacheMap: Handling node " +& intString(iNodeIdx) +& " clCandidates: " +& intString(listLength(clCandidates)) +& " simCodeVars: " +& varsString +& "\n");
+    //print("appendNodeVarsToCacheMap: Handling node " + intString(iNodeIdx) + " clCandidates: " + intString(listLength(clCandidates)) + " simCodeVars: " + varsString + "\n");
     ((iCacheMap, iCacheMapMeta, iNumNewCL,clCandidates,writtenCL,_)) := List.fold(simCodeVars, appendSCVarToCacheMap, (iCacheMap, iCacheMapMeta, iNumNewCL,clCandidates,{},1));
     clCandidates := List.removeOnTrue(writtenCL, appendNodeVarsToCacheMap0, clCandidates);
     oInfo := (iCacheMap,iCacheMapMeta,iNumNewCL,clCandidates);
@@ -474,11 +474,11 @@ encapsulated package HpcOmMemory
           true = doesSCVarFitIntoCL(currentCLCandidate, numBytesRequired);
           //print("  -- candidateCL has enough space\n");
           (currentCLCandidateCLIdx,currentCLCandidateFreeBytes) = currentCLCandidate;
-          //print("appendSCVarToCacheMap scVarIdx: " +& intString(iSCVarIdx) +& "\n");
-          //print("  -- CachelineCandidates: " +& intString(listLength(cacheLineCandidates)) +& " currentCLCandidateidx: " +& intString(currentCLCandidateIdx) +& " with " +& intString(currentCLCandidateFreeBytes) +& "free bytes\n");
+          //print("appendSCVarToCacheMap scVarIdx: " + intString(iSCVarIdx) + "\n");
+          //print("  -- CachelineCandidates: " + intString(listLength(cacheLineCandidates)) + " currentCLCandidateidx: " + intString(currentCLCandidateIdx) + " with " + intString(currentCLCandidateFreeBytes) + "free bytes\n");
           cacheLine = listGet(cacheLinesFloat, listLength(cacheLinesFloat) - currentCLCandidateCLIdx + 1);
           CACHELINEMAP(idx=clIdx,entries=CLentries) = cacheLine;
-          //print("  -- writing to CL " +& intString(clIdx) +& " (free bytes: " +& intString(currentCLCandidateFreeBytes) +& ")\n");
+          //print("  -- writing to CL " + intString(clIdx) + " (free bytes: " + intString(currentCLCandidateFreeBytes) + ")\n");
           //write new cache lines
           entryStart = cacheLineSize-currentCLCandidateFreeBytes;
           numCacheVars = listLength(cacheVariables)+1;
@@ -491,7 +491,7 @@ encapsulated package HpcOmMemory
           SOME(scVar) = arrayGet(iAllSCVarsMapping,iSCVarIdx);
 
           //varText = Tpl.textString(SimCodeDump.dumpVars(Tpl.emptyTxt, {scVar}, false));
-          //print("  appendSCVarToCacheMap: Handling variable " +& intString(iSCVarIdx) +& " | " +& varText +& "\n");
+          //print("  appendSCVarToCacheMap: Handling variable " + intString(iSCVarIdx) + " | " + varText + "\n");
 
           cacheVariables = scVar::cacheVariables;
           writtenCL = clIdx::writtenCL;
@@ -511,7 +511,7 @@ encapsulated package HpcOmMemory
         then tmpInfo;
       case(_,(cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat), CACHEMAPMETA(iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping), numNewCL, cacheLineCandidates, writtenCL, currentCLCandidateIdx))
         equation //case 3: no CL-candidates available
-          //print("--appendSCVarToCacheMap: Handling variable " +& intString(iSCVarIdx) +& "\n");
+          //print("--appendSCVarToCacheMap: Handling variable " + intString(iSCVarIdx) + "\n");
 
           ((varType,numBytesRequired)) = arrayGet(iSimCodeVarTypes,iSCVarIdx);
           entryStart = 0;
@@ -527,7 +527,7 @@ encapsulated package HpcOmMemory
           cacheVariables = scVar::cacheVariables;
           writtenCL = clIdx::writtenCL;
           freeSpace = cacheLineSize-numBytesRequired;
-          //print("  -- writing new CL (idx: " +& intString(clIdx) +& "; freeSpace: " +& intString(freeSpace) +& ")\n");
+          //print("  -- writing new CL (idx: " + intString(clIdx) + "; freeSpace: " + intString(freeSpace) + ")\n");
           cacheLineCandidates = listAppend(cacheLineCandidates,{(clIdx,freeSpace)});
           cacheMap = CACHEMAP(cacheLineSize,cacheVariables,cacheLinesFloat);
           cacheMapMeta = CACHEMAPMETA(iAllSCVarsMapping, iSimCodeVarTypes, iScVarCLMapping);
@@ -581,10 +581,10 @@ encapsulated package HpcOmMemory
     oCacheLines := matchcontinue(iCacheLineIdx, iCacheLinesArray, iCacheLineSize, iCacheLines)
       case(_,_,_,_)
         equation
-          //print("createDetailedCacheMapInformations0: CacheLineIdx: " +& intString(iCacheLineIdx) +& "\n");
+          //print("createDetailedCacheMapInformations0: CacheLineIdx: " + intString(iCacheLineIdx) + "\n");
           cacheLineEntry = arrayGet(iCacheLinesArray, arrayLength(iCacheLinesArray) - iCacheLineIdx + 1);
           numBytesFree = iCacheLineSize-getNumOfUsedBytesByCacheLine(cacheLineEntry);
-          //print("\tNumber of free bytes: " +& intString(numBytesFree) +& "\n");
+          //print("\tNumber of free bytes: " + intString(numBytesFree) + "\n");
           true = intGt(numBytesFree,0);
           cacheLines = (iCacheLineIdx,numBytesFree)::iCacheLines;
         then cacheLines;
@@ -717,7 +717,7 @@ encapsulated package HpcOmMemory
           realScVarIdx = listGet(realSimVarIdxLst, 1) + listGet(realSimVarIdxLst, 2);
           iPositionMappingList = (realScVarIdx,arrayPosition,iArrayIdx)::iPositionMappingList;
           highestIdx = intMax(highestIdx, realScVarIdx);
-          //print("convertCacheMapToMemoryMap2: " +& ComponentReference.debugPrintComponentRefTypeStr(name) +& " [" +& intString(realScVarIdx) +& "] with array-pos: " +& intString(arrayPosition) +& " | start: " +& intString(start) +& "\n");
+          //print("convertCacheMapToMemoryMap2: " + ComponentReference.debugPrintComponentRefTypeStr(name) + " [" + intString(realScVarIdx) + "] with array-pos: " + intString(arrayPosition) + " | start: " + intString(start) + "\n");
         then ((iPositionMappingList,highestIdx));
       else
         equation
@@ -798,7 +798,7 @@ encapsulated package HpcOmMemory
   algorithm
     SimCodeVar.SIMVAR(name=name,index=index) := iSimVar;
     index := index + 1;
-    //print("fillSimVarHashTableTraverse: " +& ComponentReference.debugPrintComponentRefTypeStr(name) +& " with index: " +& intString(index+ iOffset) +& "\n");
+    //print("fillSimVarHashTableTraverse: " + ComponentReference.debugPrintComponentRefTypeStr(name) + " with index: " + intString(index+ iOffset) + "\n");
     oHt := BaseHashTable.add((name,{index,iOffset,iType}),iHt);
   end fillSimVarHashTableTraverse;
 
@@ -846,7 +846,7 @@ encapsulated package HpcOmMemory
         equation
           nodeIdx = arrayGet(iCompNodeMapping, compIdx);
           true = intGe(nodeIdx,0);
-          //print("getNodeSimCodeVarMapping0: compIdx: " +& intString(compIdx) +& " -> nodeIdx: " +& intString(nodeIdx) +& "\n");
+          //print("getNodeSimCodeVarMapping0: compIdx: " + intString(compIdx) + " -> nodeIdx: " + intString(nodeIdx) + "\n");
           eqSystem = listGet(iEqSystems,eqSysIdx);
           BackendDAE.EQSYSTEM(orderedVars=orderedVars) = eqSystem;
           BackendDAE.VARIABLES(varArr=varArr) = orderedVars;
@@ -854,13 +854,13 @@ encapsulated package HpcOmMemory
           SOME(var) = arrayGet(varOptArr,varIdx);
           BackendDAE.VAR(varName=varName) = var;
           varName = getModifiedVarName(var);
-          //print("  getNodeSimCodeVarMapping0: varIdx: " +& intString(varIdx) +& " (" +& ComponentReference.printComponentRefStr(varName) +& ")\n");
+          //print("  getNodeSimCodeVarMapping0: varIdx: " + intString(varIdx) + " (" + ComponentReference.printComponentRefStr(varName) + ")\n");
           scVarValues = BaseHashTable.get(varName,iSCVarNameHashTable);
           scVarIdx = List.first(scVarValues);
           scVarOffset = List.second(scVarValues);
           scVarIdx = scVarIdx + scVarOffset;
-          //print("  getNodeSimCodeVarMapping0: scVarIdx: " +& intString(scVarIdx) +& " (including scVarOffset: " +& intString(scVarOffset) +& ")\n");
-          //print("getNodeSimCodeVarMapping0: NodeIdx = " +& intString(nodeIdx) +& " mappingLength: " +& intString(arrayLength(iMapping)) +& "\n");
+          //print("  getNodeSimCodeVarMapping0: scVarIdx: " + intString(scVarIdx) + " (including scVarOffset: " + intString(scVarOffset) + ")\n");
+          //print("getNodeSimCodeVarMapping0: NodeIdx = " + intString(nodeIdx) + " mappingLength: " + intString(arrayLength(iMapping)) + "\n");
           tmpMapping = arrayGet(iMapping,nodeIdx);
           tmpMapping = scVarIdx :: tmpMapping;
           iMapping = arrayUpdate(iMapping,nodeIdx,tmpMapping);
@@ -872,7 +872,7 @@ encapsulated package HpcOmMemory
         then ((iMapping,varIdx+1));
       case(_,_,_,_,(iMapping,varIdx))
         equation
-          print("getNodeSimCodeVarMapping0: Failed to find scVar for varIdx " +& intString(varIdx) +& "\n");
+          print("getNodeSimCodeVarMapping0: Failed to find scVar for varIdx " + intString(varIdx) + "\n");
         then ((iMapping,varIdx+1));
     end matchcontinue;
   end getNodeSimCodeVarMapping0;
@@ -913,7 +913,7 @@ encapsulated package HpcOmMemory
   protected
     list<Integer> varIdcList;
   algorithm
-    //print("getEqSCVarMapping0: Handling equation:\n" +& BackendDump.equationString(iEquation) +& "\n");
+    //print("getEqSCVarMapping0: Handling equation:\n" + BackendDump.equationString(iEquation) + "\n");
     (_,(_,(_,oMapping))) := BackendEquation.traverseBackendDAEExpsEqn(iEquation,Expression.traverseSubexpressionsHelper, (createMemoryMapTraverse0, (iHt,{})));
     //((_,(_,oMapping))) := Expression.traverseExp(exp,createMemoryMapTraverse, (iHt,{}));
   end getEqSCVarMapping0;
@@ -937,8 +937,8 @@ encapsulated package HpcOmMemory
           //print("HpcOmSimCode.createMemoryMapTraverse: try to find componentRef\n");
           varInfo = BaseHashTable.get(componentRef, iHashTable);
           varIdx = List.first(varInfo) + List.second(varInfo);
-          //print("createMemoryMapTraverse0 " +& intString(varIdx) +& "\n");
-          //print("HpcOmSimCode.createMemoryMapTraverse: Found ref " +& ComponentReference.printComponentRefStr(componentRef) +& " with Index: " +& intString(varIdx) +& "\n");
+          //print("createMemoryMapTraverse0 " + intString(varIdx) + "\n");
+          //print("HpcOmSimCode.createMemoryMapTraverse: Found ref " + ComponentReference.printComponentRefStr(componentRef) + " with Index: " + intString(varIdx) + "\n");
           //ExpressionDump.dumpExp(iExp);
           oVarList = varIdx :: iVarList;
         then (iExp,(iHashTable,oVarList));
@@ -997,16 +997,16 @@ encapsulated package HpcOmMemory
           varName = getModifiedVarName(var);
           scVarValues = BaseHashTable.get(varName,iVarNameSCVarIdxMapping);
           varNameString = ComponentReference.printComponentRefStr(varName);
-          //print("getSimCodeVarNodeMapping0: SCC-Idx: " +& intString(compIdx) +& " name: " +& varNameString +& "\n");
+          //print("getSimCodeVarNodeMapping0: SCC-Idx: " + intString(compIdx) + " name: " + varNameString + "\n");
           scVarIdx = List.first(scVarValues);
           scVarOffset = List.second(scVarValues);
           scVarIdx = scVarIdx + scVarOffset;
           nodeIdx = arrayGet(iCompNodeMapping, compIdx);
           //oldVal = arrayGet(iClTaskMapping,clIdx);
-          //print("getCacheLineTaskMadumpComponentReferencepping0 scVarIdx: " +& intString(scVarIdx) +& "\n");
+          //print("getCacheLineTaskMadumpComponentReferencepping0 scVarIdx: " + intString(scVarIdx) + "\n");
           iScVarTaskMapping = arrayUpdate(iScVarTaskMapping,scVarIdx,nodeIdx);
-          //print("Variable " +& intString(varIdx) +& " (" +& ComponentReference.printComponentRefStr(varName) +& ") [SC-Var " +& intString(scVarIdx) +& "]: Node " +& intString(nodeIdx) +& "\n---------------------\n");
-          //print("Part of CL " +& intString(clIdx) +& " solved by node " +& intString(nodeIdx) +& "\n\n");
+          //print("Variable " + intString(varIdx) + " (" + ComponentReference.printComponentRefStr(varName) + ") [SC-Var " + intString(scVarIdx) + "]: Node " + intString(nodeIdx) + "\n---------------------\n");
+          //print("Part of CL " + intString(clIdx) + " solved by node " + intString(nodeIdx) + "\n\n");
         then ((iScVarTaskMapping,varIdx+1));
       case(_,_,_,_,(iScVarTaskMapping,varIdx))
         then ((iScVarTaskMapping,varIdx+1));
@@ -1095,10 +1095,10 @@ encapsulated package HpcOmMemory
           ((clIdx,_)) = arrayGet(iSCVarCLMapping,scVarIdx);
           oldVal = arrayGet(iClTaskMapping,clIdx);
           iClTaskMapping = arrayUpdate(iClTaskMapping,clIdx,nodeIdx::oldVal);
-          //print("getCacheLineTaskMapping0 scVarIdx: " +& intString(scVarIdx) +& "\n");
+          //print("getCacheLineTaskMapping0 scVarIdx: " + intString(scVarIdx) + "\n");
           iScVarTaskMapping = arrayUpdate(iScVarTaskMapping,scVarIdx,nodeIdx);
-          //print("Variable " +& intString(varIdx) +& " (" +& ComponentReference.printComponentRefStr(varName) +& ") [SC-Var " +& intString(scVarIdx) +& "]\n---------------------\n");
-          //print("Part of CL " +& intString(clIdx) +& " solved by node " +& intString(nodeIdx) +& "\n\n");
+          //print("Variable " + intString(varIdx) + " (" + ComponentReference.printComponentRefStr(varName) + ") [SC-Var " + intString(scVarIdx) + "]\n---------------------\n");
+          //print("Part of CL " + intString(clIdx) + " solved by node " + intString(nodeIdx) + "\n\n");
         then ((iClTaskMapping,iScVarTaskMapping,varIdx+1));
       case(_,_,_,_,(iClTaskMapping,iScVarTaskMapping,varIdx))
         then ((iClTaskMapping,iScVarTaskMapping,varIdx+1));
@@ -1182,10 +1182,10 @@ encapsulated package HpcOmMemory
       case(_,(nodeIdx, graphInfo))
         equation
           true = intGt(iVarIdx,0);
-          //print("appendCacheLineEdgeToGraphSolvedVar0: NodeIdx=" +& intString(nodeIdx) +& " varIdx=" +& intString(iVarIdx) +& "\n");
-          sourceId = "Node" +& intString(nodeIdx);
-          targetId = "CL_Var" +& intString(iVarIdx);
-          edgeId = "edge_CL_" +& sourceId +& "_" +& targetId;
+          //print("appendCacheLineEdgeToGraphSolvedVar0: NodeIdx=" + intString(nodeIdx) + " varIdx=" + intString(iVarIdx) + "\n");
+          sourceId = "Node" + intString(nodeIdx);
+          targetId = "CL_Var" + intString(iVarIdx);
+          edgeId = "edge_CL_" + sourceId + "_" + targetId;
           (graphInfo,(_,_)) = GraphML.addEdge(edgeId, targetId, sourceId, GraphML.COLOR_GRAY, GraphML.DASHED(), GraphML.LINEWIDTH_STANDARD, true, {}, (GraphML.ARROWNONE(),GraphML.ARROWNONE()), {}, graphInfo);
         then ((nodeIdx,graphInfo));
       else iNodeIdxGraphInfo;
@@ -1208,7 +1208,7 @@ encapsulated package HpcOmMemory
   algorithm
     CACHELINEMAP(idx=idx,entries=entries) := iCacheLineMap;
     (iTopGraphIdx, iAttThreadIdIdx) := iTopGraphAttThreadIdIdx;
-    (tmpGraphInfo, (_,_),(_,graphIdx)) := GraphML.addGroupNode("CL_Meta_" +& intString(idx), iTopGraphIdx, true, "CL" +& intString(idx), iGraphInfo);
+    (tmpGraphInfo, (_,_),(_,graphIdx)) := GraphML.addGroupNode("CL_Meta_" + intString(idx), iTopGraphIdx, true, "CL" + intString(idx), iGraphInfo);
     oGraphInfo := List.fold(entries, function appendCacheLineEntryToGraph(iCacheVariables=iCacheVariables, iSchedulerInfo=iSchedulerInfo, iTopGraphAttThreadIdIdx=(graphIdx,iAttThreadIdIdx), iScVarTaskMapping=iScVarTaskMapping, iVarNameSCVarIdxMapping=iVarNameSCVarIdxMapping), tmpGraphInfo);
   end appendCacheLineMapToGraph;
 
@@ -1239,8 +1239,8 @@ encapsulated package HpcOmMemory
     realScVarIdx := realScVarIdx + realScVarOffset;
     varString := ComponentReference.printComponentRefStr(name);
     taskIdx := arrayGet(iScVarTaskMapping,realScVarIdx);
-    //print("HpcOmSimCode.appendCacheLineNodesToGraphTraverse SCVarNode: " +& intString(realScVarIdx) +& " [" +& varString +& "] taskIdx: " +& intString(taskIdx) +& "\n");
-    nodeId := "CL_Var" +& intString(realScVarIdx);
+    //print("HpcOmSimCode.appendCacheLineNodesToGraphTraverse SCVarNode: " + intString(realScVarIdx) + " [" + varString + "] taskIdx: " + intString(taskIdx) + "\n");
+    nodeId := "CL_Var" + intString(realScVarIdx);
     threadText := appendCacheLineNodesToGraphTraverse0(taskIdx,iSchedulerInfo);
     nodeLabelText := intString(realScVarIdx);
     nodeLabel := GraphML.NODELABEL_INTERNAL(nodeLabelText, NONE(), GraphML.FONTPLAIN());
@@ -1259,8 +1259,8 @@ encapsulated package HpcOmMemory
       case(_,_)
         equation
           ((threadIdx,_,_)) = arrayGet(iSchedulerInfo,iTaskIdx);
-          //print("Task " +& intString(iTaskIdx) +& " is solved by thread " +& intString(threadIdx) +& "\n");
-          tmpString = "Th " +& intString(threadIdx);
+          //print("Task " + intString(iTaskIdx) + " is solved by thread " + intString(threadIdx) + "\n");
+          tmpString = "Th " + intString(threadIdx);
         then tmpString;
       else
         then "";
@@ -1293,10 +1293,10 @@ encapsulated package HpcOmMemory
     String iVarsString, iBytesString;
   algorithm
     CACHELINEMAP(idx=idx, entries=entries) := iCacheLineMap;
-    print("  CacheLineMap " +& intString(idx) +& " (" +& intString(listLength(entries)) +& " entries)\n");
+    print("  CacheLineMap " + intString(idx) + " (" + intString(listLength(entries)) + " entries)\n");
     ((iVarsString, iBytesString)) := List.fold1(entries, cacheLineEntryToString, iCacheVariables, ("",""));
-    print("    " +& iVarsString +& "\n");
-    print("    " +& iBytesString +& "\n");
+    print("    " + iVarsString + "\n");
+    print("    " + iBytesString + "\n");
     print("\n");
   end printCacheLineMap;
 
@@ -1308,10 +1308,10 @@ encapsulated package HpcOmMemory
     String iVarsString, iBytesString;
   algorithm
     CACHELINEMAP(idx=idx, entries=entries) := iCacheLineMap;
-    print("  CacheLineMap " +& intString(idx) +& " (" +& intString(listLength(entries)) +& " entries)\n");
+    print("  CacheLineMap " + intString(idx) + " (" + intString(listLength(entries)) + " entries)\n");
     ((iVarsString, iBytesString)) := List.fold(entries, cacheLineEntryToStringClean, ("",""));
-    print("    " +& iVarsString +& "\n");
-    print("    " +& iBytesString +& "\n");
+    print("    " + iVarsString + "\n");
+    print("    " + iBytesString + "\n");
     print("\n");
   end printCacheLineMapClean;
 
@@ -1333,10 +1333,10 @@ encapsulated package HpcOmMemory
     CACHELINEENTRY(start=start,dataType=dataType,size=size,scVarIdx=scVarIdx) := iCacheLineEntry;
     iVar := listGet(iCacheVariables, listLength(iCacheVariables) - scVarIdx + 1);
     scVarStr := dumpSimCodeVar(iVar);
-    iVarsString := iVarsString +& "| " +& scVarStr +& " ";
+    iVarsString := iVarsString + "| " + scVarStr + " ";
     iBytesStringNew := intString(start);
     iBytesStringNew := Util.stringPadRight(iBytesStringNew, 3 + stringLength(scVarStr), " ");
-    iBytesString := iBytesString +& iBytesStringNew;
+    iBytesString := iBytesString + iBytesStringNew;
     oString := (iVarsString,iBytesString);
   end cacheLineEntryToString;
 
@@ -1355,10 +1355,10 @@ encapsulated package HpcOmMemory
     (iVarsString, iBytesString) := iString;
     CACHELINEENTRY(start=start,dataType=dataType,size=size,scVarIdx=scVarIdx) := iCacheLineEntry;
     scVarStr := intString(scVarIdx);
-    iVarsString := iVarsString +& "| " +& scVarStr +& " ";
+    iVarsString := iVarsString + "| " + scVarStr + " ";
     iBytesStringNew := intString(start);
     iBytesStringNew := Util.stringPadRight(iBytesStringNew, 3 + stringLength(scVarStr), " ");
-    iBytesString := iBytesString +& iBytesStringNew;
+    iBytesString := iBytesString + iBytesStringNew;
     oString := (iVarsString,iBytesString);
   end cacheLineEntryToStringClean;
 
@@ -1385,7 +1385,7 @@ encapsulated package HpcOmMemory
     input Integer iNodeIdx;
     output Integer oNodeIdx;
   algorithm
-    print("Node " +& intString(iNodeIdx) +& " solves sc-vars: " +& stringDelimitList(List.map(iMappingEntry, intString), ",") +& "\n");
+    print("Node " + intString(iNodeIdx) + " solves sc-vars: " + stringDelimitList(List.map(iMappingEntry, intString), ",") + "\n");
     oNodeIdx := iNodeIdx + 1;
   end printNodeSimCodeVarMapping0;
 
@@ -1402,7 +1402,7 @@ encapsulated package HpcOmMemory
     input Integer iScVarIdx;
     output Integer oScVarIdx;
   algorithm
-    print("SCVar " +& intString(iScVarIdx) +& " is solved in task: " +& intString(iMappingEntry) +& "\n");
+    print("SCVar " + intString(iScVarIdx) + " is solved in task: " + intString(iMappingEntry) + "\n");
     oScVarIdx := iScVarIdx + 1;
   end printScVarTaskMapping0;
 
@@ -1417,7 +1417,7 @@ encapsulated package HpcOmMemory
     input Integer iCacheLineIdx;
     output Integer oCacheLineIdx;
   algorithm
-    print("Tasks that are writing to cacheline " +& intString(iCacheLineIdx) +& ": " +& stringDelimitList(List.map(iTasks, intString), ",") +& "\n");
+    print("Tasks that are writing to cacheline " + intString(iCacheLineIdx) + ": " + stringDelimitList(List.map(iTasks, intString), ",") + "\n");
     oCacheLineIdx := iCacheLineIdx + 1;
   end printCacheLineTaskMapping0;
 
@@ -1433,7 +1433,7 @@ encapsulated package HpcOmMemory
     input Integer iIdx;
     output Integer oIdx;
   algorithm
-    print("Scc " +& intString(iIdx) +& " is solved by node " +& intString(iMappingEntry) +& "\n");
+    print("Scc " + intString(iIdx) + " is solved by node " + intString(iMappingEntry) + "\n");
     oIdx := iIdx + 1;
   end printSccNodeMapping0;
 
@@ -1488,14 +1488,14 @@ encapsulated package HpcOmMemory
     DAE.ComponentRef cref;
   algorithm
     cref := removeSubscripts(iCref);
-    print("expandCref: " +& ComponentReference.printComponentRefStr(cref) +& "\n");
+    print("expandCref: " + ComponentReference.printComponentRefStr(cref) + "\n");
     dims := getCrefDims(iCref);
     dimElemCount := getDimElemCount(listReverse(iNumArrayElems),dims);
-    //print("expandCref: numArrayElems " +& intString(getNumArrayElems(iNumArrayElems, getCrefDims(iCref))) +& "\n");
+    //print("expandCref: numArrayElems " + intString(getNumArrayElems(iNumArrayElems, getCrefDims(iCref))) + "\n");
     elems := List.reduce(dimElemCount, intMul);
-    print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& " elems: " +& intString(elems) +& "\n");
+    print("expandCref: " + ComponentReference.printComponentRefStr(iCref) + " dims: " + intString(dims) + " elems: " + intString(elems) + "\n");
     //dims := listLength(iNumArrayElems);
-    print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " dims: " +& intString(dims) +& "[" +& intString(getCrefDims(iCref)) +& "] elems: " +& intString(elems) +& "\n");
+    print("expandCref: " + ComponentReference.printComponentRefStr(iCref) + " dims: " + intString(dims) + "[" + intString(getCrefDims(iCref)) + "] elems: " + intString(elems) + "\n");
     oCrefs := expandCref1(cref, elems, dimElemCount);
   end expandCref;
 
@@ -1533,7 +1533,7 @@ encapsulated package HpcOmMemory
     dims := if intLe(iDims,0) then listLength(iNumArrayElems) else iDims;
     dimList := List.intRange(dims);
     intNumArrayElems := List.map(iNumArrayElems,stringInt);
-    print("getDimElemCount: dims=" +& intString(dims) +& " elems=" +& intString(listLength(iNumArrayElems)) +& "\n");
+    print("getDimElemCount: dims=" + intString(dims) + " elems=" + intString(listLength(iNumArrayElems)) + "\n");
     oNumArrayElems := List.map1(dimList, List.getIndexFirst, intNumArrayElems);
   end getDimElemCount;
 
@@ -1576,9 +1576,9 @@ encapsulated package HpcOmMemory
         then tmpCrefs;
       else
         equation
-          //print("expandCref: " +& ComponentReference.printComponentRefStr(iCref) +& " elems: " +& intString(iElems) +& " dims: " +& intString(listLength(iDimElemCount)) +& "\n");
+          //print("expandCref: " + ComponentReference.printComponentRefStr(iCref) + " elems: " + intString(iElems) + " dims: " + intString(listLength(iDimElemCount)) + "\n");
           idxList = List.intRange(List.reduce(iDimElemCount, intMul));
-          print("expandCref1 idxList-count: " +& intString(listLength(idxList)) +& "\n");
+          print("expandCref1 idxList-count: " + intString(listLength(idxList)) + "\n");
           //ComponentReference.printComponentRefList(List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref));
           tmpCrefs = List.map2(idxList, createArrayIndexCref, iDimElemCount, iCref);
           ComponentReference.printComponentRefList(tmpCrefs);
@@ -1611,21 +1611,21 @@ encapsulated package HpcOmMemory
       case(_,_,(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),1)) //the first dimension represents the last c-array-index
         equation
           true = intLe(1, listLength(iDimElemCount));
-          print("createArrayIndexCref_impl case1 " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(1) +& "\n");
+          print("createArrayIndexCref_impl case1 " + ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(1) + "\n");
           ((componentRef,_)) = createArrayIndexCref_impl(iIdx, iDimElemCount, (componentRef,1));
         then ((DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),2));
 
       case(_,_,(DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),currentDim))
         equation
           true = intLe(currentDim, listLength(iDimElemCount));
-          print("createArrayIndexCref_impl case2 " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(currentDim) +& "\n");
+          print("createArrayIndexCref_impl case2 " + ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(currentDim) + "\n");
           ((componentRef,_)) = createArrayIndexCref_impl(iIdx, iDimElemCount, (componentRef,currentDim));
         then ((DAE.CREF_QUAL(ident,identType,subscriptLst,componentRef),currentDim+1));
 
       case(_,_,(DAE.CREF_IDENT(ident,identType,subscriptLst),1))
         equation
           true = intLe(1, listLength(iDimElemCount));
-          print("createArrayIndexCref_impl case3 | len(subscriptList)= " +& intString(listLength(subscriptLst)) +& " " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(1) +& "\n");
+          print("createArrayIndexCref_impl case3 | len(subscriptList)= " + intString(listLength(subscriptLst)) + " " + ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(1) + "\n");
           idxValue = intMod(iIdx-1,List.first(iDimElemCount)) + 1;
           subscriptLst = DAE.INDEX(DAE.ICONST(idxValue))::subscriptLst;
         then createArrayIndexCref_impl(iIdx, iDimElemCount, (DAE.CREF_IDENT(ident,identType,subscriptLst),2));
@@ -1634,9 +1634,9 @@ encapsulated package HpcOmMemory
         equation
           true = intLe(currentDim, listLength(iDimElemCount));
           //dimElemsPre = List.reduce(List.sublist(iDimElemCount, listLength(iDimElemCount) - currentDim + 2, currentDim - 1), intMul);
-          print("createArrayIndexCref_impl case4: listLen=" +& intString(listLength(iDimElemCount)) +& " currentDim= " +& intString(currentDim) +& "\n");
+          print("createArrayIndexCref_impl case4: listLen=" + intString(listLength(iDimElemCount)) + " currentDim= " + intString(currentDim) + "\n");
           dimElemsPre = List.reduce(List.sublist(iDimElemCount, 0, listLength(iDimElemCount) - currentDim + 1), intMul);
-          print("createArrayIndexCref_impl case4 | len(subscriptList)= " +& intString(listLength(subscriptLst)) +& " " +& ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) +& " currentDim " +& intString(currentDim) +& " dimElemsPre: " +& intString(dimElemsPre) +& "\n");
+          print("createArrayIndexCref_impl case4 | len(subscriptList)= " + intString(listLength(subscriptLst)) + " " + ComponentReference.printComponentRefStr(Util.tuple21(iRefCurrentDim)) + " currentDim " + intString(currentDim) + " dimElemsPre: " + intString(dimElemsPre) + "\n");
           dimElems = listGet(iDimElemCount, currentDim);
           idxValue = intMod(intDiv(iIdx - 1, dimElemsPre),dimElems) + 1;
           subscriptLst = DAE.INDEX(DAE.ICONST(idxValue))::subscriptLst;
@@ -1737,7 +1737,7 @@ encapsulated package HpcOmMemory
     SimCodeVar.SIMVAR(name=name) := iSimVar;
     (iCacheLineMapping,iSimVarIdx) := iCacheLineMappingSimVarIdx;
     clIdx := intDiv(iSimVarIdx-1,iNumCL)+1;
-    //print("Sc-Var" +& intString(iSimVarIdx) +& ":" +& ComponentReference.debugPrintComponentRefTypeStr(name) +& " is part of cl: " +& intString(clIdx) +& "\n");
+    //print("Sc-Var" + intString(iSimVarIdx) + ":" + ComponentReference.debugPrintComponentRefTypeStr(name) + " is part of cl: " + intString(clIdx) + "\n");
     iCacheLineMapping := arrayUpdate(iCacheLineMapping,iSimVarIdx,clIdx);
     oCacheLineMappingSimVarIdx := (iCacheLineMapping,iSimVarIdx+1);
   end getSCVarCacheLineMapping0;
@@ -1823,7 +1823,7 @@ encapsulated package HpcOmMemory
           //BackendDump.debugExpStr((exp,"\n"));
           //print("end Expression\n");
           (_,(_,varIdcList)) = Expression.traverseExp(exp,createMemoryMapTraverse0, (iHt,{}));
-          //print("Var List for simEquation " +& intString(index) +& ":");
+          //print("Var List for simEquation " + intString(index) + ":");
           //print(stringDelimitList, ","));
           //print("\n");
         then varIdcList;
@@ -1909,7 +1909,7 @@ encapsulated package HpcOmMemory
   protected
     array<list<Integer>> taskCLMapping;
   algorithm
-    //print("transposeCacheLineTaskMapping with nodeCount: " +& intString(iNumberOfTasks) +& "\n");
+    //print("transposeCacheLineTaskMapping with nodeCount: " + intString(iNumberOfTasks) + "\n");
     taskCLMapping := arrayCreate(iNumberOfTasks,{});
     ((oCLTaskMappingT,_)) := Array.fold(iCLTaskMapping,transposeCacheLineTaskMapping0,(taskCLMapping,1));
     //print("transposeCacheLineTaskMapping finished\n");
@@ -1940,7 +1940,7 @@ encapsulated package HpcOmMemory
     oTaskCLMapping := matchcontinue(iTaskIdx,iCLIdx,iTaskCLMapping)
       case(_,_,_)
         equation
-          //print("transposeCacheLineTaskMapping1 TaskIdx: " +& intString(iTaskIdx) +& " CacheLineIdx: " +& intString(iCLIdx) +& "\n");
+          //print("transposeCacheLineTaskMapping1 TaskIdx: " + intString(iTaskIdx) + " CacheLineIdx: " + intString(iCLIdx) + "\n");
           oldValue = arrayGet(iTaskCLMapping,iTaskIdx);
           oldValue = iCLIdx :: oldValue;
           tmpCLTaskMapping = arrayUpdate(iTaskCLMapping,iTaskIdx,oldValue);
@@ -1973,9 +1973,9 @@ encapsulated package HpcOmMemory
     oNodeIdx := matchcontinue(iSchedulerInfo,iSchedulerInfoFull,iGraphData,iCLTaskMapping,iTaskCLMapping,iNodeIdx)
       case(_,_,_,_,_,_)
         equation
-          print("evaluateCacheBehaviour0 for node " +& intString(iNodeIdx) +& "\n");
+          print("evaluateCacheBehaviour0 for node " + intString(iNodeIdx) + "\n");
           taskCacheLines = arrayGet(iTaskCLMapping,iNodeIdx);
-          //print("evaluateCacheBehaviour0 writing to cache lines: " +& stringDelimitList(List.map(taskCacheLines, intString), ",") +& "\n");
+          //print("evaluateCacheBehaviour0 writing to cache lines: " + stringDelimitList(List.map(taskCacheLines, intString), ",") + "\n");
           List.map4_0(taskCacheLines, evaluateCacheBehaviour1, (iGraphData,iNodeIdx), iSchedulerInfoFull, iSchedulerInfo, iCLTaskMapping);
         then iNodeIdx + 1;
       else iNodeIdx + 1;
@@ -2003,7 +2003,7 @@ encapsulated package HpcOmMemory
           otherTasksCL = List.removeOnTrue(iNodeIdx, intEq, otherTasksCL);
           //filter out tasks that belong to the same thread
           otherTasksCL = List.fold3(otherTasksCL, evaluateCacheBehaviour1Filter, iGraphData, iSchedulerInfoFull, (iNodeIdx,threadIdx),  {});
-          print("Conflicting tasks: " +& stringDelimitList(List.map(otherTasksCL, intString), ",") +& "\n");
+          print("Conflicting tasks: " + stringDelimitList(List.map(otherTasksCL, intString), ",") + "\n");
         then ();
       else ();
     end matchcontinue;
@@ -2056,8 +2056,8 @@ encapsulated package HpcOmMemory
   //  array<list<Integer>> knownEdges;
   //algorithm
   //  (eqIdx,knownEdges,graphInfo) := iGraphInfoIdx;
-  //  //print("appendCacheLineEdgesToGraphTraverse: Equation with Vars: " +& stringDelimitList(List.map(iEqVars, intString), ",") +& "\n");
-  //  //print("appendCacheLineEdgesToGraphTraverse " +& intString(eqIdx) +& " arrayLength: " +& intString(arrayLength(ieqCompMapping)) +& "\n");
+  //  //print("appendCacheLineEdgesToGraphTraverse: Equation with Vars: " + stringDelimitList(List.map(iEqVars, intString), ",") + "\n");
+  //  //print("appendCacheLineEdgesToGraphTraverse " + intString(eqIdx) + " arrayLength: " + intString(arrayLength(ieqCompMapping)) + "\n");
   //  ((compIdx,_,_)) := arrayGet(ieqCompMapping,eqIdx);
   //  nodeIdx := arrayGet(iCompNodeMapping, compIdx);
   //  graphInfo := List.fold4(iEqSCVars, appendCacheLineEdgeToGraph, eqIdx, nodeIdx, knownEdges, iScVarTaskMapping, graphInfo);
@@ -2079,29 +2079,29 @@ encapsulated package HpcOmMemory
   //  oGraphInfo := matchcontinue(iSCVarIdx,iEqIdx,iNodeIdx,iKnownEdges,iScVarTaskMapping,iGraphInfo)
   //    case(_,_,_,_,_,_)
   //      equation
-  //        //print("appendCacheLineEdgeToGraph: scVarFound " +& intString(iVarIdx) +& " [SC-Var " +& intString(scVarIdx) +& "]\n");
+  //        //print("appendCacheLineEdgeToGraph: scVarFound " + intString(iVarIdx) + " [SC-Var " + intString(scVarIdx) + "]\n");
   //        //knownEdgesOfNode = arrayGet(knownEdges,nodeIdx);
   //        //false = List.exist1(knownEdgesOfNode, intEq, clIdx);
   //        true = intGt(iNodeIdx,0);
   //        // Node solves scvar
   //        true = intEq(arrayGet(iScVarTaskMapping, iSCVarIdx), iNodeIdx);
   //        //knownEdges = arrayUpdate(knownEdges, nodeIdx, clIdx::knownEdgesOfNode);
-  //        edgeId = "CL_Edge" +& intString(iNodeIdx) +& intString(iSCVarIdx);
-  //        sourceId = "Node" +& intString(iNodeIdx);
-  //        //targetId = "CL_Meta_" +& intString(clIdx);
-  //        //print("appendCacheLineEdgeToGraph: Equation " +& intString(iEqIdx) +& " reads/writes SC-Var-idx: " +& intString(iSCVarIdx) +& " solved in node " +& intString(iNodeIdx) +& "\n");
-  //        targetId = "CL_Var" +& intString(iSCVarIdx);
+  //        edgeId = "CL_Edge" + intString(iNodeIdx) + intString(iSCVarIdx);
+  //        sourceId = "Node" + intString(iNodeIdx);
+  //        //targetId = "CL_Meta_" + intString(clIdx);
+  //        //print("appendCacheLineEdgeToGraph: Equation " + intString(iEqIdx) + " reads/writes SC-Var-idx: " + intString(iSCVarIdx) + " solved in node " + intString(iNodeIdx) + "\n");
+  //        targetId = "CL_Var" + intString(iSCVarIdx);
   //        (tmpGraphInfo,(_,_)) = GraphML.addEdge(edgeId, targetId, sourceId, GraphML.COLOR_GRAY, GraphML.DASHED(), GraphML.LINEWIDTH_STANDARD, true, {}, (GraphML.ARROWNONE(),GraphML.ARROWNONE()), {}, iGraphInfo);
   //      then tmpGraphInfo;
   //     case(_,_,_,_,_,_)
   //      equation
   //        //((nodeIdx,_,_)) = arrayGet(ieqCompMapping,iEqIdx);
-  //        //print("HpcOmSimCode.appendCacheLineEdgeToGraph: No node for scc " +& intString(sccIdx) +& " found\n");
+  //        //print("HpcOmSimCode.appendCacheLineEdgeToGraph: No node for scc " + intString(sccIdx) + " found\n");
   //      then iGraphInfo;
   //     else
   //      equation
   //        //Valid if there is no state in the model and a dummy state was added
-  //        //print("HpcOmSimCode.appendCacheLineEdgeToGraph: Equation " +& intString(iEqIdx) +& " is not part of a scc.\n");
+  //        //print("HpcOmSimCode.appendCacheLineEdgeToGraph: Equation " + intString(iEqIdx) + " is not part of a scc.\n");
   //        //print("HpcOmSimCode.appendCacheLineEdgeToGraph failed!\n");
   //      then iGraphInfo;
   //  end matchcontinue;

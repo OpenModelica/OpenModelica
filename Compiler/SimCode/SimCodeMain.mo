@@ -102,7 +102,7 @@ protected
   Integer numberOfIntervals;
 algorithm
   numberOfIntervals := if inumberOfIntervals <= 0 then 1 else inumberOfIntervals;
-  stepSize := (stopTime -. startTime) /. intReal(numberOfIntervals);
+  stepSize := (stopTime - startTime) / intReal(numberOfIntervals);
   simSettings := SimCode.SIMULATION_SETTINGS(
     startTime, stopTime, numberOfIntervals, stepSize, tolerance,
     method, options, outputFormat, variableFilter, cflags);
@@ -518,7 +518,7 @@ algorithm
     then ();
 
     case (_, _, _) equation
-      str = "Unknown template target: " +& target;
+      str = "Unknown template target: " + target;
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();
   end match;
@@ -574,7 +574,7 @@ algorithm
       then ();
     case (_,_,_)
       equation
-        str = "Unknown template target: " +& target;
+        str = "Unknown template target: " + target;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;

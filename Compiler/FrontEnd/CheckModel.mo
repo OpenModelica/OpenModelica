@@ -346,7 +346,7 @@ algorithm
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- CheckModel.countVarEqnSize failed on: " +& DAEDump.dumpElementsStr({elem}));
+        Debug.traceln("- CheckModel.countVarEqnSize failed on: " + DAEDump.dumpElementsStr({elem}));
       then
         fail();
   end match;
@@ -541,7 +541,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = DAEDump.ppStatementStr(inStatement);
-        Debug.traceln("- CheckModel.statementOutputs failed for " +& str);
+        Debug.traceln("- CheckModel.statementOutputs failed for " + str);
     then
       fail();
 

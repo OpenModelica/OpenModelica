@@ -196,7 +196,7 @@ algorithm
         //print(NFInstDump.connectionsStr(conn));
         //print("\n");
 
-        //print("NFInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
+        //print("NFInst took " + realString(System.getTimerIntervalTime()) + " seconds.\n");
 
         /*********************************************************************/
         /* --------------------------- EXPANSION --------------------------- */
@@ -208,7 +208,7 @@ algorithm
         dae = DAEUtil.appendToCompDae(dae, dae_conn);
 
         //print("\nEXPANDED FORM:\n\n");
-        //print(DAEDump.dumpStr(dae, func_tree) +& "\n");
+        //print(DAEDump.dumpStr(dae, func_tree) + "\n");
       then
         (dae, func_tree);
 
@@ -216,7 +216,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         name = Absyn.pathString(inClassPath);
-        Debug.traceln("NFInst.instClass failed on " +& name);
+        Debug.traceln("NFInst.instClass failed on " + name);
       then
         fail();
 
@@ -463,7 +463,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         name = SCode.elementName(inClassExtends);
-        Debug.traceln("NFInst.instClassExtends failed on " +& name);
+        Debug.traceln("NFInst.instClassExtends failed on " + name);
       then
         fail();
 
@@ -514,7 +514,7 @@ end instClassExtends;
 //      equation
 //        true = Flags.isSet(Flags.FAILTRACE);
 //        name = SCode.elementName(inClassExtends);
-//        Debug.traceln("NFInst.instClassExtends failed on " +& name);
+//        Debug.traceln("NFInst.instClassExtends failed on " + name);
 //      then
 //        fail();
 //
@@ -540,7 +540,7 @@ end instClassExtends;
 //      equation
 //        true = Flags.isSet(Flags.FAILTRACE);
 //        name = NFSCodeEnv.getEnvName(inClassEnv);
-//        Debug.traceln("NFInst.getClassExtendsBaseClass failed on " +& name);
+//        Debug.traceln("NFInst.getClassExtendsBaseClass failed on " + name);
 //      then
 //        fail();
 //
@@ -1882,8 +1882,8 @@ algorithm
         //bval = isBuiltinFunctionName(funcName);
         bval = false;
         str = if bval then "*builtin*" else "*regular*";
-        Debug.traceln("Failed to instantiate call to " +& str +& " function: " +&
-          Dump.printExpStr(inExp) +& " at position:" +& Error.infoStr(inInfo));
+        Debug.traceln("Failed to instantiate call to " + str + " function: " +
+          Dump.printExpStr(inExp) + " at position:" + Error.infoStr(inInfo));
       then
         fail();
 
@@ -2050,8 +2050,8 @@ algorithm
     else
       equation
         str = Dump.printExpStr(inExp);
-        str = "NFInst.instExp: Unhandled Expression FIXME: " +& str;
-        print(str +& "\n");
+        str = "NFInst.instExp: Unhandled Expression FIXME: " + str;
+        print(str + "\n");
       then
         (DAE.SCONST(str),inGlobals);
 
@@ -2142,7 +2142,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFInst.instCref failed on " +& Dump.printComponentRefStr(inCref));
+        Debug.traceln("- NFInst.instCref failed on " + Dump.printComponentRefStr(inCref));
       then
         fail();
 
@@ -2392,7 +2392,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         cref_str = ComponentReference.printComponentRefStr(inCref);
-        Debug.traceln("- NFInst.instPackageConstant failed on " +& cref_str);
+        Debug.traceln("- NFInst.instPackageConstant failed on " + cref_str);
       then
         fail();
 
@@ -2673,8 +2673,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("NFInst.instFunction failed: " +& Absyn.printComponentRefStr(inName) +&
-          " at position: " +& Error.infoStr(inInfo));
+        Debug.traceln("NFInst.instFunction failed: " + Absyn.printComponentRefStr(inName) +
+          " at position: " + Error.infoStr(inInfo));
         //(_, _, _) = instFunction(inName, inEnv, inPrefix, inInfo, inGlobals);
       then fail();
   end matchcontinue;
@@ -3022,8 +3022,8 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         name = NFInstUtil.getClassName(inClass);
-        Debug.traceln("- NFInst.getFunctionParameters failed for: " +& Absyn.pathString(name) +& ".\n" +&
-        NFInstDump.modelStr(Absyn.pathString(name), inClass) +& "\n");
+        Debug.traceln("- NFInst.getFunctionParameters failed for: " + Absyn.pathString(name) + ".\n" +
+        NFInstDump.modelStr(Absyn.pathString(name), inClass) + "\n");
       then
         fail();
 
@@ -3204,8 +3204,8 @@ protected function fillFunctionSlots
 protected
   list<FunctionSlot> slots;
 algorithm
-  //print(Error.infoStr(inInfo) +& " Function: " +& Absyn.pathString(inFuncName) +& ":\n");
-  //print(Util.stringDelimitListNonEmptyElts(List.map(inInputs, NFInstUtil.printElement), "\n\t") +& "\n");
+  //print(Error.infoStr(inInfo) + " Function: " + Absyn.pathString(inFuncName) + ":\n");
+  //print(Util.stringDelimitListNonEmptyElts(List.map(inInputs, NFInstUtil.printElement), "\n\t") + "\n");
   slots := makeFunctionSlots(inInputs, inPositionalArgs, {}, inFuncName, inInfo);
   slots := List.fold(inNamedArgs, fillFunctionSlot, slots);
   outArgs := List.map(slots, extractFunctionSlotExp);
@@ -3265,10 +3265,10 @@ algorithm
     case ({}, _ :: _, _, _, _)
       equation
         // TODO: Make this a proper error message.
-        print(Error.infoStr(inInfo) +& ": ");
+        print(Error.infoStr(inInfo) + ": ");
         name = Absyn.pathString(inFuncName);
-        print("NFInst.makeFunctionSlots: Too many arguments to function " +&
-          name +& "\n");
+        print("NFInst.makeFunctionSlots: Too many arguments to function " +
+          name + "\n");
       then
         fail();
 
@@ -3295,7 +3295,7 @@ algorithm
 
       case ((arg_name, _), {})
         equation
-          print("No matching slot " +& arg_name +& "\n");
+          print("No matching slot " + arg_name + "\n");
         then
           fail();
 
@@ -3333,7 +3333,7 @@ algorithm
     // Found a matching slot that is already filled, show error.
     case (true, _, NFInstTypes.SLOT(name = name, arg = SOME(arg)), _)
       equation
-        print("Slot " +& name +& " is already filled with: " +& ExpressionDump.printExpStr(arg) +& "\n");
+        print("Slot " + name + " is already filled with: " + ExpressionDump.printExpStr(arg) + "\n");
       then
         fail();
 
@@ -3353,7 +3353,7 @@ algorithm
     case NFInstTypes.SLOT(defaultValue = SOME(exp)) then exp;
     case NFInstTypes.SLOT(name = name)
       equation
-        print("Slot " +& name +& " has no value.\n");
+        print("Slot " + name + " has no value.\n");
       then
         fail();
 
@@ -3495,8 +3495,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFInst.markParamAsStructural failed on " +&
-          ComponentReference.printComponentRefStr(inCref) +& "\n");
+        Debug.traceln("- NFInst.markParamAsStructural failed on " +
+          ComponentReference.printComponentRefStr(inCref) + "\n");
       then
         fail();
 
@@ -3748,7 +3748,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = SCodeDump.equationStr(inEquation,SCodeDump.defaultOptions);
-        Debug.traceln("Unknown or failed equation in NFInst.instEEquation: " +& str);
+        Debug.traceln("Unknown or failed equation in NFInst.instEEquation: " + str);
       then
         fail();
 
@@ -3870,7 +3870,7 @@ algorithm
 
     else
       equation
-        print("NFInst.instStatement failed: " +& SCodeDump.statementStr(statement,SCodeDump.defaultOptions) +& "\n");
+        print("NFInst.instStatement failed: " + SCodeDump.statementStr(statement,SCodeDump.defaultOptions) + "\n");
       then fail();
 
   end match;
@@ -4090,8 +4090,8 @@ end instWhenBranch;
 //    else
 //      equation
 //        true = Flags.isSet(Flags.FAILTRACE);
-//        Debug.traceln("NFInst.instConditionalComponent failed on " +&
-//          NFInstDump.componentStr(inComponent) +& "\n");
+//        Debug.traceln("NFInst.instConditionalComponent failed on " +
+//          NFInstDump.componentStr(inComponent) + "\n");
 //      then
 //        fail();
 //

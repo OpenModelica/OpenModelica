@@ -185,7 +185,7 @@ algorithm
     // failure
     case (g, _, _, _, SOME(_))
       equation
-        print("FLookup.id failed for: " +& inName +& " in: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& "\n");
+        print("FLookup.id failed for: " + inName + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
         fail();
 
@@ -229,8 +229,8 @@ algorithm
     // failure
     case (g, _, _, _, SOME(_))
       equation
-        print("FLookup.search failed for: " +& inName +& " in: " +&
-           FNode.toPathStr(FNode.fromRef(List.first(inRefs))) +& "\n");
+        print("FLookup.search failed for: " + inName + " in: " +
+           FNode.toPathStr(FNode.fromRef(List.first(inRefs))) + "\n");
       then
         fail();
 
@@ -278,7 +278,7 @@ algorithm
         failure((_, _) = name(g, r, rest, inOptions, inMsg));
         // add an assersion node that it should
         // be a name in here and return that
-        s = "missing: " +& Absyn.pathString(rest) +& " in scope: " +& FNode.toPathStr(FNode.fromRef(r));
+        s = "missing: " + Absyn.pathString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
         // make the assert node have the name of the missing path part
         (g, r) = FGraphBuild.mkAssertNode(Absyn.pathFirstIdent(rest), s, r, g);
       then
@@ -294,7 +294,7 @@ algorithm
 
     case (g, _, _, _, SOME(_))
       equation
-        print("FLookup.name failed for: " +& Absyn.pathString(inPath) +& " in: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& "\n");
+        print("FLookup.name failed for: " + Absyn.pathString(inPath) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
         fail();
 
@@ -327,10 +327,10 @@ algorithm
         r = FNode.child(inRef, FNode.refNodeName);
         // get the target from ref
         r = FNode.target(FNode.fromRef(r));
-        // print("Searching for: " +& inName +& " in class extends target:\n\t" +& FNode.toPathStr(FNode.fromRef(r)) +& "\n");
+        // print("Searching for: " + inName + " in class extends target:\n\t" + FNode.toPathStr(FNode.fromRef(r)) + "\n");
         // search in type target
         (g, r) = id(g, r, inName, ignoreParents, inMsg);
-        // print("Found it in: " +& FNode.toPathStr(FNode.fromRef(r)) +& "\n");
+        // print("Found it in: " + FNode.toPathStr(FNode.fromRef(r)) + "\n");
       then
         (g, r);
 
@@ -341,7 +341,7 @@ algorithm
         // get the original parent
         r = FNode.original(FNode.parents(FNode.fromRef(inRef)));
         (g, r) = id(g, r, inName, ignoreNothing, inMsg);
-        // print("Found it in: " +& FNode.toPathStr(FNode.fromRef(r)) +& "\n");
+        // print("Found it in: " + FNode.toPathStr(FNode.fromRef(r)) + "\n");
       then
         (g, r);
 
@@ -351,7 +351,7 @@ algorithm
         refs = FNode.extendsRefs(inRef);
         true = List.isNotEmpty(refs);
         refs = List.map(List.map(refs, FNode.fromRef), FNode.target);
-        // print("Searching for: " +& inName +& " in extends targets:\n\t" +& stringDelimitList(List.map(List.map(refs, FNode.fromRef), FNode.toPathStr), "\n\t") +& "\n");
+        // print("Searching for: " + inName + " in extends targets:\n\t" + stringDelimitList(List.map(List.map(refs, FNode.fromRef), FNode.toPathStr), "\n\t") + "\n");
         (g, r) = search(g, refs, inName, ignoreParentsAndImports, inMsg);
       then
         (g, r);
@@ -557,7 +557,7 @@ algorithm
         true = FNode.isRefClass(r) or FNode.isRefComponent(r);
         // add an assersion node that it should
         // be a name in here and return that
-        s = "missing: " +& Absyn.crefString(rest) +& " in scope: " +& FNode.toPathStr(FNode.fromRef(r));
+        s = "missing: " + Absyn.crefString(rest) + " in scope: " + FNode.toPathStr(FNode.fromRef(r));
         // make the assert node have the name of the missing cref part
         (g, r) = FGraphBuild.mkAssertNode(Absyn.crefFirstIdent(rest), s, r, g);
       then
@@ -574,7 +574,7 @@ algorithm
 
     case (g, _, _, _, SOME(_))
       equation
-        print("FLookup.cr failed for: " +& Absyn.crefString(inCref) +& " in: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& "\n");
+        print("FLookup.cr failed for: " + Absyn.crefString(inCref) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
         fail();
 

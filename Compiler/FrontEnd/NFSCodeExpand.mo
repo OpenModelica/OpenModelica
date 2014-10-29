@@ -106,8 +106,8 @@ algorithm
         tree = DAEUtil.addDaeFunction(funcs, tree);
 
         (_,_) = countElements(el, 0, 0);
-        //print("\nFound " +& intString(vars) +& " components and " +&
-        //  intString(params) +& " parameters.\n");
+        //print("\nFound " + intString(vars) + " components and " +
+        //  intString(params) + " parameters.\n");
       then
         (dae, tree);
 
@@ -226,8 +226,8 @@ algorithm
     case (NFInstTypes.CONDITIONAL_ELEMENT(component = comp), _, _, _)
       equation
         path = NFInstUtil.getComponentName(comp);
-        err_msg = "NFSCodeExpand.expandElement got unresolved conditional component " +&
-          Absyn.pathString(path) +& "\n";
+        err_msg = "NFSCodeExpand.expandElement got unresolved conditional component " +
+          Absyn.pathString(path) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
         inAccumEl;
@@ -266,16 +266,16 @@ algorithm
 
     case (NFInstTypes.UNTYPED_COMPONENT(name = name, info = info), _, _, _)
       equation
-        err_msg = "NFSCodeExpand.expandComponent got untyped component " +&
-          Absyn.pathString(name) +& " at position: " +& Error.infoStr(info) +& "\n";
+        err_msg = "NFSCodeExpand.expandComponent got untyped component " +
+          Absyn.pathString(name) + " at position: " + Error.infoStr(info) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
         fail();
 
     case (NFInstTypes.CONDITIONAL_COMPONENT(name = name, info = info), _, _, _)
       equation
-        err_msg = "NFSCodeExpand.expandComponent got unresolved conditional component " +&
-          Absyn.pathString(name) +& " at position: " +& Error.infoStr(info) +& "\n";
+        err_msg = "NFSCodeExpand.expandComponent got unresolved conditional component " +
+          Absyn.pathString(name) + " at position: " + Error.infoStr(info) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
         inAccumEl;
@@ -342,7 +342,7 @@ algorithm
     else
       equation
         dim_str = ExpressionDump.dimensionString(List.first(inDimensions));
-        print("Unknown dimension " +& dim_str +& " in NFSCodeExpand.expandArray\n");
+        print("Unknown dimension " + dim_str + " in NFSCodeExpand.expandArray\n");
       then
         fail();
 
@@ -480,13 +480,13 @@ algorithm
 
     case (NFInstTypes.UNTYPED_COMPONENT(name = name), _, _)
       equation
-        print("Got untyped component " +& Absyn.pathString(name) +& "\n");
+        print("Got untyped component " + Absyn.pathString(name) + "\n");
       then
         fail();
 
     case (NFInstTypes.CONDITIONAL_COMPONENT(name = name), _, _)
       equation
-        print("Got conditional component " +& Absyn.pathString(name) +& "\n");
+        print("Got conditional component " + Absyn.pathString(name) + "\n");
       then
         fail();
 
@@ -640,18 +640,18 @@ algorithm
 
     case (_, {}, _, _)
       equation
-        str = "NFSCodeExpand.subscriptCref ran out of subscripts on cref: " +&
-          ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
-          ComponentReference.printComponentRefStr(inCref) +& "!\n";
+        str = "NFSCodeExpand.subscriptCref ran out of subscripts on cref: " +
+          ComponentReference.printComponentRefStr(inCrefFull) + " reached: " +
+          ComponentReference.printComponentRefStr(inCref) + "!\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         inCref;
 
     case (DAE.CREF_IDENT(ident = _), _, _, _)
       equation
-        str = "NFSCodeExpand.subscriptCref got too many subscripts on cref: " +&
-          ComponentReference.printComponentRefStr(inCrefFull) +& " reached: " +&
-          ComponentReference.printComponentRefStr(inCref) +& "!\n";
+        str = "NFSCodeExpand.subscriptCref got too many subscripts on cref: " +
+          ComponentReference.printComponentRefStr(inCrefFull) + " reached: " +
+          ComponentReference.printComponentRefStr(inCref) + "!\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         inCref;
@@ -794,8 +794,8 @@ algorithm
 
     else
       equation
-        print("NFSCodeExpand.expandEquation failed on equation:\n" +&
-            NFInstDump.equationStr(inEquation) +& "\n");
+        print("NFSCodeExpand.expandEquation failed on equation:\n" +
+            NFInstDump.equationStr(inEquation) + "\n");
       then
         inAccumEl;
 

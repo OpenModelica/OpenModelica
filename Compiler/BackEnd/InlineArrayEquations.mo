@@ -247,7 +247,7 @@ algorithm
     else equation
       // show only on failtrace!
       true = Flags.isSet(Flags.FAILTRACE);
-      Debug.traceln("- InlineArrayEquations.generateScalarArrayEqns2 failed on: " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& "\n");
+      Debug.traceln("- InlineArrayEquations.generateScalarArrayEqns2 failed on: " + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\n");
     then fail();
   end matchcontinue;
 end generateScalarArrayEqns2;

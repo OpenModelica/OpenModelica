@@ -212,7 +212,7 @@ algorithm
     else
       equation
         str = toStr(inPrefix);
-        str = str +& "." +& inString;
+        str = str + "." + inString;
       then
         str;
 
@@ -339,7 +339,7 @@ algorithm
 
     case PREFIX(name = name, restPrefix = rest_prefix)
       equation
-        str = toStr(rest_prefix) +& "." +& name;
+        str = toStr(rest_prefix) + "." + name;
       then
         str;
 
@@ -362,13 +362,13 @@ algorithm
 
     case EMPTY_PREFIX(classPath = SOME(path))
       equation
-        str = "E(" +& Absyn.pathLastIdent(path) +& ")";
+        str = "E(" + Absyn.pathLastIdent(path) + ")";
       then
         str;
 
     case PREFIX(name = name, restPrefix = rest_prefix)
       equation
-        str = toStrWithEmpty(rest_prefix) +& "." +& name;
+        str = toStrWithEmpty(rest_prefix) + "." + name;
       then
         str;
 

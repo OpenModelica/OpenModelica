@@ -135,10 +135,10 @@ algorithm
         (binds as _::_) = matchesFrontEnd(inExp, from, {});
         outExp = rewriteExpFrontEnd(to, binds);
         b = boolNot(referenceEq(inExp, outExp));
-        print("FrontEnd Exp:     " +& Dump.printExpStr(inExp) +& "\n" +&
-              "FrontEnd From:    " +& Dump.printExpStr(from) +& "\n" +&
-              "FrontEnd To:      " +& Dump.printExpStr(to) +& "\n" +&
-              "FrontEnd Rewrite: " +& Dump.printExpStr(outExp) +& "\n---------\n");
+        print("FrontEnd Exp:     " + Dump.printExpStr(inExp) + "\n" +
+              "FrontEnd From:    " + Dump.printExpStr(from) + "\n" +
+              "FrontEnd To:      " + Dump.printExpStr(to) + "\n" +
+              "FrontEnd Rewrite: " + Dump.printExpStr(outExp) + "\n---------\n");
       then
         (outExp, b);
 
@@ -593,10 +593,10 @@ algorithm
         (binds as _::_) = matchesBackEnd(inExp, from, {});
         outExp = rewriteExpBackEnd(to, binds);
         b = boolNot(referenceEq(inExp, outExp));
-        print("BackEnd Exp:     " +& ExpressionDump.printExpStr(inExp) +& "\n" +&
-              "BackEnd From:    " +& ExpressionDump.printExpStr(from) +& "\n" +&
-              "BackEnd To:      " +& ExpressionDump.printExpStr(to) +& "\n" +&
-              "BackEnd Rewrite: " +& ExpressionDump.printExpStr(outExp) +& "\n---------\n");
+        print("BackEnd Exp:     " + ExpressionDump.printExpStr(inExp) + "\n" +
+              "BackEnd From:    " + ExpressionDump.printExpStr(from) + "\n" +
+              "BackEnd To:      " + ExpressionDump.printExpStr(to) + "\n" +
+              "BackEnd Rewrite: " + ExpressionDump.printExpStr(outExp) + "\n---------\n");
       then
         (outExp, b);
 
@@ -1093,7 +1093,7 @@ algorithm
 
     case _
       equation
-        Error.addInternalError("Unable to parse rewrite rules file: " +& inFile);
+        Error.addInternalError("Unable to parse rewrite rules file: " + inFile);
         setGlobalRoot(Global.rewriteRulesIndex, NONE());
       then
         ();
@@ -1181,7 +1181,7 @@ algorithm
              Absyn.FUNCTIONARGS({from, to}, {}))
            )::rest, _)
       equation
-        print("FrontEnd rule: " +& Dump.printExpStr(from) +& " -> " +& Dump.printExpStr(to) +& "\n");
+        print("FrontEnd rule: " + Dump.printExpStr(from) + " -> " + Dump.printExpStr(to) + "\n");
         acc = stmtsToRules(rest, FRONTEND_RULE(from, to)::inAcc);
       then
         acc;
@@ -1193,7 +1193,7 @@ algorithm
              Absyn.FUNCTIONARGS({from, to}, {}))
            )::rest, _)
       equation
-        print("FrontEnd rule: " +& Dump.printExpStr(from) +& " -> " +& Dump.printExpStr(to) +& "\n");
+        print("FrontEnd rule: " + Dump.printExpStr(from) + " -> " + Dump.printExpStr(to) + "\n");
         acc = stmtsToRules(rest, FRONTEND_RULE(from, to)::inAcc);
       then
         acc;
@@ -1205,14 +1205,14 @@ algorithm
              Absyn.FUNCTIONARGS({from, to}, {}))
            )::rest, _)
       equation
-        print("BackEnd rule: " +& Dump.printExpStr(from) +& " -> " +& Dump.printExpStr(to) +& "\n");
+        print("BackEnd rule: " + Dump.printExpStr(from) + " -> " + Dump.printExpStr(to) + "\n");
         acc = stmtsToRules(rest, BACKEND_RULE(from, to)::inAcc);
       then
         acc;
 
     case (s::_, _)
       equation
-        Error.addInternalError("Unable to parse rewrite rule: " +&
+        Error.addInternalError("Unable to parse rewrite rule: " +
           GlobalScriptDump.printIstmtStr(s));
       then
         fail();

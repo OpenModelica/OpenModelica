@@ -3059,7 +3059,7 @@ algorithm
     case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),_,{outVar1})
       equation
         true = listMember(name,knownExternalCFunctions);
-        true = outVar2 ==& outVar1;
+        true = outVar2 == outVar1;
         argsStr = List.mapMap(args, Absyn.expCref, Absyn.crefIdent);
         equality(argsStr = inVars);
       then name;

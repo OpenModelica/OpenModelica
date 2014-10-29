@@ -535,7 +535,7 @@ algorithm
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSB1 failed in equation " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSB1 failed in equation " + intString(i));
       then
         fail();
 
@@ -580,7 +580,7 @@ algorithm
         BFSBphase1(b,rest,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,queue1,c::inVisitedColums);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSBphase failed in equation " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSBphase failed in equation " + intString(i));
       then
         fail();
 
@@ -664,7 +664,7 @@ algorithm
         (queue2,b);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSBtraverseRows failed in equation " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSBtraverseRows failed in equation " + intString(i));
       then
         fail();
 
@@ -865,7 +865,7 @@ algorithm
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function DFSB1 failed in equation " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function DFSB1 failed in equation " + intString(i));
       then
         fail();
 
@@ -902,7 +902,7 @@ algorithm
         DFSBtraverseRows(rows,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function DFSBphase failed in equation " +& intString(c));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function DFSBphase failed in equation " + intString(c));
       then
         fail();
 
@@ -1129,7 +1129,7 @@ algorithm
         (ass1_1,ass2_1,syst,shared,arg);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function MC21A1 failed in equation " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function MC21A1 failed in equation " + intString(i));
       then
         fail();
   end matchcontinue;
@@ -1227,7 +1227,7 @@ algorithm
         MC21Achecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function MC21Aphase failed in equation " +& intString(c));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function MC21Aphase failed in equation " + intString(c));
       then
         fail();
   end match;
@@ -1632,7 +1632,7 @@ algorithm
         PFchecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFphase failed in equation " +& intString(c));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFphase failed in equation " + intString(c));
       then
         fail();
 
@@ -1984,7 +1984,7 @@ algorithm
         PFPluschecklookahead(b,listReverse(rows),stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFPlusphase failed in equation " +& intString(c));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFPlusphase failed in equation " + intString(c));
       then
         fail();
 
@@ -2419,7 +2419,7 @@ algorithm
         HKBFS(rest,nv,ne,m,mT,rowmarks,i,level,ll,ass1,ass2,rows);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFS failed in phase " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFS failed in phase " + intString(i));
       then
         fail();
   end match;
@@ -2479,7 +2479,7 @@ algorithm
         (rows,ll);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFSBphase failed in phase " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFSBphase failed in phase " + intString(i));
       then
         fail();
 
@@ -2579,7 +2579,7 @@ algorithm
         (queue1,rowstpl,b);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFStraverseRows failed in phase " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFStraverseRows failed in phase " + intString(i));
       then
         fail();
 
@@ -2619,7 +2619,7 @@ algorithm
         HKDFS(rest,i,nv,ne,m,mT,collummarks,level,ass1,ass2,ur);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDFS failed in phase " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDFS failed in phase " + intString(i));
       then
         fail();
 
@@ -2657,7 +2657,7 @@ algorithm
         HKDFStraverseCollums(collums,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDFSphase failed in phase " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDFSphase failed in phase " + intString(i));
       then
         fail();
   end match;
@@ -2983,7 +2983,7 @@ algorithm
         ();
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDWDFS failed in phase " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDWDFS failed in phase " + intString(i));
       then
         fail();
 
@@ -3019,7 +3019,7 @@ algorithm
         HKDWDFStraverseCollums(collums,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDWDFSphase failed in phase " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDWDFSphase failed in phase " + intString(i));
       then
         fail();
   end match;
@@ -3708,7 +3708,7 @@ algorithm
         (i_1,b);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPDFSphase failed in phase " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPDFSphase failed in phase " + intString(i));
       then
         fail();
   end match;
@@ -4462,7 +4462,7 @@ algorithm
         ();
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function matchSingleVars failed in equation " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function matchSingleVars failed in equation " + intString(i));
       then
         fail();
   end matchcontinue;
@@ -4527,7 +4527,7 @@ algorithm
         cheapmatching(i+1,nv,ne,m,mT,ass1,ass2,i::inUnMatched);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function cheapmatching failed in equation " +& intString(i));
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function cheapmatching failed in equation " + intString(i));
       then
         fail();
   end matchcontinue;
@@ -5685,9 +5685,9 @@ algorithm
         e1 = mapIncRowEqn[e];
         eqns = mapEqnIncRow[e1];
         _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
-        //  print("Seach for unassigned Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
+        //  print("Seach for unassigned Eqns " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
         eqns = getEqnsforIndexReductionphase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
-        //  print("Found Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
+        //  print("Found Eqns " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
         Array.appendToElement(mark,eqns,inSubsets);
       then
         getEqnsforIndexReduction1(rest,m,mT,mark+1,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets);
@@ -5722,7 +5722,7 @@ algorithm
       equation
         // traverse all adiacent rows
         rows = List.select(m[e], Util.intPositive);
-        //  print("search in Rows " +& stringDelimitList(List.map(rows,intString),", ") +& " from " +& intString(e) +& "\n");
+        //  print("search in Rows " + stringDelimitList(List.map(rows,intString),", ") + " from " + intString(e) + "\n");
         eqns = getEqnsforIndexReductiontraverseRows(rows,{},m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
       then
         getEqnsforIndexReductionphase(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
@@ -5761,9 +5761,9 @@ algorithm
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is matched
-        // print("check Row " +& intString(r) +& "\n");
+        // print("check Row " + intString(r) + "\n");
         rc = ass2[r];
-        // print("check Colum " +& intString(rc) +& "\n");
+        // print("check Colum " + intString(rc) + "\n");
         true = intGt(rc,0);
         mrc = colummarks[rc];
         false = intEq(mrc,mark);
@@ -5775,7 +5775,7 @@ algorithm
         e = mapIncRowEqn[rc];
         eqns = mapEqnIncRow[e];
         _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
-        //  print("add to nextQueue and Queue " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
+        //  print("add to nextQueue and Queue " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
         nextqueue = listAppend(nextColums,eqns);
         queue = listAppend(inEqns,eqns);
         //(nextqueue,queue) = getEqnsforIndexReductiontraverseColums(mT[r],colummarks,ass1,rc::nextColums,rc::inEqns);
@@ -5981,7 +5981,7 @@ protected
 algorithm
   ne := BackendDAEUtil.systemSize(isyst);
   nv := BackendVariable.daenumVariables(isyst);
-  print("Systemsize: " +& intString(ne) +& "\n");
+  print("Systemsize: " + intString(ne) + "\n");
   matchingAlgorithms := {("OMCNew:   ",DFSLH),
                          ("BFSB:     ",BFSB),
                          ("DFSB:     ",DFSB),
@@ -6000,7 +6000,7 @@ algorithm
   matchingExternalsetIncidenceMatrix(nv,ne,m);
   cheapID := 3;
   t := System.realtimeTock(ClockIndexes.RT_PROFILER0);
-  print("SetMEXT:     " +& realString(t) +& "\n");
+  print("SetMEXT:     " + realString(t) + "\n");
   extmatchingAlgorithms := {("DFSEXT:   ",1),
                             ("BFSEXT:   ",2),
                             ("MC21AEXT: ",3),
@@ -6015,10 +6015,10 @@ algorithm
   vec1 := arrayCreate(ne,-1);
   vec2 := arrayCreate(nv,-1);
   BackendDAEEXT.getAssignment(vec1,vec2);
-  print("GetAssEXT:   " +& realString(t) +& "\n");
+  print("GetAssEXT:   " + realString(t) + "\n");
   System.realtimeTick(ClockIndexes.RT_PROFILER0);
   //unassigned := checkAssignment(1,ne,vec1,vec2,{});
-  //print("Unnasigned: " +& intString(listLength(unassigned)) +& "\n");
+  //print("Unnasigned: " + intString(listLength(unassigned)) + "\n");
   //print("Unassigned:\n");
   //BackendDump.debuglst((unassigned,intString,"\n","\n"));
   //BackendDump.dumpMatching(vec1);
@@ -6046,13 +6046,13 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         testMatchingAlgorithm(10,matchingAlgorithm,isyst,ishared,inMatchingOptions);
         t = System.realtimeTock(ClockIndexes.RT_PROFILER0);
-        print(str +& realString(realDiv(t,10.0)) +& "\n");
+        print(str + realString(realDiv(t,10.0)) + "\n");
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
       then
         ();
     case ((str,_)::rest,_,_,_)
       equation
-        print(str +& "failed!\n");
+        print(str + "failed!\n");
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
       then
         ();
@@ -6106,13 +6106,13 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         testExternMatchingAlgorithm(10,matchingAlgorithm,cheapId,nv,ne);
         t = System.realtimeTock(ClockIndexes.RT_PROFILER0);
-        print(str +& realString(realDiv(t,10.0)) +& "\n");
+        print(str + realString(realDiv(t,10.0)) + "\n");
         testExternMatchingAlgorithms1(rest,cheapId,nv,ne);
       then
         ();
     case ((str,_)::rest,_,_,_)
       equation
-        print(str +& "failed!\n");
+        print(str + "failed!\n");
         testExternMatchingAlgorithms1(rest,cheapId,nv,ne);
       then
         ();
@@ -6238,7 +6238,7 @@ algorithm
     BackendDump.dumpMatching(inAssignments1);
     BackendDump.dumpMatching(inAssignments2);
     syst := BackendDAEUtil.setEqSystemMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-    IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"SingularSystem" +& intString(n) +& ".graphml",false);
+    IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"SingularSystem" + intString(n) + ".graphml",false);
   */
   // get from scalar eqns indexes the indexes in the equation array
   unmatched := List.flatten(eqns);

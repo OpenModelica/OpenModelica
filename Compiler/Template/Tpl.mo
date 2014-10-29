@@ -827,7 +827,7 @@ algorithm
         Print.printBufSpace(nchars);
         Print.printBuf(str);
         blen = Print.getBufLength() - blen;
-        //str = spaceStr(nchars) +& str; //indent is actually stored in nchars when on start of the line
+        //str = spaceStr(nchars) + str; //indent is actually stored in nchars when on start of the line
       then
         (blen, false, aind);
 
@@ -843,7 +843,7 @@ algorithm
       equation
         Print.printBufSpace(nchars);
         Print.printBuf(str);
-        //str = spaceStr(nchars) +& str; //indent is actually stored in nchars when on start of the line
+        //str = spaceStr(nchars) + str; //indent is actually stored in nchars when on start of the line
       then
         (aind, true, aind);
 
@@ -923,7 +923,7 @@ algorithm
         (nchars, isstart, aind) = stringListString(strLst, nchars, hasNL, aind);
 
         //"\n" = stringGetStringChar(str, stringLength(str));
-        //accstr = accstr +& (spaceStr(nchars) +& str); //indent is actually stored in nchars when on start of the line
+        //accstr = accstr + (spaceStr(nchars) + str); //indent is actually stored in nchars when on start of the line
         //(str, nchars, isstart, aind)
         // = stringListString(strLst, aind, true, aind, accstr);
       then
@@ -934,7 +934,7 @@ algorithm
     //case (str :: strLst, nchars, true, aind, accstr)
     //  equation
     //    //failure("\n" = stringGetStringChar(str, stringLength(str)));
-    //    accstr = accstr +& (spaceStr(nchars) +& str); //indent is actually stored in nchars when on start of the line
+    //    accstr = accstr + (spaceStr(nchars) + str); //indent is actually stored in nchars when on start of the line
     //    nchars = nchars + stringLength(str);
     //    (str, nchars, isstart, aind)
     //     = stringListString(strLst, nchars, false, aind, accstr);
@@ -953,7 +953,7 @@ algorithm
         (nchars, isstart, aind) = stringListString(strLst, nchars, hasNL, aind);
 
         //"\n" = stringGetStringChar(str, stringLength(str));
-        //accstr = accstr +& str;
+        //accstr = accstr + str;
         //(str, nchars, isstart, aind)
         // = stringListString(strLst, aind, true, aind, accstr);
       then
@@ -963,7 +963,7 @@ algorithm
     //case (str :: strLst, nchars, true, aind, accstr)
     //  equation
     //    //failure("\n" = stringGetStringChar(str, stringLength(str)));
-    //    accstr = accstr +& str;
+    //    accstr = accstr + str;
     //    nchars = nchars + stringLength(str);
     //    (str, nchars, isstart, aind)
     //     = stringListString(strLst, nchars, false, aind, accstr);
@@ -1705,13 +1705,13 @@ algorithm
         rtTickW = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         Print.writeBuf(file);
         if Config.getRunningTestsuite() then
-          System.appendFile(Config.getRunningTestsuiteFile(), file +& "\n");
+          System.appendFile(Config.getRunningTestsuiteFile(), file + "\n");
         end if;
         Print.clearBuf();
         if Flags.isSet(Flags.TPL_PERF_TIMES) then
-           Debug.trace("textFile " +& file
-           +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
-           +& "\n   write:" +& realString(realSub(System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL), rtTickW))
+           Debug.trace("textFile " + file
+           + "\n    text:" + realString(realSub(rtTickW,rtTickTxt))
+           + "\n   write:" + realString(realSub(System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL), rtTickW))
            );
         end if;
       then
@@ -1752,13 +1752,13 @@ algorithm
           Print.writeBuf(file);
         end if;
         if Config.getRunningTestsuite() then
-          System.appendFile(Config.getRunningTestsuiteFile(), file +& "\n");
+          System.appendFile(Config.getRunningTestsuiteFile(), file + "\n");
         end if;
         Print.clearBuf();
         if Flags.isSet(Flags.TPL_PERF_TIMES) then
-           Debug.traceln("textFile " +& file
-           +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
-           +& "\n   write:" +& realString(realSub(System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL), rtTickW))
+           Debug.traceln("textFile " + file
+           + "\n    text:" + realString(realSub(rtTickW,rtTickTxt))
+           + "\n   write:" + realString(realSub(System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL), rtTickW))
            );
         end if;
       then

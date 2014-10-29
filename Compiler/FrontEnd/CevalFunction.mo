@@ -144,7 +144,7 @@ algorithm
         partialPrefix = partialPrefix), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- CevalFunction.evaluate failed for function: " +& (if partialPrefix then "partial " else "") +& Absyn.pathString(p));
+        Debug.traceln("- CevalFunction.evaluate failed for function: " + (if partialPrefix then "partial " else "") + Absyn.pathString(p));
       then
         fail();
   end matchcontinue;
@@ -402,7 +402,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         err_str = DAEDump.dumpExtArgStr(inArgument);
-        Debug.traceln("- CevalFunction.evaluateExtInputArg failed on " +& err_str);
+        Debug.traceln("- CevalFunction.evaluateExtInputArg failed on " + err_str);
       then
         fail();
 
@@ -1457,7 +1457,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- CevalFunction.extractLhsComponentRef failed on " +& ExpressionDump.printExpStr(inExp));
+        Debug.traceln("- CevalFunction.extractLhsComponentRef failed on " + ExpressionDump.printExpStr(inExp));
       then
         fail();
   end match;
@@ -2215,7 +2215,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         print("- CevalFunction.assignVector failed on: ");
-        print(ExpressionDump.printSubscriptStr(sub) +& "\n");
+        print(ExpressionDump.printSubscriptStr(sub) + "\n");
       then
         fail();
   end matchcontinue;
@@ -2479,7 +2479,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CevalFunction.getRecordVarBindingAndName failed on variable "
-          +& name +& "\n");
+          + name + "\n");
       then
         fail();
   end matchcontinue;
@@ -2862,7 +2862,7 @@ algorithm
           ComponentReference.printComponentRefStr);
         cycles_strs = List.map1(names, stringDelimitList, ",");
         cycles_str = stringDelimitList(cycles_strs, "}, {");
-        cycles_str = "{" +& cycles_str +& "}";
+        cycles_str = "{" + cycles_str + "}";
         scope_str = "";
         info = DAEUtil.getElementSourceFileInfo(inSource);
         Error.addSourceMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str}, info);

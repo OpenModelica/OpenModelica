@@ -901,7 +901,7 @@ algorithm
   DAE.STMT_ASSERT(cond=cond, msg=msg, level=level, source=source) := assrtIn;
   (cond,_,_,_) := inlineExp(cond,fns,source);
   (cond,(_,_,true)) := Expression.traverseExp(cond,replaceArgs,(argmap,checkcr,true));
-  //print("ASSERT inlined: "+&ExpressionDump.printExpStr(cond)+&"\n");
+  //print("ASSERT inlined: "+ExpressionDump.printExpStr(cond)+"\n");
   (msg,_,_,_) := inlineExp(msg,fns,source);
   (msg,(_,_,true)) := Expression.traverseExp(msg,replaceArgs,(argmap,checkcr,true));
   assrtOut := DAE.STMT_ASSERT(cond, msg, level, source);
@@ -930,7 +930,7 @@ protected
   DAE.Exp exp;
 algorithm
   (cr,exp) := inTpl;
-  print(ComponentReference.printComponentRefStr(cr) +& " -> " +& ExpressionDump.printExpStr(exp) +& "\n");
+  print(ComponentReference.printComponentRefStr(cr) + " -> " + ExpressionDump.printExpStr(exp) + "\n");
 end dumpArgmap;
 
 public function forceInlineCall
@@ -1335,7 +1335,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("Inline.getFunctionBody failed for function: " +& Absyn.pathString(p));
+        Debug.traceln("Inline.getFunctionBody failed for function: " + Absyn.pathString(p));
         // Error.addMessage(Error.INTERNAL_ERROR, {"Inline.getFunctionBody failed"});
       then
         fail();
@@ -1496,7 +1496,7 @@ algorithm
     case({},_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("Inline.getExpFromArgMap failed with empty argmap and cref: " +& ComponentReference.printComponentRefStr(inComponentRef));
+        Debug.traceln("Inline.getExpFromArgMap failed with empty argmap and cref: " + ComponentReference.printComponentRefStr(inComponentRef));
       then
         fail();
     case((cref,exp) :: _,key)

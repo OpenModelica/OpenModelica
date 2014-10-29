@@ -161,7 +161,7 @@ algorithm
       equation
         _ = FNode.id(FNode.fromRef(inRef));
         v = avlTreeGet(tree(inVisited), FNode.id(FNode.fromRef(inRef)));
-        print("Already visited: " +& FNode.toStr(FNode.fromRef(inRef)) +& " seq: " +& intString(seq(v)) +& "\n");
+        print("Already visited: " + FNode.toStr(FNode.fromRef(inRef)) + " seq: " + intString(seq(v)) + "\n");
       then
         fail();
 
@@ -604,14 +604,14 @@ algorithm
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = "\n" +& valueStr(rval) +& ",  " +& (if stringEq(s2, "") then "" else (s2 + ", ")) +& s3;
+        res = "\n" + valueStr(rval) + ",  " + (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
       then
         res;
     case (FCore.VAVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = (if stringEq(s2, "") then "" else (s2 +& ", ")) +& s3;
+        res = (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
       then
         res;
   end match;
@@ -667,19 +667,19 @@ algorithm
 
     case (SOME(FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(key = rkey)), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
+        indent = inIndent + "  ";
         s1 = printAvlTreeStrPP2(l, indent);
         s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" +& inIndent +& keyStr(rkey) +& s1 +& s2;
+        res = "\n" + inIndent + keyStr(rkey) + s1 + s2;
       then
         res;
 
     case (SOME(FCore.VAVLTREENODE(value = NONE(), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
+        indent = inIndent + "  ";
         s1 = printAvlTreeStrPP2(l, indent);
         s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" +& s1 +& s2;
+        res = "\n" + s1 + s2;
       then
         res;
   end match;

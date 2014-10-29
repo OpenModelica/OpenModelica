@@ -674,14 +674,14 @@ algorithm
 
     case ( (tplname, STR_TOKEN_DEF(value = stvalue)) :: restTDefs, tplPackage, accMMDecls )
       equation
-        tplname = constantNamePrefix +& tplname; //no encoding needed, just denoting it is a constant (only for readibility)
+        tplname = constantNamePrefix + tplname; //no encoding needed, just denoting it is a constant (only for readibility)
         mmDecls = transformTemplateDefs(restTDefs, tplPackage,
                   (MM_STR_TOKEN_DECL(true, tplname, stvalue) :: accMMDecls));
       then mmDecls;
 
     case ( (tplname, LITERAL_DEF(value = svalue, litType = litType)) :: restTDefs, tplPackage, accMMDecls )
       equation
-        tplname = constantNamePrefix +& tplname; //actually, literals are inlined, so this is just for presence of the constant in the source
+        tplname = constantNamePrefix + tplname; //actually, literals are inlined, so this is just for presence of the constant in the source
         mmDecls = transformTemplateDefs(restTDefs, tplPackage,
                   (MM_LITERAL_DECL(true, tplname, svalue, litType) :: accMMDecls));
       then mmDecls;
@@ -695,7 +695,7 @@ algorithm
         //the rest is tailored into templates
         //... but function signatures have no prefixes in their AST representations (iargs, oargs, ...)
         (stmts, locals, _, accMMDecls,_)
-          = statementsFromExp(texp, {}, {}, imlicitTxt, /*outPrefix +&*/ imlicitTxt, {},
+          = statementsFromExp(texp, {}, {}, imlicitTxt, /*outPrefix +*/ imlicitTxt, {},
                { FUN_SCOPE(targs, encArgs) },  tplPackage, accMMDecls);
 
 
@@ -757,7 +757,7 @@ public function encodeIdent
   input Ident prefix;
   output Ident outIdent;
 algorithm
-  outIdent := prefix +& encodeIdentNoPrefix(inIdent);
+  outIdent := prefix + encodeIdentNoPrefix(inIdent);
 end encodeIdent;
 
 //every ident to be encoded as ".ident"
@@ -774,17 +774,17 @@ algorithm
     //when the first character is "_", encode it as "_0" (although this is not relevant for MM yet)
     case ( ident  )
       equation
-        true = (stringLength(ident) > 0) and (stringGetStringChar(ident,1) ==& "_");
+        true = (stringLength(ident) > 0) and (stringGetStringChar(ident,1) == "_");
         ident = System.stringReplace(ident, "_", "__");
         ident = System.stringReplace(ident, "._", "_0");
         ident = System.stringReplace(ident, ".", "_");
-        ident = "0" +& ident;
+        ident = "0" + ident;
       then
         ( ident );
 
     case ( ident  )
       equation
-        //false = (stringLength(ident) > 0) and (stringGetStringChar(ident,1) ==& "_");
+        //false = (stringLength(ident) > 0) and (stringGetStringChar(ident,1) == "_");
 
         ident = System.stringReplace(ident, "_", "__");
         ident = System.stringReplace(ident, "._", "_0");
@@ -928,7 +928,7 @@ algorithm
     case ( ident :: largs, txtargs, trIdents)
       equation
         _ = lookupTupleList(txtargs, ident);
-        outident = outPrefix +& ident;
+        outident = outPrefix + ident;
         trIdents = updateTupleList(trIdents, (ident,outident) );
         (largs, trIdents) = addOutPrefixesLhs(largs, txtargs, trIdents);
       then ( outident :: largs, trIdents );
@@ -974,7 +974,7 @@ algorithm
     case ( (ident, _) :: restArgs , trIdents)
       equation
         //failure(_ = lookupTupleList(trIdents, ident));
-        outident = outPrefix +& ident;
+        outident = outPrefix + ident;
         stmts = addOutTextAssigns( restArgs, trIdents);
       then ( MM_ASSIGN({outident},MM_IDENT(IDENT(ident))) :: stmts );
 
@@ -1107,24 +1107,24 @@ algorithm
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln("\n BOUND_VALUE resolving boundPath = " +& pathIdentString(path));
+          Debug.traceln("\n BOUND_VALUE resolving boundPath = " + pathIdentString(path));
         end if;
         (mmexp, idtype, scEnv) = resolveBoundPath(path, scEnv, tplPackage);
-        //Debug.fprint(Flags.FAILTRACE,"\n BEFORE boundPath = " +& pathIdentString(path) +& "\n");
+        //Debug.fprint(Flags.FAILTRACE,"\n BEFORE boundPath = " + pathIdentString(path) + "\n");
         checkResolvedType(path, idtype, "bound value", sinfo);
-        //Debug.fprint(Flags.FAILTRACE,"\n AFTER boundPath = " +& pathIdentString(path) +& "\n");
+        //Debug.fprint(Flags.FAILTRACE,"\n AFTER boundPath = " + pathIdentString(path) + "\n");
         //ensure non-recursive Text evaluation - only this level ...
         //TODO: for indirect reference, too, like <# buf += templ(buf) #>
         //true = ensureNotUsingTheSameText(path, mmexp, idtype, outtxt);
         exptype = deAliasedType(idtype, astDefs);
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln("\n BOUND_VALUE resolved mmexp = " +& mmExpString(mmexp) +& " : "
-                     +& typeSignatureString(idtype) +& " (dealiased: "
-                     +& typeSignatureString(exptype) +& ")");
+          Debug.traceln("\n BOUND_VALUE resolved mmexp = " + mmExpString(mmexp) + " : "
+                     + typeSignatureString(idtype) + " (dealiased: "
+                     + typeSignatureString(exptype) + ")");
         end if;
         (stmts, locals, scEnv, accMMDecls, intxt)
           = addWriteCallFromMMExp(true, mmexp, exptype, sinfo, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
-        // fprint(Flags.FAILTRACE," BOUND_VALUE after writeCall stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
+        // fprint(Flags.FAILTRACE," BOUND_VALUE after writeCall stmts (in reverse order) =\n" + stmtsString(stmts) + "\n");
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
 
@@ -1132,10 +1132,10 @@ algorithm
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln("\n FUN_CALL fname = " +& pathIdentString(fname));
+          Debug.traceln("\n FUN_CALL fname = " + pathIdentString(fname));
         end if;
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, sinfo, tplPackage);
-        // fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
+        // fprint(Flags.FAILTRACE," after fname = " + pathIdentString(fname) + "\n");
 
         //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls)
@@ -1144,12 +1144,12 @@ algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace(" FUN_CALL argList stmts generation passed\n");
         end if;
-        //fprint(Flags.FAILTRACE," FUN_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
+        //fprint(Flags.FAILTRACE," FUN_CALL after argList stmts (in reverse order) =\n" + stmtsString(stmts) + "\n");
 
         (hasretval, stmt, mmexp, rettype, locals, intxt)
           = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage, sinfo);
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace(" FUN_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
+          Debug.trace(" FUN_CALL stmt =\n" + stmtsString({stmt}) + "\n");
         end if;
 
         rettype = deAliasedType(rettype, astDefs);
@@ -1275,9 +1275,9 @@ algorithm
         //allowing hiddening of let bindings
         //(_, UNRESOLVED_TYPE(reason), scEnv)
         //  = resolveBoundPath(IDENT(ident), scEnv, tplPackage);
-        //fprint(Flags.FAILTRACE,"\n TEXT_CREATE ident = " +& ident +& " is fresh (reason = " +& reason +& ")\n");
+        //fprint(Flags.FAILTRACE,"\n TEXT_CREATE ident = " + ident + " is fresh (reason = " + reason + ")\n");
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln("\n TEXT_CREATE ident = " +& ident);
+          Debug.traceln("\n TEXT_CREATE ident = " + ident);
         end if;
 
         encIdent = encodeIdent(ident, letValueNamePrefix);
@@ -1309,7 +1309,7 @@ algorithm
         (_, idtype, _)
           = resolveBoundPath(IDENT(ident), scEnv, tplPackage);
         failure(UNRESOLVED_TYPE(_) = idtype);
-        fprint(Flags.FAILTRACE,"\nError - TEXT_CREATE ident = '" +& ident +& "' is NOT fresh (type = " +& typeSignatureString(idtype) +& ")\n Only new (fresh) variable can be used in a Text assignment (creation).\n");
+        fprint(Flags.FAILTRACE,"\nError - TEXT_CREATE ident = '" + ident + "' is NOT fresh (type = " + typeSignatureString(idtype) + ")\n Only new (fresh) variable can be used in a Text assignment (creation).\n");
       then fail();
     */
 
@@ -1344,7 +1344,7 @@ algorithm
         (_, idtype, _) = resolveBoundPath(path, scEnv, tplPackage);
         failure(UNRESOLVED_TYPE(_) = idtype);
         failure(TEXT_TYPE() = idtype);
-        fprint(Flags.FAILTRACE,"\nError - TEXT_ADD ident = '" +& ident +& "' is NOT of Text& type but " +& typeSignatureString(idtype) +& ")\n Only Text& typed variables can be appended to.\n");
+        fprint(Flags.FAILTRACE,"\nError - TEXT_ADD ident = '" + ident + "' is NOT of Text& type but " + typeSignatureString(idtype) + ")\n Only Text& typed variables can be appended to.\n");
       then fail();
     */
 
@@ -1354,10 +1354,10 @@ algorithm
       equation
         warnIfSomeOptions(mmopts);
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln("\n NORET_CALL fname = " +& pathIdentString(fname));
+          Debug.traceln("\n NORET_CALL fname = " + pathIdentString(fname));
         end if;
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, sinfo2, tplPackage);
-        //fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
+        //fprint(Flags.FAILTRACE," after fname = " + pathIdentString(fname) + "\n");
 
         {} = oargs;
         //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
@@ -1367,12 +1367,12 @@ algorithm
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace(" NORET_CALL argList stmts generation passed.\n");
         end if;
-        //fprint(Flags.FAILTRACE," NORET_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
+        //fprint(Flags.FAILTRACE," NORET_CALL after argList stmts (in reverse order) =\n" + stmtsString(stmts) + "\n");
 
         (_, stmt,_,_, locals, intxt)
           = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage, sinfo2);
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln(" NORET_CALL stmt =\n" +& stmtsString({stmt}));
+          Debug.traceln(" NORET_CALL stmt =\n" + stmtsString({stmt}));
         end if;
         stmts = stmt::stmts;
 
@@ -1385,11 +1385,11 @@ algorithm
            _, _, _, _, _, _, tplPackage as TEMPL_PACKAGE(astDefs=_), _ )
       equation
         (fname,_, oargs,_) = getFunSignature(fname, sinfo2, tplPackage);
-        //fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
+        //fprint(Flags.FAILTRACE," after fname = " + pathIdentString(fname) + "\n");
         (_::_) = oargs;
 
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("Error - NORET_CALL with a '" +& pathIdentString(fname) +& "' template or function that has output argument(s).\n");
+          Debug.trace("Error - NORET_CALL with a '" + pathIdentString(fname) + "' template or function that has output argument(s).\n");
         end if;
       then fail();
 
@@ -1467,7 +1467,7 @@ algorithm
     //warning - more options than expected
     case ( (optid,_) ::_ )
       equation
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - more options specified than expected for an expression (first option is '" +& optid +& "').\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - more options specified than expected for an expression (first option is '" + optid + "').\n");
        then fail();
 
     //cannot happen
@@ -1550,7 +1550,7 @@ algorithm
            stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
         failure(_ = lookupTupleList(defaultEscOptions, optid));
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - an unknown option'" +& optid +& "' was specified. \n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - an unknown option'" + optid + "' was specified. \n");
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls)
           = statementsFromEscOptions(opts, accMMEscOpts, stmts, locals, scEnv, tplPackage, accMMDecls);
       then
@@ -1563,7 +1563,7 @@ algorithm
       equation
         _ = lookupTupleList(defaultEscOptions, optid);
         _ = lookupTupleList(accMMEscOpts, optid);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Warning - a duplicit option'" +& optid +& "' was specified. It will be ignored (not evaluated).\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Warning - a duplicit option'" + optid + "' was specified. It will be ignored (not evaluated).\n");
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls)
          = statementsFromEscOptions(opts, accMMEscOpts, stmts, locals, scEnv, tplPackage, accMMDecls);
       then
@@ -1749,11 +1749,11 @@ algorithm
     case ( (BOUND_VALUE(boundPath = path), sinfo),
            stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
-        //Debug.fprint(Flags.FAILTRACE,"\n arg BOUND_VALUE resolving boundPath = " +& pathIdentString(path) +& "\n");
+        //Debug.fprint(Flags.FAILTRACE,"\n arg BOUND_VALUE resolving boundPath = " + pathIdentString(path) + "\n");
         (mmexp, idtype, scEnv) = resolveBoundPath(path, scEnv, tplPackage);
         checkResolvedType(path, idtype, "argument", sinfo);
-        //Debug.fprint(Flags.FAILTRACE," arg BOUND_VALUE resolved mmexp = " +& mmExpString(mmexp) +& " : "
-        //             +& typeSignatureString(idtype) +& "\n");
+        //Debug.fprint(Flags.FAILTRACE," arg BOUND_VALUE resolved mmexp = " + mmExpString(mmexp) + " : "
+        //             + typeSignatureString(idtype) + "\n");
       then ( (mmexp,idtype,sinfo), stmts, locals, scEnv, accMMDecls);
 
     //or embed it into the FUN_CALL ??... --> match
@@ -1779,11 +1779,11 @@ algorithm
         //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls)
            = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);
-        outtxt = textTempVarNamePrefix +& intString(listLength(locals));
+        outtxt = textTempVarNamePrefix + intString(listLength(locals));
         (_, stmt, mmexp, rettype, locals, outtxt)
            = statementFromFun(argvals, fname, iargs, oargs, tyVars, emptyTxt, outtxt, locals, tplPackage, sinfo);
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln(" arg FUN_CALL stmt =\n" +& stmtsString({stmt}));
+          Debug.traceln(" arg FUN_CALL stmt =\n" + stmtsString({stmt}));
         end if;
         //if emptyList in case of non-template function, not to be included to locals
         locals = addLocalValue(outtxt, TEXT_TYPE(), locals);
@@ -1803,7 +1803,7 @@ algorithm
     // ESCAPED and INDENTATION
     case ( exp as (_,sinfo), stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
-        outtxt = textTempVarNamePrefix +& intString(listLength(locals));
+        outtxt = textTempVarNamePrefix + intString(listLength(locals));
         (stmts, locals, scEnv, accMMDecls, outtxt)
           = statementsFromExp(exp, {}, stmts, emptyTxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
         locals = addLocalValue(outtxt, TEXT_TYPE(), locals); //if emptyList, not to be included to locals
@@ -2069,9 +2069,9 @@ algorithm
     //or it is an illegal no-ret fun call (to be auto-converted to "" in the future??)
     case (mmexp, UNRESOLVED_TYPE(reason = reason), _)
       equation
-        reason = "#UnresType# " +& reason +& " #";
+        reason = "#UnresType# " + reason + " #";
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("Error - an unresolved value trying to convert to string. Unresolution reason:\n    " +& reason);
+          Debug.trace("Error - an unresolved value trying to convert to string. Unresolution reason:\n    " + reason);
         end if;
       then
         MM_FN_CALL(IDENT(reason),{ mmexp });
@@ -2079,10 +2079,10 @@ algorithm
     //trying to convert a value when there is no conversion for its type
     case (mmexp, ts, _)
       equation
-        str = "Elaborated expression '" +& mmExpString(mmexp) +& "' of type '"
-           +& typeSignatureString(ts) +& "' has no automatic to-string conversion.";
+        str = "Elaborated expression '" + mmExpString(mmexp) + "' of type '"
+           + typeSignatureString(ts) + "' has no automatic to-string conversion.";
         addSusanError(str, inSourceInfo);
-        reason = "Error# " +& str +& " #";
+        reason = "Error# " + str + " #";
       then
         MM_FN_CALL(IDENT(reason),{ mmexp });
 
@@ -2175,7 +2175,7 @@ algorithm
         (mmargs, setTyVars) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
         outtype = specializeType(outtype, tyVars, setTyVars);
         //make a separate locally bound return value
-        retval = returnTempVarNamePrefix +& intString(listLength(locals));
+        retval = returnTempVarNamePrefix + intString(listLength(locals));
         locals = addLocalValue(retval, outtype, locals);
         mmexp = MM_FN_CALL(fname, mmargs);
       then
@@ -2200,10 +2200,10 @@ algorithm
       equation
         errArgVals = List.map(argvals, Util.tuple312);
         str = "Cannot elaborate function\n  "
-          +& Tpl.tplString3(TplCodegen.sFunSignature, fname, iargs, oargs)
-          +& "\n  for actual parameters  "
-          +& Tpl.tplString(TplCodegen.sActualMMParams, errArgVals)
-          +& "\n  --> Invalid types (cannot convert) or number of in/out arguments (text in/out arguments must match by order and name equality where prefixes 'in' and 'out' can be used; A function has valid template signature only if all text out params have corresponding in text arguments.).\n";
+          + Tpl.tplString3(TplCodegen.sFunSignature, fname, iargs, oargs)
+          + "\n  for actual parameters  "
+          + Tpl.tplString(TplCodegen.sActualMMParams, errArgVals)
+          + "\n  --> Invalid types (cannot convert) or number of in/out arguments (text in/out arguments must match by order and name equality where prefixes 'in' and 'out' can be used; A function has valid template signature only if all text out params have corresponding in text arguments.).\n";
         addSusanError(str,inInfo);
       then
         fail();
@@ -2401,13 +2401,13 @@ algorithm
     //no fail branch
     case ( mmarg, argtype, sinfo, true, targettype,_,setTyVars,_)
       equation
-        msg = "Elaborated expression '" +& mmExpString(mmarg) +& "' of type '"
-           +& typeSignatureString(argtype)
-           +& "' failed to type adapt to its inferred type '"
-           +& typeSignatureString(targettype) +& "'.";
+        msg = "Elaborated expression '" + mmExpString(mmarg) + "' of type '"
+           + typeSignatureString(argtype)
+           + "' failed to type adapt to its inferred type '"
+           + typeSignatureString(targettype) + "'.";
         addSusanError(msg, sinfo);
         //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeAdaptMMArg failed\n");
-        msg = "#Error# " +& msg +& " #";
+        msg = "#Error# " + msg + " #";
       then
         ( MM_FN_CALL(IDENT(msg),{ mmarg }), setTyVars);
 
@@ -2516,7 +2516,7 @@ algorithm
     case ( mmarg as MM_FN_CALL(fnName = _), targettype, stmts, locals)
       equation
          //make a separate locally bound return value
-        retval = returnTempVarNamePrefix +& intString(listLength(locals));
+        retval = returnTempVarNamePrefix + intString(listLength(locals));
         locals = addLocalValue(retval, targettype, locals);
         stmts = MM_ASSIGN({retval}, mmarg) :: stmts;
       then
@@ -2678,7 +2678,7 @@ algorithm
         ofbindEnc = typeCheckMatchingExp(ofbind, oftype, astDefs);
         //ofbindEnc = encodeMatchingExp(ofbindEnc);
         idxName = Util.getOptionOrDefault(hasIndexIdentOpt, impossibleIdent);
-        freshIdxName = indexNamePrefix +& idxName;// +& "_" +& intString(listLength(locals));
+        freshIdxName = indexNamePrefix + idxName;// + "_" + intString(listLength(locals));
 
         //i0ti = ("i_i0",INTEGER_TYPE());
         //i1ti = ("i_i1",INTEGER_TYPE());
@@ -2705,7 +2705,7 @@ algorithm
         mapstmts = if useiter then stmt :: mapstmts else mapstmts;
         //(mapstmts,_) = addNextIter(useiter, mapstmts, imlicitTxt, imlicitTxt);
         //create a new list-map function
-        fname = listMapFunPrefix +& intString(listLength(accMMDecls));
+        fname = listMapFunPrefix + intString(listLength(accMMDecls));
         iargs = imlicitTxtArg :: ("items",argtype) :: encodedExtargs;
         assignedIdents = getAssignedIdents(mapstmts, {});
         //oargs = List.filter(extargs, isText);
@@ -2777,7 +2777,7 @@ algorithm
         ofbindEnc = typeCheckMatchingExp(ofbind, argtype, astDefs);
         //ofbindEnc = encodeMatchingExp(ofbindEnc);
         idxName = Util.getOptionOrDefault(hasIndexIdentOpt, impossibleIdent);
-        freshIdxName = indexNamePrefix +& idxName;// +& "_" +& intString(listLength(locals));
+        freshIdxName = indexNamePrefix + idxName;// + "_" + intString(listLength(locals));
 
         //i0ti = ("i_i0",INTEGER_TYPE());
         //i1ti = ("i_i1",INTEGER_TYPE());
@@ -2811,7 +2811,7 @@ algorithm
 
         //create a new scalar-map function,
         //where ofbind is not a simple BIND_MATCH -> it must be a match fun
-        fname = scalarMapFunPrefix +& intString(listLength(accMMDecls));
+        fname = scalarMapFunPrefix + intString(listLength(accMMDecls));
         iargs = imlicitTxtArg :: ("it",argtype) :: encodedExtargs;
         assignedIdents = getAssignedIdents(mapstmts, {});
         //oargs = List.filter(extargs, isText); //it can be actually Text, but not to be as output stream
@@ -3598,8 +3598,8 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure( _ = lookupTupleList(fields, ident) );
-        //reason = "#Error - unresolved type - cannot find field '" +& ident +& "'#";
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeCheckMatchingExpRecord failed to find field '" +& ident +& "'\n");
+        //reason = "#Error - unresolved type - cannot find field '" + ident + "'#";
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeCheckMatchingExpRecord failed to find field '" + ident + "'\n");
         //(locals, fms) = localsFromMatchExpAndTypeCheckRecord(fms, fields, locals, astDefs);
       then
         fail();
@@ -3860,7 +3860,7 @@ algorithm
         failure( _ = lookupTupleList(fields, ident) );
         //locals = addLocalValue(ident, UNRESOLVED_TYPE(reason), locals);
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("Error - rewriteMatchExpByLocalNamesRecord failed to find field '" +& ident +& "'\n");
+          Debug.trace("Error - rewriteMatchExpByLocalNamesRecord failed to find field '" + ident + "'\n");
         end if;
         (fms, usedLocals) = rewriteMatchExpByLocalNamesRecord(fms, fields, inLocalNames, usedLocals, astDefs);
       then
@@ -3951,9 +3951,9 @@ algorithm
     case ( ident, mtype, locals)
       equation
         _ = lookupTupleList(locals, ident);
-        msg = "A duplicite identifier '" +& ident +& "' bound in a matching expression.";
+        msg = "A duplicite identifier '" + ident + "' bound in a matching expression.";
         addSusanError(msg, dummySourceInfo); //TODO: Match expressions source info here
-        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - (addLocalValue) a duplicite identifier '" +& ident +& "' bound in a matching expression. \n");
+        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - (addLocalValue) a duplicite identifier '" + ident + "' bound in a matching expression. \n");
       then
         ((ident, mtype) :: locals);
 
@@ -4145,7 +4145,7 @@ algorithm
     case ( (mmexp, exptype, sinfo), _, stmts, locals,  TEMPL_PACKAGE(astDefs = astdefs))
       equation
         TEXT_TYPE() = deAliasedType(exptype, astdefs);
-        strid = textToStringNamePrefix +& intString(listLength(locals));
+        strid = textToStringNamePrefix + intString(listLength(locals));
         locals = addLocalValue(strid, STRING_TYPE(), locals);
         mmexp = mmExpToString(mmexp, TEXT_TYPE(), sinfo);
         stmt = MM_ASSIGN({strid}, mmexp);
@@ -4332,7 +4332,7 @@ algorithm
       equation
         //(ident, _) = encodePathIdent(path);
         ident = pathIdentString(path);
-        //Debug.fprint(Flags.FAILTRACE,"\n encoded path = " +& pathIdentString(path) +& ", ident = "+& ident +& "\n");
+        //Debug.fprint(Flags.FAILTRACE,"\n encoded path = " + pathIdentString(path) + ", ident = "+ ident + "\n");
         (ident, idtype, scEnv) = resolvePathInScopeEnv(ident, path, true, scEnv, astDefs);
       then
         (MM_IDENT(IDENT(ident)), idtype, scEnv);
@@ -4364,7 +4364,7 @@ algorithm
         (typepckgOpt, typeident) = splitPackageAndIdent(path);
         (typepckg, _)
           = getTypeInfo(typepckgOpt, typeident, astDefs);
-        reason = "Unresolved path - imported symbol '" +& pathIdentString(path) +& "' other than a constant used in a value context (missing parenthesis ?).";
+        reason = "Unresolved path - imported symbol '" + pathIdentString(path) + "' other than a constant used in a value context (missing parenthesis ?).";
         idtype = UNRESOLVED_TYPE(reason);
         path = makePathIdent(typepckg, typeident);
       then
@@ -4382,7 +4382,7 @@ algorithm
         (ident, encpath) = encodePathIdent(path);
         failure( (_,_) = lookupUpdateMatchingExp(ident, encpath, mexp, mtype, astDefs) );
         (UNRESOLVED_TYPE(reason), mexp) = lookupUpdateMExpDotPath(ident, path, mexp, mtype, astDefs);
-        reason = "Unresolved path '" +& pathIdentString(path) +& "'- after try of imlicit case lookup got:\n   " +& reason;
+        reason = "Unresolved path '" + pathIdentString(path) + "'- after try of imlicit case lookup got:\n   " + reason;
         idtype = UNRESOLVED_TYPE(reason);
       then
         ( MM_IDENT(IDENT(ident)), idtype, (scope :: scEnv));
@@ -4391,7 +4391,7 @@ algorithm
     // all the rest
     case (path, scEnv, _  )
       equation
-        reason = "Unresolved path '" +& pathIdentString(path) +& "'.";
+        reason = "Unresolved path '" + pathIdentString(path) + "'.";
         idtype = UNRESOLVED_TYPE(reason);
       then
         ( MM_IDENT(path), idtype, scEnv);
@@ -4422,9 +4422,9 @@ algorithm
       equation
 
         //true = Flags.isSet(Flags.FAILTRACE);
-        //msg = msg +& " unresolved type of '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n";
-        msg = "(" +& msg +& ") " +& reason;
-        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("ADD Error: " +& msg +& "\n");  //+& " unresolved path '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n");
+        //msg = msg + " unresolved type of '" + pathIdentString(path) + "', reason = '" + reason + "'.\n";
+        msg = "(" + msg + ") " + reason;
+        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("ADD Error: " + msg + "\n");  //+ " unresolved path '" + pathIdentString(path) + "', reason = '" + reason + "'.\n");
         addSusanError(msg, inInfo);
       then
         ();
@@ -4455,8 +4455,8 @@ algorithm
 
     case ( ts, _, msg, _)
       equation
-        msg = "(" +& msg +& ") identifier '" +& inIdent +& "' was expected to have Text& type but resolved to " +& typeSignatureString(ts)
-           +& ".\n Only Text& typed variables can be appended to.";
+        msg = "(" + msg + ") identifier '" + inIdent + "' was expected to have Text& type but resolved to " + typeSignatureString(ts)
+           + ".\n Only Text& typed variables can be appended to.";
         addSusanError(msg, inInfo);
       then
         UNRESOLVED_TYPE(msg);
@@ -4482,7 +4482,7 @@ algorithm
     // string constants are of StringToken type and does not involve a type conversion, use them through idents
     case ( STR_TOKEN_DEF(value = _), ident)
       equation
-        ident = constantNamePrefix +& ident; //no encoding needed, just prefix, it is a constant
+        ident = constantNamePrefix + ident; //no encoding needed, just prefix, it is a constant
       then
         (MM_IDENT(IDENT(ident)), STRING_TOKEN_TYPE());
 
@@ -4495,7 +4495,7 @@ algorithm
     // Error - a template in a value context ... maybe, this can be with lower priority, after of trying of imlicit record lookup
     case ( TEMPLATE_DEF(_,_,_,_), ident)
       equation
-        reason = "Unresolved identifier - the template '" +& ident +& "'in a value context found (missing parenthesis ?) .";
+        reason = "Unresolved identifier - the template '" + ident + "'in a value context found (missing parenthesis ?) .";
         idtype = UNRESOLVED_TYPE(reason);
         //ident = encodeIdent(ident);
       then
@@ -4575,8 +4575,8 @@ algorithm
           (RECURSIVE_SCOPE(recIdent = letIdent) :: _), _)
       equation
         true = stringEq(ident, letIdent);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - trying to use '" +& ident
-           +& "' recursively inside a let scope or text addition. Use an additional Text variable if a self addition/duplication is needed, like  let b = a  let &a += b ... \n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - trying to use '" + ident
+           + "' recursively inside a let scope or text addition. Use an additional Text variable if a self addition/duplication is needed, like  let b = a  let &a += b ... \n");
       then
         fail();
 
@@ -4670,14 +4670,14 @@ algorithm
              hasImplicitScope = true) :: restEnv, astdefs  )
       equation
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln("\n trying [it.]path for '" +& ident +& " / " +& pathIdentString(path) +& "' : "
-                    +& typeSignatureString(mtype));
+          Debug.traceln("\n trying [it.]path for '" + ident + " / " + pathIdentString(path) + "' : "
+                    + typeSignatureString(mtype));
         end if;
         (idtype, mexp) = lookupUpdateMExpDotPath(ident, path, mexp, mtype, astdefs);
         failure(UNRESOLVED_TYPE(_) = idtype);
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.traceln("\n [it.]path for '" +& pathIdentString(path) +& "' : "
-                    +& typeSignatureString(idtype));
+          Debug.traceln("\n [it.]path for '" + pathIdentString(path) + "' : "
+                    + typeSignatureString(idtype));
         end if;
 
         encident = encodePathIdent(path, caseBindingNamePrefix);
@@ -4742,7 +4742,7 @@ algorithm
     // can normally fail for template or external constants
     //case ( ident, _, _, _ )
     //  equation
-    //    true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-resolvePathInScopeEnv failed for ident '" +& ident +& "'.\n");
+    //    true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-resolvePathInScopeEnv failed for ident '" + ident + "'.\n");
     //  then
     //    fail();
   end matchcontinue;
@@ -4765,7 +4765,7 @@ algorithm
 
     case ( ident, _)
       equation
-        ident = ident +& "_" +& intString(inPostfix);
+        ident = ident + "_" + intString(inPostfix);
       then
         ident;
 
@@ -5033,7 +5033,7 @@ algorithm
              bindIdent = bid ), _, _ )
       equation
         true = stringEq(id, bid);
-        reason = "Unresolved path '" +& inid +& "' after first dot - only the first part '" +& id +& "' resolved as a bind match.";
+        reason = "Unresolved path '" + inid + "' after first dot - only the first part '" + id + "' resolved as a bind match.";
         valtype = UNRESOLVED_TYPE(reason);
       then
         (valtype , inmexp );
@@ -5146,8 +5146,8 @@ algorithm
         mtype = deAliasedType(mtype, astDefs);
         (fields,tagpath) = getFieldsForRecord(mtype, tagpath, astDefs); // this should not fail as we have type-checked the matching expression
         failure( _ = lookupTupleList(fields, id));
-        reason = "Unresolved path - failed in lookup for field '" +& id +& "' at the end of the path '" +& inid
-                 +& "', no such field in '" +& pathIdentString(tagpath) +& "' record fields.\n";
+        reason = "Unresolved path - failed in lookup for field '" + id + "' at the end of the path '" + inid
+                 + "', no such field in '" + pathIdentString(tagpath) + "' record fields.\n";
         valtype = UNRESOLVED_TYPE(reason);
       then
         ( valtype, RECORD_MATCH(tagpath, fms) );
@@ -5172,8 +5172,8 @@ algorithm
         mtype = deAliasedType(mtype, astDefs);
         (fields, tagpath) = getFieldsForRecord(mtype, tagpath, astDefs); // this should not fail as we have type-checked the matching expression
         failure( _ = lookupTupleList(fields, id));
-        reason = "Unresolved path - failed in lookup for field '" +& id +& "' inside the (encoded) path '" +& inid
-              +& "', no such field in '" +& pathIdentString(tagpath) +& "' record fields.\n";
+        reason = "Unresolved path - failed in lookup for field '" + id + "' inside the (encoded) path '" + inid
+              + "', no such field in '" + pathIdentString(tagpath) + "' record fields.\n";
         valtype = UNRESOLVED_TYPE( reason );
       then
         ( valtype, RECORD_MATCH(tagpath, fms) );
@@ -5182,8 +5182,8 @@ algorithm
     // just check the type if it is a pure record type and then expand the mexp with the record match
     case ( inid, path, mexp, _, _ )
       equation
-        reason = "Unresolved path (encoded) '" +& inid
-                 +& "', cannot follow the rest path '" +& pathIdentString(path) +& "', no record match available to look down the path.";
+        reason = "Unresolved path (encoded) '" + inid
+                 + "', cannot follow the rest path '" + pathIdentString(path) + "', no record match available to look down the path.";
         valtype = UNRESOLVED_TYPE(reason);
       then
         ( valtype, mexp );
@@ -5193,7 +5193,7 @@ algorithm
     case ( ident, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!lookupUpdateMExpDotPath failed for ident '" +& ident +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!lookupUpdateMExpDotPath failed for ident '" + ident + "'.\n");
       then
         fail();
 
@@ -5321,7 +5321,7 @@ algorithm
 
     case ( inid, fieldid, _, {}, _, _ )
       equation
-        reason = "Unresolved path '" +& inid +& "', cannot follow the path after a dot, no record match available to look down the path after '" +& fieldid +& "'.\n";
+        reason = "Unresolved path '" + inid + "', cannot follow the path after a dot, no record match available to look down the path after '" + fieldid + "'.\n";
         valtype = UNRESOLVED_TYPE(reason);
       then
         ( valtype, {} );
@@ -5344,7 +5344,7 @@ algorithm
     case ( inid, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!lookupUpdateMExpDotPathRecord failed for ident '" +& inid +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!lookupUpdateMExpDotPathRecord failed for ident '" + inid + "'.\n");
       then
         fail();
   end matchcontinue;
@@ -5389,7 +5389,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure( _ = lookupTupleList(fields, ident) );
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-Error!!!lookupUpdateMExpRecord failed in lookup for field (type) ident '" +& ident +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-Error!!!lookupUpdateMExpRecord failed in lookup for field (type) ident '" + ident + "'.\n");
       then
         fail(); //?? will fail the whole lookupUpdateMExpRecord or retry the next case ?
 
@@ -5477,7 +5477,7 @@ algorithm
     case ( NAMED_TYPE(name = _), tagpath, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - (getFieldsForRecord) for case tag '" +& pathIdentString(tagpath) +& "' failed for reason above.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - (getFieldsForRecord) for case tag '" + pathIdentString(tagpath) + "' failed for reason above.\n");
       then
         fail();
 
@@ -5485,7 +5485,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         //failure(NAMED_TYPE(_) = mtype);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - for case tag '" +& pathIdentString(tagpath) +& "' the input type is not a NAME_TYPE hence not a union/record type.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - for case tag '" + pathIdentString(tagpath) + "' the input type is not a NAME_TYPE hence not a union/record type.\n");
       then
         fail();
 
@@ -5609,7 +5609,7 @@ algorithm
       equation
         equality(typepckg = importckg);
         failure(_ = lookupTupleList(typeLst, typeident));
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getTypeInfo failed to lookup the type '" +& typeident +& "' for package '" +& pathIdentString(typepckg) +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getTypeInfo failed to lookup the type '" + typeident + "' for package '" + pathIdentString(typepckg) + "'.\n");
       then
         fail();
     */
@@ -5622,12 +5622,12 @@ algorithm
 
     case (NONE(), typeident, {} )
       equation
-        addSusanNotification("Error - getTypeInfo failed to lookup the type '" +& typeident +& "' after looking up all AST definitions.", dummySourceInfo);
+        addSusanNotification("Error - getTypeInfo failed to lookup the type '" + typeident + "' after looking up all AST definitions.", dummySourceInfo);
       then fail();
 
     case ( SOME(typepckg), typeident, {} )
       equation
-        addSusanNotification("getTypeInfo failed to lookup the type '" +& pathIdentString(typepckg) +& "." +& typeident +& "' after looking up all AST definitions.", dummySourceInfo);
+        addSusanNotification("getTypeInfo failed to lookup the type '" + pathIdentString(typepckg) + "." + typeident + "' after looking up all AST definitions.", dummySourceInfo);
       then fail();
 
   end matchcontinue;
@@ -5737,10 +5737,10 @@ algorithm
         //true = listMember(na, tyVars); //must be true
         tyConcreteDA = deAliasedType(tyConcrete, astDefs);
         failure( typesEqualConcrete(ty, tyConcreteDA, astDefs) );
-        Debug.trace("Error - unmatched type for type variable '" +& tid
-           +& "'. Firstly inferred '" +& typeSignatureString(ty)
-           +& "', next inferred '" +& typeSignatureString(tyConcrete)
-           +& "'(dealiased '" +& typeSignatureString(tyConcreteDA) +& "').\n"
+        Debug.trace("Error - unmatched type for type variable '" + tid
+           + "'. Firstly inferred '" + typeSignatureString(ty)
+           + "', next inferred '" + typeSignatureString(tyConcrete)
+           + "'(dealiased '" + typeSignatureString(tyConcreteDA) + "').\n"
             );
       then
         fail();
@@ -5900,7 +5900,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         true = listMember(tid, tyVars);
         failure(_ = lookupTupleList(setTyVars, tid));
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - cannot infer type variable '" +& tid +& "'.\n" );
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - cannot infer type variable '" + tid + "'.\n" );
       then
         fail();
 
@@ -5953,7 +5953,7 @@ algorithm
     case (IDENT(templname), _, TEMPL_PACKAGE(templateDefs = templateDefs))
       equation
         _  =  lookupTupleList(templateDefs, templname);
-        msg = "Constant template '" +& templname +& "' is used in a function/template context (while it is defined as a constant).";
+        msg = "Constant template '" + templname + "' is used in a function/template context (while it is defined as a constant).";
         addSusanError(msg, inSourceInfo);
       then
         fail();
@@ -5970,7 +5970,7 @@ algorithm
 
     case (fname, _, _)
       equation
-        msg = "Unresolved template/function name '" +& pathIdentString(fname) +& "'.";
+        msg = "Unresolved template/function name '" + pathIdentString(fname) + "'.";
         addSusanError(msg, inSourceInfo);
       then
         fail();
@@ -6030,7 +6030,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure(_ = lookupTupleList(rectags, tagident));
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getFields failed to lookup the union tag '" +& tagident +& "', that is not found in type '" +& typeident +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getFields failed to lookup the union tag '" + tagident + "', that is not found in type '" + typeident + "'.\n");
       then
         fail();
 
@@ -6044,7 +6044,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         false = stringEq(tagident, typeident);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getFields failed to match the tag '" +& tagident +& "', the type '" +& typeident +& "' expected.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getFields failed to match the tag '" + tagident + "', the type '" + typeident + "' expected.\n");
       then
         fail();
 
@@ -6116,7 +6116,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure(typeLst = listMap1Tuple22(typeLst, fullyQualifyAstTypeInfo, importckg));
-        Debug.trace("-fullyQualifyASTDefs failed for importckg = " +& pathIdentString(importckg) +& " .\n");
+        Debug.trace("-fullyQualifyASTDefs failed for importckg = " + pathIdentString(importckg) + " .\n");
       then
         fail();
 
@@ -6634,7 +6634,7 @@ public function addSusanError
   input Absyn.Info inInfo;
 algorithm
   if Flags.isSet(Flags.FAILTRACE) then
-    Debug.traceln("Error - " +& inErrMsg);
+    Debug.traceln("Error - " + inErrMsg);
   end if;
   Error.addSourceMessage(Error.SUSAN_ERROR, {inErrMsg}, inInfo);
 end addSusanError;
@@ -6695,13 +6695,13 @@ algorithm
       equation
         // \a \b \f \r \v  ... TODO: Error in the .srz or .c compilation(\r)
         true =
-            (c ==& "\'")
-         or (c ==& "\"")
-         or (c ==& "?")
-         or (c ==& "\\")
-         or (c ==& "\n")
-         or (c ==& "\t")
-         or (c ==& " ");
+            (c == "\'")
+         or (c == "\"")
+         or (c == "?")
+         or (c == "\\")
+         or (c == "\n")
+         or (c == "\t")
+         or (c == " ");
       then canBeEscapedUnquotedChars(chars);
 
     case ( _ ) then false;
@@ -6735,7 +6735,7 @@ algorithm
 
     case ( PATH_IDENT(ident = ident, path = path ) )
       equation
-        ident = ident +& "." +& pathIdentString(path);
+        ident = ident + "." + pathIdentString(path);
       then
         ident;
 

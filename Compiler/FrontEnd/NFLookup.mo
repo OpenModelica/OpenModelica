@@ -723,7 +723,7 @@ algorithm
     else
       equation
         str = SCode.elementName(inElement);
-        str = "NFLookup.nextState2 failed on unknown transition for element " +& str;
+        str = "NFLookup.nextState2 failed on unknown transition for element " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();

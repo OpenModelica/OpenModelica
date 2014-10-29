@@ -100,10 +100,10 @@ algorithm
 /*
     case(_,_,_,_) // FOR DEBBUGING...
       equation
-        print("Try to solve: rhs: " +&
-          ExpressionDump.dumpExpStr(inExp1,0) +& " lhs: " +&
-          ExpressionDump.dumpExpStr(inExp2,0) +& " with respect to: " +&
-          ExpressionDump.printExpStr(inExp3) +& "\n");
+        print("Try to solve: rhs: " +
+          ExpressionDump.dumpExpStr(inExp1,0) + " lhs: " +
+          ExpressionDump.dumpExpStr(inExp2,0) + " with respect to: " +
+          ExpressionDump.printExpStr(inExp3) + "\n");
       then
         fail();
 */
@@ -136,7 +136,7 @@ algorithm
 /*
     case(_,_,_,_)
       equation
-        print("solve " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& " for " +& ExpressionDump.printExpStr(inExp3) +& " failed\n");
+        print("solve " + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + " for " + ExpressionDump.printExpStr(inExp3) + " failed\n");
       then
         fail();
 */
@@ -264,8 +264,8 @@ algorithm
     // (r1)^f(a) = r2 => f(a)  = ln(r2)/ln(r1)
     case (DAE.BINARY(e11 as DAE.RCONST(r),DAE.POW(_),e2), DAE.RCONST(r2), DAE.CREF(componentRef = cr))
        equation
-         true = r2 >. 0.0;
-         true = r >. 0.0;
+         true = r2 > 0.0;
+         true = r > 0.0;
          false = Expression.isConstOne(e11);
          true = Expression.expHasCref(e2, cr);
          e1 = Expression.makePureBuiltinCall("log",{e11},DAE.T_REAL_DEFAULT);
@@ -807,7 +807,7 @@ algorithm
         sn = Absyn.pathString(pn);
         _ = ExpressionDump.printExpStr(iExp);
         crstr = ComponentReference.printComponentRefStr(cr);
-        estr = "Expression for " +& crstr +& " out of min(" +& s1 +& ")/max(" +& sn +& ") = ";
+        estr = "Expression for " + crstr + " out of min(" + s1 + ")/max(" + sn + ") = ";
         // iExp >= e1 and iExp <= en
         e = DAE.LBINARY(DAE.RELATION(iExp,DAE.GREATEREQ(DAE.T_INTEGER_DEFAULT),e1,-1,NONE()),DAE.AND(DAE.T_BOOL_DEFAULT),
                                      DAE.RELATION(iExp,DAE.LESSEQ(DAE.T_INTEGER_DEFAULT),en,-1,NONE()));

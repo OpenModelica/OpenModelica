@@ -122,7 +122,7 @@ algorithm
         //  BackendDump.dumpMatching(inAssignments1);
         //  BackendDump.dumpMatching(inAssignments2);
         //  syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-        //  dumpSystemGraphML(syst,ishared,NONE(),"ConstrainRevoluteJoint" +& intString(listLength(List.flatten(eqns))) +& ".graphml");
+        //  dumpSystemGraphML(syst,ishared,NONE(),"ConstrainRevoluteJoint" + intString(listLength(List.flatten(eqns))) + ".graphml");
         // check by count vars of equations, if len(eqns) > len(vars) stop because of structural singular system
         ErrorExt.setCheckpoint("Pantelides");
         (eqns_1,unassignedStates,unassignedEqns,_) = minimalStructurallySingularSystem(eqns,isyst,ishared,inAssignments1,inAssignments2,inArg);
@@ -375,11 +375,11 @@ algorithm
 
     case (ilst::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        // print("Eqns " +& stringDelimitList(List.map(ilst,intString),", ") +& "\n");
+        // print("Eqns " + stringDelimitList(List.map(ilst,intString),", ") + "\n");
         ((unassignedEqns,eqnsLst,discEqns)) = List.fold2(ilst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},inDiscEqnsAcc));
-        // print("unassignedEqns " +& stringDelimitList(List.map(unassignedEqns,intString),", ") +& "\n");
+        // print("unassignedEqns " + stringDelimitList(List.map(unassignedEqns,intString),", ") + "\n");
         stateIndxs = List.fold2(ilst,statesInEquations,(m,statemark,mark),inAssignments1,{});
-        // print("stateIndxs " +& stringDelimitList(List.map(stateIndxs,intString),", ") +& "\n");
+        // print("stateIndxs " + stringDelimitList(List.map(stateIndxs,intString),", ") + "\n");
         b = intGe(listLength(stateIndxs),listLength(unassignedEqns));
         singulareSystemError(b,stateIndxs,unassignedEqns,eqnsLst,isyst,ishared,inAssignments1,inAssignments2,inArg);
         (outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns) =
@@ -690,7 +690,7 @@ algorithm
         ilst1;
     case (i::_,_,_,_,_)
       equation
-        print("collectVarEqns failed for eqn " +& intString(i) +& "\n");
+        print("collectVarEqns failed for eqn " + intString(i) + "\n");
       then fail();
   end matchcontinue;
 end collectVarEqns;
@@ -762,9 +762,9 @@ algorithm
     case (e::es,_,_,_,_,_,_,_,_,_)
       equation
         eqn = BackendEquation.equationNth1(eqns, e);
-        //fcall(Flags.BLT_DUMP, print, "differentiat equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
+        //fcall(Flags.BLT_DUMP, print, "differentiat equation " + intString(e) + " " + BackendDump.equationString(eqn) + "\n");
         (eqn_1, shared) = Differentiate.differentiateEquationTime(eqn, vars, ishared);
-        //fcall(Flags.BLT_DUMP, print, "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
+        //fcall(Flags.BLT_DUMP, print, "differentiated equation " + intString(e) + " " + BackendDump.equationString(eqn_1) + "\n");
         eqn = BackendEquation.markDifferentiated(eqn);
         // get needed der(variables) from equation
        (_,(_,(_,_,elst))) = BackendEquation.traverseBackendDAEExpsEqn(eqn_1, Expression.traverseSubexpressionsHelper, (getDerVarsExp, (vars,ass1,{})));
@@ -863,9 +863,9 @@ algorithm
     case (e::es,_,_,_,_)
       equation
         eqn = BackendEquation.equationNth1(eqns, e);
-        // fcall(Flags.BLT_DUMP, print, "differentiate equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
+        // fcall(Flags.BLT_DUMP, print, "differentiate equation " + intString(e) + " " + BackendDump.equationString(eqn) + "\n");
         (eqn_1, shared) = Differentiate.differentiateEquationTime(eqn, vars, ishared);
-        // fcall(Flags.BLT_DUMP, print, "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
+        // fcall(Flags.BLT_DUMP, print, "differentiated equation " + intString(e) + " " + BackendDump.equationString(eqn_1) + "\n");
         eqn = BackendEquation.markDifferentiated(eqn);
         (eqntpl, shared) = differentiateEqnsLst(es,vars,eqns,shared,(e,SOME(eqn_1),eqn)::inEqnTpl);
       then
@@ -1215,7 +1215,7 @@ algorithm
         // check if there are states with unused derivative
         _::_ = ilst;
         if Flags.isSet(Flags.BLT_DUMP) then
-          print("All unassignedStates without Derivative: " +& stringDelimitList(List.map(ilst,intString),", ")  +& "\n");
+          print("All unassignedStates without Derivative: " + stringDelimitList(List.map(ilst,intString),", ")  + "\n");
           BackendDump.printVarList(varlst);
         end if;
         (syst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn) = handleundifferntiableMSS(intLe(listLength(ilst),listLength(unassignedEqns)),ilst,inEqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn);
@@ -1361,7 +1361,7 @@ algorithm
       eqn = BackendEquation.equationNth1(inEqns, pos);
       (eqn1, _) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceAliasStateExp, (inACr, inCrExp, indCrExp));
       eqns =  BackendEquation.setAtIndex(inEqns, pos, eqn1);
-      // print("Replace in Eqn:\n" +& BackendDump.equationString(eqn) +& "\nto\n" +& BackendDump.equationString(eqn1) +& "\n");
+      // print("Replace in Eqn:\n" + BackendDump.equationString(eqn) + "\nto\n" + BackendDump.equationString(eqn1) + "\n");
     then replaceAliasState(rest, inCrExp, indCrExp, inACr, eqns);
   end match;
 end replaceAliasState;
@@ -2221,7 +2221,7 @@ algorithm
         if Flags.isSet(Flags.BLT_DUMP) then
           print("try to select dummy vars with natural matching(newer)\n");
         end if;
-        //  print("Vars " +& intString(nfreeStates) +& " Eqns " +& intString(neqns) +& "\n");
+        //  print("Vars " + intString(nfreeStates) + " Eqns " + intString(neqns) + "\n");
         // sort vars with heuristic
         hovvars = BackendVariable.listVar1(statecandidates);
         eqns1 = BackendEquation.listEquation(eqnslst);
@@ -2321,7 +2321,7 @@ algorithm
         end if;
         // splitt it into sets
         syst = BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(vec1,vec2,{}));
-        //  dumpSystemGraphML(syst,ishared,NONE(),"StateSelection" +& intString(arrayLength(m)) +& ".graphml");
+        //  dumpSystemGraphML(syst,ishared,NONE(),"StateSelection" + intString(arrayLength(m)) + ".graphml");
         (syst,m,mT,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.ABSOLUTE(), SOME(funcs));
         // TODO: partition the system
         comps = partitionSystem(m,mT);
@@ -2343,7 +2343,7 @@ algorithm
           BackendDump.printEquationList(eqnslst);
         end if;
         // no chance, to much equations
-        msg = "It is not possible to select continues time states because Number of Equations " +& intString(neqns) +& " greater than number of States " +& intString(nfreeStates) +& " to select from.";
+        msg = "It is not possible to select continues time states because Number of Equations " + intString(neqns) + " greater than number of States " + intString(nfreeStates) + " to select from.";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
@@ -2431,7 +2431,7 @@ algorithm
   //ilst1 := List.map1r(ilst1,arrayGet,invindexmap);
   //ilst := List.unionIntN(ilst, ilst1, nvars);
   print("##########################\n");
-  print(BackendDump.dumpMarkedVars(syst, ilst) +& "\n");
+  print(BackendDump.dumpMarkedVars(syst, ilst) + "\n");
   print(BackendDump.dumpMarkedEqns(syst, eqns));
 end dumpBlock;
 
@@ -2735,21 +2735,21 @@ algorithm
         (varlst,dummyStates,stateSets);
     case (seteqns::sets,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        //  print("seteqns: " +& intString(listLength(seteqns)) +& "\n");
-        //  print(stringDelimitList(List.map(seteqns,intString),", ") +& "\n");
+        //  print("seteqns: " + intString(listLength(seteqns)) + "\n");
+        //  print(stringDelimitList(List.map(seteqns,intString),", ") + "\n");
         unassigned = List.select1r(seteqns,Matching.isUnAssigned,vec1);
         n = arrayLength(inM);
         set = getEqnsforDynamicStateSelection(unassigned,n,inM,inMT,vec1,vec2,inMapEqnIncRow,inMapIncRowEqn);
         assigned = List.select1r(set,Matching.isAssigned,vec1);
-        //  print("Set: " +& intString(listLength(set)) +& "\n");
-        //  print(stringDelimitList(List.map(set,intString),", ") +& "\n");
-        //  print("assigned: " +& intString(listLength(assigned)) +& "\n");
-        //  print(stringDelimitList(List.map(assigned,intString),", ") +& "\n");
+        //  print("Set: " + intString(listLength(set)) + "\n");
+        //  print(stringDelimitList(List.map(set,intString),", ") + "\n");
+        //  print("assigned: " + intString(listLength(assigned)) + "\n");
+        //  print(stringDelimitList(List.map(assigned,intString),", ") + "\n");
         flag = arrayCreate(inVarSize,true);
         ((statevars,_)) = List.fold3(set,getSetStates,flag,inM,vec2,({},{}));
-        //  print("Statevars: " +& intString(listLength(statevars)) +& "\n");
-        //  print(stringDelimitList(List.map(statevars,intString),", ") +& "\n");
-        //  print("Select " +& intString(listLength(unassigned)) +& " from " +& intString(listLength(statevars)) +& "\n");
+        //  print("Statevars: " + intString(listLength(statevars)) + "\n");
+        //  print(stringDelimitList(List.map(statevars,intString),", ") + "\n");
+        //  print("Select " + intString(listLength(unassigned)) + " from " + intString(listLength(statevars)) + "\n");
         nstatevars = listLength(statevars);
         ass1 = List.consN(nstatevars, -1, {});
         nunassigned = listLength(unassigned);
@@ -2758,9 +2758,9 @@ algorithm
         assigend1 = List.map1r(unassigned,arrayGet,inMapIncRowEqn);
         n = arrayLength(inMapIncRowEqn);
         assigend1 = List.uniqueIntN(assigend1,n);
-        //  print("BackendEquation.getEqns " +& stringDelimitList(List.map(assigend1,intString),", ") +& "\n");
+        //  print("BackendEquation.getEqns " + stringDelimitList(List.map(assigend1,intString),", ") + "\n");
         eqnlst = BackendEquation.getEqns(assigend1,iEqns);
-        //  print("BackendEquation.equationRemove " +& stringDelimitList(List.map(assigend1,intString),", ") +& "\n");
+        //  print("BackendEquation.equationRemove " + stringDelimitList(List.map(assigend1,intString),", ") + "\n");
         eqns1 = List.fold(assigend1,BackendEquation.equationRemove,iEqns);
         nassigned = listLength(assigned);
         flag = arrayCreate(inEqnsSize,true);
@@ -2835,7 +2835,7 @@ algorithm
         true = flag[e];
         true = intGt(vec1[e],0);
         e1 = inMapIncRowEqn[e];
-        // print("BackendEquation.equationNth1 " +& intString(e1) +& "\n");
+        // print("BackendEquation.equationNth1 " + intString(e1) + "\n");
         eqn = BackendEquation.equationNth1(iEqnsArr,e1);
         eqnarr = BackendEquation.equationRemove(e1,iEqnsArr);
         eqns = inMapEqnIncRow[e1];
@@ -2939,7 +2939,7 @@ algorithm
         e1 = mapIncRowEqn[e];
         eqns = mapEqnIncRow[e1];
         _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
-        //  print("Seach for unassigned Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
+        //  print("Seach for unassigned Eqns " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
         (set,_) = getEqnsforDynamicStateSelectionPhase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,false);
       then
         getEqnsforDynamicStateSelection1(rest,m,mT,mark+1,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,set);
@@ -2977,9 +2977,9 @@ algorithm
         // traverse all adiacent rows but not the assigned
         rows = List.select(m[e], Util.intPositive);
         rows = List.removeOnTrue(ass1[e], intEq, rows);
-        // print("search in Rows " +& stringDelimitList(List.map(rows,intString),", ") +& " from " +& intString(e) +& "\n");
+        // print("search in Rows " + stringDelimitList(List.map(rows,intString),", ") + " from " + intString(e) + "\n");
         (set,found) = getEqnsforDynamicStateSelectionRows(rows,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,false);
-        // print("add " +& boolString(found) +& " equation " +& intString(e) +& "\n");
+        // print("add " + boolString(found) + " equation " + intString(e) + "\n");
         set = List.consOnTrue(found, e, set);
         _ = arrayUpdate(colummarks,e,if found then mark else colummarks[e]);
         (set,found) = getEqnsforDynamicStateSelectionPhase(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,set,found or iFound);
@@ -3014,27 +3014,27 @@ algorithm
     case (r::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is free
-        // print("check Row " +& intString(r) +& "\n");
+        // print("check Row " + intString(r) + "\n");
         rc = ass2[r];
-        // print("check Colum " +& intString(rc) +& "\n");
+        // print("check Colum " + intString(rc) + "\n");
         false = intGt(rc,0);
-        // print("Found free eqn " +& intString(rc) +& "\n");
+        // print("Found free eqn " + intString(rc) + "\n");
         (set,b) = getEqnsforDynamicStateSelectionRows(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,true);
       then
         (set,b);
     case (r::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is matched
-        // print("check Row " +& intString(r) +& "\n");
+        // print("check Row " + intString(r) + "\n");
         rc = ass2[r];
-        // print("check Colum " +& intString(rc) +& "\n");
+        // print("check Colum " + intString(rc) + "\n");
         true = intGt(rc,0);
         true = intEq(colummarks[rc],0);
         // if it is a multi dim equation take all scalare equations
         e = mapIncRowEqn[rc];
         eqns = mapEqnIncRow[e];
         List.fold1r(eqns,arrayUpdate,if iFound then mark else -mark,colummarks);
-        // print("traverse Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
+        // print("traverse Eqns " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
         (set,b) = getEqnsforDynamicStateSelectionPhase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,false);
         eqns = if b and not iFound then eqns else {};
         _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
@@ -3044,12 +3044,12 @@ algorithm
     case (r::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is matched
-        // print("check Row " +& intString(r) +& "\n");
+        // print("check Row " + intString(r) + "\n");
         rc = ass2[r];
-        // print("check Colum " +& intString(rc) +& "\n");
+        // print("check Colum " + intString(rc) + "\n");
         true = intGt(rc,0);
         b = intGt(colummarks[rc],0);
-        // print("Found " +& boolString(b) +& " equation " +& intString(rc) +& "\n");
+        // print("Found " + boolString(b) + " equation " + intString(rc) + "\n");
         (set,b) = getEqnsforDynamicStateSelectionRows(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,b or iFound);
       then
         (set,b);
@@ -3169,7 +3169,7 @@ algorithm
         varCref = BackendVariable.varCref(v);
         prio1 = varStateSelectPrio(v);
         prio2 = varStateSelectHeuristicPrio(v,allVars,index,m);
-        prio = prio1 +. prio2;
+        prio = prio1 + prio2;
         if Flags.isSet(Flags.DUMMY_SELECT) then
           BackendDump.debugStrCrefStrRealStrRealStrRealStr("Calc Prio for ",varCref,"\n Prio StateSelect : ",prio1,"\n Prio Heuristik : ",prio2,"\n ### Prio Result : ",prio,"\n");
         end if;
@@ -3199,7 +3199,7 @@ algorithm
   prio4 := varStateSelectHeuristicPrio4(v,vars);
   prio5 := varStateSelectHeuristicPrio5(v);
   prio6 := varStateSelectHeuristicPrio6(v,index,m);
-  prio:= prio1 +. prio2 +. prio3 +. prio4 +. prio5 +. prio6;
+  prio := prio1 + prio2 + prio3 + prio4 + prio5 + prio6;
   printVarListtateSelectHeuristicPrio(prio1,prio2,prio3,prio4,prio5,prio6);
 end varStateSelectHeuristicPrio;
 
@@ -3215,12 +3215,12 @@ algorithm
     case(_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.DUMMY_SELECT);
-        print("Prio 1 : " +& realString(Prio1) +& "\n");
-        print("Prio 2 : " +& realString(Prio2) +& "\n");
-        print("Prio 3 : " +& realString(Prio3) +& "\n");
-        print("Prio 4 : " +& realString(Prio4) +& "\n");
-        print("Prio 5 : " +& realString(Prio5) +& "\n");
-        print("Prio 6 : " +& realString(Prio6) +& "\n");
+        print("Prio 1 : " + realString(Prio1) + "\n");
+        print("Prio 2 : " + realString(Prio2) + "\n");
+        print("Prio 3 : " + realString(Prio3) + "\n");
+        print("Prio 4 : " + realString(Prio4) + "\n");
+        print("Prio 5 : " + realString(Prio5) + "\n");
+        print("Prio 6 : " + realString(Prio6) + "\n");
       then
         ();
     else ();
@@ -3448,7 +3448,7 @@ protected function dumpDeterminants
   input tuple<DAE.Exp,list<Integer>> iTpl;
   output String s;
 algorithm
-  s := "Determinant: " +& stringDelimitList(List.map(Util.tuple22(iTpl),intString),", ") +& " \n" +& ExpressionDump.printExpStr(Util.tuple21(iTpl)) +& "\n";
+  s := "Determinant: " + stringDelimitList(List.map(Util.tuple22(iTpl),intString),", ") + " \n" + ExpressionDump.printExpStr(Util.tuple21(iTpl)) + "\n";
 end dumpDeterminants;
 
 protected function makeder
@@ -3762,7 +3762,7 @@ algorithm
           (hov1,lov, dummystates);
       case ((cr,s)::_,_,_,_,_,_,_)
         equation
-          print("selectDummyStates failed for " +& intString(s) +& " " +& ComponentReference.printComponentRefStr(cr) +& "\n");
+          print("selectDummyStates failed for " + intString(s) + " " + ComponentReference.printComponentRefStr(cr) + "\n");
           BackendDump.printVariables(vars);
           BackendDump.printVariables(hov);
         then
@@ -4247,7 +4247,7 @@ algorithm
         ((vars,ht));
     else
       equation
-        msg = "IndexReduction.makeDummyVarandDummyDerivative failed " +& BackendDump.varString(inVar) +& "!";
+        msg = "IndexReduction.makeDummyVarandDummyDerivative failed " + BackendDump.varString(inVar) + "!";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
@@ -4320,7 +4320,7 @@ algorithm
       then (e,ht);
     case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst=_::_::_),ht)
       equation
-        msg = "IndexReduction.replaceDummyDerivativesExp failed for " +& ExpressionDump.printExpStr(e) +& "!";
+        msg = "IndexReduction.replaceDummyDerivativesExp failed for " + ExpressionDump.printExpStr(e) + "!";
         Error.addMessage(Error.COMPILER_WARNING, {msg});
       then (e,ht);
     else (inExp,iht);
@@ -4499,7 +4499,7 @@ algorithm
 
          SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true,shared);
          jac = listReverse(jac);
-         print("Jac:\n" +& BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
+         print("Jac:\n" + BackendDump.dumpJacobianStr(SOME(jac)) + "\n");
 
          // generate Determinant
          // base is jacobian of the system
@@ -4536,7 +4536,7 @@ algorithm
   zycles := determinantEdges(digraph[1],size,1,{1},{},1,1,digraph,{});
   dumpzycles(zycles,size);
   det := determinantfromZycles(zycles,size,DAE.RCONST(0.0));
-  print("Determinant: \n" +& ExpressionDump.printExpStr(det) +& "\n");
+  print("Determinant: \n" + ExpressionDump.printExpStr(det) + "\n");
 end determinant;
 
 protected function determinantfromZycles
@@ -4681,13 +4681,13 @@ algorithm
     case({},_,_,_,_,_,_,_,_) then izycles;
     case((edge,e)::_,_,_,_,_,_,_,_,_)
       equation
-        //print("Check edge:" +& intString(edge) +& " startNode " +& intString(startNode) +& " length " +& intString(length) +& "\n");
+        //print("Check edge:" + intString(edge) + " startNode " + intString(startNode) + " length " + intString(length) + "\n");
         // back at the start node of the cycle?
         true = intEq(edge,startNode);
         // a full cycle?
         true = intEq(size,length);
         // return zicle
-        //print("Voller Zyklus gefunden: d:" +& intString(subzycles) +& "\n");
+        //print("Voller Zyklus gefunden: d:" + intString(subzycles) + "\n");
         //BackendDump.debuglst(e::ezycle,ExpressionDump.printExpStr,", ","\n");
       then
         (e::ezycle,subzycles)::izycles;
@@ -4699,7 +4699,7 @@ algorithm
         false = intGt(length,size);
         // get next unvisited node
         nextnode = getUnvisitedNode(1,size,zycle);
-        //print("unvollstaendiger Zyklus gefunden: d:" +& intString(subzycles) +& " fahre mit Node " +& intString(nextnode) +& " fort\n");
+        //print("unvollstaendiger Zyklus gefunden: d:" + intString(subzycles) + " fahre mit Node " + intString(nextnode) + " fort\n");
         zycles = determinantEdges(digraph[nextnode],size,length+1,nextnode::zycle,e::ezycle,subzycles+1,nextnode,digraph,izycles);
       then
         determinantEdges(rest,size,length,zycle,ezycle,subzycles,startNode,digraph,zycles);
@@ -4709,7 +4709,7 @@ algorithm
         false = intGt(length,size);
         // not allready visited
         false = listMember(edge,zycle);
-        //print("fahre mit Node " +& intString(edge) +& " fort\n");
+        //print("fahre mit Node " + intString(edge) + " fort\n");
         zycles = determinantEdges(digraph[edge],size,length+1,edge::zycle,e::ezycle,subzycles,startNode,digraph,izycles);
       then
         determinantEdges(rest,size,length,zycle,ezycle,subzycles,startNode,digraph,zycles);
@@ -4727,7 +4727,7 @@ end determinantEdges;
 //   input tuple<Integer,DAE.Exp> inTpl;
 //   output String s;
 // algorithm
-//   s := intString(Util.tuple21(inTpl)) +& ":" +& ExpressionDump.printExpStr(Util.tuple22(inTpl));
+//   s := intString(Util.tuple21(inTpl)) + ":" + ExpressionDump.printExpStr(Util.tuple22(inTpl));
 // end dumpZycle;
 
 protected function getDeterminantDigraph
@@ -4769,7 +4769,7 @@ algorithm
     case((elst,d)::rest,_)
       equation
         sign = realPow(-1.0,intReal(size-d));
-        print("d:" +& intString(d) +& " : " +& realString(sign) +& "*");
+        print("d:" + intString(d) + " : " + realString(sign) + "*");
         BackendDump.debuglst(elst,ExpressionDump.printExpStr,"*","\n");
         dumpzycles(rest,size);
       then
@@ -5097,7 +5097,7 @@ protected
   BackendDAE.Equation a,b;
 algorithm
   (a,b) := inTpl;
-  print("High index problem, differentiated equation:\n" +& BackendDump.equationString(a) +& "\nto\n" +& BackendDump.equationString(b) +& "\n");
+  print("High index problem, differentiated equation:\n" + BackendDump.equationString(a) + "\nto\n" + BackendDump.equationString(b) + "\n");
 end debugdifferentiateEqns;
 
 protected function getSetVars
@@ -5120,7 +5120,7 @@ protected
   DAE.Type tp;
 algorithm
 //  set := ComponentReference.makeCrefIdent("$STATESET",DAE.T_COMPLEX_DEFAULT,{DAE.INDEX(DAE.ICONST(index))});
-  set := ComponentReference.makeCrefIdent("$STATESET" +& intString(index),DAE.T_COMPLEX_DEFAULT,{});
+  set := ComponentReference.makeCrefIdent("$STATESET" + intString(index),DAE.T_COMPLEX_DEFAULT,{});
   tp := if intGt(setsize,1) then DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource) else DAE.T_REAL_DEFAULT;
   crstates := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("x",tp,{}));
   oSetVars := generateArrayVar(crstates,BackendDAE.STATE(1,NONE()),tp,NONE());
@@ -5305,20 +5305,20 @@ algorithm
     case (v as BackendDAE.VAR(varName=cr),(true,id,(graphInfo,graph)))
       equation
         true = BackendVariable.isStateVar(v);
-        //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
-        //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
+        //g = GraphML.addNode("v" + intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
+        //g = GraphML.addNode("v" + intString(id),intString(id),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
         labelText = intString(id);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         desc = ComponentReference.printComponentRefStr(cr);
-        (graphInfo,_) = GraphML.addNode("v" +& intString(id),GraphML.COLOR_BLUE, {label}, GraphML.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
+        (graphInfo,_) = GraphML.addNode("v" + intString(id),GraphML.COLOR_BLUE, {label}, GraphML.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
       then (v,(true,id+1,(graphInfo,graph)));
 
     case (v as BackendDAE.VAR(varName=cr),(false,id,(graphInfo,graph)))
       equation
         true = BackendVariable.isStateVar(v);
-        labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
+        labelText = intString(id) + ": " + ComponentReference.printComponentRefStr(cr);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-        (graphInfo,_) = GraphML.addNode("v" +& intString(id),GraphML.COLOR_BLUE,{label},GraphML.ELLIPSE(),NONE(),{}, graph, graphInfo);
+        (graphInfo,_) = GraphML.addNode("v" + intString(id),GraphML.COLOR_BLUE,{label},GraphML.ELLIPSE(),NONE(),{}, graph, graphInfo);
       then (v,(false,id+1,(graphInfo,graph)));
 
     case (v as BackendDAE.VAR(varName=cr),(true,id,(graphInfo,graph)))
@@ -5328,18 +5328,18 @@ algorithm
         labelText = intString(id);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
         desc = ComponentReference.printComponentRefStr(cr);
-        //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
-        //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
-        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color,{label},GraphML.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
+        //g = GraphML.addNode("v" + intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
+        //g = GraphML.addNode("v" + intString(id),intString(id),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
+        (graphInfo,_) = GraphML.addNode("v" + intString(id),color,{label},GraphML.ELLIPSE(),SOME(desc),{}, graph, graphInfo);
       then (v,(true,id+1,(graphInfo,graph)));
 
     case (v as BackendDAE.VAR(varName=cr),(false,id,(graphInfo,graph)))
       equation
         b = BackendVariable.isVarDiscrete(v);
         color = if b then GraphML.COLOR_PURPLE else GraphML.COLOR_RED;
-        labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
+        labelText = intString(id) + ": " + ComponentReference.printComponentRefStr(cr);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
+        (graphInfo,_) = GraphML.addNode("v" + intString(id),color, {label}, GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
       then (v,(false,id+1,(graphInfo,graph)));
 
     else (inVar,inTpl);
@@ -5368,11 +5368,11 @@ algorithm
       equation
         true = BackendVariable.isStateVar(v);
         color = if intGt(vec1[id],0) then GraphML.COLOR_BLUE else GraphML.COLOR_YELLOW;
-        labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
+        labelText = intString(id) + ": " + ComponentReference.printComponentRefStr(cr);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-        //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
-        //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
-        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
+        //g = GraphML.addNode("v" + intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
+        //g = GraphML.addNode("v" + intString(id),intString(id),color,GraphML.ELLIPSE(),g);
+        (graphInfo,_) = GraphML.addNode("v" + intString(id),color, {label}, GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
       then (v,(false,id+1,vec1,(graphInfo,graph)));
 
     case (v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph)))
@@ -5382,17 +5382,17 @@ algorithm
         desc = ComponentReference.printComponentRefStr(cr);
         labelText = intString(id);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color, {label}, GraphML.ELLIPSE(),SOME(desc),{},graph, graphInfo);
+        (graphInfo,_) = GraphML.addNode("v" + intString(id),color, {label}, GraphML.ELLIPSE(),SOME(desc),{},graph, graphInfo);
       then (v,(true,id+1,vec1,(graphInfo,graph)));
 
     case (v as BackendDAE.VAR(varName=cr),(false,id,vec1,(graphInfo,graph)))
       equation
         color = if intGt(vec1[id],0) then GraphML.COLOR_RED else GraphML.COLOR_YELLOW;
-        labelText = intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr);
+        labelText = intString(id) + ": " + ComponentReference.printComponentRefStr(cr);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-        //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
-        //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
-        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color,{label},GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
+        //g = GraphML.addNode("v" + intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
+        //g = GraphML.addNode("v" + intString(id),intString(id),color,GraphML.ELLIPSE(),g);
+        (graphInfo,_) = GraphML.addNode("v" + intString(id),color,{label},GraphML.ELLIPSE(),NONE(),{},graph, graphInfo);
       then (v,(false,id+1,vec1,(graphInfo,graph)));
 
     case (v as BackendDAE.VAR(varName=cr),(true,id,vec1,(graphInfo,graph)))
@@ -5401,7 +5401,7 @@ algorithm
         desc = ComponentReference.printComponentRefStr(cr);
         labelText = intString(id);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-        (graphInfo,_) = GraphML.addNode("v" +& intString(id),color,{label},GraphML.ELLIPSE(),SOME(desc),{},graph, graphInfo);
+        (graphInfo,_) = GraphML.addNode("v" + intString(id),color,{label},GraphML.ELLIPSE(),SOME(desc),{},graph, graphInfo);
       then (v,(true,id+1,vec1,(graphInfo,graph)));
 
     else (inVar,inTpl);
@@ -5429,21 +5429,21 @@ algorithm
         eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
         str = BackendDump.equationString(eqn);
         //str := intString(inNode);
-        str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
+        str = intString(inNode) + ": " + BackendDump.equationString(eqn);
         str = Util.xmlEscape(str);
         label = GraphML.NODELABEL_INTERNAL(str,NONE(),GraphML.FONTPLAIN());
-        (graphInfo,_) = GraphML.addNode("n" +& intString(inNode),GraphML.COLOR_GREEN,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
+        (graphInfo,_) = GraphML.addNode("n" + intString(inNode),GraphML.COLOR_GREEN,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
       then ((graphInfo,graph));
     case(_,_,_,true,(graphInfo,graph))
       equation
         eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
         str = BackendDump.equationString(eqn);
         //str := intString(inNode);
-        //str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
+        //str = intString(inNode) + ": " + BackendDump.equationString(eqn);
         str = Util.xmlEscape(str);
         labelText = intString(inNode);
         label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-        (graphInfo,_) = GraphML.addNode("n" +& intString(inNode),GraphML.COLOR_GREEN, {label},GraphML.RECTANGLE(),SOME(str),{},graph,graphInfo);
+        (graphInfo,_) = GraphML.addNode("n" + intString(inNode),GraphML.COLOR_GREEN, {label},GraphML.RECTANGLE(),SOME(str),{},graph,graphInfo);
       then ((graphInfo,graph));
   end match;
 end addEqnGraph;
@@ -5492,12 +5492,12 @@ algorithm
         false = eqnsflag[e];
        eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
        str = BackendDump.equationString(eqn);
-       str = intString(e) +& ": " +&  str;
+       str = intString(e) + ": " +  str;
        //str = intString(inNode);
        str = Util.xmlEscape(str);
        color = if intGt(vec2[inNode],0) then GraphML.COLOR_GREEN else GraphML.COLOR_PURPLE;
        label = GraphML.NODELABEL_INTERNAL(str,NONE(),GraphML.FONTPLAIN());
-       (graphInfo,_) = GraphML.addNode("n" +& intString(e),color, {label}, GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
+       (graphInfo,_) = GraphML.addNode("n" + intString(e),color, {label}, GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
      then ((graphInfo,graph));
     case(_,_,(vec2,mapIncRowEqn,eqnsflag),true,(graphInfo,graph))
       equation
@@ -5505,13 +5505,13 @@ algorithm
         false = eqnsflag[e];
        eqn = BackendEquation.equationNth1(eqns, mapIncRowEqn[inNode]);
        str = BackendDump.equationString(eqn);
-       //str = intString(e) +& ": " +&  str;
+       //str = intString(e) + ": " +  str;
        //str = intString(inNode);
        str = Util.xmlEscape(str);
        color = if intGt(vec2[inNode],0) then GraphML.COLOR_GREEN else GraphML.COLOR_PURPLE;
        labelText = intString(e);
        label = GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-       (graphInfo,_) = GraphML.addNode("n" +& intString(e),color, {label}, GraphML.RECTANGLE(),SOME(str),{},graph,graphInfo);
+       (graphInfo,_) = GraphML.addNode("n" + intString(e),color, {label}, GraphML.RECTANGLE(),SOME(str),{},graph,graphInfo);
      then ((graphInfo,graph));
     case(_,_,(_,mapIncRowEqn,eqnsflag),_,_)
       equation
@@ -5535,7 +5535,7 @@ algorithm
   (id,graph) := inTpl;
   v := intAbs(V);
   ln := if intGt(V,0) then GraphML.LINE() else GraphML.DASHED();
-  (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,ln,GraphML.LINEWIDTH_STANDARD, false, {},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{},graph);
+  (graph,_) := GraphML.addEdge("e" + intString(id),"n" + intString(e),"v" + intString(v),GraphML.COLOR_BLACK,ln,GraphML.LINEWIDTH_STANDARD, false, {},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{},graph);
   outTpl := ((id+1,graph));
 end addEdgeGraph;
 
@@ -5574,7 +5574,7 @@ algorithm
   absv := intAbs(v);
   arrow := if intEq(r,absv) then (GraphML.ARROWSTANDART(),GraphML.ARROWNONE()) else (GraphML.ARROWNONE(),GraphML.ARROWSTANDART());
   lt := if intGt(v,0) then GraphML.LINE() else GraphML.DASHED();
-  (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(absv),GraphML.COLOR_BLACK,lt,GraphML.LINEWIDTH_STANDARD, false, {},arrow,{},graph);
+  (graph,_) := GraphML.addEdge("e" + intString(id),"n" + intString(e),"v" + intString(absv),GraphML.COLOR_BLACK,lt,GraphML.LINEWIDTH_STANDARD, false, {},arrow,{},graph);
   outTpl := ((id+1,r,graph));
 end addDirectedEdgeGraph;
 
@@ -5614,7 +5614,7 @@ algorithm
   (id,r,text,graph) := inTpl;
   arrow := if intEq(r,v) then (GraphML.ARROWSTANDART(),GraphML.ARROWNONE()) else (GraphML.ARROWNONE(),GraphML.ARROWSTANDART());
   labels := if intEq(r,v) then {GraphML.EDGELABEL(text,SOME("#0000FF"),GraphML.FONTSIZE_STANDARD)} else {};
-  (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,labels,arrow,{},graph);
+  (graph,_) := GraphML.addEdge("e" + intString(id),"n" + intString(e),"v" + intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,labels,arrow,{},graph);
   outTpl := ((id+1,r,text,graph));
 end addDirectedNumEdgeGraph;
 
@@ -5675,7 +5675,7 @@ algorithm
   (graph,id) := inGraph;
   evar :=ass2[e];
   arrow := if intGt(evar,0) and intEq(evar,v) then GraphML.ARROWSTANDART() else GraphML.ARROWNONE();
-  (graph,_) := GraphML.addEdge("e" +& intString(id),"n" +& intString(e),prefix +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD, false, {},(GraphML.ARROWNONE(),arrow),{},graph);
+  (graph,_) := GraphML.addEdge("e" + intString(id),"n" + intString(e),prefix + intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD, false, {},(GraphML.ARROWNONE(),arrow),{},graph);
   outGraph := (graph,id+1);
 end addEdge;
 
@@ -5695,7 +5695,7 @@ algorithm
   color := if intGt(ass2[inNode],0) then GraphML.COLOR_GREEN else GraphML.COLOR_BLUE;
   labelText := intString(inNode);
   label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-  (graphInfo,_) := GraphML.addNode("n" +& intString(inNode),color,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
+  (graphInfo,_) := GraphML.addNode("n" + intString(inNode),color,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
   outGraph := (graphInfo,graph);
 end addEqnNodes;
 
@@ -5722,7 +5722,7 @@ algorithm
   c := if intGt(ass1[inNode],0) then color1 else color;
   labelText := ComponentReference.printComponentRefStr(cr);
   label := GraphML.NODELABEL_INTERNAL(labelText,NONE(),GraphML.FONTPLAIN());
-  (graphInfo,_) := GraphML.addNode(prefix +& intString(inNode),c,{label},GraphML.ELLIPSE(),NONE(),{},graph,graphInfo);
+  (graphInfo,_) := GraphML.addNode(prefix + intString(inNode),c,{label},GraphML.ELLIPSE(),NONE(),{},graph,graphInfo);
   outGraph := (graphInfo,graph);
 end addVarNodes;
 
@@ -5823,7 +5823,7 @@ algorithm
         true = intGt(v,0);
         text = intString(solvabilityWights(s));
         label = GraphML.EDGELABEL(text,SOME("#0000FF"), GraphML.FONTSIZE_STANDARD);
-        (graph,_) = GraphML.addEdge("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{label},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{},graph);
+        (graph,_) = GraphML.addEdge("e" + intString(id),"n" + intString(e),"v" + intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{label},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{},graph);
       then
         ((id+1,graph));
     else inTpl;
@@ -5857,9 +5857,9 @@ algorithm
         (_,vlst) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         varcomp1 = List.fold1r(vlst,arrayUpdate,iN,varcomp);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,vars);
-        text = intString(iN) +& ":" +& stringDelimitList(List.map(List.map(varlst,BackendVariable.varCref),ComponentReference.printComponentRefStr),"\n");
+        text = intString(iN) + ":" + stringDelimitList(List.map(List.map(varlst,BackendVariable.varCref),ComponentReference.printComponentRefStr),"\n");
         label = GraphML.NODELABEL_INTERNAL(text,NONE(),GraphML.FONTPLAIN());
-        (graphInfo,_) = GraphML.addNode("n" +& intString(iN),GraphML.COLOR_GREEN,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
+        (graphInfo,_) = GraphML.addNode("n" + intString(iN),GraphML.COLOR_GREEN,{label},GraphML.RECTANGLE(),NONE(),{},graph,graphInfo);
       then
         addCompsGraph(rest,vars,varcomp1,iN+1,(graphInfo,graph));
   end match;
@@ -5948,7 +5948,7 @@ algorithm
         c = varcomp[v];
         false = intEq(markarray[c],mark);
         _ = arrayUpdate(markarray,c,mark);
-        (graph,_) = GraphML.addEdge("e" +& intString(id),"n" +& intString(c),"n" +& intString(iN),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{},(GraphML.ARROWSTANDART(),GraphML.ARROWNONE()),{},iGraph);
+        (graph,_) = GraphML.addEdge("e" + intString(id),"n" + intString(c),"n" + intString(iN),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{},(GraphML.ARROWSTANDART(),GraphML.ARROWNONE()),{},iGraph);
         (n,graph) = addCompEdgesGraph(rest,varcomp,markarray,mark,iN,id+1,graph);
       then
         (n,graph);
@@ -6065,7 +6065,7 @@ algorithm
         addStateOrderFinder(vlst,dvlst,vars);
     case(var::_,dvar::_,_)
       equation
-        msg = "IndexReduction.addStateOrderFinder failed for " +& BackendDump.varString(var) +& " with derivative " +& BackendDump.varString(dvar) +& "\n";
+        msg = "IndexReduction.addStateOrderFinder failed for " + BackendDump.varString(var) + " with derivative " + BackendDump.varString(dvar) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
@@ -6082,7 +6082,7 @@ protected function dumpStates
   input tuple<DAE.ComponentRef,Integer> state;
   output String outStr;
 algorithm
-  outStr := intString(Util.tuple22(state)) +& " " +& ComponentReference.printComponentRefStr(Util.tuple21(state));
+  outStr := intString(Util.tuple22(state)) + " " + ComponentReference.printComponentRefStr(Util.tuple21(state));
 end dumpStates;
 
 /******************************************
@@ -6330,7 +6330,7 @@ protected function printStateOrderStr "help function to dumpStateOrder"
   input tuple<DAE.ComponentRef,DAE.ComponentRef> tpl;
   output String str;
 algorithm
-  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& ComponentReference.printComponentRefStr(Util.tuple22(tpl));
+  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ComponentReference.printComponentRefStr(Util.tuple22(tpl));
 end printStateOrderStr;
 
 annotation(__OpenModelica_Interface="backend");

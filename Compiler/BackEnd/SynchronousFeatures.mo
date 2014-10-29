@@ -257,7 +257,7 @@ algorithm
     lst := ea[ix];
     eq := BackendEquation.equationNth1(arr, i);
     lst := eq::lst;
-    // print("adding eq " +& intString(n) +& " to group " +& intString(ix) +& "\n");
+    // print("adding eq " + intString(n) + " to group " + intString(ix) + "\n");
     arrayUpdate(ea, ix, lst);
   end for;
 end partitionEquations;
@@ -290,15 +290,15 @@ algorithm
       fail();
     end if;
 
-    // print("adding var " +& intString(i) +& " to group ???\n");
+    // print("adding var " + intString(i) + " to group ???\n");
     eqix::_ := mT[i];
     eqix := intAbs(eqix);
-    // print("var " +& intString(i) +& " has eq " +& intString(eqix) +& "\n");
+    // print("var " + intString(i) + " has eq " + intString(eqix) + "\n");
     // That's the index of the indep.system
     ix := ixs[eqix];
     lst := va[ix];
     lst := v::lst;
-    // print("adding var " +& intString(i) +& " to group " +& intString(ix) +& " (comes from eq: "+& intString(eqix) +&")\n");
+    // print("adding var " + intString(i) + " to group " + intString(ix) + " (comes from eq: "+ intString(eqix) +")\n");
     arrayUpdate(va, ix, lst);
   end for;
 end partitionVars;

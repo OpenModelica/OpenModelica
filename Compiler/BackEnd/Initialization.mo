@@ -219,10 +219,10 @@ algorithm
       b2 = List.isNotEmpty(removedEqns);
       if Flags.isSet(Flags.INITIALIZATION) then
         if b1 then
-          Error.addCompilerWarning("Assuming fixed start value for the following " +& intString(listLength(dumpVars)) +& " variables:\n" +& warnAboutVars2(dumpVars));
+          Error.addCompilerWarning("Assuming fixed start value for the following " + intString(listLength(dumpVars)) + " variables:\n" + warnAboutVars2(dumpVars));
         end if;
         if b2 then
-          Error.addCompilerWarning("Assuming redundant initial conditions for the following " +& intString(listLength(removedEqns)) +& " initial equations:\n" +& warnAboutEqns2(removedEqns));
+          Error.addCompilerWarning("Assuming redundant initial conditions for the following " + intString(listLength(removedEqns)) + " initial equations:\n" + warnAboutEqns2(removedEqns));
         end if;
       else
         if b1 then
@@ -278,7 +278,7 @@ algorithm
       true = intGt(nEqns, nVars);
 
       if Flags.isSet(Flags.INITIALIZATION) then
-        Error.addCompilerWarning("It was not possible to solve the over-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
+        Error.addCompilerWarning("It was not possible to solve the over-determined initial system (" + intString(nEqns) + " equations and " + intString(nVars) + " variables)");
       end if;
     then fail();
 
@@ -296,7 +296,7 @@ algorithm
       true = intLt(nEqns, nVars);
 
       if Flags.isSet(Flags.INITIALIZATION) then
-        Error.addCompilerWarning("It was not possible to solve the under-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
+        Error.addCompilerWarning("It was not possible to solve the under-determined initial system (" + intString(nEqns) + " equations and " + intString(nVars) + " variables)");
       end if;
     then fail();
   end matchcontinue;
@@ -787,12 +787,12 @@ algorithm
     case ({}) then "";
 
     case (v::{}) equation
-      crStr = "         " +& BackendDump.varString(v);
+      crStr = "         " + BackendDump.varString(v);
     then crStr;
 
     case (v::vars) equation
       crStr = BackendDump.varString(v);
-      str = "         " +& crStr +& "\n" +& warnAboutVars2(vars);
+      str = "         " + crStr + "\n" + warnAboutVars2(vars);
     then str;
   end match;
 end warnAboutVars2;
@@ -812,12 +812,12 @@ algorithm
     case ({}) then "";
 
     case (eq::{}) equation
-      crStr = "         " +& BackendDump.equationString(eq);
+      crStr = "         " + BackendDump.equationString(eq);
     then crStr;
 
     case (eq::eqns) equation
       crStr = BackendDump.equationString(eq);
-      str = "         " +& crStr +& "\n" +& warnAboutEqns2(eqns);
+      str = "         " + crStr + "\n" + warnAboutEqns2(eqns);
     then str;
   end match;
 end warnAboutEqns2;
@@ -1209,24 +1209,24 @@ algorithm
   // get state-index list
   stateIndices := BackendVariable.getVarIndexFromVar(inInitVars, inVars);
   nInitVars := listLength(stateIndices);
-//print("{" +& stringDelimitList(List.map(stateIndices, intString),",") +& "}\n");
+//print("{" + stringDelimitList(List.map(stateIndices, intString),",") + "}\n");
 
   // get initial equation-index list
   //(initEqs, _) := List.extractOnTrue(BackendEquation.equationList(inEqns), BackendEquation.isInitialEquation);
   //nInitEqs := BackendDAEUtil.equationSize(BackendEquation.listEquation(initEqs));
   ((_, initEqsIndices)) := List.fold(BackendEquation.equationList(inEqns), getInitEqIndex, (1, {}));
   nInitEqs := listLength(initEqsIndices);
-//print("{" +& stringDelimitList(List.map(initEqsIndices, intString),",") +& "}\n");
+//print("{" + stringDelimitList(List.map(initEqsIndices, intString),",") + "}\n");
 
   // modify incidence matrix for under-determined systems
   nAddEqs := intMax(nVars-nEqns + inIndex, inIndex);
-//print("nAddEqs: " +& intString(nAddEqs) +& "\n");
+//print("nAddEqs: " + intString(nAddEqs) + "\n");
   m_ := fixUnderDeterminedSystem(m_, stateIndices, nEqns, nAddEqs);
   SOME(m) := BackendDAEUtil.copyIncidenceMatrix(SOME(m_)) "deep copy";
 
   // modify incidence matrix for over-determined systems
   nAddVars := intMax(nEqns-nVars + inIndex, inIndex);
-//print("nAddVars: " +& intString(nAddVars) +& "\n");
+//print("nAddVars: " + intString(nAddVars) + "\n");
   m := fixOverDeterminedSystem(m, initEqsIndices, nVars, nAddVars);
 
   // match the system (nVars+nAddVars == nEqns+nAddEqs)
@@ -1241,14 +1241,14 @@ algorithm
   // check whether or not a complete matching was found
   unassigned := Matching.getUnassigned(nVars+nAddVars, vec1, {});
   if 0 < listLength(unassigned) then
-    Error.addCompilerNotification("The given system is mixed-determined.   [index > " +& intString(inIndex) +& "]");
+    Error.addCompilerNotification("The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
   end if;
   0 := listLength(unassigned); // if this fails, the system is singular (mixed-determined)
 
   // map to equations
   range := if nAddVars > 0 then List.intRange2(nVars+1, nVars+nAddVars) else {};
   redundantEqns := mapIndices(range, vec1);
-//print("{" +& stringDelimitList(List.map(redundantEqns, intString),",") +& "}\n");
+//print("{" + stringDelimitList(List.map(redundantEqns, intString),",") + "}\n");
 
   // symbolic consistency check
   (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared);
@@ -1263,7 +1263,7 @@ algorithm
   // map to variables
   range := if nAddEqs > 0 then List.intRange2(nEqns+1, nEqns+nAddEqs) else {};
   range := mapIndices(range, vec2);
-//print("{" +& stringDelimitList(List.map(range, intString),",") +& "}\n");
+//print("{" + stringDelimitList(List.map(range, intString),",") + "}\n");
 
   // introduce additional initial equations
   initVarList := List.map1r(range, BackendVariable.getVarAt, inVars);
@@ -1381,7 +1381,7 @@ algorithm
 
       dumpVar = BackendVariable.copyVarNewName(cref, var);
       // crStr = BackendDump.varString(dumpVar);
-      // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
+      // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " + crStr);
 
       (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
     then (eqns, dumpVar::dumpVars);
@@ -1400,7 +1400,7 @@ algorithm
       eqns = BackendEquation.addEquation(eqn, inEqns);
 
       // crStr = BackendDump.varString(var);
-      // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
+      // fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " + crStr);
 
       (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
     then (eqns, var::dumpVars);
@@ -1791,7 +1791,7 @@ algorithm
       //((_, listParameter))=parameterCheck((exp, {}));
       //false=intGt(listLength(listParameter), 0);
       eqn = BackendEquation.equationNth1(inEqnsOrig, currID);
-      Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " +& BackendDump.equationString(eqn));
+      Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " + BackendDump.equationString(eqn));
     then ({currID}, true, {});
 
     case (currID, _, _, _, _, _, _, _) equation
@@ -1817,7 +1817,7 @@ algorithm
       false=intGt(listLength(listParameter), 0);
 
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
-      Error.addCompilerError("The initialization problem is inconsistent due to the following equation: " +& BackendDump.equationString(eqn2) +& " (" +& BackendDump.equationString(eqn) +& ")");
+      Error.addCompilerError("The initialization problem is inconsistent due to the following equation: " + BackendDump.equationString(eqn2) + " (" + BackendDump.equationString(eqn) + ")");
     then ({}, false, {});
 
     case (currID, _, _, _, _, _, _, _) equation
@@ -1861,7 +1861,7 @@ algorithm
       true=intGt(listLength(listParameter), 0);
 
       eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
-      Error.addCompilerWarning("It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: " +& BackendDump.equationString(eqn2) +& " (" +& BackendDump.equationString(eqn) +& ")");
+      Error.addCompilerWarning("It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters during compile time: " + BackendDump.equationString(eqn2) + " (" + BackendDump.equationString(eqn) + ")");
     then ({}, true, {currID});
   end matchcontinue;
 end getConsistentEquation;
@@ -2237,7 +2237,7 @@ algorithm
       vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
       eqns = BackendEquation.addEquation(eqn, eqns);
 
-      // Error.addCompilerNotification("VARIABLE (fixed=true): " +& BackendDump.varString(var));
+      // Error.addCompilerNotification("VARIABLE (fixed=true): " + BackendDump.varString(var));
     then (var, (vars, fixvars, eqns, hs));
 
     // VARIABLE (fixed=false)
@@ -2259,12 +2259,12 @@ algorithm
       fixvars = if isInput then BackendVariable.addVar(var, fixvars) else fixvars;
       vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
 
-      // Error.addCompilerNotification("VARIABLE (fixed=false); " +& BackendDump.varString(var));
+      // Error.addCompilerNotification("VARIABLE (fixed=false); " + BackendDump.varString(var));
     then (var, (vars, fixvars, eqns, hs));
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed for: " +& BackendDump.varString(inVar));
+        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed for: " + BackendDump.varString(inVar));
       then fail();
 
   end matchcontinue;
@@ -2356,7 +2356,7 @@ algorithm
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed for: " +& BackendDump.varString(inVar));
+        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed for: " + BackendDump.varString(inVar));
       then fail();
 
   end match;

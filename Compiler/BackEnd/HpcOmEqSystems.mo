@@ -170,7 +170,7 @@ algorithm
       equation
         // completed
         true = listLength(compsIn) < compIdx;
-          //print("finished at:"+&intString(compIdx)+&"\n");
+          //print("finished at:"+intString(compIdx)+"\n");
       then
         (systIn,tornSysIdxIn);
     case(_,_,_,_,_,_,_)
@@ -182,9 +182,9 @@ algorithm
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
         if Flags.isSet(Flags.HPCOM_DUMP) then
-          print("handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
+          print("handle linear torn systems of size: "+intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+"\n");
         end if;
-           //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
+           //print("handle tornsystem with compnumber:"+intString(compIdx)+"\n");
            //BackendDump.dumpEqSystem(systIn,"the original system");
 
         // build the new components, the new variables and the new equations
@@ -202,9 +202,9 @@ algorithm
         vars = BackendVariable.listVar1(varLst);  // !!! BackendVariable.listVar outputs the reversed order therefore listVar1
         eqs = BackendEquation.listEquation(eqLst);
         if Flags.isSet(Flags.HPCOM_DUMP) then
-          print("number of added equations: "+&intString(listLength(eqsNew))+&" and the size of the linear torn system: "+&intString(listLength(tvarIdcs))+&"\n");
+          print("number of added equations: "+intString(listLength(eqsNew))+" and the size of the linear torn system: "+intString(listLength(tvarIdcs))+"\n");
         end if;
-        //print("new systemsize:"+&intString(listLength(varLst))+&" vars. and "+&intString(listLength(eqLst))+&" eqs\n");
+        //print("new systemsize:"+intString(listLength(varLst))+" vars. and "+intString(listLength(eqLst))+" eqs\n");
 
         // build the matching
         ass1All = arrayCreate(listLength(varLst),-1);
@@ -219,7 +219,7 @@ algorithm
 
         // insert the new components into the BLT instead of the TornSystem, append the updated blocks for the other equations, update matching for the new equations
         numNewSingleEqs = listLength(compsNew)-listLength(tvarIdcs);
-          //print("num of new comps:"+&intString(numNewSingleEqs)+&"\n");
+          //print("num of new comps:"+intString(numNewSingleEqs)+"\n");
           //BackendDump.dumpComponents(compsNew);
         compsNew = listAppend(compsNew, otherComps);
         compsTmp = List.replaceAtWithList(compsNew,compIdx-1,compsIn);
@@ -236,7 +236,7 @@ algorithm
     else
       // go to next StrongComponent
       equation
-        //print("no torn system in comp:"+&intString(compIdx)+&"\n");
+        //print("no torn system in comp:"+intString(compIdx)+"\n");
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn);
       then
         (systTmp,tornSysIdx);
@@ -426,7 +426,7 @@ algorithm
         Matching.matchingExternalsetIncidenceMatrix(nVars, nEqs, m);
         BackendDAEEXT.matching(nVars, nEqs, 5, -1, 0.0, 1);
         BackendDAEEXT.getAssignment(ass2, ass1);
-        //print("ass1 "+&stringDelimitList(List.map(arrayList(ass1),intString),"\n")+&"\n");
+        //print("ass1 "+stringDelimitList(List.map(arrayList(ass1),intString),"\n")+"\n");
 
         // order vars to assigned equations
         elimVarLst = List.map1(arrayList(ass1),List.getIndexFirst,elimVars);
@@ -478,14 +478,14 @@ algorithm
     case(false,_,_,_)
       equation
         jac = buildLinearJacobian(jacValuesIn);
-        //print("Jac:\n" +& BackendDump.dumpJacobianStr(jac) +& "\n");
+        //print("Jac:\n" + BackendDump.dumpJacobianStr(jac) + "\n");
         comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_LINEAR());
-        //print("the eqs of the sys: "+&stringDelimitList(List.map(varIdcsIn,intString),"\n")+&"\n");
-        //print("the vars of the sys: "+&stringDelimitList(List.map(eqIdcsIn,intString),"\n")+&"\n");
+        //print("the eqs of the sys: "+stringDelimitList(List.map(varIdcsIn,intString),"\n")+"\n");
+        //print("the vars of the sys: "+stringDelimitList(List.map(eqIdcsIn,intString),"\n")+"\n");
         //comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,NONE(),BackendDAE.JAC_NO_ANALYTIC());
         //comp = BackendDAE.TORNSYSTEM(varIdcsIn,eqIdcsIn,{},true);
         if Flags.isSet(Flags.HPCOM_DUMP) then
-          print("a linear equationsystem of size "+&intString(listLength(eqIdcsIn))+&" is left from the partitioning.\n\n");
+          print("a linear equationsystem of size "+intString(listLength(eqIdcsIn))+" is left from the partitioning.\n\n");
         end if;
       then
         comp;
@@ -899,8 +899,8 @@ algorithm
         // gets the equations for computing the coefficients for the new residual equations
         r_i = listGet(r_i_lstIn,iValue+1);
         (hs_i_lstTmp,a_i_lstTmp) = getTornSystemCoefficients1(List.intRange(numTVars),iValue,r_i,hs_i_lstIn,a_i_lstIn,tornSysIdx);
-        //BackendDump.dumpVarList(listGet(a_i_lstTmp,1),"a_"+&intString(iValue)+&"\n");
-        //BackendDump.dumpEquationList(listGet(hs_i_lstTmp,1),"hs_"+&intString(iValue)+&"\n");
+        //BackendDump.dumpVarList(listGet(a_i_lstTmp,1),"a_"+intString(iValue)+"\n");
+        //BackendDump.dumpEquationList(listGet(hs_i_lstTmp,1),"hs_"+intString(iValue)+"\n");
         (hs_i_lstTmp,a_i_lstTmp) = getTornSystemCoefficients(iLstRest,numTVars,r_i_lstIn,{}::hs_i_lstTmp,{}::a_i_lstTmp,tornSysIdx);
       then
         (hs_i_lstTmp,a_i_lstTmp);
@@ -949,8 +949,8 @@ algorithm
       equation
         true = intEq(0,iIdx);
         // build the coefficients (offset d=a_0) of the new residual equations (hs = A*xt+d)
-        aName = "$a_"+&intString(tornSysIdx)+&intString(iIdx)+&"_"+&intString(resIdx);
-        //aName = "$a_"+&intString(resIdx)+&"_"+&intString(iIdx);
+        aName = "$a_"+intString(tornSysIdx)+intString(iIdx)+"_"+intString(resIdx);
+        //aName = "$a_"+intString(resIdx)+"_"+intString(iIdx);
         ty = DAE.T_REAL_DEFAULT;
         aCRef = ComponentReference.makeCrefIdent(aName,ty,{});
         _ = Expression.makeCrefExp(aCRef,ty);
@@ -972,8 +972,8 @@ algorithm
       equation
         true = iIdx > 0;
         // build the co-efficients (A-matrix-entries) of the new residual equations (hs = A*xt+d)
-        //aName = "$a_"+&intString(iIdx)+&"_"+&intString(resIdx);
-        aName = "$a_"+&intString(tornSysIdx)+&intString(resIdx)+&"_"+&intString(iIdx);
+        //aName = "$a_"+intString(iIdx)+"_"+intString(resIdx);
+        aName = "$a_"+intString(tornSysIdx)+intString(resIdx)+"_"+intString(iIdx);
         ty = DAE.T_REAL_DEFAULT;
         aCRef = ComponentReference.makeCrefIdent(aName,ty,{});
         aExp = Expression.makeCrefExp(aCRef,ty);
@@ -1092,10 +1092,10 @@ algorithm
       // traverse the residualEquations
       equation
         eqIdxRange = List.intRange(listLength(resEqLstIn));
-        resVarName = "r_"+&intString(tornSysIdx)+&intString(iValue);
+        resVarName = "r_"+intString(tornSysIdx)+intString(iValue);
         ((h_i_lstTmp,r_i_lstTmp)) = List.fold2(eqIdxRange,addResidualVarToEquation1,resEqLstIn,resVarName,(h_i_lstIn, r_i_lstIn));
-        //BackendDump.dumpVarList(listGet(r_i_lstTmp,1),"r_"+&intString(iValue)+&"\n");
-        //BackendDump.dumpEquationList(listGet(h_i_lstTmp,1),"h_"+&intString(iValue)+&"\n");
+        //BackendDump.dumpVarList(listGet(r_i_lstTmp,1),"r_"+intString(iValue)+"\n");
+        //BackendDump.dumpEquationList(listGet(h_i_lstTmp,1),"h_"+intString(iValue)+"\n");
         (h_i_lstTmp,r_i_lstTmp) = addResidualVarToEquation(iLstRest,resEqLstIn,{}::h_i_lstTmp,{}::r_i_lstTmp,tornSysIdx);
       then
         (h_i_lstTmp,r_i_lstTmp);
@@ -1130,7 +1130,7 @@ algorithm
   (h_i_lst,r_i_lst):= tplIn;
   // add the variable for the residuumValue
   resEq := listGet(resEqLstIn,eqIdx);
-  resName := "$"+&resVarName +&"_"+& intString(eqIdx);
+  resName := "$"+resVarName +"_"+ intString(eqIdx);
   ty := DAE.T_REAL_DEFAULT;
   resCRef := ComponentReference.makeCrefIdent(resName,ty,{});
   resExp := Expression.makeCrefExp(resCRef,ty);
@@ -1203,9 +1203,9 @@ algorithm
       BackendDAE.EquationAttributes attr;
     case(BackendDAE.EQUATION(exp=exp1,scalar=exp2,source=source,attr=attr),_)
       equation
-        //print("rhs expression: "+&ExpressionDump.dumpExpStr(exp1,0)+&"\n");
+        //print("rhs expression: "+ExpressionDump.dumpExpStr(exp1,0)+"\n");
         //print("\n append with \n");
-        //print("residualValue: "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
+        //print("residualValue: "+ExpressionDump.dumpExpStr(exp2,0)+"\n");
         exp1 = Expression.expAdd(exp1,addExp);
       then BackendDAE.EQUATION(exp1,exp2,source,attr);
     else
@@ -1264,7 +1264,7 @@ algorithm
       true = iValue == 0;
       replTmp = BackendVarTransform.emptyReplacementsSized(size);
       replTmp = List.fold1(tVarCRefLstIn,replaceTVarWithReal,0.0,replTmp);
-      ((xaVarLstTmp,replTmp)) = List.fold2(List.intRange(listLength(oVarCRefLstIn)),replaceOtherVarsWithPrefixCref,"$xa0"+&intString(tornSysIdx),oVarCRefLstIn,({},replTmp));
+      ((xaVarLstTmp,replTmp)) = List.fold2(List.intRange(listLength(oVarCRefLstIn)),replaceOtherVarsWithPrefixCref,"$xa0"+intString(tornSysIdx),oVarCRefLstIn,({},replTmp));
       (gEqLstTmp,true) = BackendVarTransform.replaceEquations(otherEqLstIn,replTmp,NONE());
       (g_i_lstTmp,xa_i_lstTmp,replLstTmp) = getAlgebraicEquationsForEI(iLstRest,size,otherEqLstIn,tvarLstIn,tVarCRefLstIn,otherVarLstIn,oVarCRefLstIn, replTmp::replacementLstIn, gEqLstTmp::g_i_lstIn,xaVarLstTmp::xa_i_lstIn, tornSysIdx);
     then
@@ -1274,8 +1274,8 @@ algorithm
     // computes xa_i from g_i
     equation
       true = iValue > 0;
-      str1 = "$xa"+&intString(tornSysIdx)+&intString(iValue);
-      _ = "$g"+&intString(tornSysIdx)+&intString(iValue);
+      str1 = "$xa"+intString(tornSysIdx)+intString(iValue);
+      _ = "$g"+intString(tornSysIdx)+intString(iValue);
       tVarCRef = listGet(tVarCRefLstIn,iValue);
       tVarCRefLst1 = listDelete(tVarCRefLstIn,iValue);
       replTmp = BackendVarTransform.emptyReplacementsSized(size);
@@ -1346,7 +1346,7 @@ author: Waurich TUD 2013-08"
 protected
   String str;
 algorithm
-  print("---------\n"+&heading+&"-variables\n---------\n");
+  print("---------\n"+heading+"-variables\n---------\n");
   str := List.fold1(List.intRange(listLength(inLstLst)),dumpVarLstLst1,inLstLst,heading);
 end dumpVarLstLst;
 
@@ -1362,7 +1362,7 @@ protected
   list<BackendDAE.Var> inLst;
 algorithm
   inLst := listGet(inLstLst,lstIdx);
-  str1 := heading+&"_"+&intString(lstIdx-1);
+  str1 := heading+"_"+intString(lstIdx-1);
   BackendDump.dumpVarList(inLst,str1);
   headingOut := heading;
 end dumpVarLstLst1;
@@ -1375,7 +1375,7 @@ author: Waurich TUD 2013-08"
 protected
   String str;
 algorithm
-  print("---------\n"+&heading+&"-equations\n---------\n");
+  print("---------\n"+heading+"-equations\n---------\n");
   str := List.fold1(List.intRange(listLength(inLstLst)),dumpEqLstLst1,inLstLst,heading);
 end dumpEqLstLst;
 
@@ -1391,7 +1391,7 @@ protected
   list<BackendDAE.Equation> inLst;
 algorithm
   inLst := listGet(inLstLst,lstIdx);
-  str1 := heading+&"_"+&intString(lstIdx-1);
+  str1 := heading+"_"+intString(lstIdx-1);
   BackendDump.dumpEquationList(inLst,str1);
   headingOut := heading;
 end dumpEqLstLst1;
@@ -1414,13 +1414,13 @@ author: Waurich TUD 2013-10"
 algorithm
    print("disassemble a linear torn system\n");
    print("tvars:\n");
-   print(ComponentReference.printComponentRefListStr(tcrs)+&"\n");
+   print(ComponentReference.printComponentRefListStr(tcrs)+"\n");
    print("resEqs:\n");
    BackendDump.printEquationList(reqns);
    print("otherEqs:\n");
    BackendDump.printEquationList(otherEqnsLst);
    print("other vars:\n");
-   print(ComponentReference.printComponentRefListStr(ovcrs)+&"\n");
+   print(ComponentReference.printComponentRefListStr(ovcrs)+"\n");
    dumpVarLstLst(xa_i_lst,"xa");
    dumpEqLstLst(g_i_lst,"g");
    dumpVarLstLst(r_i_lst,"r");
@@ -1536,12 +1536,12 @@ algorithm
       eq = listGet(eqLstIn,eqIdx);
       (b,SOME((varExp,const))) = oneSideConstant(eq);
       true = b;
-      //print("\neq with const: "+&BackendDump.dumpEqnsStr({eq})+&"\n");
+      //print("\neq with const: "+BackendDump.dumpEqnsStr({eq})+"\n");
       //print("one side is constant\n");
       (eqLst,varLst,repl,changed1) = handleConstantSide(varExp,const,eqIdx,eqLstIn,varLstIn,replIn,changed);
       eqIdxTmp = if changed1 then eqIdx else (eqIdx+1);
       changed = changed1 or changed;
-      //print("changed? "+&boolString(changed)+&"\n");
+      //print("changed? "+boolString(changed)+"\n");
       ((varLst,eqLst,repl,changed)) = removeConstOrAlias(eqIdxTmp,(varLst,eqLst,repl,changed));
     then
       ((varLst,eqLst,repl,changed));
@@ -1552,11 +1552,11 @@ algorithm
       BackendDAE.EQUATION(exp= exp1, scalar=exp2) = eq;
       true = Expression.isCref(exp1);
       true = Expression.isCref(exp2);
-      //print("\neq with both sides CREFs: "+&BackendDump.dumpEqnsStr({eq})+&"\n");
+      //print("\neq with both sides CREFs: "+BackendDump.dumpEqnsStr({eq})+"\n");
       (eqLst,varLst,repl,changed1) = checkForPosAlias(exp1,exp2,eqIdx,eqLstIn,varLstIn,replIn);
       eqIdxTmp = if changed1 then eqIdx else (eqIdx+1);
       changed = changed1 or changed;
-      //print("changed? "+&boolString(changed)+&"\n");
+      //print("changed? "+boolString(changed)+"\n");
       ((varLst,eqLst,repl,changed)) = removeConstOrAlias(eqIdxTmp,(varLst,eqLst,repl,changed));
     then
       ((varLst,eqLst,repl,changed));
@@ -1564,7 +1564,7 @@ algorithm
     equation
       // nothing to simplify. go to next equation
       //print("nothing to simplify\n");
-      //print("changed? "+&boolString(changed)+&"\n");
+      //print("changed? "+boolString(changed)+"\n");
       ((varLst,eqLst,repl,changed)) = removeConstOrAlias(eqIdx+1,(varLstIn,eqLstIn,replIn,changed));
     then
       ((varLst,eqLst,repl,changed));
@@ -1615,7 +1615,7 @@ algorithm
     case(DAE.BINARY(exp1=exp1,operator=op,exp2=exp2),DAE.RCONST(real=real),_,_,_,_,_)
       equation
         // check for alias vars: a+-b = 0.0
-        true = real ==. 0.0;
+        true = real == 0.0;
         (eqLst,varLst,repl,changed) = checkForAlias(exp1,exp2,op,eqIdx,eqLstIn,varLstIn,replIn);
       then
         (eqLst,varLst,repl,changed);
@@ -1730,7 +1730,7 @@ algorithm
         varLst = BackendVariable.varList(vars);
         eqLst = listDelete(eqLstIn, eqIdx);
         newExp = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),exp2);
-        //print("checkForNegAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with "+&ExpressionDump.printExpStr(newExp)+&"\n");
+        //print("checkForNegAlias: replace "+ComponentReference.printComponentRefStr(cref2)+" with "+ExpressionDump.printExpStr(newExp)+"\n");
         repl = BackendVarTransform.addReplacement(replIn,cref1,newExp,NONE());
       then
         (eqLst,varLst,repl,true);
@@ -1743,7 +1743,7 @@ algorithm
         varLst = BackendVariable.varList(vars);
         eqLst = listDelete(eqLstIn, eqIdx);
         newExp = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),exp1);
-        //print("checkForNegAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with - "+&ExpressionDump.printExpStr(newExp)+&"\n");
+        //print("checkForNegAlias: replace "+ComponentReference.printComponentRefStr(cref2)+" with - "+ExpressionDump.printExpStr(newExp)+"\n");
         repl = BackendVarTransform.addReplacement(replIn,cref2,newExp,NONE());
       then
         (eqLst,varLst,repl,true);
@@ -1780,7 +1780,7 @@ algorithm
         // a - otherVar = 0  replace: a --> otherVar   or   a - b = 0 replace: a --> b
         vars = BackendVariable.listVar(varLstIn);
         true = BackendVariable.existsVar(cref1,vars,false);
-        //print("checkForPosAlias: replace "+&ComponentReference.printComponentRefStr(cref1)+&" with "+&ExpressionDump.printExpStr(exp2)+&"\n");
+        //print("checkForPosAlias: replace "+ComponentReference.printComponentRefStr(cref1)+" with "+ExpressionDump.printExpStr(exp2)+"\n");
         vars = BackendVariable.removeCref(cref1,vars);
         varLst = BackendVariable.varList(vars);
         eqLst = listDelete(eqLstIn, eqIdx);
@@ -1792,7 +1792,7 @@ algorithm
         // otherVar - a = 0  replace: a --> otherVar
         vars = BackendVariable.listVar(varLstIn);
         true = BackendVariable.existsVar(cref2,vars,false);
-        //print("checkForPosAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with "+&ExpressionDump.printExpStr(exp1)+&"\n");
+        //print("checkForPosAlias: replace "+ComponentReference.printComponentRefStr(cref2)+" with "+ExpressionDump.printExpStr(exp1)+"\n");
         vars = BackendVariable.removeCref(cref2,vars);
         varLst = BackendVariable.varList(vars);
         eqLst = listDelete(eqLstIn, eqIdx);
@@ -1889,7 +1889,7 @@ algorithm
 
       varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
       eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
-      dumpEquationSystemBipartiteGraph2(compVars,compEqs,m,varAtts,eqAtts,"rL_eqSys_"+&graphName);
+      dumpEquationSystemBipartiteGraph2(compVars,compEqs,m,varAtts,eqAtts,"rL_eqSys_"+graphName);
     then ();
   case((comp as BackendDAE.TORNSYSTEM(residualequations=rEqIdcs,tearingvars=tVarIdcs,otherEqnVarTpl=otherEqnVarTplIdcs)),_,_,_)
     equation
@@ -1956,7 +1956,7 @@ algorithm
   ((graphInfo,graphIdx)) := List.fold3(eqRange,addEqNodeToGraph,eqsIn,eqAtts,{nameAttIdx,typeAttIdx,idxAttIdx}, (graphInfo,graphIdx));
   ((graphInfo,graphIdx)) := List.fold3(varRange,addVarNodeToGraph,varsIn,varAtts,{nameAttIdx,typeAttIdx,idxAttIdx}, (graphInfo,graphIdx));
   graphInfo := List.fold1(eqRange,addEdgeToGraph,mIn,graphInfo);
-  GraphML.dumpGraph(graphInfo,name+&".graphml");
+  GraphML.dumpGraph(graphInfo,name+".graphml");
 end dumpEquationSystemBipartiteGraph2;
 
 public function dumpEquationSystemBipartiteGraphSolve2
@@ -1984,7 +1984,7 @@ algorithm
   ((graphInfo,graphIdx)) := List.fold3(eqRange,addEqNodeToGraph,eqsIn,eqAtts,{nameAttIdx,typeAttIdx,idxAttIdx}, (graphInfo,graphIdx));
   ((graphInfo,graphIdx)) := List.fold3(varRange,addVarNodeToGraph,varsIn,varAtts,{nameAttIdx,typeAttIdx,idxAttIdx}, (graphInfo,graphIdx));
   graphInfo := List.fold1(eqRange,addSolvEdgeToGraph,meIn,graphInfo);
-  GraphML.dumpGraph(graphInfo,name+&".graphml");
+  GraphML.dumpGraph(graphInfo,name+".graphml");
 end dumpEquationSystemBipartiteGraphSolve2;
 
 protected function addVarNodeToGraph "adds a node for a variable to the graph.
@@ -2077,7 +2077,7 @@ protected
 algorithm
   eqNodeId := getEqNodeIdx(eqIdx);
   varNodeId := getVarNodeIdx(varIdx);
-  (graphInfoOut,_) := GraphML.addEdge("Edge_"+&intString(varIdx)+&"_"+&intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{}, graphInfoIn);
+  (graphInfoOut,_) := GraphML.addEdge("Edge_"+intString(varIdx)+"_"+intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{}, graphInfoIn);
 end addEdgeToGraph2;
 
 protected function addSolvEdgeToGraph "adds an edge with solvability information to the graph by traversing the enhanced adjacency matrix.
@@ -2110,7 +2110,7 @@ algorithm
   eqNodeId := getEqNodeIdx(eqIdx);
   varNodeId := getVarNodeIdx(varIdx);
   lineWidth := if solvable then GraphML.LINEWIDTH_BOLD else GraphML.LINEWIDTH_STANDARD;
-  (graphInfoOut,_) := GraphML.addEdge("Edge_"+&intString(varIdx)+&"_"+&intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),lineWidth,false,{},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{}, graphInfoIn);
+  (graphInfoOut,_) := GraphML.addEdge("Edge_"+intString(varIdx)+"_"+intString(eqIdx),varNodeId,eqNodeId,GraphML.COLOR_BLACK,GraphML.LINE(),lineWidth,false,{},(GraphML.ARROWNONE(),GraphML.ARROWNONE()),{}, graphInfoIn);
 end addSolvEdgeToGraph2;
 
 protected function genSystemVarIdcs
@@ -2128,7 +2128,7 @@ author:Waurich TUD 2013-12"
   input Integer idx;
   output String varString;
 algorithm
-  varString := "varNode"+&intString(idx);
+  varString := "varNode"+intString(idx);
 end getVarNodeIdx;
 
 protected function getEqNodeIdx "outputs the identifier string for the given eqIdx.
@@ -2136,7 +2136,7 @@ author:Waurich TUD 2013-12"
   input Integer idx;
   output String eqString;
 algorithm
-  eqString := "eqNode"+&intString(idx);
+  eqString := "eqNode"+intString(idx);
 end getEqNodeIdx;
 
 
@@ -2289,18 +2289,18 @@ algorithm
       resSimEqSysIdcs = List.map1r(List.intRange(numResEqs),intSub,List.first(simEqSysIdcs));
       otherSimEqSysIdcs = List.map1r(List.intRange2(numResEqs+1,numResEqs+numEqs),intSub,List.first(simEqSysIdcs));
       otherSimEqMapping = listArray(List.map(otherSimEqSysIdcs,List.create));
-        //print("simEqSysIdcs "+&stringDelimitList(List.map(simEqSysIdcs,intString),",")+&"\n");
-        //print("resSimEqSysIdcs "+&stringDelimitList(List.map(resSimEqSysIdcs,intString),",")+&"\n");
-        //print("otherSimEqSysIdcs "+&stringDelimitList(List.map(otherSimEqSysIdcs,intString),",")+&"\n");
+        //print("simEqSysIdcs "+stringDelimitList(List.map(simEqSysIdcs,intString),",")+"\n");
+        //print("resSimEqSysIdcs "+stringDelimitList(List.map(resSimEqSysIdcs,intString),",")+"\n");
+        //print("otherSimEqSysIdcs "+stringDelimitList(List.map(otherSimEqSysIdcs,intString),",")+"\n");
 
       // dump graphs
-      dumpEquationSystemBipartiteGraph1(comp,eqsIn,varsIn,"tornSys_bipartite_"+&intString(compIdxIn));
-      dumpEquationSystemDAG(graph,meta,"tornSys_matched_"+&intString(compIdxIn));
+      dumpEquationSystemBipartiteGraph1(comp,eqsIn,varsIn,"tornSys_bipartite_"+intString(compIdxIn));
+      dumpEquationSystemDAG(graph,meta,"tornSys_matched_"+intString(compIdxIn));
 
       //GRS
       (graphMerged,metaMerged) = HpcOmSimCodeMain.applyFiltersToGraph(graph,meta,true,{},1);
 
-      dumpEquationSystemDAG(graphMerged,metaMerged,"tornSys_matched2_"+&intString(compIdxIn));
+      dumpEquationSystemDAG(graphMerged,metaMerged,"tornSys_matched2_"+intString(compIdxIn));
         //HpcOmTaskGraph.printTaskGraph(graphMerged);
         //HpcOmTaskGraph.printTaskGraphMeta(metaMerged);
 
@@ -2348,9 +2348,9 @@ algorithm
         //05-09-2014 marcusw: Changed because of dependency-task restructuring for MPI
         numThreads = arrayLength(threadTasks);
         // rename locks, get locks before residual equations
-        //lockSuffix = "_"+&intString(compIdx);
+        //lockSuffix = "_"+intString(compIdx);
         //outgoingDepTasks = List.map1(lockIdc,stringAppend,lockSuffix);
-        //outgoingDepTasksEnd = List.map1r(List.map(List.intRange(numThreads),intString),stringAppend,"lock_comp"+&intString(compIdx)+&"_th");
+        //outgoingDepTasksEnd = List.map1r(List.map(List.intRange(numThreads),intString),stringAppend,"lock_comp"+intString(compIdx)+"_th");
         //outgoingDepTasks = listAppend(outgoingDepTasks,outgoingDepTasksEnd);
         //threadTasks = Array.map1(threadTasks,appendStringToLockIdcs,lockSuffix);
 
@@ -2539,7 +2539,7 @@ algorithm
   (graphInfo, (_,graphIdx)) := GraphML.addGraph("TornSystemGraph", true, graphInfo);
   (graphInfo,(_,nameAttIdx)) := GraphML.addAttribute("", "Name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
   graphInfo := buildGraphInfoDAG(graphIn,metaIn,graphInfo,graphIdx,{nameAttIdx});
-  GraphML.dumpGraph(graphInfo, fileName+&".graphml");
+  GraphML.dumpGraph(graphInfo, fileName+".graphml");
 end dumpEquationSystemDAG;
 
 protected function buildGraphInfoDAG
@@ -2585,7 +2585,7 @@ algorithm
   nodeName := stringDelimitList(List.map(arrayGet(inComps,nodeIdx),intString),",");
   nameAttIdx := listGet(atts,1);
   nodeLabel := GraphML.NODELABEL_INTERNAL(nodeString,NONE(),GraphML.FONTPLAIN());
-  (tmpGraph,(_,_)) := GraphML.addNode("Node"+&intString(nodeIdx),
+  (tmpGraph,(_,_)) := GraphML.addNode("Node"+intString(nodeIdx),
                                               GraphML.COLOR_ORANGE,
                                               {nodeLabel},
                                               GraphML.RECTANGLE(),
@@ -2604,9 +2604,9 @@ author: Waurich TUD 2014-07"
   input GraphML.GraphInfo graphInfoIn;
   output GraphML.GraphInfo graphInfoOut;
 algorithm
-  (graphInfoOut,(_,_)) := GraphML.addEdge( "Edge" +& intString(parent)+&intString(child),
-                                      "Node" +& intString(child),
-                                      "Node" +& intString(parent),
+  (graphInfoOut,(_,_)) := GraphML.addEdge( "Edge" + intString(parent)+intString(child),
+                                      "Node" + intString(child),
+                                      "Node" + intString(parent),
                                       GraphML.COLOR_BLACK,
                                       GraphML.LINE(),
                                       GraphML.LINEWIDTH_STANDARD,

@@ -316,7 +316,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        print("Expression.unelabExp failed on: " +& ExpressionDump.printExpStr(inExp) +& "\n");
+        print("Expression.unelabExp failed on: " + ExpressionDump.printExpStr(inExp) + "\n");
       then
         fail();
   end matchcontinue;
@@ -666,7 +666,7 @@ algorithm
       then DAE.ICONST(i_1);
     case (DAE.RCONST(r))
       equation
-        r_1 = 0.0 -. r;
+        r_1 = 0.0 - r;
       then DAE.RCONST(r_1);
     case (DAE.BCONST(b))
       equation
@@ -1041,7 +1041,7 @@ algorithm
 
     else
       equation
-        str = "Expression.subscriptExp failed on " +& ExpressionDump.printExpStr(inExp) +& "\n";
+        str = "Expression.subscriptExp failed on " + ExpressionDump.printExpStr(inExp) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -1987,7 +1987,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         sub_str = ExpressionDump.subscriptString(inSubscript);
-        Debug.traceln("- Expression.subscriptDimension failed on " +& sub_str);
+        Debug.traceln("- Expression.subscriptDimension failed on " + sub_str);
       then
         fail();
 
@@ -2224,7 +2224,7 @@ algorithm
 
     case e
       equation
-        msg = "- Expression.typeof failed for " +& ExpressionDump.printExpStr(e);
+        msg = "- Expression.typeof failed for " + ExpressionDump.printExpStr(e);
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then fail();
   end matchcontinue;
@@ -2937,9 +2937,9 @@ algorithm
           tExisting = ComponentReference.crefLastType(cref);
           if not valueEq(tGiven, tExisting)
           then // type not the same
-            Debug.traceln("Warning: Expression.makeCrefExp: cref " +& ComponentReference.printComponentRefStr(cref) +& " was given type DAE.CREF.ty: " +&
-                      Types.unparseType(tGiven) +&
-                      " is different from existing DAE.CREF.componentRef.ty: " +&
+            Debug.traceln("Warning: Expression.makeCrefExp: cref " + ComponentReference.printComponentRefStr(cref) + " was given type DAE.CREF.ty: " +
+                      Types.unparseType(tGiven) +
+                      " is different from existing DAE.CREF.componentRef.ty: " +
                       Types.unparseType(tExisting));
           end if;
         end if;
@@ -3006,10 +3006,10 @@ algorithm
           _ = match(inExp) // check the DAE.ASUB so that the given expression is NOT a cref
             case (DAE.CREF(componentRef = _))
               equation
-                Debug.traceln("Warning: makeASUB: given expression: " +&
-                        ExpressionDump.printExpStr(inExp) +&
-                        " contains a component reference!\n" +&
-                        " Subscripts exps: [" +& stringDelimitList(List.map(inSubs, ExpressionDump.printExpStr), ",")+& "]\n" +&
+                Debug.traceln("Warning: makeASUB: given expression: " +
+                        ExpressionDump.printExpStr(inExp) +
+                        " contains a component reference!\n" +
+                        " Subscripts exps: [" + stringDelimitList(List.map(inSubs, ExpressionDump.printExpStr), ",")+ "]\n" +
                         "DAE.ASUB should not be used for component references, instead the subscripts should be added directly to the component reference!");
               then ();
             else (); // check the DAE.ASUB -> was not a cref
@@ -3373,7 +3373,7 @@ algorithm
       then res;
     else
       equation
-        str = "Expression.makeLBinary failed for operator " +& ExpressionDump.lbinopSymbol(op);
+        str = "Expression.makeLBinary failed for operator " + ExpressionDump.lbinopSymbol(op);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
@@ -4634,7 +4634,7 @@ algorithm
     else
       equation
         str = ExpressionDump.printExpStr(inExp);
-        str = "Expression.traverseExp or one of the user-defined functions using it is not implemented correctly: " +& str;
+        str = "Expression.traverseExp or one of the user-defined functions using it is not implemented correctly: " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
@@ -5085,7 +5085,7 @@ algorithm
     else
       equation
         str = ExpressionDump.printExpStr(inExp);
-        str = "Expression.traverseExpTopDown1 not implemented correctly: " +& str;
+        str = "Expression.traverseExpTopDown1 not implemented correctly: " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;
@@ -5595,7 +5595,7 @@ algorithm
       DAE.ComponentRef cr;
     case (DAE.CREF(componentRef = cr), (name,false))
       equation
-        b = name ==& ComponentReference.crefFirstIdent(cr);
+        b = name == ComponentReference.crefFirstIdent(cr);
       then (inExp,not b,(name,b));
     case (_,(_,b)) then (inExp,not b,inTpl);
   end match;
@@ -6087,7 +6087,7 @@ algorithm
     else
       equation
         error_msg = "in Expression.traverseExpBidirSubExps - Unknown expression: ";
-        error_msg = error_msg +& ExpressionDump.printExpStr(inExp);
+        error_msg = error_msg + ExpressionDump.printExpStr(inExp);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -6914,11 +6914,11 @@ algorithm
 
     case(DAE.TYPES_VAR(name = s1, ty = t1)::vars1,DAE.TYPES_VAR(name = s2, ty = t2)::vars2)
       equation
-        //print(" verify subvars: " +& s1 +& " and " +& s2 +& " to go: " +& intString(listLength(vars1)) +& " , " +& intString(listLength(vars2))  +& "\n");
+        //print(" verify subvars: " + s1 + " and " + s2 + " to go: " + intString(listLength(vars1)) + " , " + intString(listLength(vars2))  + "\n");
         true = stringEq(s1,s2);
-        //print(" types: " +& Types.unparseType(t1) +& " and " +& Types.unparseType(t2) +& "\n");
+        //print(" types: " + Types.unparseType(t1) + " and " + Types.unparseType(t2) + "\n");
         true = equalTypes(t1,t2);
-        //print(s1 +& " and " +& s2 +& " EQUAL \n\n");
+        //print(s1 + " and " + s2 + " EQUAL \n\n");
       then
         equalTypesComplexVars(vars1,vars2);
 
@@ -7630,7 +7630,7 @@ algorithm
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        s = "Expression.expEqual failed for input: " +& s1 +& " = " +& s2;
+        s = "Expression.expEqual failed for input: " + s1 + " = " + s2;
         Error.addMessage(Error.INTERNAL_ERROR, {s});
       then fail();
   end matchcontinue;
@@ -7670,15 +7670,15 @@ algorithm
       equation
         i2 = - i2;
       then (i1 == i2);
-    case (DAE.RCONST(real = r1),DAE.RCONST(real = r2),_,_) then (r1 ==. r2);
+    case (DAE.RCONST(real = r1),DAE.RCONST(real = r2),_,_) then (r1 == r2);
     case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r1)),DAE.RCONST(real = r2),_,_)
       equation
-        r1 = -. r1;
-      then (r1 ==. r2);
+        r1 = - r1;
+      then (r1 == r2);
     case (DAE.RCONST(real = r1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r2)),_,_)
       equation
-        r2 = -. r2;
-      then (r1 ==. r2);
+        r2 = - r2;
+      then (r1 == r2);
     case (DAE.SCONST(string = s1),DAE.SCONST(string = s2),_,_) then stringEq(s1, s2);
     case (DAE.BCONST(bool = b1),DAE.BCONST(bool = b2),_,_) then boolEq(b1, b2);
     case (DAE.ENUM_LITERAL(name = enum1), DAE.ENUM_LITERAL(name = enum2),_,_) then Absyn.pathEqual(enum1, enum2);
@@ -7932,15 +7932,15 @@ algorithm
       equation
         i2 = - i2;
       then (i1 == i2);
-    case (DAE.RCONST(real = r1),DAE.RCONST(real = r2)) then (r1 ==. r2);
+    case (DAE.RCONST(real = r1),DAE.RCONST(real = r2)) then (r1 == r2);
     case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r1)),DAE.RCONST(real = r2))
       equation
-        r1 = -. r1;
-      then (r1 ==. r2);
+        r1 = - r1;
+      then (r1 == r2);
     case (DAE.RCONST(real = r1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r2)))
       equation
-        r2 = -. r2;
-      then (r1 ==. r2);
+        r2 = - r2;
+      then (r1 == r2);
     case (DAE.SCONST(string = s1),DAE.SCONST(string = s2)) then stringEq(s1, s2);
     case (DAE.BCONST(bool = b1),DAE.BCONST(bool = b2)) then boolEq(b1, b2);
     case (DAE.ENUM_LITERAL(name = enum1), DAE.ENUM_LITERAL(name = enum2)) then Absyn.pathEqual(enum1, enum2);
@@ -9234,7 +9234,7 @@ algorithm
     case DAE.PATTERN(pattern=_) then 0;
     else
       equation
-        str = "Expression.complexityWork failed: " +& ExpressionDump.printExpStr(exp);
+        str = "Expression.complexityWork failed: " + ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then fail();
   end match;
@@ -10170,7 +10170,7 @@ algorithm
 
     else
     equation
-      print("Expression.fromAbsynExp: Unhandled expression: " +& Dump.printExpStr(inAExp) +& "\n");
+      print("Expression.fromAbsynExp: Unhandled expression: " + Dump.printExpStr(inAExp) + "\n");
     then
       fail();
 
@@ -10246,7 +10246,7 @@ algorithm
     case(Absyn.NEQUAL(), _) then DAE.NEQUAL(ty);
     else
     equation
-      print("Expression.fromAbsynOperator: Unhandled operator: " +& Dump.opSymbol(aop) +& "\n");
+      print("Expression.fromAbsynOperator: Unhandled operator: " + Dump.opSymbol(aop) + "\n");
     then
       fail();
   end match;
@@ -10377,7 +10377,7 @@ algorithm
   oCrefWithEqualIdents := matchcontinue(iExpressions)
     case(head::_)
       equation
-        //print("isCrefListWithEqualIdents: \n" +& stringDelimitList(List.map1(iExpressions, ExpressionDump.dumpExpStr, 1), ""));
+        //print("isCrefListWithEqualIdents: \n" + stringDelimitList(List.map1(iExpressions, ExpressionDump.dumpExpStr, 1), ""));
         boolHelperList = List.map(iExpressions, isCref);
         true = List.reduce(boolHelperList,boolAnd);
         //print("isCrefListWithEqualIdents: all crefs!\n");
@@ -10385,7 +10385,7 @@ algorithm
         headCref = expCref(head);
         boolHelperList = List.map1(crefs, ComponentReference.crefEqualWithoutLastSubs, headCref);
         tmpCrefWithEqualIdents = List.reduce(boolHelperList,boolAnd);
-        //print("isCrefListWithEqualIdents: returns " +& boolString(tmpCrefWithEqualIdents) +& "\n\n");
+        //print("isCrefListWithEqualIdents: returns " + boolString(tmpCrefWithEqualIdents) + "\n\n");
       then tmpCrefWithEqualIdents;
     case({})
       then true;
@@ -10728,7 +10728,7 @@ algorithm
     else
       equation
         str = ExpressionDump.printExpStr(inExp);
-        str = "Expression.traverseExpDerPreStart or one of the user-defined functions using it is not implemented correctly: " +& str;
+        str = "Expression.traverseExpDerPreStart or one of the user-defined functions using it is not implemented correctly: " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;

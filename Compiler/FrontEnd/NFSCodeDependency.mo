@@ -105,8 +105,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeDependency.analyseClass failed for " +&
-          Absyn.pathString(inClassName) +& " in " +&
+        Debug.traceln("- NFSCodeDependency.analyseClass failed for " +
+          Absyn.pathString(inClassName) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
       then
         fail();
@@ -325,8 +325,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeDependency.analyseItem failed on " +&
-          NFSCodeEnv.getItemName(inItem) +& " in " +&
+        Debug.traceln("- NFSCodeDependency.analyseItem failed on " +
+          NFSCodeEnv.getItemName(inItem) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
       then
         fail();
@@ -401,8 +401,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeDependency.analyseItemNoStopOnUsed failed on " +&
-          NFSCodeEnv.getItemName(inItem) +& " in " +&
+        Debug.traceln("- NFSCodeDependency.analyseItemNoStopOnUsed failed on " +
+          NFSCodeEnv.getItemName(inItem) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
       then
         fail();
@@ -625,7 +625,7 @@ algorithm
     case SCode.EXTENDS(baseClassPath = bc)
       equation
         name = Absyn.pathString(bc);
-        name = "extends " +& name;
+        name = "extends " + name;
       then
         name;
 
@@ -696,7 +696,7 @@ algorithm
         (el, _) = List.deleteMemberOnTrue("destructor", el, stringEqual);
         // Print an error message with the rest of the elements.
         el_str = stringDelimitList(el, ", ");
-        el_str = "contains invalid elements: " +& el_str;
+        el_str = "contains invalid elements: " + el_str;
         Error.addSourceMessage(Error.INVALID_EXTERNAL_OBJECT,
           {inObjectName, el_str}, inInfo);
       then
@@ -796,8 +796,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeDependency.analyseRedeclaredClass2 failed for " +&
-          NFSCodeEnv.getItemName(inItem) +& " in " +&
+        Debug.traceln("- NFSCodeDependency.analyseRedeclaredClass2 failed for " +
+          NFSCodeEnv.getItemName(inItem) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
       then
         fail();
@@ -875,8 +875,8 @@ algorithm
     case (SCode.EXTENDS(baseClassPath = _, modifications = mods, info = info), _,
         NFSCodeEnv.EXTENDS(baseClass = bc) :: exts, _)
       equation
-        //print("bc = " +& Absyn.pathString(bc) +& "\n");
-        //print("bc2 = " +& Absyn.pathString(bc2) +& "\n");
+        //print("bc = " + Absyn.pathString(bc) + "\n");
+        //print("bc2 = " + Absyn.pathString(bc2) + "\n");
         (ty_item, _, ty_env) =
           NFSCodeLookup.lookupBaseClassName(bc, inEnv, info);
         analyseExtends(bc, inEnv, info);
@@ -1994,7 +1994,7 @@ algorithm
 
         cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
         resolved_item = updateItemEnv(resolved_item, cls, class_env);
-        basename = name +& NFSCodeEnv.BASE_CLASS_SUFFIX;
+        basename = name + NFSCodeEnv.BASE_CLASS_SUFFIX;
         env = NFSCodeEnv.extendEnvWithItem(resolved_item, inAccumEnv, basename);
         env = NFSCodeEnv.extendEnvWithItem(item, env, name);
       then

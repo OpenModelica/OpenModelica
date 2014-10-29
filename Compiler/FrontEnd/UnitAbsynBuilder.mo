@@ -335,7 +335,7 @@ algorithm
   outSt := match(st)
   local array<Option<UnitAbsyn.Unit>> vector; Integer indx,incr;
     case(UnitAbsyn.STORE(vector,indx)) equation
-        incr = intMin(1,realInt(intReal(indx) *. 0.4));
+        incr = intMin(1,realInt(intReal(indx) * 0.4));
         vector = Array.expand(incr,vector,NONE());
      then UnitAbsyn.STORE(vector,indx);
   end match;
@@ -431,7 +431,7 @@ public function printTermsStr "print the terms to a string"
   input UnitAbsyn.UnitTerms terms;
   output String str;
 algorithm
-  str := "{" +& stringDelimitList(List.map(terms,printTermStr),",") +& "}";
+  str := "{" + stringDelimitList(List.map(terms,printTermStr),",") + "}";
 end printTermsStr;
 
 public function printTermStr "print one term to a string"
@@ -552,11 +552,11 @@ algorithm
   str := matchcontinue(lst)
   local Integer i1,i2,i3,i4;
     case(MMath.RATIONAL(i1,i2)::MMath.RATIONAL(i3,i4)::_) equation
-    str = "m^("+&intString(i1)+&"/"+&intString(i2)+&")"
-    +&  "s^("+&intString(i3)+&"/"+&intString(i4)+&")" ;
+    str = "m^("+intString(i1)+"/"+intString(i2)+")"
+    +  "s^("+intString(i3)+"/"+intString(i4)+")" ;
     then str;
     case({}) then "";
-    else "printBaseUnitsStr failed len:" +& intString(listLength(lst)) +& "\n";
+    else "printBaseUnitsStr failed len:" + intString(listLength(lst)) + "\n";
   end matchcontinue;
 end printBaseUnitsStr;
 
@@ -567,13 +567,13 @@ algorithm
   str := matchcontinue(typeParam)
   local String name; Integer i1,i2,i3,indx;
     case((MMath.RATIONAL(0,0),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
-      str = name +& "[indx =" +& intString(indx) +& "]";
+      str = name + "[indx =" + intString(indx) + "]";
       then str;
     case((MMath.RATIONAL(i1,1),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
-      str = name +& "^" +& intString(i1) +& "[indx=" +& intString(indx) +& "]";
+      str = name + "^" + intString(i1) + "[indx=" + intString(indx) + "]";
     then str;
     case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
-      str = name+& "^("+& intString(i1) +& "/" +& intString(i2)+&")" +& "[indx=" +& intString(indx) +& "]";
+      str = name+ "^("+ intString(i1) + "/" + intString(i2)+")" + "[indx=" + intString(indx) + "]";
     then str;
   end matchcontinue;
 end printTypeParameterStr;
@@ -619,7 +619,7 @@ algorithm
     case(i1::nums,i2::denoms,tpParam::tpstrs,_) equation
       typeParams = joinTypeParams(nums,denoms,tpstrs,funcInstIdOpt);
       s = Util.stringOption(Util.applyOption(funcInstIdOpt,intString));
-      tpParam = tpParam +& s;
+      tpParam = tpParam + s;
     then (MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(tpParam,0))::typeParams;
   end match;
 end joinTypeParams;
@@ -974,7 +974,7 @@ algorithm
     then (UnitAbsyn.LOC(indx,e),{},store);*/
 
     case(_,e as DAE.ICONST(i),divOrMul,ht,store) equation
-      s1 = "$"+&intString(tick())+&"_"+&intString(i);
+      s1 = "$"+intString(tick())+"_"+intString(i);
       u = if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) = add(u,store);
        ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
@@ -982,7 +982,7 @@ algorithm
 
     /* for each constant, add new unspecified unit*/
     case(_,e as DAE.RCONST(r),divOrMul,ht,store)equation
-      s1 = "$"+&intString(tick())+&"_"+&realString(r);
+      s1 = "$"+intString(tick())+"_"+realString(r);
       u = if divOrMul then str2unit("1",NONE()) else UnitAbsyn.UNSPECIFIED();
       (store,indx) = add(u,store);
        ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
@@ -1011,7 +1011,7 @@ algorithm
         (_,terms2,store) = buildTermExp(env,e2,divOrMul,ht,store);
         terms = listAppend(terms1,terms2);
         i = realInt(r);
-        true = intReal(i) -. r ==. 0.0;
+        true = intReal(i) - r == 0.0;
         ut = UnitAbsyn.POW(ut1,MMath.RATIONAL(i,1),e);
     then (ut,terms,store);
 
@@ -1058,7 +1058,7 @@ algorithm
     can not be declared in Modelica, since modifiers on arrays must affect the whole array */
     case(_,e as DAE.ARRAY(_,_,expl),_,ht,store)
       equation
-        print("vector ="+&ExpressionDump.printExpStr(e)+&"\n");
+        print("vector ="+ExpressionDump.printExpStr(e)+"\n");
       (uts,terms,store) = buildTermExpList(env,expl,ht,store);
       ut::uts = buildArrayElementTerms(uts,expl);
       terms = listAppend(terms,uts);
@@ -1066,7 +1066,7 @@ algorithm
 
     case(_,e as DAE.MATRIX(matrix=mexpl),_,ht,store)
       equation
-        print("Matrix ="+&ExpressionDump.printExpStr(e)+&"\n");
+        print("Matrix ="+ExpressionDump.printExpStr(e)+"\n");
         expl = List.flatten(mexpl);
         (uts,terms,store) = buildTermExpList(env,expl,ht,store);
         ut::uts = buildArrayElementTerms(uts,expl);
@@ -1074,7 +1074,7 @@ algorithm
       then (ut,terms,store);
 
     case(_,e as DAE.CALL(path=_),_,_,_) equation
-      print("buildTermDAE.CALL failed exp: "+&ExpressionDump.printExpStr(e)+&"\n");
+      print("buildTermDAE.CALL failed exp: "+ExpressionDump.printExpStr(e)+"\n");
     then fail();
   end matchcontinue;
 end buildTermExp;
@@ -1153,7 +1153,7 @@ algorithm
     // Real
     case(DAE.T_FUNCTION(_,functp,_,_),_,_,store) equation
       unitStr = getUnitStr(functp);
-      //print("Got unit='"+&unitStr+&"'\n");
+      //print("Got unit='"+unitStr+"'\n");
       unspec = 0 == stringCompare(unitStr,"");
 
       unit = str2unit(unitStr,SOME(funcInstId));
@@ -1220,7 +1220,7 @@ algorithm
       extraTerms = listAppend(eterms1,eterms2);
     then (ut::terms,extraTerms,store);
     case(_,e::_,_,_) equation
-      print("buildTermExpList failed for exp"+&ExpressionDump.printExpStr(e)+&"\n");
+      print("buildTermExpList failed for exp"+ExpressionDump.printExpStr(e)+"\n");
     then fail();
   end matchcontinue;
 end buildTermExpList;
@@ -1239,7 +1239,7 @@ algorithm
       (store,indxs) = buildFuncTypeStores2(args,funcInstId,store);
     then (store,indxs);
     case(tp,_,_) equation
-      print("buildFuncTypeStores failed, tp"+&Types.unparseType(tp)+&"\n");
+      print("buildFuncTypeStores failed, tp"+Types.unparseType(tp)+"\n");
     then fail();
   end matchcontinue;
 end buildFuncTypeStores;
@@ -1289,7 +1289,7 @@ algorithm
     case(DAE.T_REAL({},_)) then "";
     case(DAE.T_INTEGER(varLst = _)) then "";
     case(DAE.T_ARRAY(ty=tp)) then getUnitStr(tp);
-    case(tp) equation print("getUnitStr for type "+&Types.unparseType(tp)+&" failed\n"); then fail();
+    case(tp) equation print("getUnitStr for type "+Types.unparseType(tp)+" failed\n"); then fail();
   end matchcontinue;
 end getUnitStr;
 

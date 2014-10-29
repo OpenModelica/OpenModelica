@@ -225,7 +225,7 @@ algorithm
     // failure
     case (env, _, _)
       equation
-        print("- NFSCodeHashTable.enterScope failed on: " +& inName +& " in scope: " +& NFSCodeEnv.getEnvName(env) +& "\n");
+        print("- NFSCodeHashTable.enterScope failed on: " + inName + " in scope: " + NFSCodeEnv.getEnvName(env) + "\n");
       then
         fail();
   end matchcontinue;
@@ -340,7 +340,7 @@ algorithm
     case ({element}, _, _)
       equation
         // something is wrong!
-        // print("wrong: " +& SCodeDump.printElementStr(element) +& "\n");
+        // print("wrong: " + SCodeDump.printElementStr(element) + "\n");
       then
         LOCAL_SECTION(parent, section);
 
@@ -386,9 +386,9 @@ algorithm
 
     else
       equation
-        print("- NFSCodeHashTable.createElementStructure failed on: " +&
-          " modifiers:" +& stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
-          " element: " +& SCodeDump.shortElementStr(element) +& "\n"
+        print("- NFSCodeHashTable.createElementStructure failed on: " +
+          " modifiers:" + stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +
+          " element: " + SCodeDump.shortElementStr(element) + "\n"
         );
       then
         fail();
@@ -511,8 +511,8 @@ algorithm
         // entering the base class
         env = enterScope(env, Absyn.pathLastIdent(path), cls_ty);
 
-        //print("Adding derived modif: " +& SCodeDump.printElementStr(parentElement) +& " in parent: " +& Dump.printComponentRefStr(inParentCref) +&
-        //" in scope: " +& NFSCodeEnv.getEnvName(env) +& "\n");
+        //print("Adding derived modif: " + SCodeDump.printElementStr(parentElement) + " in parent: " + Dump.printComponentRefStr(inParentCref) +
+        //" in scope: " + NFSCodeEnv.getEnvName(env) + "\n");
 
         modifiers = listAppend(modifiers, {parentElement});
 
@@ -655,7 +655,7 @@ algorithm
         // type, because the type should not be looked up via itself.
         env = NFSCodeEnv.removeExtendsFromLocalScope(env);
 
-        // print("Looking up: " +& Absyn.pathString(path) +& " in parent: " +& Dump.printComponentRefStr(inParentCref) +& "\n");
+        // print("Looking up: " + Absyn.pathString(path) + " in parent: " + Dump.printComponentRefStr(inParentCref) + "\n");
 
         (NFSCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) =
           NFSCodeLookup.lookupBaseClassName(path, env, info);
@@ -663,8 +663,8 @@ algorithm
         // entering the base class
         env = enterScope(env, Absyn.pathLastIdent(path), cls_ty);
 
-        //print("Adding extends modif: " +& SCodeDump.printElementStr(el) +& " in parent: " +& Dump.printComponentRefStr(inParentCref) +&
-        //" in scope: " +& NFSCodeEnv.getEnvName(env) +& "\n");
+        //print("Adding extends modif: " + SCodeDump.printElementStr(el) + " in parent: " + Dump.printComponentRefStr(inParentCref) +
+        //" in scope: " + NFSCodeEnv.getEnvName(env) + "\n");
 
         modifiers = listAppend(modifiers, {el});
 
@@ -686,7 +686,7 @@ algorithm
       equation
         fullCref = joinCrefs(inParentCref, Absyn.CREF_IDENT(name, {}));
 
-        // print("Entering: " +& name +& " in parent: " +& Dump.printComponentRefStr(inParentCref) +& " in scope: " +& NFSCodeEnv.getEnvName(env) +& "\n");
+        // print("Entering: " + name + " in parent: " + Dump.printComponentRefStr(inParentCref) + " in scope: " + NFSCodeEnv.getEnvName(env) + "\n");
 
         env = enterScope(env, name, NFSCodeEnv.USERDEFINED());
 
@@ -746,7 +746,7 @@ algorithm
 
      case (_, parentElement, modifiers, _, el, env, hashTable, seqNumber)
        equation
-         print("- NFSCodeHashTable.hashTableAddElement failed on element: " +& SCodeDump.shortElementStr(el) +& "\n");
+         print("- NFSCodeHashTable.hashTableAddElement failed on element: " + SCodeDump.shortElementStr(el) + "\n");
        then
          fail();
 
@@ -770,7 +770,7 @@ algorithm
     // found nothing!
     else
       equation
-        print("Lookup failed for: " +&  Dump.printComponentRefStr(key) +& "\n");
+        print("Lookup failed for: " +  Dump.printComponentRefStr(key) + "\n");
       then
         fail();
   end matchcontinue;
@@ -840,45 +840,45 @@ algorithm
 
     case (LOCAL_ELEMENT(parentOpt, el))
       equation
-        str = "local[" +& SCodeDump.shortElementStr(el) +& "]";
+        str = "local[" + SCodeDump.shortElementStr(el) + "]";
       then
         str;
 
     case (EXTENDS_ELEMENT(parent, base, el, modifiers))
       equation
-        str = "extends[" +& SCodeDump.shortElementStr(el) +&
-               ", parent: " +& SCodeDump.shortElementStr(parent) +&
-               ", base: " +& SCodeDump.shortElementStr(base) +&
-               ", modifiers:" +& stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
+        str = "extends[" + SCodeDump.shortElementStr(el) +
+               ", parent: " + SCodeDump.shortElementStr(parent) +
+               ", base: " + SCodeDump.shortElementStr(base) +
+               ", modifiers:" + stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +
                "]";
       then
         str;
 
     case (DERIVED_ELEMENT(parent, base, el, modifiers))
       equation
-        str = "derived[" +& SCodeDump.shortElementStr(el) +&
-               ", parent: " +& SCodeDump.shortElementStr(parent) +&
-               ", base: " +& SCodeDump.shortElementStr(base) +&
-               ", modifiers:" +& stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
+        str = "derived[" + SCodeDump.shortElementStr(el) +
+               ", parent: " + SCodeDump.shortElementStr(parent) +
+               ", base: " + SCodeDump.shortElementStr(base) +
+               ", modifiers:" + stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +
                "]";
       then
         str;
 
     case (LOCAL_SECTION(el, sec))
       equation
-        str = "local section[" +& SCodeDump.shortElementStr(el) +& ", " +& printSectionStr(sec) +& "]";
+        str = "local section[" + SCodeDump.shortElementStr(el) + ", " + printSectionStr(sec) + "]";
       then
         str;
 
     case (EXTENDS_SECTION(el, base, sec))
       equation
-        str = "extends section[" +& SCodeDump.shortElementStr(el) +& ", base: " +& SCodeDump.shortElementStr(base) +& ", " +& printSectionStr(sec) +& "]";
+        str = "extends section[" + SCodeDump.shortElementStr(el) + ", base: " + SCodeDump.shortElementStr(base) + ", " + printSectionStr(sec) + "]";
       then
         str;
 
     case (DERIVED_SECTION(el, base, sec))
       equation
-        str = "derived section[" +& SCodeDump.shortElementStr(el) +& ", base: " +& SCodeDump.shortElementStr(base) +& ", " +& printSectionStr(sec) +& "]";
+        str = "derived section[" + SCodeDump.shortElementStr(el) + ", base: " + SCodeDump.shortElementStr(base) + ", " + printSectionStr(sec) + "]";
       then
         str;
 
@@ -922,19 +922,19 @@ algorithm
 
     case (VALUE(seqNumbers = seqNumbers, structures = structures, optChildren = NONE()))
       equation
-        str = "[" +& stringDelimitList(List.map(seqNumbers, intString), ", ") +&
-              "], " +& printStructuresStr(structures) +& "\n";
+        str = "[" + stringDelimitList(List.map(seqNumbers, intString), ", ") +
+              "], " + printStructuresStr(structures) + "\n";
       then
         str;
 
     case (VALUE(seqNumbers = seqNumbers,  structures = structures, optChildren = SOME(hashTable)))
       equation
-        str = "[" +& stringDelimitList(List.map(seqNumbers, intString), ", ") +&
-              "], " +& printStructuresStr(structures) +&
-              ", \n\tKids: (\n\t" +&
+        str = "[" + stringDelimitList(List.map(seqNumbers, intString), ", ") +
+              "], " + printStructuresStr(structures) +
+              ", \n\tKids: (\n\t" +
               stringDelimitList(
                 List.map(BaseHashTable.hashTableList(hashTable),
-                hashItemString), "\n\t") +& ")";
+                hashItemString), "\n\t") + ")";
       then
         str;
   end matchcontinue;
@@ -948,7 +948,7 @@ protected
   Value v;
 algorithm
   (k, v) := tpl;
-  str := "{" +& Dump.printComponentRefStr(k) +& ",{" +& hashValueString(v) +& "}}";
+  str := "{" + Dump.printComponentRefStr(k) + ",{" + hashValueString(v) + "}}";
 end hashItemString;
 
 public function emptyHashTable

@@ -194,69 +194,69 @@ algorithm
       Integer i1, i2, i3, i4, i5, i6, i7;
 
     case UNIT(factor1, i1, i2, i3, i4, i5, i6, i7/* , shift1 */) equation
-      str = realString(factor1) +& " * ";
+      str = realString(factor1) + " * ";
 
       b = false;
-      s = "mol^(" +& intString(i1) +& ")";
+      s = "mol^(" + intString(i1) + ")";
       s = if intEq(i1, 0) then "" else s;
       b = b or intNe(i1, 0);
-      str = str +& s;
+      str = str + s;
 
       s = if b and intNe(i2, 0) then " * " else "";
-      str = str +& s;
-      s = "cd^(" +& intString(i2) +& ")";
+      str = str + s;
+      s = "cd^(" + intString(i2) + ")";
       s = if intEq(i2, 0) then "" else s;
       b = b or intNe(i2, 0);
-      str = str +& s;
+      str = str + s;
 
       s = if b and intNe(i3, 0) then " * " else "";
-      str = str +& s;
-      s = "m^(" +& intString(i3) +& ")";
+      str = str + s;
+      s = "m^(" + intString(i3) + ")";
       s = if intEq(i3, 0) then "" else s;
       b = b or intNe(i3, 0);
-      str = str +& s;
+      str = str + s;
 
       s = if b and intNe(i4, 0) then " * " else "";
-      str = str +& s;
-      s = "s^(" +& intString(i4) +& ")";
+      str = str + s;
+      s = "s^(" + intString(i4) + ")";
       s = if intEq(i4, 0) then "" else s;
       b = b or intNe(i4, 0);
-      str = str +& s;
+      str = str + s;
 
       s = if b and intNe(i5, 0) then " * " else "";
-      str = str +& s;
-      s = "A^(" +& intString(i5) +& ")";
+      str = str + s;
+      s = "A^(" + intString(i5) + ")";
       s = if intEq(i5, 0) then "" else s;
       b = b or intNe(i5, 0);
-      str = str +& s;
+      str = str + s;
 
       s = if b and intNe(i6, 0) then " * " else "";
-      str = str +& s;
-      //s = "(K-" +& realString(shift1) +& ")^(" +& intString(i6) +& ")";
-      s = "K^(" +& intString(i6) +& ")";
+      str = str + s;
+      //s = "(K-" + realString(shift1) + ")^(" + intString(i6) + ")";
+      s = "K^(" + intString(i6) + ")";
       s = if intEq(i6, 0) then "" else s;
       b = b or intNe(i6, 0);
-      str = str +& s;
+      str = str + s;
 
       s = if b and intNe(i7, 0) then " * " else "";
-      str = str +& s;
-      s = "g^(" +& intString(i7) +& ")";
+      str = str + s;
+      s = "g^(" + intString(i7) + ")";
       s = if intEq(i7, 0) then "" else s;
       b = b or intNe(i7, 0);
-      str = str +& s;
+      str = str + s;
 
       s = if b then "" else "1";
-      str = str +& s;
+      str = str + s;
     then str;
 
     case MASTER(crefList) equation
       str = "MASTER(";
-      str = str +& printListCr(crefList);
-      str = str +& ")";
+      str = str + printListCr(crefList);
+      str = str + ")";
     then str;
 
     case UNKNOWN(s) equation
-      str = "UNKOWN(" +& s +& ")";
+      str = "UNKOWN(" + s + ")";
     then str;
   end match;
 end unit2string;
@@ -280,7 +280,7 @@ algorithm
 
     case cr::lCr equation
       s = ComponentReference.crefStr(cr);
-      s = s +& ", " +& printListCr(lCr);
+      s = s + ", " + printListCr(lCr);
     then s;
 
   end match;

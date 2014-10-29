@@ -377,7 +377,7 @@ algorithm
     // failtrace. adrpo: TODO! FIXME! this SHOULD NOT FAIL!
     case (elt::dae,_,_)
       equation
-        // Debug.fprintln(Flags.FAILTRACE, "- VarTransform.applyReplacementsDAEElts could not apply replacements to: " +& DAEDump.dumpElementsStr({elt}));
+        // Debug.fprintln(Flags.FAILTRACE, "- VarTransform.applyReplacementsDAEElts could not apply replacements to: " + DAEDump.dumpElementsStr({elt}));
         dae = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then elt::dae;
   end matchcontinue;
@@ -869,7 +869,7 @@ algorithm ostr := match (inVariableReplacements)
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
         str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
-        s1 = "Replacements: (" +& intString(listLength(tplLst)) +& ")\n=============\n" +& str +& "\n";
+        s1 = "Replacements: (" + intString(listLength(tplLst)) + ")\n=============\n" + str + "\n";
       then
         s1;
   end match;
@@ -901,9 +901,9 @@ protected function printReplacementTupleStr "help function to dumpReplacements"
   output String str;
 algorithm
   // optional exteded type debugging
-  //str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
+  //str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
-  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.printExpStr(Util.tuple22(tpl));
+  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
 
 public function replacementSources "Returns all sources of the replacement rules"

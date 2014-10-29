@@ -289,13 +289,13 @@ algorithm
       equation
         names = List.map(cls,Absyn.className);
         names = List.map1(names,Absyn.joinPaths,scope);
-        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}\n";
+        res = "{" + stringDelimitList(List.map(names,Absyn.pathString),",") + "}\n";
       then res;
 
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP()))
       equation
         names = List.map(cls,Absyn.className);
-        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}\n";
+        res = "{" + stringDelimitList(List.map(names,Absyn.pathString),",") + "}\n";
       then res;
 
   end match;
@@ -425,13 +425,13 @@ algorithm
     // problem with the libs, ignore!
     case false
       equation
-        Print.printErrorBuf("Failed to load library: " +& inLib +& "!\n");
+        Print.printErrorBuf("Failed to load library: " + inLib + "!\n");
       then
         fail();
 
     case true
       equation
-        Print.printErrorBuf("Failed to parse file: " +& inLib +& "!\n");
+        Print.printErrorBuf("Failed to parse file: " + inLib + "!\n");
       then
         fail();
 
@@ -463,7 +463,7 @@ algorithm
     // The last class in the first file will be instantiated.
     case (libs)
       equation
-        //print("Class to instantiate: " +& Config.classToInstantiate() +& "\n");
+        //print("Class to instantiate: " + Config.classToInstantiate() + "\n");
         isEmptyOrFirstIsModelicaFile(libs);
         System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
         System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
@@ -526,7 +526,7 @@ algorithm
         // parse our algorithm given in the script
         stmts = Parser.parseexp(f);
         //System.stopTimer();
-        //print("\nParseExp: " +& realString(System.getTimerIntervalTime()));
+        //print("\nParseExp: " + realString(System.getTimerIntervalTime()));
 
         // are there any errors?
         // show errors if there are any
@@ -634,7 +634,7 @@ protected function interactivemode
 "Initiate the interactive mode using socket communication."
   input GlobalScript.SymbolTable symbolTable;
 algorithm
-  print("Opening a socket on port " +& intString(29500) +& "\n");
+  print("Opening a socket on port " + intString(29500) + "\n");
   serverLoop(true, Socket.waitforconnect(29500), symbolTable);
 end interactivemode;
 
@@ -730,9 +730,9 @@ algorithm
         // we have something!
         false = stringEq(omdevPath, "");
         // do we have bin?
-        true = System.directoryExists(omdevPath +& "\\tools\\mingw\\bin");
+        true = System.directoryExists(omdevPath + "\\tools\\mingw\\bin");
         // do we have the correct libexec stuff?
-        true = System.directoryExists(omdevPath +& "\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
+        true = System.directoryExists(omdevPath + "\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
         oldPath = System.readEnv("PATH");
         newPath = stringAppendList({omHome,"\\bin;",
                                     omHome,"\\lib;",
@@ -748,9 +748,9 @@ algorithm
         _ = System.setEnv("OPENMODELICAHOME",omHome,true);
         oldPath = System.readEnv("PATH");
         // do we have bin?
-        true = System.directoryExists(omHome +& "\\mingw\\bin");
+        true = System.directoryExists(omHome + "\\mingw\\bin");
         // do we have the correct libexec stuff?
-        true = System.directoryExists(omHome +& "\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
+        true = System.directoryExists(omHome + "\\mingw\\libexec\\gcc\\mingw32\\4.4.0");
         newPath = stringAppendList({omHome,"\\bin;",
                                     omHome,"\\lib;",
                                     omHome,"\\mingw\\bin;",

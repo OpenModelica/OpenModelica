@@ -572,7 +572,7 @@ algorithm
     /* uncomment for debuging
     case (cache,_,inExp,impl,st,doVect,_,info)
       equation
-        print("Static.elabExp: " +& Dump.dumpExpStr(inExp) +& "\n");
+        print("Static.elabExp: " + Dump.dumpExpStr(inExp) + "\n");
       then
         fail();
     */
@@ -890,8 +890,8 @@ algorithm
        true = Flags.isSet(Flags.FAILTRACE);
        fprint(Flags.FAILTRACE, "- Static.elabExp failed: ");
        Debug.traceln(Dump.printExpStr(e));
-       Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
-       Debug.traceln("  Prefix: " +& PrefixUtil.printPrefixStr(pre));
+       Debug.traceln("  Scope: " + FGraph.printGraphPathStr(env));
+       Debug.traceln("  Prefix: " + PrefixUtil.printPrefixStr(pre));
 
        //Debug.traceln("\n env : ");
        //Debug.traceln(FGraph.printGraphStr(env));
@@ -920,7 +920,7 @@ algorithm
     case ({e1}, {Absyn.NAMEDARG("simplified", e2)}) then {e1, e2};
     case (_, _)
       equation
-        Error.addCompilerError("+replaceHomotopy: homotopy called with wrong arguments: " +&
+        Error.addCompilerError("+replaceHomotopy: homotopy called with wrong arguments: " +
           Dump.printFunctionArgsStr(Absyn.FUNCTIONARGS(args, nargs)));
       then
         fail();
@@ -1069,7 +1069,7 @@ algorithm
     else
       equation
         str = Dump.unparseClassPart(cp);
-        Error.addInternalError("Static.fromEquationsToAlgAssignments: Unknown classPart in match expression:\n" +& str);
+        Error.addInternalError("Static.fromEquationsToAlgAssignments: Unknown classPart in match expression:\n" + str);
       then fail();
   end match;
 end fromEquationsToAlgAssignments;
@@ -1164,7 +1164,7 @@ algorithm
 
     case (Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_IDENT(strLeft,{})),Absyn.CREF(Absyn.CREF_IDENT(strRight,{}))),_,_)
       equation
-        true = strLeft ==& strRight;
+        true = strLeft == strRight;
         // match x case x then ... produces equation x = x; we save a bit of time by removing it here :)
       then {};
 
@@ -1326,9 +1326,9 @@ algorithm
         (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iters, impl, st, doVect, pre, info);
         dims = listReverse(dims);
         dims = fixDimsItertype(iterType,dims);
-        // print("elabReductionExp: " +& Dump.printExpStr(exp) +& "\n");
+        // print("elabReductionExp: " + Dump.printExpStr(exp) + "\n");
         (cache,exp_1,DAE.PROP(expty, expconst),st) = elabExpInExpression(cache, env_1, exp, impl, st, doVect, pre, info);
-        // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
+        // print("exp_1 has type: " + Types.unparseType(expty) + "\n");
         const = Types.constAnd(expconst, iterconst);
         fn_1 = Absyn.crefToPath(fn);
         (cache,exp_1,expty,resultTy,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), dims, hasGuardExp, info);
@@ -1337,7 +1337,7 @@ algorithm
         resultId = Util.getTempVariableIndex();
         (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty,resultTy,foldId,resultId);
         (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, resultTy, impl, st, doVect,pre,info);
-        // print("make reduction: " +& Absyn.pathString(fn_1) +& " exp_1: " +& ExpressionDump.printExpStr(exp_1) +& " ty: " +& Types.unparseType(expty) +& "\n");
+        // print("make reduction: " + Absyn.pathString(fn_1) + " exp_1: " + ExpressionDump.printExpStr(exp_1) + " ty: " + Types.unparseType(expty) + "\n");
         exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,iterType,expty,v,foldId,resultId,foldExp),exp_1,reductionIters);
       then
         (cache,exp_1,prop,st);
@@ -1413,9 +1413,9 @@ algorithm
         (cache,iterExp,_) = Ceval.cevalIfConstant(cache,env,iterExp,DAE.PROP(fulliterty,DAE.C_CONST()),impl, info);
         (iterty,dim) = Types.unliftArrayOrList(fulliterty);
 
-        // print("iterator type: " +& Types.unparseType(iterty) +& "\n");
+        // print("iterator type: " + Types.unparseType(iterty) + "\n");
         envWithIterators = FGraph.addForIterator(env, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
-        // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
+        // print("exp_1 has type: " + Types.unparseType(expty) + "\n");
         (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, envWithIterators, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info);
 
         diter = DAE.REDUCTIONITER(iter,iterExp,guardExp,iterty);
@@ -1470,7 +1470,7 @@ algorithm
       equation
         env = inEnv;
         cr = Absyn.pathToCref(path);
-        // print("makeReductionFoldExp => " +& Absyn.pathString(path) +& Types.unparseType(expty) +& "\n");
+        // print("makeReductionFoldExp => " + Absyn.pathString(path) + Types.unparseType(expty) + "\n");
         env = FGraph.addForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         env = FGraph.addForIterator(env, resultId, resultTy, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId,{});
@@ -2022,7 +2022,7 @@ algorithm
         Print.printErrorBuf("- Inst.elabGraphicsExp failed: ");
         ps = PrefixUtil.printPrefixStr2(pre);
         s = Dump.printExpStr(e);
-        Print.printErrorBuf(ps+&s);
+        Print.printErrorBuf(ps+s);
         Print.printErrorBuf("\n");
       then
         fail();
@@ -2152,8 +2152,8 @@ algorithm
         List.consr(List.consOption(opt_step, {stop}), start),
           Dump.dumpExpStr);
         error_str = stringDelimitList(error_strs, ":");
-        Debug.trace("- " +& Error.infoStr(info));
-        Debug.traceln(" Static.elabRangeType failed on " +& error_str);
+        Debug.trace("- " + Error.infoStr(info));
+        Debug.traceln(" Static.elabRangeType failed on " + error_str);
       then
         fail();
   end matchcontinue;
@@ -2689,7 +2689,7 @@ algorithm
       equation
         envStr = FGraph.printGraphPathStr(env);
         preStr = PrefixUtil.printPrefixStr(pre);
-        str = "Static.elabGraphicsArray failed on an empty modification with prefix: " +& preStr +& " in scope: " +& envStr;
+        str = "Static.elabGraphicsArray failed on an empty modification with prefix: " + preStr + " in scope: " + envStr;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
         fail();
@@ -2698,7 +2698,7 @@ algorithm
         envStr = FGraph.printGraphPathStr(env);
         preStr = PrefixUtil.printPrefixStr(pre);
         expStr = Dump.printExpStr(e);
-        str = "Static.elabGraphicsArray failed on expresion: " +& expStr +& " with prefix: " +& preStr +& " in scope: " +& envStr;
+        str = "Static.elabGraphicsArray failed on expresion: " + expStr + " with prefix: " + preStr + " in scope: " + envStr;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
         fail();
@@ -3165,7 +3165,7 @@ algorithm
         a1 = Dump.printExpStr(p);
         a2 = Dump.printExpStr(expr);
         sp = PrefixUtil.printPrefixStr3(pre);
-        s1 = "smooth(" +& a1 +& ", " +& a2 +&"), first argument must be a constant or parameter expression of type Integer";
+        s1 = "smooth(" + a1 + ", " + a2 +"), first argument must be a constant or parameter expression of type Integer";
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS,{s1,sp},info);
       then
         fail();
@@ -3181,7 +3181,7 @@ algorithm
         a1 = Dump.printExpStr(p);
         a2 = Dump.printExpStr(expr);
         sp = PrefixUtil.printPrefixStr3(pre);
-        s1 = "smooth("+&a1+& ", "+&a2 +&"), second argument must be a Real, array of Reals or record only containg Reals";
+        s1 = "smooth("+a1+ ", "+a2 +"), second argument must be a Real, array of Reals or record only containg Reals";
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS,{s1,sp},info);
       then
         fail();
@@ -3191,7 +3191,7 @@ algorithm
         failure(2 = listLength(expl));
         a1 = Dump.printExpLstStr(expl);
         sp = PrefixUtil.printPrefixStr3(pre);
-        s1 = "expected smooth(p,expr), got smooth("+&a1+&")";
+        s1 = "expected smooth(p,expr), got smooth("+a1+")";
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS,{s1,sp},info);
       then fail();
   end matchcontinue;
@@ -3283,7 +3283,7 @@ algorithm
         // determine if it's a scalar or array.
         false = Types.isUnknownType(inArrayExpType);
         exp_str = ExpressionDump.printExpStr(inArrayExp);
-        size_str = "size(" +& exp_str +& ")";
+        size_str = "size(" + exp_str + ")";
         Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {size_str}, inInfo);
       then
         fail();
@@ -3346,7 +3346,7 @@ algorithm
         false = Types.isUnknownType(inArrayType);
         exp_str = ExpressionDump.printExpStr(inArrayExp);
         index_str = ExpressionDump.printExpStr(inIndexExp);
-        size_str = "size(" +& exp_str +& ", " +& index_str +& ")";
+        size_str = "size(" + exp_str + ", " + index_str + ")";
         Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {size_str}, inInfo);
       then
         (NONE(), NONE());
@@ -3433,7 +3433,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         sp = PrefixUtil.printPrefixStr3(pre);
-        Debug.traceln("- Static.elabBuiltinNdims failed for: ndims(" +& Dump.printExpLstStr(expl) +& " in component: " +& sp);
+        Debug.traceln("- Static.elabBuiltinNdims failed for: ndims(" + Dump.printExpLstStr(expl) + " in component: " + sp);
       then
         fail();
   end matchcontinue;
@@ -3519,9 +3519,9 @@ algorithm
 
     case (_,env,dims,_,_,_,_)
       equation
-        str = "Static.elabBuiltinFill failed in component" +& PrefixUtil.printPrefixStr3(inPrefix) +&
-              " and scope: " +& FGraph.printGraphPathStr(env) +&
-              " for expression: fill(" +& Dump.printExpLstStr(dims) +& ")";
+        str = "Static.elabBuiltinFill failed in component" + PrefixUtil.printPrefixStr3(inPrefix) +
+              " and scope: " + FGraph.printGraphPathStr(env) +
+              " for expression: fill(" + Dump.printExpLstStr(dims) + ")";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
         fail();
@@ -3610,9 +3610,9 @@ algorithm
 
     case (_,env,_,_,_,_,_,_,_)
       equation
-        str = "Static.elabBuiltinFill2 failed in component" +& PrefixUtil.printPrefixStr3(inPrefix) +&
-              " and scope: " +& FGraph.printGraphPathStr(env) +&
-              " for expression: fill(" +& Dump.printExpLstStr(inDims) +& ")";
+        str = "Static.elabBuiltinFill2 failed in component" + PrefixUtil.printPrefixStr3(inPrefix) +
+              " and scope: " + FGraph.printGraphPathStr(env) +
+              " for expression: fill(" + Dump.printExpLstStr(inDims) + ")";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, inInfo);
       then
         fail();
@@ -3791,7 +3791,7 @@ algorithm
       equation
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExpInExpression(cache,env, arrexp, impl,NONE(),true,pre,info);
         (exp_1,_) = Types.matchType(exp_1, ty, DAE.T_INTEGER_DEFAULT, true);
-        str_exp = "product(" +& Dump.printExpStr(arrexp) +& ")";
+        str_exp = "product(" + Dump.printExpStr(arrexp) + ")";
         str_pre = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str_exp, str_pre}, info);
       then
@@ -3801,7 +3801,7 @@ algorithm
       equation
         (cache,exp_1,DAE.PROP(ty,c),_) = elabExpInExpression(cache,env, arrexp, impl,NONE(),true,pre,info);
         (exp_1,_) = Types.matchType(exp_1, ty, DAE.T_REAL_DEFAULT, true);
-        str_exp = "product(" +& Dump.printExpStr(arrexp) +& ")";
+        str_exp = "product(" + Dump.printExpStr(arrexp) + ")";
         str_pre = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str_exp, str_pre}, info);
       then
@@ -4757,7 +4757,7 @@ algorithm
         false = valueEq(variability,DAE.C_VAR());
           // check if argument is non-negativ
           rInterval = Expression.expReal(interval);
-          true = rInterval >=. 0.0;
+          true = rInterval >= 0.0;
 
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("interval",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
@@ -4798,7 +4798,7 @@ algorithm
         (condition,_) = Types.matchType(condition,ty1,DAE.T_BOOL_DEFAULT,true);
         (startInterval,_) = Types.matchType(startInterval,ty2,DAE.T_REAL_DEFAULT,true);
         rStartInterval = Expression.expReal(startInterval);
-        true = rStartInterval >=. 0.0;
+        true = rStartInterval >= 0.0;
 
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("condition",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
@@ -5394,7 +5394,7 @@ algorithm
         slist = List.map(nargs,Dump.printNamedArgStr);
         s1 = Dump.printExpLstStr(args);
         s2 = stringDelimitList(s1 :: slist, ", ");
-        strMsg0 = "transition(" +& s2 +& ")";
+        strMsg0 = "transition(" + s2 + ")";
         strPre = PrefixUtil.printPrefixStr3(pre);
         n = listLength(args);
 
@@ -5442,22 +5442,22 @@ protected
   String s1,s2,strPos,strMsg1;
   Boolean b1;
 algorithm
-  strPos := if argName ==& "from" then "first" else "second";
-  nPos := if argName ==& "from" then 1 else 2;
+  strPos := if argName == "from" then "first" else "second";
+  nPos := if argName == "from" then 1 else 2;
   b1 := List.isMemberOnTrue(argName, nargs, elabBuiltinTransition3);
 
-  s1 := strMsg0 +& ", named argument \"" +& argName +& "\" already has a value.";
+  s1 := strMsg0 + ", named argument \"" + argName + "\" already has a value.";
   Error.assertionOrAddSourceMessage(not (b1 and n >= nPos),Error.WRONG_TYPE_OR_NO_OF_ARGS,
     {s1, strPre}, info);
 
-  s2 := strMsg0 +& ", missing value for " +& strPos +& " argument \"" +& argName +& "\".";
+  s2 := strMsg0 + ", missing value for " + strPos + " argument \"" + argName + "\".";
   Error.assertionOrAddSourceMessage(b1 or n >= nPos, Error.WRONG_TYPE_OR_NO_OF_ARGS,
       {s2, strPre}, info);
 
   arg1 := elabBuiltinTransition5(argName, b1, args, nargs);
   (_, _, prop1, _) := elabExpInExpression(inCache,inEnv,arg1,inBoolean,NONE(),true,inPrefix,info);
   ty := Types.getPropType(prop1);
-  strMsg1 := strMsg0 +& ", " +& strPos +& "argument needs to be a block instance.";
+  strMsg1 := strMsg0 + ", " + strPos + "argument needs to be a block instance.";
   Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty),Error.WRONG_TYPE_OR_NO_OF_ARGS,
   {strMsg1, strPre}, info);
 
@@ -5557,7 +5557,7 @@ algorithm
       equation
         (cache, state, prop1, _) = elabExpInExpression(cache,env,astate,impl,NONE(),true,pre,info);
         ty1 = Types.getPropType(prop1);
-        strMsg = "initialState(" +& Dump.printExpLstStr(args) +& "), Argument needs to be a block instance.";
+        strMsg = "initialState(" + Dump.printExpLstStr(args) + "), Argument needs to be a block instance.";
         strPre = PrefixUtil.printPrefixStr3(pre);
         Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty1),Error.WRONG_TYPE_OR_NO_OF_ARGS,
           {strMsg, strPre}, info);
@@ -5603,7 +5603,7 @@ algorithm
       equation
         (cache, state, prop1, _) = elabExpInExpression(cache,env,astate,impl,NONE(),true,pre,info);
         ty1 = Types.getPropType(prop1);
-        strMsg = "activeState(" +& Dump.printExpLstStr(args) +& "), Argument needs to be a block instance.";
+        strMsg = "activeState(" + Dump.printExpLstStr(args) + "), Argument needs to be a block instance.";
         strPre = PrefixUtil.printPrefixStr3(pre);
         Error.assertionOrAddSourceMessage(isBlockTypeWorkaround(ty1), Error.WRONG_TYPE_OR_NO_OF_ARGS,
           {strMsg, strPre}, info);
@@ -6881,8 +6881,8 @@ algorithm
     case (_, _, _, pre, _)
       equation
         scope_str = FGraph.printGraphPathStr(env);
-        arg_str = "vector(" +& Dump.printExpStr(expr) +& ")";
-        dim_str = "[" +& stringDelimitList(List.map(dimensions, intString), ", ") +& "]";
+        arg_str = "vector(" + Dump.printExpStr(expr) + ")";
+        dim_str = "[" + stringDelimitList(List.map(dimensions, intString), ", ") + "]";
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.BUILTIN_VECTOR_INVALID_DIMENSIONS,
           {scope_str, pre_str, dim_str, arg_str}, inInfo);
@@ -8148,9 +8148,9 @@ algorithm
         // join the type with the function name: Modelica.Mechanics.MultiBody.World.gravityAcceleration
         functionClassPath = Absyn.joinPaths(componentType, Absyn.IDENT(fnIdent));
 
-        fprintln(Flags.STATIC, "Looking for function: " +& Absyn.pathString(fn));
+        fprintln(Flags.STATIC, "Looking for function: " + Absyn.pathString(fn));
         // lookup the function using the correct typeOf(world).functionName
-        fprintln(Flags.STATIC, "Looking up class: " +& Absyn.pathString(functionClassPath));
+        fprintln(Flags.STATIC, "Looking up class: " + Absyn.pathString(functionClassPath));
         (_, scodeClass, classEnv) = Lookup.lookupClass(cache, env, functionClassPath, true);
         Util.setStatefulBoolean(stopElab,true);
         // see if class scodeClass is derived and then
@@ -8175,7 +8175,7 @@ algorithm
         (cache, env) = addComponentFunctionsToCurrentEnvironment(cache, env, scodeClass, classEnv, componentName);
         // transform Absyn.QUALIFIED("world", Absyn.IDENT("gravityAcceleration")) to
         // Absyn.IDENT("world.gravityAcceleration").
-        stringifiedInstanceFunctionName = componentName +& "__" +& SCode.className(scodeClass);
+        stringifiedInstanceFunctionName = componentName + "__" + SCode.className(scodeClass);
         correctFunctionPath = Absyn.IDENT(stringifiedInstanceFunctionName);
         // use the extra arguments if any
         nargs = listAppend(nargs, translatedNArgs);
@@ -8290,8 +8290,8 @@ algorithm
           elabTypes(cache, env, args, nargs, typelist, true, false/* Do not check types*/, impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info);
         argStr = ExpressionDump.printExpListStr(args_1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        fn_str = Absyn.pathString(fn) +& "(" +& argStr +& ")\nof type\n  " +& Types.unparseType(functype);
-        types_str = "\n  " +& Types.unparseType(tp1);
+        fn_str = Absyn.pathString(fn) + "(" + argStr + ")\nof type\n  " + Types.unparseType(functype);
+        types_str = "\n  " + Types.unparseType(tp1);
         Error.assertionOrAddSourceMessage(Error.getNumErrorMessages()<>numErrors,Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
 
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
@@ -8317,7 +8317,7 @@ algorithm
         fn_str = Absyn.pathString(fn);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         types_str = stringDelimitList(t_lst, "\n -");
-        //fn_str = fn_str +& " in component " +& pre_str;
+        //fn_str = fn_str + " in component " + pre_str;
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
 
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
@@ -8343,7 +8343,7 @@ algorithm
     case (cache,env,fn,_,_,_,_,_,_,_,_)
       equation
         failure((_,_,_) = Lookup.lookupType(cache,env, fn, NONE())) "msg" ;
-        scope = FGraph.printGraphPathStr(env) +& " (looking for a function or record)";
+        scope = FGraph.printGraphPathStr(env) + " (looking for a function or record)";
         fn_str = Absyn.pathString(fn);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {fn_str,scope}, info); // No need to add prefix because only depends on scope?
 
@@ -8356,7 +8356,7 @@ algorithm
         (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env,fn,info);
         fn_str = Absyn.pathString(fn);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        fn_str = fn_str +& " in component " +& pre_str;
+        fn_str = fn_str + " in component " + pre_str;
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE, {fn_str}, info);
 
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
@@ -8367,7 +8367,7 @@ algorithm
       equation
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& FGraph.printGraphPathStr(env));
+        Debug.traceln("- Static.elabCallArgs failed on: " + Absyn.pathString(fn) + " in env: " + FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -8449,13 +8449,13 @@ algorithm
 
   // create a replacement for input variables -> their binding
   //inputVarsRepl = createInputVariableReplacements(slots2, VarTransform.emptyReplacements());
-  //print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");
+  //print("Repls: " + VarTransform.dumpReplacementsStr(inputVarsRepl) + "\n");
   // replace references to inputs in the arguments
   //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
 
-  //debugPrintString = if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
+  //debugPrintString = if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " + Absyn.pathString(fn_1) + "\n", "");print(debugPrintString);
   (call_exp,prop_1) := vectorizeCall(callExp, vect_dims, slots2, prop, info);
-  // print("3 Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " path: " +& Absyn.pathString(fn_1) +& "\n");
+  // print("3 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + Absyn.pathString(fn_1) + "\n");
   // Instantiate the function and add to dae function tree
   (cache,status) := instantiateDaeFunction(cache,inEnv,
     if Lookup.isFunctionCallViaComponent(cache, inEnv, fn) then fn else fn_1, // don't use the fully qualified name for calling component functions
@@ -8546,10 +8546,10 @@ algorithm
         scopeName = FNode.refName(ref);
         true = FGraph.checkScopeType({ref}, SOME(FCore.PARALLEL_SCOPE()));
 
-        errorString = "\n" +&
-             "- Non-Parallel function '" +& Absyn.pathString(inFn) +&
-             "' can not be called from a parallel scope." +& "\n" +&
-             "- Here called from :" +& scopeName +& "\n" +&
+        errorString = "\n" +
+             "- Non-Parallel function '" + Absyn.pathString(inFn) +
+             "' can not be called from a parallel scope." + "\n" +
+             "- Here called from :" + scopeName + "\n" +
              "- Please declare the function as parallel function.";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
@@ -8580,11 +8580,11 @@ algorithm
         // make sure the function is not calling itself
         // recurrsion is not allowed.
         true = stringEqual(scopeName,Absyn.pathString(inFn));
-        errorString = "\n" +&
-             "- Parallel function '" +& Absyn.pathString(inFn) +&
-             "' can not call itself. Recurrsion is not allowed for parallel functions currently." +& "\n" +&
-             "- Parallel functions can only be called from: 'kernel' functions," +&
-             " OTHER 'parallel' functions (no recurrsion) or from a body of a" +&
+        errorString = "\n" +
+             "- Parallel function '" + Absyn.pathString(inFn) +
+             "' can not call itself. Recurrsion is not allowed for parallel functions currently." + "\n" +
+             "- Parallel functions can only be called from: 'kernel' functions," +
+             " OTHER 'parallel' functions (no recurrsion) or from a body of a" +
              " 'parfor' loop";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
@@ -8606,11 +8606,11 @@ algorithm
         false = FNode.isRefTop(ref);
         scopeName = FNode.refName(ref);
 
-        errorString = "\n" +&
-             "- Parallel function '" +& Absyn.pathString(inFn) +&
-             "' can not be called from a non parallel scope '" +& scopeName +& "'.\n" +&
-             "- Parallel functions can only be called from: 'kernel' functions," +&
-             " other 'parallel' functions (no recurrsion) or from a body of a" +&
+        errorString = "\n" +
+             "- Parallel function '" + Absyn.pathString(inFn) +
+             "' can not be called from a non parallel scope '" + scopeName + "'.\n" +
+             "- Parallel functions can only be called from: 'kernel' functions," +
+             " other 'parallel' functions (no recurrsion) or from a body of a" +
              " 'parfor' loop";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
@@ -8625,9 +8625,9 @@ algorithm
         // make sure the function is not calling itself
         // recurrsion is not allowed.
         true = stringEqual(scopeName,Absyn.pathString(inFn));
-        errorString = "\n" +&
-             "- Kernel function '" +& Absyn.pathString(inFn) +&
-             "' can not call itself. " +& "\n" +&
+        errorString = "\n" +
+             "- Kernel function '" + Absyn.pathString(inFn) +
+             "' can not call itself. " + "\n" +
              "- Recurrsion is not allowed for Kernel functions. ";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
@@ -8641,11 +8641,11 @@ algorithm
         scopeName = FNode.refName(ref);
         true = FGraph.checkScopeType({ref}, SOME(FCore.PARALLEL_SCOPE()));
 
-        errorString = "\n" +&
-             "- Kernel function '" +& Absyn.pathString(inFn) +&
-             "' can not be called from a parallel scope '" +& scopeName +& "'.\n" +&
-             "- Kernel functions CAN NOT be called from: 'kernel' functions," +&
-             " 'parallel' functions or from a body of a" +&
+        errorString = "\n" +
+             "- Kernel function '" + Absyn.pathString(inFn) +
+             "' can not be called from a parallel scope '" + scopeName + "'.\n" +
+             "- Kernel functions CAN NOT be called from: 'kernel' functions," +
+             " 'parallel' functions or from a body of a" +
              " 'parfor' loop";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
@@ -8659,11 +8659,11 @@ algorithm
         scopeName = FNode.refName(ref);
 
         true = stringEqual(scopeName, FCore.parForScopeName);
-        errorString = "\n" +&
-             "- Kernel function '" +& Absyn.pathString(inFn) +&
-             "' can not be called from inside parallel for (parfor) loop body." +& "'.\n" +&
-             "- Kernel functions CAN NOT be called from: 'kernel' functions," +&
-             " 'parallel' functions or from a body of a" +&
+        errorString = "\n" +
+             "- Kernel function '" + Absyn.pathString(inFn) +
+             "' can not be called from inside parallel for (parfor) loop body." + "'.\n" +
+             "- Kernel functions CAN NOT be called from: 'kernel' functions," +
+             " 'parallel' functions or from a body of a" +
              " 'parfor' loop";
         Error.addSourceMessage(Error.PARMODELICA_ERROR,
           {errorString}, inInfo);
@@ -8777,7 +8777,7 @@ algorithm
       equation
         (cache,_,prop,_) = elabExpInExpression(cache,env,Absyn.TUPLE(args),false,st,false,pre,info);
         tys = List.map(vars, Types.getVarType);
-        str = "Failed to match types:\n    actual:   " +& Types.unparseType(Types.getPropType(prop)) +& "\n    expected: " +& Types.unparseType(DAE.T_TUPLE(tys,DAE.emptyTypeSource));
+        str = "Failed to match types:\n    actual:   " + Types.unparseType(Types.getPropType(prop)) + "\n    expected: " + Types.unparseType(DAE.T_TUPLE(tys,DAE.emptyTypeSource));
         fn_str = Absyn.pathString(fqPath);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,str},info);
       then (cache,NONE());
@@ -8786,7 +8786,7 @@ algorithm
     case (cache,_,t,args,_,_,_,_,_,_)
       equation
         {fqPath} = Types.getTypeSource(t);
-        args_str = "Failed to elaborate arguments " +& Dump.printExpStr(Absyn.TUPLE(args));
+        args_str = "Failed to elaborate arguments " + Dump.printExpStr(Absyn.TUPLE(args));
         fn_str = Absyn.pathString(fqPath);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,args_str},info);
       then (cache,NONE());
@@ -8879,7 +8879,7 @@ algorithm
     case(cache,_,name,_,_,_,_,true,NORMAL_FUNCTION_INST())
       equation
         failure(Absyn.IDENT(_) = name); // Don't skip builtin functions or functions in the same package; they are useful to inline
-        // print("Skipping: " +& Absyn.pathString(name) +& "\n");
+        // print("Skipping: " + Absyn.pathString(name) + "\n");
       then (cache,Util.SUCCESS());
 
     // Builtin functions skipped
@@ -9339,7 +9339,7 @@ algorithm
     /* Scalar expression, non-constant but known dimensions */
     case (DAE.CALL(path = _),(DAE.DIM_EXP(exp=dimexp) :: _),_,DAE.PROP(_,_),_)
       equation
-        str = "Cannot vectorize call with dimensions [" +& ExpressionDump.dimensionsString(inDims) +& "]";
+        str = "Cannot vectorize call with dimensions [" + ExpressionDump.dimensionsString(inDims) + "]";
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
       then
         fail();
@@ -9348,7 +9348,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = ExpressionDump.dimensionString(dim);
-        Debug.traceln("- Static.vectorizeCall failed: " +& str);
+        Debug.traceln("- Static.vectorizeCall failed: " + str);
       then
         fail();
   end matchcontinue;
@@ -9666,7 +9666,7 @@ algorithm
     case (_,_,_,_,t::_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.elabTypes failed: " +& Types.unparseType(t));
+        Debug.traceln("- Static.elabTypes failed: " + Types.unparseType(t));
       then
         fail();
   end matchcontinue;
@@ -10491,7 +10491,7 @@ algorithm
       equation
         // enabled only by +d=failtrace
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.functionParams failed on: " +& stringDelimitList(List.map(vs, Types.printVarStr), "; "));
+        Debug.traceln("- Static.functionParams failed on: " + stringDelimitList(List.map(vs, Types.printVarStr), "; "));
       then
         fail();
   end match;
@@ -10721,7 +10721,7 @@ algorithm
         SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((dexp,_)))) = SCode.getElementNamed(id, class_);
 
         (cache,exp,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, dexp, impl, NONE(), true, pre, info);
-        // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");
+        // print("Slot: " + id + " -> " + Exp.printExpStr(exp) + "\n");
         (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
         true = Types.constEqualOrHigher(c1,c2);
       then
@@ -11452,10 +11452,10 @@ algorithm
       equation
         // enabled with +d=failtrace
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.elabCref failed: " +&
-          Dump.printComponentRefStr(c) +& " in env: " +&
+        Debug.traceln("- Static.elabCref failed: " +
+          Dump.printComponentRefStr(c) + " in env: " +
           FGraph.printGraphPathStr(env));
-        // Debug.traceln("ENVIRONMENT:\n" +& FGraph.printGraphStr(env));
+        // Debug.traceln("ENVIRONMENT:\n" + FGraph.printGraphStr(env));
       then
         fail();
 
@@ -11468,9 +11468,9 @@ algorithm
         (cache,DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange),
                SOME((cl as SCode.COMPONENT(n, pref, SCode.ATTR(arrayDims = ad), Absyn.TPATH(tpath, _),m,comment,cond,info),cmod)),instStatus,_)
           = Lookup.lookupIdent(cache, env, id);
-        print("Static: cref:" +& Absyn.printComponentRefStr(c) +& " component first ident:\n" +& SCodeDump.unparseElementStr(cl) +& "\n");
+        print("Static: cref:" + Absyn.printComponentRefStr(c) + " component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
         (cache, cl, env) = Lookup.lookupClass(cache, env, tpath, false);
-        print("Static: cref:" +& Absyn.printComponentRefStr(c) +& " class component first ident:\n" +& SCodeDump.unparseElementStr(cl) +& "\n");
+        print("Static: cref:" + Absyn.printComponentRefStr(c) + " class component first ident:\n" + SCodeDump.unparseElementStr(cl) + "\n");
       then
         (cache,NONE());*/
 
@@ -11909,7 +11909,7 @@ algorithm
         true = Types.getFixedVarAttributeParameterOrConstant(tt);
         // s = ComponentReference.printComponentRefStr(cr);
         // pre_str = PrefixUtil.printPrefixStr2(inPrefix);
-        // s = pre_str +& s;
+        // s = pre_str + s;
         // str = DAEUtil.printBindingExpStr(inBinding);
         // Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}, info); // Don't add source info here... Many models give multiple errors that are not filtered out
         binding_1 = DAEUtil.setBindingSource(bind, DAE.BINDING_FROM_DEFAULT_VALUE());
@@ -11956,12 +11956,12 @@ algorithm
       equation
         cr2 = ComponentReference.crefStripLastSubs(cr);
         subsc = ComponentReference.crefLastSubs(cr);
-        // print(ComponentReference.printComponentRefStr(cr) +& " is a constant with variable subscript and binding: " +& DAEUtil.printBindingExpStr(binding) +& "\n");
+        // print(ComponentReference.printComponentRefStr(cr) + " is a constant with variable subscript and binding: " + DAEUtil.printBindingExpStr(binding) + "\n");
         (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Absyn.MSG(info),0);
-        // print("Got value: " +& ValuesUtil.valString(v) +& "\n");
+        // print("Got value: " + ValuesUtil.valString(v) + "\n");
         e = ValuesUtil.valueExp(v);
         e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
-        // print(ComponentReference.printComponentRefStr(cr) +& " is a constant with variable subscript and binding: " +& ExpressionDump.printB+& "\n");
+        // print(ComponentReference.printComponentRefStr(cr) + " is a constant with variable subscript and binding: " + ExpressionDump.printB+ "\n");
       then
         (cache,e,DAE.C_VAR(),attr);
 
@@ -12131,7 +12131,7 @@ algorithm
         s = ComponentReference.printComponentRefStr(cr);
         str = ExpressionDump.printExpStr(exp);
         pre_str = PrefixUtil.printPrefixStr2(pre);
-        s = pre_str +& s;
+        s = pre_str + s;
         Error.addSourceMessage(Error.CONSTANT_OR_PARAM_WITH_NONCONST_BINDING, {s,str}, info);
       then
         fail();
@@ -12142,10 +12142,10 @@ algorithm
         s = ComponentReference.printComponentRefStr(cr);
         scope = FGraph.printGraphPathStr(env);
         pre_str = PrefixUtil.printPrefixStr2(pre);
-        s = pre_str +& s;
+        s = pre_str + s;
         // Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {s,scope}, info);
         if Flags.isSet(Flags.STATIC) then
-          Debug.traceln("- Static.elabCref2 failed on: " +& pre_str +& s +& " with no constant binding in scope: " +& scope);
+          Debug.traceln("- Static.elabCref2 failed on: " + pre_str + s + " with no constant binding in scope: " + scope);
         end if;
         expTy = Types.simplifyType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -12192,7 +12192,7 @@ algorithm
                           Flags.getConfigBool(Flags.CHECK_MODEL));
         pre_str = PrefixUtil.printPrefixStr2(pre);
         // Don't generate warning if variable is for iterator, since it doesn't have a value (it's iterated over separately)
-        s = pre_str +& s;
+        s = pre_str + s;
         Debug.bcall3(genWarning,Error.addSourceMessage,Error.UNBOUND_PARAMETER_WARNING,{s}, info);
         */
         expTy = Types.simplifyType(tt);
@@ -12207,7 +12207,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         pre_str = PrefixUtil.printPrefixStr2(pre);
-        Debug.traceln("- Static.elabCref2 failed for: " +& pre_str +& ComponentReference.printComponentRefStr(cr) +& "\n env:" +& FGraph.printGraphStr(env));
+        Debug.traceln("- Static.elabCref2 failed for: " + pre_str + ComponentReference.printComponentRefStr(cr) + "\n env:" + FGraph.printGraphStr(env));
       then
         fail();
   end matchcontinue;
@@ -12501,9 +12501,9 @@ algorithm
     case( ( (DAE.INDEX(exp = exp1 as DAE.ICONST(_))) :: subs1),id,ety)
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
-        //print("1. flattened rest into "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
+        //print("1. flattened rest into "+ExpressionDump.dumpExpStr(exp2,0)+"\n");
         exp2 = applySubscript(exp1, exp2 ,id,Expression.unliftArray(ety));
-        //print("1. applied this subscript into "+&ExpressionDump.dumpExpStr(exp2,0)+&"\n");
+        //print("1. applied this subscript into "+ExpressionDump.dumpExpStr(exp2,0)+"\n");
       then
         exp2;
     // special case for zero dimension...
@@ -12554,7 +12554,7 @@ algorithm
     case(exp1) then exp1;
     case(exp1)
       equation
-        print("- Static.removeDoubleEmptyArrays failure for: " +& ExpressionDump.printExpStr(exp1) +& "\n");
+        print("- Static.removeDoubleEmptyArrays failure for: " + ExpressionDump.printExpStr(exp1) + "\n");
       then
         fail();
   end matchcontinue;
@@ -12785,7 +12785,7 @@ algorithm
     case (cr,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("createCrefArray failed on:" +& ComponentReference.printComponentRefStr(cr));
+        Debug.trace("createCrefArray failed on:" + ComponentReference.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -12831,7 +12831,7 @@ algorithm
     case (cr,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.createCrefArray2d failed on: " +& ComponentReference.printComponentRefStr(cr));
+        Debug.traceln("- Static.createCrefArray2d failed on: " + ComponentReference.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -12909,13 +12909,13 @@ algorithm
     // IDENT
     case (cache,crefEnv,crefSubs,Absyn.CREF_IDENT(name = id,subscripts = ss),topPrefix,crefPrefix,impl,hasZeroSizeDim,_)
       equation
-        // Debug.traceln("Try elabSucscriptsDims " +& id);
+        // Debug.traceln("Try elabSucscriptsDims " + id);
         (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,
                                            ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
         (cache,_,t,_,_,InstTypes.SPLICEDEXPDATA(identType = id_ty),_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         // false = Types.isUnknownType(t);
-        // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n");
-        // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
+        // print("elabCrefSubs type of: " + id + " is " + Types.printTypeStr(t) + "\n");
+        // Debug.traceln("    elabSucscriptsDims " + id + " got var");
         ty = Types.simplifyType(t);
         id_ty = Types.simplifyType(id_ty);
         hasZeroSizeDim = Types.isZeroLengthArray(id_ty);
@@ -12977,10 +12977,10 @@ algorithm
       equation
         // FAILTRACE REMOVE
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.elabCrefSubs failed on: " +&
-        "[top:" +& PrefixUtil.printPrefixStr(topPrefix) +& "]." +&
-        PrefixUtil.printPrefixStr(crefPrefix) +& "." +&
-          Dump.printComponentRefStr(absynCref) +& " env: " +&
+        Debug.traceln("- Static.elabCrefSubs failed on: " +
+        "[top:" + PrefixUtil.printPrefixStr(topPrefix) + "]." +
+        PrefixUtil.printPrefixStr(crefPrefix) + "." +
+          Dump.printComponentRefStr(absynCref) + " env: " +
           FGraph.printGraphPathStr(crefEnv));
       then
         fail();
@@ -13266,8 +13266,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.elabSubscript failed on " +&
-          Dump.printSubscriptStr(inSubscript) +& " in env: " +&
+        Debug.traceln("- Static.elabSubscript failed on " +
+          Dump.printSubscriptStr(inSubscript) + " in env: " +
           FGraph.printGraphPathStr(inEnv));
       then
         fail();
@@ -13474,7 +13474,7 @@ algorithm
         e_str = ExpressionDump.printExpStr(e1);
         t_str = Types.unparseTypeNoAttr(t1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        t_str = t_str +& " (in component: "+&pre_str+&")";
+        t_str = t_str + " (in component: "+pre_str+")";
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str}, inInfo);
       then
         fail();
@@ -14047,8 +14047,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.elabArrayDim failed on: " +&
-          Absyn.printComponentRefStr(inCref) +&
+        Debug.traceln("- Static.elabArrayDim failed on: " +
+          Absyn.printComponentRefStr(inCref) +
           Dump.printArraydimStr({inDimension}));
       then
         fail();
@@ -14131,7 +14131,7 @@ algorithm
       equation
         true = Types.isParameterOrConstant(cnst);
         e_str = ExpressionDump.printExpStr(inExp);
-        a_str = Dump.printComponentRefStr(inCref) +& "[" +& e_str +& "]";
+        a_str = Dump.printComponentRefStr(inCref) + "[" + e_str + "]";
         Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING, {e_str, a_str}, inInfo);
         //(_, _) = elabArrayDim2(inCache, inEnv, inCref, inExp, inProperties, inImpl, inST, inDoVect, inPrefix, inInfo);
       then
@@ -14234,11 +14234,11 @@ protected function replaceEnd2
 protected
   Absyn.ComponentRef stripcr;
 algorithm
-  // print("replaceEnd start " +& Dump.printExpStr(Absyn.CREF(cr)) +& "\n");
+  // print("replaceEnd start " + Dump.printExpStr(Absyn.CREF(cr)) + "\n");
   stripcr := Absyn.crefStripLastSubs(cr);
-  // print("stripCref        " +& Dump.printExpStr(Absyn.CREF(stripcr)) +& "\n");
+  // print("stripCref        " + Dump.printExpStr(Absyn.CREF(stripcr)) + "\n");
   (ocr,_) := Absyn.traverseExpBidirCref(cr,replaceEndEnter,replaceEndExit,({Absyn.CREF(stripcr)},{0},{true}));
-  // print("replaceEnd  end  " +& Dump.printExpStr(Absyn.CREF(ocr)) +& "\n");
+  // print("replaceEnd  end  " + Dump.printExpStr(Absyn.CREF(ocr)) + "\n");
 end replaceEnd2;
 
 protected function fixTupleMetaModelica

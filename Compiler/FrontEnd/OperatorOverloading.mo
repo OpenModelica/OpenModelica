@@ -223,7 +223,7 @@ algorithm
          path = Absyn.makeFullyQualified(path);
          (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
 
-         str1 = "'" +& Dump.opSymbolCompact(aboper) +& "'";
+         str1 = "'" + Dump.opSymbolCompact(aboper) + "'";
          path = Absyn.joinPaths(path, Absyn.IDENT(str1));
 
          (cache,operatorCl,operatorEnv) = Lookup.lookupClass(cache,recordEnv,path, false);
@@ -603,7 +603,7 @@ algorithm
         if bool1 and bool2 and Absyn.opIsElementWise(op) then
           types = {};
         else
-          opStr = "'" +& Dump.opSymbolCompact(op) +& "'";
+          opStr = "'" + Dump.opSymbolCompact(op) + "'";
           // print("Try overloading for " + opStr + " " + Types.unparseType(inType1) + "," + Types.unparseType(inType2) + "\n");
           (cache,types1) = getOperatorFuncsOrEmpty(cache,env,{type1},opStr,info,{});
           (cache,types2) = getOperatorFuncsOrEmpty(cache,env,{type2},opStr,info,{});
@@ -1231,7 +1231,7 @@ algorithm
     case (op,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("OperatorOverloading.operatorsBinary failed, op: " +& Dump.opSymbol(op));
+        Debug.traceln("OperatorOverloading.operatorsBinary failed, op: " + Dump.opSymbol(op));
       then
         fail();
   end matchcontinue;
@@ -1274,7 +1274,7 @@ algorithm
     case _
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("OperatorOverloading.operatorsUnary failed, op: " +& Dump.opSymbol(op));
+        Debug.traceln("OperatorOverloading.operatorsUnary failed, op: " + Dump.opSymbol(op));
       then fail();
   end match;
 end operatorsUnary;
@@ -2112,7 +2112,7 @@ algorithm
         true = boolOr(b1,b2);
         verifyOp(op);
         opString = ExpressionDump.relopSymbol(op);
-        stmtString = ExpressionDump.printExpStr(e1) +& opString +& ExpressionDump.printExpStr(e2);
+        stmtString = ExpressionDump.printExpStr(e1) + opString + ExpressionDump.printExpStr(e2);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.WARNING_RELATION_ON_REAL, {pre_str,stmtString,opString}, inInfo);
       then

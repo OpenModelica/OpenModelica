@@ -22,10 +22,10 @@ because of all the side-effects. However, all of them are captured here."
   input String inOptions "Figaro fault tree generation options";
   input String inFigaroProcessorFile "Figaro processor to call";
 protected
-  String bdfFile := System.pwd() +& "/BDF.fi" "Figaro code to the Figaro processor";
-  String figaroFile := System.pwd() +& "/Figaro0.fi" "Figaro code from the Figaro processor";
-  String argumentFile := System.pwd() +& "/figp_commands.xml" "instructions to the Figaro processor";
-  String resultFile := System.pwd() +& "/result.xml" "status from the Figaro processor"; // File name cannot be changed.
+  String bdfFile := System.pwd() + "/BDF.fi" "Figaro code to the Figaro processor";
+  String figaroFile := System.pwd() + "/Figaro0.fi" "Figaro code from the Figaro processor";
+  String argumentFile := System.pwd() + "/figp_commands.xml" "instructions to the Figaro processor";
+  String resultFile := System.pwd() + "/result.xml" "status from the Figaro processor"; // File name cannot be changed.
   SCode.Element program;
   String figaro, database, xml, xml2;
   list<String> sl;
@@ -34,7 +34,7 @@ algorithm
 
   // Code for the Figaro objects.
   figaro := makeFigaro(program);
-  if figaro ==& ""
+  if figaro == ""
     then fail();
   end if;
   System.writeFile(bdfFile, figaro);
@@ -130,7 +130,7 @@ algorithm
     // Element is an extends clause.
     case (fb, ft, program, SOME(cn), SCode.EXTENDS(baseClassPath = bcp, modifications = m))
       equation
-        true = fb ==& getLastIdent(bcp);
+        true = fb == getLastIdent(bcp);
         tn = fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn);
     // Nested class of some sort.
@@ -150,7 +150,7 @@ protected
   String tn;
   FigaroClass fc;
 algorithm
-  tn := if inTypeName ==& "" then inFigaroType else inTypeName;
+  tn := if inTypeName == "" then inFigaroType else inTypeName;
   fc := FIGAROCLASS(inClassName, tn);
   outFigaroClassList := fc :: fcElement(inClassName, tn, inProgram, NONE(), inProgram);
 end fcAddFigaroClass;
@@ -182,7 +182,7 @@ algorithm
     case (fb, ft, program, cn, SCode.DERIVED(typeSpec = ts, modifications = m))
       equation
         p = Absyn.typeSpecPath(ts);
-        true = fb ==& getLastIdent(p);
+        true = fb == getLastIdent(p);
         tn = fcMod1(m);
       then fcAddFigaroClass(ft, program, cn, tn);
   end match;
@@ -260,7 +260,7 @@ algorithm
       SCode.Mod m;
     case SCode.NAMEMOD(ident = n, mod = m)
       equation
-        true = n ==& "fullClassName";
+        true = n == "fullClassName";
       then fcMod2(m);
   end match;
 end fcSubMod;
@@ -399,7 +399,7 @@ algorithm
       String tn;
     case (p, FIGAROCLASS(className = cn, typeName = tn))
       equation
-        true = getLastIdent(p) ==& cn;
+        true = getLastIdent(p) == cn;
       then tn;
   end match;
 end getFigaroTypeName;
@@ -445,7 +445,7 @@ algorithm
       SCode.Mod m;
     case SCode.NAMEMOD(ident = n, mod = m)
       equation
-        true = n ==& "codeInstanceFigaro";
+        true = n == "codeInstanceFigaro";
       then foMod2(m);
   end match;
 end foSubMod;
@@ -508,7 +508,7 @@ algorithm
       equation
         rf = figaroObjectToString(first);
         rr = figaroObjectListToString(rest);
-      then rf +& rr;
+      then rf + rr;
   end match;
 end figaroObjectListToString;
 
@@ -524,8 +524,8 @@ algorithm
       String middle;
     case FIGAROOBJECT(objectName = on, typeName = tn, figaroCode = fc)
       equation
-        middle = if fc ==& "" then "" else "\n" +& fc;
-      then "OBJECT " +& on +& " IS_A " +& tn +& ";" +& middle +& "\n\n";
+        middle = if fc == "" then "" else "\n" + fc;
+      then "OBJECT " + on + " IS_A " + tn + ";" + middle + "\n\n";
   end match;
 end figaroObjectToString;
 
@@ -540,27 +540,27 @@ protected
   String xml;
 algorithm
   xml := "<REQUESTS>\n  ";
-  xml := xml +& "<LOAD_BDC_FI>" +& inDatabase +& "\n  </LOAD_BDC_FI>";
-  xml := xml +& "\n\n<LOAD_BDF_FI>\n    <FILE>";
-  xml := xml +& inBdfFile;
-  xml := xml +& "</FILE>\n</LOAD_BDF_FI>\n";
-  xml := xml +& "<RUN_TREATMENT>\n";
+  xml := xml + "<LOAD_BDC_FI>" + inDatabase + "\n  </LOAD_BDC_FI>";
+  xml := xml + "\n\n<LOAD_BDF_FI>\n    <FILE>";
+  xml := xml + inBdfFile;
+  xml := xml + "</FILE>\n</LOAD_BDF_FI>\n";
+  xml := xml + "<RUN_TREATMENT>\n";
 
   // In case the fault tree will be needed.
-  if inMode ==& "figaro0" then
-    xml := xml +& "    <TREATMENT>GENERATE_FIG0</TREATMENT>\n    <FILE>";
-    xml := xml +& inFigaroFile;
-    xml := xml +& "</FILE>";
-  elseif inMode ==& "fault-tree" then
-    xml := xml +& "    <TREATMENT>GENERATE_TREE</TREATMENT>\n    <FILE>";
-    xml := xml +& System.pwd() +& "/FaultTree.xml";
-    xml := xml +& "</FILE>\n";
-    xml := xml +& "    <FILE_MACRO>fiab_ADD.h</FILE_MACRO>";
-    xml := xml +& "\n    <FILE_TREE_OPTIONS>" +& inOptions +& "</FILE_TREE_OPTIONS>";
+  if inMode == "figaro0" then
+    xml := xml + "    <TREATMENT>GENERATE_FIG0</TREATMENT>\n    <FILE>";
+    xml := xml + inFigaroFile;
+    xml := xml + "</FILE>";
+  elseif inMode == "fault-tree" then
+    xml := xml + "    <TREATMENT>GENERATE_TREE</TREATMENT>\n    <FILE>";
+    xml := xml + System.pwd() + "/FaultTree.xml";
+    xml := xml + "</FILE>\n";
+    xml := xml + "    <FILE_MACRO>fiab_ADD.h</FILE_MACRO>";
+    xml := xml + "\n    <FILE_TREE_OPTIONS>" + inOptions + "</FILE_TREE_OPTIONS>";
   end if;
 
-  xml := xml +& "\n    <RESOLVE_CONST>VRAI</RESOLVE_CONST>\n    <RESOLVE_ATTR>FAUX</RESOLVE_ATTR>\n    <INST_RULE>VRAI</INST_RULE>\n";
-  xml := xml +& "</RUN_TREATMENT>\n</REQUESTS>";
+  xml := xml + "\n    <RESOLVE_CONST>VRAI</RESOLVE_CONST>\n    <RESOLVE_ATTR>FAUX</RESOLVE_ATTR>\n    <INST_RULE>VRAI</INST_RULE>\n";
+  xml := xml + "</RUN_TREATMENT>\n</REQUESTS>";
   outXml := xml;
 end makeXml;
 
@@ -570,7 +570,7 @@ protected function callFigaroProcessor "Calls the Figaro processor."
 protected
   String command;
 algorithm
-  command := "start " +& inFigaroProcessorFile +& " -testxml " +& inArgumentFile;
+  command := "start " + inFigaroProcessorFile + " -testxml " + inArgumentFile;
   System.systemCall(command);
 end callFigaroProcessor;
 
@@ -675,7 +675,7 @@ algorithm
     case ">" :: rest
       then (rest, inTagName);
     case first :: rest
-      then scanTagName(rest, inTagName +& first);
+      then scanTagName(rest, inTagName + first);
   end matchcontinue;
 end scanTagName;
 
@@ -694,7 +694,7 @@ algorithm
     case "<" :: rest
       then (inStringList, inText);
     case first :: rest
-      then scanText(rest, inText +& first);
+      then scanText(rest, inText + first);
   end matchcontinue;
 end scanText;
 
@@ -760,7 +760,7 @@ algorithm
       then {};
     case CLOSETAG(tagName = tn) :: rest
       equation
-        true = tn ==& inTagName;
+        true = tn == inTagName;
       then removeFirstIfText(rest);
     case _ :: rest
       then removeUnknown(rest, inTagName);
@@ -799,7 +799,7 @@ algorithm
       then {};
     case OPENTAG(tagName = tn) :: rest
       equation
-        true = tn ==& "ANSWERS";
+        true = tn == "ANSWERS";
       then parseAnswers(rest);
   end matchcontinue;
 end parse;
@@ -826,13 +826,13 @@ algorithm
       list<Token> rest, tl, tl2;
     case OPENTAG(tagName = tn) :: rest
       equation
-        true = tn ==& "ANSWER";
+        true = tn == "ANSWER";
         (sl, tl) = parseAnswer(rest);
         (sl2, tl2) = parseAnswerList(tl);
       then (listAppend(sl, sl2), tl2);
     case CLOSETAG(tagName = tn) :: rest
       equation
-        true = tn ==& "ANSWERS";
+        true = tn == "ANSWERS";
       then ({}, rest);
   end matchcontinue;
 end parseAnswerList;
@@ -857,13 +857,13 @@ algorithm
       list<Token> rest, tl, tl2;
     case OPENTAG(tagName = tn) :: rest
       equation
-        true = tn ==& "ERROR";
+        true = tn == "ERROR";
         (sl, tl) = parseError(rest);
         (sl2, tl2) = parseErrorList(tl);
       then (listAppend(sl, sl2), tl2);
     case CLOSETAG(tagName = tn) :: rest
       equation
-        true = tn ==& "ANSWER";
+        true = tn == "ANSWER";
       then ({}, rest);
   end matchcontinue;
 end parseErrorList;
@@ -899,7 +899,7 @@ algorithm
       then ((tn, s) :: stl, tl2);
     case CLOSETAG(tagName = tn) :: rest
       equation
-        true = tn ==& "ERROR";
+        true = tn == "ERROR";
       then ({}, rest);
   end matchcontinue;
 end parseInfoList;
@@ -932,7 +932,7 @@ algorithm
       then false;
     case (k, v) :: rest
       equation
-        true = k ==& "CRITICITY";
+        true = k == "CRITICITY";
       then listMember(v, errorsToReport);
     case _ :: rest
       then isToBeReported(rest);
@@ -949,7 +949,7 @@ algorithm
       list<tuple<String, String>> rest;
     case (k, v) :: rest
       equation
-        true = k ==& "LABEL";
+        true = k == "LABEL";
       then v;
     case _ :: rest
       then getMessage(rest);
@@ -1008,7 +1008,7 @@ algorithm
       String tn;
     case FIGAROCLASS(className = cn, typeName = tn)
       equation
-        print(cn +& " = " +& tn +& "\n");
+        print(cn + " = " + tn + "\n");
       then ();
   end match;
 end printFigaroClass;
@@ -1064,15 +1064,15 @@ algorithm
       String s;
     case OPENTAG(tagName = s)
       equation
-        print("OPEN: " +& s);
+        print("OPEN: " + s);
       then ();
     case CLOSETAG(tagName = s)
       equation
-        print("CLOSE: " +& s);
+        print("CLOSE: " + s);
       then ();
     case TEXT(text = s)
       equation
-        print("\"" +& s +& "\"");
+        print("\"" + s + "\"");
       then ();
   end matchcontinue;
 end printToken;

@@ -338,7 +338,7 @@ algorithm
   iGraph := listGet(graphs,graphCount-iGraphIdx+1);
   GRAPH(gid,directed,nodeIdc,attValues) := iGraph;
   //Add new sub graph
-  (tmpGraphInfo,(newGraph,newGraphIdx)) := addGraph("g" +& id, directed, iGraphInfo);
+  (tmpGraphInfo,(newGraph,newGraphIdx)) := addGraph("g" + id, directed, iGraphInfo);
   GRAPHINFO(graphs,graphCount,nodes,nodeCount,edges,edgeCount,attributes,graphNodeKey,graphEdgeKey) := tmpGraphInfo;
   //Append node to graph
   nodeCount := nodeCount + 1;
@@ -614,8 +614,8 @@ protected
 algorithm
   GRAPHINFO(graphs=graphs,graphCount=graphCount,nodes=nodes,nodeCount=nodeCount,attributes=attributes,graphNodeKey=graphNodeKey,graphEdgeKey=graphEdgeKey) := iGraphInfo;
   List.map_0(nodes,printNode);
-  print("nodeCount: "+&intString(nodeCount)+&"\n");
-  print("graphCount: "+&intString(graphCount)+&"\n");
+  print("nodeCount: "+intString(nodeCount)+"\n");
+  print("graphCount: "+intString(graphCount)+"\n");
 end printGraphInfo;
 
 protected function printNode
@@ -630,7 +630,7 @@ protected
 algorithm
   NODE(id=id,optDesc=optDesc,attValues=attValues) := node;
   atts := stringDelimitList(List.map(attValues,Util.tuple22)," | ");
-  print("node: "+&id+&" desc: "+&Util.getOption(optDesc)+&"\n\tatts: "+&atts+&"\n");
+  print("node: "+id+" desc: "+Util.getOption(optDesc)+"\n\tatts: "+atts+"\n");
 end printNode;
 
 protected function printGraph
@@ -640,7 +640,7 @@ protected
     list<Integer> nodeIdc;
 algorithm
   GRAPH(id=id,nodeIdc=nodeIdc) := graph;
-  print("graph: "+&id+&" nodeIdc: "+&stringDelimitList(List.map(nodeIdc,intString),", ")+&"\n");
+  print("graph: "+id+" nodeIdc: "+stringDelimitList(List.map(nodeIdc,intString),", ")+"\n");
 end printGraph;
 
 protected function printAttribute
@@ -653,7 +653,7 @@ protected
     AttributeTarget attTarget;
 algorithm
   ATTRIBUTE(attIdx=attIdx,name=name) := attr;
-  print("attIdx: "+&intString(attIdx)+&" name: "+&name+&"\n");
+  print("attIdx: "+intString(attIdx)+" name: "+name+"\n");
 end printAttribute;
 
 annotation(__OpenModelica_Interface="susan");

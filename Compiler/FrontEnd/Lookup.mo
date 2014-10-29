@@ -207,7 +207,7 @@ algorithm
       equation
         env_2 = FGraph.openScope(env_1, encflag, SOME(id), SOME(FCore.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, FGraph.getGraphName(env_2));
-        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& FGraph.printGraphPathStr(env_1) +& " path:" +& Absyn.pathString(path));
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
@@ -233,7 +233,7 @@ algorithm
     // Classes that are external objects. Implicitly instantiate to get type
     case (cache,env_1,_,c)
       equation
-        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& FGraph.printGraphPathStr(env_1) +& " path:" +& Absyn.pathString(path));
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
         true = SCode.classIsExternalObject(c);
         (cache,env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
@@ -250,7 +250,7 @@ algorithm
     // up the type.
     case (cache,env_1,_,c as SCode.CLASS(name = id,restriction=SCode.R_FUNCTION(_)))
       equation
-        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& FGraph.printGraphPathStr(env_1) +& " path:" +& Absyn.pathString(path));
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " + FGraph.printGraphPathStr(env_1) + " path:" + Absyn.pathString(path));
         (cache,env_2,_) =
         InstFunction.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
         (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
@@ -361,7 +361,7 @@ algorithm
     /*
     case (_,_,_,_)
       equation
-        print("CL: " +& Absyn.pathString(inPath) +& " env: " +& FGraph.printGraphPathStr(inEnv) +& " msg: " +& boolString(msg) +& "\n");
+        print("CL: " + Absyn.pathString(inPath) + " env: " + FGraph.printGraphPathStr(inEnv) + " msg: " + boolString(msg) + "\n");
       then
         fail();*/
 
@@ -386,11 +386,11 @@ algorithm
     case (_, _, _, _)
       equation
          (outCache,outClass,outEnv,_) = lookupClass1(inCache, inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
-         // print("CLRET: " +& SCode.elementName(outClass) +& " outenv: " +& FGraph.printGraphPathStr(outEnv) +& "\n");
+         // print("CLRET: " + SCode.elementName(outClass) + " outenv: " + FGraph.printGraphPathStr(outEnv) + "\n");
       then
         (outCache,outClass,outEnv);
   end matchcontinue;
-  // print("Lookup C2: " +& " outenv: " +& FGraph.printGraphPathStr(outEnv) +& "\n");
+  // print("Lookup C2: " + " outenv: " + FGraph.printGraphPathStr(outEnv) + "\n");
 end lookupClass;
 
 protected function lookupClass1 "help function to lookupClass, does all the work."
@@ -423,8 +423,8 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         id = Absyn.pathString(inPath);
         scope = FGraph.printGraphPathStr(inEnv);
-        fprintln(Flags.FAILTRACE,  "- Lookup.lookupClass failed:\n" +&
-          id +& " in:\n" +&
+        fprintln(Flags.FAILTRACE,  "- Lookup.lookupClass failed:\n" +
+          id + " in:\n" +
           scope);
       then fail();*/
   end matchcontinue;
@@ -482,7 +482,7 @@ algorithm
     /*
     case (cache,env,p,_,_,_)
       equation
-        Debug.traceln("lookupClass failed " +& Absyn.pathString(p) +& " " +& FGraph.printGraphPathStr(env));
+        Debug.traceln("lookupClass failed " + Absyn.pathString(p) + " " + FGraph.printGraphPathStr(env));
       then fail();
     */
   end match;
@@ -564,7 +564,7 @@ algorithm
       equation
         env = FGraph.pushScopeRef(env, frame);
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,msg);
-        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED FRAME: " +& FGraph.printGraphPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
+        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED FRAME: " + FGraph.printGraphPathStr(env) + " path: " + Absyn.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
       then (cache,c,env,prevFrames);
 
     // class is an instance of a component
@@ -581,7 +581,7 @@ algorithm
       equation
         env = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env));
-        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " +& FGraph.printGraphPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
+        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " + FGraph.printGraphPathStr(env) + " path: " + Absyn.pathString(path) + " class: " + SCodeDump.shortElementStr(c));
         (cache,env,_,_,_) =
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
@@ -613,7 +613,7 @@ algorithm
       equation
         false = FNode.isRefTop(ref);
         (frame as FCore.N(name = sid)) = FNode.fromRef(ref);
-        true = id ==& sid;
+        true = id == sid;
       then
         (SOME(ref),prevFrames);
 
@@ -640,13 +640,13 @@ algorithm
     case (Absyn.QUAL_IMPORT(path = path) :: _, _)
       equation
         id = Absyn.pathLastIdent(path);
-        true = id ==& ident;
+        true = id == ident;
       then ComponentReference.pathToCref(path);
 
     // Named imports, e.g. import A = B.C;
     case (Absyn.NAMED_IMPORT(name = id,path = path) :: _, _)
       equation
-        true = id ==& ident;
+        true = id == ident;
       then ComponentReference.pathToCref(path);
 
     // Check next frame.
@@ -780,7 +780,7 @@ algorithm
 
     case (cache,Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id)) :: _,env,ident,_)
       equation
-        true = id ==& ident "For imported paths A, not possible to assert sub-path package";
+        true = id == ident "For imported paths A, not possible to assert sub-path package";
         Util.setStatefulBoolean(inState,true);
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env = FGraph.setScope(env, {r});
@@ -791,7 +791,7 @@ algorithm
     case (cache,Absyn.QUAL_IMPORT(path = path) :: _,env,ident,_)
       equation
         id = Absyn.pathLastIdent(path) "For imported path A.B.C, assert A.B is package" ;
-        true = id ==& ident;
+        true = id == ident;
         Util.setStatefulBoolean(inState,true);
 
         r::prevFrames = listReverse(FGraph.currentScope(env));
@@ -804,13 +804,13 @@ algorithm
 
     case (cache,Absyn.NAMED_IMPORT(name = id,path = path) :: _,env,ident,_)
       equation
-        true = id ==& ident "Named imports";
+        true = id == ident "Named imports";
         Util.setStatefulBoolean(inState,true);
 
         r::prevFrames = listReverse(FGraph.currentScope(env));
         env = FGraph.setScope(env, {r});
         // strippath = Absyn.stripLast(path);
-        // Debug.traceln("named import " +& id +& " is " +& Absyn.pathString(path));
+        // Debug.traceln("named import " + id + " is " + Absyn.pathString(path));
         // (cache,c2,env_1,prevFrames) = lookupClass2(cache,{fr},strippath,prevFrames,Util.makeStatefulBoolean(false),true);
         (cache,c,env_1,prevFrames) = lookupClass2(cache,env,path,prevFrames,Util.makeStatefulBoolean(false),true);
       then
@@ -857,7 +857,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, path, false);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        // fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& FGraph.printGraphPathStr(env) +& "." +& ident);
+        // fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
         (cache, env, _,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         r = FGraph.lastScopeRef(env);
         env = FGraph.setScope(env, {r});
@@ -914,7 +914,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames) = lookupClass2(cache,env3,path,prevFrames,Util.makeStatefulBoolean(false),false);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        // fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " +& FGraph.printGraphPathStr(env) +& "." +& ident);
+        // fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " + FGraph.printGraphPathStr(env) + "." + ident);
         (cache,env2,_,_,_) =
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
@@ -1058,7 +1058,7 @@ algorithm
     /*/ debugging
     case (cache,env,cref)
       equation
-        print("CO: " +& ComponentReference.printComponentRefStr(cref) +& " env: " +& FGraph.printGraphPathStr(env) +& "\n");
+        print("CO: " + ComponentReference.printComponentRefStr(cref) + " env: " + FGraph.printGraphPathStr(env) + "\n");
       then
         fail();*/
 
@@ -1081,8 +1081,8 @@ algorithm
     /*/ fail if we couldn't find it
     case (_,env,cref)
       equation
-        fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +&
-          ComponentReference.printComponentRefStr(cref) +& " in:\n" +&
+        fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +
+          ComponentReference.printComponentRefStr(cref) + " in:\n" +
           FGraph.printGraphPathStr(env));
       then fail();*/
   end matchcontinue;
@@ -1111,7 +1111,7 @@ algorithm
       equation
         FCore.CL(e = cl) = FNode.refData(FGraph.lastScopeRef(classEnv));
         false = SCode.isPackage(cl);
-        // print("cref:  " +& ComponentReference.printComponentRefStr(cref) +& "\nprenv: " +& FGraph.getGraphNameStr(parentEnv) +& "\nclenv: " +& FGraph.getGraphNameStr(classEnv) +& "\ncoenv: " +& FGraph.getGraphNameStr(componentEnv) +& "\n");
+        // print("cref:  " + ComponentReference.printComponentRefStr(cref) + "\nprenv: " + FGraph.getGraphNameStr(parentEnv) + "\nclenv: " + FGraph.getGraphNameStr(classEnv) + "\ncoenv: " + FGraph.getGraphNameStr(componentEnv) + "\n");
       then
         ();*/
 
@@ -1122,7 +1122,7 @@ algorithm
         s2 = FGraph.printGraphPathStr(classEnv);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Lookup.checkPackageVariableConstant failed: " +& s1 +& " in " +& s2);
+        Debug.traceln("- Lookup.checkPackageVariableConstant failed: " + s1 + " in " + s2);
       then fail();
   end matchcontinue;
 end checkPackageVariableConstant;
@@ -1300,7 +1300,7 @@ algorithm
 
         env3 = FGraph.openScope(env2, encflag, SOME(n), FGraph.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, FGraph.getGraphName(env3));
-        // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " +& FGraph.printGraphPathStr(env3) +& " var: " +& ComponentReference.printComponentRefStr(cref));
+        // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " + FGraph.printGraphPathStr(env3) + " var: " + ComponentReference.printComponentRefStr(cref));
         (cache,env5,_,_,_,_,_,_,_,_,_,_) =
         Inst.instClassIn(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {},
@@ -1363,7 +1363,7 @@ algorithm
     else
       equation
         //true = Flags.isSet(Flags.FAILTRACE);
-        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& FGraph.printGraphPathStr(env));
+        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" + ComponentReference.printComponentRefStr(cr) + " in scope: " + FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -1537,7 +1537,7 @@ algorithm
     /*
     case (cache,env,id,info)
       equation
-        print("Looking up: " +& Absyn.pathString(id) +& " in env: " +& FGraph.printGraphPathStr(env) +& "\n");
+        print("Looking up: " + Absyn.pathString(id) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
       then
         fail();*/
 
@@ -1623,7 +1623,7 @@ algorithm
     case (_,_,id,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("lookupFunctionsInEnv failed on: " +& Absyn.pathString(id));
+        Debug.traceln("lookupFunctionsInEnv failed on: " + Absyn.pathString(id));
       then
         fail();
 
@@ -1658,7 +1658,7 @@ algorithm
       then (cache,acc);
     case (_,env,id::_,_,_)
       equation
-        str = Absyn.pathString(id) +& " not found in scope: " +& FGraph.printGraphPathStr(env);
+        str = Absyn.pathString(id) + " not found in scope: " + FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then fail();
   end matchcontinue;
@@ -1710,7 +1710,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=_,restriction=restr)),env_1) = lookupClass(cache, inEnv, id, false);
         true = SCode.isFunctionRestriction(restr);
         // get function dae from instantiation
-        // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " +& FGraph.printGraphPathStr(env_1) +& "." +& str);
+        // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " + FGraph.printGraphPathStr(env_1) + "." + str);
         (cache,env_2 as FCore.G(scope = r::_),_)
            = InstFunction.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
         ht = FNode.children(FNode.fromRef(r));
@@ -1738,7 +1738,7 @@ algorithm
         env2 = FGraph.openScope(env_1, encflag, SOME(str), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
 
-        // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " +& FGraph.printGraphPathStr(env2) +& "." +& str);
+        // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " + FGraph.printGraphPathStr(env2) + "." + str);
         (cache,env_2,_,_,_) =
         Inst.partialInstClassIn(
           cache, env2, InnerOuter.emptyInstHierarchy,
@@ -1935,7 +1935,7 @@ algorithm
     // Found function
     case (cache,FCore.N(data = FCore.CL(e = cdef as SCode.CLASS(restriction=SCode.R_FUNCTION(_)))),env,id)
       equation
-        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE IN FRAME ICD: " +& FGraph.printGraphPathStr(env) +& " id:" +& id);
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE IN FRAME ICD: " + FGraph.printGraphPathStr(env) + " id:" + id);
 
         // select the env if is the same as cenv as is updated!
         cenv = env; // selectUpdatedEnv(env, cenv);
@@ -2067,7 +2067,7 @@ protected
 algorithm
   (outCache,_,cdef) := buildRecordConstructorClass(cache,env,icdef);
   name := SCode.className(cdef);
-  // fprintln(Flags.INST_TRACE", "LOOKUP BUILD RECORD TY ICD: " +& FGraph.printGraphPathStr(env) +& "." +& name);
+  // fprintln(Flags.INST_TRACE", "LOOKUP BUILD RECORD TY ICD: " + FGraph.printGraphPathStr(env) + "." + name);
   (outCache,outEnv,_) := InstFunction.implicitFunctionTypeInstantiation(
      outCache,env,InnerOuter.emptyInstHierarchy, cdef);
   (outCache,ftype,_) := lookupTypeInEnv(outCache,outEnv,Absyn.IDENT(name));
@@ -2139,7 +2139,7 @@ algorithm
         (cdefelts,classExtendsElts,extendsElts,compElts) = InstUtil.splitElts(elts);
         (cache,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
         eltsMods = listAppend(eltsMods,InstUtil.addNomod(compElts));
-        // print("Record Elements: " +&
+        // print("Record Elements: " +
         //   stringDelimitList(
         //     List.map(
         //       List.map(
@@ -2153,7 +2153,7 @@ algorithm
 
     // fail
     else equation
-      Debug.traceln("buildRecordConstructorClass2 failed, cl:"+&SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions)+&"\n");
+      Debug.traceln("buildRecordConstructorClass2 failed, cl:"+SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions)+"\n");
     then fail();
       /* TODO: short class defs */
   end matchcontinue;
@@ -2326,7 +2326,7 @@ algorithm
     case (cache, env, (comp,cmod)::_, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Lookup.buildRecordConstructorElts failed " +& SCodeDump.unparseElementStr(comp,SCodeDump.defaultOptions) +& " with mod: " +& Mod.printModStr(cmod) +& " and: " +& Mod.printModStr(mods));
+        Debug.traceln("- Lookup.buildRecordConstructorElts failed " + SCodeDump.unparseElementStr(comp,SCodeDump.defaultOptions) + " with mod: " + Mod.printModStr(cmod) + " and: " + Mod.printModStr(mods));
       then fail();
   end matchcontinue;
 end buildRecordConstructorElts;
@@ -2340,10 +2340,10 @@ protected function buildRecordConstructorResultElt
   input Absyn.Info info;
   output SCode.Element outElement;
 algorithm
-  //print(" creating element of type: " +& id +& "\n");
-  //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
-  //print(" creating element of type: " +& id +& "\n");
-  //print(" with generated mods:" +& SCode.printSubs1Str(submodlst) +& "\n");
+  //print(" creating element of type: " + id + "\n");
+  //print(" with generated mods:" + SCode.printSubs1Str(submodlst) + "\n");
+  //print(" creating element of type: " + id + "\n");
+  //print(" with generated mods:" + SCode.printSubs1Str(submodlst) + "\n");
   outElement := SCode.COMPONENT("result",SCode.defaultPrefixes,
           SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE()),
@@ -2559,8 +2559,8 @@ algorithm
         false = Config.acceptMetaModelicaGrammar(); // MetaModelica function references generate too much failtrace...
         r = FNode.avlTreeGet(ht, id);
         FCore.N(data = FCore.CL(e = SCode.CLASS(name = name, restriction = restr))) = FNode.fromRef(r);
-        name = id +& " = " +& FGraph.printGraphPathStr(inGraph) +& "." +& name;
-        Debug.traceln("- Lookup.lookupVar2 failed because we find a class instead of a variable: " +& name);
+        name = id + " = " + FGraph.printGraphPathStr(inGraph) + "." + name;
+        Debug.traceln("- Lookup.lookupVar2 failed because we find a class instead of a variable: " + name);
       then
         fail();
 
@@ -2722,7 +2722,7 @@ algorithm
         ss = addArrayDimensions(tty,ss);
         cref_ = ComponentReference.makeCrefIdent(id,tty, ss);
         splicedExp = Expression.makeCrefExp(cref_,tty);
-        //print("splicedExp ="+&ExpressionDump.dumpExpStr(splicedExp,0)+&"\n");
+        //print("splicedExp ="+ExpressionDump.dumpExpStr(splicedExp,0)+"\n");
       then
         (cache,attr,ty_1,bind,cnstForRange,InstTypes.SPLICEDEXPDATA(SOME(splicedExp),ty),componentEnv,name);
 
@@ -2812,14 +2812,14 @@ algorithm
         tyElement = Types.arrayElementType(inParentType);
         true = Types.isRecord(tyElement);
 
-        // print("CREF EB: " +& ComponentReference.printComponentRefStr(inCref) +& "\nTyParent: " +& Types.printTypeStr(inParentType) +& "\nParent:\n" +& Types.printBindingStr(inParentBinding) +& "\nChild:\n" +& Types.printBindingStr(inChildBinding) +& "\n");
+        // print("CREF EB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + Types.printTypeStr(inParentType) + "\nParent:\n" + Types.printBindingStr(inParentBinding) + "\nChild:\n" + Types.printBindingStr(inChildBinding) + "\n");
 
         DAE.RECORD(_, exps, comp, _) = Expression.subscriptExp(e, ss);
 
         e = listGet(exps, List.position(cId, comp));
         b = DAE.EQBOUND(e, NONE(), c, s);
 
-        // print("CREF EB RESULT: " +& ComponentReference.printComponentRefStr(inCref) +& "\nBinding:\n" +& Types.printBindingStr(b) +& "\n");
+        // print("CREF EB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + Types.printBindingStr(b) + "\n");
       then
         b;
 
@@ -2838,14 +2838,14 @@ algorithm
         true = Types.isArray(inParentType, {});
         tyElement = Types.arrayElementType(inParentType);
         true = Types.isRecord(tyElement);
-        // print("CREF VB: " +& ComponentReference.printComponentRefStr(inCref) +& "\nTyParent: " +& Types.printTypeStr(inParentType) +& "\nParent:\n" +& Types.printBindingStr(inParentBinding) +& "\nChild:\n" +& Types.printBindingStr(inChildBinding) +& "\n");
+        // print("CREF VB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + Types.printTypeStr(inParentType) + "\nParent:\n" + Types.printBindingStr(inParentBinding) + "\nChild:\n" + Types.printBindingStr(inChildBinding) + "\n");
         e = ValuesUtil.valueExp(v);
         DAE.RECORD(_, exps, comp, _) = Expression.subscriptExp(e, ss);
 
         e = listGet(exps, List.position(cId, comp));
 
         b = DAE.EQBOUND(e, NONE(), DAE.C_CONST(), s);
-        // print("CREF VB RESULT: " +& ComponentReference.printComponentRefStr(inCref) +& "\nBinding:\n" +& Types.printBindingStr(b) +& "\n");
+        // print("CREF VB RESULT: " + ComponentReference.printComponentRefStr(inCref) + "\nBinding:\n" + Types.printBindingStr(b) + "\n");
       then
         b;
 
@@ -3047,7 +3047,7 @@ protected
 algorithm
   SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index,singleton),classDef=SCode.PARTS(elementLst = els)) := cdef;
   env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(id), SOME(FCore.CLASS_SCOPE()));
-  // print("buildMetaRecordType " +& id +& " in scope " +& FGraph.printGraphPathStr(env) +& "\n");
+  // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + "\n");
   (cache,utPath) := Inst.makeFullyQualified(inCache,env,utPath);
   path := Absyn.joinPaths(utPath, Absyn.IDENT(id));
   (outCache,outEnv,_,_,_,_,_,varlst,_) := Inst.instElementList(
@@ -3058,7 +3058,7 @@ algorithm
   varlst := Types.boxVarLst(varlst);
   ts := Types.mkTypeSource(SOME(path));
   ftype := DAE.T_METARECORD(utPath,index,varlst,singleton,ts);
-  // print("buildMetaRecordType " +& id +& " in scope " +& FGraph.printGraphPathStr(env) +& " OK " +& Types.unparseType(ftype) +&"\n");
+  // print("buildMetaRecordType " + id + " in scope " + FGraph.printGraphPathStr(env) + " OK " + Types.unparseType(ftype) +"\n");
 end buildMetaRecordType;
 
 public function isIterator

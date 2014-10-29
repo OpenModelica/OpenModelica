@@ -108,7 +108,7 @@ protected
   SCode.Element cl;
 algorithm
   cl := translateClass(inClass);
-  // print("\n" +& SCodeDump.printElementStr(cl) +& "\n");
+  // print("\n" + SCodeDump.printElementStr(cl) + "\n");
   outAcc := cl :: acc;
 end translate2;
 
@@ -143,7 +143,7 @@ algorithm
 
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info), _)
       equation
-        // fprint(Flags.TRANSLATE, "Translating class:" +& n +& "\n");
+        // fprint(Flags.TRANSLATE, "Translating class:" + n + "\n");
         r_1 = translateRestriction(c, r); // uniontype will not get translated!
         (d_1,cmt) = translateClassdef(d,file_info);
         sFin = SCode.boolFinal(f);
@@ -172,7 +172,7 @@ algorithm
         // Print out an internal error msg only if no other errors have already
         // been printed.
         true = intEq(Error.getNumMessages(), inNumMessages);
-        n = "SCodeUtil.translateClass2 failed: " +& n;
+        n = "SCodeUtil.translateClass2 failed: " + n;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{n},file_info);
       then
         fail();
@@ -455,7 +455,7 @@ algorithm
     case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt),_)
       equation
         checkTypeSpec(t, info);
-        // fprintln(Flags.TRANSLATE, "translating derived class: " +& Dump.unparseTypeSpec(t));
+        // fprintln(Flags.TRANSLATE, "translating derived class: " + Dump.unparseTypeSpec(t));
         mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info) "TODO: attributes of derived classes";
         scodeAttr = translateAttributes(attr, {});
         scodeCmt = translateComment(cmt);
@@ -503,7 +503,7 @@ algorithm
 
     case (Absyn.CLASS_EXTENDS(baseClassName = name,modifications = cmod,ann=ann,comment = cmtString,parts = parts),_)
       equation
-        // fprintln(Flags.TRANSLATE "translating model extends " +& name +& " ... end " +& name +& ";");
+        // fprintln(Flags.TRANSLATE "translating model extends " + name + " ... end " + name + ";");
         els = translateClassdefElements(parts);
         eqs = translateClassdefEquations(parts);
         initeqs = translateClassdefInitialequations(parts);
@@ -519,7 +519,7 @@ algorithm
 
     case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating pder( " +& Absyn.pathString(path) +& ", vars)");
+        // fprintln(Flags.TRANSLATE, "translating pder( " + Absyn.pathString(path) + ", vars)");
         scodeCmt = translateComment(cmt);
       then
         (SCode.PDER(path,vars),scodeCmt);
@@ -993,7 +993,7 @@ algorithm
     case ({},_) then {};
     case ((Absyn.ELEMENTITEM(element = e) :: es),vis)
       equation
-        // fprintln(Flags.TRANSLATE, "translating element: " +& Dump.unparseElementStr(1, e));
+        // fprintln(Flags.TRANSLATE, "translating element: " + Dump.unparseElementStr(1, e));
         e_1 = translateElement(e, vis);
         es_1 = translateEitemlist(es, vis);
         l = listAppend(e_1, es_1);
@@ -1077,7 +1077,7 @@ algorithm
       list<Absyn.NamedArg> args;
 
     case(Absyn.NAMEDARG(name,Absyn.STRING(str))::_,arg) equation
-      true = name ==& arg;
+      true = name == arg;
     then SOME(str);
     case({},_) then NONE();
     case(_::args,arg) then translateDefineunitParam(args,arg);
@@ -1097,7 +1097,7 @@ algorithm
 
     case(Absyn.NAMEDARG(name,Absyn.REAL(s))::_,arg)
       equation
-      true = name ==& arg;
+      true = name == arg;
         r = System.stringReal(s);
     then SOME(r);
     case({},_) then NONE();
@@ -1180,7 +1180,7 @@ algorithm
 
     case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating local class: " +& n);
+        // fprintln(Flags.TRANSLATE, "translating local class: " + n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
         (de_1,cmt) = translateClassdef(de,i);
         (_, redecl) = translateRedeclarekeywords(repl);
@@ -1199,14 +1199,14 @@ algorithm
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
-        // fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
+        // fprintln(Flags.TRANSLATE, "translating extends: " + Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
       then
         {SCode.EXTENDS(path,vis,mod,NONE(),info)};
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
-        // fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
+        // fprintln(Flags.TRANSLATE, "translating extends: " + Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         ann = translateAnnotation(absann);
       then
@@ -1220,7 +1220,7 @@ algorithm
       equation
         // TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
         checkTypeSpec(t,info);
-        // fprintln(Flags.TRANSLATE, "translating component: " +& n +& " final: " +& SCode.finalStr(SCode.boolFinal(finalPrefix)));
+        // fprintln(Flags.TRANSLATE, "translating component: " + n + " final: " + SCode.finalStr(SCode.boolFinal(finalPrefix)));
         setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, vis,
@@ -1245,7 +1245,7 @@ algorithm
 
     case (_,_,_,_,vis,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
-        // fprintln(Flags.TRANSLATE, "translating import: " +& Dump.unparseImportStr(imp));
+        // fprintln(Flags.TRANSLATE, "translating import: " + Dump.unparseImportStr(imp));
         xs_1 = translateImports(imp,vis,info);
       then
         xs_1;
@@ -1429,7 +1429,7 @@ algorithm
 
     case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
       equation
-        // fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
+        // fprintln(Flags.TRANSLATE, "translating equation: " + Dump.unparseEquationStr(0, e));
         (com,info) = translateCommentWithLineInfoChanges(acom,info);
         e_1 = translateEquation(e,com,info,inIsInitial);
         es_1 = translateEquations(es, inIsInitial);
@@ -1465,7 +1465,7 @@ algorithm
 
     case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
       equation
-        // fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
+        // fprintln(Flags.TRANSLATE, "translating equation: " + Dump.unparseEquationStr(0, e));
         (com,info) = translateCommentWithLineInfoChanges(acom,info);
         e_1 = translateEquation(e,com,info, inIsInitial);
         es_1 = translateEEquations(es, inIsInitial);
@@ -2275,8 +2275,8 @@ algorithm
     // failure
     case ((el as SCode.EXTENDS(baseClassPath = _))::_, redecls)
       equation
-        print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" +& SCodeDump.shortElementStr(el) +&
-                 "\nredeclares:\n" +& stringDelimitList(List.map1(redecls, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n") +& "\n");
+        print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" + SCodeDump.shortElementStr(el) +
+                 "\nredeclares:\n" + stringDelimitList(List.map1(redecls, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n") + "\n");
       then
         fail();
 
@@ -2332,8 +2332,8 @@ algorithm
     // failure
     else
       equation
-        print("SCodeUtil.mergeSCodeMods failed on:\nouterMod: " +& SCodeDump.printModStr(inModOuter,SCodeDump.defaultOptions) +&
-               "\ninnerMod: " +& SCodeDump.printModStr(inModInner,SCodeDump.defaultOptions) +& "\n");
+        print("SCodeUtil.mergeSCodeMods failed on:\nouterMod: " + SCodeDump.printModStr(inModOuter,SCodeDump.defaultOptions) +
+               "\ninnerMod: " + SCodeDump.printModStr(inModInner,SCodeDump.defaultOptions) + "\n");
       then
         fail();
 
@@ -2381,7 +2381,7 @@ algorithm
     case (f, e, (el as SCode.CLASS(name = _, classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::rest)
       equation
         // print an error here
-        print("- SCodeUtil.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " +& SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) +& "\n");
+        print("- SCodeUtil.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " + SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) + "\n");
         // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
       then
@@ -2407,7 +2407,7 @@ algorithm
     case (f, e, el::rest)
       equation
         // print an error here
-        print("- SCodeUtil.makeElementsIntoSubMods ignoring redeclare-as-element redeclaration: " +& SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) +& "\n");
+        print("- SCodeUtil.makeElementsIntoSubMods ignoring redeclare-as-element redeclaration: " + SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) + "\n");
         // recurse
         newSubMods = makeElementsIntoSubMods(f, e, rest);
       then

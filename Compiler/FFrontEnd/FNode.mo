@@ -651,7 +651,7 @@ algorithm
     case (FCore.REF(_)) then "REF";
     case (FCore.VR(source = _)) then "VR";
     case (FCore.IM(_)) then "IM";
-    case (FCore.ASSERT(m)) then "assert(" +& m +& ")";
+    case (FCore.ASSERT(m)) then "assert(" + m + ")";
 
     else "UKNOWN NODE DATA";
 
@@ -673,10 +673,10 @@ algorithm
     case (FCore.N(_, i, p, _, d))
       equation
         outStr =
-           "[i:" +& intString(i) +& "] " +&
-           "[p:" +& stringDelimitList(List.map(List.map(List.map(p, fromRef), id), intString), ", ") +& "] " +&
-           "[n:" +& name(inNode) +& "] " +&
-           "[d:" +& dataStr(d) +& "]";
+           "[i:" + intString(i) + "] " +
+           "[p:" + stringDelimitList(List.map(List.map(List.map(p, fromRef), id), intString), ", ") + "] " +
+           "[n:" + name(inNode) + "] " +
+           "[d:" + dataStr(d) + "]";
       then
         outStr;
 
@@ -712,7 +712,7 @@ algorithm
         nr = contextual(p);
         true = hasParents(fromRef(nr));
         s = toPathStr(fromRef(nr));
-        outStr = s +& "." +& name(inNode);
+        outStr = s + "." + name(inNode);
       then
         outStr;
 
@@ -720,7 +720,7 @@ algorithm
       equation
         nr = contextual(p);
         false = hasParents(fromRef(nr));
-        outStr = "." +& name(inNode);
+        outStr = "." + name(inNode);
       then
         outStr;
   end matchcontinue;
@@ -1298,7 +1298,7 @@ algorithm
 
     case (_, s)
       equation
-        // print("Searching for scope: " +& toPathStr(fromRef(List.first(s))) +& " in " +& toPathStr(fromRef(inRef)) +& "\n");
+        // print("Searching for scope: " + toPathStr(fromRef(List.first(s))) + " in " + toPathStr(fromRef(inRef)) + "\n");
         // reverse and remove top
         _::s = listReverse(s);
         r = lookupRef_dispatch(inRef, s);
@@ -1327,7 +1327,7 @@ algorithm
     case (_, r::rest)
       equation
         n = name(fromRef(r));
-        // print("Lookup child: " +& n +& " in " +& toPathStr(fromRef(inRef)) +& "\n");
+        // print("Lookup child: " + n + " in " + toPathStr(fromRef(inRef)) + "\n");
         r = child(inRef, n);
         r = lookupRef_dispatch(r, rest);
       then
@@ -2135,7 +2135,7 @@ algorithm
 
     case (_, (t, g))
       equation
-        // print("Updating references in node: " +& toStr(fromRef(inRef)) +& " / [" +& toPathStr(fromRef(inRef)) +& "]\n");
+        // print("Updating references in node: " + toStr(fromRef(inRef)) + " / [" + toPathStr(fromRef(inRef)) + "]\n");
         FCore.N(n, i, p, c, d) = fromRef(inRef);
         p = List.map1r(p, lookupRefFromRef, t);
         d = updateRefInData(d, t);
@@ -2449,7 +2449,7 @@ public function mkExtendsName
   input Absyn.Path inPath;
   output Name outName;
 algorithm
-  outName := extendsPrefix +& Absyn.pathString(inPath);
+  outName := extendsPrefix + Absyn.pathString(inPath);
 end mkExtendsName;
 
 // ************************ AVL Tree implementation ***************************
@@ -2873,14 +2873,14 @@ algorithm
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = "\n" +& valueStr(rval) +& ",  " +& (if stringEq(s2, "") then "" else (s2 +& ", ")) +& s3;
+        res = "\n" + valueStr(rval) + ",  " + (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
       then
         res;
     case (FCore.CAVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = (if stringEq(s2, "") then "" else (s2 +& ", ")) +& s3;
+        res = (if stringEq(s2, "") then "" else (s2 + ", ")) + s3;
       then
         res;
   end match;
@@ -2936,19 +2936,19 @@ algorithm
 
     case (SOME(FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(key = rkey)), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
+        indent = inIndent + "  ";
         s1 = printAvlTreeStrPP2(l, indent);
         s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" +& inIndent +& rkey +& s1 +& s2;
+        res = "\n" + inIndent + rkey + s1 + s2;
       then
         res;
 
     case (SOME(FCore.CAVLTREENODE(value = NONE(), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
+        indent = inIndent + "  ";
         s1 = printAvlTreeStrPP2(l, indent);
         s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" +& s1 +& s2;
+        res = "\n" + s1 + s2;
       then
         res;
   end match;

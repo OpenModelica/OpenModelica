@@ -603,10 +603,10 @@ algorithm
     case ((node::M,L),_,_)
       equation
         L = node::L;
-        //print(" List size 1 " +& intString(listLength(L)) +& "\n");
+        //print(" List size 1 " + intString(listLength(L)) + "\n");
         ((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc);
-        //print(" List size 2 " +& intString(listLength(edges)) +& "\n");
-        //print(" List size 3 " +& intString(listLength(edges)) +& "\n");
+        //print(" List size 2 " + intString(listLength(edges)) + "\n");
+        //print(" List size 3 " + intString(listLength(edges)) + "\n");
         M = listAppend(edges,M);
         //print("Start new round! \n");
       then allReachableNodesWork((M,L),inGraph,inEqualFunc);
@@ -804,21 +804,21 @@ algorithm
     case (_, _, _, _, _, _)
       equation
         NONE() = arrayGet(inForbiddenColor, inIndex);
-        //print("Found color on index : " +& intString(inIndex) +& "\n");
+        //print("Found color on index : " + intString(inIndex) + "\n");
       then inIndex;
     case (_, _, _, _, _, _)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
         failure(_ = List.getMemberOnTrue(inNode, nodes, inEqualFunc));
-        //print("Found color on index : " +& intString(inIndex) +& "\n");
+        //print("Found color on index : " + intString(inIndex) + "\n");
       then inIndex;
     case (_, _, _, _, _, _)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
         _ = List.getMemberOnTrue(inNode, nodes, inEqualFunc);
-        //print("Not found color on index : " +& intString(inIndex) +& "\n");
+        //print("Not found color on index : " + intString(inIndex) + "\n");
         index = arrayFindMinColorIndex(inForbiddenColor, inNode, inIndex+1, inmaxIndex, inEqualFunc, inPrintFunc);
       then index;
   end matchcontinue;
@@ -855,7 +855,7 @@ algorithm
   (node, edges) := inNode;
   node_str := inPrintFunc(node);
   edges_str := stringDelimitList(List.map(edges, inPrintFunc), ", ");
-  outString := node_str +& ": " +& edges_str;
+  outString := node_str + ": " + edges_str;
 end printNode;
 
 /* Functions for Integer graphs */
@@ -874,7 +874,7 @@ algorithm
      case({}) then ();
      case((node,edges)::restGraph)
        equation
-         print("Node : " +& intString(node) +& " Edges: ");
+         print("Node : " + intString(node) + " Edges: ");
          strEdges = List.map(edges, intString);
          strEdges = List.map1(strEdges, stringAppend, " ");
          List.map_0(strEdges, print);
@@ -895,11 +895,11 @@ algorithm
        list<String> strNodes;
      case ({}, _)
        equation
-         print(inName +& "\n");
+         print(inName + "\n");
        then ();
      case (_, _)
        equation
-         print(inName +& " : ");
+         print(inName + " : ");
          strNodes = List.map(inListNodes, intString);
          strNodes = List.map1(strNodes, stringAppend, " ");
          List.map_0(strNodes, print);
@@ -1009,8 +1009,8 @@ algorithm
         addForbiddenColorsInt(inNode, rest, inColored, inForbiddenColor, inGraph);
 /*    case (_, node::rest, _, _, _)
       equation
-        print("node : " +& intString(node) +& "\n");
-        print("inGraph : " +& intString(arrayLength(inGraph)) +& "\n");
+        print("node : " + intString(node) + "\n");
+        print("inGraph : " + intString(arrayLength(inGraph)) + "\n");
       then fail();
 */    else
       equation
@@ -1046,8 +1046,8 @@ algorithm
     then ();
 /*    case (index::rest, _, _, _)
       equation
-        print("index : " +& intString(index) +& "\n");
-        print("inColored : " +& intString(arrayLength(inColored)) +& "\n");
+        print("index : " + intString(index) + "\n");
+        print("inColored : " + intString(arrayLength(inColored)) + "\n");
       then fail();
 */  end matchcontinue;
 end updateForbiddenColorArrayInt;
@@ -1064,21 +1064,21 @@ algorithm
     case (_, _, _)
       equation
         NONE() = arrayGet(inForbiddenColor, inIndex);
-        //print("Found color on index : " +& intString(inIndex) +& "\n");
+        //print("Found color on index : " + intString(inIndex) + "\n");
       then inIndex;
     case (_, _, _)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
         failure(_ = List.getMemberOnTrue(inNode, nodes, intEq));
-        //print("Found color on index : " +& intString(inIndex) +& "\n");
+        //print("Found color on index : " + intString(inIndex) + "\n");
       then inIndex;
     case (_, _, _)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
         _ = List.getMemberOnTrue(inNode, nodes, intEq);
-        //print("Not found color on index : " +& intString(inIndex) +& "\n");
+        //print("Not found color on index : " + intString(inIndex) + "\n");
       then
         arrayFindMinColorIndexInt(inForbiddenColor, inNode, inIndex+1);
   end matchcontinue;

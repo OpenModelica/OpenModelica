@@ -935,7 +935,7 @@ algorithm
       equation
         true = DAEUtil.expTypeComplex(ty);
         size = Expression.sizeOf(ty);
-        //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source)) +& "\n");
+        //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source)) + "\n");
        then
         ((v, s, BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
     // array types to array equations
@@ -944,7 +944,7 @@ algorithm
         true = DAEUtil.expTypeArray(ty);
         dims = Expression.arrayDimension(ty);
         ds = Expression.dimensionsSizes(dims);
-        //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source)) +& "\n");
+        //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source)) + "\n");
       then
         ((v, s, BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
     // other types
@@ -953,7 +953,7 @@ algorithm
         b1 = DAEUtil.expTypeComplex(ty);
         b2 = DAEUtil.expTypeArray(ty);
         false = b1 or b2;
-        //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.EQUATION(lhs, rhs, source)) +& "\n");
+        //  print("Add Equation:\n" + BackendDump.equationStr(BackendDAE.EQUATION(lhs, rhs, source)) + "\n");
         //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
         ((v, s, BackendDAE.EQUATION(lhs, rhs, source, eqAttr)::eqns, seqns, index, mT, b));
@@ -961,7 +961,7 @@ algorithm
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendDAEOptimize.generateEquation failed on: " +& ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs) +& "\n");
+        Debug.traceln("- BackendDAEOptimize.generateEquation failed on: " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
       then
         fail();
   end matchcontinue;
@@ -1067,7 +1067,7 @@ algorithm
     case(_, _, _, _, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          BackendDump.debugStrCrefStrCrefStr("Alias Equation ", cr1, " = ", cr2, " found. Negated lhs[" +& boolString(negatedCr1) +& "] = rhs[" +& boolString(negatedCr2) +& "].\n");
+          BackendDump.debugStrCrefStrCrefStr("Alias Equation ", cr1, " = ", cr2, " found. Negated lhs[" + boolString(negatedCr1) + "] = rhs[" + boolString(negatedCr2) + "].\n");
         end if;
         // get Variables
         (vars1, ilst1, varskn1, time1) = getVars(cr1, vars, shared);
@@ -1264,7 +1264,7 @@ algorithm
         crexp2 = Expression.crefExp(cr2);
         crexp1 = negateExpression(negatedCr1, crexp1, crexp1, " checkEqualAlias ");
         crexp2 = negateExpression(negatedCr2, crexp2, crexp2, " checkEqualAlias ");
-        eqn_str = ExpressionDump.printExpStr(crexp1) +& " = " +& ExpressionDump.printExpStr(crexp2) +& "\n";
+        eqn_str = ExpressionDump.printExpStr(crexp1) + " = " + ExpressionDump.printExpStr(crexp2) + "\n";
         info = DAEUtil.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str, var_str}, info);
       then
@@ -3239,8 +3239,8 @@ algorithm
     // end of list analyse what we got
     case ({}, rest, _, _, _, _) equation
       ((e, cr, i)) = selectNonZeroExpression(rest);
-      s = iStr +& "=> select value from " +&  ComponentReference.printComponentRefStr(cr) +&  "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n" +&
-          "   because its component reference (or its binding component reference) is closer to the top level scope with depth: " +& intString(i) +& ".\n" +&
+      s = iStr + "=> select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n" +
+          "   because its component reference (or its binding component reference) is closer to the top level scope with depth: " + intString(i) + ".\n" +
           "   If we have equal component reference depth for several components choose the one with non zero binding.";
       Error.addMessage(Error.COMPILER_WARNING, {s});
       v = inFunc(inVar, e);
@@ -3248,13 +3248,13 @@ algorithm
 
     // none, push it in
     case ((e, cr)::zerofreevalues, {}, _, _, _, _) equation
-      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n";
+      s = iStr + " * candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
     then selectFreeValue1(zerofreevalues, {(e, cr, i)}, s, iAttributeName, inFunc, inVar);
 
     // equal, put it in
     case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _, _, _) equation
-      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n";
+      s = iStr + " * candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       true = intEq(i, is);
       favorit = (e, cr, i)::(es, crs, is)::rest;
@@ -3262,7 +3262,7 @@ algorithm
 
     // less than, remove all from list, return just this one
     case ((e, cr)::zerofreevalues, (_, _, is)::_, _, _, _, _) equation
-      s = iStr +& " * candidate: " +& ComponentReference.printComponentRefStr(cr) +& "(" +& iAttributeName +& " = " +& ExpressionDump.printExpStr(e) +& ")\n";
+      s = iStr + " * candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n";
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       favorit = if intLt(i, is) then {(e, cr, i)} else iFavorit;
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar);
@@ -4127,7 +4127,7 @@ algorithm
       equation
         negatedExp = Expression.negate(inExp);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          BackendDump.debugStrExpStr("Negating: ", inExp, " " +& message +& ".\n");
+          BackendDump.debugStrExpStr("Negating: ", inExp, " " + message + ".\n");
         end if;
       then
         negatedExp;
@@ -4135,7 +4135,7 @@ algorithm
     case (false, _, _, _)
       equation
         if Flags.isSet(Flags.DEBUG_ALIAS) then
-          BackendDump.debugStrExpStrExpStr("Not negating: ", inExp, " returning: ", inAlternative, " " +& message +& ".\n");
+          BackendDump.debugStrExpStrExpStr("Not negating: ", inExp, " returning: ", inAlternative, " " + message + ".\n");
         end if;
       then
         inAlternative;

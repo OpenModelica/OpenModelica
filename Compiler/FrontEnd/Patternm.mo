@@ -330,7 +330,7 @@ algorithm
     case (_,_,lhs,_,_,_)
       equation
         true = numError == Error.getNumErrorMessages();
-        str = Dump.printExpStr(lhs) +& " of type " +& Types.unparseType(ty);
+        str = Dump.printExpStr(lhs) + " of type " + Types.unparseType(ty);
         Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
       then fail();
 
@@ -368,7 +368,7 @@ algorithm
     else
       equation
         s = Dump.printExpStr(lhs);
-        s = "pattern " +& s;
+        s = "pattern " + s;
         Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {s}, info);
       then fail();
   end match;
@@ -469,14 +469,14 @@ algorithm
     case (_,_,strs,0,_)
       equation
         str = stringDelimitList(strs,",");
-        str = Absyn.pathString(path) +& " missing pattern for fields: " +& str;
+        str = Absyn.pathString(path) + " missing pattern for fields: " + str;
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
 */
     /*
     case (path,_,_,_,info)
       equation
-        str = Absyn.pathString(path) +& " mixing positional and named patterns";
+        str = Absyn.pathString(path) + " mixing positional and named patterns";
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
     */
@@ -580,16 +580,16 @@ algorithm
     case DAE.PAT_SOME(pat)
       equation
         str = patternStr(pat);
-      then "SOME(" +& str +& ")";
+      then "SOME(" + str + ")";
     case DAE.PAT_META_TUPLE(pats)
       equation
         str = stringDelimitList(List.map(pats,patternStr),",");
-      then "(" +& str +& ")";
+      then "(" + str + ")";
 
     case DAE.PAT_CALL_TUPLE(pats)
       equation
         str = stringDelimitList(List.map(pats,patternStr),",");
-      then "(" +& str +& ")";
+      then "(" + str + ")";
 
     case DAE.PAT_CALL(name=name, patterns=pats)
       equation
@@ -605,12 +605,12 @@ algorithm
         str = stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
       then stringAppendList({id,"(",str,")"});
 
-    case DAE.PAT_CONS(head,tail) then patternStr(head) +& "::" +& patternStr(tail);
+    case DAE.PAT_CONS(head,tail) then patternStr(head) + "::" + patternStr(tail);
 
     case DAE.PAT_CONSTANT(exp=exp) then ExpressionDump.printExpStr(exp);
-    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" +& Types.unparseType(et) +& ")" +& ExpressionDump.printExpStr(exp);
-    case DAE.PAT_AS(id=id,pat=pat) then id +& " as " +& patternStr(pat);
-    case DAE.PAT_AS_FUNC_PTR(id, pat) then id +& " as " +& patternStr(pat);
+    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" + Types.unparseType(et) + ")" + ExpressionDump.printExpStr(exp);
+    case DAE.PAT_AS(id=id,pat=pat) then id + " as " + patternStr(pat);
+    case DAE.PAT_AS_FUNC_PTR(id, pat) then id + " as " + patternStr(pat);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Patternm.patternStr not implemented correctly"});
@@ -1472,7 +1472,7 @@ algorithm
       then outTpl;
     case ((pat,_),_)
       equation
-        str = "Patternm.traversePattern failed: " +& patternStr(pat);
+        str = "Patternm.traversePattern failed: " + patternStr(pat);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;

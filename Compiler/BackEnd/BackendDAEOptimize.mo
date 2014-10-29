@@ -1849,7 +1849,7 @@ algorithm
     then (listReverse(iEquationList), listReverse(iVariableList));
 
     case((BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source,attr=eqAttr))::restEquationList, index,_,_) equation
-      varName = "$res" +& intString(index);
+      varName = "$res" + intString(index);
       componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
       expVarName = DAE.CREF(componentRef, DAE.T_REAL_DEFAULT);
       currEquation = BackendDAE.EQUATION(expVarName, exp, source, eqAttr);
@@ -1860,7 +1860,7 @@ algorithm
     then (equationList, variableList);
 
     case(currEquation::_, _,_,_) equation
-      errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function convertResidualsIntoSolvedEquations2 failed: " +& BackendDump.equationString(currEquation);
+      errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function convertResidualsIntoSolvedEquations2 failed: " + BackendDump.equationString(currEquation);
       Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
     then fail();
 
@@ -1960,7 +1960,7 @@ algorithm
         // bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
         // printPartition(b,ixs);
         systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i,syst,ixs,mT,throwNoError) else {syst};
-        // print("Number of partitioned systems: " +& intString(listLength(systs)) +& "\n");
+        // print("Number of partitioned systems: " + intString(listLength(systs)) + "\n");
         // List.map1_0(systs, BackendDump.dumpEqSystem, "System");
       then (systs,shared);
     else
@@ -2064,10 +2064,10 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b))
       equation
         ((i1,i2,i3,i4)) = countOperationstraverseComps(comps,isyst,shared,(0,0,0,0));
-        print("Add Operations: " +& intString(i1) +& "\n");
-        print("Mul Operations: " +& intString(i2) +& "\n");
-        print("Oth Operations: " +& intString(i3) +& "\n");
-        print("Trig Operations: " +& intString(i4) +& "\n");
+        print("Add Operations: " + intString(i1) + "\n");
+        print("Mul Operations: " + intString(i2) + "\n");
+        print("Oth Operations: " + intString(i3) + "\n");
+        print("Trig Operations: " + intString(i4) + "\n");
       then
         (isyst,(shared,b));
   end match;
@@ -2876,7 +2876,7 @@ algorithm
         eqstr = stringDelimitList(List.map(listAppend(trueBranches,{falseBranch}),BackendDump.dumpEqnsStr),"\n");
         strs = List.map(nrOfEquationsBranches, intString);
         str = stringDelimitList(strs,",");
-        str = "{" +& str +& "," +& intString(nrOfEquations) +& "}";
+        str = "{" + str + "," + intString(nrOfEquations) + "}";
         Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str,eqstr},DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
@@ -3020,7 +3020,7 @@ algorithm
     // failure
     case _
       equation
-        str = "- BackendDAEOptimize.makeEquationToResidualExp failed to transform equation: " +& BackendDump.equationString(eq) +& " to residual form!";
+        str = "- BackendDAEOptimize.makeEquationToResidualExp failed to transform equation: " + BackendDump.equationString(eq) + " to residual form!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -4173,14 +4173,14 @@ algorithm
     // simple condition [already in ht]
     case (condition, _, index, ht) equation
       localIndex = BaseHashTable.get(condition, ht);
-      crStr = "$whenCondition" +& intString(localIndex);
+      crStr = "$whenCondition" + intString(localIndex);
       condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
     then (condition, {}, {}, index, ht);
 
     // simple condition [not yet in ht]
     case (condition, _, index, ht) equation
       ht = BaseHashTable.add((condition, index), ht);
-      crStr = "$whenCondition" +& intString(index);
+      crStr = "$whenCondition" + intString(index);
 
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       var = BackendVariable.setVarFixed(var, true);
@@ -4358,7 +4358,7 @@ algorithm
 
     // array-condition
     case (DAE.ARRAY(array={condition}), _, index) equation
-      crStr = "$whenCondition" +& intString(index);
+      crStr = "$whenCondition" + intString(index);
 
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       var = BackendVariable.setVarFixed(var, true);
@@ -4374,7 +4374,7 @@ algorithm
 
     // simple condition
     case (condition, _, index) equation
-      crStr = "$whenCondition" +& intString(index);
+      crStr = "$whenCondition" + intString(index);
 
       var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       var = BackendVariable.setVarFixed(var, true);
@@ -4633,7 +4633,7 @@ algorithm
     case(_, _, _)
       equation
         /* Might be part of a different equation-system...
-        str = "BackendDAECreate.updateStatesVars failed for: " +& ComponentReference.printComponentRefStr(cr);
+        str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         */
       then (inVars, iExp);
@@ -4667,7 +4667,7 @@ algorithm
     case(_, _::newStates, _)
       equation
         /* Might be part of a different equation-system...
-        str = "BackendDAECreate.updateStatesVars failed for: " +& ComponentReference.printComponentRefStr(cr);
+        str = "BackendDAECreate.updateStatesVars failed for: " + ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         */
         vars = updateStatesVars(inVars, newStates, noStateFound);
@@ -4795,7 +4795,7 @@ algorithm
   BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(backendDAEType=backendDAEType)) := inBackendDAE;
   warnings := listAllIterationVariables0(eqs);
 
-  Error.addCompilerNotification("List of all iteration variables (DAE kind: " +& BackendDump.printBackendDAEType2String(backendDAEType) +& ")\n" +& stringDelimitList(warnings, "\n"));
+  Error.addCompilerNotification("List of all iteration variables (DAE kind: " + BackendDump.printBackendDAEType2String(backendDAEType) + ")\n" + stringDelimitList(warnings, "\n"));
 end listAllIterationVariables;
 
 protected function listAllIterationVariables0 "author: lochel"
@@ -4853,7 +4853,7 @@ algorithm
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = List.isEmpty(varlst);
 
-      warning = "Iteration variables of nonlinear equation system:\n" +& warnAboutVars(varlst);
+      warning = "Iteration variables of nonlinear equation system:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 
@@ -4861,7 +4861,7 @@ algorithm
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = List.isEmpty(varlst);
 
-      warning = "Iteration variables of equation system w/o analytic Jacobian:\n" +& warnAboutVars(varlst);
+      warning = "Iteration variables of equation system w/o analytic Jacobian:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 
@@ -4869,7 +4869,7 @@ algorithm
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = List.isEmpty(varlst);
 
-      warning = "Iteration variables of equation system w/o analytic Jacobian:\n" +& warnAboutVars(varlst);
+      warning = "Iteration variables of equation system w/o analytic Jacobian:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 
@@ -4878,7 +4878,7 @@ algorithm
       false = List.isEmpty(varlst);
 
       str = if linear then "linear" else "nonlinear";
-      warning = "Iteration variables of torn " +& str +& " equation system:\n" +& warnAboutVars(varlst);
+      warning = "Iteration variables of torn " + str + " equation system:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 
@@ -4903,12 +4903,12 @@ algorithm
     then "";
 
     case (v::{}) equation
-      crStr = "  " +& BackendDump.varString(v);
+      crStr = "  " + BackendDump.varString(v);
     then crStr;
 
     case (v::vars) equation
       crStr = BackendDump.varString(v);
-      str = "  " +& crStr +& "\n" +& warnAboutVars(vars);
+      str = "  " + crStr + "\n" + warnAboutVars(vars);
     then str;
   end match;
 end warnAboutVars;

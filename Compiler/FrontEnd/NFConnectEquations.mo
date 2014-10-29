@@ -225,7 +225,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = stringDelimitList(List.map(inElements, NFConnectUtil2.connectorStr), ", ");
-        Debug.traceln("- ConnectUtil.generatePotentialEquations failed on {" +& str +& "}");
+        Debug.traceln("- ConnectUtil.generatePotentialEquations failed on {" + str + "}");
       then
         fail();
 

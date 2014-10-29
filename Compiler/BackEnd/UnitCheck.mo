@@ -271,51 +271,51 @@ algorithm
       s= if realEq(factor, 1.0) then "" else s;
       b = false;
       sExponent = if intEq(i1, 1) then "" else intString(i1);
-      s1 = "mol" +& sExponent;
+      s1 = "mol" + sExponent;
       s1 = if intEq(i1, 0) then "" else s1;
       b = b or intNe(i1, 0);
 
       s2 = if b and intNe(i2, 0) then "." else "";
       sExponent = if intEq(i2, 1) then "" else intString(i2);
-      s2 = s2 +& "cd" +& sExponent;
+      s2 = s2 + "cd" + sExponent;
       s2 = if intEq(i2, 0) then "" else s2;
       b = b or intNe(i2, 0);
 
       s3 = if b and intNe(i3, 0) then "." else "";
       sExponent = if intEq(i3, 1) then "" else intString(i3);
-      s3 = s3 +& "m" +& sExponent;
+      s3 = s3 + "m" + sExponent;
       s3 = if intEq(i3, 0) then "" else s3;
       b = b or intNe(i3, 0);
 
       s4 = if b and intNe(i4, 0) then "." else "";
       sExponent = if intEq(i4, 1) then "" else intString(i4);
-      s4 = s4 +& "s" +& sExponent;
+      s4 = s4 + "s" + sExponent;
       s4 = if intEq(i4, 0) then "" else s4;
       b = b or intNe(i4, 0);
 
       s5 = if b and intNe(i5, 0) then "." else "";
       sExponent = if intEq(i5, 1) then "" else intString(i5);
-      s5 = s5 +& "A" +& sExponent;
+      s5 = s5 + "A" + sExponent;
       s5 = if intEq(i5, 0) then "" else s5;
       b = b or intNe(i5, 0);
 
       s6 = if b and intNe(i6, 0) then "." else "";
       sExponent = if intEq(i6, 1) then "" else intString(i6);
-      s6 = s6 +& "K" +& sExponent;
+      s6 = s6 + "K" + sExponent;
       s6 = if intEq(i6, 0) then "" else s6;
       b = b or intNe(i6, 0);
 
       s7 = if b and intNe(i7, 0) then "." else "";
       sExponent = if intEq(i7, 1) then "" else intString(i7);
-      s7 = s7 +& "g" +& sExponent;
+      s7 = s7 + "g" + sExponent;
       s7 = if intEq(i7, 0) then "" else s7;
       b = b or intNe(i7, 0);
-      s = s +& s1 +& s2 +& s3 +& s4 +& s5 +& s6 +& s7;
+      s = s + s1 + s2 + s3 + s4 + s5 + s6 + s7;
       s = if b then s else "1";
     then s;
 
     else equation
-      Error.addCompilerWarning("function unit2String failed: \"" +& Unit.unit2string(inUt) +&"\" can not return in DAE!!!");
+      Error.addCompilerWarning("function unit2String failed: \"" + Unit.unit2string(inUt) +"\" can not return in DAE!!!");
     then Unit.unit2string(inUt);
   end matchcontinue;
 end unit2String;
@@ -560,8 +560,8 @@ algorithm
       equation
         s = BackendDump.equationString(inEq);
         s1 = Errorfunction2(expList, inHtU2S);
-        Error.addCompilerWarning("The following equation is INCONSISTENT due to specified unit information: " +& s +& "\n" +&
-        "The units of following sub-expressions need to be equal:\n" +& s1 );
+        Error.addCompilerWarning("The following equation is INCONSISTENT due to specified unit information: " + s + "\n" +
+        "The units of following sub-expressions need to be equal:\n" + s1 );
     then ();
   end match;
 end Errorfunction;
@@ -583,14 +583,14 @@ algorithm
     case ((exp, ut)::{}, _) equation
       s = ExpressionDump.printExpStr(exp);
       s1 = unit2String(ut, inHtU2S);
-      s = "- sub-expression \"" +& s +& "\" has unit \"" +& s1 +& "\"";
+      s = "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"";
     then s;
 
     case ((exp, ut)::expList, _) equation
       s = ExpressionDump.printExpStr(exp);
       s1 = unit2String(ut, inHtU2S);
       s2 = Errorfunction2(expList, inHtU2S);
-      s = "- sub-expression \"" +& s +& "\" has unit \"" +& s1 +& "\"\n" +& s2;
+      s = "- sub-expression \"" + s + "\" has unit \"" + s1 + "\"\n" + s2;
     then s;
   end match;
 end Errorfunction2;
@@ -645,9 +645,9 @@ algorithm
     case (t1::lt1, _, _) equation
       (cr1, Unit.MASTER(varList=_))=t1;
       Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7)=BaseHashTable.get(cr1, inHtCr2U2);
-      s1="\"" +& ComponentReference.crefStr(cr1) +& "\" has the Unit \"" +& unit2String(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtU2S) +& "\"" +& "\n";
+      s1="\"" + ComponentReference.crefStr(cr1) + "\" has the Unit \"" + unit2String(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtU2S) + "\"" + "\n";
       s2=notification2(lt1, inHtCr2U2, inHtU2S);
-    then s1 +& s2;
+    then s1 + s2;
 
     case (t1::lt1, _, _) equation
       s1 = notification2(lt1, inHtCr2U2, inHtU2S);
@@ -766,7 +766,7 @@ algorithm
     equation
       (ut as Unit.UNIT(factor=_), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut2 as Unit.UNIT(factor=_), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" +& unit2String(ut, HtU2S) +& ").(" +& unit2String(ut2, HtU2S) +& ")";
+      //s1="(" + unit2String(ut, HtU2S) + ").(" + unit2String(ut2, HtU2S) + ")";
       ut = unitMul(ut, ut2);
       s1 = unit2String(ut, HtU2S);
       expListList = listAppend(expListList, expListList2);
@@ -785,7 +785,7 @@ algorithm
     equation
       (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut2 as Unit.UNIT(factor=_), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" +& unit2String(inUt, HtU2S) +& ")/(" +& unit2String(ut2, HtU2S) +& ")";
+      //s1="(" + unit2String(inUt, HtU2S) + ")/(" + unit2String(ut2, HtU2S) + ")";
       ut = unitDiv(inUt, ut2);
       s1 = unit2String(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
@@ -805,7 +805,7 @@ algorithm
     equation
       (ut2 as Unit.UNIT(factor=_), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" +& unit2String(inUt, HtU2S) +& ")/(" +& unit2String(ut2, HtU2S) +& ")";
+      //s1="(" + unit2String(inUt, HtU2S) + ")/(" + unit2String(ut2, HtU2S) + ")";
       ut = unitDiv(inUt, ut2);
       s1 = unit2String(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
@@ -825,7 +825,7 @@ algorithm
     equation
       (ut as Unit.UNIT(factor=_), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut2 as Unit.UNIT(factor=_), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" +& unit2String(ut, HtU2S) +& ")/(" +& unit2String(ut2, HtU2S) +& ")";
+      //s1="(" + unit2String(ut, HtU2S) + ")/(" + unit2String(ut2, HtU2S) + ")";
       ut = unitDiv(ut, ut2);
       s1 = unit2String(ut, HtU2S);
       expListList = listAppend(expListList, expListList2);
@@ -844,7 +844,7 @@ algorithm
     equation
       (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (ut2 as Unit.UNIT(factor=_), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" +& unit2String(inUt, HtU2S) +& ").(" +& unit2String(ut2, HtU2S) +& ")";
+      //s1="(" + unit2String(inUt, HtU2S) + ").(" + unit2String(ut2, HtU2S) + ")";
       ut = unitMul(inUt, ut2);
       s1 = unit2String(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
@@ -864,7 +864,7 @@ algorithm
     equation
       (ut2 as Unit.UNIT(factor=_), (HtCr2U, HtS2U, HtU2S), expListList) = insertUnitinEquation(exp1, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
       (Unit.MASTER(varList=lcr), (HtCr2U, HtS2U, HtU2S), expListList2) = insertUnitinEquation(exp2, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
-      //s1="(" +& unit2String(ut2, HtU2S) +& ")/(" +& unit2String(inUt, HtU2S) +& ")";
+      //s1="(" + unit2String(ut2, HtU2S) + ")/(" + unit2String(inUt, HtU2S) + ")";
       ut = unitDiv(ut2, inUt);
       s1 = unit2String(ut, HtU2S);
       HtCr2U = List.fold1(lcr, updateHtCr2U, ut, HtCr2U);
@@ -1277,7 +1277,7 @@ algorithm
     then token2string(curr);
 
     case (curr::rest, _) equation
-      str = token2string(curr) +& inDeliminator +& tokenList2string(rest, inDeliminator);
+      str = token2string(curr) + inDeliminator + tokenList2string(rest, inDeliminator);
     then str;
   end match;
 end tokenList2string;
@@ -1628,28 +1628,28 @@ algorithm
 
     case "+"::charList equation
       (charList, number) = popNumber(charList);
-      false = (number ==& "");
+      false = (number == "");
       tokenList = lexer(charList);
       i = stringInt(number);
     then T_NUMBER(i)::tokenList;
 
     case "-"::charList equation
       (charList, number) = popNumber(charList);
-      false = (number ==& "");
+      false = (number == "");
       tokenList = lexer(charList);
       i = -stringInt(number);
     then T_NUMBER(i)::tokenList;
 
     case charList equation
       (charList, number) = popNumber(charList);
-      false = (number ==& "");
+      false = (number == "");
       tokenList = lexer(charList);
       i = stringInt(number);
     then T_NUMBER(i)::tokenList;
 
     case charList equation
       (charList, unit) = popUnit(charList);
-      false = (unit ==& "");
+      false = (unit == "");
       tokenList = lexer(charList);
     then T_UNIT(unit)::tokenList;
 
@@ -1677,12 +1677,12 @@ algorithm
     case s1::strRest equation
       true = (stringCompare(s1, "a") >= 0) and (stringCompare(s1, "z") <= 0);
       (strRest, s2) = popUnit(strRest);
-    then (strRest, s1 +& s2);
+    then (strRest, s1 + s2);
 
     case s1::strRest equation
       true = (stringCompare(s1, "A") >= 0) and (stringCompare(s1, "Z") <= 0) ;
       (strRest, s2) = popUnit(strRest);
-    then (strRest, s1 +& s2);
+    then (strRest, s1 + s2);
 
     else (inCharList, "");
   end matchcontinue;
@@ -1706,9 +1706,9 @@ algorithm
 
     case s1::strRest equation
       i = stringInt(s1);
-      true = (intString(i) ==& s1);
+      true = (intString(i) == s1);
       (strRest, s2) = popNumber(strRest);
-    then (strRest, s1 +& s2);
+    then (strRest, s1 + s2);
 
     else (inCharList, "");
   end matchcontinue;
@@ -1727,7 +1727,7 @@ protected
 algorithm
   Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) := inUt1;
   Unit.UNIT(factor2, j1, j2, j3, j4, j5, j6, j7) := inUt2;
-  factor1:=factor1 *. factor2;
+  factor1 := factor1 * factor2;
   i1 := i1+j1;
   i2 := i2+j2;
   i3 := i3+j3;
@@ -1751,7 +1751,7 @@ protected
 algorithm
   Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) := inUt1;
   Unit.UNIT(factor2, j1, j2, j3, j4, j5, j6, j7) := inUt2;
-  factor1 := factor1 /. factor2;
+  factor1 := factor1 / factor2;
   i1 := i1-j1;
   i2 := i2-j2;
   i3 := i3-j3;
@@ -1795,7 +1795,7 @@ protected
   Integer i1, i2, i3, i4, i5, i6, i7;
 algorithm
   Unit.UNIT(factor, i1, i2, i3, i4, i5, i6, i7) := inUt;
-  factor:= factor *. inFactor;
+  factor := factor * inFactor;
   outUt := Unit.UNIT(factor, i1, i2, i3, i4, i5, i6, i7);
 end unitMulReal;
 

@@ -115,51 +115,51 @@ algorithm
         g = FResolve.ext(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
-        print("Extends:        " +& realString(List.first(lst)) +& "\n");
+        print("Extends:        " + realString(List.first(lst)) + "\n");
 
         System.startTimer();
         // resolve derived
         g = FResolve.derived(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
-        print("Derived:        " +& realString(List.first(lst)) +& "\n");
+        print("Derived:        " + realString(List.first(lst)) + "\n");
 
         System.startTimer();
         // resolve type paths for constrain classes
         g = FResolve.cc(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
-        print("ConstrainedBy:  " +& realString(List.first(lst)) +& "\n");
+        print("ConstrainedBy:  " + realString(List.first(lst)) + "\n");
 
         System.startTimer();
         // resolve class extends nodes
         g = FResolve.clsext(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
-        print("ClassExtends:   " +& realString(List.first(lst)) +& "\n");
+        print("ClassExtends:   " + realString(List.first(lst)) + "\n");
 
         System.startTimer();
         // resolve type paths
         g = FResolve.ty(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
-        print("ComponentTypes: " +& realString(List.first(lst)) +& "\n");
+        print("ComponentTypes: " + realString(List.first(lst)) + "\n");
 
         System.startTimer();
         // resolve all component references
         g = FResolve.cr(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
-        print("Comp Refs:      " +& realString(List.first(lst)) +& "\n");
+        print("Comp Refs:      " + realString(List.first(lst)) + "\n");
 
         System.startTimer();
         // resolve all modifier lhs (thisOne = binding)
         g = FResolve.mod(FGraph.top(g), g);
         System.stopTimer();
         lst = List.consr(lst, System.getTimerIntervalTime());
-        print("Modifiers:      " +& realString(List.first(lst)) +& "\n");
+        print("Modifiers:      " + realString(List.first(lst)) + "\n");
 
-        print("FExpand.all:    " +& realString(List.fold(lst, realAdd, 0.0)) +& "\n");
+        print("FExpand.all:    " + realString(List.fold(lst, realAdd, 0.0)) + "\n");
       then
         g;
 

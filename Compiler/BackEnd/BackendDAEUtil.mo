@@ -152,7 +152,7 @@ algorithm
       //Check for correct size
       samesize = nVars == nEqns;
       if Flags.isSet(Flags.CHECK_BACKEND_DAE) then
-        print("No. of Equations: " +& intString(nVars) +& " No. of BackendDAE.Variables: " +& intString(nEqns) +& " Samesize: " +& boolString(samesize) +& "\n");
+        print("No. of Equations: " + intString(nVars) + " No. of BackendDAE.Variables: " + intString(nEqns) + " Samesize: " + boolString(samesize) + "\n");
       end if;
       (expCrefs, wrongEqns) = checkBackendDAE(inBackendDAE);
       printcheckBackendDAEWithErrorMsg(expCrefs, wrongEqns);
@@ -2221,9 +2221,9 @@ algorithm
         markStateEquationsWork(eqns,nextQueue,m,ass1,iMark);
     case (eqn::_,_,_,_,_)
       equation
-        print("- BackendDAEUtil.markStateEquationsWork failed for eqn: " +& intString(eqn));
-        print(" array length = " +& intString(arrayLength(iMark)) +& "\n");
-        print("mark_value: " +& intString(iMark[eqn]) +& "\n");
+        print("- BackendDAEUtil.markStateEquationsWork failed for eqn: " + intString(eqn));
+        print(" array length = " + intString(arrayLength(iMark)) + "\n");
+        print("mark_value: " + intString(iMark[eqn]) + "\n");
       then
         fail();
   end matchcontinue;
@@ -2308,7 +2308,7 @@ algorithm
         removeNegative(m[indx]);
     else
       equation
-        s = "- BackendDAEUtil.varsInEqn failed, indx= " +& intString(indx) +& "array length: " +& intString(arrayLength(m)) +& "\n";
+        s = "- BackendDAEUtil.varsInEqn failed, indx= " + intString(indx) + "array length: " + intString(arrayLength(m)) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR,{s});
       then
         fail();
@@ -3065,7 +3065,7 @@ algorithm
     case (v::_,_,_)
       equation
         vabs = intAbs(v);
-        print("- BackendDAEUtil.fillincidenceMatrixT failed for Var " +& intString(vabs) +& "\n");
+        print("- BackendDAEUtil.fillincidenceMatrixT failed for Var " + intString(vabs) + "\n");
       then
         fail();
   end matchcontinue;
@@ -3180,7 +3180,7 @@ algorithm
     else
       equation
         eqnstr = BackendDump.equationString(inEquation);
-        str = "- BackendDAE.incidenceRow failed for equation: " +& eqnstr;
+        str = "- BackendDAE.incidenceRow failed for equation: " + eqnstr;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -4480,7 +4480,7 @@ algorithm
     case ((x::_),_,_)
       equation
         str = DAEDump.ppStatementStr(x);
-        str = "BackenddAEUtil.traverseStmts not implemented correctly: " +& str;
+        str = "BackenddAEUtil.traverseStmts not implemented correctly: " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -6247,7 +6247,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = BackendDump.dumpEqnsStr({inEquation});
-        Debug.traceln("- BackendDAE.calculateJacobianRow failed on " +& str);
+        Debug.traceln("- BackendDAE.calculateJacobianRow failed on " + str);
       then
         fail();
   end match;
@@ -6399,7 +6399,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = ExpressionDump.printExpStr(inExp);
-        Debug.traceln("- BackendDAE.calculateJacobianRow2 failed on " +& str);
+        Debug.traceln("- BackendDAE.calculateJacobianRow2 failed on " + str);
       then
         fail();
   end matchcontinue;
@@ -6443,7 +6443,7 @@ algorithm
     case (_,_,SOME(jac))
       equation
         //str = BackendDump.dumpJacobianStr(SOME(jac));
-        //print("analyze Jacobian: \n" +& str +& "\n");
+        //print("analyze Jacobian: \n" + str + "\n");
         b = jacobianNonlinear(vars, jac);
         // check also if variables occure in if expressions
         ((_,false)) = if not b then traverseBackendDAEExpsEqnsWithStop(eqns,varsNotInRelations,(vars,true)) else (vars,false);
@@ -6456,7 +6456,7 @@ algorithm
         true = jacobianConstant(jac);
         b = rhsConstant(vars,eqns);
         jactype = if b then BackendDAE.JAC_CONSTANT() else BackendDAE.JAC_LINEAR();
-        //print("jac type: " +& if_(b,"JAC_CONSTANT()","JAC_LINEAR()")  +& "\n");
+        //print("jac type: " + if_(b,"JAC_CONSTANT()","JAC_LINEAR()")  + "\n");
       then
         (jactype,true);
 
@@ -6822,21 +6822,21 @@ algorithm
     case (eqn as BackendDAE.SOLVED_EQUATION(source=_),_)
       equation
         str = BackendDump.equationString(eqn);
-        str = "BackendDAEUtil.equationToExp failed for solved equation: " +& str;
+        str = "BackendDAEUtil.equationToExp failed for solved equation: " + str;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
       then fail();
 
     case (eqn as BackendDAE.COMPLEX_EQUATION(source=_),_)
       equation
         str = BackendDump.equationString(eqn);
-        str = "BackendDAEUtil.equationToExp failed for complex equation: " +& str;
+        str = "BackendDAEUtil.equationToExp failed for complex equation: " + str;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
       then fail();
 
     case (eqn,_)
       equation
         str = BackendDump.equationString(eqn);
-        str = "BackendDAEUtil.equationToExp failed: " +& str;
+        str = "BackendDAEUtil.equationToExp failed: " + str;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
       then
         fail();
@@ -8240,7 +8240,7 @@ algorithm
       BackendDAE.DAE(systs, shared) = optModule(inDAE);
       systs = filterEmptySystems(systs);
       dae = BackendDAE.DAE(systs, shared);
-      SimCodeUtil.execStat("preOpt " +& moduleStr);
+      SimCodeUtil.execStat("preOpt " + moduleStr);
       if Flags.isSet(Flags.OPT_DAE_DUMP) then
         print(stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
         BackendDump.printBackendDAE(dae);
@@ -8249,7 +8249,7 @@ algorithm
     then (dae1, status);
 
     case (_, (_, moduleStr, b)::rest) equation
-      SimCodeUtil.execStat("<failed> preOpt " +& moduleStr);
+      SimCodeUtil.execStat("<failed> preOpt " + moduleStr);
       str = stringAppendList({"pre-optimization module ", moduleStr, " failed."});
       Error.addMessage(Error.INTERNAL_ERROR, {str});
       (dae,status) = preOptimizeDAE(inDAE,rest);
@@ -8372,7 +8372,7 @@ algorithm
 
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_),_)
       equation
-        //  print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
+        //  print("SystemSize: " + intString(systemSize(isyst)) + "\n");
         funcs = getFunctions(ishared);
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(funcs));
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
@@ -8381,15 +8381,15 @@ algorithm
         nvars = BackendVariable.daenumVariables(syst);
         neqns = systemSize(syst);
         syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
-        // SimCodeUtil.execStat("transformDAE -> singularSystemCheck " +& mAmethodstr);
+        // SimCodeUtil.execStat("transformDAE -> singularSystemCheck " + mAmethodstr);
         // match the system and reduce index if neccessary
         (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
-        // SimCodeUtil.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1);
+        // SimCodeUtil.execStat("transformDAE -> matchingAlgorithm " + mAmethodstr + " index Reduction Method " + str1);
       then (syst,shared,SOME(arg),true);
 
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
       equation
-        str = "Transformation Module " +& mAmethodstr +& " index Reduction Method " +& str1 +& " failed!";
+        str = "Transformation Module " + mAmethodstr + " index Reduction Method " + str1 + " failed!";
         if not isInitializationDAE(ishared) then
           Error.addMessage(Error.INTERNAL_ERROR, {str});
         end if;
@@ -8419,7 +8419,7 @@ algorithm
       equation
         // do state selection
         outDAE = sDfunc(BackendDAE.DAE(systs,shared),args);
-        SimCodeUtil.execStat("transformDAE -> state selection " +& methodstr);
+        SimCodeUtil.execStat("transformDAE -> state selection " + methodstr);
       then
          outDAE;
     else inDAE;
@@ -8508,7 +8508,7 @@ algorithm
     case (_, BackendDAE.SHARED(info = BackendDAE.EXTRA_INFO(fileNamePrefix=fileNamePrefix)))
       equation
         seqNo = System.tmpTickIndex(Global.backendDAE_fileSequence);
-        fileName = fileNamePrefix +& "_" +& intString(seqNo) +& "_Comps" +& intString(systemSize(isyst)) +& ".graphml";
+        fileName = fileNamePrefix + "_" + intString(seqNo) + "_Comps" + intString(systemSize(isyst)) + ".graphml";
         IndexReduction.dumpSystemGraphML(isyst,ishared,NONE(),fileName,false);
       then ();
 
@@ -8546,7 +8546,7 @@ algorithm
         BackendDAE.DAE(systs, shared) = optModule(inDAE);
         systs = filterEmptySystems(systs);
         dae = BackendDAE.DAE(systs, shared);
-        SimCodeUtil.execStat("postOpt " +& moduleStr);
+        SimCodeUtil.execStat("postOpt " + moduleStr);
         if Flags.isSet(Flags.OPT_DAE_DUMP) then
           print(stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
           BackendDump.printBackendDAE(dae);
@@ -8557,7 +8557,7 @@ algorithm
 
     case (_, (_, moduleStr, b)::rest, _, _)
       equation
-        SimCodeUtil.execStat("postOpt <failed> " +& moduleStr);
+        SimCodeUtil.execStat("postOpt <failed> " + moduleStr);
         str = stringAppendList({"post-optimization module ", moduleStr, " failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         (dae,status) = postOptimizeDAE(inDAE,rest,matchingAlgorithm,daeHandler);
@@ -9350,7 +9350,7 @@ algorithm
 
     case (exp::_, _ ,_)
       equation
-        msg = "./Compiler/BackEnd/BackendDAEUtil.mo: function getConditionList1 failed for " +& ExpressionDump.printExpStr(exp) +& "\n";
+        msg = "./Compiler/BackEnd/BackendDAEUtil.mo: function getConditionList1 failed for " + ExpressionDump.printExpStr(exp) + "\n";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
      then fail();
   end matchcontinue;

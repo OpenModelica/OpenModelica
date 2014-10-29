@@ -456,9 +456,9 @@ algorithm
 Sorry - Support for Discrete Equation Systems is not yet implemented\n";
         crlst = List.map(var_lst,BackendVariable.varCref);
         slst = List.map(crlst,ComponentReference.printComponentRefStr);
-        msg = msg +& stringDelimitList(slst,"\n");
+        msg = msg + stringDelimitList(slst,"\n");
         slst = List.map(eqn_lst,BackendDump.equationString);
-        msg = msg +& "\n" +& stringDelimitList(slst,"\n");
+        msg = msg + "\n" + stringDelimitList(slst,"\n");
         Error.addInternalError(msg);
       then
         fail();
@@ -680,7 +680,7 @@ algorithm
     case (e,_,_,_) /* equation no. assignments2 */
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("BackendDAETransform.getEquationAndSolvedVar_Internal failed at index: " +& intString(e));
+        Debug.traceln("BackendDAETransform.getEquationAndSolvedVar_Internal failed at index: " + intString(e));
       then
         fail();
   end matchcontinue;
@@ -893,7 +893,7 @@ algorithm
         (i_1,stack_3,comps_2);
     else
       equation
-        Debug.traceln("- BackendDAETransform.strongConnect failed for eqn " +& intString(v));
+        Debug.traceln("- BackendDAETransform.strongConnect failed for eqn " + intString(v));
       then
         fail();
   end matchcontinue;

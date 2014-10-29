@@ -79,7 +79,7 @@ algorithm
   str := match(r)
   local Integer n,d;
     case(RATIONAL(n,d)) equation
-      str = intString(n)+&"/"+&intString(d);
+      str = intString(n)+"/"+intString(d);
     then str;
   end match;
 end rationalString;

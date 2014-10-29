@@ -99,7 +99,7 @@ algorithm
         eqnsl = BackendEquation.equationList(eqns);
         ls1 = List.map1(eqnsl, equationStr, wcLst);
         s1 = stringDelimitList(ls1, ",");
-        s = "EqStr = {" +& s1 +& "};";
+        s = "EqStr = {" + s1 + "};";
       then
         s;
   end match;
@@ -258,7 +258,7 @@ algorithm
       equation
         vars = BackendVariable.varList(vars1);
         s = dumpVars(vars);
-        s = "VL = {" +& s +& "};";
+        s = "VL = {" + s + "};";
       then
         s;
   end match;

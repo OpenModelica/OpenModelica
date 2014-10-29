@@ -905,10 +905,10 @@ algorithm
       Util.TranslatableContent msg;
     case (MESSAGE(error_id, msg_type, severity, msg), tokens)
       equation
-        //print(" adding message: " +& intString(error_id) +& "\n");
+        //print(" adding message: " + intString(error_id) + "\n");
         msg_str = Util.translateContent(msg);
         ErrorExt.addMessage(error_id, msg_type, severity, msg_str, tokens);
-        //print(" succ add " +& msg_type_str +& " " +& severity_string +& ",  " +& msg +& "\n");
+        //print(" succ add " + msg_type_str + " " + severity_string + ",  " + msg + "\n");
       then
         ();
   end match;
@@ -1166,9 +1166,9 @@ algorithm
     case (Absyn.INFO(fileName = filename, lineNumberStart = line_start,
         columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end))
         equation
-          info_str = "[" +& Util.testsuiteFriendly(filename) +& ":" +&
-                     intString(line_start) +& ":" +& intString(col_start) +& "-" +&
-                     intString(line_end) +& ":" +& intString(col_end) +& "]";
+          info_str = "[" + Util.testsuiteFriendly(filename) + ":" +
+                     intString(line_start) + ":" + intString(col_start) + "-" +
+                     intString(line_end) + ":" + intString(col_end) + "]";
       then info_str;
   end match;
 end infoStr;

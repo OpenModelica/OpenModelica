@@ -620,7 +620,7 @@ algorithm
     else
       equation
         name = Types.unparseVar(inVar);
-        Error.addInternalError("Unknown var " +& name +& " in ConnectUtil.daeVarToCrefs");
+        Error.addInternalError("Unknown var " + name + " in ConnectUtil.daeVarToCrefs");
       then
         fail();
 
@@ -742,9 +742,9 @@ algorithm
     case (Connect.SETS(sets, sc, c, o), _, DAE.SOURCE(info=_), _)
       equation
         sc = sc + 1;
-        //src = DAEUtil.addAdditionalComment(inSource, " add inside flow(" +&
-        //        PrefixUtil.printPrefixStr(inPrefix) +& "/" +&
-        //        ComponentReference.printComponentRefStr(inCref) +&
+        //src = DAEUtil.addAdditionalComment(inSource, " add inside flow(" +
+        //        PrefixUtil.printPrefixStr(inPrefix) + "/" +
+        //        ComponentReference.printComponentRefStr(inCref) +
         //        ")");
         e = newElement(inCref, Connect.INSIDE(), Connect.FLOW(), inSource, sc);
         sets = setTrieAdd(e, sets);
@@ -1910,11 +1910,11 @@ algorithm
 
     case (true, _, _, _, _)
       equation
-        //print(printSetsStr(inSets) +& "\n");
+        //print(printSetsStr(inSets) + "\n");
         set_array = generateSetArray(inSets);
         sets = arrayList(set_array);
         //print("Sets:\n");
-        //print(stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
+        //print(stringDelimitList(List.map(sets, printSetStr), "\n") + "\n");
 
         has_expandable = daeHasExpandableConnectors(inDae);
         (sets, dae) = removeUnusedExpandableVariablesAndConnections(sets, inDae, has_expandable);
@@ -2045,7 +2045,7 @@ algorithm
 
     case (set::rest, _)
       equation
-        // print("OnlyExp Set:\n\t" +& stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
+        // print("OnlyExp Set:\n\t" + stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") + "\n");
         acc = if allCrefsAreExpandable(set) then listAppend(set, inAcc) else inAcc;
         acc = getOnlyExpandableConnectedCrefs(rest, acc);
       then
@@ -2567,7 +2567,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = stringDelimitList(List.map(inElements, printElementStr), ", ");
-        Debug.traceln("- ConnectUtil.generateEquEquations failed on {" +& str +& "}");
+        Debug.traceln("- ConnectUtil.generateEquEquations failed on {" + str + "}");
       then
         fail();
 
@@ -3099,7 +3099,7 @@ algorithm
           (has_stream as true, has_cardinality as _, sets, set_arr, _))
       equation
         e = evaluateInStream(cr, (has_stream, has_cardinality, sets, set_arr));
-        //print("Evaluated inStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
+        //print("Evaluated inStream(" + ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) + ") ->\n" + ExpressionDump.dumpExpStr(e, 0) + "\n");
       then
         (e, (has_stream, has_cardinality, sets, set_arr, true));
 
@@ -3108,7 +3108,7 @@ algorithm
           (has_stream as true, has_cardinality as _, sets, set_arr, _))
       equation
         e = evaluateActualStream(cr, sets, set_arr);
-        //print("Evaluated actualStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
+        //print("Evaluated actualStream(" + ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) + ") ->\n" + ExpressionDump.dumpExpStr(e, 0) + "\n");
       then
         (e, (has_stream, has_cardinality, sets, set_arr, true));
 
@@ -3171,8 +3171,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- ConnectUtil.evaluateInStream failed for " +&
-          ComponentReference.crefStr(inStreamCref) +& "\n");
+        Debug.traceln("- ConnectUtil.evaluateInStream failed for " +
+          ComponentReference.crefStr(inStreamCref) + "\n");
       then
         fail();
 
@@ -3497,10 +3497,10 @@ protected
 algorithm
   (potentials, flows, streams) := countConnectorVars(inVars);
   true := checkConnectorBalance2(potentials, flows, streams, path, info);
-  //print(Absyn.pathString(path) +& " has:\n\t" +&
-  //  intString(potentials) +& " potential variables\n\t" +&
-  //  intString(flows) +& " flow variables\n\t" +&
-  //  intString(streams) +& " stream variables\n\n");
+  //print(Absyn.pathString(path) + " has:\n\t" +
+  //  intString(potentials) + " potential variables\n\t" +
+  //  intString(flows) + " flow variables\n\t" +
+  //  intString(streams) + " stream variables\n\n");
 end checkConnectorBalance;
 
 protected function checkConnectorBalance2
@@ -3693,7 +3693,7 @@ algorithm
     case t
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.sizeOfVariable failed on " +& Types.printTypeStr(t));
+        Debug.traceln("- Inst.sizeOfVariable failed on " + Types.printTypeStr(t));
       then
         fail();
   end matchcontinue;
@@ -3809,10 +3809,10 @@ protected
   list<OuterConnect> o;
 algorithm
   Connect.SETS(sets, sc, c, o) := inSets;
-  outString := intString(sc) +& " sets:\n";
-  outString := outString +& printSetTrieStr(sets, "\t");
-  outString := outString +& "Connected sets:\n";
-  outString := outString +& printSetConnections(c) +& "\n";
+  outString := intString(sc) + " sets:\n";
+  outString := outString + printSetTrieStr(sets, "\t");
+  outString := outString + "Connected sets:\n";
+  outString := outString + printSetConnections(c) + "\n";
 end printSetsStr;
 
 protected function printSetTrieStr
@@ -3829,15 +3829,15 @@ algorithm
       list<SetTrieNode> nodes;
 
     case (Connect.SET_TRIE_DELETED(name = name), _)
-      then inAccumName +& "." +& name +& ": deleted\n";
+      then inAccumName + "." + name + ": deleted\n";
 
     case (Connect.SET_TRIE_LEAF(name = name,
         insideElement = ie, outsideElement = oe, flowAssociation = fa), _)
       equation
-        res = inAccumName +& "." +& name +& ":";
-        res = res +& printLeafElementStr(ie);
-        res = res +& printLeafElementStr(oe);
-        res = res +& printOptFlowAssociation(fa) +& "\n";
+        res = inAccumName + "." + name + ":";
+        res = res + printLeafElementStr(ie);
+        res = res + printLeafElementStr(oe);
+        res = res + printOptFlowAssociation(fa) + "\n";
       then
         res;
 
@@ -3846,7 +3846,7 @@ algorithm
 
     case (Connect.SET_TRIE_NODE(name = name, nodes = nodes), _)
       equation
-        name = inAccumName +& "." +& name;
+        name = inAccumName + "." + name;
         res = stringAppendList(List.map1(nodes, printSetTrieStr, name));
       then
         res;
@@ -3869,8 +3869,8 @@ algorithm
 
     case SOME(Connect.CONNECTOR_ELEMENT(face = face, ty = ty, set = set))
       equation
-        res = " " +& printFaceStr(face) +& " ";
-        res = res +& printConnectorTypeStr(ty) +& " [" +& intString(set) +& "]";
+        res = " " + printFaceStr(face) + " ";
+        res = res + printConnectorTypeStr(ty) + " [" + intString(set) + "]";
       then
         res;
 
@@ -3894,9 +3894,9 @@ algorithm
 
     case Connect.CONNECTOR_ELEMENT(name = name, face = face, ty = ty, set = set)
       equation
-        res = ComponentReference.printComponentRefStr(name) +& " ";
-        res = res +& printFaceStr(face) +& " ";
-        res = res +& printConnectorTypeStr(ty) +& " [" +& intString(set) +& "]";
+        res = ComponentReference.printComponentRefStr(name) + " ";
+        res = res + printFaceStr(face) + " ";
+        res = res + printConnectorTypeStr(ty) + " [" + intString(set) + "]";
       then
         res;
 
@@ -3937,7 +3937,7 @@ algorithm
       DAE.ComponentRef cr;
 
     case NONE() then "";
-    case SOME(cr) then " associated flow: " +&
+    case SOME(cr) then " associated flow: " +
       ComponentReference.printComponentRefStr(cr);
 
   end match;
@@ -3959,7 +3959,7 @@ protected
   Integer set1, set2;
 algorithm
   (set1, set2) := inConnection;
-  outString := "\t" +& intString(set1) +& " connected to " +& intString(set2) +& "\n";
+  outString := "\t" + intString(set1) + " connected to " + intString(set2) + "\n";
 end printSetConnection;
 
 protected function printSetStr
@@ -3981,7 +3981,7 @@ algorithm
 
     case Connect.SET_POINTER(index = index)
       equation
-        str = "pointer to set " +& intString(index);
+        str = "pointer to set " + intString(index);
       then
         str;
 
@@ -4060,13 +4060,13 @@ algorithm
       equation
         // 1 - get all expandable crefs
         expandableVars = getExpandableVariablesWithNoBinding(elems, {});
-        // print("All expandable (1):\n  " +& stringDelimitList(List.map(expandableVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        // print("All expandable (1):\n  " + stringDelimitList(List.map(expandableVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
 
         // 2 - remove all expandable without binding from the dae
         dae = DAEUtil.removeVariables(inDAE, expandableVars);
         // 2 - get all expandable crefs used in the dae (without the expandable vars)
         usedInDAE = DAEUtil.getAllExpandableCrefsFromDAE(dae);
-        // print("Used in the DAE (2):\n  " +& stringDelimitList(List.map(usedInDAE, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        // print("Used in the DAE (2):\n  " + stringDelimitList(List.map(usedInDAE, ComponentReference.printComponentRefStr), "\n  ") + "\n");
 
         // 3 - get all expandable crefs that are connected ONLY with expandable
         setsAsCrefs = getExpandableEquSetsAsCrefs(inSets, {});
@@ -4074,11 +4074,11 @@ algorithm
         // TODO! FIXME! maybe we should do fixpoint here??
         setsAsCrefs = mergeEquSetsAsCrefs(setsAsCrefs);
         onlyExpandableConnected = getOnlyExpandableConnectedCrefs(setsAsCrefs, {});
-        // print("All expandable - expandable connected (3):\n  " +& stringDelimitList(List.map(onlyExpandableConnected, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        // print("All expandable - expandable connected (3):\n  " + stringDelimitList(List.map(onlyExpandableConnected, ComponentReference.printComponentRefStr), "\n  ") + "\n");
 
         // 4 - subtract (2) from (3)
         unnecessary = List.setDifferenceOnTrue(onlyExpandableConnected, usedInDAE, ComponentReference.crefEqualWithoutSubs);
-        // print("REMOVE: (3)-(2):\n  " +& stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        // print("REMOVE: (3)-(2):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
 
         // 5 - remove unnecessary variables form the DAE
         dae = DAEUtil.removeVariables(inDAE, unnecessary);
@@ -4086,11 +4086,11 @@ algorithm
         sets = removeCrefsFromSets(inSets, unnecessary);
 
         equVars = getAllEquCrefs(sets, {});
-        // print("(6):\n  " +& stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        // print("(6):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
         expandableVars = List.setDifferenceOnTrue(expandableVars, usedInDAE, ComponentReference.crefEqualWithoutSubs);
-        // print("(1)-(2)=(7):\n  " +& stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        // print("(1)-(2)=(7):\n  " + stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") + "\n");
         unnecessary = List.setDifferenceOnTrue(expandableVars, equVars, ComponentReference.crefEqualWithoutSubs);
-        // print("REMOVE: (7)-(6):\n  " +& stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        // print("REMOVE: (7)-(6):\n  " + stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") + "\n");
         dae = DAEUtil.removeVariables(dae, unnecessary);
       then
         (sets, dae);

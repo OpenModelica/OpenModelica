@@ -446,7 +446,7 @@ algorithm
     else
       equation
         error_msg = "in XMLDump.binopSymbol2 - Unknown operator: ";
-        error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
+        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -784,7 +784,7 @@ algorithm
     case (_,_,_)
       equation
         error_msg = "in XMLDump.dumpCrefIdxLstArr - failed for var number:";
-        error_msg = error_msg +& intString(inInteger);
+        error_msg = error_msg + intString(inInteger);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then fail();
   end matchcontinue;
@@ -2141,7 +2141,7 @@ algorithm
       then ();
     case (_)
       equation
-        dumpComment("UNKNOWN EXPRESSION: " +& ExpressionDump.printExpStr(inExp));
+        dumpComment("UNKNOWN EXPRESSION: " + ExpressionDump.printExpStr(inExp));
       then ();
   end matchcontinue;
 end dumpExp2;
@@ -3690,7 +3690,7 @@ algorithm
     case (_::xs,_,varno,_)
       equation
         error_msg = "in XMLDump.dumpVarsAdds2 - Unknown var: ";
-        error_msg = error_msg +& intString(varno);
+        error_msg = error_msg + intString(varno);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
         var_1 = varno+1;
         dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
@@ -4108,7 +4108,7 @@ algorithm
     else
       equation
         error_msg = "in XMLDump.lbinopSymbol - Unknown operator";
-        error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
+        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -4130,7 +4130,7 @@ algorithm
     else
       equation
         error_msg = "in XMLDump.lunaryopSymbol - Unknown operator";
-        error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
+        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -4157,7 +4157,7 @@ algorithm
     else
       equation
         error_msg = "in XMLDump.relopSymbol - Unknown operator";
-        error_msg = error_msg +& ExpressionDump.debugBinopSymbol(inOperator);
+        error_msg = error_msg + ExpressionDump.debugBinopSymbol(inOperator);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();

@@ -1543,7 +1543,7 @@ algorithm
     case (DAE.T_METABOXED(ty = t1),t2,_) equation true = isBoxedType(t2); then subtype2(t1,t2,requireRecordNamesEqual);
     case (t1,DAE.T_METABOXED(ty = t2),_) equation true = isBoxedType(t1); then subtype2(t1,t2,requireRecordNamesEqual);
 
-    case (DAE.T_METAPOLYMORPHIC(name = l1),DAE.T_METAPOLYMORPHIC(name = l2),_) then l1 ==& l2;
+    case (DAE.T_METAPOLYMORPHIC(name = l1),DAE.T_METAPOLYMORPHIC(name = l2),_) then l1 == l2;
     case (DAE.T_UNKNOWN(_),_,_) then true;
     case (_,DAE.T_UNKNOWN(_),_) then true;
     case (DAE.T_NORETCALL(_),DAE.T_NORETCALL(_),_) then true;
@@ -2131,7 +2131,7 @@ algorithm
         s1 = if Config.typeinfo() then " /*" + Absyn.pathString(path) + "*/ (" else "(";
         s2 = stringDelimitList(l, ", ");
         /* s2 = stringAppendList(List.map(vs, unparseVar));
-        s2 = if_(s2 ==& "", "", "(" + s2 + ")"); */
+        s2 = if_(s2 == "", "", "(" + s2 + ")"); */
         str = stringAppendList({"enumeration",s1,s2,")"});
       then
         str;
@@ -6124,7 +6124,7 @@ algorithm
       InstTypes.PolymorphicBindings rest;
     case (_, (id2,tys)::_)
       equation
-        true = id ==& id2;
+        true = id == id2;
       then List.map(tys, boxIfUnboxedType);
     case (_, _::rest)
       equation
@@ -6405,7 +6405,7 @@ algorithm
       then {(id,{ty})};
     case (id1,ty,(id2,tys)::rest)
       equation
-        true = id1 ==& id2;
+        true = id1 == id2;
         ty = unboxedType(ty);
         ty = boxIfUnboxedType(ty);
       then (id2,ty::tys)::rest;
@@ -6542,7 +6542,7 @@ algorithm
 
     case ((ty1 as DAE.T_METAPOLYMORPHIC(name = id1))::_,(ty2 as DAE.T_METAPOLYMORPHIC(name = id2))::tys2,solvedBindings)
       equation
-        false = id1 ==& id2;
+        false = id1 == id2;
         // If we have $X,Y,..., bind $X = Y instead of Y = $X
         fromOtherFunction = System.stringFind(id1,"$") <> -1;
         id = if fromOtherFunction then id1 else id2;

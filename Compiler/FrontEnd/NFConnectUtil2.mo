@@ -251,7 +251,7 @@ algorithm
   name_str := ComponentReference.printComponentRefStr(name);
   face_str := faceStr(face);
   cty_str := connectorTypeStr(cty);
-  outString := cty_str +& " " +& name_str +& "<" +& face_str +& ">";
+  outString := cty_str + " " + name_str + "<" + face_str + ">";
 end connectorStr;
 
 public function faceStr
@@ -281,7 +281,7 @@ algorithm
       equation
         cref_str = ComponentReference.printComponentRefStr(cref);
       then
-        "stream(" +& cref_str +& ")";
+        "stream(" + cref_str + ")";
     else "NO_TYPE";
   end match;
 end connectorTypeStr;

@@ -103,7 +103,7 @@ public function printIntListStr
   input list<Integer> ilst;
   output String res;
 algorithm
-  res := "{" +& stringDelimitList(List.map(ilst, intString), ",") +& "}";
+  res := "{" + stringDelimitList(List.map(ilst, intString), ",") + "}";
 end printIntListStr;
 
 annotation(__OpenModelica_Interface="frontend");

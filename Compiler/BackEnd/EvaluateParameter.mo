@@ -460,7 +460,7 @@ algorithm
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
         repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e ,NONE());
-        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
       then
         (inKnVars,iCache,repl,repleval);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.CONST(),bindExp=SOME(e)),_,_,_,_,_,_,_)
@@ -477,7 +477,7 @@ algorithm
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
         repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1 ,NONE());
-        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
       then
         (knvars,cache,repl,repleval);
     // Parameter with evaluate=true
@@ -490,7 +490,7 @@ algorithm
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
         repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e ,NONE());
-        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
       then
         (knvars,iCache,repl,repleval);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e)),_,_,_,_,_,_,_)
@@ -508,7 +508,7 @@ algorithm
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
         repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1 ,NONE());
-        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
       then
         (knvars,cache,repl,repleval);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindValue=SOME(value)),_,_,_,_,_,_,_)
@@ -521,7 +521,7 @@ algorithm
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
         repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e, NONE());
-        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
       then
         (knvars,iCache,repl,repleval);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=attr),_,_,_,_,_,_,_)
@@ -541,7 +541,7 @@ algorithm
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
         repleval = BackendVarTransform.addReplacement(iReplEvaluate, cr, e1, NONE());
-        //  print("Evaluate Selected " +& BackendDump.varString(var) +& "\n->    " +& BackendDump.varString(v) +& "\n");
+        //  print("Evaluate Selected " + BackendDump.varString(var) + "\n->    " + BackendDump.varString(v) + "\n");
       then
         (knvars,cache,repl,repleval);
     // try to evaluate with initial equations
@@ -551,7 +551,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.PEDANTIC);
         info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
-        msg = "Cannot evaluate Variable \"" +& BackendDump.varString(var);
+        msg = "Cannot evaluate Variable \"" + BackendDump.varString(var);
         Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
       then
         (inKnVars,iCache,iRepl,iReplEvaluate);
@@ -590,7 +590,7 @@ algorithm
         e1 = ValuesUtil.valueExp(value);
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-        //  print("Evaluate " +& BackendDump.varString(var) +& "\n->    " +& ExpressionDump.printExpStr(e1) +& "\n");
+        //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e1) + "\n");
       then
         (inKnVars,cache,repl);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindValue=SOME(value)),_,_,_,_,_)
@@ -599,7 +599,7 @@ algorithm
         e = ValuesUtil.valueExp(value);
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e, NONE());
-        //  print("Evaluate " +& BackendDump.varString(var) +& "\n->    " +& ExpressionDump.printExpStr(e) +& "\n");
+        //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e) + "\n");
       then
         (inKnVars,iCache,repl);
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=attr),_,_,_,_,_)
@@ -613,7 +613,7 @@ algorithm
         e1 = ValuesUtil.valueExp(value);
         // save replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr, e1, NONE());
-        //  print("Evaluate " +& BackendDump.varString(var) +& "\n->    " +& ExpressionDump.printExpStr(e1) +& "\n");
+        //  print("Evaluate " + BackendDump.varString(var) + "\n->    " + ExpressionDump.printExpStr(e1) + "\n");
       then
         (inKnVars,cache,repl);
     // try to evaluate with initial equations
@@ -749,7 +749,7 @@ algorithm
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
         (e2, (_,_,_)) = Expression.traverseExp(e1, replaceCrefWithBindStartExp, (knvars,false,HashSet.emptyHashSet()));
-        msg = ComponentReference.printComponentRefStr(cr) +& " has unevaluateable fixed attribute value \"" +& ExpressionDump.printExpStr(e) +& "\" use values from start attribute(s) \"" +& ExpressionDump.printExpStr(e2) +& "\"";
+        msg = ComponentReference.printComponentRefStr(cr) + " has unevaluateable fixed attribute value \"" + ExpressionDump.printExpStr(e) + "\" use values from start attribute(s) \"" + ExpressionDump.printExpStr(e2) + "\"";
         Error.addSourceMessage(Error.COMPILER_WARNING, {msg}, info);
       then
         e2;

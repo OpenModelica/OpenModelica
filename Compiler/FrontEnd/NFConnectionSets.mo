@@ -611,7 +611,7 @@ protected
   Integer nc;
 algorithm
   DISJOINT_SETS(nodes, _, nc) := inSets;
-  print(intString(nc) +& " sets:\n");
+  print(intString(nc) + " sets:\n");
   printNodes(arrayList(nodes));
 end printSets;
 
@@ -649,8 +649,8 @@ algorithm
     case NODE(conn, parent_id, index)
       equation
         conn_str = NFConnectUtil2.connectorStr(conn);
-        print("[" +& intString(index) +& "] " +& conn_str +& " -> " +&
-          intString(parent_id) +& "\n");
+        print("[" + intString(index) + "] " + conn_str + " -> " +
+          intString(parent_id) + "\n");
       then
         ();
 

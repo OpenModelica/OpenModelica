@@ -268,11 +268,11 @@ algorithm
         //print("* Auxiliary set of equations: \n");
         //BackendDump.dumpEquationList(setS_eq);
 
-        outStringB = "{{"+&getMathematicaVarStr(knownVariables)+&","+&getMathematicaEqStr(setC_eq,allVars,sharedVars)+&"},{"
-                        +&getMathematicaVarStr(unknownVariables)+&","+&getMathematicaEqStr(setS_eq,allVars,sharedVars)+&"},"
-                        +&dumpVarsDistributionInfo(distributions)+&"}";
-        Print.printBuf("{"+&getMathematicaText("Extraction finished")+&"}");
-        outStringA = "Grid[{"+&Print.getString()+&"}]";
+        outStringB = "{{"+getMathematicaVarStr(knownVariables)+","+getMathematicaEqStr(setC_eq,allVars,sharedVars)+"},{"
+                        +getMathematicaVarStr(unknownVariables)+","+getMathematicaEqStr(setS_eq,allVars,sharedVars)+"},"
+                        +dumpVarsDistributionInfo(distributions)+"}";
+        Print.printBuf("{"+getMathematicaText("Extraction finished")+"}");
+        outStringA = "Grid[{"+Print.getString()+"}]";
 
         outString=if dumpSteps then outStringA else outStringB;
         resstr=writeFileIfNonEmpty(outputFile,outString);
@@ -281,8 +281,8 @@ algorithm
         (cache,Values.STRING(resstr),st);
     case (_,_,_,_,outputFile,_)
       equation
-        Print.printBuf("{"+&getMathematicaText("Extraction failed")+&"}");
-        outStringA = "Grid[{"+&Print.getString()+&"}]";
+        Print.printBuf("{"+getMathematicaText("Extraction failed")+"}");
+        outStringA = "Grid[{"+Print.getString()+"}]";
         _=writeFileIfNonEmpty(outputFile,outStringA);
         true = Flags.isSet(Flags.FAILTRACE);
         resstr = Absyn.pathStringNoQual(className);
@@ -305,21 +305,21 @@ protected function wrapInList
   input String text;
   output String oText;
 algorithm
-  oText:="{"+&text+&"}";
+  oText:="{"+text+"}";
 end wrapInList;
 
 protected function verticalGrid
   input list<String> elems;
   output String out;
 algorithm
-  out:="Grid[{"+&stringDelimitList(List.map(elems,wrapInList),",")+&"}]";
+  out:="Grid[{"+stringDelimitList(List.map(elems,wrapInList),",")+"}]";
 end verticalGrid;
 
 protected function verticalGridBoxed
   input list<String> elems;
   output String out;
 algorithm
-  out:="Grid[{"+&stringDelimitList(List.map(elems,wrapInList),",")+&"},Frame -> All]";
+  out:="Grid[{"+stringDelimitList(List.map(elems,wrapInList),",")+"},Frame -> All]";
 end verticalGridBoxed;
 
 protected function numerateList
@@ -333,12 +333,12 @@ algorithm
       then "";
     case({h},_)
       equation
-        s="{"+&(intString(index))+&","+&h+&"}";
+        s="{"+(intString(index))+","+h+"}";
       then s;
     case(h::t,_)
         equation
-          s="{"+&(intString(index))+&","+&h+&"}";
-          ss=s+&","+&(numerateList(t,index+1));
+          s="{"+(intString(index))+","+h+"}";
+          ss=s+","+(numerateList(t,index+1));
         then ss;
   end matchcontinue;
 end numerateList;
@@ -354,12 +354,12 @@ algorithm
       then "";
     case({h},{n})
       equation
-        s="{"+&(intString(n))+&","+&h+&"}";
+        s="{"+(intString(n))+","+h+"}";
       then s;
     case(h::t,n::tn)
         equation
-          s="{"+&(intString(n))+&","+&h+&"}";
-          ss=s+&","+&(numerateListIndex(t,tn));
+          s="{"+(intString(n))+","+h+"}";
+          ss=s+","+(numerateListIndex(t,tn));
         then ss;
   end matchcontinue;
 
@@ -379,7 +379,7 @@ algorithm
   eqns:=List.unique(List.map1r(equIndices, listGet, arrayList(mapIncRowEqn)));
   eqList:=List.map1r(eqns, BackendEquation.equationNth1, allEqs);
   eqsString:=List.map1(eqList, MathematicaDump.printMmaEqnStr, (variables, knownVariables));
-  out:="Grid[{"+&numerateListIndex(eqsString, eqns)+&"}, Frame -> All]";
+  out:="Grid[{"+numerateListIndex(eqsString, eqns)+"}, Frame -> All]";
 end equationsToMathematicaGrid;
 
 
@@ -403,7 +403,7 @@ out:=matchcontinue(vars,eqns)
     then {};
   case(var::var_t,eqn::eqn_t)
       equation
-        s = var+&","+&eqn;
+        s = var+","+eqn;
         r = unknowsMatchingToMathematicaGrid2(var_t,eqn_t);
       then s::r;
   end matchcontinue;
@@ -473,7 +473,7 @@ protected function variablesToMathematicaGrid
 algorithm
   varList:=List.map1r(varIndices,BackendVariable.getVarAt,variables);
   eqsString:=List.map2(varList,MathematicaDump.printMmaVarStr,false,variables);
-  out:="Grid[{"+&numerateListIndex(eqsString,varIndices)+&"},Frame -> All]";
+  out:="Grid[{"+numerateListIndex(eqsString,varIndices)+"},Frame -> All]";
 end variablesToMathematicaGrid;
 
 
@@ -486,18 +486,18 @@ out:=matchcontinue(filename,content)
     local String directory;
     case("",_)
       equation
-        //print("Mathematica Expression =\n"+&content);
+        //print("Mathematica Expression =\n"+content);
       then content;
     case(_,_)
       equation
         directory=System.dirname(filename);
         true=System.directoryExists(directory);
-        //print("Writing file "+&filename);
+        //print("Writing file "+filename);
         System.writeFile(filename,content);
       then "Done...";
     case(_,_)
         equation
-          //print("Mathematica Expression =\n"+&content);
+          //print("Mathematica Expression =\n"+content);
         then content;
   end matchcontinue;
 end writeFileIfNonEmpty;
@@ -527,7 +527,7 @@ protected function dumpVarsDistributionInfo
   input list<Option<DAE.Distribution>> d;
   output String s;
 algorithm
-  s:="{"+&stringDelimitList(List.map(d,dumpVarDistributionInfo),",")+&"}";
+  s:="{"+stringDelimitList(List.map(d,dumpVarDistributionInfo),",")+"}";
 end dumpVarsDistributionInfo;
 
 protected function getEquationsWithApproximatedAnnotation
@@ -677,7 +677,7 @@ protected function getMathematicaVarStr
   protected String s1;
 algorithm
   (states,algs,outputs,inputsStates) := MathematicaDump.printMmaVarsStr(vars);
-  out := "{"+&Util.stringDelimitListNonEmptyElts(listAppend(listAppend(states,algs),listAppend(outputs,inputsStates)),",")+&"}";
+  out := "{"+Util.stringDelimitListNonEmptyElts(listAppend(listAppend(states,algs),listAppend(outputs,inputsStates)),",")+"}";
 end getMathematicaVarStr;
 
 protected function getMathematicaEqStr
@@ -786,7 +786,7 @@ algorithm
         nxVarMap = listLength(xVarMap);
         nxEqMap = listLength(xEqMap);
         size=if nxEqMap>nxVarMap then nxEqMap else nxVarMap;
-        //print("Final matching of "+&intString(nxEqMap)+&" equations and "+&intString(nxVarMap)+&" variables \n");
+        //print("Final matching of "+intString(nxEqMap)+" equations and "+intString(nxVarMap)+" variables \n");
         Matching.matchingExternalsetIncidenceMatrix(size,size,mx);
 
         //BackendDump.dumpIncidenceMatrix(mx);
@@ -804,7 +804,7 @@ algorithm
         mt = BackendDAEUtil.transposeMatrix(mx,nxVarMap);
 
         comps = getComponentsWrapper(mx,mt,ass1,ass2);
-        //print("Removing equations larget than "+&intString(listLength(xEqMap))+&"\n");
+        //print("Removing equations larget than "+intString(listLength(xEqMap))+"\n");
         comps = removeDummyEquations(comps,listLength(xEqMap));
         //BackendDump.dumpComponentsOLD(comps);
 
@@ -814,7 +814,7 @@ algorithm
 
         comps_fixed = List.map1(comps_fixed,restoreIndicesEquivalence,arrayList(mapIncRowEqn)); // this is done to print the correct numbers
         printSep(getMathematicaText("Blocks (each row is a block)"));
-        printSep("Grid["+&listString(List.map(comps_fixed,intListString))+&",Frame->All]");
+        printSep("Grid["+listString(List.map(comps_fixed,intListString))+",Frame->All]");
 
 
         printSep(getMathematicaText("System of knowns after step 8 and 9"));
@@ -841,7 +841,7 @@ protected function printVarReduction2
   list<Integer> occurrences,vars;
 algorithm
   (occurrences,vars) := elem;
-  out:= "("+&stringDelimitList(List.map(vars,intString),",")+&") ("+&stringDelimitList(List.map(occurrences,intString),",")+&")";
+  out:= "("+stringDelimitList(List.map(vars,intString),",")+") ("+stringDelimitList(List.map(occurrences,intString),",")+")";
 end printVarReduction2;
 
 protected function pickReductionCandidates
@@ -930,7 +930,7 @@ algorithm
       equation
         true=count>0;
         temp = listGet(candidate,1);
-        //print("Eliminating "+&intString(temp)+&"\n");
+        //print("Eliminating "+intString(temp)+"\n");
         variables=List.setDifference(getVariables(m),{temp});
         newM = removeVarsNotInSet(m,variables,{});
         newM = reduceVariablesInMatrix(newM,candidatesTail,count-1);
@@ -1064,7 +1064,7 @@ protected function getMathematicaText
   input String text;
   output String textOut;
 algorithm
-  textOut:="Text[Style[\""+&text+&"\",Bold,Large]]";
+  textOut:="Text[Style[\""+text+"\",Bold,Large]]";
 end getMathematicaText;
 
 protected function getComponentsWrapper
@@ -1166,7 +1166,7 @@ end removeEquationInSquaredBlock;
 protected function printIntList
   input list<Integer> l;
 algorithm
-  print("List of size = "+&intString(listLength(l))+&"\n");
+  print("List of size = "+intString(listLength(l))+"\n");
   print(stringDelimitList(List.map(l,intString),","));
   print("\n");
 end printIntList;
@@ -1175,14 +1175,14 @@ protected function intListString
   input list<Integer> l;
   output String out;
 algorithm
-  out:="{"+&stringDelimitList(List.map(l,intString),",")+&"}";
+  out:="{"+stringDelimitList(List.map(l,intString),",")+"}";
 end intListString;
 
 protected function listString
   input list<String> l;
   output String out;
 algorithm
-  out:="{"+&stringDelimitList(l,",")+&"}";
+  out:="{"+stringDelimitList(l,",")+"}";
 end listString;
 
 protected function setOfList
@@ -1347,7 +1347,7 @@ algorithm
                 true=List.isEmpty(removeUnrelatedEquations(m,{h}));
                 not_found_var=BackendVariable.getVarAt(variables,h);
                 str = ComponentReference.crefStr(BackendVariable.varCref(not_found_var));
-                print("Warning: The variable '"+&str+&"' was not found in the system of knowns\n");
+                print("Warning: The variable '"+str+"' was not found in the system of knowns\n");
                 checkSystemContainsVars(m,t,variables);
             then ();
         case(_,h::t,_)
@@ -1501,7 +1501,7 @@ protected function prepareForMatching
   protected list<list<Integer>> m;
 algorithm
 (eqMap,varMap,m):=prepareForMatching2(mExt,{},{},{});
-//print("Matrix to match: equations = "+&intString(listLength(eqMap))+&" variables = "+&intString(listLength(varMap))+&"\n");
+//print("Matrix to match: equations = "+intString(listLength(eqMap))+" variables = "+intString(listLength(varMap))+"\n");
 mOut:=listArray(fixUnderdeterminedSystem(m,listLength(varMap),listLength(eqMap)));
 end prepareForMatching;
 
@@ -1583,7 +1583,7 @@ algorithm
         then ();
     case((eq,vars)::t)
         equation
-          print(intString(eq)+&":"+&stringDelimitList(List.map(vars,intString),",")+&"\n");
+          print(intString(eq)+":"+stringDelimitList(List.map(vars,intString),",")+"\n");
           dumpExtIncidenceMatrix(t);
         then ();
   end match;
@@ -1679,7 +1679,7 @@ algorithm
       _ = BackendEquation.equationList(ieqns);
       eqnLst = BackendEquation.equationList(eqns);
       crefDouble = findArraysPartiallyIndexed(eqnLst);
-      //print("partially indexed crs:"+&Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+&"\n");
+      //print("partially indexed crs:"+Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+"\n");
       repl = BackendVarTransform.emptyReplacements();
 
       (m,_,_,_) = BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE());
@@ -1839,7 +1839,7 @@ protected function findArraysPartiallyIndexedRecords "finds vector variables ins
   output HashTable.HashTable outHt;
 algorithm
  (_,outHt) := BackendEquation.traverseBackendDAEExpsEqnList(inEqs,findArraysPartiallyIndexedRecordsExpVisitor,ht);
- //print("partially indexed crs from reccrs:"+&Util.stringDelimitList(Util.listMap(outRef,Exp.printComponentRefStr),",\n")+&"\n");
+ //print("partially indexed crs from reccrs:"+Util.stringDelimitList(Util.listMap(outRef,Exp.printComponentRefStr),",\n")+"\n");
 end findArraysPartiallyIndexedRecords;
 
 protected function findArraysPartiallyIndexedRecordsExpVisitor "visitor function for expressions in findArraysPartiallyIndexedRecords"
@@ -1951,7 +1951,7 @@ algorithm
       SOME(elimVar) = varOptArr[elimVarIndex];
       BackendDAE.VAR(varName = cr1) = elimVar;
       (e2, source) = solveEqn2(e, cr1);
-//      print("Eliminated variable #" +& intString(elimVarIndex) +& " in equation #" +& intString(eqnIndex) +& "\n");
+//      print("Eliminated variable #" + intString(elimVarIndex) + " in equation #" + intString(eqnIndex) + "\n");
 
       //false = BackendVariable.isStateVar(elimVar);
       //BackendVariable.isVariable(cr1,vars,knvars) "cr1 not constant";
@@ -2556,14 +2556,14 @@ protected function rateVariable
 algorithm
   acc:=0.0;
   BackendDAE.VAR(varName=cr) := var;
-  i := 1.0 /. (1.0 +. intReal(ComponentReference.crefDepth(cr))); // larger names = lower rating
-  acc:=acc +. i;
+  i := 1.0 / (1.0 + intReal(ComponentReference.crefDepth(cr))); // larger names = lower rating
+  acc:=acc + i;
   i:=if BackendVariable.isParam(var) then 3.0 else 0.0; // parametes has higher rating than variables
-  acc:=acc +. i;
+  acc:=acc + i;
   i:=if BackendVariable.isStateVar(var) then 5.0 else 0.0; // states have higher rating than variables and parameters
-  acc:=acc +. i;
+  acc:=acc + i;
   i:=if BackendVariable.varHasUncertainValueRefine(var) then 7.0 else 0.0; // uncertain variables have the highest rating for this elimination
-  acc:=acc +. i;
+  acc:=acc + i;
   out:=acc;
 end rateVariable;
 
@@ -3137,7 +3137,7 @@ algorithm
     case(cr::cr_t,i::i_t)
       equation
         s = if i>0 then "+" else "-";
-        print(s+&ComponentReference.printComponentRefStr(cr)+&", ");
+        print(s+ComponentReference.printComponentRefStr(cr)+", ");
         dumpAliasSets2(cr_t,i_t);
       then ();
   end match;
@@ -3158,7 +3158,7 @@ algorithm
   case(SOME(DAE.SOURCE(comment=comment)))
   equation
     str = boolString(isApproximatedEquation2(comment));
-    print(" *Approximated = "+&str);
+    print(" *Approximated = "+str);
   then ();
   end match;
 end dumpAliasSets3;

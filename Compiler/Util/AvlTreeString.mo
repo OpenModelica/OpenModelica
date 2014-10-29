@@ -501,14 +501,14 @@ algorithm
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = "< value=" +& valueStr(rval) +& ",key=" +& keyStr(rkey) +& ",height="+& intString(h)+& s2 +& s3 +& ">\n";
+        res = "< value=" + valueStr(rval) + ",key=" + keyStr(rkey) + ",height="+ intString(h)+ s2 + s3 + ">\n";
       then
         res;
     case (NODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = "<NONE," +& s2 +& ", "+& s3 +& ">";
+        res = "<NONE," + s2 + ", "+ s3 + ">";
 
       then
         res;

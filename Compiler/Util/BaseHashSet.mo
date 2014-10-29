@@ -161,7 +161,7 @@ algorithm
         print(intString(bsize));
         print(" key: ");
         s = keystrFunc(key);
-        print(s +& " Hash: ");
+        print(s + " Hash: ");
         hval = hashFunc(key,bsize);
         print(intString(hval));
         print("\n");
@@ -453,7 +453,7 @@ algorithm
       equation
         (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
         rsize = intReal(size);
-        rexpandsize = rsize *. 0.4;
+        rexpandsize = rsize * 0.4;
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;

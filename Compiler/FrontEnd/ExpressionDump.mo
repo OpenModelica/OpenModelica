@@ -365,7 +365,7 @@ algorithm
         s = dumpExpStr(e1,0);
         s = System.stringReplace(s, "\n", "");
       then
-        "1:"+&s;
+        "1:"+s;
   end match;
 end debugPrintSubscriptStr;
 
@@ -394,7 +394,7 @@ algorithm
       equation
         s = printExpStr(e1);
       then
-        "1:"+&s;
+        "1:"+s;
   end match;
 end printSubscriptStr;
 
@@ -501,7 +501,7 @@ algorithm
       String  scope, tyStr;
 
     case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _, _)
-      then "<EMPTY(scope: " +& scope +& ", name: " +& ComponentReference.printComponentRefStr(name) +& ", ty: " +& tyStr +& ")>";
+      then "<EMPTY(scope: " + scope + ", name: " + ComponentReference.printComponentRefStr(name) + ", ty: " + tyStr + ")>";
 
     case (DAE.ICONST(integer = i), _, _, _)
       equation
@@ -716,7 +716,7 @@ algorithm
         s1_1 = parenthesize(s1, pe1, p,false);
         s4 = stringDelimitList(
           List.map3(aexpl,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
-        s_4 = s1_1+& "["+& s4 +& "]";
+        s_4 = s1_1+ "["+ s4 + "]";
       then
         s_4;
 
@@ -747,7 +747,7 @@ algorithm
     // MetaModelica tuple
     case (DAE.META_TUPLE(es), _, _, _)
       equation
-        s = "Tuple" +& printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
+        s = "Tuple" + printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
       then
         s;
 
@@ -815,7 +815,7 @@ algorithm
     case (DAE.PATTERN(pattern=pat),_,_,_)
       then Patternm.patternStr(pat);
 
-    case (DAE.CODE(code=code),_,_,_) then "$Code(" +& Dump.printCodeStr(code) +& ")";
+    case (DAE.CODE(code=code),_,_,_) then "$Code(" + Dump.printCodeStr(code) + ")";
 
     else printExpTypeStr(inExp);
 
@@ -877,11 +877,11 @@ algorithm
       DAE.Exp exp,gexp;
     case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=NONE()))
       equation
-        str = id +& " in " +& printExpStr(exp);
+        str = id + " in " + printExpStr(exp);
       then str;
     case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=SOME(gexp)))
       equation
-        str = id +& " guard " +& printExpStr(gexp) +& " in " +& printExpStr(exp);
+        str = id + " guard " + printExpStr(gexp) + " in " + printExpStr(exp);
       then str;
   end match;
 end reductionIteratorStr;
@@ -1293,7 +1293,7 @@ algorithm
         new_level1 = level + 1;
         sym = unaryopSymbol(op);
         ct = dumpExpStr(e, new_level1);
-        str = "expType:"+&Types.unparseType(Expression.typeof(e))+&" optype:"+&Types.unparseType(Expression.typeofOp(op));
+        str = "expType:"+Types.unparseType(Expression.typeof(e))+" optype:"+Types.unparseType(Expression.typeofOp(op));
         res_str = stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;
@@ -1552,7 +1552,7 @@ protected function printExpIfDiff ""
 algorithm
   s := if Expression.expEqual(e1,e2)
        then ""
-       else printExpStr(e1) +& " =!= " +& printExpStr(e2) +& "\n";
+       else printExpStr(e1) + " =!= " + printExpStr(e2) + "\n";
 end printExpIfDiff;
 
 public function printArraySizes "Function: printArraySizes"
@@ -1607,7 +1607,7 @@ algorithm str := matchcontinue(inExp)
   case(DAE.CREF(cr,_)) then ComponentReference.debugPrintComponentRefTypeStr(cr);
   case(DAE.ARRAY(_,_,expl))
     equation
-      s1 = "{" +& stringAppendList(List.map(expl,debugPrintComponentRefExp)) +& "}";
+      s1 = "{" + stringAppendList(List.map(expl,debugPrintComponentRefExp)) + "}";
     then
       s1;
   else printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
@@ -1788,16 +1788,16 @@ algorithm
     then "Clock()";
 
     case DAE.INTEGER_CLOCK(intervalCounter=intervalCounter, resolution=resolution)
-    then "Clock(" +& dumpExpStr(intervalCounter,0) +& ", " +& intString(resolution) +& ")";
+    then "Clock(" + dumpExpStr(intervalCounter,0) + ", " + intString(resolution) + ")";
 
     case DAE.REAL_CLOCK(interval=interval)
-    then "Clock(" +& dumpExpStr(interval,0) +& ")";
+    then "Clock(" + dumpExpStr(interval,0) + ")";
 
     case DAE.BOOLEAN_CLOCK(condition=condition, startInterval=startInterval)
-    then "Clock(" +& dumpExpStr(condition,0) +& ", " +& realString(startInterval) +& ")";
+    then "Clock(" + dumpExpStr(condition,0) + ", " + realString(startInterval) + ")";
 
     case DAE.SOLVER_CLOCK(c=c, solverMethod=solverMethod)
-    then "Clock(" +& clockKindString(c) +& ", " +& solverMethod +& ")";
+    then "Clock(" + clockKindString(c) + ", " + solverMethod + ")";
   end match;
 end clockKindString;
 

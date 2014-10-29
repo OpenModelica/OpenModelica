@@ -478,7 +478,7 @@ protected
   list<DAE.ComponentRef> crs;
 algorithm
   CACHE(evaluatedParams=(_,crs::_)) := cache;
-  print("printNumStructuralParameters: " +& intString(listLength(crs)) +& "\n");
+  print("printNumStructuralParameters: " + intString(listLength(crs)) + "\n");
 end printNumStructuralParameters;
 
 public function setCacheClassName
@@ -577,19 +577,19 @@ algorithm
     case (_, _)
       equation
         checkCachedInstFuncGuard(cache, func);
-        // print("Func quard [there]: " +& Absyn.pathString(func) +& "\n");
+        // print("Func quard [there]: " + Absyn.pathString(func) + "\n");
       then cache;
 
     case (CACHE(igraph,ef,ht,p,program),Absyn.FULLYQUALIFIED(_))
       equation
         ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
-        // print("Func quard [new]: " +& Absyn.pathString(func) +& "\n");
+        // print("Func quard [new]: " + Absyn.pathString(func) + "\n");
       then CACHE(igraph,ef,ht,p,program);
 
     // Non-FQ paths mean aliased functions; do not add these to the cache
     case (_,_)
       equation
-        // print("Func quard [unqual]: " +& Absyn.pathString(func) +& "\n");
+        // print("Func quard [unqual]: " + Absyn.pathString(func) + "\n");
       then (cache);
 
   end matchcontinue;
@@ -743,7 +743,7 @@ algorithm
       then
         inName;
 
-    else inName +& recordConstructorSuffix;
+    else inName + recordConstructorSuffix;
 
   end matchcontinue;
 end getRecordConstructorName;

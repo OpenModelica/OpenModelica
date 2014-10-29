@@ -103,7 +103,7 @@ algorithm
                               args, CevalScript.getSimulationOption(inSimOpt, "stopTime"),
                               pre, info);
 
-        intervals = realInt((rstopTime -. rstartTime) /. rstepTime);
+        intervals = realInt((rstopTime - rstartTime) / rstepTime);
         numberOfIntervals = DAE.ICONST(intervals);
       then
         (cache, startTime, stopTime, numberOfIntervals);

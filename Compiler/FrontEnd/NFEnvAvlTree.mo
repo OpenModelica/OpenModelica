@@ -720,19 +720,19 @@ algorithm
 
     case (SOME(NFInstTypes.AVLTREENODE(value = SOME(NFInstTypes.AVLTREEVALUE(key = rkey)), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
+        indent = inIndent + "  ";
         s1 = printTreeStrPP2(l, indent);
         s2 = printTreeStrPP2(r, indent);
-        res = "\n" +& inIndent +& rkey +& s1 +& s2;
+        res = "\n" + inIndent + rkey + s1 + s2;
       then
         res;
 
     case (SOME(NFInstTypes.AVLTREENODE(value = NONE(), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
+        indent = inIndent + "  ";
         s1 = printTreeStrPP2(l, indent);
         s2 = printTreeStrPP2(r, indent);
-        res = "\n" +& s1 +& s2;
+        res = "\n" + s1 + s2;
       then
         res;
   end match;

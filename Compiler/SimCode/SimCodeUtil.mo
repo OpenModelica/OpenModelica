@@ -3718,14 +3718,14 @@ algorithm
     // f(x) = f(y) -> x - y = 0
     case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2}))
      equation
-       true = s1 ==& s2;
+       true = s1 == s2;
        true = createNonlinearResidualExp_4(s1);
        res = Expression.expSub(e1,e2);
      then res;
     // f(x) = -f(y) -> x + y = 0
     case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}), DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})))
      equation
-       true = s1 ==& s2;
+       true = s1 == s2;
        true = createNonlinearResidualExp_4(s1);
        res = Expression.expAdd(e1,e2);
      then res;
@@ -3741,7 +3741,7 @@ algorithm
     // log(f(x)) = c -> f(x) = exp(c)
     case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.RCONST(r))
       equation
-       true = r <=. 10.0;
+       true = r <= 10.0;
        tp = Expression.typeof(iExp2);
        e = Expression.makePureBuiltinCall("exp", {iExp2}, tp);
        res = Expression.expSub(e1,e);
@@ -3749,7 +3749,7 @@ algorithm
     // log10(f(x)) = c -> f(x) = 10^(c)
     case(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), DAE.RCONST(r))
       equation
-       true = r <=. 10.0;
+       true = r <= 10.0;
        e = Expression.expPow(DAE.RCONST(10.0),iExp2);
        res = Expression.expSub(e1,e);
       then res;
@@ -3774,14 +3774,14 @@ algorithm
   // f(x) + f(y) = 0 -> x + y = 0
     case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.ADD(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
      equation
-       true = s1 ==& s2;
+       true = s1 == s2;
        true = createNonlinearResidualExp_4(s1);
        res = Expression.expAdd(e1,e2);
      then res;
   // f(x) - f(y) = 0 -> x - y = 0
     case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.SUB(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
      equation
-       true = s1 ==& s2;
+       true = s1 == s2;
        true = createNonlinearResidualExp_4(s1);
        res = Expression.expSub(e1,e2);
      then res;
@@ -9763,7 +9763,7 @@ algorithm
     // omcruntime on windows needs linking with mico2313 and wsock and then some :)
     case Absyn.STRING("omcruntime")
       equation
-        true = "Windows_NT" ==& System.os();
+        true = "Windows_NT" == System.os();
         strs = {"f2c.lib", "initialization.lib", "libexpat.lib", "math-support.lib", "meta.lib", "ModelicaExternalC.lib", "results.lib", "simulation.lib", "solver.lib", "sundials_kinsol.lib", "sundials_nvecserial.lib", "util.lib", "lapack_win32_MT.lib"};
       then
         strs;
@@ -9779,7 +9779,7 @@ algorithm
     // If the string starts with a -, it's probably -l or -L gcc flags
     case Absyn.STRING(str)
       equation
-        true = "-" ==& stringGetStringChar(str, 1);
+        true = "-" == stringGetStringChar(str, 1);
       then {str};
 
     case Absyn.STRING(str)
@@ -9812,7 +9812,7 @@ algorithm
     // omcruntime on windows needs linking with mico2313 and wsock and then some :)
     case Absyn.STRING(str as "omcruntime")
       equation
-        true = "Windows_NT" ==& System.os();
+        true = "Windows_NT" == System.os();
         str = "-l" + str;
         strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: {};
       then  strs;
@@ -9828,7 +9828,7 @@ algorithm
     // If omcruntime is linked statically against omniORB, we need to include those here as well
     case Absyn.STRING("omcruntime")
       equation
-        false = "Windows_NT" ==& System.os();
+        false = "Windows_NT" == System.os();
       then
         System.getRuntimeLibs();
 
@@ -9841,7 +9841,7 @@ algorithm
     // If the string starts with a -, it's probably -l or -L gcc flags
     case Absyn.STRING(str)
       equation
-        true = "-" ==& stringGetStringChar(str, 1);
+        true = "-" == stringGetStringChar(str, 1);
       then {str};
 
     case Absyn.STRING(str)
@@ -10847,7 +10847,7 @@ algorithm
       equation
         (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4";
         rsize = intReal(size);
-        rexpandsize = rsize *. 0.4;
+        rexpandsize = rsize * 0.4;
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;

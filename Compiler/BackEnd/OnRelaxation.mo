@@ -177,7 +177,7 @@ algorithm
         //((_,ass1,ass2)) = List.fold1(eqn_lst,naturalMatching1,vars,(1,ass1,ass2));
         //((_,ass1,ass2)) = List.fold1(eqn_lst,naturalMatching2,vars,(1,ass1,ass2));
         //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemVectorMatching.graphml");
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemVectorMatching.graphml");
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpMatching(ass2);
 
@@ -196,7 +196,7 @@ algorithm
         _ = arrayUpdate(ass1,128,temp);
         _ = arrayUpdate(ass2,temp,128);
           subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-          IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemHackMatching.graphml");
+          IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemHackMatching.graphml");
 */
 
         // Matching based on Enhanced Adiacency Matrix, take care of the solvability - theems to be good but not good enough
@@ -215,7 +215,7 @@ algorithm
         BackendDAEEXT.getAssignment(ass2,ass1);
 
         //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemOneMatching.graphml");
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemOneMatching.graphml");
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpMatching(ass2);
 
@@ -229,11 +229,11 @@ algorithm
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpMatching(ass2);
         //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemOneFreeMatching.graphml");
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemOneFreeMatching.graphml");
 
         // hier sollte zur vorsicht noch mal ein matching durchgefuehrt werden
           BackendDAEUtil.profilerstop1();
-          print("Matching  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          print("Matching  time: " + realString(BackendDAEUtil.profilertime1()) + "\n");
           BackendDAEUtil.profilerreset1();
           BackendDAEUtil.profilerstart1();
         // collect tearing variables and residual equations
@@ -269,13 +269,13 @@ algorithm
         (mark,roots,constraints) = prepairOrphansOrder(vorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vorphansarray1,vars,{},{}) "generate cliques for tearing vars";
         mark = prepairOrphansOrder2(vorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vorphansarray1);
         //  subsyst = BackendDAE.EQSYSTEM(vars,eqns,SOME(mc),SOME(mct),BackendDAE.NO_MATCHING(),{});
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemPreIndex.graphml");
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemPreIndex.graphml");
         //  print("roots:\n");
         //  BackendDump.debuglst((roots,intString,", ","\n"));
         //  print("constraints:\n");
         //  BackendDump.debuglst((constraints,intString,", ","\n"));
           BackendDAEUtil.profilerstop1();
-          print("Identifikation  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          print("Identifikation  time: " + realString(BackendDAEUtil.profilertime1()) + "\n");
           BackendDAEUtil.profilerreset1();
           BackendDAEUtil.profilerstart1();
         // Order of orphans
@@ -293,7 +293,7 @@ algorithm
 
         (vorphans,mark) = getOrphansOrderEdvanced3(roots,otherorphans,constraints,vorphans,vorphansarray1,mark,rowmarks);
           BackendDAEUtil.profilerstop1();
-          print("Reihenfolge  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          print("Reihenfolge  time: " + realString(BackendDAEUtil.profilertime1()) + "\n");
           BackendDAEUtil.profilerreset1();
           BackendDAEUtil.profilerstart1();
         List.map2_0(constraints,doMark,rowmarks,mark);
@@ -313,7 +313,7 @@ algorithm
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpIncidenceMatrix(ass22);
           BackendDAEUtil.profilerstop1();
-          print("Paarung  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          print("Paarung  time: " + realString(BackendDAEUtil.profilertime1()) + "\n");
           BackendDAEUtil.profilerreset1();
           BackendDAEUtil.profilerstart1();
         vec1 = arrayCreate(esize,{});
@@ -331,7 +331,7 @@ algorithm
 
         ((_,_,_,eqns,vars)) = Array.fold(vec2,getEqnsinOrder,(eqns,vars,ass22,BackendEquation.listEquation({}),BackendVariable.emptyVars()));
           BackendDAEUtil.profilerstop1();
-          print("Indizierung  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          print("Indizierung  time: " + realString(BackendDAEUtil.profilertime1()) + "\n");
           BackendDAEUtil.profilerreset1();
           BackendDAEUtil.profilerstart1();
         // replace evaluated parametes
@@ -340,12 +340,12 @@ algorithm
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         (subsyst,m,_) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
         //  BackendDump.dumpEqSystem(subsyst);
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemIndexed.graphml");
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemIndexed.graphml");
         (SOME(jac),_) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true, ishared);
         (beqs,_) = BackendDAEUtil.getEqnSysRhs(eqns,vars,SOME(funcs));
         beqs = listReverse(beqs);
         //  print("Jacobian:\n");
-        //  print(BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
+        //  print(BackendDump.dumpJacobianStr(SOME(jac)) + "\n");
         // dumpJacMatrix(jac,1,1,size,vars);
 
         matrix = arrayCreate(size,{});
@@ -365,12 +365,12 @@ algorithm
         crefexps = listArray(crefexplst);
         neweqns = makeGausElimination(1,size,matrix,crefexps,{});
           BackendDAEUtil.profilerstop1();
-          print("Gaus Elimination time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          print("Gaus Elimination time: " + realString(BackendDAEUtil.profilertime1()) + "\n");
           BackendDAEUtil.profilerreset1();
           BackendDAEUtil.profilerstart1();
         syst = replaceEquationsAddNew(eindex,neweqns,syst);
           BackendDAEUtil.profilerstop2();
-          print("Gesamt  time: " +& realString(BackendDAEUtil.profilertime2()) +& "\n");
+          print("Gesamt  time: " + realString(BackendDAEUtil.profilertime2()) + "\n");
           BackendDAEUtil.profilerreset1();
           BackendDAEUtil.profilerstart1();
         /*
@@ -396,9 +396,9 @@ algorithm
         //  (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL(), SOME(funcs));
         //  BackendDump.dumpEqSystem(syst);
         //  (i1,i2,i3) = countOperations1(syst,shared);
-        //  print("Add Operations: " +& intString(i1) +& "\n");
-        //  print("Mul Operations: " +& intString(i2) +& "\n");
-        //  print("Oth Operations: " +& intString(i3) +& "\n");
+        //  print("Add Operations: " + intString(i1) + "\n");
+        //  print("Mul Operations: " + intString(i2) + "\n");
+        //  print("Oth Operations: " + intString(i3) + "\n");
           print("Ok system relaxed\n");
         (syst,shared,_) = relaxSystem1(syst,shared,comps);
       then
@@ -594,15 +594,15 @@ algorithm
       equation
         false = intEq(colummarks[o],mark);
         _ = arrayUpdate(colummarks,o,mark);
-        //  print("Process Residual " +& intString(o) +& "\n");
+        //  print("Process Residual " + intString(o) + "\n");
         rlst = m[o];
         // check for partner
         elst = List.select1(List.flatten(List.map1r(rlst,arrayGet,mt)),intGt,0);
-        //  print("Search for " +& intString(o) +& " Parnters in: " +& stringDelimitList(List.map(elst,intString),", ") +& "\n");
+        //  print("Search for " + intString(o) + " Parnters in: " + stringDelimitList(List.map(elst,intString),", ") + "\n");
         partner = List.select1(elst,isResOrphan,ass2);
         partner = List.uniqueIntN(List.removeOnTrue(o, intEq, partner),arrayLength(colummarks));
         List.map2_0(partner,doMark,colummarks,mark);
-        //  print("Found for " +& intString(o) +& " Parnters: " +& stringDelimitList(List.map(partner,intString),", ") +& "\n");
+        //  print("Found for " + intString(o) + " Parnters: " + stringDelimitList(List.map(partner,intString),", ") + "\n");
         //  BackendDump.debuglst((rlst,intString,", ","\n"));
         vlst = List.map1r(rlst,BackendVariable.getVarAt,vars);
         blst = List.map(vlst,BackendVariable.isFlowVar);
@@ -648,7 +648,7 @@ algorithm
         ifoundFlow;
     case (r::rest,_,_,_,_,_,_,_,_,_)
       equation
-        //  print("check Var " +& intString(r)  +& " ass[e]: " +& intString(ass1[r]) +& "\n");
+        //  print("check Var " + intString(r)  + " ass[e]: " + intString(ass1[r]) + "\n");
         false = intEq(rowmarks[r],mark);
         // remove orphans
         next = List.select1(mt[r],isNoResOrphan,ass2);
@@ -656,7 +656,7 @@ algorithm
         next = List.select2(next, unmarked, colummarks, mark);
         // remove assigned equation of this row
         next = List.removeOnTrue(ass1[r], intEq, next);
-        //  print("Eqns use Var " +& intString(r) +& " : " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        //  print("Eqns use Var " + intString(r) + " : " + stringDelimitList(List.map(next,intString),", ") + "\n");
         true = List.isNotEmpty(next);
       then
         generateCliquesResidual1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,ifoundFlow,vars);
@@ -672,7 +672,7 @@ algorithm
         false = List.isNotEmpty(next);
         _ = arrayUpdate(rowmarks,r,mark);
         e = ass1[r];
-        // print("Go From " +& intString(r) +& " to " +& intString(e) +& "\n");
+        // print("Go From " + intString(r) + " to " + intString(e) + "\n");
         _ = arrayUpdate(colummarks,e,mark);
         rlst = ass2[e];
         next = List.fold1(rlst,List.removeOnTrue, intEq, m[e]);
@@ -738,13 +738,13 @@ algorithm
         rlst = ass2[e];
         lst = List.fold1(rlst,List.removeOnTrue, intEq, m[e]);
         (lst1 as _::_) = List.select2(lst, unmarked, rowmarks, mark-1);
-        // print("generateClique " +& intString(eqn) +& " to " +& stringDelimitList(List.map(lst1,intString),", ") +& "\n");
+        // print("generateClique " + intString(eqn) + " to " + stringDelimitList(List.map(lst1,intString),", ") + "\n");
         List.map4_0(lst1,generateResidualClique,m,mt,orphan,e);
         List.map2_0(rlst,doMark,rowmarks,mark);
         lst = List.select2(lst, marked, rowmarks, mark-1);
-        // print("Go From " +& intString(e) +& " to " +& stringDelimitList(List.map(r,intString),", ") +& "\n");
+        // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r,intString),", ") + "\n");
         _ = arrayUpdate(colummarks,e,mark);
-        // print("Go From " +& intString(e) +& " to " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(next,intString),", ") + "\n");
         generateCliquesResidual2(lst,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan);
         generateCliquesResidual2(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan);
       then
@@ -834,7 +834,7 @@ algorithm
         blst = List.map(vlst,BackendVariable.isFlowVar);
         constr = Util.boolAndList(blst);
         constraints = List.consOnTrue(constr, o, iconstraints);
-        //  print("Process Orphan " +& intString(o) +& "\n");
+        //  print("Process Orphan " + intString(o) + "\n");
         //  BackendDump.debuglst((mt[o],intString,", ","\n"));
         foundflow = prepairOrphansOrder1(mt[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,o,orphans,{o},false,vars);
         roots = List.consOnTrue(foundflow and not constr, o, iroots);
@@ -877,7 +877,7 @@ algorithm
         ifoundFlow;
     case (e::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        //  print("check Eqn " +& intString(e)  +& " ass[e]: " +& stringDelimitList(List.map(ass2[e],intString),", ") +& "\n");
+        //  print("check Eqn " + intString(e)  + " ass[e]: " + stringDelimitList(List.map(ass2[e],intString),", ") + "\n");
         false = intEq(colummarks[e],mark);
         // remove orphans
         next = List.select1(m[e],isNoOrphan,ass1);
@@ -885,7 +885,7 @@ algorithm
         next = List.select2(next, unmarked, rowmarks, mark);
         // remove assigned
         next = List.fold1(ass2[e],List.removeOnTrue, intEq, next);
-        //  print("Used Vars of " +& intString(e) +& " : " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        //  print("Used Vars of " + intString(e) + " : " + stringDelimitList(List.map(next,intString),", ") + "\n");
         true = List.isNotEmpty(next);
       then
         prepairOrphansOrder1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,prer,ifoundFlow,vars);
@@ -901,7 +901,7 @@ algorithm
         false = List.isNotEmpty(next);
         _ = arrayUpdate(colummarks,e,mark);
         r = ass2[e];
-        // print("Go From " +& intString(e) +& " to " +& stringDelimitList(List.map(r,intString),", ") +& "\n");
+        // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r,intString),", ") + "\n");
         List.map2_0(r,doMark,rowmarks,mark);
         elst = List.select1(List.map1r(r,arrayGet,ass1),intGt,0);
         next = List.flatten(List.map1r(r,arrayGet,mt));
@@ -910,7 +910,7 @@ algorithm
         vlst = List.map1r(r,BackendVariable.getVarAt,vars);
         blst = List.map(vlst,BackendVariable.isFlowVar);
         b1 = Util.boolOrList(blst);
-        // print("Go From " +& intString(e) +& " to " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(next,intString),", ") + "\n");
         b = prepairOrphansOrder1(next,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,r,b1 or ifoundFlow,vars);
       then
         prepairOrphansOrder1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,prer,b,vars);
@@ -943,7 +943,7 @@ algorithm
       equation
         false = intEq(rowmarks[o],imark);
         _ = arrayUpdate(rowmarks,o,imark);
-        //  print("Process Orphan " +& intString(o) +& "\n");
+        //  print("Process Orphan " + intString(o) + "\n");
         //  BackendDump.debuglst((mt[o],intString,", ","\n"));
         // check for partner
         elst = List.select1(mt[o],intGt,0) "eqns of orphan";
@@ -951,7 +951,7 @@ algorithm
         partner = List.select1(rlst,isOrphan,ass1);
         partner = List.unique(partner);
         List.map2_0(partner,doMark,rowmarks,imark);
-        //  print("Found for " +& intString(o) +& " Parnters: " +& stringDelimitList(List.map(partner,intString),", ") +& "\n");
+        //  print("Found for " + intString(o) + " Parnters: " + stringDelimitList(List.map(partner,intString),", ") + "\n");
         prepairOrphansOrder3(mt[o],ass1,ass2,m,mt,imark,rowmarks,colummarks,o,partner,orphans,{o});
        then
         prepairOrphansOrder2(rest,ass1,ass2,m,mt,imark,rowmarks,colummarks,orphans);
@@ -990,19 +990,19 @@ algorithm
         lst = List.unique(List.flatten(List.map1r(r,arrayGet,orphans)));
         true = listMember(preorphan,lst);
         _ = arrayUpdate(colummarks,e,mark);
-        // print("Go From " +& intString(e) +& " to " +& stringDelimitList(List.map(r,intString),", ") +& "\n");
+        // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r,intString),", ") + "\n");
         List.map2_0(r,doMark,rowmarks,mark);
         elst = List.select1(List.map1r(r,arrayGet,ass1),intGt,0);
         next = List.flatten(List.map1r(r,arrayGet,mt));
         next = List.fold1(elst,List.removeOnTrue, intEq, next);
-        // print("Go From " +& intString(e) +& " to " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(next,intString),", ") + "\n");
         prepairOrphansOrder3(next,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,partner,orphans,r);
         prepairOrphansOrder3(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,partner,orphans,prer);
       then
         ();
     case (e::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        //  print("check Eqn " +& intString(e)  +& " ass[e]: " +& stringDelimitList(List.map(ass2[e],intString),", ") +& "\n");
+        //  print("check Eqn " + intString(e)  + " ass[e]: " + stringDelimitList(List.map(ass2[e],intString),", ") + "\n");
         false = intEq(colummarks[e],mark);
         // update Incidence Matrix
         List.map4_0(prer,generateClique,m,mt,partner,e);
@@ -1031,22 +1031,22 @@ algorithm
     case (_,_,_,{},_) then ();
     case (_,_,_,orphan::rest,_)
       equation
-        //  print("Replace " +& intString(r) +& " with " +& intString(orphan) +& "\n");
+        //  print("Replace " + intString(r) + " with " + intString(orphan) + "\n");
         lst = mt[r];
         // mt[r]-e
         lst = List.removeOnTrue(e, intEq, lst);
-        //  print("mt[ " +& intString(r) +& "]= " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        //  print("mt[ " + intString(r) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
         _  = arrayUpdate(mt,r,lst);
         // mt[preorphan]+e
         lst = mt[orphan];
         lst = List.unique(e::lst);
-        //  print("mt[ " +& intString(orphan) +& "]= " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        //  print("mt[ " + intString(orphan) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
         _ = arrayUpdate(mt,orphan,lst);
         // m[e] - r + preorphan
         lst = m[e];
         lst = List.removeOnTrue(r, intEq, lst);
         lst = List.unique(orphan::lst);
-        //  print("m[ " +& intString(e) +& "]= " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        //  print("m[ " + intString(e) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
         _ = arrayUpdate(m,e,lst);
         generateClique(r,m,mt,rest,e);
      then
@@ -1069,22 +1069,22 @@ algorithm
     case (_,_,_,{},_) then ();
     case (_,_,_,orphan::rest,_)
       equation
-        //  print("Replace " +& intString(e) +& " with " +& intString(orphan) +& "\n");
+        //  print("Replace " + intString(e) + " with " + intString(orphan) + "\n");
         lst = m[e];
         // mt[e]-r
         lst = List.removeOnTrue(r, intEq, lst);
-        //  print("m[ " +& intString(e) +& "]= " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        //  print("m[ " + intString(e) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
         _ = arrayUpdate(m,e,lst);
         // m[orphan]+r
         lst = m[orphan];
         lst = List.unique(r::lst);
-        //  print("m[ " +& intString(orphan) +& "]= " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        //  print("m[ " + intString(orphan) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
         _ = arrayUpdate(m,orphan,lst);
         // mt[r] - e + orphan
         lst = mt[r];
         lst = List.removeOnTrue(e, intEq, lst);
         lst = List.unique(orphan::lst);
-        //  print("mt[ " +& intString(r) +& "]= " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        //  print("mt[ " + intString(r) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
         _ = arrayUpdate(mt,r,lst);
         generateResidualClique(r,m,mt,rest,e);
      then
@@ -1117,7 +1117,7 @@ algorithm
       equation
         false = intEq(rowmarks[o],mark);
         _ = arrayUpdate(rowmarks,o,mark);
-        //  print("Process Orphan " +& intString(o) +& "\n");
+        //  print("Process Orphan " + intString(o) + "\n");
         getOrphansOrderEdvanced1(mct[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,o,orphans,{});
       then
         getOrphansOrderEdvanced(rest,ass1,ass2,m,mt,mc,mct,mark+1,rowmarks,colummarks,orphans);
@@ -1185,7 +1185,7 @@ protected function addPreOrphan
 protected
   list<Integer> olst;
 algorithm
-  //  print("Add orpan[" +& intString(orphan) +& "] = " +& intString(preorphan) +& "\n");
+  //  print("Add orpan[" + intString(orphan) + "] = " + intString(preorphan) + "\n");
   olst := arr[orphan];
   olst := List.union({preorphan}, olst);
   _:=arrayUpdate(arr,orphan,olst);
@@ -1239,13 +1239,13 @@ algorithm
         ();
     case (e::_,_,_,_,_,_,_,_,_,_,_)
       equation
-        // print("Check Eqn: " +& intString(e) +& "\n");
+        // print("Check Eqn: " + intString(e) + "\n");
         false = intEq(colummarks[e],mark);
         r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
-        //  print("search in " +& stringDelimitList(List.map(r,intString),", ") +& "\n");
+        //  print("search in " + stringDelimitList(List.map(r,intString),", ") + "\n");
         olst = hasOrphanEdvanced(r,ass1,{});
         _ = arrayUpdate(colummarks,e,mark);
-        //  print("Found Orphans " +& stringDelimitList(List.map(olst,intString),", ") +& " ChildOrphan is " +& intString(preorphan) +& "\n");
+        //  print("Found Orphans " + stringDelimitList(List.map(olst,intString),", ") + " ChildOrphan is " + intString(preorphan) + "\n");
         addPreOrphans(preorphan,olst,orphans);
       then
         ();
@@ -1258,7 +1258,7 @@ algorithm
         elst = List.select1(List.map1r(r,arrayGet,ass1),intGt,0) "equations assigned with needed vars";
         next = listAppend(nextQueue, elst);
         _ = arrayUpdate(colummarks,e,mark);
-        //  print("goto " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        //  print("goto " + stringDelimitList(List.map(next,intString),", ") + "\n");
         getOrphansOrderEdvanced1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,next);
       then
         ();
@@ -1296,7 +1296,7 @@ algorithm
       equation
         false = intEq(rowmarks[o],mark);
         _ = arrayUpdate(rowmarks,o,mark);
-        //  print("Process Orphan " +& intString(o) +& "\n");
+        //  print("Process Orphan " + intString(o) + "\n");
         getConstraintesOrphansOrderEdvanced1(mct[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,o,orphans,{});
       then
         getConstraintesOrphansOrderEdvanced(rest,ass1,ass2,m,mt,mc,mct,mark+1,rowmarks,colummarks,orphans);
@@ -1333,13 +1333,13 @@ algorithm
         ();
     case (e::rest,_,_,_,_,_,_,_,_,_,_)
       equation
-        // print("Check Eqn: " +& intString(e) +& "\n");
+        // print("Check Eqn: " + intString(e) + "\n");
         false = intEq(colummarks[e],mark);
         r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
-        //  print("search in " +& stringDelimitList(List.map(r,intString),", ") +& "\n");
+        //  print("search in " + stringDelimitList(List.map(r,intString),", ") + "\n");
         olst = hasOrphanEdvanced(r,ass1,{});
         _ = arrayUpdate(colummarks,e,mark);
-        //  print("Found Orphans " +& stringDelimitList(List.map(olst,intString),", ") +& " ChildOrphan is " +& intString(preorphan) +& "\n");
+        //  print("Found Orphans " + stringDelimitList(List.map(olst,intString),", ") + " ChildOrphan is " + intString(preorphan) + "\n");
         addPreOrphans(preorphan,olst,orphans);
         r1 = ass2[e] "vars assignt with equation";
         r = List.fold1(r1,List.removeOnTrue, intEq, r) "needed vars of equation";
@@ -1357,7 +1357,7 @@ algorithm
         elst = List.select1(List.map1r(r,arrayGet,ass1),intGt,0) "equations assigned with needed vars";
         next = listAppend(nextQueue, elst);
         _ = arrayUpdate(colummarks,e,mark);
-        //  print("goto " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        //  print("goto " + stringDelimitList(List.map(next,intString),", ") + "\n");
         getConstraintesOrphansOrderEdvanced1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,next);
       then
         ();
@@ -1449,7 +1449,7 @@ algorithm
         lst;
     case(_,_,_,_,_,_,_)
       equation
-        print("Error in getLinkPosition1! Found Orphan with more than one parents " +& stringDelimitList(List.map(orphans,intString),", ") +& "\n");
+        print("Error in getLinkPosition1! Found Orphan with more than one parents " + stringDelimitList(List.map(orphans,intString),", ") + "\n");
       then
         fail();
   end matchcontinue;
@@ -1477,7 +1477,7 @@ algorithm
       equation
         lst = mergeOrphanParents(links,m,{});
         childs = getLinkPosition(lst,m,mt,imark,rowmarks,{});
-        //  print("Found for links " +& stringDelimitList(List.map(links,intString),", ") +& " childs " +& stringDelimitList(List.map(childs,intString),", ") +& "\n");
+        //  print("Found for links " + stringDelimitList(List.map(links,intString),", ") + " childs " + stringDelimitList(List.map(childs,intString),", ") + "\n");
         (acc,mark) = getOrphansOrderEdvanced5(rest,m,mt,imark+1,rowmarks,childs::iAcc);
       then
         (acc,mark);
@@ -1554,7 +1554,7 @@ algorithm
         (listArray(listReverse(m)),mT);
     case (o::rest,_,_,_,_,_)
       equation
-        //  print("getOrphansIncidenceMatrix for " +& intString(o) +& "\n");
+        //  print("getOrphansIncidenceMatrix for " + intString(o) + "\n");
         lst = List.map1r(vorphansarray[o],arrayGet,invmap);
         i = invmap[o];
         lst = List.consOnTrue(addself,i,lst);
@@ -1616,7 +1616,7 @@ algorithm
   comps := BackendDAETransform.tarjanAlgorithm(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
   ((order,linkslst)) := List.fold(comps,getOrder,({},{}));
-  //  print("order: " +& stringDelimitList(List.map(order,intString),", ") +& "\n");
+  //  print("order: " + stringDelimitList(List.map(order,intString),", ") + "\n");
   //  print("Links\n");
   //  BackendDump.dumpComponentsOLD(linkslst);
   (m,mt) := getOrphansIncidenceMatrix(vorphans,invmap,vorphansarray,{},arrayCreate(size,{}),false);
@@ -1633,7 +1633,7 @@ algorithm
   sortvorphans := List.flatten(listReverse(comps));
   // map back to global indexes
   sortvorphans := List.map1r(sortvorphans,arrayGet,map);
-  //  print("sortvorphans: " +& stringDelimitList(List.map(sortvorphans,intString),", ") +& "\n");
+  //  print("sortvorphans: " + stringDelimitList(List.map(sortvorphans,intString),", ") + "\n");
 end getOrphansOrderEdvanced3;
 
 protected function reduceOrphancMatrix
@@ -1803,7 +1803,7 @@ algorithm
     then ();
 
     case (_, _, _) equation
-      print(intString(row) +& ": ");
+      print(intString(row) + ": ");
       BackendDump.debuglst(matrix[row], dumpMatrix1, ", ", "\n");
       dumpMatrix(row+1, size, matrix);
     then ();
@@ -2015,14 +2015,14 @@ algorithm
     case(_,_,_,_,_,_,_,_)
       equation
         SOME(e) = diagonalEntry(col,matrix[row]);
-        //  print("Found entriy in " +& intString(row) +& "\n");
+        //  print("Found entriy in " + intString(row) + "\n");
         //  BackendDump.debuglst((matrix[row],dumpMatrix1,", ","\n"));
         e1 = Expression.expDiv(e,ce);
         (e1,_) = ExpressionSimplify.simplify(e1);
         (vars,eqns,cexp,tpl) = makeDummyVar(inTpl,e1,inVars,inEqns);
         elst = matrix[col];
         elst = List.map1(elst,mulRow,cexp);
-        //  print("mulRow " +& intString(col) +& " with " +& ExpressionDump.printExpStr(e1) +& "\n");
+        //  print("mulRow " + intString(col) + " with " + ExpressionDump.printExpStr(e1) + "\n");
         //  BackendDump.debuglst((elst,dumpMatrix1,", ","\n"));
         (elst,vars,eqns,tpl) = addRows(matrix[row],elst,col,vars,eqns,tpl,{});
         //  print("addRow\n");
@@ -2064,7 +2064,7 @@ algorithm
     case(_,_,_,_,_,_)
       equation
         SOME(e) = diagonalEntry(col,matrix[col]);
-        //  print("Jacobian as Matrix " +& intString(col) +& "\n");
+        //  print("Jacobian as Matrix " + intString(col) + "\n");
         //  BackendDump.debuglst((matrix[col],dumpMatrix1,", ","\n"));
         (vars,eqns,tpl) = gaussElimination1(col,col+1,size,e,matrix,inVars,inEqns,inTpl);
         //  dumpMatrix(1,size,matrix);
@@ -2074,7 +2074,7 @@ algorithm
     case(_,_,_,_,_,_)
       equation
         NONE() = diagonalEntry(col,matrix[col]);
-        print("gaussElimination failt because of non diagonal Entry for col " +& intString(col) +& "\n");
+        print("gaussElimination failt because of non diagonal Entry for col " + intString(col) + "\n");
       then
         fail();
   end matchcontinue;
@@ -2343,7 +2343,7 @@ protected
   list<tuple<Integer, Integer>> tpl;
 algorithm
   (c, tpl) := orphanspairs;
-  print(intString(c) +& ":\n");
+  print(intString(c) + ":\n");
   BackendDump.debuglst(tpl, dumpOrphansPairs1, ",", "\n");
 end dumpOrphansPairs;
 
@@ -2513,7 +2513,7 @@ algorithm
     case (o::rest,_,_,_,_,_,_,_)
       equation
         false = intEq(rowmarks[o],mark);
-        //  print("Process Orphan " +& intString(o) +& "\n");
+        //  print("Process Orphan " + intString(o) + "\n");
         getOrphansPairs1({o},ass1,ass2,m,mt,mark,rowmarks,colummarks,o,{});
       then
         getOrphansPairs(rest,ass1,ass2,m,mt,mark+1,rowmarks,colummarks);
@@ -2545,18 +2545,18 @@ algorithm
         ();
     case ({},_,_,_,_,_,_,_,_,_)
       equation
-        //  print("next queue " +& stringDelimitList(List.map(nextQueue,intString),", ") +& "\n");
+        //  print("next queue " + stringDelimitList(List.map(nextQueue,intString),", ") + "\n");
         getOrphansPairs1(nextQueue,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan,{});
       then
         ();
     case (r::_,_,_,_,_,_,_,_,_,_)
       equation
-        // print("Check Var: " +& intString(r) +& "\n");
+        // print("Check Var: " + intString(r) + "\n");
         false = intEq(rowmarks[r],mark);
         elst = List.select1(mt[r],intGt,0);
-        //  print("search in " +& stringDelimitList(List.map(elst,intString),", ") +& "\n");
+        //  print("search in " + stringDelimitList(List.map(elst,intString),", ") + "\n");
         o = hasResidualOrphan(elst,ass2);
-        //  print("Found Orphanpair " +& intString(o) +& " <-> " +& intString(orphan) +& "\n");
+        //  print("Found Orphanpair " + intString(o) + " <-> " + intString(orphan) + "\n");
         _ = arrayUpdate(ass1,orphan,o);
         _ = arrayUpdate(ass2, o, {orphan});
       then
@@ -2566,10 +2566,10 @@ algorithm
         false = intEq(rowmarks[r],mark);
         elst =  List.select1(mt[r],intGt,0) "equations of var";
         next = List.select1(List.flatten(List.map1r(elst,arrayGet,ass2)),intGt,0) "vars assignt with equations";
-        //  print("add to queue " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        //  print("add to queue " + stringDelimitList(List.map(next,intString),", ") + "\n");
         next = listAppend(nextQueue, next);
         _ = arrayUpdate(rowmarks,r,mark);
-        //  print("goto " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        //  print("goto " + stringDelimitList(List.map(next,intString),", ") + "\n");
         getOrphansPairs1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan,next);
       then
         ();
@@ -2605,7 +2605,7 @@ algorithm
       equation
         false = intEq(colummarks[o],mark);
         _ = arrayUpdate(colummarks,o,mark);
-          print("getOrphansPairsConstraints Process Orphan " +& intString(o) +& "\n");
+          print("getOrphansPairsConstraints Process Orphan " + intString(o) + "\n");
         getOrphansPairsConstraints1(mt[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,eqns,o,{});
       then
         getOrphansPairsConstraints(rest,ass1,ass2,m,mt,mark+1,rowmarks,colummarks,eqns);
@@ -2643,14 +2643,14 @@ algorithm
         ();
     case (e::_,_,_,_,_,_,_,_,_,_,_)
       equation
-        // print("Check Eqn: " +& intString(e) +& "\n");
+        // print("Check Eqn: " + intString(e) + "\n");
         false = intEq(colummarks[e],mark);
         rlst = List.select1(m[e],intGt,0) "vars of eqns";
         rlst = List.fold1(ass2[e],List.removeOnTrue, intEq, rlst);
         next = List.select1(List.flatten(List.map1r(rlst,arrayGet,mt)),intGt,0);
-        //  print("search in " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        //  print("search in " + stringDelimitList(List.map(next,intString),", ") + "\n");
         o = hasResidualOrphan1(next,ass2,eqnsarr);
-        //  print("Found Orphanpair " +& intString(o) +& " <-> " +& intString(orphan) +& "\n");
+        //  print("Found Orphanpair " + intString(o) + " <-> " + intString(orphan) + "\n");
         _ = arrayUpdate(ass1,orphan,o);
         ass2lst = ass2[o];
         ass2lst = orphan::ass2lst;
@@ -2667,7 +2667,7 @@ algorithm
         next = List.select1(List.map1r(rlst,arrayGet,ass1),intGt,0);
         next = listAppend(nextQueue, next);
         _ = arrayUpdate(colummarks,e,mark);
-        //  print("goto " +& stringDelimitList(List.map(next,intString),", ") +& "\n");
+        //  print("goto " + stringDelimitList(List.map(next,intString),", ") + "\n");
         getOrphansPairsConstraints1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqnsarr,orphan,next);
       then
         ();
@@ -2720,7 +2720,7 @@ algorithm
         true = intEq(orowmarks[vorphan],1);
         eorphan = ass1[vorphan];
         vorphans = ass2[eorphan];
-        //  print("getIndexesForEqnsAdvanced Process Orphans " +& stringDelimitList(List.map(vorphans,intString),", ") +& "  " +& intString(eorphan) +& "\n");
+        //  print("getIndexesForEqnsAdvanced Process Orphans " + stringDelimitList(List.map(vorphans,intString),", ") + "  " + intString(eorphan) + "\n");
         // generate subgraph from residual equation to tearing variable
         rows = List.select(m[eorphan], Util.intPositive);
         rows = List.fold1(ass2[eorphan],List.removeOnTrue, intEq, rows);
@@ -2743,25 +2743,25 @@ algorithm
         mark = mark+1;
         // collect all border vars and equations
         // mark all elements of the clique
-        //  print("Mark all Index Vars " +& stringDelimitList(List.map(rqueue,intString),", ") +& "\n");
+        //  print("Mark all Index Vars " + stringDelimitList(List.map(rqueue,intString),", ") + "\n");
         List.map2_0(rqueue,doMark,rowmarks,mark);
-        //  print("Mark all Index Eqns " +& stringDelimitList(List.map(queue,intString),", ") +& "\n");
+        //  print("Mark all Index Eqns " + stringDelimitList(List.map(queue,intString),", ") + "\n");
         List.map2_0(queue,doMark,colummarks,mark);
         // get all unmarked elements -> boarder elements
         bvars = getBorderElements(queue,m,mark,rowmarks,{});
         bvars = List.fold1(vorphans,List.removeOnTrue, intEq, bvars);
-        //  print("Mark all Index BVars " +& stringDelimitList(List.map(bvars,intString),", ") +& "\n");
+        //  print("Mark all Index BVars " + stringDelimitList(List.map(bvars,intString),", ") + "\n");
         beqns = getBorderElements(rqueue,mT,mark,colummarks,{});
         beqns = List.removeOnTrue(eorphan, intEq, beqns);
-        //  print("Mark all Index BEqns " +& stringDelimitList(List.map(beqns,intString),", ") +& "\n");
+        //  print("Mark all Index BEqns " + stringDelimitList(List.map(beqns,intString),", ") + "\n");
         lst = List.select2(m[eorphan],unmarked,rowmarks,mark);
         lst = listAppend(listAppend(vorphans,lst),bvars);
-        //  print("Set eorphan " +& intString(eorphan) +& ": " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        //  print("Set eorphan " + intString(eorphan) + ": " + stringDelimitList(List.map(lst,intString),", ") + "\n");
         _ = arrayUpdate(m,eorphan,lst);
 
         lst = List.select2(vorphanseqns,unmarked,colummarks,mark);
         lst = listAppend(eorphan::lst,beqns);
-        //  print("Set vorphan " +& intString(vorphan) +& ": " +& stringDelimitList(List.map(lst,intString),", ") +& "\n");
+        //  print("Set vorphan " + intString(vorphan) + ": " + stringDelimitList(List.map(lst,intString),", ") + "\n");
         _ = arrayUpdate(mT,vorphan,lst);
 
         setBoarderElemts(bvars,mT,mark,colummarks,eorphan);
@@ -2776,7 +2776,7 @@ algorithm
        _ = List.fold1r(vorphans,arrayUpdate,{},mT);
 
        //   syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{});
-       //   IndexReduction.dumpSystemGraphML(syst,shared,NONE(),intString(size) +& "SystemIndexing" +& intString(index) +& ".graphml");
+       //   IndexReduction.dumpSystemGraphML(syst,shared,NONE(),intString(size) + "SystemIndexing" + intString(index) + ".graphml");
 
       then
        getIndexesForEqnsAdvanced(rest,index1+1,m,mT,mark+2,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size);
@@ -2829,7 +2829,7 @@ algorithm
       equation
         lst = List.select2(m[elem],unmarked,arr,mark);
         _ = arrayUpdate(m,elem,orphan::lst);
-        //  print("Set BElement " +& intString(elem) +& ": " +& stringDelimitList(List.map(orphan::lst,intString),", ") +& "\n");
+        //  print("Set BElement " + intString(elem) + ": " + stringDelimitList(List.map(orphan::lst,intString),", ") + "\n");
         setBoarderElemts(rest,m,mark,arr,orphan);
       then
         ();
@@ -2853,7 +2853,7 @@ algorithm
       equation
         r = ass2[col];
         false = queuemark[col];
-        //  print("Index: " +& intString(index) +& ":" +& stringDelimitList(List.map(r,intString),", ") +& "  " +& intString(col) +& "\n");
+        //  print("Index: " + intString(index) + ":" + stringDelimitList(List.map(r,intString),", ") + "  " + intString(col) + "\n");
         _ = arrayUpdate(vec1,index,r);
         _ = arrayUpdate(vec2,index,col);
         _ = arrayUpdate(queuemark,col,true);
@@ -2904,7 +2904,7 @@ algorithm
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         r = ass2[c];
-        //  print("Process Colum " +& intString(c) +& " Rows " +& stringDelimitList(List.map(r,intString),", ") +& "  " +& boolString(b) +&"\n");
+        //  print("Process Colum " + intString(c) + " Rows " + stringDelimitList(List.map(r,intString),", ") + "  " + boolString(b) +"\n");
         (colums1,b2) = getIndexQueque1(r,c,mT,mark,rowmarks,{},false);
         //  BackendDump.debuglst((colums1,intString,", ","\n"));
         b1 = List.isNotEmpty(colums);
@@ -2940,7 +2940,7 @@ algorithm
     case (r::rest,_,_,_,_,_,_)
       equation
         true = intEq(rowmarks[r],mark);
-        //  print("Go from: " +& intString(c) +& " to " +& intString(r) +& "\n");
+        //  print("Go from: " + intString(c) + " to " + intString(r) + "\n");
         colums = List.select(mT[r], Util.intPositive);
         colums = List.removeOnTrue(c, intEq , colums);
         colums = listAppend(colums,icolums);
@@ -3058,7 +3058,7 @@ algorithm
         //true = intEq(r,vorphan);
         true = listMember(r,vorphan);
         // mark all entries in the queue
-        // print("Found orphan " +& intString(r) +& "\n");
+        // print("Found orphan " + intString(r) + "\n");
          _ = getIndexSubGraph(rest,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,false);
       then
         true;
@@ -3085,7 +3085,7 @@ algorithm
         false = intEq(colummarks[e],mark);
         nextrows = List.select(m[e], Util.intPositive);
         nextrows = List.setDifferenceOnTrue(nextrows,ass2[e],intEq);
-        //  print("search Subgraph: " +& intString(r) +& " across " +& intString(e) +& "\n");
+        //  print("search Subgraph: " + intString(r) + " across " + intString(e) + "\n");
         //_ = arrayUpdate(rowmarks,r,mark);
         _ = arrayUpdate(colummarks,e,mark);
         //  BackendDump.debuglst((nextrows,intString,", ","\n"));
@@ -3346,7 +3346,7 @@ algorithm
         ();
     case(c::rest,_,_,_,_,_,_,_,_)
       equation
-        //  print("Process Eqn " +& intString(c) +& "\n");
+        //  print("Process Eqn " + intString(c) + "\n");
         rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
         //_ = arrayUpdate(columark,c,mark);
         newqueue = onefreeMatchingBFS1(rows,c,mt,ass1,ass2,columark,mark,nextQeue);
@@ -3391,7 +3391,7 @@ algorithm
       BackendDAE.IncidenceMatrixElement vareqns;
     case (r::{},_,_,_,_,_,_,_)
       equation
-        //  print("Assign Var" +& intString(r) +& " with Eqn " +& intString(c) +& "\n");
+        //  print("Assign Var" + intString(r) + " with Eqn " + intString(c) + "\n");
         // assigen
         _ = arrayUpdate(ass1,r,c);
         _ = arrayUpdate(ass2,c,r);

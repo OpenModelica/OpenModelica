@@ -218,7 +218,7 @@ algorithm
     case TYPE_CLOCK(path = _) then "Clock";
     case HAS_RESTRICTIONS(path = _, hasEquations = false, hasAlgorithms = false, hasConstraints = false) then "new def";
     case HAS_RESTRICTIONS(path = _, hasEquations = b1, hasAlgorithms = b2, hasConstraints = _)
-      then "has" +& (if b1 then " equations" else "") +& (if b2 then " algorithms" else "") +& (if b1 then " constraints" else "");
+      then "has" + (if b1 then " equations" else "") + (if b2 then " algorithms" else "") + (if b1 then " constraints" else "");
     case EXTERNAL_OBJ(_) then "ExternalObject";
     case META_TUPLE(_) then "tuple";
     case META_LIST(_) then "list";
@@ -388,7 +388,7 @@ algorithm
     case FOUND_EQUATION() then "equation";
     case FOUND_CONSTRAINT() then "constraint";
     case NEWDEF() then "new definition";
-    case FOUND_COMPONENT(name) then "component " +& name;
+    case FOUND_COMPONENT(name) then "component " + name;
     case FOUND_EXT_DECL() then "external function declaration";
     else "Unknown event";
   end match;
@@ -532,7 +532,7 @@ algorithm
     case (st,ev)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- ClassInf.trans failed: " +& printStateStr(st) +& ", " +& printEventStr(ev));
+        Debug.traceln("- ClassInf.trans failed: " + printStateStr(st) + ", " + printEventStr(ev));
       then
         fail();
   end match;

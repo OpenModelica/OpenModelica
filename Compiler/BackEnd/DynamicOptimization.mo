@@ -179,10 +179,10 @@ algorithm
 
    case({}, _, _, _, _, _, _) then (inVars, inEqns);
    case(e::conLst, _, _, _, _, _, _) equation
-    //print("con"+& intString(inI) +& " "+& ExpressionDump.printExpStr(e) +& "\n=>" +& ExpressionDump.dumpExpStr(e,0) +& "\n");
+    //print("con"+ intString(inI) + " "+ ExpressionDump.printExpStr(e) + "\n=>" + ExpressionDump.dumpExpStr(e,0) + "\n");
     //BackendDump.printVariables(inVars);
     //BackendDump.printVariables(knvars);
-    conCrefName = prefConCrefName +& intString(inI);
+    conCrefName = prefConCrefName + intString(inI);
     (conEqn, dummyVar) = BackendEquation.generateResidualfromRealtion(conCrefName, e, DAE.emptyElementSource, inVars, knvars, conKind);
     v = BackendVariable.addNewVar(dummyVar, inVars);
     eqns = listAppend(conEqn, inEqns);

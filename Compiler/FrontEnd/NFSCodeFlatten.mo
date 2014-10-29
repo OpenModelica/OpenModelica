@@ -127,8 +127,8 @@ algorithm
         (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
 
         //System.stopTimer();
-        //Debug.traceln("NFSCodeFlatten.flattenClassInProgram took " +&
-        //  realString(System.getTimerIntervalTime()) +& " seconds");
+        //Debug.traceln("NFSCodeFlatten.flattenClassInProgram took " +
+        //  realString(System.getTimerIntervalTime()) + " seconds");
 
       then
         (prog, env);
@@ -136,7 +136,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("NFSCodeFlatten.flattenClassInProgram failed on " +&
+        Debug.traceln("NFSCodeFlatten.flattenClassInProgram failed on " +
           Absyn.pathString(inClassName));
       then
         fail();

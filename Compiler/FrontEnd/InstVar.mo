@@ -175,7 +175,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyInner(io);
 
-        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         // instantiate as inner
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph) =
@@ -222,7 +222,7 @@ algorithm
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         s1 = ComponentReference.printComponentRefStr(cref);
         s2 = Mod.prettyPrintMod(mod, 0);
-        s = s1 +&  " " +& s2;
+        s = s1 +  " " + s2;
         // add a warning!
         Error.addSourceMessage(Error.OUTER_MODIFICATION, {s}, info);
 
@@ -343,7 +343,7 @@ algorithm
            _,_) =
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
-        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
@@ -355,7 +355,7 @@ algorithm
           s1 = ComponentReference.printComponentRefStr(crefOuter);
           s2 = Dump.unparseInnerouterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
-          s1 = Absyn.pathString(typePath) +& " " +& s1;
+          s1 = Absyn.pathString(typePath) + " " + s1;
           Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
         end if;
 
@@ -378,7 +378,7 @@ algorithm
         // lookup in IH, crap, we couldn't find it!
         failure(_ = InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io));
 
-        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
@@ -390,7 +390,7 @@ algorithm
           s1 = ComponentReference.printComponentRefStr(crefOuter);
           s2 = Dump.unparseInnerouterStr(io);
           s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
-          s1 = Absyn.pathString(typePath) +& " " +& s1;
+          s1 = Absyn.pathString(typePath) + " " + s1;
           Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
         end if;
 
@@ -457,7 +457,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isInnerOuter(io);
 
-        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner outer: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) =
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
@@ -509,7 +509,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isNotInnerOuter(io);
 
-        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar NO inner NO outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar NO inner NO outer: " + PrefixUtil.printPrefixStr(pre) + "/" + n + " in env: " + FGraph.printGraphPathStr(env));
 
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
@@ -521,9 +521,9 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        Debug.traceln("- InstVar.instVar failed while instatiating variable: " +&
-          ComponentReference.printComponentRefStr(cref) +& " " +& Mod.prettyPrintMod(mod, 0) +&
-          "\nin scope: " +& FGraph.printGraphPathStr(env) +& " class:\n" +& SCodeDump.unparseElementStr(cl));
+        Debug.traceln("- InstVar.instVar failed while instatiating variable: " +
+          ComponentReference.printComponentRefStr(cref) + " " + Mod.prettyPrintMod(mod, 0) +
+          "\nin scope: " + FGraph.printGraphPathStr(env) + " class:\n" + SCodeDump.unparseElementStr(cl));
       then
         fail();
     end matchcontinue;
@@ -630,7 +630,7 @@ algorithm
         p1 = PrefixUtil.prefixPath(p1,pre);
         str = Absyn.pathString(p1);
         Error.updateCurrentComponent(str,info);
-        // print("instVar: " +& str +& " in scope " +& FGraph.printGraphPathStr(env) +& "\t mods: " +& Mod.printModStr(mod) +& "\n");
+        // print("instVar: " + str + " in scope " + FGraph.printGraphPathStr(env) + "\t mods: " + Mod.printModStr(mod) + "\n");
 
         // The prefix is handled in other parts of the code. Applying it too soon gives wrong results: // attr = InstUtil.propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets,ty,graph) =
@@ -693,7 +693,7 @@ algorithm
         cr = ComponentReference.makeCrefIdent(n,ty,{});
         (cache,cr) = PrefixUtil.prefixCref(inCache,inEnv,inIH,pre,cr);
         eq = DAE.ARRAY_EQUATION(dims, DAE.CREF(cr,ty), exp, source);
-        // print("Creating array equation for " +& PrefixUtil.printPrefixStr(pre) +& "." +& n +& " of const " +& DAEUtil.constStr(const) +& " in classinf " +& ClassInf.printStateStr(inState) +& "\n");
+        // print("Creating array equation for " + PrefixUtil.printPrefixStr(pre) + "." + n + " of const " + DAEUtil.constStr(const) + " in classinf " + ClassInf.printStateStr(inState) + "\n");
       then (cache,DAE.DAE(eq::dae));
     else (inCache,inDae);
   end matchcontinue;
@@ -1003,9 +1003,9 @@ algorithm
     case (_,env,_,_,_,mod,pre,n,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- InstVar.instVar2 failed: " +&
-          PrefixUtil.printPrefixStr(pre) +& "." +&
-          n +& "(" +& Mod.prettyPrintMod(mod, 0) +& ")\n  Scope: " +&
+        Debug.traceln("- InstVar.instVar2 failed: " +
+          PrefixUtil.printPrefixStr(pre) + "." +
+          n + "(" + Mod.prettyPrintMod(mod, 0) + ")\n  Scope: " +
           FGraph.printGraphPathStr(env));
       then
         fail();
@@ -1148,7 +1148,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.instScalar failed on " +& inName +& " in scope " +& PrefixUtil.printPrefixStr(inPrefix) +& " env: " +& FGraph.printGraphPathStr(inEnv) +& "\n");
+        Debug.traceln("- Inst.instScalar failed on " + inName + " in scope " + PrefixUtil.printPrefixStr(inPrefix) + " env: " + FGraph.printGraphPathStr(inEnv) + "\n");
       then
         fail();
   end matchcontinue;
@@ -1436,7 +1436,7 @@ algorithm
     case (DAE.NAMEMOD(ident = name, mod = DAE.MOD(eachPrefix = SCode.NOT_EACH(),
         eqModOption = eqmod)), _, _, _, _)
       equation
-        name = inIdent +& "." +& name;
+        name = inIdent + "." + name;
         true = checkArrayModBindingDimSize(eqmod, inDimension, inPrefix, name, inInfo);
       then
         ();
@@ -1659,10 +1659,10 @@ algorithm
       equation
         failure(_ = Mod.lookupIdxModification(mod, i));
         str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, {}, pre, SCode.VAR(), ci_state));
-        str2 = "[" +& stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") +& "]";
+        str2 = "[" + stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") + "]";
         str3 = Mod.prettyPrintMod(mod, 1);
-        str4 = PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "(" +& n +& str2 +& "=" +& str3 +& ")";
-        str2 = str1 +& str2;
+        str4 = PrefixUtil.printPrefixStrIgnoreNoPre(pre) + "(" + n + str2 + "=" + str3 + ")";
+        str2 = str1 + str2;
         Error.addSourceMessage(Error.MODIFICATION_INDEX_NOT_FOUND, {str1,str4,str2,str3}, info);
       then
         fail();
@@ -1670,7 +1670,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.instArray failed: " +& inIdent);
+        Debug.traceln("- Inst.instArray failed: " + inIdent);
       then
         fail();
   end matchcontinue;

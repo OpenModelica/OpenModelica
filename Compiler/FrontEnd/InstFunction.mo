@@ -289,8 +289,8 @@ algorithm
     case (_,env,_,_,_,SCode.CLASS(name=n),_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.implicitFunctionInstantiation failed " +& n);
-        Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
+        Debug.traceln("- Inst.implicitFunctionInstantiation failed " + n);
+        Debug.traceln("  Scope: " + FGraph.printGraphPathStr(env));
       then fail();
   end match;
 end implicitFunctionInstantiation;
@@ -355,7 +355,7 @@ algorithm
         // if we're not MetaModelica set it to non-partial
         c = if Config.acceptMetaModelicaGrammar() then inClass else SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), inClass);
         cs = if instFunctionTypeOnly then InstTypes.TYPE_CALL() else InstTypes.INNER_CALL();
-        //print("1 Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " path: " +& n +& "\n");
+        //print("1 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + n + "\n");
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,
             c, inst_dims, true, cs, ConnectionGraph.EMPTY, Connect.emptySet);
@@ -363,7 +363,7 @@ algorithm
         // do not add the stripped class to the env, is already there, not stripped!
         env_1 = env; // Env.extendFrameC(env,c);
         (cache,fpath) = Inst.makeFullyQualified(cache, env_1, Absyn.IDENT(n));
-        //print("2 Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " path: " +& Absyn.pathString(fpath) +& "\n");
+        //print("2 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + Absyn.pathString(fpath) + "\n");
         cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt);
         derFuncs = InstUtil.getDeriveAnnotation(cd, cmt,fpath,cache,cenv,ih,pre,info);
 
@@ -437,8 +437,8 @@ algorithm
     case (_,env,_,_,_,SCode.CLASS(name=n),_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.implicitFunctionInstantiation2 failed " +& n);
-        Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
+        Debug.traceln("- Inst.implicitFunctionInstantiation2 failed " + n);
+        Debug.traceln("  Scope: " + FGraph.printGraphPathStr(env));
       then fail();
   end matchcontinue;
 end implicitFunctionInstantiation2;
@@ -453,9 +453,9 @@ dae and can be generated code for in case they are required"
   input Absyn.Info info;
   output FCore.Cache outCache;
 algorithm
- // print("instantiate deriative functions for "+&Absyn.pathString(path)+&"\n");
+ // print("instantiate deriative functions for "+Absyn.pathString(path)+"\n");
  (outCache) := instantiateDerivativeFuncs2(cache,env,ih,DAEUtil.getDerivativePaths(funcs),path,info);
- // print("instantiated derivative functions for "+&Absyn.pathString(path)+&"\n");
+ // print("instantiated derivative functions for "+Absyn.pathString(path)+"\n");
 end instantiateDerivativeFuncs;
 
 protected function instantiateDerivativeFuncs2 "help function"
@@ -611,7 +611,7 @@ algorithm
     case (_,_,_,SCode.CLASS(name=id))
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.implicitFunctionTypeInstantiation failed " +& id +& "\nenv: " +& FGraph.getGraphNameStr(inEnv) +& "\nelelement: " +& SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions));
+        Debug.traceln("- Inst.implicitFunctionTypeInstantiation failed " + id + "\nenv: " + FGraph.getGraphNameStr(inEnv) + "\nelelement: " + SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions));
       then fail();
   end matchcontinue;
 end implicitFunctionTypeInstantiation;
@@ -650,7 +650,7 @@ algorithm
     // Instantiate each function, add its FQ name to the type, needed when deoverloading
     case (cache,env,ih,_,(fn :: fns))
       equation
-        // print("instOvl: " +& Absyn.pathString(fn) +& "\n");
+        // print("instOvl: " + Absyn.pathString(fn) + "\n");
         (cache,(c as SCode.CLASS(name=_,encapsulatedPrefix=_,restriction=rest)),cenv) =
            Lookup.lookupClass(cache, env, fn, true);
         true = SCode.isFunctionRestriction(rest);
@@ -663,7 +663,7 @@ algorithm
     case (_,_,_,_,(fn :: _))
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.instOverloaded_functions failed " +& Absyn.pathString(fn));
+        Debug.traceln("- Inst.instOverloaded_functions failed " + Absyn.pathString(fn));
       then
         fail();
   end matchcontinue;
@@ -905,7 +905,7 @@ algorithm
       else
         equation
           true = Flags.isSet(Flags.FAILTRACE);
-          Debug.traceln("InstFunction.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath));
+          Debug.traceln("InstFunction.getRecordConstructorFunction failed for " + Absyn.pathString(inPath));
         then
           fail();
 

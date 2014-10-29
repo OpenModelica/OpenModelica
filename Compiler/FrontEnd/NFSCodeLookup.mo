@@ -1192,8 +1192,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeLookup.lookupRedeclaredClassByItem failed on " +&
-            NFSCodeEnv.getItemName(inItem) +& " in " +&
+        Debug.traceln("- NFSCodeLookup.lookupRedeclaredClassByItem failed on " +
+            NFSCodeEnv.getItemName(inItem) + " in " +
             NFSCodeEnv.getEnvName(inEnv));
       then
         fail();
@@ -1263,8 +1263,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeLookup.lookupRedeclaredClass2 failed on " +&
-            NFSCodeEnv.getItemName(inItem) +& " in " +&
+        Debug.traceln("- NFSCodeLookup.lookupRedeclaredClass2 failed on " +
+            NFSCodeEnv.getItemName(inItem) + " in " +
             NFSCodeEnv.getEnvName(inEnv));
       then
         fail();
@@ -1829,8 +1829,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFSCodeLookup.qualifyPath failed on " +&
-          Absyn.pathString(inPath) +& " in " +&
+        Debug.traceln("- NFSCodeLookup.qualifyPath failed on " +
+          Absyn.pathString(inPath) + " in " +
           NFSCodeEnv.getEnvName(inEnv));
       then
         fail();

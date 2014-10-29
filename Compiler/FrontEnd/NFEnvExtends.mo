@@ -181,7 +181,7 @@ algorithm
   env := qualify(inEnv);
   outEnv := update2(env);
   //System.stopTimer();
-  //print("Updating extends took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
+  //print("Updating extends took " + realString(System.getTimerIntervalTime()) + " seconds.\n");
 end update;
 
 public function qualify
@@ -373,8 +373,8 @@ algorithm
     case (NFSCodeEnv.EXTENDS(baseClass = bc), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFEnvExtends.qualifyExtends failed on " +&
-          Absyn.pathString(bc) +& "\n");
+        Debug.traceln("- NFEnvExtends.qualifyExtends failed on " +
+          Absyn.pathString(bc) + "\n");
       then
         fail();
 
@@ -655,7 +655,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFEnvExtends.printExtendsError failed to print error " +&
+        Debug.traceln("- NFEnvExtends.printExtendsError failed to print error " +
           Absyn.pathString(inErrorPath));
       then
         fail();
@@ -1259,7 +1259,7 @@ algorithm
     // Add the base class suffix to the name and try to look it up.
     case (_, _, _)
       equation
-        basename = inName +& NFSCodeEnv.BASE_CLASS_SUFFIX;
+        basename = inName + NFSCodeEnv.BASE_CLASS_SUFFIX;
         (item, _) = NFSCodeLookup.lookupInheritedName(basename, inEnv);
         // Use a special $ce qualified so that we can find the correct class
         // with NFSCodeLookup.lookupBaseClassName.
@@ -1347,8 +1347,8 @@ algorithm
         info = SCode.elementInfo(inClassExtends);
         el_str = SCodeDump.unparseElementStr(inClassExtends,SCodeDump.defaultOptions);
         env_str = NFSCodeEnv.getEnvName(inEnv);
-        err_msg = "NFSCodeFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +&
-          el_str +& " in " +& env_str;
+        err_msg = "NFSCodeFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +
+          el_str + " in " + env_str;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {err_msg}, info);
       then
         fail();
@@ -1379,7 +1379,7 @@ algorithm
 
     else
       equation
-        estr = "- NFEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +&
+        estr = "- NFEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +
                "existing class extends information, this should not happen!.";
         Error.addMessage(Error.INTERNAL_ERROR, {estr});
       then

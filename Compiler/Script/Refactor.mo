@@ -877,7 +877,7 @@ algorithm
 
     case(rx1,rx2,ry1,ry2,crx1,cry1,crx2,cry2)
       equation
-        aspect = (realAbs(ry2 -. ry1) *. (realAbs(cry2 -. cry1))) /. (realAbs(rx2 -. rx1) *. (realAbs(crx2 -. crx1)));
+        aspect = (realAbs(ry2 - ry1) * (realAbs(cry2 - cry1))) / (realAbs(rx2 - rx1) * (realAbs(crx2 - crx1)));
         s = realString(aspect);
       then
       Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("aspectRatio"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
@@ -902,7 +902,7 @@ algorithm
       String s;
     case(x1,x2,n)
       equation
-        value = (x1 +. x2) /. 2.0;
+        value = (x1 + x2) / 2.0;
         s = realString(value);
       then
         Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(n),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
@@ -925,7 +925,7 @@ algorithm
       String s;
     case(arx1,arx2,crx1,crx2)
       equation
-        scaleFac = (realAbs(arx1 -. arx2)) /. (realAbs(crx1 -. crx2));
+        scaleFac = (realAbs(arx1 - arx2)) / (realAbs(crx1 - crx2));
         s = realString(scaleFac);
       then
         Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("scale"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
@@ -947,7 +947,7 @@ protected
 
 algorithm
 
-  value := val1 >. val2;
+  value := val1 > val2;
   flip := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(name),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.BOOL(value),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
 
 end getFlipAnn;
@@ -960,7 +960,7 @@ protected
   Real r;
   String s;
 algorithm
-  r := rot *. (-1.0);
+  r := rot * (-1.0);
   s := realString(r);
   rotation := Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("rotation"),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.REAL(s),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo);
 end getRotationAnn;
@@ -1538,7 +1538,7 @@ algorithm
   res := match(narg,argName)
   local String name;
     case(Absyn.NAMEDARG(name,_),_) equation
-      res = (name ==& argName);
+      res = (name == argName);
     then res;
   end match;
 end nameArgWithName;
@@ -2225,7 +2225,7 @@ algorithm
     case(Absyn.REAL(value = val))
     then val;
     case(Absyn.UNARY(exp = Absyn.REAL(value = val)))
-    then -.val;
+    then - val;
   end matchcontinue;
 end getValueFromRealExp;  */
 
@@ -2241,13 +2241,13 @@ algorithm
     then System.stringReal(realVal);
 
     case(Absyn.UNARY(exp = Absyn.REAL(value = realVal)))
-    then -. System.stringReal(realVal);
+    then - System.stringReal(realVal);
 
     case(Absyn.INTEGER(value = intVal))
     then intReal(intVal);
 
     case(Absyn.UNARY(exp = Absyn.INTEGER(value = intVal)))
-    then -. intReal(intVal);
+    then - intReal(intVal);
   end match;
 end getValueFromExp;
 

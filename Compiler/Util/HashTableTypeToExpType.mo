@@ -99,7 +99,7 @@ protected
 algorithm
   //str := Types.printTypeStr(inTy);
   //hash := System.stringHashDjb2Mod(str, hashMod);
-  //print("hash: " +& intString(hash) +& " for " +& str +& "\n");
+  //print("hash: " + intString(hash) + " for " + str + "\n");
   (tt, _) := inTy;
   t := (tt, NONE());
   hash := valueHashMod(t, hashMod);

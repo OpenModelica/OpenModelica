@@ -152,7 +152,7 @@ algorithm
     case (_,_,_)
       equation
         s = ComponentReference.printComponentRefStr(inSrc);
-        print("-BackendVarTransform.removeReplacement failed for " +& s +&"\n");
+        print("-BackendVarTransform.removeReplacement failed for " + s +"\n");
       then
         fail();
   end matchcontinue;
@@ -263,7 +263,7 @@ algorithm
     case (_,_,_,_)
       equation
         s = ComponentReference.printComponentRefStr(inSrc);
-        print("-BackendVarTransform.addReplacement failed for " +& s);
+        print("-BackendVarTransform.addReplacement failed for " + s);
       then
         fail();
   end matchcontinue;
@@ -300,7 +300,7 @@ algorithm
         REPLACEMENTS(ht_1,invHt_1,eht_1,iv,derConst);
     case (_,_,_)
       equation
-        print("-add_replacement failed for " +& ComponentReference.printComponentRefStr(inSrc) +& " = " +& ExpressionDump.printExpStr(inDst) +& "\n");
+        print("-add_replacement failed for " + ComponentReference.printComponentRefStr(inSrc) + " = " + ExpressionDump.printExpStr(inDst) + "\n");
       then
         fail();
   end matchcontinue;
@@ -665,7 +665,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         s = ComponentReference.printComponentRefStr(cr);
-        Debug.trace("- BackendVarTransform.addExtendReplacement failed for " +& s);
+        Debug.trace("- BackendVarTransform.addExtendReplacement failed for " + s);
       then extendrepl;
   end matchcontinue;
 end addExtendReplacement;
@@ -1824,9 +1824,9 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        msg = "BackendVarTransform: failed to replace left hand side of when equation " +&
-              ComponentReference.printComponentRefStr(oldCr) +& " with " +& ExpressionDump.printExpStr(inLhs) +& "\n";
-        // print(msg +& "\n");
+        msg = "BackendVarTransform: failed to replace left hand side of when equation " +
+              ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionDump.printExpStr(inLhs) + "\n";
+        // print(msg + "\n");
         Debug.trace(msg);
       then
         fail();
@@ -2359,9 +2359,9 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        msg = "BackendVarTransform: failed to replace left hand side of array assign statement " +&
-              ComponentReference.printComponentRefStr(oldCr) +& " with " +& ExpressionDump.printExpStr(lhs) +& "\n";
-        // print(msg +& "\n");
+        msg = "BackendVarTransform: failed to replace left hand side of array assign statement " +
+              ComponentReference.printComponentRefStr(oldCr) + " with " + ExpressionDump.printExpStr(lhs) + "\n";
+        // print(msg + "\n");
         Debug.trace(msg);
       then
         fail();
@@ -2696,9 +2696,9 @@ protected function printReplacementTupleStr "help function to dumpReplacements"
   output String str;
 algorithm
   // optional exteded type debugging
-  //str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
+  //str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
-  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.printExpStr(Util.tuple22(tpl));
+  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ExpressionDump.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
 
 public function dumpStatistics
@@ -2713,12 +2713,12 @@ protected
   Option<HashTable2.HashTable> derConst;
 algorithm
   REPLACEMENTS(ht,invht,extht,iVars,derConst) := inVariableReplacements;
-  print("Replacements: " +& intString(BaseHashTable.hashTableCurrentSize(ht)) +& "\n");
-  print("inv. Repl.  : " +& intString(BaseHashTable.hashTableCurrentSize(invht)) +& "\n");
-  print("ext  Repl.  : " +& intString(BaseHashTable.hashTableCurrentSize(extht)) +& "\n");
-  print("iVars.      : " +& intString(listLength(iVars)) +& "\n");
+  print("Replacements: " + intString(BaseHashTable.hashTableCurrentSize(ht)) + "\n");
+  print("inv. Repl.  : " + intString(BaseHashTable.hashTableCurrentSize(invht)) + "\n");
+  print("ext  Repl.  : " + intString(BaseHashTable.hashTableCurrentSize(extht)) + "\n");
+  print("iVars.      : " + intString(listLength(iVars)) + "\n");
   extht := Util.getOptionOrDefault(derConst,HashTable2.emptyHashTable());
-  print("derConst: " +& intString(BaseHashTable.hashTableCurrentSize(extht)) +& "\n");
+  print("derConst: " + intString(BaseHashTable.hashTableCurrentSize(extht)) + "\n");
 end dumpStatistics;
 
 annotation(__OpenModelica_Interface="backend");

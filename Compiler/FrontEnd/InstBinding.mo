@@ -672,7 +672,7 @@ algorithm
         // lochel: I moved the warning to the back end for now
         // s = componentName;
         // pre_str = PrefixUtil.printPrefixStr2(inPrefix);
-        // s = pre_str +& s;
+        // s = pre_str + s;
         // str = DAEUtil.printBindingExpStr(binding);
         // Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}, inInfo);
       then
@@ -730,7 +730,7 @@ algorithm
         tp_str = Types.unparseTypeNoAttr(tp);
         e_str = ExpressionDump.printExpStr(e);
         e_str_1 = stringAppend("=", e_str);
-        str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& "." +& componentName;
+        str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) + "." + componentName;
         Types.typeErrorSanityCheck(e_tp_str, tp_str, info);
         Error.addSourceMessage(Error.MODIFIER_TYPE_MISMATCH_ERROR, {str,tp_str,e_str_1,e_tp_str}, info);
       then
@@ -739,7 +739,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.makeBinding failed on component:" +& PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName);
+        Debug.traceln("- Inst.makeBinding failed on component:" + PrefixUtil.printPrefixStr(inPrefix) + "." + componentName);
       then
         fail();
   end matchcontinue;
@@ -770,10 +770,10 @@ public function makeRecordBinding
   output DAE.Binding outBinding;
 algorithm
   /*
-  print("makeRecordBinding:\nname" +& Absyn.pathString(inRecordName) +&
-    "\ntype:" +& Types.unparseType(inRecordType) +&
-    "\nmod:" +& Mod.printModStr(DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), inMods, NONE())) +&
-    "\nvars:" +& stringDelimitList(List.map(inRecordVars, Types.getVarName), ", ") +& "\n");
+  print("makeRecordBinding:\nname" + Absyn.pathString(inRecordName) +
+    "\ntype:" + Types.unparseType(inRecordType) +
+    "\nmod:" + Mod.printModStr(DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), inMods, NONE())) +
+    "\nvars:" + stringDelimitList(List.map(inRecordVars, Types.getVarName), ", ") + "\n");
   */
   outBinding := makeRecordBinding2(inCache, inEnv, inRecordName, inRecordType, inRecordVars, inMods, inInfo, {}, {}, {});
 end makeRecordBinding;
@@ -875,7 +875,7 @@ algorithm
     case (_, _, _, _, DAE.TYPES_VAR(name = name) :: _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.makeRecordBinding2 failed for " +& Absyn.pathString(inRecordName) +& "." +& name +& "\n");
+        Debug.traceln("- Inst.makeRecordBinding2 failed for " + Absyn.pathString(inRecordName) + "." + name + "\n");
       then
         fail();
 

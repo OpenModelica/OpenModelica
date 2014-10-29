@@ -251,7 +251,7 @@ algorithm
           SCode.CLASS(restriction = res), _)
       equation
         ty = SCodeDump.restrictionStringPP(res);
-        ty = "a " +& ty;
+        ty = "a " + ty;
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
         Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
           {"component", name, ty}, info);

@@ -850,7 +850,7 @@ algorithm
         t1 = System.time();
         (cache,_,SOME(st)) = Ceval.ceval(cache,env, exp, true, SOME(st),msg,numIter+1);
         t2 = System.time();
-        t = t2 -. t1;
+        t = t2 - t1;
       then
         (cache,Values.REAL(t),st);
 
@@ -2351,7 +2351,7 @@ algorithm
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
-        str = if not (encoding ==& "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
+        str = if not (encoding == "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
         newp = Parser.parsestring(str,name);
         newp = Interactive.updateProgram(newp, p);
       then
@@ -2751,10 +2751,10 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
+        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
-        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
-        filename2 = if System.substring(filename2,1,1) ==& "/" then filename2 else stringAppendList({pwd,pd,filename2});
+        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename2 = if System.substring(filename2,1,1) == "/" then filename2 else stringAppendList({pwd,pd,filename2});
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
         strings = SimulationResults.cmpSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,x1,x2,vars_1);
         cvars = List.map(strings,ValuesUtil.makeString);
@@ -2769,10 +2769,10 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
+        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
-        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
-        filename2 = if System.substring(filename2,1,1) ==& "/" then filename2 else stringAppendList({pwd,pd,filename2});
+        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename2 = if System.substring(filename2,1,1) == "/" then filename2 else stringAppendList({pwd,pd,filename2});
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
         (b,strings) = SimulationResults.diffSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,reltol,reltolDiffMinMax,rangeDelta,vars_1,b);
         cvars = List.map(strings,ValuesUtil.makeString);
@@ -2789,9 +2789,9 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
+        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
         filename_1 = Util.testsuiteFriendlyPath(filename_1);
-        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
         str = SimulationResults.diffSimulationResultsHtml(Config.getRunningTestsuite(),filename,filename_1,reltol,reltolDiffMinMax,rangeDelta,str);
       then
         (cache,Values.STRING(str),st);
@@ -2803,8 +2803,8 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
-        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkTaskGraph(filename, filename_1);
         cvars = List.map(strings,ValuesUtil.makeString);
         v = ValuesUtil.makeArray(cvars);
@@ -2817,8 +2817,8 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = if System.substring(filename,1,1) ==& "/" then filename else stringAppendList({pwd,pd,filename});
-        filename_1 = if System.substring(filename_1,1,1) ==& "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
+        filename = if System.substring(filename,1,1) == "/" then filename else stringAppendList({pwd,pd,filename});
+        filename_1 = if System.substring(filename_1,1,1) == "/" then filename_1 else stringAppendList({pwd,pd,filename_1});
         strings = TaskGraphResults.checkCodeGraph(filename, filename_1);
         cvars = List.map(strings,ValuesUtil.makeString);
         v = ValuesUtil.makeArray(cvars);
@@ -4129,7 +4129,7 @@ algorithm
         // Only compile if change occured after last build.
         (Absyn.CLASS(info = Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_)))) = Interactive.getPathedClassInProgram(classname,p);
         compileDir = System.pwd() + System.pathDelimiter();
-        true = (build >. edit);
+        true = build > edit;
         init_filename = stringAppendList({filenameprefix,"_init.xml"});
         exeFile = filenameprefix + System.getExeExt();
         existFile = System.regularFileExists(exeFile);
@@ -4403,7 +4403,7 @@ algorithm
         //        OPENMODELICAHOME that we set will contain a SPACE at the end!
         //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
         //        to the environment variable! Don't ask me why, ask Microsoft.
-        isWindows = System.os() ==& "Windows_NT";
+        isWindows = System.os() == "Windows_NT";
         target = Config.simulationCodeTarget();
         winCompileMode = if Config.getRunningTestsuite() then "serial" else "parallel";
         omhome = if isWindows then "set OPENMODELICAHOME=\"" + System.stringReplace(omhome_1, "/", "\\") + "\"&& " else "";
@@ -4641,22 +4641,6 @@ algorithm op :=  matchcontinue(ip)
 end matchcontinue;
 end getWithinStatement;
 
-protected function compileOrNot "This function compares last-build-time vs last-edit-time, and if we have edited since we built last time
-it fails."
-input Absyn.Class classIn;
-algorithm _:= match(classIn)
-  local
-    Absyn.Class c1;
-    Absyn.Info nfo;
-    Real tb,te;
-    case(Absyn.CLASS(info = Absyn.INFO(buildTimes = Absyn.TIMESTAMP(tb,te))))
-    equation
-    true = (tb >. te);
-     then ();
-    case(_) then fail();
-end match;
-end compileOrNot;
-
 public function subtractDummy
 "if $dummy is present in Variables, subtract 1 from equation and variable size, otherwise not"
   input BackendDAE.Variables vars;
@@ -4745,7 +4729,7 @@ algorithm
 
         compileDir = System.pwd() + System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
-        filenameprefix = if filenameprefix ==& "<default>" then cname_str else filenameprefix;
+        filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
@@ -4785,7 +4769,7 @@ algorithm
 
         compileDir = System.pwd() + System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
-        filenameprefix = if filenameprefix ==& "<default>" then cname_str else filenameprefix;
+        filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
@@ -4826,7 +4810,7 @@ algorithm
 
         compileDir = System.pwd() + System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
-        filenameprefix = if filenameprefix ==& "<default>" then cname_str else filenameprefix;
+        filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow);
@@ -5139,7 +5123,9 @@ algorithm
         (_,Values.STRING(str),_) = checkModel(FCore.emptyCache(), env, className, st, msg);
         Flags.setConfigBool(Flags.CHECK_MODEL, false);
         (_,Values.STRING(str),_) = checkModel(FCore.emptyCache(), env, className, st, msg);
-        t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);
+        t2 = clock();
+        elapsedTime = t2 - t1;
+        s = realString(elapsedTime);
         print (s + " seconds -> " + failOrSuccess(str) + "\n\t");
         print (System.stringReplace(str, "\n", "\n\t"));
         print ("\n");
@@ -7075,8 +7061,8 @@ algorithm
         true = stringEq(fNew,""); // see that we don't have a file!
 
         // see if the build time from the class is the same as the build time from the compiled functions list
-        true = (buildTime >=. build);
-        true = (buildTime >. edit);
+        true = buildTime >= build;
+        true = buildTime > edit;
 
         if Flags.isSet(Flags.DYN_LOAD) then
           print("[dynload]: [func from buffer] About to execute function present in CF list: " + Absyn.pathString(funcpath) + "\n");

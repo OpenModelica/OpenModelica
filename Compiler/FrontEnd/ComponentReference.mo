@@ -91,11 +91,11 @@ hash := matchcontinue(cr)
     list<DAE.Subscript> subs;
     DAE.ComponentRef cr1;
   case(DAE.CREF_IDENT(id,tp,subs)) equation
-    //print("IDENT, "+&id+&" hashed to "+&intString(stringHashDjb2(id))+&", subs hashed to "+&intString(hashSubscripts(tp,subs))+&"\n");
+    //print("IDENT, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
   then stringHashDjb2(id) + hashSubscripts(tp,subs);
 
   case(DAE.CREF_QUAL(id,tp,subs,cr1)) equation
-    //print("QUAL, "+&id+&" hashed to "+&intString(stringHashDjb2(id))+&", subs hashed to "+&intString(hashSubscripts(tp,subs))+&"\n");
+    //print("QUAL, "+id+" hashed to "+intString(stringHashDjb2(id))+", subs hashed to "+intString(hashSubscripts(tp,subs))+"\n");
   then stringHashDjb2(id)+hashSubscripts(tp,subs)+hashComponentRef(cr1);
 
   case(DAE.CREF_ITER(id,_,tp,subs))
@@ -337,7 +337,7 @@ algorithm
     case _
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        print("ComponentReference.unelabCref failed on: " +& printComponentRefStr(inComponentRef) +& "\n");
+        print("ComponentReference.unelabCref failed on: " + printComponentRefStr(inComponentRef) + "\n");
       then
         fail();
 
@@ -466,7 +466,7 @@ algorithm
       equation
         s = Dump.printSubscriptsStr({e});
         _ = stringAppendList({"#Error converting subscript: ",s," to Expression.\n"});
-        //print("#Error converting subscript: " +& s +& " to Expression.\n");
+        //print("#Error converting subscript: " + s + " to Expression.\n");
         //Print.printErrorBuf(str);
         xs_1 = toExpCrefSubs(xs);
       then
@@ -536,7 +536,7 @@ algorithm
      case SOME(cref)
        equation
          str = printComponentRefStr(cref);
-         str = "SOME(" +& str +& ")";
+         str = "SOME(" + str + ")";
        then
          str;
    end match;
@@ -576,14 +576,14 @@ algorithm
 
     // Optimize -- a function call less
     case (DAE.CREF_ITER(ident = s,index=ix,subscriptLst = {}))
-      then s +& "/* iter index " +& intString(ix) +& " */";
+      then s + "/* iter index " + intString(ix) + " */";
 
     // idents with subscripts
     case DAE.CREF_ITER(ident = s,index=ix,subscriptLst = subs)
       equation
         str = printComponentRef2Str(s, subs);
       then
-        str +& "/* iter index " +& intString(ix) +& " */";
+        str + "/* iter index " + intString(ix) + " */";
 
     // Qualified - Modelica output - does not handle names with underscores
     // Qualified - non Modelica output
@@ -611,7 +611,7 @@ algorithm
     local
       DAE.ComponentRef cr;
     case (DAE.CREF_QUAL(ident = "$DER",subscriptLst = {},componentRef=cr))
-      then "der(" +& printComponentRefStr(cr) +& ")";
+      then "der(" + printComponentRefStr(cr) + ")";
     else printComponentRefStr(inComponentRef);
   end match;
 end printComponentRefStrFixDollarDer;
@@ -664,7 +664,7 @@ algorithm
     case DAE.CREF_IDENT(ident = s,identType=ty,subscriptLst = subs)
       equation
         str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
-        str = s + (if stringLength(str_1) > 0 then "["+& str_1 +& "]" else "");
+        str = s + (if stringLength(str_1) > 0 then "["+ str_1 + "]" else "");
         str2 = Types.unparseType(ty);
         str = stringAppendList({str," [",str2,"]"});
       then
@@ -681,7 +681,7 @@ algorithm
           str = stringAppendList({str," [",str2,"] ", "__", strrest});
         else
           str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
-          str = s + (if stringLength(str_1) > 0 then "["+& str_1 +& "]" else "");
+          str = s + (if stringLength(str_1) > 0 then "["+ str_1 + "]" else "");
           str2 = Types.unparseType(ty);
           strrest = debugPrintComponentRefTypeStr(cr);
           str = stringAppendList({str," [",str2,"] ", ".", strrest});
@@ -957,7 +957,7 @@ algorithm
     // they are not a prefix of one-another
     else
       equation
-        // print("Expression.crefPrefixOf: " +& printComponentRefStr(cr1) +& " NOT PREFIX OF " +& printComponentRefStr(cr2) +& "\n");
+        // print("Expression.crefPrefixOf: " + printComponentRefStr(cr1) + " NOT PREFIX OF " + printComponentRefStr(cr2) + "\n");
       then false;
   end match;
 end crefPrefixOf;
@@ -1033,14 +1033,14 @@ algorithm
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
       equation
         0 = System.stringFind(n1, n2); // n2 should be first in n1!
-        s1 = n2 +& "[" +& ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") +& "]";
+        s1 = n2 + "[" + ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") + "]";
         true = stringEq(s1,n1);
       then
         true;
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx2 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
       equation
         0 = System.stringFind(n2, n1); // n1 should be first in n2!
-        s1 = n1 +& "[" +& ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") +& "]";
+        s1 = n1 + "[" + ExpressionDump.printListStr(idx2, ExpressionDump.printSubscriptStr, ",") + "]";
         true = stringEq(s1,n2);
       then
         true;
@@ -2217,7 +2217,7 @@ algorithm
     //  equation
     //    str1 = printComponentRefStr(child);
     //    str2 = stringDelimitList(List.map(newSub, printSubscriptStr), ", ");
-    //    str  = "replaceCrefSliceSub(" +& str1 +& " subs: [" +& str2 +& "]\n";
+    //    str  = "replaceCrefSliceSub(" + str1 + " subs: [" + str2 + "]\n";
     //    print(str);
     //  then
     //    fail();
@@ -2605,7 +2605,7 @@ public function printComponentRefListStr
   input list<DAE.ComponentRef> crs;
   output String res;
 algorithm
-  res := "{" +& stringDelimitList(List.map(crs, printComponentRefStr), ",") +& "}";
+  res := "{" + stringDelimitList(List.map(crs, printComponentRefStr), ",") + "}";
 end printComponentRefListStr;
 
 public function printComponentRefList
@@ -2613,7 +2613,7 @@ public function printComponentRefList
 protected
   String buffer;
 algorithm
-  buffer := "{" +& stringDelimitList(List.map(crs, printComponentRefStr), ", ") +& "}\n";
+  buffer := "{" + stringDelimitList(List.map(crs, printComponentRefStr), ", ") + "}\n";
   print(buffer);
 end printComponentRefList;
 
@@ -2786,7 +2786,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- ComponentReference.expandCref failed on " +&
+        Debug.traceln("- ComponentReference.expandCref failed on " +
           printComponentRefStr(inCref));
       then
         fail();

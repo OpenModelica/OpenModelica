@@ -898,7 +898,7 @@ algorithm
     else
       equation
         err_str = Absyn.pathString(inComponentName);
-        err_str = "NFInstUtil.mergePrefixesFromComponent got " +& err_str +&
+        err_str = "NFInstUtil.mergePrefixesFromComponent got " + err_str +
           " which is not a component!";
         Error.addMessage(Error.INTERNAL_ERROR, {err_str});
       then
@@ -1341,8 +1341,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        err_msg = "NFSCodeInst.removeCrefOuterPrefix failed on inner path " +&
-          Absyn.pathString(inInnerPath) +& " and outer cref " +&
+        err_msg = "NFSCodeInst.removeCrefOuterPrefix failed on inner path " +
+          Absyn.pathString(inInnerPath) + " and outer cref " +
           ComponentReference.printComponentRefStr(inOuterCref);
         Debug.traceln(err_msg);
       then

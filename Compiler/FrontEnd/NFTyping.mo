@@ -231,7 +231,7 @@ algorithm
 
     case (NFInstTypes.CONDITIONAL_COMPONENT(name = name), _, _, _, _)
       equation
-        print("Trying to type conditional component " +& Absyn.pathString(name) +& "\n");
+        print("Trying to type conditional component " + Absyn.pathString(name) + "\n");
       then
         fail();
 
@@ -622,9 +622,9 @@ algorithm
     case (t1, t2, e, info)
       equation
         str = ExpressionDump.printExpStr(e);
-        str = "NFTyping.checkBindingTypeOk: expression: " +& str;
-        str = str +& ", binding type: " +& Types.unparseType(t1);
-        str = str +& " != expression type: " +& Types.unparseType(t2);
+        str = "NFTyping.checkBindingTypeOk: expression: " + str;
+        str = str + ", binding type: " + Types.unparseType(t1);
+        str = str + " != expression type: " + Types.unparseType(t2);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then
         fail();
@@ -922,8 +922,8 @@ algorithm
     else (inExp, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), inSymbolTable);
     //else
     //  equation
-    //    print("typeExp: unknown expression " +&
-    //        ExpressionDump.printExpStr(inExp) +& "\n");
+    //    print("typeExp: unknown expression " +
+    //        ExpressionDump.printExpStr(inExp) + "\n");
     //  then
     //    fail();
 
@@ -1085,8 +1085,8 @@ algorithm
 
     else
       equation
-        print("Failed to type cref " +&
-            ComponentReference.printComponentRefStr(inCref) +& "\n");
+        print("Failed to type cref " +
+            ComponentReference.printComponentRefStr(inCref) + "\n");
       then
         fail();
 
@@ -2059,7 +2059,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         func_str = Absyn.pathString(inPath);
-        Debug.traceln("- NFTyping.lookupFunction could not find the function " +& func_str);
+        Debug.traceln("- NFTyping.lookupFunction could not find the function " + func_str);
       then
         fail();
 
@@ -2127,7 +2127,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFTyping.typeFunction2 failed on function " +&
+        Debug.traceln("- NFTyping.typeFunction2 failed on function " +
           Absyn.pathString(inPath));
       then
         fail();

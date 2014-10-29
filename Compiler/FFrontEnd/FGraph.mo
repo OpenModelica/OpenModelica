@@ -270,7 +270,7 @@ algorithm
         // uncomment this if unique node id's are not unique!
         /*
         b = (id == i);
-        Debug.bcall1(true, print, "Next: " +& intString(id) +& " <-> " +& intString(i) +& " node: " +& FNode.toStr(n) +& "\n");
+        Debug.bcall1(true, print, "Next: " + intString(id) + " <-> " + intString(i) + " node: " + FNode.toStr(n) + "\n");
         // true = b;
         */
      then
@@ -390,8 +390,8 @@ algorithm
     // create one and update it
     case (r, _)
       equation
-        Error.addCompilerWarning("FNode.updateSourceTargetScope: node does not yet have a reference child: " +& FNode.toPathStr(FNode.fromRef(r)) +&
-              " target scope: " +& FNode.scopeStr(inTargetScope) +& "\n");
+        Error.addCompilerWarning("FNode.updateSourceTargetScope: node does not yet have a reference child: " + FNode.toPathStr(FNode.fromRef(r)) +
+              " target scope: " + FNode.scopeStr(inTargetScope) + "\n");
       then
         inRef;
 
@@ -420,7 +420,7 @@ algorithm
 
    else
     equation
-      Error.addCompilerError("FGraph.updateInstance failed for node: " +& FNode.toPathStr(FNode.fromRef(inRef)) +& " variable:" +& Types.printVarStr(inVar));
+      Error.addCompilerError("FGraph.updateInstance failed for node: " + FNode.toPathStr(FNode.fromRef(inRef)) + " variable:" + Types.printVarStr(inVar));
     then
       fail();
 
@@ -653,7 +653,7 @@ algorithm
 
     else
       equation
-        Error.addCompilerError("FGraph.openNewScope: failed to open new scope in scope: " +& getGraphNameStr(inGraph) +& " name: " +& Util.stringOption(inName) +& "\n");
+        Error.addCompilerError("FGraph.openNewScope: failed to open new scope in scope: " + getGraphNameStr(inGraph) + " name: " + Util.stringOption(inName) + "\n");
       then
         fail();
 
@@ -711,7 +711,7 @@ algorithm
 
     else
       equation
-        Error.addCompilerError("FGraph.openScope: failed to open new scope in scope: " +& getGraphNameStr(inGraph) +& " name: " +& Util.stringOption(inName) +& "\n");
+        Error.addCompilerError("FGraph.openScope: failed to open new scope in scope: " + getGraphNameStr(inGraph) + " name: " + Util.stringOption(inName) + "\n");
       then
         fail();
 
@@ -1080,7 +1080,7 @@ algorithm
       equation
         // maks sure the element name and the DAE.TYPES_VAR name is the same!
         false = stringEq(n, SCode.elementName(c));
-        Error.addCompilerError("FGraph.mkComponentNode: The component name: " +& SCode.elementName(c) +& " is not the same as its DAE.TYPES_VAR: " +& n +& "\n");
+        Error.addCompilerError("FGraph.mkComponentNode: The component name: " + SCode.elementName(c) + " is not the same as its DAE.TYPES_VAR: " + n + "\n");
       then
         fail();
 
@@ -1600,10 +1600,10 @@ algorithm
         ih = inIH; // ih = InnerOuter.addClassIfInner(c, crefPrefix, gclass, inIH);
 
         /*
-        print("Instance1: CL(" +& getGraphNameStr(inSourceEnv) +& ").CO(" +&
-              inSourceName +& ").CL(" +& getGraphNameStr(inTargetClassEnv) +& "." +&
-              targetClassName +& SCodeDump.printModStr(Mod.unelabMod(inMod), SCodeDump.defaultOptions) +& ")\n\t" +&
-              newTargetClassName +& "\n");*/
+        print("Instance1: CL(" + getGraphNameStr(inSourceEnv) + ").CO(" +
+              inSourceName + ").CL(" + getGraphNameStr(inTargetClassEnv) + "." +
+              targetClassName + SCodeDump.printModStr(Mod.unelabMod(inMod), SCodeDump.defaultOptions) + ")\n\t" +
+              newTargetClassName + "\n");*/
       then
         (gclass, c, ih);
 
@@ -1614,11 +1614,11 @@ algorithm
         (newTargetClassName, crefPrefix) = mkVersionName(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, targetClassName);
 
         Error.addCompilerWarning(
-          "FGraph.mkVersionNode: failed to create version node:\n" +&
-          "Instance: CL(" +& getGraphNameStr(inSourceEnv) +& ").CO(" +&
-          inSourceName +& ").CL(" +& getGraphNameStr(inTargetClassEnv) +& "." +&
-          targetClassName +& SCodeDump.printModStr(Mod.unelabMod(inMod), SCodeDump.defaultOptions) +& ")\n\t" +&
-          newTargetClassName +& "\n");
+          "FGraph.mkVersionNode: failed to create version node:\n" +
+          "Instance: CL(" + getGraphNameStr(inSourceEnv) + ").CO(" +
+          inSourceName + ").CL(" + getGraphNameStr(inTargetClassEnv) + "." +
+          targetClassName + SCodeDump.printModStr(Mod.unelabMod(inMod), SCodeDump.defaultOptions) + ")\n\t" +
+          newTargetClassName + "\n");
       then
         (inTargetClassEnv, inTargetClass, inIH);
 
@@ -1718,13 +1718,13 @@ algorithm
       equation
         crefPrefix = PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
 
-        // name = inTargetClassName +& "$" +& ComponentReference.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
-        name = inTargetClassName +& "$" +& Absyn.pathString2NoLeadingDot(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$")
-               ; // +& "$" +& Absyn.pathString2NoLeadingDot(getGraphName(inSourceEnv), "$");
-        // name = "'$" +& inTargetClassName +& "@" +& Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +& "'";
-        // name = "'$" +& getGraphNameStr(inSourceEnv) +& "." +& Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +& "'";
-        // name = "$'" +& getGraphNameStr(inSourceEnv) +& "." +&
-        //        Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +&
+        // name = inTargetClassName + "$" + ComponentReference.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
+        name = inTargetClassName + "$" + Absyn.pathString2NoLeadingDot(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$")
+               ; // + "$" + Absyn.pathString2NoLeadingDot(getGraphName(inSourceEnv), "$");
+        // name = "'$" + inTargetClassName + "@" + Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";
+        // name = "'$" + getGraphNameStr(inSourceEnv) + "." + Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";
+        // name = "$'" + getGraphNameStr(inSourceEnv) + "." +
+        //        Absyn.pathString(Absyn.stringListPath(listReverse(Absyn.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) +
         //        SCodeDump.printModStr(Mod.unelabMod(inMod), SCodeDump.defaultOptions);
       then
         (name, crefPrefix);
@@ -1875,7 +1875,7 @@ algorithm
     // did we fail for some weird reson?
     case (g, _, _)
       equation
-        print("FGraph.setStatus failed on: " +& getGraphNameStr(g) +& " element: " +& inName +& "\n");
+        print("FGraph.setStatus failed on: " + getGraphNameStr(g) + " element: " + inName + "\n");
       then
         g;
 
@@ -1909,7 +1909,7 @@ algorithm
     // we can fail here with no problem, there is no status node!
     case (g, _)
       equation
-        // print("FGraph.getStatus failed on: " +& getGraphNameStr(g) +& " element: " +& inName +& "\n");
+        // print("FGraph.getStatus failed on: " + getGraphNameStr(g) + " element: " + inName + "\n");
       then
         fail();
 
@@ -1941,7 +1941,7 @@ algorithm
         diff = le - lp;
         cs = List.stripN(cs, diff);
         env = setScope(inEnv, cs);
-        // print("F: " +& Absyn.pathString(inPath) +& "\n"); print("E: " +& getGraphNameStr(inEnv) +& "\n"); print("R: " +& getGraphNameStr(env) +& "\n");
+        // print("F: " + Absyn.pathString(inPath) + "\n"); print("E: " + getGraphNameStr(inEnv) + "\n"); print("R: " + getGraphNameStr(env) + "\n");
       then
         env;
 

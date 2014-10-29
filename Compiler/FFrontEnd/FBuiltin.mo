@@ -582,8 +582,8 @@ algorithm
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
-        fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
-        fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
+        fileModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
+        fileMetaModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/MetaModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileMetaModelica),Error.FILE_NOT_FOUND_ERROR,{fileMetaModelica},Absyn.dummyInfo);
         Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
@@ -597,8 +597,8 @@ algorithm
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
-        fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
-        fileParModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ParModelicaBuiltin.mo";
+        fileModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
+        fileParModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ParModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileParModelica),Error.FILE_NOT_FOUND_ERROR,{fileParModelica},Absyn.dummyInfo);
         Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
@@ -612,7 +612,7 @@ algorithm
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
-        fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
+        fileModelica = Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         (p as Absyn.PROGRAM(classes=classes)) = Parser.parsebuiltin(fileModelica,"UTF-8");
         sp = List.map(classes, SCodeUtil.translateClass);

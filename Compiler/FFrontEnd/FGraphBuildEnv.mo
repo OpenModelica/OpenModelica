@@ -242,7 +242,7 @@ algorithm
     // something bad happened!
     case (name, _, _, _, g)
       equation
-        print("FGraphBuildEnv.mkModNode failed with: " +& name +& " mod: " +& SCodeDump.printModStr(inMod, SCodeDump.defaultOptions) +& "\n");
+        print("FGraphBuildEnv.mkModNode failed with: " + name + " mod: " + SCodeDump.printModStr(inMod, SCodeDump.defaultOptions) + "\n");
       then
         g;
 
@@ -821,8 +821,8 @@ algorithm
     else
       equation
         pr = FGraph.top(inGraph);
-        print("FGraphBuildEnv.mkTypeNode: Error making type node: " +& inName +&
-              " in parent: " +& FNode.name(FNode.fromRef(pr)) +& "\n");
+        print("FGraphBuildEnv.mkTypeNode: Error making type node: " + inName +
+              " in parent: " + FNode.name(FNode.fromRef(pr)) + "\n");
       then
         inGraph;
 
@@ -1441,8 +1441,8 @@ algorithm
                not FNode.isRefConstrainClass(inTargetRef) and
                not FNode.isRefFunction(inTargetRef);
 
-        //print("Cloning: " +& FNode.toPathStr(FNode.fromRef(inTargetRef)) +& "/" +& FNode.toStr(FNode.fromRef(inTargetRef)) +& "\n\t" +&
-        //      "Scope: " +& FNode.toPathStr(FNode.fromRef(inParentRef)) +& "/" +& FNode.toStr(FNode.fromRef(inParentRef)) +& "\n");
+        //print("Cloning: " + FNode.toPathStr(FNode.fromRef(inTargetRef)) + "/" + FNode.toStr(FNode.fromRef(inTargetRef)) + "\n\t" +
+        //      "Scope: " + FNode.toPathStr(FNode.fromRef(inParentRef)) + "/" + FNode.toStr(FNode.fromRef(inParentRef)) + "\n");
         (g, n) = FGraph.node(g, inName, {inParentRef}, FCore.CLONE(inTargetRef));
         // make a ref
         rn = FNode.toRef(n);

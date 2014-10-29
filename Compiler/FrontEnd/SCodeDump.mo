@@ -213,7 +213,7 @@ algorithm
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
         str = Absyn.pathString(path);
-        str = str +& printModStr(mod,defaultOptions);
+        str = str + printModStr(mod,defaultOptions);
         res = stringAppendList({"extends ",str,";"});
       then
         res;
@@ -234,7 +234,7 @@ algorithm
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.CLASS_EXTENDS(baseClassName = str))
       equation
-        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+        ioStr = Dump.unparseInnerouterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
         res = stringAppendList({ioStr, "class extends ",n," extends ", str, ";"});
       then
         res;
@@ -242,21 +242,21 @@ algorithm
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
                      classDef = SCode.ENUMERATION(enumLst = _))
       equation
-        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+        ioStr = Dump.unparseInnerouterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
         res = stringAppendList({ioStr, "class ",n," enumeration;"});
       then
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp))
       equation
-        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+        ioStr = Dump.unparseInnerouterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
         res = stringAppendList({ioStr, "class ",n,";"});
       then
         res;
 
     case (SCode.IMPORT(imp = imp))
       equation
-         str = "import "+& Absyn.printImportString(imp) +& ";";
+         str = "import "+ Absyn.printImportString(imp) + ";";
       then str;
   end match;
 end shortElementStr;
@@ -433,7 +433,7 @@ algorithm
       equation
         path_str = Absyn.pathString(path);
         mod_str = printModStr(mod,defaultOptions);
-      then ("replaceable ", path_str +& "(" +& mod_str +& ")");
+      then ("replaceable ", path_str + "(" + mod_str + ")");
     case (SCode.REPLACEABLE(NONE())) then ("replaceable ", "");
     case (SCode.NOT_REPLACEABLE()) then ("", "");
   end match;
@@ -471,10 +471,10 @@ algorithm
 
     case(SCode.PREFIXES(v,rd,f,io,rpl))
       equation
-        s = visibilityStr(v) +&
-            redeclareStr(rd) +&
-            finalStr(f) +&
-            Absyn.innerOuterStr(io) +&
+        s = visibilityStr(v) +
+            redeclareStr(rd) +
+            finalStr(f) +
+            Absyn.innerOuterStr(io) +
             replaceablePrefixStr(rpl);
       then
         s;

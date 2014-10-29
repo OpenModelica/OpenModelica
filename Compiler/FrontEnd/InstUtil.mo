@@ -209,9 +209,9 @@ algorithm
 
     case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb),cache,_)
       equation
-        //print(" (Initial if)To ceval: " +& stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") +& "\n");
+        //print(" (Initial if)To ceval: " + stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") + "\n");
         (cache,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Absyn.NO_MSG(),0);
-        //print(" Ceval res: ("+&stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+&")\n");
+        //print(" Ceval res: ("+stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+")\n");
 
         blist = List.map(valList,ValuesUtil.valueBool);
         selectedBranch = List.selectFirstBoolList(blist, tbs, fb);
@@ -404,7 +404,7 @@ algorithm
         (cache,DAE.TYPES_VAR(name,attributes,_,binding,cnstOpt),
           _,_,_,compenv) =
           Lookup.lookupIdentLocal(cache, env, nn);
-        // print("updateEnumerationEnvironment1 -> component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
+        // print("updateEnumerationEnvironment1 -> component: " + name + " ty: " + Types.printTypeStr(ty) + "\n");
         // change type
         new_var = DAE.TYPES_VAR(name,attributes,ty,binding,cnstOpt);
         // update
@@ -508,7 +508,7 @@ algorithm
     // If the bottom var is a connector, then it is not an outside connector. (spec 0.1.2)
     case(DAE.CREF_IDENT(_,_,_))
       equation
-        // print(name +& " is not a outside connector \n");
+        // print(name + " is not a outside connector \n");
       then
         fail();
 
@@ -549,7 +549,7 @@ algorithm outCref := matchcontinue(cr1,cr2)
       ComponentReference.makeCrefQual(name,ty,subs,outCref);
   else
     equation
-      print(" ***** FAILURE with " +& ComponentReference.printComponentRefStr(cr1) +& " _and_ " +& ComponentReference.printComponentRefStr(cr2) +& "\n");
+      print(" ***** FAILURE with " + ComponentReference.printComponentRefStr(cr1) + " _and_ " + ComponentReference.printComponentRefStr(cr2) + "\n");
     then fail();
   end matchcontinue;
 end updateCrefTypesWithConnectorPrefix;
@@ -776,9 +776,9 @@ algorithm
         daetemp = DAEUtil.joinDaeLst(daes);
         (store,ut)=  UnitAbsynBuilder.instBuildUnitTerms(env,daetemp,compDAE,store);
 
-        //print("built store for "+&className+&"\n");
+        //print("built store for "+className+"\n");
         //UnitAbsynBuilder.printInstStore(store);
-        //print("terms for "+&className+&"\n");
+        //print("terms for "+className+"\n");
         //UnitAbsynBuilder.printTerms(ut);
 
         UnitAbsynBuilder.registerUnitWeights(cache,env,compDAE);
@@ -786,9 +786,9 @@ algorithm
         // perform the check
         store = UnitChecker.check(ut,store);
 
-        //print("store for "+&className+&"\n");
+        //print("store for "+className+"\n");
         //UnitAbsynBuilder.printInstStore(store);
-        //print("dae1="+&DAEDump.dumpDebugDAE(DAE.DAE(dae1))+&"\n");
+        //print("dae1="+DAEDump.dumpDebugDAE(DAE.DAE(dae1))+"\n");
      then
        (cache,env,store);
   end matchcontinue;
@@ -895,8 +895,8 @@ algorithm
     case (_, _, _, r1, {SCode.EXTENDS(baseClassPath=p)})
       equation
         (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache, inEnv, p, false);
-        print("Error!: " +& SCodeDump.restrString(r1) +& " " +& FGraph.printGraphPathStr(inEnv) +&
-              " cannot be extended by " +& SCodeDump.restrString(r2) +& " " +& Absyn.pathString(p) +& " due to derived/base class restrictions.\n");
+        print("Error!: " + SCodeDump.restrString(r1) + " " + FGraph.printGraphPathStr(inEnv) +
+              " cannot be extended by " + SCodeDump.restrString(r2) + " " + Absyn.pathString(p) + " due to derived/base class restrictions.\n");
       then fail();
   end matchcontinue;
 end checkExtendsForTypeRestiction;
@@ -968,9 +968,9 @@ algorithm
     case({},_,_)
       equation
         s1 = Mod.prettyPrintMod(inmod,0);
-        s2 = s1 +& " not found in <" +& callingScope +& ">";
+        s2 = s1 + " not found in <" + callingScope + ">";
         // Line below can be used for testing test-suite for dangling modifiers when getErrorString() is not called.
-        //print(" *** ERROR Unused modifer...: " +& s2 +& "\n");
+        //print(" *** ERROR Unused modifer...: " + s2 + "\n");
         Error.addMessage(Error.UNUSED_MODIFIER,{s2});
       then
         fail();
@@ -1063,8 +1063,8 @@ algorithm
     case(_, SOME(cr), _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.extractConstantPlusDeps failure to find " +& ComponentReference.printComponentRefStr(cr) +& ", returning \n");
-        Debug.trace("- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
+        Debug.trace("- Inst.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
+        Debug.trace("- Inst.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
 end extractConstantPlusDepsTpl;
@@ -1113,8 +1113,8 @@ algorithm
     case(_, SOME(cr), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- Inst.extractConstantPlusDeps failure to find " +& ComponentReference.printComponentRefStr(cr) +& ", returning \n");
-        Debug.trace("- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
+        Debug.trace("- Inst.extractConstantPlusDeps failure to find " + ComponentReference.printComponentRefStr(cr) + ", returning \n");
+        Debug.trace("- Inst.extractConstantPlusDeps elements to instantiate:" + intString(listLength(inComps)) + "\n");
       then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
 end extractConstantPlusDeps;
@@ -1145,7 +1145,7 @@ algorithm
 
     case({},SOME(_),_,_,_)
       equation
-        //print(" failure to find: " +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& className +& "\n");
+        //print(" failure to find: " + ComponentReference.printComponentRefStr(cr) + " in scope: " + className + "\n");
       then {};
     case({},_,_,_,_) then fail();
     case (_,NONE(),_,_,_) then inComps;
@@ -1560,9 +1560,9 @@ algorithm
     // show me something!
     case (_, _, _, _)
       equation
-        print("Graph for env: " +& FGraph.printGraphPathStr(env) +& "\n" +& Graph.printGraph(g, elementName) +& "\n");
-        print("Element order:\n\t" +& stringDelimitList(List.map(order, elementName), "\n\t") +& "\n");
-        print("Cycles:\n" +& Graph.printGraph(cycles, elementName) +& "\n");
+        print("Graph for env: " + FGraph.printGraphPathStr(env) + "\n" + Graph.printGraph(g, elementName) + "\n");
+        print("Element order:\n\t" + stringDelimitList(List.map(order, elementName), "\n\t") + "\n");
+        print("Cycles:\n" + Graph.printGraph(cycles, elementName) + "\n");
       then ();
   end matchcontinue;
 end printGraph;
@@ -1692,7 +1692,7 @@ algorithm
 
     else
       equation
-        print("Inst.getCrefFromMod: could not retrieve crefs from SCode.Mod: " +& SCodeDump.printModStr(inMod,SCodeDump.defaultOptions) +& "\n");
+        print("Inst.getCrefFromMod: could not retrieve crefs from SCode.Mod: " + SCodeDump.printModStr(inMod,SCodeDump.defaultOptions) + "\n");
       then
         fail();
 
@@ -2145,7 +2145,7 @@ algorithm
         names = List.mapList(cycles, elementName);
         cycles_strs = List.map1(names, stringDelimitList, ",");
         cycles_str = stringDelimitList(cycles_strs, "}, {");
-        cycles_str = "{" +& cycles_str +& "}";
+        cycles_str = "{" + cycles_str + "}";
         scope_str = FGraph.printGraphPathStr(inEnv);
         Error.addMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str});
       then
@@ -2438,7 +2438,7 @@ algorithm
     // otherwise, extend frame with in class.
     case (cache,env,ih,pre,(sel1 as SCode.CLASS(classDef = _)),_,_)
       equation
-        // Debug.traceln("Extend frame " +& FGraph.printGraphPathStr(env) +& " with " +& SCode.className(cl));
+        // Debug.traceln("Extend frame " + FGraph.printGraphPathStr(env) + " with " + SCode.className(cl));
         env_1 = FGraph.mkClassNode(env, sel1, pre, DAE.NOMOD());
         ih = InnerOuter.addClassIfInner(sel1, pre, env_1, ih);
       then
@@ -2695,7 +2695,7 @@ algorithm
         checkCompEnvPathVsCompTypePath(FGraph.getScopePath(env), tpp);
 
         ns = Absyn.pathString(tpp);
-        n = n +& " in env: " +&  FGraph.printGraphPathStr(env);
+        n = n + " in env: " +  FGraph.printGraphPathStr(env);
         Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns}, aInfo);
       then
         fail();
@@ -2720,8 +2720,8 @@ algorithm
         (cache,env,ih,selem,smod) = Inst.redeclareType(cache,env,ih,compModLocal,
         /*comp,*/ SCode.COMPONENT(n,pf,attr,tss,m,comment,aExp, aInfo),
         pre, cistate, impl,cmod);
-        // Debug.traceln(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& " cmod: " +& Mod.printModStr(cmod) +& " cmL: " +& Mod.printModStr(compModLocal) +& " smod: " +& Mod.printModStr(smod));
-        // print(" \t comp: " +& n +& " " +& "selem: " +& SCodeDump.printElementStr(selem) +& " smod: " +& Mod.printModStr(smod) +& "\n");
+        // Debug.traceln(" adding comp: " + n + " " + Mod.printModStr(mod) + " cmod: " + Mod.printModStr(cmod) + " cmL: " + Mod.printModStr(compModLocal) + " smod: " + Mod.printModStr(smod));
+        // print(" \t comp: " + n + " " + "selem: " + SCodeDump.printElementStr(selem) + " smod: " + Mod.printModStr(smod) + "\n");
         (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, cistate, {(selem,smod)}, instdims, impl);
       then
         (cache,env_1,ih);
@@ -2827,13 +2827,13 @@ algorithm
         cmod_1 = Mod.merge(compmod, cmod, env, pre);
 
         /*
-        print("Inst.addCompToEnv: " +&
-          n +& " in env " +&
-          FGraph.printGraphPathStr(env) +& " with mod: " +& Mod.printModStr(cmod_1) +& " in element: " +&
-          SCodeDump.printElementStr(comp) +& "\n");
+        print("Inst.addCompToEnv: " +
+          n + " in env " +
+          FGraph.printGraphPathStr(env) + " with mod: " + Mod.printModStr(cmod_1) + " in element: " +
+          SCodeDump.printElementStr(comp) + "\n");
         */
 
-        // Debug.traceln("  extendFrameV comp " +& n +& " m:" +& Mod.printModStr(cmod_1) +& " compm: " +& Mod.printModStr(compmod) +& " cm: " +& Mod.printModStr(cmod));
+        // Debug.traceln("  extendFrameV comp " + n + " m:" + Mod.printModStr(cmod_1) + " compm: " + Mod.printModStr(compmod) + " cm: " + Mod.printModStr(cmod));
         env_1 = FGraph.mkComponentNode(env,
           DAE.TYPES_VAR(
             n,DAE.ATTR(ct,prl,var,dir,io,vis),
@@ -2914,7 +2914,7 @@ algorithm
         equation
           outMod = chainRedeclare_dispatch(inModOuter,inModInner);
           false = SCode.modEqual(inModInner, outMod);
-          print("Chain:\nO:" +& Mod.printModStr(inModOuter) +& "\nI:" +& SCodeDump.printModStr(inModInner, SCodeDump.defaultOptions) +& "\nR:" +& SCodeDump.printModStr(outMod, SCodeDump.defaultOptions) +& "\n");
+          print("Chain:\nO:" + Mod.printModStr(inModOuter) + "\nI:" + SCodeDump.printModStr(inModInner, SCodeDump.defaultOptions) + "\nR:" + SCodeDump.printModStr(outMod, SCodeDump.defaultOptions) + "\n");
         then
           outMod;
       */
@@ -3018,7 +3018,7 @@ algorithm
         true = Absyn.isInputOrOutput(inDirection);
         // TODO, add the env path to the check!
         false = stringEq(Absyn.pathLastIdent(path), name);
-        // print("InstFunction.implicitFunctionInstantiation: " +& name +& " in f:" +& Absyn.pathString(path) +& " in s:" +& FGraph.printGraphPathStr(inEnv) +& " m: " +& Mod.printModStr(inMod) +& "\n");
+        // print("InstFunction.implicitFunctionInstantiation: " + name + " in f:" + Absyn.pathString(path) + " in s:" + FGraph.printGraphPathStr(inEnv) + " m: " + Mod.printModStr(inMod) + "\n");
         (cache, env, ih) = InstFunction.implicitFunctionInstantiation(inCache, inEnv, inIH, inMod, inPrefix, inClass, inInstDims);
       then
         (cache, env, ih);
@@ -3207,7 +3207,7 @@ algorithm
     case (_,_,_,_,_,
           ((SCode.CLASS(name=n,classDef=SCode.PARTS(elementLst=SCode.EXTENDS(baseClassPath=Absyn.IDENT(n2))::_ )),_)),_,_)
       equation
-        n = "$parent" +& "." +& n;
+        n = "$parent" + "." + n;
         0 = System.stringFind(n, n2);
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
@@ -3340,8 +3340,8 @@ algorithm
         // add a warning and let it continue!
         s1 = SCodeDump.unparseElementStr(oldElt,SCodeDump.defaultOptions);
         s2 = SCodeDump.unparseElementStr(newElt,SCodeDump.defaultOptions);
-        s = "Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627\n\tfirst:  " +&
-            s1 +& "\n\tsecond: " +& s2 +& "\nContinue ....";
+        s = "Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627\n\tfirst:  " +
+            s1 + "\n\tsecond: " + s2 + "\nContinue ....";
         Error.addMultiSourceMessage(Error.COMPILER_WARNING, {s}, {old_info, new_info});
       then ();
 
@@ -3604,7 +3604,7 @@ algorithm
     case (_, DAE.VAR(componentRef = cref))
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- InstUtil.moveBindings failed on " +&
+        Debug.traceln("- InstUtil.moveBindings failed on " +
             ComponentReference.printComponentRefStr(cref));
       then
         fail();
@@ -3794,7 +3794,7 @@ algorithm
   // Since c1 is generated by Types.matchProp, it can not be lower that c, so no need to check that it is higher
   case (c,c1,_,n,e,_)
     equation
-      sn = PrefixUtil.printPrefixStr2(pre)+&n;
+      sn = PrefixUtil.printPrefixStr2(pre)+n;
       sc = DAEUtil.constStr(c);
       sc1 = DAEUtil.constStr(c1);
       se = ExpressionDump.printExpStr(e);
@@ -3976,7 +3976,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         id = SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
-        Debug.traceln("Inst.getUsertypeDimensions failed: " +& id);
+        Debug.traceln("Inst.getUsertypeDimensions failed: " + id);
       then
         fail();
 
@@ -4342,10 +4342,10 @@ algorithm
         s2 = ComponentReference.printComponentRefStr(inCref);
         s3 = DAEDump.dumpVarParallelismStr(inVarParallelism);
 
-        s4 = "\n" +&
-             "- Component declared as '" +& s1 +&
-             "' when having the variable '" +& s2 +&
-             "' declared as '" +& s3 +& "' : Subcomponent parallelism modified to." +&
+        s4 = "\n" +
+             "- Component declared as '" + s1 +
+             "' when having the variable '" + s2 +
+             "' declared as '" + s3 + "' : Subcomponent parallelism modified to." +
              s1
              ;
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
@@ -4530,7 +4530,7 @@ algorithm
     case (_, _, cref,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Inst.elabComponentArraydimFromEnv failed: " +&
+        Debug.traceln("- Inst.elabComponentArraydimFromEnv failed: " +
           ComponentReference.printComponentRefStr(cref));
       then
         fail();
@@ -4682,7 +4682,7 @@ algorithm
         t = Types.getPropType(prop);
         (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
-        //Debug.traceln("TYPED: " +& ExpressionDump.printExpStr(e) +& " s: " +& FGraph.printGraphPathStr(env));
+        //Debug.traceln("TYPED: " + ExpressionDump.printExpStr(e) + " s: " + FGraph.printGraphPathStr(env));
         dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
@@ -4720,8 +4720,8 @@ algorithm
         // only display when the failtrace flag is on
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.elabArraydim failed on: \n\tcref:");
-        Debug.trace(Absyn.pathString(path) +& " " +& Dump.printComponentRefStr(cref));
-        Debug.traceln(Dump.printArraydimStr(ad) +& " = " +& Types.unparseOptionEqMod(eq));
+        Debug.trace(Absyn.pathString(path) + " " + Dump.printComponentRefStr(cref));
+        Debug.traceln(Dump.printArraydimStr(ad) + " = " + Types.unparseOptionEqMod(eq));
       then
         fail();
   end matchcontinue;
@@ -4811,10 +4811,10 @@ algorithm
 
     case(t,ad,_,_,_,_,_,_)
       equation
-        adStr = Absyn.pathString(path) +& Dump.printArraydimStr(ad);
+        adStr = Absyn.pathString(path) + Dump.printArraydimStr(ad);
         tpStr = Types.unparseTypeNoAttr(t);
         expStr = ExpressionDump.printExpStr(exp);
-        str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& Absyn.printComponentRefStr(componentRef);
+        str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) + Absyn.printComponentRefStr(componentRef);
         Error.addSourceMessage(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,{str,adStr,expStr,tpStr},info);
       then fail();
     end matchcontinue;
@@ -4869,7 +4869,7 @@ algorithm
     /*
     case (DAE.T_ARRAY(dims = d::_::_, ty = t, source = ts), ad, subs)
       equation
-        //print("Got a type with several dimensions: " +& Types.printTypeStr(inType) +& "\n");
+        //print("Got a type with several dimensions: " + Types.printTypeStr(inType) + "\n");
         t = Types.expTypetoTypesType(inType);
         l = elabArraydimType2(t, ad, subs);
       then
@@ -5100,13 +5100,13 @@ algorithm element := matchcontinue(inSubs,elemDecl,baseFunc,inCache,inEnv,inIH,i
       defaultDerivative = getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
 
 
-      /*print("\n adding conditions on derivative count: " +& intString(listLength(conditionRefs)) +& "\n");
+      /*print("\n adding conditions on derivative count: " + intString(listLength(conditionRefs)) + "\n");
       dbgString = Absyn.optPathString(defaultDerivative);
-      dbgString = if_(stringEq(dbgString,""),"", "**** Default Derivative: " +& dbgString +& "\n");
-      print("**** Function derived: " +& Absyn.pathString(baseFunc) +& " \n");
-      print("**** Deriving function: " +& Absyn.pathString(deriveFunc) +& "\n");
-      print("**** Conditions: " +& stringDelimitList(DAEDump.dumpDerivativeCond(conditionRefs),", ") +& "\n");
-      print("**** Order: " +& intString(order) +& "\n");
+      dbgString = if_(stringEq(dbgString,""),"", "**** Default Derivative: " + dbgString + "\n");
+      print("**** Function derived: " + Absyn.pathString(baseFunc) + " \n");
+      print("**** Deriving function: " + Absyn.pathString(deriveFunc) + "\n");
+      print("**** Conditions: " + stringDelimitList(DAEDump.dumpDerivativeCond(conditionRefs),", ") + "\n");
+      print("**** Order: " + intString(order) + "\n");
       print(dbgString);*/
 
 
@@ -5189,7 +5189,7 @@ algorithm
 
   case({},_,_)
     equation
-      print(" failure in setFunctionInputIndex, didn't find any index for: " +& str +& "\n");
+      print(" failure in setFunctionInputIndex, didn't find any index for: " + str + "\n");
       then fail();
 
         /* found matching input*/
@@ -7167,9 +7167,9 @@ algorithm
 
     case(cache, _, ih, pre, SOME(DAE.MOD(_,_, lsm ,_)), SCode.CLASS(name=str))
       equation
-        // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3: " +& Mod.printModStr(mo) +& " class name: " +& str);
+        // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3: " + Mod.printModStr(mo) + " class name: " + str);
         (mo2,_) = extractCorrectClassMod2(lsm,str,{});
-        // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3 after extractCorrectClassMod2: " +& Mod.printModStr(mo2) +& " class name: " +& str);
+        // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3 after extractCorrectClassMod2: " + Mod.printModStr(mo2) + " class name: " + str);
         // TODO: classinf below should be FQ
         (cache, env2, ih, sele2 as SCode.CLASS(name = _) , _) =
         Inst.redeclareType(cache, env, ih, mo2, sele, pre, ClassInf.MODEL(Absyn.IDENT(str)), true, DAE.NOMOD());
@@ -7593,7 +7593,7 @@ algorithm
     case (_::exps,i)
       equation
         s = intString(i);
-        s = "i" +& s;
+        s = "i" + s;
         i1 = i + 1;
         (names,i2) = generateUnusedNames2(exps,i1);
       then
@@ -8284,7 +8284,7 @@ algorithm
         s1 = SCodeDump.unparseElementStr(e,SCodeDump.defaultOptions);
         s2 = Mod.printModStr(m);
         s3 = printElementAndModList(rest);
-        s = "Element:\n" +& s1 +& "\nModifier: " +& s2 +& "\n" +& s3;
+        s = "Element:\n" + s1 + "\nModifier: " + s2 + "\n" + s3;
       then
         s;
 
@@ -8557,7 +8557,7 @@ algorithm
     case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,b3,b4,i,DAE.NO_TAIL())),_,_)
       equation
         true = Absyn.pathEqual(path1,path2);
-        str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& stringDelimitList(vars,",");
+        str = "Tail recursion of: " + ExpressionDump.printExpStr(rhs) + " with input vars: " + stringDelimitList(vars,",");
         if Flags.isSet(Flags.TAIL) then
           Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
         end if;
@@ -8744,8 +8744,8 @@ algorithm
       equation
         vars = List.filterOnTrue(vars, Types.varIsVariable);
         // TODO: We filter out parameters at the moment. I'm unsure if this is correct. Might be that this is an automatic error...
-        names = List.map1r(List.map(vars, Types.varName), stringAppend, name +& ".");
-        // print("for record: " +& stringDelimitList(names,",") +& "\n");
+        names = List.map1r(List.map(vars, Types.varName), stringAppend, name + ".");
+        // print("for record: " + stringDelimitList(names,",") + "\n");
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
         outNames = if DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()) then names else {};
         names = if Expression.dimensionsKnownAndNonZero(dims) then names else {};
@@ -8894,7 +8894,7 @@ algorithm
     else
       equation
         str = DAEDump.ppStatementStr(inStmt);
-        str = "Inst.checkFunctionDefUseStmt failed: " +& str;
+        str = "Inst.checkFunctionDefUseStmt failed: " + str;
         info = DAEUtil.getElementSourceFileInfo(DAEUtil.getStatementSource(inStmt));
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
       then fail();
@@ -8952,12 +8952,12 @@ algorithm
       // Assignment to part of a record
     case (DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id1,componentRef=DAE.CREF_IDENT(ident=id2))),unbound)
       equation
-        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,id1 +& "." +& id2);
+        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,id1 + "." + id2);
       then unbound;
       // Assignment to the whole record - filter out everything it is prefix of
     case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id1),ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_))),unbound)
       equation
-        id1 = id1 +& ".";
+        id1 = id1 + ".";
         unbound = List.filter2OnTrue(unbound,Util.notStrncmp,id1,stringLength(id1));
       then unbound;
     case (DAE.CREF(componentRef=cr),unbound)
@@ -9099,9 +9099,9 @@ algorithm
         hasnodir = not Absyn.isInputOrOutput(dir);
         true = isparglobal and hasnodir;
 
-        errorString = "\n" +&
-        "- local parglobal component '" +& inName +&
-        "' is declared in parallel/parkernel function '" +& scopeName +& "'. \n" +&
+        errorString = "\n" +
+        "- local parglobal component '" + inName +
+        "' is declared in parallel/parkernel function '" + scopeName + "'. \n" +
         "- parglobal variables can be declared only in normal functions. \n";
 
         Error.addSourceMessage(Error.PARMODELICA_ERROR,

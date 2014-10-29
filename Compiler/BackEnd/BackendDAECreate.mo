@@ -423,7 +423,7 @@ algorithm
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendDAECreate.lower3 failed on: " +& DAEDump.dumpElementsStr({inElement}));
+        Debug.traceln("- BackendDAECreate.lower3 failed on: " + DAEDump.dumpElementsStr({inElement}));
       then
         fail();
   end match;
@@ -541,7 +541,7 @@ algorithm
         then (vars, knvars, exvars, eqns);
       case (elem::_,  _, _, _, _, _)
        equation
-        str = "BackendDAECreate.lowerVars failed for " +& DAEDump.dumpElementsStr({elem});
+        str = "BackendDAECreate.lowerVars failed for " + DAEDump.dumpElementsStr({elem});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
@@ -630,7 +630,7 @@ algorithm
 
     else
       equation
-        str = "BackendDAECreate.lowerVar failed for " +& DAEDump.dumpElementsStr({inElement});
+        str = "BackendDAECreate.lowerVar failed for " + DAEDump.dumpElementsStr({inElement});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
@@ -766,7 +766,7 @@ algorithm
 
     else
       equation
-        str = "BackendDAECreate.lowerKnownVar failed for " +& DAEDump.dumpElementsStr({inElement});
+        str = "BackendDAECreate.lowerKnownVar failed for " + DAEDump.dumpElementsStr({inElement});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -851,25 +851,25 @@ algorithm
     case (DAE.CALL(path=_),_,_,_)
       equation
         e1 = BaseHashTable.get(iExp,iInlineHT);
-        // print("use chache Inline\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
+        // print("use chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
         source = DAEUtil.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(iExp),DAE.PARTIAL_EQUATION(e1)));
       then (e1,source,iInlineHT,{});
     case (DAE.CALL(path=_),_,_,_)
       equation
-        // print("add chache Inline\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
+        // print("add chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
         (e1, source, inlined,_) = Inline.inlineExp(iExp, fnstpl, iSource);
         inlineHT = if inlined then BaseHashTable.add((iExp,e1), iInlineHT) else iInlineHT;
       then (e1,source,inlineHT,{});
     case (DAE.ASUB(e,elst),_,_,_)
       equation
         e1 = BaseHashTable.get(e,iInlineHT);
-        // print("use chache Inline\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
+        // print("use chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
         source = DAEUtil.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e1)));
         (e, source, _,_) = Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, source);
       then (e,source,iInlineHT,{});
     case (DAE.ASUB(e,elst),_,_,_)
       equation
-        // print("add chache Inline(1)\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
+        // print("add chache Inline(1)\n" + ExpressionDump.printExpStr(iExp) + "\n");
         (e1, _, inlined,assrtLst1) = Inline.inlineExp(e, fnstpl, iSource);
         inlineHT = if inlined then BaseHashTable.add((e,e1), iInlineHT) else iInlineHT;
         (e, source, _,assrtLst2) = Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, iSource);
@@ -877,7 +877,7 @@ algorithm
       then (e,source,inlineHT,assrtLst);
     case (_,_,_,_)
       equation
-        // print("no chache Inline\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
+        // print("no chache Inline\n" + ExpressionDump.printExpStr(iExp) + "\n");
         (e, source, _,_) = Inline.inlineExp(iExp, fnstpl, iSource);
       then (e,source,iInlineHT,{});
   end matchcontinue;
@@ -1088,7 +1088,7 @@ algorithm
       then inType;
     case (DAE.T_FUNCTION(funcResultType = _))
       then inType;
-    else equation print("lowerType: " +& Types.printTypeStr(inType) +& " failed\n"); then fail();
+    else equation print("lowerType: " + Types.printTypeStr(inType) + " failed\n"); then fail();
   end matchcontinue;
 end lowerType;
 
@@ -1358,7 +1358,7 @@ algorithm
 
     case (_,_,_,_,_)
       equation
-        s = "BackendDAECreate.lowerEqn failed for " +& DAEDump.dumpElementsStr({inElement});
+        s = "BackendDAECreate.lowerEqn failed for " + DAEDump.dumpElementsStr({inElement});
         Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, DAEUtil.getElementSourceFileInfo(DAEUtil.getElementSource(inElement)));
       then fail();
 
@@ -1705,7 +1705,7 @@ algorithm
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendDAECreate.lowerExtendedRecordEqn failed on: " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& "\n");
+        Debug.traceln("- BackendDAECreate.lowerExtendedRecordEqn failed on: " + ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2) + "\n");
       then
         fail();
   end matchcontinue;
@@ -1806,7 +1806,7 @@ algorithm
 
     case (DAE.WHEN_EQUATION(condition = _, source = source), _, _, _)
       equation
-        str = "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +&
+        str = "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +
               DAEDump.dumpElementsStr({inElement});
         Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -1954,7 +1954,7 @@ algorithm
     case (el::_, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendDAECreate.lowerWhenEqn2 failed on:" +& DAEDump.dumpElementsStr({el}));
+        Debug.traceln("- BackendDAECreate.lowerWhenEqn2 failed on:" + DAEDump.dumpElementsStr({el}));
       then
         fail();
 
@@ -2439,7 +2439,7 @@ algorithm
       equation
         // only report error if no other error is in the queue!
         0 = Error.getNumErrorMessages();
-        str = "BackendDAECreate.lowerAlgorithm failed for:\n" +& DAEDump.dumpElementsStr({inElement});
+        str = "BackendDAECreate.lowerAlgorithm failed for:\n" + DAEDump.dumpElementsStr({inElement});
         Error.addSourceMessage(
           Error.INTERNAL_ERROR,
           {str},
@@ -3330,7 +3330,7 @@ algorithm
   case((key,SOME(DAE.FUNCTION(path=path,functions=functions,type_=type_,visibility=vis,partialPrefix=pPref,isImpure=isImpure,inlineType=iType,source=source,comment=comment))))
     equation
       pathName = Absyn.pathString(path);
-      pathName = Util.stringReplaceChar(pathName,".","_")+&"_";
+      pathName = Util.stringReplaceChar(pathName,".","_")+"_";
       functions = List.map1(functions,renameFunctionParameter2,pathName);
   then((key,SOME(DAE.FUNCTION(path,functions,type_,vis,pPref,isImpure,iType,source,comment))));
   else

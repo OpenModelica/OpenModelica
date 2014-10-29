@@ -139,7 +139,7 @@ protected
   Absyn.TimeStamp ts;
 algorithm
   (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
-  // print("System.getLoadModelPath: " +& id +& " {" +& stringDelimitList(prios,",") +& "} " +& stringDelimitList(mps,",") +& " => " +& mp +& " " +& name +& " " +& boolString(isDir));
+  // print("System.getLoadModelPath: " + id + " {" + stringDelimitList(prios,",") + "} " + stringDelimitList(mps,",") + " => " + mp + " " + name + " " + boolString(isDir));
   Config.setLanguageStandardFromMSL(name);
   cl := loadClassFromMp(id, mp, name, isDir, encoding);
   ts := Absyn.getNewTimeStamp();
@@ -165,7 +165,7 @@ algorithm
         /* Check for path/package.encoding; OpenModelica extension */
         encodingfile = stringAppendList({path,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
-        cl = parsePackageFile(path +& pd +& name,encoding,false,Absyn.TOP(),id);
+        cl = parsePackageFile(path + pd + name,encoding,false,Absyn.TOP(),id);
       then
         cl;
 
@@ -222,7 +222,7 @@ algorithm
     case (_,pack,mp,_,_,_)
       equation
         true = numError == Error.getNumErrorMessages();
-        str = "loadCompletePackageFromMp failed for unknown reason: mp=" +& mp +& " pack=" +& pack;
+        str = "loadCompletePackageFromMp failed for unknown reason: mp=" + mp + " pack=" + pack;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -284,15 +284,15 @@ algorithm
     case (CLASSLOAD(id),_,_,_,_)
       equation
         pd = System.pathDelimiter();
-        file = mp +& pd +& id +& "/package.mo";
-        bDirectoryAndFileExists = System.directoryExists(mp +& pd +& id) and System.regularFileExists(file);
+        file = mp + pd + id + "/package.mo";
+        bDirectoryAndFileExists = System.directoryExists(mp + pd + id) and System.regularFileExists(file);
         if (bDirectoryAndFileExists)
         then
           cl = loadCompletePackageFromMp(id,id,mp,encoding,w1,Error.getNumErrorMessages());
           ei = Absyn.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         else
-          file = mp +& pd +& id +& ".mo";
+          file = mp + pd + id + ".mo";
           true = System.regularFileExists(file);
           cl = parsePackageFile(file,encoding,false,w1,id);
           ei = Absyn.makeClassElement(cl);
@@ -343,7 +343,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("ClassLoader.parsePackageFile failed: "+&name);
+        Debug.traceln("ClassLoader.parsePackageFile failed: "+name);
       then
         fail();
   end matchcontinue;
@@ -354,7 +354,7 @@ protected function getBothPackageAndFilename
   input String mp;
   output String out;
 algorithm
-  out := Util.testsuiteFriendly(System.realpath(mp +& "/" +& str +& ".mo")) +& ", " +& Util.testsuiteFriendly(System.realpath(mp +& "/" +& str +& "/package.mo"));
+  out := Util.testsuiteFriendly(System.realpath(mp + "/" + str + ".mo")) + ", " + Util.testsuiteFriendly(System.realpath(mp + "/" + str + "/package.mo"));
 end getBothPackageAndFilename;
 
 protected function getPackageContentNames
@@ -462,7 +462,7 @@ algorithm
     case (CLASSLOAD(str),_,_)
       equation
         pd = System.pathDelimiter();
-        Error.assertionOrAddSourceMessage(System.directoryExists(mp +& pd +& str) or System.regularFileExists(mp +& pd +& str +& ".mo"),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
+        Error.assertionOrAddSourceMessage(System.directoryExists(mp + pd + str) or System.regularFileExists(mp + pd + str + ".mo"),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
       then ();
     else ();
   end match;
@@ -476,7 +476,7 @@ protected
   String pd;
 algorithm
   pd := System.pathDelimiter();
-  b := System.regularFileExists(mp +& pd +& name +& pd +& "package.mo");
+  b := System.regularFileExists(mp + pd + name + pd + "package.mo");
 end existPackage;
 
 protected function getPackageContentNamesinParts
@@ -543,7 +543,7 @@ algorithm
     case (name1::namesToSort,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=Absyn.CLASS(name=name2,info=info)))))::elts,_,_)
       equation
         load = makeClassLoad(name1);
-        b = name1 ==& name2;
+        b = name1 == name2;
         Error.assertionOrAddSourceMessage(if b then not listMember(load,po) else true, Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
         orderElt = if b then makeElement(ei,pub) else load;
         (outOrder,names) = getPackageContentNamesinElts(namesToSort,if b then elts else inElts,orderElt :: po, pub);
@@ -587,7 +587,7 @@ algorithm
 
     case (n1::rest1,n2::rest2,_)
       equation
-        if (n1 ==& n2)
+        if (n1 == n2)
         then
           (rest1,b) = matchCompNames(rest1,rest2,info);
           Error.assertionOrAddSourceMessage(b, Error.ORDER_FILE_COMPONENTS, {}, info);

@@ -820,8 +820,8 @@ algorithm
     // Couldn't find the inner component, print an error.
     else
       equation
-        print("Couldn't find corresponding inner component for " +&
-            Absyn.pathString(inOuterName) +& "\n");
+        print("Couldn't find corresponding inner component for " +
+            Absyn.pathString(inOuterName) + "\n");
       then
         fail();
 
@@ -895,7 +895,7 @@ algorithm
         deps = findCyclicDependencies(inSymbolTable);
         dep_str =
           stringDelimitList(List.map(deps, ExpressionDump.printExpStr), ", ");
-        dep_str = "{" +& dep_str +& "}";
+        dep_str = "{" + dep_str + "}";
         // TODO: The "in scope" part of this error message should be removed, since
         // we check for global cycles and not scope-local cycles like the old Inst.
         Error.addMessage(Error.CIRCULAR_COMPONENTS, {"", dep_str});
@@ -1049,7 +1049,7 @@ algorithm
     case (ht :: rest_st)
       equation
         keys = BaseHashTable.hashTableKeyList(ht);
-        print(stringDelimitList(List.map(keys, Absyn.pathString), "\n") +& "\n");
+        print(stringDelimitList(List.map(keys, Absyn.pathString), "\n") + "\n");
         dumpSymbolTableKeys(rest_st);
       then
         ();

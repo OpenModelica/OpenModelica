@@ -613,7 +613,7 @@ algorithm outCr := match(inCr)
     list<DAE.Subscript> subs;
   case(DAE.CREF_IDENT(id,idt,subs))
     equation
-      id = DAE.UNIQUEIO +& id;
+      id = DAE.UNIQUEIO + id;
     then
       ComponentReference.makeCrefIdent(id,idt,subs);
   case(DAE.CREF_QUAL(id,idt,subs,child))
@@ -653,7 +653,7 @@ algorithm ocr := matchcontinue(cr,removalString)
   case(child,_)
     equation
       print(" failure unNameInnerouterUniqueCref: ");
-      print(ComponentReference.printComponentRefStr(child) +& "\n");
+      print(ComponentReference.printComponentRefStr(child) + "\n");
       then fail();
   end matchcontinue;
 end unNameInnerouterUniqueCref;
@@ -2024,9 +2024,9 @@ algorithm
     case (_, SCode.PARGLOBAL(), _, _)
       equation
         path = ClassInf.getStateName(inState);
-        str1 = "\n" +&
-        "- DAEUtil.toDaeParallelism: parglobal component '" +& ComponentReference.printComponentRefStr(inCref)
-        +& "' in non-function class: " +& ClassInf.printStateStr(inState) +& " " +& Absyn.pathString(path);
+        str1 = "\n" +
+        "- DAEUtil.toDaeParallelism: parglobal component '" + ComponentReference.printComponentRefStr(inCref)
+        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + Absyn.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
           {str1}, inInfo);
@@ -2035,9 +2035,9 @@ algorithm
     case (_, SCode.PARLOCAL(), _, _)
       equation
         path = ClassInf.getStateName(inState);
-        str1 = "\n" +&
-        "- DAEUtil.toDaeParallelism: parlocal component '" +& ComponentReference.printComponentRefStr(inCref)
-        +& "' in non-function class: " +& ClassInf.printStateStr(inState) +& " " +& Absyn.pathString(path);
+        str1 = "\n" +
+        "- DAEUtil.toDaeParallelism: parlocal component '" + ComponentReference.printComponentRefStr(inCref)
+        + "' in non-function class: " + ClassInf.printStateStr(inState) + " " + Absyn.pathString(path);
 
         Error.addSourceMessage(Error.PARMODELICA_WARNING,
           {str1}, inInfo);
@@ -2216,7 +2216,7 @@ algorithm
     case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs),
           source= source)::rest, impl)
       equation
-        // fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
+        // fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue typeOfRHS: " + ExpressionDump.typeOfString(rhs));
         info = getElementSourceFileInfo(source);
         (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE(), Absyn.MSG(info),0);
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
@@ -2227,7 +2227,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = DAEDump.dumpDebugDAE(DAE.DAE({el}));
-        Debug.traceln("- DAEUtil.daeToRecordValue failed on: " +& str);
+        Debug.traceln("- DAEUtil.daeToRecordValue failed on: " + str);
       then
         fail();
   end matchcontinue;
@@ -2666,7 +2666,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
-        msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  " +& msg;
+        msg = "DAEUtil.getNamedFunction failed: " + Absyn.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
         // Error.addMessage(Error.INTERNAL_ERROR,{msg});
         Debug.traceln(msg);
       then
@@ -2688,7 +2688,7 @@ algorithm
     else
       equation
         msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
-        msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  " +& msg;
+        msg = "DAEUtil.getNamedFunction failed: " + Absyn.pathString(path) + "\nThe following functions were part of the cache:\n  " + msg;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{msg},info);
       then fail();
   end matchcontinue;
@@ -2709,7 +2709,7 @@ algorithm
     case (path,{})
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- DAEUtil.getNamedFunctionFromList failed " +& Absyn.pathString(path));
+        Debug.traceln("- DAEUtil.getNamedFunctionFromList failed " + Absyn.pathString(path));
       then
         fail();
   end matchcontinue;
@@ -3019,7 +3019,7 @@ algorithm
 
     case(el::_,_)
       equation
-        msg = "- DAEUtil.verifyWhenEquationStatements failed on: " +& DAEDump.dumpElementsStr({el});
+        msg = "- DAEUtil.verifyWhenEquationStatements failed on: " + DAEDump.dumpElementsStr({el});
         info = getElementSourceFileInfo(getElementSource(el));
         Error.addSourceMessage(Error.INTERNAL_ERROR,{msg}, info);
       then
@@ -3607,7 +3607,7 @@ algorithm
         lst = avlTreeToList(ft);
         lstInvalid = List.select(lst, isInvalidFunctionEntry);
         str = stringDelimitList(List.map(List.map(lstInvalid, Util.tuple21), Absyn.pathString), "\n ");
-        str = "\n " +& str +& "\n";
+        str = "\n " + str + "\n";
         Error.addMessage(Error.NON_INSTANTIATED_FUNCTION, {str});
         fns = List.mapMap(List.select(lst, isValidFunctionEntry), Util.tuple22, Util.getOption);
       then
@@ -3708,7 +3708,7 @@ algorithm
     case((p,NONE())::_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- DAEUtil.traverseDAEFuncLst failed: " +& Absyn.pathString(p));
+        Debug.traceln("- DAEUtil.traverseDAEFuncLst failed: " + Absyn.pathString(p));
       then fail();
   end match;
 end traverseDAEFuncLst;
@@ -4099,7 +4099,7 @@ algorithm
     case(elt,_,_)
       equation
         str = DAEDump.dumpElementsStr({elt});
-        str = "DAEUtil.traverseDAE not implemented correctly for element:" +& str;
+        str = "DAEUtil.traverseDAE not implemented correctly for element:" + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         print(str);
       then
@@ -4358,7 +4358,7 @@ algorithm
     case (x,_,_,_)
       equation
         str = DAEDump.ppStatementStr(x);
-        str = "DAEUtil.traverseDAEEquationsStmts not implemented correctly: " +& str;
+        str = "DAEUtil.traverseDAEEquationsStmts not implemented correctly: " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -4574,7 +4574,7 @@ algorithm
     case ((x::_),_,_)
       equation
         str = DAEDump.ppStatementStr(x);
-        str = "DAEUtil.traverseDAEStmts not implemented correctly: " +& str;
+        str = "DAEUtil.traverseDAEStmts not implemented correctly: " + str;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
@@ -5130,7 +5130,7 @@ algorithm
         elts = List.appendNoCopy(elts1,elts2);
         // t2 = clock();
         // ti = t2 -. t1;
-        // fprintln(Flags.INNER_OUTER, " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
+        // fprintln(Flags.INNER_OUTER, " joinDAEs: (" + realString(ti) + ") -> " + intString(listLength(elts1)) + " + " +  intString(listLength(elts2)));
       then DAE.DAE(elts);
 
   end match;
@@ -5608,14 +5608,14 @@ algorithm
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = "< value=" +& valueStr(rval) +& ",key=" +& keyStr(rkey) +& ",height="+& intString(h)+& s2 +& s3 +& ">\n";
+        res = "< value=" + valueStr(rval) + ",key=" + keyStr(rkey) + ",height="+ intString(h)+ s2 + s3 + ">\n";
       then
         res;
     case (DAE.AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = "<NONE," +& s2 +& ", "+& s3 +& ">";
+        res = "<NONE," + s2 + ", "+ s3 + ">";
 
       then
         res;
@@ -6053,7 +6053,7 @@ algorithm
 
     case (DAE.VAR(componentRef=cr, kind=DAE.PARAM(), variableAttributesOption=varOpt), _) equation
       _ = BaseHashTable.get(cr, ht);
-      // print("Make cr final " +& ComponentReference.printComponentRefStr(cr) +& "\n");
+      // print("Make cr final " + ComponentReference.printComponentRefStr(cr) + "\n");
       elt = setVariableAttributes(inElement, setFinalAttr(varOpt, true));
     then elt;
 
@@ -6099,7 +6099,7 @@ algorithm
         str;
     case(DAE.VALBOUND(valBound=v))
       equation
-        str = " = " +& ValuesUtil.valString(v);
+        str = " = " + ValuesUtil.valString(v);
       then
         str;
   end match;
@@ -6170,19 +6170,19 @@ algorithm
     case (func::funcs,tree)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        // print("Add to cache [check] : " +& Absyn.pathString(functionName(func)) +& "\n");
-        // print("Function added: \n" +& DAEDump.dumpFunctionStr(func) +& "\n");
+        // print("Add to cache [check] : " + Absyn.pathString(functionName(func)) + "\n");
+        // print("Function added: \n" + DAEDump.dumpFunctionStr(func) + "\n");
         fOld = Util.getOption(avlTreeGet(tree, functionName(func)));
         failure(equality(fOld = func));
-        print("Function already in the tree and different (keep the one already in the tree):" +&
-          "\nnew:\n" +& DAEDump.dumpFunctionStr(func) +&
-          "\nold:\n" +& DAEDump.dumpFunctionStr(fOld) +& "\n");
+        print("Function already in the tree and different (keep the one already in the tree):" +
+          "\nnew:\n" + DAEDump.dumpFunctionStr(func) +
+          "\nold:\n" + DAEDump.dumpFunctionStr(fOld) + "\n");
       then
         fail();
 */
     case (func::funcs,tree)
       equation
-        // print("Add to cache: " +& Absyn.pathString(functionName(func)) +& "\n");
+        // print("Add to cache: " + Absyn.pathString(functionName(func)) + "\n");
         tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeFunction(funcs,tree);
 
@@ -6238,7 +6238,7 @@ algorithm
     case (func::funcs,tree)
       equation
         true = isExtFunction(func);
-        // print("Add ext to cache: " +& Absyn.pathString(functionName(func)) +& "\n");
+        // print("Add ext to cache: " + Absyn.pathString(functionName(func)) + "\n");
         tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeExtFunction(funcs,tree);
 
@@ -6275,12 +6275,12 @@ algorithm
       Absyn.Path p;
     case ((p, NONE()))
       equation
-        str = Absyn.pathString(p) +& " [invalid]";
+        str = Absyn.pathString(p) + " [invalid]";
       then
         str;
     case ((p, SOME(_)))
       equation
-        str = Absyn.pathString(p) +& " [valid]  ";
+        str = Absyn.pathString(p) + " [valid]  ";
       then
         str;
   end matchcontinue;
@@ -6295,7 +6295,7 @@ algorithm
     case (_)
       equation
         msg = stringDelimitList(getFunctionsInfo(tree), "\n  ");
-        print("Cache has: \n  " +& msg +& "\n");
+        print("Cache has: \n  " + msg + "\n");
       then ();
   end matchcontinue;
 end showCacheFuncs;

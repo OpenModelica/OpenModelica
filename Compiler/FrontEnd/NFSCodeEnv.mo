@@ -211,7 +211,7 @@ algorithm
 
     case (_, _)
       equation
-        print("Failed to enterScope: " +& inName +& " in env: " +& printEnvStr(inEnv) +& "\n");
+        print("Failed to enterScope: " + inName + " in env: " + printEnvStr(inEnv) + "\n");
       then
         fail();
   end matchcontinue;
@@ -678,7 +678,7 @@ algorithm
       equation
         class_env = makeClassEnvironment(inClassDefElement, false);
         cls_type = getClassType(cdef);
-        alias_name = cls_name +& BASE_CLASS_SUFFIX;
+        alias_name = cls_name + BASE_CLASS_SUFFIX;
         env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
           inEnv, alias_name);
         env = extendEnvWithItem(ALIAS(alias_name, NONE(), info), env, cls_name);
@@ -1362,14 +1362,14 @@ algorithm
       equation
         alias_str = Absyn.pathString(path);
       then
-        "alias " +& name +& " -> (" +& alias_str +& "." +& name +& ")";
+        "alias " + name + " -> (" + alias_str + "." + name + ")";
     case ALIAS(name = name, path = NONE())
-      then "alias " +& name +& " -> ()";
+      then "alias " + name + " -> ()";
     case REDECLARED_ITEM(item = item)
       equation
         name = itemStr(item);
       then
-        "redeclared " +& name;
+        "redeclared " + name;
 
     else "UNHANDLED ITEM";
 
@@ -1426,7 +1426,7 @@ algorithm
     case REDECLARED_ITEM(item = item) then getItemEnvNoFail(item);
     else
       equation
-        str = "NO ENV FOR ITEM: " +& getItemName(inItem);
+        str = "NO ENV FOR ITEM: " + getItemName(inItem);
         f = newFrame(SOME(str), ENCAPSULATED_SCOPE());
         env = {f};
       then
@@ -1564,7 +1564,7 @@ algorithm
         {EXTENDS(baseClass = bc, redeclareModifiers = rm)} =
           getEnvExtendsFromTable(inEnv);
         false = Absyn.pathSuffixOf(path, bc);
-        print("Derived paths are not the same: " +& Absyn.pathString(path) +& " != " +& Absyn.pathString(bc) +& "\n");
+        print("Derived paths are not the same: " + Absyn.pathString(path) + " != " + Absyn.pathString(bc) + "\n");
       then
         rm;
 
@@ -1820,11 +1820,11 @@ algorithm
         tree_str = printAvlTreeStr(SOME(tree));
         ext_str = printExtendsTableStr(exts);
         imp_str = printImportTableStr(imps);
-        name_str = "<<<" +& ty_str +& " frame " +& name_str +& ">>>\n";
-        out = name_str +&
-              "\tImports:\n" +& imp_str +&
-              "\n\tExtends:\n" +& ext_str +&
-              "\n\tComponents:\n" +& tree_str +& "\n";
+        name_str = "<<<" + ty_str + " frame " + name_str + ">>>\n";
+        out = name_str +
+              "\tImports:\n" + imp_str +
+              "\n\tExtends:\n" + ext_str +
+              "\n\tComponents:\n" + tree_str + "\n";
       then
         out;
   end match;
@@ -1872,7 +1872,7 @@ algorithm
         left_str = printAvlTreeStr(left);
         right_str = printAvlTreeStr(right);
         value_str = printAvlValueStr(value);
-        value_str = value_str +& left_str +& right_str;
+        value_str = value_str + left_str + right_str;
       then
         value_str;
   end match;
@@ -1889,22 +1889,22 @@ algorithm
       Item i;
 
     case (AVLTREEVALUE(key = key_str, value = CLASS(cls = _)))
-      then "\t\tClass " +& key_str +& "\n";
+      then "\t\tClass " + key_str + "\n";
 
     case (AVLTREEVALUE(key = key_str, value = VAR(var = _)))
-      then "\t\tVar " +& key_str +& "\n";
+      then "\t\tVar " + key_str + "\n";
 
     case (AVLTREEVALUE(key = key_str, value = ALIAS(name = name, path = SOME(path))))
       equation
-        alias_str = Absyn.pathString(path) +& "." +& name;
+        alias_str = Absyn.pathString(path) + "." + name;
       then
-        "\t\tAlias " +& key_str +& " -> " +& alias_str +& "\n";
+        "\t\tAlias " + key_str + " -> " + alias_str + "\n";
 
     case (AVLTREEVALUE(key = key_str, value = ALIAS(name = name)))
-      then "\t\tAlias " +& key_str +& " -> " +& name +& "\n";
+      then "\t\tAlias " + key_str + " -> " + name + "\n";
 
     case (AVLTREEVALUE(key = key_str, value = REDECLARED_ITEM(item = i)))
-      then "\t\tRedeclare " +& key_str +& " -> " +& getItemName(i) +& "\n";
+      then "\t\tRedeclare " + key_str + " -> " + getItemName(i) + "\n";
 
   end match;
 end printAvlValueStr;
@@ -1918,10 +1918,10 @@ protected
   Option<SCode.Element> cei;
 algorithm
   EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei) := inExtendsTable;
-  outString := stringDelimitList(List.map(bcl, printExtendsStr), "\n") +&
-    "\n\t\tRedeclare elements:\n\t\t\t" +&
-    stringDelimitList(List.map1(re, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n\t\t\t") +&
-    "\n\t\tClass extends:\n\t\t\t" +&
+  outString := stringDelimitList(List.map(bcl, printExtendsStr), "\n") +
+    "\n\t\tRedeclare elements:\n\t\t\t" +
+    stringDelimitList(List.map1(re, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n\t\t\t") +
+    "\n\t\tClass extends:\n\t\t\t" +
     Util.stringOption(Util.applyOption1(cei, SCodeDump.unparseElementStr, SCodeDump.defaultOptions));
 end printExtendsTableStr;
 
@@ -1936,7 +1936,7 @@ algorithm
   EXTENDS(baseClass = bc, redeclareModifiers = mods) := inExtends;
   mods_str := stringDelimitList(
     List.map(mods, printRedeclarationStr), "\n");
-  outString := "\t\t" +& Absyn.pathString(bc) +& "(" +& mods_str +& ")";
+  outString := "\t\t" + Absyn.pathString(bc) + "(" + mods_str + ")";
 end printExtendsStr;
 
 public function printRedeclarationStr
@@ -1946,9 +1946,9 @@ algorithm
   outString := matchcontinue(inRedeclare)
     local String name; Absyn.Path p;
     case (PROCESSED_MODIFIER(modifier = ALIAS(name = name, path = SOME(p))))
-      then "ALIAS(" +& Absyn.pathString(p) +& "." +& name +& ")";
+      then "ALIAS(" + Absyn.pathString(p) + "." + name + ")";
     case (PROCESSED_MODIFIER(modifier = ALIAS(name = name)))
-      then "ALIAS(" +& name +& ")";
+      then "ALIAS(" + name + ")";
     case _ then SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions);
   end matchcontinue;
 end printRedeclarationStr;
@@ -1966,7 +1966,7 @@ algorithm
     List.map(qual_imps, Absyn.printImportString), "\n\t\t");
   unqual_str := stringDelimitList(
     List.map(unqual_imps, Absyn.printImportString), "\n\t\t");
-  outString := "\t\t" +& qual_str +& unqual_str;
+  outString := "\t\t" + qual_str + unqual_str;
 end printImportTableStr;
 
 public function avlTreeAdd
@@ -2384,19 +2384,19 @@ algorithm
 
     case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey)), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
+        indent = inIndent + "  ";
         s1 = printAvlTreeStrPP2(l, indent);
         s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" +& inIndent +& rkey +& s1 +& s2;
+        res = "\n" + inIndent + rkey + s1 + s2;
       then
         res;
 
     case (SOME(AVLTREENODE(value = NONE(), left = l, right = r)), _)
       equation
-        indent = inIndent +& "  ";
+        indent = inIndent + "  ";
         s1 = printAvlTreeStrPP2(l, indent);
         s2 = printAvlTreeStrPP2(r, indent);
-        res = "\n" +& s1 +& s2;
+        res = "\n" + s1 + s2;
       then
         res;
   end match;

@@ -151,8 +151,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFInstFlatten.flattenClass failed for " +&
-          Absyn.pathString(NFInstUtil.getClassName(inClass)) +& "\n");
+        Debug.traceln("- NFInstFlatten.flattenClass failed for " +
+          Absyn.pathString(NFInstUtil.getClassName(inClass)) + "\n");
       then
         fail();
 
@@ -231,8 +231,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFInstFlatten.flattenElements failed for " +&
-            Absyn.pathString(inClassPath) +& "\n");
+        Debug.traceln("- NFInstFlatten.flattenElements failed for " +
+            Absyn.pathString(inClassPath) + "\n");
       then
         fail();
 

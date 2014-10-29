@@ -54,14 +54,14 @@ algorithm
     opCostN := listGet(opCosts,2); //n
     s1 := intString(opCostM);
     s2 := intString(opCostN);
-    //print("Test op y= " +& s1 +& " * x + " +& s2 +& "\n");
+    //print("Test op y= " + s1 + " * x + " + s2 + "\n");
 
     comCosts := HpcOmBenchmarkExt.requiredTimeForComm();
     comCostM := listGet(comCosts,1); //m
     comCostN := listGet(comCosts,2); //n
     s1 := intString(comCostM);
     s2 := intString(comCostN);
-    //print("Test comm y= " +& s1 +& " * x + " +& s2 +& "\n");
+    //print("Test comm y= " + s1 + " * x + " + s2 + "\n");
 
     oTime := ((opCostM,opCostN),(comCostM,comCostN));
 end benchSystem;
@@ -78,7 +78,7 @@ algorithm
   calcTimes := matchcontinue(iFileNamePrefix)
     case(_)
       equation
-        fullFileName = iFileNamePrefix +& ".json";
+        fullFileName = iFileNamePrefix + ".json";
         SOME(_) = System.getFileModificationTime(fullFileName);
         //json-file does exist
         print("Using json-file\n");
@@ -86,7 +86,7 @@ algorithm
       then tmpCalcTimes;
     case(_)
       equation
-        fullFileName = iFileNamePrefix +& ".xml";
+        fullFileName = iFileNamePrefix + ".xml";
         SOME(_) = System.getFileModificationTime(fullFileName);
         //xml-file does exist
         tmpCalcTimes = readCalcTimesFromXml(fullFileName);
@@ -137,7 +137,7 @@ algorithm
   oTuples := matchcontinue(iList, iTuples)
   case(numOfCalcs::calcTimeSum::eqIdx::rest,_)
     equation
-      //print("readCalcTimesFromXml1 eqIdx: " +& intString(realInt(eqIdx)) +& " numOfCalcs: " +& intString(realInt(numOfCalcs)) +& " calcTime: " +& realString(calcTimeSum) +& " \n");
+      //print("readCalcTimesFromXml1 eqIdx: " + intString(realInt(eqIdx)) + " numOfCalcs: " + intString(realInt(numOfCalcs)) + " calcTime: " + realString(calcTimeSum) + " \n");
       intNumOfCalcs = realInt(numOfCalcs);
       intEqIdx = realInt(eqIdx);
       tmpTuples = expandCalcTimes(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);

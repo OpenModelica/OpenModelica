@@ -433,10 +433,10 @@ algorithm
         str1 = stringDelimitList(List.map(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);
         strInitial = SCodeDump.printInitialStr(initial_);
-        Debug.traceln("- Algorithm.makeTupleAssignment failed on: \n\t" +&
-          lhs_str +& " = " +& rhs_str +&
-          "\n\tprops lhs: (" +& str1 +& ") =  props rhs: " +& str2 +&
-          "\n\tin " +& strInitial +& " section");
+        Debug.traceln("- Algorithm.makeTupleAssignment failed on: \n\t" +
+          lhs_str + " = " + rhs_str +
+          "\n\tprops lhs: (" + str1 + ") =  props rhs: " + str2 +
+          "\n\tin " + strInitial + " section");
       then
         fail();
   end matchcontinue;

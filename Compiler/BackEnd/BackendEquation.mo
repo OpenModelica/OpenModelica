@@ -75,7 +75,7 @@ protected
   array<Option<BackendDAE.Equation>> optarr;
 algorithm
   len := listLength(inEquationList);
-  rlen := intReal(len) *. 1.4;
+  rlen := intReal(len) * 1.4;
   arrsize := realInt(rlen);
   optarr := arrayCreate(arrsize, NONE());
   (size, optarr) := listEquation1(inEquationList, 1, 0, optarr);
@@ -1179,7 +1179,7 @@ algorithm
     case (e, BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr)) equation /* Do NOT Have space to add array elt. Expand array 1.4 times */
       (numberOfElement < arrSize) = false;
       rsize = intReal(arrSize);
-      rexpandsize = rsize *. 0.4;
+      rexpandsize = rsize * 0.4;
       expandsize = realInt(rexpandsize);
       expandsize_1 = intMax(expandsize, 1);
       newsize = expandsize_1 + arrSize;
@@ -1190,7 +1190,7 @@ algorithm
     then BackendDAE.EQUATION_ARRAY(size, n_1, newsize, arr_2);
 
     case (_, BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr)) equation
-      print("- BackendEquation.addEquation failed\nArraySize: " +& intString(arrSize) +& "\nnumberOfElement " +& intString(numberOfElement) +& "\nSize " +& intString(size) +& "\narraySize " +& intString(arrayLength(equOptArr)));
+      print("- BackendEquation.addEquation failed\nArraySize: " + intString(arrSize) + "\nnumberOfElement " + intString(numberOfElement) + "\nSize " + intString(size) + "\narraySize " + intString(arrayLength(equOptArr)));
     then fail();
   end matchcontinue;
 end addEquation;
@@ -1315,8 +1315,8 @@ algorithm
     then e;
 
     case (BackendDAE.EQUATION_ARRAY(numberOfElement=n), _) equation
-      str = "BackendEquation.equationNth1 failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(inPos);
-      print(str +& "\n");
+      str = "BackendEquation.equationNth1 failed; numberOfElement=" + intString(n) + "; pos=" + intString(inPos);
+      print(str + "\n");
       Error.addInternalError(str);
     then fail();
   end matchcontinue;
@@ -1349,7 +1349,7 @@ algorithm
 
     case ({}, _, _) equation
       str = "BackendEquation.equationNthSize1 failed";
-      print(str +& "\n");
+      print(str + "\n");
       Error.addInternalError(str);
     then fail();
 
@@ -1366,7 +1366,7 @@ algorithm
 
     else equation
       str = "BackendEquation.equationNthSize1 failed";
-      print(str +& "\n");
+      print(str + "\n");
       Error.addInternalError(str);
     then fail();
   end matchcontinue;
@@ -1508,7 +1508,7 @@ algorithm
     then iEqns;
 
     else equation
-      print("BackendEquation.compressEquations1 failed for index " +& intString(index) +& " and Number of Equations " +& intString(nEqns) +& "\n");
+      print("BackendEquation.compressEquations1 failed for index " + intString(index) + " and Number of Equations " + intString(nEqns) + "\n");
     then fail();
   end matchcontinue;
 end compressEquations1;
@@ -1623,7 +1623,7 @@ algorithm
     then ((i+1, eqs));
 
     case (_, _, _, _, (i, _)) equation
-      str = "BackendEquation.equationTupleToScalarResidualForm failed: " +& intString(i) +& ": " +& ExpressionDump.printExpStr(cr);
+      str = "BackendEquation.equationTupleToScalarResidualForm failed: " + intString(i) + ": " + ExpressionDump.printExpStr(cr);
       Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, DAEUtil.getElementSourceFileInfo(inSource));
     then fail();
   end match;
@@ -1878,7 +1878,7 @@ algorithm
     else equation
       // show only on failtrace!
       true = Flags.isSet(Flags.FAILTRACE);
-      Debug.traceln("- BackendEquation.generateEquation failed on: " +& ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs) +& "\n");
+      Debug.traceln("- BackendEquation.generateEquation failed on: " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
     then fail();
   end matchcontinue;
 end generateEquation;
@@ -2145,7 +2145,7 @@ algorithm
     then eq;
 */
     else equation
-      BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " +& ExpressionDump.printExpStr(crefExp), true);
+      BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " + ExpressionDump.printExpStr(crefExp), true);
       Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function solveEquation failed");
     then fail();
   end matchcontinue;

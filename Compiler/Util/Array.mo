@@ -486,7 +486,7 @@ algorithm
   if inNewSize <= arrayLength(inArray) then
     outArray := inArray;
   else
-    new_size := realInt(intReal(arrayLength(inArray)) *. inExpansionFactor);
+    new_size := realInt(intReal(arrayLength(inArray)) * inExpansionFactor);
     outArray := arrayCreate(new_size, inFillValue);
     copy(inArray, outArray);
   end if;

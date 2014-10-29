@@ -133,7 +133,7 @@ algorithm
 
     case _
       equation
-        print("valueExpType on "+&valString(inValue) +& " not implemented yet\n");
+        print("valueExpType on "+valString(inValue) + " not implemented yet\n");
       then fail();
   end matchcontinue;
 end valueExpType;
@@ -305,18 +305,18 @@ algorithm
     case (Values.REAL(rv1),Values.INTEGER(iv2), Values.MULOP())
       equation
         rv2 = intReal(iv2);
-        rv3 = rv1 *. rv2;
+        rv3 = rv1 * rv2;
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.MULOP())
       equation
         rv1 = intReal(iv1);
-        rv3 = rv1 *. rv2;
+        rv3 = rv1 * rv2;
       then
         Values.REAL(rv3);
     case (Values.REAL(rv1), Values.REAL(rv2), Values.MULOP())
       equation
-        rv3 = rv1 *. rv2;
+        rv3 = rv1 * rv2;
       then
         Values.REAL(rv3);
         //DIV
@@ -329,18 +329,18 @@ algorithm
     case (Values.REAL(rv1),Values.INTEGER(iv2), Values.DIVOP())
       equation
         rv2 = intReal(iv2);
-        rv3 = rv1 /. rv2;
+        rv3 = rv1 / rv2;
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.DIVOP())
       equation
         rv1 = intReal(iv1);
-        rv3 = rv1 /. rv2;
+        rv3 = rv1 / rv2;
       then
         Values.REAL(rv3);
     case (Values.REAL(rv1), Values.REAL(rv2), Values.DIVOP())
       equation
-        rv3 = rv1 /. rv2;
+        rv3 = rv1 / rv2;
       then
         Values.REAL(rv3);
         //POW
@@ -392,18 +392,18 @@ algorithm
     case (Values.REAL(rv1),Values.INTEGER(iv2), Values.ADDOP())
       equation
         rv2 = intReal(iv2);
-        rv3 = rv1 +. rv2;
+        rv3 = rv1 + rv2;
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.ADDOP())
       equation
         rv1 = intReal(iv1);
-        rv3 = rv1 +. rv2;
+        rv3 = rv1 + rv2;
       then
         Values.REAL(rv3);
     case (Values.REAL(rv1), Values.REAL(rv2), Values.ADDOP())
       equation
-        rv3 = rv1 +. rv2;
+        rv3 = rv1 + rv2;
       then
         Values.REAL(rv3);
         //SUB
@@ -416,18 +416,18 @@ algorithm
     case (Values.REAL(rv1),Values.INTEGER(iv2), Values.SUBOP())
       equation
         rv2 = intReal(iv2);
-        rv3 = rv1 -. rv2;
+        rv3 = rv1 - rv2;
       then
         Values.REAL(rv3);
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.SUBOP())
       equation
         rv1 = intReal(iv1);
-        rv3 = rv1 -. rv2;
+        rv3 = rv1 - rv2;
       then
         Values.REAL(rv3);
     case (Values.REAL(rv1), Values.REAL(rv2), Values.SUBOP())
       equation
-        rv3 = rv1 -. rv2;
+        rv3 = rv1 - rv2;
       then
         Values.REAL(rv3);
   end matchcontinue;
@@ -446,17 +446,17 @@ algorithm
       Integer i1, i2;
 
     case (Values.REAL(r1), Values.REAL(r2))
-      then (r1 <=. r2);
+      then (r1 <= r2);
 
     case (Values.REAL(r1), _)
       equation
         r2 = intReal(valueInteger(val2));
-      then (r1 <=. r2);
+      then (r1 <= r2);
 
     case (_, Values.REAL(r2))
       equation
         r1 = intReal(valueInteger(val1));
-      then (r1 <=. r2);
+      then (r1 <= r2);
 
     case (_, _)
       equation
@@ -650,7 +650,7 @@ algorithm
         (Values.INTEGER(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
       equation
-        rres = r1 +. r2;
+        rres = r1 + r2;
         res2 = addElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(rres) :: res2);
@@ -692,7 +692,7 @@ algorithm
         (Values.INTEGER(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
       equation
-        rres = r1 -. r2;
+        rres = r1 - r2;
         res2 = subElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(rres) :: res2);
@@ -728,7 +728,7 @@ algorithm
         (Values.INTEGER(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
       equation
-        rres = r1 *. r2;
+        rres = r1 * r2;
         res2 = mulElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(rres) :: res2);
@@ -760,13 +760,13 @@ algorithm
       equation
         r1=intReal(i1);
         r2=intReal(i2);
-        res = r1 /. r2;
+        res = r1 / r2;
         res2 = divElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
       equation
-        res = r1 /. r2;
+        res = r1 / r2;
         res2 = divElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(res) :: res2);
@@ -798,13 +798,13 @@ algorithm
       equation
         r1=intReal(i1);
         r2=intReal(i2);
-        res = r1 ^. r2;
+        res = r1 ^ r2;
         res2 = powElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(res) :: res2);
     case ((Values.REAL(real = r1) :: rest1),(Values.REAL(real = r2) :: rest2))
       equation
-        res = r1 ^. r2;
+        res = r1 ^ r2;
         res2 = powElementwiseArrayelt(rest1, rest2);
       then
         (Values.REAL(res) :: res2);
@@ -946,7 +946,7 @@ algorithm
 
     case (v)
       equation
-        s = "ValuesUtil.valueExp failed for " +& valString(v);
+        s = "ValuesUtil.valueExp failed for " + valString(v);
         Error.addMessage(Error.INTERNAL_ERROR, {s});
       then
         fail();
@@ -1155,7 +1155,7 @@ algorithm
       list<Integer> dims;
     case (Values.REAL(real = r))
       equation
-        r_1 = -. r;
+        r_1 = - r;
       then
         Values.REAL(r_1);
     case (Values.INTEGER(integer = i))
@@ -1197,7 +1197,7 @@ algorithm
     case ((Values.REAL(real = r2) :: xs))
       equation
         Values.REAL(r1) = sumArrayelt(xs);
-        r3 = r1 +. r2;
+        r3 = r1 + r2;
       then
         Values.REAL(r3);
     case ((arr as (Values.ARRAY(valueLst = v2) :: _)))
@@ -1239,20 +1239,20 @@ algorithm
     case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
         r2 = intReal(i2);
-        r1 = r1 *. r2;
+        r1 = r1 * r2;
         v2 = multScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
         r1 = intReal(i1);
-        r1 = r1 *. r2;
+        r1 = r1 * r2;
         v2 = multScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = r1 *. r2;
+        r1 = r1 * r2;
         v2 = multScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
@@ -1291,26 +1291,26 @@ algorithm
     case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
         r2 = intReal(i2);
-        r1 = r1 +. r2;
+        r1 = r1 + r2;
         v2 = addScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
         r1 = intReal(i1);
-        r1 = r1 +. r2;
+        r1 = r1 + r2;
         v2 = addScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = r1 +. r2;
+        r1 = r1 + r2;
         v2 = addScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.STRING(string = s1)),(Values.STRING(string = s2) :: rest))
       equation
-        s1 = s1+&s2;
+        s1 = s1+s2;
         v2 = addScalarArrayelt(sval, rest);
       then
         (Values.STRING(s1) :: v2);
@@ -1358,27 +1358,27 @@ algorithm
       equation
         r1 = intReal(i1);
         r2 = intReal(i2);
-        r1 = r1 /. r2;
+        r1 = r1 / r2;
         v2 = divScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
         r2 = intReal(i2);
-        r1 = r1 /. r2;
+        r1 = r1 / r2;
         v2 = divScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
         r1 = intReal(i1);
-        r1 = r1 /. r2;
+        r1 = r1 / r2;
         v2 = divScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = r1 /. r2;
+        r1 = r1 / r2;
         v2 = divScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
@@ -1416,20 +1416,20 @@ algorithm
     case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
         r2 = intReal(i2);
-        r1 = r1 -. r2;
+        r1 = r1 - r2;
         v2 = subScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
         r1 = intReal(i1);
-        r1 = r1 -. r2;
+        r1 = r1 - r2;
         v2 = subScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = r1 -. r2;
+        r1 = r1 - r2;
         v2 = subScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
@@ -1462,27 +1462,27 @@ algorithm
       equation
         r1=intReal(i1);
         r2=intReal(i2);
-        r1 = r1 ^. r2;
+        r1 = r1 ^ r2;
         v2 = powScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
         r2 = intReal(i2);
-        r1 = r1 ^. r2;
+        r1 = r1 ^ r2;
         v2 = powScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
         r1 = intReal(i1);
-        r1 = r1 ^. r2;
+        r1 = r1 ^ r2;
         v2 = powScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = r1 ^. r2;
+        r1 = r1 ^ r2;
         v2 = powScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: v2);
@@ -1520,20 +1520,20 @@ algorithm
     case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
         r2 = intReal(i2);
-        r1 = r2 -. r1;
+        r1 = r2 - r1;
         v2 = subArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
         r1 = intReal(i1);
-        r1 = r2 -. r1;
+        r1 = r2 - r1;
         v2 = subArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = r2 -. r1;
+        r1 = r2 - r1;
         v2 = subArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: v2);
@@ -1566,27 +1566,27 @@ algorithm
       equation
         r1=intReal(i1);
         r2=intReal(i2);
-        r1 = r2 ^. r1;
+        r1 = r2 ^ r1;
         v2 = powArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.INTEGER(integer = i2) :: rest))
       equation
         r2 = intReal(i2);
-        r1 = r2 ^. r1;
+        r1 = r2 ^ r1;
         v2 = powArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = r2) :: rest))
       equation
         r1 = intReal(i1);
-        r1 = r2 ^. r1;
+        r1 = r2 ^ r1;
         v2 = powArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: v2);
     case ((sval as Values.REAL(real = r1)),(Values.REAL(real = r2) :: rest))
       equation
-        r1 = r2 ^. r1;
+        r1 = r2 ^ r1;
         v2 = powArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: v2);
@@ -1623,14 +1623,14 @@ algorithm
         Values.INTEGER(res);
     case ((Values.REAL(real = r1) :: (v1lst as (_ :: _))),(Values.REAL(real = r2) :: (v2lst as (_ :: _))))
       equation
-        r1 = r1 *. r2;
+        r1 = r1 * r2;
         Values.REAL(r2) = multScalarProduct(v1lst, v2lst);
-        rres = r1 +. r2;
+        rres = r1 + r2;
       then
         Values.REAL(rres);
     case ({Values.REAL(real = r1)},{Values.REAL(real = r2)})
       equation
-        rres = r1 *. r2;
+        rres = r1 * r2;
       then
         Values.REAL(rres);
     case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.INTEGER(integer = _) :: _)))
@@ -1788,20 +1788,20 @@ algorithm
     case ((sval as Values.REAL(real = v1)),(Values.INTEGER(integer = i2) :: rest))
       equation
         v2_1 = intReal(i2);
-        v1 = v2_1 /. v1;
+        v1 = v2_1 / v1;
         r2 = divArrayeltScalar(sval, rest);
       then
         (Values.REAL(v1) :: r2);
     case ((sval as Values.INTEGER(integer = i1)),(Values.REAL(real = v2) :: rest))
       equation
         v1_1 = intReal(i1);
-        v1 = v2 /. v1_1;
+        v1 = v2 / v1_1;
         r2 = divArrayeltScalar(sval, rest);
       then
         (Values.REAL(v1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
       equation
-        v1 = v2 /. v1;
+        v1 = v2 / v1;
         r2 = divArrayeltScalar(sval, rest);
       then
         (Values.REAL(v1) :: r2);
@@ -2070,9 +2070,9 @@ algorithm
       equation
         recordName = Absyn.pathStringNoQual(recordPath);
 
-        Print.printBuf("record " +& recordName +& "\n");
+        Print.printBuf("record " + recordName + "\n");
         valRecordString(xs,ids);
-        Print.printBuf("end " +& recordName +& ";");
+        Print.printBuf("end " + recordName + ";");
       then
         ();
 
@@ -2139,7 +2139,7 @@ algorithm
     /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
     case (Values.ENUM_LITERAL(index = n, name=p))
       equation
-        s = intString(n) +& " /* ENUM: " +& Absyn.pathString(p) +& " */";
+        s = intString(n) + " /* ENUM: " + Absyn.pathString(p) + " */";
         Print.printBuf(s);
       then
         ();
@@ -2154,7 +2154,7 @@ algorithm
 
     case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr))
       equation
-        Print.printBuf("/* <EMPTY(scope: " +& scope +& ", name: " +& name +& ", ty: " +& tyStr +& ")> */");
+        Print.printBuf("/* <EMPTY(scope: " + scope + ", name: " + name + ", ty: " + tyStr + ")> */");
       then ();
 
     else
@@ -2236,8 +2236,8 @@ algorithm
 
     case (xs,ids)
       equation
-        print("ValuesUtil.valRecordString failed:\nids: "+& stringDelimitList(ids, ", ") +&
-        "\nvals: " +& stringDelimitList(List.map(xs, valString), ", ") +& "\n");
+        print("ValuesUtil.valRecordString failed:\nids: "+ stringDelimitList(ids, ", ") +
+        "\nvals: " + stringDelimitList(List.map(xs, valString), ", ") + "\n");
       then
         fail();
 
@@ -2363,8 +2363,8 @@ algorithm
     case (v1, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- ValuesUtil.unparsePtolemySet2 failed on v1: " +&
-          printValStr(v1) +& " and v2: " +& printValStr(v1));
+        Debug.traceln("- ValuesUtil.unparsePtolemySet2 failed on v1: " +
+          printValStr(v1) + " and v2: " + printValStr(v1));
       then
         fail();
   end matchcontinue;
