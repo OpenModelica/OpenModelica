@@ -623,7 +623,7 @@ algorithm
     outList := {};
   else
     _ :: outList := listReverse(inList);
-    outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+    outList := listReverse(outList);
   end if;
 end stripLast;
 
@@ -1154,7 +1154,7 @@ public function splitLast<T>
   output list<T> outRest;
 algorithm
   outLast :: outRest := listReverse(inList);
-  outRest := MetaModelica.Dangerous.listReverseInPlace(outRest);
+  outRest := listReverse(outRest);
 end splitLast;
 
 public function splitEqualParts<T>
@@ -1618,7 +1618,7 @@ algorithm
     outUnion := unionElt(e, outUnion);
   end for;
 
-  outUnion := MetaModelica.Dangerous.listReverseInPlace(outUnion);
+  outUnion := listReverse(outUnion);
 end unionAppendonUnion;
 
 public function unionOnTrue<T>
@@ -4954,7 +4954,7 @@ public function filter1<T, ArgT1>
 algorithm
   for e in inList loop
     try
-    inFilterFunc(e, inArg1);
+      inFilterFunc(e, inArg1);
       outList := e :: outList;
     else
     end try;
@@ -5591,7 +5591,7 @@ algorithm
   for e in inList loop
     outList := inMapFunc(e, outList);
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverse(outList);
 end accumulateMapAccum;
 
 public function accumulateMapAccum1<TI, TO, ArgT1>
@@ -5613,7 +5613,7 @@ algorithm
   for e in inList loop
     outList := inMapFunc(e, inArg, outList);
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverse(outList);
 end accumulateMapAccum1;
 
 public function accumulateMapFold = accumulateMapFoldAccum;
@@ -5636,7 +5636,7 @@ algorithm
   for e in inList loop
     (outList, outFoldArg) := inFunc(e, outFoldArg, outList);
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverse(outList);
 end accumulateMapFoldAccum;
 
 public function first2FromTuple3<T>
