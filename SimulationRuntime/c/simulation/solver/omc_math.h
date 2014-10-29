@@ -89,8 +89,10 @@ _omc_vector* _omc_fillVector(_omc_vector* vec, _omc_scalar s);
 _omc_vector* _omc_negateVector(_omc_vector* vec);
 
 _omc_vector* _omc_multiplyScalarVector(_omc_vector* vec, _omc_scalar s);
-_omc_vector* _omc_addVectorVector(_omc_vector* vec1, _omc_vector* vec2);
-_omc_vector* _omc_subtractVectorVector(_omc_vector* vec1, _omc_vector* vec2);
+_omc_vector* _omc_addVector(_omc_vector* vec1, const _omc_vector* vec2);
+_omc_vector* _omc_subVector(_omc_vector* vec1, const _omc_vector* vec2);
+_omc_vector* _omc_addVectorVector(_omc_vector* dest, const _omc_vector* vec1, const _omc_vector* vec2);
+_omc_vector* _omc_subVectorVector(_omc_vector* dest, const _omc_vector* vec1, const _omc_vector* vec2);
 _omc_scalar _omc_scalarProduct(const _omc_vector* vec1, const _omc_vector* vec2);
 _omc_scalar _omc_sumVector(const _omc_vector* vec);
 

@@ -404,44 +404,88 @@ _omc_vector* _omc_multiplyScalarVector(_omc_vector* vec, _omc_scalar s) {
   return vec;
 }
 
-/*! \fn _omc_vector* _omc_addVectorVector(_omc_vector* vec1, _omc_vector* vec2)
+/*! \fn _omc_vector* _omc_addVector(_omc_vector* dest, _omc_vector* src)
  *
  *  addition of two vectors to the first one
  *
  *  \param [ref]  [_omc_vector]
  *  \param [ref]  [_omc_vector]
  */
-_omc_vector* _omc_addVectorVector(_omc_vector* vec1, _omc_vector* vec2) {
-  _omc_size i, j;
-  assertStreamPrint(NULL, vec1->size == vec2->size,
-      "Vectors have not the same size %d != %d", vec1->size, vec2->size);
-  assertStreamPrint(NULL, NULL != vec1->data, "vector1 data is NULL pointer");
-  assertStreamPrint(NULL, NULL != vec2->data, "vector2 data is NULL pointer");
-  for (i = 0; i < vec1->size; ++i) {
-    vec1->data[i] += vec2->data[i];
+_omc_vector* _omc_addVector(_omc_vector* dest, const _omc_vector* src) {
+  _omc_size i;
+  assertStreamPrint(NULL, dest->size == src->size,
+      "Vectors have not the same size %d != %d", dest->size, src->size);
+  assertStreamPrint(NULL, NULL != dest->data, "vector1 data is NULL pointer");
+  assertStreamPrint(NULL, NULL != src->data, "vector2 data is NULL pointer");
+  for (i = 0; i < dest->size; ++i) {
+    dest->data[i] += src->data[i];
   }
 
-  return vec1;
+  return dest;
 }
 
-/*! \fn _omc_vector* _omc_subtractVectorVector(_omc_vector* vec1, _omc_vector* vec2)
+/*! \fn _omc_vector* _omc_subVector(_omc_vector* dest, const _omc_vector* src)
  *
  *  subtraction of two vectors to the first one
  *
  *  \param [ref]  [_omc_vector]
  *  \param [ref]  [_omc_vector]
  */
-_omc_vector* _omc_subtractVectorVector(_omc_vector* vec1, _omc_vector* vec2) {
-  _omc_size i, j;
-  assertStreamPrint(NULL, vec1->size == vec2->size,
+_omc_vector* _omc_subVector(_omc_vector* dest, const _omc_vector* src) {
+  _omc_size i;
+  assertStreamPrint(NULL, src->size == dest->size,
+      "Vectors have not the same size %d != %d", src->size, dest->size);
+  assertStreamPrint(NULL, NULL != dest->data, "vector1 data is NULL pointer");
+  assertStreamPrint(NULL, NULL != src->data, "vector2 data is NULL pointer");
+  for (i = 0; i < dest->size; ++i) {
+    dest->data[i] -= src->data[i];
+  }
+
+  return dest;
+}
+
+/*! \fn _omc_vector* _omc_addVectorVector(_omc_vector dest, const _omc_vector* vec1, const _omc_vector* vec2)
+ *
+ *  addition of two vectors in a third one
+ *
+ *  \param [ref]  [_omc_vector]
+ *  \param [ref]  [_omc_vector]
+ *  \param [ref]  [_omc_vector]
+ */
+_omc_vector* _omc_addVectorVector(_omc_vector* dest, const _omc_vector* vec1, const _omc_vector* vec2) {
+  _omc_size i;
+  assertStreamPrint(NULL, vec1->size == vec2->size && dest->size == vec1->size,
+      "Vectors have not the same size %d != %d != %d", dest->size, vec1->size, vec2->size);
+  assertStreamPrint(NULL, NULL != vec1->data, "vector1 data is NULL pointer");
+  assertStreamPrint(NULL, NULL != vec2->data, "vector2 data is NULL pointer");
+  assertStreamPrint(NULL, NULL != dest->data, "destination data is NULL pointer");
+  for (i = 0; i < vec1->size; ++i) {
+    dest->data[i] = vec1->data[i] + vec2->data[i];
+  }
+
+  return dest;
+}
+
+/*! \fn _omc_vector* _omc_subVectorVector(_omc_vector* dest, const _omc_vector* vec1, const _omc_vector* vec2)
+ *
+ *  subtraction of vec2 from vec1 in a third one
+ *
+ *  \param [ref]  [_omc_vector]
+ *  \param [ref]  [_omc_vector]
+ *  \param [ref]  [_omc_vector]
+ */
+_omc_vector* _omc_subVectorVector(_omc_vector* dest, const _omc_vector* vec1, const _omc_vector* vec2) {
+  _omc_size i;
+  assertStreamPrint(NULL, vec1->size == vec2->size && dest->size == vec1->size,
       "Vectors have not the same size %d != %d", vec1->size, vec2->size);
   assertStreamPrint(NULL, NULL != vec1->data, "vector1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != vec2->data, "vector2 data is NULL pointer");
+  assertStreamPrint(NULL, NULL != dest->data, "destination data is NULL pointer");
   for (i = 0; i < vec1->size; ++i) {
-    vec1->data[i] -= vec2->data[i];
+    dest->data[i] = vec1->data[i] - vec2->data[i];
   }
 
-  return vec1;
+  return dest;
 }
 
 /*! \fn _omc_scalar _omc_scalarProduct(_omc_vector* vec1, _omc_vector* vec2)
@@ -643,13 +687,13 @@ _omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2) {
  *  \param [in]   [int]
  */
 void _omc_printVector(_omc_vector* vec, const char* name, const int logLevel) {
-  _omc_size i, j;
+  _omc_size i;
   if (!ACTIVE_STREAM(logLevel)) return;
 
   assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
 
   infoStreamPrint(logLevel, 1, "%s", name);
-  for (j = 0; i < vec->size; ++j)
+  for (i = 0; i < vec->size; ++i)
     infoStreamPrint(logLevel, 0, "[%2d] %20.12g", i, vec->data[i]);
   messageClose(logLevel);
 }
@@ -687,7 +731,7 @@ void _omc_printMatrix(_omc_matrix* mat, const char* name, const int logLevel) {
  */
 _omc_scalar _omc_euclideanVectorNorm(const _omc_vector* vec) {
   _omc_size i;
-  _omc_scalar result;
+  _omc_scalar result = 0;
   assertStreamPrint(NULL, vec->size > 0, "Vector size is greater the zero");
   assertStreamPrint(NULL, NULL != vec->data, "Vector data is NULL pointer");
   for (i = 0; i < vec->size; ++i) {
