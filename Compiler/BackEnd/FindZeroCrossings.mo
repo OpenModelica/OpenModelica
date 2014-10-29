@@ -632,12 +632,12 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="noEvent")), _)
     then (inExp, false, inTpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="smooth"))), _)
+    case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _)
     then (inExp, false, inTpl);
 
     case (DAE.CALL(path=Absyn.IDENT(name="sample")), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       eqs = {alg_indx};
-      zc = createZeroCrossing(e, eqs, {});
+      zc = createZeroCrossing(inExp, eqs, {});
       samples = listAppend(samples, {zc});
       samples = mergeZeroCrossings(samples, {});
       if Flags.isSet(Flags.RELIDX) then
