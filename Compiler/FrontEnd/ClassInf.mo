@@ -487,10 +487,10 @@ algorithm
     case (CONNECTOR(path = _),FOUND_COMPONENT(name = _)) then inState;
     case (TYPE(path = p),FOUND_COMPONENT(name = s)) // A type can not contain new components
       equation
-        b = isBasicTypeComponentName(s);
-        s = Debug.bcallret1(not b, Absyn.pathString, p, "");
-        msg = List.consOnTrue(not b, s, {});
-        Error.assertionOrAddSourceMessage(b, Error.TYPE_NOT_FROM_PREDEFINED, msg, Absyn.dummyInfo);
+        if not isBasicTypeComponentName(s) then
+          Error.addMessage(Error.TYPE_NOT_FROM_PREDEFINED, {Absyn.pathString(p)});
+          fail();
+        end if;
       then TYPE(p);
     /* adrpo 2009-05-15: type Orientation can contain equalityConstraint function! */
     //case (TYPE(path = p),FOUND_COMPONENT()) then TYPE(p);

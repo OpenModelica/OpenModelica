@@ -510,9 +510,13 @@ algorithm
         jacStr = stringDelimitList(List.map1(List.mapList(jacVals,realString),stringDelimitList," , ")," ;\n  ");
         eqnstr = BackendDump.dumpEqnsStr(iEqns);
         syst = stringAppendList({"\n",eqnstr,"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
-        Debug.bcall2(intGt(linInfo,0), Error.addMessage, Error.LINEAR_SYSTEM_SINGULAR, {syst,infoStr,varname});
+        if intGt(linInfo,0) then
+          Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst,infoStr,varname});
+        end if;
         syst = stringAppendList({eqnstr,"\n[", jacStr, "] * [",varnames,"] = [",rhsStr,"]"});
-        Debug.bcall2(intLt(linInfo,0), Error.addMessage, Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv",syst});
+        if intLt(linInfo,0) then
+          Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv",syst});
+        end if;
       then
         false;
     else true;
@@ -938,7 +942,7 @@ algorithm
     case (_,_,_)
       equation
         var = a2[eqn] "Got the variable that is solved in the equation";
-        reachable = Debug.bcallret2(intGt(var,0),arrayGet,mt,var,{}) "Got the equations of that variable";
+        reachable = if intGt(var,0) then arrayGet(mt,var) else {} "Got the equations of that variable";
         reachable_1 = BackendDAEUtil.removeNegative(reachable) "in which other equations is this variable present ?";
       then
         List.removeOnTrue(eqn, intEq, reachable_1);

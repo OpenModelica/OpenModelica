@@ -202,7 +202,7 @@ algorithm
     //should not ever happen
     case (_,_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tplMainTest failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tplMainTest failed.\n");
       then
         fail();
   end matchcontinue;

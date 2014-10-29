@@ -1063,10 +1063,9 @@ algorithm
     case(_, SOME(cr), _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- Inst.extractConstantPlusDeps failure to find " +& ComponentReference.printComponentRefStr(cr) +& ", returning \n");
-        Debug.fprint(Flags.FAILTRACE, "- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
-      then
-        (inComps, ieql, iieql, ialgs, iialgs);
+        Debug.trace("- Inst.extractConstantPlusDeps failure to find " +& ComponentReference.printComponentRefStr(cr) +& ", returning \n");
+        Debug.trace("- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
+      then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
 end extractConstantPlusDepsTpl;
 
@@ -1114,10 +1113,9 @@ algorithm
     case(_, SOME(cr), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- Inst.extractConstantPlusDeps failure to find " +& ComponentReference.printComponentRefStr(cr) +& ", returning \n");
-        Debug.fprint(Flags.FAILTRACE, "- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
-      then
-        inComps;
+        Debug.trace("- Inst.extractConstantPlusDeps failure to find " +& ComponentReference.printComponentRefStr(cr) +& ", returning \n");
+        Debug.trace("- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
+      then fail(); // TODO: This used to return the input only if failtrace was set; should it always succeed?
   end matchcontinue;
 end extractConstantPlusDeps;
 
@@ -1809,7 +1807,8 @@ algorithm
     case ({}) then {};
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.getCrefFromDim failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.getCrefFromDim failed\n");
       then
         fail();
   end matchcontinue;
@@ -2355,9 +2354,9 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Inst.addClassdefsToEnv failed\n");
-        then
-          fail();
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.addClassdefsToEnv failed\n");
+      then fail();
 
   end matchcontinue;
 end addClassdefsToEnv;
@@ -2461,7 +2460,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Inst.addClassdefToEnv2 failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.addClassdefToEnv2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2852,8 +2852,8 @@ algorithm
     // failtrace
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Inst.addComponentsToEnv2 failed\n");
-        Debug.fprint(Flags.FAILTRACE, "\n\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.addComponentsToEnv2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -3233,8 +3233,10 @@ algorithm
     // failure
     else
       equation
-        Debug.fprint(Flags.FAILTRACE,"-Inst.checkMultiplyDeclared failed\n");
         ErrorExt.delCheckpoint("checkMultiplyDeclared");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("-Inst.checkMultiplyDeclared failed\n");
+        end if;
       then fail();
   end matchcontinue;
 end checkMultiplyDeclared;
@@ -3829,7 +3831,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.makeArrayType failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.makeArrayType failed\n");
       then
         fail();
   end matchcontinue;
@@ -4147,7 +4150,8 @@ algorithm
 
     case (DAE.DIM_UNKNOWN(), _, _, _)
       equation
-        Debug.fprint(Flags.FAILTRACE,"- Inst.instWholeDimFromMod failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.instWholeDimFromMod failed\n");
       then
         fail();
   end matchcontinue;
@@ -4525,8 +4529,8 @@ algorithm
 
     case (_, _, cref,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,
-          "- Inst.elabComponentArraydimFromEnv failed: " +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.elabComponentArraydimFromEnv failed: " +&
           ComponentReference.printComponentRefStr(cref));
       then
         fail();
@@ -4762,7 +4766,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.compatibleArraydim failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.compatibleArraydim failed\n");
       then
         fail();
   end match;
@@ -4896,9 +4901,8 @@ algorithm
     case (t,(_ :: _),_) /* PR, for debugging */
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "Undefined!");
-        Debug.fprint(Flags.FAILTRACE, " The type detected: ");
-        Debug.fprint(Flags.FAILTRACE, Types.printTypeStr(t));
+        Debug.trace("Undefined! The type detected: ");
+        Debug.traceln(Types.printTypeStr(t));
       then
         fail();
   end matchcontinue;
@@ -5561,9 +5565,11 @@ algorithm
       equation
         // Some weird functions pass the same output twice so we cannot check for exactly 1 occurance
         // Interfacing with LAPACK routines is fun, fun, fun :)
-        b = List.isMemberOnTrue(v,arg::args,extArgCrefEq) or Util.isSome(binding);
-        str = Debug.bcallret1(not b,ComponentReference.printComponentRefStr,cr,"");
-        Error.assertionOrAddSourceMessage(b,Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},DAEUtil.getElementSourceFileInfo(source));
+        if not (List.isMemberOnTrue(v,arg::args,extArgCrefEq) or Util.isSome(binding)) then
+          str = ComponentReference.printComponentRefStr(cr);
+          Error.addSourceMessage(Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},DAEUtil.getElementSourceFileInfo(source));
+          fail();
+        end if;
       then ();
     else ();
   end match;
@@ -5663,7 +5669,8 @@ algorithm
         extdecl;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtMakeExternaldecl failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("#-- Inst.instExtMakeExternaldecl failed");
       then
         fail();
   end matchcontinue;
@@ -5898,7 +5905,8 @@ algorithm
         (cache,e,prop,st);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "-Inst.elabExpExt failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("-Inst.elabExpExt failed");
       then
         fail();
   end matchcontinue;
@@ -5937,7 +5945,8 @@ algorithm
         (cache,extargs);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instExtGetFargs failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.instExtGetFargs failed");
       then
         fail();
   end matchcontinue;
@@ -6108,7 +6117,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instExtRettype failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.instExtRettype failed");
       then
         fail();
   end matchcontinue;
@@ -7157,9 +7167,9 @@ algorithm
 
     case(cache, _, ih, pre, SOME(DAE.MOD(_,_, lsm ,_)), SCode.CLASS(name=str))
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3: " +& Mod.printModStr(mo) +& " class name: " +& str);
+        // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3: " +& Mod.printModStr(mo) +& " class name: " +& str);
         (mo2,_) = extractCorrectClassMod2(lsm,str,{});
-        // Debug.fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3 after extractCorrectClassMod2: " +& Mod.printModStr(mo2) +& " class name: " +& str);
+        // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3 after extractCorrectClassMod2: " +& Mod.printModStr(mo2) +& " class name: " +& str);
         // TODO: classinf below should be FQ
         (cache, env2, ih, sele2 as SCode.CLASS(name = _) , _) =
         Inst.redeclareType(cache, env, ih, mo2, sele, pre, ClassInf.MODEL(Absyn.IDENT(str)), true, DAE.NOMOD());
@@ -7201,7 +7211,8 @@ algorithm (omod,restmods) := matchcontinue( smod , name , premod)
 
   else
     equation
-      Debug.fprint(Flags.FAILTRACE, "- extract_Correct_Class_Mod_2 failed\n");
+      true = Flags.isSet(Flags.FAILTRACE);
+      Debug.trace("- extract_Correct_Class_Mod_2 failed\n");
     then
       fail();
   end matchcontinue;
@@ -8075,96 +8086,6 @@ algorithm
   end matchcontinue;
 end findCorrespondingBinding;
 
-/*protected function checkModelBalancing
-"@author adrpo
- this function checks the balancing of the given model"
-  input Option<Absyn.Path> classNameOpt;
-  input DAE.DAElist inDae;
-algorithm
-  _ := matchcontinue(classNameOpt, inDae)
-    local
-      DAE.DAElist dae;
-      Integer eqnSize,varSize,simpleEqnSize;
-      String warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
-      BackendDAE.EquationArray eqns;
-      Integer elimLevel;
-      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-    // check the balancing of the instantiated model
-    // special case for no elements!
-    case (classNameOpt, DAE.DAE({},_))
-      equation
-        //classNameStr = Absyn.optPathString(classNameOpt);
-        //warnings = Error.printMessagesStr();
-        //retStr= stringAppendList({"# CHECK: ", classNameStr, " inst has 0 equation(s) and 0 variable(s)", warnings, "."});
-        // do not show empty elements with 0 vars and 0 equs
-        // Debug.fprintln(Flags.CHECK_MODEL_BALANCE, retStr);
-    then ();
-    // check the balancing of the instantiated model
-    case (classNameOpt, dae)
-      equation
-        dae = DAEUtil.transformIfEqToExpr(dae,false);
-        elimLevel = Config.eliminationLevel();
-        Config.setEliminationLevel(0); // No variable elimination
-        (dlow as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
-        = BackendDAECreate.lower(dae, false, true);
-        // Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dump, dlow);
-        Config.setEliminationLevel(elimLevel); // reset elimination level.
-        eqnSize = BackendEquation.equationSize(eqns);
-        (eqnSize,varSize) = CevalScript.subtractDummy(BackendVariable.daeVars(dlow),eqnSize,varSize);
-        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(eqns);
-        eqnSizeStr = intString(eqnSize);
-        varSizeStr = intString(varSize);
-        simpleEqnSizeStr = intString(simpleEqnSize);
-        classNameStr = Absyn.optPathString(classNameOpt);
-        warnings = Error.printMessagesStr();
-        retStr= stringAppendList({"# CHECK: ", classNameStr, " inst has ", eqnSizeStr,
-                                       " equation(s) and ", varSizeStr," variable(s). ",
-                                       simpleEqnSizeStr, " of these are trivial equation(s).",
-                                       warnings});
-        Debug.fprintln(Flags.CHECK_MODEL_BALANCE, retStr);
-    then ();
-    // we might fail, show a message
-    case (classNameOpt, inDAEElements)
-      equation
-        classNameStr = Absyn.optPathString(classNameOpt);
-        Debug.fprintln(Flags.CHECK_MODEL_BALANCE, "# CHECK: " +& classNameStr +& " inst failed!");
-      then ();
-  end matchcontinue;
-end checkModelBalancing;
-*/
-
-
-/*protected function checkModelBalancingFilterByRestriction
-"@author: adrpo
- filter out some restricted classes"
-  input SCode.Restriction r;
-  input Option<Absyn.Path> pathOpt;
-  input list<DAE.Element> dae;
-algorithm
-  _ := matchcontinue(r, pathOpt, dae)
-    // no checking for these!
-    case (SCode.R_FUNCTION(), _, _) then ();
-    case (SCode.R_EXT_FUNCTION(), _, _) then ();
-    case (SCode.R_TYPE(), _, _) then ();
-    case (SCode.R_RECORD(), _, _) then ();
-    case (SCode.R_PACKAGE(), _, _) then ();
-    case (SCode.R_ENUMERATION(), _, _) then ();
-    case (SCode.R_PREDEFINED_BOOLEAN(), _, _) then ();
-    case (SCode.R_PREDEFINED_INTEGER(), _, _) then ();
-    case (SCode.R_PREDEFINED_REAL(), _, _) then ();
-    case (SCode.R_PREDEFINED_STRING(), _, _) then ();
-    // check anything else
-    case (_, pathOpt, dae)
-      equation
-        true = Flags.isSet(Flags.CHECK_MODEL);
-        checkModelBalancing(pathOpt, dae);
-      then ();
-    // do nothing if the debug flag checkModel is not set
-    case (_, pathOpt, dae) then ();
-  end matchcontinue;
-end checkModelBalancingFilterByRestriction;
-*/
-
 public function isPartial
   input SCode.Partial partialPrefix;
   input DAE.Mod mods;
@@ -8637,7 +8558,9 @@ algorithm
       equation
         true = Absyn.pathEqual(path1,path2);
         str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& stringDelimitList(vars,",");
-        Debug.bcall3(Flags.isSet(Flags.TAIL),Error.addSourceMessage,Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
+        if Flags.isSet(Flags.TAIL) then
+          Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
+        end if;
       then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,b3,b4,i,DAE.TAIL(vars))),true);
     case (_,DAE.IFEXP(e1,e2,e3),_,_)
       equation
@@ -8999,8 +8922,8 @@ algorithm
         ((b1,b2,unboundBranch)) = checkFunctionDefUseElse(else_,unbound,inLoop,info);
         ((b3,b4,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
         iloop = true "We find a few false positives if we are too conservative, so let's do it non-exact";
-        unbound = Debug.bcallret3(iloop,List.intersectionOnTrue, unboundBranch, unbound, stringEq, unbound);
-        unbound = Debug.bcallret2(not (iloop or b1), List.union, unboundBranch, unbound, unbound);
+        unbound = if iloop then List.intersectionOnTrue(unboundBranch, unbound, stringEq) else unbound;
+        unbound = if not (iloop or b1) then List.union(unboundBranch, unbound) else unbound;
         /* Merge the state of the two branches. Either they can break/return or not */
         b1 = b1 and b3;
         b2 = b2 and b4;

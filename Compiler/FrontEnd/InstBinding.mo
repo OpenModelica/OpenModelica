@@ -595,13 +595,12 @@ algorithm
     case (c,ty1,m,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- InstBinding.instModEquation failed\n type: ");
-        Debug.fprint(Flags.FAILTRACE, Types.printTypeStr(ty1));
-        Debug.fprint(Flags.FAILTRACE, "\n  cref: ");
-        Debug.fprint(Flags.FAILTRACE, ComponentReference.printComponentRefStr(c));
-        Debug.fprint(Flags.FAILTRACE, "\n mod:");
-        Debug.fprint(Flags.FAILTRACE, Mod.printModStr(m));
-        Debug.fprint(Flags.FAILTRACE, "\n");
+        Debug.trace("- InstBinding.instModEquation failed\n type: ");
+        Debug.trace(Types.printTypeStr(ty1));
+        Debug.trace("\n  cref: ");
+        Debug.trace(ComponentReference.printComponentRefStr(c));
+        Debug.trace("\n mod:");
+        Debug.traceln(Mod.printModStr(m));
       then
         fail();
   end matchcontinue;
@@ -739,7 +738,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Inst.makeBinding failed on component:" +& PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.makeBinding failed on component:" +& PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName);
       then
         fail();
   end matchcontinue;

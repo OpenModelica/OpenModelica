@@ -138,18 +138,22 @@ algorithm
     case (graph, _, DAE.DAE(elts))
       equation
 
-        Debug.fprintln(Flags.CGRAPH, "Summary: \n\t" +&
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("Summary: \n\t" +&
            "Nr Roots:           " +& intString(listLength(getDefiniteRoots(graph))) +& "\n\t" +&
            "Nr Potential Roots: " +& intString(listLength(getPotentialRoots(graph))) +& "\n\t" +&
            "Nr Unique Roots:    " +& intString(listLength(getUniqueRoots(graph))) +& "\n\t" +&
            "Nr Branches:        " +& intString(listLength(getBranches(graph))) +& "\n\t" +&
            "Nr Connections:     " +& intString(listLength(getConnections(graph))));
+        end if;
 
         (roots, connected, broken) = findResultGraph(graph, modelNameQualified);
 
-        Debug.fprintln(Flags.CGRAPH, "Roots: " +& stringDelimitList(List.map(roots, ComponentReference.printComponentRefStr), ", "));
-        Debug.fprintln(Flags.CGRAPH, "Broken connections: " +& stringDelimitList(List.map1(broken, printConnectionStr, "broken"), ", "));
-        Debug.fprintln(Flags.CGRAPH, "Allowed connections: " +& stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", "));
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("Roots: " +& stringDelimitList(List.map(roots, ComponentReference.printComponentRefStr), ", "));
+          Debug.traceln("Broken connections: " +& stringDelimitList(List.map1(broken, printConnectionStr, "broken"), ", "));
+          Debug.traceln("Allowed connections: " +& stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", "));
+        end if;
 
         elts = evalConnectionsOperators(roots, graph, elts);
       then
@@ -158,7 +162,8 @@ algorithm
     // handle the connection breaking
     else
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.handleOverconstrainedConnections failed for model: " +& modelNameQualified);
+        true = Flags.isSet(Flags.CGRAPH);
+        Debug.traceln("- ConnectionGraph.handleOverconstrainedConnections failed for model: " +& modelNameQualified);
       then
         fail();
   end matchcontinue;
@@ -182,7 +187,9 @@ algorithm
 
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), root)
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addDefiniteRoot(" +& ComponentReference.printComponentRefStr(root) +& ")");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.addDefiniteRoot(" +& ComponentReference.printComponentRefStr(root) +& ")");
+        end if;
       then
         GRAPH(updateGraph,root::definiteRoots,potentialRoots,uniqueRoots,branches,connections);
   end match;
@@ -208,8 +215,9 @@ algorithm
 
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), root, priority)
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addPotentialRoot(" +&
-            ComponentReference.printComponentRefStr(root) +& ", " +& realString(priority) +& ")");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.addPotentialRoot(" +& ComponentReference.printComponentRefStr(root) +& ", " +& realString(priority) +& ")");
+        end if;
       then
         GRAPH(updateGraph,definiteRoots,(root,priority)::potentialRoots,uniqueRoots,branches,connections);
   end match;
@@ -242,7 +250,9 @@ algorithm
                 branches = branches,connections = connections),
                 roots as DAE.CREF(root, _), _)
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addUniqueRoots(" +& ComponentReference.printComponentRefStr(root) +& ", " +& ExpressionDump.printExpStr(inMessage) +& ")");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.addUniqueRoots(" +& ComponentReference.printComponentRefStr(root) +& ", " +& ExpressionDump.printExpStr(inMessage) +& ")");
+        end if;
       then
         GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
 
@@ -258,7 +268,9 @@ algorithm
                 branches = branches,connections = connections),
                 roots as DAE.ARRAY(ty, scalar, DAE.CREF(root, _)::rest), _)
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addUniqueRoots(" +& ComponentReference.printComponentRefStr(root) +& ", " +& ExpressionDump.printExpStr(inMessage) +& ")");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.addUniqueRoots(" +& ComponentReference.printComponentRefStr(root) +& ", " +& ExpressionDump.printExpStr(inMessage) +& ")");
+        end if;
         graph = GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
         graph = addUniqueRoots(graph, DAE.ARRAY(ty, scalar, rest), inMessage);
       then
@@ -293,7 +305,9 @@ algorithm
 
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,branches = branches,connections = connections), ref1, ref2)
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addBranch(" +& ComponentReference.printComponentRefStr(ref1) +& ", " +& ComponentReference.printComponentRefStr(ref2) +& ")");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.addBranch(" +& ComponentReference.printComponentRefStr(ref1) +& ", " +& ComponentReference.printComponentRefStr(ref2) +& ")");
+        end if;
       then
         GRAPH(updateGraph, definiteRoots,potentialRoots,uniqueRoots,(ref1,ref2)::branches,connections);
   end match;
@@ -321,8 +335,10 @@ algorithm
 
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots, potentialRoots = potentialRoots, uniqueRoots = uniqueRoots, branches = branches, connections = connections), ref1, ref2, dae)
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.addConnection(" +& ComponentReference.printComponentRefStr(ref1) +& ", " +& ComponentReference.printComponentRefStr(ref2) +& ")");
-    then GRAPH(updateGraph, definiteRoots,potentialRoots,uniqueRoots,branches,(ref1,ref2,dae)::connections);
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.trace("- ConnectionGraph.addConnection(" +& ComponentReference.printComponentRefStr(ref1) +& ", " +& ComponentReference.printComponentRefStr(ref2) +& ")\n");
+        end if;
+      then GRAPH(updateGraph, definiteRoots,potentialRoots,uniqueRoots,branches,(ref1,ref2,dae)::connections);
   end match;
 end addConnection;
 
@@ -360,7 +376,7 @@ algorithm
       equation
         parent = BaseHashTable.get(ref, partition);
         parentCanonical = canonical(partition, parent);
-        //Debug.fprintln(Flags.CGRAPH,
+        //fprintln(Flags.CGRAPH,
         //  "- ConnectionGraph.canonical_case1(" +& ComponentReference.printComponentRefStr(ref) +& ") = " +&
         //  ComponentReference.printComponentRefStr(parentCanonical));
         //partition2 = BaseHashTable.add((ref, parentCanonical), partition);
@@ -368,7 +384,7 @@ algorithm
 
     case (_,ref)
       equation
-        //Debug.fprintln(Flags.CGRAPH,
+        //fprintln(Flags.CGRAPH,
         //  "- ConnectionGraph.canonical_case2(" +& ComponentReference.printComponentRefStr(ref) +& ") = " +&
         //  ComponentReference.printComponentRefStr(ref));
       then ref;
@@ -470,9 +486,11 @@ algorithm
     case(partition,(ref1,ref2,_))
       equation
         // debug print
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.connectComponents: should remove equations generated from: connect(" +&
-           ComponentReference.printComponentRefStr(ref1) +& ", " +&
-           ComponentReference.printComponentRefStr(ref2) +& ") and add {0, ..., 0} = equalityConstraint(cr1, cr2) instead.");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.trace("- ConnectionGraph.connectComponents: should remove equations generated from: connect(" +&
+             ComponentReference.printComponentRefStr(ref1) +& ", " +&
+             ComponentReference.printComponentRefStr(ref2) +& ") and add {0, ..., 0} = equalityConstraint(cr1, cr2) instead.\n");
+        end if;
       then (partition, {}, {inDaeEdge});
   end matchcontinue;
 end connectComponents;
@@ -686,7 +704,9 @@ algorithm
         // order potential roots in the order or priority
         orderedPotentialRoots = List.sort(potentialRoots, ord);
 
-        Debug.fprintln(Flags.CGRAPH, "Ordered Potential Roots: " +& stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("Ordered Potential Roots: " +& stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
+        end if;
 
         // add connections to the table and return the broken/connected connections
         (table, connected, broken) = addConnections(table, connections);
@@ -1019,8 +1039,10 @@ algorithm
         cref1 = getEdge(cref,branches);
         // print("- ConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +&
         //   ComponentReference.printComponentRefStr(cref) +& ", " +& ComponentReference.printComponentRefStr(cref1) +& "\n");
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +&
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +&
            ComponentReference.printComponentRefStr(cref) +& ", " +& ComponentReference.printComponentRefStr(cref1));
+        end if;
         result = getRooted(cref,cref1,rooted);
         //print("- ConnectionGraph.evalRootedAndIsRootHelper: " +&
         //   ComponentReference.printComponentRefStr(cref) +& " is " +& boolString(result) +& " rooted\n");
@@ -1085,7 +1107,7 @@ algorithm
 
     // no replacement needed
     else (inExp, inRoots);
-    // Debug.fprintln(Flags.CGRAPH, ExpressionDump.printExpStr(exp) +& " not found in roots!");
+    // fprintln(Flags.CGRAPH, ExpressionDump.printExpStr(exp) +& " not found in roots!");
   end matchcontinue;
 end evalConnectionsOperatorsHelper;
 
@@ -1334,7 +1356,9 @@ algorithm
           GRAPH(updateGraph = updateGraph2, definiteRoots = definiteRoots2, potentialRoots = potentialRoots2, uniqueRoots=uniqueRoots2,
                 branches = branches2,connections = connections2))
       equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.merge()");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.trace("- ConnectionGraph.merge()\n");
+        end if;
         updateGraph    = boolOr(updateGraph1, updateGraph2);
         definiteRoots  = List.union(definiteRoots1, definiteRoots2);
         potentialRoots = List.union(potentialRoots1, potentialRoots2);
@@ -1630,19 +1654,18 @@ algorithm
 
           if Flags.isSet(Flags.CGRAPH)
           then
-            Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: keep: " +&
+            Debug.traceln("- ConnectionGraph.removeBrokenConnects: keep: " +&
               stringDelimitList(List.map(toKeep, ComponentReference.printComponentRefStr), ", "));
-            Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: delete: " +&
+            Debug.traceln("- ConnectionGraph.removeBrokenConnects: delete: " +&
               stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
-            Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: allow = remove - keep: " +&
+            Debug.traceln("- ConnectionGraph.removeBrokenConnects: allow = remove - keep: " +&
               stringDelimitList(List.map(intersect, ComponentReference.printComponentRefStr), ", "));
           end if;
 
           toRemove = List.setDifference(toRemove, intersect);
 
-          if Flags.isSet(Flags.CGRAPH)
-          then
-            Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: allow - delete: " +&
+          if Flags.isSet(Flags.CGRAPH) then
+            Debug.traceln("- ConnectionGraph.removeBrokenConnects: allow - delete: " +&
               stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
           end if;
 
@@ -1675,9 +1698,9 @@ algorithm
       equation
         true = ConnectUtil.isReferenceInConnects(inConnects, c1);
         true = ConnectUtil.isReferenceInConnects(inConnects, c2);
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBroken: removed connect(" +&
-          ComponentReference.printComponentRefStr(c1) +& ", " +&
-          ComponentReference.printComponentRefStr(c2) +& ")");
+        if Flags.isSet(Flags.CGRAPH) then
+          Debug.traceln("- ConnectionGraph.removeBroken: removed connect(" +& ComponentReference.printComponentRefStr(c1) +& ", " +& ComponentReference.printComponentRefStr(c2) +& ")");
+        end if;
         filtered = filterFromSet(inConnects, rest, c1::c2::inAcc);
       then
         filtered;

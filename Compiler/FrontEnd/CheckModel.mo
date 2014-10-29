@@ -120,7 +120,7 @@ algorithm
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e1, source), ieqnslst);
-        hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
+        hs = if not b then BaseHashSet.add(cr, ihs) else ihs;
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize+size, eqns, hs);
       then
         (varSize, eqnSize, eqns, hs);
@@ -132,7 +132,7 @@ algorithm
         ce = Expression.crefExp(cr);
         size = if b then 0 else 1;
         eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e1, source), ieqnslst);
-        hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
+        hs = if not b then BaseHashSet.add(cr, ihs) else ihs;
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize+size, eqns, hs);
       then
         (varSize, eqnSize, eqns, hs);
@@ -142,7 +142,7 @@ algorithm
       equation
         b = topLevelInput(cr, dir, ct);
         size = if b then 0 else 1;
-        hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
+        hs = if not b then BaseHashSet.add(cr, ihs) else ihs;
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize, ieqnslst, hs);
       then
         (varSize, eqnSize, eqns, hs);
@@ -152,7 +152,7 @@ algorithm
       equation
         b = topLevelInput(cr, dir, ct);
         size = if b then 0 else 1;
-        hs = Debug.bcallret2(not b, BaseHashSet.add, cr, ihs, ihs);
+        hs = if not b then BaseHashSet.add(cr, ihs) else ihs;
         (varSize, eqnSize, eqns, hs) = countVarEqnSize(rest, ivarSize+size, ieqnSize, ieqnslst, hs);
       then
         (varSize, eqnSize, eqns, hs);
@@ -537,9 +537,11 @@ algorithm
         ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
       then ht;
 
-    else equation
-      str = DAEDump.ppStatementStr(inStatement);
-      Debug.fprintln(Flags.FAILTRACE, "- CheckModel.statementOutputs failed for " +& str +& "\n");
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        str = DAEDump.ppStatementStr(inStatement);
+        Debug.traceln("- CheckModel.statementOutputs failed for " +& str);
     then
       fail();
 

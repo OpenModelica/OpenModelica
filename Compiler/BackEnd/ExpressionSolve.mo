@@ -142,7 +142,8 @@ algorithm
 */
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "-ExpressionSolve.solve failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-ExpressionSolve.solve failed\n");
         //print("solve ");print(ExpressionDump.printExpStr(inExp1));print(" = ");print(ExpressionDump.printExpStr(inExp2));
         //print("\t w.r.t ");print(ExpressionDump.printExpStr(inExp3));print(" failed\n");
       then

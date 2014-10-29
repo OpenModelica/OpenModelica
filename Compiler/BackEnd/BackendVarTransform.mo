@@ -254,7 +254,7 @@ algorithm
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
           ", ",s4,")\n"});
           print(s);
-        Debug.fprint(Flags.ADD_REPL, s);*/
+        fprint(Flags.ADD_REPL, s);*/
         ht_1 = BaseHashTable.add((src_1, dst_1),ht);
         invHt_1 = addReplacementInv(invHt, src_1, dst_1);
         eht_1 = addExtendReplacement(eht,src_1,NONE());
@@ -663,8 +663,9 @@ algorithm
       then erepl;
     case (_,_,_)
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         s = ComponentReference.printComponentRefStr(cr);
-        Debug.fprintln(Flags.FAILTRACE, "- BackendVarTransform.addExtendReplacement failed for " +& s);
+        Debug.trace("- BackendVarTransform.addExtendReplacement failed for " +& s);
       then extendrepl;
   end matchcontinue;
 end addExtendReplacement;
@@ -1547,7 +1548,7 @@ algorithm
         // Do not do empty replacements; it just takes time ;)
         false = replacementEmpty(repl);
         ((_,_,eqns,replacementPerformed)) = BackendEquation.traverseBackendDAEEqns(inEqns,replaceEquationTraverser,(repl,inFuncTypeExpExpToBooleanOption,{},false));
-        outEqns = Debug.bcallret1(replacementPerformed,BackendEquation.listEquation,eqns,inEqns);
+        outEqns = if replacementPerformed then BackendEquation.listEquation(eqns) else inEqns;
       then
         (outEqns,replacementPerformed);
     else
@@ -1822,10 +1823,11 @@ algorithm
     case(DAE.LUNARY(operator=op,exp=DAE.CREF(componentRef=cr)),_,_) then (cr,DAE.LUNARY(op,inRhs));
     else
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         msg = "BackendVarTransform: failed to replace left hand side of when equation " +&
               ComponentReference.printComponentRefStr(oldCr) +& " with " +& ExpressionDump.printExpStr(inLhs) +& "\n";
         // print(msg +& "\n");
-        Debug.fprintln(Flags.FAILTRACE, msg);
+        Debug.trace(msg);
       then
         fail();
   end match;
@@ -2356,10 +2358,11 @@ algorithm
         statementLst;
     else
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         msg = "BackendVarTransform: failed to replace left hand side of array assign statement " +&
               ComponentReference.printComponentRefStr(oldCr) +& " with " +& ExpressionDump.printExpStr(lhs) +& "\n";
         // print(msg +& "\n");
-        Debug.fprintln(Flags.FAILTRACE, msg);
+        Debug.trace(msg);
       then
         fail();
   end matchcontinue;

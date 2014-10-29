@@ -151,7 +151,9 @@ algorithm
       //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       //Check for correct size
       samesize = nVars == nEqns;
-      Debug.fcall(Flags.CHECK_BACKEND_DAE, print, "No. of Equations: " +& intString(nVars) +& " No. of BackendDAE.Variables: " +& intString(nEqns) +& " Samesize: " +& boolString(samesize) +& "\n");
+      if Flags.isSet(Flags.CHECK_BACKEND_DAE) then
+        print("No. of Equations: " +& intString(nVars) +& " No. of BackendDAE.Variables: " +& intString(nEqns) +& " Samesize: " +& boolString(samesize) +& "\n");
+      end if;
       (expCrefs, wrongEqns) = checkBackendDAE(inBackendDAE);
       printcheckBackendDAEWithErrorMsg(expCrefs, wrongEqns);
     then ();
@@ -275,7 +277,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAEUtil.checkBackendDAE failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAEUtil.checkBackendDAE failed\n");
       then
         fail();
   end matchcontinue;
@@ -812,7 +815,7 @@ algorithm
   // check if the DAE has states
   daeContainsNoStates := addDummyStateIfNeeded1(systs);
   // adrpo: add the dummy derivative state ONLY IF the DAE contains no states
-  systs := Debug.bcallret1(daeContainsNoStates,addDummyState,systs,systs);
+  systs := if daeContainsNoStates then addDummyState(systs) else systs;
   outBackendDAE := if daeContainsNoStates then BackendDAE.DAE(systs,shared) else inBackendDAE;
 end addDummyStateIfNeeded;
 
@@ -829,7 +832,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars = vars)::systs)
       equation
         containsNoStates = BackendVariable.traverseBackendDAEVarsWithStop(vars, traverserVaraddDummyStateIfNeeded, true);
-        containsNoStates = Debug.bcallret1(containsNoStates,addDummyStateIfNeeded1,systs,containsNoStates);
+        containsNoStates = if containsNoStates then addDummyStateIfNeeded1(systs) else containsNoStates;
       then
         containsNoStates;
   end match;
@@ -1308,7 +1311,9 @@ algorithm
         aliasVariables = BackendVariable.addVar(v,inAliasVariables);
         exp = BackendVariable.varBindExp(v);
         cr = BackendVariable.varCref(v);
-        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("++++ added Alias eqn: ",cr," = ",exp,"\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("++++ added Alias eqn: ",cr," = ",exp,"\n");
+        end if;
       then
        addAliasVariables(rest,aliasVariables);
     case (_,_)
@@ -5451,7 +5456,7 @@ algorithm
     case (DAE.CREF(componentRef=cr)::rest,_)
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,inCr);
-        b = Debug.bcallret2(not b, expCrefLstHasCref, rest, inCr, b);
+        b = if not b then expCrefLstHasCref(rest, inCr) else b;
       then
         b;
     else
@@ -6242,7 +6247,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = BackendDump.dumpEqnsStr({inEquation});
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.calculateJacobianRow failed on " +& str +& "\n");
+        Debug.traceln("- BackendDAE.calculateJacobianRow failed on " +& str);
       then
         fail();
   end match;
@@ -6293,7 +6298,8 @@ algorithm
         (subs1,entry::entrylst);
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.getArrayEquationSub failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAE.getArrayEquationSub failed\n");
       then
         fail();
   end matchcontinue;
@@ -6393,7 +6399,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = ExpressionDump.printExpStr(inExp);
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.calculateJacobianRow2 failed on " +& str +& "\n");
+        Debug.traceln("- BackendDAE.calculateJacobianRow2 failed on " +& str);
       then
         fail();
   end matchcontinue;
@@ -6440,7 +6446,7 @@ algorithm
         //print("analyze Jacobian: \n" +& str +& "\n");
         b = jacobianNonlinear(vars, jac);
         // check also if variables occure in if expressions
-        ((_,false)) = Debug.bcallret3(not b,traverseBackendDAEExpsEqnsWithStop,eqns,varsNotInRelations,(vars,true),(vars,false));
+        ((_,false)) = if not b then traverseBackendDAEExpsEqnsWithStop(eqns,varsNotInRelations,(vars,true)) else (vars,false);
         //print("jac type: JAC_NONLINEAR() \n");
       then
         (BackendDAE.JAC_NONLINEAR(),false);
@@ -6509,7 +6515,9 @@ algorithm
       equation
         // check if vars not in condition
         (_,(_,b)) = Expression.traverseExpTopDown(e1, varsNotInRelations, (vars,b));
-        (_,(_,b)) = Debug.bcallret3_2(b,Expression.traverseExpListTopDown,expLst, getEqnsysRhsExp2, (vars,b), expLst, (vars,b));
+        if b then
+          (_,(_,b)) = Expression.traverseExpListTopDown(expLst, getEqnsysRhsExp2, (vars,b));
+        end if;
       then (e,false,(vars,b));
     case (e,(vars,b)) then (e,b,inTpl);
   end match;
@@ -7308,7 +7316,8 @@ algorithm
         ext_arg_1;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsVars failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAE.traverseBackendDAEExpsVars failed\n");
       then
         fail();
   end matchcontinue;
@@ -7472,7 +7481,7 @@ algorithm
     then inTypeB;
     case(_,_,_,_,_,_) equation
       (b,ext_arg_1) = arrayfunc(inArray[pos],func,inTypeB);
-      ext_arg_2 = Debug.bcallret6(b,traverseBackendDAEArrayNoCopyWithStop,inArray,func,arrayfunc,pos+1,len,ext_arg_1,ext_arg_1);
+      ext_arg_2 = if b then traverseBackendDAEArrayNoCopyWithStop(inArray,func,arrayfunc,pos+1,len,ext_arg_1) else ext_arg_1;
     then ext_arg_2;
   end matchcontinue;
 end traverseBackendDAEArrayNoCopyWithStop;
@@ -7654,7 +7663,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsVar failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAE.traverseBackendDAEExpsVar failed\n");
       then
         fail();
   end matchcontinue;
@@ -7851,7 +7861,8 @@ algorithm
       then traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,1,arrayLength(equOptArr),inTypeA);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsEqns failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAE.traverseBackendDAEExpsEqns failed\n");
       then
         fail();
   end matchcontinue;
@@ -7882,7 +7893,8 @@ algorithm
       then traverseBackendDAEArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEExpsOptEqnWithStop,1,arrayLength(equOptArr),inTypeA);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsEqnsWithStop failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAE.traverseBackendDAEExpsEqnsWithStop failed\n");
       then
         fail();
   end matchcontinue;
@@ -8141,8 +8153,12 @@ algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strdaeHandler);
 
-  Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
-  Debug.bcall2(Flags.isSet(Flags.DUMP_DAE_LOW) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizIncidenceMatrix, inDAE, "dumpdaelow");
+  if Flags.isSet(Flags.DUMP_DAE_LOW) then
+    BackendDump.dumpBackendDAE(inDAE, "dumpdaelow");
+    if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
+      BackendDump.graphvizIncidenceMatrix(inDAE, "dumpdaelow");
+    end if;
+  end if;
 
   // pre-optimization phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
@@ -8152,7 +8168,9 @@ algorithm
 
   // transformation phase (matching and sorting using index reduction method)
   sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
-  Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump", sode));
+  if Flags.isSet(Flags.BLT_DUMP) then
+    BackendDump.bltdump("bltdump", sode);
+  end if;
 
   // post-optimization phase
   (optsode, Util.SUCCESS()) := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
@@ -8163,11 +8181,21 @@ algorithm
   outSODE := calculateValues(sode1);
   SimCodeUtil.execStat("calculateValue");
 
-  Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
-  Debug.bcall2(Flags.isSet(Flags.DUMP_INDX_DAE) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizBackendDAE, outSODE, "dumpindxdae");
-  Debug.fcall2(Flags.DUMP_TRANSFORMED_MODELICA_MODEL, BackendDump.dumpBackendDAEToModelica, outSODE, "dumpindxdae");
-  Debug.bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outSODE);
-  Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "indxdae: eqns in order");
+  if Flags.isSet(Flags.DUMP_INDX_DAE) then
+    BackendDump.dumpBackendDAE(outSODE, "dumpindxdae");
+    if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
+      BackendDump.graphvizBackendDAE(outSODE, "dumpindxdae");
+    end if;
+  end if;
+  if Flags.isSet(Flags.DUMP_TRANSFORMED_MODELICA_MODEL) then
+    BackendDump.dumpBackendDAEToModelica(outSODE, "dumpindxdae");
+  end if;
+  if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
+    BackendDump.dumpCompShort(outSODE);
+  end if;
+  if Flags.isSet(Flags.DUMP_EQNINORDER) then
+    BackendDump.dumpEqnsSolved(outSODE, "indxdae: eqns in order");
+  end if;
 
   checkBackendDAEWithErrorMsg(outSODE);
 end getSolvedSystem;
@@ -8201,8 +8229,11 @@ algorithm
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
 
-    case (_, {}) equation
-      Debug.fcall(Flags.OPT_DAE_DUMP, print, "pre-optimization done.\n");
+    case (_, {})
+      equation
+      if Flags.isSet(Flags.OPT_DAE_DUMP) then
+        print("pre-optimization done.\n");
+      end if;
     then (inDAE,Util.SUCCESS());
 
     case (_, (optModule, moduleStr, _)::rest) equation
@@ -8210,8 +8241,10 @@ algorithm
       systs = filterEmptySystems(systs);
       dae = BackendDAE.DAE(systs, shared);
       SimCodeUtil.execStat("preOpt " +& moduleStr);
-      Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
-      Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
+      if Flags.isSet(Flags.OPT_DAE_DUMP) then
+        print(stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
+        BackendDump.printBackendDAE(dae);
+      end if;
       (dae1,status) = preOptimizeDAE(dae, rest);
     then (dae1, status);
 
@@ -8260,7 +8293,7 @@ algorithm
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
   SimCodeUtil.execStat("matching");
   // do late inline
-  outDAE := Debug.bcallret1(dolateinline,BackendInline.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
+  outDAE := if dolateinline then BackendInline.lateInlineFunction(BackendDAE.DAE(systs,shared)) else BackendDAE.DAE(systs,shared);
   // do state selection
   BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
   // sort assigned equations to blt form
@@ -8357,7 +8390,9 @@ algorithm
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
       equation
         str = "Transformation Module " +& mAmethodstr +& " index Reduction Method " +& str1 +& " failed!";
-        Debug.bcall2(not isInitializationDAE(ishared), Error.addMessage, Error.INTERNAL_ERROR, {str});
+        if not isInitializationDAE(ishared) then
+          Error.addMessage(Error.INTERNAL_ERROR, {str});
+        end if;
       then
         fail();
   end matchcontinue;
@@ -8501,7 +8536,9 @@ algorithm
 
     case (_, {}, _, _)
       equation
-        Debug.fcall(Flags.OPT_DAE_DUMP, print, "post-optimization done.\n");
+        if Flags.isSet(Flags.OPT_DAE_DUMP) then
+          print("post-optimization done.\n");
+        end if;
       then (inDAE,Util.SUCCESS());
 
     case (_, (optModule, moduleStr, _)::rest, _, _)
@@ -8510,8 +8547,10 @@ algorithm
         systs = filterEmptySystems(systs);
         dae = BackendDAE.DAE(systs, shared);
         SimCodeUtil.execStat("postOpt " +& moduleStr);
-        Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
-        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
+        if Flags.isSet(Flags.OPT_DAE_DUMP) then
+          print(stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
+          BackendDump.printBackendDAE(dae);
+        end if;
         dae1 = causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, false);
         (dae2, status) = postOptimizeDAE(dae1, rest, matchingAlgorithm, daeHandler);
       then (dae2, status);
@@ -8623,22 +8662,22 @@ algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strdaeHandler);
 
-  //Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
+  //fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   // pre optimisation phase
   _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   (optdae,Util.SUCCESS()) := preOptimizeDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
   sode := causalizeDAE(optdae,NONE(),matchingAlgorithm,daeHandler,true);
-  //Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
+  //fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // post-optimization phase
   (outSODE,Util.SUCCESS()) := postOptimizeDAE(sode,postOptModules,matchingAlgorithm,daeHandler);
   _ := traverseBackendDAEExps(outSODE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
 
-  //Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
-  //Debug.bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outSODE);
-  //Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "system for jacobians");
+  //fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
+  //bcall(Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO), BackendDump.dumpCompShort, outSODE);
+  //fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "system for jacobians");
 end getSolvedSystemforJacobians;
 
 /*************************************************

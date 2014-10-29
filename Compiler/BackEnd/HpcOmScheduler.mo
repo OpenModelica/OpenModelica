@@ -1740,7 +1740,9 @@ algorithm
   //level := getGraphLevel(iGraph,{startNodes});
   level := HpcOmTaskGraph.getLevelNodes(iGraph);
   //print("level: \n"+&stringDelimitList(List.map(level,intListString),"\n")+&"\n");
-  Debug.fcall(Flags.HPCOM_DUMP,print,"number of level: "+&intString(listLength(level))+&"\nnumber of processors :"+&intString(Flags.getConfigInt(Flags.NUM_PROC))+&"\n");
+  if Flags.isSet(Flags.HPCOM_DUMP) then
+    print("number of level: "+&intString(listLength(level))+&"\nnumber of processors :"+&intString(Flags.getConfigInt(Flags.NUM_PROC))+&"\n");
+  end if;
   levelComps := List.mapList1_1(level,Array.getIndexFirst,inComps);
   levelComps := List.mapList1_1(levelComps,List.sort,intGt);
   SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
@@ -2800,9 +2802,9 @@ algorithm
         //tasks = task::assLocks;
         tasks = listAppend(relLocks,{task});
         tasks = listAppend(tasks,assLocks);
-        thread = Debug.bcallret1(List.isNotEmpty(threads),List.first,threads,{});
+        thread = if List.isNotEmpty(threads) then List.first(threads) else {};
         thread = listAppend(tasks,thread);
-        threads = Debug.bcallret3(List.isNotEmpty(threads),List.replaceAt,thread,1,threads,{thread});
+        threads = if List.isNotEmpty(threads) then List.replaceAt(thread,1,threads) else {thread};
         //_ = printThreadSchedule(thread,thr);
         outgoingDepTasks = listAppend(relLocks,outgoingDepTasks);
         outgoingDepTasks = listAppend(assLocks,outgoingDepTasks);
@@ -3832,14 +3834,14 @@ algorithm
     case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp,source=source),_)
       equation
         hasRepl = BackendVarTransform.hasReplacement(replIn,cref);
-        DAE.CREF(componentRef=cref) = Debug.bcallret2(hasRepl,BackendVarTransform.getReplacement,replIn,cref,DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT));
+        DAE.CREF(componentRef=cref) = if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
         (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         simEqSys = SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source);
     then (simEqSys,changed or hasRepl);
     case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,componentRef=cref,exp=exp,source=source),_)
       equation
         hasRepl = BackendVarTransform.hasReplacement(replIn,cref);
-        DAE.CREF(componentRef=cref) = Debug.bcallret2(hasRepl,BackendVarTransform.getReplacement,replIn,cref,DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT));
+        DAE.CREF(componentRef=cref) = if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
         (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
         simEqSys = SimCode.SES_ARRAY_CALL_ASSIGN(idx,cref,exp,source);
     then (simEqSys,changed or hasRepl);
@@ -4262,7 +4264,9 @@ algorithm
   (schedule,removeLocks) := createScheduleFromAssignments(taskAss,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,commCosts,inComps,iSimVarMapping,schedule);
   // remove superfluous locks
   numSfLocks := intDiv(listLength(removeLocks),2);
-  Debug.fcall(Flags.HPCOM_DUMP,print,"number of removed superfluous locks: "+&intString(numSfLocks)+&"\n");
+  if Flags.isSet(Flags.HPCOM_DUMP) then
+    print("number of removed superfluous locks: "+&intString(numSfLocks)+&"\n");
+  end if;
   schedule := traverseAndUpdateThreadsInSchedule(schedule,removeLocksFromThread,removeLocks);
   schedule := updateLockIdcsInThreadschedule(schedule,removeLocksFromLockList,removeLocks);
   //printSchedule(schedule);
@@ -4700,12 +4704,12 @@ algorithm
         (_,lIdx,b1) = getMemberOnTrueWithIdx(p,leftLst,realLt);
         (_,rIdx,b2) = getMemberOnTrueWithIdx(p,rightLst,realGt);
         rIdx = size+1-rIdx;
-        lstTmp = Debug.bcallret3(b1,swapEntriesInList,pivotIdx,lIdx,lstIn,lstIn);
-        lstTmp = Debug.bcallret3(b2,swapEntriesInList,pivotIdx,rIdx,lstTmp,lstTmp);
-        orderTmp = Debug.bcallret3(b1,swapEntriesInList,pivotIdx,lIdx,orderIn,orderIn);
-        orderTmp = Debug.bcallret3(b2,swapEntriesInList,pivotIdx,rIdx,orderTmp,orderTmp);
+        lstTmp = if b1 then swapEntriesInList(pivotIdx,lIdx,lstIn) else lstIn;
+        lstTmp = if b2 then swapEntriesInList(pivotIdx,rIdx,lstTmp) else lstTmp;
+        orderTmp = if b1 then swapEntriesInList(pivotIdx,lIdx,orderIn) else orderIn;
+        orderTmp = if b2 then swapEntriesInList(pivotIdx,rIdx,orderTmp) else orderTmp;
         b3 = boolAnd(boolNot(b1),boolNot(b2)); // if both are false(no member left or rigth found) than the pivot has the right place
-        ((marked,pivot)) = Debug.bcallret3(b3,getNextPivot,lstTmp,markedIn,pivotIdx,((markedIn,pivotIdx)));
+        ((marked,pivot)) = if b3 then getNextPivot(lstTmp,markedIn,pivotIdx) else ((markedIn,pivotIdx));
 
         (lstTmp,orderTmp) = quicksortWithOrder1(lstTmp,orderTmp,pivot,marked,size);
       then
@@ -5151,14 +5155,18 @@ algorithm
         parTime = List.fold(levelCosts,realAdd,0.0);
         parTime = HpcOmTaskGraph.roundReal(parTime,2);
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-        Debug.fcall(Flags.HPCOM_DUMP,print,"the serialCosts: "+&realString(serTime)+&"\n");
-        Debug.fcall(Flags.HPCOM_DUMP,print,"the parallelCosts: "+&realString(parTime)+&"\n");
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("the serialCosts: "+&realString(serTime)+&"\n");
+          print("the parallelCosts: "+&realString(parTime)+&"\n");
+        end if;
         printPredictedExeTimeInfo(serTime,parTime,realDiv(serTime,parTime),realDiv(serTime,cpCostsWoC),numProcIn);
       then
         criticalPathInfo;
     case(HpcOmSimCode.THREADSCHEDULE(outgoingDepTasks=outgoingDepTasks),_,_,_)
       equation
-        Debug.fcall(Flags.HPCOM_DUMP,print,"the number of locks: "+&intString(listLength(outgoingDepTasks))+&"\n");
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("the number of locks: "+&intString(listLength(outgoingDepTasks))+&"\n");
+        end if;
         //get the criticalPath
         ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
         criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
@@ -5167,9 +5175,11 @@ algorithm
         serTime = HpcOmTaskGraph.roundReal(serTime,2);
         parTime = HpcOmTaskGraph.roundReal(parTime,2);
         cpCostsWoC = HpcOmTaskGraph.roundReal(cpCostsWoC,2);
-        Debug.fcall(Flags.HPCOM_DUMP,print,"the serialCosts: "+&realString(serTime)+&"\n");
-        Debug.fcall(Flags.HPCOM_DUMP,print,"the parallelCosts: "+&realString(parTime)+&"\n");
-        Debug.fcall(Flags.HPCOM_DUMP,print,"the cpCosts: "+&realString(cpCostsWoC)+&"\n");
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("the serialCosts: "+&realString(serTime)+&"\n");
+          print("the parallelCosts: "+&realString(parTime)+&"\n");
+          print("the cpCosts: "+&realString(cpCostsWoC)+&"\n");
+        end if;
         printPredictedExeTimeInfo(serTime,parTime,speedUp,speedUpMax,numProcIn);
       then
         criticalPathInfo;
@@ -5313,15 +5323,20 @@ algorithm
     case(_,_,_,_,_)
       equation
         true = speedUpMax ==. -1.0;
-        Debug.bcall(Flags.isSet(Flags.HPCOM_DUMP),print,"The predicted SpeedUp with "+&intString(numProc)+&" processors is " +& System.snprintff("%.2f", 25, speedUp) +& ".\n");
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("The predicted SpeedUp with "+&intString(numProc)+&" processors is " +& System.snprintff("%.2f", 25, speedUp) +& ".\n");
+        end if;
       then
         ();
     else
       equation
-        isOkString = "The predicted SpeedUp with "+&intString(numProc)+&" processors is: "+& System.snprintff("%.2f", 25, speedUp)+&" With a theoretical maxmimum speedUp of: "+& System.snprintff("%.2f", 25, speedUpMax)+&"\n";
-        isNotOkString = "Something is weird. The predicted SpeedUp is "+& System.snprintff("%.2f", 25, speedUp)+&" and the theoretical maximum speedUp is "+& System.snprintff("%.2f", 25, speedUpMax)+&"\n";
-        Debug.bcall(realGt(speedUp,speedUpMax) and Flags.isSet(Flags.HPCOM_DUMP),print,isNotOkString);
-        Debug.bcall(realLe(speedUp,speedUpMax) and Flags.isSet(Flags.HPCOM_DUMP),print,isOkString);
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          if speedUp > speedUpMax then
+            print("Something is weird. The predicted SpeedUp is "+& System.snprintff("%.2f", 25, speedUp)+&" and the theoretical maximum speedUp is "+& System.snprintff("%.2f", 25, speedUpMax)+&"\n");
+          elseif speedUp <= speedUpMax then
+            print("The predicted SpeedUp with "+&intString(numProc)+&" processors is: "+& System.snprintff("%.2f", 25, speedUp)+&" With a theoretical maxmimum speedUp of: "+& System.snprintff("%.2f", 25, speedUpMax)+&"\n");
+          end if;
+        end if;
       then
         ();
   end matchcontinue;
@@ -5503,7 +5518,7 @@ algorithm
   isLastThread := intEq(threadId,numThreads);
   nextThread := if isLastThread then 1 else (threadId+1);
   isClosed := List.isMemberOnTrue(nextThread,closedThreads,intEq);
-  nextThreadOut := Debug.bcallret3(isClosed, getNextThreadIdx, nextThread, closedThreads, numThreads, nextThread);
+  nextThreadOut := if isClosed then getNextThreadIdx(nextThread, closedThreads, numThreads) else nextThread;
 end getNextThreadIdx;
 
 protected function updateFinishingTime "updates the finishing times.
@@ -5536,7 +5551,7 @@ algorithm
         isComputable = List.isEmpty(parentLst);
         taskIdxNew = if isComputable then (taskIdxIn+1) else taskIdxIn;
         //update the threadTasks and checked Tasks
-        ((threadTasks,checkedTasks)) = Debug.bcallret1(isComputable, computeFinishingTimeForOneTask, (threadTasksIn,checkedTasksIn,taskIdxIn,threadIdxIn,latestTask,taskGraphMetaIn),(threadTasksIn,checkedTasksIn));
+        ((threadTasks,checkedTasks)) = if isComputable then computeFinishingTimeForOneTask((threadTasksIn,checkedTasksIn,taskIdxIn,threadIdxIn,latestTask,taskGraphMetaIn)) else (threadTasksIn,checkedTasksIn);
       then
         (threadTasks,checkedTasks,taskIdxNew);
     case(HpcOmSimCode.DEPTASK(sourceTask=_,targetTask=_,outgoing=_),_,_,_,_,_,_)
@@ -5564,7 +5579,7 @@ algorithm
   finishingTimeIn := getTimeFinished(taskIn);
   task := arrayGet(checkedTaskIn,parentIdx);
   isCalc := isCalcTask(task);
-  finishingTime := Debug.bcallret1(isCalc,getTimeFinished,task,-1.0);
+  finishingTime := if isCalc then getTimeFinished(task) else -1.0;
   task := if realGt(finishingTime,finishingTimeIn) then task else taskIn;
   parentLst := if isCalc then parentLstIn else (parentIdx::parentLstIn);
   tplOut := (parentLst,task);
@@ -5657,7 +5672,7 @@ algorithm
         index = indexIn-1;
         preTask = listGet(threadIn,index);
         isCalc = isCalcTask(preTask);
-        preTask = Debug.bcallret2(boolNot(isCalc),getPredecessorCalcTask,threadIn,index,preTask);
+        preTask = if boolNot(isCalc) then getPredecessorCalcTask(threadIn,index) else preTask;
       then
         preTask;
   end matchcontinue;

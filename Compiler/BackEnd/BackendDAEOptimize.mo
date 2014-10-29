@@ -165,7 +165,7 @@ algorithm
         (var::{},_) = BackendVariable.getVar(cr, aliasvars);
         (cr,negate) = BackendVariable.getAlias(var);
         e = DAE.CREF(cr,tp);
-        e = Debug.bcallret1(negate,Expression.negate,e,e);
+        e = if negate then Expression.negate(e) else e;
         (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("pre"),{e},attr));
         (e,_) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
       then
@@ -188,7 +188,7 @@ algorithm
         (var::{},_) = BackendVariable.getVar(cr, aliasvars);
         (cr,negate) = BackendVariable.getAlias(var);
         e = DAE.CREF(cr,tp);
-        e = Debug.bcallret1(negate,Expression.negate,e,e);
+        e = if negate then Expression.negate(e) else e;
         (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("change"),{e},attr));
         (e,_) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
       then (e,(knvars,aliasvars,true));
@@ -204,7 +204,7 @@ algorithm
         (var::{},_) = BackendVariable.getVar(cr, aliasvars);
         (cr,negate) = BackendVariable.getAlias(var);
         e = DAE.CREF(cr,tp);
-        e = Debug.bcallret1(negate,Expression.negate,e,e);
+        e = if negate then Expression.negate(e) else e;
         (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("edge"),{e},attr));
         (e,_) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
       then (e,(knvars,aliasvars,true));
@@ -453,7 +453,8 @@ algorithm
 
     case (_,_,_,_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAEOptimize.traverseIncidenceMatrixList failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAEOptimize.traverseIncidenceMatrixList failed\n");
       then
         fail();
   end matchcontinue;
@@ -677,7 +678,9 @@ algorithm
         ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeParametersFinder,(repl,knvars));
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
         (knvars1,repl2) = replaceFinalVars(1,knvars1,repl2);
-        Debug.fcall(Flags.DUMP_PARAM_REPL, BackendVarTransform.dumpReplacements, repl2);
+        if Flags.isSet(Flags.DUMP_PARAM_REPL) then
+         BackendVarTransform.dumpReplacements(repl2);
+        end if;
         systs= List.map1(systs,removeParameterswork,repl2);
       then
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei));
@@ -871,7 +874,9 @@ algorithm
       equation
         repl = BackendVarTransform.emptyReplacements();
         repl1 = BackendVariable.traverseBackendDAEVars(knvars,protectedParametersFinder,repl);
-        Debug.fcall(Flags.DUMP_PP_REPL, BackendVarTransform.dumpReplacements, repl1);
+        if Flags.isSet(Flags.DUMP_PP_REPL) then
+          BackendVarTransform.dumpReplacements(repl1);
+        end if;
         systs = List.map1(systs,removeProtectedParameterswork,repl1);
       then
         (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,einfo,eoc,btp,symjacs,ei)));
@@ -898,7 +903,7 @@ algorithm
       equation
         lsteqns = BackendEquation.equationList(eqns);
         (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
-        eqns1 = Debug.bcallret1(b, BackendEquation.listEquation,eqns_1,eqns);
+        eqns1 = if b then BackendEquation.listEquation(eqns_1) else eqns;
         syst = if b then BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind) else isyst;
       then
         syst;
@@ -1952,9 +1957,9 @@ algorithm
         i = SynchronousFeatures.partitionIndependentBlocks0(m,mT,ixs);
         // i2 = SynchronousFeatures.partitionIndependentBlocks0(mT,m,ixsT);
         b = i > 1;
-        // Debug.bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
+        // bcall2(b,BackendDump.dumpBackendDAE,BackendDAE.DAE({syst},shared), "partitionIndependentBlocksHelper");
         // printPartition(b,ixs);
-        systs = Debug.bcallret5(b,SynchronousFeatures.partitionIndependentBlocksSplitBlocks,i,syst,ixs,mT,throwNoError,{syst});
+        systs = if b then SynchronousFeatures.partitionIndependentBlocksSplitBlocks(i,syst,ixs,mT,throwNoError) else {syst};
         // print("Number of partitioned systems: " +& intString(listLength(systs)) +& "\n");
         // List.map1_0(systs, BackendDump.dumpEqSystem, "System");
       then (systs,shared);
@@ -3130,7 +3135,9 @@ protected
   Integer index;
 algorithm
   (eqn, index) := iTpl;
-  Debug.fcall(Flags.SEMILINEAR, BackendDump.debugStrEqnStr, ("Replace with ", eqn, "\n"));
+  if Flags.isSet(Flags.SEMILINEAR) then
+    BackendDump.debugStrEqnStr("Replace with ", eqn, "\n");
+  end if;
   oEqns := BackendEquation.setAtIndex(iEqns, index+1, eqn);
 end semiLinearReplaceEqns;
 
@@ -3340,7 +3347,7 @@ algorithm
       equation
         ht = BaseHashTable.add((y,size), iHt);
         // expand if necesarray
-        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Array.expand,5, iEqnsarray, {},iEqnsarray);
+        eqnsarray = if intGt(size,arrayLength(iEqnsarray)) then Array.expand(5, iEqnsarray, {}) else iEqnsarray;
         eqnsarray = arrayUpdate(eqnsarray,size,{(eqn,index)});
       then
         semiLinearSort(rest,ht,size+1,eqnsarray);
@@ -3367,7 +3374,7 @@ algorithm
     case ((tpl::{})::rest,_,_)
       equation
         // expand if necesarray
-        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Array.expand,5, iEqnsarray, {},iEqnsarray);
+        eqnsarray = if intGt(size,arrayLength(iEqnsarray)) then Array.expand(5, iEqnsarray, {}) else iEqnsarray;
         eqnsarray = arrayUpdate(eqnsarray,size,{tpl});
       then
         semiLinearSort1(rest,size+1,eqnsarray);
@@ -3411,7 +3418,7 @@ algorithm
       equation
         ht = BaseHashTable.add((x,size), iHt);
         // expand if necesarray
-        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Array.expand,5, iEqnsarray, {},iEqnsarray);
+        eqnsarray = if intGt(size,arrayLength(iEqnsarray)) then Array.expand(5, iEqnsarray, {}) else iEqnsarray;
         eqnsarray = arrayUpdate(eqnsarray,size,{(eqn,index)});
         (i,eqnsarray) = semiLinearSort2(rest,ht,size+1,eqnsarray);
       then
@@ -3463,57 +3470,77 @@ algorithm
     case (BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp=DAE.CALL(path=path as Absyn.IDENT("semiLinear"),expLst={DAE.UNARY(exp=x),sb,sa},attr=attr)),source=source,attr=eqAttr),(eqnslst,index,_))
       equation
         eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,eqAttr);
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
     case (BackendDAE.EQUATION(exp=DAE.UNARY(exp=DAE.CALL(path=path as Absyn.IDENT("semiLinear"),expLst={DAE.UNARY(exp=x),sb,sa},attr=attr)),scalar=y,source=source,attr=eqAttr),(eqnslst,index,_))
       equation
         eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,eqAttr);
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
     // -y = semiLinear(-x,sb,sa) -> y = semiLinear(x,sa,sb)
     case (BackendDAE.EQUATION(exp=DAE.UNARY(exp=y),scalar=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),source=source,attr=eqAttr),(eqnslst,index,_))
       equation
         eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,eqAttr);
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
     case (BackendDAE.EQUATION(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),scalar=DAE.UNARY(exp=y),source=source,attr=eqAttr),(eqnslst,index,_))
       equation
         eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,eqAttr);
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
     // y = semiLinear(-x,sb,sa) -> -y = semiLinear(x,sa,sb)
     case (BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),source=source,attr=eqAttr),(eqnslst,index,_))
       equation
         y = Expression.negate(y);
         eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,eqAttr);
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
     case (BackendDAE.EQUATION(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),scalar=y,source=source,attr=eqAttr),(eqnslst,index,_))
       equation
         y = Expression.negate(y);
         eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,eqAttr);
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
     // y = semiLinear(x,sa,sb)
     case (eqn as BackendDAE.EQUATION(scalar=DAE.CALL(path =Absyn.IDENT("semiLinear"))),(eqnslst,index,_))
       equation
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
     case (eqn as BackendDAE.EQUATION(exp=DAE.CALL(path =Absyn.IDENT("semiLinear"))),(eqnslst,index,_))
       equation
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
     case (BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp= x as DAE.CALL(path = Absyn.IDENT("semiLinear"))),source=source,attr=eqAttr),(eqnslst,index,_))
       equation
         y = Expression.negate(y);
         eqn = BackendDAE.EQUATION(y,x,source,eqAttr);
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
     case (BackendDAE.EQUATION(exp=DAE.UNARY(exp= x as DAE.CALL(path = Absyn.IDENT("semiLinear"))),scalar=y,source=source,attr=eqAttr),(eqnslst,index,_))
       equation
         y = Expression.negate(y);
         eqn = BackendDAE.EQUATION(y,x,source,eqAttr);
-        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+        if Flags.isSet(Flags.SEMILINEAR) then
+          BackendDump.debugStrEqnStr("Found semiLinear ",eqn,"\n");
+        end if;
       then (eqn,((eqn,index)::eqnslst,index+1,true));
 
     case (eqn,(eqnslst,index,b)) then (eqn,(eqnslst,index+1,b));
@@ -3549,14 +3576,16 @@ algorithm
   BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs, ei)) := inDAE;
   repl := BackendVarTransform.emptyReplacements();
   repl := BackendVariable.traverseBackendDAEVars(knvars, removeConstantsFinder, repl);
-  Debug.fcall(Flags.DUMP_CONST_REPL, BackendVarTransform.dumpReplacements, repl);
+  if Flags.isSet(Flags.DUMP_CONST_REPL) then
+    BackendVarTransform.dumpReplacements(repl);
+  end if;
   (knvars, (repl, _)) := BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceFinalVarTraverser, (repl, 0));
   lsteqns := BackendEquation.equationList(remeqns);
   (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
-  remeqns := Debug.bcallret1(b, BackendEquation.listEquation, lsteqns, remeqns);
+  remeqns := if b then BackendEquation.listEquation(lsteqns) else remeqns;
   lsteqns := BackendEquation.equationList(inieqns);
   (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
-  inieqns := Debug.bcallret1(b, BackendEquation.listEquation, lsteqns, inieqns);
+  inieqns := if b then BackendEquation.listEquation(lsteqns) else inieqns;
   systs := List.map1(systs, removeConstantsWork, repl);
   outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs, ei));
 end removeConstants;
@@ -3577,7 +3606,7 @@ algorithm
   (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceFinalVarTraverser, (repl, 0));
   lsteqns := BackendEquation.equationList(eqns);
   (eqns_1, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
-  eqns1 := Debug.bcallret1(b, BackendEquation.listEquation, eqns_1, eqns);
+  eqns1 := if b then BackendEquation.listEquation(eqns_1) else eqns;
   outEqSystem := if b then BackendDAE.EQSYSTEM(vars, eqns1, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind) else inEqSystem;
 end removeConstantsWork;
 
@@ -3912,7 +3941,9 @@ algorithm
                               symjacs,
                               ei);
   outDAE := if intGt(index, 1) then BackendDAE.DAE(systs, shared) else inDAE;
-  Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpBackendDAE, outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
+  if Flags.isSet(Flags.DUMP_ENCAPSULATEWHENCONDITIONS) then
+    BackendDump.dumpBackendDAE(outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
+  end if;
 end encapsulateWhenConditions;
 
 protected function encapsulateWhenConditionsFromWhenClause "author: lochel"

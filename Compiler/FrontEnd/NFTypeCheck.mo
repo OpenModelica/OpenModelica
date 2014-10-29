@@ -403,7 +403,8 @@ algorithm
         s1 = stringAppendList({e1Str,"=",e2Str});
         s2 = stringAppendList({t1Str,"=",t2Str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, inInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
       then
         fail();
 
@@ -416,7 +417,8 @@ algorithm
         s1 = stringAppendList({e1Str,":=",e2Str});
         s2 = stringAppendList({t1Str,":=",t2Str});
         Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR, {e1Str,e2Str,t1Str,t2Str}, inInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.checkExpEquality failed with type mismatch: " +& s1 +& " tys: " +& s2);
       then
         fail();
   end matchcontinue;
@@ -488,7 +490,8 @@ algorithm
         s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
         s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
         fail();
 
@@ -502,7 +505,8 @@ algorithm
         s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
         s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.ccheckLogicalBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
         fail();
 
@@ -567,7 +571,8 @@ algorithm
         s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
         s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,sugg}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
         fail();
 
@@ -581,7 +586,8 @@ algorithm
         s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
         s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.checkRelationOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
         fail();
 
@@ -726,7 +732,8 @@ algorithm
         s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
         s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.checkBinaryOperation failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
         fail();
 
@@ -1103,7 +1110,8 @@ algorithm
         s1 = "' " +& e1Str +& DAEDump.dumpOperatorSymbol(inOp) +& e2Str +& " '";
         s2 = "' " +& t1Str +& DAEDump.dumpOperatorString(inOp) +& t2Str +& " '";
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,t1Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkBinaryOperationArrays failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.checkBinaryOperationArrays failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
         fail();
 
@@ -1173,7 +1181,8 @@ algorithm
         t2Str = Types.unparseType(inType2);
         s2 = DAEDump.dumpOperatorString(inOp);
         Error.addSourceMessage(Error.FOUND_NON_NUMERIC_TYPES, {s2,t1Str,t2Str}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.bothTypesSimpleNumeric failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.bothTypesSimpleNumeric failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
         false;
 
@@ -1305,7 +1314,8 @@ algorithm
         s1 = "Failed to match or convert '" +& e1Str +& "' of type '" +& t1Str +&
              "' to type '" +& t2Str +& "'";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArgs failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.matchCallArgs failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
         fail();
 
@@ -1337,7 +1347,8 @@ algorithm
 
     case (_::_,(_ :: _),(_ :: _), _)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArgs failed ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- NFTypeCheck.matchCallArgs failed\n");
       then
         fail();
   end matchcontinue;
@@ -1431,7 +1442,8 @@ algorithm
         s1 = "Failed to match or convert '" +& e1Str +& "' of type '" +& t1Str +&
              "' to type '" +& t2Str +& "'";
         Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.matchCallArg failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.matchCallArg failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
       then
         fail();
   end matchcontinue;
@@ -1523,7 +1535,8 @@ algorithm
              ExpressionDump.printListStr(argDims,ExpressionDump.dimensionString,",") +& "]";
 
         Error.addSourceMessage(Error.INTERNAL_ERROR, {s1}, Absyn.dummyInfo);
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.checkVectorization failed ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.checkVectorization failed ");
       then
         fail();
 
@@ -1567,7 +1580,8 @@ algorithm
 
     case(_::_, _)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.findVectorizationDim failed with dimensions: [" +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFTypeCheck.findVectorizationDim failed with dimensions: [" +&
          ExpressionDump.printListStr(inGivenDims,ExpressionDump.dimensionString,",") +& "] vs [" +&
          ExpressionDump.printListStr(inExpectedDims,ExpressionDump.dimensionString,",") +& "].");
       then

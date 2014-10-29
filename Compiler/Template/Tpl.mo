@@ -205,7 +205,7 @@ algorithm
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
     case (_ , _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeText failed - incomplete text was passed to be written\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.writeText failed - incomplete text was passed to be written\n");
       then
         fail();
   end matchcontinue;
@@ -247,7 +247,7 @@ algorithm
     //should not ever happen
     case (_ , _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeChars failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.writeChars failed.\n");
       then
         fail();
   end match;
@@ -359,7 +359,7 @@ algorithm
     //should not ever happen
     case (_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.softNL failed. \n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.softNL failed. \n");
       then
         fail();
 
@@ -450,7 +450,7 @@ algorithm
     //should not ever happen
     case (_, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.pushBlock failed \n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.pushBlock failed \n");
       then
         fail();
 
@@ -489,7 +489,7 @@ algorithm
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
     case (_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n");
       then
        fail();
   end match;
@@ -523,7 +523,7 @@ algorithm
     //should not ever happen
     case (_ , _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.pushIter failed \n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.pushIter failed \n");
       then
         fail();
   end match;
@@ -561,7 +561,7 @@ algorithm
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
     case (_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.popIter failed - probably pushIter and popIter are not well balanced or something was written between the last nextIter and popIter ?\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.popIter failed - probably pushIter and popIter are not well balanced or something was written between the last nextIter and popIter ?\n");
       then
        fail();
   end match;
@@ -640,7 +640,7 @@ algorithm
     //should not ever happen
     case (_ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.nextIter failed - nextIter was called in a non-iteration context ? \n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.nextIter failed - nextIter was called in a non-iteration context ? \n");
       then
         fail();
   end matchcontinue;
@@ -664,7 +664,7 @@ algorithm
     //should not ever happen
     case (_ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.getIter_i0 failed - getIter_i0 was called in a non-iteration context ? \n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.getIter_i0 failed - getIter_i0 was called in a non-iteration context ? \n");
       then
         fail();
   end match;
@@ -688,7 +688,7 @@ algorithm
     //should not ever happen
     case (_ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.getIter_i1 failed - getIter_i1 was called in a non-iteration context ? \n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.getIter_i1 failed - getIter_i1 was called in a non-iteration context ? \n");
       then
         fail();
   end match;
@@ -717,7 +717,7 @@ algorithm
     //should not ever happen
     case (_ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed.\n");
       then
         fail();
   end match;
@@ -744,14 +744,14 @@ algorithm
             blocksStack = _::_
             ))
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed - a non-comlete text was given.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed - a non-comlete text was given.\n");
       then
         fail();
 
     //should not ever happen
     case (_ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textString failed.\n");
       then
         fail();
   end match;
@@ -788,7 +788,7 @@ algorithm
     //should not ever happen
     case (_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tokensString failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokensString failed.\n");
       then
         fail();
   end match;
@@ -872,7 +872,7 @@ algorithm
     //should not ever happen
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tokString failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
       then
         fail();
   end match;
@@ -973,7 +973,7 @@ algorithm
     //should not ever happen
     case (_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.stringListString failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.stringListString failed.\n");
       then
         fail();
   end matchcontinue;
@@ -1141,7 +1141,7 @@ algorithm
     //should not ever happen
     case (_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tokString failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
       then
         fail();
   end matchcontinue;
@@ -1239,7 +1239,7 @@ algorithm
     //should not ever happen
     case (_,_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.iterSeparatorAlignWrapString failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterSeparatorAlignWrapString failed.\n");
       then
         fail();
   end matchcontinue;
@@ -1312,7 +1312,7 @@ algorithm
     //should not ever happen
     case (_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.iterAlignWrapString failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
       then
         fail();
   end matchcontinue;
@@ -1352,7 +1352,7 @@ algorithm
     //should not ever happen
     case (_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tryWrap failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tryWrap failed.\n");
       then
         fail();
   end matchcontinue;
@@ -1400,7 +1400,7 @@ algorithm
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
     case (_ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n");
       then
         fail();
   end matchcontinue;
@@ -1475,13 +1475,15 @@ protected
   Text txt;
 algorithm
  outTxt := matchcontinue(inFun, inArgA, inArgB)
+    local
+      String file,symbol;
     case(_, argA, argB)
       equation
         txt = inFun(emptyTxt, argA, argB);
       then txt;
     else
       equation
-        addTemplateError("A template call failed (a call with 2 parameters). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
+        addTemplateError("A template call failed (a call with 2 parameters: " + System.dladdr(inFun) + "). One possible reason could be that a template imported function call failed (which should not happen for functions called from within template code; templates preserve pure 'match'/non-failing semantics).");
       then fail();
   end matchcontinue;
 end tplCallWithFailError2;
@@ -1702,20 +1704,25 @@ algorithm
         textStringBuf(txt);
         rtTickW = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         Print.writeBuf(file);
-        Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), file +& "\n");
+        if Config.getRunningTestsuite() then
+          System.appendFile(Config.getRunningTestsuiteFile(), file +& "\n");
+        end if;
         Print.clearBuf();
-        Debug.fprintln(Flags.TPL_PERF_TIMES,
-                "textFile " +& file
+        if Flags.isSet(Flags.TPL_PERF_TIMES) then
+           Debug.trace("textFile " +& file
            +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
            +& "\n   write:" +& realString(realSub(System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL), rtTickW))
            );
+        end if;
       then
         ();
 
     //TODO: let this function fail and the error message can be reported via  # ( textFile(txt,"file.cpp") ; failMsg="error" )
     case (_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textFile failed - a system error ?\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("-!!!Tpl.textFile failed - a system error ?\n");
+        end if;
       then
         ();
 
@@ -1739,22 +1746,28 @@ algorithm
         textStringBuf(txt);
         rtTickW = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
         System.writeFile(file, "") /* To make realpath work */;
-        Debug.bcall1(boolOr(Config.acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)), Print.writeBufConvertLines, System.realpath(file));
-        Debug.bcall1(not boolOr(Config.acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)), Print.writeBuf, file);
-        Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), file +& "\n");
+        if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+          Print.writeBufConvertLines(System.realpath(file));
+        else
+          Print.writeBuf(file);
+        end if;
+        if Config.getRunningTestsuite() then
+          System.appendFile(Config.getRunningTestsuiteFile(), file +& "\n");
+        end if;
         Print.clearBuf();
-        Debug.fprintln(Flags.TPL_PERF_TIMES,
-                "textFile " +& file
+        if Flags.isSet(Flags.TPL_PERF_TIMES) then
+           Debug.traceln("textFile " +& file
            +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
            +& "\n   write:" +& realString(realSub(System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL), rtTickW))
            );
+        end if;
       then
         ();
 
     //TODO: let this function fail and the error message can be reported via  # ( textFile(txt,"file.cpp") ; failMsg="error" )
     case (_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textFile failed - a system error ?\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textFile failed - a system error ?\n");
       then
         ();
 

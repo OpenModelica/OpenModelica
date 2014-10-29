@@ -131,17 +131,23 @@ algorithm
       HtS2U=foldComplexUnits(HashTableStringToUnit.emptyHashTableSized(2053));
       HtU2S=foldComplexUnits2(HashTableUnitToString.emptyHashTableSized(2053));
 
-      Debug.fcall2(Flags.DUMP_EQ_UNIT, BackendDump.dumpEquationList, eqList, "########### Equation-Liste: #########\n");
+      if Flags.isSet(Flags.DUMP_EQ_UNIT) then
+        BackendDump.dumpEquationList(eqList, "########### Equation-Liste: #########\n");
+      end if;
       ((HtCr2U1, HtS2U, HtU2S)) = List.fold(varList, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
       ((HtCr2U1, HtS2U, HtU2S)) = List.fold(paraList, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
       ((HtCr2U1, HtS2U, HtU2S)) = List.fold(aliasList, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
 
       HtCr2U2=BaseHashTable.copy(HtCr2U1);
-      Debug.fcall(Flags.DUMP_UNIT, print, "#####################################\n");
-      Debug.fcall(Flags.DUMP_UNIT, BaseHashTable.dumpHashTable, HtCr2U1);
+      if Flags.isSet(Flags.DUMP_UNIT) then
+        print("#####################################\n");
+        BaseHashTable.dumpHashTable(HtCr2U1);
+      end if;
       ((HtCr2U2, HtS2U, HtU2S)) = algo(paraList, eqList, HtCr2U2, HtS2U, HtU2S);
-      Debug.fcall(Flags.DUMP_UNIT,  BaseHashTable.dumpHashTable, HtCr2U2);
-      Debug.fcall(Flags.DUMP_UNIT, print, "######## UnitCheck COMPLETED ########\n");
+      if Flags.isSet(Flags.DUMP_UNIT) then
+        BaseHashTable.dumpHashTable(HtCr2U2);
+        print("######## UnitCheck COMPLETED ########\n");
+      end if;
       notification(HtCr2U1, HtCr2U2, HtU2S);
       varList = List.map2(varList, returnVar, HtCr2U2, HtU2S);
       paraList = List.map2(paraList, returnVar, HtCr2U2, HtU2S);
@@ -412,7 +418,9 @@ protected
   list<list<tuple<DAE.Exp, Unit.Unit>>> expListList;
   Boolean b;
 algorithm
-  Debug.fcall(Flags.DUMP_EQ_UNIT_STRUCT, BackendDump.printEquation, inEq);
+  if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+    BackendDump.printEquation(inEq);
+  end if;
   (HtCr2U, b, HtS2U, HtU2S):=inTpl;
   (HtCr2U, HtS2U, HtU2S, expListList):=foldEquation2(inEq, HtCr2U, HtS2U, HtU2S);
   List.map2_0(expListList, Errorfunction, inEq, HtU2S);
@@ -445,27 +453,35 @@ algorithm
 
     case (eq as BackendDAE.EQUATION(exp=lhs, scalar=rhs), HtCr2U, HtS2U, HtU2S) equation
       temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      Debug.fcall(Flags.DUMP_EQ_UNIT_STRUCT, ExpressionDump.dumpExp, temp);
+      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+        ExpressionDump.dumpExp(temp);
+      end if;
       (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs), HtCr2U, HtS2U, HtU2S) equation
       temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      Debug.fcall(Flags.DUMP_EQ_UNIT_STRUCT, ExpressionDump.dumpExp, temp);
+      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+        ExpressionDump.dumpExp(temp);
+      end if;
       (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=rhs), HtCr2U, HtS2U, HtU2S) equation
       lhs = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
       temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      Debug.fcall(Flags.DUMP_EQ_UNIT_STRUCT, ExpressionDump.dumpExp, temp);
+      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+        ExpressionDump.dumpExp(temp);
+      end if;
       (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=rhs), HtCr2U, HtS2U, HtU2S) equation
       lhs = DAE.RCONST(0.0);
       temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      Debug.fcall(Flags.DUMP_EQ_UNIT_STRUCT, ExpressionDump.dumpExp, temp);
+      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+        ExpressionDump.dumpExp(temp);
+      end if;
       (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
@@ -479,7 +495,9 @@ algorithm
 
     case (BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs), HtCr2U, HtS2U, HtU2S) equation
       temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      Debug.fcall(Flags.DUMP_EQ_UNIT_STRUCT, ExpressionDump.dumpExp, temp);
+      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+        ExpressionDump.dumpExp(temp);
+      end if;
       (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitinEquation(temp, (HtCr2U, HtS2U, HtU2S), Unit.MASTER({}));
     then (HtCr2U, HtS2U, HtU2S, expList);
 
@@ -594,8 +612,10 @@ algorithm
       lt1 = BaseHashTable.hashTableList(inHtCr2U1);
       str = notification2(lt1, inHtCr2U2, inHtU2S);
       false = stringEqual(str, "");
-      Debug.fcall(Flags.DUMP_UNIT, Error.addCompilerNotification, str);
-  then ();
+      if Flags.isSet(Flags.DUMP_UNIT) then
+        Error.addCompilerNotification(str);
+      end if;
+    then ();
 
   else then ();
   end matchcontinue;
@@ -1365,7 +1385,7 @@ algorithm
     // "1"
     case (bMul::bRest, T_NUMBER(number=1)::tokens, _, _) equation
       ut = Unit.UNIT(1e0, 0, 0, 0, 0, 0, 0, 0/* , 0e0 */);
-      ut = Debug.ifcallret2(bMul, unitMul, unitDiv, inUnit, ut);
+      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
       ut = parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
@@ -1373,14 +1393,14 @@ algorithm
     case (bMul::bRest, T_UNIT(unit=s)::T_NUMBER(exponent)::tokens, _, _) equation
       ut = unitToken2unit(s, inHtS2U);
       ut = unitPow(ut, exponent);
-      ut = Debug.ifcallret2(bMul, unitMul, unitDiv, inUnit, ut);
+      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
       ut = parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 
     // "unit"
     case (bMul::bRest, T_UNIT(unit=s)::tokens, _, _) equation
       ut = unitToken2unit(s, inHtS2U);
-      ut = Debug.ifcallret2(bMul, unitMul, unitDiv, inUnit, ut);
+      ut = if bMul then unitMul(inUnit,ut) else unitDiv(inUnit, ut);
       ut = parser3(bRest, tokens, ut, inHtS2U);
     then ut;
 

@@ -250,7 +250,6 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow);
-        Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
@@ -326,7 +325,6 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow);
-        Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
@@ -416,8 +414,8 @@ algorithm
       true = Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
-      //Debug.bcall(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),print,"Deactivate profiling if you want to simulate in parallel.\n");
-      //_ = Debug.bcallret2((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),Flags.set,Flags.HPCOM,false,true);
+      //bcall(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),print,"Deactivate profiling if you want to simulate in parallel.\n");
+      //_ = bcallret2((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),Flags.set,Flags.HPCOM,false,true);
       //true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)) or stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL));
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
@@ -429,8 +427,8 @@ algorithm
       true = Flags.isSet(Flags.HPCOM);
 
       // either generate code for profiling or for parallel simulation
-      //Debug.bcall((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),print,"Deactivate profiling if you want to simulate in parallel.\n");
-      //_ = Debug.bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),Flags.set,Flags.HPCOM,false,true);
+      //bcall((not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL))) and (not stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL))),print,"Deactivate profiling if you want to simulate in parallel.\n");
+      //_ = bcallret2(not stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)),Flags.set,Flags.HPCOM,false,true);
       //true = stringEq("none",Flags.getConfigString(Flags.PROFILING_LEVEL)) or stringEq("all_perf",Flags.getConfigString(Flags.PROFILING_LEVEL));
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);

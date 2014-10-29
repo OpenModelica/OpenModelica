@@ -103,7 +103,7 @@ protected function keyCompareNinjaSecretHashTricks
   output Integer cmp;
 algorithm
   cmp := Util.intSign(lhash-rhash);
-  cmp := Debug.bcallret2(cmp == 0, stringCompare, lstr, rstr, cmp);
+  cmp := if cmp == 0 then stringCompare(lstr, rstr) else cmp;
 end keyCompareNinjaSecretHashTricks;
 
 public function treeGet "author: PA

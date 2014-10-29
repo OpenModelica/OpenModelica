@@ -158,7 +158,9 @@ algorithm
   unReplaceable := HashSet.emptyHashSet();
   ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(dae, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(dae, unReplaceable);
-  Debug.fcall2(Flags.DUMP_REPL, BackendDump.dumpHashSet, unReplaceable, "Unreplaceable Crefs:");
+  if Flags.isSet(Flags.DUMP_REPL) then
+    BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
+  end if;
   // traverse all systems and remove simple equations
   (odae, (repl, b, _, _)) := BackendDAEUtil.mapEqSystemAndFold(dae, fastAcausal1, (repl, false, unReplaceable, Flags.getConfigInt(Flags.MAXTRAVERSALS)));
   // traverse the shared parts
@@ -300,7 +302,9 @@ algorithm
   unReplaceable := HashSet.emptyHashSet();
   ((_,unReplaceable)) := BackendDAEUtil.traverseBackendDAEExps(inDAE, Expression.traverseSubexpressionsHelper, (traverserExpUnreplaceable, unReplaceable));
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
-  Debug.fcall2(Flags.DUMP_REPL, BackendDump.dumpHashSet, unReplaceable, "Unreplaceable Crefs:");
+  if Flags.isSet(Flags.DUMP_REPL) then
+    BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
+  end if;
   (outDAE, (repl, _, b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, allAcausal1, (repl, unReplaceable, false));
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
   // until remove simple equations does not update assignments and comps remove them
@@ -365,7 +369,9 @@ algorithm
   unReplaceable := addUnreplaceableFromWhens(inDAE, unReplaceable);
   // do not replace state sets
   unReplaceable := addUnreplaceableFromStateSets(inDAE, unReplaceable);
-  Debug.fcall2(Flags.DUMP_REPL, BackendDump.dumpHashSet, unReplaceable, "Unreplaceable Crefs:");
+  if Flags.isSet(Flags.DUMP_REPL) then
+    BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
+  end if;
   (outDAE, (repl, _, b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, causal1, (repl, unReplaceable, false));
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
   // until remove simple equations does not update assignments and comps remove them
@@ -608,32 +614,42 @@ algorithm
 
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr), _)
       equation
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Equation ", e1, " = ", e2, " to handle.\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrExpStrExpStr("Found Equation ", e1, " = ", e2, " to handle.\n");
+        end if;
       then
         simpleEquationAcausal(e1, e2, (source, eqAttr), false, inTpl);
 
     case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _)
       equation
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Array Equation ", e1, " = ", e2, " to handle.\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrExpStrExpStr("Found Array Equation ", e1, " = ", e2, " to handle.\n");
+        end if;
       then
         simpleArrayEquationAcausal(e1, e2, Expression.typeof(e1), (source, eqAttr), inTpl);
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=eqAttr), _)
       equation
         e1 = Expression.crefExp(cr);
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Solved Equation ", e1, " = ", e2, " to handle.\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrExpStrExpStr("Found Solved Equation ", e1, " = ", e2, " to handle.\n");
+        end if;
       then
         simpleEquationAcausal(e1, e2, (source, eqAttr), false, inTpl);
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=eqAttr), _)
       equation
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStr, ("Found Residual Equation ", e1, " to handle.\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrExpStr("Found Residual Equation ", e1, " to handle.\n");
+        end if;
       then
         simpleExpressionAcausal(e1, (source, eqAttr), false, inTpl);
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _)
       equation
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Found Complex Equation ", e1, " = ", e2, " to handle.\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrExpStrExpStr("Found Complex Equation ", e1, " = ", e2, " to handle.\n");
+        end if;
       then
         simpleEquationAcausal(e1, e2, (source, eqAttr), false, inTpl);
 
@@ -1050,7 +1066,9 @@ algorithm
 
     case(_, _, _, _, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrCrefStr, ("Alias Equation ", cr1, " = ", cr2, " found. Negated lhs[" +& boolString(negatedCr1) +& "] = rhs[" +& boolString(negatedCr2) +& "].\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrCrefStr("Alias Equation ", cr1, " = ", cr2, " found. Negated lhs[" +& boolString(negatedCr1) +& "] = rhs[" +& boolString(negatedCr2) +& "].\n");
+        end if;
         // get Variables
         (vars1, ilst1, varskn1, time1) = getVars(cr1, vars, shared);
         (vars2, ilst2, varskn2, time2) = getVars(cr2, vars, shared);
@@ -1061,7 +1079,9 @@ algorithm
 
     case(_, _, _, _, _, _, _, true, _)
       equation
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Non Alias Equation ", inE1, " = ", inE2, " to generate.\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrExpStrExpStr("Non Alias Equation ", inE1, " = ", inE2, " to generate.\n");
+        end if;
         e1 = Expression.crefExp(cr1);
         ty = Expression.typeof(e1);
         e2 = inE2;
@@ -1540,7 +1560,9 @@ algorithm
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
         true = Expression.isConstValue(exp);
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Const Equation ", cr, " = ", exp, " found.\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Const Equation ", cr, " = ", exp, " found.\n");
+        end if;
         colum = mT[i];
         _ = arrayUpdate(mT, i, index::colum);
       then
@@ -1550,7 +1572,9 @@ algorithm
       equation
         false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
         exp2 = Ceval.cevalSimpleWithFunctionTreeReturnExp(exp, functions);
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
+        end if;
         colum = mT[i];
         _ = arrayUpdate(mT, i, index::colum);
       then
@@ -1560,7 +1584,9 @@ algorithm
     case (_, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
         false = Expression.isImpure(exp); // lochel: this is at least needed for impure functions
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
+        end if;
         colum = mT[i];
         _ = arrayUpdate(mT, i, index::colum);
       then ((vars, shared, eqns, TIMEINDEPENTVAR(cr, i, exp, eqnAttributes, -1)::seqns, index+1, mT, true));
@@ -2166,7 +2192,7 @@ algorithm
        expcr = Expression.crefExp(cr1);
        pv = BackendVariable.getVarSharedAt(i2, ishared);
        vsattr = addVarSetAttributes(pv, negated, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
-       vsattr = Debug.bcallret5(replaceable_ and replaceble1, addVarSetAttributes, v, negated, mark, simpleeqnsarr, vsattr, vsattr);
+       vsattr = if replaceable_ and replaceble1 then addVarSetAttributes(v, negated, mark, simpleeqnsarr, vsattr) else vsattr;
        rows = List.removeOnTrue(r, intEq, iMT[i1]);
        _ = arrayUpdate(iMT, i1, {});
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i1, exp, SOME(expcr), negated, SOME(DAE.RCONST(0.0)), mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
@@ -2207,9 +2233,9 @@ algorithm
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
        constExp = Expression.isConstValue(exp);
        // add to replacements if constant
-       repl = Debug.bcallret4(replaceable_ and constExp and replaceble1, BackendVarTransform.addReplacement, iRepl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator), iRepl);
+       repl = if replaceable_ and constExp and replaceble1 then BackendVarTransform.addReplacement(iRepl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator)) else iRepl;
        // if state der(var) has to replaced to 0
-       repl = Debug.bcallret3(isState, BackendVarTransform.addDerConstRepl, cr, DAE.RCONST(0.0), repl, repl);
+       repl = if isState then BackendVarTransform.addDerConstRepl(cr, DAE.RCONST(0.0), repl) else repl;
        exp = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v, false, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r, intEq, iMT[i]);
@@ -2230,9 +2256,9 @@ algorithm
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
        constExp = Expression.isConstValue(exp);
        // add to replacements if constant
-       repl = Debug.bcallret4(replaceable_ and constExp and replaceble1, BackendVarTransform.addReplacement, iRepl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator), iRepl);
+       repl = if replaceable_ and constExp and replaceble1 then BackendVarTransform.addReplacement(iRepl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator)) else iRepl;
        // if state der(var) has to replaced to 0
-       repl = Debug.bcallret3(isState, BackendVarTransform.addDerConstRepl, cr, DAE.RCONST(0.0), repl, repl);
+       repl = if isState then BackendVarTransform.addDerConstRepl(cr, DAE.RCONST(0.0), repl) else repl;
        exp = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v, false, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r, intEq, iMT[i2]);
@@ -2434,7 +2460,7 @@ algorithm
   v1 := BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr, exp)::ops);
   // State?
   bs := BackendVariable.isStateVar(v);
-  v1 := Debug.bcallret2(bs, BackendVariable.setVarKind, v1, BackendDAE.DUMMY_STATE(), v1);
+  v1 := if bs then BackendVariable.setVarKind(v1, BackendDAE.DUMMY_STATE()) else v1;
   // remove from vars
   (oVars, _) := BackendVariable.removeVar(i, iVars);
   // store changed var
@@ -2542,11 +2568,11 @@ algorithm
         // negate if necessary
         globalnegated1 = if negated then not globalnegated else globalnegated;
         exp1 = negateExpression(globalnegated1, exp, exp, " ALIAS_1 ");
-        derReplacement = Debug.bcallret1(globalnegated1, negateOptExp, derReplaceState, derReplaceState);
+        derReplacement = if globalnegated1 then negateOptExp(derReplaceState) else derReplaceState;
         // replace alias with selected variable if replaceable_
-        source = Debug.bcallret3(replaceable_, addSubstitutionOption, optExp, crexp, source, source);
+        source = if replaceable_ then addSubstitutionOption(optExp, crexp, source) else source;
         (vars, eqnslst, shared, repl) = handleSetVar(replaceable_ and replaceble1, derReplacement, v, i, (source, eqAttr), exp1, iMT, iVars, iEqnslst, ishared, iRepl);
-        vsattr = Debug.bcallret5(replaceable_ and replaceble1, addVarSetAttributes, v, globalnegated1, mark, simpleeqnsarr, iAttributes, iAttributes);
+        vsattr = if replaceable_ and replaceble1 then addVarSetAttributes(v, globalnegated1, mark, simpleeqnsarr, iAttributes) else iAttributes;
         // negate if necessary
         crexp = negateExpression(negated, crexp, crexp, " ALIAS_2 ");
         rows = List.removeOnTrue(r, intEq, iMT[i]);
@@ -2992,7 +3018,7 @@ algorithm
       isdiscrete = BackendVariable.isVarDiscrete(inVar);
 
       // start and fixed
-      v = Debug.bcallret4(not isdiscrete, mergeStartFixedAttributes, inVar, fixedset, startvalues, inShared, inVar);
+      v = if not isdiscrete then mergeStartFixedAttributes(inVar, fixedset, startvalues, inShared) else inVar;
       // nominal
       v = mergeNominalAttribute(nominalset, v);
       // min max
@@ -3374,17 +3400,19 @@ algorithm
     case (false, _, _) then inDAE;
     case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs, ei)), _)
       equation
-        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
-        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);
-        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpDerConstReplacements, repl);
+        if Flags.isSet(Flags.DUMP_REPL) then
+          BackendVarTransform.dumpReplacements(repl);
+          BackendVarTransform.dumpExtendReplacements(repl);
+          BackendVarTransform.dumpDerConstReplacements(repl);
+        end if;
         // replace moved vars in knvars, remeqns
         (aliasVars, (_, varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceAliasVarTraverser, (repl, {}));
         aliasVars = List.fold(varlst, fixAliasConstBindings, aliasVars);
         (knvars1, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceVarTraverser, repl);
         ((_, eqnslst, b1)) = BackendEquation.traverseBackendDAEEqns(inieqns, replaceEquationTraverser, (repl, {}, false));
-        inieqns = Debug.bcallret1(b1, BackendEquation.listEquation, eqnslst, inieqns);
+        inieqns = if b1 then BackendEquation.listEquation(eqnslst) else inieqns;
         ((_, eqnslst, b1)) = BackendEquation.traverseBackendDAEEqns(remeqns, replaceEquationTraverser, (repl, {}, false));
-        remeqns1 = Debug.bcallret1(b1, BackendEquation.listEquation, eqnslst, remeqns);
+        remeqns1 = if b1 then BackendEquation.listEquation(eqnslst) else remeqns;
         (whenClauseLst1, _) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         // remove optimica contraints and classAttributes
         (constraintsLst, clsAttrsLst) = replaceOptimicaExps(constraintsLst, clsAttrsLst, repl);
@@ -3452,7 +3480,7 @@ algorithm
       equation
         (e1, true) = BackendVarTransform.replaceExp(e, repl, NONE());
         b = Expression.isConstValue(e1);
-        v1 = Debug.bcallret2(not b, BackendVariable.setBindExp, v, SOME(e1), v);
+        v1 = if not b then BackendVariable.setBindExp(v, SOME(e1)) else v;
         varlst = List.consOnTrue(b, v1, varlst);
       then (v1, (repl, varlst));
     else (inVar,inTpl);
@@ -3512,8 +3540,8 @@ algorithm
     case ((syst as BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind))::rest, _, _, _, _)
       equation
         ((_, eqnslst, b)) = BackendEquation.traverseBackendDAEEqns(eqns, replaceEquationTraverser, (repl, {}, false));
-        eqnslst = Debug.bcallret1(b, listReverse, eqnslst, eqnslst);
-        eqns = Debug.bcallret1(b, BackendEquation.listEquation, eqnslst, eqns);
+        eqnslst = if b then listReverse(eqnslst) else eqnslst;
+        eqns = if b then BackendEquation.listEquation(eqnslst) else eqns;
         (stateSets, b1, statesetrepl1) = removeAliasVarsStateSets(stateSets, statesetrepl, v, aliasVars, {}, false);
         syst = if b or b1 then BackendDAE.EQSYSTEM(v, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind) else syst;
       then
@@ -4051,8 +4079,8 @@ algorithm
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), SOME(pcr), _)
       equation
         (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
-        pcr = Debug.bcallret4(b, ComponentReference.crefPrependIdent, pcr, name, {}, ty, pcr);
-        unReplaceable = Debug.bcallret2(b, BaseHashSet.add, pcr, iUnreplaceable, iUnreplaceable);
+        pcr = if b then ComponentReference.crefPrependIdent(pcr, name, {}, ty) else pcr;
+        unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
         pcr = ComponentReference.crefPrependIdent(pcr, name, subs, ty);
       then
         traverseCrefUnreplaceable(cr, SOME(pcr), unReplaceable);
@@ -4060,7 +4088,7 @@ algorithm
       equation
         (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
         pcr = DAE.CREF_IDENT(name, ty, {});
-        unReplaceable = Debug.bcallret2(b, BaseHashSet.add, pcr, iUnreplaceable, iUnreplaceable);
+        unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
       then
         traverseCrefUnreplaceable(cr, SOME(DAE.CREF_IDENT(name, ty, subs)), unReplaceable);
 
@@ -4068,14 +4096,14 @@ algorithm
       equation
         (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
         pcr = ComponentReference.crefPrependIdent(pcr, name, {}, ty);
-        unReplaceable = Debug.bcallret2(b, BaseHashSet.add, pcr, iUnreplaceable, iUnreplaceable);
+        unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
       then
         unReplaceable;
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), NONE(), _)
       equation
         (_, b) = Expression.traverseExpTopDownCrefHelper(DAE.CREF_IDENT(name, ty, subs), Expression.traversingComponentRefPresent, false);
         pcr = DAE.CREF_IDENT(name, ty, {});
-        unReplaceable = Debug.bcallret2(b, BaseHashSet.add, pcr, iUnreplaceable, iUnreplaceable);
+        unReplaceable = if b then BaseHashSet.add(pcr, iUnreplaceable) else iUnreplaceable;
       then
         unReplaceable;
 
@@ -4098,13 +4126,17 @@ algorithm
     case (true, _, _, _)
       equation
         negatedExp = Expression.negate(inExp);
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStr, ("Negating: ", inExp, " " +& message +& ".\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrExpStr("Negating: ", inExp, " " +& message +& ".\n");
+        end if;
       then
         negatedExp;
     // we should not negate
     case (false, _, _, _)
       equation
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrExpStrExpStr, ("Not negating: ", inExp, " returning: ", inAlternative, " " +& message +& ".\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrExpStrExpStr("Not negating: ", inExp, " returning: ", inAlternative, " " +& message +& ".\n");
+        end if;
       then
         inAlternative;
   end match;

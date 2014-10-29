@@ -2066,7 +2066,9 @@ algorithm
 
     case (p,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "rename_component failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("rename_component failed\n");
+        end if;
       then
         ("Error",p);
   end matchcontinue;
@@ -2115,7 +2117,9 @@ algorithm
 
     case (p,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "renameComponentOnlyInClass failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("renameComponentOnlyInClass failed\n");
+        end if;
       then
         ("Error",p);
   end matchcontinue;
@@ -8977,7 +8981,7 @@ algorithm
 
     case (path,inmodel,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
-        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         // remove self reference, otherwise we go into an infinite loop!
         path = InstUtil.removeSelfReference(Absyn.pathLastIdent(inmodel),path);
         inmodeldef = getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
@@ -8988,7 +8992,7 @@ algorithm
 
     case (path,inmodel,p) /* Then look inside next level */
       equation
-        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 2 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "Interactive.lookupClassdef 2 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         innewpath = Absyn.stripLast(inmodel);
         (cdef,respath) = lookupClassdef(path, innewpath, p);
       then
@@ -8996,7 +9000,7 @@ algorithm
 
     case (path,_,p)
       equation
-        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 3 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "Interactive.lookupClassdef 3 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         cdef = getPathedClassInProgram(path, p) "Finally look in top level" ;
       then
         (cdef,path);
@@ -9021,7 +9025,7 @@ algorithm
 
     case (path,inmodel,_)
       equation
-        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 8 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
+        //fprintln(Flags.INTER, "Interactive.lookupClassdef 8 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         s1 = Absyn.pathString(path);
         s2 = Absyn.pathString(inmodel);
         Error.addMessage(Error.LOOKUP_ERROR, {s1,s2});
@@ -13706,9 +13710,7 @@ algorithm
     case (_, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE,
-          "- Interactive.getAnnotationString failed on annotation: " +
-          Dump.unparseAnnotation(inAnnotation));
+        Debug.traceln("- Interactive.getAnnotationString failed on annotation: " + Dump.unparseAnnotation(inAnnotation));
       then
         fail();
   end matchcontinue;

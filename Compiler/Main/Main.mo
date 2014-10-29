@@ -98,15 +98,19 @@ algorithm
     case (_,shandle,isymb)
       equation
         str = Socket.handlerequest(shandle);
-        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- Recieved Data from client -----\n");
-        Debug.fprint(Flags.INTERACTIVE_DUMP, str);
-        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
+        if Flags.isSet(Flags.INTERACTIVE_DUMP) then
+          Debug.trace("------- Recieved Data from client -----\n");
+          Debug.trace(str);
+          Debug.trace("------- End recieved Data-----\n");
+        end if;
         Print.clearBuf();
         (b,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
         replystr = if b then replystr else "quit requested, shutting server down\n";
         Socket.sendreply(shandle, replystr);
-        Debug.bcall1(not b, Socket.close, shandle);
-        Debug.bcall0(not b, Socket.cleanup);
+        if not b then
+          Socket.close(shandle);
+          Socket.cleanup();
+        end if;
       then serverLoop(b, shandle, newsymb);
   end match;
 end serverLoop;
@@ -191,11 +195,11 @@ algorithm
 
     else
       equation
-        Debug.fcall0(Flags.DUMP, Print.clearBuf);
-        Debug.fcall0(Flags.DUMP_GRAPHVIZ, Print.clearBuf);
+        if Flags.isSet(Flags.DUMP) or Flags.isSet(Flags.DUMP_GRAPHVIZ) then
+          Print.clearBuf();
+        end if;
         (stmts, prog) = parseCommand(inCommand);
-        (result, st) =
-          handleCommand2(stmts, prog, inCommand, inSymbolTable);
+        (result, st) = handleCommand2(stmts, prog, inCommand, inSymbolTable);
         result = makeDebugResult(Flags.DUMP, result);
         result = makeDebugResult(Flags.DUMP_GRAPHVIZ, result);
       then
@@ -232,9 +236,13 @@ algorithm
       equation
         prog2 = Interactive.addScope(prog, vars);
         prog2 = Interactive.updateProgram(prog2, ast);
-        Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
-        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, prog2);
-        Debug.fcall(Flags.DUMP, Dump.dump, prog2);
+        if Flags.isSet(Flags.DUMP) then
+          Debug.trace("\n--------------- Parsed program ---------------\n");
+          Dump.dump(prog2);
+        end if;
+        if Flags.isSet(Flags.DUMP_GRAPHVIZ) then
+          DumpGraphviz.dump(prog2);
+        end if;
         result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
         st = GlobalScriptUtil.setSymbolTableAST(inSymbolTable, prog2);
       then (result, st);
@@ -464,18 +472,21 @@ algorithm
         // Show any errors that occured during parsing.
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
 
-        Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
-        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, p);
-        Debug.fcall(Flags.DUMP, Dump.dump, p);
-        s = Debug.fcallret0(Flags.DUMP, Print.getString, "");
-        Debug.fcall(Flags.DUMP,print,s);
+        if Flags.isSet(Flags.DUMP) then
+          Debug.trace("\n--------------- Parsed program ---------------\n");
+          Dump.dump(p);
+          print(Print.getString());
+        end if;
+        if Flags.isSet(Flags.DUMP_GRAPHVIZ) then
+          DumpGraphviz.dump(p);
+        end if;
 
         SimCodeUtil.execStat("Parsed file");
 
         // Instantiate the program.
         (cache, env, d, cname) = instantiate(p);
 
-        d = Debug.bcallret3(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
+        d = if Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP) then DAEUtil.transformationsBeforeBackend(cache,env,d) else d;
 
         funcs = FCore.getFunctionTree(cache);
 
@@ -484,16 +495,17 @@ algorithm
         s = DAEDump.dumpStr(d, funcs);
         SimCodeUtil.execStat("DAEDump done");
         Print.printBuf(s);
-        Debug.fcall(Flags.DAE_DUMP_GRAPHV, DAEDump.dumpGraphviz, d);
+        if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
+          DAEDump.dumpGraphviz(d);
+        end if;
         SimCodeUtil.execStat("Misc Dump");
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
-        d = Debug.bcallret3(boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
+        d = if boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)) then DAEUtil.transformationsBeforeBackend(cache,env,d) else  d;
 
-        str = Print.getString();
-        silent = Config.silent();
-        notsilent = boolNot(silent);
-        Debug.bcall(notsilent, print, str);
+        if not Config.silent() then
+          print(Print.getString());
+        end if;
         SimCodeUtil.execStat("Transformations before backend");
 
         // Run the backend.

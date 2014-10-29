@@ -94,7 +94,8 @@ algorithm
      // failtrace
      else
        equation
-         Debug.fprint(Flags.FAILTRACE, "UnitChecker::check() failed\n");
+         true = Flags.isSet(Flags.FAILTRACE);
+         Debug.trace("UnitChecker::check() failed\n");
          print("check failed\n");
        then
          fail();
@@ -231,7 +232,8 @@ algorithm
 
      else
        equation
-         Debug.fprint(Flags.FAILTRACE, "UnitChecker::checkTerm() failed\n");
+         true = Flags.isSet(Flags.FAILTRACE);
+         Debug.trace("UnitChecker::checkTerm() failed\n");
        then fail();
    end matchcontinue;
 end checkTerm;
@@ -249,9 +251,11 @@ algorithm
     case(UnitAbsyn.CONSISTENT(),UnitAbsyn.CONSISTENT(),incon) then incon;
     case(UnitAbsyn.CONSISTENT(),incon,_) then incon;
     case(incon,_,_) then incon;
-    else equation
-      Debug.fprint(Flags.FAILTRACE, "UnitChecker::chooseResult() failed\n");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::chooseResult() failed\n");
+      then fail();
   end matchcontinue;
 end chooseResult;
 
@@ -380,7 +384,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::getUnknown() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::getUnknown() failed\n");
       then
         fail();
   end matchcontinue;
@@ -393,9 +398,11 @@ algorithm
   res := matchcontinue(su)
     case(UnitAbsyn.SPECUNIT({},_)) then false;
     case(UnitAbsyn.SPECUNIT(_,_)) then true;
-    else equation
-      Debug.fprint(Flags.FAILTRACE, "UnitChecker::hasUnknown() failed\n");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::hasUnknown() failed\n");
+      then fail();
   end matchcontinue;
 end hasUnknown;
 
@@ -434,7 +441,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::mulSpecUnit() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::mulSpecUnit() failed\n");
       then
         fail();
   end matchcontinue;
@@ -473,7 +481,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::powUnitVec() failed\n");
       then fail();
   end matchcontinue;
 end mulUnitVec;
@@ -499,7 +508,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::divSpecUnit() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::divSpecUnit() failed\n");
       then fail();
   end matchcontinue;
 end divSpecUnit;
@@ -538,7 +548,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::powUnitVec() failed\n");
       then fail();
   end matchcontinue;
 end divUnitVec;
@@ -562,7 +573,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powSpecUnit() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::powSpecUnit() failed\n");
       then
         fail();
   end matchcontinue;
@@ -590,7 +602,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitParams() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::powUnitParams() failed\n");
       then fail();
   end matchcontinue;
 end powUnitParams;
@@ -616,7 +629,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::powUnitVec() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::powUnitVec() failed\n");
       then fail();
   end matchcontinue;
 end powUnitVec;
@@ -643,7 +657,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::negParamList() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::negParamList() failed\n");
       then fail();
   end matchcontinue;
 end negParamList;
@@ -687,7 +702,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeOnUnit() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::normalizeOnUnit() failed\n");
       then fail();
   end matchcontinue;
 end normalizeOnUnit;
@@ -732,7 +748,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeParamsExponents() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::normalizeParamsExponents() failed\n");
       then
         fail();
   end matchcontinue;
@@ -770,7 +787,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::getParam() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::getParam() failed\n");
       then fail();
   end matchcontinue;
 end getParam;
@@ -804,7 +822,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::normalizeParamsValues() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::normalizeParamsValues() failed\n");
       then fail();
   end matchcontinue;
 end normalizeParamsValues;
@@ -835,7 +854,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "UnitChecker::mulSpecUnitWithNorm() failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("UnitChecker::mulSpecUnitWithNorm() failed\n");
       then fail();
   end matchcontinue;
 end mulSpecUnitWithNorm;

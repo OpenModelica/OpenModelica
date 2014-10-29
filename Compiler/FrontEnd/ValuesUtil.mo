@@ -1678,7 +1678,8 @@ algorithm
         makeArray({Values.REAL(r1)});
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "Values.multScalarProduct failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Values.multScalarProduct failed\n");
       then
         fail();
   end matchcontinue;
@@ -2362,7 +2363,7 @@ algorithm
     case (v1, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- ValuesUtil.unparsePtolemySet2 failed on v1: " +&
+        Debug.traceln("- ValuesUtil.unparsePtolemySet2 failed on v1: " +&
           printValStr(v1) +& " and v2: " +& printValStr(v1));
       then
         fail();

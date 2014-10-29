@@ -535,7 +535,9 @@ algorithm
 
     case (eqn::eqns, _, _) equation
       (b, arg) = traverseBackendDAEExpsEqnWithStop(eqn, inFunc, inTypeA);
-      (b, arg) = Debug.bcallret3_2(b, traverseBackendDAEExpsEqnListWithStop, eqns, inFunc, arg, b, arg);
+      if b then
+        (b, arg) = traverseBackendDAEExpsEqnListWithStop(eqns, inFunc, arg);
+      end if;
     then (b, arg);
   end match;
 end traverseBackendDAEExpsEqnListWithStop;
@@ -569,7 +571,9 @@ algorithm
 
     case (eqn::eqns, _, _) equation
       (b, arg) = traverseBackendDAEExpsEqnListWithStop(eqn, func, inTypeA);
-      (b, arg) = Debug.bcallret3_2(b, traverseBackendDAEExpsEqnListListWithStop, eqns, func, arg, b, arg);
+      if b then
+        (b, arg) = traverseBackendDAEExpsEqnListListWithStop(eqns, func, arg);
+      end if;
     then (b, arg);
   end match;
 end traverseBackendDAEExpsEqnListListWithStop;
@@ -690,69 +694,100 @@ algorithm
       BackendDAE.WhenEquation elsePart;
       DAE.ElementSource source;
       Integer size;
-      Type_a ext_arg_1, ext_arg_2, ext_arg_3;
+      Type_a ext_arg, ext_arg_1, ext_arg_2, ext_arg_3;
       list<Integer> dimSize;
       DAE.Algorithm alg;
       list<DAE.Statement> stmts;
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
-      Boolean b1, b2, b3, b4;
+      Boolean b, b1, b2, b3, b4;
       BackendDAE.EquationAttributes eqAttr;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2), _, _) equation
-      (_, b1, ext_arg_1) = func(e1, inTypeA);
-      (_, b2, ext_arg_2) = Debug.bcallret2_3(b1, func, e2, ext_arg_1, e2, b1, ext_arg_1);
-    then (b2, ext_arg_2);
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2), _, _)
+      equation
+        (_, b, ext_arg) = func(e1, inTypeA);
+        if b then
+          (_, b, ext_arg) = func(e2, ext_arg);
+        end if;
+      then (b, ext_arg);
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2), _, _) equation
-      (_, b1, ext_arg_1) = func(e1, inTypeA);
-      (_, b2, ext_arg_2) = Debug.bcallret2_3(b1, func, e2, ext_arg_1, e2, b1, ext_arg_1);
-    then (b2, ext_arg_2);
+    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2), _, _)
+      equation
+        (_, b, ext_arg) = func(e1, inTypeA);
+        if b then
+          (_, b, ext_arg) = func(e2, ext_arg);
+        end if;
+      then (b, ext_arg);
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2), _, _) equation
-      tp = Expression.typeof(e2);
-      e1 = Expression.makeCrefExp(cr, tp);
-      (_, b1, ext_arg_1) = func(e1, inTypeA);
-      (_, b2, ext_arg_2) = Debug.bcallret2_3(b1, func, e2, ext_arg_1, e2, b1, ext_arg_1);
-    then (b2, ext_arg_2);
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2), _, _)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr, tp);
+        (_, b, ext_arg) = func(e1, inTypeA);
+        if b then
+          (_, b, ext_arg) = func(e2, ext_arg);
+        end if;
+      then (b, ext_arg);
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e1), _, _) equation
-      (_, b1, ext_arg_1) = func(e1, inTypeA);
-    then (b1, ext_arg_1);
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e1), _, _)
+      equation
+        (_, b, ext_arg) = func(e1, inTypeA);
+      then (b, ext_arg);
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=NONE())), _, _) equation
-      tp = Expression.typeof(e2);
-      e1 = Expression.makeCrefExp(cr, tp);
-      (_, b1, ext_arg_1) = func(e1, inTypeA);
-      (_, b2, ext_arg_2) = Debug.bcallret2_3(b1, func, e2, ext_arg_1, e2, b1, ext_arg_1);
-      (_, b3, ext_arg_3) = Debug.bcallret2_3(b2, func, cond, ext_arg_2, e2, b2, ext_arg_2);
-    then (b3, ext_arg_3);
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=NONE())), _, _)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr, tp);
+        (_, b, ext_arg) = func(e1, inTypeA);
+        if b then
+          (_, b, ext_arg) = func(e2, ext_arg);
+        end if;
+        if b then
+          (_, b, ext_arg) = func(cond, ext_arg);
+        end if;
+      then (b, ext_arg);
 
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=SOME(elsePart)), source=source, attr=eqAttr), _, _) equation
-      tp = Expression.typeof(e2);
-      e1 = Expression.makeCrefExp(cr, tp);
-      (_, b1, ext_arg_1) = func(e1, inTypeA);
-      (_, b2, ext_arg_2) = Debug.bcallret2_3(b1, func, e2, ext_arg_1, e2, b1, ext_arg_1);
-      (_, b3, ext_arg_3) = Debug.bcallret2_3(b2, func, cond, ext_arg_2, e2, b2, ext_arg_2);
-      (b4, ext_arg_3) = Debug.bcallret3_2(b2, traverseBackendDAEExpsEqnWithStop, BackendDAE.WHEN_EQUATION(size, elsePart, source, eqAttr), func, ext_arg_2, b3, ext_arg_3);
-    then (b4, ext_arg_3);
+    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=SOME(elsePart)), source=source, attr=eqAttr), _, _)
+      equation
+        tp = Expression.typeof(e2);
+        e1 = Expression.makeCrefExp(cr, tp);
+        (_, b, ext_arg) = func(e1, inTypeA);
+        if b then
+          (_, b, ext_arg) = func(e2, ext_arg);
+        end if;
+        if b then
+          (_, b, ext_arg) = func(cond, ext_arg);
+        end if;
+        if b then
+          (b, ext_arg) = traverseBackendDAEExpsEqnWithStop(BackendDAE.WHEN_EQUATION(size, elsePart, source, eqAttr), func, ext_arg);
+        end if;
+      then (b, ext_arg);
 
-    case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst=_)), _, _) equation
-      print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseBackendDAEExpsEqnWithStop\n");
-     // (stmts1, ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts, func, inTypeA);
-    then fail();
+    case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst=_)), _, _)
+      equation
+        print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseBackendDAEExpsEqnWithStop\n");
+       // (stmts1, ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts, func, inTypeA);
+      then fail();
 
     //(true, inTypeA);
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2), _, _) equation
-      (_, b1, ext_arg_1) = func(e1, inTypeA);
-      (_, b2, ext_arg_2) = Debug.bcallret2_3(b1, func, e2, ext_arg_1, e2, b1, ext_arg_1);
-    then (b2, ext_arg_2);
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2), _, _)
+      equation
+        (_, b, ext_arg) = func(e1, inTypeA);
+        if b then
+          (_, b, ext_arg) = func(e2, ext_arg);
+        end if;
+      then (b, ext_arg);
 
-    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns), _, _) equation
-      (b1, ext_arg_1) = traverseBackendDAEExpListWithStop(expl, func, inTypeA);
-      (b2, ext_arg_2) = Debug.bcallret3_2(b1, traverseBackendDAEExpsEqnListListWithStop, eqnslst, func, ext_arg_1, b1, ext_arg_1);
-      (b3, ext_arg_3) = Debug.bcallret3_2(b2, traverseBackendDAEExpsEqnListWithStop, eqns, func, ext_arg_2, b2, ext_arg_2);
-    then (b3, ext_arg_3);
+    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns), _, _)
+      equation
+        (b, ext_arg) = traverseBackendDAEExpListWithStop(expl, func, inTypeA);
+        if b then
+          (b, ext_arg) = traverseBackendDAEExpsEqnListListWithStop(eqnslst, func, ext_arg);
+        end if;
+        if b then
+          (b, ext_arg) = traverseBackendDAEExpsEqnListWithStop(eqns, func, ext_arg);
+        end if;
+      then (b, ext_arg);
   end match;
 end traverseBackendDAEExpsEqnWithStop;
 
@@ -812,10 +847,13 @@ protected function traverseBackendDAEExpListWithStop "author Frenkel TUD
     case ({}, _, ext_arg_1)
     then (true, ext_arg_1);
 
-    case (e::res, _, ext_arg_1) equation
-      (_, b, ext_arg_2) = rel(e, ext_arg_1);
-      (b, ext_arg_3) = Debug.bcallret3_2(b, traverseBackendDAEExpListWithStop, res, rel, ext_arg_2, b, ext_arg_2);
-    then (b, ext_arg_3);
+    case (e::res, _, ext_arg_1)
+      equation
+        (_, b, ext_arg_2) = rel(e, ext_arg_1);
+        if b then
+          (b, ext_arg_2) = traverseBackendDAEExpListWithStop(res, rel, ext_arg_2);
+        end if;
+      then (b, ext_arg_2);
   end match;
 end traverseBackendDAEExpListWithStop;
 
@@ -840,9 +878,11 @@ algorithm
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)), _, _)
     then BackendDAEUtil.traverseBackendDAEArrayNoCopy(equOptArr, func, traverseBackendDAEOptEqn, 1, arrayLength(equOptArr), inTypeA);
 
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqns failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendEquation.traverseBackendDAEEqns failed\n");
+      then fail();
   end matchcontinue;
 end traverseBackendDAEEqns;
 
@@ -873,9 +913,11 @@ algorithm
         (_, ext_arg) = func(eqn, inTypeA);
       then ext_arg;
 
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqn failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendEquation.traverseBackendDAEOptEqn failed\n");
+      then fail();
   end matchcontinue;
 end traverseBackendDAEOptEqn;
 
@@ -901,9 +943,11 @@ algorithm
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)), _, _)
     then BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(equOptArr, func, traverseBackendDAEOptEqnWithStop, 1, arrayLength(equOptArr), inTypeA);
 
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendEquation.traverseBackendDAEEqnsWithStop failed");
+      then fail();
   end matchcontinue;
 end traverseBackendDAEEqnsWithStop;
 
@@ -937,9 +981,11 @@ algorithm
         (_, b, ext_arg) = func(eqn, inTypeA);
       then (b, ext_arg);
 
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqnWithStop failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendEquation.traverseBackendDAEOptEqnWithStop failed\n");
+      then fail();
   end matchcontinue;
 end traverseBackendDAEOptEqnWithStop;
 
@@ -969,9 +1015,11 @@ algorithm
         (equOptArr, ext_arg) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(equOptArr, func, traverseBackendDAEOptEqnWithUpdate, 1, arrayLength(equOptArr), inTypeA);
       then (BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr), ext_arg);
 
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendEquation.traverseBackendDAEEqnsWithStop failed\n");
+      then fail();
   end matchcontinue;
 end traverseBackendDAEEqnsWithUpdate;
 
@@ -1004,9 +1052,11 @@ algorithm
       oeqn = if referenceEq(eqn, eqn1) then oeqn else SOME(eqn1);
     then (oeqn, ext_arg);
 
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqnWithUpdate failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendEquation.traverseBackendDAEOptEqnWithUpdate failed\n");
+      then fail();
   end matchcontinue;
 end traverseBackendDAEOptEqnWithUpdate;
 
@@ -1342,9 +1392,11 @@ algorithm
       eqnlst = equationDelete1(arrSize, equOptArr, {});
     then listEquation(eqnlst);
 
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationDelete failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAE.equationDelete failed\n");
+      then fail();
   end matchcontinue;
 end equationDelete;
 
@@ -1526,9 +1578,11 @@ algorithm
     case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation=_))
     then {backendEq};
 
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationToScalarResidualForm failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAE.equationToScalarResidualForm failed\n");
+      then fail();
   end match;
 end equationToScalarResidualForm;
 
@@ -1620,9 +1674,11 @@ algorithm
     case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation=_))
     then backendEq;
 
-    case (_) equation
-      Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationToResidualForm failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- BackendDAE.equationToResidualForm failed\n");
+      then fail();
   end matchcontinue;
 end equationToResidualForm;
 

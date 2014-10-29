@@ -242,7 +242,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- CevalFunction.evaluateFunction failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- CevalFunction.evaluateFunction failed.\n");
       then
         fail();
   end matchcontinue;
@@ -269,8 +270,8 @@ algorithm
 
     case ((DAE.VAR(direction = DAE.INPUT())) :: _, {})
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- CevalFunction.pairFuncParamsWithArgs "
-         +& "failed because of too few input arguments.");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- CevalFunction.pairFuncParamsWithArgs failed because of too few input arguments.\n");
       then
         fail();
 
@@ -1455,9 +1456,8 @@ algorithm
     case DAE.CREF(componentRef = cref) then cref;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,
-          "- CevalFunction.extractLhsComponentRef failed on " +&
-          ExpressionDump.printExpStr(inExp) +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- CevalFunction.extractLhsComponentRef failed on " +& ExpressionDump.printExpStr(inExp));
       then
         fail();
   end match;
@@ -1964,7 +1964,8 @@ algorithm
 
     case (_, _ :: _, _, _, _, _)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- CevalFunction.appendDimensions2 failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- CevalFunction.appendDimensions2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2449,7 +2450,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- CevalFunction.generateDefaultBinding failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- CevalFunction.generateDefaultBinding failed\n");
       then
         fail();
   end matchcontinue;

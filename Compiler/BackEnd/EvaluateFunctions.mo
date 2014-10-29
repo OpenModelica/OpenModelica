@@ -104,9 +104,11 @@ algorithm
         BackendDAE.DAE(eqs = eqSysts,shared = shared) = inDAE;
         (eqSysts,(shared,_,changed)) = List.mapFold(eqSysts,evalFunctions_main,(shared,1,false));
         //shared = evaluateShared(shared);
-        outDAE = if changed then BackendDAE.DAE(eqSysts,shared) else inDAE;
-        outDAE = Debug.bcallret1(changed,RemoveSimpleEquations.fastAcausal,outDAE,inDAE);
-        outDAE = Debug.bcallret1(changed,updateVarKinds,outDAE,inDAE);
+        if changed then
+          outDAE = updateVarKinds(RemoveSimpleEquations.fastAcausal(BackendDAE.DAE(eqSysts,shared)));
+        else
+          outDAE = inDAE;
+        end if;
       then
         outDAE;
     else
@@ -215,9 +217,9 @@ algorithm
         true = b1 or b2;
         (shared,addEqs,idx,changed) = tplIn;
         funcs = BackendDAEUtil.getFunctions(shared);
-        ((rhsExp,lhsExp,addEqs1,funcs,idx,changed1)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs,idx,changed));
+        ((rhsExp,lhsExp,addEqs1,funcs,idx,changed1)) = if b1 then evaluateConstantFunction(exp1,exp2,funcs,idx) else (exp2,exp1,{},funcs,idx,changed);
         changed = changed1 or changed;
-        ((rhsExp,lhsExp,addEqs2,funcs,idx,changed1)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs,idx,changed));
+        ((rhsExp,lhsExp,addEqs2,funcs,idx,changed1)) = if b2 then evaluateConstantFunction(exp2,exp1,funcs,idx) else (rhsExp,lhsExp,{},funcs,idx,changed);
         changed = changed1 or changed;
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
@@ -226,7 +228,9 @@ algorithm
         (eq,(shared,addEqs,idx+1,changed));
     case(BackendDAE.ARRAY_EQUATION(dimSize=_),_)
       equation
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"this is an array equation. update evalFunctions_findFuncs\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("this is an array equation. update evalFunctions_findFuncs\n");
+        end if;
       then
         (eqIn,tplIn);
     case(BackendDAE.COMPLEX_EQUATION(left=exp1, right=exp2, source=source, attr=attr),_)
@@ -236,9 +240,9 @@ algorithm
         true = b1 or b2;
         (shared,addEqs,idx,changed) = tplIn;
         funcs = BackendDAEUtil.getFunctions(shared);
-        ((rhsExp,lhsExp,addEqs1,funcs,idx,changed1)) = Debug.bcallret4(b1,evaluateConstantFunction,exp1,exp2,funcs,idx,(exp2,exp1,{},funcs,idx,changed));
+        ((rhsExp,lhsExp,addEqs1,funcs,idx,changed1)) = if b1 then evaluateConstantFunction(exp1,exp2,funcs,idx) else (exp2,exp1,{},funcs,idx,changed);
         changed = changed or changed1;
-        ((rhsExp,lhsExp,addEqs2,funcs,idx,changed1)) = Debug.bcallret4(b2,evaluateConstantFunction,exp2,exp1,funcs,idx,(rhsExp,lhsExp,{},funcs,idx,changed));
+        ((rhsExp,lhsExp,addEqs2,funcs,idx,changed1)) = if b2 then evaluateConstantFunction(exp2,exp1,funcs,idx) else (rhsExp,lhsExp,{},funcs,idx,changed);
         changed = changed or changed1;
         addEqs = listAppend(addEqs1,addEqs);
         addEqs = listAppend(addEqs2,addEqs);
@@ -293,7 +297,9 @@ algorithm
       list<list<DAE.ComponentRef>> scalarInputs, scalarOutputs;
     case(DAE.CALL(path=path, expLst=exps, attr=attr1),_,_,_)
       equation
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"\nStart evaluation of:\n"+&ExpressionDump.printExpStr(lhsExpIn)+&" := "+&ExpressionDump.printExpStr(rhsExpIn)+&"\n\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("\nStart evaluation of:\n"+&ExpressionDump.printExpStr(lhsExpIn)+&" := "+&ExpressionDump.printExpStr(rhsExpIn)+&"\n\n");
+        end if;
 
         // get the elements of the function and the algorithms
         SOME(func) = DAEUtil.avlTreeGet(funcsIn,path);
@@ -368,12 +374,21 @@ algorithm
         funcIsPartConst = (List.isNotEmpty(varScalarCrefs) or List.isNotEmpty(varComplexCrefs)) and (List.isNotEmpty(constScalarCrefs) or List.isNotEmpty(constComplexCrefs)) and not funcIsConst;
         isConstRec = intEq(listLength(constScalarCrefs),listLength(List.flatten(scalarOutputs))) and List.isEmpty(varScalarCrefs) and List.isEmpty(varComplexCrefs) and List.isEmpty(constComplexCrefs);
 
-        //Debug.bcall1(isConstRec,print,"the function output is completely constant and its a record\n");
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsConst,print,"the function output is completely constant\n");
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and funcIsPartConst,print,"the function output is partially constant\n");
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not funcIsPartConst and not funcIsConst,print,"the function output is not constant in any case\n");
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and hasAssert and funcIsConst,print,"the function output is completely constant but there is an assert\n");
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and abort,print,"the evaluated function is not used because there is a return or a terminate or a reinit statement\n");
+        //bcall1(isConstRec,print,"the function output is completely constant and its a record\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          if funcIsConst then
+            if hasAssert then
+              print("the function output is completely constant but there is an assertion\n");
+            else
+              print("the function output is completely constant\n");
+            end if;
+          elseif not funcIsPartConst then
+            print("the function output is not constant in any case\n");
+          end if;
+          if abort then
+            print("the evaluated function is not used because there is a return or a terminate or a reinit statement\n");
+          end if;
+        end if;
         funcIsConst = if (hasAssert and funcIsConst) or abort then false else funcIsConst; // quit if there is a return or terminate or use partial evaluation if there is an assert
         funcIsPartConst = if hasAssert and funcIsConst then true else funcIsPartConst;
         funcIsPartConst = if abort then false else funcIsPartConst;  // quit if there is a return or terminate
@@ -383,7 +398,11 @@ algorithm
         // build the new lhs, the new statements for the function, the constant parts...
         (updatedVarOutputs,outputExp,varScalarCrefsInFunc) = buildVariableFunctionParts(scalarOutputs,constComplexCrefs,varComplexCrefs,constScalarCrefs,varScalarCrefs,allOutputs,lhsExpIn);
         (constScalarCrefsOut,constComplexCrefs) = buildConstFunctionCrefs(constScalarCrefs,constComplexCrefs,allOutputCrefs,lhsExpIn);
-        (algs,constEqs) = Debug.bcallret3_2(not funcIsConst,buildPartialFunction,(varScalarCrefsInFunc,algs),(constScalarCrefs,constScalarExps,constComplexCrefs,constComplexExps,constScalarCrefsOut),repl,algs,{});
+        if not funcIsConst then
+          (algs,constEqs) = buildPartialFunction((varScalarCrefsInFunc,algs),(constScalarCrefs,constScalarExps,constComplexCrefs,constComplexExps,constScalarCrefsOut),repl);
+        else
+          constEqs = {};
+        end if;
 
         //print("constScalarCrefsOut\n"+&stringDelimitList(List.map(constScalarCrefsOut,ComponentReference.printComponentRefStr),"\n")+&"\n");
         //print("constComplexCrefs\n"+&stringDelimitList(List.map(constComplexCrefs,ComponentReference.printComponentRefStr),"\n")+&"\n");
@@ -394,7 +413,7 @@ algorithm
         elements = listAppend(elements,algs);
         elements = List.unique(elements);
         (func,path) = updateFunctionBody(func,elements,idx, updatedVarOutputs, allOutputs);
-        funcs = Debug.bcallret2(funcIsPartConst,DAEUtil.addDaeFunction,{func},funcs,funcs);
+        funcs = if funcIsPartConst then DAEUtil.addDaeFunction({func},funcs) else funcs;
         idx = if funcIsPartConst or funcIsConst then (idx+1) else idx;
 
         //decide which lhs to take (tuple or 1d)
@@ -406,12 +425,12 @@ algorithm
         outputVarTypes = List.map(newOutputVars,DAEUtil.getVariableType);
         attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE(outputVarTypes,DAE.emptyTypeSource));
         DAE.CALL_ATTR(ty = singleOutputType) = attr1;
-        singleOutputType = Debug.bcallret1(List.isNotEmpty(newOutputVars),List.first,outputVarTypes,singleOutputType);//if the function is evaluated completely
+        singleOutputType = if List.isNotEmpty(newOutputVars) then List.first(outputVarTypes) else singleOutputType;//if the function is evaluated completely
         attr1 = DAEUtil.replaceCallAttrType(attr1,singleOutputType);
         attr2 = if intEq(listLength(newOutputVars),1) then attr1 else attr2;
         //DAEDump.dumpCallAttr(attr2);
 
-        exp2 = Debug.bcallret1(List.hasOneElement(constComplexExps) and funcIsConst,List.first,constComplexExps,DAE.TUPLE(constComplexExps));  // either a single equation or a tuple equation
+        exp2 = if List.hasOneElement(constComplexExps) and funcIsConst then List.first(constComplexExps) else DAE.TUPLE(constComplexExps);  // either a single equation or a tuple equation
         exp = if funcIsConst then exp2 else rhsExpIn;
         exp = if funcIsPartConst then DAE.CALL(path, exps, attr2) else exp;
         exp = if isConstRec then DAE.TUPLE(constScalarExps) else exp;
@@ -422,8 +441,12 @@ algorithm
         outputExp = setRecordTypes(outputExp,FUNCINFO(repl,funcs,idx));
         //print("RHS EXP:\n");
         //ExpressionDump.dumpExp(exp);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"Finish evaluation in:\n"+&ExpressionDump.printExpStr(outputExp)+&" := "+&ExpressionDump.printExpStr(exp)+&"\n");
-          Debug.bcall2(Flags.isSet(Flags.EVAL_FUNC_DUMP) and List.isNotEmpty(constEqs),BackendDump.dumpEquationList,constEqs,"including the additional equations:\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("Finish evaluation in:\n"+&ExpressionDump.printExpStr(outputExp)+&" := "+&ExpressionDump.printExpStr(exp)+&"\n");
+          if List.isNotEmpty(constEqs) then
+            BackendDump.dumpEquationList(constEqs,"including the additional equations:\n");
+          end if;
+        end if;
       then
         ((exp,outputExp,constEqs,funcs,idx,changed));
     else
@@ -669,7 +692,7 @@ algorithm
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(constComplexCrefs,allOutputCrefs,ComponentReference.crefEqual);
         pos = List.map1(outputCrefs,List.position,allOutputCrefs);
         varScalarExps = List.map1(pos,List.getIndexFirst,expLst);
-        outputExp = Debug.bcallret1(List.hasOneElement(varScalarExps),List.first,varScalarExps,DAE.TUPLE(varScalarExps));
+        outputExp = if List.hasOneElement(varScalarExps) then List.first(varScalarExps) else DAE.TUPLE(varScalarExps);
         funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcProts = List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         varOutputs = listAppend(funcOutputs,funcProts);
@@ -700,7 +723,7 @@ algorithm
         pos = List.map1(outputCrefs,List.position,allOutputCrefs);
         varScalarExps = List.map1(pos,List.getIndexFirst,expLst);
         varScalarExps = List.map(varScalarExps,scalarRecExpForOneDimRec);
-        outputExp = Debug.bcallret1(List.hasOneElement(varScalarExps),List.first,varScalarExps,DAE.TUPLE(varScalarExps));
+        outputExp = if List.hasOneElement(varScalarExps) then List.first(varScalarExps) else DAE.TUPLE(varScalarExps);
       then (varOutputs,outputExp,varScalarCrefsInFunc);
     case(_,_,_,_,_,_,DAE.LBINARY(exp1=exp1,operator=_,exp2=exp2))
       equation
@@ -715,7 +738,7 @@ algorithm
         (protCrefs,_,outputCrefs) = List.intersection1OnTrue(constScalarCrefs,allOutputCrefs,ComponentReference.crefEqual);
         pos = List.map1(outputCrefs,List.position,allOutputCrefs);
         varScalarExps = List.map1(pos,List.getIndexFirst,expLst);
-        outputExp = Debug.bcallret1(List.hasOneElement(varScalarExps),List.first,varScalarExps,DAE.TUPLE(varScalarExps));
+        outputExp = if List.hasOneElement(varScalarExps) then List.first(varScalarExps) else DAE.TUPLE(varScalarExps);
         funcOutputs = List.map2(outputCrefs,generateOutputElements,allOutputs,lhsExpIn);
         funcProts = List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         varOutputs = listAppend(funcOutputs,funcProts);
@@ -749,7 +772,7 @@ algorithm
         varScalarCrefs1 = List.map(varScalarCrefs,ComponentReference.crefStripFirstIdent);
         varScalarCrefs1 = List.map1(varScalarCrefs1,ComponentReference.joinCrefsR,lhsCref);
         varScalarExps = List.map(varScalarCrefs1,Expression.crefExp);
-        outputExp = Debug.bcallret1(List.hasOneElement(varScalarExps),List.first,varScalarExps,DAE.TUPLE(varScalarExps));
+        outputExp = if List.hasOneElement(varScalarExps) then List.first(varScalarExps) else DAE.TUPLE(varScalarExps);
       then
         (varOutputs,outputExp,varScalarCrefs);
     else
@@ -895,7 +918,7 @@ algorithm
 
         // if the record is only 1-dimensional, use the scalar value
         crefs = getRecordScalars(cref);
-        cref1 = Debug.bcallret1(intEq(listLength(crefs),1),List.first,crefs,cref1);
+        cref1 = if intEq(listLength(crefs),1) then List.first(crefs) else cref1;
 
         // its not possible to use qualified output crefs
         i1 = ComponentReference.crefFirstIdent(cref);
@@ -1039,7 +1062,7 @@ algorithm
     equation
       //print("the out types1: "+&Types.unparseType(outType)+&"\n");
       outTypeLst = List.map(outputs,DAEUtil.getVariableType);
-      outType = Debug.bcallret1(intEq(listLength(outTypeLst),1),List.first,outTypeLst,DAE.T_TUPLE(outTypeLst,DAE.emptyTypeSource));
+      outType = if intEq(listLength(outTypeLst),1) then List.first(outTypeLst) else DAE.T_TUPLE(outTypeLst,DAE.emptyTypeSource);
       outType = DAE.T_FUNCTION(inputs,outType,atts,source);
       //print("the out types2: "+&Types.unparseType(outType)+&"\n");
     then
@@ -1188,7 +1211,7 @@ algorithm
     case(exp::rest)
       equation
         b1 = Expression.isConst(exp);
-        b1 = Debug.bcallret1(b1,expLstIsConst,rest,false);
+        b1 = if b1 then expLstIsConst(rest) else false;
       then
         b1;
   end match;
@@ -1411,12 +1434,14 @@ algorithm
       equation
         // replace, evaluate, simplify the assignment
        //print("the STMT_ASSIGN before: "+&DAEDump.ppStatementStr(List.first(algsIn)));
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"assignment:\n"+&DAEDump.ppStatementStr(List.first(algsIn)));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("assignment:\n"+&DAEDump.ppStatementStr(List.first(algsIn)));
+        end if;
         cref = Expression.expCref(exp1);
         scalars = getRecordScalars(cref);
         (exp2,changed) = BackendVarTransform.replaceExp(exp2,replIn,NONE());
         (exp2,(exp1,funcTree,idx,addStmts)) = Expression.traverseExpTopDown(exp2,evaluateConstantFunctionWrapper,(exp1,funcTree,idx,{}));
-        (exp2,changed) = Debug.bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed);
+        // (exp2,changed) = bcallret1_2(changed,ExpressionSimplify.simplify,exp2,exp2,changed); This does nothing useful with the statement below...
         (exp2,_) = ExpressionSimplify.simplify(exp2);
         expLst = Expression.getComplexContents(exp2);
         //print("SIMPLIFIED\n"+&stringDelimitList(List.map({exp2},ExpressionDump.printExpStr),"\n")+&"\n");
@@ -1445,24 +1470,26 @@ algorithm
         //print("variable scalars\n"+&stringDelimitList(List.map(varScalars,ComponentReference.printComponentRefStr),"\n")+&"\n");
         //BackendVarTransform.dumpReplacements(replIn);
 
-        repl = Debug.bcallret4(isCon and not isRec, BackendVarTransform.addReplacement,repl,cref,exp2,NONE(),repl);
-        repl = Debug.bcallret4(isCon and isRec, BackendVarTransform.addReplacements,repl,scalars,expLst,NONE(),repl);
-        repl = Debug.bcallret3(not isCon and not isRec, BackendVarTransform.removeReplacement, repl,cref,NONE(),repl);
-        repl = Debug.bcallret3(not isCon and isRec, BackendVarTransform.removeReplacements,repl,varScalars,NONE(),repl);
-        repl = Debug.bcallret4(not isCon and isRec, BackendVarTransform.addReplacements,repl,constScalars,expLst,NONE(),repl);
+        repl = if isCon and not isRec then BackendVarTransform.addReplacement(repl,cref,exp2,NONE()) else repl;
+        repl = if isCon and isRec then BackendVarTransform.addReplacements(repl,scalars,expLst,NONE()) else repl;
+        repl = if not isCon and not isRec then BackendVarTransform.removeReplacement(repl,cref,NONE()) else repl;
+        repl = if not isCon and isRec then BackendVarTransform.removeReplacements(repl,varScalars,NONE()) else repl;
+        repl = if not isCon and isRec then BackendVarTransform.addReplacements(repl,constScalars,expLst,NONE()) else repl;
 
-        //Debug.bcall(isCon and not isRec,print,"add the replacement: "+&ComponentReference.crefStr(cref)+&" --> "+&ExpressionDump.printExpStr(exp2)+&"\n");
-        //Debug.bcall(not isCon,print,"update the replacement for: "+&ComponentReference.crefStr(cref)+&"\n");
+        //bcall(isCon and not isRec,print,"add the replacement: "+&ComponentReference.crefStr(cref)+&" --> "+&ExpressionDump.printExpStr(exp2)+&"\n");
+        //bcall(not isCon,print,"update the replacement for: "+&ComponentReference.crefStr(cref)+&"\n");
         //BackendVarTransform.dumpReplacements(repl);
 
         // build the new statements
         alg = if isCon then DAE.STMT_ASSIGN(typ,exp1,exp2,source) else List.first(algsIn);
-        tplExpsLHS = Debug.bcallret1(isTpl,Expression.getComplexContents,exp1,{});
-        tplExpsRHS = Debug.bcallret1(isTpl,Expression.getComplexContents,exp2,{});
+        tplExpsLHS = if isTpl then Expression.getComplexContents(exp1) else {};
+        tplExpsRHS = if isTpl then Expression.getComplexContents(exp2) else {};
         tplStmts = List.map2(List.intRange(listLength(tplExpsLHS)),makeAssignmentMap,tplExpsLHS,tplExpsRHS);
         //alg = if_(isTpl,DAE.STMT_TUPLE_ASSIGN(typ,tplExpsLHS,exp2,source),alg);
         stmts1 = if isTpl then tplStmts else {alg};
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated assignment to:\n"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("evaluated assignment to:\n"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
+        end if;
 
         //stmts1 = listAppend({alg},lstIn);
         stmts1 = listAppend(stmts1,lstIn);
@@ -1479,7 +1506,9 @@ algorithm
     case(DAE.STMT_IF(exp=exp0, statementLst=stmtsIf, else_=else_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"IF-statement:\n"+&DAEDump.ppStatementStr(alg));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("IF-statement:\n"+&DAEDump.ppStatementStr(alg));
+        end if;
 
         // get all stmts in the function and the assigned crefs (need the outputs in order to remove the replacements if nothing can be evaluated)
         stmtsLst = getDAEelseStatemntLsts(else_,{});
@@ -1494,13 +1523,23 @@ algorithm
         (isEval,stmts1) = evaluateIfStatement(alg,FUNCINFO(replIn,funcTree,idx));
 
         // if its not definite which case, try to predict a constant output, maybe its partially constant, then remove function outputs replacements
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval,print,"-->try to predict the outputs \n");
-        ((stmtsNew,addStmts),FUNCINFO(repl,funcTree,idx)) = Debug.bcallret2_2(not isEval ,predictIfOutput,alg,FUNCINFO(replIn,funcTree,idx),(stmts1,{}),FUNCINFO(replIn,funcTree,idx));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval then
+          print("-->try to predict the outputs \n");
+        end if;
+        if not isEval then
+          ((stmtsNew,addStmts),FUNCINFO(repl,funcTree,idx)) = predictIfOutput(alg,FUNCINFO(replIn,funcTree,idx));
+        else
+          stmtsNew = stmts1;
+          addStmts = {};
+          repl = replIn;
+        end if;
         predicted = List.isNotEmpty(addStmts) or List.isEmpty(stmtsNew) and not isEval;
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval,print,"could it be predicted? "+&boolString(predicted)+&"\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isEval then
+          print("could it be predicted? "+&boolString(predicted)+&"\n");
+        end if;
 
         // if nothing can be done, remove the replacements for the variables assigned in the if stmt
-        repl = Debug.bcallret3(not predicted and not isEval, BackendVarTransform.removeReplacements, repl,outputs,NONE(),repl);
+        repl = if not predicted and not isEval then BackendVarTransform.removeReplacements(repl,outputs,NONE()) else repl;
         //print("REMOVE THE REPLACEMENTS\n"+&stringDelimitList(List.map(outputs,ComponentReference.printComponentRefStr),"\n")+&"\n");
 
         //stmts1 = if_(simplified and isCon, listAppend(stmts1,addStmts), stmts1);
@@ -1512,7 +1551,9 @@ algorithm
 
         //print("the STMT_IF after: \n"+&stringDelimitList(List.map(listAppend(stmts1,addStmts),DAEDump.ppStatementStr),"\n")+&"\n");
         //print("\nthe REST if after :"+&stringDelimitList(List.map(rest,DAEDump.ppStatementStr),"\n")+&"\n");
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated IF-statements to:\n"+&stringDelimitList(List.map(listAppend(stmts1,addStmts),DAEDump.ppStatementStr),"\n")+&"\n\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("evaluated IF-statements to:\n"+&stringDelimitList(List.map(listAppend(stmts1,addStmts),DAEDump.ppStatementStr),"\n")+&"\n\n");
+        end if;
 
         stmts1 = listAppend(stmts1,lstIn);
         //print("\nthe traverse LIST after :"+&stringDelimitList(List.map(stmts1,DAEDump.ppStatementStr),"\n")+&"\n");
@@ -1520,7 +1561,9 @@ algorithm
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_TUPLE_ASSIGN(type_=_, expExpLst=expLst, exp=exp0)::rest,(funcTree,replIn,idx),_)
       equation
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"Tuple-statement:\n"+&DAEDump.ppStatementStr(List.first(algsIn)));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("Tuple-statement:\n"+&DAEDump.ppStatementStr(List.first(algsIn)));
+        end if;
         //print("idx: "+&intString(idx)+&"\n");
         //print("\nthe traverse LIST tpl before :"+&stringDelimitList(List.map(lstIn,DAEDump.ppStatementStr),"\n")+&"\n");
         //print("the LHS before\n");
@@ -1541,12 +1584,15 @@ algorithm
         //BackendDump.dumpEquationList(addEqs,"the additional equations after");
         isCon = Expression.isConst(exp1);
         exp1 = if isCon then exp1 else exp0;
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"--> is the tuple const? "+&boolString(isCon)+&"\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("--> is the tuple const? "+&boolString(isCon)+&"\n");
+        end if;
 
         // add the replacements
         varScalars = List.map(expLst,Expression.expCref);
-        repl = Debug.bcallret3(not isCon,BackendVarTransform.removeReplacements,replIn,varScalars,NONE(),replIn); // remove the lhs crefs if tis not constant
-        repl = Debug.bcallret3(isCon,addTplReplacements,repl,exp1,exp2,repl);  // add all tuple exps to repl if the whole tuple is constant
+        repl = if not isCon
+          then BackendVarTransform.removeReplacements(replIn,varScalars,NONE()) // remove the lhs crefs if tis not constant
+          else addTplReplacements(replIn,exp1,exp2); // add all tuple exps to repl if the whole tuple is constant
 
         // build the new statements
         size = DAEUtil.getTupleSize(exp2);
@@ -1564,7 +1610,9 @@ algorithm
         stmts2 = if intEq(size,0) then {DAE.STMT_ASSIGN(typ,exp2,exp1,DAE.emptyElementSource)} else stmtsNew;
         stmts1 = List.map(addEqs,equationToStatement);
         stmts2 = listAppend(stmts2,stmts1);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated Tuple-statements to (incl. addEqs):\n"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("evaluated Tuple-statements to (incl. addEqs):\n"+&stringDelimitList(List.map(stmts2,DAEDump.ppStatementStr),"\n")+&"\n");
+        end if;
         stmts2 = listReverse(stmts2);
         stmts2 = listAppend(stmts2,lstIn);
         //print("idx: "+&intString(idx)+&"\n");
@@ -1577,7 +1625,9 @@ algorithm
       equation
         alg = List.first(algsIn);
         // TODO: evaluate for-loops
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"For-statement:\n"+&DAEDump.ppStatementStr(alg));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("For-statement:\n"+&DAEDump.ppStatementStr(alg));
+        end if;
         // at least remove the replacements for the lhs
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
         lhsExps = List.unique(lhsExps);
@@ -1585,11 +1635,13 @@ algorithm
         lhsExps = listAppend(List.flatten(lhsExpLst),lhsExps);
         lhsExps = List.filterOnTrue(lhsExps,Expression.isCref); //remove e.g. ASUBs and consider only the scalar subs
         outputs = List.map(lhsExps,Expression.expCref);
-        repl = Debug.bcallret3(true, BackendVarTransform.removeReplacements,replIn,outputs,NONE(),replIn);
+        repl = if true then BackendVarTransform.removeReplacements(replIn,outputs,NONE()) else replIn;
 
         // lets see if we can evaluate it
 
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated For-statement to:\n"+&DAEDump.ppStatementStr(alg));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("evaluated For-statement to:\n"+&DAEDump.ppStatementStr(alg));
+        end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
@@ -1598,53 +1650,69 @@ algorithm
       equation
         alg = List.first(algsIn);
         // TODO: evaluate while-loops
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"While-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("While-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+        end if;
         lhsExps = List.fold1(stmts1,getStatementLHSScalar,funcTree,{});
         lhsExps = List.unique(lhsExps);
         outputs = List.map(lhsExps,Expression.expCref);
-        repl = Debug.bcallret3(true, BackendVarTransform.removeReplacements,replIn,outputs,NONE(),replIn);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluated While-statement to:\n"+&DAEDump.ppStatementStr(alg));
+        repl = if true then BackendVarTransform.removeReplacements(replIn,outputs,NONE()) else replIn;
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("evaluated While-statement to:\n"+&DAEDump.ppStatementStr(alg));
+        end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,repl,idx),stmts2);
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"assert-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("assert-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+        end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_TERMINATE(msg=_,source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"terminate-statement:\n"+&DAEDump.ppStatementStr(alg));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("terminate-statement:\n"+&DAEDump.ppStatementStr(alg));
+        end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_REINIT(var=_,value=_,source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"reinit-statement:\n"+&DAEDump.ppStatementStr(alg));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("reinit-statement:\n"+&DAEDump.ppStatementStr(alg));
+        end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_NORETCALL(exp=_,source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"noretcall-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("noretcall-statement (not evaluated):\n"+&DAEDump.ppStatementStr(alg));
+        end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
       then (rest,(funcTree,repl,idx));
     case(DAE.STMT_RETURN(source=_)::rest,(funcTree,replIn,idx),_)
       equation
         alg = List.first(algsIn);
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"return-statement:\n"+&DAEDump.ppStatementStr(alg));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("return-statement:\n"+&DAEDump.ppStatementStr(alg));
+        end if;
         stmts2 = alg::lstIn;
         (rest,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(rest,(funcTree,replIn,idx),stmts2);
       then (rest,(funcTree,repl,idx));
     else
       equation
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluateFunctions_updateStatement failed for!\n"+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("evaluateFunctions_updateStatement failed for!\n"+&DAEDump.ppStatementStr(List.first(algsIn))+&"\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -1669,29 +1737,52 @@ algorithm
     case(DAE.STMT_IF(exp=expIf, statementLst=stmtsIf, else_=else_),FUNCINFO(repl=replIn, funcTree=funcTree, idx=idx))
       equation
         //check if its the if
-          Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"-->try to check if its the if case\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("-->try to check if its the if case\n");
+        end if;
         (exp1,(_,_,_,_)) = Expression.traverseExpTopDown(expIf,evaluateConstantFunctionWrapper,(expIf,funcTree,idx,{}));
         (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         isCon = Expression.isConst(exp1);
-        isIf = Debug.bcallret1(isCon,Expression.getBoolConst,exp1,false);
+        isIf = if isCon then Expression.getBoolConst(exp1) else false;
 
         // check if its the IF case, if true then evaluate:
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"-->is the if const? "+&boolString(isCon)+&" and is it the if case ? "+&boolString(isIf)+&"\n");
-        //(stmts1,(funcTree,repl,idx)) = Debug.bcallret3_2(isIf and isCon,evaluateFunctions_updateStatement,stmtsIf,(funcTree,replIn,idx),lstIn,stmtsIf,(funcTree,replIn,idx));
-        (stmts1,(funcTree,repl,idx)) = Debug.bcallret3_2(isIf and isCon,evaluateFunctions_updateStatement,stmtsIf,(funcTree,replIn,idx),{},{stmtIn},(funcTree,replIn,idx));  // without listIn
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("-->is the if const? "+&boolString(isCon)+&" and is it the if case ? "+&boolString(isIf)+&"\n");
+        end if;
+        //(stmts1,(funcTree,repl,idx)) = bcallret3_2(isIf and isCon,evaluateFunctions_updateStatement,stmtsIf,(funcTree,replIn,idx),lstIn,stmtsIf,(funcTree,replIn,idx));
+        if isIf and isCon then
+          (stmts1,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(stmtsIf,(funcTree,replIn,idx),{});  // without listIn
+        else
+          stmts1 = {stmtIn};
+        end if;
 
         // if its definitly not the if, check the else
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->try to check if its another case\n");
-        (stmtsElse,isElse) = Debug.bcallret2_2(isCon and not isIf,evaluateElse,else_,info,{stmtIn},false);
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf,print,"-->is it an other case? "+&boolString(isElse)+&"\n");
-        (stmts1,(funcTree,repl,idx)) = Debug.bcallret3_2(isCon and isElse,evaluateFunctions_updateStatement,stmtsElse,(funcTree,replIn,idx),{},stmts1,(funcTree,replIn,idx));
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf then
+          print("-->try to check if its another case\n");
+        end if;
+        if isCon and not isIf then
+          (stmtsElse,isElse) = evaluateElse(else_,info);
+        else
+          stmtsElse = {stmtIn};
+          isElse = false;
+        end if;
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) and not isIf then
+          print("-->is it an other case? "+&boolString(isElse)+&"\n");
+        end if;
+        if isCon and isElse then
+          (stmts1,(funcTree,repl,idx)) = evaluateFunctions_updateStatement(stmtsElse,(funcTree,replIn,idx),{});
+        else
+          repl = replIn;
+        end if;
         eval = isCon and (isIf or isElse);
      then
        (eval,stmts1);
      else
        equation
-         Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"evaluateIfStatement failed \n");
+         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+           print("evaluateIfStatement failed \n");
+         end if;
        then
          fail();
   end matchcontinue;
@@ -1716,13 +1807,17 @@ algorithm
     case(DAE.ELSEIF(exp=expIf,statementLst=stmts,else_=else_),FUNCINFO(repl=replIn, funcTree=funcTree, idx=idx))
       equation
         // check if its the elseif
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"-->try to check if its the elseif case\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("-->try to check if its the elseif case\n");
+        end if;
         (exp1,(_,_,_,_)) = Expression.traverseExpTopDown(expIf,evaluateConstantFunctionWrapper,(expIf,funcTree,idx,{}));
         (exp1,_) = BackendVarTransform.replaceExp(exp1,replIn,NONE());
         (exp1,_) = ExpressionSimplify.simplify(exp1);
         isCon = Expression.isConst(exp1);
-        isElseIf = Debug.bcallret1(isCon,Expression.getBoolConst,exp1,false);
-        (stmts,isElseIf) = Debug.bcallret2_2(isCon and not isElseIf,evaluateElse,else_,info,stmts,isElseIf);
+        isElseIf = if isCon then Expression.getBoolConst(exp1) else false;
+        if isCon and not isElseIf then
+          (stmts,isElseIf) = evaluateElse(else_,info);
+        end if;
       then
         (stmts,isElseIf);
     case(DAE.ELSE(statementLst=stmts),FUNCINFO(repl=replIn, funcTree=funcTree, idx=idx))
@@ -1842,41 +1937,55 @@ algorithm
     then expLst;
   case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=stmtLst1,elseWhen=SOME(stmt1),source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print," check getStatementLHS for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
+      if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+        print(" check getStatementLHS for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
+      end if;
       expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
       expLst = List.fold({stmt1},getStatementLHS,expLst);
     then expLst;
   case(DAE.STMT_WHEN(exp=_,conditions=_,initialCall=_,statementLst=stmtLst1,elseWhen=NONE(),source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print," check getStatementLHS for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
+      if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+        print(" check getStatementLHS for WHEN!\n"+&DAEDump.ppStatementStr(stmt));
+      end if;
       expLst = List.fold(stmtLst1,getStatementLHS,expsIn);
     then expLst;
   case(DAE.STMT_ASSERT(cond=_,msg=_,level=_,source=_),_)
     equation
-      //Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
+      //bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for ASSERT!\n"+&DAEDump.ppStatementStr(stmt));
     then expsIn;
   case(DAE.STMT_TERMINATE(msg=_,source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for TERMINATE!\n"+&DAEDump.ppStatementStr(stmt));
+      if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+        print("getStatementLHS update for TERMINATE!\n"+&DAEDump.ppStatementStr(stmt));
+      end if;
     then fail();
   case(DAE.STMT_REINIT(var=_,value=_,source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for REINIT!\n"+&DAEDump.ppStatementStr(stmt));
+      if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+        print("getStatementLHS update for REINIT!\n"+&DAEDump.ppStatementStr(stmt));
+      end if;
     then fail();
   case(DAE.STMT_NORETCALL(exp=exp,source=_),_)
     equation
     then expsIn;
   case(DAE.STMT_RETURN(source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for RETURN!\n"+&DAEDump.ppStatementStr(stmt));
+      if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+        print("getStatementLHS update for RETURN!\n"+&DAEDump.ppStatementStr(stmt));
+      end if;
     then fail();
   case(DAE.STMT_BREAK(source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for BREAK!\n"+&DAEDump.ppStatementStr(stmt));
+      if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+        print("getStatementLHS update for BREAK!\n"+&DAEDump.ppStatementStr(stmt));
+      end if;
     then fail();
   case(DAE.STMT_ARRAY_INIT(name=_,ty=_,source=_),_)
     equation
-      Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"getStatementLHS update for ARRAY_INIT!\n"+&DAEDump.ppStatementStr(stmt));
+      if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+        print("getStatementLHS update for ARRAY_INIT!\n"+&DAEDump.ppStatementStr(stmt));
+      end if;
     then fail();
   else
     equation
@@ -2082,10 +2191,15 @@ algorithm
           //ExpressionDump.dumpExp(exp);
         // check if this could be evaluated
         const = Expression.isConst(exp);
-        isElseIf = Debug.bcallret1(const,Expression.getBoolConst,exp,false);
+        isElseIf = if const then Expression.getBoolConst(exp) else false;
         //print("do we have to use the elseif: "+&boolString(isElseIf)+&"\n");
-        (stmts,(funcs,repl,idx)) = Debug.bcallret3_2(const and isElseIf,evaluateFunctions_updateStatement,stmts,(funcs,replIn,idx),{},stmts,(funcs,replIn,idx));  // is this elseif case
-        (stmts,(funcs,repl,idx,isElseIf)) = Debug.bcallret2_2(not isElseIf,simplifyElse,else_,(funcs,replIn,idx),stmts,(funcs,repl,idx,isElseIf)); // is the another elseif case or the else case
+        if const and isElseIf then
+          (stmts,(funcs,repl,idx)) = evaluateFunctions_updateStatement(stmts,(funcs,replIn,idx),{});  // is this elseif case
+        elseif not isElseIf then
+          (stmts,(funcs,repl,idx,isElseIf)) = simplifyElse(else_,(funcs,replIn,idx)); // is the another elseif case or the else case
+        else
+          repl = replIn;
+        end if;
       then
         (stmts,(funcs,repl,idx,isElseIf));
     case(DAE.ELSE(statementLst=stmts),(funcs,repl,idx))
@@ -2140,7 +2254,9 @@ algorithm
     case(DAE.VAR(componentRef=cref,ty=DAE.T_REAL(varLst=_, source=_), dims=dims ))
       equation
         dim = List.map(dims, Expression.dimensionSize);
-        Debug.bcall1(intEq(listLength(dim),2),print,"failure in getScalarsForComplexVar:the array has multiple dimensions");
+        if intEq(listLength(dim),2) then
+          print("failure in getScalarsForComplexVar:the array has multiple dimensions");
+        end if;
         true = listLength(dim) == 1;
         dim = List.intRange(List.first(dim));
         ranges = List.map1(dim,List.fill,1);
@@ -2150,18 +2266,24 @@ algorithm
         crefs;
     case(DAE.VAR(componentRef=cref,ty=DAE.T_ARRAY(ty=_,dims=dimensions,source=_)))
       equation
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"the array cref before\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("the array cref before\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        end if;
         crefs = ComponentReference.expandArrayCref(cref,dimensions);
       then
         crefs;
     case(DAE.VAR(componentRef=cref,ty=DAE.T_ENUMERATION(index=_,path=_,names=_,literalVarLst=_,attributeLst=_,source=_)))
       equation
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"update getScalarsForComplexVar for enumerations: the enum cref is :"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("update getScalarsForComplexVar for enumerations: the enum cref is :"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        end if;
       then
         {};
     case(DAE.VAR(componentRef=cref,ty=DAE.T_TUPLE(tupleType=_,source=_)))
       equation
-        Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"update getScalarsForComplexVar for tuple types: the tupl cref is :\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+          print("update getScalarsForComplexVar for tuple types: the tupl cref is :\n"+&stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+&"\n");
+        end if;
       then
         {};
     else
@@ -2298,7 +2420,7 @@ algorithm
       equation
         // array cref
         b = ComponentReference.isArrayElement(cref);
-        crefs = Debug.bcallret2(b, ComponentReference.expandCref,cref,true,{cref});
+        crefs = if b then ComponentReference.expandCref(cref,true) else {cref};
         size = listLength(crefs);
         then
           size;
@@ -2468,12 +2590,14 @@ algorithm
          expLst = List.map1(constantOutputs,List.getIndexFirst,List.first(expLstLst));
          //print("the constant shared outputs: "+&stringDelimitList(List.map(expLst,ExpressionDump.printExpStr),"\n")+&"\n");
          //print("the constant shared output crefs: "+&stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n")+&"\n");
-           Debug.bcall1(Flags.isSet(Flags.EVAL_FUNC_DUMP),print,"--> the predicted const outputs:\n"+&stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n"));
+         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
+           print("--> the predicted const outputs:\n"+&stringDelimitList(List.map(outExps,ExpressionDump.printExpStr),"\n"));
+         end if;
          (constOutExps,_,varOutExps) = List.intersection1OnTrue(outExps,allLHS,Expression.expEqual);
 
          predicted = List.isNotEmpty(constOutExps) and List.isEmpty(varOutExps);
-         //repl = Debug.bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);
-         //Debug.bcall(not predicted,print,"remove the replacement for: "+&stringDelimitList(List.map(varCrefs,ComponentReference.crefStr),"\n")+&"\n");
+         //repl = bcallret3(not predicted, BackendVarTransform.removeReplacements,replIn,varCrefs,NONE(),replIn);
+         //bcall(not predicted,print,"remove the replacement for: "+&stringDelimitList(List.map(varCrefs,ComponentReference.crefStr),"\n")+&"\n");
          repl = replIn;
          // build the additional statements and update the old one
          addStmts = List.map2(List.intRange(listLength(outExps)),makeAssignmentMap,outExps,expLst);
@@ -2763,7 +2887,7 @@ algorithm
     case (varOld as BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE(index=_,derName=_)),derVars)
       equation
         isState = List.isMemberOnTrue(cr1,derVars,ComponentReference.crefEqual);
-        varNew = Debug.bcallret2(not isState,BackendVariable.setVarKind,varOld,BackendDAE.VARIABLE(),varOld);
+        varNew = if not isState then BackendVariable.setVarKind(varOld,BackendDAE.VARIABLE()) else varOld;
       then (varNew,derVars);
     else (inVar,inCrefs);
   end matchcontinue;

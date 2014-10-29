@@ -373,7 +373,7 @@ protected
   list<tuple<SCode.Element, DAE.Mod, Boolean>> elts;
   list<SCode.Element> cdefelts,tmpelts;
 algorithm
-  //Debug.fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName);
+  //fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName);
   (outCache,outEnv,outIH,outMod,elts,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs):=
   instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inClassExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
   // Filter out the last boolean in the tuple
@@ -383,7 +383,7 @@ algorithm
   (_,cdefelts,_,_) := InstUtil.splitEltsNoComponents(tmpelts);
   // Add the class definitions to the environment
   (outCache,outEnv,outIH) := InstUtil.addClassdefsToEnv(outCache,outEnv,outIH,inPrefix,cdefelts,inImpl,SOME(outMod));
-  //Debug.fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName +& " done");
+  //fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList;
 
 protected function instExtendsAndClassExtendsList2 "
@@ -682,7 +682,7 @@ algorithm
 
     case (cache,env,ih,mod,pre,SCode.CLASS( info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _, false, _)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "DERIVED: " +& FGraph.printGraphPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(inClass) +& " mods: " +& Mod.printModStr(mod));
+        // fprintln(Flags.INST_TRACE, "DERIVED: " +& FGraph.printGraphPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(inClass) +& " mods: " +& Mod.printModStr(mod));
         (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, true);
         dmod = InstUtil.chainRedeclares(mod, dmod);
         // false = Absyn.pathEqual(FGraph.getGraphName(env),FGraph.getGraphName(cenv)) and SCode.elementEqual(c,inClass);
@@ -713,7 +713,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Inst.instDerivedClasses failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.instDerivedClasses failed\n");
       then
         fail();
   end matchcontinue;
@@ -833,14 +834,14 @@ algorithm
 
     case ((comp,cmod,b),_,_)
       equation
-        Debug.fprintln(
-          Flags.FAILTRACE,
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln(
           "- InstExtends.updateComponentsAndClassdefs2 failed on:\n" +&
           "env = " +& FGraph.printGraphPathStr(inEnv) +&
           "\nmod = " +& Mod.printModStr(inMod) +&
           "\ncmod = " +& Mod.printModStr(cmod) +&
           "\nbool = " +& boolString(b) +& "\n" +&
-          SCodeDump.unparseElementStr(comp,SCodeDump.defaultOptions)
+          SCodeDump.unparseElementStr(comp)
           );
       then
         fail();
@@ -1027,7 +1028,7 @@ algorithm
     case (cache,env,SCode.COMPONENT(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                     SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
+        //fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         // lookup as it might have been redeclared!!!
         (_, _, SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),
          _, _, _) = Lookup.lookupIdentLocal(cache, env, name);
@@ -1040,7 +1041,7 @@ algorithm
     // we failed above
     case (cache,env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
+        //fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
         (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
         (cache,SOME(ad)) = fixArrayDim(cache, env, SOME(ad), ht);
@@ -1050,7 +1051,7 @@ algorithm
     case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                 SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
+        //fprintln(Flags.DEBUG,"fixClassdef " +& name);
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
                      cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
@@ -1062,7 +1063,7 @@ algorithm
     // failed above
     case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
+        //fprintln(Flags.DEBUG,"fixClassdef " +& name);
         env = FGraph.openScope(env, SCode.ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
@@ -1071,7 +1072,7 @@ algorithm
     case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
                                 SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
+        //fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
         // lookup as it might have been redeclared!!!
         (SCode.CLASS(prefixes = prefixes, partialPrefix = partialPrefix, restriction = restriction,
                      cmt = comment, info = info,classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
@@ -1084,7 +1085,7 @@ algorithm
     // failed above
     case (cache,env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
+        //fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
         env = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), FGraph.restrictionToScopeType(restriction));
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then
@@ -1092,7 +1093,7 @@ algorithm
 
     case (cache,env,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info),ht)
       equation
-        //Debug.fprintln(Flags.DEBUG,"fix extends " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
+        //fprintln(Flags.DEBUG,"fix extends " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
         (cache,extendsPath) = fixPath(cache,env,extendsPath,ht);
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
       then
@@ -1102,7 +1103,8 @@ algorithm
 
     case (_,_,elt,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "InstExtends.fixElement failed: " +& SCodeDump.unparseElementStr(elt,SCodeDump.defaultOptions));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("InstExtends.fixElement failed: " +& SCodeDump.unparseElementStr(elt));
       then fail();
 
   end matchcontinue;
@@ -1174,7 +1176,8 @@ algorithm
 
     case (_,_,cd,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "InstExtends.fixClassDef failed: " +& SCodeDump.classDefStr(cd,SCodeDump.defaultOptions));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("InstExtends.fixClassDef failed: " +& SCodeDump.classDefStr(cd));
       then
         fail();
 
@@ -1207,7 +1210,8 @@ algorithm
         (cache,SCode.EQUATION(eeq));
     case (_,_,SCode.EQUATION(eeq),_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.fixEquation failed: " +& SCodeDump.equationStr(eeq,SCodeDump.defaultOptions));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.fixEquation failed: " +& SCodeDump.equationStr(eeq));
       then
         fail();
   end match;
@@ -1446,7 +1450,8 @@ algorithm
 
     case (_,_,stmt,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.fixStatement failed: " +& Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(stmt)));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.fixStatement failed: " +& Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(stmt)));
       then fail();
   end matchcontinue;
 end fixStatement;
@@ -1563,7 +1568,7 @@ algorithm
     case (cache,_,path1 as Absyn.FULLYQUALIFIED(_),_)
       equation
         // path1 = FGraph.pathStripGraphScopePrefix(path1, env, false);
-        //Debug.fprintln(Flags.DEBUG, "Path FULLYQUAL: " +& Absyn.pathString(path));
+        //fprintln(Flags.DEBUG, "Path FULLYQUAL: " +& Absyn.pathString(path));
       then
         (cache,path1);
 
@@ -1573,16 +1578,16 @@ algorithm
         path2 = BaseHashTable.get(id,ht);
         path2 = Absyn.pathReplaceFirstIdent(path1,path2);
         path2 = FGraph.pathStripGraphScopePrefix(path2, env, false);
-        //Debug.fprintln(Flags.DEBUG, "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& FGraph.printGraphPathStr(env));
+        //fprintln(Flags.DEBUG, "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& FGraph.printGraphPathStr(env));
       then (cache,path2);
 
     // first indent is local in the env, DO NOT QUALIFY!
     case (cache,env,path,_)
       equation
-        //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
+        //fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
         (_, _) = Lookup.lookupClassLocal(env, Absyn.pathFirstIdent(path));
         path = FGraph.pathStripGraphScopePrefix(path, env, false);
-        //Debug.fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
+        //fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
       then (cache,path);
 
     case (cache,env,path,_)
@@ -1598,7 +1603,7 @@ algorithm
     case (cache,env,path,_)
       equation
         path = FGraph.pathStripGraphScopePrefix(path, env, false);
-        //Debug.fprintln(Flags.DEBUG, "Path not fixed: " +& Absyn.pathString(path) +& "\n");
+        //fprintln(Flags.DEBUG, "Path not fixed: " +& Absyn.pathString(path) +& "\n");
       then
         (cache,path);
   end matchcontinue;
@@ -1676,12 +1681,12 @@ algorithm
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        //Debug.fprintln(Flags.DEBUG,"Try ht lookup " +& id);
+        //fprintln(Flags.DEBUG,"Try ht lookup " +& id);
         path = BaseHashTable.get(id,ht);
-        //Debug.fprintln(Flags.DEBUG,"Got path " +& Absyn.pathString(path));
+        //fprintln(Flags.DEBUG,"Got path " +& Absyn.pathString(path));
         cref = Absyn.crefReplaceFirstIdent(cref,path);
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
-        //Debug.fprintln(Flags.DEBUG, "Cref HT fixed: " +& Absyn.printComponentRefStr(cref));
+        //fprintln(Flags.DEBUG, "Cref HT fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
     // try lookup var (constant in a package?)
@@ -1689,15 +1694,15 @@ algorithm
       equation
         id = Absyn.crefFirstIdent(cref);
         cref_ = ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{});
-        //Debug.fprintln(Flags.DEBUG,"Try lookupV " +& id);
+        //fprintln(Flags.DEBUG,"Try lookupV " +& id);
         (denv,id) = lookupVarNoErrorMessage(cache,env,cref_);
-        //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
+        //fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
         // isOutside = FGraph.graphPrefixOf(denv, env);
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
         cref = FGraph.crefStripGraphScopePrefix(cref, env, false);
-        //Debug.fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
+        //fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
     case (cache,env,cref,_)
@@ -1708,7 +1713,7 @@ algorithm
         // isOutside = FGraph.graphPrefixOf(denv, env);
         // id might come from named import, make sure you use the actual class name!
         id = SCode.getElementName(c);
-        //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
+        //fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
         denv = FGraph.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,FGraph.getGraphName(denv));
         // cref = if_(isOutside, cref, FGraph.crefStripGraphScopePrefix(cref, env, false));
@@ -1718,7 +1723,7 @@ algorithm
 
     case (cache,_,cref,_)
       equation
-        //Debug.fprintln(Flags.DEBUG, "Cref not fixed: " +& Absyn.printComponentRefStr(cref));
+        //fprintln(Flags.DEBUG, "Cref not fixed: " +& Absyn.printComponentRefStr(cref));
       then
         (cache,cref);
 
@@ -1780,7 +1785,8 @@ algorithm
 
     case (_,_,mod,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"InstExtends.fixModifications failed: " +& SCodeDump.printModStr(mod,SCodeDump.defaultOptions));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("InstExtends.fixModifications failed: " +& SCodeDump.printModStr(mod));
       then
         fail();
 

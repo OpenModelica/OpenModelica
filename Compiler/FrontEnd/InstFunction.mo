@@ -142,7 +142,8 @@ algorithm
     // failed
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- InstFunction.instantiateExternalObject failed.");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- InstFunction.instantiateExternalObject failed.\n");
       then fail();
   end matchcontinue;
 end instantiateExternalObject;
@@ -198,7 +199,8 @@ algorithm
         (cache,ih);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- InstFunction.instantiateExternalObjectDestructor failed.");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- InstFunction.instantiateExternalObjectDestructor failed.\n");
       then fail();
    end matchcontinue;
 end instantiateExternalObjectDestructor;
@@ -228,7 +230,8 @@ algorithm
         (cache,ih,ty);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- InstFunction.instantiateExternalObjectConstructor failed.");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- InstFunction.instantiateExternalObjectConstructor failed.\n");
       then fail();
   end matchcontinue;
 end instantiateExternalObjectConstructor;
@@ -378,9 +381,9 @@ algorithm
         daeElts = InstUtil.optimizeFunctionCheckForLocals(fpath,daeElts,NONE(),{},{},{});
         InstUtil.checkFunctionDefUse(daeElts,info);
         /* Not working 100% yet... Also, a lot of code has unused inputs :( */
-        Debug.bcall3(
-          false and Config.acceptMetaModelicaGrammar() and not instFunctionTypeOnly,
-          InstUtil.checkFunctionInputUsed,daeElts,NONE(),Absyn.pathString(fpath));
+        if false and Config.acceptMetaModelicaGrammar() and not instFunctionTypeOnly then
+          InstUtil.checkFunctionInputUsed(daeElts,NONE(),Absyn.pathString(fpath));
+        end if;
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,visibility,partialPrefixBool,isImpure,inlineType,source,SOME(cmt))});
 
@@ -659,7 +662,8 @@ algorithm
     // failure
     case (_,_,_,_,(fn :: _))
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Inst.instOverloaded_functions failed " +& Absyn.pathString(fn) +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.instOverloaded_functions failed " +& Absyn.pathString(fn));
       then
         fail();
   end matchcontinue;
@@ -729,7 +733,8 @@ algorithm
         (cache,ih,daeextdecl);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtDecl failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("#-- Inst.instExtDecl failed\n");
       then
         fail();
 
@@ -900,7 +905,7 @@ algorithm
       else
         equation
           true = Flags.isSet(Flags.FAILTRACE);
-          Debug.fprint(Flags.FAILTRACE, "InstFunction.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath) +& "\n");
+          Debug.traceln("InstFunction.getRecordConstructorFunction failed for " +& Absyn.pathString(inPath));
         then
           fail();
 

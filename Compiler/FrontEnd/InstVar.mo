@@ -175,7 +175,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyInner(io);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         // instantiate as inner
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph) =
@@ -343,21 +343,21 @@ algorithm
            _,_) =
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        s1 = ComponentReference.printComponentRefStr(crefOuter);
-        s2 = Dump.unparseInnerouterStr(io);
-        s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
         typeName = SCode.className(cl);
         (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
-        s1 = Absyn.pathString(typePath) +& " " +& s1;
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         // print(if_(impl, "impl crap\n", "no impl\n"));
-        Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
-        Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
-        Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.rollBack, "innerouter-instVar-implicit");
+        if not (impl and listMember(pre, {Prefix.NOPRE()})) then
+          s1 = ComponentReference.printComponentRefStr(crefOuter);
+          s2 = Dump.unparseInnerouterStr(io);
+          s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
+          s1 = Absyn.pathString(typePath) +& " " +& s1;
+          Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
+        end if;
 
         // call it normaly
         (cache,compenv,ih,store,dae,_,ty,graph) =
@@ -378,21 +378,21 @@ algorithm
         // lookup in IH, crap, we couldn't find it!
         failure(_ = InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io));
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        s1 = ComponentReference.printComponentRefStr(crefOuter);
-        s2 = Dump.unparseInnerouterStr(io);
-        s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
         typeName = SCode.className(cl);
         (cache, typePath) = Inst.makeFullyQualified(cache, env, Absyn.IDENT(typeName));
-        s1 = Absyn.pathString(typePath) +& " " +& s1;
         // print(if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
-        Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
-        Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
-        Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.rollBack, "innerouter-instVar-implicit");
+        if not (impl and listMember(pre, {Prefix.NOPRE()})) then
+          s1 = ComponentReference.printComponentRefStr(crefOuter);
+          s2 = Dump.unparseInnerouterStr(io);
+          s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
+          s1 = Absyn.pathString(typePath) +& " " +& s1;
+          Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
+        end if;
 
         // call it normally
         (cache,compenv,ih,store,dae,_,ty,graph) =
@@ -457,7 +457,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isInnerOuter(io);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar inner outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) =
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
@@ -509,7 +509,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isNotInnerOuter(io);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "- InstVar.instVar NO inner NO outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INNER_OUTER, "- InstVar.instVar NO inner NO outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& FGraph.printGraphPathStr(env));
 
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
@@ -521,9 +521,9 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
-        Debug.fprintln(Flags.FAILTRACE, "- InstVar.instVar failed while instatiating variable: " +&
+        Debug.traceln("- InstVar.instVar failed while instatiating variable: " +&
           ComponentReference.printComponentRefStr(cref) +& " " +& Mod.prettyPrintMod(mod, 0) +&
-          "\nin scope: " +& FGraph.printGraphPathStr(env) +& " class:\n" +& SCodeDump.unparseElementStr(cl,SCodeDump.defaultOptions));
+          "\nin scope: " +& FGraph.printGraphPathStr(env) +& " class:\n" +& SCodeDump.unparseElementStr(cl));
       then
         fail();
     end matchcontinue;
@@ -1003,7 +1003,7 @@ algorithm
     case (_,env,_,_,_,mod,pre,n,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- InstVar.instVar2 failed: " +&
+        Debug.traceln("- InstVar.instVar2 failed: " +&
           PrefixUtil.printPrefixStr(pre) +& "." +&
           n +& "(" +& Mod.prettyPrintMod(mod, 0) +& ")\n  Scope: " +&
           FGraph.printGraphPathStr(env));
@@ -1148,7 +1148,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instScalar failed on " +& inName +& " in scope " +& PrefixUtil.printPrefixStr(inPrefix) +& " env: " +& FGraph.printGraphPathStr(inEnv) +& "\n");
+        Debug.traceln("- Inst.instScalar failed on " +& inName +& " in scope " +& PrefixUtil.printPrefixStr(inPrefix) +& " env: " +& FGraph.printGraphPathStr(inEnv) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -1246,9 +1246,7 @@ algorithm
     // All other scalars.
     else
       equation
-        dae = Debug.bcallret5(Types.isComplexType(inType),
-          InstBinding.instModEquation, inCref, inType, inMod, inSource, inImpl,
-          DAE.emptyDae);
+        dae = if Types.isComplexType(inType) then InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl) else DAE.emptyDae;
         cls_dae = stripRecordDefaultBindingsFromDAE(inClassDae, inType, dae);
         dae = DAEUtil.joinDaes(dae, inDae);
         dae = DAEUtil.joinDaes(cls_dae, dae);
@@ -1672,7 +1670,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instArray failed: " +& inIdent);
+        Debug.traceln("- Inst.instArray failed: " +& inIdent);
       then
         fail();
   end matchcontinue;

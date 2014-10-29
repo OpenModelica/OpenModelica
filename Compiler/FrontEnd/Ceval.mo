@@ -1627,7 +1627,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Ceval.cevalBuiltinSize2 failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Ceval.cevalBuiltinSize2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -1931,7 +1932,8 @@ algorithm
         Values.ARRAY(vs_1,i::il);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Ceval.cevalBuiltinPromote2 failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Ceval.cevalBuiltinPromote2 failed\n");
       then fail();
   end matchcontinue;
 end cevalBuiltinPromote2;
@@ -4768,8 +4770,9 @@ algorithm
         str = ComponentReference.printComponentRefStr(inCref);
         scope_str = FGraph.printGraphPathStr(inEnv);
         // Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {str, scope_str}, info);
-        Debug.fprintln(Flags.CEVAL, "- Ceval.cevalCref on: " +& str +&
-          " failed with no constant binding in scope: " +& scope_str);
+        if Flags.isSet(Flags.CEVAL) then
+          Debug.traceln("- Ceval.cevalCref on: " +& str +& " failed with no constant binding in scope: " +& scope_str);
+        end if;
         // build a default binding for it!
         s1 = FGraph.printGraphPathStr(inEnv);
         s2 = ComponentReference.printComponentRefStr(inCref);
@@ -4861,7 +4864,8 @@ algorithm
 
     case (_,_,_,DAE.UNBOUND(),(true),Absyn.MSG(_),_)
       equation
-        Debug.fprint(Flags.CEVAL, "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
+        true = Flags.isSet(Flags.CEVAL);
+        Debug.trace("#- Ceval.cevalCrefBinding: Ignoring unbound when implicit\n");
       then
         fail();
 

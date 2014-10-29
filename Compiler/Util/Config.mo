@@ -40,7 +40,6 @@ encapsulated package Config
   module, which makes it easier to manipulate the configuration of the compiler."
 
 public import Flags;
-protected import Debug;
 protected import Error;
 protected import System;
 
@@ -501,8 +500,9 @@ algorithm
         setLanguageStandard(new_std);
         show_warning = hasLanguageStandardChanged(current_std);
         new_std_str = languageStandardString(new_std);
-        Debug.bcall2(show_warning, Error.addMessage, Error.CHANGED_STD_VERSION,
-          {new_std_str, version});
+        if show_warning then
+          Error.addMessage(Error.CHANGED_STD_VERSION, {new_std_str, version});
+        end if;
       then
         ();
 

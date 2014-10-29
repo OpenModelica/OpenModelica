@@ -181,7 +181,9 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
-        Debug.fcall(Flags.HPCOM_DUMP,print,"handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
+        end if;
            //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
            //BackendDump.dumpEqSystem(systIn,"the original system");
 
@@ -199,7 +201,9 @@ algorithm
         eqLst = List.fold2(List.intRange(listLength(resEqIdcs)),replaceAtPositionFromList,resEqs,resEqIdcs,eqLst);  // replaces the old residualEquations with the new ones
         vars = BackendVariable.listVar1(varLst);  // !!! BackendVariable.listVar outputs the reversed order therefore listVar1
         eqs = BackendEquation.listEquation(eqLst);
-        Debug.fcall(Flags.HPCOM_DUMP,print,"number of added equations: "+&intString(listLength(eqsNew))+&" and the size of the linear torn system: "+&intString(listLength(tvarIdcs))+&"\n");
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("number of added equations: "+&intString(listLength(eqsNew))+&" and the size of the linear torn system: "+&intString(listLength(tvarIdcs))+&"\n");
+        end if;
         //print("new systemsize:"+&intString(listLength(varLst))+&" vars. and "+&intString(listLength(eqLst))+&" eqs\n");
 
         // build the matching
@@ -466,7 +470,9 @@ algorithm
         eqIdx = listGet(eqIdcsIn,1);
         varIdx = listGet(varIdcsIn,1);
         comp = BackendDAE.SINGLEEQUATION(eqIdx,varIdx);
-        Debug.fcall(Flags.HPCOM_DUMP,print,"a linear equationsystem of size 1 was found and was replaced by a single equation\n\n");
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("a linear equationsystem of size 1 was found and was replaced by a single equation\n\n");
+        end if;
       then
         comp;
     case(false,_,_,_)
@@ -478,7 +484,9 @@ algorithm
         //print("the vars of the sys: "+&stringDelimitList(List.map(eqIdcsIn,intString),"\n")+&"\n");
         //comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,NONE(),BackendDAE.JAC_NO_ANALYTIC());
         //comp = BackendDAE.TORNSYSTEM(varIdcsIn,eqIdcsIn,{},true);
-        Debug.fcall(Flags.HPCOM_DUMP,print,"a linear equationsystem of size "+&intString(listLength(eqIdcsIn))+&" is left from the partitioning.\n\n");
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("a linear equationsystem of size "+&intString(listLength(eqIdcsIn))+&" is left from the partitioning.\n\n");
+        end if;
       then
         comp;
   end match;
@@ -744,7 +752,7 @@ algorithm
         coeffExp = varExp(coeff);
         tVar = listGet(tVars,idx);
         tVarExp = varExp(tVar);
-        tVarExp = Debug.bcallret1(BackendVariable.isStateVar(tVar), Expression.expDer, tVarExp, tVarExp); // if tvar is a state, use the der(varexp)
+        tVarExp = if BackendVariable.isStateVar(tVar) then Expression.expDer(tVarExp) else tVarExp; // if tvar is a state, use the der(varexp)
         ty = DAE.T_REAL_DEFAULT;
         expTmp = DAE.BINARY(coeffExp,DAE.MUL(ty),tVarExp);
         expTmp = buildNewResidualEquation2(idx+1,coeffs,tVars,expTmp);
@@ -786,7 +794,7 @@ protected
 algorithm
   fac1 := varExp(var1);
   fac2 := varExp(var2);
-  fac2 := Debug.bcallret1(BackendVariable.isStateVar(var2), Expression.expDer, fac2, fac2);
+  fac2 := if BackendVariable.isStateVar(var2) then Expression.expDer(fac2) else fac2;
   ty := DAE.T_REAL_DEFAULT;
   prod := DAE.BINARY(fac1, DAE.MUL(ty), fac2);
   expOut := DAE.BINARY(inExp, DAE.ADD(ty), prod);
@@ -954,8 +962,8 @@ algorithm
         rhs = varExp(a_ii);
         hs_ii = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         // update th a_i_lst and the hs_i_lst
-        a_i_lstTmp = Debug.bcallret1(List.isEmpty(a_i_lstIn), List.create, {a_ii},varInFrontList(a_ii,a_i_lstIn));
-        hs_i_lstTmp = Debug.bcallret1(List.isEmpty(hs_i_lstIn), List.create, {hs_ii}, eqInFrontList(hs_ii,hs_i_lstIn));
+        a_i_lstTmp = if List.isEmpty(a_i_lstIn) then List.create({a_ii}) else varInFrontList(a_ii,a_i_lstIn);
+        hs_i_lstTmp = if List.isEmpty(hs_i_lstIn) then List.create({hs_ii}) else eqInFrontList(hs_ii,hs_i_lstIn);
         //next residual equation
         (hs_i_lstTmp,a_i_lstTmp) = getTornSystemCoefficients1(resIdxRest,iIdx,resVal_iIn,hs_i_lstTmp,a_i_lstTmp,tornSysIdx);
       then
@@ -981,8 +989,8 @@ algorithm
         lhs = varExp(r_ii);
         hs_ii = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         // update th a_i_lst and the hs_i_lst
-        a_i_lstTmp = Debug.bcallret1(List.isEmpty(a_i_lstIn), List.create, {a_ii},varInFrontList(a_ii, a_i_lstIn));
-        hs_i_lstTmp = Debug.bcallret1(List.isEmpty(hs_i_lstIn), List.create, {hs_ii}, eqInFrontList(hs_ii, hs_i_lstIn));
+        a_i_lstTmp = if List.isEmpty(a_i_lstIn) then List.create({a_ii}) else varInFrontList(a_ii, a_i_lstIn);
+        hs_i_lstTmp = if List.isEmpty(hs_i_lstIn) then List.create({hs_ii}) else eqInFrontList(hs_ii, hs_i_lstIn);
         // next residual equation
         (hs_i_lstTmp, a_i_lstTmp) = getTornSystemCoefficients1(resIdxRest, iIdx, resVal_iIn, hs_i_lstTmp, a_i_lstTmp,tornSysIdx);
       then
@@ -1130,8 +1138,8 @@ algorithm
   resEq := addResidualVarToEquation2(resEq,resExp);
 
   // update the resEq and resVar lists
-  r_i_lst := Debug.bcallret1(List.isEmpty(r_i_lst), List.create, {resVal},varInFrontList(resVal,r_i_lst));
-  h_i_lst := Debug.bcallret1(List.isEmpty(h_i_lst), List.create, {resEq}, eqInFrontList(resEq,h_i_lst));
+  r_i_lst := if List.isEmpty(r_i_lst) then List.create({resVal}) else varInFrontList(resVal,r_i_lst);
+  h_i_lst := if List.isEmpty(h_i_lst) then List.create({resEq}) else eqInFrontList(resEq,h_i_lst);
   tplOut := (h_i_lst,r_i_lst);
 end addResidualVarToEquation1;
 

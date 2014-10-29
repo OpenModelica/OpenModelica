@@ -410,7 +410,8 @@ algorithm
       then (DAE.DAE(elts2),DAE.DAE(e::elts3));
     case(DAE.DAE(_::_))
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.splitDAEIntoVarsAndEquations failed on: " );
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- DAEUtil.splitDAEIntoVarsAndEquations failed on:\n");
       then fail();
   end matchcontinue;
 end splitDAEIntoVarsAndEquations;
@@ -2215,7 +2216,7 @@ algorithm
     case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs),
           source= source)::rest, impl)
       equation
-        // Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
+        // fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
         info = getElementSourceFileInfo(source);
         (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE(), Absyn.MSG(info),0);
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
@@ -2226,7 +2227,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = DAEDump.dumpDebugDAE(DAE.DAE({el}));
-        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue failed on: " +& str);
+        Debug.traceln("- DAEUtil.daeToRecordValue failed on: " +& str);
       then
         fail();
   end matchcontinue;
@@ -2707,7 +2708,8 @@ algorithm
     case (path,fn::fns) then getNamedFunctionFromList(path, fns);
     case (path,{})
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.getNamedFunctionFromList failed " +& Absyn.pathString(path));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- DAEUtil.getNamedFunctionFromList failed " +& Absyn.pathString(path));
       then
         fail();
   end matchcontinue;
@@ -2842,7 +2844,8 @@ algorithm
       stmts;
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Differentiatte.getStatement failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Differentiatte.getStatement failed\n");
       then
         fail();
   end matchcontinue;
@@ -3704,7 +3707,8 @@ algorithm
       then (funcLst,extraArg);*/
     case((p,NONE())::_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.traverseDAEFuncLst failed: " +& Absyn.pathString(p));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- DAEUtil.traverseDAEFuncLst failed: " +& Absyn.pathString(p));
       then fail();
   end match;
 end traverseDAEFuncLst;
@@ -5126,7 +5130,7 @@ algorithm
         elts = List.appendNoCopy(elts1,elts2);
         // t2 = clock();
         // ti = t2 -. t1;
-        // Debug.fprintln(Flags.INNER_OUTER, " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
+        // fprintln(Flags.INNER_OUTER, " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
       then DAE.DAE(elts);
 
   end match;
@@ -6003,7 +6007,9 @@ algorithm
   DAE.DAE(elts) := inDAElist;
   ht := FCore.getEvaluatedParams(cache);
   elts := List.map1(elts, makeEvaluatedParamFinal, ht);
-  Debug.bcall(Flags.isSet(Flags.PRINT_STRUCTURAL), transformationsBeforeBackendNotification, ht);
+  if Flags.isSet(Flags.PRINT_STRUCTURAL) then
+    transformationsBeforeBackendNotification(ht);
+  end if;
   outDAElist := DAE.DAE(elts);
   // Don't even run the function to try and do this; it doesn't work very well
   // outDAElist := transformDerInline(outDAElist);

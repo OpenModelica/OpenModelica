@@ -558,9 +558,15 @@ algorithm
       (replEqs,_,_) = List.intersection1OnTrue(replEqsIn,loop1,intEq);  // just consider the already replaced equations in this loop
 
       // first try to replace a non cross node, otherwise an already replaced eq, or if none of them is available take a crossnode (THIS IS NOT YET CLEAR)
-      pos = Debug.bcallret1(List.isNotEmpty(crossEqs),List.first,crossEqs,-1);
-      pos = Debug.bcallret1(List.isNotEmpty(replEqs),List.first,replEqs,pos);
-      pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos); // CHECK THIS
+      if List.isNotEmpty(eqs) then
+        pos = List.first(eqs);
+      elseif List.isNotEmpty(replEqs) then
+        pos = List.first(replEqs);
+      elseif List.isNotEmpty(crossEqs) then
+        pos = List.first(crossEqs);
+      else
+        pos = -1;
+      end if;
 
       eqs = List.deleteMember(loop1,pos);
         //print("contract eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&" to eq "+&intString(pos)+&"\n");
@@ -607,8 +613,8 @@ algorithm
         //print("priorized eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&"\n");
 
       // first try to replace a non cross node, otherwise an already replaced eq
-      pos = Debug.bcallret1(List.isNotEmpty(replEqs),List.first,replEqs,-1);
-      pos = Debug.bcallret1(List.isNotEmpty(eqs),List.first,eqs,pos);
+      pos = if List.isNotEmpty(replEqs) then List.first(replEqs) else -1;
+      pos = if List.isNotEmpty(eqs) then List.first(eqs) else pos;
 
       eqs = List.deleteMember(loop1,pos);
         //print("contract eqs: "+&stringDelimitList(List.map(eqs,intString),",")+&" to eq "+&intString(pos)+&"\n");
@@ -991,7 +997,7 @@ algorithm
         b1 = intEq(startNode,endNodeIn);
         endNode = List.last(path);
         b2 = intEq(endNode,startNodeIn);
-        path = Debug.bcallret3(not(b1 and b2),findPathByEnds,pathLst,startNodeIn,endNodeIn,path);
+        path = if not(b1 and b2) then findPathByEnds(pathLst,startNodeIn,endNodeIn) else path;
       then
         path;
     case({},_,_)
@@ -1158,12 +1164,13 @@ algorithm
   eqVars := arrayGet(mIn,eq);
   (crossVars,_,_) := List.intersection1OnTrue(eqVars,varCrossLst,intEq);
   numCrossVars := listLength(crossVars);
-  b0 := intEq(numCrossVars,0);
-  b1 := intEq(numCrossVars,1);
-  b2 := intGe(numCrossVars,2);
-  Debug.bcall3(b0,arrayGetAppendLst,1,{eq},priorities);
-  Debug.bcall3(b1,arrayGetAppendLst,2,{eq},priorities);
-  Debug.bcall3(b2,arrayGetAppendLst,3,{eq},priorities);
+  if numCrossVars == 0 then
+    arrayGetAppendLst(1,{eq},priorities);
+  elseif numCrossVars == 1 then
+    arrayGetAppendLst(2,{eq},priorities);
+  elseif numCrossVars >= 2 then
+    arrayGetAppendLst(3,{eq},priorities);
+  end if;
 end priorizeEqsWithVarCrosses2;
 
 protected function evaluateLoop
@@ -1422,7 +1429,9 @@ algorithm
         hasChanged = intEq(entry,0);
         isAnotherPartition = intNe(entry,currNumber);
         isAnotherPartition = boolAnd(boolNot(hasChanged),isAnotherPartition);
-        Debug.bcall(isAnotherPartition,print,"in arrayUpdateAndGetNextEqs: "+&intString(eq)+&" cannot be assigned to a partition.check this"+&"\n");
+        if isAnotherPartition then
+          print("in arrayUpdateAndGetNextEqs: "+&intString(eq)+&" cannot be assigned to a partition.check this"+&"\n");
+        end if;
         markNodes = arrayUpdate(markNodesIn,eq,currNumber);
       then
         (markNodes,hasChanged);
@@ -1604,8 +1613,8 @@ algorithm
         paths1 = listAppend(paths1,paths2);
         true = List.isNotEmpty(paths1);
         path = List.first(paths1);
-        endNode = Debug.bcallret1(List.isNotEmpty(paths1),List.last,path,-1);
-        endNode = Debug.bcallret1(List.isNotEmpty(paths2),List.first,path,-1);
+        endNode = if List.isNotEmpty(paths1) then List.last(path) else -1;
+        endNode = if List.isNotEmpty(paths2) then List.first(path) else -1;
         rest = List.deleteMember(pathsIn,path);
         sortedPaths = listAppend(sortedPathsIn,{path});
         sortedPaths = sortPathsAsChain1(rest,firstNode,endNode,sortedPaths);
@@ -1620,8 +1629,8 @@ algorithm
         paths1 = listAppend(paths1,paths2);
         true = List.isNotEmpty(paths1);
         path = List.first(paths1);
-        startNode = Debug.bcallret1(List.isNotEmpty(paths1),List.last,path,-1);
-        startNode = Debug.bcallret1(List.isNotEmpty(paths2),List.first,path,-1);
+        startNode = if List.isNotEmpty(paths1) then List.last(path) else -1;
+        startNode = if List.isNotEmpty(paths2) then List.first(path) else -1;
         rest = List.deleteMember(pathsIn,path);
         sortedPaths = path::sortedPathsIn;
         sortedPaths = sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);
@@ -1713,7 +1722,7 @@ algorithm
         endPaths = List.filter1OnTrue(endPaths,lastInListIsEqual,startNode);
         endPaths = listAppend(startPaths,endPaths);
         closedALoop = intGe(listLength(endPaths),1);
-        loops = Debug.bcallret2(closedALoop,connectPaths,path,endPaths,{});
+        loops = if closedALoop then connectPaths(path,endPaths) else {};
         restPaths = if closedALoop then restPathsIn else (path::restPathsIn);
         loops = listAppend(loops,loopsIn);
         (loops,restPaths) = connect2PathsToLoops(rest,loops,restPaths);

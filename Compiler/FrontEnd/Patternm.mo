@@ -1756,7 +1756,7 @@ algorithm
     case (p1::ps1,p2::ps2)
       equation
         res = patternsDoNotOverlap(p1,p2);
-        res = Debug.bcallret2(not res,patternListsDoNotOverlap,ps1,ps2,res);
+        res = if not res then patternListsDoNotOverlap(ps1,ps2) else res;
       then res;
   end match;
 end patternListsDoNotOverlap;
@@ -1797,14 +1797,14 @@ algorithm
     case (DAE.PAT_CALL(name1,ix1,{},_,_),DAE.PAT_CALL(name2,ix2,{},_,_))
       equation
         res = ix1 == ix2;
-        res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
+        res = if res then Absyn.pathEqual(name1, name2) else res;
       then not res;
 
     case (DAE.PAT_CALL(name1,ix1,ps1,_,_),DAE.PAT_CALL(name2,ix2,ps2,_,_))
       equation
         res = ix1 == ix2;
-        res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
-        res = Debug.bcallret2(res, patternListsDoNotOverlap, ps1, ps2, not res);
+        res = if res then Absyn.pathEqual(name1, name2) else res;
+        res = if res then patternListsDoNotOverlap(ps1, ps2) else not res;
       then res;
 
     // TODO: PAT_CALLED_NAMED?

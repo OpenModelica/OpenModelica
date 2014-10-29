@@ -207,7 +207,7 @@ algorithm
       equation
         env_2 = FGraph.openScope(env_1, encflag, SOME(id), SOME(FCore.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, FGraph.getGraphName(env_2));
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& FGraph.printGraphPathStr(env_1) +& " path:" +& Absyn.pathString(path));
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& FGraph.printGraphPathStr(env_1) +& " path:" +& Absyn.pathString(path));
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
@@ -233,7 +233,7 @@ algorithm
     // Classes that are external objects. Implicitly instantiate to get type
     case (cache,env_1,_,c)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& FGraph.printGraphPathStr(env_1) +& " path:" +& Absyn.pathString(path));
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& FGraph.printGraphPathStr(env_1) +& " path:" +& Absyn.pathString(path));
         true = SCode.classIsExternalObject(c);
         (cache,env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
@@ -250,7 +250,7 @@ algorithm
     // up the type.
     case (cache,env_1,_,c as SCode.CLASS(name = id,restriction=SCode.R_FUNCTION(_)))
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& FGraph.printGraphPathStr(env_1) +& " path:" +& Absyn.pathString(path));
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& FGraph.printGraphPathStr(env_1) +& " path:" +& Absyn.pathString(path));
         (cache,env_2,_) =
         InstFunction.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
         (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
@@ -423,7 +423,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         id = Absyn.pathString(inPath);
         scope = FGraph.printGraphPathStr(inEnv);
-        Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupClass failed:\n" +&
+        fprintln(Flags.FAILTRACE,  "- Lookup.lookupClass failed:\n" +&
           id +& " in:\n" +&
           scope);
       then fail();*/
@@ -564,7 +564,7 @@ algorithm
       equation
         env = FGraph.pushScopeRef(env, frame);
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,msg);
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED FRAME: " +& FGraph.printGraphPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
+        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED FRAME: " +& FGraph.printGraphPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
       then (cache,c,env,prevFrames);
 
     // class is an instance of a component
@@ -581,7 +581,7 @@ algorithm
       equation
         env = FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env));
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " +& FGraph.printGraphPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
+        // fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " +& FGraph.printGraphPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
         (cache,env,_,_,_) =
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
@@ -857,7 +857,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, path, false);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& FGraph.printGraphPathStr(env) +& "." +& ident);
+        // fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& FGraph.printGraphPathStr(env) +& "." +& ident);
         (cache, env, _,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         r = FGraph.lastScopeRef(env);
         env = FGraph.setScope(env, {r});
@@ -914,7 +914,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames) = lookupClass2(cache,env3,path,prevFrames,Util.makeStatefulBoolean(false),false);
         env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " +& FGraph.printGraphPathStr(env) +& "." +& ident);
+        // fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " +& FGraph.printGraphPathStr(env) +& "." +& ident);
         (cache,env2,_,_,_) =
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
@@ -1081,7 +1081,7 @@ algorithm
     /*/ fail if we couldn't find it
     case (_,env,cref)
       equation
-        Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +&
+        fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +&
           ComponentReference.printComponentRefStr(cref) +& " in:\n" +&
           FGraph.printGraphPathStr(env));
       then fail();*/
@@ -1121,7 +1121,8 @@ algorithm
         s1 = ComponentReference.printComponentRefStr(cref);
         s2 = FGraph.printGraphPathStr(classEnv);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
-        Debug.fprintln(Flags.FAILTRACE, "- Lookup.checkPackageVariableConstant failed: " +& s1 +& " in " +& s2);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Lookup.checkPackageVariableConstant failed: " +& s1 +& " in " +& s2);
       then fail();
   end matchcontinue;
 end checkPackageVariableConstant;
@@ -1299,7 +1300,7 @@ algorithm
 
         env3 = FGraph.openScope(env2, encflag, SOME(n), FGraph.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, FGraph.getGraphName(env3));
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " +& FGraph.printGraphPathStr(env3) +& " var: " +& ComponentReference.printComponentRefStr(cref));
+        // fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " +& FGraph.printGraphPathStr(env3) +& " var: " +& ComponentReference.printComponentRefStr(cref));
         (cache,env5,_,_,_,_,_,_,_,_,_,_) =
         Inst.instClassIn(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {},
@@ -1622,7 +1623,7 @@ algorithm
     case (_,_,id,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "lookupFunctionsInEnv failed on: " +& Absyn.pathString(id));
+        Debug.traceln("lookupFunctionsInEnv failed on: " +& Absyn.pathString(id));
       then
         fail();
 
@@ -1709,7 +1710,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=_,restriction=restr)),env_1) = lookupClass(cache, inEnv, id, false);
         true = SCode.isFunctionRestriction(restr);
         // get function dae from instantiation
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " +& FGraph.printGraphPathStr(env_1) +& "." +& str);
+        // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " +& FGraph.printGraphPathStr(env_1) +& "." +& str);
         (cache,env_2 as FCore.G(scope = r::_),_)
            = InstFunction.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
         ht = FNode.children(FNode.fromRef(r));
@@ -1737,7 +1738,7 @@ algorithm
         env2 = FGraph.openScope(env_1, encflag, SOME(str), FGraph.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
 
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " +& FGraph.printGraphPathStr(env2) +& "." +& str);
+        // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " +& FGraph.printGraphPathStr(env2) +& "." +& str);
         (cache,env_2,_,_,_) =
         Inst.partialInstClassIn(
           cache, env2, InnerOuter.emptyInstHierarchy,
@@ -1934,7 +1935,7 @@ algorithm
     // Found function
     case (cache,FCore.N(data = FCore.CL(e = cdef as SCode.CLASS(restriction=SCode.R_FUNCTION(_)))),env,id)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE IN FRAME ICD: " +& FGraph.printGraphPathStr(env) +& " id:" +& id);
+        // fprintln(Flags.INST_TRACE, "LOOKUP TYPE IN FRAME ICD: " +& FGraph.printGraphPathStr(env) +& " id:" +& id);
 
         // select the env if is the same as cenv as is updated!
         cenv = env; // selectUpdatedEnv(env, cenv);
@@ -2066,7 +2067,7 @@ protected
 algorithm
   (outCache,_,cdef) := buildRecordConstructorClass(cache,env,icdef);
   name := SCode.className(cdef);
-  // Debug.fprintln(Flags.INST_TRACE", "LOOKUP BUILD RECORD TY ICD: " +& FGraph.printGraphPathStr(env) +& "." +& name);
+  // fprintln(Flags.INST_TRACE", "LOOKUP BUILD RECORD TY ICD: " +& FGraph.printGraphPathStr(env) +& "." +& name);
   (outCache,outEnv,_) := InstFunction.implicitFunctionTypeInstantiation(
      outCache,env,InnerOuter.emptyInstHierarchy, cdef);
   (outCache,ftype,_) := lookupTypeInEnv(outCache,outEnv,Absyn.IDENT(name));
@@ -2103,7 +2104,8 @@ algorithm
         (cache,env,cl);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,"buildRecordConstructorClass failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("buildRecordConstructorClass failed\n");
       then fail();
   end matchcontinue;
 end buildRecordConstructorClass;
@@ -2655,11 +2657,11 @@ algorithm
     case (t,s)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- Lookup.checkSubscripts failed (tp: ");
-        Debug.fprint(Flags.FAILTRACE, Types.printTypeStr(t));
-        Debug.fprint(Flags.FAILTRACE, " subs:");
-        Debug.fprint(Flags.FAILTRACE, stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
-        Debug.fprint(Flags.FAILTRACE, ")\n");
+        Debug.trace("- Lookup.checkSubscripts failed (tp: ");
+        Debug.trace(Types.printTypeStr(t));
+        Debug.trace(" subs:");
+        Debug.trace(stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
+        Debug.trace(")\n");
       then
         fail();
   end matchcontinue;
@@ -2737,7 +2739,7 @@ algorithm
         componentEnv = FGraph.setScope(componentEnv, List.create(FGraph.lastScopeRef(componentEnv)));
 
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
-        ty = Debug.bcallret1(Types.isBoxedType(tyParent) and not Types.isUnknownType(tyParent), Types.boxIfUnboxedType, tyChild, tyChild) "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
+        ty = if Types.isBoxedType(tyParent) and not Types.isUnknownType(tyParent) then Types.boxIfUnboxedType(tyChild) else tyChild "The internal types in a metarecord are lookup up in a clean environment, so we have to box them";
         (tCref::_) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(tyParent, ss);
         ty = sliceDimensionType(ty1,ty);

@@ -195,7 +195,7 @@ algorithm
               SCodeDump.printModStr(m) +&
               " in env: " +&
               FGraph.printGraphStr(env);
-        Debug.fprintln(Flags.FAILTRACE, str);
+        fprintln(Flags.FAILTRACE, str);
       then
         fail();*/
   end match;
@@ -608,8 +608,10 @@ algorithm
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_val) = elabModValue(cache,env,e_1,prop,impl,info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        Debug.fprint(Flags.UPDMOD, "Updated mod: ");
-        Debug.fprintln(Flags.UPDMOD, Debug.fcallret1(Flags.UPDMOD, printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,e,info))),""));
+        if Flags.isSet(Flags.UPDMOD) then
+          Debug.trace("Updated mod: ");
+          Debug.traceln(printModStr(DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,e,info)))));
+        end if;
       then
         (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,e,info))));
 
@@ -1449,13 +1451,13 @@ algorithm
     case (mod,idx)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- Mod.lookupIdxModification(");
+        Debug.trace("- Mod.lookupIdxModification(");
         str = printModStr(mod);
-        Debug.fprint(Flags.FAILTRACE, str);
-        Debug.fprint(Flags.FAILTRACE, ", ");
+        Debug.trace(str);
+        Debug.trace(", ");
         s = intString(idx);
-        Debug.fprint(Flags.FAILTRACE, s);
-        Debug.fprint(Flags.FAILTRACE, ") failed\n");
+        Debug.trace(s);
+        Debug.trace(") failed\n");
       then
         fail();
   end matchcontinue;
@@ -1501,7 +1503,8 @@ algorithm
 
     else
       equation
-       Debug.fprint(Flags.FAILTRACE, "- Mod.lookupIdxModification2 failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Mod.lookupIdxModification2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -1534,7 +1537,7 @@ algorithm
     case (_,idx)
       equation
       true = Flags.isSet(Flags.FAILTRACE);
-      Debug.fprintln(Flags.FAILTRACE, "- Mod.lookupIdxModification3 failed for mod: \n" +&
+      Debug.traceln("- Mod.lookupIdxModification3 failed for mod: \n" +&
                      printModStr(inMod) +& "\n for index:" +& intString(idx));
     then fail();
   end matchcontinue;
@@ -1605,7 +1608,7 @@ algorithm
     case (SOME(eq),_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Mod.indexEqmod failed for mod:\n " +&
+        Debug.traceln("- Mod.indexEqmod failed for mod:\n " +&
                Types.unparseEqMod(eq) +& "\n indexes:" +&
                stringDelimitList(List.map(inIntegerLst, intString), ", "));
       then fail();
@@ -3103,19 +3106,19 @@ algorithm
 
     case((DAE.REDECL(f,e,redecls)),_)
       equation
-        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
+        //fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
         redecls = removeRedeclareMods(redecls,componentModified);
         outmod = if List.isNotEmpty(redecls) then DAE.REDECL(f,e,redecls) else DAE.NOMOD();
-        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+        //fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
         outmod;
 
     case(DAE.MOD(f,e,subs,oem),_)
       equation
-        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
+        //fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
         subs = removeModInSubs(subs,componentModified);
         outmod = DAE.MOD(f,e,subs,oem);
-        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+        //fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
         outmod;
   end match;

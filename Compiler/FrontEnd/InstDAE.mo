@@ -135,7 +135,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.daeDeclare failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.daeDeclare failed\n");
       then
         fail();
 

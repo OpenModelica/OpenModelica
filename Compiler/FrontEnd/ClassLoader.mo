@@ -104,7 +104,8 @@ algorithm
     /* failure */
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadClass failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("ClassLoader.loadClass failed\n");
       then
         fail();
   end matchcontinue;
@@ -163,7 +164,7 @@ algorithm
         pd = System.pathDelimiter();
         /* Check for path/package.encoding; OpenModelica extension */
         encodingfile = stringAppendList({path,pd,"package.encoding"});
-        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
+        encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
         cl = parsePackageFile(path +& pd +& name,encoding,false,Absyn.TOP(),id);
       then
         cl;
@@ -173,7 +174,7 @@ algorithm
         /* Check for path/package.encoding; OpenModelica extension */
         pd = System.pathDelimiter();
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
-        encoding = System.trimChar(System.trimChar(Debug.bcallret1(System.regularFileExists(encodingfile),System.readFile,encodingfile,Util.getOptionOrDefault(optEncoding,"UTF-8")),"\n")," ");
+        encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
         cl = loadCompletePackageFromMp(id, name, path, encoding, Absyn.TOP(), Error.getNumErrorMessages());
       then
         cl;
@@ -341,7 +342,8 @@ algorithm
     // faliling
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "ClassLoader.parsePackageFile failed: "+&name+&"\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("ClassLoader.parsePackageFile failed: "+&name);
       then
         fail();
   end matchcontinue;
@@ -542,7 +544,7 @@ algorithm
       equation
         load = makeClassLoad(name1);
         b = name1 ==& name2;
-        Error.assertionOrAddSourceMessage(not Debug.bcallret2(b,listMember,load,po,false), Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
+        Error.assertionOrAddSourceMessage(if b then not listMember(load,po) else true, Error.PACKAGE_MO_NOT_IN_ORDER, {name2}, info);
         orderElt = if b then makeElement(ei,pub) else load;
         (outOrder,names) = getPackageContentNamesinElts(namesToSort,if b then elts else inElts,orderElt :: po, pub);
       then (outOrder,names);

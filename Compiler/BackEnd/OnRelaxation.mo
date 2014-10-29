@@ -610,7 +610,7 @@ algorithm
         rlst = selectNonFlows(rlst,blst,{});
         foundflow = generateCliquesResidual1(rlst,ass1,ass2,m,mt,mark,rowmarks,colummarks,foundflow,vars);
         generateCliquesResidual2(rlst,ass1,ass2,m,mt,mark+1,rowmarks,colummarks,o::partner);
-        constraints = Debug.bcallret2(not foundflow, listAppend, o::partner, iconstraints, iconstraints);
+        constraints = if not foundflow then listAppend(o::partner, iconstraints) else iconstraints;
         (omark,constraints) = generateCliquesResidual(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,vars,constraints);
       then
        (omark,constraints);
@@ -1804,7 +1804,7 @@ algorithm
 
     case (_, _, _) equation
       print(intString(row) +& ": ");
-      BackendDump.debuglst((matrix[row], dumpMatrix1, ", ", "\n"));
+      BackendDump.debuglst(matrix[row], dumpMatrix1, ", ", "\n");
       dumpMatrix(row+1, size, matrix);
     then ();
   end matchcontinue;
@@ -2344,7 +2344,7 @@ protected
 algorithm
   (c, tpl) := orphanspairs;
   print(intString(c) +& ":\n");
-  BackendDump.debuglst((tpl, dumpOrphansPairs1, ",", "\n"));
+  BackendDump.debuglst(tpl, dumpOrphansPairs1, ",", "\n");
 end dumpOrphansPairs;
 
 protected function dumpOrphansPairs1
@@ -2909,7 +2909,7 @@ algorithm
         //  BackendDump.debuglst((colums1,intString,", ","\n"));
         b1 = List.isNotEmpty(colums);
         // cons next rows in front to jump over marked nodes
-        queue = Debug.bcallret3(b1, List.unionOnTrue, colums1, nextqueue, intEq, nextqueue);
+        queue = if b1 then List.unionOnTrue(colums1, nextqueue, intEq) else nextqueue;
         //  print("queue: "); BackendDump.debuglst((queue,intString,", ","\n"));
         queue1 = List.consOnTrue(b2, c, iqueue);
       then

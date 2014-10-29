@@ -120,7 +120,8 @@ algorithm
         BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,graph,functionTree,eventInfo,extObjClasses,btp,symjacs,ei));
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Inline.inlineCalls failed\n");
       then
         fail();
   end matchcontinue;
@@ -170,7 +171,8 @@ algorithm
         (BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),oInlined);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEquationArray failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Inline.inlineEquationArray failed\n");
       then
         fail();
   end matchcontinue;
@@ -418,7 +420,8 @@ algorithm
         (BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),inlined);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineVariables failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Inline.inlineVariables failed\n");
       then
         fail();
   end matchcontinue;
@@ -558,9 +561,11 @@ algorithm
       ev = if b1 or b2 or b3 then BackendDAE.EVENT_INFO(timeEvents, wclst_1, zclst_1, samples, relations, numberOfRelations, numberOfMathEvents) else inEventInfo;
     then ev;
 
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "Inline.inlineEventInfo failed");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Inline.inlineEventInfo failed\n");
+      then fail();
   end matchcontinue;
 end inlineEventInfo;
 

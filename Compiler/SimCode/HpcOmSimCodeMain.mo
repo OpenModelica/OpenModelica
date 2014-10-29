@@ -288,14 +288,18 @@ algorithm
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde,inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       SimCodeUtil.execStat("hpcom dump ODE TaskGraph");
 
-      Debug.fcall(Flags.HPCOM_DUMP,print,"Critical Path successful calculated\n");
+      if Flags.isSet(Flags.HPCOM_DUMP) then
+        print("Critical Path successful calculated\n");
+      end if;
 
       // Analyse Systems of Equations
       //-----------------------------
       (scheduledTasks,scheduledDAENodes) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,simVarMapping,inBackendDAE);
       //HpcOmScheduler.printTaskList(scheduledTasks);
 
-      Debug.fcall(Flags.HPCOM_DUMP,print,"Torn System parallelized\n");
+      if Flags.isSet(Flags.HPCOM_DUMP) then
+        print("Torn System parallelized\n");
+      end if;
 
       //Apply filters
       //-------------
@@ -310,7 +314,9 @@ algorithm
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       SimCodeUtil.execStat("hpcom dump simplified TaskGraph");
 
-      Debug.fcall(Flags.HPCOM_DUMP,print,"Filter successful applied\n");
+      if Flags.isSet(Flags.HPCOM_DUMP) then
+        print("Filter successful applied\n");
+      end if;
 
       //Create schedule
       //---------------
@@ -334,7 +340,9 @@ algorithm
 
       SimCodeUtil.execStat("hpcom dump schedule TaskGraph");
 
-      Debug.fcall(Flags.HPCOM_DUMP,print,"Schedule created\n");
+      if Flags.isSet(Flags.HPCOM_DUMP) then
+        print("Schedule created\n");
+      end if;
 
       //Check ODE-System size
       //---------------------
@@ -423,7 +431,9 @@ algorithm
       equation
         numProcSys = System.numProcessors();
         numProc = if intGt(numProcFlag,numProcSys) then numProcSys else numProcFlag; // the system does not provide so many cores
-        Debug.bcall(intGt(numProcFlag,numProcSys) and Flags.isSet(Flags.HPCOM_DUMP),print,"Warning: Your system provides only "+&intString(numProcSys)+&" processors!\n");
+        if intGt(numProcFlag,numProcSys) and Flags.isSet(Flags.HPCOM_DUMP) then
+          print("Warning: Your system provides only "+&intString(numProcSys)+&" processors!\n");
+        end if;
       then
         (numProcFlag,true);
   end match;
@@ -469,7 +479,9 @@ algorithm
         doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
         (taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
 
-        Debug.fcall(Flags.HPCOM_DUMP,print,"Handling filter iteration " +& intString(iIterationIdx) +& "\n");
+        if Flags.isSet(Flags.HPCOM_DUMP) then
+          print("Handling filter iteration " +& intString(iIterationIdx) +& "\n");
+        end if;
         (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,changed1 or changed2 or changed3,doNotMergeIn,iIterationIdx+1);
       then (taskGraph1,taskGraphMeta1);
     else (iTaskGraph, iTaskGraphMeta);

@@ -1397,7 +1397,9 @@ algorithm
         indent(i);
         Print.printBuf("for ");
         Print.printBuf(id);
-        Debug.bcall(index <> -1, Print.printBuf, " /* iter index " +& intString(index) +& " */");
+        if index <> -1 then
+          Print.printBuf(" /* iter index " +& intString(index) +& " */");
+        end if;
         Print.printBuf(" in ");
         ExpressionDump.printExp(e);
         Print.printBuf(" loop\n");
@@ -1413,7 +1415,9 @@ algorithm
         indent(i);
         Print.printBuf("parfor ");
         Print.printBuf(id);
-        Debug.bcall(index <> -1, Print.printBuf, " /* iter index " +& intString(index) +& " */");
+        if index <> -1 then
+          Print.printBuf(" /* iter index " +& intString(index) +& " */");
+        end if;
         Print.printBuf(" in ");
         ExpressionDump.printExp(e);
         Print.printBuf(" loop\n");
@@ -2864,7 +2868,7 @@ algorithm
         sourceStr = getSourceInformationStr(src);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        s3 = Debug.bcallret1(Config.typeinfo(), Types.printDimensionsStr, dims, "");
+        s3 = if Config.typeinfo() then Types.printDimensionsStr(dims) else "";
         s3 = if Config.typeinfo() then " /* array equation [" +& s3 +& "] */" else "";
         str = IOStream.appendList(str, {"  ", s1, " = ", s2, s3, sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);

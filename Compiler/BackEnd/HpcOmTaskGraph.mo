@@ -3264,9 +3264,13 @@ algorithm
   clusterValues := listArray(values);
   itemArr := listArray(items);
   itemsCopy := Array.map(itemArr,List.create);
-  clusters := Debug.bcallret2(true,Array.copy,itemsCopy,clusters,clusters);
-  clusterValues := Debug.bcallret2(not b,Array.copy,listArray(values),clusterValues,clusterValues);
-  (clustersOut,clusterValuesOut) := Debug.bcallret3_2(b,distributeToClusters1,(items,values),(clusters,clusterValues),numClusters,clusters,clusterValues);
+  clusters := if true then Array.copy(itemsCopy,clusters) else clusters;
+  clusterValues := if not b then Array.copy(listArray(values),clusterValues) else clusterValues;
+  if b then
+    (clustersOut,clusterValuesOut) := distributeToClusters1((items,values),(clusters,clusterValues),numClusters);
+  else
+    (clustersOut,clusterValuesOut) := (clusters,clusterValues);
+  end if;
 end distributeToClusters;
 
 protected function distributeToClusters1
@@ -4165,7 +4169,9 @@ protected
 algorithm
   TASKGRAPHMETA(inComps=inComps, exeCosts=exeCosts) := dataIn;
   isFine := checkForExecutionCosts1(exeCosts,inComps,1);
-  Debug.bcall(not isFine,print,"There are execution costs with value 0.0!\n ");
+  if not isFine then
+    print("There are execution costs with value 0.0!\n");
+  end if;
 end checkForExecutionCosts;
 
 protected function checkForExecutionCosts1 "checks if the comp for the given node has an executionCost > 0.0
@@ -4476,7 +4482,7 @@ algorithm
         BackendDAE.EQUATION(exp=e1, scalar=e2, source=source) = BackendEquation.equationNth1(eqns, eqnIdx);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varIdx);
         varexp = Expression.crefExp(cr);
-        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
+        varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
         (exp_, _) = ExpressionSolve.solveLin(e1, e2, varexp);
         (_,(op1,op2,_,op3)) = BackendDAEOptimize.countOperationsExp(exp_,(0,0,0,0));
       then ((op1,op2,op3));
@@ -5640,7 +5646,9 @@ algorithm
    case(eqSys as BackendDAE.EQSYSTEM(orderedVars = vars)::rest,_,_)
       equation
         (_,lst) = BackendVariable.getVar(cref,vars);
-        Debug.bcall1(intNe(listLength(lst),1),print,"Check if there is a assert or something that is dependent of arrayEquations");
+        if intNe(listLength(lst),1) then
+          print("Check if there is a assert or something that is dependent of arrayEquations");
+        end if;
       then (eqSysIdxIn,List.first(lst),true);
     case(BackendDAE.EQSYSTEM(orderedVars = vars)::rest,_,_)
       equation
@@ -5666,7 +5674,7 @@ algorithm
     equation
       ((node,eqSys,offset)) = arrayGet(varCompMapping,tryThisIndex);
       eqSysNeq = intNe(eqSys,eqSysIdx);
-      node = Debug.bcallret4(eqSysNeq,getNodeForVarIdx,varIdx,eqSysIdx,varCompMapping,tryThisIndex+offset,node);
+      node = if eqSysNeq then getNodeForVarIdx(varIdx,eqSysIdx,varCompMapping,tryThisIndex+offset) else node;
     then node;
   case(-1,-1,_,_)
     then -1;

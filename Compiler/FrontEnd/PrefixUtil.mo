@@ -603,14 +603,14 @@ algorithm
     case (cache,env,ih,cref,pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
+        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
         //   if_(Absyn.isOuter(io), " [outer] ", " ") +&
         //   if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isInner(io);
         false = Absyn.isOuter(io);
         // prefix normally
         newCref = prefixCref(pre, cref);
-        // Debug.fprintln(Flags.INNER_OUTER, "INNER normally prefixed: " +& ComponentReference.printComponentRefStr(newCref));
+        // fprintln(Flags.INNER_OUTER, "INNER normally prefixed: " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
 
@@ -618,7 +618,7 @@ algorithm
     case (cache,env,ih,cref as DAE.CREF_IDENT(ident=_),pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
+        // fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +&
         //   if_(Absyn.isOuter(io), " [outer] ", " ") +&
         //   if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isOuter(io);
@@ -631,7 +631,7 @@ algorithm
 
         newCref = prefixCref(innerPrefix, lastCref);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "OUTER IDENT prefixed INNER : " +& ComponentReference.printComponentRefStr(newCref));
+        // fprintln(Flags.INNER_OUTER, "OUTER IDENT prefixed INNER : " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
 
@@ -643,7 +643,7 @@ algorithm
         true = Absyn.isOuter(io);
         (cache,innerPrefix) = searchForInnerPrefix(cache,env,ih,cref,pre,io);
         newCref = prefixCref(innerPrefix, cref);
-        // Debug.fprintln(Flags.INNER_OUTER, "OUTER QUAL prefixed INNER: " +& ComponentReference.printComponentRefStr(newCref));
+        // fprintln(Flags.INNER_OUTER, "OUTER QUAL prefixed INNER: " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
     */
@@ -884,10 +884,9 @@ algorithm
     case (_,_,_,e,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "-PrefixUtil.prefixExp failed on exp: ");
+        Debug.trace("-PrefixUtil.prefixExp failed on exp: ");
         s = ExpressionDump.printExpStr(e);
-        Debug.fprint(Flags.FAILTRACE, s);
-        Debug.fprint(Flags.FAILTRACE, "\n");
+        Debug.traceln(s);
       then
         fail();
   end matchcontinue;

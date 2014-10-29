@@ -57,7 +57,6 @@ encapsulated package Flags
   "
 
 protected import Corba;
-protected import Debug;
 protected import Error;
 protected import ErrorExt;
 protected import Global;
@@ -1394,8 +1393,8 @@ algorithm
   neg1 := stringEq(stringGetStringChar(inFlag, 1), "-");
   neg2 := System.strncmp("no",inFlag,2) == 0;
   negated :=  neg1 or neg2;
-  flag_str := Debug.bcallret1(negated, Util.stringRest, inFlag, inFlag);
-  flag_str := Debug.bcallret1(neg2, Util.stringRest, flag_str, flag_str);
+  flag_str := if negated then Util.stringRest(inFlag) else inFlag;
+  flag_str := if neg2 then Util.stringRest(flag_str) else flag_str;
   setDebugFlag2(flag_str, not negated, inFlags);
 end setDebugFlag;
 

@@ -858,7 +858,7 @@ algorithm
       equation
         // print("add chache Inline\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
         (e1, source, inlined,_) = Inline.inlineExp(iExp, fnstpl, iSource);
-        inlineHT = Debug.bcallret2(inlined, BaseHashTable.add, (iExp,e1), iInlineHT, iInlineHT);
+        inlineHT = if inlined then BaseHashTable.add((iExp,e1), iInlineHT) else iInlineHT;
       then (e1,source,inlineHT,{});
     case (DAE.ASUB(e,elst),_,_,_)
       equation
@@ -871,7 +871,7 @@ algorithm
       equation
         // print("add chache Inline(1)\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
         (e1, _, inlined,assrtLst1) = Inline.inlineExp(e, fnstpl, iSource);
-        inlineHT = Debug.bcallret2(inlined, BaseHashTable.add, (e,e1), iInlineHT, iInlineHT);
+        inlineHT = if inlined then BaseHashTable.add((e,e1), iInlineHT) else iInlineHT;
         (e, source, _,assrtLst2) = Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, iSource);
         assrtLst = listAppend(assrtLst1,assrtLst2);
       then (e,source,inlineHT,assrtLst);
@@ -2539,7 +2539,7 @@ algorithm
       equation
         (e1, true) = BackendVarTransform.replaceExp(e, repl, NONE());
         b = Expression.isConst(e1);
-        v1 = Debug.bcallret2(not b, BackendVariable.setBindExp, v, SOME(e1), v);
+        v1 = if not b then BackendVariable.setBindExp(v, SOME(e1)) else v;
       then (v1, repl);
     else (inVar,inRepl);
   end matchcontinue;
@@ -2804,7 +2804,9 @@ algorithm
         vars = BackendVariable.addVar(var, vars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr2, e1, NONE());
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Alias Equation ", cr2, " = ", e1, " found (4).\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr2, " = ", e1, " found (4).\n");
+        end if;
       then
         (vars, iKnVars, iExtVars, avars, repl);
     // state variable
@@ -2828,7 +2830,9 @@ algorithm
         vars = BackendVariable.addVar(var, vars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr1, e2, NONE());
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Alias Equation ", cr1, " = ", e2, " found (4).\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr1, " = ", e2, " found (4).\n");
+        end if;
       then
         (vars, iKnVars, iExtVars, avars, repl);
     // var var / state state
@@ -2853,7 +2857,7 @@ algorithm
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(avar, DAE.SOLVED(acr, e)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e));
-        avar = Debug.bcallret2(b1, BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
+        avar = if b1 then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
         // remove from vars
         (vars, _) = BackendVariable.removeVar(aindx, iVars);
         // add to alias
@@ -2862,7 +2866,9 @@ algorithm
         vars = BackendVariable.addVar(var, vars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, acr, e, NONE());
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Alias Equation ", acr, " = ", e, " found (4).\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Alias Equation ", acr, " = ", e, " found (4).\n");
+        end if;
       then
         (vars, iKnVars, iExtVars, avars, repl);
     // var/state parameter
@@ -2877,7 +2883,7 @@ algorithm
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e2));
-        avar = Debug.bcallret2(BackendVariable.isStateVar(v1), BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
+        avar = if BackendVariable.isStateVar(v1) then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index1, iVars);
         // add to alias
@@ -2886,7 +2892,9 @@ algorithm
         knvars = BackendVariable.addVar(var, iKnVars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr1, e2, NONE());
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Alias Equation ", cr1, " = ", e2, " found (4).\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr1, " = ", e2, " found (4).\n");
+        end if;
       then
         (vars, knvars, iExtVars, avars, repl);
     // parameter var/state
@@ -2901,7 +2909,7 @@ algorithm
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e1));
-        avar = Debug.bcallret2(BackendVariable.isStateVar(v2), BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
+        avar = if BackendVariable.isStateVar(v2) then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index2, iVars);
         // add to alias
@@ -2910,7 +2918,9 @@ algorithm
         knvars = BackendVariable.addVar(var, iKnVars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr2, e1, NONE());
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Alias Equation ", cr2, " = ", e1, " found (4).\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr2, " = ", e1, " found (4).\n");
+        end if;
       then
         (vars, knvars, iExtVars, avars, repl);
     // var/state extvar
@@ -2925,7 +2935,7 @@ algorithm
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e2));
-        avar = Debug.bcallret2(BackendVariable.isStateVar(v1), BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
+        avar = if BackendVariable.isStateVar(v1) then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index1, iVars);
         // add to alias
@@ -2934,7 +2944,9 @@ algorithm
         extvars = BackendVariable.addVar(var, iExtVars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr1, e2, NONE());
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Alias Equation ", cr1, " = ", e2, " found (4).\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr1, " = ", e2, " found (4).\n");
+        end if;
       then
         (vars, iKnVars, extvars, avars, repl);
     // extvar var/state
@@ -2949,7 +2961,7 @@ algorithm
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
         avar = BackendVariable.setBindExp(avar, SOME(e1));
-        avar = Debug.bcallret2(BackendVariable.isStateVar(v2), BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
+        avar = if BackendVariable.isStateVar(v2) then BackendVariable.setVarKind(avar, BackendDAE.DUMMY_STATE()) else avar;
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index2, iVars);
         // add to alias
@@ -2958,7 +2970,9 @@ algorithm
         extvars = BackendVariable.addVar(var, iExtVars);
         // add replacement
         repl = BackendVarTransform.addReplacement(iRepl, cr2, e1, NONE());
-        Debug.fcall(Flags.DEBUG_ALIAS, BackendDump.debugStrCrefStrExpStr, ("Alias Equation ", cr2, " = ", e1, " found (4).\n"));
+        if Flags.isSet(Flags.DEBUG_ALIAS) then
+          BackendDump.debugStrCrefStrExpStr("Alias Equation ", cr2, " = ", e1, " found (4).\n");
+        end if;
       then
         (vars, iKnVars, extvars, avars, repl);
   end match;
@@ -3230,7 +3244,9 @@ algorithm
         explst;
     case (_, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "BackendDAECreate.extendRange failed. Maybe some ZeroCrossing are not supported\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("BackendDAECreate.extendRange failed. Maybe some ZeroCrossing are not supported\n");
+        end if;
       then
         ({});
   end matchcontinue;

@@ -538,7 +538,9 @@ algorithm
     case DAE.T_ENUMERATION(source=_) then DAE.VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
     else equation
       // repord a warning on failtrace
-      Debug.fprint(Flags.FAILTRACE,"getVariableAttributefromType called with unsopported Type!\n");
+      if Flags.isSet(Flags.FAILTRACE) then
+        Debug.trace("getVariableAttributefromType called with unsopported Type!\n");
+      end if;
     then DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
   end match;
 end getVariableAttributefromType;
@@ -2408,7 +2410,7 @@ protected
 algorithm
   BackendDAE.VARIABLES(numberOfVars = numberOfVars,bucketSize = bucketSize,varArr=varArr) := inVariables;
   size := realInt(realMul(intReal(numberOfVars), HASHVECFACTOR));
-  outVariables := Debug.bcallret2(intGt(numberOfVars,bucketSize),resizeVars1,varArr,numberOfVars,inVariables);
+  outVariables := if intGt(numberOfVars,bucketSize) then resizeVars1(varArr,numberOfVars) else inVariables;
 end resizeVars;
 
 protected function resizeVars1 "author: Frenkel TUD
@@ -2886,7 +2888,7 @@ algorithm
     case (_,_,_)
       equation
         (varlst,_) = getVar(inComponentRef,inVariables);
-        varlst = Debug.bcallret2(skipDiscrete, List.select, varlst, isVarNonDiscrete, varlst);
+        varlst = if skipDiscrete then List.select(varlst, isVarNonDiscrete) else varlst;
       then
         List.isNotEmpty(varlst);
     case (_,_,_)
@@ -3260,7 +3262,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "setVarAt failed to set the variable at index:" +& intString(pos));
+        Debug.traceln("setVarAt failed to set the variable at index:" +& intString(pos));
       then
         fail();
   end matchcontinue;
@@ -3366,7 +3368,7 @@ algorithm
     /* failure
     case (_,_)
       equation
-        Debug.fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
+        fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
      */
@@ -3697,9 +3699,11 @@ algorithm
       ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr, func, traverseBackendDAEVar, 1, n, inTypeA);
     then ext_arg_1;
 
-    case (_, _, _) equation
-      Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVars failed");
-    then fail();
+    case (_, _, _)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- traverseBackendDAEVars failed\n");
+      then fail();
   end matchcontinue;
 end traverseBackendDAEVars;
 
@@ -3730,9 +3734,9 @@ algorithm
       then ext_arg_1;
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarsWithStop failed");
-      then
-        fail();
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- traverseBackendDAEVarsWithStop failed\n");
+      then fail();
   end matchcontinue;
 end traverseBackendDAEVarsWithStop;
 
@@ -3763,7 +3767,8 @@ algorithm
         ext_arg;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVar failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- traverseBackendDAEVar failed\n");
       then
         fail();
   end matchcontinue;
@@ -3799,7 +3804,8 @@ algorithm
         (b,ext_arg);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarWithStop failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- traverseBackendDAEVarWithStop failed\n");
       then
         fail();
   end matchcontinue;
@@ -3836,7 +3842,8 @@ algorithm
         (BackendDAE.VARIABLES(crefIdxLstArr,BackendDAE.VARIABLE_ARRAY(numberOfElements,arrSize,varOptArr1),bucketSize,numberOfVars),ext_arg_1);
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarsWithUpdate failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- traverseBackendDAEVarsWithUpdate failed\n");
       then
         fail();
   end matchcontinue;
@@ -3871,7 +3878,8 @@ algorithm
       then (ovar,ext_arg);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVar failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- traverseBackendDAEVar failed\n");
       then
         fail();
   end matchcontinue;
@@ -4091,7 +4099,7 @@ algorithm
       then v;
     case (v,false,_,_,_,true,SOME(sb),_,_,_)
       equation
-        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = if negate then Expression.negate(sb) else sb;
         v1 = setVarStartValue(v,e);
         v2 = setVarFixed(v1,true);
       then v2;
@@ -4111,14 +4119,14 @@ algorithm
       then v;
     case (v,false,NONE(),_,_,false,SOME(sb),_,_,_)
       equation
-        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = if negate then Expression.negate(sb) else sb;
         v1 = setVarStartValue(v,e);
       then v1;
     case (v as BackendDAE.VAR(varName=_,varType=ty,values = _),false,_,_,BackendDAE.VAR(varName=_,varType=tya,values = _),false,_,_,_,_)
       equation
         sa = startValueType(sv,ty);
         sb = startValueType(sva,tya);
-        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = if negate then Expression.negate(sb) else sb;
         (e,origin) = getNonZeroStart(false,sa,so,e,soa,knVars);
         _ = setVarStartValue(v,e);
         v1 = setVarStartOrigin(v,origin);
@@ -4127,7 +4135,7 @@ algorithm
       equation
         sa = startValueType(sv,ty);
         sb = startValueType(sva,tya);
-        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = if negate then Expression.negate(sb) else sb;
         // according to MSL
         // use the value from the variable that is closer to the top of the
         // hierarchy i.e. A.B value has priority over X.Y.Z value!
@@ -4142,7 +4150,7 @@ algorithm
       equation
         sa = startValueType(sv,ty);
         sb = startValueType(sva,tya);
-        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = if negate then Expression.negate(sb) else sb;
         (e,origin) = getNonZeroStart(true,sa,so,e,soa,knVars);
         _ = setVarStartValue(v,e);
         v1 = setVarStartOrigin(v,origin);
@@ -4152,7 +4160,7 @@ algorithm
       equation
         sa = startValueType(sv,ty);
         sb = startValueType(sva,tya);
-        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = if negate then Expression.negate(sb) else sb;
         // overconstrained system report warning/error
         i = ComponentReference.crefDepth(cr);
         ia = ComponentReference.crefDepth(cra);
@@ -4351,7 +4359,7 @@ algorithm
         // nominal
         e = varNominalValue(v);
         e1 = varNominalValue(var);
-        e_1 = Debug.bcallret1(negate,Expression.negate,e,e);
+        e_1 = if negate then Expression.negate(e) else e;
         esum = Expression.makeSum({e_1,e1});
         eaverage = Expression.expDiv(esum,DAE.RCONST(2.0)); // Real is legal because only Reals have nominal attribute
         (eaverage,_) = ExpressionSimplify.simplify(eaverage);
@@ -4361,7 +4369,7 @@ algorithm
       equation
         // nominal
         e = varNominalValue(v);
-        e_1 = Debug.bcallret1(negate,Expression.negate,e,e);
+        e_1 = if negate then Expression.negate(e) else e;
         var1 = setVarNominalValue(var,e_1);
       then var1;
     case(_,_,_) then inVar;

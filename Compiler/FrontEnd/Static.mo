@@ -888,7 +888,7 @@ algorithm
        Error.addSourceMessage(Error.GENERIC_ELAB_EXPRESSION,{msg},info);
        /* FAILTRACE REMOVE
        true = Flags.isSet(Flags.FAILTRACE);
-       Debug.fprint(Flags.FAILTRACE, "- Static.elabExp failed: ");
+       fprint(Flags.FAILTRACE, "- Static.elabExp failed: ");
        Debug.traceln(Dump.printExpStr(e));
        Debug.traceln("  Scope: " +& FGraph.printGraphPathStr(env));
        Debug.traceln("  Prefix: " +& PrefixUtil.printPrefixStr(pre));
@@ -1030,7 +1030,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- elabListExp failed, non-matching args in list constructor?");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- elabListExp failed, non-matching args in list constructor?\n");
       then
         fail();
   end matchcontinue;
@@ -1348,7 +1349,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "Static.elabCallReduction - failed!\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Static.elabCallReduction - failed!\n");
       then fail();
   end matchcontinue;
 end elabCallReduction;
@@ -1744,7 +1746,8 @@ algorithm
     case(DAE.C_CONST()) then SCode.CONST();
     case(DAE.C_UNKNOWN())
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Static.constToVariability failed on DAE.C_UNKNOWN()");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Static.constToVariability failed on DAE.C_UNKNOWN()\n");
       then
         fail();
   end match;
@@ -1980,7 +1983,7 @@ algorithm
 
     case (cache,env,Absyn.RANGE(start = start,step = SOME(step),stop = stop),impl,pre,_)
       equation
-        (cache,start_1,DAE.PROP(start_t,c_start)) = elabGraphicsExp(cache,env, start, impl,pre,info) "Debug.fprintln(\"setr\", \"elab_graphics_exp_range2\") &" ;
+        (cache,start_1,DAE.PROP(start_t,c_start)) = elabGraphicsExp(cache,env, start, impl,pre,info) "fprintln(\"setr\", \"elab_graphics_exp_range2\") &" ;
         (cache,step_1,DAE.PROP(step_t,c_step)) = elabGraphicsExp(cache,env, step, impl,pre,info);
         (cache,stop_1,DAE.PROP(stop_t,c_stop)) = elabGraphicsExp(cache,env, stop, impl,pre,info);
         (start_2,SOME(step_2),stop_2,rt) = deoverloadRange((start_1,start_t), SOME((step_1,step_t)), (stop_1,stop_t));
@@ -2396,7 +2399,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,"- Static.stripExtraArgsFromType failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Static.stripExtraArgsFromType failed\n");
       then
         fail();
   end matchcontinue;
@@ -2552,7 +2556,11 @@ algorithm
       then
         c;
 
-    else equation Debug.fprint(Flags.FAILTRACE, "-elabArrayConst failed\n"); then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-elabArrayConst failed\n");
+      then fail();
   end matchcontinue;
 end elabArrayConst;
 
@@ -2772,7 +2780,8 @@ algorithm
         (cache, el_1, prop, dim1, dim2_1);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Static.elabMatrixComma failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Static.elabMatrixComma failed\n");
       then
         fail();
   end matchcontinue;
@@ -2800,7 +2809,8 @@ algorithm
         res;
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "-elab_matrix_cat_one failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-elab_matrix_cat_one failed\n");
       then
         fail();
   end matchcontinue;
@@ -2954,7 +2964,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Static.promoteExp failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Static.promoteExp failed");
       then
         fail();
 
@@ -3451,7 +3462,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         sp = PrefixUtil.printPrefixStr3(pre);
-        Debug.fprint(Flags.FAILTRACE, "- Static.elabBuiltinNdims failed for: ndims(" +& Dump.printExpLstStr(expl) +& " in component: " +& sp);
+        Debug.traceln("- Static.elabBuiltinNdims failed for: ndims(" +& Dump.printExpLstStr(expl) +& " in component: " +& sp);
       then
         fail();
   end matchcontinue;
@@ -3547,14 +3558,13 @@ algorithm
     case (_,_,dims,_,impl,pre,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE,
-          "- Static.elabBuiltinFill: Couldn't elaborate fill(): ");
+        Debug.trace("- Static.elabBuiltinFill: Couldn't elaborate fill(): ");
         implstr = boolString(impl);
         expstrs = List.map(dims, Dump.printExpStr);
         expstr = stringDelimitList(expstrs, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
         str = stringAppendList({expstr," impl=",implstr,", in component: ",sp});
-        Debug.fprintln(Flags.FAILTRACE, str);
+        Debug.traceln(str);
       then
         fail();
   end matchcontinue;
@@ -5834,7 +5844,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Static.elabBuiltinDiagonal: Couldn't elaborate diagonal()");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Static.elabBuiltinDiagonal: Couldn't elaborate diagonal()\n");
       then
         fail();
   end matchcontinue;
@@ -5975,8 +5986,8 @@ algorithm
         symbol_table_2;
     else
       equation
-        Debug.fprint(Flags.FAILTRACE,
-          "-absyn_cref_list_to_interactive_var_list failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-absyn_cref_list_to_interactive_var_list failed\n");
       then
         fail();
   end matchcontinue;
@@ -8176,9 +8187,9 @@ algorithm
         // join the type with the function name: Modelica.Mechanics.MultiBody.World.gravityAcceleration
         functionClassPath = Absyn.joinPaths(componentType, Absyn.IDENT(fnIdent));
 
-        Debug.fprintln(Flags.STATIC, "Looking for function: " +& Absyn.pathString(fn));
+        fprintln(Flags.STATIC, "Looking for function: " +& Absyn.pathString(fn));
         // lookup the function using the correct typeOf(world).functionName
-        Debug.fprintln(Flags.STATIC, "Looking up class: " +& Absyn.pathString(functionClassPath));
+        fprintln(Flags.STATIC, "Looking up class: " +& Absyn.pathString(functionClassPath));
         (_, scodeClass, classEnv) = Lookup.lookupClass(cache, env, functionClassPath, true);
         Util.setStatefulBoolean(stopElab,true);
         // see if class scodeClass is derived and then
@@ -8395,7 +8406,7 @@ algorithm
       equation
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& FGraph.printGraphPathStr(env));
+        Debug.traceln("- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& FGraph.printGraphPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -8494,7 +8505,7 @@ algorithm
   (call_exp,_,didInline,_) := Inline.inlineExp(call_exp,(SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),DAE.emptyElementSource);
   (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
-  prop_1 := Debug.bcallret2(didInline, Types.setPropType, prop_1, restype, prop_1);
+  prop_1 := if didInline then Types.setPropType(prop_1, restype) else prop_1;
   (cache, call_exp, prop_1) := Ceval.cevalIfConstant(cache, inEnv, call_exp, prop_1, impl, info);
   expProps := if Util.isSuccess(status) then SOME((call_exp,prop_1)) else NONE();
   outCache := cache;
@@ -9374,8 +9385,9 @@ algorithm
 
     case (_,dim::_,_,_,_)
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         str = ExpressionDump.dimensionString(dim);
-        Debug.fprintln(Flags.FAILTRACE, "- Static.vectorizeCall failed: " +& str);
+        Debug.traceln("- Static.vectorizeCall failed: " +& str);
       then
         fail();
   end matchcontinue;
@@ -9533,7 +9545,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "-Static.vectorizeCallScalar failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-Static.vectorizeCallScalar failed\n");
       then
         fail();
   end matchcontinue;
@@ -9691,7 +9704,8 @@ algorithm
     // failtrace
     case (_,_,_,_,t::_,_,_,_,_,_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Static.elabTypes failed: " +& Types.unparseType(t));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Static.elabTypes failed: " +& Types.unparseType(t));
       then
         fail();
   end matchcontinue;
@@ -10179,7 +10193,8 @@ algorithm
         ad;
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "-slots_vectorizable failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-slots_vectorizable failed\n");
       then
         fail();
   end matchcontinue;
@@ -10293,12 +10308,12 @@ algorithm
     case (ty,const)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- get_properties failed: ");
+        Debug.trace("- get_properties failed: ");
         tystr = Types.unparseType(ty);
         conststr = Types.printTupleConstStr(const);
-        Debug.fprint(Flags.FAILTRACE, tystr);
-        Debug.fprint(Flags.FAILTRACE, ", ");
-        Debug.fprintln(Flags.FAILTRACE, conststr);
+        Debug.trace(tystr);
+        Debug.trace(", ");
+        Debug.traceln(conststr);
       then
         fail();
   end matchcontinue;
@@ -10601,7 +10616,7 @@ algorithm
 
     // fail trace
     else
-      /* FAILTRACE REMOVE equation Debug.fprint(Flags.FAILTRACE,"elabInputArgs failed\n"); */
+      /* FAILTRACE REMOVE equation fprint(Flags.FAILTRACE,"elabInputArgs failed\n"); */
       then fail();
   end match;
 end elabInputArgs;
@@ -12194,7 +12209,9 @@ algorithm
         pre_str = PrefixUtil.printPrefixStr2(pre);
         s = pre_str +& s;
         // Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {s,scope}, info);
-        Debug.fprintln(Flags.STATIC,"- Static.elabCref2 failed on: " +& pre_str +& s +& " with no constant binding in scope: " +& scope);
+        if Flags.isSet(Flags.STATIC) then
+          Debug.traceln("- Static.elabCref2 failed on: " +& pre_str +& s +& " with no constant binding in scope: " +& scope);
+        end if;
         expTy = Types.simplifyType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
         // tyStr = Types.printTypeStr(tt);
@@ -12255,7 +12272,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         pre_str = PrefixUtil.printPrefixStr2(pre);
-        Debug.fprint(Flags.FAILTRACE, "- Static.elabCref2 failed for: " +& pre_str +& ComponentReference.printComponentRefStr(cr) +& "\n env:" +& FGraph.printGraphStr(env));
+        Debug.traceln("- Static.elabCref2 failed for: " +& pre_str +& ComponentReference.printComponentRefStr(cr) +& "\n env:" +& FGraph.printGraphStr(env));
       then
         fail();
   end matchcontinue;
@@ -12764,7 +12781,8 @@ algorithm
         (DAE.CALL(fn,(e :: args),attr) :: es_1);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Static.callVectorize failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Static.callVectorize failed\n");
       then
         fail();
   end matchcontinue;
@@ -12831,7 +12849,8 @@ algorithm
     // failure
     case (cr,_,_,_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "createCrefArray failed on:" +& ComponentReference.printComponentRefStr(cr));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("createCrefArray failed on:" +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -12877,7 +12896,7 @@ algorithm
     case (cr,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Static.createCrefArray2d failed on: " +& ComponentReference.printComponentRefStr(cr));
+        Debug.traceln("- Static.createCrefArray2d failed on: " +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -13023,7 +13042,7 @@ algorithm
       equation
         // FAILTRACE REMOVE
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Static.elabCrefSubs failed on: " +&
+        Debug.traceln("- Static.elabCrefSubs failed on: " +&
         "[top:" +& PrefixUtil.printPrefixStr(topPrefix) +& "]." +&
         PrefixUtil.printPrefixStr(crefPrefix) +& "." +&
           Dump.printComponentRefStr(absynCref) +& " env: " +&
@@ -13312,7 +13331,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Static.elabSubscript failed on " +&
+        Debug.traceln("- Static.elabSubscript failed on " +&
           Dump.printSubscriptStr(inSubscript) +& " in env: " +&
           FGraph.printGraphPathStr(inEnv));
       then

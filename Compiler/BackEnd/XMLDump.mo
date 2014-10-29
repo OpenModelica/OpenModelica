@@ -1532,7 +1532,7 @@ algorithm
       equation
         cref = BackendVariable.varCref(var);
         varexp = Expression.crefExp(cref);
-        varexp = Debug.bcallret1(BackendVariable.isStateVar(var), Expression.expDer, varexp, varexp);
+        varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
         eqn = BackendEquation.solveEquation(eqn, varexp);
         dumpEquation(eqn, intString(index),addMMLCode);
         dumpEqns2(eqns, vars, index+1, addMMLCode, false, true);

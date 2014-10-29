@@ -744,7 +744,7 @@ algorithm
         s1 = ExpressionDump.printExpStr(inExp);
         s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
         serr = stringAppendList({"- differentiateExp ",s1," w.r.t: ",s2," failed\n"});
-        Debug.fprint(Flags.FAILTRACE, serr);
+        Debug.trace(serr);
       then
         fail();
 
@@ -929,7 +929,7 @@ algorithm
         s1 = DAEDump.ppStatementStr(currStatement);
         s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
         serr = stringAppendList({"- differentiateStatements ",s1," w.r.t: ",s2," failed\n"});
-        Debug.fprint(Flags.FAILTRACE, serr);
+        Debug.trace(serr);
       then
         fail();
 
@@ -1243,7 +1243,7 @@ algorithm
         se1 = Types.printTypeStr(Expression.typeof(inExp));
         s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
         serr = stringAppendList({"\n- differentiateCrefs ",s1," type:", se1 ," w.r.t: ",s2," failed\n"});
-        Debug.fprint(Flags.FAILTRACE, serr);
+        Debug.trace(serr);
       then
         fail();
     end matchcontinue;
@@ -1400,7 +1400,7 @@ algorithm
         s1 = ExpressionDump.printExpStr(inExp);
         s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
         serr = stringAppendList({"\n- Function differentiateCalls failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
-        Debug.fprint(Flags.FAILTRACE, serr);
+        Debug.trace(serr);
       then
         fail();
     end match;
@@ -1894,7 +1894,7 @@ algorithm
         s1 = ExpressionDump.printExpStr(inExp);
         s2 = ComponentReference.printComponentRefStr(inDiffwrtCref);
         serr = stringAppendList({"\n- Function differentiateBinary failed. differentiateExp ",s1," w.r.t: ",s2," failed\n"});
-        Debug.fprint(Flags.FAILTRACE, serr);
+        Debug.trace(serr);
       then
         fail();
 
@@ -2017,8 +2017,9 @@ algorithm
 
       else
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         str = "Differentiate.differentiateFunctionCall failed for " +& ExpressionDump.printExpStr(inExp) +& "\n";
-        Debug.fprint(Flags.FAILTRACE, str);
+        Debug.trace(str);
       then fail();
   end matchcontinue;
 end differentiateFunctionCall;
@@ -2171,8 +2172,9 @@ algorithm
 
       else
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         str = "Differentiate.differentiateFunctionCallPartial failed for " +& ExpressionDump.printExpStr(inExp) +& "\n";
-        Debug.fprint(Flags.FAILTRACE, str);
+        Debug.trace(str);
       then fail();
   end matchcontinue;
 end differentiateFunctionCallPartial;
@@ -2437,11 +2439,13 @@ algorithm
       dfunc = DAE.FUNCTION(dpath, {DAE.FUNCTION_DEF(funcbodyDer)}, dtp, visibility, false, isImpure, dinl, DAE.emptyElementSource, NONE());
     then (dfunc, functions, blst);
 
-    else equation
-      path = DAEUtil.functionName(inFunction);
-      str = "\nDifferentiate.differentiatePartialFunction failed for function: " +& Absyn.pathString(path) +& "\n";
-      Debug.fprint(Flags.FAILTRACE, str);
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        path = DAEUtil.functionName(inFunction);
+        str = "\nDifferentiate.differentiatePartialFunction failed for function: " +& Absyn.pathString(path) +& "\n";
+        Debug.trace(str);
+      then fail();
   end matchcontinue;
 end differentiatePartialFunction;
 
@@ -2615,9 +2619,11 @@ algorithm
       ret = List.isEqualOnTrue(tlst,dtlst,Types.equivtypes);
     then (ret,tlst);
 
-    case (_,_,_) equation
-      Debug.fprintln(Flags.FAILTRACE, "-Differentiate.checkDerivativeFunctionInputs failed\n");
-    then fail();
+    case (_,_,_)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-Differentiate.checkDerivativeFunctionInputs failed\n");
+      then fail();
   end matchcontinue;
 end checkDerivativeFunctionInputs;
 
@@ -2684,9 +2690,11 @@ algorithm
     then bl;
 
     // failure
-    else equation
-      Debug.fprintln(Flags.FAILTRACE, "-Differentiate.checkDerFunctionConds failed\n");
-    then fail();
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-Differentiate.checkDerFunctionConds failed\n");
+      then fail();
   end matchcontinue;
 end checkDerFunctionConds;
 
@@ -2754,7 +2762,8 @@ algorithm
     then m;
     case (_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "-Differentiate.getFunctionMapper1 failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-Differentiate.getFunctionMapper1 failed\n");
       then
         fail();
   end matchcontinue;

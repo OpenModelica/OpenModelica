@@ -114,7 +114,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.DFSLH failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.DFSLH failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -461,7 +463,9 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.BFSB failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.BFSB failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -792,7 +796,9 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.BFSB failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+         Debug.trace("- Matching.BFSB failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -1055,7 +1061,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.MC21A failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.MC21A failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -1419,7 +1427,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.PF failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.PF failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -1820,7 +1830,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.PFPlus failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.PFPlus failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -2175,7 +2187,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.HK failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.HK failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -2825,7 +2839,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.HKDW failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.HKDW failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -3146,7 +3162,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.ABMP failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.ABMP failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -3852,7 +3870,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.PR_FIFO_FAIR failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.PR_FIFO_FAIR failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -4916,7 +4936,7 @@ algorithm
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
+        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,1,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -4935,7 +4955,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.DFSBExternal failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.DFSBExternal failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -4968,7 +4990,7 @@ algorithm
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
+        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,2,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -4987,7 +5009,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.BFSBExternal failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.BFSBExternal failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -5020,7 +5044,7 @@ algorithm
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
+        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,3,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -5039,7 +5063,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.MC21AExternal failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.MC21AExternal failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -5072,7 +5098,7 @@ algorithm
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
+        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,4,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -5091,7 +5117,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.PFExternal failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.PFExternal failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -5124,7 +5152,7 @@ algorithm
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
+        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -5143,7 +5171,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.PFPlusExternal failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.PFPlusExternal failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -5176,7 +5206,7 @@ algorithm
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
+        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,6,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -5195,7 +5225,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.HKExternal failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.HKExternal failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -5228,7 +5260,7 @@ algorithm
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
+        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,7,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -5247,7 +5279,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.HKDWExternal failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.HKDWExternal failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -5280,7 +5314,7 @@ algorithm
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
+        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,8,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -5299,7 +5333,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.ABMPExternal failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.ABMPExternal failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -5332,7 +5368,7 @@ algorithm
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = Debug.bcallret4(not clearMatching,BackendDAEEXT.setAssignment, neqns, nvars, vec1, vec2, true);
+        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,10,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
@@ -5351,7 +5387,9 @@ algorithm
         (syst,ishared,inArg);
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.PR_FIFO_FAIRExternal failed\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("- Matching.PR_FIFO_FAIRExternal failed\n");
+        end if;
       then
         fail();
   end matchcontinue;
@@ -5729,9 +5767,10 @@ algorithm
         true = intGt(rc,0);
         mrc = colummarks[rc];
         false = intEq(mrc,mark);
-        b = intGt(colummarks[rc],0);
-        Debug.bcall4(b,mergeSubsets,mark,mrc,inSubsets,colummarks);
-        false = b;
+        if intGt(colummarks[rc],0) then
+          mergeSubsets(mark,mrc,inSubsets,colummarks);
+          fail();
+        end if;
         // if it is a multi dim equation take all scalare equations
         e = mapIncRowEqn[rc];
         eqns = mapEqnIncRow[e];

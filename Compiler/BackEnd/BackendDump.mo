@@ -126,7 +126,7 @@ algorithm
                       stateSets=stateSets,
                       partitionKind=partitionKind) := inEqSystem;
 
-  print("\n" +& partitionKindString(partitionKind) +& " partition\n" +& UNDERLINE +& "\n");
+  print("\n" + partitionKindString(partitionKind) + " partition\n" + UNDERLINE + "\n");
   dumpVariables(orderedVars, "Variables");
   dumpEquationArray(orderedEqs, "Equations");
   dumpStateSets(stateSets, "State Sets");
@@ -142,7 +142,7 @@ public function printEquation "author: PA
   Helper function to print_equations"
   input BackendDAE.Equation inEquation;
 algorithm
-  print(equationString(inEquation) +& "\n");
+  print(equationString(inEquation) + "\n");
 end printEquation;
 
 public function printEquationArray "Helper function to dump."
@@ -168,7 +168,7 @@ algorithm
   (i,iscalar) := inInteger;
   size := BackendEquation.equationSize(inEquation);
   attr := BackendEquation.getEquationAttributes(inEquation);
-  print(intString(i) +& "/" +& intString(iscalar) +& " (" +& intString(size) +& "): " +& equationString(inEquation) +& "   " +& equationAttrString(attr) +& "\n");
+  print(intString(i) + "/" + intString(iscalar) + " (" + intString(size) + "): " + equationString(inEquation) + "   " + equationAttrString(attr) + "\n");
   oInteger := (i + 1,iscalar + size);
 end printEquationList2;
 
@@ -187,7 +187,7 @@ algorithm
 
     else equation
       ((_, _, buffer)) = List.fold(inEqns, equationList2String, (1, 1, ""));
-      buffer = heading +& "\n" +& UNDERLINE +& "\n" +& buffer;
+      buffer = heading + "\n" + UNDERLINE + "\n" + buffer;
     then buffer;
   end match;
 end equationListString;
@@ -202,7 +202,7 @@ protected
 algorithm
   (i, iscalar, buffer) := inTuple;
   size := BackendEquation.equationSize(inEquation);
-  buffer := buffer +& intString(i) +& "/" +& intString(iscalar) +& " (" +& intString(size) +& "): " +& equationString(inEquation) +& "\n";
+  buffer := buffer + intString(i) + "/" + intString(iscalar) + " (" + intString(size) + "): " + equationString(inEquation) + "\n";
   outTuple := (i + 1, iscalar + size, buffer);
 end equationList2String;
 
@@ -248,9 +248,9 @@ public function printClassAttributes "This unction print the  Optimica ClassAttr
     Option<DAE.Exp> e1,e2;
   algorithm
     DAE.OPTIMIZATION_ATTRS(objetiveE = e1, objectiveIntegrandE = e2) := optimicaFun;
-    print("Mayer" +& "\n" +& UNDERLINE +& "\n\n");
+    print("Mayer" + "\n" + UNDERLINE + "\n\n");
     print(ExpressionDump.printOptExpStr(e1));
-    print("Lagrange" +& "\n" +& UNDERLINE +& "\n\n");
+    print("Lagrange" + "\n" + UNDERLINE + "\n\n");
     print(ExpressionDump.printOptExpStr(e2));
     print("\n");
 end printClassAttributes;
@@ -288,8 +288,8 @@ algorithm
   dumpVariables(aliasVars, "AliasVariables");
   dumpEquationArray(removedEqs, "Simple Equations");
   dumpEquationArray(initialEqs, "Initial Equations");
-  dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings (number of relations: " +& intString(relationsNumber) +& ")");
-  dumpZeroCrossingList(relationsLst, "Relations (number of relations: " +& intString(relationsNumber) +& ")");
+  dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings (number of relations: " + intString(relationsNumber) + ")");
+  dumpZeroCrossingList(relationsLst, "Relations (number of relations: " + intString(relationsNumber) + ")");
   dumpZeroCrossingList(sampleLst, "Samples");
   dumpWhenClauseList(whenClauseLst, "When Clauses");
   dumpConstraintList(constraints, "Constraints");
@@ -330,14 +330,14 @@ protected
 algorithm
   BackendDAE.STATESET(rang=rang,statescandidates=states) := statSet;
   crstates := List.map(states,BackendVariable.varCref);
-  print("StateSet: select " +& intString(rang) +& " from\n");
-  debuglst((crstates,ComponentReference.printComponentRefStr,"\n","\n"));
+  print("StateSet: select " + intString(rang) + " from\n");
+  debuglst(crstates,ComponentReference.printComponentRefStr,"\n","\n");
 end printStateSet;
 
 public function printVar
   input BackendDAE.Var inVar;
 algorithm
-  print(varString(inVar) +& "\n");
+  print(varString(inVar) + "\n");
 end printVar;
 
 public function printVariables "Helper function to dump."
@@ -378,7 +378,7 @@ algorithm
 
     else equation
       ((_, buffer)) = List.fold(inVars, var1String, (1, ""));
-      buffer = heading +& "\n" +& UNDERLINE +& "\n" +& buffer;
+      buffer = heading + "\n" + UNDERLINE + "\n" + buffer;
     then buffer;
   end match;
 end varListString;
@@ -392,8 +392,8 @@ protected
   String buffer;
 algorithm
   (varNo, buffer) := inTpl;
-  buffer := buffer +& intString(varNo) +& ": ";
-  buffer := buffer +& varString(inVar) +& "\n";
+  buffer := buffer + intString(varNo) + ": ";
+  buffer := buffer + varString(inVar) + "\n";
   outTpl := (varNo + 1, buffer);
 end var1String;
 
@@ -419,7 +419,7 @@ algorithm
       paths = DAEUtil.getElementSourceTypes(source);
       paths_lst = List.map(paths, Absyn.pathString);
       path_str = stringDelimitList(paths_lst, ", ");
-      print(path_str +& "\n");
+      print(path_str + "\n");
       print("end ");print(Absyn.pathString(path));
     then ();
   end match;
@@ -439,7 +439,7 @@ algorithm
     case (curr::rest) equation
       (cr, crList) = curr;
       crStr = ComponentReference.crefStr(cr);
-      print(crStr +& " affects the following (" +& intString(listLength(crList)) +& ") outputs\n  ");
+      print(crStr + " affects the following (" + intString(listLength(crList)) + ") outputs\n  ");
       ComponentReference.printComponentRefList(crList);
 
       printSparsityPattern(rest);
@@ -532,7 +532,7 @@ public function dumpBackendDAE "This function dumps the BackendDAE.BackendDAE re
   input BackendDAE.BackendDAE inBackendDAE;
   input String heading;
 algorithm
-  print("\n" +& BORDER +& "\n" +& heading +& "\n" +& BORDER +& "\n\n");
+  print("\n" + BORDER + "\n" + heading + "\n" + BORDER + "\n\n");
   printBackendDAE(inBackendDAE);
   print("\n");
 end dumpBackendDAE;
@@ -551,7 +551,7 @@ public function dumpEqSystem "function dumpEqSystem"
   input BackendDAE.EqSystem inEqSystem;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
   printEqSystem(inEqSystem);
   print("\n");
 end dumpEqSystem;
@@ -560,7 +560,7 @@ public function dumpEqSystems
   input BackendDAE.EqSystems inEqSystems;
   input String heading;
 algorithm
-  print("\n" +& BORDER +& "\n" +& heading +& " (" +& intString(listLength(inEqSystems)) +& " partitions)\n" +& BORDER +& "\n\n");
+  print("\n" + BORDER + "\n" + heading + " (" + intString(listLength(inEqSystems)) + " partitions)\n" + BORDER + "\n\n");
   List.map_0(inEqSystems, printEqSystem);
   print("\n");
 end dumpEqSystems;
@@ -569,7 +569,7 @@ public function dumpVariables "function dumpVariables"
   input BackendDAE.Variables inVars;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(BackendVariable.varsSize(inVars)) +& ")\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + " (" + intString(BackendVariable.varsSize(inVars)) + ")\n" + UNDERLINE + "\n");
   printVariables(inVars);
   print("\n");
 end dumpVariables;
@@ -578,7 +578,7 @@ public function dumpVarList "function dumpVarList"
   input list<BackendDAE.Var> inVars;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(inVars)) +& ")\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + " (" + intString(listLength(inVars)) + ")\n" + UNDERLINE + "\n");
   printVarList(inVars);
   print("\n");
 end dumpVarList;
@@ -587,7 +587,7 @@ public function dumpEquationArray "function dumpEquationArray"
   input BackendDAE.EquationArray inEqns;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(BackendEquation.equationList(inEqns))) +& ", " +& intString(BackendDAEUtil.equationSize(inEqns)) +& ")\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + " (" + intString(listLength(BackendEquation.equationList(inEqns))) + ", " + intString(BackendDAEUtil.equationSize(inEqns)) + ")\n" + UNDERLINE + "\n");
   printEquationArray(inEqns);
   print("\n");
 end dumpEquationArray;
@@ -596,7 +596,7 @@ public function dumpEquationList "function dumpEquationList"
   input list<BackendDAE.Equation> inEqns;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(inEqns)) +& ")\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + " (" + intString(listLength(inEqns)) + ")\n" + UNDERLINE + "\n");
   printEquationList(inEqns);
   print("\n");
 end dumpEquationList;
@@ -605,7 +605,7 @@ protected function dumpExternalObjectClasses "dump classes of external objects"
   input BackendDAE.ExternalObjectClasses inEOC;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(inEOC)) +& ")\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + " (" + intString(listLength(inEOC)) + ")\n" + UNDERLINE + "\n");
   printExternalObjectClasses(inEOC);
   print("\n");
 end dumpExternalObjectClasses;
@@ -614,7 +614,7 @@ protected function dumpStateSets
   input BackendDAE.StateSets stateSets;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
   printStateSets(stateSets);
   print("\n");
 end dumpStateSets;
@@ -623,7 +623,7 @@ protected function dumpZeroCrossingList "function dumpZeroCrossingList"
   input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
   print(zeroCrossingListString(inZeroCrossingList));
   print("\n");
 end dumpZeroCrossingList;
@@ -632,7 +632,7 @@ protected function dumpWhenClauseList "function dumpWhenClauseList"
   input list<BackendDAE.WhenClause> inWhenClauseList;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
   print(whenClauseListString(inWhenClauseList));
   print("\n");
 end dumpWhenClauseList;
@@ -641,7 +641,7 @@ protected function dumpConstraintList "function dumpConstraintArray"
   input list<DAE.Constraint> inConstraintArray;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
   dumpConstraints(inConstraintArray, 0);
   print("\n");
 end dumpConstraintList;
@@ -653,7 +653,7 @@ protected
   Integer size;
 algorithm
   size := BaseHashSet.currentSize(hashSet);
-  print("\n" +& heading +& " (" +& intString(size) +& ")\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + " (" + intString(size) + ")\n" + UNDERLINE + "\n");
   BaseHashSet.printHashSet(hashSet);
   print("\n");
 end dumpHashSet;
@@ -667,11 +667,11 @@ protected
 algorithm
   (pattern, _, (diffVars, diffedVars)) := inPattern;
 
-  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
-  print("independents [or inputs] (" +& intString(listLength(diffVars)) +& ")\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
+  print("independents [or inputs] (" + intString(listLength(diffVars)) + ")\n");
   ComponentReference.printComponentRefList(diffVars);
 
-  print("dependents [or outputs] (" +& intString(listLength(diffedVars)) +& ")\n");
+  print("dependents [or outputs] (" + intString(listLength(diffedVars)) + ")\n");
   ComponentReference.printComponentRefList(diffedVars);
 
   printSparsityPattern(pattern);
@@ -743,7 +743,7 @@ public function dumpBackendDAEEqnList
   input String header;
   input Boolean printExpTree;
 algorithm
-   print(header +& "\n");
+   print(header + "\n");
    dumpBackendDAEEqnList2(inBackendDAEEqnList,printExpTree);
    print("===================\n");
 end dumpBackendDAEEqnList;
@@ -770,17 +770,17 @@ algorithm
 
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation /*done*/
       str = "EQUATION: ";
-      str = str +& ExpressionDump.printExpStr(e1);
-      str = str +& " = ";
-      str = str +& ExpressionDump.printExpStr(e2);
-      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
+      str = str + ExpressionDump.printExpStr(e1);
+      str = str + " = ";
+      str = str + ExpressionDump.printExpStr(e2);
+      str = str + " (" + equationKindString(eqKind) + ")\n";
       print(str);
 
       str = "LHS:\n";
-      str = str +& ExpressionDump.dumpExpStr(e1, 0);
-      str = str +& "RHS:\n";
-      str = str +& ExpressionDump.dumpExpStr(e2, 0);
-      str = str +& "\n";
+      str = str + ExpressionDump.dumpExpStr(e1, 0);
+      str = str + "RHS:\n";
+      str = str + ExpressionDump.dumpExpStr(e2, 0);
+      str = str + "\n";
       str = if printExpTree then str else "";
       print(str);
 
@@ -789,17 +789,17 @@ algorithm
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation /*done*/
       str = "COMPLEX_EQUATION: ";
-      str = str +& ExpressionDump.printExpStr(e1);
-      str = str +& " = ";
-      str = str +& ExpressionDump.printExpStr(e2);
-      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
+      str = str + ExpressionDump.printExpStr(e1);
+      str = str + " = ";
+      str = str + ExpressionDump.printExpStr(e2);
+      str = str + " (" + equationKindString(eqKind) + ")\n";
       print(str);
 
       str = "LHS:\n";
-      str = str +& ExpressionDump.dumpExpStr(e1, 0);
-      str = str +& "RHS:\n";
-      str = str +& ExpressionDump.dumpExpStr(e2, 0);
-      str = str +& "\n";
+      str = str + ExpressionDump.dumpExpStr(e1, 0);
+      str = str + "RHS:\n";
+      str = str + ExpressionDump.dumpExpStr(e2, 0);
+      str = str + "\n";
       str = if printExpTree then str else "";
       print(str);
 
@@ -810,7 +810,7 @@ algorithm
       print("SOLVED_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
-      print(" (" +& equationKindString(eqKind) +& ")\n");
+      print(" (" + equationKindString(eqKind) + ")\n");
       str = ExpressionDump.dumpExpStr(e,0);
       str = if printExpTree then str else "";
       print(str);
@@ -820,12 +820,12 @@ algorithm
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation /*done*/
       str = "RESIDUAL_EQUATION: ";
-      str = str +& ExpressionDump.printExpStr(e);
-      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
+      str = str + ExpressionDump.printExpStr(e);
+      str = str + " (" + equationKindString(eqKind) + ")\n";
       print(str);
 
       str = ExpressionDump.dumpExpStr(e, 0);
-      str = str +& "\n";
+      str = str + "\n";
       str = if printExpTree then str else "";
       print(str);
 
@@ -836,7 +836,7 @@ algorithm
       print("ARRAY_EQUATION: ");
       str = ExpressionDump.printExpStr(e1);
       print(str);
-      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
+      str = str + " (" + equationKindString(eqKind) + ")\n";
       str = ExpressionDump.dumpExpStr(e1,0);
       str = if printExpTree then str else "";
       print(str);
@@ -847,7 +847,7 @@ algorithm
     case (BackendDAE.ALGORITHM(alg=alg, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
       print("ALGORITHM: ");
       dumpAlgorithms({alg},0);
-      print(" (" +& equationKindString(eqKind) +& ")\n");
+      print(" (" + equationKindString(eqKind) + ")\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
@@ -855,7 +855,7 @@ algorithm
       print("WHEN_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
-      str = str +& " (" +& equationKindString(eqKind) +& ")\n";
+      str = str + " (" + equationKindString(eqKind) + ")\n";
       str = ExpressionDump.dumpExpStr(e,0);
       str = if printExpTree then str else "";
       print(str);
@@ -874,7 +874,7 @@ public function dumpBackendDAEVarList
   input list<BackendDAE.Var> inBackendDAEVarList;
   input String header;
 algorithm
-   print(header +& "\n");
+   print(header + "\n");
    printVarList(inBackendDAEVarList);
    print("===================\n");
 end dumpBackendDAEVarList;
@@ -885,7 +885,7 @@ public function dumpEqnsSolved "This function dumps the equations in the order t
 protected
   BackendDAE.EqSystems eqs;
 algorithm
-  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
   BackendDAE.DAE(eqs=eqs) := inBackendDAE;
   List.map_0(eqs, dumpEqnsSolved1);
   print("\n");
@@ -935,7 +935,7 @@ algorithm
     case ({},_,_)  then ();
     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_)
       equation
-        print("SingleEquation: " +& intString(e) +& "\n");
+        print("SingleEquation: " + intString(e) + "\n");
         var = BackendVariable.getVarAt(vars,v);
         printVarList({var});
         eqn = BackendEquation.equationNth1(eqns,e);
@@ -946,13 +946,13 @@ algorithm
         ();
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst,jac=BackendDAE.FULL_JACOBIAN(jac),jacType=jacType)::rest,_,_)
       equation
-        print("Equationsystem " +& jacobianTypeStr(jacType) +& ":\n");
+        print("Equationsystem " + jacobianTypeStr(jacType) + ":\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns);
         printEquationList(eqnlst);
         print("\n");
-        print("Jac:\n" +& dumpJacobianStr(jac) +& "\n");
+        print("Jac:\n" + dumpJacobianStr(jac) + "\n");
         print("\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then
@@ -1015,7 +1015,7 @@ algorithm
     case (BackendDAE.TORNSYSTEM(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst,linear=b)::rest,_,_)
       equation
         s = if b then "linear" else "nonlinear";
-        print("torn " +& s +& " Equationsystem:\n");
+        print("torn " + s + " Equationsystem:\n");
         vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
         elst1 = List.map(eqnsvartpllst,Util.tuple21);
         varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
@@ -1143,7 +1143,7 @@ public function dumpComponents
   input BackendDAE.StrongComponents inComps;
 algorithm
   print("StrongComponents\n");
-  print(UNDERLINE +& "\n");
+  print(UNDERLINE + "\n");
   List.map_0(inComps,dumpComponent);
 end dumpComponents;
 
@@ -1175,7 +1175,7 @@ algorithm
       Boolean b;
     case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
       equation
-        tmpStr = "{" +& intString(i) +& ":" +& intString(v) +& "}\n";
+        tmpStr = "{" + intString(i) + ":" + intString(v) + "}\n";
       then tmpStr;
     case BackendDAE.EQUATIONSYSTEM(eqns=ilst,vars=vlst,jacType=jacType)
       equation
@@ -1184,37 +1184,37 @@ algorithm
         ls = List.map(vlst, intString);
         s2 = stringDelimitList(ls, ", ");
 
-        tmpStr = "{" +& s +& ":" +& s2 +& "} Size: " +& intString(listLength(vlst)) +& " " +& jacobianTypeStr(jacType) +& "\n";
+        tmpStr = "{" + s + ":" + s2 + "} Size: " + intString(listLength(vlst)) + " " + jacobianTypeStr(jacType) + "\n";
       then tmpStr;
     case BackendDAE.SINGLEARRAY(eqn=i,vars=vlst)
       equation
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        tmpStr = "Array " +& " {{" +& intString(i) +& ":" +& s +& "}}\n";
+        tmpStr = "Array " + " {{" + intString(i) + ":" + s + "}}\n";
       then tmpStr;
     case BackendDAE.SINGLEIFEQUATION(eqn=i,vars=vlst)
       equation
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        tmpStr = "IfEquation " +& " {{" +& intString(i) +& ":" +& s +& "}}\n";
+        tmpStr = "IfEquation " + " {{" + intString(i) + ":" + s + "}}\n";
       then tmpStr;
     case BackendDAE.SINGLEALGORITHM(eqn=i,vars=vlst)
       equation
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        tmpStr = "Algorithm " +& " {{" +& intString(i) +& ":" +& s +& "}}\n";
+        tmpStr = "Algorithm " + " {{" + intString(i) + ":" + s + "}}\n";
       then tmpStr;
     case BackendDAE.SINGLECOMPLEXEQUATION(eqn=i,vars=vlst)
       equation
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        tmpStr = "ComplexEquation " +& " {" +& intString(i) +& ":" +& s +& "}\n";
+        tmpStr = "ComplexEquation " + " {" + intString(i) + ":" + s + "}\n";
       then tmpStr;
     case BackendDAE.SINGLEWHENEQUATION(eqn=i,vars=vlst)
       equation
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        tmpStr = "WhenEquation " +& " {" +& intString(i) +& ":" +& s +& "}\n";
+        tmpStr = "WhenEquation " + " {" + intString(i) + ":" + s + "}\n";
       then tmpStr;
     case BackendDAE.TORNSYSTEM(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst,linear=b)
       equation
@@ -1225,7 +1225,7 @@ algorithm
         ls = List.map(vlst, intString);
         s3 = stringDelimitList(ls, ", ");
         s4 = if b then "linear" else "nonlinear";
-        tmpStr = "{{" +& s +& "}\n,{" +& s2 +& ":" +& s3 +& "} Size: " +& intString(listLength(vlst)) +& " " +& s4 +& "\n";
+        tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "} Size: " + intString(listLength(vlst)) + " " + s4 + "\n";
       then tmpStr;
   end match;
 end printComponent;
@@ -1450,7 +1450,7 @@ algorithm
     list<BackendDAE.ZeroCrossing> rest;
   case ({}) then "";
   case (curr::rest) equation
-  then zeroCrossingString(curr) +& "\n" +& zeroCrossingListString(rest);
+  then zeroCrossingString(curr) + "\n" + zeroCrossingListString(rest);
 end match;
 end zeroCrossingListString;
 
@@ -1557,7 +1557,7 @@ algorithm
     case(DAE.CREF_QUAL(ident="$DER",componentRef=c),_)
       equation
         sc = ComponentReference.printComponentRefStr(c);
-        sc = "der(" +& sc +& ")";
+        sc = "der(" + sc + ")";
       then
         sc;
     case(c,_)
@@ -1575,242 +1575,230 @@ end componentRef_DIVISION_String;
 // =============================================================================
 
 public function debugStrCrefLstStr
-  input tuple<String,list<DAE.ComponentRef>,String,String> inTpl;
-protected
-  list<DAE.ComponentRef> b;
-  String a,c,d;
+  input String a;
+  input list<DAE.ComponentRef> b;
+  input String c;
+  input String d;
 algorithm
-  (a,b,c,d) := inTpl;
   print(a);
-  debuglst((b,ComponentReference.printComponentRefStr,c,d));
+  debuglst(b,ComponentReference.printComponentRefStr,c,d);
 end debugStrCrefLstStr;
 
 public function debugCrefStr
-  input tuple<DAE.ComponentRef,String> inTpl;
-protected
-  DAE.ComponentRef a;
-  String b;
+  input DAE.ComponentRef a;
+  input String b;
 algorithm
-  (a,b) := inTpl;
-  print(ComponentReference.printComponentRefStr(a) +& b);
+  print(ComponentReference.printComponentRefStr(a) + b);
 end debugCrefStr;
 
 public function debugStrIntStr
-  input tuple<String,Integer,String> inTpl;
-protected
-  String a,c;
-  Integer b;
+  input String a;
+  input Integer b;
+  input String c;
 algorithm
-  (a,b,c) := inTpl;
-  print(a +& intString(b) +& c);
+  print(a + intString(b) + c);
 end debugStrIntStr;
 
 public function debugStrIntStrIntStr
-  input tuple<String,Integer,String,Integer,String> inTpl;
-protected
-  String a,c,e;
-  Integer b,d;
+  input String a;
+  input Integer b;
+  input String c;
+  input Integer d;
+  input String e;
 algorithm
-  (a,b,c,d,e) := inTpl;
-  print(a +& intString(b) +& c +& intString(d) +& e);
+  print(a + intString(b) + c + intString(d) + e);
 end debugStrIntStrIntStr;
 
 public function debugCrefStrIntStr
-  input tuple<DAE.ComponentRef,String,Integer,String> inTpl;
-protected
-  DAE.ComponentRef a;
-  String b,d;
-  Integer c;
+  input DAE.ComponentRef a;
+  input String b;
+  input Integer c;
+  input String d;
 algorithm
-  (a,b,c,d) := inTpl;
-  print(ComponentReference.printComponentRefStr(a) +& b +& intString(c) +& d);
+  print(ComponentReference.printComponentRefStr(a) + b + intString(c) + d);
 end debugCrefStrIntStr;
 
 public function debugStrCrefStr
-  input tuple<String,DAE.ComponentRef,String> inTpl;
-protected
-  String a,c;
-  DAE.ComponentRef b;
+  input String a;
+  input DAE.ComponentRef b;
+  input String c;
 algorithm
-  (a,b,c) := inTpl;
-  print(a +&ComponentReference.printComponentRefStr(b) +& c);
+  print(a +ComponentReference.printComponentRefStr(b) + c);
 end debugStrCrefStr;
 
 public function debugStrCrefStrIntStr
-  input tuple<String,DAE.ComponentRef,String,Integer,String> inTpl;
-protected
-  String a,c,e;
-  DAE.ComponentRef b;
-  Integer d;
+  input String a;
+  input DAE.ComponentRef b;
+  input String c;
+  input Integer d;
+  input String e;
 algorithm
-  (a,b,c,d,e) := inTpl;
-  print(a +& ComponentReference.printComponentRefStr(b) +& c +& intString(d) +& e);
+  print(a + ComponentReference.printComponentRefStr(b) + c + intString(d) + e);
 end debugStrCrefStrIntStr;
 
 public function debugStrCrefStrRealStrRealStrRealStr
-  input tuple<String,DAE.ComponentRef,String,Real,String,Real,String,Real,String> inTpl;
-protected
-  String a,c,e,g,i;
-  DAE.ComponentRef b;
-  Real d,f,h;
+  input String a;
+  input DAE.ComponentRef b;
+  input String c;
+  input Real d;
+  input String e;
+  input Real f;
+  input String g;
+  input Real h;
+  input String i;
 algorithm
-  (a,b,c,d,e,f,g,h,i) := inTpl;
-  print(a +& ComponentReference.printComponentRefStr(b) +& c +& realString(d) +& e +& realString(f) +& g +& realString(h) +& i);
+  print(a + ComponentReference.printComponentRefStr(b) + c + realString(d) + e + realString(f) + g + realString(h) + i);
 end debugStrCrefStrRealStrRealStrRealStr;
 
 public function debugStrRealStrRealStrRealStrRealStr
-  input tuple<String,Real,String,Real,String,Real,String,Real,String> inTpl;
-protected
-  String a,c,e,g,i;
-  Real b,d,f,h;
+  input String a;
+  input Real b;
+  input String c;
+  input Real d;
+  input String e;
+  input Real f;
+  input String g;
+  input Real h;
+  input String i;
 algorithm
-  (a,b,c,d,e,f,g,h,i) := inTpl;
-  print(a +& realString(b) +& c +& realString(d) +& e +& realString(f) +& g +& realString(h) +& i);
+  print(a + realString(b) + c + realString(d) + e + realString(f) + g + realString(h) + i);
 end debugStrRealStrRealStrRealStrRealStr;
 
 public function debugStrCrefStrExpStr
-  input tuple<String,DAE.ComponentRef,String,DAE.Exp,String> inTpl;
-protected
-  String a,c,e;
-  DAE.ComponentRef b;
-  DAE.Exp d;
+  input String a;
+  input DAE.ComponentRef b;
+  input String c;
+  input DAE.Exp d;
+  input String e;
 algorithm
-  (a,b,c,d,e) := inTpl;
-  print(a +& ComponentReference.printComponentRefStr(b) +& c +& ExpressionDump.printExpStr(d) +& e);
+  print(a + ComponentReference.printComponentRefStr(b) + c + ExpressionDump.printExpStr(d) + e);
 end debugStrCrefStrExpStr;
 
 public function debugStrCrefStrCrefStr
-  input tuple<String,DAE.ComponentRef,String,DAE.ComponentRef,String> inTpl;
-protected
-  String a,c,e;
-  DAE.ComponentRef b,d;
+  input String a;
+  input DAE.ComponentRef b;
+  input String c;
+  input DAE.ComponentRef d;
+  input String e;
 algorithm
-  (a,b,c,d,e) := inTpl;
-  print(a +& ComponentReference.printComponentRefStr(b) +& c +& ComponentReference.printComponentRefStr(d) +& e);
+  print(a + ComponentReference.printComponentRefStr(b) + c + ComponentReference.printComponentRefStr(d) + e);
 end debugStrCrefStrCrefStr;
 
 public function debugExpStr
-  input tuple<DAE.Exp,String> inTpl;
-protected
-  String b;
-  DAE.Exp a;
+  input DAE.Exp a;
+  input String b;
 algorithm
-  (a,b) := inTpl;
-  print(ExpressionDump.printExpStr(a) +& b);
+  print(ExpressionDump.printExpStr(a) + b);
 end debugExpStr;
 
 public function debugStrExpStr
-  input tuple<String,DAE.Exp,String> inTpl;
-protected
-  String a,c;
-  DAE.Exp b;
+  input String a;
+  input DAE.Exp b;
+  input String c;
 algorithm
-  (a,b,c) := inTpl;
-  print(a +& ExpressionDump.printExpStr(b) +& c);
+  print(a + ExpressionDump.printExpStr(b) + c);
 end debugStrExpStr;
 
 public function debugStrExpLstStr
-  input tuple<String,list<DAE.Exp>,String,String> inTpl;
-protected
-  list<DAE.Exp> b;
-  String a,c,d;
+  input String a;
+  input list<DAE.Exp> b;
+  input String c, d;
 algorithm
-  (a,b,c,d) := inTpl;
   print(a);
-  debuglst((b,ExpressionDump.printExpStr,c,d));
+  debuglst(b,ExpressionDump.printExpStr,c,d);
 end debugStrExpLstStr;
 
 public function debugStrExpStrCrefStr
-  input tuple<String,DAE.Exp,String,DAE.ComponentRef,String> inTpl;
-protected
-  String a,c,e;
-  DAE.Exp b;
-  DAE.ComponentRef d;
+  input String a;
+  input DAE.Exp b;
+  input String c;
+  input DAE.ComponentRef d;
+  input String e;
 algorithm
-  (a,b,c,d,e) := inTpl;
-  print(a +& ExpressionDump.printExpStr(b) +& c +& ComponentReference.printComponentRefStr(d) +& e);
+  print(a + ExpressionDump.printExpStr(b) + c + ComponentReference.printComponentRefStr(d) + e);
 end debugStrExpStrCrefStr;
 
 public function debugStrExpStrExpStr
-  input tuple<String,DAE.Exp,String,DAE.Exp,String> inTpl;
-protected
-  String a,c,e;
-  DAE.Exp b,d;
+  input String a;
+  input DAE.Exp b;
+  input String c;
+  input DAE.Exp d;
+  input String e;
 algorithm
-  (a,b,c,d,e) := inTpl;
-  print(a +& ExpressionDump.printExpStr(b) +& c +& ExpressionDump.printExpStr(d) +& e);
+  print(a + ExpressionDump.printExpStr(b) + c + ExpressionDump.printExpStr(d) + e);
 end debugStrExpStrExpStr;
 
 public function debugExpStrExpStrExpStr
-  input tuple<DAE.Exp,String,DAE.Exp,String,DAE.Exp,String> inTpl;
-protected
-  DAE.Exp a,c,e;
-  String b,d,f;
+  input DAE.Exp a;
+  input String b;
+  input DAE.Exp c;
+  input String d;
+  input DAE.Exp e;
+  input String f;
 algorithm
-  (a,b,c,d,e,f) := inTpl;
-  print(ExpressionDump.printExpStr(a) +& b +& ExpressionDump.printExpStr(c) +& d +& ExpressionDump.printExpStr(e) +& f);
+  print(ExpressionDump.printExpStr(a) + b + ExpressionDump.printExpStr(c) + d + ExpressionDump.printExpStr(e) + f);
 end debugExpStrExpStrExpStr;
 
 public function debugStrExpStrExpStrExpStr
-  input tuple<String,DAE.Exp,String,DAE.Exp,String,DAE.Exp,String> inTpl;
-protected
-  String a,c,e,g;
-  DAE.Exp b,d,f;
+  input String a;
+  input DAE.Exp b;
+  input String c;
+  input DAE.Exp d;
+  input String e;
+  input DAE.Exp f;
+  input String g;
 algorithm
-  (a,b,c,d,e,f,g) := inTpl;
-  print(a +& ExpressionDump.printExpStr(b) +& c +& ExpressionDump.printExpStr(d) +& e +& ExpressionDump.printExpStr(f) +& g);
+  print(a + ExpressionDump.printExpStr(b) + c + ExpressionDump.printExpStr(d) + e + ExpressionDump.printExpStr(f) + g);
 end debugStrExpStrExpStrExpStr;
 
 public function debugStrEqnStr
-  input tuple<String,BackendDAE.Equation,String> inTpl;
-protected
-  String a,c,e;
-  BackendDAE.Equation b,d;
+  input String a;
+  input BackendDAE.Equation b;
+  input String c;
 algorithm
-  (a,b,c) := inTpl;
-  print(a +& equationString(b) +& c);
+  print(a + equationString(b) + c);
 end debugStrEqnStr;
 
 public function debugStrEqnStrEqnStr
-  input tuple<String,BackendDAE.Equation,String,BackendDAE.Equation,String> inTpl;
-protected
-  String a,c,e;
-  BackendDAE.Equation b,d;
+  input String a;
+  input BackendDAE.Equation b;
+  input String c;
+  input BackendDAE.Equation d;
+  input String e;
 algorithm
-  (a,b,c,d,e) := inTpl;
-  print(a +& equationString(b) +& c +& equationString(d) +& e);
+  print(a + equationString(b) + c + equationString(d) + e);
 end debugStrEqnStrEqnStr;
 
 public function debuglst
-  input tuple<list<Type_a>,FuncTypeType_aToStr,String,String> inTpl "(List,FuncListElementToString,DelemiterString,EndString";
+  input list<Type_a> lst;
+  input FuncTypeType_aToStr f;
+  input String c;
+  input String se;
   partial function FuncTypeType_aToStr
     input Type_a inTypeA;
     output String outTypeA;
   end FuncTypeType_aToStr;
   replaceable type Type_a subtypeof Any;
 algorithm
-   _ := match(inTpl)
+  _ := match lst
     local
       Type_a a;
       list<Type_a> rest;
-      FuncTypeType_aToStr f;
-      String s,c,se;
-    case (({},_,_,se))
+    case {}
       equation
         print(se);
       then ();
-    case ((a::{},f,_,se))
+    case a::{}
       equation
-       s = f(a);
-       print(s);
-       print(se);
-    then ();
-    case ((a::rest,f,c,se))
+        print(f(a));
+        print(se);
+      then ();
+    case a::rest
       equation
-       s = f(a);
-       print(s); print(c);
-       debuglst((rest,f,c,se));
-    then ();
+        print(f(a));
+        print(c);
+        debuglst(rest,f,c,se);
+     then ();
   end match;
 end debuglst;
 
@@ -2012,13 +2000,13 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching) := inEqSystem;
   (doc,i) := inTpl;
-  prefixId := inPrefixIdstr +& "_" +& intString(i);
+  prefixId := inPrefixIdstr + "_" + intString(i);
   vars := BackendVariable.varList(vars1);
-  varlen_str := "Variables (" +& intString(listLength(vars)) +& ")";
+  varlen_str := "Variables (" + intString(listLength(vars)) + ")";
   tags := DumpHTML.addHeadingTag(2,varlen_str,{});
   tags := printVarListHTML(vars,prefixId,tags);
   eqnsl := BackendEquation.equationList(eqns);
-  eqnlen_str := "Equations (" +& intString(listLength(eqnsl)) +& "," +& intString(BackendDAEUtil.equationSize(eqns)) +& ")";
+  eqnlen_str := "Equations (" + intString(listLength(eqnsl)) + "," + intString(BackendDAEUtil.equationSize(eqns)) + ")";
   tags := DumpHTML.addHeadingTag(2,eqnlen_str,tags);
   tags := dumpEqnsHTML(eqnsl,prefixId,tags);
   //dumpOption(m,dumpIncidenceMatrix);
@@ -2026,8 +2014,8 @@ algorithm
   tags := dumpFullMatchingHTML(matching,prefixId,tags);
 //  doc := DumpHTML.addBodyTags(tags,doc);
   doc := DumpHTML.addLine("<hr>",doc);
-  doc := DumpHTML.addHyperLink("javascript:toggle('" +& prefixId +& "system')","System einblenden","System " +& intString(i) +& " ein/ausblenden",doc);
-  doc := DumpHTML.addDivision(prefixId +& "system",{("display","none")},tags,doc);
+  doc := DumpHTML.addHyperLink("javascript:toggle('" + prefixId + "system')","System einblenden","System " + intString(i) + " ein/ausblenden",doc);
+  doc := DumpHTML.addDivision(prefixId + "system",{("display","none")},tags,doc);
   outTpl := (doc,i+1);
 end dumpEqSystemHTML;
 
@@ -2041,8 +2029,8 @@ protected
   DumpHTML.Tags tags;
 algorithm
   ((tags,_)) := List.fold1(vars,dumpVarHTML,prefixId,({},1));
-  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" +& prefixId +& "variables')","Variablen einblenden","Variablen ein/ausblenden",inTags);
-  outTags := DumpHTML.addDivisionTag(prefixId +& "variables",{("background","#FFFFCC"),("display","none")},tags,outTags);
+  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" + prefixId + "variables')","Variablen einblenden","Variablen ein/ausblenden",inTags);
+  outTags := DumpHTML.addDivisionTag(prefixId + "variables",{("background","#FFFFCC"),("display","none")},tags,outTags);
 end printVarListHTML;
 
 protected function dumpVarHTML
@@ -2058,9 +2046,9 @@ protected
 algorithm
   (tags,i) := inTpl;
   istr := intString(i);
-  ln := prefixId +& "varanker" +& istr;
+  ln := prefixId + "varanker" + istr;
   tags := DumpHTML.addAnkerTag(ln,tags);
-  ln := istr +& ": " +& varString(inVar);
+  ln := istr + ": " + varString(inVar);
   tags := DumpHTML.addLineTag(ln,tags);
   oTpl := (tags,i+1);
 end dumpVarHTML;
@@ -2075,8 +2063,8 @@ protected
   DumpHTML.Tags tags;
 algorithm
   ((tags,_)) := List.fold1(eqns,dumpEqnHTML,prefixId,({},1));
-  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" +& prefixId +& "equations')","Equations einblenden","Equations ein/ausblenden",inTags);
-  outTags := DumpHTML.addDivisionTag(prefixId +& "equations",{("background","#C0C0C0"),("display","none")},tags,outTags);
+  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" + prefixId + "equations')","Equations einblenden","Equations ein/ausblenden",inTags);
+  outTags := DumpHTML.addDivisionTag(prefixId + "equations",{("background","#C0C0C0"),("display","none")},tags,outTags);
 end dumpEqnsHTML;
 
 protected function dumpEqnHTML
@@ -2092,9 +2080,9 @@ protected
 algorithm
   (tags,i) := inTpl;
   istr := intString(i);
-  ln := prefixId +& "eqanker" +& istr;
+  ln := prefixId + "eqanker" + istr;
   tags := DumpHTML.addAnkerTag(ln,tags);
-  ln := istr +& " (" +& intString(BackendEquation.equationSize(inEquation)) +& "): " +& equationString(inEquation);
+  ln := istr + " (" + intString(BackendEquation.equationSize(inEquation)) + "): " + equationString(inEquation);
   tags := DumpHTML.addLineTag(ln,tags);
   oTpl := (tags,i+1);
 end dumpEqnHTML;
@@ -2134,11 +2122,11 @@ protected
 algorithm
   outTags := DumpHTML.addHeadingTag(2,"Matching",inTags);
   len := arrayLength(v);
-  len_str := intString(len) +& " variables and equations\n";
+  len_str := intString(len) + " variables and equations\n";
   outTags := DumpHTML.addLineTag(len_str,outTags);
   tags := dumpMatchingHTML2(v, 1, len, prefixId, {});
-  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" +& prefixId +& "matching')","Matching einblenden","Matching ein/ausblenden",outTags);
-  outTags := DumpHTML.addDivisionTag(prefixId +& "matching",{("background","#339966"),("display","none")},tags,outTags);
+  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" + prefixId + "matching')","Matching einblenden","Matching ein/ausblenden",outTags);
+  outTags := DumpHTML.addDivisionTag(prefixId + "matching",{("background","#339966"),("display","none")},tags,outTags);
 end dumpMatchingHTML;
 
 protected function dumpMatchingHTML2
@@ -2161,7 +2149,7 @@ algorithm
         s = intString(i);
         eqn = v[i];
         s2 = intString(eqn);
-        s = "Variable <a href=\"#" +& prefixId +& "varanker" +& s +& "\" onclick=\"return show('" +& prefixId +& "variables');\">" +& s +& "</a> is solved in Equation  <a href=\"#" +& prefixId +& "eqanker" +& s2 +& "\" onclick=\"return show('" +& prefixId +& "equations');\">" +& s2 +& "</a>";
+        s = "Variable <a href=\"#" + prefixId + "varanker" + s + "\" onclick=\"return show('" + prefixId + "variables');\">" + s + "</a> is solved in Equation  <a href=\"#" + prefixId + "eqanker" + s2 + "\" onclick=\"return show('" + prefixId + "equations');\">" + s2 + "</a>";
       then
         dumpMatchingHTML2(v, i+1, len, prefixId, DumpHTML.LINE(s)::inTags);
     else
@@ -2233,7 +2221,7 @@ public function dumpSparsePatternArray
  description: function dumps sparse pattern of a Jacobain System."
   input array<list<Integer>> inSparsePatter;
 algorithm
-  print("Print sparse pattern: " +& intString(arrayLength(inSparsePatter)) +& "\n");
+  print("Print sparse pattern: " + intString(arrayLength(inSparsePatter)) + "\n");
   dumpSparsePattern2(arrayList(inSparsePatter), 1);
   print("\n");
 end dumpSparsePatternArray;
@@ -2244,7 +2232,7 @@ public function dumpSparsePattern
  description: function dumps sparse pattern of a Jacobain System."
   input list<list<Integer>> inSparsePatter;
 algorithm
-  print("Print sparse pattern: " +& intString(listLength(inSparsePatter)) +& "\n");
+  print("Print sparse pattern: " + intString(listLength(inSparsePatter)) + "\n");
   dumpSparsePattern2(inSparsePatter, 1);
   print("\n");
 end dumpSparsePattern;
@@ -2264,8 +2252,8 @@ algorithm
     case({},_) then ();
     case(elem::rest,_)
       equation
-      sparsepatternStr = List.toString(elem, intString,"Row[" +& intString(inInteger) +& "] = ","{",";","}",true);
-      print(sparsepatternStr +& "\n");
+      sparsepatternStr = List.toString(elem, intString,"Row[" + intString(inInteger) + "] = ","{",";","}",true);
+      print(sparsepatternStr + "\n");
       dumpSparsePattern2(rest,inInteger+1);
     then ();
   end match;
@@ -2360,7 +2348,7 @@ algorithm
       equation
         es = equationString(eqn);
         is = intString(index);
-        str = (is +& " : ") +& es;
+        str = (is + " : ") + es;
         index_1 = index + 1;
         acc = str::acc;
       then dumpEqnsStr2(eqns, index_1, acc);
@@ -2432,10 +2420,10 @@ algorithm
                  connectorType = ct) := inVar;
   paths := DAEUtil.getElementSourceTypes(source);
   paths_lst := List.map(paths, Absyn.pathString);
-  outStr := DAEDump.dumpDirectionStr(dir) +& ComponentReference.printComponentRefStr(cr) +& ":"
-            +& kindString(kind) +& "(" +& connectorTypeString(ct) +& attributesString(dae_var_attr)
-            +& ") " +& optExpressionString(bindExp,"") +& DAEDump.dumpCommentAnnotationStr(comment)
-            +& stringDelimitList(paths_lst, ", ") +& " type: " +& dumpTypeStr(var_type);
+  outStr := DAEDump.dumpDirectionStr(dir) + ComponentReference.printComponentRefStr(cr) + ":"
+            + kindString(kind) + "(" + connectorTypeString(ct) + attributesString(dae_var_attr)
+            + ") " + optExpressionString(bindExp,"") + DAEDump.dumpCommentAnnotationStr(comment)
+            + stringDelimitList(paths_lst, ", ") + " type: " + dumpTypeStr(var_type);
 end varString;
 
 public function dumpKind
@@ -2457,15 +2445,15 @@ algorithm
       Integer i;
       DAE.ComponentRef dcr;
     case BackendDAE.VARIABLE()    then "VARIABLE";
-    case BackendDAE.STATE(index=i,derName=NONE())      then "STATE(" +& intString(i) +& ")";
-    case BackendDAE.STATE(index=i,derName=SOME(dcr))      then "STATE(" +& intString(i) +& "," +& ComponentReference.printComponentRefStr(dcr) +& ")";
+    case BackendDAE.STATE(index=i,derName=NONE())      then "STATE(" + intString(i) + ")";
+    case BackendDAE.STATE(index=i,derName=SOME(dcr))      then "STATE(" + intString(i) + "," + ComponentReference.printComponentRefStr(dcr) + ")";
     case BackendDAE.STATE_DER()   then "STATE_DER";
     case BackendDAE.DUMMY_DER()   then "DUMMY_DER";
     case BackendDAE.DUMMY_STATE() then "DUMMY_STATE";
     case BackendDAE.DISCRETE()    then "DISCRETE";
     case BackendDAE.PARAM()       then "PARAM";
     case BackendDAE.CONST()       then "CONST";
-    case BackendDAE.EXTOBJ(path)  then "EXTOBJ: " +& Absyn.pathString(path);
+    case BackendDAE.EXTOBJ(path)  then "EXTOBJ: " + Absyn.pathString(path);
     case BackendDAE.JAC_VAR()     then "JACOBIAN_VAR";
     case BackendDAE.JAC_DIFF_VAR()then "JACOBIAN_DIFF_VAR";
     case BackendDAE.OPT_CONSTR()  then "OPT_CONSTR";
@@ -2571,9 +2559,9 @@ algorithm
 
     case(NONE()) then ();
     case(SOME(DAE.DISTRIBUTION(e1,e2,e3))) equation
-      print("distribution = Distribution("+&ExpressionDump.printExpStr(e1)+&", "
-      +&ExpressionDump.printExpStr(e2)+&", "
-      +&ExpressionDump.printExpStr(e3)+&")");
+      print("distribution = Distribution("+ExpressionDump.printExpStr(e1)+", "
+      +ExpressionDump.printExpStr(e2)+", "
+      +ExpressionDump.printExpStr(e3)+")");
     then ();
   end match;
 end dumpOptDistribution;
@@ -2652,35 +2640,35 @@ algorithm
      then "";
     case SOME(DAE.VAR_ATTR_REAL(min=min,max=max,start=start,unit=unit,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist,uncertainOption=uncertainopt))
       equation
-        str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(unit,"unit") +& optExpressionString(fixed,"fixed")
-             +& optExpressionString(nominal,"nominal") +& optStateSelectionString(stateSelectOption) +& optBooleanString(isProtected,"protected")
-             +& optBooleanString(finalPrefix,"final") +& optDistributionString(dist) +& optUncertainty(uncertainopt);
+        str = optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(unit,"unit") + optExpressionString(fixed,"fixed")
+             + optExpressionString(nominal,"nominal") + optStateSelectionString(stateSelectOption) + optBooleanString(isProtected,"protected")
+             + optBooleanString(finalPrefix,"final") + optDistributionString(dist) + optUncertainty(uncertainopt);
      then str;
     case SOME(DAE.VAR_ATTR_INT(min=NONE(),max=NONE(),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
      then "";
     case SOME(DAE.VAR_ATTR_INT(min=min,max=max,start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=_,uncertainOption=uncertainopt))
       equation
-        str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(fixed,"fixed")
-             +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final") +& optUncertainty(uncertainopt);
+        str = optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(fixed,"fixed")
+             + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final") + optUncertainty(uncertainopt);
      then str;
     case SOME(DAE.VAR_ATTR_BOOL(start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
       then "";
     case SOME(DAE.VAR_ATTR_BOOL(start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
-        str = optExpressionString(start,"start") +& optExpressionString(fixed,"fixed") +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final");
+        str = optExpressionString(start,"start") + optExpressionString(fixed,"fixed") + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final");
      then str;
     case SOME(DAE.VAR_ATTR_STRING(start=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then "";
     case SOME(DAE.VAR_ATTR_STRING(start=start,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
-        str = optExpressionString(start,"start") +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final");
+        str = optExpressionString(start,"start") + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final");
      then str;
     case SOME(DAE.VAR_ATTR_ENUMERATION(min=NONE(),max=NONE(),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
      then "";
     case SOME(DAE.VAR_ATTR_ENUMERATION(min=min,max=max,start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
       equation
-        str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(fixed,"fixed")
-             +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final");
+        str = optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(fixed,"fixed")
+             + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final");
      then str;
     else "";
   end match;
@@ -2698,9 +2686,9 @@ algorithm
     case(NONE()) then "";
     case(SOME(DAE.DISTRIBUTION(e1,e2,e3)))
       equation
-        str =  "distribution = Distribution(" +& ExpressionDump.printExpStr(e1) +& ", "
-             +& ExpressionDump.printExpStr(e2) +& ", "
-             +& ExpressionDump.printExpStr(e3) +& ")";
+        str =  "distribution = Distribution(" + ExpressionDump.printExpStr(e1) + ", "
+             + ExpressionDump.printExpStr(e2) + ", "
+             + ExpressionDump.printExpStr(e3) + ")";
     then str;
   end match;
 end optDistributionString;
@@ -2754,9 +2742,9 @@ protected
   Integer subPartitionIndex;
 algorithm
   BackendDAE.EQUATION_ATTRIBUTES(kind=kind, subPartitionIndex=subPartitionIndex) := inEqAttr;
-  outString := "[" +& equationKindString(kind);
-  outString := if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then (outString +& ", sub-partition index: " +& subPartitionString(subPartitionIndex)) else outString;
-  outString := outString +& "]";
+  outString := "[" + equationKindString(kind);
+  outString := if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then (outString + ", sub-partition index: " + subPartitionString(subPartitionIndex)) else outString;
+  outString := outString + "]";
 end equationAttrString;
 
 protected function subPartitionString
@@ -2798,7 +2786,7 @@ algorithm
     case (SOME(e),_)
       equation
          se = ExpressionDump.printExpStr(e);
-         str = inString +& " = " +& se +& " ";
+         str = inString + " = " + se + " ";
      then str;
     else "";
   end match;
@@ -2816,7 +2804,7 @@ algorithm
        String str;
     case (SOME(true),_)
       equation
-         str = inString +& " = true ";
+         str = inString + " = true ";
      then str;
     else "";
   end match;
@@ -2832,7 +2820,7 @@ protected
   list<list<Integer>> m_1;
 algorithm
   print("\nIncidence Matrix (row: equation)\n");
-  print(UNDERLINE +& "\n");
+  print(UNDERLINE + "\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
   print("number of rows: ");
@@ -2853,7 +2841,7 @@ protected
   list<list<Integer>> m_1;
 algorithm
   print("\nTranspose Incidence Matrix (row: var)\n");
-  print(UNDERLINE +& "\n");
+  print(UNDERLINE + "\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
   print("number of rows: ");
@@ -2992,7 +2980,7 @@ algorithm
       equation
         s = intString(x);
         s1 = dumpSolvability(solva);
-        print("(" +& s +& "," +& s1 +& ")");
+        print("(" + s + "," + s1 + ")");
         print(" ");
         dumpAdjacencyRowEnhanced(xs);
       then
@@ -3011,8 +2999,8 @@ algorithm
     case BackendDAE.SOLVABILITY_SOLVED() then "solved";
     case BackendDAE.SOLVABILITY_CONSTONE() then "constone";
     case BackendDAE.SOLVABILITY_CONST() then "const";
-    case BackendDAE.SOLVABILITY_PARAMETER(b=b) then "param(" +& boolString(b) +& ")";
-    case BackendDAE.SOLVABILITY_LINEAR(b=b) then "variable(" +& boolString(b) +& ")";
+    case BackendDAE.SOLVABILITY_PARAMETER(b=b) then "param(" + boolString(b) + ")";
+    case BackendDAE.SOLVABILITY_LINEAR(b=b) then "variable(" + boolString(b) + ")";
     case BackendDAE.SOLVABILITY_NONLINEAR() then "nonlinear";
     case BackendDAE.SOLVABILITY_UNSOLVABLE() then "unsolvable";
   end match;
@@ -3046,7 +3034,7 @@ protected
   String len_str;
 algorithm
   print("Matching\n");
-  print(UNDERLINE +& "\n");
+  print(UNDERLINE + "\n");
   len := arrayLength(v);
   len_str := intString(len);
   print(len_str);
@@ -3070,7 +3058,7 @@ algorithm
         s = intString(i);
         eqn = v[i];
         s2 = intString(eqn);
-        print("var " +& s +& " is solved in eqn " +& s2 +& "\n");
+        print("var " + s + " is solved in eqn " + s2 + "\n");
         dumpMatching2(v, i+1, len);
       then
         ();
@@ -3088,7 +3076,7 @@ protected
   String len_str;
 algorithm
   print("Matching\n");
-  print(UNDERLINE +& "\n");
+  print(UNDERLINE + "\n");
   len := arrayLength(v);
   len_str := intString(len);
   print(len_str);
@@ -3112,7 +3100,7 @@ algorithm
         s = intString(i);
         eqn = v[i];
         s2 = intString(eqn);
-        print("var " +& s +& " is solved in eqn " +& s2 +& "\n");
+        print("var " + s + " is solved in eqn " + s2 + "\n");
         dumpMatching2Vars(v, i+1, len);
       then
         ();
@@ -3130,7 +3118,7 @@ protected
   String len_str;
 algorithm
   print("Matching\n");
-  print(UNDERLINE +& "\n");
+  print(UNDERLINE + "\n");
   len := arrayLength(v);
   len_str := intString(len);
   print(len_str);
@@ -3154,7 +3142,7 @@ algorithm
         s = intString(i);
         eqn = v[i];
         s2 = intString(eqn);
-        print("eqn " +& s +& " is solved for var " +& s2 +& "\n");
+        print("eqn " + s + " is solved for var " + s2 + "\n");
         dumpMatching2Eqns(v, i+1, len);
       then
         ();
@@ -3357,7 +3345,7 @@ end intListStr;
 //       equation
 //         cr = BackendVariable.varCref(v);
 //         e = BackendVariable.varBindExp(v);
-//         //print("### dump var : " +&  ComponentReference.printComponentRefStr(cr) +& "\n");
+//         //print("### dump var : " +  ComponentReference.printComponentRefStr(cr) + "\n");
 //         scr = ComponentReference.printComponentRefStr(cr);
 //         se = ExpressionDump.printExpStr(e);
 //         s = stringAppendList({scr," = ",se,"\n"});
@@ -3403,18 +3391,17 @@ end dumpStateVariable;
 
 public function bltdump
 "author: Frenkel TUD 2011-03"
-  input tuple<String,BackendDAE.BackendDAE> inTpl;
+  input String headerline;
+  input BackendDAE.BackendDAE dae;
 algorithm
-   _:=
-  matchcontinue (inTpl)
+   _ := matchcontinue dae
     local
-      BackendDAE.BackendDAE dae;
       BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
-      String str,strlow,headerline;
+      String str,strlow;
       DumpHTML.Document doc;
 
-    case ((headerline,BackendDAE.DAE(eqs,shared)))
+    case BackendDAE.DAE(eqs,shared)
       equation
         Flags.STRING_FLAG(data=str) = Flags.getConfigValue(Flags.DUMP_TARGET);
         strlow = System.tolower(str);
@@ -3424,12 +3411,12 @@ algorithm
         strlow = intString(realInt(System.time()));
         ((doc,_)) = List.fold1(eqs,dumpEqSystemHTML,strlow,(doc,1));
         doc = dumpSharedHTML(shared,doc);
-        str = strlow +& str;
+        str = strlow + str;
         DumpHTML.dumpDocument(doc,str);
       then
         ();
 
-    case ((headerline,BackendDAE.DAE(eqs,shared)))
+    case BackendDAE.DAE(eqs,shared)
       equation
         print(headerline); print(":\n");
         List.map_0(eqs,printEqSystem);
@@ -3449,7 +3436,7 @@ protected
 algorithm
   (e,v) := iTpl;
   s := stringDelimitList(List.map(v,intString), ", ");
-  s := "{"+&intString(e)+&":"+&s+&"}";
+  s := "{"+intString(e)+":"+s+"}";
 end tupleString;
 
 protected type DumpCompShortSystemsTpl = tuple<list<Integer>,list<tuple<Integer,Integer>>,list<Integer>,list<Integer>>;
@@ -3499,18 +3486,18 @@ algorithm
   dvarStr := intString(dvar);
   dstStr := intString(dst);
   statesStr := if Flags.isSet(Flags.DUMP_STATESELECTION_INFO)
-    then " (" +& stringDelimitList(List.map(states, ComponentReference.printComponentRefStr),",") +& ")"
+    then " (" + stringDelimitList(List.map(states, ComponentReference.printComponentRefStr),",") + ")"
     else " ('+d=stateselection' for list of states)";
   discvarsStr := if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)
-    then " (" +& stringDelimitList(List.map(discvars, ComponentReference.printComponentRefStr),",") +& ")"
+    then " (" + stringDelimitList(List.map(discvars, ComponentReference.printComponentRefStr),",") + ")"
     else " ('+d=discreteinfo' for list of discrete vars)";
   discstatesStr := if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)
-     then " (" +& stringDelimitList(List.map(discstates, ComponentReference.printComponentRefStr),",") +& ")"
+     then " (" + stringDelimitList(List.map(discstates, ComponentReference.printComponentRefStr),",") + ")"
      else " ('+d=discreteinfo' for list of discrete states)";
   inpStr := intString(inp);
-  stStr := stStr+&statesStr;
-  dvarStr := dvarStr+&discvarsStr;
-  dstStr := dstStr+&discstatesStr;
+  stStr := stStr+statesStr;
+  dvarStr := dvarStr+discvarsStr;
+  dstStr := dstStr+discstatesStr;
   msgs := {daeType,sysStr,stStr,dvarStr,dstStr,inpStr};
   Error.addMessage(Error.BACKENDDAEINFO_STATISTICS, msgs);
 
@@ -3528,9 +3515,15 @@ algorithm
   msgs := {daeType,strcompsStr,seqStr,sarrStr,salgStr,sceStr,sweStr,sieStr,eqsysStr,teqsysStr,meqsysStr};
   Error.addMessage(Error.BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS, msgs);
 
-  Debug.bcall(intGt(eqsys,0),dumpCompSystems,systemsTpl);
-  Debug.bcall(intGt(meqsys,0),dumpCompMixed,mixedTpl);
-  Debug.bcall(intGt(teqsys,0),dumpCompTorn,tornTpl);
+  if intGt(eqsys,0) then
+    dumpCompSystems(systemsTpl);
+  end if;
+  if intGt(meqsys,0) then
+    dumpCompMixed(mixedTpl);
+  end if;
+  if intGt(teqsys,0) then
+    dumpCompTorn(tornTpl);
+  end if;
 end dumpCompShort;
 
 protected function dumpCompSystems
@@ -3594,7 +3587,7 @@ protected
   Integer len;
 algorithm
   len := listLength(eqs);
-  str := if len == 0 then "0" else (intString(len) +& " {" +& stringDelimitList(List.map(eqs,fn),",") +& "}");
+  str := if len == 0 then "0" else (intString(len) + " {" + stringDelimitList(List.map(eqs,fn),",") + "}");
 end equationSizesStr;
 
 protected function sizeNumNonZeroTplString
@@ -3607,7 +3600,7 @@ algorithm
   (sz,nnz) := inTpl;
   density := realDiv(realMul(100.0,intReal(nnz)),realMul(intReal(sz),intReal(sz)));
   str := System.snprintff("%.1f",20,density);
-  str := "(" +& intString(sz) +& "," +& str +& "%)";
+  str := "(" + intString(sz) + "," + str + "%)";
 end sizeNumNonZeroTplString;
 
 protected function intTplString
@@ -3617,7 +3610,7 @@ protected
   Integer e,d;
 algorithm
   (d,e) := inTpl;
-  outStr := intString(d) +& " " +& intString(e);
+  outStr := intString(d) + " " + intString(e);
 end intTplString;
 
 protected function dumpCompShort1
@@ -3778,7 +3771,7 @@ algorithm
   BackendDAE.DAE(eqs=systs) := inDAE;
   nlst := List.map(systs,BackendDAEUtil.systemSize);
   n := List.fold(nlst,intAdd,0);
-  print(preStr +& " NrOfEquations: " +& intString(n) +& "\n");
+  print(preStr + " NrOfEquations: " + intString(n) + "\n");
 end dumpNrOfEquations;
 
 annotation(__OpenModelica_Interface="backend");

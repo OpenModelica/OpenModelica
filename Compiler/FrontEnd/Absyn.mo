@@ -66,7 +66,6 @@ encapsulated package Absyn
 
   The following are the types and uniontypes that are used for the AST:"
 
-protected import Debug;
 protected import Dump;
 protected import System;
 
@@ -2578,7 +2577,7 @@ algorithm
     // qual ident vs. qual ident
     case (QUALIFIED(id1, path1),QUALIFIED(id2, path2))
       equation
-        res = Debug.bcallret2(stringEq(id1, id2), pathEqual, path1, path2, false);
+        res = if stringEq(id1, id2) then pathEqual(path1, path2) else false;
       then res;
     // other return false
     else false;
@@ -2703,7 +2702,7 @@ algorithm
     case (QUALIFIED(i1,p1),QUALIFIED(i2,p2))
       equation
         o = stringCompare(i1,i2);
-        o = Debug.bcallret2(o == 0, pathCompare, p1, p2, o);
+        o = if o == 0 then pathCompare(p1, p2) else o;
       then o;
     case (QUALIFIED(name=_),_) then 1;
     case (_,QUALIFIED(name=_)) then -1;
@@ -2726,7 +2725,7 @@ algorithm
     case (QUALIFIED(i1,p1),QUALIFIED(i2,p2))
       equation
         o = stringCompare(i1,i2);
-        o = Debug.bcallret2(o == 0, pathCompare, p1, p2, o);
+        o = if o == 0 then pathCompare(p1, p2) else o;
       then o;
     case (QUALIFIED(name=_),_) then 1;
     case (_,QUALIFIED(name=_)) then -1;
@@ -2742,7 +2741,7 @@ public function pathHashMod "Hashes a path."
 algorithm
 // hash := valueHashMod(path,mod);
 // print(pathString(path) +& " => " +& intString(hash) +& "\n");
-// hash := System.stringHashDjb2Mod(pathString(path),mod);
+// hash := stringHashDjb2Mod(pathString(path),mod);
 // TODO: stringHashDjb2 is missing a default value for the seed; add this once we bootstrapped omc so we can use that function instead of our own hack
   hash := intAbs(intMod(pathHashModWork(path,5381),mod));
 end pathHashMod;

@@ -1046,7 +1046,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "-values_to_vars failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-values_to_vars failed\n");
       then
         fail();
   end matchcontinue;
@@ -2864,7 +2865,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Types.makeEnumerationType failed on " + printTypeStr(inType));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Types.makeEnumerationType failed on " + printTypeStr(inType));
       then
         fail();
   end matchcontinue;
@@ -3576,9 +3578,9 @@ algorithm
     case prop
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- prop_all_const failed: ");
+        Debug.trace("- prop_all_const failed: ");
         str = printPropStr(prop);
-        Debug.fprintln(Flags.FAILTRACE, str);
+        Debug.traceln(str);
       then
         fail();
   end matchcontinue;
@@ -3604,9 +3606,9 @@ algorithm
     case prop
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- prop_any_const failed: ");
+        Debug.trace("- prop_any_const failed: ");
         str = printPropStr(prop);
-        Debug.fprintln(Flags.FAILTRACE, str);
+        Debug.traceln(str);
       then
         fail();
   end matchcontinue;
@@ -3654,9 +3656,9 @@ algorithm
     case const
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- prop_tuple_any_const failed: ");
+        Debug.trace("- prop_tuple_any_const failed: ");
         str = printTupleConstStr(const);
-        Debug.fprintln(Flags.FAILTRACE, str);
+        Debug.traceln(str);
       then
         fail();
   end matchcontinue;
@@ -3698,9 +3700,9 @@ algorithm
     case const
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- prop_tuple_all_const failed: ");
+        Debug.trace("- prop_tuple_all_const failed: ");
         str = printTupleConstStr(const);
-        Debug.fprintln(Flags.FAILTRACE, str);
+        Debug.traceln(str);
       then
         fail();
   end matchcontinue;
@@ -4180,7 +4182,8 @@ algorithm
         (e_1::e_2,(tp :: res));
     case (_,_,_,true)
       equation
-        Debug.fprint(Flags.TYPES, "- matchTypeList failed\n");
+        true = Flags.isSet(Flags.TYPES);
+        Debug.trace("- matchTypeList failed\n");
       then
         fail();
   end matchcontinue;
@@ -4212,7 +4215,8 @@ algorithm
         (e_1::e_2,(tp :: res));
     case (_,(_ :: _),(_ :: _),true)
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Types.matchTypeTuple failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Types.matchTypeTuple failed\n");
       then
         fail();
   end matchcontinue;
@@ -4240,7 +4244,8 @@ algorithm
       then ();
     case (_,(_ :: _),(_ :: _))
       equation
-        Debug.fprint(Flags.FAILTRACE, "- matchTypeTupleCall failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- matchTypeTupleCall failed\n");
       then
         fail();
   end matchcontinue;
@@ -4802,7 +4807,8 @@ algorithm
           DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = _),
           DAE.T_METABOXED(ty = _),_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Not yet implemented: Converting record calls (not constructor) into boxed records");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Not yet implemented: Converting record calls (not constructor) into boxed records\n");
       then
         fail();
 
@@ -4978,7 +4984,8 @@ algorithm
       then (e::expl,DAE.T_METALIST(t1,DAE.emptyTypeSource));
     else
       equation
-        Debug.fprintln(Flags.TYPES, "- typeConvertMatrixToList failed");
+        true = Flags.isSet(Flags.TYPES);
+        Debug.trace("- typeConvertMatrixToList failed\n");
       then fail();
   end matchcontinue;
 end typeConvertMatrixToList;
@@ -5138,7 +5145,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE,"- Types.matchWithPromote failed on: " +
+        Debug.traceln("- Types.matchWithPromote failed on: " +
            "\nprop1: " + printPropStr(inProperties1) +
            "\nprop2: " + printPropStr(inProperties2) +
            "\nhaveReal: " + boolString(inBoolean3));
@@ -5464,7 +5471,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = unparseType(tty);
-        Debug.fprintln(Flags.FAILTRACE, "-- Types.getAllExpsTt failed " + str);
+        Debug.traceln("-- Types.getAllExpsTt failed " + str);
       then
         fail();
   end matchcontinue;
@@ -5515,7 +5522,8 @@ algorithm
     case DAE.VALBOUND(valBound = _) then {};
     case _
       equation
-        Debug.fprintln(Flags.FAILTRACE, "-- Types.getAllExpsBinding failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-- Types.getAllExpsBinding failed\n");
       then
         fail();
   end matchcontinue;
@@ -5631,7 +5639,8 @@ algorithm
       then (elist, st);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Types.listMatchSuperType failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Types.listMatchSuperType failed\n");
       then fail();
   end matchcontinue;
 end listMatchSuperType;
@@ -5660,7 +5669,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = ExpressionDump.printExpStr(e);
-        Debug.fprintln(Flags.FAILTRACE, "- Types.listMatchSuperType2 failed: " + str);
+        Debug.traceln("- Types.listMatchSuperType2 failed: " + str);
       then fail();
   end matchcontinue;
 end listMatchSuperType2;
@@ -6250,7 +6259,7 @@ algorithm
       then ty1; */
     case _
       equation
-        // Debug.fprintln(Flags.FAILTRACE, "- Types.makeFunctionPolymorphicReference failed");
+        // fprintln(Flags.FAILTRACE, "- Types.makeFunctionPolymorphicReference failed");
       then fail();
   end match;
 end makeFunctionPolymorphicReference;
@@ -7417,7 +7426,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Types.varsToValues failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Types.varsToValues failed\n");
       then
         fail();
   end matchcontinue;

@@ -251,8 +251,8 @@ algorithm
   resultValues := listReverse(inAddResultValues);
   //TODO: maybe we should test if the fields are the ones in simulationResultType_full
   notest := not Config.getRunningTestsuite();
-  fields := Debug.bcallret2(notest, List.map, resultValues, Util.tuple21, {});
-  vals := Debug.bcallret2(notest, List.map, resultValues, Util.tuple22, {});
+  fields := if notest then List.map(resultValues, Util.tuple21) else {};
+  vals := if notest then List.map(resultValues, Util.tuple22) else {};
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),
     Values.STRING(resultFile)::Values.STRING(options)::Values.STRING(message)::vals,
     "resultFile"::"simulationOptions"::"messages"::fields,-1);
@@ -273,8 +273,8 @@ algorithm
   resultValues := listReverse(inAddResultValues);
   //TODO: maybe we should test if the fields are the ones in simulationResultType_full
   notest := not Config.getRunningTestsuite();
-  fields := Debug.bcallret2(notest, List.map, resultValues, Util.tuple21, {});
-  vals := Debug.bcallret2(notest, List.map, resultValues, Util.tuple22, {});
+  fields := if notest then List.map(resultValues, Util.tuple21) else {};
+  vals := if notest then List.map(resultValues, Util.tuple22) else {};
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),Values.STRING(message)::
     vals, "messages"::fields,-1);
 end createDrModelicaSimulationResult;
@@ -710,7 +710,8 @@ algorithm
     // failing
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed: "+name+"\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("ClassLoader.loadFile failed: "+name+"\n");
       then
         fail();
   end matchcontinue;
@@ -739,9 +740,9 @@ algorithm
     case ((path,strings)::modelsToLoad,_,p,_,_,_)
       equation
         b = checkModelLoaded((path,strings),p,forceLoad,NONE());
-        pnew = Debug.bcallret4(not b, ClassLoader.loadClass, path, strings, modelicaPath, NONE(), Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
+        pnew = if not b then ClassLoader.loadClass(path, strings, modelicaPath, NONE()) else Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp);
         className = Absyn.pathString(path);
-        version = Debug.bcallret2(not b, getPackageVersion, path, pnew, "");
+        version = if not b then getPackageVersion(path, pnew) else "";
         Error.assertionOrAddSourceMessage(b or not notifyLoad or forceLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
         p = Interactive.updateProgram(pnew, p);
         (p,b1) = loadModel(if checkUses then Interactive.getUsesAnnotationOrDefault(pnew) else {}, modelicaPath, p, false, notifyLoad, checkUses);
@@ -1022,9 +1023,9 @@ algorithm
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(_)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         (ip,_) = Builtin.getInitialFunctions();
-        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,ip,p);
+        p = if builtin then Interactive.updateProgram(p,ip) else p;
         paths = Interactive.getTopClassnames(p);
-        paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
+        paths = if sort then List.sort(paths, Absyn.pathGe) else paths;
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
@@ -1032,10 +1033,10 @@ algorithm
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         (ip,_) = Builtin.getInitialFunctions();
-        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,ip,p);
+        p = if builtin then Interactive.updateProgram(p,ip) else p;
         paths = Interactive.getClassnamesInPath(path, p, showProtected);
-        paths = Debug.bcallret3(b,List.map1r,paths,Absyn.joinPaths,path,paths);
-        paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
+        paths = if b then List.map1r(paths,Absyn.joinPaths,path) else paths;
+        paths = if sort then List.sort(paths, Absyn.pathGe) else paths;
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
@@ -1043,10 +1044,10 @@ algorithm
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         (ip,_) = Builtin.getInitialFunctions();
-        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,ip,p);
+        p = if builtin then Interactive.updateProgram(p,ip) else p;
         (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,showProtected,{});
         paths = listReverse(paths);
-        paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
+        paths = if sort then List.sort(paths, Absyn.pathGe) else paths;
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
@@ -1054,10 +1055,10 @@ algorithm
     case (cache,_,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         (ip,_) = Builtin.getInitialFunctions();
-        p = Debug.bcallret2(builtin,Interactive.updateProgram,p,ip,p);
+        p = if builtin then Interactive.updateProgram(p,ip) else p;
         (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,showProtected,{});
         paths = listReverse(paths);
-        paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
+        paths = if sort then List.sort(paths, Absyn.pathGe) else paths;
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
@@ -1068,7 +1069,7 @@ algorithm
         (sp, _) = NFSCodeFlatten.flattenClassInProgram(path, sp);
         sp = SCode.removeBuiltinsFromTopScope(sp);
         paths = Interactive.getSCodeClassNamesRecursive(sp);
-        // paths = Debug.bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
+        // paths = bcallret2(sort, List.sort, paths, Absyn.pathGe, paths);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
@@ -1200,10 +1201,13 @@ algorithm
       equation
         (scodeP,st) = GlobalScriptUtil.symbolTableToSCode(st);
         name = Absyn.pathLastIdent(path);
-        str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
-        str = Debug.bcallret2(name ==& "SCode", SCodeDump.programStr, scodeP, SCodeDump.defaultOptions, str);
-        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.programStr, scodeP, SCodeDump.OPTIONS(true,false,true,true,true,true), str);
-        str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
+        str = match name
+          case "Absyn" then Dump.unparseStr(p, false);
+          case "SCode" then SCodeDump.programStr(scodeP);
+          case "MetaModelicaInterface" then SCodeDump.programStr(scodeP, SCodeDump.OPTIONS(true,false,true,true,true,true));
+          case "Internal" then System.anyStringCode(p);
+          else "";
+        end match;
       then
         (cache,Values.STRING(str),st);
 
@@ -1213,14 +1217,17 @@ algorithm
         (scodeP,st) = GlobalScriptUtil.symbolTableToSCode(st);
         name = Absyn.pathLastIdent(path);
         absynClass = Interactive.getPathedClassInProgram(className, p);
-        absynClass = Debug.bcallret1(b1,Absyn.getFunctionInterface,absynClass,absynClass);
-        absynClass = Debug.bcallret1(b2,Absyn.getShortClass,absynClass,absynClass);
+        absynClass = if b1 then Absyn.getFunctionInterface(absynClass) else absynClass;
+        absynClass = if b2 then Absyn.getShortClass(absynClass) else absynClass;
         p = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
-        str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
-        str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
         cl = SCodeUtil.getElementWithPathCheckBuiltin(scodeP, className);
-        str = Debug.bcallret2(name ==& "SCode", SCodeDump.unparseElementStr, cl, SCodeDump.defaultOptions, str);
-        str = Debug.bcallret2(name ==& "MetaModelicaInterface", SCodeDump.unparseElementStr, cl, SCodeDump.OPTIONS(true,false,true,true,true,true), str);
+        str = match name
+          case "Absyn" then Dump.unparseStr(p, false);
+          case "SCode" then SCodeDump.unparseElementStr(cl);
+          case "MetaModelicaInterface" then SCodeDump.unparseElementStr(cl, SCodeDump.OPTIONS(true,false,true,true,true,true));
+          case "Internal" then System.anyStringCode(p);
+          else "";
+        end match;
       then
         (cache,Values.STRING(str),st);
 
@@ -1563,7 +1570,9 @@ algorithm
         // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
         // we should really have different log files for simulation/compilation!
         // as the buildModel log file will be deleted here and that gives less information to the user!
-        0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
+        if System.regularFileExists(logFile) then
+          0 = System.removeFile(logFile);
+        end if;
         sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags});
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
@@ -1643,7 +1652,9 @@ algorithm
         cit = winCitation();
         executableSuffixedExe = stringAppend(executable, System.getExeExt());
         logFile = stringAppend(executable,".log");
-        0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
+        if System.regularFileExists(logFile) then
+          0 = System.removeFile(logFile);
+        end if;
         strlinearizeTime = realString(linearizeTime);
         sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ","-l=",strlinearizeTime," ",simflags});
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
@@ -1688,7 +1699,9 @@ algorithm
         // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
         // we should really have different log files for simulation/compilation!
         // as the buildModel log file will be deleted here and that gives less information to the user!
-        0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
+        if System.regularFileExists(logFile) then
+          0 = System.removeFile(logFile);
+        end if;
         sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags});
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
@@ -1720,7 +1733,9 @@ algorithm
         b = Error.getNumMessages() == 0;
         str = Absyn.pathString(path);
         str = "Instantiation of " + str + " failed with no error message";
-        Debug.bcall2(b, Error.addMessage, Error.INTERNAL_ERROR, {str,"<TOP>"});
+        if b then
+          Error.addMessage(Error.INTERNAL_ERROR, {str,"<TOP>"});
+        end if;
       then
         (cache,Values.STRING(""),st);
 
@@ -2008,7 +2023,7 @@ algorithm
       equation
         true = System.regularFileExists(str1);
         b = System.regularFileExists(str2) and System.fileContentsEqual(str1,str2);
-        b = Debug.bcallret2(not b,System.rename,str1,str2,b);
+        b = if not b then System.rename(str1,str2) else b;
       then
         (cache,Values.BOOL(b),st);
 
@@ -2242,10 +2257,14 @@ algorithm
         /* If the user requests a custom version to parse as, set it up */
         oldLanguageStd = Config.getLanguageStandard();
         b1 = not stringEq(str,"");
-        Debug.bcall1(b1,Config.setLanguageStandard,Debug.bcallret1(b1,Config.versionStringToStd,str,Config.MODELICA_LATEST() /* Unused */));
+        if b1 then
+          Config.setLanguageStandard(Config.versionStringToStd(str));
+        end if;
         (p,b) = loadModel({(path,strings)},mp,p,true,b,true);
-        Debug.bcall1(b1,Config.setLanguageStandard,oldLanguageStd);
-        _ = Print.getString();
+        if b1 then
+          Config.setLanguageStandard(oldLanguageStd);
+        end if;
+        Print.clearBuf();
         newst = GlobalScript.SYMBOLTABLE(p,NONE(),{},iv,cf,lf);
       then
         (FCore.emptyCache(),Values.BOOL(b),newst);
@@ -2313,7 +2332,7 @@ algorithm
         Absyn.CLASS(info=Absyn.INFO(fileName=filename,buildTimes=Absyn.TIMESTAMP(lastEditTime=r2))) = Interactive.getPathedClassInProgram(classpath, p);
         (true,_,r1) = System.stat(filename);
         b = realEq(r1,r2);
-        st = Debug.bcallret3(not b, reloadClass, filename, encoding, st, st);
+        st = if not b then reloadClass(filename, encoding, st) else st;
       then (cache,Values.BOOL(true),st);
 
     case (cache,_,"reloadClass",{Values.CODE(Absyn.C_TYPENAME(classpath)),_},st as GlobalScript.SYMBOLTABLE(ast = p),_)
@@ -2332,7 +2351,7 @@ algorithm
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
-        str = Debug.bcallret3(not (encoding ==& "UTF-8"), System.iconv, str, encoding, "UTF-8", str);
+        str = if not (encoding ==& "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
         newp = Parser.parsestring(str,name);
         newp = Interactive.updateProgram(newp, p);
       then
@@ -2523,7 +2542,7 @@ algorithm
         interval = if numberOfIntervals == 0 then interval else realDiv(realSub(stopTime,startTime),intReal(intMax(numberOfIntervals,1)));
         r1 = realSub(stopTime,startTime);
         r2 = realMax(interval,1e-30  /* TODO: Use real if-expressions to skip these things */);
-        r = Debug.bcallret2(realGt(interval,0.0), realDiv, r1, r2, 0.0);
+        r = if realGt(interval,0.0) then realDiv(r1, r2) else 0.0;
         numberOfIntervals = if numberOfIntervals == 0 then (if realGt(interval,0.0) then realInt(realCeil(r)) else 0) else numberOfIntervals;
       then
         (cache,Values.TUPLE({Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)}),st);
@@ -4152,9 +4171,13 @@ algorithm
         init_filename = filenameprefix + "_init.xml"; //a hack ? should be at one place somewhere
         //win1 = getWithinStatement(classname);
 
-        Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " + filenameprefix + ", " + file_dir);
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("buildModel: about to compile model " + filenameprefix + ", " + file_dir);
+        end if;
         compileModel(filenameprefix, libs, file_dir, method_str);
-        Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.trace("buildModel: Compiling done.\n");
+        end if;
         // p = setBuildTime(p,classname);
         st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
         timeCompile = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
@@ -4248,8 +4271,9 @@ algorithm
         //print("instantiated class\n");
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = FCore.getFunctionTree(cache);
-        str = Debug.bcallret2(showFlatModelica, DAEDump.dumpStr, dae, funcs, "");
-        Debug.bcall(showFlatModelica, print, str);
+        if showFlatModelica then
+          print(DAEDump.dumpStr(dae, funcs));
+        end if;
         // get all the variable names with a distribution
         // TODO FIXME
         // sort all variable names in the distribution order
@@ -4389,23 +4413,35 @@ algorithm
         numParallelStr = intString(numParallel);
         make_call = stringAppendList({make," -j",numParallelStr," -f ",fileprefix,".makefile"});
         s_call = if isWindows then win_call else make_call;
-        Debug.fprintln(Flags.DYN_LOAD, "compileModel: running " + s_call);
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("compileModel: running " + s_call);
+        end if;
 
         // remove .exe .dll .log!
         fileEXE = fileprefix + System.getExeExt();
         fileDLL = fileprefix + System.getDllExt();
         fileLOG = fileprefix + ".log";
-        0 = Debug.bcallret1(System.regularFileExists(fileEXE),System.removeFile,fileEXE,0);
-        0 = Debug.bcallret1(System.regularFileExists(fileDLL),System.removeFile,fileDLL,0);
-        0 = Debug.bcallret1(System.regularFileExists(fileLOG),System.removeFile,fileLOG,0);
+        if System.regularFileExists(fileEXE) then
+          0 = System.removeFile(fileEXE);
+        end if;
+        if System.regularFileExists(fileDLL) then
+          0 = System.removeFile(fileDLL);
+        end if;
+        if System.regularFileExists(fileLOG) then
+          0 = System.removeFile(fileLOG);
+        end if;
 
         // call the system command to compile the model!
         0 = System.systemCall(s_call,if isWindows then "" else fileLOG);
-        Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(),
-          fileEXE + "\n" + fileDLL + "\n" + fileLOG + "\n" + fileprefix + ".o\n" + fileprefix + ".libs\n" +
-          fileprefix + "_records.o\n" + fileprefix + "_res.mat\n");
+        if Config.getRunningTestsuite() then
+          System.appendFile(Config.getRunningTestsuiteFile(),
+            fileEXE + "\n" + fileDLL + "\n" + fileLOG + "\n" + fileprefix + ".o\n" + fileprefix + ".libs\n" +
+            fileprefix + "_records.o\n" + fileprefix + "_res.mat\n");
+        end if;
 
-        Debug.fprintln(Flags.DYN_LOAD, "compileModel: successful! ");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.trace("compileModel: successful!\n");
+        end if;
       then
         ();
     case (fileprefix,_,_,_) /* compilation failed */
@@ -4414,7 +4450,8 @@ algorithm
         true = System.regularFileExists(filename);
         str = System.readFile(filename);
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
-        Debug.fprintln(Flags.DYN_LOAD, "compileModel: failed!");
+        true = Flags.isSet(Flags.DYN_LOAD);
+        Debug.trace("compileModel: failed!\n");
       then
         fail();
 
@@ -5166,9 +5203,13 @@ algorithm
         //(cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str,outputFormat_str)
         //= calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str,outputFormat_str);
-        Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " + filenameprefix + ", " + file_dir);
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("buildModel: about to compile model " + filenameprefix + ", " + file_dir);
+        end if;
         compileModel(filenameprefix, libs, file_dir, method_str);
-        Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.trace("buildModel: Compiling done.\n");
+        end if;
         // SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir);
         _ = getWithinStatement(classname);
         compileModel(filenameprefix, libs, file_dir,method_str);
@@ -5312,11 +5353,11 @@ algorithm
     case (cache, env, _, path)
       equation
         true = Flags.isSet(Flags.GEN);
+        true = Flags.isSet(Flags.FAILTRACE);
         (cache,false) = Static.isExternalObjectFunction(cache,env,path);
         pathstr = generateFunctionName(path);
         fileName = generateFunctionFileName(path);
-        pathstr = "CevalScript.cevalGenerateFunction failed:\nfunction: " + pathstr + "\nfile: " + fileName + "\n";
-        Debug.fprint(Flags.FAILTRACE, pathstr);
+        Debug.trace("CevalScript.cevalGenerateFunction failed:\nfunction: " + pathstr + "\nfile: " + fileName + "\n");
       then
         fail();
   end matchcontinue;
@@ -6967,7 +7008,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
-        // Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " + Absyn.pathString(funcpath) + "\n");
+        // bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " + Absyn.pathString(funcpath) + "\n");
         (cache,
          sc as SCode.CLASS(
           partialPrefix = SCode.NOT_PARTIAL(),
@@ -6985,7 +7026,7 @@ algorithm
           {});
         func = FCore.getCachedInstFunc(cache, funcpath);
         (cache, newval, st) = CevalFunction.evaluate(cache, env, func, vallst, st);
-        // Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print, "[dynload]: constant evaluation SUCCESS: " + Absyn.pathString(funcpath) + "\n");
+        // bcall1(Flags.isSet(Flags.DYN_LOAD), print, "[dynload]: constant evaluation SUCCESS: " + Absyn.pathString(funcpath) + "\n");
       then
         (cache, newval, st);
 
@@ -6996,7 +7037,9 @@ algorithm
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
-        Debug.fprintln(Flags.DYN_LOAD, "[dynload]: [func from file] check if is in CF list: " + Absyn.pathString(funcpath));
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("[dynload]: [func from file] check if is in CF list: " + Absyn.pathString(funcpath));
+        end if;
 
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -7004,7 +7047,9 @@ algorithm
         false = stringEq(fNew,""); // see if the WE have a file or not!
         false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from file] About to execute function present in CF list: " + Absyn.pathString(funcpath) + "\n");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: [func from file] About to execute function present in CF list: " + Absyn.pathString(funcpath) + "\n");
+        end if;
 
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
@@ -7020,7 +7065,9 @@ algorithm
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from buffer] check if is in CF list: " + Absyn.pathString(funcpath) + "\n");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: [func from buffer] check if is in CF list: " + Absyn.pathString(funcpath) + "\n");
+        end if;
 
         (true, funcHandle, buildTime, _) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -7031,10 +7078,11 @@ algorithm
         true = (buildTime >=. build);
         true = (buildTime >. edit);
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from buffer] About to execute function present in CF list: " + Absyn.pathString(funcpath) + "\n");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: [func from buffer] About to execute function present in CF list: " + Absyn.pathString(funcpath) + "\n");
+        end if;
 
-        print_debug = Flags.isSet(Flags.DYN_LOAD);
-        newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
+        newval = DynLoad.executeFunction(funcHandle, vallst, Flags.isSet(Flags.DYN_LOAD));
       then
         (cache,newval,st);
 
@@ -7046,7 +7094,9 @@ algorithm
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list: " + Absyn.pathString(funcpath) + "\n");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: [SOME SYMTAB] not in in CF list: " + Absyn.pathString(funcpath) + "\n");
+        end if;
 
         // remove it and all its dependencies as it might be there with an older build time.
         // get dependencies!
@@ -7055,8 +7105,10 @@ algorithm
         newCF = Interactive.removeCfAndDependencies(cf, funcpath::functionDependencies);
         //print("\nFunctions after remove:\n\t" + stringDelimitList(List.map(newCF, Interactive.dumpCompiledFunction), "\n\t") + "\n");
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list: removed deps:" +
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: [SOME SYMTAB] not in in CF list: removed deps:" +
           stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", ") + "\n");
+        end if;
         //print("\nfunctions in SYMTAB: " + Interactive.dumpCompiledFunctions(syt)
 
         // now is safe to generate code
@@ -7074,7 +7126,9 @@ algorithm
         ts = Absyn.setTimeStampBuild(ts, buildTime);
         w = Interactive.buildWithin(funcpath);
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: Updating build time for function path: " + Absyn.pathString(funcpath) + " within: " + Dump.unparseWithin(w) + "\n");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: Updating build time for function path: " + Absyn.pathString(funcpath) + " within: " + Dump.unparseWithin(w) + "\n");
+        end if;
 
         p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
         f = Absyn.getFileNameFromInfo(info);
@@ -7084,8 +7138,10 @@ algorithm
                 GlobalScript.CFunction(funcpath,DAE.T_UNKNOWN({funcpath}),funcHandle,buildTime,f)::newCF,
                 lf);
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list [finished]: " +
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: [SOME SYMTAB] not in in CF list [finished]: " +
           Absyn.pathString(funcpath) + "\n");
+        end if;
         //print("\nfunctions in SYMTAB: " + Interactive.dumpCompiledFunctions(syt));
       then
         (cache,newval,SOME(syt));
@@ -7098,14 +7154,18 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
         ErrorExt.setCheckpoint("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
 
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [NO SYMTAB] not in in CF list: " + Absyn.pathString(funcpath) + "\n");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: [NO SYMTAB] not in in CF list: " + Absyn.pathString(funcpath) + "\n");
+        end if;
 
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
         p = FCore.getProgramFromCache(cache);
         (cache,funcstr,fileName) = cevalGenerateFunction(cache, env, p, funcpath);
         // generate a uniquely named dll!
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: cevalCallFunction: about to execute " + funcstr + "\n");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: cevalCallFunction: about to execute " + funcstr + "\n");
+        end if;
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         libHandle = System.loadLibrary(fileName, print_debug);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
@@ -7113,7 +7173,9 @@ algorithm
         System.freeFunction(funcHandle, print_debug);
         System.freeLibrary(libHandle, print_debug);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list [finished]: " + Absyn.pathString(funcpath) + "\n");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("CALL: [NO SYMTAB] not in in CF list [finished]: " + Absyn.pathString(funcpath));
+        end if;
         ErrorExt.rollBack("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
       then
         (cache,newval,NONE());
@@ -7130,12 +7192,14 @@ algorithm
 
     case (_,_,(DAE.CALL(path = funcpath,expLst = _)),_,_,_, _, _)
       equation
-        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: FAILED to constant evaluate function: " + Absyn.pathString(funcpath) + "\n");
-        _ = Absyn.pathString(funcpath);
+        if Flags.isSet(Flags.DYN_LOAD) then
+          print("[dynload]: FAILED to constant evaluate function: " + Absyn.pathString(funcpath) + "\n");
+        end if;
         //TODO: readd this when testsuite is okay.
         //Error.addMessage(Error.FAILED_TO_EVALUATE_FUNCTION, {error_Str});
         false = Flags.isSet(Flags.GEN);
-        Debug.fprint(Flags.FAILTRACE, "- codegeneration is turned off. switch \"nogen\" flag off\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- codegeneration is turned off. switch \"nogen\" flag off\n");
       then
         fail();
 
@@ -7265,7 +7329,9 @@ algorithm
     // Record constructors
     case(cache,env,(DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),pubVallst,_,st,msg,_)
       equation
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: func: " + Absyn.pathString(funcpath) + " type path: " + Absyn.pathString(complexName));
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("CALL: record constructor: func: " + Absyn.pathString(funcpath) + " type path: " + Absyn.pathString(complexName));
+        end if;
         true = Absyn.pathEqual(funcpath,complexName);
         (pubVarLst,proVarLst) = List.splitOnTrue(varLst,Types.isPublicVar);
         expl = List.map1(proVarLst, Types.getBindingExp, funcpath);
@@ -7274,7 +7340,7 @@ algorithm
         proVarNames = List.map(proVarLst,Expression.varName);
         varNames = listAppend(pubVarNames, proVarNames);
         vallst = listAppend(pubVallst, proVallst);
-        // Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " + Absyn.pathString(funcpath));
+        // fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " + Absyn.pathString(funcpath));
       then
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
@@ -7282,7 +7348,9 @@ algorithm
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), _, _, _, msg, _)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " + Absyn.pathString(funcpath));
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("CALL: try to evaluate or generate function: " + Absyn.pathString(funcpath));
+        end if;
 
         bIsCompleteFunction = isCompleteFunction(cache, env, funcpath);
         false = Types.hasMetaArray(ty);
@@ -7302,7 +7370,9 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         false = isCompleteFunction(cache, env, funcpath);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation failed (not complete function): " + Absyn.pathString(funcpath));
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("CALL: constant evaluation failed (not complete function): " + Absyn.pathString(funcpath));
+        end if;
       then
         fail();
 

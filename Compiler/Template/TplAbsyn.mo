@@ -794,7 +794,7 @@ algorithm
 
     case ( _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!encodeIdentNoPrefix failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!encodeIdentNoPrefix failed\n");
       then
         fail();
   end matchcontinue;
@@ -828,7 +828,7 @@ algorithm
     //should not ever happen
     case ( _, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!encodeTypedIdent failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!encodeTypedIdent failed\n");
       then
         fail();
   end matchcontinue;
@@ -869,7 +869,7 @@ algorithm
 
     case (_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!addOutPrefixes failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addOutPrefixes failed\n");
       then
         fail();
   end matchcontinue;
@@ -941,7 +941,7 @@ algorithm
 
     case (_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!addOutPrefixesLhs failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addOutPrefixesLhs failed\n");
       then
         fail();
   end matchcontinue;
@@ -980,7 +980,7 @@ algorithm
 
     case (_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!addOutTextAssigns failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addOutTextAssigns failed\n");
       then
         fail();
   end matchcontinue;
@@ -1106,7 +1106,9 @@ algorithm
     case ( (BOUND_VALUE(boundPath = path), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
-        Debug.fprint(Flags.FAILTRACE,"\n BOUND_VALUE resolving boundPath = " +& pathIdentString(path) +& "\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln("\n BOUND_VALUE resolving boundPath = " +& pathIdentString(path));
+        end if;
         (mmexp, idtype, scEnv) = resolveBoundPath(path, scEnv, tplPackage);
         //Debug.fprint(Flags.FAILTRACE,"\n BEFORE boundPath = " +& pathIdentString(path) +& "\n");
         checkResolvedType(path, idtype, "bound value", sinfo);
@@ -1115,32 +1117,40 @@ algorithm
         //TODO: for indirect reference, too, like <# buf += templ(buf) #>
         //true = ensureNotUsingTheSameText(path, mmexp, idtype, outtxt);
         exptype = deAliasedType(idtype, astDefs);
-        Debug.fprint(Flags.FAILTRACE,"\n BOUND_VALUE resolved mmexp = " +& mmExpString(mmexp) +& " : "
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln("\n BOUND_VALUE resolved mmexp = " +& mmExpString(mmexp) +& " : "
                      +& typeSignatureString(idtype) +& " (dealiased: "
-                     +& typeSignatureString(exptype) +& ")\n");
+                     +& typeSignatureString(exptype) +& ")");
+        end if;
         (stmts, locals, scEnv, accMMDecls, intxt)
           = addWriteCallFromMMExp(true, mmexp, exptype, sinfo, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
-        //Debug.fprint(Flags.FAILTRACE," BOUND_VALUE after writeCall stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
+        // fprint(Flags.FAILTRACE," BOUND_VALUE after writeCall stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
 
     case ( (FUN_CALL(name = fname, args = explst), sinfo), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
-        Debug.fprint(Flags.FAILTRACE,"\n FUN_CALL fname = " +& pathIdentString(fname) +& "\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln("\n FUN_CALL fname = " +& pathIdentString(fname));
+        end if;
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, sinfo, tplPackage);
-        //Debug.fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
+        // fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
 
         //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls)
           = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);
 
-        Debug.fprint(Flags.FAILTRACE," FUN_CALL argList stmts generation passed\n");
-        //Debug.fprint(Flags.FAILTRACE," FUN_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace(" FUN_CALL argList stmts generation passed\n");
+        end if;
+        //fprint(Flags.FAILTRACE," FUN_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
 
         (hasretval, stmt, mmexp, rettype, locals, intxt)
           = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage, sinfo);
-        Debug.fprint(Flags.FAILTRACE," FUN_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace(" FUN_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
+        end if;
 
         rettype = deAliasedType(rettype, astDefs);
         (stmts, locals, scEnv, accMMDecls, intxt)
@@ -1265,8 +1275,10 @@ algorithm
         //allowing hiddening of let bindings
         //(_, UNRESOLVED_TYPE(reason), scEnv)
         //  = resolveBoundPath(IDENT(ident), scEnv, tplPackage);
-        //Debug.fprint(Flags.FAILTRACE,"\n TEXT_CREATE ident = " +& ident +& " is fresh (reason = " +& reason +& ")\n");
-        Debug.fprint(Flags.FAILTRACE,"\n TEXT_CREATE ident = " +& ident +& "\n");
+        //fprint(Flags.FAILTRACE,"\n TEXT_CREATE ident = " +& ident +& " is fresh (reason = " +& reason +& ")\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln("\n TEXT_CREATE ident = " +& ident);
+        end if;
 
         encIdent = encodeIdent(ident, letValueNamePrefix);
         (freshIdent, locals)  = updateLocalsForLetExp(ident, encIdent, 0, TEXT_TYPE(), locals, scEnv);
@@ -1297,7 +1309,7 @@ algorithm
         (_, idtype, _)
           = resolveBoundPath(IDENT(ident), scEnv, tplPackage);
         failure(UNRESOLVED_TYPE(_) = idtype);
-        Debug.fprint(Flags.FAILTRACE,"\nError - TEXT_CREATE ident = '" +& ident +& "' is NOT fresh (type = " +& typeSignatureString(idtype) +& ")\n Only new (fresh) variable can be used in a Text assignment (creation).\n");
+        fprint(Flags.FAILTRACE,"\nError - TEXT_CREATE ident = '" +& ident +& "' is NOT fresh (type = " +& typeSignatureString(idtype) +& ")\n Only new (fresh) variable can be used in a Text assignment (creation).\n");
       then fail();
     */
 
@@ -1332,7 +1344,7 @@ algorithm
         (_, idtype, _) = resolveBoundPath(path, scEnv, tplPackage);
         failure(UNRESOLVED_TYPE(_) = idtype);
         failure(TEXT_TYPE() = idtype);
-        Debug.fprint(Flags.FAILTRACE,"\nError - TEXT_ADD ident = '" +& ident +& "' is NOT of Text& type but " +& typeSignatureString(idtype) +& ")\n Only Text& typed variables can be appended to.\n");
+        fprint(Flags.FAILTRACE,"\nError - TEXT_ADD ident = '" +& ident +& "' is NOT of Text& type but " +& typeSignatureString(idtype) +& ")\n Only Text& typed variables can be appended to.\n");
       then fail();
     */
 
@@ -1341,21 +1353,27 @@ algorithm
            mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs=_), accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
-        Debug.fprint(Flags.FAILTRACE,"\n NORET_CALL fname = " +& pathIdentString(fname) +& "\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln("\n NORET_CALL fname = " +& pathIdentString(fname));
+        end if;
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, sinfo2, tplPackage);
-        //Debug.fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
+        //fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
 
         {} = oargs;
         //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls)
           = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);
 
-        Debug.fprint(Flags.FAILTRACE," NORET_CALL argList stmts generation passed.\n" );
-        //Debug.fprint(Flags.FAILTRACE," NORET_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace(" NORET_CALL argList stmts generation passed.\n");
+        end if;
+        //fprint(Flags.FAILTRACE," NORET_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
 
         (_, stmt,_,_, locals, intxt)
           = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage, sinfo2);
-        Debug.fprint(Flags.FAILTRACE," NORET_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln(" NORET_CALL stmt =\n" +& stmtsString({stmt}));
+        end if;
         stmts = stmt::stmts;
 
         (stmts, locals, scEnv, accMMDecls, intxt)
@@ -1367,16 +1385,17 @@ algorithm
            _, _, _, _, _, _, tplPackage as TEMPL_PACKAGE(astDefs=_), _ )
       equation
         (fname,_, oargs,_) = getFunSignature(fname, sinfo2, tplPackage);
-        //Debug.fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
+        //fprint(Flags.FAILTRACE," after fname = " +& pathIdentString(fname) +& "\n");
         (_::_) = oargs;
 
-        Debug.fprint(Flags.FAILTRACE,"Error - NORET_CALL with a '" +& pathIdentString(fname)
-          +& "' template or function that has output argument(s).\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("Error - NORET_CALL with a '" +& pathIdentString(fname) +& "' template or function that has output argument(s).\n");
+        end if;
       then fail();
 
     case (_,_,_,_,_, _,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!statementsFromExp failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!statementsFromExp failed\n");
       then
         fail();
   end matchcontinue;
@@ -1426,7 +1445,7 @@ algorithm
 
     case (_,_,_,_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!statementsFromExpList failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!statementsFromExpList failed\n");
       then
         fail();
   end matchcontinue;
@@ -1448,13 +1467,12 @@ algorithm
     //warning - more options than expected
     case ( (optid,_) ::_ )
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "Error - more options specified than expected for an expression (first option is '" +& optid +& "').\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - more options specified than expected for an expression (first option is '" +& optid +& "').\n");
        then fail();
 
     //cannot happen
     case (_) equation
-        Debug.fprint(Flags.FAILTRACE, "- warnIfSomeOptions failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("- warnIfSomeOptions failed.\n");
       then fail();
   end matchcontinue;
 end warnIfSomeOptions;
@@ -1532,7 +1550,7 @@ algorithm
            stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
         failure(_ = lookupTupleList(defaultEscOptions, optid));
-        Debug.fprint(Flags.FAILTRACE, "Error - an unknown option'" +& optid +& "' was specified. \n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - an unknown option'" +& optid +& "' was specified. \n");
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls)
           = statementsFromEscOptions(opts, accMMEscOpts, stmts, locals, scEnv, tplPackage, accMMDecls);
       then
@@ -1545,7 +1563,7 @@ algorithm
       equation
         _ = lookupTupleList(defaultEscOptions, optid);
         _ = lookupTupleList(accMMEscOpts, optid);
-        Debug.fprint(Flags.FAILTRACE, "Warning - a duplicit option'" +& optid +& "' was specified. It will be ignored (not evaluated).\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Warning - a duplicit option'" +& optid +& "' was specified. It will be ignored (not evaluated).\n");
         (accMMEscOpts, stmts, locals, scEnv, accMMDecls)
          = statementsFromEscOptions(opts, accMMEscOpts, stmts, locals, scEnv, tplPackage, accMMDecls);
       then
@@ -1554,7 +1572,7 @@ algorithm
     //can fail on error
     case (_,_,_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, " -statementsFromEscOptions failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace(" -statementsFromEscOptions failed\n");
       then
         fail();
   end matchcontinue;
@@ -1577,7 +1595,7 @@ algorithm
     //cannot happen
     case (_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!statementsFromExp failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!statementsFromExp failed\n");
       then
         fail();
   end matchcontinue;
@@ -1622,7 +1640,7 @@ algorithm
     //cannot happen
     case (_,_,_,_, _,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!pushPopBlock failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!pushPopBlock failed\n");
       then
         fail();
   end matchcontinue;
@@ -1675,7 +1693,7 @@ algorithm
     //cannot happen
     case (_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!addImplicitArgument failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addImplicitArgument failed\n");
       then
         fail();
   end matchcontinue;
@@ -1743,7 +1761,9 @@ algorithm
             sinfo as Absyn.INFO(fileName = fileName, lineNumberStart = lineNumberStart, columnNumberStart = columnNumberStart)),
            stmts, locals, scEnv, _, accMMDecls )
       equation
-        Debug.fprint(Flags.FAILTRACE," arg sourceInfo \n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace(" arg sourceInfo \n");
+        end if;
         fname = PATH_IDENT("Tpl", IDENT("sourceInfo"));
         rettype = NAMED_TYPE(PATH_IDENT("Absyn", IDENT("Info")));
         lineStr = intString(lineNumberStart);
@@ -1762,7 +1782,9 @@ algorithm
         outtxt = textTempVarNamePrefix +& intString(listLength(locals));
         (_, stmt, mmexp, rettype, locals, outtxt)
            = statementFromFun(argvals, fname, iargs, oargs, tyVars, emptyTxt, outtxt, locals, tplPackage, sinfo);
-        Debug.fprint(Flags.FAILTRACE," arg FUN_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln(" arg FUN_CALL stmt =\n" +& stmtsString({stmt}));
+        end if;
         //if emptyList in case of non-template function, not to be included to locals
         locals = addLocalValue(outtxt, TEXT_TYPE(), locals);
       then ( (mmexp, rettype, sinfo), stmt :: stmts, locals, scEnv, accMMDecls);
@@ -1791,7 +1813,7 @@ algorithm
     //should not ever happen
     case (_,_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!statementsFromArg failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!statementsFromArg failed\n");
       then
         fail();
   end matchcontinue;
@@ -1840,7 +1862,7 @@ algorithm
 
     case (_,_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!statementsFromArgList failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!statementsFromArgList failed\n");
       then
         fail();
   end matchcontinue;
@@ -1979,7 +2001,7 @@ algorithm
     //fail / error - is in  mmExpToString
     case ( _, _, _, _, _, _, _, _, _,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!addWriteCallFromMMExp failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addWriteCallFromMMExp failed\n");
       then
         fail();
   end matchcontinue;
@@ -2048,8 +2070,9 @@ algorithm
     case (mmexp, UNRESOLVED_TYPE(reason = reason), _)
       equation
         reason = "#UnresType# " +& reason +& " #";
-        //true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "Error - an unresolved value trying to convert to string. Unresolution reason:\n    " +& reason);
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("Error - an unresolved value trying to convert to string. Unresolution reason:\n    " +& reason);
+        end if;
       then
         MM_FN_CALL(IDENT(reason),{ mmexp });
 
@@ -2066,7 +2089,7 @@ algorithm
     //should not ever happen
     case ( _, _, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!mmExpToString failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!mmExpToString failed\n");
       then
         fail();
   end matchcontinue;
@@ -2261,19 +2284,19 @@ algorithm
 
     case ( {}, (_ :: _), _,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "Error - more arguments expected for a function.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - more arguments expected for a function.\n");
       then
         fail();
 
     case ( (_ :: _), {}, _,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "Error - less number of arguments expected for a function.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - less number of arguments expected for a function.\n");
       then
         fail();
 
     case ( _, _,_,_, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "!!! - typeAdaptMMArgsForFun failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!! - typeAdaptMMArgsForFun failed\n");
       then
         fail();
   end matchcontinue;
@@ -2383,7 +2406,7 @@ algorithm
            +& "' failed to type adapt to its inferred type '"
            +& typeSignatureString(targettype) +& "'.";
         addSusanError(msg, sinfo);
-        //Debug.fprint(Flags.FAILTRACE, "Error - typeAdaptMMArg failed\n");
+        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeAdaptMMArg failed\n");
         msg = "#Error# " +& msg +& " #";
       then
         ( MM_FN_CALL(IDENT(msg),{ mmarg }), setTyVars);
@@ -2391,7 +2414,7 @@ algorithm
     //fail when no case is useful and no error shoud be reported
     case ( _, _, _, false, _,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "Fail branch- typeAdaptMMArg failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Fail branch- typeAdaptMMArg failed\n");
       then
         fail();
   end matchcontinue;
@@ -2463,7 +2486,7 @@ algorithm
 
     case ( _, _, _, _, _, _, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "Error - typeAdaptMMOption failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeAdaptMMOption failed\n");
       then
         fail();
   end matchcontinue;
@@ -2508,7 +2531,7 @@ algorithm
     //may fail, when addLocalValue fails
     case ( _, _, _, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "!!!- mmEnsureNonFunctionArg failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!!- mmEnsureNonFunctionArg failed\n");
       then
         fail();
   end matchcontinue;
@@ -2568,14 +2591,14 @@ algorithm
 
     case ( {}, {}, _::_, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "Error - inconsistent in/out Text arguments for a template function (Output texts are not a subset of input texts).\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - inconsistent in/out Text arguments for a template function (Output texts are not a subset of input texts).\n");
       then
         fail();
 
     //should not ever happen
     case ( _, _, _, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "!!!- elabOutTextArgs failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!!- elabOutTextArgs failed\n");
       then
         fail();
   end matchcontinue;
@@ -2825,7 +2848,7 @@ algorithm
     //may fail on error
     case (_,_,_,_,_, _,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!statementsFromMapExp failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!statementsFromMapExp failed\n");
       then
         fail();
   end matchcontinue;
@@ -2923,7 +2946,7 @@ algorithm
     //cannot happen
     case (_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!addNextIter failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addNextIter failed\n");
       then
         fail();
   end matchcontinue;
@@ -2962,7 +2985,7 @@ algorithm
     //should not happen
     case (_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!addGetIndex failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addGetIndex failed\n");
       then
         fail();
   end matchcontinue;
@@ -3000,7 +3023,7 @@ algorithm
     //cannot happen
     case (_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!addNextIter failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addNextIter failed\n");
       then
         fail();
   end matchcontinue;
@@ -3042,7 +3065,7 @@ algorithm
     //cannot happen
     case (_, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!makeMMExpOptions failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!makeMMExpOptions failed\n");
       then
         fail();
   end matchcontinue;
@@ -3066,7 +3089,7 @@ algorithm
     //cannot happen
     case (_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!mmexpFromStrTokOption failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!mmexpFromStrTokOption failed\n");
       then
         fail();
   end matchcontinue;
@@ -3144,7 +3167,7 @@ algorithm
 
     case (_,_,_,_, _,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!makeMatchFun failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!makeMatchFun failed\n");
       then
         fail();
   end matchcontinue;
@@ -3311,7 +3334,7 @@ algorithm
 
     case (_,_,_,_, _,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!elabMatchCases failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!elabMatchCases failed\n");
       then
         fail();
   end matchcontinue;
@@ -3346,7 +3369,7 @@ algorithm
 
     case (_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!getAssignedTexts failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!getAssignedTexts failed\n");
       then
         fail();
   end matchcontinue;
@@ -3528,14 +3551,14 @@ algorithm
     case (_, _,_)
       equation
         //locals = addLocalValue("#Error - type check#", mtype, locals);
-        Debug.fprint(Flags.FAILTRACE, "Error - typeCheckMatchingExp failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeCheckMatchingExp failed\n");
       then
         fail();
 
     // should not ever happen
     case (_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!typeCheckMatchingExp failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!typeCheckMatchingExp failed\n");
       then
         fail();
 
@@ -3576,7 +3599,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         failure( _ = lookupTupleList(fields, ident) );
         //reason = "#Error - unresolved type - cannot find field '" +& ident +& "'#";
-        Debug.fprint(Flags.FAILTRACE, "Error - typeCheckMatchingExpRecord failed to find field '" +& ident +& "'\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeCheckMatchingExpRecord failed to find field '" +& ident +& "'\n");
         //(locals, fms) = localsFromMatchExpAndTypeCheckRecord(fms, fields, locals, astDefs);
       then
         fail();
@@ -3586,7 +3609,7 @@ algorithm
     /*
     case (_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!localsFromMatchExpAndTypeCheckRecord failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!localsFromMatchExpAndTypeCheckRecord failed\n");
       then
         fail();
     */
@@ -3624,13 +3647,13 @@ algorithm
 
     case ( (_ :: _), {}, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "Error - typeCheckMatchingExpList more expressions to chceck than required (a tuple type has less arguments than provided?).\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeCheckMatchingExpList more expressions to chceck than required (a tuple type has less arguments than provided?).\n");
       then
         fail();
 
     case ( {}, _ :: _, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "Error - typeCheckMatchingExpList more arguments expected (the tuple type has more arguments than provided).\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - typeCheckMatchingExpList more arguments expected (the tuple type has more arguments than provided).\n");
       then
         fail();
 
@@ -3638,7 +3661,7 @@ algorithm
     /*
     case (_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!localsFromMatchExpAndTypeCheckList failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!localsFromMatchExpAndTypeCheckList failed\n");
       then
         fail();
     */
@@ -3836,7 +3859,9 @@ algorithm
       equation
         failure( _ = lookupTupleList(fields, ident) );
         //locals = addLocalValue(ident, UNRESOLVED_TYPE(reason), locals);
-        Debug.fprint(Flags.FAILTRACE, "Error - rewriteMatchExpByLocalNamesRecord failed to find field '" +& ident +& "'\n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("Error - rewriteMatchExpByLocalNamesRecord failed to find field '" +& ident +& "'\n");
+        end if;
         (fms, usedLocals) = rewriteMatchExpByLocalNamesRecord(fms, fields, inLocalNames, usedLocals, astDefs);
       then
         ((ident, mexp) :: fms, usedLocals);
@@ -3844,7 +3869,7 @@ algorithm
     // should not ever happen
     case (_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!rewriteMatchExpByLocalNamesRecord failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!rewriteMatchExpByLocalNamesRecord failed\n");
       then
         fail();
 
@@ -3887,7 +3912,7 @@ algorithm
     // should not ever happen - when type check was successful
     case (_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!localsFromMatchExpList failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!localsFromMatchExpList failed\n");
       then
         fail();
 
@@ -3928,7 +3953,7 @@ algorithm
         _ = lookupTupleList(locals, ident);
         msg = "A duplicite identifier '" +& ident +& "' bound in a matching expression.";
         addSusanError(msg, dummySourceInfo); //TODO: Match expressions source info here
-        //Debug.fprint(Flags.FAILTRACE, "Error - (addLocalValue) a duplicite identifier '" +& ident +& "' bound in a matching expression. \n");
+        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - (addLocalValue) a duplicite identifier '" +& ident +& "' bound in a matching expression. \n");
       then
         ((ident, mtype) :: locals);
 
@@ -3960,7 +3985,7 @@ algorithm
 
     case (_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!makeMMMatchCase failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!makeMMMatchCase failed\n");
       then
         fail();
   end matchcontinue;
@@ -4000,7 +4025,7 @@ algorithm
 
     case (_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!makeExtraArgBinding failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!makeExtraArgBinding failed\n");
       then
         fail();
   end matchcontinue;
@@ -4037,7 +4062,7 @@ algorithm
 
     case ( _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!addRestElabCase failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!addRestElabCase failed\n");
       then
         fail();
   end matchcontinue;
@@ -4135,7 +4160,7 @@ algorithm
     //cannot happen
     case ( _, _, _, _, _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!adaptTextToString failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!adaptTextToString failed\n");
       then
         fail();
   end matchcontinue;
@@ -4210,7 +4235,7 @@ algorithm
 
     case (_,_,_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!elabCasesFromCondition failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!elabCasesFromCondition failed\n");
       then
         fail();
   end matchcontinue;
@@ -4247,7 +4272,7 @@ algorithm
 
     case (_,_,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!casesForTrueFalseCondition failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!casesForTrueFalseCondition failed\n");
       then
         fail();
   end matchcontinue;
@@ -4270,7 +4295,7 @@ algorithm
     //cannot happen
     case (_ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!getElseBranch failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!getElseBranch failed\n");
       then
         fail();
   end matchcontinue;
@@ -4374,7 +4399,7 @@ algorithm
     //should not ever happen
     case ( _, _, _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!resolveBoundPath failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!resolveBoundPath failed\n");
       then
         fail();
   end matchcontinue;
@@ -4399,7 +4424,7 @@ algorithm
         //true = Flags.isSet(Flags.FAILTRACE);
         //msg = msg +& " unresolved type of '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n";
         msg = "(" +& msg +& ") " +& reason;
-        //Debug.fprint(Flags.FAILTRACE, "ADD Error: " +& msg +& "\n");  //+& " unresolved path '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n");
+        //true = Flags.isSet(Flags.FAILTRACE); Debug.trace("ADD Error: " +& msg +& "\n");  //+& " unresolved path '" +& pathIdentString(path) +& "', reason = '" +& reason +& "'.\n");
         addSusanError(msg, inInfo);
       then
         ();
@@ -4440,32 +4465,6 @@ algorithm
 end checkTextType;
 
 
-/*
-public function ensureNotUsingTheSameText
-  input PathIdent inPath;
-  input MMExp inMMExpIdent "local ident";
-  input TypeSignature inType;
-  input Ident inText;
-  output Boolean isOK;
-algorithm
-  isOK := matchcontinue (inPath, inMMExpIdent, inType, inText)
-    local
-      PathIdent path;
-      Ident txtIdent, intxt;
-
-    case ( path, MM_IDENT(IDENT(txtIdent)), TEXT_TYPE(), intxt)
-      equation
-        true = stringEq(txtIdent, intxt);
-        Debug.fprint(Flags.FAILTRACE, "Error - trying to use '" +& pathIdentString(path)
-           +& "' Text recursively during self evaluation. Use an additional Text variable if a self addition/duplication is needed, like  let b = a  let &a += b ... \n");
-      then
-        false;
-
-    case ( _, _, _, _) then true;
-  end matchcontinue;
-end ensureNotUsingTheSameText;
-*/
-
 public function makeMMExpFromTemplateConstant
   input TemplateDef inTplDef;
   input Ident inTemplIdent;
@@ -4505,7 +4504,7 @@ algorithm
     // should not ever happen
     case ( _, _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!makeMMExpFromTemplateConstant failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!makeMMExpFromTemplateConstant failed\n");
       then
         fail();
   end matchcontinue;
@@ -4576,7 +4575,7 @@ algorithm
           (RECURSIVE_SCOPE(recIdent = letIdent) :: _), _)
       equation
         true = stringEq(ident, letIdent);
-        Debug.fprint(Flags.FAILTRACE, "Error - trying to use '" +& ident
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - trying to use '" +& ident
            +& "' recursively inside a let scope or text addition. Use an additional Text variable if a self addition/duplication is needed, like  let b = a  let &a += b ... \n");
       then
         fail();
@@ -4670,12 +4669,16 @@ algorithm
              matchArgName = matchArgName,
              hasImplicitScope = true) :: restEnv, astdefs  )
       equation
-        Debug.fprint(Flags.FAILTRACE,"\n trying [it.]path for '" +& ident +& " / " +& pathIdentString(path) +& "' : "
-                    +& typeSignatureString(mtype) +& " \n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln("\n trying [it.]path for '" +& ident +& " / " +& pathIdentString(path) +& "' : "
+                    +& typeSignatureString(mtype));
+        end if;
         (idtype, mexp) = lookupUpdateMExpDotPath(ident, path, mexp, mtype, astdefs);
         failure(UNRESOLVED_TYPE(_) = idtype);
-        Debug.fprint(Flags.FAILTRACE,"\n [it.]path for '" +& pathIdentString(path) +& "' : "
-                    +& typeSignatureString(idtype) +& " \n");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.traceln("\n [it.]path for '" +& pathIdentString(path) +& "' : "
+                    +& typeSignatureString(idtype));
+        end if;
 
         encident = encodePathIdent(path, caseBindingNamePrefix);
         (encident, localNames, accLocals)
@@ -4739,7 +4742,7 @@ algorithm
     // can normally fail for template or external constants
     //case ( ident, _, _, _ )
     //  equation
-    //    Debug.fprint(Flags.FAILTRACE, "-resolvePathInScopeEnv failed for ident '" +& ident +& "'.\n");
+    //    true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-resolvePathInScopeEnv failed for ident '" +& ident +& "'.\n");
     //  then
     //    fail();
   end matchcontinue;
@@ -4833,7 +4836,7 @@ algorithm
     // should not ever happen
     case (_,_,_, _,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!updateLocalsForMatchingExp failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!updateLocalsForMatchingExp failed\n");
       then
         fail();
   end matchcontinue;
@@ -4954,7 +4957,7 @@ algorithm
     // should not ever happen
     case (_,_,_, _,_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!updateLocalsForLetExp failed\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!updateLocalsForLetExp failed\n");
       then
         fail();
   end matchcontinue;
@@ -5190,7 +5193,7 @@ algorithm
     case ( ident, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "-!!!lookupUpdateMExpDotPath failed for ident '" +& ident +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!lookupUpdateMExpDotPath failed for ident '" +& ident +& "'.\n");
       then
         fail();
 
@@ -5233,7 +5236,7 @@ algorithm
     // should not ever happen
     case ( _, _, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!updateFieldMatchingsForField failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!updateFieldMatchingsForField failed.\n");
       then
         fail();
   end matchcontinue;
@@ -5286,7 +5289,7 @@ algorithm
     //should not ever happen
     case ( _, _)
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!makeBindAs failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!makeBindAs failed.\n");
       then
         fail();
   end matchcontinue;
@@ -5341,7 +5344,7 @@ algorithm
     case ( inid, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "-!!!lookupUpdateMExpDotPathRecord failed for ident '" +& inid +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!lookupUpdateMExpDotPathRecord failed for ident '" +& inid +& "'.\n");
       then
         fail();
   end matchcontinue;
@@ -5386,7 +5389,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure( _ = lookupTupleList(fields, ident) );
-        Debug.fprint(Flags.FAILTRACE, "-Error!!!lookupUpdateMExpRecord failed in lookup for field (type) ident '" +& ident +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-Error!!!lookupUpdateMExpRecord failed in lookup for field (type) ident '" +& ident +& "'.\n");
       then
         fail(); //?? will fail the whole lookupUpdateMExpRecord or retry the next case ?
 
@@ -5474,7 +5477,7 @@ algorithm
     case ( NAMED_TYPE(name = _), tagpath, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "Error - (getFieldsForRecord) for case tag '" +& pathIdentString(tagpath) +& "' failed for reason above.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - (getFieldsForRecord) for case tag '" +& pathIdentString(tagpath) +& "' failed for reason above.\n");
       then
         fail();
 
@@ -5482,7 +5485,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         //failure(NAMED_TYPE(_) = mtype);
-        Debug.fprint(Flags.FAILTRACE, "Error - for case tag '" +& pathIdentString(tagpath) +& "' the input type is not a NAME_TYPE hence not a union/record type.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - for case tag '" +& pathIdentString(tagpath) +& "' the input type is not a NAME_TYPE hence not a union/record type.\n");
       then
         fail();
 
@@ -5520,7 +5523,7 @@ algorithm
     //should not ever happen
     case ( _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!splitPackageAndIdent failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!splitPackageAndIdent failed.\n");
       then
         fail();
 
@@ -5552,7 +5555,7 @@ algorithm
     //should not ever happen
     case ( _, _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!makePathIdent failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!makePathIdent failed.\n");
       then
         fail();
 
@@ -5606,7 +5609,7 @@ algorithm
       equation
         equality(typepckg = importckg);
         failure(_ = lookupTupleList(typeLst, typeident));
-        Debug.fprint(Flags.FAILTRACE, "Error - getTypeInfo failed to lookup the type '" +& typeident +& "' for package '" +& pathIdentString(typepckg) +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getTypeInfo failed to lookup the type '" +& typeident +& "' for package '" +& pathIdentString(typepckg) +& "'.\n");
       then
         fail();
     */
@@ -5734,7 +5737,7 @@ algorithm
         //true = listMember(na, tyVars); //must be true
         tyConcreteDA = deAliasedType(tyConcrete, astDefs);
         failure( typesEqualConcrete(ty, tyConcreteDA, astDefs) );
-        Debug.fprint(Flags.FAILTRACE, "Error - unmatched type for type variable '" +& tid
+        Debug.trace("Error - unmatched type for type variable '" +& tid
            +& "'. Firstly inferred '" +& typeSignatureString(ty)
            +& "', next inferred '" +& typeSignatureString(tyConcrete)
            +& "'(dealiased '" +& typeSignatureString(tyConcreteDA) +& "').\n"
@@ -5897,7 +5900,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         true = listMember(tid, tyVars);
         failure(_ = lookupTupleList(setTyVars, tid));
-        Debug.fprint(Flags.FAILTRACE, "Error - cannot infer type variable '" +& tid +& "'.\n" );
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - cannot infer type variable '" +& tid +& "'.\n" );
       then
         fail();
 
@@ -5995,7 +5998,7 @@ algorithm
 
     case ( _, _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!checkPackageOpt failed - package paths are not the same.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!checkPackageOpt failed - package paths are not the same.\n");
       then
         fail();
 
@@ -6027,7 +6030,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure(_ = lookupTupleList(rectags, tagident));
-        Debug.fprint(Flags.FAILTRACE, "Error - getFields failed to lookup the union tag '" +& tagident +& "', that is not found in type '" +& typeident +& "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getFields failed to lookup the union tag '" +& tagident +& "', that is not found in type '" +& typeident +& "'.\n");
       then
         fail();
 
@@ -6041,7 +6044,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         false = stringEq(tagident, typeident);
-        Debug.fprint(Flags.FAILTRACE, "Error - getFields failed to match the tag '" +& tagident +& "', the type '" +& typeident +& "' expected.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - getFields failed to match the tag '" +& tagident +& "', the type '" +& typeident +& "' expected.\n");
       then
         fail();
 
@@ -6051,7 +6054,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         failure(TI_UNION_TYPE(_) = typeinfo);
         failure(TI_RECORD_TYPE(_) = typeinfo);
-        Debug.fprint(Flags.FAILTRACE, "- getFields failed - the typeinfo is neither union nor record type.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("- getFields failed - the typeinfo is neither union nor record type.\n");
       then
         fail();
 
@@ -6113,14 +6116,14 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure(typeLst = listMap1Tuple22(typeLst, fullyQualifyAstTypeInfo, importckg));
-        Debug.fprint(Flags.FAILTRACE, "-fullyQualifyASTDefs failed for importckg = " +& pathIdentString(importckg) +& " .\n");
+        Debug.trace("-fullyQualifyASTDefs failed for importckg = " +& pathIdentString(importckg) +& " .\n");
       then
         fail();
 
     //should not happen
     case ( _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!! fullyQualifyASTDefs failed .\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!! fullyQualifyASTDefs failed .\n");
       then
         fail();
   end matchcontinue;
@@ -6176,7 +6179,7 @@ algorithm
     //should not happen
     case ( _, _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!! fullyQualifyAstTypeInfo failed .\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!! fullyQualifyAstTypeInfo failed .\n");
       then
         fail();
   end matchcontinue;
@@ -6266,7 +6269,7 @@ algorithm
     //should not happen
     case ( _, _, _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!! fullyQualifyAstTypeSignature failed .\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!! fullyQualifyAstTypeSignature failed .\n");
       then
         fail();
   end matchcontinue;
@@ -6297,7 +6300,7 @@ algorithm
     //cannot happen
     case ( _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!! convertNameTypeIfTextType failed .\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!! convertNameTypeIfTextType failed .\n");
       then
         fail();
   end matchcontinue;
@@ -6339,7 +6342,7 @@ algorithm
     //can fail on errror
     case ( _, _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "- fullyQualifyTemplateDef failed .\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("- fullyQualifyTemplateDef failed .\n");
       then
         fail();
 
@@ -6410,7 +6413,7 @@ algorithm
     //should not happen
     case ( _, _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!! fullyQualifyTemplateTypeSignature failed .\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!! fullyQualifyTemplateTypeSignature failed .\n");
       then
         fail();
   end matchcontinue;
@@ -6630,7 +6633,9 @@ public function addSusanError
   input String inErrMsg;
   input Absyn.Info inInfo;
 algorithm
-  Debug.fprint(Flags.FAILTRACE, "Error - " +& inErrMsg +& "\n");
+  if Flags.isSet(Flags.FAILTRACE) then
+    Debug.traceln("Error - " +& inErrMsg);
+  end if;
   Error.addSourceMessage(Error.SUSAN_ERROR, {inErrMsg}, inInfo);
 end addSusanError;
 
@@ -6737,7 +6742,7 @@ algorithm
     //should not ever happen
     case ( _ )
       equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!pathIdentString failed.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!pathIdentString failed.\n");
       then
         fail();
 

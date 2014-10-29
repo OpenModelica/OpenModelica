@@ -173,8 +173,10 @@ encapsulated package HpcOmMemory
           //---------------------------
           notOptimizedVars = getNotOptimizedVarsByCacheLineMapping(scVarCLMapping, allVarsMapping);
           //notOptimizedVars = listAppend(notOptimizedVars, aliasVars);
-          Debug.bcall(Flags.isSet(Flags.HPCOM_DUMP), print, "Not optimized vars:\n\t");
-          Debug.bcall(Flags.isSet(Flags.HPCOM_DUMP), print, stringDelimitList(List.map(notOptimizedVars, dumpSimCodeVar), ",") +& "\n");
+          if Flags.isSet(Flags.HPCOM_DUMP) then
+            print("Not optimized vars:\n\t");
+            print(stringDelimitList(List.map(notOptimizedVars, dumpSimCodeVar), ",") +& "\n");
+          end if;
 
           //Append cache line nodes to graph
           //--------------------------------
@@ -191,7 +193,9 @@ encapsulated package HpcOmMemory
           GraphML.dumpGraph(graphInfo, fileName);
           tmpMemoryMap = convertCacheMapToMemoryMap(cacheMap,hashTable,notOptimizedVars);
           //print cache map
-          Debug.bcall(Flags.isSet(Flags.HPCOM_DUMP), printCacheMap, cacheMap);
+          if Flags.isSet(Flags.HPCOM_DUMP) then
+            printCacheMap(cacheMap);
+          end if;
         then SOME(tmpMemoryMap);
       case(_,_,_,_,_,_,_,_,_,_,_,_)
         equation

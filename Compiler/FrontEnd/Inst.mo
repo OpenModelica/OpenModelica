@@ -456,7 +456,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "Inst.instClassInProgram failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Inst.instClassInProgram failed\n");
       then
         fail();
 
@@ -547,9 +548,12 @@ algorithm
           inst_dims,impl,callscope,graph,_)
       equation
         recursionDepthReached = listLength(FGraph.currentScope(env)) < Global.recursionDepthLimit;
-        scopeName = Debug.bcallret1(not recursionDepthReached,FGraph.printGraphPathStr,env,"");
-        strDepth = intString(Global.recursionDepthLimit);
-        Error.assertionOrAddSourceMessage(recursionDepthReached,Error.RECURSION_DEPTH_REACHED,{strDepth, scopeName},info);
+        if not recursionDepthReached then
+          scopeName = FGraph.printGraphPathStr(env);
+          strDepth = intString(Global.recursionDepthLimit);
+          Error.addSourceMessage(Error.RECURSION_DEPTH_REACHED,{strDepth, scopeName},info);
+          fail();
+        end if;
         //print("---- CLASS: "); print(n);print(" ----\n"); print(SCodeDump.printClassStr(c)); //Print out the input SCode class
         //str = SCodeDump.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
 
@@ -600,8 +604,8 @@ algorithm
 
     case (_,env,_,_,_,_,SCode.CLASS(name = n),_,_,_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClass: " +& n +& " in env: " +&
-        FGraph.printGraphPathStr(env) +& " failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.instClass: " +& n +& " in env: " +& FGraph.printGraphPathStr(env) +& " failed\n");
       then
         fail();
   end matchcontinue;
@@ -677,7 +681,7 @@ algorithm
 
     case (_,_,_,_,_,_,SCode.CLASS(name = _),_,_,_,_)
       equation
-        //Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassBasictype: " +& n +& " failed");
+        //fprintln(Flags.FAILTRACE, "- Inst.instClassBasictype: " +& n +& " failed");
       then
         fail();
 
@@ -917,7 +921,7 @@ algorithm
         // cache = FCore.setCachedFunctionTree(cache, DAEUtil.joinAvlTrees(functionTree, FCore.getFunctionTree(cache)));
         showCacheInfo("Full Inst Hit: ", fullEnvPathPlusClass);
         /*
-        Debug.fprintln(Flags.CACHE, "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
+        fprintln(Flags.CACHE, "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +&
           "\n\tmods: " +& Mod.printModStr(mods) +&
           "\n\tenv: " +& FGraph.printGraphPathStr(inEnv) +&
@@ -951,7 +955,7 @@ algorithm
              (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims),
              (env,ci_state)))*/ NONE());
         /*
-        Debug.fprintln(Flags.CACHE, "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
+        fprintln(Flags.CACHE, "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +&
           "\n\tmods: " +& Mod.printModStr(mods) +&
           "\n\tenv: " +& FGraph.printGraphPathStr(inEnv) +&
@@ -972,8 +976,7 @@ algorithm
       equation
         //print("instClassIn(");print(n);print(") failed\n");
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassIn2 failed on class:" +&
-           n +& " in environment: " +& FGraph.printGraphPathStr(env));
+        Debug.traceln("- Inst.instClassIn2 failed on class:" +& n +& " in environment: " +& FGraph.printGraphPathStr(env));
       then
         fail();
 
@@ -1139,10 +1142,10 @@ algorithm
       equation
         ErrorExt.setCheckpoint("instClassParts");
         false = InstUtil.isBuiltInClass(n) "If failed above, no need to try again";
-        // Debug.fprint(Flags.INSTTR, "ICLASS [");
+        // fprint(Flags.INSTTR, "ICLASS [");
         // _ = if_(impl, "impl] ", "expl] ");
-        // Debug.fprint(Flags.INSTTR, implstr);
-        // Debug.fprintln(Flags.INSTTR, FGraph.printGraphPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
+        // fprint(Flags.INSTTR, implstr);
+        // fprintln(Flags.INSTTR, FGraph.printGraphPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
         // t1 = clock();
         (cache,env_1,ih,store,dae,csets,ci_state_1,tys,bc,oDA,eqConstraint,graph) =
           instClassdef(cache, env, ih, store, mods, pre, ci_state, n, d, r, vis,
@@ -1152,7 +1155,7 @@ algorithm
         // time = t2 -. t1;
         // b=realGt(time,0.05);
         // s = realString(time);
-        // Debug.fprintln(Flags.INSTTR, " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& FGraph.printGraphPathStr(env) +& " mods: " +& Mod.printModStr(mods));
+        // fprintln(Flags.INSTTR, " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& FGraph.printGraphPathStr(env) +& " mods: " +& Mod.printModStr(mods));
         dae = if SCode.isFunction(c) and not impl then DAE.DAE({}) else dae;
         ErrorExt.delCheckpoint("instClassParts");
       then
@@ -1162,9 +1165,12 @@ algorithm
     case (cache,env,ih,store,_,_,ci_state,c as SCode.CLASS(name = _),_,_,impl,_,graph,_,_)
       equation
         b = Flags.getConfigBool(Flags.CHECK_MODEL) and (not impl) and SCode.isFunction(c);
-        Debug.bcall1(not b, ErrorExt.delCheckpoint, "instClassParts");
-        Debug.bcall1(b, ErrorExt.rollBack, "instClassParts");
-        true = b;
+        if not b then
+          ErrorExt.delCheckpoint("instClassParts");
+          fail();
+        else
+          ErrorExt.rollBack("instClassParts");
+        end if;
         // clsname = SCode.className(cls);
         // print("Ignore function" +& clsname +& "\n");
       then
@@ -1174,7 +1180,7 @@ algorithm
     else
       equation
         //print("instClassIn(");print(n);print(") failed\n");
-        //Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassIn failed" +& n);
+        //fprintln(Flags.FAILTRACE, "- Inst.instClassIn failed" +& n);
       then
         fail();
   end matchcontinue;
@@ -1404,7 +1410,8 @@ algorithm
 
     case (DAE.NAMEMOD(ident = name), _, _, _, _)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instBasicTypeAttributes2 failed on " +& name);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.instBasicTypeAttributes2 failed on " +& name);
       then
         fail();
 
@@ -1498,7 +1505,7 @@ algorithm
 
     case(_,_,_,SOME(v),_,expectedTp,_) equation
       true = Flags.isSet(Flags.FAILTRACE);
-      Debug.fprintln(Flags.FAILTRACE, "instBuiltinAttribute failed for: " +& id +&
+      Debug.traceln("instBuiltinAttribute failed for: " +& id +&
                                   " value binding: " +& ValuesUtil.printValStr(v) +&
                                   " binding: " +& ExpressionDump.printExpStr(bind) +&
                                   " expected type: " +& Types.printTypeStr(expectedTp) +&
@@ -1506,7 +1513,7 @@ algorithm
     then fail();
     case(_,_,_,_,_,expectedTp,_) equation
       true = Flags.isSet(Flags.FAILTRACE);
-      Debug.fprintln(Flags.FAILTRACE, "instBuiltinAttribute failed for: " +& id +&
+      Debug.traceln("instBuiltinAttribute failed for: " +& id +&
                                   " value binding: NONE()" +&
                                   " binding: " +& ExpressionDump.printExpStr(bind) +&
                                   " expected type: " +& Types.printTypeStr(expectedTp) +&
@@ -1637,7 +1644,7 @@ algorithm
         equality(bbx = bby);
         // true = checkClassEqual(aa_5, c);
         (cache,env,_,_,_,_,ci_state_1,_,_,_,_,_) = outputs;
-        //Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->got FULL from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        //fprintln(Flags.CACHE, "IIIIPARTIAL->got FULL from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (inCache,env,ih,ci_state_1);*/
 
@@ -1662,7 +1669,7 @@ algorithm
            NONE(),
            SOME(FUNC_partialInstClassIn( // result for partial instantiation
              inputs,outputs)));
-        // Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        // fprintln(Flags.CACHE, "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
         // _ = FGraph.updateClass(inEnv, inClass, inPrefix, inMod, FCore.CLS_PARTIAL(), env);
       then
         (cache,env,ih,ci_state,vars);
@@ -1768,7 +1775,7 @@ algorithm
         //b=realGt(time,0.05);
         // s = realString(time);
         // s2 = FGraph.printGraphPathStr(env);
-        // Debug.fprintln(Flags.INSTTR, "ICLASSPARTIAL " +& n +& " inst time: " +& s +& " in env " +& s2 +& " mods: " +& Mod.printModStr(mods));
+        // fprintln(Flags.INSTTR, "ICLASSPARTIAL " +& n +& " inst time: " +& s +& " in env " +& s2 +& " mods: " +& Mod.printModStr(mods));
       then
         (cache,env_1,ih,ci_state_1,vars);
 
@@ -2056,7 +2063,7 @@ algorithm
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
           re,vis,_,_,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "ICD BEGIN: " +& FGraph.printGraphPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
+        // fprintln(Flags.INST_TRACE, "ICD BEGIN: " +& FGraph.printGraphPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
       then
         fail();*/
 
@@ -2097,7 +2104,7 @@ algorithm
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
           re,vis,_,_,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "ICD AFTER BASIC TYPE: " +& FGraph.printGraphPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
+        // fprintln(Flags.INST_TRACE, "ICD AFTER BASIC TYPE: " +& FGraph.printGraphPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
       then
         fail();*/
 
@@ -2124,7 +2131,9 @@ algorithm
       equation
         false = Util.getStatefulBoolean(stopInst);
         false = SCode.isExternalObject(els);
-        Debug.bcall0(Flags.getConfigBool(Flags.UNIT_CHECKING),UnitParserExt.checkpoint);
+        if Flags.getConfigBool(Flags.UNIT_CHECKING) then
+          UnitParserExt.checkpoint();
+        end if;
         //Debug.traceln(" Instclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         els = InstUtil.extractConstantPlusDeps(els,instSingleCref,{},className);
@@ -2140,7 +2149,7 @@ algorithm
         (cache, env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods));
 
 
-        //// Debug.fprintln(Flags.INST_TRACE, "after InstUtil.addClassdefsToEnv ENV: " +& if_(stringEq(className, "PortVolume"), FGraph.printGraphStr(env1), " no env print "));
+        //// fprintln(Flags.INST_TRACE, "after InstUtil.addClassdefsToEnv ENV: " +& if_(stringEq(className, "PortVolume"), FGraph.printGraphStr(env1), " no env print "));
 
         // adrpo: TODO! DO SOME CHECKS HERE!
         // restriction on what can inherit what, see 7.1.3 Restrictions on the Kind of Base Class
@@ -2154,8 +2163,8 @@ algorithm
 
         // print("Extended Elements inst:\n" +& InstUtil.printElementAndModList(extcomps));
 
-        //Debug.fprint(Flags.INST_EXT_TRACE, "EXTENDS RETURNS:\n" +& Debug.fcallret1(Flags.INST_EXT_TRACE, printElementAndModList, extcomps, "") +& "\n");
-        //Debug.fprint(Flags.INST_EXT_TRACE, "EXTENDS RETURNS EMODS: " +& Mod.printModStr(emods) +& "\n");
+        //fprint(Flags.INST_EXT_TRACE, "EXTENDS RETURNS:\n" +& Debug.fcallret1(Flags.INST_EXT_TRACE, printElementAndModList, extcomps, "") +& "\n");
+        //fprint(Flags.INST_EXT_TRACE, "EXTENDS RETURNS EMODS: " +& Mod.printModStr(emods) +& "\n");
 
         compelts_1 = InstUtil.addNomod(compelts)
         "Problem. Modifiers on inherited components are unelabed, loosing their
@@ -2193,7 +2202,7 @@ algorithm
 
         //(csets, env2, ih) = InstUtil.addConnectionCrefsFromEqs(csets, eqs_1, pre, env2, ih);
 
-        //// Debug.fprintln(Flags.INST_TRACE, "Emods to InstUtil.addComponentsToEnv: " +& Mod.printModStr(emods));
+        //// fprintln(Flags.INST_TRACE, "Emods to InstUtil.addComponentsToEnv: " +& Mod.printModStr(emods));
 
         //Add variables to env, wihtout type and binding, which will be added
         //later in instElementList (where update_variable is called)"
@@ -2212,8 +2221,8 @@ algorithm
         //Instantiate components
         compelts_2_elem = List.map(compelts_2,Util.tuple21);
 
-        // Debug.fprintln(Flags.INNER_OUTER, "Number of components: " +& intString(listLength(compelts_2_elem)));
-        // Debug.fprintln(Flags.INNER_OUTER, stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
+        // fprintln(Flags.INNER_OUTER, "Number of components: " +& intString(listLength(compelts_2_elem)));
+        // fprintln(Flags.INNER_OUTER, stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
 
         //print("To match modifiers,\n" +& Mod.printModStr(checkMods) +& "\n on components: ");
         //print(" (" +& stringDelimitList(List.map(compelts_2_elem,SCode.elementName),", ") +& ") \n");
@@ -2289,18 +2298,20 @@ algorithm
         //(dae,csets5,ih,graph) = InnerOuter.changeOuterReferences(dae,csets5,ih,graph);
         //t2 = clock();
         //ti = t2 -. t1;
-        //Debug.fprintln(Flags.INNER_OUTER, " INST_CLASS: (" +& realString(ti) +& ") -> " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods) +& " in env: " +& FGraph.printGraphPathStr(env7));
+        //fprintln(Flags.INNER_OUTER, " INST_CLASS: (" +& realString(ti) +& ") -> " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods) +& " in env: " +& FGraph.printGraphPathStr(env7));
 
         csets5 = InnerOuter.changeInnerOuterInOuterConnect(csets5);
 
         // adrpo: moved bunch of a lot of expensive unit checking operations to this function
         (cache,env5,store) = InstUtil.handleUnitChecking(cache,env5,store,pre,dae1,{dae2,dae3,dae4,dae5},className);
 
-        Debug.bcall0(Flags.getConfigBool(Flags.UNIT_CHECKING),UnitParserExt.rollback); // print("rollback for "+&className+&"\n");
+        if Flags.getConfigBool(Flags.UNIT_CHECKING) then
+          UnitParserExt.rollback(); // print("rollback for "+&className+&"\n");
+        end if;
 
         // Search for equalityConstraint
         eqConstraint = InstUtil.equalityConstraint(env5, els, info);
-        ci_state6 = Debug.bcallret3(Util.isSome(ed),ClassInf.assertTrans,ci_state6,ClassInf.FOUND_EXT_DECL(),info,ci_state6);
+        ci_state6 = if Util.isSome(ed) then ClassInf.assertTrans(ci_state6,ClassInf.FOUND_EXT_DECL(),info) else ci_state6;
       then
         (cache,env5,ih,store,dae,csets5,ci_state6,vars,MetaUtil.fixUniontype(ci_state6,NONE()/* no basictype bc*/,inClassDef6),NONE(),eqConstraint,graph);
 
@@ -2625,10 +2636,10 @@ algorithm
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
-        Debug.fprint(Flags.FAILTRACE, "- Inst.instClassdef DERIVED( ");
-        Debug.fprint(Flags.FAILTRACE, Absyn.pathString(cn));
-        Debug.fprint(Flags.FAILTRACE, ") lookup failed\n ENV:");
-        Debug.fprint(Flags.FAILTRACE,FGraph.printGraphStr(env));
+        Debug.trace("- Inst.instClassdef DERIVED( ");
+        Debug.trace(Absyn.pathString(cn));
+        Debug.trace(") lookup failed\n ENV:");
+        Debug.trace(FGraph.printGraphStr(env));
       then
         fail();
 
@@ -2976,7 +2987,7 @@ algorithm
         className = SCode.getElementName(parentClass);
 
         // Debug.traceln(" Partialinstclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
-        // Debug.fprintln(Flags.INST_TRACE, "PARTIALICD: " +& FGraph.printGraphPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
+        // fprintln(Flags.INST_TRACE, "PARTIALICD: " +& FGraph.printGraphPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
         partialPrefix = InstUtil.isPartial(partialPrefix, mods);
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = InstUtil.splitElts(els);
@@ -3218,13 +3229,13 @@ algorithm
   // print("push " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n");
   cache := InstUtil.pushStructuralParameters(inCache);
   // i1 := numStructuralParameterScopes(cache);
-  //Debug.fprintln(Flags.IDEP, "Before:\n" +& stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
+  //fprintln(Flags.IDEP, "Before:\n" +& stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
   //System.startTimer();
   el := InstUtil.sortElementList(inElements, inEnv, FGraph.inFunctionScope(inEnv));
   // adrpo: MAKE SURE inner objects ARE FIRST in the list for instantiation!
   el := InstUtil.sortInnerFirstTplLstElementMod(el);
   //System.stopTimer();
-  //Debug.fprintln(Flags.IDEP, "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
+  //fprintln(Flags.IDEP, "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
 
   for e in el loop
     (cache, outEnv, outIH, outStore, dae, outSets, outState, vars, outGraph) :=
@@ -3551,7 +3562,7 @@ algorithm
          */
         mod = Mod.merge(mod, var_class_mod, env2, pre);
 
-        // Debug.fprintln(Flags.INST_TRACE, "INST ELEMENT: name: " +& name +& " mod: " +& Mod.printModStr(mod));
+        // fprintln(Flags.INST_TRACE, "INST ELEMENT: name: " +& name +& " mod: " +& Mod.printModStr(mod));
 
         // Apply redeclaration modifier to component
         (cache, env2, ih, SCode.COMPONENT(name,
@@ -3953,7 +3964,7 @@ algorithm
     case (_,_,_,DAE.REDECL(finalPrefix = _),_,
           _,_,_,_)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "redeclareType\nmodifier: " +& Mod.printModStr(inMod) +& "\nelement\n:" +& SCodeDump.unparseElementStr(inElement));
+        // fprintln(Flags.INST_TRACE, "redeclareType\nmodifier: " +& Mod.printModStr(inMod) +& "\nelement\n:" +& SCodeDump.unparseElementStr(inElement));
       then
         fail();
 
@@ -4101,7 +4112,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.redeclareType failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.redeclareType failed\n");
       then
         fail();
   end matchcontinue;
@@ -4169,10 +4181,10 @@ protected
 algorithm
   //myTick := intString(tick());
   //crefsStr := stringDelimitList(List.map(crefs, Dump.printComponentRefStr),",");
-  //Debug.fprintln(Flags.DEBUG,"start update comps " +& myTick +& " # " +& crefsStr);
+  //fprintln(Flags.DEBUG,"start update comps " +& myTick +& " # " +& crefsStr);
   (outCache,outEnv,outIH,_):=
     updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,NONE(),NONE());
-  //Debug.fprintln(Flags.DEBUG,"finished update comps" +& myTick);
+  //fprintln(Flags.DEBUG,"finished update comps" +& myTick);
   //print("outEnv:");print(FGraph.printGraphStr(outEnv));print("\n");
 end updateComponentsInEnv_dispatch;
 
@@ -4270,7 +4282,7 @@ algorithm
         //true = valueEq(tsOld, tsNew);
 
         // update frame in env!
-        // Debug.fprintln(Flags.INST_TRACE, "updateComponentInEnv: found a redeclaration that only changes bindings and prefixes: NEW:\n" +& SCodeDump.unparseElementStr(compNew) +& " in env:" +& FGraph.printGraphPathStr(env));
+        // fprintln(Flags.INST_TRACE, "updateComponentInEnv: found a redeclaration that only changes bindings and prefixes: NEW:\n" +& SCodeDump.unparseElementStr(compNew) +& " in env:" +& FGraph.printGraphPathStr(env));
 
         // update the mod then give it to
         (cache, daeMod) = Mod.elabMod(cache, env, ih, pre, smod, impl, Mod.COMPONENT(name), info);
@@ -4535,7 +4547,7 @@ algorithm
         /* The environment is extended with the new variable binding. */
         (cache,binding) = InstBinding.makeBinding(cache, env, attr, mod_3, ty, pre, name, info);
         /* type info present */
-        //Debug.fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
+        //fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
         env = FGraph.updateComp(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), FCore.VAR_TYPED(), compenv);
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
 
@@ -4585,7 +4597,7 @@ algorithm
         /* The environment is extended with the new variable binding. */
         (cache,binding) = InstBinding.makeBinding(cache, env, attr, m_1, ty, pre, name, info);
         /* type info present */
-        //Debug.fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
+        //fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
         env = FGraph.updateComp(env, DAE.TYPES_VAR(name,dattr,ty,binding,NONE()), FCore.VAR_TYPED(), compenv);
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
 
@@ -4874,7 +4886,8 @@ algorithm
         (cache,env2,dae,ci_state);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instConstraints failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.instConstraints failed\n");
       then
         fail();
 
@@ -4910,7 +4923,8 @@ algorithm
       then (cache,env,dae);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassAttributes failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.instClassAttributes failed\n");
       then
         fail();
   end match;
@@ -4999,7 +5013,8 @@ algorithm
       then attrs;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.insertClassAttribute failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Inst.insertClassAttribute failed\n");
       then
         fail();
 
@@ -5506,7 +5521,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE,"-updateComponentsInEnv failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("-updateComponentsInEnv failed\n");
       then fail();
   end matchcontinue;
 end updateComponentsInEnv2;

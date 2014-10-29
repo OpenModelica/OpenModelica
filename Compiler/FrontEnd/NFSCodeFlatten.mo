@@ -135,7 +135,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "NFSCodeFlatten.flattenClassInProgram failed on " +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("NFSCodeFlatten.flattenClassInProgram failed on " +&
           Absyn.pathString(inClassName));
       then
         fail();
@@ -186,7 +187,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "NFSCodeFlatten.flattenCompleteProgram failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("NFSCodeFlatten.flattenCompleteProgram failed\n");
       then
         fail();
 

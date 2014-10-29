@@ -323,7 +323,7 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e})
       equation
         b2 = Expression.isRelation(e) or Expression.isEventTriggeringFunctionExp(e);
-      then Debug.bcallret1(not b2,simplifyNoEvent,e,inExp);
+      then if not b2 then simplifyNoEvent(e) else inExp;
 
     // der(-v) -> -der(v)
     case DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.UNARY(DAE.UMINUS(tp),e1 as DAE.CREF(componentRef=_))},attr=attr)
@@ -513,19 +513,25 @@ algorithm
         ty1 = Expression.typeof(before);
         ty2 = Expression.typeof(after);
         b = valueEq(ty1,ty2);
-        s1 = Debug.bcallret1(not b,ExpressionDump.printExpStr,before,"");
-        s2 = Debug.bcallret1(not b,ExpressionDump.printExpStr,after,"");
-        s3 = Debug.bcallret1(not b,Types.unparseType,ty1,"");
-        s4 = Debug.bcallret1(not b,Types.unparseType,ty2,"");
-        Error.assertionOrAddSourceMessage(b, Error.SIMPLIFICATION_TYPE, {s1,s2,s3,s4}, Absyn.dummyInfo);
+        if not b then
+          s1 = ExpressionDump.printExpStr(before);
+          s2 = ExpressionDump.printExpStr(after);
+          s3 = Types.unparseType(ty1);
+          s4 = Types.unparseType(ty2);
+          Error.addMessage(Error.SIMPLIFICATION_TYPE, {s1,s2,s3,s4});
+          fail();
+        end if;
         c1 = Expression.complexity(before);
         c2 = Expression.complexity(after);
         b = c1 < c2;
-        s1 = intString(c2);
-        s2 = intString(c1);
-        s3 = Debug.bcallret1(b,ExpressionDump.printExpStr,before,"");
-        s4 = Debug.bcallret1(b,ExpressionDump.printExpStr,after,"");
-        Error.assertionOrAddSourceMessage(not b, Error.SIMPLIFICATION_COMPLEXITY, {s1,s2,s3,s4}, Absyn.dummyInfo);
+        if b then
+          s1 = intString(c2);
+          s2 = intString(c1);
+          s3 = ExpressionDump.printExpStr(before);
+          s4 = ExpressionDump.printExpStr(after);
+          Error.addMessage(Error.SIMPLIFICATION_COMPLEXITY, {s1,s2,s3,s4});
+          fail();
+        end if;
       then ();
   end match;
 end checkSimplify;
@@ -563,8 +569,11 @@ algorithm
         ErrorExt.setCheckpoint("ExpressionSimplify");
         (expAfterSimplify,options) = Expression.traverseExp(exp,simplifyWork,options);
         b = not referenceEq(expAfterSimplify, exp);
-        Debug.bcall1(b,ErrorExt.rollBack,"ExpressionSimplify");
-        Debug.bcall1(not b,ErrorExt.delCheckpoint,"ExpressionSimplify");
+        if b then
+          ErrorExt.rollBack("ExpressionSimplify");
+        else
+          ErrorExt.delCheckpoint("ExpressionSimplify");
+        end if;
         // print("simplify1 iter: " +& ExpressionDump.printExpStr(expAfterSimplify) +& "\n");
         (expAfterSimplify,b) = simplify1FixP(expAfterSimplify,options,n-1,b,b or hasChanged);
       then (expAfterSimplify,b);
@@ -1121,8 +1130,8 @@ algorithm
         es = List.flatten(mexpl);
         tp1 = Expression.unliftArray(Expression.unliftArray(tp1));
         sc = not Expression.isArrayType(tp1);
-        tp1 = Debug.bcallret1(sc,Expression.unliftArray,tp1,tp1);
-        tp1 = Debug.bcallret2(sc,Expression.liftArrayLeft,tp1,DAE.DIM_UNKNOWN(),tp1);
+        tp1 = if sc then Expression.unliftArray(tp1) else tp1;
+        tp1 = if sc then Expression.liftArrayLeft(tp1,DAE.DIM_UNKNOWN()) else tp1;
         dim = listLength(es);
         tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_INTEGER(dim));
         e = DAE.ARRAY(tp1,sc,es);
@@ -1135,8 +1144,8 @@ algorithm
         es = simplifyCat(1,es);
         tp1 = Expression.unliftArray(tp1);
         sc = not Expression.isArrayType(tp1);
-        tp1 = Debug.bcallret1(sc,Expression.unliftArray,tp1,tp1);
-        tp1 = Debug.bcallret2(sc,Expression.liftArrayLeft,tp1,DAE.DIM_UNKNOWN(),tp1);
+        tp1 = if sc then Expression.unliftArray(tp1) else tp1;
+        tp1 = if sc then Expression.liftArrayLeft(tp1,DAE.DIM_UNKNOWN()) else tp1;
         dim = listLength(es);
         tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_INTEGER(dim));
         e = DAE.ARRAY(tp1,sc,es);
@@ -2446,7 +2455,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE,"- ExpressionSimplify.simplifyBinaryAddConstants failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- ExpressionSimplify.simplifyBinaryAddConstants failed\n");
       then
         fail();
   end matchcontinue;
@@ -2612,7 +2622,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE,"- ExpressionSimplify.simplifyAdd failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- ExpressionSimplify.simplifyAdd failed\n");
       then
         fail();
   end matchcontinue;

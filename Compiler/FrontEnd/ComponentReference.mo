@@ -914,8 +914,8 @@ algorithm
           DAE.CREF_QUAL(ident = id2, subscriptLst = ss2,componentRef = cr2))
       equation
         res = stringEq(id1, id2);
-        res = Debug.bcallret2(res, Expression.subscriptEqual, ss1, ss2, false);
-        res = Debug.bcallret2(res, crefPrefixOf, cr1, cr2, false);
+        res = if res then Expression.subscriptEqual(ss1, ss2) else false;
+        res = if res then crefPrefixOf(cr1, cr2) else false;
       then
         res;
 
@@ -929,7 +929,7 @@ algorithm
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
           DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
       equation
-        res = Debug.bcallret2(stringEq(id1, id2), Expression.subscriptEqual, ss1, ss2, false);
+        res = if stringEq(id1, id2) then Expression.subscriptEqual(ss1, ss2) else false;
       then
         res;
 
@@ -942,7 +942,7 @@ algorithm
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
           DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
       equation
-        res = Debug.bcallret2(stringEq(id1, id2), Expression.subscriptEqual, ss1, ss2, false);
+        res = if stringEq(id1, id2) then Expression.subscriptEqual(ss1, ss2) else false;
       then
         res;
 
@@ -1131,14 +1131,14 @@ algorithm
     case (_,DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
       equation
         res = stringEq(n1, n2);
-        res = Debug.bcallret2(res, Expression.subscriptEqual, idx1, idx2, false);
+        res = if res then Expression.subscriptEqual(idx1, idx2) else false;
       then res;
     // qualified crefs
     case (_,DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
       equation
         res = stringEq(n1, n2);
-        res = Debug.bcallret3(res, crefEqualNoStringCompare2, referenceEq(cr1,cr2), cr1, cr2, false);
-        res = Debug.bcallret2(res, Expression.subscriptEqual, idx1, idx2, false);
+        res = if res then crefEqualNoStringCompare2(referenceEq(cr1,cr2), cr1, cr2) else false;
+        res = if res then Expression.subscriptEqual(idx1, idx2) else false;
       then res;
     // the crefs are not equal!
     else false;
@@ -1196,8 +1196,7 @@ algorithm
              DAE.CREF_QUAL(ident = n2, componentRef = cr2))
       equation
         r = stringEq(n1, n2);
-        r = Debug.bcallret3(r, crefEqualWithoutSubs2, referenceEq(cr1, cr2),
-          cr1, cr2, false);
+        r = if r then crefEqualWithoutSubs2(referenceEq(cr1, cr2), cr1, cr2) else false;
       then
         r;
 
@@ -1736,10 +1735,9 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "-ComponentReference.crefType failed on Cref:");
+        Debug.trace("-ComponentReference.crefType failed on Cref:");
         s = printComponentRefStr(inRef);
-        Debug.fprint(Flags.FAILTRACE, s);
-        Debug.fprint(Flags.FAILTRACE, "\n");
+        Debug.traceln(s);
       then
         fail();
   end matchcontinue;
@@ -2243,7 +2241,9 @@ algorithm
       equation
         false = (listLength(Expression.arrayTypeDimensions(t2)) >= (listLength(subs)+listLength(newSub)));
         child = subscriptCref(inCr,newSub);
-        Debug.fprintln(Flags.FAILTRACE, "WARNING - Expression.replaceCref_SliceSub setting subscript last, not containing dimension");
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("WARNING - Expression.replaceCref_SliceSub setting subscript last, not containing dimension\n");
+        end if;
       then
         child;
 
@@ -2271,7 +2271,8 @@ algorithm
 
     else
       equation
-        Debug.fprint(Flags.FAILTRACE, "- Expression.replaceCref_SliceSub failed\n ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Expression.replaceCref_SliceSub failed\n");
       then
         fail();
   end matchcontinue;

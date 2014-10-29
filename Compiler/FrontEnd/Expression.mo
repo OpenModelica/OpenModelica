@@ -1236,7 +1236,8 @@ algorithm
     case (DAE.USERDEFINED(fqName = _), _) then inOp;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,"- Expression.setOpType failed on unknown operator");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Expression.setOpType failed on unknown operator");
       then
         fail();
   end match;
@@ -1457,7 +1458,8 @@ algorithm
 
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Expression.arrayAppend failed.");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Expression.arrayAppend failed.");
       then
         fail();
   end matchcontinue;
@@ -2652,87 +2654,87 @@ algorithm
       then acc;
     case (DAE.CREF(componentRef = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.BINARY(exp1 = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.ICONST(integer = 1),acc,_,_)
       then acc;
     case (DAE.ICONST(integer = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.RCONST(real = r),acc,_,_)
       equation
         b = not realEq(r,1.0);
-        e = Debug.bcallret1(b and doInverseFactors, inverseFactors, inExp, inExp);
+        e = if b and doInverseFactors then inverseFactors(inExp) else inExp;
         acc = List.consOnTrue(b, e, acc);
       then acc;
     case (DAE.SCONST(string = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.UNARY(operator = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.IFEXP(expCond = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.CALL(path = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.RECORD(path = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.RECORD(path = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.PARTEVALFUNCTION(path = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.ARRAY(ty = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.MATRIX(ty = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.RANGE(ty = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.CAST(ty = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.ASUB(exp = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.TSUB(exp = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.SIZE(exp = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (DAE.REDUCTION(expr = _),acc,_,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, inExp, inExp);
+        e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
     case (e,acc,true,_)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+        e = if doInverseFactors then inverseFactors(e) else e;
       then e::acc;
     case (_,acc,false,_)
       then acc;
@@ -3434,11 +3436,10 @@ algorithm
     case (lst)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE,"-Expression.makeSum failed, DAE.Exp lst:");
+        Debug.trace("-Expression.makeSum failed, DAE.Exp lst:");
         explst = List.map(lst, ExpressionDump.printExpStr);
         str = stringDelimitList(explst, ", ");
-        Debug.fprint(Flags.FAILTRACE,str);
-        Debug.fprint(Flags.FAILTRACE,"\n");
+        Debug.traceln(str);
       then
         fail();
   end matchcontinue;
@@ -3726,11 +3727,10 @@ algorithm
     case (lst)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE,"-Expression.makeProductLst failed, DAE.Exp lst:");
+        Debug.trace("-Expression.makeProductLst failed, DAE.Exp lst:");
         explst = List.map(lst, ExpressionDump.printExpStr);
         str = stringDelimitList(explst, ", ");
-        Debug.fprint(Flags.FAILTRACE,str);
-        Debug.fprint(Flags.FAILTRACE,"\n");
+        Debug.traceln(str);
       then
         fail();
   end matchcontinue;
@@ -7823,7 +7823,7 @@ algorithm
     // metamodeling code
     case (DAE.CODE(code = _),DAE.CODE(code = _),_,_)
       equation
-        Debug.fprint(Flags.FAILTRACE,"exp_equal on CODE not impl.\n");
+        Debug.trace("exp_equal on CODE not impl.\n");
       then
         false;
 
@@ -7957,8 +7957,8 @@ algorithm
     case (DAE.BINARY(exp1 = e11,operator = op1,exp2 = e12),DAE.BINARY(exp1 = e21,operator = op2,exp2 = e22))
       equation
         b = operatorEqual(op1, op2);
-        b = Debug.bcallret2(b, expStructuralEqual, e11, e21, b);
-        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+        b = if b then expStructuralEqual(e11, e21) else b;
+        b = if b then expStructuralEqual(e12, e22) else b;
       then
         b;
 
@@ -7967,8 +7967,8 @@ algorithm
           DAE.LBINARY(exp1 = e21,operator = op2,exp2 = e22))
       equation
         b = operatorEqual(op1, op2);
-        b = Debug.bcallret2(b, expStructuralEqual, e11, e21, b);
-        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+        b = if b then expStructuralEqual(e11, e21) else b;
+        b = if b then expStructuralEqual(e12, e22) else b;
       then
         b;
 
@@ -7976,7 +7976,7 @@ algorithm
     case (DAE.UNARY(operator = op1,exp = e1),DAE.UNARY(operator = op2,exp = e2))
       equation
         b = operatorEqual(op1, op2);
-        b = Debug.bcallret2(b, expStructuralEqual, e1, e2, b);
+        b = if b then expStructuralEqual(e1, e2) else b;
       then
         b;
 
@@ -7984,7 +7984,7 @@ algorithm
     case (DAE.LUNARY(operator = op1,exp = e1),DAE.LUNARY(operator = op2,exp = e2))
       equation
         b = operatorEqual(op1, op2);
-        b = Debug.bcallret2(b, expStructuralEqual, e1, e2, b);
+        b = if b then expStructuralEqual(e1, e2) else b;
       then
         b;
 
@@ -7992,8 +7992,8 @@ algorithm
     case (DAE.RELATION(exp1 = e11,operator = op1,exp2 = e12),DAE.RELATION(exp1 = e21,operator = op2,exp2 = e22))
       equation
         b = operatorEqual(op1, op2);
-        b = Debug.bcallret2(b, expStructuralEqual, e11, e21, b);
-        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+        b = if b then expStructuralEqual(e11, e21) else b;
+        b = if b then expStructuralEqual(e12, e22) else b;
       then
         b;
 
@@ -8001,8 +8001,8 @@ algorithm
     case (DAE.IFEXP(expCond = e11,expThen = e12,expElse = e13),DAE.IFEXP(expCond = e21,expThen = e22,expElse = e23))
       equation
         b = expStructuralEqual(e11, e21);
-        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
-        b = Debug.bcallret2(b, expStructuralEqual, e13, e23, b);
+        b = if b then expStructuralEqual(e12, e22) else b;
+        b = if b then expStructuralEqual(e13, e23) else b;
       then
         b;
 
@@ -8010,20 +8010,20 @@ algorithm
     case (DAE.CALL(path = path1,expLst = expl1),DAE.CALL(path = path2,expLst = expl2))
       equation
         b = Absyn.pathEqual(path1, path2);
-        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+        b = if b then expStructuralEqualList(expl1, expl2) else b;
       then
         b;
     case (DAE.RECORD(path = path1,exps = expl1),DAE.RECORD(path = path2,exps = expl2))
       equation
         b = Absyn.pathEqual(path1, path2);
-        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+        b = if b then expStructuralEqualList(expl1, expl2) else b;
       then
         b;
     // partially evaluated functions
     case (DAE.PARTEVALFUNCTION(path = path1,expList = expl1),DAE.PARTEVALFUNCTION(path = path2,expList = expl2))
       equation
         b = Absyn.pathEqual(path1, path2);
-        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+        b = if b then expStructuralEqualList(expl1, expl2) else b;
       then
         b;
 
@@ -8031,7 +8031,7 @@ algorithm
     case (DAE.ARRAY(ty = tp1,array = expl1),DAE.ARRAY(ty = tp2,array = expl2))
       equation
         b = valueEq(tp1, tp2);
-        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+        b = if b then expStructuralEqualList(expl1, expl2) else b;
       then
         b;
 
@@ -8045,7 +8045,7 @@ algorithm
           DAE.RANGE(ty = _,start = e21,step = NONE(),stop = e23))
       equation
         b = expStructuralEqual(e11, e21);
-        b = Debug.bcallret2(b, expStructuralEqual, e13, e23, b);
+        b = if b then expStructuralEqual(e13, e23) else b;
       then
         b;
 
@@ -8054,8 +8054,8 @@ algorithm
           DAE.RANGE(ty = _,start = e21,step = SOME(e22),stop = e23))
       equation
         b = expStructuralEqual(e11, e21);
-        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
-        b = Debug.bcallret2(b, expStructuralEqual, e13, e23, b);
+        b = if b then expStructuralEqual(e12, e22) else b;
+        b = if b then expStructuralEqual(e13, e23) else b;
       then
         b;
 
@@ -8067,7 +8067,7 @@ algorithm
     case (DAE.CAST(ty = tp1,exp = e1),DAE.CAST(ty = tp2,exp = e2))
       equation
         b = valueEq(tp1, tp2);
-        b = Debug.bcallret2(b, expStructuralEqual, e1, e2, b);
+        b = if b then expStructuralEqual(e1, e2) else b;
       then
         b;
 
@@ -8075,7 +8075,7 @@ algorithm
     case (DAE.ASUB(exp = e1,sub = ae1),DAE.ASUB(exp = _,sub = ae2))
       equation
         b = expStructuralEqual(e1, e1);
-        b = Debug.bcallret2(b, expStructuralEqualList, ae1, ae2, b);
+        b = if b then expStructuralEqualList(ae1, ae2) else b;
       then
         b;
 
@@ -8087,14 +8087,14 @@ algorithm
     case (DAE.SIZE(exp = e1,sz = SOME(e11)),DAE.SIZE(exp = e2,sz = SOME(e22)))
       equation
         b = expStructuralEqual(e1, e2);
-        b = Debug.bcallret2(b, expStructuralEqual, e11, e22, b);
+        b = if b then expStructuralEqual(e11, e22) else b;
       then
         b;
 
     // metamodeling code
     case (DAE.CODE(code = _),DAE.CODE(code = _))
       equation
-        Debug.fprint(Flags.FAILTRACE,"exp_equal on CODE not impl.\n");
+        Debug.trace("exp_equal on CODE not impl.\n");
       then
         false;
 
@@ -8124,7 +8124,7 @@ algorithm
           DAE.CONS(car = e21,cdr = e22))
       equation
         b = expStructuralEqual(e11, e21);
-        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+        b = if b then expStructuralEqual(e12, e22) else b;
       then
         b;
 
@@ -8142,7 +8142,7 @@ algorithm
     case (DAE.METARECORDCALL(path = path1,args = expl1),DAE.METARECORDCALL(path = path2,args = expl2))
       equation
         b = Absyn.pathEqual(path1, path2);
-        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+        b = if b then expStructuralEqualList(expl1, expl2) else b;
       then
         b;
 
@@ -8354,10 +8354,10 @@ algorithm
     case (e,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- Expression.expContains failed\n");
+        Debug.trace("- Expression.expContains failed\n");
         s = ExpressionDump.printExpStr(e);
-        str = stringAppendList({"exp = ",s,"\n"});
-        Debug.fprint(Flags.FAILTRACE, str);
+        str = stringAppendList({"exp = ",s});
+        Debug.traceln(str);
       then
         fail();
   end matchcontinue;

@@ -233,7 +233,9 @@ algorithm
         comps = BackendDAETransform.tarjanAlgorithm(mt, ass);
          // evaluate vars with bind expression consists of evaluated vars
         (knvars,repl,repleval,cache,mark) = traverseParameterSorted(comps,knvars,m,inieqns,cache,graph,mark,markarr,repl,repleval);
-        Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repleval);
+        if Flags.isSet(Flags.DUMP_EA_REPL) then
+          BackendVarTransform.dumpReplacements(repleval);
+        end if;
         // replace evaluated parameter in variables
         (systs,(knvars,m,inieqns,cache,graph,mark,markarr,repl,repleval)) = List.mapFold(systs,replaceEvaluatedParametersSystem,(knvars,m,inieqns,cache,graph,mark,markarr,repl,repleval));
         (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceEvaluatedParameterTraverser,(knvars,m,inieqns,cache,graph,mark,markarr,repl,repleval));
@@ -725,7 +727,7 @@ algorithm
    e1 := evaluateFixedAttributeReportWarning(b,cr,e,e1,source,oKnVars);
    attr1 := DAEUtil.setFixedAttr(attr,SOME(e1));
    oVar := BackendVariable.setVarAttributes(var,attr1);
-   oKnVars := Debug.bcallret2(addVar,BackendVariable.addVar,oVar, oKnVars, oKnVars);
+   oKnVars := if addVar then BackendVariable.addVar(oVar, oKnVars) else oKnVars;
 end evaluateFixedAttribute1;
 
 protected function evaluateFixedAttributeReportWarning
@@ -878,7 +880,7 @@ algorithm
         //e1 = ValuesUtil.valueExp(value);
         // set bind value
         //v = BackendVariable.setBindExp(var, SOME(e1));
-        v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
+        v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
         knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then
         (knVars,repl,repleval,iCache,iMark);
@@ -899,7 +901,7 @@ algorithm
         //e1 = ValuesUtil.valueExp(value);
         // set bind value
         //v = BackendVariable.setBindExp(var, SOME(e1));
-        v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
+        v = if Expression.isConst(e) then BackendVariable.setVarFinal(v, true) else v;
         knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then
         (knVars,repl,repleval,iCache,iMark);
@@ -1020,7 +1022,7 @@ algorithm
         (e1,_) = ExpressionSimplify.simplify(e1);
         v = BackendVariable.setBindExp(v, SOME(e1));
         (attr,(replEvaluate,b)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
-        v = Debug.bcallret2(b,BackendVariable.setVarAttributes,v,attr,v);
+        v = if b then BackendVariable.setVarAttributes(v,attr) else v;
         (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,graph,mark,markarr,repl);
       then (v,(knVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate));
 
@@ -1073,11 +1075,11 @@ algorithm
         // do replacements in initial equations
         eqnslst = BackendEquation.equationList(inieqns);
         (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
-        inieqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,inieqns);
+        inieqns = if b then BackendEquation.listEquation(eqnslst) else inieqns;
         // do replacements in simple equations
         eqnslst = BackendEquation.equationList(remeqns);
         (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst, repl,NONE());
-        remeqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,remeqns);
+        remeqns = if b then BackendEquation.listEquation(eqnslst) else remeqns;
         // do replacements in systems
         systs = List.map1(systs,replaceEvaluatedParametersSystemEqns,repl);
       then
@@ -1103,7 +1105,7 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind) := isyst;
   lsteqns := BackendEquation.equationList(eqns);
   (eqns_1,b) := BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
-  eqns1 := Debug.bcallret1(b, BackendEquation.listEquation,eqns_1,eqns);
+  eqns1 := if b then BackendEquation.listEquation(eqns_1) else eqns;
   osyst := if b then BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind) else isyst;
 end replaceEvaluatedParametersSystemEqns;
 

@@ -428,7 +428,8 @@ algorithm
         (DAE.ALGORITHM_STMTS(stmts_1),inlined);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineAlgorithm failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Inline.inlineAlgorithm failed\n");
       then
         fail();
   end matchcontinue;
@@ -845,7 +846,7 @@ algorithm
         // add noEvent to avoid events as usually for functions
         // MSL 3.2.1 need GenerateEvents to disable this
         generateEvents = hasGenerateEventsAnnotation(comment);
-        newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
+        newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
         (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
         (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
@@ -874,7 +875,7 @@ algorithm
         // add noEvent to avoid events as usually for functions
         // MSL 3.2.1 need GenerateEvents to disable this
         generateEvents = hasGenerateEventsAnnotation(comment);
-        newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
+        newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
         (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         assrt = inlineAssert(assrt,fns,argmap,checkcr);
         // for inlinecalls in functions
@@ -975,7 +976,7 @@ algorithm
         // add noEvent to avoid events as usually for functions
         // MSL 3.2.1 need GenerateEvents to disable this
         generateEvents = hasGenerateEventsAnnotation(comment);
-        newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
+        newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
         (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
         (newExp1,(_,b,assrtLst)) = Expression.traverseExp(newExp,forceInlineCall,(fns,true,assrtLstIn));
@@ -1283,7 +1284,8 @@ algorithm
       then ((c1,exp));
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords1 failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Inline.extendCrefRecords1 failed\n");
       then
         fail();
   end matchcontinue;
@@ -1307,7 +1309,8 @@ algorithm
       then c1;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords2 failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Inline.extendCrefRecords2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -1350,7 +1353,8 @@ algorithm
       DAE.Exp res;
     case({})
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.getRhsExp failed - cannot inline such a function");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("Inline.getRhsExp failed - cannot inline such a function\n");
       then
         fail();
     case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=res)})) :: _) then res;
@@ -1491,7 +1495,8 @@ algorithm
       list<DAE.Subscript> subs;
     case({},_)
       equation
-        Debug.fprintln(Flags.FAILTRACE,"Inline.getExpFromArgMap failed with empty argmap and cref: " +& ComponentReference.printComponentRefStr(inComponentRef));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("Inline.getExpFromArgMap failed with empty argmap and cref: " +& ComponentReference.printComponentRefStr(inComponentRef));
       then
         fail();
     case((cref,exp) :: _,key)

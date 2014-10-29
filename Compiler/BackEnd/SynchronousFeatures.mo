@@ -121,7 +121,9 @@ algorithm
   // analyze partition kind
   outSysts := List.map1(outSysts, analyzePartitionKind, inShared);
 
-  Debug.fcall2(Flags.DUMP_SYNCHRONOUS, BackendDump.dumpEqSystems, outSysts, "base-clock partitioning");
+  if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
+    BackendDump.dumpEqSystems(outSysts, "base-clock partitioning");
+  end if;
 end clockPartitioning1;
 
 public function partitionIndependentBlocks0

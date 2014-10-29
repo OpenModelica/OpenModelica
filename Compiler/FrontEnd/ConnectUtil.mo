@@ -2024,7 +2024,7 @@ algorithm
       equation
          // Could be faster if we had a function for intersectionExist in a set
          b = List.isEmpty(List.intersectionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare));
-         set = Debug.bcallret3(not b, List.unionOnTrue, set1, set2, ComponentReference.crefEqualNoStringCompare, set1);
+         set = if not b then List.unionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare) else set1;
          acc = List.consOnTrue(b, set2, acc);
          (set, rest) = mergeWithRest(set, rest, acc);
       then (set, rest);
@@ -2046,7 +2046,7 @@ algorithm
     case (set::rest, _)
       equation
         // print("OnlyExp Set:\n\t" +& stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-        acc = Debug.bcallret2(allCrefsAreExpandable(set), listAppend, set, inAcc, inAcc);
+        acc = if allCrefsAreExpandable(set) then listAppend(set, inAcc) else inAcc;
         acc = getOnlyExpandableConnectedCrefs(rest, acc);
       then
         acc;
@@ -2068,7 +2068,7 @@ algorithm
 
     case (name::rest)
       equation
-        b = Debug.bcallret1(isExpandable(name), allCrefsAreExpandable, rest, false);
+        b = if isExpandable(name) then allCrefsAreExpandable(rest) else false;
       then b;
 
   end match;
@@ -3692,8 +3692,8 @@ algorithm
     // Anything we forgot?
     case t
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.sizeOfVariable failed on " +&
-          Types.printTypeStr(t));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Inst.sizeOfVariable failed on " +& Types.printTypeStr(t));
       then
         fail();
   end matchcontinue;

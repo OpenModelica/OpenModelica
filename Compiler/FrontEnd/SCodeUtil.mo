@@ -143,7 +143,7 @@ algorithm
 
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info), _)
       equation
-        // Debug.fprint(Flags.TRANSLATE, "Translating class:" +& n +& "\n");
+        // fprint(Flags.TRANSLATE, "Translating class:" +& n +& "\n");
         r_1 = translateRestriction(c, r); // uniontype will not get translated!
         (d_1,cmt) = translateClassdef(d,file_info);
         sFin = SCode.boolFinal(f);
@@ -455,7 +455,7 @@ algorithm
     case (Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt),_)
       equation
         checkTypeSpec(t, info);
-        // Debug.fprintln(Flags.TRANSLATE, "translating derived class: " +& Dump.unparseTypeSpec(t));
+        // fprintln(Flags.TRANSLATE, "translating derived class: " +& Dump.unparseTypeSpec(t));
         mod = translateMod(SOME(Absyn.CLASSMOD(a,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info) "TODO: attributes of derived classes";
         scodeAttr = translateAttributes(attr, {});
         scodeCmt = translateComment(cmt);
@@ -464,7 +464,7 @@ algorithm
 
     case (Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann=ann,comment = cmtString),_)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating class parts");
+        // fprintln(Flags.TRANSLATE, "translating class parts");
         tvels = List.map1(typeVars, makeTypeVarElement, info);
         els = translateClassdefElements(parts);
         els = listAppend(tvels,els);
@@ -481,7 +481,7 @@ algorithm
 
     case (Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt),_)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating enumerations");
+        // fprintln(Flags.TRANSLATE, "translating enumerations");
         lst_1 = translateEnumlist(lst);
         scodeCmt = translateComment(cmt);
       then
@@ -489,21 +489,21 @@ algorithm
 
     case (Absyn.ENUMERATION(Absyn.ENUM_COLON(), cmt),_)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating enumeration of ':'");
+        // fprintln(Flags.TRANSLATE, "translating enumeration of ':'");
         scodeCmt = translateComment(cmt);
       then
         (SCode.ENUMERATION({}),scodeCmt);
 
     case (Absyn.OVERLOAD(pathLst,cmt),_)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating overloaded");
+        // fprintln(Flags.TRANSLATE, "translating overloaded");
         scodeCmt = translateComment(cmt);
       then
         (SCode.OVERLOAD(pathLst),scodeCmt);
 
     case (Absyn.CLASS_EXTENDS(baseClassName = name,modifications = cmod,ann=ann,comment = cmtString,parts = parts),_)
       equation
-        // Debug.fprintln(Flags.TRANSLATE "translating model extends " +& name +& " ... end " +& name +& ";");
+        // fprintln(Flags.TRANSLATE "translating model extends " +& name +& " ... end " +& name +& ";");
         els = translateClassdefElements(parts);
         eqs = translateClassdefEquations(parts);
         initeqs = translateClassdefInitialequations(parts);
@@ -519,7 +519,7 @@ algorithm
 
     case (Absyn.PDER(functionName = path,vars = vars, comment=cmt),_)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating pder( " +& Absyn.pathString(path) +& ", vars)");
+        // fprintln(Flags.TRANSLATE, "translating pder( " +& Absyn.pathString(path) +& ", vars)");
         scodeCmt = translateComment(cmt);
       then
         (SCode.PDER(path,vars),scodeCmt);
@@ -722,7 +722,8 @@ algorithm
         als;
     case _
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- SCodeUtil.translateClassdefAlgorithms failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- SCodeUtil.translateClassdefAlgorithms failed\n");
       then fail();
   end match;
 end translateClassdefAlgorithms;
@@ -753,7 +754,8 @@ algorithm
         cos;
     case _
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- SCodeUtil.translateClassdefConstraints failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- SCodeUtil.translateClassdefConstraints failed\n");
       then fail();
   end match;
 end translateClassdefConstraints;
@@ -991,7 +993,7 @@ algorithm
     case ({},_) then {};
     case ((Absyn.ELEMENTITEM(element = e) :: es),vis)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating element: " +& Dump.unparseElementStr(1, e));
+        // fprintln(Flags.TRANSLATE, "translating element: " +& Dump.unparseElementStr(1, e));
         e_1 = translateElement(e, vis);
         es_1 = translateEitemlist(es, vis);
         l = listAppend(e_1, es_1);
@@ -1178,7 +1180,7 @@ algorithm
 
     case (_,_,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating local class: " +& n);
+        // fprintln(Flags.TRANSLATE, "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
         (de_1,cmt) = translateClassdef(de,i);
         (_, redecl) = translateRedeclarekeywords(repl);
@@ -1197,14 +1199,14 @@ algorithm
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
+        // fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
       then
         {SCode.EXTENDS(path,vis,mod,NONE(),info)};
 
     case (_,_,_,_,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = SOME(absann)),info)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
+        // fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
         ann = translateAnnotation(absann);
       then
@@ -1218,7 +1220,7 @@ algorithm
       equation
         // TODO: Improve performance by iterating over all elements at once instead of creating a new Absyn.COMPONENTS in each step...
         checkTypeSpec(t,info);
-        // Debug.fprintln(Flags.TRANSLATE, "translating component: " +& n +& " final: " +& SCode.finalStr(SCode.boolFinal(finalPrefix)));
+        // fprintln(Flags.TRANSLATE, "translating component: " +& n +& " final: " +& SCode.finalStr(SCode.boolFinal(finalPrefix)));
         setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, vis,
@@ -1243,7 +1245,7 @@ algorithm
 
     case (_,_,_,_,vis,Absyn.IMPORT(import_ = imp, info = info),_)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating import: " +& Dump.unparseImportStr(imp));
+        // fprintln(Flags.TRANSLATE, "translating import: " +& Dump.unparseImportStr(imp));
         xs_1 = translateImports(imp,vis,info);
       then
         xs_1;
@@ -1427,7 +1429,7 @@ algorithm
 
     case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
+        // fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
         (com,info) = translateCommentWithLineInfoChanges(acom,info);
         e_1 = translateEquation(e,com,info,inIsInitial);
         es_1 = translateEquations(es, inIsInitial);
@@ -1463,7 +1465,7 @@ algorithm
 
     case ((Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es), _)
       equation
-        // Debug.fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
+        // fprintln(Flags.TRANSLATE, "translating equation: " +& Dump.unparseEquationStr(0, e));
         (com,info) = translateCommentWithLineInfoChanges(acom,info);
         e_1 = translateEquation(e,com,info, inIsInitial);
         es_1 = translateEEquations(es, inIsInitial);
