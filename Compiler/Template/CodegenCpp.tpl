@@ -3129,7 +3129,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
 
     /* <%assginBegin%>  output.data<%assginEnd%> = <%cr%>;*/
     <<
-   <%contextCref(c,contextFunction,simCode,useFlatArrayNotation)%> =(<%expTypeModelica(ty)%>) <%cr%>;
+      <%contextCref(c,contextFunction,simCode,useFlatArrayNotation)%> =(<%expTypeModelica(ty)%>) <%cr%>;
     >>
     else
     <<
