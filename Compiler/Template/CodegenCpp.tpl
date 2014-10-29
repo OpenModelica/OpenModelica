@@ -2915,18 +2915,18 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
    let _ =  match outVars
 
    case {var} then "1"
-	 
+
    else
     //(List.restOrEmpty(outVars) |> var hasindex i1 fromindex 1 =>  varOutputTuple(fn, var,i1, &varDecls1, &outVarInits1, &outVarCopy1, &outVarAssign1, simCode, useFlatArrayNotation)
-	(outVars |> var hasindex i1 fromindex 0 =>  varOutputTuple(fn, var,i1, &varDecls1, &outVarInits1, &outVarCopy1, &outVarAssign1, simCode, useFlatArrayNotation)
+  (outVars |> var hasindex i1 fromindex 0 =>  varOutputTuple(fn, var,i1, &varDecls1, &outVarInits1, &outVarCopy1, &outVarAssign1, simCode, useFlatArrayNotation)
     ;separator="\n"; empty /* increase the counter! */
     )
   end match
     let functionBodyExternalFunctionreturn = match outVarAssign1
    case "" then << <%if retVar then 'output = <%retVar%>;' %> >>
    else outVarAssign1
-	
-	
+
+
   let fnBody = <<
   void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode,useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)/*function2*/
   {
@@ -2935,10 +2935,10 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
     /* functionBodyExternalFunction: preExp */
     <%preExp%>
   <%inputAssign%>
-  
+
     /* functionBodyExternalFunction: outputAlloc */
     <%outVarInits%>
-	<%outputAllocate%>
+  <%outputAllocate%>
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
   <%outputAssign%>
@@ -3118,7 +3118,7 @@ template extFunCallVarcopy(SimExtArg arg, String fnName,Boolean useTuple, SimCod
 match arg
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
   match oi case 0 then
-	""
+  ""
   else
    let cr = '<%extVarName2(c)%>'
     match useTuple
@@ -3126,10 +3126,10 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     let assginBegin = 'boost::get<<%intAdd(-1,oi)%>>('
       let assginEnd = ')'
 
-    
+
     /* <%assginBegin%>  output.data<%assginEnd%> = <%cr%>;*/
     <<
-	 <%contextCref(c,contextFunction,simCode,useFlatArrayNotation)%> =(<%expTypeModelica(ty)%>) <%cr%>;
+   <%contextCref(c,contextFunction,simCode,useFlatArrayNotation)%> =(<%expTypeModelica(ty)%>) <%cr%>;
     >>
     else
     <<
@@ -3156,7 +3156,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     <<
      <%assginBegin%>_<%fnName%>.data<%assginEnd%> = <%cr%> ;
     >>
-	
+
 end extFunCallVarcopyTuple;
 
 template expTypeModelica(DAE.Type ty)
@@ -3206,30 +3206,30 @@ template extCBoolCast(SimExtArg extArg, Text &preExp, Text &varDecls /*BUFP*/, T
   let name = contextCref2(c,contextFunction)
    match type_
     case T_ARRAY(__)then
-	let dimStr = listLength(dims)
+  let dimStr = listLength(dims)
      let dimsStr = checkDimension(dims)
-	 
+
     match ty
        case T_BOOL(__) then
          let tmp = match dimsStr
-		  
-		  case "" then tempDecl('DynArrayDim<%listLength(dims)%><int>', &varDecls /*BUFD*/)
+
+      case "" then tempDecl('DynArrayDim<%listLength(dims)%><int>', &varDecls /*BUFD*/)
           else   tempDecl('StatArrayDim<%dimStr%><int,<%dimsStr%> > ', &varDecls /*BUFD*/)
           end match
        if(iI)
         then
            let _ = inputAssignTest(c, contextFunction, tmp, &inputAssign)
-		  <<
+      <<
            <%tmp%>.getData()/*TestAusgabe1*/
           >>
         else
         let _ = outputAssignTest(c, contextFunction, tmp, &outputAssign)
-		let &outputAllocate += '<%tmp%>.setDims(<%name%>.getDims());'
-		<<
+    let &outputAllocate += '<%tmp%>.setDims(<%name%>.getDims());'
+    <<
          <%tmp%>.getData()/*TestAusgabe2*/
-		>>
-        
-        
+    >>
+
+
     else
      '(<%extType2(t,iI,true)%>)<%name%>.getData() '
     end match
@@ -3242,7 +3242,7 @@ template inputAssignTest(DAE.ComponentRef cref, Context context, Text tmp, Text 
 ::=
   let &inputAssign += 'convertBoolToInt(<%contextCref2(cref,context)%>, <%tmp%>); '
   ""
-  
+
 end inputAssignTest;
 
 template outputAssignTest(DAE.ComponentRef cref, Context context, Text tmp, Text &outputAssign /*BUFD*/)
@@ -4866,9 +4866,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      StatArrayDim2<double,<%size%>,<%size%>,true>* __A; //dense
      //b vector
      StatArrayDim1<double,<%size%> > __b;
-    >>	
+    >>
     %>
-	
+
 
     sparse_inserter *__Asparse; //sparse
 
