@@ -454,7 +454,7 @@ algorithm
       (e1, ((_, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZC, ((zeroCrossings, relations, samples, numRelations, numMathFunctions), (eq_count, wc_count, vars, knvars)));
       e_1 = DAE.LUNARY(op, e1);
       zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
-      zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
+      zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         BackendDump.debugExpStr(e_1, "\n");
@@ -471,7 +471,7 @@ algorithm
       true = intGt(numRelations1, numRelations);
       e_1 = DAE.LBINARY(e_1, op, e_2);
       zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
-      zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
+      zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         BackendDump.zeroCrossingListString(zeroCrossings);
@@ -494,9 +494,9 @@ algorithm
        end if;
        e_1 = DAE.RELATION(e1, op, e2, numRelations, NONE());
        zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
-       (eres, relations, numRelations) = zerocrossingindex(e_1, numRelations, relations, zc);
+       (eres, relations, numRelations) = zcIndex(e_1, numRelations, relations, zc);
        zc = createZeroCrossing(eres, {eq_count}, {wc_count});
-       (DAE.RELATION(index=itmp), zeroCrossings, _) = zerocrossingindex(eres, numRelations, zeroCrossings, zc);
+       (DAE.RELATION(index=itmp), zeroCrossings, _) = zcIndex(eres, numRelations, zeroCrossings, zc);
        if Flags.isSet(Flags.RELIDX) then
          print("collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& " index: " +& intString(itmp) +& "\n");
        end if;
@@ -511,7 +511,7 @@ algorithm
        e_1 = DAE.CALL(Absyn.IDENT("integer"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
        zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
-       (eres, zeroCrossings, numMathFunctions) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
        if Flags.isSet(Flags.RELIDX) then
          print("collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& "\n");
@@ -526,7 +526,7 @@ algorithm
        e_1 = DAE.CALL(Absyn.IDENT("floor"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
        zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
-       (eres, zeroCrossings, numMathFunctions) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
        if Flags.isSet(Flags.RELIDX) then
          print("collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& "\n");
@@ -541,7 +541,7 @@ algorithm
        e_1 = DAE.CALL(Absyn.IDENT("ceil"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
        zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
-       (eres, zeroCrossings, numMathFunctions) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
        if Flags.isSet(Flags.RELIDX) then
          print("collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& "\n");
@@ -556,7 +556,7 @@ algorithm
        e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
        zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
-       (eres, zeroCrossings, numMathFunctions) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
        if Flags.isSet(Flags.RELIDX) then
          print("collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& "\n");
@@ -572,7 +572,7 @@ algorithm
        e_1 = DAE.CALL(Absyn.IDENT("floor"), {DAE.BINARY(e1, DAE.DIV(ty), e2), DAE.ICONST(numMathFunctions)}, attr);
 
        zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
-       (eres, zeroCrossings, numMathFunctions) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
        e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
        if Flags.isSet(Flags.RELIDX) then
@@ -589,7 +589,7 @@ algorithm
        e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
        zc = createZeroCrossing(e_1, {eq_count}, {wc_count});
-       (eres, zeroCrossings, numMathFunctions) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+       (eres, zeroCrossings, numMathFunctions) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
        e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
        if Flags.isSet(Flags.RELIDX) then
@@ -680,7 +680,7 @@ algorithm
       (e1, (iterator, inExpLst, range, (_, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
       e_1 = DAE.LUNARY(op, e1);
       zc = createZeroCrossing(e_1, {alg_indx}, {});
-      zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
+      zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         print("collectZCAlgsFor LUNARY result zc : ");
@@ -729,7 +729,7 @@ algorithm
       true = intGt(numRelations1, numRelations);
       e_1 = DAE.LBINARY(e_1, op, e_2);
       zc = createZeroCrossing(e_1, {alg_indx}, {});
-      zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
+      zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
         print("collectZCAlgsFor LBINARY2 result zc : ");
@@ -806,7 +806,7 @@ algorithm
       e_1 = DAE.CALL(Absyn.IDENT("integer"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
       zc = createZeroCrossing(e_1, {alg_indx}, {});
-      ((eres, zeroCrossings, numMathFunctions)) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+      ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& "\n");
@@ -821,7 +821,7 @@ algorithm
       e_1 = DAE.CALL(Absyn.IDENT("floor"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
       zc = createZeroCrossing(e_1, {alg_indx}, {});
-      ((eres, zeroCrossings, numMathFunctions)) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+      ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& "\n");
@@ -836,7 +836,7 @@ algorithm
       e_1 = DAE.CALL(Absyn.IDENT("ceil"), {e1, DAE.ICONST(numMathFunctions)}, attr);
 
       zc = createZeroCrossing(e_1, {alg_indx}, {});
-      ((eres, zeroCrossings, numMathFunctions)) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+      ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& "\n");
@@ -851,7 +851,7 @@ algorithm
       e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
       zc = createZeroCrossing(e_1, {alg_indx}, {});
-      ((eres, zeroCrossings, numMathFunctions)) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+      ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
 
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& "\n");
@@ -867,7 +867,7 @@ algorithm
       e_1 = DAE.CALL(Absyn.IDENT("floor"), {DAE.BINARY(e1, DAE.DIV(ty), e2), DAE.ICONST(numMathFunctions)}, attr);
 
       zc = createZeroCrossing(e_1, {alg_indx}, {});
-      ((eres, zeroCrossings, numMathFunctions)) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+      ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
       e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
       if Flags.isSet(Flags.RELIDX) then
@@ -884,7 +884,7 @@ algorithm
       e_1 = DAE.CALL(Absyn.IDENT("div"), {e1, e2, DAE.ICONST(numMathFunctions)}, attr);
 
       zc = createZeroCrossing(e_1, {alg_indx}, {});
-      ((eres, zeroCrossings, numMathFunctions)) = zerocrossingindex(e_1, numMathFunctions, zeroCrossings, zc);
+      ((eres, zeroCrossings, numMathFunctions)) = zcIndex(e_1, numMathFunctions, zeroCrossings, zc);
       e_2 = DAE.BINARY(e1, DAE.SUB(ty), DAE.BINARY(eres, DAE.MUL(ty), e2));
 
       if Flags.isSet(Flags.RELIDX) then
@@ -942,63 +942,49 @@ algorithm
   end matchcontinue;
 end replaceIteratorwithStaticValues;
 
-protected function zerocrossingindex
-  input DAE.Exp exp;
-  input Integer index;
-  input list<BackendDAE.ZeroCrossing> zeroCrossings;
-  input BackendDAE.ZeroCrossing zc;
-  output DAE.Exp outExp;
-  output list<BackendDAE.ZeroCrossing> outZClst;
+protected function zcIndex "
+  "
+  input DAE.Exp inRelation;
+  input Integer inIndex;
+  input list<BackendDAE.ZeroCrossing> inZeroCrossings;
+  input BackendDAE.ZeroCrossing inZeroCrossing;
+  output DAE.Exp outRelation;
+  output list<BackendDAE.ZeroCrossing> outZeroCrossings;
   output Integer outIndex;
 algorithm
-  (outExp, outZClst, outIndex) := matchcontinue (exp, index, zeroCrossings, zc)
+  (outRelation, outZeroCrossings, outIndex) := matchcontinue (inRelation, inIndex, inZeroCrossings, inZeroCrossing)
     local
-      DAE.Exp e_1, e1, e2;
+      DAE.Exp relation, e1, e2;
       DAE.Operator op;
-      list<BackendDAE.ZeroCrossing> newzero, zc_lst;
-      BackendDAE.ZeroCrossing z_c;
-      String str;
+      BackendDAE.ZeroCrossing newZeroCrossing;
+      list<BackendDAE.ZeroCrossing> zcLst;
 
-    case (DAE.RELATION(exp1 = _, operator = _, exp2 = _), _, _, z_c) equation
-      {} = List.select1(zeroCrossings, sameZeroCrossing, z_c/*zc1*/);
-      zc_lst = listAppend(zeroCrossings, {z_c});
-      //fcall(Flags.RELIDX, print, " zerocrossingindex 1 : "  +& ExpressionDump.printExpStr(exp) +& " index: " +& intString(index) +& "\n");
-    then (exp, zc_lst, index+1);
+    case (DAE.RELATION(exp1=_), _, _, _) equation
+      {} = List.select1(inZeroCrossings, zcEqual, inZeroCrossing);
+      zcLst = listAppend(inZeroCrossings, {inZeroCrossing});
+    then (inRelation, zcLst, inIndex+1);
 
-    case (DAE.RELATION(exp1 = _, operator = _, exp2 = _), _, _, z_c) equation
-      newzero = List.select1(zeroCrossings, sameZeroCrossing, z_c);
-      BackendDAE.ZERO_CROSSING(e_1, _, _)=List.first(newzero);
-      //length=listLength(newzero);
-      //fcall(Flags.RELIDX, print, " zerocrossingindex 2: results "  +& ExpressionDump.printExpStr(e_1)+& "index: " +& intString(indx) +& " lenght: " +& intString(length) +& "\n");
-    then ((e_1, zeroCrossings, index));
+    // math function with one argument and index
+    case (DAE.CALL(expLst={_, _}), _, _, _) equation
+      {} = List.select1(inZeroCrossings, zcEqual, inZeroCrossing);
+      zcLst = listAppend(inZeroCrossings, {inZeroCrossing});
+    then (inRelation, zcLst, inIndex+1);
 
-    /* math function with one argument and index */
-    case (e_1 as DAE.CALL(path=_, expLst={_, _}), _, _, z_c) equation
-      {} = List.select1(zeroCrossings, sameZeroCrossing, z_c/*zc1*/);
-      zc_lst = listAppend(zeroCrossings, {z_c});
-    then (e_1, zc_lst, index+1);
+    // math function with two arguments and index
+    case (DAE.CALL(expLst={_, _, _}), _, _, _) equation
+      {} = List.select1(inZeroCrossings, zcEqual, inZeroCrossing);
+      zcLst = listAppend(inZeroCrossings, {inZeroCrossing});
+    then (inRelation, zcLst, inIndex+2);
 
-    case (DAE.CALL(path=_, expLst={_, _}), _, _, z_c) equation
-      newzero = List.select1(zeroCrossings, sameZeroCrossing, z_c);
-      BackendDAE.ZERO_CROSSING(e_1, _, _)=List.first(newzero);
-    then (e_1, zeroCrossings, index);
-
-    /* math function with two arguments and index */
-    case (e_1 as DAE.CALL(path=_, expLst={_, _, _}), _, _, z_c) equation
-      {} = List.select1(zeroCrossings, sameZeroCrossing, z_c/*zc1*/);
-      zc_lst = listAppend(zeroCrossings, {z_c});
-    then (e_1, zc_lst, index+2);
-
-    case (DAE.CALL(path=_, expLst={_, _, _}), _, _, z_c) equation
-      newzero = List.select1(zeroCrossings, sameZeroCrossing, z_c);
-      BackendDAE.ZERO_CROSSING(e_1, _, _) = List.first(newzero);
-    then (e_1, zeroCrossings, index);
+    case (_, _, _, _) equation
+      BackendDAE.ZERO_CROSSING(relation_=relation)::_ = List.select1(inZeroCrossings, zcEqual, inZeroCrossing);
+    then ((relation, inZeroCrossings, inIndex));
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function zerocrossingindex failed for: "  +& ExpressionDump.printExpStr(exp));
+      Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function zcIndex failed for: "  +& ExpressionDump.printExpStr(inRelation));
     then fail();
   end matchcontinue;
-end zerocrossingindex;
+end zcIndex;
 
 protected function mergeZeroCrossings "
   Takes a list of zero crossings and if more than one have identical
@@ -1017,7 +1003,7 @@ algorithm
     then listReverse(inAccum);
 
     case (zc::xs, _) equation
-      (samezc, diff) = List.split1OnTrue(xs, sameZeroCrossing, zc);
+      (samezc, diff) = List.split1OnTrue(xs, zcEqual, zc);
       same_1 = List.fold(samezc, mergeZeroCrossing, zc);
       res = mergeZeroCrossings(diff, same_1::inAccum);
     then res;
@@ -1091,7 +1077,7 @@ algorithm
   end matchcontinue;
 end getMinZeroCrossings;
 
-protected function sameZeroCrossing "
+protected function zcEqual "
   Returns true if both zero crossings have the same function expression"
   input BackendDAE.ZeroCrossing inZeroCrossing1;
   input BackendDAE.ZeroCrossing inZeroCrossing2;
@@ -1102,39 +1088,39 @@ algorithm
       Boolean res, res2;
       DAE.Exp e1, e2, e3, e4;
 
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_ = DAE.CALL(path=Absyn.IDENT("integer"), expLst={e2, _}))) equation
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("integer"), expLst={e2, _}))) equation
       res = Expression.expEqual(e1, e2);
     then res;
 
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_ = DAE.CALL(path=Absyn.IDENT("floor"), expLst={e2, _}))) equation
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("floor"), expLst={e2, _}))) equation
       res = Expression.expEqual(e1, e2);
     then res;
 
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_ = DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e2, _}))) equation
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e2, _}))) equation
       res = Expression.expEqual(e1, e2);
     then res;
 
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_ = DAE.CALL(path=Absyn.IDENT("div"), expLst={e3, e4, _}))) equation
+    case (BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2, _})), BackendDAE.ZERO_CROSSING(relation_=DAE.CALL(path=Absyn.IDENT("div"), expLst={e3, e4, _}))) equation
       res = Expression.expEqual(e1, e3);
       res2 = Expression.expEqual(e2, e4);
     then (res and res2);
 
-    case (BackendDAE.ZERO_CROSSING(relation_ = e1), BackendDAE.ZERO_CROSSING(relation_ = e2)) equation
+    case (BackendDAE.ZERO_CROSSING(relation_=e1), BackendDAE.ZERO_CROSSING(relation_=e2)) equation
       res = Expression.expEqual(e1, e2);
     then res;
   end match;
-end sameZeroCrossing;
+end zcEqual;
 
 protected function traverseStmtsExps "Handles the traversing of list<DAE.Statement>.
   Works with the help of Expression.traverseExpTopDown to find
   ZeroCrossings in algorithm statements
   modified: 2011-01 by wbraun"
   input list<DAE.Statement> inStmts;
-  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> iextraArg;
-  input BackendDAE.Variables knvars;
+  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> inExtraArg;
+  input BackendDAE.Variables inKnvars;
   output tuple<list<DAE.Statement>, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>> outTplStmtTypeA;
 algorithm
-  (outTplStmtTypeA) := match(inStmts, iextraArg, knvars)
+  (outTplStmtTypeA) := match(inStmts, inExtraArg, inKnvars)
     local
       DAE.Exp e_1, e_2, e, e2, iteratorExp;
       Integer ix;
@@ -1152,109 +1138,109 @@ algorithm
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
 
-    case ({}, extraArg, _)
-    then (({}, extraArg));
+    case ({}, _, _)
+    then (({}, inExtraArg));
 
-    case ((DAE.STMT_ASSIGN(type_ = tp, exp1 = e2, exp = e, source = source)::xs), extraArg, _) equation
-      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
+    case ((DAE.STMT_ASSIGN(type_=tp, exp1=e2, exp=e, source=source)::xs), _, _) equation
+      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, inExtraArg);
       (e_2, extraArg) = Expression.traverseExpTopDown(e2, collectZCAlgsFor, extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_ASSIGN(tp, e_2, e_1, source)::xs_1, extraArg));
 
-    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp, expExpLst = expl1, exp = e, source = source)::xs), extraArg, _) equation
-      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
+    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp, expExpLst = expl1, exp = e, source = source)::xs), _, _) equation
+      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, inExtraArg);
       (expl2, extraArg) = Expression.traverseExpListTopDown(expl1, collectZCAlgsFor, extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_TUPLE_ASSIGN(tp, expl2, e_1, source)::xs_1, extraArg));
 
-    case ((DAE.STMT_ASSIGN_ARR(type_ = tp, componentRef = cr, exp = e, source = source)::xs), extraArg, _) equation
-      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp, componentRef = cr, exp = e, source = source)::xs), _, _) equation
+      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, inExtraArg);
       (DAE.CREF(cr_1, _), _, extraArg) = collectZCAlgsFor(Expression.crefExp(cr), extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_ASSIGN_ARR(tp, cr_1, e_1, source)::xs_1, extraArg));
 
-    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp, componentRef = cr, exp = e, source = source))::xs), extraArg, _) equation
-      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
+    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp, componentRef = cr, exp = e, source = source))::xs), _, _) equation
+      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, inExtraArg);
       failure((DAE.CREF(_, _), _, _) = collectZCAlgsFor(Expression.crefExp(cr), extraArg));
       true = Flags.isSet(Flags.FAILTRACE);
       print(DAEDump.ppStatementStr(x));
       print("Warning, not allowed to set the componentRef to a expression in FindZeroCrossings.traverseStmtsExps for ZeroCrosssing\n");
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_ASSIGN_ARR(tp, cr, e_1, source)::xs_1, extraArg));
 
-    case (((DAE.STMT_IF(exp=e, statementLst=stmts, else_ = algElse, source = source))::xs), extraArg, _) equation
-      ((algElse, extraArg)) = traverseStmtsElseExps(algElse, extraArg, knvars);
-      ((stmts2, extraArg)) = traverseStmtsExps(stmts, extraArg, knvars);
+    case (((DAE.STMT_IF(exp=e, statementLst=stmts, else_ = algElse, source = source))::xs), _, _) equation
+      ((algElse, extraArg)) = traverseStmtsElseExps(algElse, inExtraArg, inKnvars);
+      ((stmts2, extraArg)) = traverseStmtsExps(stmts, extraArg, inKnvars);
       (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_IF(e_1, stmts2, algElse, source)::xs_1, extraArg));
 
-    case (((DAE.STMT_FOR(type_=tp, iterIsArray=b1, iter=id1, index=ix, range=e, statementLst=stmts, source = source))::xs), extraArg, _) equation
+    case (((DAE.STMT_FOR(type_=tp, iterIsArray=b1, iter=id1, index=ix, range=e, statementLst=stmts, source = source))::xs), _, _) equation
       cr = ComponentReference.makeCrefIdent(id1, tp, {});
       iteratorExp = Expression.crefExp(cr);
-      iteratorexps = BackendDAECreate.extendRange(e, knvars);
-      (stmts2, extraArg) = traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, knvars, extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      iteratorexps = BackendDAECreate.extendRange(e, inKnvars);
+      (stmts2, extraArg) = traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, inExtraArg);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_FOR(tp, b1, id1, ix, e, stmts2, source)::xs_1, extraArg));
 
-    case (((DAE.STMT_PARFOR(type_=tp, iterIsArray=b1, iter=id1, index=ix, range=e, statementLst=stmts, loopPrlVars= loopPrlVars, source = source))::xs), extraArg, _) equation
+    case (((DAE.STMT_PARFOR(type_=tp, iterIsArray=b1, iter=id1, index=ix, range=e, statementLst=stmts, loopPrlVars= loopPrlVars, source = source))::xs), _, _) equation
       cr = ComponentReference.makeCrefIdent(id1, tp, {});
       iteratorExp = Expression.crefExp(cr);
-      iteratorexps = BackendDAECreate.extendRange(e, knvars);
-      (stmts2, extraArg) = traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, knvars, extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      iteratorexps = BackendDAECreate.extendRange(e, inKnvars);
+      (stmts2, extraArg) = traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, inExtraArg);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_PARFOR(tp, b1, id1, ix, e, stmts2, loopPrlVars, source)::xs_1, extraArg));
 
-    case (((DAE.STMT_WHILE(exp = e, statementLst=stmts, source = source))::xs), extraArg, _) equation
-      ((stmts2, extraArg)) = traverseStmtsExps(stmts, extraArg, knvars);
+    case (((DAE.STMT_WHILE(exp = e, statementLst=stmts, source = source))::xs), _, _) equation
+      ((stmts2, extraArg)) = traverseStmtsExps(stmts, inExtraArg, inKnvars);
       (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_WHILE(e_1, stmts2, source)::xs_1, extraArg));
 
-    case (((DAE.STMT_WHEN(exp=e, conditions=conditions, initialCall=initialCall, statementLst=stmts, elseWhen=NONE(), source = source))::xs), extraArg, _) equation
+    case (((DAE.STMT_WHEN(exp=e, conditions=conditions, initialCall=initialCall, statementLst=stmts, elseWhen=NONE(), source = source))::xs), _, _) equation
       /* wbraun: statemenents inside when equations can't contain zero-crossings*/
-      /*((stmts2, extraArg)) = traverseStmtsExps(stmts, extraArg, knvars);*/
-      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      /*((stmts2, extraArg)) = traverseStmtsExps(stmts, extraArg, inKnvars);*/
+      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, inExtraArg);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_WHEN(e_1, conditions, initialCall, stmts, NONE(), source)::xs_1, extraArg));
 
-    case (((DAE.STMT_WHEN(exp=e, conditions=conditions, initialCall=initialCall, statementLst=stmts, elseWhen=SOME(ew), source = source))::xs), extraArg, _) equation
-      (({ew_1}, extraArg)) = traverseStmtsExps({ew}, extraArg, knvars);
+    case (((DAE.STMT_WHEN(exp=e, conditions=conditions, initialCall=initialCall, statementLst=stmts, elseWhen=SOME(ew), source = source))::xs), _, _) equation
+      (({ew_1}, extraArg)) = traverseStmtsExps({ew}, inExtraArg, inKnvars);
       /* wbraun: statemenents inside when equations can't contain zero-crossings*/
-      /*((stmts2, extraArg)) = traverseStmtsExps(stmts, extraArg, knvars);*/
+      /*((stmts2, extraArg)) = traverseStmtsExps(stmts, extraArg, inKnvars);*/
       (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_WHEN(e_1, conditions, initialCall, stmts, SOME(ew_1), source)::xs_1, extraArg));
 
-    case (((x as DAE.STMT_ASSERT(cond = _, msg=_))::xs), extraArg, _) equation
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+    case (((x as DAE.STMT_ASSERT(cond = _, msg=_))::xs), _, _) equation
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case (((x as DAE.STMT_TERMINATE(msg = _))::xs), extraArg, _) equation
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+    case (((x as DAE.STMT_TERMINATE(msg = _))::xs), _, _) equation
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case (((x as DAE.STMT_REINIT(var = _, value=_))::xs), extraArg, _) equation
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+    case (((x as DAE.STMT_REINIT(var = _, value=_))::xs), _, _) equation
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case (((DAE.STMT_NORETCALL(exp = e, source = source))::xs), extraArg, _) equation
-      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+    case (((DAE.STMT_NORETCALL(exp = e, source = source))::xs), _, _) equation
+      (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, inExtraArg);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_NORETCALL(e_1, source)::xs_1, extraArg));
 
-    case ((x as DAE.STMT_RETURN(source=_))::xs, extraArg, _) equation
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+    case ((x as DAE.STMT_RETURN(source=_))::xs, _, _) equation
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case ((x as DAE.STMT_BREAK(source=_))::xs, extraArg, _) equation
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+    case ((x as DAE.STMT_BREAK(source=_))::xs, _, _) equation
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
     // MetaModelica extension. KS
-    case ((DAE.STMT_FAILURE(body=stmts, source = source))::xs, extraArg, _) equation
-      ((stmts2, extraArg)) = traverseStmtsExps(stmts, extraArg, knvars);
-      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, knvars);
+    case ((DAE.STMT_FAILURE(body=stmts, source = source))::xs, _, _) equation
+      ((stmts2, extraArg)) = traverseStmtsExps(stmts, inExtraArg, inKnvars);
+      ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_FAILURE(stmts2, source)::xs_1, extraArg));
 
     case (x::_, _, _) equation
@@ -1268,11 +1254,11 @@ protected function traverseStmtsElseExps "author: BZ, 2008-12
   Helper function for traverseStmtsExps to find ZeroCrosssings in algorithm
   else statements."
   input DAE.Else inElse;
-  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> iextraArg;
-  input BackendDAE.Variables knvars;
+  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> inExtraArg;
+  input BackendDAE.Variables inKnvars;
   output tuple<DAE.Else, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>> outTplStmtTypeA;
 algorithm
-  outTplStmtTypeA := match(inElse, iextraArg, knvars)
+  outTplStmtTypeA := match(inElse, inExtraArg, inKnvars)
     local
       DAE.Exp e, e_1;
       list<DAE.Statement> st, st_1;
@@ -1280,16 +1266,16 @@ algorithm
       tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> extraArg;
 
     case(DAE.NOELSE(), _, _)
-    then ((DAE.NOELSE(), iextraArg));
+    then ((DAE.NOELSE(), inExtraArg));
 
     case(DAE.ELSEIF(e, st, el), _, _) equation
-      ((el_1, extraArg)) = traverseStmtsElseExps(el, iextraArg, knvars);
-      ((st_1, extraArg)) = traverseStmtsExps(st, extraArg, knvars);
+      ((el_1, extraArg)) = traverseStmtsElseExps(el, inExtraArg, inKnvars);
+      ((st_1, extraArg)) = traverseStmtsExps(st, extraArg, inKnvars);
       (e_1, extraArg) = Expression.traverseExpTopDown(e, collectZCAlgsFor, extraArg);
     then ((DAE.ELSEIF(e_1, st_1, el_1), extraArg));
 
     case(DAE.ELSE(st), _, _) equation
-      ((st_1, extraArg)) = traverseStmtsExps(st, iextraArg, knvars);
+      ((st_1, extraArg)) = traverseStmtsExps(st, inExtraArg, inKnvars);
     then ((DAE.ELSE(st_1), extraArg));
   end match;
 end traverseStmtsElseExps;
@@ -1301,25 +1287,23 @@ protected function traverseStmtsForExps "modified: 2011-01 by wbraun
   input list<DAE.Exp> inExplst;
   input DAE.Exp inRange;
   input list<DAE.Statement> inStmts;
-  input BackendDAE.Variables knvars;
-  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> iextraArg;
+  input BackendDAE.Variables inKnvars;
+  input tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> inExtraArg;
   output list<DAE.Statement> outStatements;
   output tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> outTpl;
 algorithm
-  (outStatements,outTpl) := matchcontinue (inIteratorExp, inExplst, inRange, inStmts, knvars, iextraArg)
+  (outStatements, outTpl) := matchcontinue (inIteratorExp, inExplst, inRange, inStmts, inKnvars, inExtraArg)
     local
       list<DAE.Statement> statementLst;
-      DAE.Exp ie, range;
+      tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer> tpl2;
       tuple<Integer, BackendDAE.Variables, BackendDAE.Variables> tpl3;
-      list<BackendDAE.ZeroCrossing> zcs, rels, samples;
-      Integer idx, idx2;
       tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> extraArg;
 
     case (_, {}, _, _, _, _)
-    then (inStmts, iextraArg);
+    then (inStmts, inExtraArg);
 
-    case (_, _, _, _, _, (_, _, _, (zcs, rels, samples, idx, idx2), tpl3)) equation
-      ((statementLst, extraArg)) = traverseStmtsExps(inStmts, (inIteratorExp, inExplst, inRange, (zcs, rels, samples, idx, idx2), tpl3), knvars);
+    case (_, _, _, _, _, (_, _, _, tpl2, tpl3)) equation
+      ((statementLst, extraArg)) = traverseStmtsExps(inStmts, (inIteratorExp, inExplst, inRange, tpl2, tpl3), inKnvars);
     then (statementLst, extraArg);
 
     else equation
