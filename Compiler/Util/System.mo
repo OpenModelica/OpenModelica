@@ -1102,5 +1102,30 @@ public function covertTextFileToCLiteral
 external "C" success=SystemImpl__covertTextFileToCLiteral(textFile,outFile);
 end covertTextFileToCLiteral;
 
+public function dladdr<T>
+  input T symbol "Function pointer";
+  output String info;
+  output String file;
+  output String name;
+algorithm
+  (file,name) := _dladdr(symbol);
+  info := file + ": " + name;
+protected
+
+function _dladdr<T>
+  input T symbol "Function pointer";
+  output String file;
+  output String name;
+external "C" SystemImpl__dladdr(symbol, file, name) annotation(Library = {"omcruntime"},Documentation(info="<html>
+<p>Like <a href=\"http://linux.die.net/man/3/dladdr\">dladdr(3)</a>.</p>
+<p>Only works on Linux. Other platforms return dummy strings.</p>.
+</html>"));
+end _dladdr;
+annotation(Documentation(info="<html>
+<p>Like <a href=\"http://linux.die.net/man/3/dladdr\">dladdr(3)</a>.</p>
+<p>Only works on Linux. Other platforms return dummy strings.</p>.
+</html>"));
+end dladdr;
+
 annotation(__OpenModelica_Interface="util");
 end System;

@@ -120,9 +120,10 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #include <sys/unistd.h>
 #include <sys/wait.h> /* only available in Linux, not windows */
 #include <unistd.h>
-#include <dlfcn.h>
 #include <stdlib.h>
 #include <spawn.h>
+
+#include <dlfcn.h>
 extern char **environ;
 
 #define HAVE_SCANDIR
@@ -2669,6 +2670,23 @@ done:
     fclose(fout);
   }
   return result;
+}
+
+void SystemImpl__dladdr(void *symbol, const char **file, const char **name)
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  *file = "dladdr failed";
+  *name = "not available on Windows";
+#else
+  Dl_info info;
+  if (0 == dladdr((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(symbol), 1))), &info)) {
+    *file = "dladdr failed";
+    *name = "";
+  } else {
+    *file = GC_strdup(info.dli_fname);
+    *name = GC_strdup(info.dli_sname);
+  }
+#endif
 }
 
 #ifdef __cplusplus
