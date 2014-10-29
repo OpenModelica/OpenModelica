@@ -1391,94 +1391,89 @@ algorithm
 end stringPadLeft;
 
 public function stringWrap
-  "Breaks the given string into multiple parts which are no longer than the
-   given wrap length. The string is broken at word boundaries, i.e. at spaces, so
-   that words are not split. The delimiter is prefixed to all result strings
-   except for the first one. Example:
-    stringWrap('this is a somewhat long string', 12, '\n  ') =>
-      {'this is a', '\n  somewhat', '\n  long string'}"
+  "Breaks the given string into segments which are no longer than the given wrap
+   length. The string is broken at word boundaries, i.e. at spaces, so that
+   words are not split. It also wraps the string at any newline characters it
+   finds.  It also takes an optional delimiter which is prefixed to all segments
+   except the first one. The length of the delimiter is taken into account when
+   wrapping the string, so it must be shorter than the wrap length or the
+   function will fail. Example:
+     stringWrap('this is a somewhat long string with new\nlines', 20, '\n  ') =>
+       {'this is a somewhat', '\n  long string with', '\n  new', '\n  lines'}"
   input String inString;
   input Integer inWrapLength;
   input String inDelimiter;
-  output list<String> outStrings;
+  output list<String> outStrings := {};
 protected
-  list<String> str;
-  Integer dl;
+  Integer start_pos := 1, end_pos := inWrapLength;
+  Integer dlen, llen, next_start, next_end;
+  String str, delim := "";
+  list<String> lines;
 algorithm
-  str := stringListStringChar(inString);
-  dl := stringLength(inDelimiter);
-  outStrings := stringWrap2(str, inWrapLength, inDelimiter, dl, {}, 0, {});
+  // Check that the wrap length is larger than the delimiter and positive
+  // (stringLength is always >= 0).
+  true := inWrapLength > stringLength(inDelimiter);
+
+  // Split the string into lines delimited by newlines.
+  lines := System.strtok(inString, "\n");
+  dlen := stringLength(inDelimiter);
+  llen := inWrapLength - dlen - 1;
+
+  // Wrap each line separately.
+  for line in lines loop
+    while end_pos < stringLength(line) loop
+      // If the next character is not a space, then we need to back up to the
+      // previous space so we don't wrap in the middle of a word.
+      if not MetaModelica.Dangerous.stringGetNoBoundsChecking(line, end_pos + 1) == 32 then
+        next_end := end_pos;
+
+        // Search backwards until we find a space.
+        for i in end_pos:-1:start_pos loop
+          if MetaModelica.Dangerous.stringGetNoBoundsChecking(line, i) == 32 then
+            next_end := i - 1;
+            // Skip the space for the next segment.
+            next_start := i + 1;
+            break;
+          end if;
+        end for;
+
+        // If we reached the start position it means that we have a word that's
+        // longer than the wrap length, so we have to break the word to respect
+        // the wrap length.
+        if next_end <= start_pos then
+          next_start := end_pos + 1;
+        else
+          // Otherwise, move the end position to the found wrap point.
+          end_pos := next_end;
+        end if;
+      else
+        // If the next character is a space we don't need to back up, but we set
+        // the start position of the next segment so that we skip the space.
+        next_start := end_pos + 2;
+      end if;
+
+      // Wrap the line at this point.
+      str := delim + substring(line, start_pos, end_pos);
+      outStrings := str :: outStrings;
+
+      // Continue with the remainder of the line.
+      start_pos := next_start;
+      end_pos := start_pos + llen;
+      delim := inDelimiter;
+    end while;
+
+    // Add the remainder of the line to the list.
+    str := delim + substring(line, start_pos, stringLength(line));
+    outStrings := str :: outStrings;
+
+    // Continue with the next line.
+    start_pos := 1;
+    end_pos := llen;
+    delim := inDelimiter;
+  end for;
+
+  outStrings := MetaModelica.Dangerous.listReverseInPlace(outStrings);
 end stringWrap;
-
-protected function stringWrap2
-  "Helper function to stringWrap."
-  input list<String> inString;
-  input Integer inWrapLength;
-  input String inDelimiter;
-  input Integer inDelimiterLength;
-  input list<String> inAccumString;
-  input Integer inStringLength;
-  input list<String> inAccumStrings;
-  output list<String> outStrings;
-algorithm
-  outStrings := matchcontinue(inString, inWrapLength, inDelimiter,
-      inDelimiterLength, inAccumString, inStringLength, inAccumStrings)
-    local
-      String char, str, delim;
-      list<String> rest_str, acc_strl, acc_str;
-      Integer wl, sl, dl, pos;
-
-    // The case when the given string is a multiple of the wraplength, i.e. both
-    // the string and the accumulated string is empty.
-    case ({}, _, _, _, _, 0, _) then listReverse(inAccumStrings);
-
-    // Wrap on newline (the newline will be thrown away).
-    case ("\n" :: rest_str, wl, delim, dl, acc_str, _, acc_strl)
-      equation
-        // The delimiter should not be applied to the first string.
-        delim = if listEmpty(acc_strl) then "" else delim;
-        str = delim +& stringAppendList(listReverse(acc_str));
-        acc_strl = str :: acc_strl;
-      then
-        stringWrap2(rest_str, wl, inDelimiter, dl, {}, 0, acc_strl);
-
-    // The string is empty, assemble the accumulated string and return the
-    // wrapped strings.
-    case ({}, _, delim, _, acc_str, _, acc_strl)
-      equation
-        // The delimiter should not be applied to the first string.
-        delim = if listEmpty(acc_strl) then "" else delim;
-        str = delim +& stringAppendList(listReverse(acc_str));
-        acc_strl = str :: acc_strl;
-      then
-        listReverse(acc_strl);
-
-    // The length of the accumulated string is equal to the wrap length, time to
-    // assemble it and start accumulate a new string.
-    case (_, wl, delim, dl, acc_str, sl, acc_strl)
-      equation
-        // The delimiter should not be applied to the first string.
-        ((delim, dl)) = if listEmpty(acc_strl) then ("", 0) else (delim, dl);
-        true = sl + dl >= wl;
-        // Split the string at the first space (will be the last since the
-        // string is reversed). The first part before the space will be the new
-        // accumulated string, while the rest is added to the list of result
-        // strings.
-        pos = List.position(" ", acc_str)-1 "zero-based index needed" ;
-        (acc_str, rest_str) = List.split(acc_str, pos);
-        sl = listLength(acc_str);
-        str = delim +& stringAppendList(listReverse(rest_str));
-      then
-        stringWrap2(inString, wl, inDelimiter, inDelimiterLength, acc_str,
-          sl, str :: acc_strl);
-
-    // None of the above cases matches, add the first character to the
-    // accumulated string and continue with the rest of the string.
-    case (char :: rest_str, wl, delim, dl, acc_str, sl, acc_strl)
-      then stringWrap2(rest_str, wl, delim, dl, char :: acc_str, sl + 1, acc_strl);
-
-  end matchcontinue;
-end stringWrap2;
 
 public function stringRest
   "Returns all but the first character of a string."
