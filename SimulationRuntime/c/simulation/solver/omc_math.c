@@ -746,8 +746,9 @@ void _omc_printMatrix(_omc_matrix* mat, const char* name, const int logLevel) {
   infoStreamPrint(logLevel, 1, "%s", name);
   for (i = 0; i < mat->rows; ++i) {
     buffer[0] = 0;
-    for (j = 0; i < mat->rows; ++j)
+    for (j = 0; j < mat->cols; ++j){
       sprintf(buffer, "%s%10g ", buffer, _omc_getMatrixElement(mat, i, j));
+    }
     infoStreamPrint(logLevel, 0, "%s", buffer);
   }
   messageClose(logLevel);
