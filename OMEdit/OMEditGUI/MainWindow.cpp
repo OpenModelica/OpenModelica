@@ -233,8 +233,13 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   }
   switchToWelcomePerspective();
   // read last Open Directory location
-  if (pSettings->contains("lastOpenDirectory"))
+  if (pSettings->contains("lastOpenDirectory")) {
     StringHandler::setLastOpenDirectory(pSettings->value("lastOpenDirectory").toString());
+  }
+  // read the grid lines
+  if (pSettings->contains("modeling/gridLines")) {
+    mpShowGridLinesAction->setChecked(pSettings->value("modeling/gridLines").toBool());
+  }
   // create the auto save timer
   mpAutoSaveTimer = new QTimer(this);
   connect(mpAutoSaveTimer, SIGNAL(timeout()), SLOT(autoSave()));
@@ -636,6 +641,8 @@ void MainWindow::beforeClosingMainWindow()
   pSettings->setValue("application/windowState", saveState());
   // save last Open Directory location
   pSettings->setValue("lastOpenDirectory", StringHandler::getLastOpenDirectory());
+  // save the grid lines
+  pSettings->setValue("modeling/gridLines", mpShowGridLinesAction->isChecked());
   delete pSettings;
 }
 

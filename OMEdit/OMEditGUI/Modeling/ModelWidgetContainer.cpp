@@ -1171,7 +1171,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines())
   {
     painter->setBrush(Qt::NoBrush);
-    painter->setPen(Qt::lightGray);
+    painter->setPen(QColor(229, 229, 229));
     /* Draw left half vertical lines */
     int horizontalGridStep = mpCoOrdinateSystem->getHorizontalGridStep();
     qreal xAxisStep = 0;
@@ -1207,12 +1207,12 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       yAxisStep -= verticalGridStep;
     }
     /* set the middle horizontal and vertical line gray */
-    painter->setPen(Qt::darkGray);
+    painter->setPen(QColor(192, 192, 192));
     painter->drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
     painter->drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()));
   }
   // draw scene rectangle
-  painter->setPen(Qt::darkGray);
+  painter->setPen(QColor(192, 192, 192));
   painter->drawRect(sceneRect());
 }
 
