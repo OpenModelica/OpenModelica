@@ -705,7 +705,7 @@ void OptionsDialog::addListItems()
   pSimulationItem->setText(Helper::simulation);
   // Notifications Item
   QListWidgetItem *pNotificationsItem = new QListWidgetItem(mpOptionsList);
-  pNotificationsItem->setIcon(QIcon(":/Resources/icons/notificationicon.png"));
+  pNotificationsItem->setIcon(QIcon(":/Resources/icons/notificationicon.svg"));
   pNotificationsItem->setText(tr("Notifications"));
   // Pen Style Item
   QListWidgetItem *pLineStyleItem = new QListWidgetItem(mpOptionsList);

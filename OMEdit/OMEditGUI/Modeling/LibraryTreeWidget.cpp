@@ -2005,7 +2005,7 @@ QPixmap LibraryComponent::getComponentPixmap(QSize size)
   painter.scale(1.0, -1.0);
   mpGraphicsView->scene()->render(&painter, mRectangle, mpGraphicsView->sceneRect());
   painter.end();
-  return pixmap.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  return pixmap;
 }
 
 void LibraryComponent::hasIconAnnotation(Component *pComponent)
