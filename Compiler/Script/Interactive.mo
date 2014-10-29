@@ -231,35 +231,36 @@ protected function showStatement
   input GlobalScript.Statement s;
   input Boolean semicolon;
   input Boolean start;
+protected
+  Boolean testsuite;
 algorithm
-  _ := matchcontinue(s, semicolon, start)
+  if not Flags.isSet(Flags.SHOW_STATEMENT) then
+    return;
+  end if;
+
+  testsuite := Config.getRunningTestsuite();
+
+  _ := matchcontinue(start, testsuite)
 
     // running testsuite
-    case (_, _, true)
+    case (true, true)
       equation
-        true = Flags.isSet(Flags.SHOW_STATEMENT);
-        true = Config.getRunningTestsuite();
         print("Evaluating: " + printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) + "\n");
       then
         ();
-    case (_, _, false)
-      equation
-        true = Flags.isSet(Flags.SHOW_STATEMENT);
-        true = Config.getRunningTestsuite();
-      then
-        ();
+
+    case (false, true) then ();
 
     // not running testsuite, show more!
-    case (_, _, true)
+    case (true, false)
       equation
-        true = Flags.isSet(Flags.SHOW_STATEMENT);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SHOW_STATEMENT);
         print("Evaluating:   > " + printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) + "\n");
       then
         ();
-    case (_, _, false)
+
+    case (false, false)
       equation
-        true = Flags.isSet(Flags.SHOW_STATEMENT);
         print("Evaluated:    < " + realString(System.realtimeTock(ClockIndexes.RT_CLOCK_SHOW_STATEMENT)) + " / " + printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) + "\n");
       then
         ();
@@ -330,7 +331,7 @@ algorithm
       then
         (str_1,newst);
 
-    // Evaluate algorithm statements in  evaluateAlgStmt()
+    // Evaluate algorithm statements in evaluateAlgStmt()
     case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM(algorithm_ = _)))}, semicolon = _),st)
       equation
         Inst.initInstHashTable();
@@ -14118,12 +14119,11 @@ end getNthComponentInClass;
 protected function getNthComponentInElementitems
 " This function takes an ElementItem list and and integer
    and returns the nth component in the list, indexed from 1..n."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input list<Absyn.ElementItem> inElements;
   input Integer inInteger;
   output Absyn.Element outElement;
 algorithm
-  outElement:=
-  matchcontinue (inAbsynElementItemLst,inInteger)
+  outElement:= matchcontinue (inElements, inInteger)
     local
       Boolean a;
       Option<Absyn.RedeclareKeywords> b;
@@ -14139,31 +14139,24 @@ algorithm
       list<Absyn.ElementItem> rest;
 
     case ((Absyn.ELEMENTITEM(element =
-      Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = c,
-                    specification = Absyn.COMPONENTS(attributes = e,typeSpec = f,components = (item::_)),
-                    info = info,constrainClass = i)) :: _),1)
+        Absyn.ELEMENT(a, b, c, Absyn.COMPONENTS(e, f, (item::_)), info, i)) :: _),1)
       then
         Absyn.ELEMENT(a,b,c,Absyn.COMPONENTS(e,f,{item}),info,i);
 
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst))) :: rest),n)
-      equation
-        numcomps = listLength(lst);
-        (n > numcomps) = true;
-        newn = n - numcomps;
-        res = getNthComponentInElementitems(rest, newn);
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(a, b, c,
+        Absyn.COMPONENTS(e, f, lst), info, i)) :: rest),n)
+      algorithm
+        numcomps := listLength(lst);
+
+        if n > numcomps then
+          newn := n - numcomps;
+          res := getNthComponentInElementitems(rest, newn);
+        else
+          item := listGet(lst, n);
+          res := Absyn.ELEMENT(a, b, c, Absyn.COMPONENTS(e, f, {item}), info, i);
+        end if;
       then
         res;
-
-    case ((Absyn.ELEMENTITEM(element =
-      (Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = c,
-                     specification = Absyn.COMPONENTS(attributes = e,typeSpec = f,components = lst),
-                     info = info,constrainClass = i))) :: _),n)
-      equation
-        numcomps = listLength(lst);
-        (n <= numcomps) = true;
-        item = listGet(lst, n);
-      then
-        Absyn.ELEMENT(a,b,c,Absyn.COMPONENTS(e,f,{item}),info,i);
 
     case ((_ :: rest),n)
       equation
@@ -14896,6 +14889,17 @@ algorithm
   end match;
 end buildPath;
 
+protected function replaceClassInProgram2
+  input Absyn.Class inClass;
+  input String inClassName;
+  output Boolean outReplace;
+protected
+  String cls_name;
+algorithm
+  Absyn.CLASS(name = cls_name) := inClass;
+  outReplace := cls_name == inClassName;
+end replaceClassInProgram2;
+  
 protected function replaceClassInProgram
 " This function takes a Class and a Program and replaces the class
    definition at the top level in the program by the class definition of
@@ -14903,44 +14907,23 @@ protected function replaceClassInProgram
   input Absyn.Class inClass;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
+protected
+  String cls_name1, cls_name2;
+  list<Absyn.Class> clst;
+  Absyn.Within w;
+  Absyn.TimeStamp ts;
+  Boolean replaced;
 algorithm
-  outProgram := matchcontinue (inClass,inProgram)
-    local
-      Absyn.Class c,c1;
-      Absyn.Within w;
-      String name1,name2;
-      list<Absyn.Class> clst,newclst;
-      Absyn.Program p;
-      Absyn.Path cp;
-      Absyn.TimeStamp ts, newTs;
+  Absyn.CLASS(name = cls_name1) := inClass;
+  Absyn.PROGRAM(classes = clst, within_ = w, globalBuildTimes = ts) := inProgram;
+  (clst, replaced) := List.replaceOnTrue(inClass, clst,
+    function replaceClassInProgram2(inClassName = cls_name1));
 
-    case (c,Absyn.PROGRAM(classes = {},within_ = w,globalBuildTimes=ts)) then Absyn.PROGRAM({c},w,ts);
+  if not replaced then
+    clst := listAppend(clst, {inClass});
+  end if;
 
-    case ((c as Absyn.CLASS(name = name1)),Absyn.PROGRAM(classes = ((Absyn.CLASS(name = name2)) :: clst),within_ = w,globalBuildTimes=ts))
-      equation
-        true = stringEq(name1, name2);
-        _ = buildPath(w, Absyn.IDENT(name2));
-      then
-        Absyn.PROGRAM((c :: clst),w,ts);
-
-    case ((c as Absyn.CLASS(name = name1)),Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name2)) :: clst),within_ = w,globalBuildTimes=ts))
-      equation
-        false = stringEq(name1, name2);
-        Absyn.PROGRAM(newclst,w,newTs) = replaceClassInProgram(c, Absyn.PROGRAM(clst,w,ts));
-      then
-        Absyn.PROGRAM((c1 :: newclst),w,newTs);
-
-    case (c,p as Absyn.PROGRAM(globalBuildTimes=ts))
-      equation
-        true = Flags.isSet(Flags.DUMP);
-        Print.printBuf("Interactive.replaceClassInProgram failed \n class:");
-        Dump.dump(Absyn.PROGRAM({c}, Absyn.TOP(), ts));
-        Print.printBuf("\nprogram: \n");
-        Dump.dump(p);
-      then
-        fail();
-
-  end matchcontinue;
+  outProgram := Absyn.PROGRAM(clst, w, ts);
 end replaceClassInProgram;
 
 protected function insertClassInProgram
@@ -15125,39 +15108,34 @@ algorithm
   end matchcontinue;
 end removeInnerClass;
 
+protected function classElementItemIsNamed
+  input String inClassName;
+  input Absyn.ElementItem inElement;
+  output Boolean outIsNamed;
+algorithm
+  outIsNamed := match(inElement)
+    local
+      String name;
+
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+        Absyn.CLASSDEF(class_ = (Absyn.CLASS(name = name)))))
+      then inClassName == name;
+
+    else false;
+  end match;
+end classElementItemIsNamed;
+
 protected function removeClassInElementitemlist
 " This function takes an Element list and a Class and returns a modified
    element list where the class definition of the class is removed."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input list<Absyn.ElementItem> inElements;
   input Absyn.Class inClass;
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
+  output list<Absyn.ElementItem> outElements;
+protected
+  String name;
 algorithm
-  outAbsynElementItemLst := matchcontinue (inAbsynElementItemLst,inClass)
-    local
-      list<Absyn.ElementItem> res,xs;
-      Absyn.ElementItem a1,e1;
-      Absyn.Class c,c1,c2;
-      String name1,name;
-
-    case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (Absyn.CLASS(name = name1)))))) :: xs),(c as Absyn.CLASS(name = name)))
-      equation
-        false = stringEq(name1, name);
-        res = removeClassInElementitemlist(xs, c);
-      then
-        (e1 :: res);
-
-    case (((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = name1))))) :: xs),(Absyn.CLASS(name = name)))
-      equation
-        true = stringEq(name1, name);
-      then
-        xs;
-
-    case ((a1 :: xs),c)
-      equation
-        res = removeClassInElementitemlist(xs, c);
-      then
-        (a1 :: res);
-  end matchcontinue;
+  Absyn.CLASS(name = name) := inClass;
+  outElements := List.deleteMemberOnTrue(name, inElements, classElementItemIsNamed);
 end removeClassInElementitemlist;
 
 protected function replaceInnerClass
@@ -15263,7 +15241,7 @@ algorithm
     local
       list<Absyn.ElementItem> res,xs;
       Absyn.ElementItem a1,e1;
-      Absyn.Class c,c1,c2;
+      Absyn.Class c;
       String name1,name;
       Boolean a,e;
       Option<Absyn.RedeclareKeywords> b;
@@ -15271,18 +15249,11 @@ algorithm
       Option<Absyn.ConstrainClass> h;
       Absyn.InnerOuter io;
 
-    case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (Absyn.CLASS(name = name1)))))) :: xs),(c as Absyn.CLASS(name = name)))
-      equation
-        false = stringEq(name1, name);
-        (res, replaced) = replaceClassInElementitemlist(xs, c);
-      then
-        (e1 :: res, replaced);
-
-    case (((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = io,specification = Absyn.CLASSDEF(replaceable_ = e,class_ = Absyn.CLASS(name = name1)),info = info,constrainClass = h))) :: xs),(c2 as Absyn.CLASS(name = name)))
+    case (((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = a,redeclareKeywords = b,innerOuter = io,specification = Absyn.CLASSDEF(replaceable_ = e,class_ = Absyn.CLASS(name = name1)),info = info,constrainClass = h))) :: xs),(c as Absyn.CLASS(name = name)))
       equation
         true = stringEq(name1, name);
       then
-        (Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,io,Absyn.CLASSDEF(e,c2),info,h)) :: xs, true);
+        (Absyn.ELEMENTITEM(Absyn.ELEMENT(a,b,io,Absyn.CLASSDEF(e,c),info,h)) :: xs, true);
 
     case ((e1 :: xs),c)
       equation
@@ -15290,7 +15261,7 @@ algorithm
       then
         (e1 :: res, replaced);
 
-    case ({},c) then ({}, false);
+    else ({}, false);
 
   end matchcontinue;
 end replaceClassInElementitemlist;
@@ -15719,34 +15690,15 @@ protected function getClassFromElementitemlist "
   This function takes an ElementItem list and an Ident and returns the
   class definition among the element list having that identifier.
 "
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input list<Absyn.ElementItem> inElements;
   input Absyn.Ident inIdent;
   output Absyn.Class outClass;
+protected
+  Absyn.ElementItem elem;
 algorithm
-  outClass:=
-  matchcontinue (inAbsynElementItemLst,inIdent)
-    local
-      Absyn.Class res,c1;
-      list<Absyn.ElementItem> xs;
-      String name,name1,name2;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (c1 as Absyn.CLASS(name = name1))))) :: _),name2)
-      equation
-        true = stringEq(name1, name2);
-      then
-        c1;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (Absyn.CLASS(name = name1))))) :: xs),name)
-      equation
-        false = stringEq(name1, name);
-        res = getClassFromElementitemlist(xs, name);
-      then
-        res;
-    case ((_ :: xs),name)
-      equation
-        res = getClassFromElementitemlist(xs, name);
-      then
-        res;
-    case ({},_) then fail();
-  end matchcontinue;
+  elem := List.getMemberOnTrue(inIdent, inElements, classElementItemIsNamed);
+  Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+    Absyn.CLASSDEF(class_ = outClass))) := elem;
 end getClassFromElementitemlist;
 
 protected function classInProgram
@@ -16089,42 +16041,22 @@ end annotationListToAbsynComment;
 
 protected function annotationListToAbsynComment2
 "Helper function to annotationListToAbsynComment2."
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  output Option<Absyn.Comment> outAbsynCommentOption;
+  input list<Absyn.NamedArg> inNamedArgs;
+  output Option<Absyn.Comment> outComment;
+protected
+  list<Absyn.ElementArg> annargs;
+  Option<String> ostrcmt;
+  Absyn.Annotation ann;
 algorithm
-  outAbsynCommentOption:=
-  matchcontinue (inAbsynNamedArgLst)
-    local
-      list<Absyn.NamedArg> nargs;
-      String strcmt;
-      Absyn.Annotation annotation_;
-      Option<String> ostrcmt;
-    case (nargs)
-      equation
-        Absyn.ANNOTATION({}) = annotationListToAbsyn(nargs) "special case for empty string" ;
-        SOME("") = commentToAbsyn(nargs);
-      then
-        NONE();
-    case (nargs)
-      equation
-        Absyn.ANNOTATION({}) = annotationListToAbsyn(nargs);
-        SOME(strcmt) = commentToAbsyn(nargs);
-      then
-        SOME(Absyn.COMMENT(NONE(),SOME(strcmt)));
-    case (nargs)
-      equation
-        Absyn.ANNOTATION({}) = annotationListToAbsyn(nargs);
-        NONE() = commentToAbsyn(nargs);
-      then
-        NONE();
-    case (nargs)
-      equation
-        annotation_ = annotationListToAbsyn(nargs);
-        ostrcmt = commentToAbsyn(nargs);
-      then
-        SOME(Absyn.COMMENT(SOME(annotation_),ostrcmt));
-    case (_) then NONE();
-  end matchcontinue;
+  ann as Absyn.ANNOTATION(annargs) := annotationListToAbsyn(inNamedArgs);
+  ostrcmt := commentToAbsyn(inNamedArgs);
+
+  outComment := match(ostrcmt, annargs)
+    case (SOME(""), {}) then NONE();
+    case (SOME(_), {}) then SOME(Absyn.COMMENT(NONE(), ostrcmt));
+    case (NONE(), {}) then NONE();
+    else SOME(Absyn.COMMENT(SOME(ann), ostrcmt));
+  end match;
 end annotationListToAbsynComment2;
 
 protected function commentToAbsyn
@@ -16148,7 +16080,7 @@ algorithm
         res = commentToAbsyn(rest);
       then
         res;
-    case (_) then NONE();
+    else NONE();
   end matchcontinue;
 end commentToAbsyn;
 
@@ -16266,32 +16198,32 @@ end namedargToModification;
 public function addInstantiatedClass
 " This function adds an instantiated class to the list of instantiated
    classes. If the class path already exists, the class is replaced."
-  input list<GlobalScript.InstantiatedClass> inInstantiatedClassLst;
+  input list<GlobalScript.InstantiatedClass> inClasses;
   input GlobalScript.InstantiatedClass inInstantiatedClass;
-  output list<GlobalScript.InstantiatedClass> outInstantiatedClassLst;
+  output list<GlobalScript.InstantiatedClass> outClasses;
+protected
+  Boolean replaced;
+  Absyn.Path path;
 algorithm
-  outInstantiatedClassLst:=
-  matchcontinue (inInstantiatedClassLst,inInstantiatedClass)
-    local
-      GlobalScript.InstantiatedClass cl,newc,x;
-      Absyn.Path path,path2;
-      DAE.DAElist dae,dae_1;
-      FCore.Graph env,env_1;
-      list<GlobalScript.InstantiatedClass> xs,res;
-    case ({},cl) then {cl};
-    case ((GlobalScript.INSTCLASS(qualName = path,daeElementLst = _) :: xs),newc as GlobalScript.INSTCLASS(qualName = path2))
-      equation
-        true = Absyn.pathEqual(path, path2);
-      then
-        (newc :: xs);
-    case (((x as GlobalScript.INSTCLASS(qualName = path)) :: xs),(newc as GlobalScript.INSTCLASS(qualName = path2)))
-      equation
-        false = Absyn.pathEqual(path, path2);
-        res = addInstantiatedClass(xs, newc);
-      then
-        (x :: res);
-  end matchcontinue;
+  GlobalScript.INSTCLASS(qualName = path) := inInstantiatedClass;
+  (outClasses, replaced) := List.replaceOnTrue(inInstantiatedClass,
+    inClasses, function isInstantiatedClassNamed(inName = path));
+
+  if not replaced then
+    outClasses := listAppend(inClasses, {inInstantiatedClass});
+  end if;
 end addInstantiatedClass;
+
+protected function isInstantiatedClassNamed
+  input Absyn.Path inName;
+  input GlobalScript.InstantiatedClass inClass; 
+  output Boolean outIsNamed;
+protected
+  Absyn.Path path;
+algorithm
+  GlobalScript.INSTCLASS(qualName = path) := inClass;
+  outIsNamed := Absyn.pathEqual(inName, path);
+end isInstantiatedClassNamed;
 
 public function getInstantiatedClass
 "This function get an instantiated class
@@ -16300,26 +16232,7 @@ public function getInstantiatedClass
   input Absyn.Path inPath;
   output GlobalScript.InstantiatedClass outInstantiatedClass;
 algorithm
-  outInstantiatedClass:=
-  matchcontinue (inInstantiatedClassLst,inPath)
-    local
-      GlobalScript.InstantiatedClass x,res;
-      Absyn.Path path,path2;
-      DAE.DAElist dae;
-      FCore.Graph env;
-      list<GlobalScript.InstantiatedClass> xs;
-    case (((x as GlobalScript.INSTCLASS(qualName = path,daeElementLst = _)) :: _),path2)
-      equation
-        true = Absyn.pathEqual(path, path2);
-      then
-        x;
-    case (((GlobalScript.INSTCLASS(qualName = path)) :: xs),path2)
-      equation
-        false = Absyn.pathEqual(path, path2);
-        res = getInstantiatedClass(xs, path2);
-      then
-        res;
-  end matchcontinue;
+  outInstantiatedClass := List.getMemberOnTrue(inPath, inInstantiatedClassLst, isInstantiatedClassNamed);
 end getInstantiatedClass;
 
 public function getContainedClassAndFile
@@ -16425,6 +16338,23 @@ algorithm
   end match;
 end removeInnerDiffFiledClass;
 
+protected function elementIsInFile
+  input String inFilename;
+  input Absyn.ElementItem inElement;
+  output Boolean outInFile;
+algorithm
+  outInFile := match(inElement)
+    local
+      String filename;
+
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+        Absyn.CLASSDEF(class_ = Absyn.CLASS(info = Absyn.INFO(fileName = filename)))))
+      then stringEq(inFilename, filename);
+
+    else false;
+  end match;
+end elementIsInFile;
+
 protected function removeClassDiffFiledInElementitemlist
 "author: PA
   This function takes an Element list and a filename
@@ -16432,41 +16362,12 @@ protected function removeClassDiffFiledInElementitemlist
   not stored in filename are removed.
   inputs: (Absyn.ElementItem list, string /* filename */)
   outputs: Absyn.ElementItem list"
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input String inString;
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
+  input list<Absyn.ElementItem> inElements;
+  input String inFilename;
+  output list<Absyn.ElementItem> outElements;
 algorithm
-  outAbsynElementItemLst:=
-  matchcontinue (inAbsynElementItemLst,inString)
-    local
-      list<Absyn.ElementItem> res,xs;
-      Absyn.ElementItem a1,e1,c1;
-      String c,filename2,filename1,filename;
-
-    case (((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-      Absyn.CLASS(info = Absyn.INFO(fileName = filename2)))))) :: xs),filename1)
-      equation
-        false = stringEq(filename1, filename2);
-        res = removeClassDiffFiledInElementitemlist(xs, filename1);
-      then
-        res;
-
-    case (((e1 as Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
-      Absyn.CLASS(info = Absyn.INFO(fileName = filename2)))))) :: xs),filename1)
-      equation
-        true = stringEq(filename1, filename2);
-        res = removeClassDiffFiledInElementitemlist(xs, filename1);
-      then
-        (e1 :: res);
-
-    case ((c1 :: xs),filename)
-      equation
-        res = removeClassDiffFiledInElementitemlist(xs, filename);
-      then
-        (c1 :: res);
-
-    case ({},_) then {};
-  end matchcontinue;
+  outElements := List.filterOnTrue(inElements,
+    function elementIsInFile(inFilename = inFilename));
 end removeClassDiffFiledInElementitemlist;
 
 protected function getSurroundingPackage
@@ -17141,38 +17042,35 @@ protected function getLoadedFileInfo
   input String fileName                   "Filename to load";
   input list<GlobalScript.LoadedFile> loadedFiles      "The already loaded files";
   output Option<list<Absyn.Path>> qualifiedClasses  "The qualified classes";
+protected
+  String name;
+  Real loadtime, modtime;
+  list<Absyn.Path> classes;
+  Option<Real> omodtime;
 algorithm
-  (qualifiedClasses) := matchcontinue (fileName, loadedFiles)
-    local
-      String f,f1;
-      list<GlobalScript.LoadedFile> rest;
-      list<Absyn.Path> info;
-      Real loadTime, modificationTime;
-      Option<list<Absyn.Path>> optInfo;
-    case (_, {}) // we did not find it
-      then
-        NONE();
-    case (f, GlobalScript.FILE(f1,loadTime,info)::_) // found it
-      equation
-        true = stringEq(f,f1);
-        SOME(modificationTime) = System.getFileModificationTime(f);
-        // The file is loaded and is not changed since the last load
-        true = realGt(loadTime, modificationTime);
-      then
-        SOME(info);
-    case (f, GlobalScript.FILE(f1,_,_)::_) // found it
-      equation
-        true = stringEq(f,f1);
-        // we could not get the modification time
-        NONE() = System.getFileModificationTime(f);
-      then
-        NONE(); // report none so that it gets loaded
-    case (f, _::rest) // searching in the rest
-      equation
-        optInfo = getLoadedFileInfo(f, rest);
-      then
-        optInfo; // loading
-  end matchcontinue;
+  for file in loadedFiles loop
+    GlobalScript.FILE(name, loadtime, classes) := file;
+
+    if stringEq(fileName, name) then
+      omodtime := System.getFileModificationTime(fileName); 
+      
+      if isSome(omodtime) then
+        SOME(modtime) := omodtime;
+
+        if loadtime >= modtime then
+          // The file is loaded and is not changed since the last load.
+          qualifiedClasses := SOME(classes);
+          return;
+        end if;
+      end if;
+
+      // The file was found, stop looking.
+      break;
+    end if;
+  end for;
+
+  // The file wasn't found or has been changed since it was loaded.
+  qualifiedClasses := NONE();
 end getLoadedFileInfo;
 
 protected function checkLoadedFiles
@@ -18351,45 +18249,34 @@ protected function getClassEnvNoElaboration " Retrieves the environment of the c
    end A;
 
    where partial instantiation fails since cardinality(p) can not be determined."
-  input Absyn.Program p;
-  input Absyn.Path p_class;
-  input FCore.Graph env;
-  output FCore.Graph env_2;
+  input Absyn.Program inProgram;
+  input Absyn.Path inClassPath;
+  input FCore.Graph inEnv;
+  output FCore.Graph outEnv;
 protected
   SCode.Element cl;
   String id;
   SCode.Encapsulated encflag;
   SCode.Restriction restr;
-  FCore.Graph env_1,env2;
+  FCore.Graph env;
   ClassInf.State ci_state;
-  Real t1,t2;
   FCore.Cache cache;
 algorithm
-  env_2 := matchcontinue(p,p_class,env)
-    // First try partial instantiation
-    case(_,_,_)
-      equation
-        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p_class, false);
-        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        (cache,env_2,_,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
-      then
-        env_2;
-
-    case(_,_,_)
-      equation
-        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p_class, false);
-        env2 = FGraph.openScope(env_1, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
-          UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(),
-          ci_state, cl, SCode.PUBLIC(), {},false, InstTypes.INNER_CALL(),
-          ConnectionGraph.EMPTY, Connect.emptySet, NONE());
-    then
-      env_2;
-  end matchcontinue;
-
+  (cache, (cl as SCode.CLASS(name = id, encapsulatedPrefix = encflag, restriction = restr)), env) :=
+    Lookup.lookupClass(FCore.emptyCache(), inEnv, inClassPath, false);
+  env := FGraph.openScope(env, encflag, SOME(id), FGraph.restrictionToScopeType(restr));
+  ci_state := ClassInf.start(restr, FGraph.getGraphName(env));
+  
+  // First try partial instantiation
+  try
+    (_, outEnv) := Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy,
+      DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
+  else
+    (_, outEnv) := Inst.instClassIn(cache, env, InnerOuter.emptyInstHierarchy,
+      UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl,
+      SCode.PUBLIC(), {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY,
+      Connect.emptySet, NONE());
+  end try;
 end getClassEnvNoElaboration;
 
 annotation(__OpenModelica_Interface="backend");

@@ -2060,8 +2060,11 @@ algorithm
     case CONFIG_FLAG(validOptions = NONE()) then "";
     case CONFIG_FLAG(validOptions = SOME(STRING_OPTION(options = strl)))
       equation
-        opt_str = "\n" + descriptionIndent + "   " + System.gettext("Valid options:") + " " +
+        opt_str = descriptionIndent + "   " + System.gettext("Valid options:") + " " +
           stringDelimitList(strl, ", ");
+        strl = Util.stringWrap(opt_str, System.getTerminalWidth(), descriptionIndent + "     ");
+        opt_str = stringDelimitList(strl, "\n");
+        opt_str = "\n" + opt_str;
       then
         opt_str;
     case CONFIG_FLAG(validOptions = SOME(STRING_DESC_OPTION(options = descl)))

@@ -1342,5 +1342,15 @@ algorithm
   end matchcontinue;
 end prefixDimensions;
 
+public function isNoPrefix
+  input Prefix.Prefix inPrefix;
+  output Boolean outIsEmpty;
+algorithm
+  outIsEmpty := match(inPrefix)
+    case Prefix.NOPRE() then true;
+    else false;
+  end match;
+end isNoPrefix;
+
 annotation(__OpenModelica_Interface="frontend");
 end PrefixUtil;

@@ -2289,6 +2289,19 @@ algorithm
   outString := unparseType(ty);
 end unparseTypeNoAttr;
 
+public function unparsePropTypeNoAttr
+  input DAE.Properties inProps;
+  output String outString;
+algorithm
+  outString := match(inProps)
+    local
+      DAE.Type ty;
+
+    case DAE.PROP(type_ = ty) then unparseTypeNoAttr(ty);
+    case DAE.PROP_TUPLE(type_ = ty) then unparseTypeNoAttr(ty);
+  end match;
+end unparsePropTypeNoAttr;
+
 public function unparseConst
   input DAE.Const inConst;
   output String outString;

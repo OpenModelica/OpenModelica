@@ -2598,69 +2598,52 @@ end elabArrayReal2;
 
 protected function elabArray2
 "Helper function to elabArray, checks that all elements are equivalent."
-  input list<DAE.Exp> es;
-  input list<DAE.Properties> inProps;
-  input Prefix.Prefix pre;
-  input Absyn.Info info;
-  output list<DAE.Exp> outExpExpLst;
+  input list<DAE.Exp> inExpl;
+  input list<DAE.Properties> inProperties;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
+  output list<DAE.Exp> outExpl;
   output DAE.Properties outProperties;
+protected
+  DAE.Type ty1, ty2;
+  DAE.Const c1, c2;
+  DAE.Exp exp1;
+  list<DAE.Exp> rest_expl;
+  DAE.Properties prop1, prop2;
+  list<DAE.Properties> rest_props;
+  String pre_str, exp_str, expl_str, ty1_str, ty2_str;
 algorithm
-  (outExpExpLst,outProperties):=
-  matchcontinue (es,inProps,pre,info)
-    local
-      DAE.Exp e_1;
-      DAE.Properties prop;
-      DAE.Type t1,t2;
-      DAE.Const c1,c2,c;
-      list<DAE.Exp> es_1;
-      String e_str,str,elt_str,t1_str,t2_str,sp;
-      list<String> strs;
-      list<DAE.Properties> props;
-      Boolean knownSingleton;
-      Absyn.Path p;
+  exp1 :: rest_expl := inExpl;
+  DAE.PROP(ty1, c1) :: rest_props := inProperties;
+  outExpl := {exp1};
+  ty1 := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty1);
 
-    case ({}, {}, _, _)
-      then ({}, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST()));
+  for exp2 in rest_expl loop
+    DAE.PROP(ty2, c2) :: rest_props := rest_props;
+    ty2 := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty2);
+    
+    // If the types are not equivalent, try type conversion.
+    if not Types.equivtypes(ty1, ty2) then
+      try
+        (exp2, ty1) := Types.matchType(exp2, ty1, ty2, false);
+      else
+        ty1_str := Types.unparseTypeNoAttr(ty1);
+        ty2_str := Types.unparseTypeNoAttr(ty2);
+        Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
+        pre_str := PrefixUtil.printPrefixStr(inPrefix);
+        exp_str := ExpressionDump.printExpStr(exp2);
+        expl_str := List.toString(inExpl, ExpressionDump.printExpStr, "", "[", ",", "]", true);
+        Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_ARRAY_EXP,
+          {pre_str, exp_str, ty1_str, expl_str, ty2_str}, inInfo);
+      end try;
+    end if;
 
-    case ({e_1},{prop},_,_) then ({e_1},prop);
+    c1 := Types.constAnd(c1, c2);
+    outExpl := exp2 :: outExpl;
+  end for;
 
-    case (e_1::es_1,DAE.PROP(t1,c1)::props,_,_)
-      equation
-        (es_1,DAE.PROP(t2,c2)) = elabArray2(es_1,props,pre,info);
-        t1 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t1);
-        t2 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t2);
-        true = Types.equivtypes(t1, t2);
-        c = Types.constAnd(c1, c2);
-      then
-        ((e_1 :: es_1),DAE.PROP(t1,c));
-
-    case (e_1::es_1,DAE.PROP(t1,c1)::props,_,_)
-      equation
-        (es_1,DAE.PROP(t2,c2)) = elabArray2(es_1,props,pre,info);
-        t1 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t1);
-        t2 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t2);
-        (e_1,t2) = Types.matchType(e_1, t1, t2, false);
-        c = Types.constAnd(c1, c2);
-      then
-        ((e_1 :: es_1),DAE.PROP(t2,c));
-
-    case (e_1::es_1,DAE.PROP(t1,_)::props,_,_)
-      equation
-        (es_1,DAE.PROP(t2,_)) = elabArray2(es_1,props,pre,info);
-        t1 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t1);
-        false = Types.equivtypes(t1, t2);
-        sp = PrefixUtil.printPrefixStr3(pre);
-        e_str = ExpressionDump.printExpStr(e_1);
-        strs = List.map(es, ExpressionDump.printExpStr);
-        str = stringDelimitList(strs, ",");
-        elt_str = stringAppendList({"[",str,"]"});
-        t1_str = Types.unparseTypeNoAttr(t1);
-        t2_str = Types.unparseTypeNoAttr(t2);
-        Types.typeErrorSanityCheck(t1_str, t2_str, info);
-        Error.addSourceMessage(Error.TYPE_MISMATCH_ARRAY_EXP, {sp,e_str,t1_str,elt_str,t2_str}, info);
-      then
-        fail();
-  end matchcontinue;
+  outProperties := DAE.PROP(ty1, c1);
+  outExpl := listReverse(outExpl);
 end elabArray2;
 
 protected function elabGraphicsArray
@@ -2976,88 +2959,76 @@ protected function elabMatrixSemi
 "This function elaborates Matrix expressions, e.g. {1,0;2,1}
   A row is elaborated with elabMatrixComma."
   input FCore.Cache inCache;
-  input FCore.Graph inEnv1;
-  input list<list<DAE.Exp>> expss;
-  input list<list<DAE.Properties>> inPropss;
-  input Boolean inBoolean3;
-  input Option<GlobalScript.SymbolTable> inST4;
-  input Boolean inBoolean5;
-  input Integer inInteger6;
-  input Boolean performVectorization;
+  input FCore.Graph inEnv;
+  input list<list<DAE.Exp>> inMatrix;
+  input list<list<DAE.Properties>> inProperties;
+  input Boolean inImpl;
+  input Option<GlobalScript.SymbolTable> inST;
+  input Boolean inHaveReal;
+  input Integer inDims;
+  input Boolean inDoVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp1;
-  output DAE.Properties outProperties2;
-  output DAE.Dimension outInteger3;
-  output DAE.Dimension outInteger4;
+  input Absyn.Info inInfo;
+  output FCore.Cache outCache := inCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output DAE.Dimension outDim1;
+  output DAE.Dimension outDim2;
+protected
+  list<DAE.Exp> expl;
+  list<list<DAE.Exp>> rest_expl;
+  list<DAE.Properties> props;
+  list<list<DAE.Properties>> rest_props;
+  DAE.Exp exp;
+  DAE.Properties prop;
+  DAE.Dimension dim1, dim2;
+  String dim1_str, dim2_str, pre_str, el_str, ty1_str, ty2_str;
 algorithm
-  (outCache,outExp1,outProperties2,outInteger3,outInteger4) :=
-  matchcontinue (inCache,inEnv1,expss,inPropss,inBoolean3,inST4,inBoolean5,inInteger6,performVectorization,inPrefix,info)
-    local
-      DAE.Exp exp,el_1,el_2;
-      DAE.Properties prop,prop1,prop2;
-      DAE.Type t1,t2;
-      Integer maxn,dim;
-      DAE.Dimension dim1,dim2,dim1_1,dim2_1,dim1_2;
-      Boolean impl,havereal;
-      FCore.Graph env;
-      Option<GlobalScript.SymbolTable> st;
-      list<DAE.Exp> els;
-      list<list<DAE.Exp>> elss;
-      String el_str,t1_str,t2_str,dim1_str,dim2_str,el_str1,pre_str;
-      FCore.Cache cache;
-      Boolean doVect;
-      Prefix.Prefix pre;
-      list<DAE.Properties> props;
-      list<list<DAE.Properties>> propss;
+  // Elaborate the first row so we have something to compare against.
+  expl :: rest_expl := inMatrix;
+  props :: rest_props := inProperties;
 
-    case (cache,env,{els},{props},impl,st,havereal,maxn,doVect,pre,_) /* implicit inst. contain real maxn */
-      equation
-        (cache,exp,prop,dim1,dim2) = elabMatrixComma(cache,env, els, props, impl, st, havereal, maxn,doVect,pre,info);
-        exp = elabMatrixCatTwoExp(exp);
-      then
-        (cache,exp,prop,dim1,dim2);
-    case (cache,env,els::elss,props::propss,impl,st,havereal,maxn,doVect,pre,_)
-      equation
-        _ = listLength((els :: elss));
-        (cache,el_1,prop1,dim1,dim2) = elabMatrixComma(cache,env, els, props, impl, st, havereal, maxn,doVect,pre,info);
-        el_2 = elabMatrixCatTwoExp(el_1);
-        (cache,el_1,prop2,dim1_1,dim2_1) = elabMatrixSemi(cache,env, elss, propss, impl, st, havereal, maxn,doVect,pre,info);
-        exp = elabMatrixCatOne({el_2,el_1});
-        true = Expression.dimensionsEqual(dim2,dim2_1) "semicoloned values a;b must have same no of columns" ;
-        dim1_2 = Expression.dimensionsAdd(dim1, dim1_1) "number of rows added." ;
-        prop = Types.matchWithPromote(prop1, prop2, havereal);
-      then
-        (cache,exp,prop,dim1_2,dim2);
+  (outCache, outExp, outProperties, outDim1, outDim2) :=
+    elabMatrixComma(outCache, inEnv, expl, props, inImpl, inST, inHaveReal,
+    inDims, inDoVectorization, inPrefix, inInfo);
+  outExp := elabMatrixCatTwoExp(outExp);
 
-    case (cache,env,els::elss,props::propss,impl,st,havereal,maxn,doVect,pre,_) /* Error messages */
-      equation
-        (cache,_,DAE.PROP(t1,_),_,_) = elabMatrixComma(cache,env, els, props, impl, st, havereal, maxn,doVect,pre,info);
-        (cache,_,DAE.PROP(t2,_),_,_) = elabMatrixSemi(cache,env, elss, propss, impl, st, havereal, maxn,doVect,pre,info);
-        failure(equality(t1 = t2));
-        pre_str = PrefixUtil.printPrefixStr3(inPrefix);
-        el_str = ExpressionDump.printListStr(els, ExpressionDump.printExpStr, ", ");
-        t1_str = Types.unparseTypeNoAttr(t1);
-        t2_str = Types.unparseTypeNoAttr(t2);
-        Types.typeErrorSanityCheck(t1_str, t2_str, info);
-        Error.addSourceMessage(Error.TYPE_MISMATCH_MATRIX_EXP, {pre_str,el_str,t1_str,t2_str}, info);
-      then
-        fail();
-    case (cache,env,(els :: elss),props::propss,impl,st,havereal,maxn,doVect,pre,_)
-      equation
-        (cache,_,DAE.PROP(_,_),dim1,_) = elabMatrixComma(cache,env, els, props, impl, st, havereal, maxn,doVect,pre,info);
-        (cache,_,_,_,dim2) = elabMatrixSemi(cache,env, elss, propss, impl, st, havereal, maxn,doVect,pre,info);
-        false = Expression.dimensionsEqual(dim1,dim2);
-        dim1_str = ExpressionDump.dimensionString(dim1);
-        dim2_str = ExpressionDump.dimensionString(dim2);
-        pre_str = PrefixUtil.printPrefixStr3(inPrefix);
-        el_str = ExpressionDump.printListStr(els, ExpressionDump.printExpStr, ", ");
-        el_str1 = stringAppendList({"[",el_str,"]"});
-        Error.addSourceMessage(Error.MATRIX_EXP_ROW_SIZE, {pre_str,el_str1,dim1_str,dim2_str},info);
-      then
-        fail();
-  end matchcontinue;
+  // Elaborate the rest of the rows.
+  while not listEmpty(rest_expl) loop
+    expl :: rest_expl := rest_expl;
+    props :: rest_props := rest_props;
+
+    (outCache, exp, prop, dim1, dim2) := elabMatrixComma(outCache, inEnv, expl,
+      props, inImpl, inST, inHaveReal, inDims, inDoVectorization, inPrefix, inInfo);
+
+    // Check that all rows have the same size, otherwise print an error and fail.
+    if not Expression.dimensionsEqual(dim2, outDim2) then
+      dim1_str := ExpressionDump.dimensionString(dim1); 
+      dim2_str := ExpressionDump.dimensionString(dim2); 
+      pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+      el_str := List.toString(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
+      Error.addSourceMessageAndFail(Error.MATRIX_EXP_ROW_SIZE,
+        {pre_str, el_str, dim1_str, dim2_str}, inInfo);
+    end if;
+
+    // Check that all rows are of the same type, otherwise print an error and fail.
+    try
+      outProperties := Types.matchWithPromote(outProperties, prop, inHaveReal);
+    else
+      ty1_str := Types.unparsePropTypeNoAttr(outProperties);
+      ty2_str := Types.unparsePropTypeNoAttr(prop);
+      Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
+      pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+      el_str := List.toString(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
+      Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_MATRIX_EXP,
+        {pre_str, el_str, ty1_str, ty2_str}, inInfo);
+    end try;
+
+    // Add the row to the matrix.
+    exp := elabMatrixCatTwoExp(exp);
+    outExp := elabMatrixCatOne({outExp, exp});
+    outDim1 := Expression.dimensionsAdd(dim1, outDim1);
+  end while;
 end elabMatrixSemi;
 
 protected function verifyBuiltInHandlerType "
@@ -6717,28 +6688,32 @@ protected function elabBuiltinString "
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  Absyn.Exp e;
+  DAE.Exp exp;
+  FCore.Cache cache;
+  DAE.Type tp;
+  DAE.Const c;
 algorithm
+  e :: _ := inAbsynExpLst;
+  (cache, exp, DAE.PROP(tp,c), _) :=
+    elabExpInExpression(inCache, inEnv, e, inBoolean, NONE(), true, inPrefix, info);
+
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
-      DAE.Exp exp;
-      DAE.Type tp;
-      DAE.Const c;
       list<DAE.Const> constlist;
       FCore.Graph env;
-      Absyn.Exp e;
       Boolean impl;
       list<DAE.Exp> args_1;
-      FCore.Cache cache;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       list<Slot> slots,newslots;
       Prefix.Prefix pre;
 
     // handle most of the stuff
-    case (cache,env,args as e::_,nargs,impl,pre,_)
+    case (cache,env,args,nargs,impl)
       equation
-        (cache,exp,DAE.PROP(tp,c),_) = elabExpInExpression(cache,env, e, impl,NONE(),true,pre,info);
         // Create argument slots for String function.
         slots = {SLOT(DAE.FUNCARG("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{},1),
                  SLOT(DAE.FUNCARG("minimumLength",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(0)),{},2),
@@ -6747,17 +6722,15 @@ algorithm
         slots = if Types.isRealOrSubTypeReal(tp)
           then listAppend(slots, {SLOT(DAE.FUNCARG("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(6)),{},4)})
           else slots;
-        (cache,args_1,_,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, false, true/*checkTypes*/ ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
+        (cache,args_1,_,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, false, true/*checkTypes*/ ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), inPrefix, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         exp = Expression.makePureBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
       then
         (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
 
     // handle format
-    case (cache,env,args as e::_,nargs,impl,pre,_)
+    case (cache,env,args,nargs,impl)
       equation
-        (cache,exp,DAE.PROP(tp,c),_) = elabExpInExpression(cache,env, e, impl,NONE(),true,pre,info);
-
         slots = {SLOT(DAE.FUNCARG("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{},1)};
 
         slots = if Types.isRealOrSubTypeReal(tp)
@@ -6769,7 +6742,7 @@ algorithm
         slots = if Types.isString(tp)
           then listAppend(slots, {SLOT(DAE.FUNCARG("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("s")),{},2)})
           else slots;
-        (cache,args_1,_,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, false, true /*checkTypes*/, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
+        (cache,args_1,_,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, false, true /*checkTypes*/, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), inPrefix, info, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         exp = Expression.makePureBuiltinCall("String", args_1, DAE.T_STRING_DEFAULT);
       then
@@ -6785,37 +6758,25 @@ protected function elabBuiltinGetInstanceName
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache := inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  String str;
+  Absyn.Path name, envName;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      String str;
-      Absyn.Path name,envName;
-    case (FCore.CACHE(modelName=name),_,{},{},_,Prefix.NOPRE(),_)
-      equation
-        envName = FGraph.getGraphName(inEnv);
-        true = Absyn.pathEqual(envName,name);
-        str = Absyn.pathLastIdent(name);
-        outExp = DAE.SCONST(str);
-        outProperties = DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
-      then (inCache,outExp,outProperties);
-    case (FCore.CACHE(modelName=name),_,{},{},_,Prefix.NOPRE(),_)
-      equation
-        envName = FGraph.getGraphName(inEnv);
-        false = Absyn.pathEqual(envName,name);
-        str = Absyn.pathString(envName);
-        outExp = DAE.SCONST(str);
-        outProperties = DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
-      then (inCache,outExp,outProperties);
-    case (FCore.CACHE(modelName=name),_,{},{},_,_,_)
-      equation
-        str = Absyn.pathLastIdent(name) +& "." +& PrefixUtil.printPrefixStr(inPrefix);
-        outExp = DAE.SCONST(str);
-        outProperties = DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
-      then (inCache,outExp,outProperties);
-  end matchcontinue;
+  FCore.CACHE(modelName = name) := inCache;
+  
+  if PrefixUtil.isNoPrefix(inPrefix) then
+    envName := FGraph.getGraphName(inEnv);
+    str := if Absyn.pathEqual(envName, name) then 
+      Absyn.pathLastIdent(name) else Absyn.pathString(envName);
+  else
+    str := Absyn.pathLastIdent(name) + "." + PrefixUtil.printPrefixStr(inPrefix);
+  end if;
+
+  outExp := DAE.SCONST(str);
+  outProperties := DAE.PROP(DAE.T_STRING_DEFAULT, DAE.C_CONST());
 end elabBuiltinGetInstanceName;
 
 protected function elabBuiltinVector "author: PA
@@ -10825,23 +10786,26 @@ protected function evalExternalObjectInput
   output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
-  (outCache,outExp) := matchcontinue (isExternalObject,ty,const,inCache,inEnv,inExp,info)
+  (outCache,outExp) := matchcontinue (isExternalObject)
     local
       String str;
       Values.Value val;
-    case (NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),_,_,_,_,_,_)
+    case NOT_EXTERNAL_OBJECT_MODEL_SCOPE()
       then (inCache,inExp);
-    case (_,_,_,_,_,_,_)
+
+    case (_)
       equation
         true = Types.isParameterOrConstant(const);
         false = Expression.isConst(inExp);
         (outCache, val, _) = Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Absyn.MSG(info), 0);
         outExp = ValuesUtil.valueExp(val);
       then (outCache,outExp);
-    case (_,_,_,_,_,_,_)
+
+    case (_)
       equation
         true = Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp);
       then (inCache,inExp);
+
     else
       equation
         false = Types.isParameterOrConstant(const);
@@ -10965,7 +10929,7 @@ algorithm
     case (cache, env, e, DAE.FUNCARG(name=id,ty = vt as DAE.T_CODE(ct,_),par=pr), _, slots, _, true, _, _, polymorphicBindings,_,pre,_,_,_)
       equation
         e_1 = elabCodeExp(e,cache,env,ct,st,info);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,pre,info);
       then
         (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
 
@@ -10978,7 +10942,7 @@ algorithm
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,checkTypes,pre,info) "no vectorized dim" ;
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info) "no vectorized dim" ;
       then
         (cache,slots_1,c1,polymorphicBindings);
 
@@ -10991,7 +10955,7 @@ algorithm
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info);
       then
         (cache,slots_1,c1,polymorphicBindings);
 
@@ -11003,7 +10967,7 @@ algorithm
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         /* fill slot with actual type for error message*/
-        slots_1 = fillSlot(DAE.FUNCARG(id,t,c1,pr,NONE()), e_1, {}, slots, checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,t,c1,pr,NONE()), e_1, {}, slots, pre,info);
       then
         (cache,slots_1,c1,polymorphicBindings);
 
@@ -11140,7 +11104,7 @@ algorithm
         (vt as DAE.T_CODE(ty=ct)) = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         e_1 = elabCodeExp(e,cache,env,ct,st,info);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,pre,info);
       then (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
 
     // check types exact match
@@ -11151,7 +11115,7 @@ algorithm
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
     // check types vectorized argument
@@ -11162,7 +11126,7 @@ algorithm
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, e, impl,st, true,pre,info);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
     // do not check types
@@ -11172,7 +11136,7 @@ algorithm
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,pre,info);
       then (cache,slots_1,c1,polymorphicBindings);
 
     case (cache, env, Absyn.NAMEDARG(argName = id), farg, slots, true /* only 1 function */, _, _, _, polymorphicBindings,_,pre,_,_,_)
@@ -11197,59 +11161,43 @@ algorithm
   end matchcontinue;
 end elabNamedInputArg;
 
-protected function findNamedArgType
-"This function takes an Ident and a FuncArg list, and returns the FuncArg
-  which has  that identifier.
-  Used for instance when looking up named arguments from the function type."
+protected function findNamedArg
   input String inIdent;
-  input list<DAE.FuncArg> inTypesFuncArgLst;
+  input list<DAE.FuncArg> inArgs;
+  output DAE.FuncArg outArg;
+protected
+  String id;
+algorithm
+  for arg in inArgs loop
+    DAE.FUNCARG(name = id) := arg;
+
+    if id == inIdent then
+      outArg := arg;
+      return;
+    end if;
+  end for;
+  fail();
+end findNamedArg;
+
+protected function findNamedArgType
+  "This function takes an Ident and a FuncArg list, and returns the FuncArg
+   which has  that identifier.
+   Used for instance when looking up named arguments from the function type."
+  input String inIdent;
+  input list<DAE.FuncArg> inArgs;
   output DAE.Type outType;
 algorithm
-  outType:=
-  matchcontinue (inIdent,inTypesFuncArgLst)
-    local
-      String id,id2;
-      DAE.Type ty;
-      list<DAE.FuncArg> ts;
-    case (id,DAE.FUNCARG(name=id2,ty=ty) :: _)
-      equation
-        true = stringEq(id, id2);
-      then
-        ty;
-    case (id,DAE.FUNCARG(name=id2) :: ts)
-      equation
-        false = stringEq(id, id2);
-        ty = findNamedArgType(id, ts);
-      then
-        ty;
-  end matchcontinue;
+  DAE.FUNCARG(ty = outType) := findNamedArg(inIdent, inArgs);
 end findNamedArgType;
 
 protected function findNamedArgParallelism
-"This function takes an Ident and a FuncArg list, and returns the
-  parallelism of the FuncArg which has  that identifier."
+  "This function takes an Ident and a FuncArg list, and returns the
+   parallelism of the FuncArg which has  that identifier."
   input String inIdent;
-  input list<DAE.FuncArg> inTypesFuncArgLst;
+  input list<DAE.FuncArg> inArgs;
   output DAE.VarParallelism outParallelism;
 algorithm
-  outParallelism :=
-  matchcontinue (inIdent,inTypesFuncArgLst)
-    local
-      String id,id2;
-      DAE.VarParallelism pr;
-      list<DAE.FuncArg> ts;
-    case (id,DAE.FUNCARG(name=id2,par=pr) :: _)
-      equation
-        true = stringEq(id, id2);
-      then
-        pr;
-    case (id,DAE.FUNCARG(name=id2) :: ts)
-      equation
-        false = stringEq(id, id2);
-        pr = findNamedArgParallelism(id, ts);
-      then
-        pr;
-  end matchcontinue;
+  DAE.FUNCARG(par = outParallelism) := findNamedArg(inIdent, inArgs);
 end findNamedArgParallelism;
 
 protected function fillSlot
@@ -11258,71 +11206,58 @@ protected function fillSlot
   and setting the expression. The function fails if the slot is allready set."
   input DAE.FuncArg inFuncArg;
   input DAE.Exp inExp;
-  input DAE.Dimensions inTypesArrayDimLst;
+  input DAE.Dimensions inDims;
   input list<Slot> inSlotLst;
-  input Boolean checkTypes "type checking only if true";
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output list<Slot> outSlotLst;
+  input Absyn.Info inInfo;
+  output list<Slot> outSlotLst := {};
+protected
+  String fa1, fa2, exp_str, c_str, pre_str;
+  DAE.Type ty1, ty2;
+  DAE.Const c1, c2;
+  DAE.VarParallelism prl;
+  Option<DAE.Exp> binding;
+  Boolean filled;
+  Integer idx;
+  Slot slot;
+  list<Slot> rest_slots := inSlotLst;
 algorithm
-  outSlotLst := matchcontinue (inFuncArg,inExp,inTypesArrayDimLst,inSlotLst,checkTypes,inPrefix,info)
-    local
-      String fa1,fa2,fa;
-      DAE.Exp exp;
-      DAE.Dimensions ds;
-      DAE.Type b;
-      list<Slot> xs,newslots;
-      DAE.FuncArg farg,farg1,farg2;
-      Slot s1;
-      Prefix.Prefix pre;
-      String ps,str1,str2;
-      DAE.Const c1,c2;
-      DAE.VarParallelism prl;
-      Option<DAE.Exp> oe;
-      Integer idx;
+  DAE.FUNCARG(name = fa1, ty = ty1, const = c1) := inFuncArg;
+  
+  while not listEmpty(rest_slots) loop
+    slot :: rest_slots := rest_slots;
+    SLOT(defaultArg = DAE.FUNCARG(name = fa2)) := slot;
+    
+    // Check if this slot has the same name as the one we're looking for.
+    if stringEq(fa1, fa2) then
+      SLOT(defaultArg = DAE.FUNCARG(const = c2, par = prl, defaultBinding = binding),
+        slotFilled = filled, idx = idx) := slot;
+      
+      // Fail if the slot is already filled.
+      if filled then
+        pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+        Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_ALLREADY_FILLED,
+          {fa2, pre_str}, inInfo);
+      end if;
 
-    case (DAE.FUNCARG(name=fa1,ty=b,const=c1),exp,ds,(SLOT(defaultArg = DAE.FUNCARG(name=fa2,const=c2,par=prl,defaultBinding=oe),slotFilled = false,idx = idx) :: xs),_,_,_)
-      equation
-        true = stringEq(fa1, fa2);
-        true = Types.constEqualOrHigher(c1,c2);
-      then
-        (SLOT(DAE.FUNCARG(fa2,b,c2,prl,oe),true,SOME(exp),ds,idx) :: xs);
+      // Fail if the variability is wrong.
+      if not Types.constEqualOrHigher(c1, c2) then
+        exp_str := ExpressionDump.printExpStr(inExp);
+        c_str := DAEUtil.constStrFriendly(c2);
+        Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY,
+          {fa1, exp_str, c_str}, inInfo);
+      end if;
 
-    // fail if variability is wrong
-    case (DAE.FUNCARG(name=fa1,const=c1),exp,_,(SLOT(defaultArg = DAE.FUNCARG(name=fa2,const=c2),slotFilled = false) :: _),_,_,_)
-      equation
-        true = stringEq(fa1, fa2);
-        false = Types.constEqualOrHigher(c1,c2);
-        str1 = ExpressionDump.printExpStr(exp);
-        str2 = DAEUtil.constStrFriendly(c2);
-        Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {fa1,str1,str2}, info);
-      then
-        fail();
+      // Found a valid slot, fill it and reconstruct the slot list.
+      slot := SLOT(DAE.FUNCARG(fa2, ty1, c2, prl, binding), true, SOME(inExp), inDims, idx);
+      outSlotLst := listAppend(listReverse(outSlotLst), slot :: rest_slots);
+      return;
+    end if;
 
-    // fail if slot already filled
-    case (DAE.FUNCARG(name=fa1),_,_,(SLOT(defaultArg = DAE.FUNCARG(name=fa2),slotFilled = true) :: _), _,pre,_)
-      equation
-        true = stringEq(fa1, fa2);
-        ps = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.FUNCTION_SLOT_ALLREADY_FILLED, {fa2,ps}, info);
-      then
-        fail();
+    outSlotLst := slot :: outSlotLst;
+  end while;
 
-    // no equal, try next
-    case ((farg as DAE.FUNCARG(name=fa1)),exp,ds,((s1 as SLOT(defaultArg = DAE.FUNCARG(name=fa2))) :: xs),_,pre,_)
-      equation
-        false = stringEq(fa1, fa2);
-        newslots = fillSlot(farg, exp, ds, xs,checkTypes,pre,info);
-      then
-        (s1 :: newslots);
-
-    // failure
-    case (DAE.FUNCARG(name=fa),_,_,{},_,_,_)
-      equation
-        Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {"",fa}, info);
-      then
-        fail();
-  end matchcontinue;
+  Error.addSourceMessageAndFail(Error.NO_SUCH_ARGUMENT, {"", fa1}, inInfo);
 end fillSlot;
 
 public function elabCref "

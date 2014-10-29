@@ -4149,18 +4149,11 @@ public function dimensionsAdd
   input DAE.Dimension dim2;
   output DAE.Dimension res;
 algorithm
-  res := matchcontinue(dim1, dim2)
-    local
-      DAE.Exp e1, e2;
-
-    case (_, _)
-      equation
-        res = intDimension(dimensionSize(dim1) + dimensionSize(dim2));
-      then
-        res;
-
-    else DAE.DIM_UNKNOWN();
-  end matchcontinue;
+  try
+    res := intDimension(dimensionSize(dim1) + dimensionSize(dim2));
+  else
+    res := DAE.DIM_UNKNOWN();
+  end try;
 end dimensionsAdd;
 
 public function concatArrayType
@@ -11096,19 +11089,6 @@ algorithm
   end match;
 end expandDimension;
 
-protected function makeIntegerSubscript
-  "Generates an integer subscript. For use with List.generate."
-  input Integer inIndex;
-  output Integer outNextIndex;
-  output DAE.Subscript outSubscript;
-  output Boolean outContinue;
-algorithm
-  (outNextIndex, outSubscript, outContinue) := match(inIndex)
-    case 0 then (0, DAE.WHOLEDIM(), false);
-    else (inIndex - 1, DAE.INDEX(DAE.ICONST(inIndex)), true);
-  end match;
-end makeIntegerSubscript;
-
 protected function expandSlice
   "Expands a slice subscript expression."
   input DAE.Exp inSliceExp;
@@ -11145,7 +11125,7 @@ public function dimensionSizeSubscripts
   input Integer inDimSize;
   output list<DAE.Subscript> outSubscripts;
 algorithm
-  outSubscripts := List.generateReverse(inDimSize, makeIntegerSubscript);
+  outSubscripts := list(DAE.INDEX(DAE.ICONST(i)) for i in 1:inDimSize);
 end dimensionSizeSubscripts;
 
 annotation(__OpenModelica_Interface="frontend");
