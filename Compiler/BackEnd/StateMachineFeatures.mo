@@ -148,28 +148,28 @@ algorithm
     then BackendDAE.DAE({syst}, shared);
   end match;
   names := List.map(BaseHashTable.hashTableKeyList(modes), ComponentReference.crefLastIdent);
-  print("BTH-stateMachineElab States: " + stringDelimitList(names, ",")  + "\n");
-  print("BTH-stateMachineElab ModeTable:\n");
+  print("SMF-stateMachineElab States: " + stringDelimitList(names, ",")  + "\n");
+  print("SMF-stateMachineElab ModeTable:\n");
   BaseHashTable.dumpHashTable(modes);
   nModes := BaseHashTable.hashTableCurrentSize(modes);
 
-  print("BTH-stateMachineElab: Incidence matrix:\n");
+  print("SMF-stateMachineElab: Incidence matrix:\n");
   iTable := createIncidenceTable(modes, nModes);
   printIncidenceTable(iTable, nModes);
 
-  print("BTH-stateMachineElab: Transitive closure:\n");
+  print("SMF-stateMachineElab: Transitive closure:\n");
   transClosure := transitiveClosure(iTable, nModes);
   printIncidenceTable(transClosure, nModes);
 
-  print("BTH-stateMachineElab: Initial States:\n");
+  print("SMF-stateMachineElab: Initial States:\n");
   initialStates := extractInitialStates(modes);
   print( stringDelimitList(List.map(initialStates, ComponentReference.printComponentRefStr), ", ") + "\n");
 
-  print("BTH-stateMachineElab: Flat Automata:\n");
+  print("SMF-stateMachineElab: Flat Automata:\n");
   flatAutomata := extractFlatAutomata(initialStates, transClosure, nModes);
   printFlatAutomata(flatAutomata);
 
-  print("BTH-stateMachineElab: Composition:\n");
+  print("SMF-stateMachineElab: Composition:\n");
   //compositions := getComposition(flatAutomata, {});
   compositions := getComposition(flatAutomata);
   ss := List.map(compositions, dumpCompositionStr);
@@ -301,8 +301,8 @@ protected
 algorithm
   COMPOSITION(refined=subCref) := sub;
   subCrefStripped := ComponentReference.crefStripLastIdent(subCref);
-  // print("BTH-isSuperModeOf: Unstripped: " + ComponentReference.printComponentRefStr(subCref) + "\n");
-  // print("BTH-isSuperModeOf: Stripped: " + ComponentReference.printComponentRefStr(subCrefStripped) + "\n");
+  // print("SMF-isSuperModeOf: Unstripped: " + ComponentReference.printComponentRefStr(subCref) + "\n");
+  // print("SMF-isSuperModeOf: Stripped: " + ComponentReference.printComponentRefStr(subCrefStripped) + "\n");
   COMPOSITION(refined=cref) := super;
   isSub := ComponentReference.crefEqual(cref, subCrefStripped);
 end isSubMode;
@@ -591,13 +591,13 @@ algorithm
         )),
       _)
       equation
-        print("BTH-extractStates: "+ BackendDump.dumpEqnsStr({inEq}) +"\n");
+        //print("SMF-extractStates: "+ BackendDump.dumpEqnsStr({inEq}) +"\n");
         modes = extractState(name, expLst, inA);
       then
         (inEq, modes);
     else
       equation
-        print("BTH-extractStates: NO MATCH\n");
+        //print("SMF-extractStates: NO MATCH\n");
       then
         (inEq, HashTableSM.emptyHashTable());
   end match;
@@ -621,7 +621,7 @@ algorithm
       HashSet.HashSet edges1,edges2;
     case ("initialState", {DAE.CREF(componentRef=cstate1)})
       equation
-        //print("BTH-printEq2: "+anyString(cstate1)+"\n");
+        //print("SMF-printEq2: "+anyString(cstate1)+"\n");
         mode1 = if BaseHashTable.hasKey(cstate1, inA)
           then BaseHashTable.get(cstate1, inA)
             else MODE(ComponentReference.crefLastIdent(cstate1), true, HashSet.emptyHashSet());
@@ -631,7 +631,7 @@ algorithm
       then modes;
     case ("transition", DAE.CREF(componentRef=cstate1)::DAE.CREF(componentRef=cstate2)::_)
       equation
-        //print("BTH-printEq2: "+anyString(cstate1)+"\n");
+        //print("SMF-printEq2: "+anyString(cstate1)+"\n");
         tmp = ComponentReference.crefDepth(cstate1);
         //printArgs(expLst);
         mode1 = if BaseHashTable.hasKey(cstate1, inA)
@@ -668,7 +668,7 @@ algorithm
       then true;
     case (x::xs)
       equation
-        print("BTH-printArgs: "+anyString(x)+"\n");
+        print("SMF-printArgs: "+anyString(x)+"\n");
       then printArgs(xs);
   end match;
 end printArgs;

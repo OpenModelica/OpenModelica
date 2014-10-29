@@ -232,8 +232,8 @@ algorithm
      then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
-    // is ONLY outer and is inside an instance of a State Machine state
-    case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
+    // is ONLY outer output and is inside an instance of a State Machine state
+    case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr as SCode.ATTR(direction=Absyn.OUTPUT()),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // only outer!
         io = SCode.prefixesInnerOuter(pf);
@@ -400,8 +400,8 @@ algorithm
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
-    // is inner outer and is inside an instance of a State Machine state!
-    case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
+    // is inner outer output and is inside an instance of a State Machine state!
+    case (cache,env,ih,store,ci_state,mod,pre,n,cl as SCode.CLASS(name=typeName),attr as SCode.ATTR(direction=Absyn.OUTPUT()) ,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets, _)
       equation
         // both inner and outer
         io = SCode.prefixesInnerOuter(pf);
