@@ -685,7 +685,7 @@ algorithm
           str2 = Types.unparseType(ty);
           strrest = debugPrintComponentRefTypeStr(cr);
           str = stringAppendList({str," [",str2,"] ", ".", strrest});
-        end if;        
+        end if;
       then
         str;
 
@@ -2550,7 +2550,7 @@ algorithm
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
         if (Config.modelicaOutput())
-        then 
+        then
           printComponentRef2(s, subs);
           Print.printBuf("__");
           printComponentRef(cr);
@@ -2573,13 +2573,13 @@ algorithm
     local
       DAE.Ident s;
       list<DAE.Subscript> l;
-    
+
     case (s,{})
       equation
         Print.printBuf(s);
       then
         ();
-    
+
     case (s,l)
       equation
         if (Config.modelicaOutput())
@@ -2596,7 +2596,7 @@ algorithm
         end if;
       then
         ();
-  
+
   end matchcontinue;
 end printComponentRef2;
 

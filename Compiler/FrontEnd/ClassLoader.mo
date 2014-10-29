@@ -295,7 +295,7 @@ algorithm
           true = System.regularFileExists(file);
           cl = parsePackageFile(file,encoding,false,w1,id);
           ei = Absyn.makeClassElement(cl);
-          cps = mergeBefore(Absyn.PUBLIC({ei}),acc);        
+          cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         end if;
       then cps;
 
@@ -423,7 +423,7 @@ algorithm
         true = numError == Error.getNumErrorMessages();
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"getPackageContentNames failed for unknown reason"},info);
       then fail();
-  
+
   end matchcontinue;
 end getPackageContentNames;
 
@@ -580,9 +580,9 @@ algorithm
       Boolean b, b1;
       String n1,n2;
       list<String> rest1,rest2;
-    
+
     case (_,{},_) then (names,true);
-    
+
     case (n1::rest1,n2::rest2,_)
       equation
         if (n1 ==& n2)
@@ -594,7 +594,7 @@ algorithm
           b1 = false;
         end if;
       then (rest1,b1);
-  
+
   end matchcontinue;
 end matchCompNames;
 
