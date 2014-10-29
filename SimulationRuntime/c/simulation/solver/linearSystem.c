@@ -38,8 +38,6 @@
 #include "linearSolverLapack.h"
 #include "linearSolverLis.h"
 #include "simulation_info_xml.h"
-#include "blaswrap.h"
-#include "f2c.h"
 
 /*! \fn int initializeLinearSystems(DATA *data)
  *

@@ -73,6 +73,7 @@ _omc_scalar* _omc_getVectorData(_omc_vector* vec);
 _omc_size _omc_getVectorSize(_omc_vector* vec);
 _omc_scalar _omc_getVectorElement(_omc_vector* vec, const _omc_size i);
 void _omc_setVectorElement(_omc_vector* vec, const _omc_size i, _omc_scalar s);
+_omc_scalar* _omc_setVectorData(_omc_vector* vec, _omc_scalar* data);
 
 /* get and set matrix */
 _omc_scalar* _omc_getMatrixData(_omc_matrix* mat);
@@ -81,6 +82,7 @@ _omc_size _omc_getMatrixCols(_omc_matrix* mat);
 _omc_size _omc_getMatrixSize(_omc_matrix* mat);
 _omc_scalar _omc_getMatrixElement(_omc_matrix* mat, const _omc_size i, const _omc_size j);
 void _omc_setMatrixElement(_omc_matrix* mat, const _omc_size i, const _omc_size j, _omc_scalar s);
+_omc_scalar* _omc_setMatrixData(_omc_matrix* mat, _omc_scalar* data);
 
 /* vector operations */
 _omc_vector* _omc_fillVector(_omc_vector* vec, _omc_scalar s);

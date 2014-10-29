@@ -38,24 +38,28 @@
 #include "simulation_data.h"
 #include "simulation_info_xml.h"
 #include "omc_error.h"
+#include "omc_math.h"
 #include "varinfo.h"
 #include "model_help.h"
 
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
-#include "blaswrap.h"
 
 
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
-extern double enorm_(int *n, double *x);
 
 typedef struct DATA_LAPACK
 {
   int *ipiv;  /* vector pivot values */
   int nrhs;   /* number of righthand sides*/
   int info;   /* output */
-  double* work;
+  _omc_vector* work;
+
+  _omc_vector* x;
+  _omc_vector* b;
+  _omc_matrix* A;
+
 } DATA_LAPACK;
 
 /*! \fn allocate memory for linear system solver lapack
@@ -69,13 +73,17 @@ int allocateLapackData(int size, void** voiddata)
   assertStreamPrint(NULL, 0 != data->ipiv, "Could not allocate data for linear solver lapack.");
   data->nrhs = 1;
   data->info = 0;
-  data->work = (double*) malloc(size*sizeof(double));
+  data->work = _omc_allocateVectorData(size);
+
+  data->x = _omc_createVector(size, NULL);
+  data->b = _omc_createVector(size, NULL);
+  data->A = _omc_createMatrix(size, size, NULL);
 
   *voiddata = (void*)data;
   return 0;
 }
 
-/*! \fn free memory for nonlinear solver hybrd
+/*! \fn free memory of lapack
  *
  */
 int freeLapackData(void **voiddata)
@@ -83,7 +91,11 @@ int freeLapackData(void **voiddata)
   DATA_LAPACK* data = (DATA_LAPACK*) *voiddata;
 
   free(data->ipiv);
-  free(data->work);
+  _omc_deallocateVectorData(data->work);
+
+  _omc_destroyVector(data->x);
+  _omc_destroyVector(data->b);
+  _omc_destroyMatrix(data->A);
 
   return 0;
 }
@@ -154,67 +166,21 @@ int getAnalyticalJacobianLapack(DATA* data, double* jac, int sysNumber)
   return 0;
 }
 
-/*! \fn fdjac
- *
- *  function calculates a jacobian matrix by
- *  numerical method finite differences
- */
-static int fdjacLinear(modelica_integer* n, int(*f)(double*, double*, int*, void*, int), double *x,
-       double* fvec, double *fjac, double* eps, int* iflag, double* wa,
-       void* userdata, int sysNumber)
-{
-  double xsave;
-
-  int i,j,l;
-
-  for(i = 0,l = 0; i < *n; i++) {
-    xsave = x[i];
-    /* delta_h == 1, since linear case */
-    x[i] += 1.0;
-    f(x, wa, iflag, userdata, sysNumber);
-    x[i] = xsave;
-
-    for(j = 0; j < *n; j++) {
-      fjac[l++] = wa[j] - fvec[j];
-    }
-
-  }
-
-  /* debug output */
-  if(ACTIVE_STREAM(LOG_LS))
-  {
-    int l,k;
-    printf("Print numerical jac:\n");
-    for(l=0;  l < *n;l++)
-    {
-      for(k=0;  k < *n;k++)
-        printf("% .5e ", fjac[l+k * *n]);
-      printf("\n");
-    }
-  }
-
-  return *iflag;
-}
-
-/*! \fn wrapper_fvec_hybrd for the residual Function
- *   tensolve calls for the subroutine fcn(n, x, fvec, iflag, data)
- *
+/*! \fn wrapper_fvec_lapack for the residual function
  *
  */
-static int wrapper_fvec_lapack(double* x, double* f, int* iflag, void* data, int sysNumber)
+static int wrapper_fvec_lapack(_omc_vector* x, _omc_vector* f, int* iflag, void* data, int sysNumber)
 {
   int currentSys = sysNumber;
-  /* NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]); */
-  /* DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData); */
 
-  (*((DATA*)data)->simulationInfo.linearSystemData[currentSys].residualFunc)(data, x, f, iflag);
+  (*((DATA*)data)->simulationInfo.linearSystemData[currentSys].residualFunc)(data, x->data, f->data, iflag);
   return 0;
 }
 
 /*! \fn solve linear system with lapack method
  *
  *  \param [in]  [data]
- *                [sysNumber] index of the corresponing non-linear system
+ *               [sysNumber] index of the corresponding non-linear system
  *
  *  \author wbraun
  */
@@ -223,17 +189,22 @@ int solveLapack(DATA *data, int sysNumber)
   int i, j, iflag = 1;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.linearSystemData[sysNumber]);
   DATA_LAPACK* solverData = (DATA_LAPACK*)systemData->solverData;
-  int n = systemData->size;
-  double fdeps = 1e-8;
-  double xTol = 1e-8;
-  int eqSystemNumber = systemData->equationIndex;
+
+  int success = 1;
 
   /* We are given the number of the linear system.
    * We want to look it up among all equations. */
-  /* int eqSystemNumber = systemData->equationIndex; */
-  int success = 1;
+  int eqSystemNumber = systemData->equationIndex;
+  _omc_scalar residualNorm = 0;
 
-  if (0 == systemData->method){
+
+  /* create _omc_math data */
+  _omc_setVectorData(solverData->x, systemData->x);
+  _omc_setVectorData(solverData->b, systemData->b);
+  _omc_setMatrixData(solverData->A, systemData->A);
+
+
+  if (0 == systemData->method) {
 
     /* reset matrix A */
     memset(systemData->A, 0, (systemData->size)*(systemData->size)*sizeof(double));
@@ -242,65 +213,37 @@ int solveLapack(DATA *data, int sysNumber)
     systemData->setA(data, systemData);
     /* update vector b (rhs) */
     systemData->setb(data, systemData);
+
   } else {
+
     /* calculate jacobian -> matrix A*/
-    //wrapper_fvec_lapack(systemData->x, solverData->work, &iflag, data, sysNumber);
     if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianLapack(data, systemData->A, sysNumber);
+      getAnalyticalJacobianLapack(data, solverData->A->data, sysNumber);
     } else {
       assertStreamPrint(data->threadData, 1, "jacobian function pointer is invalid" );
     }
 
     /* calculate vector b (rhs) */
-     memset(solverData->work, 0, (systemData->size)*sizeof(double));
-     wrapper_fvec_lapack(solverData->work, systemData->b, &iflag, data, sysNumber);
-     for(i=0; i < n; ++i)
-       systemData->b[i] = -systemData->b[i];
+    _omc_fillVector(solverData->work, 0.0);
+    wrapper_fvec_lapack(solverData->work, solverData->b, &iflag, data, sysNumber);
+
+    solverData->b = _omc_negateVector(solverData->b);
   }
+
   /* Log A*x=b */
-  if(ACTIVE_STREAM(LOG_LS_V))
-  {
-    char buffer[16384];
-
-    /* A matrix */
-    infoStreamPrint(LOG_LS_V, 1, "A matrix [%dx%d]", n, n);
-    printf("[ ");
-    for(i=0; i<n; i++)
-    {
-      buffer[0] = 0;
-      for(j=0; j<n; j++){
-        if (j == n-1)
-          sprintf(buffer, "%s%g ", buffer, systemData->A[i + j*n]);
-        else
-          sprintf(buffer, "%s%g, ", buffer, systemData->A[i + j*n]);
-      }
-      if (i == n-1)
-        printf("%s", buffer);
-      else
-        printf("%s;", buffer);
-    }
-    printf(" ];\n");
-    messageClose(LOG_LS_V);
-
-    /* b vector */
-    infoStreamPrint(LOG_LS_V, 1, "b vector [%d]", n);
-    for(i=0; i<n; i++)
-    {
-      buffer[0] = 0;
-      sprintf(buffer, "%s%20.12g ", buffer, systemData->b[i]);
-      infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
-    }
-
-    messageClose(LOG_LS_V);
+  if(ACTIVE_STREAM(LOG_LS_V)){
+    _omc_printMatrix(solverData->A, "Matrix A", LOG_LS_V);
+    
+    _omc_printVector(solverData->b, "Vector b", LOG_LS_V);
   }
 
   /* Solve system */
   dgesv_((int*) &systemData->size,
          (int*) &solverData->nrhs,
-         systemData->A,
+         solverData->A->data,
          (int*) &systemData->size,
          solverData->ipiv,
-         systemData->b,
+         solverData->b->data,
          (int*) &systemData->size,
          &solverData->info);
 
@@ -315,50 +258,37 @@ int solveLapack(DATA *data, int sysNumber)
         "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].",
         (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info+1, (int)solverData->info+1);
 
-    /* debug output */
-    if (ACTIVE_STREAM(LOG_LS))
-    {
-      long int l = 0;
-      long int k = 0;
-      char buffer[4096];
-      infoStreamPrint(LOG_LS, 0, "Matrix U:");
-      for(l = 0; l < systemData->size; l++)
-      {
-        buffer[0] = 0;
-        for(k = 0; k < systemData->size; k++)
-          sprintf(buffer, "%s%10g ", buffer, systemData->A[l + k*systemData->size]);
-        infoStreamPrint(LOG_LS, 0, "%s", buffer);
-      }
-      infoStreamPrint(LOG_LS, 0, "Solution x:");
-      buffer[0] = 0;
-      for(k = 0; k < systemData->size; k++)
-        sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
-      infoStreamPrint(LOG_LS, 0, "%s", buffer);
-    }
-
     success = 0;
+
+    /* debug output */
+    if (ACTIVE_STREAM(LOG_LS)){
+      _omc_printMatrix(solverData->A, "Matrix U", LOG_LS);
+    
+      _omc_printVector(solverData->b, "Output vector x", LOG_LS);
+    }
   }
 
-  if (success == 1){
+  if (1 == success){
 
     /* take the solution */
-    memcpy(systemData->x, systemData->b, systemData->size*(sizeof(double)));
+    _omc_copyVector(solverData->x, solverData->b);
 
     if (1 == systemData->method){
-      wrapper_fvec_lapack(systemData->x, solverData->work, &iflag, data, sysNumber);
+      wrapper_fvec_lapack(solverData->x, solverData->work, &iflag, data, sysNumber);
+      residualNorm = _omc_euclideanVectorNorm(solverData->work);
     }
 
     if (ACTIVE_STREAM(LOG_LS)){
-      infoStreamPrint(LOG_LS, 1, "Solution x:");
+      infoStreamPrint(LOG_LS, 1, "Residual Norm %f of solution x:", residualNorm);
       infoStreamPrint(LOG_LS, 0, "System %d numVars %d.", eqSystemNumber, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).numVar);
-      for(i=0; i<systemData->size; ++i)
-      {
+
+      for(i = 0; i < systemData->size; ++i) {
         infoStreamPrint(LOG_LS, 0, "[%d] %s = %g", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
       }
+
       messageClose(LOG_LS);
     }
   }
-
 
   return success;
 }

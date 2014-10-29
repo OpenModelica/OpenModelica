@@ -250,6 +250,19 @@ void _omc_setVectorElement(_omc_vector* vec, const _omc_size i,
   vec->data[i] = s;
 }
 
+/*! \fn _omc_scalar* _omc_setVectorData(_omc_vector* vec, _omc_scalar* data)
+ *
+ *  replaces data of _omc_vector and return the old one
+ *
+ *  \param [ref]  [_omc_vector]
+ *  \param [ref]  [_omc_scalar*]
+ */
+_omc_scalar* _omc_setVectorData(_omc_vector* vec, _omc_scalar* data) {
+  _omc_scalar* output = vec->data;
+  vec->data = data;
+  return output;
+}
+
 /*! \fn _omc_scalar* _omc_getMatrixData(_omc_matrix* mat)
  *
  *  get data of _omc_matrix
@@ -324,6 +337,19 @@ void _omc_setMatrixElement(_omc_matrix* mat, const _omc_size i,
       "_omc_matrix cols(%d) too small for %d", mat->cols, j);
   mat->data[i + j * mat->cols] = s;
 }
+
+/*! \fn _omc_scalar* _omc_setMatrixData(_omc_matrix* mat, _omc_scalar* data)
+ *
+ *  get data of _omc_matrix
+ *
+ *  \param [ref]  [_omc_matrix]
+ */
+_omc_scalar* _omc_setMatrixData(_omc_matrix* mat, _omc_scalar* data) {
+  _omc_scalar* output = mat->data;
+  mat->data = data;
+  return output;
+}
+
 
 /*! \fn _omc_vector* _omc_fillVector(_omc_vector* vec, _omc_scalar s)
  *
