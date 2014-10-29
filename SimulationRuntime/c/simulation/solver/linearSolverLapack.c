@@ -233,7 +233,7 @@ int solveLapack(DATA *data, int sysNumber)
   /* Log A*x=b */
   if(ACTIVE_STREAM(LOG_LS_V)){
     _omc_printMatrix(solverData->A, "Matrix A", LOG_LS_V);
-    
+
     _omc_printVector(solverData->b, "Vector b", LOG_LS_V);
   }
 
@@ -263,7 +263,7 @@ int solveLapack(DATA *data, int sysNumber)
     /* debug output */
     if (ACTIVE_STREAM(LOG_LS)){
       _omc_printMatrix(solverData->A, "Matrix U", LOG_LS);
-    
+
       _omc_printVector(solverData->b, "Output vector x", LOG_LS);
     }
   }
