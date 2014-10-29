@@ -3957,10 +3957,10 @@ template equationLinear(SimEqSystem eq, Context context, Text &varDecls)
 ::=
 match eq
 case e as SES_LINEAR(__) then
-  //<%vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.linearSystemData[<%e.indexLinearSystem%>].x[<%i0%>] = _<%cref(name)%>(1);' ;separator="\n"%>
   <<
   /* Linear equation system */
   <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <%vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.linearSystemData[<%e.indexLinearSystem%>].x[<%i0%>] = _<%cref(name)%>(1);' ;separator="\n"%>
   solve_linear_system(data, <%indexLinearSystem%>);
   <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo.linearSystemData[<%indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
   <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>

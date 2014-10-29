@@ -1131,6 +1131,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   data->simulationInfo.initial = 0;
   /* initialization is done */
 
+  overwriteOldSimulationData(data);     /* overwrite the whole ring-buffer with initialized values */
   storePreValues(data);                 /* save pre-values */
   updateDiscreteSystem(data);           /* evaluate discrete variables (event iteration) */
   saveZeroCrossings(data);
