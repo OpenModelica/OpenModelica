@@ -152,8 +152,8 @@ private:
   void initializeColoredJac();
 
   void setcycletime(double cycletime);
-  
-  
+
+
   ISolverSettings
     *_cvodesettings;              ///< Input      - Solver settings
 
