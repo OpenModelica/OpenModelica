@@ -20,5 +20,5 @@ IF(ANALYZATION_MODE)
   install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/UmfPack.h
                   ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/UmfPackSettings.h
                   ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/FactoryExport.h
-           DESTINATION include/omc/cpp/UmfPack)
+           DESTINATION include/omc/cpp/Solver/UmfPack)
 ENDIF(ANALYZATION_MODE)

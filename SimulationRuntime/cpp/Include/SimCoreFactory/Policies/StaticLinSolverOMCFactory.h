@@ -1,8 +1,8 @@
 #pragma once
 
 #include <SimCoreFactory/Policies/LinSolverOMCFactory.h>
-#include <UmfPack/UmfPack.h>
-#include <UmfPack/UmfPackSettings.h>
+#include <Solver/UmfPack/UmfPack.h>
+#include <Solver/UmfPack/UmfPackSettings.h>
 #include <Core/Solver/IAlgLoopSolver.h>
 
 template<class T>

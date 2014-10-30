@@ -20,5 +20,5 @@ install (TARGETS ${CVodeName} DESTINATION lib/omc/${LIBINSTALLEXT})
 IF(ANALYZATION_MODE)
   install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/CVode/CVode.h
                   ${CMAKE_SOURCE_DIR}/Include/Solver/CVode/FactoryExport.h
-           DESTINATION include/omc/cpp/CVode)
+           DESTINATION include/omc/cpp/Solver/CVode)
 ENDIF(ANALYZATION_MODE)

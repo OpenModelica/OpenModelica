@@ -20,7 +20,7 @@ IF(ANALYZATION_MODE)
   install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/Kinsol/Kinsol.h
                   ${CMAKE_SOURCE_DIR}/Include/Solver/Kinsol/KinsolSettings.h
                   ${CMAKE_SOURCE_DIR}/Include/Solver/Kinsol/FactoryExport.h
-           DESTINATION include/omc/cpp/Kinsol)
+           DESTINATION include/omc/cpp/Solver/Kinsol)
 ENDIF(ANALYZATION_MODE)
 
 

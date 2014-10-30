@@ -23,5 +23,5 @@ IF(ANALYZATION_MODE)
   install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/Newton/Newton.h
                   ${CMAKE_SOURCE_DIR}/Include/Solver/Newton/NewtonSettings.h
                   ${CMAKE_SOURCE_DIR}/Include/Solver/CVode/FactoryExport.h
-           DESTINATION include/omc/cpp/Newton)
+           DESTINATION include/omc/cpp/Solver/Newton)
 ENDIF(ANALYZATION_MODE)
