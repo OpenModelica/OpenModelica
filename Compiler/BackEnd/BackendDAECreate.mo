@@ -3218,71 +3218,63 @@ algorithm
 end detectImplicitDiscreteAlgsStatemensFor;
 
 public function extendRange
-  input DAE.Exp rangeExp;
+  input DAE.Exp inRangeExp;
   input BackendDAE.Variables inKnVariables;
-  output list<DAE.Exp> outExpLst;
+  output list<DAE.Exp> outExpLst := {};
+protected
+  DAE.Exp start, stepvalue, stop;
+  Option<DAE.Exp> step;
+  Integer istart, istop, istep;
+  list<Integer> ilst;
 algorithm
-  outExpLst:=
-  matchcontinue (rangeExp, inKnVariables)
-    local
-      list<DAE.Exp> explst;
-      DAE.Type tp;
-      DAE.Exp startvalue, stopvalue, stepvalue;
-      Option<DAE.Exp> stepvalueopt;
-      BackendDAE.Variables knv;
-      Integer istart, istop, istep;
-      list<Integer> ilst;
-    case (DAE.RANGE(ty=_, start=startvalue, step=stepvalueopt, stop=stopvalue), knv)
-      equation
-        stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
-        istart = expInt(startvalue, knv);
-        istep = expInt(stepvalue, knv);
-        istop = expInt(stopvalue, knv);
-        ilst = List.intRange3(istart, istep, istop);
-        explst = List.map(ilst, Expression.makeIntegerExp);
-      then
-        explst;
-    case (_, _)
-      equation
-        if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("BackendDAECreate.extendRange failed. Maybe some ZeroCrossing are not supported\n");
-        end if;
-      then
-        ({});
-  end matchcontinue;
+  try
+    DAE.RANGE(start=start, step=step, stop=stop) := inRangeExp;
+    stepvalue := Util.getOptionOrDefault(step, DAE.ICONST(1));
+    istart := expInt(start, inKnVariables);
+    istep := expInt(stepvalue, inKnVariables);
+    istop := expInt(stop, inKnVariables);
+    ilst := List.intRange3(istart, istep, istop);
+    outExpLst := List.map(ilst, Expression.makeIntegerExp);
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.trace("BackendDAECreate.extendRange failed. Maybe some ZeroCrossing are not supported\n");
+    end if;
+  end try;
 end extendRange;
 
 public function expInt "returns the int value of an expression"
-  input DAE.Exp exp;
+  input DAE.Exp inExp;
   input BackendDAE.Variables inKnVariables;
   output Integer i;
 algorithm
-  i := match(exp, inKnVariables)
+  i := match(inExp, inKnVariables)
     local
       Integer i1, i2;
       DAE.ComponentRef cr;
-      BackendDAE.Variables knv;
       DAE.Exp e, e1, e2;
-    case (DAE.ICONST(integer = i2), _) then i2;
-    case (DAE.ENUM_LITERAL(index = i2), _) then i2;
-    case (DAE.CREF(componentRef=cr), knv)
-      equation
-        ((BackendDAE.VAR(bindExp=SOME(e)):: _), _) = BackendVariable.getVar(cr, knv);
-        i2 = expInt(e, knv);
-      then
-        i2;
-    case (DAE.BINARY(exp1 = e1, operator=DAE.ADD(DAE.T_INTEGER(varLst = _)), exp2 = e2), knv)
-      equation
-        i1 = expInt(e1, knv);
-        i2 = expInt(e2, knv);
-        i = i1 + i2;
-      then i;
-    case (DAE.BINARY(exp1 = e1, operator=DAE.SUB(DAE.T_INTEGER(varLst = _)), exp2 = e2), knv)
-      equation
-        i1 = expInt(e1, knv);
-        i2 = expInt(e2, knv);
-        i = i1 - i2;
-      then i;
+
+    case (DAE.ICONST(integer=i2), _)
+    then i2;
+
+    case (DAE.ENUM_LITERAL(index=i2), _)
+    then i2;
+
+    case (DAE.CREF(componentRef=cr), _) equation
+      ((BackendDAE.VAR(bindExp=SOME(e)):: _), _) = BackendVariable.getVar(cr, inKnVariables);
+      i2 = expInt(e, inKnVariables);
+    then i2;
+
+    case (DAE.BINARY(exp1=e1, operator=DAE.ADD(DAE.T_INTEGER(varLst=_)), exp2=e2), _) equation
+      i1 = expInt(e1, inKnVariables);
+      i2 = expInt(e2, inKnVariables);
+      i = i1 + i2;
+    then i;
+
+    case (DAE.BINARY(exp1=e1, operator=DAE.SUB(DAE.T_INTEGER(varLst=_)), exp2=e2), _) equation
+      i1 = expInt(e1, inKnVariables);
+      i2 = expInt(e2, inKnVariables);
+      i = i1 - i2;
+    then i;
   end match;
 end expInt;
 
