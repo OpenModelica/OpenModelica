@@ -844,6 +844,16 @@ algorithm
   end match;
 end isClass;
 
+public function isInstance
+  input Node inNode;
+  output Boolean b;
+algorithm
+  b := match(inNode)
+    case FCore.N(data = FCore.CL(status = FCore.CLS_INSTANCE(_))) then true;
+    else false;
+  end match;
+end isInstance;
+
 public function isRedeclare
   input Node inNode;
   output Boolean b;
@@ -1398,6 +1408,13 @@ public function isRefClass
 algorithm
   b := isClass(fromRef(inRef));
 end isRefClass;
+
+public function isRefInstance
+  input Ref inRef;
+  output Boolean b;
+algorithm
+  b := isInstance(fromRef(inRef));
+end isRefInstance;
 
 public function isRefRedeclare
   input Ref inRef;
