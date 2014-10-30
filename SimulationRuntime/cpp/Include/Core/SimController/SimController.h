@@ -20,7 +20,7 @@ public:
     virtual std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > LoadSystem(string modelLib, string modelKey);
 #if defined(__vxworks) || defined(__TRICORE__)
 #else
-    virtual std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey);
+    virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey);
 #endif
     virtual std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > LoadModelicaSystem(PATH modelica_path, string modelKey);
     /// Starts the simulation
@@ -31,7 +31,7 @@ public:
     // for real-time usage (VxWorks and BODAS)
     virtual boost::shared_ptr<ISimData> getSimData(string modelname);
     virtual void StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings);
-    virtual void calcOneStep();
+    virtual void calcOneStep(double cycletime);
 
 private:
     void initialize(PATH library_path, PATH modelicasystem_path);

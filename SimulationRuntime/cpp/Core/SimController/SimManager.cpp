@@ -110,8 +110,9 @@ void SimManager::initialize()
 #endif
 }
 
-void SimManager::runSingleStep()
+void SimManager::runSingleStep(double cycletime)
 {
+  _solver->setcycletime(cycletime);
   _solver->solve(_solverTask);
 }
 

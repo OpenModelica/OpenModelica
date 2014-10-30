@@ -857,3 +857,6 @@ int Cvode::check_flag(void *flagvalue, const char *funcname, int opt)
 
   return (0);
 }
+
+void Cvode::setcycletime(double cycletime){}
+

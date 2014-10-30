@@ -119,9 +119,9 @@ void SimController::StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, Si
 }
 
 // Added for real-time simulation using VxWorks and Bodas
-void SimController::calcOneStep()
+void SimController::calcOneStep(double cycletime)
 {
-  _simMgr->runSingleStep();
+  _simMgr->runSingleStep(cycletime);
 }
 
 

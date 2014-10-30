@@ -67,6 +67,8 @@ public:
   /// Write out statistical information (statistical information of last simulation, e.g. time, number of steps, etc.)
   virtual void writeSimulationInfo() = 0;
 
+  virtual void setcycletime(double cycletime) = 0;
+
   /// Indicates whether a solver error occurred during integration, returns type of error and provides error message
   /*virtual const int reportErrorMessage(ostream& messageStream) = 0;*/
 };
