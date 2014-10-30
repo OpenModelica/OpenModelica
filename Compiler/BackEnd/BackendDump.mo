@@ -619,7 +619,7 @@ algorithm
   print("\n");
 end dumpStateSets;
 
-protected function dumpZeroCrossingList "function dumpZeroCrossingList"
+public function dumpZeroCrossingList "function dumpZeroCrossingList"
   input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
   input String heading;
 algorithm

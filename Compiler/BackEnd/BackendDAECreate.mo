@@ -3247,30 +3247,30 @@ public function expInt "returns the int value of an expression"
   input BackendDAE.Variables inKnVariables;
   output Integer i;
 algorithm
-  i := match(inExp, inKnVariables)
+  i := match(inExp)
     local
       Integer i1, i2;
       DAE.ComponentRef cr;
       DAE.Exp e, e1, e2;
 
-    case (DAE.ICONST(integer=i2), _)
+    case DAE.ICONST(integer=i2)
     then i2;
 
-    case (DAE.ENUM_LITERAL(index=i2), _)
+    case DAE.ENUM_LITERAL(index=i2)
     then i2;
 
-    case (DAE.CREF(componentRef=cr), _) equation
+    case DAE.CREF(componentRef=cr) equation
       ((BackendDAE.VAR(bindExp=SOME(e)):: _), _) = BackendVariable.getVar(cr, inKnVariables);
       i2 = expInt(e, inKnVariables);
     then i2;
 
-    case (DAE.BINARY(exp1=e1, operator=DAE.ADD(DAE.T_INTEGER(varLst=_)), exp2=e2), _) equation
+    case DAE.BINARY(exp1=e1, operator=DAE.ADD(DAE.T_INTEGER(varLst=_)), exp2=e2) equation
       i1 = expInt(e1, inKnVariables);
       i2 = expInt(e2, inKnVariables);
       i = i1 + i2;
     then i;
 
-    case (DAE.BINARY(exp1=e1, operator=DAE.SUB(DAE.T_INTEGER(varLst=_)), exp2=e2), _) equation
+    case DAE.BINARY(exp1=e1, operator=DAE.SUB(DAE.T_INTEGER(varLst=_)), exp2=e2) equation
       i1 = expInt(e1, inKnVariables);
       i2 = expInt(e2, inKnVariables);
       i = i1 - i2;
