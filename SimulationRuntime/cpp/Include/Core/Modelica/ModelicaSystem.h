@@ -15,12 +15,10 @@
 *
 *****************************************************************************/
 
-class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public ISystemProperties, public SystemDefaultImplementation
+class Modelica : public IMixedSystem, public IContinuous, public IEvent, public ISystemProperties, public SystemDefaultImplementation
 {
-  public:
-
-    Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData>);
-
+public:
+  Modelica(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData>);
   ~Modelica();
 
   //Releases the Modelica System
@@ -34,56 +32,56 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
   virtual int getDimContinuousStates() const;
 
   /// Provide number (dimension) of integer variables
-    virtual int getDimInteger() const;
+  virtual int getDimInteger() const;
 
-    /// Provide number (dimension) of real variables
-    virtual int getDimReal() const;
+  /// Provide number (dimension) of real variables
+  virtual int getDimReal() const;
 
-    /// Provide number (dimension) of string variables
-    virtual int getDimString() const;
+  /// Provide number (dimension) of string variables
+  virtual int getDimString() const;
 
-    /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
-    virtual int getDimRHS() const;
+  /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
+  virtual int getDimRHS() const;
 
-    /// Provide boolean variables
-    virtual void getBoolean(bool* z);
+  /// Provide boolean variables
+  virtual void getBoolean(bool* z);
 
-    /// Provide boolean variables
-    virtual void getContinuousStates(double* z);
+  /// Provide boolean variables
+  virtual void getContinuousStates(double* z);
 
-    /// Provide integer variables
-    virtual void getInteger(int* z);
+  /// Provide integer variables
+  virtual void getInteger(int* z);
 
-    /// Provide real variables
-    virtual void getReal(double* z);
+  /// Provide real variables
+  virtual void getReal(double* z);
 
-    /// Provide real variables
-    virtual void getString(std::string* z);
+  /// Provide real variables
+  virtual void getString(std::string* z);
 
-    /// Provide the right hand side
-    virtual void getRHS(double* f);
+  /// Provide the right hand side
+  virtual void getRHS(double* f);
 
-    /// Provide boolean variables
-    virtual void setBoolean(const bool* z);
+  /// Provide boolean variables
+  virtual void setBoolean(const bool* z);
 
-    /// Provide boolean variables
-    virtual void setContinuousStates(const double* z);
+  /// Provide boolean variables
+  virtual void setContinuousStates(const double* z);
 
-    /// Provide integer variables
-    virtual void setInteger(const int* z);
+  /// Provide integer variables
+  virtual void setInteger(const int* z);
 
-    /// Provide real variables
-    virtual void setReal(const double* z);
+  /// Provide real variables
+  virtual void setReal(const double* z);
 
-    /// Provide real variables
-    virtual void setString(const std::string* z);
+  /// Provide real variables
+  virtual void setString(const std::string* z);
 
-    /// Provide the right hand side
-    virtual void setRHS(const double* f);
+  /// Provide the right hand side
+  virtual void setRHS(const double* f);
 
-    // Update transfer behavior of the system of equations according to command given by solver
+  // Update transfer behavior of the system of equations according to command given by solver
   virtual bool evaluateAll(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
-    virtual void evaluateODE(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
+  virtual void evaluateODE(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
   virtual void evaluateZeroFuncs(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
 
   //Resets all time events
@@ -126,6 +124,5 @@ private:
   //Methods:
   //Saves all variables before an event is handled, is needed for the pre, edge and change operator
   void saveAll();
-
   void resetHelpVar(const int index);
 };

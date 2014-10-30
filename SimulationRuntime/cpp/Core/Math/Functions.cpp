@@ -11,7 +11,6 @@
 #define get_matrix_elt(A,r,c,n_rows) A[r + n_rows * c]
 #endif
 
-
 /* Matrixes using column major order (as in Fortran) */
 /* colInd, rowInd, n_rows is added implicitly, makes code easier to read but may be considered bad programming style! */
 #define set_pivot_matrix_elt(A,r,c,value) set_matrix_elt(A,rowInd[r],colInd[c],n_rows,value)
@@ -38,7 +37,7 @@ double  division (const double &a,const double &b, const char* text)
 /*
 find the maximum element below (and including) line/row start
 */
-int maxsearch( double *A, int start, int n_rows, int n_cols, int *rowInd, int *colInd, int *maxrow, int *maxcol, double *maxabsval)
+int maxsearch(double *A, int start, int n_rows, int n_cols, int *rowInd, int *colInd, int *maxrow, int *maxcol, double *maxabsval)
 {
   /* temporary variables */
   int row;
@@ -75,15 +74,13 @@ int maxsearch( double *A, int start, int n_rows, int n_cols, int *rowInd, int *c
   return 0;
 }
 
-
-
 /*
 pivot performs a full pivotization of a rectangular matrix A of dimension n_cols x n_rows
 rowInd and colInd are vectors of length nrwos and n_cols respectively.
 They hold the old (and new) pivoting information, such that
   A_pivoted[i,j] = A[rowInd[i], colInd[j]]
 */
-int  pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd )
+int pivot(double *A, int n_rows, int n_cols, int *rowInd, int *colInd)
 {
   /* parameter, determines how much larger an element should be before rows and columns are interchanged */
   const double fac = 1.125; /* approved by dymola ;) */

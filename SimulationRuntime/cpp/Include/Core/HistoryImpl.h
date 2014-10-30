@@ -10,13 +10,13 @@ using std::map;
 #endif
 
 template< template <size_t,size_t,size_t,size_t>  class ResultsPolicy,size_t dim_1, size_t dim_2,size_t dim_3,size_t dim_4>
-class HistoryImpl: public IHistory,
+class HistoryImpl : public IHistory,
   public ResultsPolicy<dim_1,dim_2,dim_3,dim_4>
 {
 public:
   HistoryImpl(IGlobalSettings& globalSettings)
-    :ResultsPolicy<dim_1,dim_2,dim_3,dim_4>((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(),globalSettings.getOutputPath(),globalSettings.getResultsFileName())
-    ,_globalSettings(globalSettings)
+    : ResultsPolicy<dim_1,dim_2,dim_3,dim_4>((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(),globalSettings.getOutputPath(),globalSettings.getResultsFileName())
+    , _globalSettings(globalSettings)
   {
   }
 
@@ -59,7 +59,7 @@ public:
 
   unsigned long getSize()
   {
-    return  ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::size();
+    return ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::size();
   }
 
   unsigned long getDimRe()
@@ -69,12 +69,12 @@ public:
 
   unsigned long getDimdR()
   {
-    return  dim_2;
+    return dim_2;
   }
 
   unsigned long getDimR()
   {
-    return  dim_1;
+    return dim_1;
   }
 
   vector<double> getTimeEntries()

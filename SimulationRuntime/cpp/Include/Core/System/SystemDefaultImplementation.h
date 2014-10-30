@@ -37,37 +37,37 @@ Copyright (c) 2008, OSMC
 template <class T>
 class InitVars
 {
- public:
-    void setStartValue(T variable,string key);
-    T getGetStartValue(string key);
-  private:
-   boost::unordered_map<std::string, T> _start_values;
+public:
+  void setStartValue(T variable, string key);
+  T getGetStartValue(string key);
+
+private:
+  boost::unordered_map<std::string, T> _start_values;
 };
 
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
 {
 public:
-    SystemDefaultImplementation(IGlobalSettings* globalSettings);
-    virtual ~SystemDefaultImplementation();
+  SystemDefaultImplementation(IGlobalSettings* globalSettings);
+  virtual ~SystemDefaultImplementation();
 
-    /// Provide number (dimension) of boolean variables
-    virtual int getDimBoolean() const;
+  /// Provide number (dimension) of boolean variables
+  virtual int getDimBoolean() const;
 
-    /// Provide number (dimension) of states
-    virtual int getDimContinuousStates() const;
+  /// Provide number (dimension) of states
+  virtual int getDimContinuousStates() const;
 
-    /// Provide number (dimension) of integer variables
-    virtual int getDimInteger() const;
+  /// Provide number (dimension) of integer variables
+  virtual int getDimInteger() const;
 
-    /// Provide number (dimension) of real variables
-    virtual int getDimReal() const;
+  /// Provide number (dimension) of real variables
+  virtual int getDimReal() const;
 
-    /// Provide number (dimension) of string variables
-    virtual int getDimString() const;
+  /// Provide number (dimension) of string variables
+  virtual int getDimString() const;
 
-    /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
-    virtual int getDimRHS() const;
-
+  /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
+  virtual int getDimRHS() const;
 
   /// Provide boolean variables
   virtual void getBoolean(bool* z);
@@ -129,11 +129,11 @@ protected:
     void setIntStartValue(int& var,int val, string key);
 
     double
-        _simTime;            ///< current simulation time (given by the solver)
+        _simTime;             ///< current simulation time (given by the solver)
 
     double
-        *__z,              ///< "Extended state vector", containing all states and algebraic variables of all types
-        *__zDot;             ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
+        *__z,                 ///< "Extended state vector", containing all states and algebraic variables of all types
+        *__zDot;              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
     bool
         * _conditions,        ///< External conditions changed by the solver
         * _time_conditions;
@@ -141,13 +141,13 @@ protected:
     int
         _dimContinuousStates,
         _dimRHS,              ///< Dimension der rechten Seite
-        _dimReal,              ///< Anzahl der reelwertigen Variablen
-        _dimInteger,            ///< Anzahl der integerwertigen Variablen
-        _dimBoolean,           ///< Anzahl der boolwertigen Variablen
-        _dimString,            ///< Anzahl der stringwertigen Variablen
-        _dimZeroFunc,            ///< Dimension (=Anzahl) Nullstellenfunktion
+        _dimReal,             ///< Anzahl der reelwertigen Variablen
+        _dimInteger,          ///< Anzahl der integerwertigen Variablen
+        _dimBoolean,          ///< Anzahl der boolwertigen Variablen
+        _dimString,           ///< Anzahl der stringwertigen Variablen
+        _dimZeroFunc,         ///< Dimension (=Anzahl) Nullstellenfunktion
         _dimTimeEvent,        ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
-        _dimAE;              ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
+        _dimAE;               ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
 
     int
     * _time_event_counter;
@@ -167,7 +167,7 @@ protected:
     EventHandling _event_handling;
 
     typedef boost::circular_buffer<double> buffer_type;
-    map<unsigned int,buffer_type> _delay_buffer;
+    map<unsigned int, buffer_type> _delay_buffer;
     buffer_type _time_buffer;
     double _delay_max;
     double _start_time;

@@ -1,16 +1,14 @@
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-//#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/Configuration.h>
 #if defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 #include "LibrariesConfig.h"
 #endif
 
-Configuration::Configuration( PATH libraries_path,PATH config_path,PATH modelicasystem_path)
-  :ConfigurationPolicy(libraries_path,modelicasystem_path,config_path)
+Configuration::Configuration(PATH libraries_path, PATH config_path, PATH modelicasystem_path)
+    : ConfigurationPolicy(libraries_path, modelicasystem_path, config_path)
 {
   _settings_factory = createSettingsFactory();
-
   _global_settings = _settings_factory->createSolverGlobalSettings();
 }
 

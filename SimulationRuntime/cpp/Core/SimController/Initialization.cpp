@@ -1,12 +1,10 @@
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-//#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/Initialization.h>
 
-
 Initialization::Initialization(boost::shared_ptr<ISystemInitialization> system_initialization, boost::shared_ptr<ISolver> solver)
-  :_system(system_initialization)
-  ,_solver(solver)
+  : _system(system_initialization)
+  , _solver(solver)
 {
 }
 

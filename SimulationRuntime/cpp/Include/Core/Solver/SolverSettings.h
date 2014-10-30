@@ -22,7 +22,7 @@ Copyright (c) 2008, OSMC
 class BOOST_EXTENSION_SOLVERSETTINGS_DECL SolverSettings : public ISolverSettings
 {
 public:
-  SolverSettings( IGlobalSettings* globalSettings);
+  SolverSettings(IGlobalSettings* globalSettings);
   virtual ~SolverSettings();
   /// Initial step size (default: 1e-2)
   virtual double gethInit();
@@ -52,13 +52,13 @@ public:
 
 private:
   double
-    _hInit,            ///< Initial step size (default: 1e-2)
-    _hLowerLimit,      ///< Lower limit for step size during integration (default: should be machine precision)
-    _hUpperLimit,      ///< Upper limit for step size during integration (default: _endTime-_startTime)
+    _hInit,             ///< Initial step size (default: 1e-2)
+    _hLowerLimit,       ///< Lower limit for step size during integration (default: should be machine precision)
+    _hUpperLimit,       ///< Upper limit for step size during integration (default: _endTime-_startTime)
     _endTimeTol,        ///< Tolerance to reach _endTime (default: 1e-6)
     _dRtol,
     _dAtol;
-    IGlobalSettings*
+  IGlobalSettings*
     _globalSettings;    ///< Global simulation settings
 
   bool

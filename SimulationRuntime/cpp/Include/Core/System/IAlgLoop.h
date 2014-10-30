@@ -1,5 +1,4 @@
 #pragma once
-
 struct sparse_matrix;
 
 /*****************************************************************************/
@@ -18,17 +17,17 @@ Copyright (c) 2008, OSMC
 class IAlgLoop
 {
 public:
-    /// Enumeration with modelica data types
-    enum CONSTRTYPE
-    {
-        UNDEF   =    0x00000000,
-        REAL    =    0x00000001,
-        INTEGER =    0x00000002,
-        BOOLEAN =    0x00000004,
-        ALL     =    0x00000007,
-    };
+  /// Enumeration with modelica data types
+  enum CONSTRTYPE
+  {
+      UNDEF   = 0x00000000,
+      REAL    = 0x00000001,
+      INTEGER = 0x00000002,
+      BOOLEAN = 0x00000004,
+      ALL     = 0x00000007,
+  };
 
-    virtual ~IAlgLoop() {};
+  virtual ~IAlgLoop() {};
 
   /// Provide number (dimension) of variables according to the data type
   virtual int getDimReal() const = 0;
@@ -47,21 +46,21 @@ public:
   virtual void setReal(const double* lambda) = 0;
 
   /// Update transfer behavior of the system of equations according to command given by solver
-  virtual void evaluate() = 0;   // vxworksupdate
+  virtual void evaluate() = 0;
 
   /// Provide the right hand side (according to the index)
   virtual void getRHS(double* res) = 0;
 
   virtual void getSystemMatrix(double* A_matrix) = 0;
-  virtual void getSystemMatrix(sparse_matrix * ) {};
+  virtual void getSystemMatrix(sparse_matrix *) {};
 
   virtual bool isLinear() = 0;
   virtual bool isLinearTearing() = 0;
   virtual bool isConsistent() = 0;
-
   virtual bool getUseSparseFormat() = 0;
   virtual void setUseSparseFormat(bool value) = 0;
   virtual float queryDensity() = 0;
+  
   /*/// Fügt das übergebene Objekt als Across-Kante hinzu
   void addAcrossEdge(IObject& new_obj);
 
@@ -72,4 +71,3 @@ public:
   void addConstraint(double& constr_value);
   */
 };
-

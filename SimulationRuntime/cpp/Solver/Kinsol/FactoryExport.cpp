@@ -9,7 +9,7 @@
 
 extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 {
-    return new Kinsol(algLoop,settings);
+    return new Kinsol(algLoop, settings);
 }
 
 extern "C" INonLinSolverSettings* createKinsolSettings()
@@ -46,6 +46,3 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 #else
 error "operating system not supported"
 #endif
-
-
-

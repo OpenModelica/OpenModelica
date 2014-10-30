@@ -1,4 +1,3 @@
-
 #include <Core/Modelica.h>
 #include "Configuration.h"
 #include <boost/program_options.hpp>
@@ -8,8 +7,6 @@ namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 using namespace std;
 
-
-
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <tchar.h>
 int _tmain(int argc, _TCHAR* argv[])
@@ -17,7 +14,6 @@ int _tmain(int argc, _TCHAR* argv[])
 int main(int argc, const char* argv[])
 #endif
 {
-
     try
     {
         int opt;
@@ -45,11 +41,11 @@ int main(int argc, const char* argv[])
             return 1;
         }
         string runtime_lib_path;
-    double starttime =  vm["start-time"].as<double>();
-    double stoptime = vm["stop-time"].as<double>();
-    double stepsize =  stoptime/vm["number-of-intervalls"].as<int>();
-    double tollerance =vm["tollerance"].as<double>();
-    string solver =  vm["solver"].as<string>();
+        double starttime =  vm["start-time"].as<double>();
+        double stoptime = vm["stop-time"].as<double>();
+        double stepsize =  stoptime/vm["number-of-intervalls"].as<int>();
+        double tollerance =vm["tollerance"].as<double>();
+        string solver =  vm["solver"].as<string>();
         if (vm.count("runtime-library"))
         {
             //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << std::endl;
@@ -103,8 +99,6 @@ int main(int argc, const char* argv[])
         modelica_path.make_preferred();
         config_path.make_preferred();
 
-
-
         fs::path results_file_path = fs::path( resultsfilename) ;
         if(!(results_file_path.extension().string() == ".csv"))
         {
@@ -113,8 +107,6 @@ int main(int argc, const char* argv[])
             return 1;
         }
 
-
-
         //SimController to start simulation
          SimSettings settings = {solver,"newton",starttime,stoptime,stepsize,1e-20,0.01,tollerance,results_file_path.string()};
         boost::shared_ptr<ISimController> sim_controller =  boost::shared_ptr<ISimController>(new SimController(runtime_lib_path,modelica_path));
@@ -122,8 +114,6 @@ int main(int argc, const char* argv[])
         std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = sim_controller->LoadSystem("ModelicaSystem");
 
         sim_controller->Start(system.first,settings);
-
-
     }
     catch(std::exception& ex)
     {
@@ -131,5 +121,4 @@ int main(int argc, const char* argv[])
         cerr << "Simulation stopped: "<<  error ;
         return 1;
     }
-
 }

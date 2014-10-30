@@ -4,9 +4,9 @@
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <Core/SimController/SimController.h>
 
-extern "C" ISimController* createSimController(PATH library_path,PATH modelicasystem_path)
+extern "C" ISimController* createSimController(PATH library_path, PATH modelicasystem_path)
 {
-  return new SimController(library_path,modelicasystem_path);
+  return new SimController(library_path, modelicasystem_path);
 }
 
 #elif defined(SIMSTER_BUILD)
@@ -41,7 +41,3 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 #else
 error "operating system not supported"
 #endif
-
-
-
-

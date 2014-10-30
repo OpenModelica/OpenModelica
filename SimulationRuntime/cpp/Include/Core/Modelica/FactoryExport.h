@@ -6,7 +6,6 @@
 #define BOOST_EXTENSION_EVENTHANDLING_DECL
 #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL
 
-
 #elif defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 
 #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_EXPORT_DECL
@@ -16,6 +15,3 @@
 #else
     error "operating system not supported"
 #endif
-
-
-

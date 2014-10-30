@@ -12,7 +12,6 @@
 #include <Core/Solver/SolverDefaultImplementation.h>
 #include <Core/Solver/SolverSettings.h>
 
-
 /* OMC factory*/
 using boost::extensions::factory;
 
@@ -22,7 +21,9 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
   types.get<std::map<std::string, factory<ISolverSettings, IGlobalSettings* > > >()
     ["SolverSettings"].set<SolverSettings>();
 }
+
 #elif defined(SIMSTER_BUILD)
+
 #include <Core/Modelica.h>
 #include <Core/Solver/FactoryExport.h>
 #include <Core/Solver/SolverDefaultImplementation.h>

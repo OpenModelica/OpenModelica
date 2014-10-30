@@ -1,53 +1,44 @@
- #include <Core/Modelica.h>
- #include <SimCoreFactory/Policies/FactoryConfig.h>
- #include <Core/Modelica/FactoryExport.h>
- #include <Core/System/EventHandling.h>
- #include <Core/HistoryImpl.h>
- #include <Core/System/SystemDefaultImplementation.h>
- #include <Core/DataExchange/Policies/TextfileWriter.h>
- #include <Core/Modelica/ModelicaSystem.h>
+#include <Core/Modelica.h>
+#include <SimCoreFactory/Policies/FactoryConfig.h>
+#include <Core/Modelica/FactoryExport.h>
+#include <Core/System/EventHandling.h>
+#include <Core/HistoryImpl.h>
+#include <Core/System/SystemDefaultImplementation.h>
+#include <Core/DataExchange/Policies/TextfileWriter.h>
+#include <Core/Modelica/ModelicaSystem.h>
 
-
-
-Modelica::Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> )
-:SystemDefaultImplementation(globalSettings)
-
+Modelica::Modelica(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData>)
+    : SystemDefaultImplementation(globalSettings)
 {
-    _dimBoolean =0;
-    _dimInteger =0;
-    _dimString =0;
-    _dimReal =0;
-    _dimContinuousStates =0;
-    _dimRHS = 0;
-    //DAE's are not supported yet, Index reduction is enabled
-    _dimAE = 0; // algebraic equations
-    // Initialize the state vector
-    SystemDefaultImplementation::initialize();
-    //Instantiate auxiliary object for event handling functionality
-
+  _dimBoolean = 0;
+  _dimInteger = 0;
+  _dimString = 0;
+  _dimReal = 0;
+  _dimContinuousStates = 0;
+  _dimRHS = 0;
+  //DAE's are not supported yet, Index reduction is enabled
+  _dimAE = 0; // algebraic equations
+  // Initialize the state vector
+  SystemDefaultImplementation::initialize();
+  //Instantiate auxiliary object for event handling functionality
 }
 
 Modelica::~Modelica()
 {
-
 }
-
 
 void Modelica::resetTimeEvents()
 {
 }
 
-
 bool Modelica::evaluateAll(const UPDATETYPE command)
 {
   return false;
 }
+
 void Modelica::evaluateODE(const UPDATETYPE command)
 {
-
 }
-
-
 
 // Release instance
 void Modelica::destroy()
@@ -60,8 +51,6 @@ void Modelica::setTime(const double& t)
 {
   SystemDefaultImplementation::setTime(t);
 }
-
-
 
 // Provide number (dimension) of variables
 int Modelica::getDimBoolean() const
@@ -111,13 +100,10 @@ void Modelica::getString(string* z)
   SystemDefaultImplementation::getString(z);
 }
 
-
 void Modelica::getReal(double* z)
 {
   SystemDefaultImplementation::getReal(z);
 }
-
-
 
 void Modelica::getContinuousStates(double* z)
 {
@@ -163,51 +149,46 @@ void Modelica::setRHS(const double* f)
 
 void Modelica::evaluateZeroFuncs(const UPDATETYPE command)
 {
-
 }
 
 void Modelica::getZeroFunc(double* f)
 {
-
 }
 
 void Modelica::handleEvent(const bool* events)
 {
-
 }
 
 bool Modelica::handleSystemEvents( bool* events)
 {
- return false;
-
+  return false;
 }
 
 bool Modelica::checkForDiscreteEvents()
 {
-    bool restart = false;
-
+  bool restart = false;
   return restart;
 }
+
 bool Modelica::stepCompleted(double time)
 {
-throw std::runtime_error("stepCompleted is not yet implemented");
+  throw std::runtime_error("stepCompleted is not yet implemented");
 }
- bool Modelica::checkConditions()
- {
-     throw std::runtime_error("checkConditions is not yet implemented");
- }
 
-
+bool Modelica::checkConditions()
+{
+  throw std::runtime_error("checkConditions is not yet implemented");
+}
 
 void Modelica::getJacobian(SparseMatrix& matrix)
 {
   throw std::runtime_error("giveJacobian is not yet implemented");
 }
+
 void Modelica::getStateSetJacobian(SparseMatrix& matrix)
 {
   throw std::runtime_error("giveStateJacobian is not yet implemented");
 }
-
 
 bool Modelica::isODE()
 {
@@ -231,18 +212,17 @@ bool Modelica::provideSymbolicJacobian()
 
 void Modelica::saveAll()
 {
-
 }
-void Modelica::saveDiscreteVars()
-   {
 
-   }
+void Modelica::saveDiscreteVars()
+{
+}
+
 void Modelica::resetHelpVar(const int index)
 {
 }
 
 void Modelica::getConditions(bool* c)
 {
-     memcpy(c,_conditions,_dimZeroFunc*sizeof(bool));
+  memcpy(c,_conditions,_dimZeroFunc*sizeof(bool));
 }
-

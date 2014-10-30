@@ -1,7 +1,5 @@
 #pragma once
 
-
-
 /*****************************************************************************/
 /**
 
@@ -15,16 +13,10 @@ solution of algebraic loops in open modelica.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
+
 class IAlgLoopSolverFactory
 {
-
 public:
-
-
-    virtual ~IAlgLoopSolverFactory()    {};
-
-    virtual  boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop) = 0;
-
-
-
+  virtual ~IAlgLoopSolverFactory() {};
+  virtual  boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop) = 0;
 };

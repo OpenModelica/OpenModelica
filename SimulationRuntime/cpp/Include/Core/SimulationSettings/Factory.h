@@ -18,6 +18,6 @@ public:
   ~SettingsFactory(void);
 
 private:
-    boost::shared_ptr<IGlobalSettings> _global_settings;
-    boost::shared_ptr<ISolverSettings> _solver_settings;
+  boost::shared_ptr<IGlobalSettings> _global_settings;
+  boost::shared_ptr<ISolverSettings> _solver_settings;
 };

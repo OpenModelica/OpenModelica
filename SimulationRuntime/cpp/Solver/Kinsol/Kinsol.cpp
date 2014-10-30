@@ -2,61 +2,62 @@
 #include "Kinsol.h"
 #include "KinsolSettings.h"
 
-
+#if defined(__TRICORE__)
+#include <include/kinsol/kinsol.h>
+#endif
 
 Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
-    : _algLoop      (algLoop)
-    , _kinsolSettings  ((INonLinSolverSettings*)settings)
-    , _y        (NULL)
-    , _y0       (NULL)
-    , _yScale   (NULL)
-    , _fScale   (NULL)
-    , _f        (NULL)
-    , _helpArray    (NULL)
-  , _ihelpArray    (NULL)
-  , _zeroVec (NULL)
-  , _currentIterate (NULL)
-    , _jac    (NULL)
-  ,_fHelp(NULL)
-    ,_yHelp(NULL)
-    , _dimSys      (0)
-    , _fnorm(10.0)
+    : _algLoop            (algLoop)
+    , _kinsolSettings     ((INonLinSolverSettings*)settings)
+    , _y                  (NULL)
+    , _y0                 (NULL)
+    , _yScale             (NULL)
+    , _fScale             (NULL)
+    , _f                  (NULL)
+    , _helpArray          (NULL)
+    , _ihelpArray         (NULL)
+    , _zeroVec            (NULL)
+    , _currentIterate     (NULL)
+    , _jac                (NULL)
+    , _fHelp              (NULL)
+    , _yHelp              (NULL)
+    , _dimSys             (0)
+    , _fnorm              (10.0)
     , _currentIterateNorm (100.0)
-    , _firstCall    (true)
-    , _iterationStatus  (CONTINUE)
-  ,_Kin_y(NULL)
-  ,_Kin_y0(NULL)
-  ,_Kin_yScale(NULL)
-  ,_Kin_fScale(NULL)
-  ,_kinMem(NULL)
-
+    , _firstCall          (true)
+    , _iterationStatus    (CONTINUE)
+    , _Kin_y              (NULL)
+    , _Kin_y0             (NULL)
+    , _Kin_yScale         (NULL)
+    , _Kin_fScale         (NULL)
+    , _kinMem             (NULL)
 {
     _data = ((void*)this);
 }
 
 Kinsol::~Kinsol()
 {
-    if(_y)      delete []  _y;
-    if(_y0)      delete []  _y0;
-    if(_yScale)     delete []  _yScale;
-    if(_fScale)     delete []  _fScale;
-    if(_f)      delete []  _f;
-    if(_helpArray)      delete []  _helpArray;
-  if(_ihelpArray)      delete []  _ihelpArray;
-    if(_jac)      delete []  _jac;
-    if(_fHelp)    delete []    _fHelp;
-  if(_zeroVec)    delete []    _zeroVec;
-  if(_currentIterate)    delete []    _currentIterate;
+    if(_y)                delete []  _y;
+    if(_y0)               delete []  _y0;
+    if(_yScale)           delete []  _yScale;
+    if(_fScale)           delete []  _fScale;
+    if(_f)                delete []  _f;
+    if(_helpArray)        delete []  _helpArray;
+    if(_ihelpArray)       delete []  _ihelpArray;
+    if(_jac)              delete []  _jac;
+    if(_fHelp)            delete []  _fHelp;
+    if(_zeroVec)          delete []  _zeroVec;
+    if(_currentIterate)   delete []  _currentIterate;
     if(_Kin_y)
-    N_VDestroy_Serial(_Kin_y);
+      N_VDestroy_Serial(_Kin_y);
     if(_Kin_y0)
-    N_VDestroy_Serial(_Kin_y0);
-  if(_Kin_yScale)
-    N_VDestroy_Serial(_Kin_yScale);
+      N_VDestroy_Serial(_Kin_y0);
+    if(_Kin_yScale)
+      N_VDestroy_Serial(_Kin_yScale);
     if(_Kin_fScale)
-    N_VDestroy_Serial(_Kin_fScale);
-  if(_kinMem)
-    KINFree(&_kinMem);
+      N_VDestroy_Serial(_Kin_fScale);
+    if(_kinMem)
+      KINFree(&_kinMem);
 }
 
 void Kinsol::initialize()
@@ -82,50 +83,49 @@ void Kinsol::initialize()
         if(_dimSys > 0)
         {
             // Initialization of vector of unknowns
-            if(_y)         delete []  _y;
-            if(_y0)       delete []  _y0;
-            if(_yScale)     delete []  _yScale;
-            if(_fScale)     delete []  _fScale;
-            if(_f)         delete []  _f;
-            if(_helpArray)     delete []  _helpArray;
-      if(_ihelpArray)     delete []  _ihelpArray;
-            if(_jac)     delete []  _jac;
-            if(_yHelp)    delete []    _yHelp;
-             if(_fHelp)    delete []    _fHelp;
-       if(_zeroVec)    delete []    _zeroVec;
-       if(_currentIterate)    delete []    _currentIterate;
+            if(_y)               delete []  _y;
+            if(_y0)              delete []  _y0;
+            if(_yScale)          delete []  _yScale;
+            if(_fScale)          delete []  _fScale;
+            if(_f)               delete []  _f;
+            if(_helpArray)       delete []  _helpArray;
+            if(_ihelpArray)      delete []  _ihelpArray;
+            if(_jac)             delete []  _jac;
+            if(_yHelp)           delete []  _yHelp;
+            if(_fHelp)           delete []  _fHelp;
+            if(_zeroVec)         delete []  _zeroVec;
+            if(_currentIterate)  delete []  _currentIterate;
 
-            _y      = new double[_dimSys];
-            _y0         = new double[_dimSys];
-            _yScale     = new double[_dimSys];
-            _fScale     = new double[_dimSys];
-            _f      = new double[_dimSys];
-            _helpArray    = new double[_dimSys];
-      _ihelpArray    = new long int[_dimSys];
-       _zeroVec   = new double[_dimSys];
-       _currentIterate   = new double[_dimSys];
+            _y                = new double[_dimSys];
+            _y0               = new double[_dimSys];
+            _yScale           = new double[_dimSys];
+            _fScale           = new double[_dimSys];
+            _f                = new double[_dimSys];
+            _helpArray        = new double[_dimSys];
+            _ihelpArray       = new long int[_dimSys];
+            _zeroVec          = new double[_dimSys];
+            _currentIterate   = new double[_dimSys];
 
-            _jac      = new double[_dimSys*_dimSys];
-            _yHelp        = new double[_dimSys];
-            _fHelp        = new double[_dimSys];
+            _jac              = new double[_dimSys*_dimSys];
+            _yHelp            = new double[_dimSys];
+            _fHelp            = new double[_dimSys];
+			
             _algLoop->getReal(_y);
             _algLoop->getReal(_y0);
 
-            memset(_f,0,_dimSys*sizeof(double));
-            memset(_helpArray,0,_dimSys*sizeof(double));
-      memset(_ihelpArray,0,_dimSys*sizeof(long int));
-            memset(_yHelp,0,_dimSys*sizeof(double));
-            memset(_fHelp,0,_dimSys*sizeof(double));
-            memset(_jac,0,_dimSys*_dimSys*sizeof(double));
-      memset(_zeroVec,0,_dimSys*sizeof(double));
-      memset(_currentIterate,0,_dimSys*sizeof(double));
-
-
+            memset(_f, 0, _dimSys*sizeof(double));
+            memset(_helpArray, 0, _dimSys*sizeof(double));
+            memset(_ihelpArray, 0, _dimSys*sizeof(long int));
+            memset(_yHelp, 0, _dimSys*sizeof(double));
+            memset(_fHelp, 0, _dimSys*sizeof(double));
+            memset(_jac, 0, _dimSys*_dimSys*sizeof(double));
+            memset(_zeroVec, 0, _dimSys*sizeof(double));
+            memset(_currentIterate, 0, _dimSys*sizeof(double));
+			
             _algLoop->getNominalReal(_yScale);
 
-            for (int i=0;i<_dimSys;i++)
-         _yScale[i] = 1/_yScale[i];
-
+            for (int i=0; i<_dimSys; i++)
+              _yScale[i] = 1/_yScale[i];
 
             _Kin_y = N_VMake_Serial(_dimSys, _y);
             _Kin_y0 = N_VMake_Serial(_dimSys, _y0);
@@ -143,9 +143,7 @@ void Kinsol::initialize()
                 throw std::invalid_argument("Kinsol::initialize()");
 
             idid = KINSetErrFile(_kinMem, NULL);
-
             idid = KINSetNumMaxIters(_kinMem, 1000);
-
             //idid = KINSetEtaForm(_kinMem, KIN_ETACHOICE2);
 
             _fnormtol  = 1.e-12;     /* function tolerance */
@@ -153,18 +151,15 @@ void Kinsol::initialize()
 
             idid = KINSetFuncNormTol(_kinMem, _fnormtol);
             idid = KINSetScaledStepTol(_kinMem, _scsteptol);
-      idid = KINSetRelErrFunc(_kinMem, 1e-14);
+            idid = KINSetRelErrFunc(_kinMem, 1e-14);
 
-      _counter = 0;
-
+            _counter = 0;
         }
         else
         {
             _iterationStatus = SOLVERERROR;
         }
     }
-
-
 }
 
 void Kinsol::solve()
@@ -181,7 +176,7 @@ void Kinsol::solve()
         long int irtrn  = 0;          // Retrun-flag of Fortran code        _algLoop->getReal(_y);
 
         _algLoop->evaluate();
-    _algLoop->getRHS(_f);
+        _algLoop->getRHS(_f);
         _algLoop->getSystemMatrix(_jac);
         dgesv_(&dimSys,&dimRHS,_jac,&dimSys,_ihelpArray,_f,&dimSys,&irtrn);
         memcpy(_y,_f,_dimSys*sizeof(double));
@@ -193,38 +188,37 @@ void Kinsol::solve()
         long int dimSys = _dimSys;
         long int irtrn  = 0;          // Retrun-flag of Fortran code
 
-     _algLoop->setReal(_zeroVec);
-     _algLoop->evaluate();
-         _algLoop->getRHS(_f);
-     _algLoop->getReal(_y);
-      calcJacobian(_f,_y);
-        dgesv_(&dimSys,&dimRHS,_jac,&dimSys,_ihelpArray,_f,&dimSys,&irtrn);
-    for(int i=0;i<_dimSys;i++)
-      _f[i]*=-1.0;
-        memcpy(_y,_f,_dimSys*sizeof(double));
-       _algLoop->setReal(_y);
-     //_algLoop->evaluate();
-    if(irtrn != 0)
+        _algLoop->setReal(_zeroVec);
+        _algLoop->evaluate();
+        _algLoop->getRHS(_f);
+        _algLoop->getReal(_y);
+        calcJacobian(_f,_y);
+        dgesv_(&dimSys, &dimRHS, _jac, &dimSys, _ihelpArray, _f,&dimSys,&irtrn);
+        for(int i=0; i<_dimSys; i++)
+          _f[i]*=-1.0;
+        memcpy(_y, _f, _dimSys*sizeof(double));
+        _algLoop->setReal(_y);
+        //_algLoop->evaluate();
+        if(irtrn != 0)
             throw std::runtime_error("error solving linear tearing system");
         else
           _iterationStatus = DONE;
-
     }
     else
     {
         _counter++;
-    _eventRetry = false;
+        _eventRetry = false;
 
-    // Try Dense first
-    ////////////////////////////
-    for(int i=0;i<_dimSys;i++) // Reset Scaling
-      _fScale[i] = 1.0;
+        // Try Dense first
+        ////////////////////////////
+        for(int i=0;i<_dimSys;i++) // Reset Scaling
+          _fScale[i] = 1.0;
 
 
         KINDense(_kinMem, _dimSys);
         solveNLS();
         if(_iterationStatus == DONE)
-      return;
+        return;
     else  // Try Scaling
     {
       _iterationStatus = CONTINUE;

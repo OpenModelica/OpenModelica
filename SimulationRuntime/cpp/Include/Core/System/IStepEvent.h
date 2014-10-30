@@ -9,4 +9,3 @@ public:
   //returns the intial status
   virtual bool terminal() = 0;
 };
-

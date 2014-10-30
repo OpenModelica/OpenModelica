@@ -6,35 +6,35 @@
 #include <Core/Math/Constants.h>
 
 SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, ISolverSettings* settings)
-  : SimulationMonitor()
-  , _system               (system)
-  , _settings             (settings)
-
-  , _tInit                (0.0)
-  , _tCurrent             (0.0)
-  , _tEnd                 (0.0)
-  , _tLastSuccess         (0.0)
-  , _tLastUnsucess        (0.0)
-  , _tLargeStep           (0.0)
-  , _h                    (0.0)
-
-  //, _firstCall            (true)
-  , _firstStep            (true)
-
-  , _totStps              (0)
-  , _accStps              (0)
-  , _rejStps              (0)
-  , _zeroStps             (0)
-  , _zeros                (0)
-
-  , _zeroStatus           (ISolver::UNCHANGED_SIGN)
-  , _zeroValInit          (NULL)
-  , _dimZeroFunc          (0)
-  , _zeroVal              (NULL)
-  , _zeroValLastSuccess   (NULL)
-  , _events               (NULL)
-
-  , _outputCommand        (IWriteOutput::WRITEOUT)
+    : SimulationMonitor()
+    , _system               (system)
+    , _settings             (settings)
+    
+    , _tInit                (0.0)
+    , _tCurrent             (0.0)
+    , _tEnd                 (0.0)
+    , _tLastSuccess         (0.0)
+    , _tLastUnsucess        (0.0)
+    , _tLargeStep           (0.0)
+    , _h                    (0.0)
+    
+    //, _firstCall            (true)
+    , _firstStep            (true)
+    
+    , _totStps              (0)
+    , _accStps              (0)
+    , _rejStps              (0)
+    , _zeroStps             (0)
+    , _zeros                (0)
+    
+    , _zeroStatus           (ISolver::UNCHANGED_SIGN)
+    , _zeroValInit          (NULL)
+    , _dimZeroFunc          (0)
+    , _zeroVal              (NULL)
+    , _zeroValLastSuccess   (NULL)
+    , _events               (NULL)
+    
+    , _outputCommand        (IWriteOutput::WRITEOUT)
 {
   _state_selection = boost::shared_ptr<SystemStateSelection>(new SystemStateSelection(system));
 }
@@ -66,8 +66,6 @@ void SolverDefaultImplementation::setInitStepSize(const double& h)
   _h = h;
 };
 
-
-
 const ISolver::SOLVERSTATUS SolverDefaultImplementation::getSolverStatus()
 {
   return _solverStatus;
@@ -87,9 +85,6 @@ void SolverDefaultImplementation::initialize()
   IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
   // Set current start time to the system
   timeevent_system->setTime(_tCurrent);
-
-
-
 
   //// Write out head line
   //if (_outputStream)
@@ -121,10 +116,10 @@ void SolverDefaultImplementation::initialize()
     if(_events)
       delete [] _events;
 
-    _zeroVal                  = new double[_dimZeroFunc];
-    _zeroValLastSuccess      = new double[_dimZeroFunc];
-    _events                        = new bool[_dimZeroFunc];
-    _zeroValInit                  = new double[_dimZeroFunc];
+    _zeroVal = new double[_dimZeroFunc];
+    _zeroValLastSuccess = new double[_dimZeroFunc];
+    _events = new bool[_dimZeroFunc];
+    _zeroValInit = new double[_dimZeroFunc];
     continous_system->evaluateZeroFuncs(IContinuous::CONTINUOUS);
     event_system->getZeroFunc(_zeroVal);
     memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
@@ -133,16 +128,15 @@ void SolverDefaultImplementation::initialize()
   }
 
   // Set flags
-  _firstCall                  = true;
-  _firstStep                  = true;
-
+  _firstCall = true;
+  _firstStep = true;
 
   // Reset counter
-  _totStps     = 0;
-  _accStps     = 0;
-  _rejStps    = 0;
-  _zeroStps    = 0;
-  _zeros        = 0;
+  _totStps = 0;
+  _accStps = 0;
+  _rejStps = 0;
+  _zeroStps = 0;
+  _zeros = 0;
 
   // Set initial step size
   //_h = _settings->_globalSettings->_hOutput;
@@ -174,8 +168,6 @@ void SolverDefaultImplementation::setZeroState()
   }
 
 }
-
-
 
 void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, const double& h)
 {

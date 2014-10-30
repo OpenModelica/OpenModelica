@@ -16,7 +16,7 @@ public:
     SimController(PATH library_path,PATH modelicasystem_path);
     virtual ~SimController();
 
-  ///Load and translates a Modelica modell to IMixedSystem dll
+    ///Load and translates a Modelica modell to IMixedSystem dll
     virtual std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > LoadSystem(string modelLib, string modelKey);
 #if defined(__vxworks) || defined(__TRICORE__)
 #else
@@ -28,7 +28,7 @@ public:
     /// Stops the simulation
     virtual void Stop();
 
-  // for real-time usage (VxWorks and BODAS)
+    // for real-time usage (VxWorks and BODAS)
     virtual boost::shared_ptr<ISimData> getSimData(string modelname);
     virtual void StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings);
     virtual void calcOneStep();
@@ -37,11 +37,9 @@ private:
     void initialize(PATH library_path, PATH modelicasystem_path);
     bool _initialized;
     boost::shared_ptr<Configuration> _config;
-    std::map<string, std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > > _systems;
+    std::map<string, std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > > _systems;
     boost::shared_ptr<IAlgLoopSolverFactory> _algloopsolverfactory;
 
-  // for real-time usage (VxWorks and BODAS)
+    // for real-time usage (VxWorks and BODAS)
     boost::shared_ptr<SimManager> _simMgr;
-
 };
-

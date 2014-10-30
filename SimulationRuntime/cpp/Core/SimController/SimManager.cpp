@@ -1,7 +1,5 @@
-
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-//#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/SimManager.h>
 /*
 #include <boost/log/common.hpp>
@@ -23,14 +21,15 @@ namespace attrs = boost::log::attributes;
 namespace src = boost::log::sources;
 namespace keywords = boost::log::keywords;
 */
-SimManager::SimManager(boost::shared_ptr<IMixedSystem> system,Configuration* config)
-  :_mixed_system(system)
-  ,_config(config)
-  ,_timeeventcounter(NULL)
-  , _events(NULL)
+
+SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* config)
+  : _mixed_system      (system)
+  , _config            (config)
+  , _timeeventcounter  (NULL)
+  , _events            (NULL)
 {
   _solver = _config->createSelectedSolver(system.get());
-  _initialization = boost::shared_ptr<Initialization>(new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system),_solver));
+  _initialization = boost::shared_ptr<Initialization>(new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
 }
 
 SimManager::~SimManager()
@@ -82,16 +81,16 @@ void SimManager::initialize()
   }
   else
     _dimtimeevent =0;
-  _tStart      = _config->getGlobalSettings()->getStartTime();
-  _tEnd      =_config->getGlobalSettings()->getEndTime();
+  _tStart = _config->getGlobalSettings()->getStartTime();
+  _tEnd =_config->getGlobalSettings()->getEndTime();
   // _solver->setTimeOut(_config->getGlobalSettings()->getAlarmTime());
-  _dimZeroFunc=event_system->getDimZeroFunc();
+  _dimZeroFunc = event_system->getDimZeroFunc();
   _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
-  if (_dimZeroFunc==event_system->getDimZeroFunc() )
+  if (_dimZeroFunc == event_system->getDimZeroFunc() )
   {
     if(_events)
       delete [] _events;
-    _events                        = new bool[_dimZeroFunc];
+    _events = new bool[_dimZeroFunc];
     memset(_events,false,_dimZeroFunc*sizeof(bool));
   }
   /*
@@ -115,7 +114,6 @@ void SimManager::runSingleStep()
 {
   _solver->solve(_solverTask);
 }
-
 
 void SimManager::runSimulation()
 {
@@ -288,7 +286,6 @@ void SimManager::writeProperties()
   }
 
   */
-
 }
 
 
@@ -298,7 +295,7 @@ void SimManager::computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub)
   int
     counterTimes = 0,
     counterEvents = 0;
-  time_event_type                  timeEventPairs;                        ///<             - Beinhaltet Frequenzen und Startzeit der Time-Events
+  time_event_type timeEventPairs;                        ///< - Beinhaltet Frequenzen und Startzeit der Time-Events
   _writeFinalState = true;
 
   if(tStopsSub.size()==0)
@@ -389,9 +386,6 @@ void SimManager::computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub)
     }
   }
 }
-
-
-
 
 void SimManager::runSingleProcess()
 {

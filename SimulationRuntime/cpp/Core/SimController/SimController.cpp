@@ -1,6 +1,5 @@
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
-//#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/ISimController.h>
 #include <Core/SimController/SimController.h>
 #include <Core/SimController/Configuration.h>
@@ -8,9 +7,11 @@
 #include "LibrariesConfig.h"
 #endif
 
-SimController::SimController(PATH library_path,PATH modelicasystem_path) : SimControllerPolicy(library_path, modelicasystem_path,library_path), _initialized(false)
+SimController::SimController(PATH library_path, PATH modelicasystem_path) 
+    : SimControllerPolicy(library_path, modelicasystem_path, library_path)
+    , _initialized(false)
 {
-  _config =   boost::shared_ptr<Configuration>(new Configuration(_library_path,_config_path,modelicasystem_path));
+  _config = boost::shared_ptr<Configuration>(new Configuration(_library_path, _config_path, modelicasystem_path));
   _algloopsolverfactory = createAlgLoopSolverFactory(_config->getGlobalSettings());
 }
 
@@ -21,7 +22,7 @@ SimController::~SimController()
 
 #if defined(__TRICORE__) || defined(__vxworks)
 #else
-std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > SimController::LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey)
+std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > SimController::LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey)
 {
   //if the model is already loaded
   std::map<string, std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> >  > ::iterator iter = _systems.find(modelKey);
@@ -31,45 +32,44 @@ std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > SimContr
     _systems.erase(iter);
   }
   //create system
-  std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = createSystem(createSimDataCallback, createSystemCallback, _config->getGlobalSettings(), _algloopsolverfactory);
+  std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > system = createSystem(createSimDataCallback, createSystemCallback, _config->getGlobalSettings(), _algloopsolverfactory);
   _systems[modelKey] = system;
   return system;
 }
 #endif
 
-std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > SimController::LoadSystem(string modelLib, string modelKey)
+std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > SimController::LoadSystem(string modelLib, string modelKey)
 {
   //if the model is already loaded
-  std::map<string, std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  > ::iterator iter = _systems.find(modelKey);
+  std::map<string, std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > > ::iterator iter = _systems.find(modelKey);
   if(iter!=_systems.end())
   {
     //destroy system
     _systems.erase(iter);
   }
   //create system
-  std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = createSystem(modelLib, modelKey, _config->getGlobalSettings(), _algloopsolverfactory);
-  _systems[modelKey]=system;
+  std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > system = createSystem(modelLib, modelKey, _config->getGlobalSettings(), _algloopsolverfactory);
+  _systems[modelKey] = system;
   return system;
 }
 
-std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > SimController::LoadModelicaSystem(PATH modelica_path, string modelKey)
+std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > SimController::LoadModelicaSystem(PATH modelica_path, string modelKey)
 {
   if(_use_modelica_compiler)
   {
     //if the modell is already loaded
-    std::map<string,std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > >::iterator iter = _systems.find(modelKey);
+    std::map<string,std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > >::iterator iter = _systems.find(modelKey);
     if(iter!=_systems.end())
     {
       //destroy system
       _systems.erase(iter);
     }
-    std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> >  system = createModelicaSystem(modelica_path, modelKey,_config->getGlobalSettings(), _algloopsolverfactory);
-    _systems[modelKey]=system;
+    std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > system = createModelicaSystem(modelica_path, modelKey, _config->getGlobalSettings(), _algloopsolverfactory);
+    _systems[modelKey] = system;
     return system;
   }
   else
     throw std::invalid_argument("No Modelica Compiler configured");
-
 }
 
 boost::shared_ptr<ISimData> SimController::getSimData(string modelname)
@@ -77,15 +77,9 @@ boost::shared_ptr<ISimData> SimController::getSimData(string modelname)
   return ((_systems[modelname]).second);
 }
 
-
-
-// HINZUGEFÜGT WEGEN VXWORKS
+// Added for real-time simulation using VxWorks and Bodas
 void SimController::StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings)
 {
-  /*vxworks: double startTime,endTime,llimit,ulimit,stepSize;
-  string solver,nonlinsolver,outputfile;
-  boost::tie(solver,nonlinsolver,startTime,endTime,stepSize,llimit,ulimit,outputfile)=simsettings;
-  */
   try
   {
     IGlobalSettings* global_settings = _config->getGlobalSettings();
@@ -103,7 +97,7 @@ void SimController::StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, Si
     global_settings->setLogType(simsettings.logType);
     global_settings->setOutputPointType(simsettings.outputPointType);
 
-    _simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem,_config.get()));
+    _simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 
     ISolverSettings* solver_settings = _config->getSolverSettings();
     solver_settings->setLowerLimit(simsettings.lower_limit);
@@ -124,12 +118,14 @@ void SimController::StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, Si
   }
 }
 
+// Added for real-time simulation using VxWorks and Bodas
 void SimController::calcOneStep()
 {
   _simMgr->runSingleStep();
 }
 
-void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSettings simsettings,string modelKey)
+
+void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettings simsettings, string modelKey)
 {
   try
   {
@@ -149,7 +145,7 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSetting
     global_settings->setAlarmTime(simsettings.timeOut);
     global_settings->setOutputPointType(simsettings.outputPointType);
 
-    simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem,_config.get()));
+    simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 
     ISolverSettings* solver_settings = _config->getSolverSettings();
     solver_settings->setLowerLimit(simsettings.lower_limit);
@@ -187,8 +183,7 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSetting
   }
   catch(std::exception& ex)
   {
-    std::string error =string("Simulation failed for ") + simsettings.outputfile_name + string(" with error ")+ ex.what() ;
-
+    std::string error = string("Simulation failed for ") + simsettings.outputfile_name + string(" with error ")+ ex.what();
     throw std::runtime_error(error);
   }
 }
@@ -196,4 +191,3 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem,SimSetting
 void SimController::Stop()
 {
 }
-
