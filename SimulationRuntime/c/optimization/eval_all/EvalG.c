@@ -772,9 +772,9 @@ static inline void debugeJac(OptData * optData){
         fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj)
           if(jj != k)
-            fprintf(pFile,"%g;", (double)(J[k][jj]/optData->time.dt[i]));
+            fprintf(pFile,"%g;", (double)(J[k][jj]/optData->time.dt[(i + 1 = nsi)?1:0]));
           else
-            fprintf(pFile,"%g;", (double)(J[k][jj]/optData->time.dt[i]+1));
+            fprintf(pFile,"%g;", (double)(J[k][jj]/optData->time.dt[(i + 1 = nsi)?1:0]+1));
         fprintf(pFile,"\n");
       }
     }
@@ -822,8 +822,8 @@ static inline void debugeJac(OptData * optData){
                   "            self.J[k,n,l] = float(r)",
                   "      f.close()\n",
                   "  def __str__(self):",
-                  "    print \"read file %s\"%self.filename","   print \"states: \", self.states",
-                  "    print \"inputs: \", self.inputs","   print \"t0 = %g, t = %g\"%(self.t[0],self.t[-1])",
+                  "    print \"read file %s\"%self.filename","    print \"states: \", self.states",
+                  "    print \"inputs: \", self.inputs","    print \"t0 = %g, t = %g\"%(self.t[0],self.t[-1])",
                   "    return \"\"\n");
     fprintf(pFile,"  def get_value_of_jacobian(self,i, j):\n\n");
     fprintf(pFile,"   \"\"\"\n     Input i:\n");
