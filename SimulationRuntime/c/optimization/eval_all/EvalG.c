@@ -34,6 +34,7 @@
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
 #include "../../simulation/results/simulation_result.h"
+#include "../../simulation/options.h"
 
 static inline void generated_jac_struc(OptData *, int*, int*);
 static inline void set_row(int *, int *, int *, const modelica_boolean *const,
@@ -319,9 +320,16 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     printf("\nvalues[%i] = %g",i,values[i]);
     assert(0);
     */
-#if 0
-    debugeJac(optData);
-#endif
+   {
+    char *cflags;
+    int ijac = 0;
+    cflags = (char*)omc_flagValue[FLAG_OPTDEBUGEJAC];
+    if(cflags){
+      ijac = atoi(cflags);
+      if(ijac >= optData->iter_)
+        debugeJac(optData);
+    }
+   }
   }
 
   return TRUE;
@@ -735,7 +743,9 @@ static inline void debugeJac(OptData * optData){
   const int nsi = optData->dim.nsi;
   const int nJ = optData->dim.nJ;
   const int np = optData->dim.np;
+  const int nc = optData->dim.nc;
   const int npv = np*nv;
+  const int nt = optData->dim.nt;
   double **J;
 
   FILE *pFile;
@@ -752,16 +762,90 @@ static inline void debugeJac(OptData * optData){
   fprintf(pFile,"\n");
 
   for(i=0;i < nsi; ++i){
-    for(j = 0; j < nJ; ++j){
+    for(j = 0; j < np; ++j){
       J = optData->J[i][j];
       for(k = 0; k < nx; ++k){
-        fprintf(pFile,"%s;%g;",optData->data->modelData.realVarsData[k].info.name,(double)optData->time.t[i][j]);
+        fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj)
           fprintf(pFile,"%g;", J[k][jj]);
         fprintf(pFile,"\n");
       }
     }
   }
-
   fclose(pFile);
+
+  if(optData->iter_ < 2){
+    pFile = fopen("omc_check_jac.py", "wt");
+    fprintf(pFile,"\"\"\"\nautomatically generated code for analyse derivatives\nVitalij Ruge, vruge@fh-bielefeld.de\n\"\"\"\n\n");
+    fprintf(pFile,"%s\n%s\n\n","import numpy as np","import matplotlib.pyplot as plt");
+    fprintf(pFile,"class OMC_JAC:\n  def __init__(self, filename):\n    self.filename = filename\n");
+    fprintf(pFile,"    self.states = [");
+    if(nx > 0)
+     fprintf(pFile,"'%s'",optData->data->modelData.realVarsData[0].info.name);
+    for(j = 1; j < nx-1; ++j)
+      fprintf(pFile,",'%s'",optData->data->modelData.realVarsData[j].info.name);
+    fprintf(pFile,"]\n");
+    fprintf(pFile,"    self.inputs = [");
+    if(nu > 0)
+      fprintf(pFile,"'%s'",optData->dim.inputName[0]);
+    for(j = 1; j < nu; ++j)
+      fprintf(pFile,",'%s'",optData->dim.inputName[j]);
+    fprintf(pFile,"]\n");
+    fprintf(pFile,"    self.number_of_states = %i\n",nx);
+    fprintf(pFile,"    self.number_of_inputs = %i\n",nu);
+    fprintf(pFile,"    self.number_of_constraints = %i\n",nc);
+    fprintf(pFile,"    self.number_of_timepoints = %i\n",nt);
+    fprintf(pFile,"    self.t = np.zeros(self.number_of_timepoints)\n");
+    fprintf(pFile,"    self.dx = np.zeros(self.number_of_states)\n");
+    fprintf(pFile,"    self.J = np.zeros([self.number_of_states, self.number_of_states + self.number_of_inputs, self.number_of_timepoints])\n");
+    fprintf(pFile,"    self.__read_csv__()\n\n");
+    fprintf(pFile,"  def __read_csv__(self):\n");
+    fprintf(pFile,"    with open(self.filename,'r') as f:\n");
+    fprintf(pFile,"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
+                  "      print f.readline() # name",
+                  "      for l in xrange(self.number_of_timepoints):",
+                  "        for k in xrange(self.number_of_states):",
+                  "          l1 = f.readline()",
+                  "          l1 = l1.split(\";\")",
+                  "          l1 = [e for e in l1]",
+                  "          if len(l1) <= 1:",
+                  "            break",
+                  "          self.t[l] = float(l1[1])",
+                  "          for n,r in enumerate(l1[2:-1]):",
+                  "            self.J[k,n,l] = float(r)",
+                  "      f.close()\n",
+                  "  def __str__(self):",
+                  "   print \"read file %s\"%self.filename","   print \"states: \", self.states",
+                  "   print \"inputs: \", self.inputs","   print \"t0 = %g, t = %g\"%(self.t[0],self.t[-1])",
+                  "   return \"\"");
+    fprintf(pFile,"  def get_value_of_jacobian(self,i, j):\n\n");
+    fprintf(pFile,"   \"\"\"\n     Input i:\n");
+    for(j = 0; j < nx; ++j)
+      fprintf(pFile,"      i = %i -> der(%s)\n",j,optData->data->modelData.realVarsData[j].info.name);
+
+    fprintf(pFile,"     Input j:\n");
+    for(j = 0; j < nx; ++j)
+      fprintf(pFile,"      j = %i -> %s\n",j,optData->data->modelData.realVarsData[j].info.name);
+    for(j = 0; j < nu; ++j)
+      fprintf(pFile,"      j = %i -> %s\n",nx+j,optData->dim.inputName[j]);
+    fprintf(pFile,"   \"\"\"\n");
+    fprintf(pFile,"   return self.J[i,j,:]\n\n");
+    fprintf(pFile,"  def plot_jacobian_element(self, i, j, filename):\n");
+    fprintf(pFile,"%s\n","    J = self.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","    plt.show(False)");
+    fprintf(pFile,"%s\n","    plt.plot(self.t, J)");
+    fprintf(pFile,"%s\n","    if j < self.number_of_states:");
+    fprintf(pFile,"%s\n","      plt_name = \"der(\" + self.states[i] + \")/\" + self.states[j]");
+    fprintf(pFile,"%s\n","    else:");
+    fprintf(pFile,"%s\n","      plt_name = \"der(\" + self.states[i] + \")/\" + self.inputs[j-self.number_of_states]");
+    fprintf(pFile,"%s\n","    plt.legend([plt_name])");
+    fprintf(pFile,"%s\n","    plt.xlabel('time')");
+    fprintf(pFile,"%s\n\n\n","    plt.savefig(filename = filename, format='png')");
+    fprintf(pFile,"%s\n\n","M = OMC_JAC('jac_ana_step_1.csv')");
+    fprintf(pFile,"%s\n","print M");
+    fprintf(pFile,"%s\n","M.plot_jacobian_element(0,0,'pltJac.png')");
+
+
+    fclose(pFile);
+  }
 }
