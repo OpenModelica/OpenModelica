@@ -203,7 +203,7 @@ protected function instBinding2
   output Option<DAE.Exp> outExpExpOption;
 algorithm
   outExpExpOption:=
-  matchcontinue (inMod,inType,inIntegerLst,inString,useConstValue)
+  match (inMod,inType,inIntegerLst,inString,useConstValue)
     local
       DAE.Mod mod2,mod;
       DAE.Exp e,e_1;
@@ -223,16 +223,17 @@ algorithm
         SOME(e_1);
     case (mod,etype,(index :: res),bind_name,_) /* Several elements in the index-list */
       equation
-        mod2 = Mod.lookupIdxModification(mod, index);
-        result = instBinding2(mod2, etype, res, bind_name,useConstValue);
+        result = matchcontinue()
+          case ()
+            equation
+              mod2 = Mod.lookupIdxModification(mod, index);
+              result = instBinding2(mod2, etype, res, bind_name,useConstValue);
+            then result;
+          else then NONE();
+        end matchcontinue;
       then
         result;
-    case (mod,_,(index :: _),_,_)
-      equation
-        failure(_ = Mod.lookupIdxModification(mod, index));
-      then
-        NONE();
-  end matchcontinue;
+  end match;
 end instBinding2;
 
 public function instStartBindingExp

@@ -832,37 +832,33 @@ protected function checkMissingInnerDecl2
   input DAE.Element outerVar;
   input list<DAE.Element> innerVars;
 algorithm
-  _ := matchcontinue(outerVar,innerVars)
+  _ := match(outerVar,innerVars)
     local
       String str,str2; DAE.ComponentRef cr; DAE.Element v;
-      list<DAE.ComponentRef> crs;
+      list<DAE.ComponentRef> crs, res;
       Absyn.InnerOuter io;
       DAE.ElementSource source;
       Absyn.Info info;
 
-    case(DAE.VAR(componentRef=cr),_)
-      equation
-        crs = List.map(innerVars, DAEUtil.varCref);
-        {_} = List.select1(crs, isInnerOuterMatch, cr);
-      then ();
-    case(DAE.VAR(componentRef=cr, innerOuter = _),_)
-      equation
-        // ?? adrpo: NOT USED! TODO! FIXME! str2 = Dump.unparseInnerouterStr(io);
-        crs = List.map(innerVars,DAEUtil.varCref);
-        {} = List.select1(crs,isInnerOuterMatch, cr);
-        // ?? adrpo: NOT USED! TODO! FIXME! str = ComponentReference.printComponentRefStr(cr);
-        failExceptForCheck();
-      then ();
     case(DAE.VAR(componentRef=cr, innerOuter = io, source = source),_)
       equation
-        crs = List.map(innerVars,DAEUtil.varCref);
-        {} = List.select1(crs, isInnerOuterMatch, cr);
-        str2 = Dump.unparseInnerouterStr(io);
-        str = ComponentReference.printComponentRefStr(cr);
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.MISSING_INNER_PREFIX, {str,str2}, info);
-      then fail();
-  end matchcontinue;
+        crs = List.map(innerVars, DAEUtil.varCref);
+        res = List.select1(crs, isInnerOuterMatch, cr);
+        if listEmpty(res)
+        then
+          if not Flags.getConfigBool(Flags.CHECK_MODEL)
+          then
+            str2 = Dump.unparseInnerouterStr(io);
+            str = ComponentReference.printComponentRefStr(cr);
+            info = DAEUtil.getElementSourceFileInfo(source);
+            Error.addSourceMessage(Error.MISSING_INNER_PREFIX, {str,str2}, info);
+            fail();
+          end if;
+        end if;
+      then
+        ();
+
+  end match;
 end checkMissingInnerDecl2;
 
 public function failExceptForCheck
@@ -938,21 +934,21 @@ public function assertDifferentFaces
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
 algorithm
-  _ := matchcontinue (env,inIH,inComponentRef1,inComponentRef2)
-    local DAE.ComponentRef c1,c2;
+  _ := match(env,inIH,inComponentRef1,inComponentRef2)
+    local
+      DAE.ComponentRef c1,c2;
+      Connect.Face f1, f2;
+      Boolean b1, b2;
     case (_,_,c1,_)
       equation
-        Connect.INSIDE()  = ConnectUtil.componentFace(env,inIH,c1);
-        Connect.OUTSIDE() = ConnectUtil.componentFace(env,inIH,c1);
+        f1 = ConnectUtil.componentFace(env,inIH,c1);
+        f2 = ConnectUtil.componentFace(env,inIH,c1);
+        b1 = valueEq(f1, Connect.INSIDE()) and valueEq(f2, Connect.OUTSIDE());
+        b2 = valueEq(f2, Connect.INSIDE()) and valueEq(f1, Connect.OUTSIDE());
+        true = b1 or b2;
       then
         ();
-    case (_,_,c1,_)
-      equation
-        Connect.OUTSIDE() = ConnectUtil.componentFace(env,inIH,c1);
-        Connect.INSIDE()  = ConnectUtil.componentFace(env,inIH,c1);
-      then
-        ();
-  end matchcontinue;
+  end match;
 end assertDifferentFaces;
 
 protected function lookupInnerInIH
@@ -2364,12 +2360,6 @@ algorithm
       then
         (k, v);
 
-    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),_)
-      equation
-        (pos < n) = true;
-        NONE() = arr[pos + 1];
-      then
-        fail();
   end matchcontinue;
 end valueArrayNth;
 

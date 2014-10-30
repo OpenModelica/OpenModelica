@@ -5533,20 +5533,23 @@ protected function makeFullyQualified2
   input Absyn.Path restPath;
 output Absyn.Path path;
 algorithm
-  path := matchcontinue(env,restPath)
+  path := match(env,restPath)
     local
       Absyn.Path scope;
+      Option<Absyn.Path> oscope;
     case(_,_)
       equation
-        SOME(scope) = FGraph.getScopePath(env);
-        path = Absyn.joinPaths(scope, restPath);
-      then path;
-    else
-      equation
-        NONE() = FGraph.getScopePath(env);
+        oscope = FGraph.getScopePath(env);
+        if valueEq(oscope, NONE())
+        then
+          path = restPath;
+        else
+          SOME(scope) = oscope;
+          path = Absyn.joinPaths(scope, restPath);
+        end if;
       then
-        restPath;
-  end matchcontinue;
+        path;
+  end match;
 end makeFullyQualified2;
 
 

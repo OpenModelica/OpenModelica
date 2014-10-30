@@ -749,25 +749,23 @@ public function checkExpsTypeEquiv
   input DAE.Exp inExp2;
   output Boolean bEquiv;
 algorithm
-  bEquiv := matchcontinue(inExp1, inExp2)
+  bEquiv := match(inExp1, inExp2)
     local
       DAE.Type ty1,ty2;
       Boolean b;
     case (_, _)
       equation
-        // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
-        true = Config.acceptMetaModelicaGrammar();
-      then true;
-    case (_, _)
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-        ty1 = Expression.typeof(inExp1);
-        ty2 = Expression.typeof(inExp2);
-        ((ty2, _)) = Types.traverseType((ty2, -1), Types.makeExpDimensionsUnknown);
-        b = Types.equivtypes(ty1,ty2);
-      then
-        b;
-  end matchcontinue;
+        if Config.acceptMetaModelicaGrammar()
+        then // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
+          b = true;
+        else // compare
+         ty1 = Expression.typeof(inExp1);
+         ty2 = Expression.typeof(inExp2);
+         ((ty2, _)) = Types.traverseType((ty2, -1), Types.makeExpDimensionsUnknown);
+         b = Types.equivtypes(ty1,ty2);
+        end if;
+      then b;
+  end match;
 end checkExpsTypeEquiv;
 
 protected function inlineCall
@@ -797,92 +795,78 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Type ty;
 
-      /* If we disable inlining by use of flags, we still inline builtin functions */
+    // If we disable inlining by use of flags, we still inline builtin functions
     case (DAE.CALL(attr=DAE.CALL_ATTR(inlineType=inlineType)),_)
       equation
         false = Flags.isSet(Flags.INLINE_FUNCTIONS);
-        failure(DAE.BUILTIN_EARLY_INLINE() = inlineType);
+        false = valueEq(DAE.BUILTIN_EARLY_INLINE(), inlineType);
       then (inExp,inTuple);
 
-    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_,assrtLstIn))
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-        true = DAEUtil.convertInlineTypeToBool(inlineType);
-        true = checkInlineType(inlineType,fns);
-        (fn,_) = getFunctionBody(p,fns);
-        crefs = List.map(fn,getInputCrefs);
-        crefs = List.select(crefs,removeWilds);
-        argmap = List.threadTuple(crefs,args);
-        false = List.exist(fn,DAEUtil.isProtectedVar);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
-        newExp = getRhsExp(fn);
-        // compare types
-        true = checkExpsTypeEquiv(e1, newExp);
-        // add noEvent to avoid events as usually for functions
-        // MSL 3.2.1 need GenerateEvents to disable this
-        newExp = Expression.addNoEventToRelationsAndConds(newExp);
-        (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
-        // for inlinecalls in functions
-        (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
-      then (newExp1,(fns,true,assrtLst));
-
     case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,_,assrtLstIn))
-      // no assert detected
       equation
-        false = Config.acceptMetaModelicaGrammar();
         true = DAEUtil.convertInlineTypeToBool(inlineType);
         true = checkInlineType(inlineType,fns);
         (fn,comment) = getFunctionBody(p,fns);
-        // get inputs, body and output
-        (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
-        // merge statements to one line
-        (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
-        true = List.isEmpty(assrtStmts);
-        newExp = getReplacementCheckComplex(repl,cr,ty);
-        argmap = List.threadTuple(crefs,args);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
-        // compare types
-        true = checkExpsTypeEquiv(e1, newExp);
-        // add noEvent to avoid events as usually for functions
-        // MSL 3.2.1 need GenerateEvents to disable this
-        generateEvents = hasGenerateEventsAnnotation(comment);
-        newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
-        (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
-        // for inlinecalls in functions
-        (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
-      then (newExp1,(fns,true,assrtLst));
-
-    case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(ty=ty,inlineType=inlineType)),(fns,_,assrtLstIn))
-      // assert detected
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-        true = DAEUtil.convertInlineTypeToBool(inlineType);
-        true = checkInlineType(inlineType,fns);
-        (fn,comment) = getFunctionBody(p,fns);
-        // get inputs, body and output
-        (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
-        // merge statements to one line
-        (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
-        true = List.isNotEmpty(assrtStmts);
-        true = listLength(assrtStmts) == 1;
-        assrt = listGet(assrtStmts,1);
-        DAE.STMT_ASSERT(source=_) = assrt;
-        newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
-        argmap = List.threadTuple(crefs,args);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
-        // compare types
-        true = checkExpsTypeEquiv(e1, newExp);
-        // add noEvent to avoid events as usually for functions
-        // MSL 3.2.1 need GenerateEvents to disable this
-        generateEvents = hasGenerateEventsAnnotation(comment);
-        newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
-        (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
-        assrt = inlineAssert(assrt,fns,argmap,checkcr);
-        // for inlinecalls in functions
-        (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrt::assrtLstIn));
-      then (newExp1,(fns,true,assrtLst));
+        if (Config.acceptMetaModelicaGrammar())
+        then // MetaModelica
+          crefs = List.map(fn,getInputCrefs);
+          crefs = List.select(crefs,removeWilds);
+          argmap = List.threadTuple(crefs,args);
+          false = List.exist(fn,DAEUtil.isProtectedVar);
+          (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+          newExp = getRhsExp(fn);
+          // compare types
+          true = checkExpsTypeEquiv(e1, newExp);
+          // add noEvent to avoid events as usually for functions
+          // MSL 3.2.1 need GenerateEvents to disable this
+          newExp = Expression.addNoEventToRelationsAndConds(newExp);
+          (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+          // for inlinecalls in functions
+          (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
+        else // normal Modelica
+          // get inputs, body and output
+          (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
+          // merge statements to one line
+          (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
+          // depend on detection of assert or not
+          if (List.isEmpty(assrtStmts))
+          then // no assert detected
+            newExp = getReplacementCheckComplex(repl,cr,ty);
+            argmap = List.threadTuple(crefs,args);
+            (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+            // compare types
+            true = checkExpsTypeEquiv(e1, newExp);
+            // add noEvent to avoid events as usually for functions
+            // MSL 3.2.1 need GenerateEvents to disable this
+            generateEvents = hasGenerateEventsAnnotation(comment);
+            newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
+            (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+            // for inlinecalls in functions
+            (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrtLstIn));
+          else // assert detected
+            true = listLength(assrtStmts) == 1;
+            assrt = listGet(assrtStmts,1);
+            DAE.STMT_ASSERT(source=_) = assrt;
+            newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
+            argmap = List.threadTuple(crefs,args);
+            (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+            // compare types
+            true = checkExpsTypeEquiv(e1, newExp);
+            // add noEvent to avoid events as usually for functions
+            // MSL 3.2.1 need GenerateEvents to disable this
+            generateEvents = hasGenerateEventsAnnotation(comment);
+            newExp = if not generateEvents then Expression.addNoEventToRelationsAndConds(newExp) else newExp;
+            (newExp,(_,_,true)) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+            assrt = inlineAssert(assrt,fns,argmap,checkcr);
+            // for inlinecalls in functions
+            (newExp1,(_,_,assrtLst)) = Expression.traverseExp(newExp,inlineCall,(fns,true,assrt::assrtLstIn));
+          end if;
+        end if;
+      then
+        (newExp1,(fns,true,assrtLst));
 
     else (inExp,inTuple);
+
   end matchcontinue;
 end inlineCall;
 
@@ -1417,7 +1401,7 @@ algorithm
         _ = BaseHashTable.get(cref,checkcr);
       then (e,(argmap,checkcr,false));
 
-        /* TODO: Use the inlineType of the function reference! */
+    // TODO: Use the inlineType of the function reference!
     case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,_,tc)),(argmap,checkcr,true))
       equation
         cref = ComponentReference.pathToCref(path);
