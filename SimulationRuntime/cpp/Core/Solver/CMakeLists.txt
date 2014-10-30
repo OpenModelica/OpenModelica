@@ -16,7 +16,16 @@ install (FILES
          ${CMAKE_SOURCE_DIR}/Include/Core/Solver/IAlgLoopSolver.h 
          ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ILinSolverSettings.h
          ${CMAKE_SOURCE_DIR}/Include/Core/Solver/INonLinSolverSettings.h
-		 ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ISolver.h
-		   ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ISolverSettings.h
+         ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ISolver.h
+         ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ISolverSettings.h
 DESTINATION include/omc/cpp/Core/Solver)
+
+IF(ANALYZATION_MODE)
+  install (FILES
+         ${CMAKE_SOURCE_DIR}/Include/Core/Solver/SolverSettings.h 
+         ${CMAKE_SOURCE_DIR}/Include/Core/Solver/SolverDefaultImplementation.h 
+         ${CMAKE_SOURCE_DIR}/Include/Core/Solver/SystemStateSelection.h 
+         ${CMAKE_SOURCE_DIR}/Include/Core/Solver/SimulationMonitor.h 
+  DESTINATION include/omc/cpp/Core/Solver)
+ENDIF(ANALYZATION_MODE)
  

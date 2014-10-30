@@ -1,14 +1,21 @@
-# This skript will build and install all required libraries of the C++ Simulation-runtime
+# This script will build and install all required libraries of the C++ Simulation-runtime
 #
 # The following conditional defines are passed to the c++ compiler:
-#     if the Boost_log and Boost_setup_log libraries were found ->   -DUSE_BOOST_LOG
-#     if the Boost_thread library was found ->                       -DUSE_BOOST_THREAD
-#     if the Umfpack library of SuiteSparse was found ->             -DUSE_UMFPACK
-#     if the PAPI library was found ->				                       -DUSE_PAPI
-#     if the Sundials libraries were found ->                        -DPMC_USE_SUNDIALS
-#     if the runtime is build for the omc ->                         -DOMC_BUILD
+#     if the Boost_log and Boost_setup_log libraries were found        -DUSE_BOOST_LOG
+#     if the Boost_thread library was found                            -DUSE_BOOST_THREAD
+#     if the UMFPack library of SuiteSparse was found                  -DUSE_UMFPACK
+#     if the PAPI library was found                                    -DUSE_PAPI
+#     if the Sundials libraries were found                             -DPMC_USE_SUNDIALS
+#     if the runtime is build for the OMC                              -DOMC_BUILD
+#     if the write-output functionality should be handled in parallel  -DUSE_PARALLEL_OUTPUT
+#     if ScoreP should be used for performance analysis                -DUSE_SCOREP
 #
-# Additionally it is possible to link all libraries statically (experimental), therefor -DANALYZATION_MODE=ON musst be passed to cmake
+# Some of these options can be controlled by passing arguments to CMAKE 
+#     if all libraries should be linked statically                     -DANALYZATION_MODE=ON
+#     if write output should be handled in parallel                    -USE_PARALLEL_OUTPUT=ON
+#     if ScoreP should be used for performance analysis                -USE_SCOREP=ON
+#
+#     Example: "cmake -DANALYZATION_MODE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
@@ -19,7 +26,8 @@ PROJECT(CppSolverInterface)
 
 #Set Options
 OPTION(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
-OPTION(USE_THREADS "USE_PARALLEL_OUTPUT" OFF)
+OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
+OPTION(USE_SCOREP "USE_SCOREP" OFF)
 
 
 #Set Variables
@@ -61,22 +69,31 @@ SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
 
+INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 
 # Handle Analyzation mode
 IF(NOT ANALYZATION_MODE)
-	#Precompiled header produces problems if the compiler is not "g++" but "scorep g++"
-	INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
-	MESSAGE(STATUS "Analyzation mode disabled")
+  MESSAGE(STATUS "Analyzation mode disabled")
 ELSE(NOT ANALYZATION_MODE)
-	MESSAGE(STATUS "Using analyzation mode")
-	ADD_DEFINITIONS(-DANALYZATION_MODE)	
+  MESSAGE(STATUS "Using analyzation mode")
+  ADD_DEFINITIONS(-DANALYZATION_MODE) 
 ENDIF(NOT ANALYZATION_MODE )
-
 
 # Handle parallel output
 IF(USE_PARALLEL_OUTPUT)
-	ADD_DEFINITIONS(-DUSE_PARALLEL_OUTPUT)
+  ADD_DEFINITIONS(-DUSE_PARALLEL_OUTPUT)
+  MESSAGE(STATUS "Using parallel output")
+ELSE(USE_PARALLEL_OUTPUT)
+  MESSAGE(STATUS "Parallel output disabled")
 ENDIF(USE_PARALLEL_OUTPUT)
+
+#Handle ScoreP
+IF(USE_SCOREP)
+  ADD_DEFINITIONS(-DUSE_SCOREP)
+  MESSAGE(STATUS "ScoreP enabled")
+ELSE(USE_SCOREP)
+  MESSAGE(STATUS "ScoreP disabled")
+ENDIF(USE_SCOREP)
 
 
 # Handle build type
@@ -90,32 +107,32 @@ ENDIF(OMC_BUILD)
 # Handle OMDEV
 #  - On windows boost,blas,lapack and sundial solvers from omdev are used else the installed versions are used
 IF(WIN32)
-	SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
-	SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
-	SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
-	SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
+  SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost-1_55/")
+  SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
+  SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
+  SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
-	# Disable Optimization for RelWithDebInfo on Windows
-	IF(MSVC)
-		STRING(REPLACE "/O2" "/Od" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-	ELSE(MSVC)
-		STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-		STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
-	ENDIF(MSVC)
+  # Disable Optimization for RelWithDebInfo on Windows
+  IF(MSVC)
+    STRING(REPLACE "/O2" "/Od" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+  ELSE(MSVC)
+    STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+    STRING(REPLACE "/O2" "/O0" CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG})
+  ENDIF(MSVC)
 
-	#set mico paths
-	SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
-	SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
-	#set sundials solvers include and library directories
-	SET(SUNDIALS_INLCUDE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/include)
+  #set mico paths
+  SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
+  SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
+  #set sundials solvers include and library directories
+  SET(SUNDIALS_INLCUDE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/include)
 
-	IF(MSVC)
-		SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
-	ELSEIF(MINGW)
-		SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw/dlls)
-	ENDIF(MSVC)
-	
-	SET(INSTALL_OMDEV_LIBS ON)
+  IF(MSVC)
+    SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
+  ELSEIF(MINGW)
+    SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw/dlls)
+  ENDIF(MSVC)
+  
+  SET(INSTALL_OMDEV_LIBS ON)
 ENDIF(WIN32)
 
 
@@ -155,11 +172,11 @@ ENDIF(PAPI_FOUND)
 FIND_PACKAGE(Boost COMPONENTS log log_setup)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 IF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-	ADD_DEFINITIONS(-DUSE_BOOST_LOG)
-	MESSAGE(STATUS "Using boost log")
+  ADD_DEFINITIONS(-DUSE_BOOST_LOG)
+  MESSAGE(STATUS "Using boost log")
 ELSE(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
-	MESSAGE(STATUS "Boost log disabled")
-	UNSET(Boost_LOG_LIBRARY)
+  MESSAGE(STATUS "Boost log disabled")
+  UNSET(Boost_LOG_LIBRARY)
 ENDIF(Boost_LOG_FOUND AND Boost_LOG_SETUP_FOUND)
 
 FIND_PACKAGE(Boost COMPONENTS thread atomic)
@@ -167,11 +184,10 @@ FIND_PACKAGE(Boost COMPONENTS thread atomic)
 SET(Boost_LIBRARIES_TMP ${Boost_LIBRARIES_TMP} ${Boost_LIBRARIES})
 FIND_PACKAGE(Threads)
 IF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
-	ADD_DEFINITIONS(-DUSE_BOOST_THREAD)
-	#ADD_DEFINITIONS(-DUSE_PARALLEL_OUTPUT)
-	MESSAGE(STATUS "Using boost thread")
+  ADD_DEFINITIONS(-DUSE_BOOST_THREAD)
+  MESSAGE(STATUS "Using boost thread")
 ELSE(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
-	MESSAGE(STATUS "Boost thread disabled")
+  MESSAGE(STATUS "Boost thread disabled")
 ENDIF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
 
 FIND_PACKAGE(Boost COMPONENTS filesystem system serialization program_options REQUIRED)
@@ -238,15 +254,15 @@ ENDIF(USE_SUNDIALS)
 #Handle umfpack
 FIND_PACKAGE(SuiteSparse HINTS "${CMAKE_SOURCE_DIR}/Solver/UmfPack/")
 IF(SuiteSparse_found)
-	MESSAGE(STATUS "Using UmfPack")
-	INCLUDE_DIRECTORIES(${SUITESPARSE_INCLUDE_DIRS})
-	ADD_DEFINITIONS(-DUSE_UMFPACK)
+  MESSAGE(STATUS "Using UmfPack")
+  INCLUDE_DIRECTORIES(${SUITESPARSE_INCLUDE_DIRS})
+  ADD_DEFINITIONS(-DUSE_UMFPACK)
     SET(SUITESPARSE_INCLUDE ${SUITESPARSE_INCLUDE_DIRS})
-	SET(UMFPACK_LIB ${SUITESPARSE_LIBRARIES})
+  SET(UMFPACK_LIB ${SUITESPARSE_LIBRARIES})
 ELSE(SuiteSparse_found)
-	MESSAGE(STATUS "UmfPack disabled")
-	SET(SUITESPARSE_INCLUDE ".")
-	SET(UMFPACK_LIB "")
+  MESSAGE(STATUS "UmfPack disabled")
+  SET(SUITESPARSE_INCLUDE ".")
+  SET(UMFPACK_LIB "")
 ENDIF(SuiteSparse_found)
 
 
@@ -276,6 +292,7 @@ message(STATUS "Boost dirs '${Boost_LIBRARY_DIRS}', '${Boost_INCLUDE_DIR}'")
 
 #build of simulation.core
 include_directories ("Include")
+include_directories ("Solver")
 
 
 add_subdirectory (Core/Math)
@@ -294,8 +311,7 @@ add_subdirectory (Core/SimulationSettings)
 add_subdirectory (Core/Modelica)
 add_subdirectory (Core/ModelicaExternalC)
 add_subdirectory (Core/SimController)
-#build of simulation.solver
-include_directories ("Include/Solver")
+
 #add  Euler solver project
 add_subdirectory (Solver/Euler)
 add_subdirectory (Solver/Newton)
@@ -412,8 +428,8 @@ MACRO(INSTALL_HEADERS_WITH_DIRECTORY HEADER_LIST)
 FOREACH(HEADER ${${HEADER_LIST}})
     STRING(REGEX MATCH "(.*)[/\\]" DIR ${HEADER})
     STRING(REPLACE Include "" DIR ${DIR})
-	#message(STATUS "coopy to "include/omc/cpp/${DIR})
-	INSTALL(FILES ${HEADER} DESTINATION include/omc/cpp/${DIR})
+  #message(STATUS "coopy to "include/omc/cpp/${DIR})
+  INSTALL(FILES ${HEADER} DESTINATION include/omc/cpp/${DIR})
 ENDFOREACH(HEADER)
 
 ENDMACRO(INSTALL_HEADERS_WITH_DIRECTORY)

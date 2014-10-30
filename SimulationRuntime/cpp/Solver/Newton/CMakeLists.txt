@@ -18,3 +18,10 @@ ENDIF(ANALYZATION_MODE)
 install (TARGETS ${NewtonName} DESTINATION lib/omc/${LIBINSTALLEXT})
 #install (FILES "../Interfaces/NewtonSettings.xml"
 #  DESTINATION bin/config)
+
+IF(ANALYZATION_MODE)
+  install (FILES  ${CMAKE_SOURCE_DIR}/Solver/Newton/Newton.h
+                  ${CMAKE_SOURCE_DIR}/Solver/Newton/NewtonSettings.h
+                  ${CMAKE_SOURCE_DIR}/Solver/CVode/FactoryExport.h
+           DESTINATION include/omc/cpp/Newton)
+ENDIF(ANALYZATION_MODE)

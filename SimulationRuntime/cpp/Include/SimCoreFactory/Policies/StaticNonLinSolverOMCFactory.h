@@ -1,9 +1,9 @@
 #pragma once
 
 #include <SimCoreFactory/Policies/NonLinSolverOMCFactory.h>
-#include <Core/Solver/Newton/Newton.h>
-#include <Core/Solver/Kinsol/Kinsol.h>
-#include <Core/Solver/Kinsol/KinsolSettings.h>
+#include <Newton/Newton.h>
+#include <Kinsol/Kinsol.h>
+#include <Kinsol/KinsolSettings.h>
 #include <Core/Solver/IAlgLoopSolver.h>
 
 template<class T>

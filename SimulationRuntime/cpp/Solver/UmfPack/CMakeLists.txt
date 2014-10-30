@@ -15,3 +15,10 @@ ELSE(ANALYZATION_MODE)
 ENDIF(ANALYZATION_MODE)
 
 install (TARGETS ${UmfPackName} DESTINATION lib/omc/${LIBINSTALLEXT})
+
+IF(ANALYZATION_MODE)
+  install (FILES  ${CMAKE_SOURCE_DIR}/Solver/UmfPack/UmfPack.h
+                  ${CMAKE_SOURCE_DIR}/Solver/UmfPack/UmfPackSettings.h
+                  ${CMAKE_SOURCE_DIR}/Solver/UmfPack/FactoryExport.h
+           DESTINATION include/omc/cpp/UmfPack)
+ENDIF(ANALYZATION_MODE)

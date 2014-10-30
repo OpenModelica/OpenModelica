@@ -7,7 +7,7 @@
 #include <Core/SimulationSettings//ISimControllerSettings.h>
 #include <Core/System/IMixedSystem.h>
 #include <Core/SimulationSettings/Factory.h>
-#include <Core/Solver/CVode/CVode.h>
+#include <CVode/CVode.h>
 
 /*
 Policy class to create solver object

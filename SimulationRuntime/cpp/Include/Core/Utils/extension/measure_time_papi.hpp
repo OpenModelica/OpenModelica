@@ -50,7 +50,7 @@ class MeasureTimePAPI : public MeasureTime
   static void initialize()
   {
     instance = new MeasureTimePAPI();
-    //instance->benchOverhead();
+    instance->benchOverhead();
   }
 
   void initializeDirty()

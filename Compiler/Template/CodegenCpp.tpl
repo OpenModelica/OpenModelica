@@ -12,7 +12,8 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let target  = simulationCodeTarget()
-   let()= textFile(simulationMainFile(simCode), 'OMCpp<%fileNamePrefix%>Main.cpp')
+
+  let()= textFile(simulationMainFile(simCode), 'OMCpp<%fileNamePrefix%>Main.cpp')
   let()= textFile(simulationHeaderFile(simCode, "", "", true, false), 'OMCpp<%fileNamePrefix%>.h')
   let()= textFile(simulationCppFile(simCode,false), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
@@ -433,47 +434,49 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
   {
     public:
-    <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
-    virtual ~<%lastIdentOfPath(modelInfo.name)%>Extension();
+      <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
+      virtual ~<%lastIdentOfPath(modelInfo.name)%>Extension();
 
-    ///Intialization methods from ISystemInitialization
-    virtual bool initial();
-    virtual void setInitial(bool);
-    virtual void initialize();
-    virtual void initEquations();
+      ///Intialization methods from ISystemInitialization
+      virtual bool initial();
+      virtual void setInitial(bool);
+      virtual void initialize();
+      virtual void initEquations();
 
-    ///Write simulation results methods from IWriteOutput
-    /// Output routine (to be called by the solver after every successful integration step)
-    virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
-    virtual IHistory* getHistory();
-    /// Provide Jacobian
-    virtual void getJacobian(SparseMatrix& matrix);
-    virtual void getStateSetJacobian(unsigned int index,SparseMatrix& matrix);
-    /// Called to handle all events occured at same time
-    virtual bool handleSystemEvents(bool* events);
-    //Saves all variables before an event is handled, is needed for the pre, edge and change operator
-    virtual void saveAll();
+      ///Write simulation results methods from IWriteOutput
+      /// Output routine (to be called by the solver after every successful integration step)
+      virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
+      virtual IHistory* getHistory();
+      /// Provide Jacobian
+      virtual void getJacobian(SparseMatrix& matrix);
+      virtual void getStateSetJacobian(unsigned int index,SparseMatrix& matrix);
+      /// Called to handle all events occured at same time
+      virtual bool handleSystemEvents(bool* events);
+      //Saves all variables before an event is handled, is needed for the pre, edge and change operator
+      virtual void saveAll();
 
-    //StateSelction methods
-    virtual int getDimStateSets() const;
-    virtual int getDimStates(unsigned int index) const;
-    virtual int getDimCanditates(unsigned int index) const ;
-    virtual int getDimDummyStates(unsigned int index) const ;
-    virtual void getStates(unsigned int index,double* z);
-    virtual void setStates(unsigned int index,const double* z);
-    virtual void getStateCanditates(unsigned int index,double* z);
-    virtual bool getAMatrix(unsigned int index,DynArrayDim2<int>& A);
-    virtual void setAMatrix(unsigned int index, DynArrayDim2<int>& A);
-    virtual bool getAMatrix(unsigned int index,DynArrayDim1<int>& A);
-    virtual void setAMatrix(unsigned int index,DynArrayDim1<int>& A);
-  /*colored jacobians*/
-    virtual void getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size);
-  virtual int  getA_sizeof_sparsePattern_leadindex();
-    virtual void getA_sparsePattern_index(int* A_sparsePattern_index, int size);
-  virtual int  getA_sizeof_sparsePattern_index();
-    virtual void getA_sparsePattern_colorCols(int* A_sparsePattern_colorCols, int size);
-  virtual int  getA_sizeof_sparsePattern_colorCols();
-    virtual int  getA_sparsePattern_maxColors();
+      //StateSelction methods
+      virtual int getDimStateSets() const;
+      virtual int getDimStates(unsigned int index) const;
+      virtual int getDimCanditates(unsigned int index) const ;
+      virtual int getDimDummyStates(unsigned int index) const ;
+      virtual void getStates(unsigned int index,double* z);
+      virtual void setStates(unsigned int index,const double* z);
+      virtual void getStateCanditates(unsigned int index,double* z);
+      virtual bool getAMatrix(unsigned int index,DynArrayDim2<int>& A);
+      virtual void setAMatrix(unsigned int index, DynArrayDim2<int>& A);
+      virtual bool getAMatrix(unsigned int index,DynArrayDim1<int>& A);
+      virtual void setAMatrix(unsigned int index,DynArrayDim1<int>& A);
+      /*colored jacobians*/
+      virtual void getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size);
+      virtual int getA_sizeof_sparsePattern_leadindex();
+      virtual void getA_sparsePattern_index(int* A_sparsePattern_index, int size);
+      virtual int getA_sizeof_sparsePattern_index();
+      virtual void getA_sparsePattern_colorCols(int* A_sparsePattern_colorCols, int size);
+      virtual int getA_sizeof_sparsePattern_colorCols();
+      virtual int getA_sparsePattern_maxColors();
+
+      virtual string getModelName();
   };
  >>
 end simulationExtensionHeaderFile;
@@ -838,6 +841,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getA_sizeof_sparsePattern_index()
    {
     return _A_sizeof_sparsePattern_index;
+   }
+
+   string <%lastIdentOfPath(modelInfo.name)%>Extension::getModelName()
+   {
+    return "<%fileNamePrefix%>";
    }
    >>
 end simulationExtensionCppFile;
@@ -1289,7 +1297,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
     match(getConfigString(PROFILING_LEVEL))
         case("none") then ''
         case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
-        else '#include "Core/Utils/extension/measure_time_rdtsc.hpp"'
+        else 
+         <<
+         #ifdef USE_SCOREP 
+           #include "Core/Utils/extension/measure_time_scorep.hpp"
+         #else
+           #include "Core/Utils/extension/measure_time_rdtsc.hpp"
+         #endif
+         >>
     end match
   %>
   #if defined(_MSC_VER) || defined(__MINGW32__)
@@ -1302,8 +1317,22 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
       <%
       match(getConfigString(PROFILING_LEVEL))
           case("none") then '//no profiling used'
-          case("all_perf") then 'MeasureTimePAPI::initialize();'
-          else 'MeasureTimeRDTSC::initialize();'
+          case("all_perf") then 
+           <<
+           #ifdef USE_SCOREP
+             MeasureTimeScoreP::initialize();
+           #else
+             MeasureTimePAPI::initialize();
+           #endif
+           >>
+          else 
+           <<
+           #ifdef USE_SCOREP
+             MeasureTimeScoreP::initialize();
+           #else
+             MeasureTimeRDTSC::initialize();
+           #endif
+           >>
       end match
       %>
       try
@@ -1321,7 +1350,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
                 MeasureTime::getInstance()->writeToJson();
-                //MeasureTimeRDTSC::deinitialize();
                 >>
             %>
             return 0;
@@ -1813,7 +1841,7 @@ case "gcc" then
             CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
             CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/"   -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(SUITESPARSE_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%>
             LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath <%timeMeasureLink%> -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
-            LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> <%timeMeasureLink%> $(BOOST_LOG_LIB)
+            LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> <%timeMeasureLink%> $(BOOST_THREAD_LIB) $(BOOST_LOG_LIB)
             CPPFLAGS = $(CFLAGS)
             SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
             MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
@@ -1886,14 +1914,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
             let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
             <<
+            #ifdef MEASURETIME_PROFILEBLOCKS
             measureTimeProfileBlocksArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeProfileBlocksArray);
-            measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
-            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
             measuredProfileBlockStartValues = MeasureTime::getZeroValues();
             measuredProfileBlockEndValues = MeasureTime::getZeroValues();
-            measuredFunctionStartValues = MeasureTime::getZeroValues();
-            measuredFunctionEndValues = MeasureTime::getZeroValues();
 
             for(int i = 0; i < <%numOfEqs%>; i++)
             {
@@ -1901,10 +1926,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                 ss << i;
                 measureTimeProfileBlocksArray[i] = MeasureTimeData(ss.str());
             }
+            #endif //MEASURETIME_PROFILEBLOCKS
+
+            #ifdef MEASURETIME_MODELFUNCTIONS
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
+            measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
+            measuredFunctionStartValues = MeasureTime::getZeroValues();
+            measuredFunctionEndValues = MeasureTime::getZeroValues();
 
             measureTimeFunctionsArray[0] = MeasureTimeData("evaluateODE");
             measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
             measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
+            #endif //MEASURETIME_MODELFUNCTIONS
             >>
         %>
         //DAE's are not supported yet, Index reduction is enabled
@@ -3928,7 +3961,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode sim
   "Generates function in simulation file."
 ::=
         let equation_func_calls = (initalEquations |> eq =>
-                    equation_function_create_single_func(eq, contextOther/*BUFC*/, simCode, "initEquation","Initialize",useFlatArrayNotation,true,true)
+                    equation_function_create_single_func(eq, contextOther/*BUFC*/, simCode, "initEquation","Initialize",useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))
                     ;separator="\n")
   /*
   let &varDecls = buffer ""
@@ -4428,7 +4461,7 @@ template Update(SimCode simCode, Boolean useFlatArrayNotation)
 match simCode
 case SIMCODE(__) then
   <<
-  <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,false)%>
+  <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
   <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
   <%createEvaluate(odeEquations,whenClauses,simCode,contextOther)%>
   <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther)%>
@@ -4524,7 +4557,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
     //Write the current values
     else
     {
-      <%generateMeasureTimeStartCode("measuredFunctionStartValues", "writeOutput")%>
+      <%generateMeasureTimeStartCode("measuredFunctionStartValues", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
       /* HistoryImplType::value_type_v v;
       HistoryImplType::value_type_dv v2; */
 
@@ -4549,13 +4582,13 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode, useFlatArrayNotation));separator=","%>};
       for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
 
-      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[2]")%>
+      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
 
       _historyImpl->write(v,v2,v3,_simTime);
       >>
     else
       <<
-      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[2]")%>
+      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
 
       //_historyImpl->write(v,v2,_simTime);
       _historyImpl->addContainerToWriteQueue(container);
@@ -4749,9 +4782,14 @@ match modelInfo
 
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
+      #ifdef MEASURETIME_PROFILEBLOCKS
       std::vector<MeasureTimeData> measureTimeProfileBlocksArray;
+      MeasureTimeValues *measuredProfileBlockStartValues, *measuredProfileBlockEndValues;
+      #endif //MEASURETIME_PROFILEBLOCKS
+      #ifdef MEASURETIME_MODELFUNCTIONS
       std::vector<MeasureTimeData> measureTimeFunctionsArray;
-      MeasureTimeValues *measuredProfileBlockStartValues, *measuredProfileBlockEndValues, *measuredFunctionStartValues, *measuredFunctionEndValues;
+      MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
+      #endif //MEASURETIME_MODELFUNCTIONS
       >>%>
 
       <%memberfuncs%>
@@ -7704,7 +7742,7 @@ template equation_function_call(SimEqSystem eq, Context context, Text &varDecls,
 
 end equation_function_call;
 
-template equation_function_create_single_func(SimEqSystem eq, Context context, SimCode simCode,Text method,Text classnameext, Boolean useFlatArrayNotation, Boolean createMeasureTime, Boolean enableMeasureTime)
+template equation_function_create_single_func(SimEqSystem eq, Context context, SimCode simCode,Text method,Text classnameext, Boolean useFlatArrayNotation, Boolean createMeasureTime)
 ::=
   let ix_str = equationIndex(eq)
   let ix_str_array = intSub(stringInt(ix_str),1) //equation index - 1
@@ -7735,13 +7773,13 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     case e as SES_MIXED(__)
       then
       /*<%equationMixed(e, context, &varDeclsLocal, simCode)%>*/
-      let &additionalFuncs += equation_function_create_single_func(e.cont,context,simCode,method,classnameext, useFlatArrayNotation, false, true)
+      let &additionalFuncs += equation_function_create_single_func(e.cont,context,simCode,method,classnameext, useFlatArrayNotation, createMeasureTime)
       "throw std::runtime_error(\"Mixed systems are not supported yet\");"
     else
       "NOT IMPLEMENTED EQUATION"
   end match
-  let &measureTimeStartVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>') //else ""
-  let &measureTimeEndVar += if boolAnd(boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")),createMeasureTime) then generateMeasureTimeEndCode("measuredProfileBlockStartValues", "measuredProfileBlockEndValues", 'measureTimeProfileBlocksArray[<%ix_str_array%>]') //else ""
+  let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
+  let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredProfileBlockStartValues", "measuredProfileBlockEndValues", 'measureTimeProfileBlocksArray[<%ix_str_array%>]', 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
   <<
     <%additionalFuncs%>
     /*
@@ -7751,9 +7789,9 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     {
       <%varDeclsLocal%>
 
-      <%if(enableMeasureTime) then measureTimeStartVar else ''%>
+      <%measureTimeStartVar%>
       <%body%>
-      <%if(enableMeasureTime) then measureTimeEndVar else ''%>
+      <%measureTimeEndVar%>
     }
   >>
 
@@ -11823,7 +11861,7 @@ template equationFunctions( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
 ::=
 
  let equation_func_calls = (allEquationsPlusWhen |> eq =>
-                    equation_function_create_single_func(eq, context/*BUFC*/, simCode,"evaluate","", useFlatArrayNotation,true,enableMeasureTime)
+                    equation_function_create_single_func(eq, context/*BUFC*/, simCode,"evaluate","", useFlatArrayNotation,enableMeasureTime)
                     ;separator="\n")
 
 
@@ -11854,7 +11892,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
   <<
   bool <%className%>::evaluateAll(const UPDATETYPE command)
   {
-    <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll")%>
+    <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll", "MEASURETIME_MODELFUNCTIONS")%>
     bool state_var_reinitialized = false;
 
     <%varDecls%>
@@ -11863,7 +11901,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
     /* Reinits */
     <%reinit%>
 
-    <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]")%>
+    <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS")%>
 
     return state_var_reinitialized;
   }
@@ -11912,11 +11950,11 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause>
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {
-    <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE")%>
+    <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_ode_func_calls%>
-    <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]")%>
+    <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
   }
   >>
 end createEvaluate;
@@ -13408,24 +13446,24 @@ template generateTypeCast(Type ty, list<DAE.Exp> es, Boolean isClosure, Text &pr
   '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
 end generateTypeCast;
 
-template generateMeasureTimeStartCode(String varNameStartValues, String sectionName)
+template generateMeasureTimeStartCode(String varNameStartValues, String sectionName, String defineName)
 ::=
   if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-  <<
-  //MeasureTime::getTimeValuesStart(<%varNameStartValues%>);
-  MEASURETIME_START(measuredFunctionStartValues, <%sectionName%>);
-  >>
+   <<
+   #ifdef <%defineName%>
+     MEASURETIME_REGION_DEFINE(<%sectionName%>, "<%sectionName%>");
+     MEASURETIME_START(<%varNameStartValues%>, <%sectionName%>, "<%sectionName%>");
+   #endif
+   >>
 end generateMeasureTimeStartCode;
 
-template generateMeasureTimeEndCode(String varNameStartValues, String varNameEndValues, String varNameTargetValues)
+template generateMeasureTimeEndCode(String varNameStartValues, String varNameEndValues, String varNameTargetValues, String sectionName, String defineName)
 ::=
   if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
   <<
-  MeasureTime::getTimeValuesEnd(<%varNameEndValues%>);
-  <%varNameEndValues%>->sub(<%varNameStartValues%>);
-  <%varNameEndValues%>->sub(MeasureTime::getOverhead());
-  <%varNameTargetValues%>.sumMeasuredValues->add(<%varNameEndValues%>);
-  ++(<%varNameTargetValues%>.numCalcs);
+  #ifdef <%defineName%>
+    MEASURETIME_END(<%varNameStartValues%>,<%varNameEndValues%>,<%varNameTargetValues%>, <%sectionName%>)
+  #endif
   >>
 end generateMeasureTimeEndCode;
 

@@ -10,15 +10,23 @@ builddir_inc=$(top_builddir)/build/include/omc
 
 ANALYZATION_MODE_COMMAND="-DANALYZATION_MODE=ON"
 PARALLEL_OUTPUT_COMMAND="-DUSE_PARALLEL_OUTPUT=ON"
+SCOREP_COMMAND="-DUSE_SCOREP=ON"
+CMAKE_COMMANDS=CC="scorep --user --nocompiler --thread=pthread gcc" CXX="scorep --user --nocompiler --thread=pthread g++"
 
 runtimeCpp: clean
 ifneq ("$(ANALYZATION_MODE)","true")
-	$(eval ANALYZATION_MODE_COMMAND="")
+	$(eval ANALYZATION_MODE_COMMAND=)
 endif
 ifneq ("$(USE_PARALLEL_OUTPUT)","true")
-	$(eval PARALLEL_OUTPUT_COMMAND="")
+	$(eval PARALLEL_OUTPUT_COMMAND=)
 endif
-	cd ./Build && echo "change to Build" && cmake $(ANALYZATION_MODE_COMMAND) $(PARALLEL_OUTPUT_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
+ifneq ("$(USE_SCOREP)","true") #If ScoreP ist used, the analyzation mode is automatically turned on
+	$(eval CMAKE_COMMANDS=)
+	$(eval SCOREP_COMMAND=)
+else
+	$(eval ANALYZATION_MODE_COMMAND="-DANALYZATION_MODE=ON")
+endif
+	cd ./Build && echo "change to Build" && $(CMAKE_COMMANDS) cmake $(ANALYZATION_MODE_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(SCOREP_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
 	$(MAKE) -C Build VERBOSE=1; 
 
 install: runtimeCpp

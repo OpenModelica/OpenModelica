@@ -370,14 +370,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
             let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
             <<
+            #ifdef MEASURETIME_PROFILEBLOCKS
             measureTimeProfileBlocksArray = std::vector<MeasureTimeData>(<%numOfEqs%>);
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","profileBlocks",&measureTimeProfileBlocksArray);
-            measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
-            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
             measuredProfileBlockStartValues = MeasureTime::getZeroValues();
             measuredProfileBlockEndValues = MeasureTime::getZeroValues();
-            measuredFunctionStartValues = MeasureTime::getZeroValues();
-            measuredFunctionEndValues = MeasureTime::getZeroValues();
 
             for(int i = 0; i < <%numOfEqs%>; i++)
             {
@@ -385,10 +382,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
                 ss << i;
                 measureTimeProfileBlocksArray[i] = MeasureTimeData(ss.str());
             }
+            #endif //MEASURETIME_PROFILEBLOCKS
+
+            #ifdef MEASURETIME_MODELFUNCTIONS
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
+            measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
+            measuredFunctionStartValues = MeasureTime::getZeroValues();
+            measuredFunctionEndValues = MeasureTime::getZeroValues();
 
             measureTimeFunctionsArray[0] = MeasureTimeData("evaluateODE");
             measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
             measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
+            #endif //MEASURETIME_MODELFUNCTIONS
             >>
         %>
 
@@ -564,7 +569,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
   case SIMCODE(modelInfo = MODELINFO(__)) then
       let parCode = update2(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
-       <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,false)%>
+       <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
        <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
 
@@ -619,7 +624,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           <<
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
-             <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE")%>
+             <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
              <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '//MeasureTimeValues **threadValues = new MeasureTimeValues*[<%getConfigInt(NUM_PROC)%>];'%>
              #pragma omp parallel num_threads(<%getConfigInt(NUM_PROC)%>)
              {
@@ -628,7 +633,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                 /*MeasureTimeValues *valuesStart = MeasureTime::getZeroValues();
                 MeasureTimeValues *valuesEnd = MeasureTime::getZeroValues();
                 MeasureTime::getInstance()->initializeThread(getThreadNumber);
-                <%generateMeasureTimeStartCode('valuesStart', "evaluateODEInner")%>*/
+                <%generateMeasureTimeStartCode('valuesStart', "evaluateODEInner", "MEASURETIME_MODELFUNCTIONS")%>*/
                 >>%>
 
                 <%odeEqs%>
@@ -652,7 +657,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
              ++(measureTimeArrayHpcom[0].numCalcs);*/
              >>%>
 
-             <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]")%>
+             <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
           }
           >>
         case ("mpi") then
@@ -682,11 +687,11 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
 
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
-            /*<%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE")%>*/
+            /*<%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>*/
             this->_command = command;
             _evaluateBarrier.wait(); //start calculation
             _evaluateBarrier.wait(); //calculation finished
-            /*<%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]")%>*/
+            /*<%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>*/
           }
           >>
         else ""
@@ -818,7 +823,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
     MeasureTimeValues *valuesStart = MeasureTime::getZeroValues();
     MeasureTimeValues *valuesEnd = MeasureTime::getZeroValues();
     MeasureTime::getInstance()->initializeThread(getThreadNumber);
-    //<%generateMeasureTimeStartCode('valuesStart', "evaluateODEThread")%>
+    //<%generateMeasureTimeStartCode('valuesStart', "evaluateODEThread", "MEASURETIME_MODELFUNCTIONS")%>
     >>%>
 
     while(!_simulationFinished)
@@ -829,7 +834,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
             _evaluateBarrier.wait();
             break;
         }
-        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart", "evaluateODEThread")%>'%>
+        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart", "evaluateODEThread", "MEASURETIME_MODELFUNCTIONS")%>'%>
         <%odeEqs%>
 
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
@@ -842,7 +847,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
         //measureTimeArrayHpcom[0].sumMeasuredValues->add(valuesEnd);
         <%if intEq(iThreadIdx,0) then '' else 'measureTimeArrayHpcom[0].numCalcs--;'%>
         //_measureTimeArrayLock.unlock();
-        <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", "measureTimeFunctionsArray[0]")%>
+        <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", "measureTimeFunctionsArray[0]", "evaluateODEThread", "MEASURETIME_MODELFUNCTIONS")%>
         >>%>
 
         _evaluateBarrier.wait();
@@ -1400,7 +1405,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
     match(getConfigString(PROFILING_LEVEL))
         case("none") then ''
         case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
-        else '#include "Core/Utils/extension/measure_time_rdtsc.hpp"'
+        else 
+         <<
+         #ifdef USE_SCOREP 
+           #include "Core/Utils/extension/measure_time_scorep.hpp"
+         #else
+           #include "Core/Utils/extension/measure_time_rdtsc.hpp"
+         #endif
+         >>
     end match
   %>
 
@@ -1414,8 +1426,22 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
       <%
       match(getConfigString(PROFILING_LEVEL))
           case("none") then '//no profiling used'
-          case("all_perf") then 'MeasureTimePAPI::initialize();'
-          else 'MeasureTimeRDTSC::initialize();'
+          case("all_perf") then 
+           <<
+           #ifdef USE_SCOREP
+             MeasureTimeScoreP::initialize();
+           #else
+             MeasureTimePAPI::initialize();
+           #endif
+           >>
+          else 
+           <<
+           #ifdef USE_SCOREP
+             MeasureTimeScoreP::initialize();
+           #else
+             MeasureTimeRDTSC::initialize();
+           #endif
+           >>
       end match
       %>
       try
@@ -1437,7 +1463,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
                 MeasureTime::getInstance()->writeToJson();
-                //MeasureTimeRDTSC::deinitialize();
                 >>
             %>
             return 0;
@@ -1507,7 +1532,14 @@ template simulationMainFile(SimCode simCode)
       match(getConfigString(PROFILING_LEVEL))
         case("none") then ''
         case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
-        else '#include "Core/Utils/extension/measure_time_rdtsc.hpp"'
+        else 
+         <<
+         #ifdef USE_SCOREP 
+           #include "Core/Utils/extension/measure_time_scorep.hpp"
+         #else
+           #include "Core/Utils/extension/measure_time_rdtsc.hpp"
+         #endif
+         >>
       end match
       %>
 
@@ -1523,8 +1555,22 @@ template simulationMainFile(SimCode simCode)
        <%
       match(getConfigString(PROFILING_LEVEL))
           case("none") then '//no profiling used'
-          case("all_perf") then 'MeasureTimePAPI::initialize();'
-          else 'MeasureTimeRDTSC::initialize();'
+          case("all_perf") then 
+           <<
+           #ifdef USE_SCOREP
+             MeasureTimeScoreP::initialize();
+           #else
+             MeasureTimePAPI::initialize();
+           #endif
+           >>
+          else 
+           <<
+           #ifdef USE_SCOREP
+             MeasureTimeScoreP::initialize();
+           #else
+             MeasureTimeRDTSC::initialize();
+           #endif
+           >>
       end match
       %>
         try
@@ -1545,7 +1591,6 @@ template simulationMainFile(SimCode simCode)
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
                 MeasureTime::getInstance()->writeToJson();
-                //MeasureTimeRDTSC::deinitialize();
                 >>
             %>
             return 0;

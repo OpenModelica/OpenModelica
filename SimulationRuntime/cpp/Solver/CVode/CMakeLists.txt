@@ -16,3 +16,9 @@ ENDIF(ANALYZATION_MODE)
 install (TARGETS ${CVodeName} DESTINATION lib/omc/${LIBINSTALLEXT})
 #install (FILES "../Interfaces/EulerSettings.xml"
  # DESTINATION bin/config)
+
+IF(ANALYZATION_MODE)
+  install (FILES  ${CMAKE_SOURCE_DIR}/Solver/CVode/CVode.h
+                  ${CMAKE_SOURCE_DIR}/Solver/CVode/FactoryExport.h
+           DESTINATION include/omc/cpp/CVode)
+ENDIF(ANALYZATION_MODE)

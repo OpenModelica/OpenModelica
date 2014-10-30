@@ -12,10 +12,16 @@ ENDIF(ANALYZATION_MODE)
 target_link_libraries( ${KinsolName} ${Boost_LIBRARIES}  ${SUNDIALS_LIBS}  ${LAPACK_LIBRARIES})
 
 
-
 install (TARGETS ${KinsolName} DESTINATION lib/omc/${LIBINSTALLEXT})
 #install (FILES "../Interfaces/NewtonSettings.xml"
 #  DESTINATION bin/config)
+
+IF(ANALYZATION_MODE)
+  install (FILES  ${CMAKE_SOURCE_DIR}/Solver/Kinsol/Kinsol.h
+                  ${CMAKE_SOURCE_DIR}/Solver/Kinsol/KinsolSettings.h
+                  ${CMAKE_SOURCE_DIR}/Solver/Kinsol/FactoryExport.h
+           DESTINATION include/omc/cpp/Kinsol)
+ENDIF(ANALYZATION_MODE)
 
 
 

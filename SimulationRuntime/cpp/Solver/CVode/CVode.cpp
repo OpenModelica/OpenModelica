@@ -35,7 +35,7 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
   if(MeasureTime::getInstance() != NULL)
   {
       measureTimeFunctionsArray = std::vector<MeasureTimeData>(1); //1 calcFunction
-      MeasureTime::addResultContentBlock("Modelica.Electrical.Analog.Examples.CauerLowPassSC","cvode",&measureTimeFunctionsArray);
+      MeasureTime::addResultContentBlock(system->getModelName(),"cvode",&measureTimeFunctionsArray);
       measuredFunctionStartValues = MeasureTime::getZeroValues();
       measuredFunctionEndValues = MeasureTime::getZeroValues();
 
@@ -529,9 +529,11 @@ bool Cvode::stateSelection()
 }
 int Cvode::calcFunction(const double& time, const double* y, double* f)
 {
+  MEASURETIME_REGION_DEFINE(cvodeCalcFunctionHandler, "CVodeCalcFunction");
+
   if(MeasureTime::getInstance() != NULL)
   {
-      MeasureTime::getTimeValuesStart(measuredFunctionStartValues);
+      MEASURETIME_START(measuredFunctionStartValues, cvodeCalcFunctionHandler, "CVodeCalcFunction");
   }
   int returnValue = 0;
   try
@@ -550,11 +552,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
 
   if(MeasureTime::getInstance() != NULL)
   {
-      MeasureTime::getTimeValuesEnd(measuredFunctionEndValues);
-      measuredFunctionEndValues->sub(measuredFunctionStartValues);
-      measuredFunctionEndValues->sub(MeasureTime::getOverhead());
-      measureTimeFunctionsArray[0].sumMeasuredValues->add(measuredFunctionEndValues);
-      ++(measureTimeFunctionsArray[0].numCalcs);
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[0], cvodeCalcFunctionHandler);
   }
   return returnValue;
 }

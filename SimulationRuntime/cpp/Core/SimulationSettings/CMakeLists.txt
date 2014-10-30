@@ -19,6 +19,11 @@ install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/IGlobalSettin
                ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/ISimControllerSettings.h
   DESTINATION include/omc/cpp/Core/SimulationSettings)
 
+IF(ANALYZATION_MODE)
+  install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/Factory.h
+  DESTINATION include/omc/cpp/Core/SimulationSettings)
+ENDIF(ANALYZATION_MODE)
+
 
 
 

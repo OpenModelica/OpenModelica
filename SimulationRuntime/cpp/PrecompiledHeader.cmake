@@ -135,15 +135,22 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	STRING(REPLACE ")" "\\)" _compiler_FLAGS_STR "${_compiler_FLAGS_STR}")
 	MESSAGE(STATUS "${CMAKE_CXX_COMPILER} -DPCHCOMPILE ${_compiler_FLAGS_STR} -x c++-header -o ${_output} ${_source}")
 	
-	ADD_CUSTOM_COMMAND(
-		OUTPUT ${_output}
-		COMMAND ${CMAKE_CXX_COMPILER} ${_compiler_FLAGS_STR} -x c++-header -o ${_output} ${_source}
-		DEPENDS ${_source} )
+	IF(USE_SCOREP)
+		ADD_CUSTOM_COMMAND(
+			OUTPUT ${_output}
+			COMMAND g++ ${_compiler_FLAGS_STR} -x c++-header -o ${_output} ${_source}
+			DEPENDS ${_source} )
+	ELSE(USE_SCOREP)
+		ADD_CUSTOM_COMMAND(
+			OUTPUT ${_output}
+			COMMAND ${CMAKE_CXX_COMPILER} ${_compiler_FLAGS_STR} -x c++-header -o ${_output} ${_source}
+			DEPENDS ${_source} )
+	ENDIF(USE_SCOREP)
 	ADD_CUSTOM_TARGET(${_targetName}_gch DEPENDS ${_output})
 	ADD_DEPENDENCIES(${_targetName} ${_targetName}_gch)
 	SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS "-include Core/${_name} -Winvalid-pch")
 	#copy pre compiled header file in installation directory
-	install (FILES "${_output}" DESTINATION include/omc/cpp/Core)
+	INSTALL(FILES "${_output}" DESTINATION include/omc/cpp/Core)
 	SET(PCH_FILE "${_name}.gch")
 	SET(H_FILE "${_name}")
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")

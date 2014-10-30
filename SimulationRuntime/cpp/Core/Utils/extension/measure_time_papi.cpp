@@ -32,6 +32,24 @@ MeasureTimePAPI::MeasureTimePAPI() : MeasureTime()
     std::cerr << "PAPI library init failed!" << std::endl;
     exit(1);
   }
+
+  if (PAPI_create_eventset(&eventSet) != PAPI_OK)
+  {
+    std::cerr << "PAPI create eventset failed!" << " Error: " << PAPI_create_eventset(&eventSet) << std::endl;
+    exit(1);
+  }
+
+  if (PAPI_add_events(eventSet, events, NUM_PAPI_EVENTS) != PAPI_OK)
+  {
+    std::cerr << "PAPI add events failed!" << std::endl;
+    exit(1);
+  }
+
+  if (PAPI_start(eventSet) != PAPI_OK)
+  {
+    std::cerr << "PAPI_start_counters - FAILED" << std::endl;
+    throw std::runtime_error("PAPI_start_counters - FAILED");
+  }
 #else
   eventSet = 0;
   throw std::runtime_error("Papi not supported!");

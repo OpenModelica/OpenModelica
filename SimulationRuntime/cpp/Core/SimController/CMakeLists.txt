@@ -15,7 +15,16 @@ ENDIF(ANALYZATION_MODE)
 
 install (TARGETS ${SimControllerName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
-install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimData.h
-			   ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimController.h
-        
+install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimData.h
+                ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimController.h
+                ${CMAKE_SOURCE_DIR}/Include/Core/SimController/SimController.h
+                ${CMAKE_SOURCE_DIR}/Include/Core/SimController/SimManager.h
       DESTINATION include/omc/cpp/Core/SimController)
+
+IF(ANALYZATION_MODE)
+	install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/SimController.h
+	                ${CMAKE_SOURCE_DIR}/Include/Core/SimController/SimManager.h
+	                ${CMAKE_SOURCE_DIR}/Include/Core/SimController/Configuration.h
+	                ${CMAKE_SOURCE_DIR}/Include/Core/SimController/Initialization.h
+	      DESTINATION include/omc/cpp/Core/SimController)
+ENDIF(ANALYZATION_MODE)

@@ -127,6 +127,7 @@ protected:
   void writeThread()
   {
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
+    std::cerr << "Parallel writer thread used" << std::endl;
     while(!_threadWorkDone)
     {
       writeContainer();

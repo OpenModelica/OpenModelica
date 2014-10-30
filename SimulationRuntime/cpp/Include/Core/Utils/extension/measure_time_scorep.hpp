@@ -8,18 +8,7 @@
 #ifndef MEASURE_TIME_SCOREP_HPP_
 #define MEASURE_TIME_SCOREP_HPP_
 
-#define NUM_PAPI_EVENTS 3
-
 #include <Core/Utils/extension/measure_time.hpp>
-
-#ifdef USE_SCOREP
-#include <scorep/SCOREP_User.h>
-
-#undef MEASURETIME_START(valStart,name)
-#undef MEASURETIME_END(valStart, valEnd, valRes, name)
-#define MEASURETIME_START(valStart,name) { SCOREP_USER_REGION_DEFINE(name); SCOREP_USER_REGION_BEGIN(name, "name", SCOREP_USER_REGION_TYPE_COMMON) }
-#define MEASURETIME_END(valStart, valEnd, valRes, name) { SCOREP_USER_REGION_END(name); }
-#endif
 
 class MeasureTimeValuesScoreP : public MeasureTimeValues
 {

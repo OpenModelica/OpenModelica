@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Modelica.h>
+#include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/SimController/SimController.h>

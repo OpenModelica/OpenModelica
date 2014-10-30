@@ -5,6 +5,20 @@
 #include <intrin.h>
 #endif
 
+#define MEASURETIME_PROFILEBLOCKS
+#define MEASURETIME_MODELFUNCTIONS
+
+#ifdef USE_SCOREP
+  #define MEASURETIME_REGION_DEFINE(handlerName, regionName) SCOREP_USER_REGION_DEFINE( handlerName )
+  #define MEASURETIME_START(valStart, handlerName, regionName) SCOREP_USER_REGION_BEGIN( handlerName, regionName, SCOREP_USER_REGION_TYPE_COMMON )
+  #define MEASURETIME_END(valStart, valEnd, valRes, handlerName) SCOREP_USER_REGION_END( handlerName )
+  #include <scorep/SCOREP_User.h>
+#else
+  #define MEASURETIME_REGION_DEFINE(handlerName, regionName)
+  #define MEASURETIME_START(valStart, handlerName, regionName) MeasureTime::getTimeValuesStart(valStart)
+  #define MEASURETIME_END(valStart, valEnd, valRes, handlerName) { MeasureTime::getTimeValuesEnd(valEnd); valEnd->sub(valStart); valEnd->sub(MeasureTime::getOverhead()); valRes.sumMeasuredValues->add(valEnd); ++(valRes.numCalcs); }
+#endif
+
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -99,8 +113,5 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
   virtual void getTimeValuesStartP(MeasureTimeValues *res) = 0;
   virtual void getTimeValuesEndP(MeasureTimeValues *res) = 0;
 };
-
-#define MEASURETIME_START(valStart,name) MeasureTime::getTimeValuesStart(valStart)
-#define MEASURETIME_END(valStart, valEnd, valRes, name) { MeasureTime::getTimeValuesEnd(valEnd); valEnd->sub(valStart); valEnd->sub(MeasureTime::getOverhead()); valRes.sumMeasuredValues->add(valEnd); }
 
 #endif // MEASURE_TIME_HPP
