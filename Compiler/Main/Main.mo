@@ -794,10 +794,12 @@ protected
   list<String> args_1;
 algorithm
   try
+    // set glib G_SLICE to always-malloc as is rummored to be better for Boehm GC
+    System.setEnv("G_SLICE", "always-malloc", true);
     // call GC_init() the first thing we do!
     System.initGarbageCollector();
     // Experimentally found to make the testsuite pass on asap.openmodelica.org. No clue why. Maybe GC_expand should be called only for larger tests or after loadModel. // Martin Sjölund, 2014-10-29
-    System.GC_expand_hp(1024*1024*1024);
+    System.GC_expand_hp(1024*1024*150);
     Global.initialize();
     ErrorExt.registerModelicaFormatError();
 

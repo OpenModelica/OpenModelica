@@ -958,31 +958,27 @@ algorithm
       then
         (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
-    // Connections.branch(cr1,cr2) - zero sized crefs
+    // Connections.branch(cr1,cr2)
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
               functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}))),_,_,graph,_)
       equation
         (cache,SOME((e_1,_,_))) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
         (cache,SOME((e_2,_,_))) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
+        // handle zero sized crefs
         b1 = Types.isZeroLengthArray(Expression.typeof(e_1));
         b2 = Types.isZeroLengthArray(Expression.typeof(e_2));
-        true = boolOr(b1, b2);
-        s = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
-        Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO, {s}, info);
-      then
-        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
-
-    // Connections.branch(cr1,cr2)
-    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
-              function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
-              functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}))),_,_,graph,_)
-      equation
-        (cache,SOME((DAE.CREF(cr1_,_),_,_))) = Static.elabCref(cache,env, cr1, false /* ??? */,false,pre,info);
-        (cache,SOME((DAE.CREF(cr2_,_),_,_))) = Static.elabCref(cache,env, cr2, false /* ??? */,false,pre,info);
-        (cache,cr1_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr1_);
-        (cache,cr2_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr2_);
-        graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
+        if boolOr(b1, b2)
+        then // handle zero sized crefs
+          s = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
+          Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO, {s}, info);
+        else // not zero sized
+          DAE.CREF(cr1_,_) = e_1;
+          DAE.CREF(cr2_,_) = e_2;
+          (cache,cr1_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr1_);
+          (cache,cr2_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr2_);
+          graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
+        end if;
       then
         (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
@@ -3876,40 +3872,35 @@ protected function generateExpandableDAE
  input DAE.ElementSource source;
  output DAE.DAElist outDAE;
 algorithm
-  outDAE := matchcontinue(inCache, inParentEnv, inClassEnv, cref, state, ty, attrs, vis, io, source)
+  outDAE := match(inCache, inParentEnv, inClassEnv, cref, state, ty, attrs, vis, io, source)
     local
       Absyn.ArrayDim arrDims;
       DAE.Dimensions daeDims;
       DAE.DAElist daeExpandable;
       list<DAE.ComponentRef> crefs;
 
-    // scalars!
+    // scalars and arrays
     case (_, _, _, _, _, _, _, _, _, _)
       equation
         // get the dimensions from the type!
-        (daeDims as {}) = Types.getDimensions(ty);
+        daeDims = Types.getDimensions(ty);
         _ = List.map(daeDims,Expression.unelabDimension);
-        daeExpandable = InstDAE.daeDeclare(inCache, inParentEnv, inClassEnv, cref, state, ty,
+        if listEmpty(daeDims)
+        then // empty dimensions
+         daeExpandable = InstDAE.daeDeclare(inCache, inParentEnv, inClassEnv, cref, state, ty,
            attrs,
            vis, NONE(), {}, NONE(), NONE(),
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
            io, SCode.NOT_FINAL(), source, true);
+        else // not empty list
+          crefs = ComponentReference.expandCref(cref, false);
+          // print(" crefs: " + stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr),", ") + "\n");
+          daeExpandable = daeDeclareList(inCache, inParentEnv, inClassEnv, listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
+        end if;
       then
         daeExpandable;
 
-    // arrays
-    case (_, _, _, _, _, _, _, _, _, _)
-      equation
-        // get the dimensions from the type!
-        (daeDims as _::_) = Types.getDimensions(ty);
-        _ = List.map(daeDims,Expression.unelabDimension);
-        crefs = ComponentReference.expandCref(cref, false);
-        // print(" crefs: " + stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr),", ") + "\n");
-        daeExpandable = daeDeclareList(inCache, inParentEnv, inClassEnv, listReverse(crefs), state, ty, attrs, vis, io, source, DAE.emptyDae);
-      then
-        daeExpandable;
-
-  end matchcontinue;
+  end match;
 end generateExpandableDAE;
 
 protected function daeDeclareList
@@ -5082,27 +5073,23 @@ protected function checkForNestedWhenInStatements
    An error message is added when failing."
   input SCode.Statement inWhenAlgorithm;
 algorithm
-  _ := matchcontinue(inWhenAlgorithm)
+  _ := match(inWhenAlgorithm)
     local
       Absyn.Info info;
       list<SCode.Statement> algs;
 
     // continue if when equations are not nested
-    case (SCode.ALG_WHEN_A(branches = (_,algs)::_))
+    case (SCode.ALG_WHEN_A(branches = (_,algs)::_, info = info))
       equation
-        false = containsWhenStatements(algs);
+        if containsWhenStatements(algs) // add an error message for nested when
+        then
+          Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
+          fail();
+        end if;
       then
         ();
 
-    // add an error message for nested when
-    case (SCode.ALG_WHEN_A(branches = (_,algs)::_, info = info))
-      equation
-        true = containsWhenStatements(algs);
-        Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
-      then
-        fail();
-
-  end matchcontinue;
+  end match;
 end checkForNestedWhenInStatements;
 
 protected function checkWhenEquation

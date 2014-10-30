@@ -806,12 +806,6 @@ algorithm
       then
         ((comp2, cmod2, b), mod_rest);
 
-    case ((comp as SCode.CLASS(name = id), cmod, b), _, _)
-      equation
-        DAE.NOMOD() = Mod.lookupCompModification(inMod, id);
-      then
-        ((comp, cmod, b), inMod);
-
     // adrpo:
     //  2011-01-19 we can have a modifier in the mods here,
     //  example in Modelica.Media:
@@ -826,9 +820,13 @@ algorithm
     //         if referenceChoice==ReferenceEnthalpy.UserDefined then h_offset else 0, nominal=1.0e5),
     //       Density(start=10, nominal=10),
     //       AbsolutePressure(start=10e5, nominal=10e5)); <--- AbsolutePressure is a type and can have modifications!
-    case ((comp as SCode.CLASS(name = id), _, b), _, _)
+    case ((comp as SCode.CLASS(name = id), cmod, b), _, _)
       equation
-        cmod = Mod.lookupCompModification(inMod, id);
+        cmod1 = Mod.lookupCompModification(inMod, id);
+        if not valueEq(cmod1, DAE.NOMOD())
+        then
+          cmod = cmod1;
+        end if;
       then
         ((comp, cmod, b), inMod);
 
@@ -1764,12 +1762,6 @@ algorithm
         (cache,exp) = fixExp(cache,env,exp,ht);
       then
         (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b)),info));
-
-    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE(),info),ht)
-      equation
-        (cache, subModLst) = fixSubModList(cache, env, subModLst, ht);
-      then
-        (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE(),info));
 
     case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE(),info),ht)
       equation

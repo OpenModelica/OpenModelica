@@ -480,26 +480,27 @@ algorithm
 
     case(cache,_,_,{},_,_) then (cache);
 
-    // Skipped recursive calls (by looking in cache)
-    case(cache,env,ih,p::paths,_,_)
-      equation
-        (cache,_,cenv) = Lookup.lookupClass(cache,env,p,true);
-        (cache,p) = Inst.makeFullyQualified(cache,cenv,p);
-        FCore.checkCachedInstFuncGuard(cache,p);
-      then instantiateDerivativeFuncs2(cache,env,ih,paths,path,info);
-
     case(cache,env,ih,p::paths,_,_)
       equation
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);
         (cache,p) = Inst.makeFullyQualified(cache,cenv,p);
-        // add to cache before instantiating, to break recursion for recursive definitions.
-        cache = FCore.addCachedInstFuncGuard(cache,p);
-        (cache,_,ih,funcs) =
-        implicitFunctionInstantiation2(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(),cdef,{},false);
+        _ = matchcontinue()
+          case () // Skipped recursive calls (by looking in cache)
+            equation
+              FCore.checkCachedInstFuncGuard(cache,p);
+            then ();
+          else // add to cache before instantiating, to break recursion for recursive definitions.
+            equation
+              cache = FCore.addCachedInstFuncGuard(cache,p);
+             (cache,_,ih,funcs) =
+                implicitFunctionInstantiation2(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(),cdef,{},false);
 
-        funcs = InstUtil.addNameToDerivativeMapping(funcs,path);
-        cache = FCore.addDaeFunction(cache, funcs);
-      then instantiateDerivativeFuncs2(cache,env,ih,paths,path,info);
+             funcs = InstUtil.addNameToDerivativeMapping(funcs,path);
+             cache = FCore.addDaeFunction(cache, funcs);
+          then ();
+        end matchcontinue;
+      then
+        instantiateDerivativeFuncs2(cache,env,ih,paths,path,info);
 
     else
       equation
