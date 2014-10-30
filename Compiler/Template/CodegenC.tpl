@@ -1646,9 +1646,9 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
          let body_initializeStaticLSData = (eq.vars |> var hasindex i0 =>
            <<
            /* static ls data for <%cref(varName(var))%> */
-           linearSystemData->nominal[i] = 1.0;      /* $P$ATTRIBUTE<%cref(varName(var))%>.nominal */
-           linearSystemData->min[i]     = -DBL_MAX; /* $P$ATTRIBUTE<%cref(varName(var))%>.min */
-           linearSystemData->max[i++]   = DBL_MAX;  /* $P$ATTRIBUTE<%cref(varName(var))%>.max */
+           linearSystemData->nominal[i] = $P$ATTRIBUTE<%cref(varName(var))%>.nominal;
+           linearSystemData->min[i]     = $P$ATTRIBUTE<%cref(varName(var))%>.min;
+           linearSystemData->max[i++]   = $P$ATTRIBUTE<%cref(varName(var))%>.max;
            >> ;separator="\n")
        <<
        <%auxFunction%>
