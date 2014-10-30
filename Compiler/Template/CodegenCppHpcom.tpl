@@ -1405,9 +1405,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
     match(getConfigString(PROFILING_LEVEL))
         case("none") then ''
         case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
-        else 
+        else
          <<
-         #ifdef USE_SCOREP 
+         #ifdef USE_SCOREP
            #include "Core/Utils/extension/measure_time_scorep.hpp"
          #else
            #include "Core/Utils/extension/measure_time_rdtsc.hpp"
@@ -1426,7 +1426,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
       <%
       match(getConfigString(PROFILING_LEVEL))
           case("none") then '//no profiling used'
-          case("all_perf") then 
+          case("all_perf") then
            <<
            #ifdef USE_SCOREP
              MeasureTimeScoreP::initialize();
@@ -1434,7 +1434,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
              MeasureTimePAPI::initialize();
            #endif
            >>
-          else 
+          else
            <<
            #ifdef USE_SCOREP
              MeasureTimeScoreP::initialize();
@@ -1532,9 +1532,9 @@ template simulationMainFile(SimCode simCode)
       match(getConfigString(PROFILING_LEVEL))
         case("none") then ''
         case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
-        else 
+        else
          <<
-         #ifdef USE_SCOREP 
+         #ifdef USE_SCOREP
            #include "Core/Utils/extension/measure_time_scorep.hpp"
          #else
            #include "Core/Utils/extension/measure_time_rdtsc.hpp"
@@ -1555,7 +1555,7 @@ template simulationMainFile(SimCode simCode)
        <%
       match(getConfigString(PROFILING_LEVEL))
           case("none") then '//no profiling used'
-          case("all_perf") then 
+          case("all_perf") then
            <<
            #ifdef USE_SCOREP
              MeasureTimeScoreP::initialize();
@@ -1563,7 +1563,7 @@ template simulationMainFile(SimCode simCode)
              MeasureTimePAPI::initialize();
            #endif
            >>
-          else 
+          else
            <<
            #ifdef USE_SCOREP
              MeasureTimeScoreP::initialize();
