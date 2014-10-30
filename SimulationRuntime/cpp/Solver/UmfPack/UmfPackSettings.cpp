@@ -1,4 +1,4 @@
-#include <Solver/Umfpack/UmfPackSettings.h>
+#include <Solver/UmfPack/UmfPackSettings.h>
 
 UmfPackSettings::UmfPackSettings() : ILinSolverSettings(), useSparse(true) {
 

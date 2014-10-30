@@ -6,8 +6,8 @@
 
 #elif defined(OMC_BUILD)
 
-#include <Solver/Umfpack/UmfPack.h>
-#include <Solver/Umfpack/UmfPackSettings.h>
+#include <Solver/UmfPack/UmfPack.h>
+#include <Solver/UmfPack/UmfPackSettings.h>
 
     /* OMC factory */
     using boost::extensions::factory;
