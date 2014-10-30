@@ -575,20 +575,6 @@ modelica_metatype boxptr_listHead(threadData_t *threadData, modelica_metatype ls
 
 /* Array Operations */
 
-modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
-{
-  if (nelts < 0) {
-    MMC_THROW();
-  } else {
-    void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
-    void **arrp = MMC_STRUCTDATA(arr);
-    int i = 0;
-    for(i=0; i<nelts; i++)
-      arrp[i] = val;
-    return arr;
-  }
-}
-
 modelica_metatype arrayList(modelica_metatype arr)
 {
   modelica_metatype result;

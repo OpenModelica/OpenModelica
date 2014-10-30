@@ -90,16 +90,6 @@ void* mmc_mk_box_arr(int slots, unsigned int ctor, void** args)
     return MMC_TAGPTR(p);
 }
 
-void *mmc_mk_box_no_assign(int slots, unsigned int ctor)
-{
-    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(slots+1);
-    p->header = MMC_STRUCTHDR(slots, ctor);
-#ifdef MMC_MK_DEBUG
-    fprintf(stderr, "STRUCT NO ASSIGN slots%d ctor %u\n", slots, ctor); fflush(NULL);
-#endif
-    return MMC_TAGPTR(p);
-}
-
 char* mmc_mk_scon_len_ret_ptr(size_t nbytes)
 {
     unsigned int header = MMC_STRINGHDR(nbytes);

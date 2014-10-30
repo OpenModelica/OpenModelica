@@ -397,7 +397,15 @@ static inline void *mmc_mk_some(void *x)
 }
 
 extern void *mmc_mk_box_arr(int slots, unsigned int ctor, void** args);
-extern void *mmc_mk_box_no_assign(int slots, unsigned int ctor);
+static inline void *mmc_mk_box_no_assign(int slots, unsigned int ctor)
+{
+    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(slots+1);
+    p->header = MMC_STRUCTHDR(slots, ctor);
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "STRUCT NO ASSIGN slots%d ctor %u\n", slots, ctor); fflush(NULL);
+#endif
+    return MMC_TAGPTR(p);
+}
 
 extern modelica_boolean valueEq(modelica_metatype lhs,modelica_metatype rhs);
 

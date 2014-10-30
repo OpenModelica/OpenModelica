@@ -129,7 +129,20 @@ static inline modelica_metatype nobox_arrayGet(threadData_t *threadData,modelica
     MMC_THROW_INTERNAL();
   return MMC_STRUCTDATA(arr)[ix-1];
 }
-extern modelica_metatype arrayCreate(modelica_integer, modelica_metatype);
+static inline modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
+{
+  if (nelts < 0) {
+    MMC_THROW();
+  } else {
+    void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
+    void **arrp = MMC_STRUCTDATA(arr);
+    int i = 0;
+    for(i=0; i<nelts; i++)
+      arrp[i] = val;
+    return arr;
+  }
+}
+
 #define arrayGetNoBoundsChecking(arr,ix) (MMC_STRUCTDATA((arr))[(ix)-1])
 #define arrayUpdate(X,Y,Z) boxptr_arrayUpdate(threadData,X,mmc_mk_icon(Y),Z)
 extern modelica_metatype arrayAdd(modelica_metatype, modelica_metatype);
