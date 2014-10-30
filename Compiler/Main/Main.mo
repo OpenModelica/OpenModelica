@@ -799,7 +799,10 @@ algorithm
     // call GC_init() the first thing we do!
     System.initGarbageCollector();
     // Experimentally found to make the testsuite pass on asap.openmodelica.org. No clue why. Maybe GC_expand should be called only for larger tests or after loadModel. // Martin Sjölund, 2014-10-29
-    System.GC_expand_hp(1024*1024*300);
+    // 150M for Windows, 300M for others
+    System.GC_expand_hp(if System.os() == "Windows_NT"
+                        then 1024*1024*150
+                        else 1024*1024*300);
     Global.initialize();
     ErrorExt.registerModelicaFormatError();
 
