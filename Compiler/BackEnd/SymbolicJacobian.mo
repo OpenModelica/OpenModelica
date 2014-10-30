@@ -1982,7 +1982,7 @@ algorithm
           reqns = BackendEquation.replaceDerOpInEquationList(reqns);
           eqns = BackendEquation.listEquation(reqns);
           // create  residual equations
-          reqns = BackendEquation.traverseBackendDAEEqns(eqns, traverseEquationToScalarResidualForm, {});
+          reqns = BackendEquation.traverseBackendDAEEqns(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
           (reqns, resVarsLst) = BackendDAEOptimize.convertResidualsIntoSolvedEquations(reqns);
           resVars = BackendVariable.listVar1(resVarsLst);
@@ -2027,7 +2027,7 @@ algorithm
           reqns = BackendEquation.replaceDerOpInEquationList(reqns);
           eqns = BackendEquation.listEquation(reqns);
           // create  residual equations
-          reqns = BackendEquation.traverseBackendDAEEqns(eqns, traverseEquationToScalarResidualForm, {});
+          reqns = BackendEquation.traverseBackendDAEEqns(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
           (reqns, resVarsLst) = BackendDAEOptimize.convertResidualsIntoSolvedEquations(reqns);
           resVars = BackendVariable.listVar1(resVarsLst);
@@ -2048,28 +2048,6 @@ algorithm
       case (comp, _, _, _) then (comp, inShared);
   end matchcontinue;
 end calculateJacobianComponent;
-
-protected function traverseEquationToScalarResidualForm "author: Frenkel TUD 2010-11
-  helper for calculateJacobian"
-  input BackendDAE.Equation inEq;
-  input list<BackendDAE.Equation> inEqs;
-  output BackendDAE.Equation outEq;
-  output list<BackendDAE.Equation> outEqs;
-algorithm
-  (outEq,outEqs) := matchcontinue(inEq,inEqs)
-    local
-      list<BackendDAE.Equation> eqns,reqn;
-      BackendDAE.Equation eqn;
-
-    case (eqn, eqns)
-      equation
-        reqn = BackendEquation.equationToScalarResidualForm(eqn);
-        eqns = listAppend(reqn,eqns);
-      then (eqn, eqns);
-
-    else (inEq,inEqs);
-  end matchcontinue;
-end traverseEquationToScalarResidualForm;
 
 protected function getSymbolicJacobian
 "fuction createSymbolicSimulationJacobian

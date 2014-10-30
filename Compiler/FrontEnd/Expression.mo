@@ -11128,5 +11128,255 @@ algorithm
   outSubscripts := list(DAE.INDEX(DAE.ICONST(i)) for i in 1:inDimSize);
 end dimensionSizeSubscripts;
 
+public function createResidualExp
+"author: Frenkel TUD 2012-10
+  do some numerical helpfull thinks like
+  a = b/c - > a*c-b"
+  input DAE.Exp iExp1;
+  input DAE.Exp iExp2;
+  output DAE.Exp resExp;
+algorithm
+  resExp := matchcontinue(iExp1, iExp2)
+    local
+      DAE.Exp e,   res;
+      list<DAE.Exp> explst, explst1, mexplst;
+      DAE.Type ty;
+
+    case(_,_) then createResidualExp2(iExp1, iExp2);
+    case(_, DAE.RCONST(real = 0.0)) then iExp1;
+    case(_, DAE.ICONST(0)) then iExp1;
+    case(DAE.RCONST(real = 0.0), _) then iExp2;
+    case(DAE.ICONST(0), _) then iExp2;
+    case(_, _)
+      equation
+        ty = typeof(iExp1);
+        true = Types.isIntegerOrRealOrSubTypeOfEither(ty);
+        // get terms
+        explst = terms(iExp1);
+        explst1 = terms(iExp2);
+        // get all divisors and multiply them to the other terms
+        (explst, mexplst) = moveDivToMul(explst, {}, {});
+        e = makeProductLst(mexplst);
+        (e, _) = ExpressionSimplify.simplify(e);
+        explst1 = List.map1(explst1, expMul, e);
+        explst1 = ExpressionSimplify.simplifyList(explst1, {});
+        (explst1, mexplst) = moveDivToMul(explst1, {}, {});
+        e = makeProductLst(mexplst);
+        (e, _) = ExpressionSimplify.simplify(e);
+        explst = List.map1(explst, expMul, e);
+        explst1 = List.map(explst1, negate);
+        explst = listAppend(explst, explst1);
+        res = makeSum(explst);
+        (res, _) = ExpressionSimplify.simplify(res);
+      then
+        res;
+    case(_, _)
+      equation
+        ty = typeof(iExp1);
+        true = Types.isEnumeration(ty);
+        res = expSub(iExp1, iExp2);
+      then
+        res;
+    case(_, _)
+      equation
+        ty = typeof(iExp1);
+        true = Types.isBooleanOrSubTypeBoolean(ty);
+        res = DAE.LUNARY(DAE.NOT(ty), DAE.RELATION(iExp1, DAE.EQUAL(ty), iExp2, -1, NONE()));
+      then
+        res;
+    case(_, _)
+      equation
+        ty = typeof(iExp1);
+        true = Types.isStringOrSubTypeString(ty);
+        res = DAE.LUNARY(DAE.NOT(ty), DAE.RELATION(iExp1, DAE.EQUAL(ty), iExp2, -1, NONE()));
+      then
+        res;
+    else
+      equation
+        res = expSub(iExp1, iExp2);
+       (res, _) = ExpressionSimplify.simplify(res);
+      then
+        res;
+  end matchcontinue;
+end createResidualExp;
+
+protected function moveDivToMul
+  input list<DAE.Exp> iExpLst;
+  input list<DAE.Exp> iExpLstAcc;
+  input list<DAE.Exp> iExpMuls;
+  output list<DAE.Exp> oExpLst;
+  output list<DAE.Exp> oExpMuls;
+algorithm
+  (oExpLst, oExpMuls) := match(iExpLst, iExpLstAcc, iExpMuls)
+    local
+      DAE.Exp e, e1, e2;
+      list<DAE.Exp> rest, acc, elst, elst1;
+    case ({}, _, _) then (iExpLstAcc, iExpMuls);
+    // a/b
+    case (DAE.BINARY(exp1=e1, operator=DAE.DIV(ty=_), exp2=e2)::rest, _, _)
+      equation
+         acc = List.map1(iExpLstAcc, Expression.expMul, e2);
+         rest = List.map1(rest, Expression.expMul, e2);
+         rest = ExpressionSimplify.simplifyList(rest, {});
+        (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
+      then
+        (elst, elst1);
+    case (DAE.BINARY(exp1=e1, operator=DAE.DIV_ARRAY_SCALAR(ty=_), exp2=e2)::rest, _, _)
+      equation
+         acc = List.map1(iExpLstAcc, Expression.expMul, e2);
+         rest = List.map1(rest, Expression.expMul, e2);
+         rest = ExpressionSimplify.simplifyList(rest, {});
+        (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
+      then
+        (elst, elst1);
+    case (e::rest, _, _)
+      equation
+        (elst, elst1) = moveDivToMul(rest, e::iExpLstAcc, iExpMuls);
+      then
+        (elst, elst1);
+  end match;
+end moveDivToMul;
+
+protected function createResidualExp2
+"author: Vitalij
+  do some numerical helpfull thinks on like
+  sqrt(f()) - sqrt(g(.)) = 0 -> f(.) - g(.)"
+  input DAE.Exp iExp1;
+  input DAE.Exp iExp2;
+  output DAE.Exp resExp;
+algorithm
+
+  resExp := matchcontinue(iExp1, iExp2)
+    local DAE.Exp e;
+    case(_,_)
+     equation
+      e = createResidualExp3(iExp1, iExp2);
+      (e,_) = ExpressionSimplify.simplify1(e);
+    then e;
+
+    case(_,_)
+     equation
+      e = createResidualExp3(iExp2, iExp1);
+      (e,_) = ExpressionSimplify.simplify1(e);
+     then e;
+    else fail();
+
+    end matchcontinue;
+
+end createResidualExp2;
+
+protected function createResidualExp3
+"author: Vitalij
+  helper function of createResidualExp3
+  swaps args"
+  input DAE.Exp iExp1;
+  input DAE.Exp iExp2;
+  output DAE.Exp resExp;
+algorithm
+  resExp := matchcontinue(iExp1, iExp2)
+      local 
+        DAE.Exp e,e1,e2,e3,e4,e5,res;
+        String s1, s2;
+        DAE.Type tp;
+        Real r;
+
+    // f(x) = f(y) -> x - y = 0
+    case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2}))
+     equation
+       true = s1 == s2;
+       true = createResidualExp4(s1);
+       res = Expression.expSub(e1,e2);
+     then res;
+    // f(x) = -f(y) -> x + y = 0
+    case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}), DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})))
+     equation
+       true = s1 == s2;
+       true = createResidualExp4(s1);
+       res = Expression.expAdd(e1,e2);
+     then res;
+    // sqrt(f(x)) = 0.0 -> f(x) = 0
+    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(0.0))
+      then e1;
+    // sqrt(f(x)) = c -> f(x) = c^2
+    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(_))
+      equation
+       e = Expression.expPow(iExp2, DAE.RCONST(2.0));
+       res = Expression.expSub(e1,e);
+      then res;
+    // log(f(x)) = c -> f(x) = exp(c)
+    case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.RCONST(r))
+      equation
+       true = r <= 10.0;
+       tp = Expression.typeof(iExp2);
+       e = Expression.makePureBuiltinCall("exp", {iExp2}, tp);
+       res = Expression.expSub(e1,e);
+      then res;
+    // log10(f(x)) = c -> f(x) = 10^(c)
+    case(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), DAE.RCONST(r))
+      equation
+       true = r <= 10.0;
+       e = Expression.expPow(DAE.RCONST(10.0),iExp2);
+       res = Expression.expSub(e1,e);
+      then res;
+    /*
+    // f(x)^y = 0 -> x = 0
+    case(DAE.BINARY(e1,DAE.POW(_),e2),DAE.RCONST(0.0))
+      then e1;
+    */
+    // abs(f(x)) = 0.0 -> f(x) = 0
+    case(DAE.CALL(path = Absyn.IDENT("abs"), expLst={e1}), DAE.RCONST(0.0))
+      then e1;
+   // semiLinear(0,e1,e2) = 0 -> e1 - e2 = 0
+   case(DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst={DAE.RCONST(0.0), e1, e2}), DAE.RCONST(0.0))
+     equation
+       res = Expression.expSub(e1,e2);
+      then res;
+   // -f(.) = 0 -> f(.) = 0
+   case(DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1), e2 as DAE.RCONST(0.0))
+    equation
+     res = createResidualExp3(e1,e2);
+    then res;
+  // f(x) + f(y) = 0 -> x + y = 0
+    case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.ADD(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
+     equation
+       true = s1 == s2;
+       true = createResidualExp4(s1);
+       res = Expression.expAdd(e1,e2);
+     then res;
+  // f(x) - f(y) = 0 -> x - y = 0
+    case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.SUB(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
+     equation
+       true = s1 == s2;
+       true = createResidualExp4(s1);
+       res = Expression.expSub(e1,e2);
+     then res;
+
+   else fail();
+  end matchcontinue;
+end createResidualExp3;
+
+protected function createResidualExp4"
+ author: Vitalij
+ helper function of createResidualExp3
+ return true if f(x) = f(y), then it can be transformed into x = y.
+ 
+ Beware: function is not complete, yet!
+"
+  input String f;
+  output Boolean resB;
+algorithm
+  resB := match(f)
+    case("sqrt") then true;
+    case("exp") then true;
+    case("log") then true;
+    case("log10") then true;
+    case("der") then true;
+    else then false;
+    //case("abs") then true;
+    //case("atan") then true;
+    //case("atan2") then true;
+  end match;
+end createResidualExp4;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;

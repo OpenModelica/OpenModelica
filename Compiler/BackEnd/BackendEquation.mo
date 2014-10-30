@@ -1546,18 +1546,18 @@ algorithm
     then eqns;
 
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr)) equation
-      exp = Expression.expSub(e1, e2);
+      exp = Expression.createResidualExp(e1, e2);
       (e, _) = ExpressionSimplify.simplify(exp);
     then {BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=attr)) equation
       e1 = Expression.crefExp(cr);
-      exp = Expression.expSub(e1, e2);
+      exp = Expression.createResidualExp(e1, e2);
       (e, _) = ExpressionSimplify.simplify(exp);
     then {BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
 
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=attr)) equation
-      exp = Expression.expSub(e1, e2);
+      exp = Expression.createResidualExp(e1, e2);
       subslst = Expression.dimensionSizesSubscripts(ds);
       subslst = Expression.rangesToSubscripts(subslst);
       explst = List.map1r(subslst, Expression.applyExpSubscripts, exp);
@@ -1644,25 +1644,25 @@ algorithm
 
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr)) equation
       //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n", e2);
-      exp = Expression.expSub(e1, e2);
+      exp = Expression.createResidualExp(e1, e2);
       (e, _) = ExpressionSimplify.simplify(exp);
     then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=eqAttr)) equation
       e1 = Expression.crefExp(cr);
-      exp = Expression.expSub(e1, e2);
+      exp = Expression.createResidualExp(e1, e2);
       (e, _) = ExpressionSimplify.simplify(exp);
     then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
 
     case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr)) equation
-      exp = Expression.expSub(e1, e2);
+      exp = Expression.createResidualExp(e1, e2);
       (e, _) = ExpressionSimplify.simplify(exp);
     then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr)) equation
-         exp = Expression.expSub(e1, e2);
-        (e, _) = ExpressionSimplify.simplify(exp);
-      then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
+      exp = Expression.createResidualExp(e1, e2);
+      (e, _) = ExpressionSimplify.simplify(exp);
+    then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
 
     case (backendEq as BackendDAE.RESIDUAL_EQUATION(exp=_))
     then backendEq;
@@ -1680,6 +1680,46 @@ algorithm
       then fail();
   end matchcontinue;
 end equationToResidualForm;
+
+public function traverseequationToResidualForm 
+"author: Frenkel TUD 2010-11"
+  input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
+  output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
+algorithm
+  outTpl := matchcontinue (inTpl)
+    local
+      list<BackendDAE.Equation> eqns;
+      BackendDAE.Equation eqn,reqn;
+    case ((eqn,eqns))
+      equation
+        reqn = equationToResidualForm(eqn);
+      then
+        ((eqn,reqn::eqns));
+    else inTpl;
+  end matchcontinue;
+end traverseequationToResidualForm;
+
+public function traverseEquationToScalarResidualForm 
+"author: Frenkel TUD 2010-11"
+  input BackendDAE.Equation inEq;
+  input list<BackendDAE.Equation> inEqs;
+  output BackendDAE.Equation outEq;
+  output list<BackendDAE.Equation> outEqs;
+algorithm
+  (outEq,outEqs) := matchcontinue(inEq,inEqs)
+    local
+      list<BackendDAE.Equation> eqns,reqn;
+      BackendDAE.Equation eqn;
+
+    case (eqn, eqns)
+      equation
+        reqn = equationToScalarResidualForm(eqn);
+        eqns = listAppend(reqn,eqns);
+      then (eqn, eqns);
+
+    else (inEq,inEqs);
+  end matchcontinue;
+end traverseEquationToScalarResidualForm;
 
 public function equationInfo "
   Retrieve the line number information from a BackendDAE.BackendDAEequation"
@@ -2778,7 +2818,6 @@ algorithm
     else inEqn;
   end matchcontinue;
 end replaceDerOpInEquation;
-
 
 public function getEquationRHS"gets the right hand side expression of an equation.
 author:Waurich TUD 2014-10"

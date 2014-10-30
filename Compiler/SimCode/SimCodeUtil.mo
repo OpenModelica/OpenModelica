@@ -3560,263 +3560,6 @@ algorithm
   end match;
 end createTempVars;
 
-protected function moveDivToMul
-  input list<DAE.Exp> iExpLst;
-  input list<DAE.Exp> iExpLstAcc;
-  input list<DAE.Exp> iExpMuls;
-  output list<DAE.Exp> oExpLst;
-  output list<DAE.Exp> oExpMuls;
-algorithm
-  (oExpLst, oExpMuls) := match(iExpLst, iExpLstAcc, iExpMuls)
-    local
-      DAE.Exp e, e1, e2;
-      list<DAE.Exp> rest, acc, elst, elst1;
-    case ({}, _, _) then (iExpLstAcc, iExpMuls);
-    // a/b
-    case (DAE.BINARY(exp1=e1, operator=DAE.DIV(ty=_), exp2=e2)::rest, _, _)
-      equation
-         acc = List.map1(iExpLstAcc, Expression.expMul, e2);
-         rest = List.map1(rest, Expression.expMul, e2);
-         rest = ExpressionSimplify.simplifyList(rest, {});
-        (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
-      then
-        (elst, elst1);
-    case (DAE.BINARY(exp1=e1, operator=DAE.DIV_ARRAY_SCALAR(ty=_), exp2=e2)::rest, _, _)
-      equation
-         acc = List.map1(iExpLstAcc, Expression.expMul, e2);
-         rest = List.map1(rest, Expression.expMul, e2);
-         rest = ExpressionSimplify.simplifyList(rest, {});
-        (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
-      then
-        (elst, elst1);
-    case (e::rest, _, _)
-      equation
-        (elst, elst1) = moveDivToMul(rest, e::iExpLstAcc, iExpMuls);
-      then
-        (elst, elst1);
-  end match;
-end moveDivToMul;
-
-
-
-
-protected function createNonlinearResidualExp
-"author Frenkel TUD 2012-10
-  do some numerical helpfull thinks like
-  a = b/c - > a*c-b"
-  input DAE.Exp iExp1;
-  input DAE.Exp iExp2;
-  output DAE.Exp resExp;
-algorithm
-  resExp := matchcontinue(iExp1, iExp2)
-    local
-      DAE.Exp e,   res;
-      list<DAE.Exp> explst, explst1, mexplst;
-      DAE.Type ty;
-
-    case(_,_) then createNonlinearResidualExp_2(iExp1, iExp2);
-    case(_, DAE.RCONST(real = 0.0)) then iExp1;
-    case(_, DAE.ICONST(0)) then iExp1;
-    case(DAE.RCONST(real = 0.0), _) then iExp2;
-    case(DAE.ICONST(0), _) then iExp2;
-    case(_, _)
-      equation
-        ty = Expression.typeof(iExp1);
-        true = Types.isIntegerOrRealOrSubTypeOfEither(ty);
-        // get terms
-        explst = Expression.terms(iExp1);
-        explst1 = Expression.terms(iExp2);
-        // get all divisors and multiply them to the other terms
-        (explst, mexplst) = moveDivToMul(explst, {}, {});
-        e = Expression.makeProductLst(mexplst);
-        (e, _) = ExpressionSimplify.simplify(e);
-        explst1 = List.map1(explst1, Expression.expMul, e);
-        explst1 = ExpressionSimplify.simplifyList(explst1, {});
-        (explst1, mexplst) = moveDivToMul(explst1, {}, {});
-        e = Expression.makeProductLst(mexplst);
-        (e, _) = ExpressionSimplify.simplify(e);
-        explst = List.map1(explst, Expression.expMul, e);
-        explst1 = List.map(explst1, Expression.negate);
-        explst = listAppend(explst, explst1);
-        res = Expression.makeSum(explst);
-        (res, _) = ExpressionSimplify.simplify(res);
-      then
-        res;
-    case(_, _)
-      equation
-        ty = Expression.typeof(iExp1);
-        true = Types.isEnumeration(ty);
-        res = Expression.expSub(iExp1, iExp2);
-      then
-        res;
-    case(_, _)
-      equation
-        ty = Expression.typeof(iExp1);
-        true = Types.isBooleanOrSubTypeBoolean(ty);
-        res = DAE.LUNARY(DAE.NOT(ty), DAE.RELATION(iExp1, DAE.EQUAL(ty), iExp2, -1, NONE()));
-      then
-        res;
-    case(_, _)
-      equation
-        ty = Expression.typeof(iExp1);
-        true = Types.isStringOrSubTypeString(ty);
-        res = DAE.LUNARY(DAE.NOT(ty), DAE.RELATION(iExp1, DAE.EQUAL(ty), iExp2, -1, NONE()));
-      then
-        res;
-    else
-      equation
-        res = Expression.expSub(iExp1, iExp2);
-       (res, _) = ExpressionSimplify.simplify(res);
-      then
-        res;
-  end matchcontinue;
-end createNonlinearResidualExp;
-
-protected function createNonlinearResidualExp_2
-"author Vitalij
-  do some numerical helpfull thinks on like
-  sqrt(f()) - sqrt(g(.)) = 0 -> f(.) - g(.)"
-  input DAE.Exp iExp1;
-  input DAE.Exp iExp2;
-  output DAE.Exp resExp;
-algorithm
-
-  resExp := matchcontinue(iExp1, iExp2)
-    local DAE.Exp e;
-    case(_,_)
-     equation
-      e = createNonlinearResidualExp_3(iExp1, iExp2);
-      (e,_) = ExpressionSimplify.simplify1(e);
-    then e;
-
-    case(_,_)
-     equation
-      e = createNonlinearResidualExp_3(iExp2, iExp1);
-      (e,_) = ExpressionSimplify.simplify1(e);
-     then e;
-    else fail();
-
-    end matchcontinue;
-
-end createNonlinearResidualExp_2;
-
-protected function createNonlinearResidualExp_3
-"author Vitalij
-  helper: createNonlinearResidualExp_2
-  swaps args"
-  input DAE.Exp iExp1;
-  input DAE.Exp iExp2;
-  output DAE.Exp resExp;
-
-algorithm
-  resExp := matchcontinue(iExp1, iExp2)
-      local DAE.Exp e,e1,e2,e3,e4,e5,res;
-            String s1, s2;
-            DAE.Type tp;
-            Real r;
-
-    // f(x) = f(y) -> x - y = 0
-    case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2}))
-     equation
-       true = s1 == s2;
-       true = createNonlinearResidualExp_4(s1);
-       res = Expression.expSub(e1,e2);
-     then res;
-    // f(x) = -f(y) -> x + y = 0
-    case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}), DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})))
-     equation
-       true = s1 == s2;
-       true = createNonlinearResidualExp_4(s1);
-       res = Expression.expAdd(e1,e2);
-     then res;
-    // sqrt(f(x)) = 0.0 -> f(x) = 0
-    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(0.0))
-      then e1;
-    // sqrt(f(x)) = c -> f(x) = c^2
-    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(_))
-      equation
-       e = Expression.expPow(iExp2, DAE.RCONST(2.0));
-       res = Expression.expSub(e1,e);
-      then res;
-    // log(f(x)) = c -> f(x) = exp(c)
-    case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.RCONST(r))
-      equation
-       true = r <= 10.0;
-       tp = Expression.typeof(iExp2);
-       e = Expression.makePureBuiltinCall("exp", {iExp2}, tp);
-       res = Expression.expSub(e1,e);
-      then res;
-    // log10(f(x)) = c -> f(x) = 10^(c)
-    case(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), DAE.RCONST(r))
-      equation
-       true = r <= 10.0;
-       e = Expression.expPow(DAE.RCONST(10.0),iExp2);
-       res = Expression.expSub(e1,e);
-      then res;
-    /*
-    // f(x)^y = 0 -> x = 0
-    case(DAE.BINARY(e1,DAE.POW(_),e2),DAE.RCONST(0.0))
-      then e1;
-    */
-    // abs(f(x)) = 0.0 -> f(x) = 0
-    case(DAE.CALL(path = Absyn.IDENT("abs"), expLst={e1}), DAE.RCONST(0.0))
-      then e1;
-   // semiLinear(0,e1,e2) = 0 -> e1 - e2 = 0
-   case(DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst={DAE.RCONST(0.0), e1, e2}), DAE.RCONST(0.0))
-     equation
-       res = Expression.expSub(e1,e2);
-      then res;
-   // -f(.) = 0 -> f(.) = 0
-   case(DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1), e2 as DAE.RCONST(0.0))
-    equation
-     res = createNonlinearResidualExp_3(e1,e2);
-    then res;
-  // f(x) + f(y) = 0 -> x + y = 0
-    case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.ADD(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
-     equation
-       true = s1 == s2;
-       true = createNonlinearResidualExp_4(s1);
-       res = Expression.expAdd(e1,e2);
-     then res;
-  // f(x) - f(y) = 0 -> x - y = 0
-    case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.SUB(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
-     equation
-       true = s1 == s2;
-       true = createNonlinearResidualExp_4(s1);
-       res = Expression.expSub(e1,e2);
-     then res;
-
-   else fail();
-  end matchcontinue;
-
-end createNonlinearResidualExp_3;
-
-protected function createNonlinearResidualExp_4
-"
- author Vitalij
- helper: createNonlinearResidualExp_3
- return true if f(x) = f(y) can be transform in x = y
- list is not complit!
-"
- input String f;
- output Boolean resB;
-
-algorithm
- resB := match(f)
-         //case("abs") then true;
-         case("sqrt") then true;
-         case("exp") then true;
-         case("log") then true;
-         case("log10") then true;
-         //case("atan") then true;
-         //case("atan2") then true;
-         case("der") then true;
-         else then false;
-  end match;
-
-end createNonlinearResidualExp_4;
-
-
 protected function createNonlinearResidualEquations
   input list<BackendDAE.Equation> eqs;
   input Integer iuniqueEqIndex;
@@ -3849,7 +3592,7 @@ algorithm
     then ({}, iuniqueEqIndex, itempvars);
 
     case (BackendDAE.EQUATION(exp = e1, scalar = e2, source=source) :: rest, _, _) equation
-      res_exp = createNonlinearResidualExp(e1, e2);
+      res_exp = Expression.createResidualExp(e1, e2);
       res_exp = Expression.replaceDerOpInExp(res_exp);
       (eqSystemsRest, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(rest, iuniqueEqIndex, itempvars);
     then (SimCode.SES_RESIDUAL(uniqueEqIndex, res_exp, source) :: eqSystemsRest, uniqueEqIndex+1, tempvars);
@@ -3864,7 +3607,7 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source) :: rest, _, _) equation
       ty = Expression.typeof(e1);
       left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
-      res_exp = createNonlinearResidualExp(e1, e2);
+      res_exp = Expression.createResidualExp(e1, e2);
       res_exp = Expression.replaceDerOpInExp(res_exp);
       crefstmp = ComponentReference.expandCref(left, false);
       explst1 = List.map(crefstmp, Expression.crefExp);
@@ -4036,7 +3779,7 @@ protected
   DAE.Exp e1, e2, e;
 algorithm
   (e1, e2) := inTpl;
-  e := createNonlinearResidualExp(e1, e2);
+  e := Expression.createResidualExp(e1, e2);
   outSimEqn := SimCode.SES_RESIDUAL(uniqueEqIndex, e, source);
   ouniqueEqIndex := uniqueEqIndex +1;
 end makeSES_RESIDUAL1;
