@@ -9,7 +9,7 @@ $ sudo apt-get build-dep openmodelica
 $ svn co https://openmodelica.org/svn/OpenModelica/trunk OpenModelica
 $ cd OpenModelica
 $ autoconf
-$ ./configure --with-omniORB # and/or --without-rml depending on if you want to bootstrap omc
+$ ./configure --with-omniORB
 $ make -j4 # or make -j4 omc if you only want the omc core and not the qtclients
 
 
@@ -20,18 +20,11 @@ How to compile on Linux/BSD (all from source)
 $ autoconf
 # Skip some pieces of software to ease installation and only compile the base omc executable
 # If you have a working and compatible omc that is not on the PATH, you can use --with-omc=path/to/omc to speed up compilation
-$ ./configure --prefix=/usr/local --without-rml --disable-modelica3d
+$ ./configure --prefix=/usr/local --disable-modelica3d
 $ make
 $ sudo make install
 
 But first you need to install dependencies:
-    (If you did not specify --without-rml, you will need RML)
-    rml+mmc (http://www.ida.liu.se/~pelab/rml/)
-        Just grab it from subversion:
-        svn co https://openmodelica.org/svn/MetaModelica/trunk mmc
-        user: anonymous
-        pass: none
-    rml needs smlnj: http://www.smlnj.org (working version v110.xx) and/or mlton (mlton.org)
     mico or omniORB:
         omniORB:
           Is well maintained by Linux distributions. This makes it our default choice.
@@ -49,9 +42,6 @@ OpenModelica uses Qt for plotting functionality and graphical. You will need:
     libqwt
 OMOptim uses some packages for its optimization algorithms
     paradisEO (http://paradiseo.gforge.inria.fr/ - tested with 1.3 beta; see the OpenModelica .deb installer for the directory structure or send openmodelica <at> ida.liu.se a listing of the files paradiseo installs to /usr/local/ to have the Makefiles updated). Newer versions of ParadisEO do not work.
-Note:
-    FreeBSD versions of smlnj/mlton only compile using 32-bit versions of the OS. For 64-bit versions, it might be possible to compile OpenModelica using the bootstrapped compiler (then rml-mmc is not needed).
-    The rml-mmc package needs some manual changes, too.
 
 How to compile on Ubuntu Linux (using available binary packages for dependencies)
 =================================================================================
@@ -59,10 +49,6 @@ How to compile on Ubuntu Linux (using available binary packages for dependencies
 You need:
     antlr
         $ sudo apt-get install antlr libantlr-dev
-    rml+mmc see above and:
-        $ sudo apt-get install libsmlnj-smlnj
-        or if you like to use mlton
-        $ sudo apt-get install mlton
     java
         you need to install OpenJDK Java runtime or Sun Java runtime
         $ sudo apt-get install openjdk-6-jre
@@ -96,9 +82,6 @@ NOTE:
 
 Setting your environment for compiling OpenModelica
 ===================================================
-  If rmlc is not on the PATH, set RMLHOME to rml installation, e.g.
-  /usr/local/rml/x86-linux-gcc/
-
   If you plan to use mico corba with OMC you need to:
   - set the PATH to path/to/mico/bin (for the idl compiler and mico-cpp)
   - set the LD_LIBRARY_PATH to path/to/installed/mico/lib (for mico libs)
@@ -195,24 +178,11 @@ Cannot resolve type of expression a*b (expressions :{a[1],a[2],a[3],a[4],a[5]},\
 {a, b}
 >>
 
-Bootstrapped compiler
-=====================
-
-To compile OpenModelica without the use of rml-mmc:
-$ autoconf
-$ ./configure --without-rml
-$ make bootstrap-from-tarball
-
-To recompile (once you have a working build/bin/omc)
-$ make bootstrap-from-compiled
-
-WARNING: The bootstrapped compiler has not been tested on all combinations of compilers and operating systems. It did work on 64-bit Ubuntu with GCC 4.4, but not on 64-bit Fedora Core with GCC 4.7.
-
 CentOS 6 Hints (RPM, command-line only; for clients, add CORBA, readline)
 =========================================================================
 yum install tar gcc-c++ autoconf sqlite-devel java expat-devel lpsolve-devel lapack-devel make patch gettext
 also needs cmake > 2.8; not in default repos; try http://dl.atrpms.net/el6-x86_64/atrpms/testing/cmake-2.8.8-4.el6.x86_64.rpm
-./configure --without-rml --disable-omshell-terminal --disable-modelica3d
+./configure --disable-omshell-terminal --disable-modelica3d
 make -j8 bootstrap-from-tarball
 
 GENERAL NOTES:
@@ -224,4 +194,4 @@ GENERAL NOTES:
 - On some Linux systems when running simulate(Model, ...) the
   executable for the Model enters an infinite loop. To fix this, add -ffloat-store to CFLAGS
 
-Last updated 2014-01-30. Much is still outdated.
+Last updated 2014-10-30. Much is still outdated.
