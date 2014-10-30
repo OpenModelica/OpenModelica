@@ -3817,7 +3817,7 @@ algorithm
 
         // compile
         fileNamePrefix = stringAppend(fileNamePrefix,"_FMU");
-        compileModel(fileNamePrefix , libs, file_dir, "");
+        compileModel(fileNamePrefix , libs);
 
       then
         (cache,outValMsg,st);
@@ -4174,7 +4174,7 @@ algorithm
         if Flags.isSet(Flags.DYN_LOAD) then
           Debug.traceln("buildModel: about to compile model " + filenameprefix + ", " + file_dir);
         end if;
-        compileModel(filenameprefix, libs, file_dir, method_str);
+        compileModel(filenameprefix, libs);
         if Flags.isSet(Flags.DYN_LOAD) then
           Debug.trace("buildModel: Compiling done.\n");
         end if;
@@ -4373,107 +4373,76 @@ algorithm
 end getFileDir;
 
 public function compileModel "Compiles a model given a file-prefix, helper function to buildModel."
-  input String inFilePrefix;
-  input list<String> inLibsList;
-  input String inFileDir;
-  input String solverMethod "inline solvers requires setting environment variables";
+  input String fileprefix;
+  input list<String> libs;
+protected
+  String omhome = Settings.getInstallationDirectoryPath(),omhome_1 = System.stringReplace(omhome, "\"", "");
+  String pd = System.pathDelimiter();
+  String libsfilename,libs_str,s_call,filename,winCompileMode;
+  String fileDLL = fileprefix + System.getDllExt(),fileEXE = fileprefix + System.getExeExt(),fileLOG = fileprefix + ".log";
+  Integer numParallel,res;
+  Boolean isWindows = System.os() == "Windows_NT";
 algorithm
-  _ := matchcontinue (inFilePrefix,inLibsList,inFileDir,solverMethod)
-    local
-      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,filename,str,fileDLL, fileEXE, fileLOG, make,target,numParallelStr,winCompileMode;
-      list<String> libs;
-      Boolean isWindows;
-      Integer numParallel;
+  libsfilename := fileprefix + ".libs";
+  libs_str := stringDelimitList(libs, " ");
 
-    // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
-    // adrpo 2009-11-29: use ALL THE TIME $OPENMODELICAHOME/bin/Compile
-    case (fileprefix,libs,_,_)
-      equation
-        pd = System.pathDelimiter();
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome_1 = System.stringReplace(omhome, "\"", "");
-        _ = System.pwd();
-        libsfilename = stringAppend(fileprefix, ".libs");
-        libs_str = stringDelimitList(libs, " ");
+  System.writeFile(libsfilename, libs_str);
+  if isWindows then
+    // We only need to set OPENMODELICAHOME on Windows, and set doesn't work in bash shells anyway
+    // adrpo: 2010-10-05:
+    //        whatever you do, DO NOT add a space before the && otherwise
+    //        OPENMODELICAHOME that we set will contain a SPACE at the end!
+    //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
+    //        to the environment variable! Don't ask me why, ask Microsoft.
+    omhome := "set OPENMODELICAHOME=\"" + System.stringReplace(omhome_1, "/", "\\") + "\"&& ";
+    winCompileMode := if Config.getRunningTestsuite() then "serial" else "parallel";
+    s_call := stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", winCompileMode});
+  else
+    numParallel := if Config.getRunningTestsuite() then 1 else Config.noProc();
+    s_call := stringAppendList({System.getMakeCommand()," -j",intString(numParallel)," -f ",fileprefix,".makefile"});
+  end if;
+  if Flags.isSet(Flags.DYN_LOAD) then
+    Debug.traceln("compileModel: running " + s_call);
+  end if;
 
-        System.writeFile(libsfilename, libs_str);
-        // We only need to set OPENMODELICAHOME on Windows, and set doesn't work in bash shells anyway
-        // adrpo: 2010-10-05:
-        //        whatever you do, DO NOT add a space before the && otherwise
-        //        OPENMODELICAHOME that we set will contain a SPACE at the end!
-        //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
-        //        to the environment variable! Don't ask me why, ask Microsoft.
-        isWindows = System.os() == "Windows_NT";
-        target = Config.simulationCodeTarget();
-        winCompileMode = if Config.getRunningTestsuite() then "serial" else "parallel";
-        omhome = if isWindows then "set OPENMODELICAHOME=\"" + System.stringReplace(omhome_1, "/", "\\") + "\"&& " else "";
-        win_call = stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",target," ", winCompileMode});
-        make = System.getMakeCommand();
-        numParallel = if Config.getRunningTestsuite() then 1 else Config.noProc();
-        numParallelStr = intString(numParallel);
-        make_call = stringAppendList({make," -j",numParallelStr," -f ",fileprefix,".makefile"});
-        s_call = if isWindows then win_call else make_call;
-        if Flags.isSet(Flags.DYN_LOAD) then
-          Debug.traceln("compileModel: running " + s_call);
-        end if;
+  // remove .exe .dll .log!
+  if System.regularFileExists(fileEXE) then
+    0 := System.removeFile(fileEXE);
+  end if;
+  if System.regularFileExists(fileDLL) then
+    0 := System.removeFile(fileDLL);
+  end if;
+  if System.regularFileExists(fileLOG) then
+    0 := System.removeFile(fileLOG);
+  end if;
 
-        // remove .exe .dll .log!
-        fileEXE = fileprefix + System.getExeExt();
-        fileDLL = fileprefix + System.getDllExt();
-        fileLOG = fileprefix + ".log";
-        if System.regularFileExists(fileEXE) then
-          0 = System.removeFile(fileEXE);
-        end if;
-        if System.regularFileExists(fileDLL) then
-          0 = System.removeFile(fileDLL);
-        end if;
-        if System.regularFileExists(fileLOG) then
-          0 = System.removeFile(fileLOG);
-        end if;
+  if Config.getRunningTestsuite() then
+    System.appendFile(Config.getRunningTestsuiteFile(),
+      fileEXE + "\n" + fileDLL + "\n" + fileLOG + "\n" + fileprefix + ".o\n" + fileprefix + ".libs\n" +
+      fileprefix + "_records.o\n" + fileprefix + "_res.mat\n");
+  end if;
 
-        // call the system command to compile the model!
-        0 = System.systemCall(s_call,if isWindows then "" else fileLOG);
-        if Config.getRunningTestsuite() then
-          System.appendFile(Config.getRunningTestsuiteFile(),
-            fileEXE + "\n" + fileDLL + "\n" + fileLOG + "\n" + fileprefix + ".o\n" + fileprefix + ".libs\n" +
-            fileprefix + "_records.o\n" + fileprefix + "_res.mat\n");
-        end if;
+  // call the system command to compile the model!
+  if System.systemCall(s_call,if isWindows then "" else fileLOG) <> 0 then
+    // We failed, print error
+    if System.regularFileExists(fileLOG) then
+      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(fileLOG)});
+    elseif isWindows then
+      // Check that it is a correct OPENMODELICAHOME, on Windows only
+      s_call := stringAppendList({omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile.bat"});
+      if not System.regularFileExists(s_call) then
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"})});
+      end if;
+    end if;
+    if Flags.isSet(Flags.DYN_LOAD) then
+      Debug.trace("compileModel: failed!\n");
+    end if;
+    fail();
+  end if;
 
-        if Flags.isSet(Flags.DYN_LOAD) then
-          Debug.trace("compileModel: successful!\n");
-        end if;
-      then
-        ();
-    case (fileprefix,_,_,_) /* compilation failed */
-      equation
-        filename = stringAppendList({fileprefix,".log"});
-        true = System.regularFileExists(filename);
-        str = System.readFile(filename);
-        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
-        true = Flags.isSet(Flags.DYN_LOAD);
-        Debug.trace("compileModel: failed!\n");
-      then
-        fail();
-
-    case (_,_,_,_) /* compilation failed\\n */
-      equation
-        "Windows_NT" = System.os();
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome_1 = System.stringReplace(omhome, "\"", "");
-        pd = System.pathDelimiter();
-        s_call = stringAppendList({omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile.bat"});
-        false = System.regularFileExists(s_call);
-        str=stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"});
-        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
-      then
-        fail();
-    else
-      equation
-        failure(_ = Settings.getInstallationDirectoryPath());
-        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"$OPENMODELICAHOME not found."});
-      then
-        fail();
-  end matchcontinue;
+  if Flags.isSet(Flags.DYN_LOAD) then
+    Debug.trace("compileModel: successful!\n");
+  end if;
 end compileModel;
 
 protected function winCitation "author: PA
@@ -5192,13 +5161,13 @@ algorithm
         if Flags.isSet(Flags.DYN_LOAD) then
           Debug.traceln("buildModel: about to compile model " + filenameprefix + ", " + file_dir);
         end if;
-        compileModel(filenameprefix, libs, file_dir, method_str);
+        compileModel(filenameprefix, libs);
         if Flags.isSet(Flags.DYN_LOAD) then
           Debug.trace("buildModel: Compiling done.\n");
         end if;
         // SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir);
         _ = getWithinStatement(classname);
-        compileModel(filenameprefix, libs, file_dir,method_str);
+        compileModel(filenameprefix, libs);
         // (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false);
         st2 = st; // Interactive.replaceSymbolTableProgram(st,p);
       then
@@ -5313,7 +5282,7 @@ algorithm
         pathstr  = generateFunctionName(path);
         fileName = generateFunctionFileName(path);
         SimCodeMain.translateFunctions(program, fileName, SOME(mainFunction), d, metarecordTypes, {});
-        compileModel(fileName, {}, "", "");
+        compileModel(fileName, {});
       then
         (cache, pathstr, fileName);
 
