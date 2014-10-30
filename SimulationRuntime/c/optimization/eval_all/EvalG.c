@@ -788,7 +788,7 @@ static inline void debugeJac(OptData * optData){
     fprintf(pFile,"    self.states = [");
     if(nx > 0)
      fprintf(pFile,"'%s'",optData->data->modelData.realVarsData[0].info.name);
-    for(j = 1; j < nx-1; ++j)
+    for(j = 1; j < nx; ++j)
       fprintf(pFile,",'%s'",optData->data->modelData.realVarsData[j].info.name);
     fprintf(pFile,"]\n");
     fprintf(pFile,"    self.inputs = [");
@@ -868,9 +868,6 @@ static inline void debugeJac(OptData * optData){
     fprintf(pFile,"%s\n","        plt.legend([plt_name])");
     fprintf(pFile,"%s\n","        plt.xlabel('time')");
     fprintf(pFile,"%s\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_\"+ str(j) + filename, format='png')");
-
-
-
 
     fprintf(pFile,"%s\n\n","M = OMC_JAC('jac_ana_step_1.csv')");
     fprintf(pFile,"%s\n","print M");
