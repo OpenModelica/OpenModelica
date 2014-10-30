@@ -50,99 +50,97 @@ encapsulated package CevalScript
     Subscript list : Evaluates subscripts and generates constant expressions."
 
 // public imports
-public import Absyn;
-public import BackendDAE;
-public import Ceval;
-public import DAE;
-public import FCore;
-public import Error;
-public import GlobalScript;
-public import Interactive;
-public import Values;
-public import SimCode;
-public import UnitAbsyn;
-/* exportToFigaro added by Alexander Carlqvist
-The following line of code should be commented out when building from trunk.
-Uncomment when bootstrapping. */
-//public import Figaro;
+import Absyn;
+import BackendDAE;
+import Ceval;
+import DAE;
+import FCore;
+import Error;
+import GlobalScript;
+import Interactive;
+import Values;
+import SimCode;
+import UnitAbsyn;
 
 // protected imports
-protected import BackendDump;
-protected import BackendDAECreate;
-protected import BackendDAEUtil;
-protected import BackendDAEOptimize;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import BaseHashSet;
-protected import Builtin;
-protected import CevalFunction;
-protected import CheckModel;
-protected import ClassInf;
-protected import ClassLoader;
-protected import ClockIndexes;
-protected import CodegenC;
-protected import Config;
-protected import Corba;
-protected import DAEQuery;
-protected import DAEUtil;
-protected import DAEDump;
-protected import Debug;
-protected import Dump;
-protected import DynLoad;
-protected import Expression;
-protected import ExpressionDump;
-protected import FindZeroCrossings;
-protected import Flags;
-protected import FInst;
-protected import FGraph;
-protected import FGraphDump;
-protected import Global;
-protected import GlobalScriptUtil;
-protected import Graph;
-protected import HashSetString;
-protected import Inst;
-protected import InstFunction;
-protected import InnerOuter;
-protected import List;
-protected import Lookup;
-protected import MetaUtil;
-protected import Mod;
-protected import NFSCodeLookup;
-protected import Prefix;
-protected import Parser;
-protected import Print;
-protected import Refactor;
-protected import SCodeDump;
-protected import NFEnv;
-protected import NFInst;
-protected import NFSCodeEnv;
-protected import NFSCodeFlatten;
-protected import SimCodeMain;
-protected import System;
-protected import Static;
-protected import StaticScript;
-protected import SCode;
-protected import SCodeUtil;
-protected import Settings;
-protected import SimulationResults;
-protected import TaskGraphResults;
-protected import Tpl;
-protected import CodegenFMU;
-protected import Types;
-protected import Unparsing;
-protected import Util;
-protected import ValuesUtil;
-protected import XMLDump;
-protected import ComponentReference;
-protected import Uncertainties;
-protected import OpenTURNS;
-protected import FMI;
-protected import FMIExt;
-protected import ErrorExt;
-protected import UnitAbsynBuilder;
-protected import UnitParserExt;
-protected import RewriteRules;
-protected import BlockCallRewrite;
+protected
+import BackendDump;
+import BackendDAECreate;
+import BackendDAEUtil;
+import BackendDAEOptimize;
+import BackendEquation;
+import BackendVariable;
+import BaseHashSet;
+import Builtin;
+import CevalFunction;
+import CheckModel;
+import ClassInf;
+import ClassLoader;
+import ClockIndexes;
+import CodegenC;
+import Config;
+import Corba;
+import DAEQuery;
+import DAEUtil;
+import DAEDump;
+import Debug;
+import Dump;
+import DynLoad;
+import Expression;
+import ExpressionDump;
+import Figaro;
+import FindZeroCrossings;
+import Flags;
+import FInst;
+import FGraph;
+import FGraphDump;
+import Global;
+import GlobalScriptUtil;
+import Graph;
+import HashSetString;
+import Inst;
+import InstFunction;
+import InnerOuter;
+import List;
+import Lookup;
+import MetaUtil;
+import Mod;
+import NFSCodeLookup;
+import Prefix;
+import Parser;
+import Print;
+import Refactor;
+import SCodeDump;
+import NFEnv;
+import NFInst;
+import NFSCodeEnv;
+import NFSCodeFlatten;
+import SimCodeMain;
+import System;
+import Static;
+import StaticScript;
+import SCode;
+import SCodeUtil;
+import Settings;
+import SimulationResults;
+import TaskGraphResults;
+import Tpl;
+import CodegenFMU;
+import Types;
+import Unparsing;
+import Util;
+import ValuesUtil;
+import XMLDump;
+import ComponentReference;
+import Uncertainties;
+import OpenTURNS;
+import FMI;
+import FMIExt;
+import ErrorExt;
+import UnitAbsynBuilder;
+import UnitParserExt;
+import RewriteRules;
+import BlockCallRewrite;
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -1101,22 +1099,6 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    /* Does not exist in the env...
-    case (cache,env,"lookupClass",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
-      equation
-        scodeP = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(cache, scodeP, Absyn.IDENT(""));
-        (cache,c,env) = Lookup.lookupClass(cache,env, path, true);
-        SOME(p1) = FGraph.getScopePath(env);
-        s1 = Absyn.pathString(p1);
-        Print.printBuf("Found class ");
-        Print.printBuf(s1);
-        Print.printBuf("\n\n");
-        str = Print.getString();
-      then
-        (cache,Values.STRING(str),st);
-     */
-
     case (cache,_,"basename",{Values.STRING(str)},st,_)
       equation
         str = System.basename(str);
@@ -1245,10 +1227,8 @@ algorithm
   // exportToFigaro cases added by Alexander Carlqvist
     case (cache, _, "exportToFigaro", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str), Values.STRING(str1), Values.STRING(str2), Values.STRING(str3)}, st as GlobalScript.SYMBOLTABLE(ast = p), _)
       equation
-    (scodeP, _) = GlobalScriptUtil.symbolTableToSCode(st);
-    /* The following line of code should be commented out when building from trunk.
-    Uncomment when bootstrapping. */
-    //Figaro.run(scodeP, path, str, str1, str2, str3);
+        (scodeP, _) = GlobalScriptUtil.symbolTableToSCode(st);
+        Figaro.run(scodeP, path, str, str1, str2, str3);
       then (cache, Values.BOOL(true), st);
 
     case (cache, _, "exportToFigaro", _, st, _)
@@ -4289,23 +4269,6 @@ algorithm
 
   end match;
 end buildOpenTURNSInterface;
-
-protected function getRunScriptExtension
-input String inString;
-output String outString;
-algorithm
-  outString:=match(inString)
-  local
-    case "LINUX32"
-      then ".sh";
-    case "LINUX64"
-      then ".sh";
-    case "WIN32"
-      then ".bat";
-    case "WIN64"
-      then ".bat";
-   end match;
- end getRunScriptExtension;
 
 protected function runOpenTURNSPythonScript
 "runs OpenTURNS with the given python script returning the log file"
