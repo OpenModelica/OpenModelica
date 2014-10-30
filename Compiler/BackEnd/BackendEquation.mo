@@ -1681,7 +1681,7 @@ algorithm
   end matchcontinue;
 end equationToResidualForm;
 
-public function traverseequationToResidualForm 
+public function traverseequationToResidualForm
 "author: Frenkel TUD 2010-11"
   input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
   output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
@@ -1699,7 +1699,7 @@ algorithm
   end matchcontinue;
 end traverseequationToResidualForm;
 
-public function traverseEquationToScalarResidualForm 
+public function traverseEquationToScalarResidualForm
 "author: Frenkel TUD 2010-11"
   input BackendDAE.Equation inEq;
   input list<BackendDAE.Equation> inEqs;

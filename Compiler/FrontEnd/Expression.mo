@@ -11274,7 +11274,7 @@ protected function createResidualExp3
   output DAE.Exp resExp;
 algorithm
   resExp := matchcontinue(iExp1, iExp2)
-      local 
+      local
         DAE.Exp e,e1,e2,e3,e4,e5,res;
         String s1, s2;
         DAE.Type tp;
@@ -11359,7 +11359,7 @@ protected function createResidualExp4"
  author: Vitalij
  helper function of createResidualExp3
  return true if f(x) = f(y), then it can be transformed into x = y.
- 
+
  Beware: function is not complete, yet!
 "
   input String f;
