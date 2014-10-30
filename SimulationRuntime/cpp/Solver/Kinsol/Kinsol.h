@@ -68,7 +68,7 @@ private:
     *_zeroVec,
     *_currentIterate;
 
-  double  
+  double
     _fnormtol,
     _scsteptol;
 

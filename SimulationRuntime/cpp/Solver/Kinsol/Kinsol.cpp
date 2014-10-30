@@ -109,7 +109,7 @@ void Kinsol::initialize()
             _jac              = new double[_dimSys*_dimSys];
             _yHelp            = new double[_dimSys];
             _fHelp            = new double[_dimSys];
-			
+
             _algLoop->getReal(_y);
             _algLoop->getReal(_y0);
 
@@ -121,7 +121,7 @@ void Kinsol::initialize()
             memset(_jac, 0, _dimSys*_dimSys*sizeof(double));
             memset(_zeroVec, 0, _dimSys*sizeof(double));
             memset(_currentIterate, 0, _dimSys*sizeof(double));
-			
+
             _algLoop->getNominalReal(_yScale);
 
             for (int i=0; i<_dimSys; i++)

@@ -7,7 +7,7 @@
 #include "LibrariesConfig.h"
 #endif
 
-SimController::SimController(PATH library_path, PATH modelicasystem_path) 
+SimController::SimController(PATH library_path, PATH modelicasystem_path)
     : SimControllerPolicy(library_path, modelicasystem_path, library_path)
     , _initialized(false)
 {

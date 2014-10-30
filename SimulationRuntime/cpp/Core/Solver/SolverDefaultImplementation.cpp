@@ -9,7 +9,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, I
     : SimulationMonitor()
     , _system               (system)
     , _settings             (settings)
-    
+
     , _tInit                (0.0)
     , _tCurrent             (0.0)
     , _tEnd                 (0.0)
@@ -17,23 +17,23 @@ SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, I
     , _tLastUnsucess        (0.0)
     , _tLargeStep           (0.0)
     , _h                    (0.0)
-    
+
     //, _firstCall            (true)
     , _firstStep            (true)
-    
+
     , _totStps              (0)
     , _accStps              (0)
     , _rejStps              (0)
     , _zeroStps             (0)
     , _zeros                (0)
-    
+
     , _zeroStatus           (ISolver::UNCHANGED_SIGN)
     , _zeroValInit          (NULL)
     , _dimZeroFunc          (0)
     , _zeroVal              (NULL)
     , _zeroValLastSuccess   (NULL)
     , _events               (NULL)
-    
+
     , _outputCommand        (IWriteOutput::WRITEOUT)
 {
   _state_selection = boost::shared_ptr<SystemStateSelection>(new SystemStateSelection(system));

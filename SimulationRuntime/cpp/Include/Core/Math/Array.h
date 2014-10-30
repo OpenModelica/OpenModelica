@@ -33,22 +33,22 @@ public:
   {
      throw std::invalid_argument("Wrong virtual Array operator call");
   };
-  
+
   virtual T& operator()(const unsigned int  i, const unsigned int j)
   {
     throw std::invalid_argument("Wrong virtual Array operator call");
   };
-  
+
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
     throw std::invalid_argument("Wrong virtual Array operator call");
   };
-  
+
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l)
   {
     throw std::invalid_argument("Wrong virtual Array operator call");
   };
-  
+
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l, unsigned int m)
   {
     throw std::invalid_argument("Wrong virtual Array operator call");
@@ -58,7 +58,7 @@ public:
   {
      return _static;
   }
-  
+
 protected:
   bool _static;
 };

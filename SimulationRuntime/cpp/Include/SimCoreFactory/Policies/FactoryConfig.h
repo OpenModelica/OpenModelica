@@ -15,7 +15,7 @@
   /*Defines*/
   #define PATH fs::path
   #include <Genericfactory/GenericFactory.h>
-  
+
 #elif defined(OMC_BUILD)
 
   #ifdef ANALYZATION_MODE
@@ -30,13 +30,13 @@
   #include <boost/filesystem/operations.hpp>
   #include <boost/filesystem/path.hpp>
   #include <boost/unordered_map.hpp>
-  
+
   /*Namespaces*/
   using namespace boost::extensions;
   namespace fs = boost::filesystem;
   using boost::unordered_map;
   #endif
-  
+
   /*Defines*/
   #define PATH fs::path
   #include "LibrariesConfig.h"
