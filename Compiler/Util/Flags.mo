@@ -139,6 +139,8 @@ public uniontype Flags
     array<Boolean> debugFlags;
     array<FlagData> configFlags;
   end FLAGS;
+
+  record NO_FLAGS end NO_FLAGS;
 end Flags;
 
 public uniontype ValidOptions
@@ -1237,14 +1239,30 @@ public function readArgs
   accordingly. Returns a list of arguments that were not consumed, such as the
   model filename."
   input list<String> inArgs;
-  output list<String> outArgs;
+  output list<String> outArgs := {};
 protected
   Flags flags;
   Integer numError;
+  String arg;
+  list<String> rest_args := inArgs;
 algorithm
   numError := Error.getNumErrorMessages();
   flags := loadFlags();
-  outArgs := List.filter1OnTrue(inArgs, readArg, flags);
+
+  while not listEmpty(rest_args) loop
+    arg :: rest_args := rest_args;
+
+    if arg == "--" then
+      // Stop parsing arguments if -- is encountered.
+      break;
+    else
+      if not readArg(arg, flags) then
+        outArgs := arg :: outArgs;
+      end if;
+    end if;
+  end while;
+
+  outArgs := listAppend(listReverse(outArgs), rest_args);
   _ := List.map2(outArgs,System.iconv,"UTF-8","UTF-8");
   Error.assertionOrAddSourceMessage(numError == Error.getNumErrorMessages(), Error.UTF8_COMMAND_LINE_ARGS, {}, Absyn.dummyInfo);
   saveFlags(flags);
@@ -1255,62 +1273,56 @@ protected function readArg
   consumed, otherwise false."
   input String inArg;
   input Flags inFlags;
-  output Boolean outNotConsumed;
+  output Boolean outConsumed;
+protected
+  String flagtype;
+  Integer len, pos;
 algorithm
-  outNotConsumed := matchcontinue(inArg, inFlags)
-    local
-      Integer len, pos;
-      String flag;
+  flagtype := stringGetStringChar(inArg, 1);
+  len := stringLength(inArg);
 
-    // Ignore flags that don't start with + or -.
-    case (_, _)
-      equation
-        flag = stringGetStringChar(inArg, 1);
-        false = stringEq(flag, "+") or stringEq(flag, "-");
-      then
-        true;
-
-    // Flags that start with --.
-    case (_, _)
-      equation
-        true = stringEq(System.substring(inArg, 1, 2), "--");
-        len = stringLength(inArg);
-        // Don't allow short names with --, like --a.
-        true = len > 3;
-        flag = System.substring(inArg, 3, len);
-        parseFlag(flag, inFlags);
-      then
-        false;
-
-    // Flags beginning with - are consumed by the RML runtime, until -- is
-    // encountered. The bootstrapped compiler gets all flags though, so this
-    // case is to make sure that -- is consumed and not treated as a flag.
-    case ("--", _) then false;
-
-    // Flags that start with +.
+  // Flags beginning with + can be both short and long, i.e. +h or +help.
+  if flagtype == "+" then
+    if len == 1 then // + alone is not a valid flag.
+      parseFlag(inArg, NO_FLAGS());
     else
-      equation
-        true = stringEq(stringGetStringChar(inArg, 1), "+");
-        len = stringLength(inArg);
-        pos = if len == 1 then 1 else 2; // Handle + without anything else.
-        flag = System.substring(inArg, pos, len);
-        parseFlag(flag, inFlags);
-      then
-        false;
-  end matchcontinue;
+      parseFlag(System.substring(inArg, 2, len), inFlags, flagtype);
+    end if;
+    outConsumed := true;
+  // Flags beginning with - must have another - for long flags, i.e. -h or --help.
+  elseif flagtype == "-" then
+    if len == 1 then // - alone is not a valid flag.
+      parseFlag(inArg, NO_FLAGS());
+    elseif len == 2 then // Short flag, i.e. -h.
+      parseFlag(System.substring(inArg, 2, 2), inFlags, flagtype);
+    elseif len == 3 then // Too long for short flag, too short for long flag.
+      parseFlag(inArg, NO_FLAGS());
+    else // Long flag, i.e. --help.
+      if stringGetStringChar(inArg, 2) == "-" then
+        parseFlag(System.substring(inArg, 3, len), inFlags, "--");
+      else
+        parseFlag(inArg, NO_FLAGS());
+      end if;
+    end if;
+    outConsumed := true;
+  else
+    // Arguments that don't begin with + or - are not flags, ignore them.
+    outConsumed := false;
+  end if;
 end readArg;
 
 protected function parseFlag
   "Parses a single flag."
   input String inFlag;
   input Flags inFlags;
+  input String inFlagPrefix = "";
 protected
   String flag;
   list<String> values;
 algorithm
   flag :: values := System.strtok(inFlag, "=");
   values := List.flatten(List.map1(values, System.strtok, ","));
-  parseConfigFlag(flag, values, inFlags);
+  parseConfigFlag(flag, values, inFlags, inFlagPrefix);
 end parseFlag;
 
 protected function parseConfigFlag
@@ -1318,29 +1330,26 @@ protected function parseConfigFlag
   input String inFlag;
   input list<String> inValues;
   input Flags inFlags;
+  input String inFlagPrefix;
 protected
   ConfigFlag config_flag;
 algorithm
-  config_flag := lookupConfigFlag(inFlag);
+  config_flag := lookupConfigFlag(inFlag, inFlagPrefix);
   evaluateConfigFlag(config_flag, inValues, inFlags);
 end parseConfigFlag;
 
 protected function lookupConfigFlag
   "Lookup up the flag with the given name in the list of configuration flags."
   input String inFlag;
+  input String inFlagPrefix;
   output ConfigFlag outFlag;
 algorithm
-  outFlag := matchcontinue(inFlag)
-    case (_)
-      then List.getMemberOnTrue(inFlag, allConfigFlags, matchConfigFlag);
-
-    else
-      equation
-        Error.addMessage(Error.UNKNOWN_OPTION, {inFlag});
-      then
-        fail();
-
-  end matchcontinue;
+  try
+    outFlag := List.getMemberOnTrue(inFlag, allConfigFlags, matchConfigFlag);
+  else
+    Error.addMessage(Error.UNKNOWN_OPTION, {inFlagPrefix + inFlag});
+    fail();
+  end try;
 end lookupConfigFlag;
 
 protected function evaluateConfigFlag
@@ -1966,13 +1975,13 @@ algorithm
   Print.printBuf(System.gettext("Copyright © 2014 Open Source Modelica Consortium (OSMC)\n"));
   Print.printBuf(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
-  Print.printBuf(System.gettext("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n* runtimeOptions: call omc -help to see runtime options\n"));
-  Print.printBuf(System.gettext("\n* +omcOptions:\n"));
+  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"));
+  Print.printBuf(System.gettext("\n* Options:\n"));
   Print.printBuf(printAllConfigFlags());
-  Print.printBuf(System.gettext("\nFor more details on a specific topic, use +help=topics or help(\"topics\")\n\n"));
+  Print.printBuf(System.gettext("\nFor more details on a specific topic, use --help=topics or help(\"topics\")\n\n"));
   Print.printBuf(System.gettext("* Examples:\n"));
   Print.printBuf(System.gettext("  omc Model.mo             will produce flattened Model on standard output.\n"));
-  Print.printBuf(System.gettext("  omc +s Model.mo          will produce simulation code for the model:\n"));
+  Print.printBuf(System.gettext("  omc -s Model.mo          will produce simulation code for the model:\n"));
   Print.printBuf(System.gettext("                            * Model.c           The model C code.\n"));
   Print.printBuf(System.gettext("                            * Model_functions.c The model functions C code.\n"));
   Print.printBuf(System.gettext("                            * Model.makefile    The makefile to compile the model.\n"));
@@ -1984,7 +1993,7 @@ algorithm
   Print.printBuf(System.gettext("  *.mo (Modelica files) \n"));
   //Print.printBuf("\t*.mof (Flat Modelica files) \n");
   Print.printBuf(System.gettext("  *.mos (Modelica Script files)\n\n"));
-  Print.printBuf(System.gettext("For available simulation flags, use +help=simulation.\n\n"));
+  Print.printBuf(System.gettext("For available simulation flags, use --help=simulation.\n\n"));
   Print.printBuf(System.gettext("Documentation is available in the built-in package OpenModelica.Scripting or\nonline <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n"));
   usage := Print.getString();
   Print.clearBuf();
@@ -2037,11 +2046,11 @@ algorithm
 
     case CONFIG_FLAG(name = name, shortname = SOME(shortname))
       equation
-        shortname = Util.stringPadLeft("+" + shortname, 4, " ");
-      then stringAppendList({shortname, ", +", name});
+        shortname = Util.stringPadLeft("-" + shortname, 4, " ");
+      then stringAppendList({shortname, ", --", name});
 
     case CONFIG_FLAG(name = name, shortname = NONE())
-      then "      +" + name;
+      then "      --" + name;
 
   end match;
 end printConfigFlagName;
