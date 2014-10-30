@@ -772,9 +772,9 @@ static inline void debugeJac(OptData * optData){
         fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj)
           if(jj != k)
-            fprintf(pFile,"%g;", J[k][jj]/optData->time.dt[i]);
+            fprintf(pFile,"%g;", (double)(J[k][jj]/optData->time.dt[i]));
           else
-            fprintf(pFile,"%g;", J[k][jj]/optData->time.dt[i]+1);
+            fprintf(pFile,"%g;", (double)(J[k][jj]/optData->time.dt[i]+1));
         fprintf(pFile,"\n");
       }
     }
