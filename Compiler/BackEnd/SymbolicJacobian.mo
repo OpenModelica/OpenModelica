@@ -158,7 +158,7 @@ algorithm
 
   // generate sparse pattern
   (sparsePattern, coloredCols) := generateSparsePattern(DAE, states, states);
-  shared := BackendDAEUtil.addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
+  shared := addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
 
   outBackendDAE := BackendDAE.DAE(eqs, shared);
 end detectSparsePatternODE;
@@ -187,7 +187,7 @@ algorithm
     System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
     (symJacA , sparsePattern, sparseColoring, funcs) = createSymbolicJacobianforStates(inBackendDAE);
-    shared = BackendDAEUtil.addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
+    shared = addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
     functionTree = BackendDAEUtil.getFunctions(shared);
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
     shared = BackendDAEUtil.addFunctionTree(functionTree, shared);
@@ -257,7 +257,7 @@ algorithm
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
     BackendDAE.SHARED(constraints=constraints) = shared;
     (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
-    shared = BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
+    shared = addBackendDAESharedJacobians(linearModelMatrixes, shared);
     functionTree = BackendDAEUtil.getFunctions(shared);
     functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
     shared = BackendDAEUtil.addFunctionTree(functionTree, shared);
@@ -2762,6 +2762,80 @@ algorithm
       (eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(inExp,source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN))::iAcc;
   end matchcontinue;
 end calculateJacobianRow3;
+
+protected function addBackendDAESharedJacobian
+  input BackendDAE.SymbolicJacobian inSymJac;
+  input BackendDAE.SparsePattern inSparsePattern;
+  input BackendDAE.SparseColoring inSparseColoring;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knvars,exobj,av;
+  BackendDAE.EquationArray remeqns,inieqns;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree funcTree;
+  BackendDAE.EventInfo einfo;
+  BackendDAE.ExternalObjectClasses eoc;
+  BackendDAE.BackendDAEType btp;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo ei;
+algorithm
+  BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei) := inShared;
+  symjacs := {(SOME(inSymJac), inSparsePattern, inSparseColoring), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {}), (NONE(), ({}, {}, ({}, {})), {})};
+  outShared := BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei);
+end addBackendDAESharedJacobian;
+
+protected function addBackendDAESharedJacobians
+  input BackendDAE.SymbolicJacobians inSymJac;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knvars,exobj,av;
+  BackendDAE.EquationArray remeqns,inieqns;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree funcTree;
+  BackendDAE.EventInfo einfo;
+  BackendDAE.ExternalObjectClasses eoc;
+  BackendDAE.BackendDAEType btp;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo ei;
+algorithm
+  BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, _, ei) := inShared;
+  outShared := BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, inSymJac, ei);
+end addBackendDAESharedJacobians;
+
+protected function addBackendDAESharedJacobianSparsePattern
+  input BackendDAE.SparsePattern inSparsePattern;
+  input BackendDAE.SparseColoring inSparseColoring;
+  input Integer inIndex;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
+protected
+  BackendDAE.Variables knvars,exobj,av;
+  BackendDAE.EquationArray remeqns,inieqns;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree funcTree;
+  BackendDAE.EventInfo einfo;
+  BackendDAE.ExternalObjectClasses eoc;
+  BackendDAE.BackendDAEType btp;
+  BackendDAE.SymbolicJacobians symjacs;
+  Option<BackendDAE.SymbolicJacobian> symJac;
+  BackendDAE.ExtraInfo ei;
+algorithm
+  BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei) := inShared;
+  ((symJac, _, _)) := listGet(symjacs, inIndex);
+  symjacs := List.set(symjacs, inIndex, ((symJac, inSparsePattern, inSparseColoring)));
+  outShared := BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei);
+end addBackendDAESharedJacobianSparsePattern;
 
 annotation(__OpenModelica_Interface="backend");
 end SymbolicJacobian;

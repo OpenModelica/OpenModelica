@@ -597,130 +597,29 @@ algorithm
   end match;
 end copyMatching;
 
-public function addBackendDAESharedJacobian
-"  author:  wbraun"
-  input BackendDAE.SymbolicJacobian inSymJac;
-  input BackendDAE.SparsePattern inSparsePattern;
-  input BackendDAE.SparseColoring inSparseColoring;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared;
-algorithm
-  outShared:=
-  match (inSymJac, inSparsePattern, inSparseColoring, inShared)
-    local
-      BackendDAE.Variables knvars,exobj,av;
-      EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcTree;
-      BackendDAE.EventInfo einfo;
-      ExternalObjectClasses eoc;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,_,_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,symjacs,ei))
-      equation
-        symjacs = {(SOME(inSymJac),inSparsePattern,inSparseColoring), (NONE(),({},{},({},{})),{}),(NONE(),({},{},({},{})),{}),(NONE(),({},{},({},{})),{})};
-      then
-        BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,symjacs,ei);
-
-  end match;
-end addBackendDAESharedJacobian;
-
-public function addBackendDAESharedJacobians
-"  author:  wbraun"
-  input BackendDAE.SymbolicJacobians inSymJac;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared;
-algorithm
-  outShared:=
-  match (inSymJac, inShared)
-    local
-      BackendDAE.Variables knvars,exobj,av;
-      EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcTree;
-      BackendDAE.EventInfo einfo;
-      ExternalObjectClasses eoc;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,_,ei))
-      then
-        BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,inSymJac,ei);
-
-  end match;
-end addBackendDAESharedJacobians;
-
-public function addBackendDAESharedJacobianSparsePattern
-"  author:  wbraun"
-  input BackendDAE.SparsePattern inSparsePattern;
-  input BackendDAE.SparseColoring inSparseColoring;
-  input Integer inIndex;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.Shared outShared;
-algorithm
-  outShared:=
-  match (inSparsePattern, inSparseColoring, inIndex, inShared)
-    local
-      BackendDAE.Variables knvars,exobj,av;
-      EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcTree;
-      BackendDAE.EventInfo einfo;
-      ExternalObjectClasses eoc;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      Option<BackendDAE.SymbolicJacobian> symJac;
-      BackendDAE.ExtraInfo ei;
-
-    case (_, _, _, BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,symjacs,ei))
-      equation
-        ((symJac,_,_)) = listGet(symjacs, inIndex);
-        symjacs = List.set(symjacs, inIndex, ((symJac, inSparsePattern, inSparseColoring)));
-      then
-        BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,symjacs,ei);
-
-  end match;
-end addBackendDAESharedJacobianSparsePattern;
-
 public function addBackendDAEKnVars
 "  That function replace the KnownVars in BackendDAE.
   author:  wbraun"
   input BackendDAE.Variables inKnVars;
   input BackendDAE.BackendDAE inBDAE;
   output BackendDAE.BackendDAE outBDAE;
+protected
+  BackendDAE.Variables exobj,av;
+  EquationArray remeqns,inieqns;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree funcTree;
+  BackendDAE.EventInfo einfo;
+  ExternalObjectClasses eoc;
+  BackendDAEType btp;
+  BackendDAE.SymbolicJacobians symjacs;
+  EqSystems eqs;
+  BackendDAE.ExtraInfo ei;
 algorithm
-  outBDAE := match (inKnVars, inBDAE)
-    local
-      BackendDAE.Variables exobj,av;
-      EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcTree;
-      BackendDAE.EventInfo einfo;
-      ExternalObjectClasses eoc;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      EqSystems eqs;
-      BackendDAE.ExtraInfo ei;
-
-    case (_,BackendDAE.DAE(eqs=eqs,shared=BackendDAE.SHARED(_,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,symjacs,ei)))
-      then BackendDAE.DAE(eqs,BackendDAE.SHARED(inKnVars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,einfo,eoc,btp,symjacs,ei));
-
-  end match;
+  BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(_, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei)) := inBDAE;
+  outBDAE := BackendDAE.DAE(eqs, BackendDAE.SHARED(inKnVars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei));
 end addBackendDAEKnVars;
 
 public function addBackendDAEFunctionTree
@@ -784,21 +683,17 @@ public function addVarsToEqSystem
   input BackendDAE.EqSystem syst;
   input list<BackendDAE.Var> varlst;
   output BackendDAE.EqSystem osyst;
+protected
+  BackendDAE.Variables vars;
+  EquationArray eqs;
+  Option<BackendDAE.IncidenceMatrix> m,mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  osyst := match (syst,varlst)
-    local
-      BackendDAE.Variables vars;
-      EquationArray eqs;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.Matching matching;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
-
-    case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind),_)
-      equation
-        vars = BackendVariable.addVars(varlst, vars);
-      then BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind);
-  end match;
+  BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind) := syst;
+  vars := BackendVariable.addVars(varlst, vars);
+  osyst := BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets, partitionKind);
 end addVarsToEqSystem;
 
 public function addDummyStateIfNeeded
@@ -885,225 +780,6 @@ algorithm
   // add system to list of systems
   osysts := syst::isysts;
 end addDummyState;
-
-/* Actually obsolete code, should be removed
-   but is used in modpar in Main.mo
- */
-public function calculateSizes "author: PA
-  Calculates the number of state variables, nx,
-  the number of algebraic variables, ny
-  and the number of parameters/constants, np.
-  inputs:  BackendDAE
-  outputs: (int, // nx
-            int, // ny
-            int, // np
-            int  // ng
-            int) next"
-  input BackendDAE.BackendDAE inBackendDAE;
-  output Integer outnx        "number of states";
-  output Integer outny        "number of alg. vars";
-  output Integer outnp        "number of parameters";
-  output Integer outng        "number of zerocrossings";
-  output Integer outng_sample "number of zerocrossings that are samples";
-  output Integer outnext      "number of external objects";
-  // nx cannot be strings
-  output Integer outny_string "number of alg.vars which are strings";
-  output Integer outnp_string "number of parameters which are strings";
-  // nx cannot be int
-  output Integer outny_int    "number of alg.vars which are ints";
-  output Integer outnp_int    "number of parameters which are ints";
-  // nx cannot be int
-  output Integer outny_bool   "number of alg.vars which are bools";
-  output Integer outnp_bool   "number of parameters which are bools";
-algorithm
-  (outnx,outny,outnp,outng,outng_sample,outnext, outny_string, outnp_string, outny_int, outnp_int, outny_bool, outnp_bool):=
-  match (inBackendDAE)
-    local
-      Integer np,ng,nsam,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string,np_int,np_bool,ny_int,ny_1_int,ny_bool,ny_1_bool;
-      BackendDAE.Variables vars,knvars,extvars;
-      list<BackendDAE.WhenClause> wc;
-      list<ZeroCrossing> zc;
-      Integer numberOfRelations;
-
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{},shared=BackendDAE.SHARED(knownVars = knvars, externalObjects = extvars,
-                 eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = _,
-                                        zeroCrossingLst = zc,relationsNumber=numberOfRelations))))
-      equation
-        // input variables are put in the known var list, but they should be counted by the ny counter
-        next = BackendVariable.varsSize(extvars);
-        ((np,np_string,np_int, np_bool)) = BackendVariable.traverseBackendDAEVars(knvars,calculateParamSizes,(0,0,0,0));
-        (_,nsam) = calculateNumberZeroCrossings(zc, 0, 0);
-        ((nx,ny,ny_string,ny_int, ny_bool)) = BackendVariable.traverseBackendDAEVars(vars,calculateVarSizes,(0, 0, 0, 0, 0));
-        ((nx_1,ny_1,ny_1_string,ny_1_int, ny_1_bool)) = BackendVariable.traverseBackendDAEVars(knvars,calculateVarSizes,(nx, ny, ny_string, ny_int, ny_bool));
-      then
-        (nx_1,ny_1,np,numberOfRelations,nsam,next,ny_1_string, np_string, ny_1_int, np_int, ny_1_bool, np_bool);
-  end match;
-
-end calculateSizes;
-
-protected function calculateNumberZeroCrossings "author: unknown"
-  input list<ZeroCrossing> zcLst;
-  input Integer inZc_index;
-  input Integer inSample_index;
-  output Integer zc;
-  output Integer sample;
-algorithm
-  (zc,sample) := matchcontinue (zcLst,inZc_index,inSample_index)
-    local
-      list<ZeroCrossing> xs;
-      Integer sample_index, zc_index;
-
-    case ({},zc_index,sample_index) then (zc_index,sample_index);
-
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.CALL(path = Absyn.IDENT(name = "sample")))::xs,zc_index,sample_index)
-      equation
-        sample_index = sample_index + 1;
-        zc_index = zc_index + 1;
-        (zc,sample) = calculateNumberZeroCrossings(xs,zc_index,sample_index);
-      then (zc,sample);
-
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.RELATION(operator = _), occurEquLst = _)::xs,zc_index,sample_index)
-      equation
-        zc_index = zc_index + 1;
-        (zc,sample) = calculateNumberZeroCrossings(xs,zc_index,sample_index);
-      then (zc,sample);
-
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.LBINARY(operator = _), occurEquLst = _)::xs,zc_index,sample_index)
-      equation
-        zc_index = zc_index + 1;
-        (zc,sample) = calculateNumberZeroCrossings(xs,zc_index,sample_index);
-      then (zc,sample);
-
-    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.LUNARY(operator = _), occurEquLst = _)::xs,zc_index,sample_index)
-      equation
-        zc_index = zc_index + 1;
-        (zc,sample) = calculateNumberZeroCrossings(xs,zc_index,sample_index);
-      then (zc,sample);
-
-
-    case (_,_,_)
-      equation
-        print("- BackendDAEUtil.calculateNumberZeroCrossings failed\n");
-      then
-        fail();
-
-  end matchcontinue;
-end calculateNumberZeroCrossings;
-
-protected function calculateParamSizes "author: PA
-  Helper function to calculateSizes"
-  input Var inVar;
-  input tuple<Integer,Integer,Integer,Integer> inTpl;
-  output Var outVar;
-  output tuple<Integer,Integer,Integer,Integer> outTpl;
-algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
-    local
-      Integer s1,s2,s3, s4;
-      Var var;
-    case (var,(s1,s2,s3,s4))
-      equation
-        true = BackendVariable.isBoolParam(var);
-      then (var,(s1,s2,s3,s4 + 1));
-    case (var,(s1,s2,s3,s4))
-      equation
-        true = BackendVariable.isIntParam(var);
-      then (var,(s1,s2,s3 + 1,s4));
-    case (var,(s1,s2,s3,s4))
-      equation
-        true = BackendVariable.isStringParam(var);
-      then (var,(s1,s2 + 1,s3,s4));
-    case (var,(s1,s2,s3,s4))
-      equation
-        true = BackendVariable.isParam(var);
-      then (var,(s1 + 1,s2,s3,s4));
-    else (inVar,inTpl);
-  end matchcontinue;
-end calculateParamSizes;
-
-protected function calculateVarSizes "author: PA
-  Helper function to calculateSizes"
-  input Var inVar;
-  input tuple<Integer,Integer,Integer,Integer,Integer> inTpl;
-  output Var outVar;
-  output tuple<Integer,Integer,Integer,Integer,Integer> outTpl;
-algorithm
-  (outVar,outTpl) := match (inVar,inTpl)
-    local
-      Integer nx,ny,ny_string, ny_int, ny_bool;
-      Var var;
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string+1, ny_int,ny_bool));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string, ny_int+1,ny_bool));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_BOOL(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string, ny_int,ny_bool+1));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE()),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny+1,ny_string, ny_int,ny_bool));
-
-     case (var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string+1, ny_int,ny_bool));
-
-     case (var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string, ny_int+1,ny_bool));
-
-     case (var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_BOOL(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string, ny_int,ny_bool+1));
-
-     case (var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE()),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny+1,ny_string, ny_int,ny_bool));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx+1,ny,ny_string, ny_int,ny_bool));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool)) // A dummy state is an algebraic variable
-      then
-        (var,(nx,ny,ny_string+1, ny_int,ny_bool));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool)) // A dummy state is an algebraic variable
-      then
-        (var,(nx,ny,ny_string, ny_int+1,ny_bool));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_BOOL(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string, ny_int,ny_bool+1));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()),(nx,ny,ny_string, ny_int, ny_bool)) // A dummy state is an algebraic variable
-      then
-        (var,(nx,ny+1,ny_string, ny_int,ny_bool));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string+1, ny_int,ny_bool));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string, ny_int+1,ny_bool));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_BOOL(source = _)),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny,ny_string, ny_int,ny_bool+1));
-
-    case (var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()),(nx,ny,ny_string, ny_int, ny_bool))
-      then
-        (var,(nx,ny+1,ny_string, ny_int,ny_bool));
-
-    else (inVar,inTpl);
-  end match;
-end calculateVarSizes;
 
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
@@ -1289,40 +965,6 @@ public function makeExpType
 algorithm
   outType := inType;
 end makeExpType;
-
-public function addAliasVariables
-"author: Frenkel TUD 2010-12
-  Add an alias variable to the AliasVariables "
-  input list<BackendDAE.Var> inVars;
-  input BackendDAE.Variables inAliasVariables;
-  output BackendDAE.Variables outAliasVariables;
-algorithm
-algorithm
-  outAliasVariables := matchcontinue (inVars,inAliasVariables)
-    local
-      BackendDAE.Variables aliasVariables;
-      DAE.ComponentRef cr;
-      DAE.Exp exp;
-      Var v;
-      list<BackendDAE.Var> rest;
-    case ({},_) then inAliasVariables;
-    case (v::rest,_)
-      equation
-        aliasVariables = BackendVariable.addVar(v,inAliasVariables);
-        exp = BackendVariable.varBindExp(v);
-        cr = BackendVariable.varCref(v);
-        if Flags.isSet(Flags.DEBUG_ALIAS) then
-          BackendDump.debugStrCrefStrExpStr("++++ added Alias eqn: ",cr," = ",exp,"\n");
-        end if;
-      then
-       addAliasVariables(rest,aliasVariables);
-    case (_,_)
-      equation
-        print("- BackendDAEUtil.addAliasVariables failed\n");
-      then
-        fail();
-  end matchcontinue;
-end addAliasVariables;
 
 public function isDiscreteEquation
   input BackendDAE.Equation eqn;
@@ -2866,13 +2508,12 @@ public function applyIndexType
   output list<Integer> outLst;
 algorithm
   outLst := match(inLst, inIndexType)
-
     // transform to absolute indexes
-    case (_, BackendDAE.ABSOLUTE()) then List.map(inLst, intAbs);
+    case (_, BackendDAE.ABSOLUTE())
+    then List.map(inLst, intAbs);
 
     // leave as it is
-    case (_, _) then inLst;
-
+    else inLst;
   end match;
 end applyIndexType;
 
