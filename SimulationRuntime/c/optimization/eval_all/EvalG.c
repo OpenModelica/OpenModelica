@@ -750,7 +750,11 @@ static inline void debugeJac(OptData * optData){
 
   FILE *pFile;
   char buffer[4096];
-
+  if(np != 1){
+    printf("\n***************************************************\n");
+    printf("\nError optDebugeJac work only with optimizerNP 1!!!!\n");
+    printf("\n***************************************************\n");
+  }
   sprintf(buffer, "jac_ana_step_%i.csv", optData->iter_);
   pFile = fopen(buffer, "wt");
 
@@ -767,7 +771,10 @@ static inline void debugeJac(OptData * optData){
       for(k = 0; k < nx; ++k){
         fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj)
-          fprintf(pFile,"%g;", J[k][jj]);
+          if(jj != k)
+            fprintf(pFile,"%g;", J[k][jj]/optData->time.dt[i]);
+          else
+            fprintf(pFile,"%g;", J[k][jj]/optData->time.dt[i]+1);
         fprintf(pFile,"\n");
       }
     }
@@ -802,7 +809,7 @@ static inline void debugeJac(OptData * optData){
     fprintf(pFile,"  def __read_csv__(self):\n");
     fprintf(pFile,"    with open(self.filename,'r') as f:\n");
     fprintf(pFile,"%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",
-                  "      print f.readline() # name",
+                  "      f.readline() # name",
                   "      for l in xrange(self.number_of_timepoints):",
                   "        for k in xrange(self.number_of_states):",
                   "          l1 = f.readline()",
@@ -815,9 +822,9 @@ static inline void debugeJac(OptData * optData){
                   "            self.J[k,n,l] = float(r)",
                   "      f.close()\n",
                   "  def __str__(self):",
-                  "   print \"read file %s\"%self.filename","   print \"states: \", self.states",
-                  "   print \"inputs: \", self.inputs","   print \"t0 = %g, t = %g\"%(self.t[0],self.t[-1])",
-                  "   return \"\"");
+                  "    print \"read file %s\"%self.filename","   print \"states: \", self.states",
+                  "    print \"inputs: \", self.inputs","   print \"t0 = %g, t = %g\"%(self.t[0],self.t[-1])",
+                  "    return \"\"\n");
     fprintf(pFile,"  def get_value_of_jacobian(self,i, j):\n\n");
     fprintf(pFile,"   \"\"\"\n     Input i:\n");
     for(j = 0; j < nx; ++j)
@@ -841,9 +848,35 @@ static inline void debugeJac(OptData * optData){
     fprintf(pFile,"%s\n","    plt.legend([plt_name])");
     fprintf(pFile,"%s\n","    plt.xlabel('time')");
     fprintf(pFile,"%s\n\n\n","    plt.savefig(filename = filename, format='png')");
+
+    fprintf(pFile,"%s\n","  def plot_jacian_elements_nz(self,i,filename):");
+    fprintf(pFile,"%s\n","    plt.hold(False)");
+    fprintf(pFile,"%s\n","    for j in xrange(self.number_of_states):");
+    fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","      sum_J = sum(abs(J))");
+    fprintf(pFile,"%s\n","      if sum_J >= 1e-9*np.sqrt(len(J)):");
+    fprintf(pFile,"%s\n","        plt.plot(self.t, J)");
+    fprintf(pFile,"%s\n","        plt_name = \"der(\" + self.states[i] + \")/\" + self.states[j]");
+    fprintf(pFile,"%s\n","        plt.legend([plt_name])");
+    fprintf(pFile,"%s\n","        plt.xlabel('time')");
+    fprintf(pFile,"%s\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_\"+ str(j) + filename, format='png')\n");
+    fprintf(pFile,"%s\n","    for j in xrange(self.number_of_inputs):");
+    fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","      sum_J = sum(abs(J))");
+    fprintf(pFile,"%s\n","      if sum_J >= 1e-9*np.sqrt(len(J)):");
+    fprintf(pFile,"%s\n","        plt.plot(self.t, J)");
+    fprintf(pFile,"%s\n","        plt_name = \"der(\" + self.states[i] + \")/\" + self.inputs[j]");
+    fprintf(pFile,"%s\n","        plt.legend([plt_name])");
+    fprintf(pFile,"%s\n","        plt.xlabel('time')");
+    fprintf(pFile,"%s\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_\"+ str(j) + filename, format='png')");
+
+
+
+
     fprintf(pFile,"%s\n\n","M = OMC_JAC('jac_ana_step_1.csv')");
     fprintf(pFile,"%s\n","print M");
-    fprintf(pFile,"%s\n","M.plot_jacobian_element(0,0,'pltJac.png')");
+    fprintf(pFile,"%s\n","#M.plot_jacobian_element(0,0,'pltJac.png')");
+    fprintf(pFile,"%s\n","M.plot_jacian_elements_nz(0,'pltJac.png')");
 
 
     fclose(pFile);
