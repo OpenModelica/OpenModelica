@@ -92,6 +92,7 @@ void SimulationDialog::directSimulate(LibraryTreeNode *pLibraryTreeNode, bool is
   mIsInteractive = isInteractive;
   mpLibraryTreeNode = pLibraryTreeNode;
   initializeFields();
+  mpBuildOnlyCheckBox->setChecked(false);
   mpLaunchTransformationalDebuggerCheckBox->setChecked(launchTransformationalDebugger);
   mpLaunchAlgorithmicDebuggerCheckBox->setChecked(launchAlgorithmicDebugger);
   simulate();
@@ -151,6 +152,9 @@ void SimulationDialog::setUpForm()
   mpNumberOfProcessorsSpinBox = new QSpinBox;
   mpNumberOfProcessorsSpinBox->setSpecialValueText("<Auto>");
   mpNumberOfProcessorsNoteLabel = new Label(tr("Use 1 processor if you encounter problems during compilation."));
+  // build only
+  mpBuildOnlyCheckBox = new QCheckBox(tr("Build Only"));
+  connect(mpBuildOnlyCheckBox, SIGNAL(toggled(bool)), SLOT(buildOnly(bool)));
   // Launch Transformational Debugger checkbox
   mpLaunchTransformationalDebuggerCheckBox = new QCheckBox(tr("Launch Transformational Debugger"));
   // Launch Algorithmic Debugger checkbox
@@ -165,8 +169,9 @@ void SimulationDialog::setUpForm()
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsLabel, 3, 0);
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsSpinBox, 3, 1);
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsNoteLabel, 3, 2);
-  pGeneralTabLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 4, 0, 1, 3);
-  pGeneralTabLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 5, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpBuildOnlyCheckBox, 4, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpLaunchTransformationalDebuggerCheckBox, 5, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpLaunchAlgorithmicDebuggerCheckBox, 6, 0, 1, 3);
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpGeneralTab, Helper::general);
@@ -935,6 +940,12 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
   server.close();
 }
 
+void SimulationDialog::buildOnly(bool checked)
+{
+  mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
+  mpSimulationFlagsTab->setEnabled(!checked);
+}
+
 /*!
   Slot activated when mpModelSetupFileBrowseButton clicked signal is raised.\n
   Allows user to select Model Setup File.
@@ -1153,15 +1164,14 @@ void SimulationDialog::simulate()
 void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsCompilationProcessRunning = false;
-  if (exitStatus == QProcess::NormalExit && exitCode == 0)
-  {
+  if ((exitStatus == QProcess::NormalExit) && (exitCode == 0)) {
     QString fileNamePrefix = mpLibraryTreeNode->getNameStructure();
     QString outputFormat;
-    if (!mpFileNameTextBox->text().isEmpty())
+    if (!mpFileNameTextBox->text().isEmpty()) {
       fileNamePrefix = mpFileNameTextBox->text().trimmed();
+    }
     QRegExp regExp("\\b(mat|plt|csv)\\b");
-    if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1)
-    {
+    if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1) {
       outputFormat = mpOutputFormatComboBox->currentText();
     }
     SimulationOptions simulationOptions(mpLibraryTreeNode->getNameStructure(), fileNamePrefix, outputFormat, mSimulationFlags,
@@ -1174,43 +1184,41 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
         mpLaunchTransformationalDebuggerCheckBox->isChecked()) {
       mpMainWindow->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getFileNamePrefix() + "_info.xml");
     }
-    /* launch the algorithmic debugger */
-    if (mpLaunchAlgorithmicDebuggerCheckBox->isChecked())
-    {
-      QString fileName = QString(simulationOptions.getOutputFileName()).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
-      // start the executable
-      fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(fileName);
-      fileName = fileName.replace("//", "/");
-      // run the simulation executable to create the result file
-    #ifdef WIN32
-      fileName = fileName.append(".exe");
-    #endif
-      // start the debugger
-      if (mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->isGDBRunning())
-      {
-        QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                                 GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
+    // if not build only
+    if (!mpBuildOnlyCheckBox->isChecked()) {
+      /* launch the algorithmic debugger */
+      if (mpLaunchAlgorithmicDebuggerCheckBox->isChecked()) {
+        QString fileName = QString(simulationOptions.getOutputFileName()).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
+        // start the executable
+        fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(fileName);
+        fileName = fileName.replace("//", "/");
+        // run the simulation executable to create the result file
+#ifdef WIN32
+        fileName = fileName.append(".exe");
+#endif
+        // start the debugger
+        if (mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->isGDBRunning()) {
+          QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                                   GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
+        } else {
+          QFileInfo fileInfo(fileName);
+          QString GDBPath = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBPath();
+          QStringList args(QString("-logFormat=text"));
+          args << simulationOptions.getSimulationFlags();
+          mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->launch(fileName, fileInfo.absoluteDir().absolutePath(), args, GDBPath, false);
+        }
+      } else {
+        /* run the simulation */
+        runSimulationExecutable(simulationOptions);
       }
-      else
-      {
-        QFileInfo fileInfo(fileName);
-        QString GDBPath = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBPath();
-        QStringList args(QString("-logFormat=text"));
-        args << simulationOptions.getSimulationFlags();
-        mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->launch(fileName, fileInfo.absoluteDir().absolutePath(), args, GDBPath, false);
-      }
-    }
-    else
-    {
-      /* run the simulation */
-      runSimulationExecutable(simulationOptions);
     }
   } else if (!mIsCancelled) {
     QString exitCodeStr = tr("Compilation process exited with code %1").arg(QString::number(exitCode));
-    if (mpCompilationProcess->error() == QProcess::UnknownError)
+    if (mpCompilationProcess->error() == QProcess::UnknownError) {
       writeCompilationOutput(exitCodeStr, Qt::red);
-    else
+    } else {
       writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    }
   }
 }
 

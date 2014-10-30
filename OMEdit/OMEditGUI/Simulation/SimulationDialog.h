@@ -142,6 +142,7 @@ private:
   Label *mpNumberOfProcessorsLabel;
   QSpinBox *mpNumberOfProcessorsSpinBox;
   Label *mpNumberOfProcessorsNoteLabel;
+  QCheckBox *mpBuildOnlyCheckBox;
   QCheckBox *mpLaunchTransformationalDebuggerCheckBox;
   QCheckBox *mpLaunchAlgorithmicDebuggerCheckBox;
   // Output Tab
@@ -239,6 +240,7 @@ private:
   void processFinished(int exitCode, QProcess::ExitStatus exitStatus);
 public slots:
   void runSimulationExecutable(SimulationOptions simulationOptions);
+  void buildOnly(bool checked);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
   void simulate();
