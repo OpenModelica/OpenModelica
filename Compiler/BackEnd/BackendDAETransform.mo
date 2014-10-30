@@ -439,7 +439,7 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE(),NONE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        (jac,shared) = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, true, shared);
+        (jac,shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, shared);
         // Jacobian of a Linear System is always linear
         (jac_tp,jacConstant) = BackendDAEUtil.analyzeJacobian(vars_1,eqns_1,jac);
         // if constant check for singular jacobian

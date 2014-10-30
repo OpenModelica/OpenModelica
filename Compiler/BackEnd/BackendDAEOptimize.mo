@@ -95,20 +95,19 @@ public function simplifyTimeIndepFuncCalls "author: Frenkel TUD 2012-06
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,simplifyTimeIndepFuncCalls0,false);
+  (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, simplifyTimeIndepFuncCalls0, false);
   outDAE := simplifyTimeIndepFuncCallsShared(outDAE);
 end simplifyTimeIndepFuncCalls;
 
 protected function simplifyTimeIndepFuncCalls0 "author: Frenkel TUD 2012-06"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  input tuple<BackendDAE.Shared, Boolean> sharedChanged;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+  output tuple<BackendDAE.Shared, Boolean> osharedChanged;
 algorithm
-  (osyst,osharedChanged) :=
-    matchcontinue(isyst,sharedChanged)
+  (osyst, osharedChanged) := matchcontinue(isyst, sharedChanged)
     local
-      BackendDAE.Variables orderedVars,knvars,aliasvars;
+      BackendDAE.Variables orderedVars, knvars, aliasvars;
       BackendDAE.EquationArray orderedEqs;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
@@ -117,98 +116,95 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared as BackendDAE.SHARED(knownVars = knvars,aliasVars = aliasvars), _))
-      equation
-        ((_,(_,_,true))) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,Expression.traverseSubexpressionsHelper,(traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false)));
-      then
-        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared,true));
-    else
-      (isyst,sharedChanged);
+    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared as BackendDAE.SHARED(knownVars = knvars, aliasVars = aliasvars), _)) equation
+      ((_, (_, _, true))) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false)));
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, true));
+
+    else (isyst, sharedChanged);
   end matchcontinue;
 end simplifyTimeIndepFuncCalls0;
 
 protected function traverserExpsimplifyTimeIndepFuncCalls
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean> tpl;
+  input tuple<BackendDAE.Variables, BackendDAE.Variables, Boolean> inTpl;
   output DAE.Exp outExp;
-  output tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean> outTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.Variables, Boolean> outTpl;
 algorithm
-  (outExp,outTpl) := matchcontinue (inExp,tpl)
+  (outExp, outTpl) := matchcontinue (inExp, inTpl)
     local
-      BackendDAE.Variables knvars,aliasvars;
+      BackendDAE.Variables knvars, aliasvars;
       DAE.Type tp;
-      DAE.Exp e,zero;
+      DAE.Exp e, zero;
       DAE.ComponentRef cr;
       BackendDAE.Var var;
       DAE.CallAttributes attr;
       Boolean negate;
-    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_))
-      equation
-        (var::{},_) = BackendVariable.getVar(cr, knvars);
-        false = BackendVariable.isVarOnTopLevelAndInput(var);
-        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-      then
-        (zero,(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr)}),(knvars,aliasvars,_))
-      equation
-        (_::{},_) = BackendVariable.getVar(cr, knvars);
-      then
-        (e,(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_))
-      then
-        (e,(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}),(knvars,aliasvars,_))
-      then
-        (e,(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_))
-      equation
-        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
-        (cr,negate) = BackendVariable.getAlias(var);
-        e = DAE.CREF(cr,tp);
-        e = if negate then Expression.negate(e) else e;
-        (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("pre"),{e},attr));
-        (e,_) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
-      then
-        (e,(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_))
-      equation
-        (_::_,_) = BackendVariable.getVar(cr, knvars);
-        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
-      then
-        (zero,(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_))
-      equation
-        (_::_,_) = BackendVariable.getVar(cr, aliasvars);
-        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
-      then (zero,(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_))
-      then (DAE.BCONST(false),(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_))
-      equation
-        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
-        (cr,negate) = BackendVariable.getAlias(var);
-        e = DAE.CREF(cr,tp);
-        e = if negate then Expression.negate(e) else e;
-        (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("change"),{e},attr));
-        (e,_) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
-      then (e,(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_))
-      equation
-        (_::{},_) = BackendVariable.getVar(cr, knvars);
-        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
-      then (zero,(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_))
-      then (DAE.BCONST(false),(knvars,aliasvars,true));
-    case (DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_))
-      equation
-        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
-        (cr,negate) = BackendVariable.getAlias(var);
-        e = DAE.CREF(cr,tp);
-        e = if negate then Expression.negate(e) else e;
-        (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("edge"),{e},attr));
-        (e,_) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
-      then (e,(knvars,aliasvars,true));
-    else (inExp,tpl);
+
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
+      (var::{}, _) = BackendVariable.getVar(cr, knvars);
+      false = BackendVariable.isVarOnTopLevelAndInput(var);
+      (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+    then (zero, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=cr)}), (knvars, aliasvars, _)) equation
+      (_::{}, _) = BackendVariable.getVar(cr, knvars);
+    then(e, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
+    then (e, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (knvars, aliasvars, _))
+    then (e, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
+      (var::{}, _) = BackendVariable.getVar(cr, aliasvars);
+      (cr, negate) = BackendVariable.getAlias(var);
+      e = DAE.CREF(cr, tp);
+      e = if negate then Expression.negate(e) else e;
+      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("pre"), {e}, attr));
+      (e, _) = Expression.traverseExp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
+    then (e, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
+      (_::_, _) = BackendVariable.getVar(cr, knvars);
+      zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
+    then (zero, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
+      (_::_, _) = BackendVariable.getVar(cr, aliasvars);
+      zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
+    then (zero, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
+    then (DAE.BCONST(false), (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
+      (var::{}, _) = BackendVariable.getVar(cr, aliasvars);
+      (cr, negate) = BackendVariable.getAlias(var);
+      e = DAE.CREF(cr, tp);
+      e = if negate then Expression.negate(e) else e;
+      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("change"), {e}, attr));
+      (e, _) = Expression.traverseExp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
+    then (e, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (knvars, aliasvars, _)) equation
+      (_::{}, _) = BackendVariable.getVar(cr, knvars);
+      zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
+    then (zero, (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (knvars, aliasvars, _))
+    then (DAE.BCONST(false), (knvars, aliasvars, true));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (knvars, aliasvars, _)) equation
+      (var::{}, _) = BackendVariable.getVar(cr, aliasvars);
+      (cr, negate) = BackendVariable.getAlias(var);
+      e = DAE.CREF(cr, tp);
+      e = if negate then Expression.negate(e) else e;
+      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("edge"), {e}, attr));
+      (e, _) = Expression.traverseExp(e, traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false));
+    then (e, (knvars, aliasvars, true));
+
+    else (inExp, inTpl);
   end matchcontinue;
 end traverserExpsimplifyTimeIndepFuncCalls;
 
@@ -219,121 +215,117 @@ protected function simplifyTimeIndepFuncCallsShared "pre(param) -> param
   author: Frenkel TUD 2012-06"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.Variables knvars, exobj, aliasVars;
+  BackendDAE.EquationArray remeqns, inieqns;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree funcTree;
+  BackendDAE.ExternalObjectClasses eoc;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.EventInfo eventInfo;
+  BackendDAE.BackendDAEType btp;
+  BackendDAE.EqSystems systs;
+  BackendDAE.ExtraInfo ei;
 algorithm
-  outDAE:= match (inDAE)
-    local
-      BackendDAE.Variables knvars,exobj,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcTree;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.EventInfo eventInfo;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.EqSystems systs;
-      BackendDAE.ExtraInfo ei;
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei)) := inDAE;
 
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,eventInfo,eoc,btp,symjacs,ei)))
-      equation
-        _ = BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(knvars,Expression.traverseSubexpressionsHelper,(traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasVars,false)));
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,Expression.traverseSubexpressionsHelper,(traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasVars,false)));
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,Expression.traverseSubexpressionsHelper,(traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasVars,false)));
-        (eventInfo,_) = traverseEventInfoExps(eventInfo,Expression.traverseSubexpressionsHelper,(traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasVars,false)));
-      then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,eventInfo,eoc,btp,symjacs,ei));
-  end match;
+  _ := BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(knvars, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasVars, false)));
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasVars, false)));
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasVars, false)));
+  (eventInfo, _) := traverseEventInfoExps(eventInfo, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasVars, false)));
+
+  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, eventInfo, eoc, btp, symjacs, ei));
 end simplifyTimeIndepFuncCallsShared;
 
-protected function traverseEventInfoExps
-  replaceable type Type_a subtypeof Any;
+protected function traverseEventInfoExps<T>
   input BackendDAE.EventInfo iEventInfo;
   input FuncExpType func;
-  input Type_a inTypeA;
+  input T inTypeA;
   output BackendDAE.EventInfo oEventInfo;
-  output Type_a outTypeA;
+  output T outTypeA;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input T inTypeA;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output T outA;
   end FuncExpType;
 protected
   list<BackendDAE.TimeEvent> timeEvents;
   list<BackendDAE.WhenClause> whenClauseLst;
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst,sampleLst,relationsLst;
-  Integer relationsNumber,numberMathEvents;
+  list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
+  Integer relationsNumber, numberMathEvents;
 algorithm
-  BackendDAE.EVENT_INFO(timeEvents,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents) := iEventInfo;
-  (whenClauseLst,outTypeA) := traverseWhenClauseExps(whenClauseLst,func,inTypeA,{});
-  (zeroCrossingLst,outTypeA) := traverseZeroCrossingExps(zeroCrossingLst,func,outTypeA,{});
-  (sampleLst,outTypeA) := traverseZeroCrossingExps(sampleLst,func,outTypeA,{});
-  (relationsLst,outTypeA) := traverseZeroCrossingExps(relationsLst,func,outTypeA,{});
-  oEventInfo := BackendDAE.EVENT_INFO(timeEvents,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents);
+  BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, relationsNumber, numberMathEvents) := iEventInfo;
+  (whenClauseLst, outTypeA) := traverseWhenClauseExps(whenClauseLst, func, inTypeA, {});
+  (zeroCrossingLst, outTypeA) := traverseZeroCrossingExps(zeroCrossingLst, func, outTypeA, {});
+  (sampleLst, outTypeA) := traverseZeroCrossingExps(sampleLst, func, outTypeA, {});
+  (relationsLst, outTypeA) := traverseZeroCrossingExps(relationsLst, func, outTypeA, {});
+  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, relationsNumber, numberMathEvents);
 end traverseEventInfoExps;
 
-protected function traverseWhenClauseExps
-  replaceable type Type_a subtypeof Any;
+protected function traverseWhenClauseExps<T>
   input list<BackendDAE.WhenClause> iWhenClauses;
   input FuncExpType func;
-  input Type_a inTypeA;
+  input T inTypeA;
   input list<BackendDAE.WhenClause> iAcc;
   output list<BackendDAE.WhenClause> oWhenClauses;
-  output Type_a outTypeA;
+  output T outTypeA;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input T inTypeA;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output T outA;
   end FuncExpType;
 algorithm
-  (oWhenClauses,outTypeA) := match(iWhenClauses,func,inTypeA,iAcc)
+  (oWhenClauses, outTypeA) := match (iWhenClauses)
     local
       list<BackendDAE.WhenClause> whenClause;
       DAE.Exp condition;
       list<BackendDAE.WhenOperator> reinitStmtLst;
       Option<Integer> elseClause;
-      Type_a arg;
-    case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case(BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::whenClause,_,_,_)
-      equation
-        (condition,arg) = Expression.traverseExp(condition,func,inTypeA);
-        (whenClause,arg) = traverseWhenClauseExps(whenClause,func,arg,BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::iAcc);
-      then
-        (whenClause,arg);
+      T arg;
+
+    case {}
+    then (listReverse(iAcc), inTypeA);
+
+    case BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)::whenClause equation
+      (condition, arg) = Expression.traverseExp(condition, func, inTypeA);
+      (whenClause, arg) = traverseWhenClauseExps(whenClause, func, arg, BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)::iAcc);
+    then (whenClause, arg);
   end match;
 end traverseWhenClauseExps;
 
-protected function traverseZeroCrossingExps
-  replaceable type Type_a subtypeof Any;
+protected function traverseZeroCrossingExps<T>
   input list<BackendDAE.ZeroCrossing> iZeroCrossing;
   input FuncExpType func;
-  input Type_a inTypeA;
+  input T inTypeA;
   input list<BackendDAE.ZeroCrossing> iAcc;
   output list<BackendDAE.ZeroCrossing> oZeroCrossing;
-  output Type_a outTypeA;
+  output T outTypeA;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input T inTypeA;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output T outA;
   end FuncExpType;
 algorithm
-  (oZeroCrossing,outTypeA) := match(iZeroCrossing,func,inTypeA,iAcc)
+  (oZeroCrossing, outTypeA) := match (iZeroCrossing)
     local
       list<BackendDAE.ZeroCrossing> zeroCrossing;
       DAE.Exp relation_;
       list<Integer> occurEquLst,occurWhenLst;
-      Type_a arg;
-    case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::zeroCrossing,_,_,_)
-      equation
-        (relation_,arg) = Expression.traverseExp(relation_,func,inTypeA);
-        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::iAcc);
-      then
-        (zeroCrossing,arg);
+      T arg;
+
+    case {}
+    then (listReverse(iAcc), inTypeA);
+
+    case BackendDAE.ZERO_CROSSING(relation_, occurEquLst, occurWhenLst)::zeroCrossing equation
+      (relation_, arg) = Expression.traverseExp(relation_, func, inTypeA);
+      (zeroCrossing, arg) = traverseZeroCrossingExps(zeroCrossing, func, arg, BackendDAE.ZERO_CROSSING(relation_, occurEquLst, occurWhenLst)::iAcc);
+    then (zeroCrossing, arg);
   end match;
 end traverseZeroCrossingExps;
 

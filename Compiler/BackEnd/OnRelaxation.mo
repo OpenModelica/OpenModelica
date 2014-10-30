@@ -58,6 +58,7 @@ protected import HashSet;
 protected import HashTable4;
 protected import List;
 protected import Matching;
+protected import SymbolicJacobian;
 protected import Util;
 
 
@@ -341,7 +342,7 @@ algorithm
         (subsyst,m,_) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
         //  BackendDump.dumpEqSystem(subsyst);
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemIndexed.graphml");
-        (SOME(jac),_) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true, ishared);
+        (SOME(jac),_) = SymbolicJacobian.calculateJacobian(vars, eqns, m, true, ishared);
         (beqs,_) = BackendDAEUtil.getEqnSysRhs(eqns,vars,SOME(funcs));
         beqs = listReverse(beqs);
         //  print("Jacobian:\n");

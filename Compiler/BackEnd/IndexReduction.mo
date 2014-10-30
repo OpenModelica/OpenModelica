@@ -4459,58 +4459,6 @@ algorithm
   outOEqnsLst := BackendEquation.getEqns(assigned, eqns);
 end splitEqnsinConstraintAndOther;
 
-/*****************************************
- calculation of the determinant of a square matrix .
- *****************************************/
-/*
-public function tryDeterminant
-"author: Frenkel TUD 2012-06"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,tryDeterminant0,false);
-end tryDeterminant;
-
-protected function tryDeterminant0
-"author: Frenkel TUD 2012-06"
-  input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
-  output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
-algorithm
-  (osyst,osharedChanged) :=
-    matchcontinue(isyst,sharedChanged)
-    local
-      BackendDAE.StrongComponents comps;
-      Boolean b,b1,b2;
-      BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
-      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared, b1))
-      equation
-         BackendDump.printEqSystem(syst);
-         (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
-         BackendDump.dumpIncidenceMatrixT(mt);
-
-         SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true,shared);
-         jac = listReverse(jac);
-         print("Jac:\n" + BackendDump.dumpJacobianStr(SOME(jac)) + "\n");
-
-         // generate Determinant
-         // base is jacobian of the system
-         determinant(jac,BackendDAEUtil.systemSize(syst));
-
-      then
-        (syst,(shared,false));
-  end matchcontinue;
-end tryDeterminant0;
-*/
-
 public function determinant
 "author: Frenkel TUD 2012-06"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;

@@ -951,8 +951,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEEqnsWithStop;
 
-protected function traverseBackendDAEOptEqnWithStop "author: Frenkel TUD 2010-11
-  Helper for traverseBackendDAEExpsEqnsWithStop."
+protected function traverseBackendDAEOptEqnWithStop "author: Frenkel TUD 2010-11"
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
   input FuncExpType func;
