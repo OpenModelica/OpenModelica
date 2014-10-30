@@ -1,6 +1,6 @@
 #include <Core/Modelica.h>
 
-#include "EulerSettings.h"
+#include <Solver/Euler/EulerSettings.h>
 
 EulerSettings::EulerSettings(IGlobalSettings* globalSettings)
 : SolverSettings        (globalSettings)

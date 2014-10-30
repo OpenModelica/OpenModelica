@@ -1,5 +1,5 @@
 #include <Core/Modelica.h>
-#include "Hybrj.h"
+#include <Solver/Hybrj/Hybrj.h>
 
 #include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack
 #include <Core/Math/Constants.h>        // definition of constants like uround

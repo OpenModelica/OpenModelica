@@ -1,7 +1,7 @@
 #include <Core/Modelica.h>
 
 
-#include "KinsolSettings.h"
+#include <Solver/Kinsol/KinsolSettings.h>
 
 KinsolSettings::KinsolSettings()
 : iNewt_max         (700)

@@ -27,7 +27,7 @@ else
 	$(eval ANALYZATION_MODE_COMMAND="-DANALYZATION_MODE=ON")
 endif
 	cd ./Build && echo "change to Build" && $(CMAKE_COMMANDS) cmake $(ANALYZATION_MODE_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(SCOREP_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
-	$(MAKE) -C Build VERBOSE=1; 
+	$(MAKE) VERBOSE=1 -C Build 
 
 install: runtimeCpp
 	(cd Build; $(MAKE) install)

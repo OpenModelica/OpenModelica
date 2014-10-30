@@ -1,8 +1,8 @@
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include "Euler.h"
-#include "EulerSettings.h"
+#include <Solver/Euler/Euler.h>
+#include <Solver/Euler/EulerSettings.h>
 
 
 

@@ -1,6 +1,6 @@
 //#pragma once
 #include <Core/Modelica.h>
-#include "CVodeSettings.h"
+#include <Solver/CVode/CVodeSettings.h>
 
 CVodeSettings::CVodeSettings(IGlobalSettings* globalSettings)
   : SolverSettings    (globalSettings)

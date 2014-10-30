@@ -4,8 +4,8 @@
 
 #if defined(__vxworks) || defined(__TRICORE__)
 
-#include "Kinsol.h"
-#include "KinsolSettings.h"
+#include <Solver/Kinsol/Kinsol.h>
+#include <Solver/Kinsol/KinsolSettings.h>
 
 extern "C" IAlgLoopSolver* createKinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 {
@@ -19,8 +19,8 @@ extern "C" INonLinSolverSettings* createKinsolSettings()
 
 #elif defined(SIMSTER_BUILD)
 
-#include "Kinsol.h"
-#include "KinsolSettings.h"
+#include <Solver/Kinsol/Kinsol.h>
+#include <Solver/Kinsol/KinsolSettings.h>
 
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::extensions::factory_map & fm)
@@ -31,8 +31,8 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::exten
 
 #elif defined(OMC_BUILD)
 
-#include "Kinsol.h"
-#include "KinsolSettings.h"
+#include <Solver/Kinsol/Kinsol.h>
+#include <Solver/Kinsol/KinsolSettings.h>
 
 using boost::extensions::factory;
 

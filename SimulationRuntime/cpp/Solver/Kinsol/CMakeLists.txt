@@ -17,9 +17,9 @@ install (TARGETS ${KinsolName} DESTINATION lib/omc/${LIBINSTALLEXT})
 #  DESTINATION bin/config)
 
 IF(ANALYZATION_MODE)
-  install (FILES  ${CMAKE_SOURCE_DIR}/Solver/Kinsol/Kinsol.h
-                  ${CMAKE_SOURCE_DIR}/Solver/Kinsol/KinsolSettings.h
-                  ${CMAKE_SOURCE_DIR}/Solver/Kinsol/FactoryExport.h
+  install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/Kinsol/Kinsol.h
+                  ${CMAKE_SOURCE_DIR}/Include/Solver/Kinsol/KinsolSettings.h
+                  ${CMAKE_SOURCE_DIR}/Include/Solver/Kinsol/FactoryExport.h
            DESTINATION include/omc/cpp/Kinsol)
 ENDIF(ANALYZATION_MODE)
 

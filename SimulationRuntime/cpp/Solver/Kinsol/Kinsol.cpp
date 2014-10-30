@@ -1,6 +1,6 @@
 #include <Core/Modelica.h>
-#include "Kinsol.h"
-#include "KinsolSettings.h"
+#include <Solver/Kinsol/Kinsol.h>
+#include <Solver/Kinsol/KinsolSettings.h>
 
 #if defined(__TRICORE__)
 #include <include/kinsol/kinsol.h>

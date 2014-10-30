@@ -6,8 +6,8 @@
 
 #elif defined(SIMSTER_BUILD)
 
-#include "Hybrj.h"
-#include "HybrjSettings.h"
+#include <Solver/Hybrj/Hybrj.h>
+#include <Solver/Hybrj/HybrjSettings.h>
 
 
 /*Simster factory*/
@@ -19,8 +19,8 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_hybrj(boost::extens
 
 #elif defined(OMC_BUILD)
 
-#include "Hybrj.h"
-#include "HybrjSettings.h"
+#include <Solver/Hybrj/Hybrj.h>
+#include <Solver/Hybrj/HybrjSettings.h>
 
 
 using boost::extensions::factory;

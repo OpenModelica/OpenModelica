@@ -6,7 +6,7 @@
 
 #elif defined(SIMSTER_BUILD)
 
-#include "CVode.h"
+#include <Solver/CVode/CVode.h>
 
 
 /*Simster factory*/
@@ -18,8 +18,8 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extens
 
 #elif defined(OMC_BUILD)
 
-#include "CVode.h"
-#include "CVodeSettings.h"
+#include <Solver/CVode/CVode.h>
+#include <Solver/CVode/CVodeSettings.h>
 
     /* OMC factory */
     using boost::extensions::factory;

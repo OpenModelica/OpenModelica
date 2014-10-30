@@ -4,8 +4,8 @@
 #if defined(__vxworks)
 #include <Core/Modelica.h>
 
-#include "Euler.h"
-#include "EulerSettings.h"
+#include <Solver/Euler/Euler.h>
+#include <Solver/Euler/EulerSettings.h>
 
 extern "C" ISolver* createEuler(IMixedSystem* system, ISolverSettings* settings)
 {
@@ -20,8 +20,8 @@ extern "C" ISolverSettings* createEulerSettings(IGlobalSettings* globalSettings)
 #elif defined(SIMSTER_BUILD)
 #include <Modelica.h>
 #include <Policies/FactoryConfig.h>
-#include "Euler.h"
-#include "EulerSettings.h"
+#include <Solver/Euler/Euler.h>
+#include <Solver/Euler/EulerSettings.h>
 
 /*Simster factory*/
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_euler(boost::extensions::factory_map & fm)
@@ -34,8 +34,8 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_euler(boost::extens
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include "Euler.h"
-#include "EulerSettings.h"
+#include <Solver/Euler/Euler.h>
+#include <Solver/Euler/EulerSettings.h>
 
     /* OMC factory */
     using boost::extensions::factory;

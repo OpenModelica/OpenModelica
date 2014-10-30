@@ -1,7 +1,7 @@
 #include <Core/Modelica.h>
 
 
-#include "NewtonSettings.h"
+#include <Solver/Newton/NewtonSettings.h>
 
 NewtonSettings::NewtonSettings()
 : iNewt_max                    (50)

@@ -1,7 +1,7 @@
 #include <Core/Modelica.h>
  
 
-#include "HybrjSettings.h"
+#include <Solver/Hybrj/HybrjSettings.h>
 
 HybrjSettings::HybrjSettings()
 : iNewt_max                    (50)

@@ -6,8 +6,8 @@
 
 #elif defined(OMC_BUILD)
 
-#include "Newton.h"
-#include "NewtonSettings.h"
+#include <Solver/Newton/Newton.h>
+#include <Solver/Newton/NewtonSettings.h>
 
     /* OMC factory */
     using boost::extensions::factory;

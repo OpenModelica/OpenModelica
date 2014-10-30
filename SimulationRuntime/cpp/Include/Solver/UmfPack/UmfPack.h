@@ -4,7 +4,7 @@
 #include <Core/Solver/IAlgLoopSolver.h>        // Export function from dll
 #include <Core/Solver/ILinSolverSettings.h>
 #include <Core/Math/SparseMatrix.h>
-#include "UmfPackSettings.h"
+#include <Solver/UmfPack/UmfPackSettings.h>
 #include <iostream>
 
 

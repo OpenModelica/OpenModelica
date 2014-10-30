@@ -1,4 +1,4 @@
-#include "UmfPack.h"
+#include <Solver/Umfpack/UmfPack.h>
 
 UmfPack::UmfPack(IAlgLoop* algLoop, ILinSolverSettings* settings) : _iterationStatus(CONTINUE), _umfpackSettings(settings), _algLoop(algLoop), _jacs(NULL), _rhs(NULL), _firstuse(true), _jacd(NULL)
 {

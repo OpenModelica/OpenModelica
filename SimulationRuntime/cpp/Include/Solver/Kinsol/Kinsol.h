@@ -1,10 +1,11 @@
+
 #pragma once
 
 #include "FactoryExport.h"
-#include <kinsol.h>
-#include <nvector_serial.h>
-#include <kinsol_dense.h>
-#include <kinsol_spgmr.h>
+#include<kinsol.h>
+#include<nvector_serial.h>
+#include<kinsol_dense.h>
+#include<kinsol_spgmr.h>
 #include <kinsol_spbcgs.h>
 #include <kinsol_sptfqmr.h>
 #include <boost/math/special_functions/fpclassify.hpp>
@@ -68,7 +69,7 @@ private:
     *_zeroVec,
     *_currentIterate;
 
-  double
+  double  
     _fnormtol,
     _scsteptol;
 

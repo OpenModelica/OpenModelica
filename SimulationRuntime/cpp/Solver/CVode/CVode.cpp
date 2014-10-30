@@ -1,5 +1,5 @@
 #include <Core/Modelica.h>
-#include "CVode.h"
+#include <Solver/CVode/CVode.h>
 #include <Core/Math/Functions.h>
 
 Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)

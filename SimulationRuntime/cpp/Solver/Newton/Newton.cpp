@@ -1,5 +1,5 @@
 #include <Core/Modelica.h>
-#include "Newton.h"
+#include <Solver/Newton/Newton.h>
 
 #include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack
 #include <Core/Math/Constants.h>        // definitializeion of constants like uround

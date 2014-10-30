@@ -20,8 +20,8 @@ install (TARGETS ${NewtonName} DESTINATION lib/omc/${LIBINSTALLEXT})
 #  DESTINATION bin/config)
 
 IF(ANALYZATION_MODE)
-  install (FILES  ${CMAKE_SOURCE_DIR}/Solver/Newton/Newton.h
-                  ${CMAKE_SOURCE_DIR}/Solver/Newton/NewtonSettings.h
-                  ${CMAKE_SOURCE_DIR}/Solver/CVode/FactoryExport.h
+  install (FILES  ${CMAKE_SOURCE_DIR}/Include/Solver/Newton/Newton.h
+                  ${CMAKE_SOURCE_DIR}/Include/Solver/Newton/NewtonSettings.h
+                  ${CMAKE_SOURCE_DIR}/Include/Solver/CVode/FactoryExport.h
            DESTINATION include/omc/cpp/Newton)
 ENDIF(ANALYZATION_MODE)
