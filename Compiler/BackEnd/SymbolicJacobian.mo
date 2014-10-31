@@ -2160,7 +2160,6 @@ algorithm
         // prepare creation of symbolic jacobian
         // create dependent variables
         dependentVarsLst = BackendVariable.varList(dependentVars);
-        _ = List.map(dependentVarsLst, BackendVariable.varCref);
 
         (symJacBDAE, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE,
           independentVarsLst,
