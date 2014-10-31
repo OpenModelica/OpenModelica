@@ -807,9 +807,7 @@ end dumpExternalDeclOpt;
 
 template dumpExternalDecl(ExternalDecl externalDecl, SCodeDumpOptions options)
 ::=
-match options
-case OPTIONS(stripExternalDecl=false) then
-match externalDecl
+let res = match externalDecl
   case EXTERNALDECL(__) then
     let func_name_str = match funcName case SOME(name) then name
     let func_args_str = (args |> arg => AbsynDumpTpl.dumpExp(arg) ;separator=", ")
@@ -818,6 +816,7 @@ match externalDecl
     let ann_str = dumpAnnotationOpt(annotation_, options)
     let output_str = match output_ case SOME(name) then ' <%AbsynDumpTpl.dumpCref(name)%> ='
     'external<%lang_str%><%output_str%><%func_str%><%ann_str%>;'
+match externalDecl case EXTERNALDECL(lang=SOME("builtin")) then res
 end dumpExternalDecl;
 
 template dumpCommentOpt(Option<SCode.Comment> comment, SCodeDumpOptions options)
