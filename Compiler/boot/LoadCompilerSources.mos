@@ -242,6 +242,7 @@ if true then /* Suppress output */
     "../Util/Flags.mo",
     "../Util/FMI.mo",
     "../Util/FMIExt.mo",
+    "../Util/GC.mo",
     "../Util/Graph.mo",
     "../Util/GraphML.mo",
     "../Util/GraphStream.mo",

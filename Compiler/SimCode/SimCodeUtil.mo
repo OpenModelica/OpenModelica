@@ -40,64 +40,66 @@ encapsulated package SimCodeUtil
   RCS: $Id$"
 
 // public imports
-public import Absyn;
-public import BackendDAE;
-public import Ceval;
-public import DAE;
-public import FCore;
-public import FGraph;
-public import HashTableExpToIndex;
-public import HashTableStringToPath;
-public import SCode;
-public import Tpl;
-public import Types;
-public import Values;
-public import SimCode;
-public import SimCodeVar;
+import Absyn;
+import BackendDAE;
+import Ceval;
+import DAE;
+import FCore;
+import FGraph;
+import HashTableExpToIndex;
+import HashTableStringToPath;
+import SCode;
+import Tpl;
+import Types;
+import Values;
+import SimCode;
+import SimCodeVar;
 
 // protected imports
-protected import Array;
-protected import BackendDAEOptimize;
-protected import BackendDAETransform;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import BackendVarTransform;
-protected import BaseHashTable;
-protected import BaseHashSet;
-protected import Builtin;
-protected import ClockIndexes;
-protected import CevalScript;
-protected import CheckModel;
-protected import ClassInf;
-protected import ComponentReference;
-protected import Config;
-protected import DAEDump;
-protected import DAEUtil;
-protected import Debug;
-protected import Differentiate;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import ExpressionSolve;
-protected import FindZeroCrossings;
-protected import Flags;
-protected import Graph;
-protected import HashSet;
-protected import HpcOmSimCode;
-protected import Initialization;
-protected import Inline;
-protected import List;
-protected import Mod;
-protected import PriorityQueue;
-protected import Settings;
-protected import SimCodeDump;
-protected import SymbolicJacobian;
-protected import System;
-protected import Util;
-protected import ValuesUtil;
+protected
+import Array;
+import BackendDAEOptimize;
+import BackendDAETransform;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import BackendVarTransform;
+import BaseHashTable;
+import BaseHashSet;
+import Builtin;
+import ClockIndexes;
+import CevalScript;
+import CheckModel;
+import ClassInf;
+import ComponentReference;
+import Config;
+import DAEDump;
+import DAEUtil;
+import Debug;
+import Differentiate;
+import Error;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import ExpressionSolve;
+import FindZeroCrossings;
+import Flags;
+import GC;
+import Graph;
+import HashSet;
+import HpcOmSimCode;
+import Initialization;
+import Inline;
+import List;
+import Mod;
+import PriorityQueue;
+import Settings;
+import SimCodeDump;
+import SymbolicJacobian;
+import System;
+import Util;
+import ValuesUtil;
 
 // =============================================================================
 // section for public function for SimCodeTV
@@ -14234,19 +14236,16 @@ algorithm
   _ := match (cond,name)
     local
       Real t,total,used,allocated;
-      String timeStr,totalTimeStr,usedStr,allocatedStr,fractionStr;
+      String timeStr,totalTimeStr,gcStr;
     case (false,_) then ();
     else
       equation
         t = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
         total = System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
-        (used,allocated) = System.getGCStatus();
+        gcStr = GC.profStatsStr(GC.getProfStats(), head="");
         timeStr = System.snprintff("%.4g",20,t);
         totalTimeStr = System.snprintff("%.4g",20,total);
-        usedStr = bytesToRealMBString(used);
-        allocatedStr = bytesToRealMBString(allocated);
-        fractionStr = System.snprintff("%.4g%%",20,realMul(100.0,realDiv(used,allocated)));
-        Error.addMessage(Error.EXEC_STAT,{name,timeStr,totalTimeStr,usedStr,allocatedStr,fractionStr});
+        Error.addMessage(Error.EXEC_STAT,{name,timeStr,totalTimeStr,gcStr});
         System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
       then ();
   end match;

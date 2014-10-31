@@ -3283,6 +3283,16 @@ annotation(
 </html>"));
 end GC_gcollect_and_unmap;
 
+function GC_expand_hp
+  input Integer size;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Forces the GC to expand the heap to accomodate more data.</p>
+</html>"));
+end GC_expand_hp;
+
 function checkInterfaceOfPackages
   input TypeName cl;
   input String dependencyMatrix[:,:];

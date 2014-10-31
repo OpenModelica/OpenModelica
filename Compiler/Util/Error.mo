@@ -755,7 +755,7 @@ public constant Message INVALID_FLAG_TYPE_STRINGS = MESSAGE(545, SCRIPTING(), ER
 public constant Message FUNCTION_RETURN_EXT_OBJ = MESSAGE(546, TRANSLATION(), ERROR(),
   Util.gettext("Function %s returns an external object, but the only function allowed to return this object is %s."));
 public constant Message EXEC_STAT = MESSAGE(547, TRANSLATION(), NOTIFICATION(),
-  Util.gettext("Performance of %s: time %s/%s, memory: %s/%s MB (%s)."));
+  Util.gettext("Performance of %s: time %s/%s, GC stats:%s"));
 public constant Message NON_STANDARD_OPERATOR = MESSAGE(547, TRANSLATION(), WARNING(),
   Util.gettext("Usage of non-standard operator (not specified in the Modelica specification): %s. Functionality might be partially supported but is not guaranteed."));
 public constant Message CONNECT_ARRAY_SIZE_ZERO = MESSAGE(548, TRANSLATION(), WARNING(),

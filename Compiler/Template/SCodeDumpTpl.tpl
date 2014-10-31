@@ -816,7 +816,9 @@ let res = match externalDecl
     let ann_str = dumpAnnotationOpt(annotation_, options)
     let output_str = match output_ case SOME(name) then ' <%AbsynDumpTpl.dumpCref(name)%> ='
     'external<%lang_str%><%output_str%><%func_str%><%ann_str%>;'
-match externalDecl case EXTERNALDECL(lang=SOME("builtin")) then res
+match externalDecl
+  case EXTERNALDECL(lang=SOME("builtin")) then res
+  else match options case OPTIONS(stripExternalDecl=false) then res
 end dumpExternalDecl;
 
 template dumpCommentOpt(Option<SCode.Comment> comment, SCodeDumpOptions options)

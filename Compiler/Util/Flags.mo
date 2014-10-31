@@ -411,11 +411,14 @@ constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(122, "showExpandableInfo", 
   Util.gettext("Show information about expandable connector handling."));
 constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(123, "dumpHomotopy", false,
   Util.gettext("Dumps the results of the postOptModule optimizeHomotopyCalls."));
+constant DebugFlag GC_PROF = DEBUG_FLAG(124, "gcProfiling", false,
+  Util.gettext("Prints garbage collection stats to standard output."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
 // indices).
+protected
 constant list<DebugFlag> allDebugFlags = {
   FAILTRACE,
   CEVAL,
@@ -539,9 +542,11 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_DAE_GENERATION,
   RESHUFFLE_POST,
   SHOW_EXPANDABLE_INFO,
-  DUMP_HOMOTOPY
+  DUMP_HOMOTOPY,
+  GC_PROF
 };
 
+public
 // CONFIGURATION FLAGS
 constant ConfigFlag DEBUG = CONFIG_FLAG(1, "debug",
   SOME("d"), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
@@ -940,7 +945,7 @@ constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(60, "gDynOpt
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generate dynamic optimization problem based on annation approach."));
 
-
+protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).

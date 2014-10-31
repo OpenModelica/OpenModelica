@@ -41,43 +41,45 @@ encapsulated package Main
   or starts a server loop communicating through CORBA or sockets
   (The Win32 implementation only implements CORBA)"
 
-protected import Absyn;
-protected import BackendDAE;
-protected import BackendDAECreate;
-protected import BackendDAEUtil;
-protected import CevalScript;
-protected import ClassLoader;
-protected import ClockIndexes;
-protected import Config;
-protected import Corba;
-protected import DAE;
-protected import DAEDump;
-protected import DAEUtil;
-//protected import Database;
-protected import Debug;
-protected import Dump;
-protected import DumpGraphviz;
-protected import FCore;
-protected import FGraph;
-protected import FGraphStream;
-protected import Error;
-protected import ErrorExt;
-protected import Flags;
-protected import Global;
-protected import GlobalScript;
-protected import GlobalScriptUtil;
-protected import Interactive;
-protected import List;
-protected import Parser;
-protected import Print;
-protected import Settings;
-protected import SimCode;
-protected import SimCodeMain;
-protected import SimCodeUtil;
-protected import Socket;
-protected import System;
-protected import TplMain;
-protected import Util;
+protected
+import Absyn;
+import BackendDAE;
+import BackendDAECreate;
+import BackendDAEUtil;
+import CevalScript;
+import ClassLoader;
+import ClockIndexes;
+import Config;
+import Corba;
+import DAE;
+import DAEDump;
+import DAEUtil;
+//import Database;
+import Debug;
+import Dump;
+import DumpGraphviz;
+import FCore;
+import FGraph;
+import FGraphStream;
+import Error;
+import ErrorExt;
+import Flags;
+import GC;
+import Global;
+import GlobalScript;
+import GlobalScriptUtil;
+import Interactive;
+import List;
+import Parser;
+import Print;
+import Settings;
+import SimCode;
+import SimCodeMain;
+import SimCodeUtil;
+import Socket;
+import System;
+import TplMain;
+import Util;
 
 protected function serverLoop
 "This function is the main loop of the server listening
@@ -792,24 +794,32 @@ public function main
   input list<String> args;
 protected
   list<String> args_1;
+  GC.ProfStats stats;
 algorithm
   try
     // set glib G_SLICE to always-malloc as is rummored to be better for Boehm GC
     System.setEnv("G_SLICE", "always-malloc", true);
     // call GC_init() the first thing we do!
     System.initGarbageCollector();
-    // Experimentally found to make the testsuite pass on asap.openmodelica.org. No clue why. Maybe GC_expand should be called only for larger tests or after loadModel. // Martin Sjölund, 2014-10-29
-    // 150M for Windows, 300M for others
-    System.GC_expand_hp(if System.os() == "Windows_NT"
+    // Experimentally found to make the testsuite pass on asap.openmodelica.org.
+    // 150M for Windows, 300M for others makes the GC try to unmap less and so it crashes less.
+    // Disabling unmap is another alternative that seems to work well (but could cause the memory consumption to not be released, and requires manually calling collect and unmap
+    if true then
+      GC.setForceUnmapOnGcollect(false);
+    else
+      GC.expandHeap(if System.os() == "Windows_NT"
                         then 1024*1024*150
                         else 1024*1024*300);
+    end if;
     Global.initialize();
     ErrorExt.registerModelicaFormatError();
-
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
     args_1 := Flags.new(args);
     System.gettextInit(if Config.getRunningTestsuite() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
     setDefaultCC();
+    if Flags.isSet(Flags.GC_PROF) then
+      print(GC.profStatsStr(GC.getProfStats(), head="GC stats after initialization:") + "\n");
+    end if;
     main2(args_1);
   else
     ErrorExt.clearMessages();
@@ -817,6 +827,9 @@ algorithm
     print(ErrorExt.printMessagesStr(false)); print("\n");
     fail();
   end try;
+  if Flags.isSet(Flags.GC_PROF) then
+    print(GC.profStatsStr(GC.getProfStats(), head="GC stats at end of program:") + "\n");
+  end if;
 end main;
 
 protected function main2

@@ -94,6 +94,7 @@ import Flags;
 import FInst;
 import FGraph;
 import FGraphDump;
+import GC;
 import Global;
 import GlobalScriptUtil;
 import Graph;
@@ -1124,8 +1125,13 @@ algorithm
 
     case (cache,_,"GC_gcollect_and_unmap",{},st,_)
       equation
-        System.GC_gcollect_and_unmap();
+        GC.gcollectAndUnmap();
       then (cache,Values.BOOL(true),st);
+
+    case (cache,_,"GC_expand_hp",{Values.INTEGER(i)},st,_)
+      equation
+        b = GC.expandHeap(i);
+      then (cache,Values.BOOL(b),st);
 
     case (cache,_,"clear",{},_,_)
       then (cache,Values.BOOL(true),GlobalScript.emptySymboltable);
@@ -2279,9 +2285,9 @@ algorithm
       equation
         false = Config.noProc()==1;
         strs = List.mapMap(vals,ValuesUtil.extractValueString,Util.testsuiteFriendlyPath);
-        System.GC_disable();
+        GC.disable();
         newps = System.launchParallelTasks(i, List.map1(strs,Util.makeTuple,encoding), loadFileThread);
-        System.GC_enable();
+        GC.enable();
         newp = List.fold(newps, Interactive.updateProgram, p);
       then
         (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
@@ -3526,7 +3532,13 @@ algorithm
   // URIs in external functions IncludeDirectory/LibraryDirectory
   st := runFrontEndLoadProgram(className, inInteractiveSymbolTable);
   cache := FCore.setProgramInCache(inCache, GlobalScriptUtil.getSymbolTableAST(st));
+  if Flags.isSet(Flags.GC_PROF) then
+    print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
+  end if;
   (cache,env,dae,st) := runFrontEndWork(cache,inEnv,className,st,relaxedFrontEnd,Error.getNumErrorMessages());
+  if Flags.isSet(Flags.GC_PROF) then
+    print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
+  end if;
 end runFrontEnd;
 
 protected function runFrontEndLoadProgram

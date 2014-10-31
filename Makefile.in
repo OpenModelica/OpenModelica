@@ -35,7 +35,8 @@ LDFLAGS=@LDFLAGS@
 LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
 # LIBGC configuration is different for Linux (this file) and Windows (Makefile.omdev.mingw)
-LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-parallel-mark --enable-munmap=5
+# Do not use munmap; it crashes processes...
+LIBGC_EXTRA_CONFIGURATION=--enable-threads=posix --enable-parallel-mark
 LIBFMILIB=@LIBFMILIB@
 LIBCMINPACKLIB=@LIBCMINPACKLIB@
 LD_LAPACK=@LD_LAPACK@

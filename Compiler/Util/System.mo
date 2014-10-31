@@ -872,12 +872,6 @@ public function openModelicaPlatform "
   external "C" platform=System_openModelicaPlatform() annotation(Library = "omcruntime");
 end openModelicaPlatform;
 
-public function getGCStatus
-  output Real used;
-  output Real allocated;
-  external "C" System_getGCStatus(used,allocated) annotation(Library = "omcruntime");
-end getGCStatus;
-
 public function dgesv
   "dgesv from LAPACK"
   input list<list<Real>> A;
@@ -1039,35 +1033,6 @@ end getMemorySize;
 public function initGarbageCollector "this needs to be called first in Main.mo"
 external "C" System_initGarbageCollector() annotation(Library = {"omcruntime"});
 end initGarbageCollector;
-
-public function GC_gcollect
-external "C" annotation(Library = {"gc"});
-end GC_gcollect;
-
-public function GC_gcollect_and_unmap
-external "C" annotation(Library = {"gc"});
-end GC_gcollect_and_unmap;
-
-public function GC_enable
-external "C" annotation(Library = {"gc"});
-end GC_enable;
-
-public function GC_disable
-external "C" annotation(Library = {"gc"});
-end GC_disable;
-
-public function GC_expand_hp
-  input Integer sz;
-  output Boolean success;
-external "C" success=GC_expand_hp_int(sz) annotation(Include="#define GC_expand_hp_int(sz) GC_expand_hp(sz)",Library = {"gc"});
-end GC_expand_hp;
-
-public function GC_set_free_space_divisor
-  input Integer divisor := 3;
-external "C" GC_set_free_space_divisor(divisor) annotation(Include="#define GC_set_free_space_divisor_int(divisor) GC_set_free_space_divisor(divisor)",Library = {"gc"},Documentation(info="<html>
-<p>NOTE: Do not set <3 as that seems to interfere with parallel threads.</p>
-</html>"));
-end GC_set_free_space_divisor;
 
 public function ctime
   input Real t;
