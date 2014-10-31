@@ -441,7 +441,7 @@ algorithm
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         (jac,shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, shared);
         // Jacobian of a Linear System is always linear
-        (jac_tp,jacConstant) = BackendDAEUtil.analyzeJacobian(vars_1,eqns_1,jac);
+        (jac_tp,jacConstant) = SymbolicJacobian.analyzeJacobian(vars_1,eqns_1,jac);
         // if constant check for singular jacobian
         true = analyzeConstantJacobian(jacConstant,jac,arrayLength(mt),var_lst,eqn_lst,shared);
       then

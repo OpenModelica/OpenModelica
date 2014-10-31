@@ -49,6 +49,7 @@ protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import BackendVarTransform;
 protected import BaseHashSet;
 protected import Ceval;
 protected import ClockIndexes;
@@ -73,7 +74,6 @@ protected import System;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
-
 
 // =============================================================================
 // section for postOptModule >>calculateStateSetsJacobians<<
@@ -2814,6 +2814,276 @@ algorithm
   symjacs := List.set(symjacs, inIndex, ((symJac, inSparsePattern, inSparseColoring)));
   outShared := BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcTree, einfo, eoc, btp, symjacs, ei);
 end addBackendDAESharedJacobianSparsePattern;
+
+public function analyzeJacobian "author: PA
+  Analyze the jacobian to find out if the jacobian of system of equations
+  can be solved at compiletime or runtime or if it is a nonlinear system
+  of equations."
+  input BackendDAE.Variables vars;
+  input BackendDAE.EquationArray eqns;
+  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerEquationLstOption;
+  output BackendDAE.JacobianType outJacobianType;
+  output Boolean jacConstant "true if jac is constant, does not check rhs";
+algorithm
+  (outJacobianType,jacConstant):=
+  matchcontinue (vars,eqns,inTplIntegerIntegerEquationLstOption)
+    local
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+      Boolean b;
+      BackendDAE.JacobianType jactype;
+    case (_,_,SOME(jac))
+      equation
+        //str = BackendDump.dumpJacobianStr(SOME(jac));
+        //print("analyze Jacobian: \n" + str + "\n");
+        b = jacobianNonlinear(vars, jac);
+        // check also if variables occure in if expressions
+        ((_,false)) = if not b then BackendDAEUtil.traverseBackendDAEExpsEqnsWithStop(eqns,varsNotInRelations,(vars,true)) else (vars,false);
+        //print("jac type: JAC_NONLINEAR() \n");
+      then
+        (BackendDAE.JAC_NONLINEAR(),false);
+
+    case (_,_,SOME(jac))
+      equation
+        true = jacobianConstant(jac);
+        b = rhsConstant(vars,eqns);
+        jactype = if b then BackendDAE.JAC_CONSTANT() else BackendDAE.JAC_LINEAR();
+        //print("jac type: " + if_(b,"JAC_CONSTANT()","JAC_LINEAR()")  + "\n");
+      then
+        (jactype,true);
+
+    case (_,_,SOME(_)) then (BackendDAE.JAC_LINEAR(),false);
+    case (_,_,NONE()) then (BackendDAE.JAC_NO_ANALYTIC(),false);
+  end matchcontinue;
+end analyzeJacobian;
+
+protected function jacobianNonlinear "author: PA
+  Check if jacobian indicates a nonlinear system.
+  TODO: Algorithms and Array equations"
+  input BackendDAE.Variables vars;
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> inTplIntegerIntegerEquationLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (vars,inTplIntegerIntegerEquationLst)
+    local
+      DAE.Exp e1,e2,e;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> xs;
+
+    case (_,((_,_,BackendDAE.EQUATION(exp = e1,scalar = e2))::xs))
+      equation
+        false = jacobianNonlinearExp(vars, e1);
+        false = jacobianNonlinearExp(vars, e2);
+      then
+        jacobianNonlinear(vars, xs);
+    case (_,((_,_,BackendDAE.RESIDUAL_EQUATION(exp = e))::xs))
+      equation
+        false = jacobianNonlinearExp(vars, e);
+      then
+        jacobianNonlinear(vars, xs);
+    case (_,{}) then false;
+    else true;
+  end matchcontinue;
+end jacobianNonlinear;
+
+protected function jacobianNonlinearExp "author: PA
+  Checks wheter the jacobian indicates a nonlinear system.
+  This is true if the jacobian contains any of the variables
+  that is solved for."
+  input BackendDAE.Variables vars;
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  (_,(_,outBoolean)) := Expression.traverseExpTopDown(inExp,traverserjacobianNonlinearExp,(vars,false));
+end jacobianNonlinearExp;
+
+protected function traverserjacobianNonlinearExp "author: Frenkel TUD 2012-08"
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,Boolean> tpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<BackendDAE.Variables,Boolean> outTpl;
+algorithm
+  (outExp,cont,outTpl) := matchcontinue (inExp,tpl)
+    local
+      BackendDAE.Variables vars;
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+      Boolean b;
+    case (e as DAE.CREF(componentRef=cr),(vars,_))
+      equation
+        (_::_,_) = BackendVariable.getVar(cr, vars);
+      then (e,false,(vars,true));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,_))
+      equation
+        (_,_) = BackendVariable.getVar(cr, vars);
+      then (e,false,(vars,true));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "pre")),(vars,b))
+      then (e,false,(vars,b));
+
+    case (e,(vars,b)) then (e,not b,tpl);
+  end matchcontinue;
+end traverserjacobianNonlinearExp;
+
+protected function jacobianConstant "author: PA
+  Checks if jacobian is constant, i.e. all expressions in each equation are constant."
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> inTplIntegerIntegerEquationLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inTplIntegerIntegerEquationLst)
+    local
+      DAE.Exp e1,e2,e;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
+    case ({}) then true;
+    case (((_,_,BackendDAE.EQUATION(exp = e1,scalar = e2))::eqns)) /* TODO: Algorithms and ArrayEquations */
+      equation
+        true = Expression.isConst(e1);
+        true = Expression.isConst(e2);
+      then
+        jacobianConstant(eqns);
+    case (((_,_,BackendDAE.RESIDUAL_EQUATION(exp = e))::eqns))
+      equation
+        true = Expression.isConst(e);
+      then
+        jacobianConstant(eqns);
+    case (((_,_,BackendDAE.SOLVED_EQUATION(exp = e))::eqns))
+      equation
+        true = Expression.isConst(e);
+      then
+        jacobianConstant(eqns);
+    else false;
+  end matchcontinue;
+end jacobianConstant;
+
+protected function varsNotInRelations
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,Boolean> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<BackendDAE.Variables,Boolean> outTpl;
+algorithm
+  (outExp,cont,outTpl) := match (inExp,inTpl)
+    local
+      DAE.Exp cond,t,f,e,e1;
+      BackendDAE.Variables vars;
+      Boolean b;
+      Absyn.Path path;
+      list<DAE.Exp> expLst;
+    case (DAE.IFEXP(cond,t,f),(vars,b))
+      equation
+        // check if vars not in condition
+        (_,(_,b)) = Expression.traverseExpTopDown(cond, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
+        (t,(_,b)) = Expression.traverseExpTopDown(t, varsNotInRelations, (vars,b));
+        (f,(_,b)) = Expression.traverseExpTopDown(f, varsNotInRelations, (vars,b));
+      then (DAE.IFEXP(cond,t,f),false,(vars,b));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "der")),(vars,b))
+      then (e,true,(vars,b));
+    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,b))
+      then (e,false,(vars,b));
+    case (e as DAE.CALL(expLst=expLst),(vars,b))
+      equation
+        // check if vars occurs not in argument list
+        (_,(_,b)) = Expression.traverseExpListTopDown(expLst, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
+      then (e,false,(vars,b));
+    case (e as DAE.LBINARY(exp1=_),(vars,b))
+      equation
+        // check if vars not in condition
+        (_,(_,b)) = Expression.traverseExpTopDown(e, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
+      then (e,false,(vars,b));
+    case (e as DAE.LUNARY(exp=_),(vars,b))
+      equation
+        // check if vars not in condition
+        (_,(_,b)) = Expression.traverseExpTopDown(e, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
+      then (e,false,(vars,b));
+    case (e as DAE.RELATION(exp1=_),(vars,b))
+      equation
+        // check if vars not in condition
+        (_,(_,b)) = Expression.traverseExpTopDown(e, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
+      then (e,false,(vars,b));
+    case (e as DAE.ASUB(exp=e1,sub=expLst),(vars,b))
+      equation
+        // check if vars not in condition
+        (_,(_,b)) = Expression.traverseExpTopDown(e1, varsNotInRelations, (vars,b));
+        if b then
+          (_,(_,b)) = Expression.traverseExpListTopDown(expLst, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
+        end if;
+      then (e,false,(vars,b));
+    case (e,(vars,b)) then (e,b,inTpl);
+  end match;
+end varsNotInRelations;
+
+protected function rhsConstant "author: PA
+  Determines if the right hand sides of an equation system,
+  represented as a BackendDAE, is constant."
+  input BackendDAE.Variables vars;
+  input BackendDAE.EquationArray eqns;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (vars,eqns)
+    local
+      Boolean res;
+      BackendVarTransform.VariableReplacements repl;
+    case (_,_)
+      equation
+        0 = BackendDAEUtil.equationSize(eqns);
+      then
+        true;
+    case (_,_)
+      equation
+        repl = BackendDAEUtil.makeZeroReplacements(vars);
+        ((_,res,_)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(vars,true,repl));
+      then
+        res;
+  end matchcontinue;
+end rhsConstant;
+
+protected function rhsConstant2 "Helper function to rhsConstant, traverses equation list."
+  input BackendDAE.Equation inEq;
+  input tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> inTpl;
+  output BackendDAE.Equation outEq;
+  output Boolean cont;
+  output tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> outTpl;
+algorithm
+  (outEq,cont,outTpl) := matchcontinue (inEq,inTpl)
+    local
+      DAE.Exp new_exp,rhs_exp,e1,e2,e;
+      Boolean b,res;
+      BackendDAE.Equation eqn;
+      BackendDAE.Variables vars;
+      BackendVarTransform.VariableReplacements repl;
+    // check rhs for for EQUATION nodes.
+    case (eqn as BackendDAE.EQUATION(exp = e1,scalar = e2),(vars,b,repl))
+      equation
+        new_exp = Expression.expSub(e1, e2);
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, vars,NONE(),SOME(repl));
+        res = Expression.isConst(rhs_exp);
+      then (eqn,res,(vars,b and res,repl));
+    // check rhs for for ARRAY_EQUATION nodes. check rhs for for RESIDUAL_EQUATION nodes.
+    case (eqn as BackendDAE.ARRAY_EQUATION(left=e1,right=e2),(vars,b,repl))
+      equation
+        new_exp = Expression.expSub(e1, e2);
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, vars,NONE(),SOME(repl));
+        res = Expression.isConst(rhs_exp);
+      then (eqn,res,(vars,b and res,repl));
+
+    case (eqn as BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),(vars,b,repl))
+      equation
+        new_exp = Expression.expSub(e1, e2);
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, vars,NONE(),SOME(repl));
+        res = Expression.isConst(rhs_exp);
+      then (eqn,res,(vars,b and res,repl));
+
+    case (eqn as BackendDAE.RESIDUAL_EQUATION(exp = e),(vars,b,repl)) /* check rhs for for RESIDUAL_EQUATION nodes. */
+      equation
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, vars,NONE(),SOME(repl));
+        res = Expression.isConst(rhs_exp);
+      then (eqn,res,(vars,b and res,repl));
+
+    case (eqn,(vars,_,repl)) then (eqn,false,(vars,false,repl));
+  end matchcontinue;
+end rhsConstant2;
 
 annotation(__OpenModelica_Interface="backend");
 end SymbolicJacobian;
