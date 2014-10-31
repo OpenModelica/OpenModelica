@@ -1187,7 +1187,7 @@ algorithm
         str = match name
           case "Absyn" then Dump.unparseStr(p, false);
           case "SCode" then SCodeDump.programStr(scodeP);
-          case "MetaModelicaInterface" then SCodeDump.programStr(scodeP, SCodeDump.OPTIONS(true,false,true,true,true,true));
+          case "MetaModelicaInterface" then SCodeDump.programStr(scodeP, SCodeDump.OPTIONS(true,false,true,true,true,true,true,true));
           case "Internal" then System.anyStringCode(p);
           else "";
         end match;
@@ -1207,7 +1207,7 @@ algorithm
         str = match name
           case "Absyn" then Dump.unparseStr(p, false);
           case "SCode" then SCodeDump.unparseElementStr(cl);
-          case "MetaModelicaInterface" then SCodeDump.unparseElementStr(cl, SCodeDump.OPTIONS(true,false,true,true,true,true));
+          case "MetaModelicaInterface" then SCodeDump.unparseElementStr(cl, SCodeDump.OPTIONS(true,false,true,true,true,true,true,true));
           case "Internal" then System.anyStringCode(p);
           else "";
         end match;
