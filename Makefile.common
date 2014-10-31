@@ -320,7 +320,7 @@ distclean: clean
 fmil-clean:
 	rm -rf 3rdParty/FMIL/build 3rdParty/FMIL/install 3rdParty/FMIL/Makefile
 gc-clean:
-	if test -f 3rdParty/gc/Makefile; then make -C 3rdParty/gc clean; fi
+	if test -f 3rdParty/gc/Makefile; then make -C 3rdParty/gc distclean; fi
 	rm -f 3rdParty/gc/Makefile
 bootstrap-clean:
 	$(MAKE) -C Compiler/boot clean -f $(defaultMakefileTarget)
