@@ -142,10 +142,18 @@ static inline modelica_metatype arrayCreate(modelica_integer nelts, modelica_met
     return arr;
   }
 }
-
+static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modelica_metatype dummy)
+{
+  if (nelts < 0) {
+    MMC_THROW();
+  } else {
+    return (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
+  }
+}
 #define arrayGetNoBoundsChecking(arr,ix) (MMC_STRUCTDATA((arr))[(ix)-1])
 #define arrayUpdate(X,Y,Z) boxptr_arrayUpdate(threadData,X,mmc_mk_icon(Y),Z)
 extern modelica_metatype arrayAdd(modelica_metatype, modelica_metatype);
+extern modelica_metatype arrayAppend(modelica_metatype, modelica_metatype);
 
 extern modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_arrayGet(threadData_t *threadData,modelica_metatype,modelica_metatype);

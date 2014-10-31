@@ -726,6 +726,15 @@ function arrayAdd<A> "An arrayAppend operation would be more useful; O(n) per ad
 external "builtin";
 end arrayAdd;
 
+function arrayAppend<A>
+  "Appends arr2 to arr1. O(length(arr1) + length(arr2)).
+   Note that this operation is *not* destructive, i.e. a new array is created."
+  input array<A> arr1;
+  input array<A> arr2;
+  output array<A> arr;
+external "builtin";
+end arrayAppend;
+
 function anyString<A>
   "Returns the string representation of any value.
   Rather slow; only use this for debugging!"
@@ -977,6 +986,18 @@ function arrayGetNoBoundsChecking<A> "O(1)"
   output A value;
 external "builtin";
 end arrayGetNoBoundsChecking;
+
+function arrayCreateNoInit<A>
+  "Creates a new array where the elements are *not* initialized!. Any attempt to
+   access an uninitialized elements may cause segmentation faults if you're
+   lucky, and pretty much anything else if you're not. Do not use unless you will
+   immediately fill the whole array with data. The dummy variable is used to fix
+   the type of the array."
+  input Integer size;
+  input A dummy;
+  output array<A> arr;
+external "builtin";
+end arrayCreateNoInit;
 
 function stringGetNoBoundsChecking "O(1)"
   input String str;

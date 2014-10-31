@@ -2,6 +2,7 @@
 
 functions = [
 'arrayAdd',
+'arrayAppend',
 'arrayCopy',
 'arrayGet',
 'arrayList',
