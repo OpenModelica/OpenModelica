@@ -774,6 +774,8 @@ package SCodeDump
     record OPTIONS
       Boolean stripAlgorithmSections;
       Boolean stripProtectedImports;
+      Boolean stripStringComments;
+      Boolean stripExternalDecl;
     end OPTIONS;
   end SCodeDumpOptions;
   constant SCodeDumpOptions defaultOptions;

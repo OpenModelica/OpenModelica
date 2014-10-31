@@ -126,7 +126,7 @@ match class
     let res_str = dumpRestriction(restriction)
     let prefixes_str = '<%prefix_str%><%enc_str%><%partial_str%><%res_str%>'
     let cdef_str = dumpClassDef(classDef, options)
-    let cmt_str = dumpClassComment(cmt)
+    let cmt_str = dumpClassComment(cmt, options)
     let ann_str = dumpClassAnnotation(cmt, options)
     let cc_str = dumpReplaceableConstrainClass(prefixes, options)
     let header_str = dumpClassHeader(classDef, name, cmt_str, options)
@@ -213,10 +213,10 @@ match classDef
       >>
 end dumpClassFooter;
 
-template dumpClassComment(SCode.Comment comment)
+template dumpClassComment(SCode.Comment comment, SCodeDumpOptions options)
 ::=
   match comment
-    case COMMENT(__) then dumpCommentStr(comment)
+    case COMMENT(__) then dumpCommentStr(comment, options)
 end dumpClassComment;
 
 template dumpClassAnnotation(SCode.Comment comment, SCodeDumpOptions options)
@@ -807,6 +807,8 @@ end dumpExternalDeclOpt;
 
 template dumpExternalDecl(ExternalDecl externalDecl, SCodeDumpOptions options)
 ::=
+match options
+case OPTIONS(stripExternalDecl=false) then
 match externalDecl
   case EXTERNALDECL(__) then
     let func_name_str = match funcName case SOME(name) then name
@@ -827,12 +829,14 @@ template dumpComment(SCode.Comment comment, SCodeDumpOptions options)
   match comment
     case COMMENT(__) then
       let ann_str = dumpAnnotationOpt(annotation_, options)
-      let cmt_str = dumpCommentStr(comment)
+      let cmt_str = dumpCommentStr(comment, options)
       '<%cmt_str%><%ann_str%>'
 end dumpComment;
 
-template dumpCommentStr(Option<String> comment)
-::= match comment case SOME(cmt) then '<%\ %>"<%System.escapedString(cmt,false)%>"'
+template dumpCommentStr(Option<String> comment, SCodeDumpOptions options)
+::=
+match options case OPTIONS(stripStringComments=false) then
+match comment case SOME(cmt) then '<%\ %>"<%System.escapedString(cmt,false)%>"'
 end dumpCommentStr;
 
 template errorMsg(String errMessage)

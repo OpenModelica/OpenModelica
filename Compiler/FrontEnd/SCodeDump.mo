@@ -46,7 +46,7 @@ protected import List;
 protected import SCodeDumpTpl;
 protected import Tpl;
 
-public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false,true,true);
+public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false,true,true,false,false);
 
 public uniontype SCodeDumpOptions
   record OPTIONS
@@ -56,6 +56,8 @@ public uniontype SCodeDumpOptions
     Boolean stripProtectedComponents;
     Boolean stripMetaRecords "The automatically generated records that change scope from uniontype to the package";
     Boolean stripGraphicalAnnotations;
+    Boolean stripStringComments;
+    Boolean stripExternalDecl;
   end OPTIONS;
 end SCodeDumpOptions;
 
@@ -112,12 +114,13 @@ end printCommentAndAnnotationStr;
 public function printCommentStr
 "Prints SCode.Comment.comment to a string."
   input SCode.Comment inComment;
+  input SCodeDumpOptions options := defaultOptions;
   output String outString;
 algorithm
   outString := match(inComment)
     local Option<String> comment;
     case (SCode.COMMENT(comment = comment))
-      then Tpl.tplString(SCodeDumpTpl.dumpCommentStr, comment);
+      then Tpl.tplString2(SCodeDumpTpl.dumpCommentStr, comment, options);
     else "";
   end match;
 end printCommentStr;
