@@ -8938,7 +8938,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         case T_ARRAY(__) then
           let tmp_shape = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
           let tmp_indeces = tempDecl("idx_type", &varDecls /*BUFD*/)
-          /*let idx_str = (dims |> dim => 
+          /*let idx_str = (dims |> dim =>
             let tmp_idx = tempDecl("vector<size_t>", &varDecls)
             let &preExp += '<%tmp_shape%>.push_back(1);<%\n%>
                        <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
@@ -8950,9 +8950,9 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
                         <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
           let tmp = 'make_pair(<%tmp_shape%>,<%tmp_indeces%>)'
           */
-         
+
           <<
-          <%(dims |> dim => 
+          <%(dims |> dim =>
             let tmp_idx = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
                        '<%tmp_shape%>.push_back(1);<%\n%>
                        <%tmp_indeces%>.push_back(<%tmp_idx%>);<%\n%>'
@@ -9041,7 +9041,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
             ; separator = ", "
           '<%dimSizes%>
            <%res%>.setDims(<%dim_vec%>);'
-          
+
         else
           '<%res%>.setDims(<%length%>);'%>
       >>

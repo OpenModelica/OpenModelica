@@ -137,7 +137,7 @@ protected:
       writeContainer();
 #endif
   }
-  
+
   std::deque<boost::shared_ptr<values_type> > _writeContainers;
   std::deque<boost::shared_ptr<values_type> > _freeContainers;
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
