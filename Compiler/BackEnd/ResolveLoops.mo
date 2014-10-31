@@ -118,9 +118,7 @@ algorithm
         // build the incidence matrix for the whole System
         numSimpEqs = listLength(eqLst);
         numVars = listLength(varLst);
-        m = arrayCreate(numSimpEqs, {});
-        mT = arrayCreate(numVars, {});
-        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
+        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(vars,eqs, BackendDAE.ABSOLUTE());
 
         varAtts = List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
@@ -138,9 +136,7 @@ algorithm
         // build the incidence matrix for the linear equations
         numSimpEqs = listLength(simpEqLst);
         numVars = listLength(simpVarLst);
-        m = arrayCreate(numSimpEqs, {});
-        mT = arrayCreate(numVars, {});
-        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
+        (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE());
 
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);
@@ -170,9 +166,7 @@ algorithm
         simpEqs = BackendEquation.listEquation(simpEqLst);
         numSimpEqs = listLength(simpEqLst);
         numVars = listLength(simpVarLst);
-        m_after = arrayCreate(numSimpEqs, {});
-        _ = arrayCreate(numVars, {});
-        (m_after,_) = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs,{},mT, 0, numSimpEqs, intLt(0, numSimpEqs), BackendDAE.ABSOLUTE(), NONE());
+        m_after = BackendDAEUtil.incidenceMatrixDispatch(simpVars,simpEqs, BackendDAE.ABSOLUTE());
 
         varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
         eqAtts = List.threadMap(List.fill(false,numSimpEqs),List.fill("",numSimpEqs),Util.makeTuple);

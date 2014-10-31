@@ -1883,9 +1883,7 @@ algorithm
 
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      m = arrayCreate(numEqs, {});
-      mT = arrayCreate(numVars, {});
-      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
+      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs, BackendDAE.ABSOLUTE());
 
       varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
       eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
@@ -1906,9 +1904,7 @@ algorithm
       // get incidence matrix
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      m = arrayCreate(numEqs, {});
-      mT = arrayCreate(numVars, {});
-      (m,_) = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
+      m = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs, BackendDAE.ABSOLUTE());
 
       // add tearing info to graph object and dump graph
       addInfo = List.map(varIdcs,intString);// the DAE idcs for the vars
@@ -2273,9 +2269,7 @@ algorithm
       otherVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
       otherVars = BackendVariable.listVar1(otherVarLst);
       otherEqs = BackendEquation.listEquation(otherEqLst);
-      m = arrayCreate(numEqs, {});
-      mT = arrayCreate(numVars, {});
-      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(otherVars,otherEqs,{},mT, 0, numEqs, intLt(0, numEqs), BackendDAE.ABSOLUTE(), NONE());
+      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(otherVars,otherEqs, BackendDAE.ABSOLUTE());
 
       // build task graph and taskgraphmeta
       (graph,meta) = HpcOmTaskGraph.getEmptyTaskGraph(numEqs,numEqs,numVars);
