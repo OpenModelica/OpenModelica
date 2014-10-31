@@ -1106,15 +1106,15 @@ void exp_integer_array(const integer_array_t * a, modelica_integer n, integer_ar
         if(n==1) {
             clone_integer_array_spec(a,dest);
             copy_integer_array_data(*a,dest);
-  } else {
-            integer_array_t* tmp = 0;
+        } else {
+            integer_array_t tmp;
             clone_integer_array_spec(a,tmp);
             copy_integer_array_data(*a,tmp);
             for( i = 1; i < n; ++i) {
                 mul_integer_matrix_product(a,tmp,dest);
                 copy_integer_array_data(*dest,tmp);
-      }
-  }
+            }
+        }
     }
 }
 

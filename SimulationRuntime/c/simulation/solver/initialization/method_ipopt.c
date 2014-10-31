@@ -290,8 +290,11 @@
     x_U = (double*)malloc(n * sizeof(double));
 
     /* allocate space for the constraint bounds */
-    g_L = (double*)malloc(m * sizeof(double));
-    g_U = (double*)malloc(m * sizeof(double));
+    if (m>0)
+    {
+        g_L = (double*)malloc(m * sizeof(double));
+        g_U = (double*)malloc(m * sizeof(double));
+    }
 
     /* allocate space for the initial point */
     x = (double*)malloc(n * sizeof(double));
@@ -334,8 +337,11 @@
        copied internally in CreateIpoptProblem */
     free(x_L);
     free(x_U);
-    free(g_L);
-    free(g_U);
+    if (m>0)
+    {
+        free(g_L);
+        free(g_U);
+    }
 
     /* Set some options. Note the following ones are only examples,
        they might not be suitable for your problem. */

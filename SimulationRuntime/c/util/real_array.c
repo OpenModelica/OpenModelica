@@ -1189,7 +1189,7 @@ void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* de
             clone_real_array_spec(a,dest);
             copy_real_array_data(*a,dest);
         } else {
-            real_array_t* tmp = 0;
+            real_array_t tmp;
             clone_real_array_spec(a,tmp);
             copy_real_array_data(*a,tmp);
             for(i = 1; i < n; ++i) {
