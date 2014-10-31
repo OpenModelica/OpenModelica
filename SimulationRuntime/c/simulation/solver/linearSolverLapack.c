@@ -140,7 +140,7 @@ int getAnalyticalJacobianLapack(DATA* data, double* jac, int sysNumber)
         {
           l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
           k  = j*data->simulationInfo.analyticJacobians[index].sizeRows + l;
-          jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+          jac[k] = -data->simulationInfo.analyticJacobians[index].resultVars[l];
           ii++;
         };
       }
@@ -197,12 +197,10 @@ int solveLapack(DATA *data, int sysNumber)
   int eqSystemNumber = systemData->equationIndex;
   _omc_scalar residualNorm = 0;
 
-
-  /* create _omc_math data */
+  /* set data */
   _omc_setVectorData(solverData->x, systemData->x);
   _omc_setVectorData(solverData->b, systemData->b);
   _omc_setMatrixData(solverData->A, systemData->A);
-
 
   if (0 == systemData->method) {
 
@@ -224,16 +222,15 @@ int solveLapack(DATA *data, int sysNumber)
     }
 
     /* calculate vector b (rhs) */
-    _omc_fillVector(solverData->work, 0.0);
+    _omc_copyVector(solverData->work, solverData->x);
     wrapper_fvec_lapack(solverData->work, solverData->b, &iflag, data, sysNumber);
-
-    solverData->b = _omc_negateVector(solverData->b);
+    //solverData->b = _omc_negateVector(solverData->b);
   }
 
   /* Log A*x=b */
   if(ACTIVE_STREAM(LOG_LS_V)){
+    _omc_printVector(solverData->x, "Vector old x", LOG_LS_V);
     _omc_printMatrix(solverData->A, "Matrix A", LOG_LS_V);
-
     _omc_printVector(solverData->b, "Vector b", LOG_LS_V);
   }
 
@@ -270,13 +267,17 @@ int solveLapack(DATA *data, int sysNumber)
 
   if (1 == success){
 
-    /* take the solution */
-    _omc_copyVector(solverData->x, solverData->b);
-
     if (1 == systemData->method){
+      /* take the solution */
+      solverData->x = _omc_addVectorVector(solverData->x, solverData->work, solverData->b);
+
       wrapper_fvec_lapack(solverData->x, solverData->work, &iflag, data, sysNumber);
       residualNorm = _omc_euclideanVectorNorm(solverData->work);
+    } else {
+      /* take the solution */
+      _omc_copyVector(solverData->x, solverData->b);
     }
+
 
     if (ACTIVE_STREAM(LOG_LS)){
       infoStreamPrint(LOG_LS, 1, "Residual Norm %f of solution x:", residualNorm);
