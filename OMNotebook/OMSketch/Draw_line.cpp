@@ -94,7 +94,7 @@ int Draw_Line::getState()
 
 bool Draw_Line::isMouseClickedOnHandle(const QPointF pnt)
 {
-        bool found;
+        bool found = false;
 
         for(int i=0;i<edge_items.size();i++)
         {
@@ -106,8 +106,6 @@ bool Draw_Line::isMouseClickedOnHandle(const QPointF pnt)
                  edge_items[i]->setCursor(Qt::CrossCursor);
                  break;
             }
-            else
-                found=false;
         }
         return found;
 }

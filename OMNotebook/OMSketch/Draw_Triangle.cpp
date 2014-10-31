@@ -202,25 +202,23 @@ bool Draw_Triangle::getMode()
 
 bool Draw_Triangle::isMouseClickedOnHandle(QPointF pnt)
 {
-  qDebug()<<"entered mouse clciked on handle function \n";
+    qDebug()<<"entered mouse clciked on handle function \n";
 
-    bool found;
+    bool found=false;
 
-        for(int i=0;i<handles.size();i++)
+    for(int i=0;i<handles.size();i++)
+    {
+        if(handles[i]->isUnderMouse())
         {
-            if(handles[i]->isUnderMouse())
-            {
-         qDebug()<<"entered the state condition \n";
-                 draw_state=1;
-                 found=true;
-                 handle_index=i;
-                 handles[i]->setCursor(Qt::CrossCursor);
-                 break;
-            }
-            else
-                found=false;
+        qDebug()<<"entered the state condition \n";
+            draw_state=1;
+            found=true;
+            handle_index=i;
+            handles[i]->setCursor(Qt::CrossCursor);
+            break;
         }
-        return found;
+    }
+    return found;
 
 }
 
@@ -237,8 +235,8 @@ bool Draw_Triangle::isMouseClickedOnRotateHandle(const QPointF pnt)
         pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
         pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
         item->setTransformOriginPoint(pnt1);
-    for(int i=0;i<handles.size();i++)
-      handles[i]->setTransformOriginPoint(pnt1);
+        for(int i=0;i<handles.size();i++)
+            handles[i]->setTransformOriginPoint(pnt1);
 
         //Strt_Rect->setTransformOriginPoint(pnt1);
         //End_Rect->setTransformOriginPoint(pnt1);

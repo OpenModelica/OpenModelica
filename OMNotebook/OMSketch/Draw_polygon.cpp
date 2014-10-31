@@ -96,22 +96,20 @@ int Draw_Polygon::getState()
 
 bool Draw_Polygon::isMouseClickedOnHandle(const QPointF pnt)
 {
-        bool found;
+    bool found=false;
 
-        for(int i=0;i<edge_items.size();i++)
+    for(int i=0;i<edge_items.size();i++)
+    {
+        if(edge_items[i]->isUnderMouse())
         {
-            if(edge_items[i]->isUnderMouse())
-            {
-                 draw_state=1;
-                 found=true;
-                 handle_index=i;
-                 edge_items[i]->setCursor(Qt::CrossCursor);
-                 break;
-            }
-            else
-                found=false;
+             draw_state=1;
+             found=true;
+             handle_index=i;
+             edge_items[i]->setCursor(Qt::CrossCursor);
+             break;
         }
-        return found;
+    }
+    return found;
 }
 
 
@@ -122,7 +120,7 @@ bool Draw_Polygon::isMouseClickedOnRotateHandle(const QPointF pnt)
     {
         draw_state=3;
 
-    QPointF pnt1;
+        QPointF pnt1;
         pnt1.setX((item->boundingRect().topLeft().x()+item->boundingRect().bottomRight().x())/2);
         pnt1.setY((item->boundingRect().topLeft().y()+item->boundingRect().bottomRight().y())/2);
         for(int i=0;i<edge_items.size();i++)

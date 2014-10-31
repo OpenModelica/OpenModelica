@@ -239,27 +239,21 @@ bool Draw_Arrow::getMode()
 
 bool Draw_Arrow::isMouseClickedOnHandle(QPointF pnt)
 {
-  bool found;
+    bool found=false;
 
-  for(int i=0;i<handles.size();i++)
-  {
-      if(handles[i]->isUnderMouse())
-        {
+    for(int i=0;i<handles.size();i++)
+    {
+        if(handles[i]->isUnderMouse()) {
             draw_state=1;
-      handle_index=i;
-      qDebug()<<"handle index "<<handle_index<<"\n";
-      handles[i]->setCursor(Qt::CrossCursor);
-      found=true;
-      break;
-
+            handle_index=i;
+            qDebug()<<"handle index "<<handle_index<<"\n";
+            handles[i]->setCursor(Qt::CrossCursor);
+            found=true;
+            break;
+        }
     }
-    else
-      found=false;
 
-  }
-
-  return found;
-
+    return found;
 
 }
 
