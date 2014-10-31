@@ -5624,7 +5624,6 @@ template generateInFunc(Text fname, list<Variable> functionArguments, list<Varia
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%outVars |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
-    MMC_INIT();
     MMC_TRY_TOP()
     <%match outVars
         case v::_ then '<%funArgName(v)%> = '
