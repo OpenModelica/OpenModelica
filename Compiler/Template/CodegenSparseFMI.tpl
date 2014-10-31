@@ -5460,7 +5460,7 @@ template tempDecl(String ty, Text &varDecls /*BUFP*/)
              case "listArray_rettype"
              case "arrayUpdate_rettype"
              case "arrayCopy_rettype"
-             case "arrayAdd_rettype"
+             case "arrayAppend_rettype"
              case "getGlobalRoot_rettype"
                then ' = NULL;  mmc_GC_add_root(&<%newVar%>, mmc_GC_local_state, "<%newVar%>");' else ';'
   let &varDecls += '<%ty%> <%newVar%><%initVarAddRoot%><%\n%>'

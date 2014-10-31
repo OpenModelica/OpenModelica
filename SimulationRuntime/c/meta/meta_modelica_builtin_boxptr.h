@@ -128,7 +128,6 @@ boxptr_fn2ArgsThreadData(boxptr_arrayGet,(void*),(void*),mmc_unbox_integer,nobox
 boxptr_wrapper1Arg(boxptr_arrayList,arrayList)
 boxptr_wrapper1Arg(boxptr_listArray,listArray)
 boxptr_wrapper1Arg(boxptr_arrayCopy,arrayCopy)
-boxptr_wrapper2Args(boxptr_arrayAdd,arrayAdd)
 boxptr_wrapper2Args(boxptr_arrayAppend,arrayAppend)
 boxptr_unOpThreadData(boxptr_getGlobalRoot,(void*),mmc_unbox_integer,nobox_getGlobalRoot)
 boxptr_unOp(boxptr_valueConstructor,mmc_mk_icon,(void*),valueConstructor)

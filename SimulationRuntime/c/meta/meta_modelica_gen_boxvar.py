@@ -1,7 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 functions = [
-'arrayAdd',
 'arrayAppend',
 'arrayCopy',
 'arrayGet',

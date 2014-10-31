@@ -719,13 +719,6 @@ function arrayCopy<A>
 external "builtin";
 end arrayCopy;
 
-function arrayAdd<A> "An arrayAppend operation would be more useful; O(n) per addition."
-  input array<A> arr;
-  input A a;
-  output array<A> copy;
-external "builtin";
-end arrayAdd;
-
 function arrayAppend<A>
   "Appends arr2 to arr1. O(length(arr1) + length(arr2)).
    Note that this operation is *not* destructive, i.e. a new array is created."

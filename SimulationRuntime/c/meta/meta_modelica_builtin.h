@@ -152,7 +152,6 @@ static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modeli
 }
 #define arrayGetNoBoundsChecking(arr,ix) (MMC_STRUCTDATA((arr))[(ix)-1])
 #define arrayUpdate(X,Y,Z) boxptr_arrayUpdate(threadData,X,mmc_mk_icon(Y),Z)
-extern modelica_metatype arrayAdd(modelica_metatype, modelica_metatype);
 extern modelica_metatype arrayAppend(modelica_metatype, modelica_metatype);
 
 extern modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype,modelica_metatype);

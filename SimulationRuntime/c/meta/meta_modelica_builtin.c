@@ -613,20 +613,6 @@ modelica_metatype arrayCopy(modelica_metatype arr)
   return res;
 }
 
-modelica_metatype arrayAdd(modelica_metatype arr, modelica_metatype val)
-{
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
-  void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts+1, MMC_ARRAY_TAG);
-  void **arrp = MMC_STRUCTDATA(arr);
-  void **resp = MMC_STRUCTDATA(res);
-  int i = 0;
-  for(i=0; i<nelts; i++) {
-    resp[i] = arrp[i];
-  }
-  resp[nelts] = val;
-  return res;
-}
-
 modelica_metatype arrayAppend(modelica_metatype arr1, modelica_metatype arr2)
 {
   int nelts1 = MMC_HDRSLOTS(MMC_GETHDR(arr1));
