@@ -8371,5 +8371,13 @@ algorithm
   end matchcontinue;
 end allowedInRecord;
 
+public function lookupIndexInMetaRecord
+  input list<DAE.Var> vars;
+  input String name;
+  output Integer index;
+algorithm
+  index := List.positionOnTrue(name, vars, DAEUtil.typeVarIdentEqual);
+end lookupIndexInMetaRecord;
+
 annotation(__OpenModelica_Interface="frontend");
 end Types;

@@ -3160,6 +3160,11 @@ package Types
     input DAE.Type inType;
     output DAE.Type outType;
   end unliftArray;
+  function lookupIndexInMetaRecord
+    input list<DAE.Var> vars;
+    input String name;
+    output Integer index;
+  end lookupIndexInMetaRecord;
 end Types;
 
 package FMI
