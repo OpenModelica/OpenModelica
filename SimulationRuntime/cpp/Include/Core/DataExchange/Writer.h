@@ -16,7 +16,7 @@ public:
   typedef StatArrayDim1<double, dim_1> value_type_v;
   typedef StatArrayDim1<double, dim_2> value_type_dv;
   typedef StatArrayDim1<double, dim_4> value_type_p;
-
+  typedef boost::tuple<boost::shared_ptr<value_type_v>,boost::shared_ptr<value_type_dv>, double> values_type;
   Writer()
     : _writeContainers()
     ,_freeContainers()
@@ -30,9 +30,9 @@ public:
   {
     for (int i = 0; i < CONTAINER_COUNT; ++i)
     {
-      value_type_v *v = new value_type_v();
-      value_type_dv *dv = new value_type_dv();
-      boost::tuple<value_type_v*, value_type_dv*, double> *tpl = new boost::tuple<value_type_v*, value_type_dv*, double>();
+      boost::shared_ptr<value_type_v> v = boost::shared_ptr<value_type_v>(new value_type_v());
+      boost::shared_ptr<value_type_dv> dv = boost::shared_ptr<value_type_dv>(new value_type_dv());
+      boost::shared_ptr<values_type> tpl = boost::shared_ptr<values_type>(new values_type());
       get < 0 > (*tpl) = v;
       get < 1 > (*tpl) = dv;
       _freeContainers.push_back(tpl);
@@ -50,9 +50,9 @@ public:
 
   virtual void write(value_type_v& v_list, value_type_dv& v2_list, double time) = 0;
 
-  boost::tuple<value_type_v*, value_type_dv*, double>* getFreeContainer()
+  boost::shared_ptr<values_type> getFreeContainer()
   {
-    boost::tuple<value_type_v*, value_type_dv*, double>* container = NULL;
+    boost::shared_ptr<values_type> container;
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
     _nempty.wait();
     _freeContainerMutex.wait();
@@ -65,7 +65,7 @@ public:
     return container;
   };
 
-  void addContainerToWriteQueue(boost::tuple<value_type_v*, value_type_dv*, double> *container)
+  void addContainerToWriteQueue( boost::shared_ptr<values_type> container)
   {
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
     _writeContainerMutex.wait();
@@ -81,7 +81,7 @@ public:
 protected:
   void writeContainer()
   {
-    boost::tuple<value_type_v*, value_type_dv*, double>* container = NULL;
+    boost::shared_ptr<values_type> container;
 
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
     _writeContainerMutex.wait();
@@ -92,7 +92,7 @@ protected:
     _writeContainerMutex.post();
 #endif
 
-    if (container == NULL)
+    if (!container)
     {
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
       usleep(1);
@@ -100,8 +100,8 @@ protected:
       return;
     }
 
-    value_type_v *v_list = get<0>(*container);
-    value_type_dv *v2_list = get<1>(*container);
+    boost::shared_ptr<value_type_v> v_list = get<0>(*container);
+    boost::shared_ptr<value_type_dv> v2_list = get<1>(*container);
     double time = get<2>(*container);
 
     write(*v_list, *v2_list, time);
@@ -137,9 +137,9 @@ protected:
       writeContainer();
 #endif
   }
-
-  std::deque<boost::tuple<value_type_v*, value_type_dv*, double>*> _writeContainers;
-  std::deque<boost::tuple<value_type_v*, value_type_dv*, double>*> _freeContainers;
+  
+  std::deque<boost::shared_ptr<values_type> > _writeContainers;
+  std::deque<boost::shared_ptr<values_type> > _freeContainers;
 #if defined USE_PARALLEL_OUTPUT && defined USE_BOOST_THREAD
   boost::interprocess::interprocess_semaphore _freeContainerMutex;
   boost::interprocess::interprocess_semaphore _writeContainerMutex;

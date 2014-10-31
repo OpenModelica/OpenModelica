@@ -69,6 +69,9 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
 {
   if(__z) delete [] __z;
   if(__zDot) delete [] __zDot;
+  if(_conditions) delete [] _conditions ;
+  if(_time_conditions) delete [] _time_conditions ;
+  if(_time_event_counter) delete [] _time_event_counter;
 }
 void SystemDefaultImplementation::Assert(bool cond,const string& msg)
 {

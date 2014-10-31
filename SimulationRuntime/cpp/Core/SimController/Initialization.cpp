@@ -50,4 +50,6 @@ void Initialization::initializeSystem()
     if(_solver->stateSelection())
       cout << "Cannot initialize the dynamic state selection in an unique way." << std::endl;
   }
+  delete[] conditions0;
+  delete[] conditions1;
 }

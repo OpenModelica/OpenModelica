@@ -53,6 +53,8 @@ Cvode::~Cvode()
     delete[] _zeroSign;
   if (_absTol)
     delete[] _absTol;
+  if (_zWrite)
+      delete[] _zWrite;
   if (_cvode_initialized)
   {
     N_VDestroy_Serial(_CV_y0);

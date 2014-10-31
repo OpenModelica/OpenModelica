@@ -35,7 +35,7 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* co
 SimManager::~SimManager()
 {
   if(_timeeventcounter)
-    delete _timeeventcounter;
+    delete [] _timeeventcounter;
   if(_events)
     delete [] _events;
 }
