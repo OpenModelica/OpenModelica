@@ -2516,7 +2516,7 @@ algorithm
     row := incidenceRow(eq, inVars, inIndexType, functionTree, {});
     // Put it in the arrays.
     arrayUpdate(outIncidenceArray, idx, row);
-    outIncidenceArrayT := fillincidenceMatrixT(row, {idx}, outIncidenceArrayT); 
+    outIncidenceArrayT := fillincidenceMatrixT(row, {idx}, outIncidenceArrayT);
   end for;
 end incidenceMatrixDispatch;
 
@@ -2581,10 +2581,10 @@ algorithm
       ei := eqnsindxs;
     end if;
 
-    // Put it in the array. 
+    // Put it in the array.
     row := listAppend(ei, arrayGet(inIncidenceArrayT, v));
     arrayUpdate(outIncidenceArrayT, v, row);
-  end for; 
+  end for;
 end fillincidenceMatrixT;
 
 public function incidenceRow
@@ -2680,7 +2680,7 @@ algorithm
     case BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst))
       equation
         res = traverseStmts(statementLst, function incidenceRowAlgorithm(inVariables = vars,
-          functionTree = functionTree, inIndexType = inIndexType), iRow); 
+          functionTree = functionTree, inIndexType = inIndexType), iRow);
       then
         (res,size);
 
@@ -2719,7 +2719,7 @@ protected
 algorithm
   for eq in inEquation loop
     (outIntegerLst, size) :=
-      incidenceRow(eq, inVariables, inIndexType, functionTree, outIntegerLst); 
+      incidenceRow(eq, inVariables, inIndexType, functionTree, outIntegerLst);
     rowSize := rowSize + size;
   end for;
 end incidenceRowLst;
@@ -2785,7 +2785,7 @@ protected
   list<Integer> row;
 algorithm
   (exp, row) := inTuple;
-  row := incidenceRowExp(exp, inVariables, row, functionTree, inIndexType);  
+  row := incidenceRowExp(exp, inVariables, row, functionTree, inIndexType);
   outTuple := (exp, row);
 end incidenceRowAlgorithm;
 
