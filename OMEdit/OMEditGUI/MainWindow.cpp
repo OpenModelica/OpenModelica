@@ -53,14 +53,23 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   QFont monospaceFont("Monospace");
   monospaceFont.setStyleHint(QFont::TypeWriter);
   Helper::monospacedFontInfo = QFontInfo(monospaceFont);
-  /*! @note register the RecentFile and FindText struct in the Qt's meta system
-   * Don't remove/move the following line.
-   * Because RecentFile, FindText and DebuggerConfiguration struct should be registered before reading the recentFilesList, FindText and
+  /*! @note Register the RecentFile, FindText and DebuggerConfiguration struct in the Qt's meta system
+   * Don't remove/move the following lines.
+   * Because RecentFile, FindText and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindText and
      DebuggerConfiguration section respectively from the settings file.
    */
   qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
   qRegisterMetaTypeStreamOperators<FindText>("FindText");
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
+  /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
+  setObjectName("MainWindow");
+  setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
+  setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
+  setMinimumSize(400, 300);
+  resize(800, 600);
+  setContentsMargins(1, 1, 1, 1);
+  // Create an object of MessagesWidget.
+  mpMessagesWidget = new MessagesWidget(this);
   // Create the OMCProxy object.
   pSplashScreen->showMessage(tr("Connecting to OpenModelica Compiler"), Qt::AlignRight, Qt::white);
   mpOMCProxy = new OMCProxy(this);
@@ -70,14 +79,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpOptionsDialog = new OptionsDialog(this);
   //Set the name and size of the main window
   pSplashScreen->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
-  setObjectName("MainWindow");
-  setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
-  setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
-  setMinimumSize(400, 300);
-  resize(800, 600);
-  setContentsMargins(1, 1, 1, 1);
-  // Create an object of MessagesWidget.
-  mpMessagesWidget = new MessagesWidget(this);
   // Create MessagesDockWidget dock
   mpMessagesDockWidget = new QDockWidget(tr("Messages Browser"), this);
   mpMessagesDockWidget->setObjectName("Messages");
@@ -968,6 +969,8 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode)
   QFile omnotebookFile(omnotebookFileName);
   omnotebookFile.open(QIODevice::WriteOnly);
   QTextStream textStream(&omnotebookFile);
+  textStream.setCodec(Helper::utf8.toStdString().data());
+  textStream.setGenerateByteOrderMark(false);
   textStream << xmlDocument.toString();
   omnotebookFile.close();
   mpProgressBar->setValue(value++);

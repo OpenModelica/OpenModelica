@@ -1277,6 +1277,8 @@ void VariablesWidget::reSimulate()
       initFile.close();
       initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
       QTextStream textStream(&initFile);
+      textStream.setCodec(Helper::utf8.toStdString().data());
+      textStream.setGenerateByteOrderMark(false);
       textStream << initXmlDocument.toString();
       initFile.close();
     } else {

@@ -75,6 +75,8 @@
 static inline void printStackTrace(QFile *pFile, int signalNumber, const char* signalName, unsigned int max_frames = 50)
 {
   QTextStream out(pFile);
+  out.setCodec(Helper::utf8.toStdString().data());
+  out.setGenerateByteOrderMark(false);
   if (signalName)
     out << QString("Caught signal %1 (%2)\n").arg(QString::number(signalNumber)).arg(signalName);
   else
@@ -168,6 +170,8 @@ LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
   if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {
     QTextStream out(&stackTraceFile);
+    out.setCodec(Helper::utf8.toStdString().data());
+    out.setGenerateByteOrderMark(false);
     out << g_output;
     out.flush();
     stackTraceFile.close();

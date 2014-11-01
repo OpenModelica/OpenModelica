@@ -310,11 +310,15 @@ bool OMCProxy::startServer()
   mCommunicationLogFile.setFileName(QString("%1omeditcommunication.log").arg(tmpPath));
   if (mCommunicationLogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
     mCommunicationLogFileTextStream.setDevice(&mCommunicationLogFile);
+    mCommunicationLogFileTextStream.setCodec(Helper::utf8.toStdString().data());
+    mCommunicationLogFileTextStream.setGenerateByteOrderMark(false);
   }
   /* create a file to write OMEdit commands */
   mCommandsMosFile.setFileName(QString("%1omeditcommands.mos").arg(tmpPath));
   if (mCommandsMosFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
     mCommandsLogFileTextStream.setDevice(&mCommandsMosFile);
+    mCommandsLogFileTextStream.setCodec(Helper::utf8.toStdString().data());
+    mCommandsLogFileTextStream.setGenerateByteOrderMark(false);
   }
   try
   {
@@ -513,7 +517,7 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
   */
 void OMCProxy::sendCommand()
 {
-  mResult = QString::fromLocal8Bit(mOMC->sendExpression(getExpression().toLocal8Bit()));
+  mResult = QString::fromUtf8(mOMC->sendExpression(getExpression().toUtf8()));
   emit commandFinished();
 }
 
@@ -1507,6 +1511,7 @@ QString OMCProxy::changeDirectory(QString directory)
     directory = directory.replace("\\", "/");
     sendCommand("cd(\"" + directory + "\")");
   }
+  printMessagesStringInternal();
   return StringHandler::unparse(getResult());
 }
 

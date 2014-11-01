@@ -1125,8 +1125,10 @@ bool LibraryTreeWidget::saveTextLibraryTreeNode(LibraryTreeNode *pLibraryTreeNod
   }
 
   QFile file(fileName);
-  if (file.open(QIODevice::WriteOnly)) {
+  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
+    textStream.setCodec(Helper::utf8.toStdString().data());
+    textStream.setGenerateByteOrderMark(false);
     textStream << pLibraryTreeNode->getModelWidget()->getTextEditor()->toPlainText();
     file.close();
     /* mark the file as saved and update the labels. */
@@ -1162,8 +1164,10 @@ bool LibraryTreeWidget::saveXMLLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode
   }
 
   QFile file(fileName);
-  if (file.open(QIODevice::WriteOnly)) {
+  if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
     QTextStream textStream(&file);
+    textStream.setCodec(Helper::utf8.toStdString().data());
+    textStream.setGenerateByteOrderMark(false);
     textStream << pLibraryTreeNode->getModelWidget()->getTLMEditor()->toPlainText();
     file.close();
     /* mark the file as saved and update the labels. */
