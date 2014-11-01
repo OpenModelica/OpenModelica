@@ -1511,8 +1511,9 @@ QString OMCProxy::changeDirectory(QString directory)
     directory = directory.replace("\\", "/");
     sendCommand("cd(\"" + directory + "\")");
   }
+  QString result = StringHandler::unparse(getResult());
   printMessagesStringInternal();
-  return StringHandler::unparse(getResult());
+  return result;
 }
 
 /*!
