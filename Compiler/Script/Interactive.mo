@@ -16338,7 +16338,9 @@ algorithm
   end match;
 end removeInnerDiffFiledClass;
 
-protected function elementIsInFile
+protected function classIsInFile
+"returns true for the class that has the given filename
+ returns true for anything else which does not have a filename"
   input String inFilename;
   input Absyn.ElementItem inElement;
   output Boolean outInFile;
@@ -16351,9 +16353,10 @@ algorithm
         Absyn.CLASSDEF(class_ = Absyn.CLASS(info = Absyn.INFO(fileName = filename)))))
       then stringEq(inFilename, filename);
 
-    else false;
+    else true;
+
   end match;
-end elementIsInFile;
+end classIsInFile;
 
 protected function removeClassDiffFiledInElementitemlist
 "author: PA
@@ -16367,7 +16370,7 @@ protected function removeClassDiffFiledInElementitemlist
   output list<Absyn.ElementItem> outElements;
 algorithm
   outElements := List.filterOnTrue(inElements,
-    function elementIsInFile(inFilename = inFilename));
+    function classIsInFile(inFilename = inFilename));
 end removeClassDiffFiledInElementitemlist;
 
 protected function getSurroundingPackage
