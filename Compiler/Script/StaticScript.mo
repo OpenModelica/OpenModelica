@@ -283,7 +283,7 @@ public function elabCallInteractive "This function elaborates the functions defi
       equation
         ErrorExt.setCheckpoint("Scripting");
         cr = Absyn.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
-        (cache,exp_1,prop,st_1) = elabExp(cache,env,Absyn.CALL(cr,Absyn.FUNCTIONARGS(inExps,inNamedArgs)),impl,SOME(st),false,inPrefix,info);
+        (cache,exp_1,prop,st_1) = Static.elabExp(cache,env,Absyn.CALL(cr,Absyn.FUNCTIONARGS(inExps,inNamedArgs)),impl,SOME(st),false,inPrefix,info);
         ErrorExt.delCheckpoint("Scripting");
       then (cache,exp_1,prop,st_1);
 
@@ -525,7 +525,7 @@ algorithm
       Prefix.Prefix pre;
   case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,_,pre,_,_)
       equation
-        (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
+        (cache,e_1,prop,st_1) = elabCall(cache, env, fn, args, nargs, impl, st, pre, info, Error.getNumErrorMessages());
         _ = Types.propAllConst(prop);
         (e_1,_) = ExpressionSimplify.simplify1(e_1);
       then
@@ -541,7 +541,7 @@ end elabExp2;
 
 protected function elabCall "
 function: elabCall
-  This is an special case tha considers elabCallInteractive."
+  This is an special case that considers elabCallInteractive."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -570,9 +570,9 @@ algorithm
       Boolean impl;
       FCore.Cache cache;
       Prefix.Prefix pre;
-  case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
+  case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_)
       equation
-        (cache,e,prop,st) = elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
+        (cache,e,prop,st) = elabCallInteractive(cache, env, fn, args, nargs, impl, st, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then
         (cache,e,prop,st);
   end match;

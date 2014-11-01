@@ -7599,7 +7599,7 @@ algorithm
         fail();
     case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
-        (cache,e,prop,st) = BackendInterface.elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
+        (cache,e,prop,st) = BackendInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, st, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
         ErrorExt.rollBack("elabCall_InteractiveFunction");
       then
         (cache,e,prop,st);
@@ -13836,21 +13836,16 @@ algorithm
       DAE.Type ty;
       DAE.CodeType ct2;
 
-    // First; try to elaborate the exp (maybe there is a binding in the environment that says v is a VariableName, etc...
+    // first; try to elaborate the exp (maybe there is a binding in the environment that says v is a VariableName
     case (_,_,_,_,_,_)
       equation
-        ErrorExt.setCheckpoint("elabCodeExp");
-        (_,dexp,prop,_) = elabExpInExpression(cache,env,exp,false,st,false,Prefix.NOPRE(),info);
-        DAE.T_CODE(ty=ct2) = Types.getPropType(prop);
-        true = valueEq(ct,ct2);
-        ErrorExt.delCheckpoint("elabCodeExp");
-        // print(ExpressionDump.printExpStr(dexp) + " " + Types.unparseType(ty) + "\n");
-      then dexp;
-
-    case (_,_,_,_,_,_)
-      equation
-        ErrorExt.rollBack("elabCodeExp");
-      then fail();
+        // adrpo: be very careful with this as it can take quite a long time, for example a call to:
+        //        getDerivedClassModifierValue(Modelica.Fluid.Vessels.BaseClasses.PartialLumpedVessel.Medium.MassFlowRate,unit);
+        //        will instantiate Modelica.Fluid.Vessels.BaseClasses.PartialLumpedVessel.Medium.MassFlowRate
+        //        if we're not careful
+        dexp = elabCodeExp_dispatch(exp,cache,env,ct,st,info);
+      then
+        dexp;
 
     // Expression
     case (_,_,_,DAE.C_EXPRESSION(),_,_)
@@ -13893,6 +13888,87 @@ algorithm
       then fail();
   end matchcontinue;
 end elabCodeExp;
+
+public function elabCodeExp_dispatch
+"@author: adrpo
+ evaluate a code expression.
+ be careful how much you lookup"
+  input Absyn.Exp exp;
+  input FCore.Cache cache;
+  input FCore.Graph env;
+  input DAE.CodeType ct;
+  input Option<GlobalScript.SymbolTable> st;
+  input Absyn.Info info;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue (exp,cache,env,ct,st,info)
+    local
+      String s1,s2;
+      Absyn.ComponentRef cr;
+      Absyn.Path path;
+      list<DAE.Exp> es_1;
+      list<Absyn.Exp> es;
+      DAE.Type et;
+      Integer i;
+      DAE.Exp dexp;
+      DAE.Properties prop;
+      DAE.Type ty;
+      DAE.CodeType ct2;
+      Absyn.Ident id;
+
+    // for a component reference make sure the first ident is either "OpenModelica" or not a class
+    case (Absyn.CREF(componentRef=cr),_,_,_,_,_)
+      equation
+        ErrorExt.setCheckpoint("elabCodeExp_dispatch1");
+        id = Absyn.crefFirstIdent(cr);
+        _ = matchcontinue(id)
+          case (_) // if the first one is OpenModelica, search
+            equation
+              true = id == "OpenModelica";
+              (_,dexp,prop,_) = elabExpInExpression(cache,env,exp,false,st,false,Prefix.NOPRE(),info);
+            then
+              ();
+
+          case (_) // not a class or OpenModelica, continue
+            equation
+              failure((_,_,_) = Lookup.lookupClass(cache, env, Absyn.IDENT(id), false));
+              (_,dexp,prop,_) = elabExpInExpression(cache,env,exp,false,st,false,Prefix.NOPRE(),info);
+            then
+              ();
+
+          else // a class which is not OpenModelica, fail
+            then fail();
+        end matchcontinue;
+        DAE.T_CODE(ty=ct2) = Types.getPropType(prop);
+        true = valueEq(ct,ct2);
+        ErrorExt.delCheckpoint("elabCodeExp_dispatch1");
+        // print(ExpressionDump.printExpStr(dexp) + " " + Types.unparseType(ty) + "\n");
+      then dexp;
+
+    case (Absyn.CREF(componentRef=cr),_,_,_,_,_)
+      equation
+        ErrorExt.rollBack("elabCodeExp_dispatch1");
+      then fail();
+
+    case (_,_,_,_,_,_)
+      equation
+        false = Absyn.isCref(exp);
+        ErrorExt.setCheckpoint("elabCodeExp_dispatch");
+        (_,dexp,prop,_) = elabExpInExpression(cache,env,exp,false,st,false,Prefix.NOPRE(),info);
+        DAE.T_CODE(ty=ct2) = Types.getPropType(prop);
+        true = valueEq(ct,ct2);
+        ErrorExt.delCheckpoint("elabCodeExp_dispatch");
+        // print(ExpressionDump.printExpStr(dexp) + " " + Types.unparseType(ty) + "\n");
+      then dexp;
+
+    case (_,_,_,_,_,_)
+      equation
+        false = Absyn.isCref(exp);
+        ErrorExt.rollBack("elabCodeExp_dispatch");
+      then fail();
+
+  end matchcontinue;
+end elabCodeExp_dispatch;
 
 public function elabArrayDims
   "Elaborates a list of array dimensions."
