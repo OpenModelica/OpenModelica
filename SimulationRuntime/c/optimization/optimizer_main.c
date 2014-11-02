@@ -211,6 +211,7 @@ static inline void optimizationWithIpopt(OptData*optData){
 
   if(max_iter >=0){
     optData->iter_ = 0.0;
+    optData->index = 1;
     res = IpoptSolve(nlp, vopt, NULL, &obj, mult_g, mult_x_L, mult_x_U, (void*)optData);
   }
   if(res != 0 && !ACTIVE_STREAM(LOG_IPOPT))

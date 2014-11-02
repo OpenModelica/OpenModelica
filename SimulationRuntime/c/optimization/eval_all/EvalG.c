@@ -66,7 +66,7 @@ static inline void structJacC(const modelica_real *const J, double *values,
 static inline void printMaxError(Number *g, const int m, const int nx, const int nJ, long double **t,
     const int np, const int nsi, DATA * data, OptData * optData);
 
-static inline void debugeJac(OptData * optData);
+static inline void debugeJac(OptData * optData,Number* vopt);
 
 
 /* eval constraints
@@ -92,7 +92,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
 
 
   if(new_x){
-    optData2ModelData(optData, vopt, 1);
+    optData2ModelData(optData, vopt, optData->index);
   }
 
   v = optData->v;
@@ -327,7 +327,7 @@ Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *
     if(cflags){
       ijac = atoi(cflags);
       if(ijac >= optData->iter_)
-        debugeJac(optData);
+        debugeJac(optData, vopt);
     }
    }
   }
@@ -735,8 +735,8 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
  *  generated csv and python script for jacobian
  *  author: Vitalij Ruge
  **/
-static inline void debugeJac(OptData * optData){
-  int i,j,k, jj;
+static inline void debugeJac(OptData * optData, Number* vopt){
+  int i,j,k, jj, kk ,ii;
   const int nv = optData->dim.nv;
   const int nx = optData->dim.nx;
   const int nu = optData->dim.nu;
@@ -746,14 +746,24 @@ static inline void debugeJac(OptData * optData){
   const int nc = optData->dim.nc;
   const int npv = np*nv;
   const int nt = optData->dim.nt;
+  const int NRes = optData->dim.NRes;
+  const int nReal = optData->data->modelData.nVariablesReal;
   double **J;
+  const int NV = optData->dim.NV;
+  Number vopt_shift[NV];
+  long double h[nv][nsi][np];
+  long double hh;
+  const modelica_real * const vmax = optData->bounds.vmax;
+  const modelica_real * const vmin = optData->bounds.vmin;
+  const modelica_real * vnom = optData->bounds.vnom;
+  modelica_real vv[nsi][np][nReal];
   FILE *pFile;
   char buffer[4096];
-  if(np != 1){
-    printf("\n***************************************************\n");
-    printf("\nError optDebugeJac work only with optimizerNP 1!!!!\n");
-    printf("\n***************************************************\n");
-  }
+  long double *sdt;
+  modelica_real JJ[nsi][np][nv][nx];
+  modelica_boolean **sJ;
+  float tmpJ;
+ 
   sprintf(buffer, "jac_ana_step_%i.csv", optData->iter_);
   pFile = fopen(buffer, "wt");
 
@@ -770,20 +780,97 @@ static inline void debugeJac(OptData * optData){
       for(k = 0; k < nx; ++k){
         fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj)
-          if(jj != k)
-            fprintf(pFile,"%g;", (double)(J[k][jj]));
-          else
-            fprintf(pFile,"%g;", (double)((J[k][jj]+1)));
+          fprintf(pFile,"%g;", (double)(J[k][jj]));
         fprintf(pFile,"\n");
       }
     }
   }
   fclose(pFile);
 
+
+#define DF_STEP(v) (1e-5*fabsl(v) + 1e-8)
+  memcpy(vopt_shift ,vopt, NV*sizeof(Number));
+  sJ = optData->s.JderCon;
+  optData->index = 0;
+  for(k = 0; k < nv; ++k){
+    for(i=0;i < nsi; ++i){
+      for(j = 0; j < np; ++j){
+        jj = k + i*np*nv +j*nv;
+        hh = DF_STEP(vopt_shift[jj]);
+        while(vopt_shift[jj]  + hh >=  vmax[k]){
+         hh *= -1.0;
+         if(vopt_shift[jj]  + hh <= vmin[k])
+           hh *= 0.9;
+         else
+           break;
+         if(fabs(hh) < 1e-32){
+           printf("\nWarning: StepSize fo FD became very small!");
+           break;
+         }
+        }
+        vopt_shift[jj] += hh;
+        h[k][i][j] = hh;
+        memcpy(vv[i][j] , optData->v[i][j], nReal*sizeof(Number));
+      }
+     }
+     optData2ModelData(optData, vopt_shift, optData->index);
+    for(i=0;i < nsi; ++i){
+      sdt = optData->bounds.scaldt[i];
+      for(j = 0; j < np; ++j){
+        vopt_shift[jj] = vopt[jj];
+        for(kk = 0; kk<nx;++kk){ 
+           jj = k + i*np*nv +j*nv;
+           ii = i*np*(nx+nc)+j*(nx+nc) + kk;
+           hh = h[k][i][j];
+           JJ[i][j][kk][k] = sdt[kk]*(optData->v[i][j][kk+nx]-vv[i][j][kk+nx])/hh;
+           memcpy(optData->v[i][j] , vv[i][j], nReal*sizeof(Number));
+        }
+      }
+     }
+   }
+  optData->index = 1;
+#undef DF_STEP
+  sprintf(buffer, "jac_num_step_%i.csv", optData->iter_);
+  pFile = fopen(buffer, "wt");
+
+  fprintf(pFile,"name;time;");
+  for(j = 0; j < nx; ++j)
+    fprintf(pFile,"%s;",optData->data->modelData.realVarsData[j].info.name);
+  for(j = 0; j < nu; ++j)
+    fprintf(pFile, "%s;", optData->dim.inputName[j]);
+  fprintf(pFile,"\n");
+
+  for(i=0;i < nsi; ++i){
+    for(j = 0; j < np; ++j){
+      for(k = 0; k < nx; ++k){
+        fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
+        for(jj = 0; jj < nv; ++jj){
+          tmpJ = (sJ[k][jj]) ? (float)(JJ[i][j][k][jj]) : 0.0;
+          fprintf(pFile,"%lf;",tmpJ);
+          printf("\nJ[%i][%i][%i][%i] = %g",i,j,k,jj, tmpJ);
+        }
+        fprintf(pFile,"\n");
+      }
+    }
+  }
+  fclose(pFile);
+
+  optData2ModelData(optData, vopt, optData->index);
+
   if(optData->iter_ < 2){
     pFile = fopen("omc_check_jac.py", "wt");
-    fprintf(pFile,"\"\"\"\nautomatically generated code for analyse derivatives\nVitalij Ruge, vruge@fh-bielefeld.de\n\"\"\"\n\n");
-    fprintf(pFile,"%s\n%s\n\n","import numpy as np","import matplotlib.pyplot as plt");
+    fprintf(pFile,"\"\"\"\nautomatically generated code for analyse derivatives\n\n");
+    fprintf(pFile,"  Input i:\n");
+    for(j = 0; j < nx; ++j)
+      fprintf(pFile,"   i = %i -> der(%s)\n",j,optData->data->modelData.realVarsData[j].info.name);
+    fprintf(pFile," Input j:\n");
+    for(j = 0; j < nx; ++j)
+      fprintf(pFile,"   j = %i -> %s\n",j,optData->data->modelData.realVarsData[j].info.name);
+    for(j = 0; j < nu; ++j)
+      fprintf(pFile,"   j = %i -> %s\n",nx+j,optData->dim.inputName[j]);
+    fprintf(pFile,"\n\nVitalij Ruge, vruge@fh-bielefeld.de\n\"\"\"\n\n");
+
+    fprintf(pFile,"%s\n%s\n%s\n\n","import numpy as np","import matplotlib.pyplot as plt","from numpy import linalg as LA");
     fprintf(pFile,"class OMC_JAC:\n  def __init__(self, filename):\n    self.filename = filename\n");
     fprintf(pFile,"    self.states = [");
     if(nx > 0)
@@ -825,19 +912,10 @@ static inline void debugeJac(OptData * optData){
                   "    print \"inputs: \", self.inputs","    print \"t0 = %g, t = %g\"%(self.t[0],self.t[-1])",
                   "    return \"\"\n");
     fprintf(pFile,"  def get_value_of_jacobian(self,i, j):\n\n");
-    fprintf(pFile,"   \"\"\"\n     Input i:\n");
-    for(j = 0; j < nx; ++j)
-      fprintf(pFile,"      i = %i -> der(%s)\n",j,optData->data->modelData.realVarsData[j].info.name);
-
-    fprintf(pFile,"     Input j:\n");
-    for(j = 0; j < nx; ++j)
-      fprintf(pFile,"      j = %i -> %s\n",j,optData->data->modelData.realVarsData[j].info.name);
-    for(j = 0; j < nu; ++j)
-      fprintf(pFile,"      j = %i -> %s\n",nx+j,optData->dim.inputName[j]);
-    fprintf(pFile,"   \"\"\"\n");
     fprintf(pFile,"   return self.J[i,j,:]\n\n");
     fprintf(pFile,"  def plot_jacobian_element(self, i, j, filename):\n");
     fprintf(pFile,"%s\n","    J = self.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","    plt.figure()");
     fprintf(pFile,"%s\n","    plt.show(False)");
     fprintf(pFile,"%s\n","    plt.plot(self.t, J)");
     fprintf(pFile,"%s\n","    if j < self.number_of_states:");
@@ -849,30 +927,56 @@ static inline void debugeJac(OptData * optData){
     fprintf(pFile,"%s\n\n\n","    plt.savefig(filename = filename, format='png')");
 
     fprintf(pFile,"%s\n","  def plot_jacian_elements_nz(self,i,filename):");
-    fprintf(pFile,"%s\n","    plt.hold(False)");
     fprintf(pFile,"%s\n","    for j in xrange(self.number_of_states):");
     fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j)");
-    fprintf(pFile,"%s\n","      sum_J = sum(abs(J))");
-    fprintf(pFile,"%s\n","      if sum_J >= 1e-9*np.sqrt(len(J)):");
+    fprintf(pFile,"%s\n","      if LA.norm(J) > 0:");
+    fprintf(pFile,"%s\n","        plt.figure()");
     fprintf(pFile,"%s\n","        plt.plot(self.t, J)");
     fprintf(pFile,"%s\n","        plt_name = \"der(\" + self.states[i] + \")/\" + self.states[j]");
     fprintf(pFile,"%s\n","        plt.legend([plt_name])");
     fprintf(pFile,"%s\n","        plt.xlabel('time')");
-    fprintf(pFile,"%s\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_\"+ str(j) + filename, format='png')\n");
+    fprintf(pFile,"%s\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_state\"+ str(j) + filename, format='png')\n");
     fprintf(pFile,"%s\n","    for j in xrange(self.number_of_inputs):");
     fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j)");
-    fprintf(pFile,"%s\n","      sum_J = sum(abs(J))");
-    fprintf(pFile,"%s\n","      if sum_J >= 1e-9*np.sqrt(len(J)):");
+    fprintf(pFile,"%s\n","      if LA.norm(J) > 0:");
+    fprintf(pFile,"%s\n","        plt.figure()");
     fprintf(pFile,"%s\n","        plt.plot(self.t, J)");
     fprintf(pFile,"%s\n","        plt_name = \"der(\" + self.states[i] + \")/\" + self.inputs[j]");
     fprintf(pFile,"%s\n","        plt.legend([plt_name])");
     fprintf(pFile,"%s\n","        plt.xlabel('time')");
-    fprintf(pFile,"%s\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_\"+ str(j) + filename, format='png')");
+    fprintf(pFile,"%s\n\n\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_input\"+ str(j) + filename, format='png')");
 
-    fprintf(pFile,"%s\n\n","M = OMC_JAC('jac_ana_step_1.csv')");
-    fprintf(pFile,"%s\n","print M");
-    fprintf(pFile,"%s\n","#M.plot_jacobian_element(0,0,'pltJac.png')");
-    fprintf(pFile,"%s\n","M.plot_jacian_elements_nz(0,'pltJac.png')");
+    fprintf(pFile,"%s\n","  def compare_plt_jac(self, i, J2, filename):");
+    fprintf(pFile,"%s\n","    for j in xrange(self.number_of_states):");
+    fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","      J_ = J2.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","      if LA.norm(J-J_)> 0:");
+    fprintf(pFile,"%s\n","        plt.figure()");
+    fprintf(pFile,"%s\n","        plt.hold(False)");
+    fprintf(pFile,"%s\n","        plt.plot(self.t, J, self.t,J_)");
+    fprintf(pFile,"%s\n","        plt_name = \"der(\" + self.states[i] + \")/\" + self.states[j]");
+    fprintf(pFile,"%s\n","        plt.legend([plt_name, plt_name + '_'])");
+    fprintf(pFile,"%s\n","        plt.xlabel('time')");
+    fprintf(pFile,"%s\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_state\"+ str(j) + filename, format='png')\n");
+    fprintf(pFile,"%s\n","    for j in xrange(self.number_of_inputs):");
+    fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","      J_ = J2.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","      if LA.norm(J-J_) > 0:");
+    fprintf(pFile,"%s\n","        plt.figure()");
+    fprintf(pFile,"%s\n","        plt.hold(False)");
+    fprintf(pFile,"%s\n","        plt.plot(self.t, J, self.t,J_)");
+    fprintf(pFile,"%s\n","        plt_name = \"der(\" + self.states[i] + \")/\" + self.inputs[j]");
+    fprintf(pFile,"%s\n","        plt.legend([plt_name, plt_name + '_'])");
+    fprintf(pFile,"%s\n","        plt.xlabel('time')");
+    fprintf(pFile,"%s\n\n\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_input\"+ str(j) + filename, format='png')");
+
+
+    fprintf(pFile,"%s\n","J_ana = OMC_JAC('jac_ana_step_1.csv')");
+    fprintf(pFile,"%s\n","#J_ana.plot_jacian_elements_nz(0,'pltJac_ana.png')");
+    fprintf(pFile,"%s\n","J_num = OMC_JAC('jac_num_step_1.csv')");
+    fprintf(pFile,"%s\n","#J_num.plot_jacian_elements_nz(0,'pltJac_num.png')");
+    fprintf(pFile,"%s\n","for i  in xrange(J_ana.number_of_states):");
+    fprintf(pFile,"%s\n","  J_ana.compare_plt_jac(i,J_num,'pltJac_compare.png')");
 
 
     fclose(pFile);

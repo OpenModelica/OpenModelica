@@ -632,7 +632,9 @@ void optData2ModelData(OptData *optData, double *vopt, const int index){
  **/
 static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *threadData,
                                    const int i, const int j, const int index, const int m){
+
     /* try */
+  optData->scc = 0;
 #if !defined(OMC_EMCC)
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
@@ -643,6 +645,7 @@ static inline void updateDOSystem(OptData * optData, DATA * data, threadData_t *
     if(index){
       diffSynColoredOptimizerSystem(optData, optData->J[i][j], i, j, m);
     }
+    optData->scc = 1;
 #if !defined(OMC_EMCC)
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
