@@ -6178,5 +6178,5 @@ algorithm
   end match;
 end getElementItemsInClassPart;
 
-annotation(__OpenModelica_Interface="absyn"); // TODO: Should be a frontend module
+annotation(__OpenModelica_Interface="frontend");
 end Absyn;

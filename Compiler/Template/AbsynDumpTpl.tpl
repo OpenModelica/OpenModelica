@@ -1044,5 +1044,5 @@ let() = Tpl.addTemplateError(errMessage)
 >>
 end errorMsg;
 
-annotation(__OpenModelica_Interface="absyn");
+annotation(__OpenModelica_Interface="frontend");
 end AbsynDumpTpl;
