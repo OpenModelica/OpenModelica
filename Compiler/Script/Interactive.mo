@@ -17144,6 +17144,7 @@ algorithm
       list<Absyn.Class> classes;
       list<String> toPrint;
       Integer handle;
+      Absyn.Class cl;
 
     case (_,_)
       equation
@@ -17151,6 +17152,9 @@ algorithm
         handle = Print.saveAndClearBuf();
         Print.printBuf("\"(\n");
         toPrint = getDefinitions2(classes,addFunctions);
+        List.map_0(toPrint, printWithNewline);
+        cl = getPathedClassInProgram(Absyn.IDENT("SourceInfo"), ast);
+        toPrint = getDefinitions2({cl},false);
         List.map_0(toPrint, printWithNewline);
         Print.printBuf("\n)\"");
         res = Print.getString();
