@@ -241,7 +241,9 @@ CONFIG += warn_on
 
 RESOURCES += resource_omedit.qrc
 
-RC_FILE = rc_omedit.rc
+win32 {
+  RC_FILE = rc_omedit.rc
+}
 
 DESTDIR = ../bin
 
