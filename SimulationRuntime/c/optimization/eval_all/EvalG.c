@@ -763,7 +763,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
   modelica_real JJ[nsi][np][nv][nx];
   modelica_boolean **sJ;
   float tmpJ;
- 
+
   sprintf(buffer, "jac_ana_step_%i.csv", optData->iter_);
   pFile = fopen(buffer, "wt");
 
@@ -818,7 +818,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
       sdt = optData->bounds.scaldt[i];
       for(j = 0; j < np; ++j){
         vopt_shift[jj] = vopt[jj];
-        for(kk = 0; kk<nx;++kk){ 
+        for(kk = 0; kk<nx;++kk){
            jj = k + i*np*nv +j*nv;
            ii = i*np*(nx+nc)+j*(nx+nc) + kk;
            hh = h[k][i][j];

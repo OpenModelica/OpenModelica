@@ -181,7 +181,7 @@ typedef struct OptData{
   long double ***Hcf;
   DATA *data;
   FILE * pFile;
-  
+
   double *oldH;
   int iter_;
   short index;
