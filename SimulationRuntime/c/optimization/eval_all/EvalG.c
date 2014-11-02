@@ -748,7 +748,6 @@ static inline void debugeJac(OptData * optData, Number* vopt){
   const int nt = optData->dim.nt;
   const int NRes = optData->dim.NRes;
   const int nReal = optData->data->modelData.nVariablesReal;
-  double **J;
   const int NV = optData->dim.NV;
   Number vopt_shift[NV];
   long double h[nv][nsi][np];
@@ -762,8 +761,9 @@ static inline void debugeJac(OptData * optData, Number* vopt){
   long double *sdt;
   modelica_real JJ[nsi][np][nv][nx];
   modelica_boolean **sJ;
-  float tmpJ;
+  modelica_real tmpJ;
 
+  sJ = optData->s.JderCon;
   sprintf(buffer, "jac_ana_step_%i.csv", optData->iter_);
   pFile = fopen(buffer, "wt");
 
@@ -776,11 +776,12 @@ static inline void debugeJac(OptData * optData, Number* vopt){
 
   for(i=0;i < nsi; ++i){
     for(j = 0; j < np; ++j){
-      J = optData->J[i][j];
       for(k = 0; k < nx; ++k){
         fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
-        for(jj = 0; jj < nv; ++jj)
-          fprintf(pFile,"%g;", (double)(J[k][jj]));
+        for(jj = 0; jj < nv; ++jj){
+          tmpJ = (sJ[k][jj]) ? (optData->J[i][j][k][jj]) : 0.0;
+          fprintf(pFile,"%g;", tmpJ);
+        }
         fprintf(pFile,"\n");
       }
     }
@@ -788,14 +789,12 @@ static inline void debugeJac(OptData * optData, Number* vopt){
   fclose(pFile);
 
 
-#define DF_STEP(v) (1e-5*fabsl(v) + 1e-8)
+#define DF_STEP(v) (1e-5*fabsl(v) + 1e-7)
   memcpy(vopt_shift ,vopt, NV*sizeof(Number));
-  sJ = optData->s.JderCon;
   optData->index = 0;
-  for(k = 0; k < nv; ++k){
-    for(i=0;i < nsi; ++i){
-      for(j = 0; j < np; ++j){
-        jj = k + i*np*nv +j*nv;
+  for(k=0; k < nv; ++k){
+    for(i=0, jj=k; i < nsi; ++i){
+      for(j = 0; j < np; ++j, jj += nv){
         hh = DF_STEP(vopt_shift[jj]);
         while(vopt_shift[jj]  + hh >=  vmax[k]){
          hh *= -1.0;
@@ -804,30 +803,31 @@ static inline void debugeJac(OptData * optData, Number* vopt){
          else
            break;
          if(fabs(hh) < 1e-32){
-           printf("\nWarning: StepSize fo FD became very small!");
+           printf("\nWarning: StepSize for FD became very small!\n");
            break;
          }
         }
         vopt_shift[jj] += hh;
         h[k][i][j] = hh;
-        memcpy(vv[i][j] , optData->v[i][j], nReal*sizeof(Number));
+        memcpy(vv[i][j] , optData->v[i][j], nReal*sizeof(modelica_real));
       }
      }
+
      optData2ModelData(optData, vopt_shift, optData->index);
-    for(i=0;i < nsi; ++i){
+     memcpy(vopt_shift,vopt , NV*sizeof(modelica_real));
+
+    for(i = 0; i < nsi; ++i){
       sdt = optData->bounds.scaldt[i];
       for(j = 0; j < np; ++j){
-        vopt_shift[jj] = vopt[jj];
-        for(kk = 0; kk<nx;++kk){
-           jj = k + i*np*nv +j*nv;
-           ii = i*np*(nx+nc)+j*(nx+nc) + kk;
+        for(kk = 0, ii = nx; kk<nx;++kk, ++ii){
            hh = h[k][i][j];
-           JJ[i][j][kk][k] = sdt[kk]*(optData->v[i][j][kk+nx]-vv[i][j][kk+nx])/hh;
-           memcpy(optData->v[i][j] , vv[i][j], nReal*sizeof(Number));
+           JJ[i][j][kk][k] = (optData->v[i][j][ii] - vv[i][j][ii])*sdt[kk]/hh;
         }
+        memcpy(optData->v[i][j] , vv[i][j], nReal*sizeof(modelica_real));
       }
      }
    }
+
   optData->index = 1;
 #undef DF_STEP
   sprintf(buffer, "jac_num_step_%i.csv", optData->iter_);
@@ -845,9 +845,8 @@ static inline void debugeJac(OptData * optData, Number* vopt){
       for(k = 0; k < nx; ++k){
         fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj){
-          tmpJ = (sJ[k][jj]) ? (float)(JJ[i][j][k][jj]) : 0.0;
+          tmpJ = (sJ[k][jj]) ? (JJ[i][j][k][jj]) : 0.0;
           fprintf(pFile,"%lf;",tmpJ);
-          printf("\nJ[%i][%i][%i][%i] = %g",i,j,k,jj, tmpJ);
         }
         fprintf(pFile,"\n");
       }
@@ -953,7 +952,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
     fprintf(pFile,"%s\n","      if LA.norm(J-J_)> 0:");
     fprintf(pFile,"%s\n","        plt.figure()");
     fprintf(pFile,"%s\n","        plt.hold(False)");
-    fprintf(pFile,"%s\n","        plt.plot(self.t, J, self.t,J_)");
+    fprintf(pFile,"%s\n","        plt.plot(self.t, J,'r', self.t,J_,'k--', linewidth=2.0)");
     fprintf(pFile,"%s\n","        plt_name = \"der(\" + self.states[i] + \")/\" + self.states[j]");
     fprintf(pFile,"%s\n","        plt.legend([plt_name, plt_name + '_'])");
     fprintf(pFile,"%s\n","        plt.xlabel('time')");
@@ -964,7 +963,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
     fprintf(pFile,"%s\n","      if LA.norm(J-J_) > 0:");
     fprintf(pFile,"%s\n","        plt.figure()");
     fprintf(pFile,"%s\n","        plt.hold(False)");
-    fprintf(pFile,"%s\n","        plt.plot(self.t, J, self.t,J_)");
+    fprintf(pFile,"%s\n","        plt.plot(self.t, J,'r',self.t,J_,'k--',linewidth=2.0)");
     fprintf(pFile,"%s\n","        plt_name = \"der(\" + self.states[i] + \")/\" + self.inputs[j]");
     fprintf(pFile,"%s\n","        plt.legend([plt_name, plt_name + '_'])");
     fprintf(pFile,"%s\n","        plt.xlabel('time')");
