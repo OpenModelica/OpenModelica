@@ -98,6 +98,7 @@ end mmMatchFunBody;
 template pathIdent(PathIdent path) ::=
   match path
   case IDENT(__)      then ident
+  case PATH_IDENT(ident="builtin") then pathIdent(path)
   case PATH_IDENT(__) then ident + "." + pathIdent(path) //'<%ident%>.<%pathIdent(path)%>'
 end pathIdent;
 
