@@ -414,19 +414,20 @@ public function traverseClasses
 algorithm
   outTpl := match (inProgram, inPath, inFunc, inArg, inVisitProtected)
     local
-      list<Absyn.Class> lst_1,lst;
+      list<Absyn.Class> classes;
       Option<Absyn.Path> pa_1,pa;
       Type_a args_1,args;
       Absyn.Within within_;
       FuncType visitor;
       Boolean traverse_prot;
-      Absyn.TimeStamp ts;
+      Absyn.Program p;
 
-    case (Absyn.PROGRAM(classes = lst,within_ = within_,globalBuildTimes=ts),pa,visitor,args,traverse_prot)
+    case (p as Absyn.PROGRAM(),pa,visitor,args,traverse_prot)
       equation
-        ((lst_1,pa_1,args_1)) = traverseClasses2(lst, pa, visitor, args, traverse_prot);
+        ((classes,pa_1,args_1)) = traverseClasses2(p.classes, pa, visitor, args, traverse_prot);
+        p.classes = classes;
       then
-        ((Absyn.PROGRAM(lst_1,within_,ts),pa_1,args_1));
+        (p,pa_1,args_1);
   end match;
 end traverseClasses;
 
@@ -586,7 +587,7 @@ algorithm
       Boolean p,f,e,visit_prot;
       Absyn.Restriction r;
       Option<String> str_opt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       FuncType visitor;
       Absyn.Class cl;
       list<Absyn.ElementArg> modif;
@@ -726,7 +727,7 @@ algorithm
       Boolean f,visit_prot;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter io;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
       FuncType visitor;
       Absyn.ElementItem elt;

@@ -88,7 +88,7 @@ public uniontype Connection
   record CONNECTION
     Connector lhs;
     Connector rhs;
-    Absyn.Info info;
+    SourceInfo info;
   end CONNECTION;
 end Connection;
 
@@ -97,20 +97,20 @@ public uniontype Branch
     Connector lhs;
     Connector rhs;
     Boolean breakable;
-    Absyn.Info info;
+    SourceInfo info;
   end BRANCH;
 end Branch;
 
 public uniontype Root
   record ROOT
     DAE.ComponentRef name;
-    Absyn.Info info;
+    SourceInfo info;
   end ROOT;
 
   record POTENTIAL_ROOT
     DAE.ComponentRef name;
     Integer priority;
-    Absyn.Info info;
+    SourceInfo info;
   end POTENTIAL_ROOT;
 end Root;
 

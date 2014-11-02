@@ -5840,7 +5840,7 @@ bind polymorphic variabled. Used when elaborating calls."
   input DAE.Type iexpected;
   input Option<Absyn.Path> envPath "to detect which polymorphic types are recursive";
   input InstTypes.PolymorphicBindings ipolymorphicBindings;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output InstTypes.PolymorphicBindings outBindings;
@@ -6024,7 +6024,7 @@ public function fixPolymorphicRestype
 "Uses the polymorphic bindings to determine the result type of the function."
   input DAE.Type ty;
   input InstTypes.PolymorphicBindings bindings;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Type resType;
 algorithm
   //print("Trying to fix restype: " + unparseType(ty) + "\n");
@@ -6036,7 +6036,7 @@ protected function fixPolymorphicRestype2
   input DAE.Type ty;
   input String prefix;
   input InstTypes.PolymorphicBindings bindings;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Type resType;
 algorithm
   resType := matchcontinue (ty,prefix,bindings,info)
@@ -6422,7 +6422,7 @@ such that each name is bound to a non-polymorphic type.
 Solves by doing iterations until a valid state is found (or no change is
 possible)."
   input InstTypes.PolymorphicBindings bindings;
-  input Absyn.Info info;
+  input SourceInfo info;
   input list<Absyn.Path> pathLst;
   output InstTypes.PolymorphicBindings solvedBindings;
 protected
@@ -6438,7 +6438,7 @@ protected function checkValidBindings
   input InstTypes.PolymorphicBindings bindings;
   input InstTypes.PolymorphicBindings solvedBindings;
   input InstTypes.PolymorphicBindings unsolvedBindings;
-  input Absyn.Info info;
+  input SourceInfo info;
   input list<Absyn.Path> pathLst;
 algorithm
   _ := matchcontinue (bindings, solvedBindings, unsolvedBindings, info, pathLst)
@@ -7470,7 +7470,7 @@ end makeNthDimUnknown;
 public function arraySuperType
   "Selects the supertype out of two array-types. Integer may be promoted to Real."
   input DAE.Type ity1;
-  input Absyn.Info info;
+  input SourceInfo info;
   input DAE.Type ity2;
   output DAE.Type ty;
 algorithm
@@ -7939,7 +7939,7 @@ end hasBinding;
 public function typeErrorSanityCheck
   input String inType1;
   input String inType2;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inType1, inType2, inInfo)
     case (_, _, _)
@@ -8317,7 +8317,7 @@ end isFunctionReferenceVar;
 
 public function filterRecordComponents
   input list<DAE.Var> inRecordVars;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<DAE.Var> outRecordVars;
 algorithm
   outRecordVars := matchcontinue(inRecordVars, inInfo)

@@ -194,6 +194,9 @@ extern metamodelica_string referenceDebugString(modelica_metatype fnptr);
 
 #include "meta_modelica_builtin_boxvar.h"
 
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+#define SourceInfo__SOURCEINFO(fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,lastModification) (mmc_mk_box8(3,&SourceInfo_SOURCEINFO__desc,fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,lastModification))
+
 #if defined(__cplusplus)
 }
 #endif

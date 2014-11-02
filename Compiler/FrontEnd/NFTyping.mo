@@ -253,7 +253,7 @@ algorithm
       array<Dimension> dims;
       list<DAE.Dimension> typed_dims;
       Absyn.Path name;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (NFInstTypes.UNTYPED_COMPONENT(baseType = ty, dimensions = dims), _, st, _)
       equation
@@ -502,7 +502,7 @@ algorithm
       DaePrefixes dpf;
       ParamType pty;
       array<Dimension> dims;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (NFInstTypes.UNTYPED_COMPONENT(name = name, prefixes = pf, info = info),
         _, SOME(ty), _)
@@ -533,7 +533,7 @@ algorithm
       Integer pl;
       Prefixes pf;
       ParamType pty;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
 
     case (NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(variability = var)), _)
       equation
@@ -576,7 +576,7 @@ algorithm
       SymbolTable st;
       DAE.Type ty;
       Integer pd;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (NFInstTypes.UNTYPED_BINDING(isProcessing = true), _, _, st, _)
       equation
@@ -604,13 +604,13 @@ protected function checkBindingTypeOk
   input DAE.Type inTy1;
   input DAE.Type inTy2;
   input DAE.Exp inExp;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inTy1, inTy2, inExp, inInfo)
     local
       DAE.Type t1, t2;
       DAE.Exp e;
-      Absyn.Info info;
+      SourceInfo info;
       String str;
 
     case (t1, t2, e, _)
@@ -1416,7 +1416,7 @@ algorithm
       DAE.Exp rhs, lhs, exp1, exp2, exp3;
       list<DAE.Exp> args;
       SymbolTable st;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.ComponentRef cref1, cref2;
       Prefix prefix;
       String name;
@@ -1539,7 +1539,7 @@ end typeEquation;
 
 protected function checkConnectsInWhen
   input Connections inConnections;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inConnections, inInfo)
     case (_, _)
@@ -1564,7 +1564,7 @@ protected function typeConnectionsEquation
   input list<DAE.Exp> inArgs;
   input SymbolTable inSymbolTable;
   input FunctionHashTable inFunctionTable;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Connections outConnections;
 algorithm
   outConnections := match(inName, inArgs, inSymbolTable, inFunctionTable, inInfo)
@@ -1607,7 +1607,7 @@ protected function typeConnection
   input DAE.ComponentRef inRhs;
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input list<Equation> inEquations;
   input Connections inConnections;
   output list<Equation> outEquations;
@@ -1652,7 +1652,7 @@ protected function typeConnection2
   input Boolean inIsDeleted;
   input Connector inLhsConnector;
   input Connector inRhsConnector;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input list<Equation> inEquations;
   input Connections inConnections;
   output list<Equation> outEquations;
@@ -1684,7 +1684,7 @@ protected function typeConnectorCref
   input DAE.ComponentRef inCref;
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.ComponentRef outCref;
   output Face outFace;
   output Option<Component> outComponent;
@@ -1714,7 +1714,7 @@ protected function typeConnectorCref2
   input DAE.ComponentRef inUnprefixedCref;
   input Option<Component> inComponent;
   input Option<Component> inPrefixComponent;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.ComponentRef outCref;
   output Face outFace;
   output Boolean outIsDeleted;
@@ -1767,7 +1767,7 @@ protected function lookupConnectorCref
   input DAE.ComponentRef inCref;
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.ComponentRef outCref;
   output Option<Component> outComponent;
   output Option<Component> outPrefixComponent;
@@ -1867,7 +1867,7 @@ end lookupConnectorCref3;
 protected function rangeToIteratorType
   input DAE.Type inRangeType;
   input DAE.Exp inRangeExp;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outIteratorType;
 algorithm
   outIteratorType := matchcontinue(inRangeType, inRangeExp, inInfo)
@@ -1954,7 +1954,7 @@ algorithm
   outAcc := match (inStmt,inContext,inSymbolTable,inFunctionTable,inAcc)
     local
       DAE.Exp lhs,rhs,exp;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Type lty,rty,ty;
       SymbolTable st;
       FunctionHashTable ft;
@@ -1998,7 +1998,7 @@ end typeStatement;
 protected function typeAssignment
   input DAE.Exp lhs;
   input DAE.Exp rhs;
-  input Absyn.Info info;
+  input SourceInfo info;
   input list<Statement> inAcc;
   output list<Statement> outAcc;
 algorithm

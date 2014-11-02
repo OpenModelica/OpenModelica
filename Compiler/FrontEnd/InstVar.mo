@@ -116,7 +116,7 @@ the backend. The current implementation doesn't handle cases in which the
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   input SCode.Comment inComment;
-  input Absyn.Info info;
+  input SourceInfo info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input FCore.Graph componentDefinitionParentEnv;
@@ -552,7 +552,7 @@ protected function instVar_dispatch "A component element in a class may consist 
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inSCodeComment;
-  input Absyn.Info info;
+  input SourceInfo info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   output FCore.Cache outCache;
@@ -717,7 +717,7 @@ protected function instVar2
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   input SCode.Comment inComment;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   output FCore.Cache outCache;
@@ -765,7 +765,7 @@ algorithm
       DAE.Subscript dime2;
       SCode.Prefixes pf;
       SCode.Final fin;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.InnerOuter io;
       UnitAbsyn.InstStore store;
       list<DAE.SubMod> subMods;
@@ -1029,7 +1029,7 @@ public function instScalar
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inImpl;
   input Option<SCode.Comment> inComment;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   output FCore.Cache outCache;
@@ -1328,7 +1328,7 @@ protected function instArray
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inComment;
-  input Absyn.Info info;
+  input SourceInfo info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   output FCore.Cache outCache;
@@ -1352,7 +1352,7 @@ protected function checkDimensionGreaterThanZero
   input DAE.Dimension inDim;
   input Prefix.Prefix inPrefix;
   input String inIdent;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (inDim,inPrefix,inIdent,info)
     local
@@ -1372,7 +1372,7 @@ protected function checkDimensionGreaterThanZero2
   input DAE.Dimension inDim;
   input Prefix.Prefix inPrefix;
   input String inIdent;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (isError,inDim,inPrefix,inIdent,info)
     local
@@ -1398,7 +1398,7 @@ protected function checkArrayModDimSize
   input DAE.Dimension inDimension;
   input Prefix.Prefix inPrefix;
   input String inIdent;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inModifier, inDimension, inPrefix, inIdent, inInfo)
     local
@@ -1422,7 +1422,7 @@ protected function checkArraySubModDimSize
   input DAE.Dimension inDimension;
   input Prefix.Prefix inPrefix;
   input String inIdent;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inSubMod, inDimension, inPrefix, inIdent, inInfo)
     local
@@ -1450,7 +1450,7 @@ protected function checkArrayModBindingDimSize
   input DAE.Dimension inDimension;
   input Prefix.Prefix inPrefix;
   input String inIdent;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean outIsCorrect;
 algorithm
   outIsCorrect := matchcontinue(inBinding, inDimension, inPrefix, inIdent, inInfo)
@@ -1507,7 +1507,7 @@ protected function instArray2
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inComment;
-  input Absyn.Info info;
+  input SourceInfo info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   output FCore.Cache outCache;
@@ -1695,7 +1695,7 @@ Special case for DIM_INTEGER: tail-recursive implementation since the number of 
   input list<list<DAE.Dimension>> inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inComment;
-  input Absyn.Info info;
+  input SourceInfo info;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input DAE.DAElist accDae;

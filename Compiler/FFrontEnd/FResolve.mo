@@ -70,7 +70,7 @@ type Visited = FCore.Visited;
 type Import = FCore.Import;
 type Graph = FCore.Graph;
 
-type Msg = Option<Absyn.Info>;
+type Msg = Option<SourceInfo>;
 
 public function ext
 "@author: adrpo
@@ -107,7 +107,7 @@ algorithm
       Absyn.Path p;
       SCode.Element e;
       Node n;
-      Absyn.Info i;
+      SourceInfo i;
       Graph g;
 
     // found extends that has a ref node
@@ -189,7 +189,7 @@ algorithm
       Absyn.Path p;
       SCode.ClassDef d;
       Node n;
-      Absyn.Info i;
+      SourceInfo i;
       Graph g;
 
     // found derived that has a ref node
@@ -264,7 +264,7 @@ algorithm
       Absyn.Path p;
       SCode.Element e;
       Node n;
-      Absyn.Info i;
+      SourceInfo i;
       Graph g;
 
     // found component that has a ref node
@@ -342,7 +342,7 @@ algorithm
       Absyn.Path p;
       SCode.Element e;
       Node n;
-      Absyn.Info i;
+      SourceInfo i;
       Graph g;
 
     // found constraint class that has a ref node
@@ -416,7 +416,7 @@ algorithm
       Ref r, rr, p;
       SCode.Element e;
       Node n;
-      Absyn.Info i;
+      SourceInfo i;
       Name id;
       Graph g;
 
@@ -498,7 +498,7 @@ algorithm
       Ref r, rr;
       Absyn.ComponentRef cr;
       Node n;
-      Absyn.Info i;
+      SourceInfo i;
       Graph g;
 
 
@@ -573,7 +573,7 @@ algorithm
       Ref r, rr;
       Absyn.ComponentRef cr;
       Node n;
-      Absyn.Info i;
+      SourceInfo i;
       Graph g;
 
     // found mod that has a ref node
@@ -653,7 +653,7 @@ algorithm
       Ref r, rr, p;
       SCode.Element e;
       Node n;
-      Absyn.Info i;
+      SourceInfo i;
       Name id;
       Graph g;
 

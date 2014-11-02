@@ -447,7 +447,7 @@ extern void* ErrorImpl__getMessages(threadData_t *threadData)
     void *ec = mmc_mk_icon(members->errorMessageQueue->top()->getEndColumnNo());
     void *filename = mmc_mk_scon(members->errorMessageQueue->top()->getFileName().c_str());
     void *readonly = mmc_mk_icon(members->errorMessageQueue->top()->getIsFileReadOnly());
-    void *info = Absyn__INFO(filename,readonly,sl,sc,el,ec,Absyn__TIMESTAMP(mmc_mk_rcon(0),mmc_mk_rcon(0)));
+    void *info = SourceInfo__SOURCEINFO(filename,readonly,sl,sc,el,ec,mmc_mk_rcon(0));
     void *totmsg = Error__TOTALMESSAGE(msg,info);
     res = mmc_mk_cons(totmsg,res);
     pop_message(threadData,false);

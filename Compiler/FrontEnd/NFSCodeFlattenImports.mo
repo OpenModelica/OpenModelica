@@ -77,7 +77,7 @@ algorithm
     local
       SCode.Ident name;
       SCode.ClassDef cdef;
-      Absyn.Info info;
+      SourceInfo info;
       Item item;
       Env env;
       NFSCodeEnv.Frame cls_env;
@@ -110,7 +110,7 @@ end flattenClass;
 protected function flattenClassDef
   input SCode.ClassDef inClassDef;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.ClassDef outClassDef;
   output Env outEnv;
 algorithm
@@ -170,7 +170,7 @@ end flattenClassDef;
 protected function flattenDerivedClassDef
   input SCode.ClassDef inClassDef;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.ClassDef outClassDef;
 protected
   Absyn.TypeSpec ty;
@@ -243,7 +243,7 @@ protected
   SCode.Comment cmt;
   Option<Absyn.Exp> cond;
   Option<Absyn.ConstrainClass> cc;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   SCode.COMPONENT(name, prefixes, attr, type_spec, mod, cmt, cond, info) := inComponent;
   attr := flattenAttributes(attr, inEnv, info);
@@ -256,7 +256,7 @@ end flattenComponent;
 protected function flattenAttributes
   input SCode.Attributes inAttributes;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.Attributes outAttributes;
 protected
   Absyn.ArrayDim ad;
@@ -273,7 +273,7 @@ end flattenAttributes;
 protected function flattenTypeSpec
   input Absyn.TypeSpec inTypeSpec;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Absyn.TypeSpec outTypeSpec;
 algorithm
   outTypeSpec := match(inTypeSpec, inEnv, inInfo)
@@ -311,7 +311,7 @@ protected
   Absyn.Path path;
   SCode.Mod mod;
   Option<SCode.Annotation> ann;
-  Absyn.Info info;
+  SourceInfo info;
   Env env;
   SCode.Visibility vis;
 algorithm
@@ -343,7 +343,7 @@ algorithm
       SCode.EEquation equ;
       SCode.Ident iter_name;
       Env env;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.ComponentRef cref;
       SCode.Comment cmt;
       Absyn.Exp exp;
@@ -376,9 +376,9 @@ end flattenEEquationTraverser;
 
 protected function traverseExp
   input Absyn.Exp inExp;
-  input tuple<Env, Absyn.Info> inTuple;
+  input tuple<Env, SourceInfo> inTuple;
   output Absyn.Exp outExp;
-  output tuple<Env, Absyn.Info> outTuple;
+  output tuple<Env, SourceInfo> outTuple;
 algorithm
   (outExp, outTuple) := Absyn.traverseExpBidir(inExp, flattenExpTraverserEnter, flattenExpTraverserExit, inTuple);
 end traverseExp;
@@ -386,7 +386,7 @@ end traverseExp;
 protected function flattenConstraints
   input SCode.ConstraintSection inConstraints;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.ConstraintSection outConstraints;
 protected
   list<Absyn.Exp> exps;
@@ -425,7 +425,7 @@ algorithm
       Env env;
       String iter_name;
       SCode.Statement stmt;
-      Absyn.Info info;
+      SourceInfo info;
 
     case ((stmt as SCode.ALG_FOR(index = iter_name, info = info), env))
       equation
@@ -454,7 +454,7 @@ end flattenStatementTraverser;
 protected function flattenModifier
   input SCode.Mod inMod;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.Mod outMod;
 algorithm
   outMod := match(inMod, inEnv, inInfo)
@@ -464,7 +464,7 @@ algorithm
       list<SCode.SubMod> sub_mods;
       Option<tuple<Absyn.Exp, Boolean>> opt_exp;
       SCode.Element el;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (SCode.MOD(fp, ep, sub_mods, opt_exp, info), _, _)
       equation
@@ -486,7 +486,7 @@ end flattenModifier;
 protected function flattenModOptExp
   input Option<tuple<Absyn.Exp, Boolean>> inOptExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Option<tuple<Absyn.Exp, Boolean>> outOptExp;
 algorithm
   outOptExp := match(inOptExp, inEnv, inInfo)
@@ -507,7 +507,7 @@ end flattenModOptExp;
 protected function flattenSubMod
   input SCode.SubMod inSubMod;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.SubMod outSubMod;
 algorithm
   outSubMod := match(inSubMod, inEnv, inInfo)
@@ -537,7 +537,7 @@ algorithm
       SCode.Partial pp;
       SCode.Encapsulated ep;
       SCode.Restriction res;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Element element;
       SCode.ClassDef cdef,cdef2;
       SCode.Comment cmt;
@@ -572,7 +572,7 @@ end flattenRedeclare;
 protected function flattenSubscript
   input SCode.Subscript inSub;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.Subscript outSub;
 algorithm
   outSub := match(inSub, inEnv, inInfo)
@@ -592,7 +592,7 @@ end flattenSubscript;
 protected function flattenExp
   input Absyn.Exp inExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Absyn.Exp outExp;
 algorithm
   (outExp, _) := Absyn.traverseExpBidir(inExp, flattenExpTraverserEnter, flattenExpTraverserExit, (inEnv, inInfo));
@@ -601,7 +601,7 @@ end flattenExp;
 protected function flattenOptExp
   input Option<Absyn.Exp> inExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Option<Absyn.Exp> outExp;
 algorithm
   outExp := match(inExp, inEnv, inInfo)
@@ -620,9 +620,9 @@ end flattenOptExp;
 
 protected function flattenExpTraverserEnter
   input Absyn.Exp inExp;
-  input tuple<Env, Absyn.Info> inTuple;
+  input tuple<Env, SourceInfo> inTuple;
   output Absyn.Exp outExp;
-  output tuple<Env, Absyn.Info> outTuple;
+  output tuple<Env, SourceInfo> outTuple;
 algorithm
   (outExp,outTuple) := match(inExp,inTuple)
     local
@@ -631,8 +631,8 @@ algorithm
       Absyn.FunctionArgs args;
       Absyn.Exp exp;
       Absyn.ForIterators iters;
-      Absyn.Info info;
-      tuple<Env, Absyn.Info> tup;
+      SourceInfo info;
+      tuple<Env, SourceInfo> tup;
 
     case (Absyn.CREF(componentRef = cref), tup as (env, info))
       equation
@@ -674,15 +674,15 @@ end flattenExpTraverserEnter;
 
 protected function flattenExpTraverserExit
   input Absyn.Exp inExp;
-  input tuple<Env, Absyn.Info> inTuple;
+  input tuple<Env, SourceInfo> inTuple;
   output Absyn.Exp outExp;
-  output tuple<Env, Absyn.Info> outTuple;
+  output tuple<Env, SourceInfo> outTuple;
 algorithm
   (outExp,outTuple) := match(inExp,inTuple)
     local
       Absyn.Exp e;
       Env env;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
         (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info))
@@ -701,7 +701,7 @@ end flattenExpTraverserExit;
 public function flattenComponentRefSubs
   input Absyn.ComponentRef inCref;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Absyn.ComponentRef outCref;
 algorithm
   outCref := match(inCref, inEnv, inInfo)

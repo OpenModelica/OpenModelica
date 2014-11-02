@@ -200,7 +200,7 @@ algorithm
       SCode.Each ep;
       list<SCode.SubMod> submods1, submods2;
       Option<tuple<Absyn.Exp, Boolean>> binding;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
       SCode.Mod mod1, mod2;
 
     // The second modifier has no binding, use the binding from the first.

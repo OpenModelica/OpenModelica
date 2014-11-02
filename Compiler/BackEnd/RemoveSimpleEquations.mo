@@ -1252,7 +1252,7 @@ algorithm
       DAE.ComponentRef cr1, cr2;
       DAE.Exp crexp1, crexp2;
       String eqn_str, var_str;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.ElementSource source;
 
     case(false, _, _, _, _, _) then ();

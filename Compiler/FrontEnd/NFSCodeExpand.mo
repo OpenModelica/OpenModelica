@@ -249,7 +249,7 @@ algorithm
       list<DAE.Element> el;
       NFInstTypes.Component comp;
       String err_msg;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (NFInstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _, _)
       equation
@@ -667,7 +667,7 @@ protected
   DAE.Type ty;
   NFInstTypes.DaePrefixes prefs;
   NFInstTypes.Binding binding;
-  Absyn.Info info;
+  SourceInfo info;
   Option<NFInstTypes.Component> p;
 algorithm
   NFInstTypes.TYPED_COMPONENT(name, DAE.T_ARRAY(ty = ty), p, prefs, binding, info) := inComponent;
@@ -712,7 +712,7 @@ algorithm
       list<DAE.Element> accum_el;
       list<DAE.Dimension> dims;
       Absyn.Path path;
-      Absyn.Info info;
+      SourceInfo info;
       list<DAE.Exp> expLst;
       String name           "The name of the index/iterator variable.";
       Integer index;

@@ -54,8 +54,7 @@ public import TplCodegen;
 
 protected
 constant Tpl.Text emptyTxt = Tpl.MEM_TEXT({}, {});
-constant TplAbsyn.SourceInfo dsi = TplAbsyn.dummySourceInfo;
-
+constant SourceInfo dsi = TplAbsyn.dummySourceInfo;
 
 public function main
   input String inFile;

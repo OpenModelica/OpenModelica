@@ -663,7 +663,7 @@ algorithm
       Item item;
       Env env;
       list<NFSCodeEnv.Redeclaration> redecls;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.Path> opt_path;
       Option<Item> opt_item;
       Option<Env> opt_env;
@@ -982,7 +982,7 @@ algorithm
       Absyn.TypeSpec type_spec;
       SCode.Mod mods;
       list<NFSCodeEnv.Redeclaration> redeclares;
-      Absyn.Info info;
+      SourceInfo info;
 
     // A variable.
     case (_, NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec,
@@ -1035,7 +1035,7 @@ algorithm
       Absyn.TypeSpec type_spec;
       SCode.Mod mods;
       list<NFSCodeEnv.Redeclaration> redeclares;
-      Absyn.Info info;
+      SourceInfo info;
 
     // A variable.
     case (_, NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec,
@@ -1100,7 +1100,7 @@ algorithm
     local
       Absyn.Path bc;
       list<NFSCodeEnv.Redeclaration> redecls;
-      Absyn.Info info;
+      SourceInfo info;
       Env env;
       Item item;
       list<Item> items;
@@ -1163,7 +1163,7 @@ end lookupInheritedNameAndBC;
 public function lookupRedeclaredClassByItem
   input Item inItem;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Item outItem;
   output Env outEnv;
 algorithm
@@ -1205,7 +1205,7 @@ protected function lookupRedeclaredClass2
   input SCode.Redeclare inRedeclarePrefix;
   input SCode.Replaceable inReplaceablePrefix;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Item outItem;
   output Env outEnv;
 algorithm
@@ -1215,7 +1215,7 @@ algorithm
       SCode.Ident name;
       Item item;
       Env env;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Redeclare rdp;
       SCode.Replaceable rpp;
 
@@ -1334,7 +1334,7 @@ protected function lookupName
   input Absyn.Path inName;
   input Env inEnv;
   input LookupStrategy inLookupStrategy;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Option<Error.Message> inErrorType;
   output Item outItem;
   output Absyn.Path outName;
@@ -1434,7 +1434,7 @@ public function lookupNameSilent
   "Looks up a name, but doesn't print an error message if it fails."
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
@@ -1446,7 +1446,7 @@ end lookupNameSilent;
 public function lookupNameSilentNoBuiltin
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
@@ -1459,7 +1459,7 @@ public function lookupClassName
   "Calls lookupName with the 'Class not found' error message."
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
@@ -1472,7 +1472,7 @@ public function lookupBaseClassName
   "Calls lookupName with the 'Baseclass not found' error message."
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
@@ -1514,7 +1514,7 @@ public function lookupVariableName
   "Calls lookupName with the 'Variable not found' error message."
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
@@ -1527,7 +1527,7 @@ public function lookupFunctionName
   "Calls lookupName with the 'Function not found' error message."
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
@@ -1636,7 +1636,7 @@ public function lookupComponentRef
   qualified."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Absyn.ComponentRef outCref;
 algorithm
   outCref := matchcontinue(inCref, inEnv, inInfo)
@@ -1750,7 +1750,7 @@ public function lookupTypeSpec
   scopes of the type."
   input Absyn.TypeSpec inTypeSpec;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Item outItem;
   output Absyn.TypeSpec outTypeSpec;
   output Env outTypeEnv;
@@ -1800,7 +1800,7 @@ public function qualifyPath
   resulting path with it's environment."
   input Absyn.Path inPath;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Option<Error.Message> inErrorType;
   output Absyn.Path outPath;
 algorithm

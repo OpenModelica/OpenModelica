@@ -1210,7 +1210,7 @@ public function allCombinations<T>
   So there are flags that limit the size of the set it works on."
   input list<list<T>> lst;
   input Option<Integer> maxTotalSize;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<list<T>> out;
 algorithm
   out := matchcontinue (lst,maxTotalSize,info)

@@ -891,13 +891,13 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, SimCode sim
 end functionWhenReinitStatementThen;
 
 
-template infoArgs(Info info)
+template infoArgs(builtin.SourceInfo info)
 ::=
   match info
-  case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
+  case SOURCEINFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
 end infoArgs;
 
-template assertCommon(Exp condition, Exp message, Info info, Context context, SimCode simCode)
+template assertCommon(Exp condition, Exp message, builtin.SourceInfo info, Context context, SimCode simCode)
  "Generates an assert statement."
 ::=
   let &preExpCond = buffer ""
@@ -3143,7 +3143,7 @@ template dimension(Dimension d)
 end dimension;
 
 
-template error(Absyn.Info srcInfo, String errMessage)
+template error(builtin.SourceInfo srcInfo, String errMessage)
 "Example source template error reporting template to be used together with the sourceInfo() magic function.
 Usage: error(sourceInfo(), <<message>>) "
 ::=

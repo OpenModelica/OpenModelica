@@ -56,23 +56,7 @@ public type EscOption = tuple<Ident, Option<Expression>>;
 public type StringToken = Tpl.StringToken;
 public type Tokens = Tpl.Tokens;
 
-public
-type SourceInfo = Absyn.Info;
-constant SourceInfo dummySourceInfo = Absyn.INFO("NoFileName.xxx", false, 0, 0, 0, 0, Absyn.dummyTimeStamp); //Absyn.dummyInfo;
-
-/*
-uniontype SourceInfo
-  record SOURCE_INFO
-    String fileName;
-    //Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries" ;
-    Integer lineNumberStart;
-    Integer columnNumberStart;
-    Integer lineNumberEnd;
-    Integer columnNumberEnd ;
-    //TimeStamp buildTimes "Build and edit times";
-  end SOURCE_INFO;
-end SourceInfo;
-*/
+constant SourceInfo dummySourceInfo = SOURCEINFO("NoFileName.xxx", false, 0, 0, 0, 0, 0.0);
 
 public
 uniontype PathIdent
@@ -446,7 +430,7 @@ constant tuple<Ident,TypeSignature> imlicitTxtArg = (imlicitTxt, TEXT_TYPE());
 protected
 
 constant MatchingExp imlicitTxtMExp = BIND_MATCH(imlicitTxt);
-constant Expression emptyExpression = (STR_TOKEN(Tpl.ST_STRING("")), Absyn.dummyInfo) ;
+constant Expression emptyExpression = (STR_TOKEN(Tpl.ST_STRING("")), dummySourceInfo) ;
 
 constant Ident emptyTxt = "Tpl.emptyTxt";
 constant Ident errorIdent = "!error!";
@@ -1758,14 +1742,14 @@ algorithm
 
     //or embed it into the FUN_CALL ??... --> match
     case ( (FUN_CALL(name = IDENT("sourceInfo"), args = {}),
-            sinfo as Absyn.INFO(fileName = fileName, lineNumberStart = lineNumberStart, columnNumberStart = columnNumberStart)),
+            sinfo as SOURCEINFO(fileName = fileName, lineNumberStart = lineNumberStart, columnNumberStart = columnNumberStart)),
            stmts, locals, scEnv, _, accMMDecls )
       equation
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace(" arg sourceInfo \n");
         end if;
         fname = PATH_IDENT("Tpl", IDENT("sourceInfo"));
-        rettype = NAMED_TYPE(PATH_IDENT("Absyn", IDENT("Info")));
+        rettype = NAMED_TYPE(PATH_IDENT("builtin", IDENT("SourceInfo")));
         lineStr = intString(lineNumberStart);
         colStr = intString(columnNumberStart);
         mmexp = MM_FN_CALL(fname, { MM_STRING(fileName), MM_LITERAL(lineStr), MM_LITERAL(colStr) });
@@ -4287,10 +4271,10 @@ algorithm
     local
       Expression ebranch;
 
-    case ( SOME(ebranch) ) then  ebranch;
+    case ( SOME(ebranch) ) then ebranch;
 
     //empty map-argument list will generate no code
-    case NONE()          then  emptyExpression;
+    case NONE() then emptyExpression;
 
     //cannot happen
     case (_ )
@@ -6631,7 +6615,7 @@ end listMap2Tuple22;
 
 public function addSusanError
   input String inErrMsg;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   if Flags.isSet(Flags.FAILTRACE) then
     Debug.traceln("Error - " + inErrMsg);
@@ -6641,7 +6625,7 @@ end addSusanError;
 
 protected function addSusanNotification
   input String inErrMsg;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   Error.addSourceMessage(Error.SUSAN_NOTIFY, {inErrMsg}, inInfo);
 end addSusanNotification;

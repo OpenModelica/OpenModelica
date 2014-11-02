@@ -134,7 +134,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Absyn.ClassDef d;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       SCode.Element scodeClass;
       SCode.Final sFin;
       SCode.Encapsulated sEnc;
@@ -185,7 +185,7 @@ end translateClass2;
 public function translateOperatorDef
   input Absyn.ClassDef inClassDef;
   input Absyn.Ident operatorName;
-  input Absyn.Info info;
+  input SourceInfo info;
   output SCode.ClassDef outOperDef;
   output SCode.Comment cmt;
 algorithm
@@ -347,7 +347,7 @@ algorithm
       Absyn.Restriction e;
       list<Absyn.ClassPart> rest;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Absyn.Annotation> ann;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.EXTERNAL(externalDecl = _) :: _)))) then true;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
@@ -421,7 +421,7 @@ protected function translateClassdef
    elements, equations and algorithms, which are mixed in the input.
   LS: Divided the translateClassdef into separate functions for collecting the different parts"
   input Absyn.ClassDef inClassDef;
-  input Absyn.Info info;
+  input SourceInfo info;
   output SCode.ClassDef outClassDef;
   output SCode.Comment outComment;
 algorithm
@@ -800,7 +800,7 @@ algorithm
       SCode.Statement stmt;
       Option<Absyn.Comment> comment;
       SCode.Comment scomment;
-      Absyn.Info info;
+      SourceInfo info;
     case {} then {};
     case (Absyn.ALGORITHMITEM(algorithm_ = alg, comment = comment, info = info) :: rest)
       equation
@@ -821,7 +821,7 @@ protected function translateClassdefAlgorithmItem
 "Translates an Absyn algorithm (statement) into SCode statement"
   input Absyn.Algorithm alg;
   input SCode.Comment comment;
-  input Absyn.Info info;
+  input SourceInfo info;
   output SCode.Statement stmt;
 algorithm
   stmt := match (alg,comment,info)
@@ -1044,7 +1044,7 @@ algorithm
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.ElementSpec s;
       Absyn.InnerOuter io;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> cc;
       Option<String> expOpt;
       Option<Real> weightOpt;
@@ -1114,7 +1114,7 @@ protected function translateElementspec
   input Option<Absyn.RedeclareKeywords> inRedeclareKeywords;
   input SCode.Visibility inVisibility;
   input Absyn.ElementSpec inElementSpec4;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<SCode.Element> outElementLst;
 algorithm
   outElementLst := match (cc,finalPrefix,io,inRedeclareKeywords,inVisibility,inElementSpec4,inInfo)
@@ -1148,7 +1148,7 @@ algorithm
       Option<SCode.Annotation> sann;
       Absyn.Variability variability;
       Absyn.Parallelism parallelism;
-      Absyn.Info i,info;
+      SourceInfo i,info;
       SCode.Element cls;
       SCode.Redeclare sRed;
       SCode.Final sFin;
@@ -1260,7 +1260,7 @@ end translateElementspec;
 protected function translateImports "Used to handle group imports, i.e. A.B.C.{x=a,b}"
   input Absyn.Import imp;
   input SCode.Visibility visibility;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<SCode.Element> elts;
 algorithm
   elts := match (imp,visibility,info)
@@ -1287,7 +1287,7 @@ protected function translateGroupImport "Used to handle group imports, i.e. A.B.
   input Absyn.GroupImport gimp;
   input Absyn.Path prefix;
   input SCode.Visibility visibility;
-  input Absyn.Info info;
+  input SourceInfo info;
   output SCode.Element elt;
 algorithm
   elt := match (gimp,prefix,visibility,info)
@@ -1423,7 +1423,7 @@ algorithm
       list<Absyn.EquationItem> es;
       Option<Absyn.Comment> acom;
       SCode.Comment com;
-      Absyn.Info info;
+      SourceInfo info;
 
     case ({}, _) then {};
 
@@ -1459,7 +1459,7 @@ algorithm
       list<Absyn.EquationItem> es;
       Option<Absyn.Comment> acom;
       SCode.Comment com;
-      Absyn.Info info;
+      SourceInfo info;
 
     case ({}, _) then {};
 
@@ -1480,9 +1480,9 @@ end translateEEquations;
 protected function translateCommentWithLineInfoChanges
 "turns an Absyn.Comment into an SCode.Comment"
   input Option<Absyn.Comment> inComment;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.Comment outComment;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   outComment := translateComment(inComment);
   outInfo := getInfoAnnotationOrDefault(outComment, inInfo);
@@ -1490,8 +1490,8 @@ end translateCommentWithLineInfoChanges;
 
 protected function getInfoAnnotationOrDefault "Replaces the file info if there is an annotation __OpenModelica_FileInfo=(\"fileName\",line). Should be improved."
   input SCode.Comment comment;
-  input Absyn.Info default;
-  output Absyn.Info info;
+  input SourceInfo default;
+  output SourceInfo info;
 algorithm
   info := match (comment,default)
     local
@@ -1504,8 +1504,8 @@ end getInfoAnnotationOrDefault;
 
 protected function getInfoAnnotationOrDefault2
   input list<SCode.SubMod> lst;
-  input Absyn.Info default;
-  output Absyn.Info info;
+  input SourceInfo default;
+  output SourceInfo info;
 algorithm
   info := match (lst,default)
     local
@@ -1514,7 +1514,7 @@ algorithm
       Integer line;
     case ({},_) then default;
     case (SCode.NAMEMOD(ident="__OpenModelica_FileInfo",mod=SCode.MOD(binding=SOME((Absyn.TUPLE({Absyn.STRING(fileName),Absyn.INTEGER(line)}),_))))::_,_)
-      then Absyn.INFO(fileName,false,line,0,line,0,Absyn.dummyTimeStamp);
+      then SOURCEINFO(fileName,false,line,0,line,0,0.0);
     case (_::rest,_) then getInfoAnnotationOrDefault2(rest,default);
   end match;
 end getInfoAnnotationOrDefault2;
@@ -1601,7 +1601,7 @@ protected function translateEquation
   PR Arrays seem to keep their Absyn.mo structure."
   input Absyn.Equation inEquation;
   input SCode.Comment inComment;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Boolean inIsInitial;
   output SCode.EEquation outEEquation;
 algorithm
@@ -1622,7 +1622,7 @@ algorithm
       list<Absyn.Exp> conditions;
       list<list<Absyn.EquationItem>> trueBranches;
       list<list<SCode.EEquation>> trueEEquations;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb),com,info,_)
       equation
@@ -1735,7 +1735,7 @@ end translateEquation;
 protected function translateElementAddinfo
 "function: translateElementAddinfo"
   input SCode.Element elem;
-  input Absyn.Info nfo;
+  input SourceInfo nfo;
   output SCode.Element oelem;
 algorithm
   oelem := matchcontinue(elem,nfo)
@@ -1764,7 +1764,7 @@ public function translateMod
   input Option<Absyn.Modification> inAbsynModificationOption;
   input SCode.Final inFinalPrefix;
   input SCode.Each inEachPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.Mod outMod;
 algorithm
   outMod := match (inAbsynModificationOption,inFinalPrefix,inEachPrefix,inInfo)
@@ -1813,7 +1813,7 @@ algorithm
       Boolean fp;
       Absyn.Each ep;
       Option<Absyn.Modification> mod;
-      Absyn.Info info;
+      SourceInfo info;
       list<Absyn.ElementArg> rest_args;
       SCode.Mod smod;
       Absyn.ElementSpec spec;
@@ -1860,7 +1860,7 @@ protected function translateSub
   of modifications into a number of nested SCode.SUBMOD."
   input Absyn.Path inPath;
   input SCode.Mod inMod;
-  input Absyn.Info info;
+  input SourceInfo info;
   output SCode.SubMod outSubMod;
 algorithm
   outSubMod := match (inPath,inMod,info)
@@ -2165,7 +2165,7 @@ end getImportFromElement;
 
 protected function makeTypeVarElement
   input String str;
-  input Absyn.Info info;
+  input SourceInfo info;
   output SCode.Element elt;
 protected
   SCode.ClassDef cd;
@@ -2252,7 +2252,7 @@ algorithm
       SCode.Visibility visibility;
       SCode.Mod mod;
       Option<SCode.Annotation> ann "the extends annotation";
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Mod redeclareMod;
       list<SCode.SubMod> submods;
 
@@ -2301,7 +2301,7 @@ algorithm
       SCode.Each e1, e2;
       list<SCode.SubMod> subMods1, subMods2;
       Option<tuple<Absyn.Exp, Boolean>> b1, b2;
-      Absyn.Info info;
+      SourceInfo info;
 
     // inner is NOMOD
     case (SCode.REDECL(finalPrefix = _), SCode.NOMOD()) then inModOuter;
@@ -2449,7 +2449,7 @@ algorithm
       list<SCode.SubMod> sl;
       SCode.Final fp;
       SCode.Each ep;
-      Absyn.Info i;
+      SourceInfo i;
       Option<tuple<Absyn.Exp, Boolean>> binding;
 
     case (SCode.MOD(fp, ep, sl, binding, i), _)
@@ -2529,7 +2529,7 @@ algorithm
       list<SCode.SubMod> sl;
       SCode.Final fp;
       SCode.Each ep;
-      Absyn.Info i;
+      SourceInfo i;
       Option<tuple<Absyn.Exp, Boolean>> binding;
 
     case (SCode.MOD(fp, ep, sl, binding, i), _)
@@ -2596,7 +2596,7 @@ algorithm
       SCode.Ident n;
       list<SCode.Enum> l;
       SCode.Comment cmt;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Element c;
 
     case SCode.CLASS(name = n,restriction = SCode.R_TYPE(),
@@ -2617,7 +2617,7 @@ public function expandEnumeration
   input SCode.Ident n;
   input list<SCode.Enum> l;
   input SCode.Comment cmt;
-  input Absyn.Info info;
+  input SourceInfo info;
   output SCode.Element outClass;
 protected
   list<SCode.Element> comp;
@@ -2638,7 +2638,7 @@ end expandEnumeration;
 public function makeEnumComponents
   "Translates a list of Enums to a list of elements of type EnumType."
   input list<SCode.Enum> inEnumLst;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<SCode.Element> outSCodeElementLst;
 algorithm
   outSCodeElementLst := List.map1(inEnumLst, SCode.makeEnumType, info);
@@ -2670,7 +2670,7 @@ end getElementWithPathCheckBuiltin;
 
 protected function checkTypeSpec
   input Absyn.TypeSpec ts;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (ts,info)
     local

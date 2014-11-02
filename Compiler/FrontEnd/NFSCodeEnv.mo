@@ -94,7 +94,7 @@ public uniontype Extends
     Absyn.Path baseClass;
     list<Redeclaration> redeclareModifiers;
     Integer index;
-    Absyn.Info info;
+    SourceInfo info;
   end EXTENDS;
 end Extends;
 
@@ -146,7 +146,7 @@ public uniontype Item
     "An alias for another Item, see comment in SCodeFlattenRedeclare package."
     String name;
     Option<Absyn.Path> path;
-    Absyn.Info info;
+    SourceInfo info;
   end ALIAS;
 
   record REDECLARED_ITEM
@@ -480,7 +480,7 @@ protected function removeRedeclaresFromExtend
 protected
   Absyn.Path bc;
   Integer index;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   EXTENDS(bc, _, index, info) := inExtend;
   outExtend := EXTENDS(bc, {}, index, info);
@@ -666,7 +666,7 @@ algorithm
       Env class_env, env;
       SCode.ClassDef cdef;
       ClassType cls_type;
-      Absyn.Info info;
+      SourceInfo info;
 
     // A class extends.
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
@@ -708,7 +708,7 @@ protected
   SCode.Element cls;
   String cls_name;
   Env env, enclosing_env;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   SCode.CLASS(name = cls_name, classDef = cdef, info = info) := inClassDefElement;
   env := openScope(emptyEnv, inClassDefElement);
@@ -726,7 +726,7 @@ protected
   String var_name;
   Util.StatefulBoolean is_used;
   Absyn.TypeSpec ty;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   SCode.COMPONENT(name = var_name, typeSpec = ty, info = info) := inVar;
   is_used := Util.makeStatefulBoolean(false);
@@ -788,7 +788,7 @@ algorithm
       list<Import> qual_imps, unqual_imps;
       FrameType ty;
       Env rest;
-      Absyn.Info info;
+      SourceInfo info;
       Boolean hidden;
       Option<Util.StatefulBoolean> is_used;
 
@@ -845,7 +845,7 @@ protected
   Absyn.Path bc;
   SCode.Mod mods;
   list<Redeclaration> redecls;
-  Absyn.Info info;
+  SourceInfo info;
   Env env;
   Integer index;
 algorithm
@@ -891,7 +891,7 @@ protected function extendEnvWithClassComponents
   input SCode.ClassDef inClassDef;
   input Env inEnv;
   input Env inEnclosingScope;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Env outEnv;
 algorithm
   outEnv := match(inClassName, inClassDef, inEnv, inEnclosingScope, inInfo)
@@ -994,7 +994,7 @@ public function checkUniqueQualifiedImport
   qualified imports with the same name."
   input Import inImport;
   input list<Import> inImports;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inImport, inImports, inInfo)
     local
@@ -1043,7 +1043,7 @@ protected function extendEnvWithEnumLiterals
   input Absyn.Path inEnumPath;
   input Integer inNextValue;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Env outEnv;
 algorithm
   outEnv := match(inEnum, inEnumPath, inNextValue, inEnv, inInfo)
@@ -1069,7 +1069,7 @@ protected function extendEnvWithEnum
   input Absyn.Path inEnumPath;
   input Integer inValue;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Env outEnv;
 protected
   SCode.Element enum_lit;
@@ -1326,13 +1326,13 @@ algorithm
 end envEqualPrefix2;
 
 public function getItemInfo
-  "Returns the Absyn.Info of an environment item."
+  "Returns the SourceInfo of an environment item."
   input Item inItem;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   outInfo := match(inItem)
     local
-      Absyn.Info info;
+      SourceInfo info;
       Item item;
 
     case VAR(var = SCode.COMPONENT(info = info)) then info;
@@ -1698,13 +1698,13 @@ end getRedeclarationElement;
 public function getRedeclarationNameInfo
   input Redeclaration inRedeclare;
   output String outName;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   (outName, outInfo) := match(inRedeclare)
     local
       SCode.Element el;
       String name;
-      Absyn.Info info;
+      SourceInfo info;
 
     case PROCESSED_MODIFIER(modifier = ALIAS(name = name, info = info))
       then (name, info);
@@ -2012,7 +2012,7 @@ algorithm
       Integer h;
       AvlTree t;
       Option<AvlTreeValue> oval;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Don't allow replacing of nodes.
     case (_, 0, _, _) then inAvlTree;

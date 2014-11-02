@@ -79,7 +79,7 @@ function binary
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inSymTab;
   input Prefix.Prefix inPre "For error-messages only";
-  input Absyn.Info inInfo "For error-messages only";
+  input SourceInfo inInfo "For error-messages only";
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
@@ -168,7 +168,7 @@ resulting expression. "
   input Boolean inImpl;
   input Option<GlobalScript.SymbolTable> inSymTab;
   input Prefix.Prefix inPre "For error-messages only";
-  input Absyn.Info inInfo "For error-messages only";
+  input SourceInfo inInfo "For error-messages only";
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
@@ -249,7 +249,7 @@ function string
   input Option<GlobalScript.SymbolTable> inSyTabOpt;
   input Boolean inDoVect;
   input Prefix.Prefix inPre;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
@@ -569,7 +569,7 @@ resulting expression. "
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output Option<DAE.Type> foldType;
@@ -636,7 +636,7 @@ function binaryUserdefArray
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 algorithm
@@ -688,7 +688,7 @@ function binaryUserdefArray2
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 algorithm
@@ -1397,7 +1397,7 @@ function getOperatorFuncsOrEmpty
   input FCore.Graph env;
   input list<DAE.Type> tys;
   input String opName;
-  input Absyn.Info info;
+  input SourceInfo info;
   input list<DAE.Type> acc;
   output FCore.Cache cache;
   output list<DAE.Type> funcs;
@@ -1475,7 +1475,7 @@ end lookupOperatorBaseClass;
 function checkOperatorFunctionOneOutput
   input DAE.Type ty;
   input DAE.Type opType;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Boolean isOK;
 algorithm
   isOK := match (ty,opType,info)
@@ -1502,7 +1502,7 @@ function checkOperatorFunctionOneOutputError
   input Boolean ok;
   input DAE.Type opType;
   input DAE.Type ty;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (ok,opType,ty,info)
     local
@@ -1520,7 +1520,7 @@ end checkOperatorFunctionOneOutputError;
 function checkOperatorFunctionOutput
   input DAE.Type ty;
   input DAE.Type expected;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Boolean isOK;
 algorithm
   isOK := match (ty,expected,info)
@@ -1537,7 +1537,7 @@ end checkOperatorFunctionOutput;
 
 function isOperatorBinaryFunctionOrWarn
   input DAE.Type ty;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Boolean isBinaryFunc;
 algorithm
   isBinaryFunc := match (ty,info)
@@ -1622,7 +1622,7 @@ function deoverload "Given several lists of parameter types and one argument lis
   input list<tuple<DAE.Exp, DAE.Type>> inArgs;
   input Absyn.Exp aexp "for error-messages";
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Operator outOperator;
   output list<DAE.Exp> outArgs;
   output DAE.Type outType;
@@ -1683,7 +1683,7 @@ function computeReturnType "This function determines the return type of
   input list<DAE.Type> inTypesTypeLst;
   input DAE.Type inType;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue (inOperator,inTypesTypeLst,inType,inPrefix, inInfo)
@@ -2091,7 +2091,7 @@ function warnUnsafeRelations "Check if we have Real == Real or Real != Real, if 
   input DAE.Exp e1,e2;
   input DAE.Operator op;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inEnv,inExp,variability,t1,t2,e1,e2,op,inPrefix,inInfo)
     local
@@ -2133,7 +2133,7 @@ end verifyOp;
 
 function errorMultipleValid
   input list<DAE.Exp> exps;
-  input Absyn.Info info;
+  input SourceInfo info;
 protected
   String str1,str2;
 algorithm
@@ -2151,7 +2151,7 @@ function binaryCastConstructor
   input DAE.Type inType2;
   input list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
   input list<DAE.Type> types;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> resExps;
 algorithm
@@ -2197,7 +2197,7 @@ function getZeroConstructor
   input list<DAE.Exp> zexps;
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> st;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache cache;
   output Option<Values.Value> zeroExpression;
 algorithm

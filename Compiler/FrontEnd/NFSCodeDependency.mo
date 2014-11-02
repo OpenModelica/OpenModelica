@@ -86,7 +86,7 @@ protected function analyseClass
   analysing it's contents."
   input Absyn.Path inClassName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inClassName, inEnv, inInfo)
     local
@@ -121,7 +121,7 @@ protected function lookupClass
   input Absyn.Path inPath;
   input Env inEnv;
   input Boolean inBuiltinPossible "True if the path can be a builtin, otherwise false.";
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Option<Error.Message> inErrorType;
   output Item outItem;
   output Env outEnv;
@@ -155,7 +155,7 @@ protected function lookupClass2
   input Absyn.Path inPath;
   input Env inEnv;
   input Boolean inBuiltinPossible;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Option<Error.Message> inErrorType;
   output Item outItem;
   output Env outEnv;
@@ -221,7 +221,7 @@ algorithm
     local
       Absyn.Path type_path;
       SCode.Mod mods;
-      Absyn.Info info;
+      SourceInfo info;
       Env env, type_env;
       NFSCodeEnv.Frame class_env;
       list<NFSCodeEnv.Redeclaration> redeclares;
@@ -259,7 +259,7 @@ algorithm
   _ := match(inItem)
     local
       String name;
-      Absyn.Info info;
+      SourceInfo info;
 
     case NFSCodeEnv.CLASS(cls = _) then ();
 
@@ -283,7 +283,7 @@ algorithm
       SCode.ClassDef cdef;
       NFSCodeEnv.Frame cls_env;
       Env env;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Restriction res;
       SCode.Element cls;
       SCode.Comment cmt;
@@ -366,7 +366,7 @@ algorithm
       SCode.ClassDef cdef;
       NFSCodeEnv.Frame cls_env;
       Env env;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Restriction res;
       SCode.Element cls;
       SCode.Comment cmt;
@@ -508,7 +508,7 @@ protected function analyseClassDef
   input SCode.Restriction inRestriction;
   input Env inEnv;
   input Boolean inInModifierScope;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inClassDef, inRestriction, inEnv, inInModifierScope, inInfo)
     local
@@ -594,7 +594,7 @@ protected function isExternalObject
   "Checks if a class definition is an external object."
   input list<SCode.Element> inElements;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   list<SCode.Element> el;
   list<String> el_names;
@@ -647,7 +647,7 @@ protected function checkExternalObject
   one destructor."
   input list<String> inElements;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inElements, inEnv, inInfo)
     local
@@ -680,7 +680,7 @@ protected function checkExternalObject2
   input Boolean inHasConstructor;
   input Boolean inHasDestructor;
   input String inObjectName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inElements, inHasConstructor, inHasDestructor, inObjectName, inInfo)
     local
@@ -732,7 +732,7 @@ protected function analyseMetaType
   "If a metarecord is analysed we need to also analyse it's parent uniontype."
   input SCode.Restriction inRestriction;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inRestriction, inEnv, inInfo)
     local
@@ -784,7 +784,7 @@ algorithm
       Item item;
       Env env;
       SCode.Element cls;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (NFSCodeEnv.CLASS(cls=SCode.CLASS( info = info)), _)
       equation
@@ -853,7 +853,7 @@ algorithm
       Absyn.Path bc, bc2;
       SCode.Mod mods;
       Absyn.TypeSpec ty;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Attributes attr;
       Option<Absyn.Exp> cond_exp;
       Item ty_item;
@@ -992,7 +992,7 @@ protected function markAsUsedOnConstant
   input SCode.Ident inName;
   input SCode.Attributes inAttr;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inName, inAttr, inEnv, inInfo)
     local
@@ -1017,7 +1017,7 @@ protected function markAsUsedOnRestriction
   input SCode.Ident inName;
   input SCode.Restriction inRestriction;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inName, inRestriction, inEnv, inInfo)
     local
@@ -1052,7 +1052,7 @@ protected function analyseExtends
   "Analyses an extends-clause."
   input Absyn.Path inClassName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   Item item;
   Env env;
@@ -1065,7 +1065,7 @@ protected function analyseAttributes
   "Analyses a components attributes (actually only the array dimensions)."
   input SCode.Attributes inAttributes;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   Absyn.ArrayDim ad;
 algorithm
@@ -1078,7 +1078,7 @@ protected function analyseModifier
   input SCode.Mod inModifier;
   input Env inEnv;
   input Env inTypeEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inModifier, inEnv, inTypeEnv, inInfo)
     local
@@ -1115,7 +1115,7 @@ algorithm
   _ := matchcontinue(inElement, inEnv, inTypeEnv)
     local
       SCode.ClassDef cdef;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Restriction restr;
       SCode.Prefixes prefixes;
       Absyn.TypeSpec ts;
@@ -1144,7 +1144,7 @@ protected function analyseConstrainClass
   "Analyses a constrain class, i.e. given by constrainedby."
   input Option<SCode.ConstrainClass> inCC;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inCC, inEnv, inInfo)
     local
@@ -1168,7 +1168,7 @@ protected function analyseSubMod
   "Analyses a submodifier."
   input SCode.SubMod inSubMod;
   input tuple<Env, Env> inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inSubMod, inEnv, inInfo)
     local
@@ -1191,7 +1191,7 @@ protected function analyseNameMod
   input Env inEnv;
   input Env inTypeEnv;
   input SCode.Mod inMod;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   Option<Item> item;
   Option<Env> env;
@@ -1207,7 +1207,7 @@ protected function analyseNameMod2
   input Env inEnv;
   input Env inTypeEnv;
   input SCode.Mod inModifier;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inIdent, inItem, inItemEnv, inEnv, inTypeEnv, inModifier, inInfo)
     local
@@ -1234,7 +1234,7 @@ end analyseNameMod2;
 protected function lookupNameMod
   input Absyn.Path inPath;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Option<Item> outItem;
   output Option<Env> outEnv;
 algorithm
@@ -1258,7 +1258,7 @@ protected function analyseSubscript
   "Analyses a subscript."
   input SCode.Subscript inSubscript;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inSubscript, inEnv, inInfo)
     local
@@ -1278,7 +1278,7 @@ protected function analyseModBinding
   "Analyses an optional modifier binding."
   input Option<tuple<Absyn.Exp, Boolean>> inBinding;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inBinding, inEnv, inInfo)
     local
@@ -1298,7 +1298,7 @@ protected function analyseTypeSpec
   "Analyses a type specificer."
   input Absyn.TypeSpec inTypeSpec;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inTypeSpec, inEnv, inInfo)
     local
@@ -1331,7 +1331,7 @@ end analyseTypeSpec;
 protected function analyseTypeSpecDims
   input Option<Absyn.ArrayDim> inDims;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inDims, inEnv, inInfo)
     local
@@ -1350,7 +1350,7 @@ end analyseTypeSpecDims;
 protected function analyseTypeSpecDim
   input Absyn.Subscript inDim;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inDim, inEnv, inInfo)
     local
@@ -1371,7 +1371,7 @@ protected function analyseExternalDecl
   "Analyses an external declaration."
   input Option<SCode.ExternalDecl> inExtDecl;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inExtDecl, inEnv, inInfo)
     local
@@ -1401,7 +1401,7 @@ protected function analyseComment
   "Analyses an optional comment."
   input SCode.Comment inComment;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inComment, inEnv, inInfo)
     local
@@ -1422,7 +1422,7 @@ protected function analyseAnnotation
   "Analyses an annotation."
   input SCode.Annotation inAnnotation;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inAnnotation, inEnv, inInfo)
     local
@@ -1443,7 +1443,7 @@ protected function analyseAnnotationMod
   "Analyses an annotation modifier."
   input SCode.SubMod inMod;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inMod, inEnv, inInfo)
     local
@@ -1476,7 +1476,7 @@ protected function analyseAnnotationName
   "Analyses an annotation name, such as Icon or Line."
   input SCode.Ident inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   Item item;
   Env env;
@@ -1491,7 +1491,7 @@ protected function analyseExp
   "Recursively analyses an expression."
   input Absyn.Exp inExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   (_, _) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, (inEnv, inInfo));
 end analyseExp;
@@ -1500,7 +1500,7 @@ protected function analyseOptExp
   "Recursively analyses an optional expression."
   input Option<Absyn.Exp> inExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inExp, inEnv, inInfo)
     local
@@ -1519,12 +1519,12 @@ end analyseOptExp;
 protected function analyseExpTraverserEnter
   "Traversal enter function for use in analyseExp."
   input Absyn.Exp inExp;
-  input tuple<Env, Absyn.Info> inTuple;
+  input tuple<Env, SourceInfo> inTuple;
   output Absyn.Exp outExp;
-  output tuple<Env, Absyn.Info> outTuple;
+  output tuple<Env, SourceInfo> outTuple;
 protected
   Env env;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   (env, info) := inTuple;
   env := analyseExp2(inExp, env, info);
@@ -1536,7 +1536,7 @@ protected function analyseExp2
   "Helper function to analyseExp, does the actual work."
   input Absyn.Exp inExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Env outEnv;
 algorithm
   outEnv := match(inExp, inEnv, inInfo)
@@ -1585,7 +1585,7 @@ protected function analyseCref
   "Analyses a component reference."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inCref, inEnv, inInfo)
     local
@@ -1613,15 +1613,15 @@ end analyseCref;
 protected function analyseExpTraverserExit
   "Traversal exit function for use in analyseExp."
   input Absyn.Exp inExp;
-  input tuple<Env, Absyn.Info> inTuple;
+  input tuple<Env, SourceInfo> inTuple;
   output Absyn.Exp outExp;
-  output tuple<Env, Absyn.Info> outTuple;
+  output tuple<Env, SourceInfo> outTuple;
 algorithm
   (outExp,outTuple) := match(inExp,inTuple)
     local
       Absyn.Exp e;
       Env env;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Remove any scopes added by the enter function.
 
@@ -1658,7 +1658,7 @@ algorithm
       SCode.EEquation equ;
       SCode.Ident iter_name;
       Env env;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.ComponentRef cref1;
 
     case ((equ as SCode.EQ_FOR(index = iter_name, info = info), env))
@@ -1689,9 +1689,9 @@ protected function traverseExp
   "Traversal function used by analyseEEquationTraverser and
   analyseStatementTraverser."
   input Absyn.Exp inExp;
-  input tuple<Env, Absyn.Info> inTuple;
+  input tuple<Env, SourceInfo> inTuple;
   output Absyn.Exp outExp;
-  output tuple<Env, Absyn.Info> outTuple;
+  output tuple<Env, SourceInfo> outTuple;
 algorithm
   (outExp, outTuple) := Absyn.traverseExpBidir(inExp, analyseExpTraverserEnter, analyseExpTraverserExit, inTuple);
 end traverseExp;
@@ -1725,7 +1725,7 @@ algorithm
     local
       Env env;
       SCode.Statement stmt;
-      Absyn.Info info;
+      SourceInfo info;
       list<SCode.Statement> parforBody;
       String iter_name;
 
@@ -1846,7 +1846,7 @@ algorithm
   _ := matchcontinue(inClass, inClassType, inEnv)
     local
       Item item;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Path bc;
       String cls_name;
       Env env;
@@ -1968,7 +1968,7 @@ algorithm
       SCode.ClassDef cdef;
       SCode.Encapsulated ep;
       SCode.Partial pp;
-      Absyn.Info info;
+      SourceInfo info;
       Item item, resolved_item;
       NFSCodeEnv.Frame class_frame;
       Env class_env, env, enclosing_env;
@@ -2269,7 +2269,7 @@ protected
   Absyn.Path bc;
   list<NFSCodeEnv.Redeclaration> redeclares;
   Integer index;
-  Absyn.Info info;
+  SourceInfo info;
   Env env;
 algorithm
   NFSCodeEnv.EXTENDS(bc, redeclares, index, info) := inExtends;

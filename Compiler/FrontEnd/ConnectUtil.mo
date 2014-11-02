@@ -343,7 +343,7 @@ public function addConnectorVariablesFromDAE
   input Prefix.Prefix inPrefix;
   input list<DAE.Var> inVars;
   input Sets inConnectionSet;
-  input Absyn.Info info;
+  input SourceInfo info;
   input DAE.ElementSource inElementSource;
   output Sets outConnectionSet;
 algorithm
@@ -728,7 +728,7 @@ algorithm
       Integer sc;
       list<SetConnection> c;
       list<OuterConnect> o;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.ElementSource src;
 
     // Check if it exists in the sets already.
@@ -959,7 +959,7 @@ public function addOuterConnectToSets
   input Connect.Face inFace1;
   input Connect.Face inFace2;
   input Connect.Sets inSets;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Connect.Sets outSets;
   output Boolean outAdded;
 protected
@@ -981,7 +981,7 @@ protected function addOuterConnectToSets2
   input Face inFace1;
   input Face inFace2;
   input Sets inSets;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Sets outSets;
   output Boolean outAdded;
 algorithm
@@ -3491,7 +3491,7 @@ public function checkConnectorBalance
   Modelica 3.2 specification."
   input list<DAE.Var> inVars;
   input Absyn.Path path;
-  input Absyn.Info info;
+  input SourceInfo info;
 protected
   Integer potentials, flows, streams;
 algorithm
@@ -3508,7 +3508,7 @@ protected function checkConnectorBalance2
   input Integer inFlowVars;
   input Integer inStreamVars;
   input Absyn.Path path;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Boolean outIsBalanced;
 algorithm
   outIsBalanced :=
@@ -3704,7 +3704,7 @@ public function checkShortConnectorDef
    connector C = Real;."
   input ClassInf.State inState;
   input SCode.Attributes inAttributes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean isValid;
 algorithm
   isValid := matchcontinue(inState, inAttributes, inInfo)

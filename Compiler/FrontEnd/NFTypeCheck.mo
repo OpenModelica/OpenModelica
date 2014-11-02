@@ -133,7 +133,7 @@ algorithm
       Class cls;
       Absyn.Path name;
       SymbolTable st;
-      Absyn.Info info;
+      SourceInfo info;
       String str;
 
     case (NFInstTypes.ELEMENT(NFInstTypes.UNTYPED_COMPONENT(name = name, info = info), _),
@@ -175,7 +175,7 @@ algorithm
       Component comp, inner_comp;
       Context c;
       String str;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = _,  info = info),
         _, _, _)
@@ -231,11 +231,11 @@ algorithm
       Option<Component> parent;
       DaePrefixes prefixes;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Exp bindingExp;
       DAE.Type bindingType;
       Integer propagatedDims "See NFSCodeMod.propagateMod.";
-      Absyn.Info binfo;
+      SourceInfo binfo;
       String nStr, eStr, etStr, btStr;
       DAE.Dimensions parentDimensions;
 
@@ -367,7 +367,7 @@ public function checkExpEquality
   input DAE.Exp inExp2;
   input DAE.Type inTy2;
   input String inMessage;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outExp1;
   output DAE.Type outTy1;
   output DAE.Exp outExp2;

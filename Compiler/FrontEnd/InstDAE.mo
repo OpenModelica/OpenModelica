@@ -110,7 +110,7 @@ algorithm
       InstDims inst_dims;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.VarKind vk;
       DAE.VarDirection vd;
       DAE.VarVisibility vv;
@@ -230,29 +230,29 @@ algorithm
       list<DAE.Dimension> finst_dims;
       Absyn.Path path;
       DAE.Type tty;
-      Absyn.Info info;
+      SourceInfo info;
 
-    case (vn,DAE.T_INTEGER(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn,DAE.T_INTEGER(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
-    case (vn,DAE.T_REAL(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn,DAE.T_REAL(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_REAL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
-    case (vn,DAE.T_BOOL(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn,DAE.T_BOOL(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
     // BTH
-    case (vn,DAE.T_CLOCK(varLst=_),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn,DAE.T_CLOCK(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_CLOCK_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
-    case (vn,DAE.T_STRING(varLst = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn,DAE.T_STRING(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,DAE.T_STRING_DEFAULT,e,finst_dims,ct,source,dae_var_attr,comment,io)});
@@ -263,7 +263,7 @@ algorithm
     // We should not declare each enumeration value of an enumeration when instantiating,
     // e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)}
     // instantiation of complex type extending from basic type
-    case (vn,ty as DAE.T_ENUMERATION(names = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn,ty as DAE.T_ENUMERATION(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
@@ -276,20 +276,20 @@ algorithm
       DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // instantiation of complex type extending from basic type
-    case (vn,DAE.T_SUBTYPE_BASIC(complexClassType = _,complexType = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
+    case (vn,DAE.T_SUBTYPE_BASIC(complexType = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
       equation
         (_,dae_var_attr) = InstBinding.instDaeVariableAttributes(FCore.emptyCache(),FGraph.empty(), DAE.NOMOD(), tp, {});
         dae = daeDeclare2(vn,tp,ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,io,source,declareComplexVars);
     then dae;
 
     // array that extends basic type
-    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = _)},ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
+    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_INTEGER()},ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
       equation
         dae = daeDeclare2(vn, tp, ct, kind, dir, daePrl, prot,e, inst_dims, start, dae_var_attr,comment,io,source,declareComplexVars);
       then dae;
 
     // Arrays with unknown dimension are allowed if not expanded
-    case (vn,DAE.T_ARRAY(dims = _, ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
+    case (vn,DAE.T_ARRAY(ty = tp),ct,kind,dir,daePrl,prot,e,inst_dims,start,dae_var_attr,comment,_,_,_)
       equation
         false = Config.splitArrays();
         dae = daeDeclare2(vn, tp, ct, kind, dir, daePrl, prot,e, inst_dims, start, dae_var_attr,comment,io,source,declareComplexVars);
@@ -297,7 +297,7 @@ algorithm
         dae;
 
     // if arrays are expanded and dimension is unknown, report an error
-    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = _),_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (vn,DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}),_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Config.splitArrays();
         s = ComponentReference.printComponentRefStr(vn);
@@ -314,7 +314,7 @@ algorithm
         DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
 
     // MetaModelica extensions
-    case (vn,tty as DAE.T_FUNCTION(funcArg = _),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+    case (vn,tty as DAE.T_FUNCTION(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
       equation
         finst_dims = List.flatten(inst_dims);
         path = ComponentReference.crefToPath(vn);
@@ -331,12 +331,6 @@ algorithm
       then
         DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,ty,e,finst_dims,ct,source,dae_var_attr,comment,io)});
     /*----------------------------*/
-
-    case (_,ty,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = Types.isBoxedType(ty);
-      then
-        fail();
 
     else DAE.emptyDae;
   end matchcontinue;

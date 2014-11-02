@@ -65,9 +65,9 @@ type Graph = FCore.Graph;
 type Extra = FCore.Extra;
 type Visited = FCore.Visited;
 type Import = FCore.Import;
-type Msg = Option<Absyn.Info>;
+type Msg = Option<SourceInfo>;
 
-constant Option<Absyn.Info> dummyLookupOption = NONE(); // SOME(Absyn.dummyInfo);
+constant Option<SourceInfo> dummyLookupOption = NONE(); // SOME(Absyn.dummyInfo);
 
 public uniontype Options
   record OPTIONS

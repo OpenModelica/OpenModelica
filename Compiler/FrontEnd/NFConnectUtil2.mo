@@ -71,7 +71,7 @@ protected type DisjointSets = NFConnectionSets.DisjointSets;
 public function makeBranch
   input DAE.ComponentRef inNode1;
   input DAE.ComponentRef inNode2;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output NFConnect2.Connections outConnections;
 algorithm
   NFConnectCheck.crefIsValidNode(inNode1, "Connections.branch", true, inInfo);
@@ -81,7 +81,7 @@ end makeBranch;
 
 public function makeRoot
   input DAE.ComponentRef inNode;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output NFConnect2.Connections outConnections;
 algorithm
   NFConnectCheck.crefIsValidNode(inNode, "Connections.root", true, inInfo);
@@ -91,7 +91,7 @@ end makeRoot;
 public function makePotentialRoot
   input DAE.ComponentRef inNode;
   input DAE.Exp inPriority;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output NFConnect2.Connections outConnections;
 algorithm
   NFConnectCheck.crefIsValidNode(inNode, "Connections.potentialRoot", true, inInfo);
@@ -356,7 +356,7 @@ end translateConnectorTypeToSCode;
 public function makeConnection
   input NFConnect2.Connector inLhs;
   input NFConnect2.Connector inRhs;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output NFConnect2.Connection outConnection;
 algorithm
   outConnection := NFConnect2.CONNECTION(inLhs, inRhs, inInfo);
@@ -366,7 +366,7 @@ public function addConnectionCond
   input Boolean inAdd;
   input NFConnect2.Connector inLhsConnector;
   input NFConnect2.Connector inRhsConnector;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input NFConnect2.Connections inConnections;
   output NFConnect2.Connections outConnections;
 algorithm
@@ -382,7 +382,7 @@ end addConnectionCond;
 public function addConnection
   input NFConnect2.Connector inLhsConnector;
   input NFConnect2.Connector inRhsConnector;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input NFConnect2.Connections inConnections;
   output NFConnect2.Connections outConnections;
 protected

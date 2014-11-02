@@ -77,7 +77,7 @@ algorithm
       SCode.Each ep;
       list<SCode.SubMod> submods;
       Option<tuple<Absyn.Exp, Boolean>> binding_exp;
-      Absyn.Info info;
+      SourceInfo info;
       list<Modifier> mods;
       Binding binding;
       SCode.Element el;
@@ -119,7 +119,7 @@ protected function translateBinding
   input Integer inDimensions;
   input Prefix inPrefix;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Binding outBinding;
 algorithm
   outBinding := match(inBinding, inEachPrefix, inDimensions, inPrefix, inEnv, inInfo)
@@ -224,7 +224,7 @@ algorithm
     local
       NFSCodeEnv.Item item;
       list<Absyn.Path> bcl;
-      Absyn.Info info;
+      SourceInfo info;
       String pre_str;
 
     // Check if the modified element can be found in one of the extended classes.
@@ -266,7 +266,7 @@ algorithm
     local
       String name, pre_str;
       Modifier mod;
-      Absyn.Info info;
+      SourceInfo info;
 
     // The modified element is a class but the modifier has no binding, e.g.
     // c(A(x = 3)). This is ok.
@@ -292,11 +292,11 @@ end checkClassModifier;
 
 protected function getModifierInfo
   input Modifier inMod;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   outInfo := match(inMod)
     local
-      Absyn.Info info;
+      SourceInfo info;
 
     case NFInstTypesOld.MODIFIER(info = info) then info;
     else Absyn.dummyInfo;
@@ -400,7 +400,7 @@ algorithm
       SCode.Each ep;
       list<Modifier> submods1, submods2;
       Binding binding;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
       String name;
 
     // One of the modifiers is NOMOD, return the other.
@@ -456,9 +456,9 @@ protected function checkModifierFinalOverride
    case it prints an error and fails, otherwise it does nothing."
   input String inName;
   input Modifier inOuterMod;
-  input Absyn.Info inOuterInfo;
+  input SourceInfo inOuterInfo;
   input Modifier inInnerMod;
-  input Absyn.Info inInnerInfo;
+  input SourceInfo inInnerInfo;
 algorithm
   _ := match(inName, inOuterMod, inOuterInfo, inInnerMod, inInnerInfo)
     local
@@ -665,7 +665,7 @@ algorithm
       list<Modifier> submods1, submods2;
       Binding binding;
       String name, comp_str;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
 
     // The second modifier has no binding, use the binding from the first.
     case (NFInstTypesOld.MODIFIER(name, fp, ep, binding, submods1, info1),
@@ -801,7 +801,7 @@ algorithm
       SCode.Each ep;
       NFInstTypesOld.Binding binding;
       list<Modifier> submods;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (_, 0) then inModifier;
 
@@ -828,7 +828,7 @@ algorithm
       Env env;
       Prefix prefix;
       Integer pd;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Special case for the each prefix, don't do anything.
     case (NFInstTypesOld.RAW_BINDING(propagatedDims = -1), _) then inBinding;
@@ -865,7 +865,7 @@ algorithm
       SCode.Final fp;
       SCode.Each ep;
       Option<tuple<Absyn.Exp, Boolean>> b;
-      Absyn.Info i;
+      SourceInfo i;
 
     case (SCode.MOD(fp, ep, sl, b, i),_)
       equation
@@ -924,7 +924,7 @@ algorithm
       list<SCode.SubMod> sl;
       SCode.Final fp;
       SCode.Each ep;
-      Absyn.Info i;
+      SourceInfo i;
       Absyn.Exp e;
       Boolean b;
 
@@ -1011,7 +1011,7 @@ algorithm
       list<SCode.SubMod> sl;
       SCode.Final fp;
       SCode.Each ep;
-      Absyn.Info i;
+      SourceInfo i;
       Option<tuple<Absyn.Exp, Boolean>> binding;
 
     case (SCode.MOD(fp, ep, sl, binding, i))

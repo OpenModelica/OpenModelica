@@ -559,7 +559,7 @@ algorithm
       Absyn.Exp aexp1,aexp2;
       SCode.EEquation scode;
       Absyn.ComponentRef acr;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.ElementSource source;
 
     // Record constructors are different
@@ -617,7 +617,7 @@ public function makeBinding
   input DAE.Type inType;
   input Prefix.Prefix inPrefix;
   input String componentName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Binding outBinding;
 algorithm
@@ -635,7 +635,7 @@ algorithm
       list<DAE.Var> complex_vars;
       Absyn.Path tpath;
       list<DAE.SubMod> sub_mods;
-      Absyn.Info info;
+      SourceInfo info;
       Values.Value v;
 
     // A record might have bindings from the class, use those if there is no modifier!
@@ -767,7 +767,7 @@ public function makeRecordBinding
   input DAE.Type inRecordType;
   input list<DAE.Var> inRecordVars;
   input list<DAE.SubMod> inMods;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Binding outBinding;
 algorithm
   /*
@@ -789,7 +789,7 @@ protected function makeRecordBinding2
   input DAE.Type inRecordType;
   input list<DAE.Var> inRecordVars;
   input list<DAE.SubMod> inMods;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input list<DAE.Exp> inAccumExps;
   input list<Values.Value> inAccumVals;
   input list<String> inAccumNames;
@@ -888,7 +888,7 @@ protected function makeRecordBinding3
   value from an optional submod."
   input Option<DAE.SubMod> inSubMod;
   input DAE.Type inType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outExp;
   output Values.Value outValue;
 algorithm
@@ -961,7 +961,7 @@ algorithm
       Prefix.Prefix pr;
       DAE.Type bt;
       String v_str, b_str, et_str, bt_str;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),
         DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = e))),_,_,_)

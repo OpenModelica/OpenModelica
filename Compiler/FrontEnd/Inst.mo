@@ -108,7 +108,7 @@ protected type InstDims = list<list<DAE.Dimension>>
 protected partial function BasicTypeAttrTyper
   input String inAttrName;
   input DAE.Type inClassType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outType;
 end BasicTypeAttrTyper;
 
@@ -522,7 +522,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.EqualityConstraint equalityConstraint;
-      Absyn.Info info;
+      SourceInfo info;
       UnitAbsyn.InstStore store;
 
     // adrpo: ONLY when running checkModel we should be able to instantiate partial classes
@@ -746,7 +746,7 @@ algorithm
       String  s1, s2;
       UnitAbsyn.InstStore store;
       Absyn.InnerOuter io;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Encapsulated encflag;
 
     // if the class is no outer: regular, or inner
@@ -1057,7 +1057,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.DAElist dae,dae1,dae1_1;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Type typ;
       FCore.Graph env_2, env_3;
       list<SCode.Element> els;
@@ -1241,7 +1241,7 @@ end getBasicTypeAttrTyper;
 protected function getRealAttributeType
   input String inAttrName;
   input DAE.Type inBaseType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
   outType := match(inAttrName, inBaseType, inInfo)
@@ -1268,7 +1268,7 @@ end getRealAttributeType;
 protected function getIntAttributeType
   input String inAttrName;
   input DAE.Type inBaseType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
   outType := match(inAttrName, inBaseType, inInfo)
@@ -1292,7 +1292,7 @@ end getIntAttributeType;
 protected function getStringAttributeType
   input String inAttrName;
   input DAE.Type inBaseType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
   outType := match(inAttrName, inBaseType, inInfo)
@@ -1310,7 +1310,7 @@ end getStringAttributeType;
 protected function getBoolAttributeType
   input String inAttrName;
   input DAE.Type inBaseType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
   outType := match(inAttrName, inBaseType, inInfo)
@@ -1333,7 +1333,7 @@ This function is supposed to fail since clock variables don't have attributes.
 "
   input String inAttrName;
   input DAE.Type inBaseType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
   outType := match(inAttrName, inBaseType, inInfo)
@@ -1345,7 +1345,7 @@ end getClockAttributeType;
 protected function getEnumAttributeType
   input String inAttrName;
   input DAE.Type inBaseType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
   outType := match(inAttrName, inBaseType, inInfo)
@@ -1399,7 +1399,7 @@ algorithm
       DAE.Exp exp;
       Option<Values.Value> val;
       DAE.Properties p;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (DAE.NAMEMOD(ident = name, mod = DAE.MOD(eqModOption = SOME(DAE.TYPED(
         modifierAsExp = exp, modifierAsValue = val, properties = p, info = info)))), _, _, _, _)
@@ -1728,7 +1728,7 @@ algorithm
       InstDims inst_dims;
       FCore.Cache cache;
       InstanceHierarchy ih;
-      Absyn.Info info;
+      SourceInfo info;
       list<DAE.Var> vars;
 
     case (cache,env,ih,_,_,ci_state,(SCode.CLASS(name = "Real")),_,_,_,_)
@@ -1820,7 +1820,7 @@ public function instClassdef "
   input Connect.Sets inSets;
   input Option<DAE.ComponentRef> instSingleCref;
   input SCode.Comment comment;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -1859,7 +1859,7 @@ type"
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Option<DAE.ComponentRef> instSingleCref;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
@@ -1989,7 +1989,7 @@ protected function instClassdef2 "
   input Connect.Sets inSets;
   input Option<DAE.ComponentRef> instSingleCref;
   input SCode.Comment comment;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
@@ -2045,7 +2045,7 @@ algorithm
       InstanceHierarchy ih;
       DAE.DAElist fdae;
       Boolean unrollForLoops, zero_dims;
-      Absyn.Info info2;
+      SourceInfo info2;
       list<Absyn.TypeSpec> tSpecs;
       list<DAE.Type> tys;
       SCode.Attributes DA;
@@ -2779,7 +2779,7 @@ protected function instBasictypeBaseclass
   input DAE.Mod inMod4;
   input list<list<DAE.Dimension>> inInstDims5;
   input String className;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
   output FCore.Cache outCache;
   output InnerOuter.InstHierarchy outIH;
@@ -2874,7 +2874,7 @@ Handles the fail case rollbacks/deleteCheckpoint of errors."
   input DAE.Mod inMod4;
   input list<list<DAE.Dimension>> inInstDims5;
   input String className;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
 algorithm
   _ := matchcontinue(inCache,inEnv1,inIH,store,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5,className,info,stopInst)
@@ -2970,7 +2970,7 @@ algorithm
       Boolean isPartialInst;
       Absyn.ArrayDim adno;
       list<DAE.Var> vars;
-      Absyn.Info info;
+      SourceInfo info;
       FCore.Ref lastRef;
 
       // long class definition, the normal case, a class with parts
@@ -3333,7 +3333,7 @@ protected function isDeletedComponent
 protected
   SCode.Element el;
   String el_name;
-  Absyn.Info info;
+  SourceInfo info;
   Option<Boolean> cond_val_opt;
   Boolean cond_val;
 algorithm
@@ -3402,7 +3402,7 @@ algorithm
     local
       Absyn.ComponentRef own_cref;
       Absyn.Direction dir;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.InnerOuter io;
       Absyn.Path t, type_name;
       Absyn.TypeSpec ts;
@@ -3822,7 +3822,7 @@ algorithm
       FCore.Cache cache;
       InstanceHierarchy ih;
       String name;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Final fprefix;
 
     case (cache,env,ih,_,{},_,_) then (cache,env,ih,{});
@@ -3956,7 +3956,7 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Attributes at, at2;
       Option<Absyn.Exp> cond;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.TypeSpec apt;
       Absyn.Path path;
 
@@ -4238,7 +4238,7 @@ algorithm
       Option<Absyn.Exp> cond;
       DAE.Var tyVar;
       FCore.Status is;
-      Absyn.Info info;
+      SourceInfo info;
       InstanceHierarchy ih;
       SCode.Prefixes pf;
       DAE.Attributes dae_attr;
@@ -4415,7 +4415,7 @@ protected function updateComponentInEnv2
   input SCode.Attributes attr;
   input SCode.Prefixes inPrefixes;
   input DAE.Attributes dattr;
-  input Absyn.Info info;
+  input SourceInfo info;
   input SCode.Mod m;
   input DAE.Mod cmod;
   input DAE.Mod mod;
@@ -4468,7 +4468,7 @@ protected function updateComponentInEnv2_dispatch
   input SCode.Attributes attr;
   input SCode.Prefixes inPrefixes;
   input DAE.Attributes dattr;
-  input Absyn.Info info;
+  input SourceInfo info;
   input SCode.Mod m;
   input DAE.Mod cmod;
   input DAE.Mod inMod;
@@ -4619,7 +4619,7 @@ protected function updateComponentInEnv3
   input SCode.Mod inMod;
   input Boolean inImpl;
   input Mod.ModScope inModScope;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Mod outMod;
 algorithm
@@ -4900,7 +4900,7 @@ protected function instClassAttributes
   input Prefix.Prefix inPrefix;
   input list<Absyn.NamedArg> inAttrs;
   input Boolean inBoolean;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output DAE.DAElist outDae;
@@ -4936,7 +4936,7 @@ protected function instClassAttributes2
   input Prefix.Prefix inPrefix;
   input list<Absyn.NamedArg> inAttrs;
   input Boolean inBoolean;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input DAE.DAElist inClsAttrs;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
@@ -5215,7 +5215,7 @@ protected function removeSelfReferenceAndUpdate
   input Prefix.Prefix pre;
   input DAE.Mod mods;
   input SCode.Mod scodeMod;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;

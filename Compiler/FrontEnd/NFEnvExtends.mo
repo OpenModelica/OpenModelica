@@ -392,7 +392,7 @@ algorithm
       Absyn.Path bc;
       list<NFSCodeEnv.Redeclaration> rl;
       Integer index;
-      Absyn.Info info;
+      SourceInfo info;
       Extends ext;
       Env env;
 
@@ -422,7 +422,7 @@ protected function qualifyExtends3
   input ExtendsTableArray inExtendsTable;
   input Boolean inIsFirst;
   input Absyn.Path inFullPath;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Option<Absyn.Path> inErrorPath;
   output Absyn.Path outBaseClass;
 algorithm
@@ -502,7 +502,7 @@ protected function qualifyExtendsPart
   input ExtendsTableArray inExtendsTable;
   input Boolean inIsFirst;
   input Absyn.Path inFullPath;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Option<Absyn.Path> outPath;
   output Env outEnv;
   output Option<Absyn.Path> outErrorPath;
@@ -635,7 +635,7 @@ end splitExtendsErrorPath;
 public function printExtendsError
   input Absyn.Path inErrorPath;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inErrorPath, inEnv, inInfo)
     local
@@ -668,14 +668,14 @@ public function printExtendsError2
   input Absyn.Path inBaseClass;
   input Absyn.Path inPartPath;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inError, inBaseClass, inPartPath, inEnv, inInfo)
     local
       String bc_str, env_str, part;
       list<Extends> exts;
       Error.Message msg;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (_, _, _, _, _)
       equation
@@ -740,7 +740,7 @@ algorithm
       list<Extends> rest_ext;
       Extends ext;
       Item item;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
       Absyn.Path bc;
       String bc_str;
 
@@ -1191,7 +1191,7 @@ algorithm
       String name;
       Env env;
       SCode.Mod mods;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Element cls, ext;
 
     case (_, NFSCodeEnv.FRAME(name = SOME(name),
@@ -1211,7 +1211,7 @@ protected function updateClassExtends2
   input SCode.Element inClass;
   input String inName;
   input SCode.Mod inMods;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Env inEnv;
   output SCode.Element outClass;
   output Env outEnv;
@@ -1246,7 +1246,7 @@ protected function lookupClassExtendsBaseClass
    path and the item for that base class."
   input String inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Absyn.Path outPath;
   output Item outItem;
 algorithm
@@ -1302,7 +1302,7 @@ algorithm
       SCode.Encapsulated ep;
       SCode.Restriction res;
       SCode.Prefixes prefixes;
-      Absyn.Info info;
+      SourceInfo info;
       Env env, cls_env;
       SCode.Mod mods;
       SCode.ClassDef cdef;

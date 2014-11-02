@@ -35,7 +35,7 @@ extern "C" {
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
 
-void* omc_Absyn_isDerCref(threadData_t*,void*);
+int omc_Absyn_isDerCref(threadData_t*, void*);
 /* static inline */ int call_looks_like_der_cr(void* exp)
 {
   return omc_Absyn_isDerCref(NULL,exp);

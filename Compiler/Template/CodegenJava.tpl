@@ -1116,13 +1116,13 @@ template expTypeFromOpFlag(Operator op, Integer flag)
   else "expTypeFromOpFlag:ERROR"
 end expTypeFromOpFlag;
 
-template infoArgs(Info info)
+template infoArgs(builtin.SourceInfo info)
 ::=
   match info
-  case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%isReadOnly%>'
+  case SOURCEINFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%isReadOnly%>'
 end infoArgs;
 
-template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, Info info)
+template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, builtin.SourceInfo info)
 ::=
   let &preExpCond = buffer ""
   let &preExpMsg = buffer ""

@@ -590,7 +590,7 @@ algorithm
         Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
         Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileMetaModelica,"UTF-8");
         classes = listAppend(classes1,classes2);
-        p = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
+        p = Absyn.PROGRAM(classes,Absyn.TOP());
         (p as Absyn.PROGRAM(classes=classes)) = MetaUtil.createMetaClassesInProgram(p);
         sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
@@ -606,7 +606,7 @@ algorithm
         Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8");
         Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileParModelica,"UTF-8");
         classes = listAppend(classes1,classes2);
-        p = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
+        p = Absyn.PROGRAM(classes,Absyn.TOP());
         sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
         setGlobalRoot(Global.builtinIndex, (Flags.PARMODELICA,(p,sp))::assocLst);

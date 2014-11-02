@@ -608,7 +608,7 @@ public function assertValid "This function has the same semantical meaning as th
   `valid\'.  However, it prints an error message when it fails."
   input State inState;
   input SCode.Restriction inRestriction;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := matchcontinue (inState,inRestriction,info)
     local
@@ -635,7 +635,7 @@ public function assertTrans "This function has the same semantical meaning as th
   `trans\'.  However, it prints an error message when it fails."
   input State inState;
   input Event event;
-  input Absyn.Info info;
+  input SourceInfo info;
   output State outState;
 algorithm
   outState := matchcontinue (inState,event,info)

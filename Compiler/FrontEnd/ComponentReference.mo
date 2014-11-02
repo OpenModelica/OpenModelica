@@ -3202,7 +3202,7 @@ public function checkCrefSubscriptsBounds
   "Checks that the subscripts in a cref are valid given the dimensions of the
    cref's type. Prints an error if they are not."
   input DAE.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   checkCrefSubscriptsBounds2(inCref, inCref, inInfo);
 end checkCrefSubscriptsBounds;
@@ -3210,7 +3210,7 @@ end checkCrefSubscriptsBounds;
 protected function checkCrefSubscriptsBounds2
   input DAE.ComponentRef inCref;
   input DAE.ComponentRef inWholeCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inCref, inWholeCref, inInfo)
     local
@@ -3245,7 +3245,7 @@ protected function checkCrefSubscriptsBounds3
   input DAE.Type inCrefType;
   input list<DAE.Subscript> inSubscripts;
   input DAE.ComponentRef inWholeCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   list<DAE.Dimension> dims;
   list<DAE.Subscript> subs;
@@ -3264,7 +3264,7 @@ protected function checkCrefSubscriptsBounds4
   input list<DAE.Dimension> inDimensions;
   input Integer inIndex;
   input DAE.ComponentRef inWholeCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inSubscripts, inDimensions, inIndex, inWholeCref, inInfo)
     local
@@ -3294,7 +3294,7 @@ protected function checkCrefSubscriptBounds
   input DAE.Dimension inDimension;
   input Integer inIndex;
   input DAE.ComponentRef inWholeCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean outIsValid;
 algorithm
   outIsValid := matchcontinue(inSubscript, inDimension, inIndex, inWholeCref, inInfo)
@@ -3350,7 +3350,7 @@ protected function printSubscriptBoundsError
   input DAE.Dimension inDimension;
   input Integer inIndex;
   input DAE.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   String sub_str, dim_str, idx_str, cref_str;
 algorithm

@@ -139,7 +139,7 @@ protected function checkInvalidPatternNamedArgs
   input list<Absyn.NamedArg> args;
   input list<String> fieldNameList;
   input Util.Status status;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Util.Status outStatus;
 algorithm
   outStatus := match (args,fieldNameList,status,info)
@@ -162,7 +162,7 @@ public function elabPattern
   input FCore.Graph env;
   input Absyn.Exp lhs;
   input DAE.Type ty;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Pattern pattern;
 algorithm
@@ -174,7 +174,7 @@ protected function elabPattern2
   input FCore.Graph env;
   input Absyn.Exp inLhs;
   input DAE.Type ty;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Integer numError;
   output FCore.Cache outCache;
   output DAE.Pattern pattern;
@@ -342,7 +342,7 @@ protected function elabPatternTuple
   input FCore.Graph env;
   input list<Absyn.Exp> inExps;
   input list<DAE.Type> inTys;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Exp lhs "for error messages";
   output FCore.Cache outCache;
   output list<DAE.Pattern> patterns;
@@ -380,7 +380,7 @@ protected function elabPatternCall
   input Absyn.Path callPath;
   input Absyn.FunctionArgs fargs;
   input Absyn.Path utPath;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Exp lhs "for error messages";
   output FCore.Cache outCache;
   output DAE.Pattern pattern;
@@ -458,7 +458,7 @@ protected function checkMissingArgs
   input Integer numPosArgs;
   input list<String> missingFieldNames;
   input Integer numNamedArgs;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (path,numPosArgs,missingFieldNames,numNamedArgs,info)
     local
@@ -502,7 +502,7 @@ protected function validPatternType
   input DAE.Type inTy1;
   input DAE.Type inTy2;
   input Absyn.Exp lhs;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Option<DAE.Type> ty;
 algorithm
   ty := matchcontinue (inTy1,inTy2,lhs,info)
@@ -541,7 +541,7 @@ end validPatternType;
 protected function validUniontype
   input Absyn.Path path1;
   input Absyn.Path path2;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Exp lhs;
 algorithm
   _ := matchcontinue (path1,path2,info,lhs)
@@ -626,7 +626,7 @@ public function elabMatchExpression
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Integer numError;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -706,7 +706,7 @@ protected function optimizeMatchToSwitch
   "
   input Absyn.MatchType matchTy;
   input list<DAE.MatchCase> cases;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.MatchType outType;
 algorithm
   outType := matchcontinue (matchTy,cases,info)
@@ -764,7 +764,7 @@ protected function findPatternToConvertToSwitch
   input list<Option<list<DAE.Pattern>>> inPatternMatrix;
   input Integer index;
   input Integer numPatternsInMatrix "If there is only 1 pattern, we can optimize the default case";
-  input Absyn.Info info;
+  input SourceInfo info;
   output tuple<Integer,DAE.Type,Integer> tpl;
 algorithm
   tpl := matchcontinue  (inPatternMatrix,index,numPatternsInMatrix,info)
@@ -969,7 +969,7 @@ algorithm
       list<DAE.Statement> body;
       Option<DAE.Exp> guardPattern, result;
       Integer jump;
-      Absyn.Info resultInfo, info;
+      SourceInfo resultInfo, info;
       list<DAE.MatchCase> cases;
 
     case ({},_) then {};
@@ -982,16 +982,16 @@ algorithm
 end filterUnusedAsBindings;
 
 protected function removePatternAsBinding
-  input tuple<DAE.Pattern,tuple<HashTableStringToPath.HashTable,Absyn.Info>> inTpl;
-  output tuple<DAE.Pattern,tuple<HashTableStringToPath.HashTable,Absyn.Info>> outTpl;
+  input tuple<DAE.Pattern,tuple<HashTableStringToPath.HashTable,SourceInfo>> inTpl;
+  output tuple<DAE.Pattern,tuple<HashTableStringToPath.HashTable,SourceInfo>> outTpl;
 algorithm
   outTpl := matchcontinue inTpl
     local
       HashTableStringToPath.HashTable ht;
       DAE.Pattern pat;
       String id;
-      Absyn.Info info;
-      tuple<HashTableStringToPath.HashTable,Absyn.Info> tpl;
+      SourceInfo info;
+      tuple<HashTableStringToPath.HashTable,SourceInfo> tpl;
     case ((DAE.PAT_AS(id=id,pat=pat),tpl as (ht,info)))
       equation
         _ = BaseHashTable.get(id, ht);
@@ -1097,9 +1097,9 @@ protected function checkDefUse
 "Use with traverseExp to collect all CREF's that could be references to local
 variables."
   input DAE.Exp inExp;
-  input tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info> inTpl;
+  input tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo> inTpl;
   output DAE.Exp outExp;
-  output tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info> outTpl;
+  output tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo> outTpl;
 algorithm
   (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
@@ -1108,9 +1108,9 @@ algorithm
       String name;
       DAE.Pattern pat;
       DAE.ComponentRef cr;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Type ty;
-      tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info> extra;
+      tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo> extra;
     case (DAE.CREF(componentRef=cr,ty=ty),extra as (localsTree,useTree,info))
       equation
         name = ComponentReference.crefFirstIdent(cr);
@@ -1129,17 +1129,17 @@ end checkDefUse;
 
 protected function checkDefUsePattern
 "Replace unused assignments with wildcards"
-  input tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info>> inTpl;
-  output tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info>> outTpl;
+  input tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo>> inTpl;
+  output tuple<DAE.Pattern,tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo>> outTpl;
 algorithm
   outTpl := matchcontinue inTpl
     local
       AvlTreeString.AvlTree localsTree,useTree;
       String name;
       DAE.Pattern pat;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Type ty;
-      tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,Absyn.Info> extra;
+      tuple<AvlTreeString.AvlTree,AvlTreeString.AvlTree,SourceInfo> extra;
     case ((DAE.PAT_AS(id=name,pat=pat),extra as (localsTree,useTree,info)))
       equation
         // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
@@ -1491,7 +1491,7 @@ algorithm
     local
       DAE.Element el;
       list<DAE.Element> rest;
-      Absyn.Info info;
+      SourceInfo info;
       String name;
       list<DAE.Element> acc;
       HashTableStringToPath.HashTable unusedHt;
@@ -1528,7 +1528,7 @@ algorithm
       list<DAE.MatchCase> rest;
       list<DAE.Pattern> pats;
       DAE.MatchCase case_;
-      Absyn.Info info;
+      SourceInfo info;
       list<DAE.MatchCase> acc;
 
     case (_,{},_,acc,false) then listReverse(acc);
@@ -1559,7 +1559,7 @@ end caseDeadCodeEliminiation;
 protected function findOverlappingPattern
   input list<DAE.Pattern> patterns;
   input list<DAE.MatchCase> prevCases;
-  output Absyn.Info info;
+  output SourceInfo info;
 algorithm
   info := matchcontinue (patterns,prevCases)
     local
@@ -1653,7 +1653,7 @@ algorithm
       list<DAE.Element> localDecls;
       list<DAE.Statement> body;
       Option<DAE.Exp> result,guardPattern;
-      Absyn.Info resultInfo, info;
+      SourceInfo resultInfo, info;
     case (_,0) then case_;
     case (DAE.CASE(patterns, guardPattern, localDecls, body, result, resultInfo, _, info), _)
       then DAE.CASE(patterns, guardPattern, localDecls, body, result, resultInfo, jump, info);
@@ -1672,7 +1672,7 @@ protected function optimizeContinueToMatch
   "
   input Absyn.MatchType matchType;
   input list<DAE.MatchCase> cases;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Absyn.MatchType outMatchType;
 algorithm
   outMatchType := match (matchType,cases,info)
@@ -1693,7 +1693,7 @@ protected function optimizeContinueToMatch2
   "
   input list<DAE.MatchCase> icases;
   input list<list<DAE.Pattern>> prevPatterns "All cases check its patterns against all previous patterns. If they overlap, we can't optimize away the continue";
-  input Absyn.Info info;
+  input SourceInfo info;
   output Absyn.MatchType outMatchType;
 algorithm
   outMatchType := matchcontinue (icases,prevPatterns,info)
@@ -1830,7 +1830,7 @@ protected function elabMatchCases
   input Option<GlobalScript.SymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.MatchCase> elabCases;
   output DAE.Type resType;
@@ -1918,7 +1918,7 @@ algorithm
       list<SCode.Statement> algs;
       list<DAE.Statement> body;
       list<Absyn.ElementItem> decls;
-      Absyn.Info patternInfo,resultInfo,info;
+      SourceInfo patternInfo,resultInfo,info;
       Integer len;
       FCore.Cache cache;
       FCore.Graph env;
@@ -1978,11 +1978,11 @@ protected function elabResultExp
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output list<DAE.Statement> outBody;
   output Option<DAE.Exp> resExp;
-  output Absyn.Info resultInfo;
+  output SourceInfo resultInfo;
   output Option<DAE.Type> resType;
   output Option<GlobalScript.SymbolTable> outSt;
 algorithm
@@ -1996,7 +1996,7 @@ algorithm
       FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
       list<DAE.Statement> body;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,_,body,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),_,st,_,_,info)
       then (cache,body,NONE(),info,NONE(),st);
@@ -2019,7 +2019,7 @@ protected function elabPatternGuard
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output Option<DAE.Exp> outPatternGuard;
   output Option<GlobalScript.SymbolTable> outSt;
@@ -2033,7 +2033,7 @@ algorithm
       FCore.Cache cache;
       FCore.Graph env;
       Option<GlobalScript.SymbolTable> st;
-      Absyn.Info info;
+      SourceInfo info;
       String str;
 
     case (cache,_,NONE(),_,st,_,_,_)
@@ -2070,10 +2070,10 @@ protected function elabResultExp2
   input Boolean skipPhase;
   input list<DAE.Statement> body;
   input DAE.Exp elabExp;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<DAE.Statement> outBody;
   output DAE.Exp outExp;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   (outBody,outExp,outInfo) := matchcontinue (skipPhase,body,elabExp,info)
     local
@@ -2081,7 +2081,7 @@ algorithm
       list<DAE.Exp> elabCrs1,elabCrs2;
       list<DAE.Statement> b;
       DAE.Exp e;
-      Absyn.Info i;
+      SourceInfo i;
 
     case (true,b,e,i) then (b,e,i);
     case (_,b,elabCr2 as DAE.CREF(ty=_),_)
@@ -2104,7 +2104,7 @@ protected function fixCaseReturnTypes
   input list<DAE.MatchCase> icases;
   input list<DAE.Exp> iexps;
   input list<DAE.Type> itys;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<DAE.MatchCase> outCases;
   output DAE.Type ty;
 algorithm
@@ -2153,7 +2153,7 @@ end fixCaseReturnTypes;
 public function fixCaseReturnTypes2
   input list<DAE.MatchCase> inCases;
   input list<DAE.Exp> inExps;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<DAE.MatchCase> outCases;
 algorithm
   outCases := matchcontinue (inCases,inExps,inInfo)
@@ -2165,10 +2165,10 @@ algorithm
       DAE.Exp exp;
       DAE.MatchCase case_;
       Integer jump;
-      Absyn.Info resultInfo,info2;
+      SourceInfo resultInfo,info2;
       list<DAE.MatchCase> cases;
       list<DAE.Exp> exps;
-      Absyn.Info info;
+      SourceInfo info;
 
     case ({},{},_) then {};
 
@@ -2210,7 +2210,7 @@ algorithm
       list<DAE.Statement> body,body1;
       Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
       Integer jump;
-      Absyn.Info resultInfo,info;
+      SourceInfo resultInfo,info;
       list<DAE.MatchCase> cases,cases1;
       A a;
 
@@ -2244,7 +2244,7 @@ protected function addLocalDecls
   input list<Absyn.ElementItem> els;
   input String scopeName;
   input Boolean impl;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Option<tuple<FCore.Graph,DAE.DAElist,AvlTreeString.AvlTree>> res;
 algorithm
@@ -2338,7 +2338,7 @@ algorithm
       String name;
       FCore.Cache cache;
       Boolean b;
-      Absyn.Info info;
+      SourceInfo info;
     case (SCode.COMPONENT(name=name),_,(cache,_))
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{})));
@@ -2419,7 +2419,7 @@ algorithm
       list<DAE.Statement> body;
       Option<DAE.Exp> patternGuard,result;
       Integer jump;
-      Absyn.Info resultInfo,info;
+      SourceInfo resultInfo,info;
     case (DAE.CASE(_,patternGuard,localDecls,body,result,resultInfo,jump,info),_)
       then DAE.CASE(pats,patternGuard,localDecls,body,result,resultInfo,jump,info);
   end match;
@@ -2600,7 +2600,7 @@ protected function addAliasesToEnv
   input FCore.Graph inEnv;
   input list<DAE.Type> inTypes;
   input list<list<String>> inAliases;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Graph outEnv;
 algorithm
   outEnv := match (inEnv,inTypes,inAliases,info)
@@ -2650,7 +2650,7 @@ algorithm
       list<DAE.Exp> exps;
       DAE.Else else_;
       DAE.Type ty;
-      Absyn.Info info;
+      SourceInfo info;
       Boolean b;
       String id;
       Integer index;

@@ -99,7 +99,7 @@ public function lookupType
   input FCore.Cache inCache;
   input FCore.Graph inEnv "environment to search in";
   input Absyn.Path inPath "type to look for";
-  input Option<Absyn.Info> msg "Messaage flag, SOME() outputs lookup error messages";
+  input Option<SourceInfo> msg "Messaage flag, SOME() outputs lookup error messages";
   output FCore.Cache outCache;
   output DAE.Type outType "the found type";
   output FCore.Graph outEnv "The environment the type was found in";
@@ -113,7 +113,7 @@ algorithm
       SCode.Element c;
       String classname,scope;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
@@ -1505,7 +1505,7 @@ public function lookupFunctionsInEnv
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path inId;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
@@ -1520,7 +1520,7 @@ algorithm
       String str, name;
       FCore.Cache cache;
       Absyn.Path id, scope;
-      Absyn.Info info;
+      SourceInfo info;
 
     /*
     case (cache,env,id,info)
@@ -1622,7 +1622,7 @@ public function lookupFunctionsListInEnv
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input list<Absyn.Path> inIds;
-  input Absyn.Info info;
+  input SourceInfo info;
   input list<DAE.Type> inAcc;
   output FCore.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
@@ -1658,7 +1658,7 @@ protected function lookupFunctionsInEnv2
   input FCore.Graph inEnv;
   input Absyn.Path inPath;
   input Boolean followedQual "cannot pop frames if we followed a qualified path at any point";
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
@@ -1890,7 +1890,7 @@ algorithm
       String id,n;
       SCode.Element cdef, comp;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,FCore.N(data = FCore.FT(t :: _)),env,_) then (cache,t,env);
 
@@ -1941,7 +1941,7 @@ protected function lookupFunctionsInFrame
   input FCore.Children inFuncTypes;
   input FCore.Graph inEnv;
   input SCode.Ident inFuncName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output list<DAE.Type> outFuncTypes;
 protected
@@ -2073,7 +2073,7 @@ algorithm
       SCode.Element reselt;
       SCode.Element cl;
       String id;
-      Absyn.Info info;
+      SourceInfo info;
       FCore.Cache cache;
       FCore.Graph env;
 
@@ -2108,7 +2108,7 @@ algorithm
       list<tuple<SCode.Element,DAE.Mod>> eltsMods;
       String name;
       Absyn.Path fpath;
-      Absyn.Info info;
+      SourceInfo info;
       FCore.Cache cache;
       FCore.Graph env,env1;
 
@@ -2192,7 +2192,7 @@ algorithm
       Option<Absyn.Exp> cond;
       SCode.Mod mod,umod;
       DAE.Mod mod_1, compMod, fullMod, selectedMod, cmod;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,env,{},_) then (cache,env,{});
 
@@ -2319,7 +2319,7 @@ protected function buildRecordConstructorResultElt
   input list<SCode.Element> elts;
   input SCode.Ident id;
   input FCore.Graph env;
-  input Absyn.Info info;
+  input SourceInfo info;
   output SCode.Element outElement;
 algorithm
   //print(" creating element of type: " + id + "\n");

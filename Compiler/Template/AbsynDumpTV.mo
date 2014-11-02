@@ -6,6 +6,17 @@ package builtin
     output list<T> outLst;
     replaceable type T subtypeof Any;
   end listReverse;
+
+  uniontype SourceInfo
+    record SOURCEINFO
+      String fileName;
+      Boolean isReadOnly;
+      Integer lineNumberStart;
+      Integer columnNumberStart;
+      Integer lineNumberEnd;
+      Integer columnNumberEnd;
+    end SOURCEINFO;
+  end SourceInfo;
 end builtin;
 
 package Absyn
@@ -26,17 +37,6 @@ package Absyn
     record TOP end TOP;
   end Within;
 
-  uniontype Info
-    record INFO
-      String fileName;
-      Boolean isReadOnly;
-      Integer lineNumberStart;
-      Integer columnNumberStart;
-      Integer lineNumberEnd;
-      Integer columnNumberEnd;
-    end INFO;
-  end Info;
-
   uniontype Class
     record CLASS
       Ident name;
@@ -45,7 +45,7 @@ package Absyn
       Boolean encapsulatedPrefix;
       Restriction restriction;
       ClassDef body;
-      Info info;
+      builtin.SourceInfo info;
     end CLASS;
   end Class;
 
@@ -169,7 +169,7 @@ package Absyn
       Option<RedeclareKeywords> redeclareKeywords;
       InnerOuter innerOuter;
       ElementSpec specification;
-      Info info;
+      builtin.SourceInfo info;
       Option<ConstrainClass> constrainClass;
     end ELEMENT;
 
@@ -181,7 +181,7 @@ package Absyn
     record TEXT
       Option<Ident> optName;
       String string;
-      Info info;
+      builtin.SourceInfo info;
     end TEXT;
   end Element;
 
@@ -207,7 +207,7 @@ package Absyn
     record IMPORT
       Import import_;
       Option<Comment> comment;
-      Info info;
+      builtin.SourceInfo info;
     end IMPORT;
 
     record COMPONENTS
@@ -596,22 +596,22 @@ package Absyn
     record CASE
       Exp pattern;
       Option<Exp> patternGuard;
-      Info patternInfo;
+      builtin.SourceInfo patternInfo;
       list<ElementItem> localDecls;
       ClassPart classPart;
       Exp result;
-      Info resultInfo;
+      builtin.SourceInfo resultInfo;
       Option<String> comment;
-      Info info;
+      builtin.SourceInfo info;
     end CASE;
 
     record ELSE
       list<ElementItem> localDecls;
       ClassPart classPart;
       Exp result;
-      Info resultInfo;
+      builtin.SourceInfo resultInfo;
       Option<String> comment;
-      Info info;
+      builtin.SourceInfo info;
     end ELSE;
   end Case;
 

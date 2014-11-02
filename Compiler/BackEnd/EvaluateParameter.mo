@@ -451,7 +451,7 @@ algorithm
       FCore.Cache cache;
       Values.Value value;
       BackendDAE.Variables knvars;
-      Absyn.Info info;
+      SourceInfo info;
       String msg;
     // Parameter with evaluate=true
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.CONST(),bindExp=SOME(e)),_,_,_,_,_,_,_)
@@ -741,7 +741,7 @@ protected function evaluateFixedAttributeReportWarning
 algorithm
   outE := match(b,cr,e,e1,source,knvars)
     local
-      Absyn.Info info;
+      SourceInfo info;
       String msg;
       DAE.Exp e2;
     case (true,_,_,_,_,_) then e1;

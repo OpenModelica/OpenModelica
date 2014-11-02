@@ -123,21 +123,21 @@ public uniontype Binding
     Absyn.Exp bindingExp;
     Env env;
     Integer propagatedDims "See NFSCodeMod.propagateMod.";
-    Absyn.Info info;
+    SourceInfo info;
   end RAW_BINDING;
 
   record UNTYPED_BINDING
     DAE.Exp bindingExp;
     Boolean isProcessing;
     Integer propagatedDims "See NFSCodeMod.propagateMod.";
-    Absyn.Info info;
+    SourceInfo info;
   end UNTYPED_BINDING;
 
   record TYPED_BINDING
     DAE.Exp bindingExp;
     DAE.Type bindingType;
     Integer propagatedDims "See NFSCodeMod.propagateMod.";
-    Absyn.Info info;
+    SourceInfo info;
   end TYPED_BINDING;
 end Binding;
 
@@ -149,7 +149,7 @@ public uniontype Component
     Prefixes prefixes;
     ParamType paramType;
     Binding binding;
-    Absyn.Info info;
+    SourceInfo info;
   end UNTYPED_COMPONENT;
 
   record TYPED_COMPONENT
@@ -158,7 +158,7 @@ public uniontype Component
     Option<Component> parent; //NO_COMPONENT?
     DaePrefixes prefixes;
     Binding binding;
-    Absyn.Info info;
+    SourceInfo info;
   end TYPED_COMPONENT;
 
   record CONDITIONAL_COMPONENT
@@ -169,7 +169,7 @@ public uniontype Component
     Prefixes prefixes;
     Env env;
     Prefix prefix;
-    Absyn.Info info;
+    SourceInfo info;
   end CONDITIONAL_COMPONENT;
 
   record DELETED_COMPONENT
@@ -209,7 +209,7 @@ public uniontype Modifier
     SCode.Each eachPrefix;
     Binding binding;
     list<Modifier> subModifiers;
-    Absyn.Info info;
+    SourceInfo info;
   end MODIFIER;
 
   record REDECLARE
@@ -239,8 +239,8 @@ public uniontype Prefixes
     SCode.Variability variability;
     SCode.Final finalPrefix;
     Absyn.InnerOuter innerOuter;
-    tuple<Absyn.Direction, Absyn.Info> direction;
-    tuple<SCode.ConnectorType, Absyn.Info> connectorType;
+    tuple<Absyn.Direction, SourceInfo> direction;
+    tuple<SCode.ConnectorType, SourceInfo> connectorType;
     VarArgs varArgs;
   end PREFIXES;
 end Prefixes;
@@ -279,7 +279,7 @@ public uniontype Equation
   record EQUALITY_EQUATION
     DAE.Exp lhs "The left hand side expression.";
     DAE.Exp rhs "The right hand side expression.";
-    Absyn.Info info;
+    SourceInfo info;
   end EQUALITY_EQUATION;
 
   record CONNECT_EQUATION
@@ -290,7 +290,7 @@ public uniontype Equation
     NFConnect2.Face rhsFace "The face of the rhs component, inside or outside.";
     DAE.Type rhsType     "The type of the rhs component.";
     Prefix prefix;
-    Absyn.Info info;
+    SourceInfo info;
   end CONNECT_EQUATION;
 
   record FOR_EQUATION
@@ -299,42 +299,42 @@ public uniontype Equation
     DAE.Type indexType    "The type of the index/iterator variable.";
     Option<DAE.Exp> range "The range expression to loop over.";
     list<Equation> body   "The body of the for loop.";
-    Absyn.Info info;
+    SourceInfo info;
   end FOR_EQUATION;
 
   record IF_EQUATION
     list<tuple<DAE.Exp, list<Equation>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
-    Absyn.Info info;
+    SourceInfo info;
   end IF_EQUATION;
 
   record WHEN_EQUATION
     list<tuple<DAE.Exp, list<Equation>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
-    Absyn.Info info;
+    SourceInfo info;
   end WHEN_EQUATION;
 
   record ASSERT_EQUATION
     DAE.Exp condition "The assert condition.";
     DAE.Exp message "The message to display if the assert fails.";
     DAE.Exp level "Error or warning";
-    Absyn.Info info;
+    SourceInfo info;
   end ASSERT_EQUATION;
 
   record TERMINATE_EQUATION
     DAE.Exp message "The message to display if the terminate triggers.";
-    Absyn.Info info;
+    SourceInfo info;
   end TERMINATE_EQUATION;
 
   record REINIT_EQUATION
     DAE.ComponentRef cref "The variable to reinitialize.";
     DAE.Exp reinitExp "The new value of the variable.";
-    Absyn.Info info;
+    SourceInfo info;
   end REINIT_EQUATION;
 
   record NORETCALL_EQUATION
     DAE.Exp exp;
-    Absyn.Info info;
+    SourceInfo info;
   end NORETCALL_EQUATION;
 end Equation;
 
@@ -342,13 +342,13 @@ public uniontype Statement
   record ASSIGN_STMT
     DAE.Exp lhs "The asignee";
     DAE.Exp rhs "The expression";
-    Absyn.Info info;
+    SourceInfo info;
   end ASSIGN_STMT;
 
   record FUNCTION_ARRAY_INIT "Used to mark in which order local array variables in functions should be initialized"
     String name;
     DAE.Type ty;
-    Absyn.Info info;
+    SourceInfo info;
   end FUNCTION_ARRAY_INIT;
 
   record FOR_STMT
@@ -357,60 +357,60 @@ public uniontype Statement
     DAE.Type indexType "The type of the index/iterator variable.";
     Option<DAE.Exp> range "The range expression to loop over.";
     list<Statement> body "The body of the for loop.";
-    Absyn.Info info;
+    SourceInfo info;
   end FOR_STMT;
 
   record IF_STMT
     list<tuple<DAE.Exp, list<Statement>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
-    Absyn.Info info;
+    SourceInfo info;
   end IF_STMT;
 
   record WHEN_STMT
     list<tuple<DAE.Exp, list<Statement>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
-    Absyn.Info info;
+    SourceInfo info;
   end WHEN_STMT;
 
   record ASSERT_STMT
     DAE.Exp condition "The assert condition.";
     DAE.Exp message "The message to display if the assert fails.";
-    Absyn.Info info;
+    SourceInfo info;
   end ASSERT_STMT;
 
   record TERMINATE_STMT
     DAE.Exp message "The message to display if the terminate triggers.";
-    Absyn.Info info;
+    SourceInfo info;
   end TERMINATE_STMT;
 
   record REINIT_STMT
     DAE.ComponentRef cref "The variable to reinitialize.";
     DAE.Exp reinitExp "The new value of the variable.";
-    Absyn.Info info;
+    SourceInfo info;
   end REINIT_STMT;
 
   record NORETCALL_STMT
     DAE.Exp exp;
-    Absyn.Info info;
+    SourceInfo info;
   end NORETCALL_STMT;
 
   record WHILE_STMT
     DAE.Exp exp;
     list<Statement> statementLst;
-    Absyn.Info info;
+    SourceInfo info;
   end WHILE_STMT;
 
   record RETURN_STMT
-    Absyn.Info info;
+    SourceInfo info;
   end RETURN_STMT;
 
   record BREAK_STMT
-    Absyn.Info info;
+    SourceInfo info;
   end BREAK_STMT;
 
   record FAILURE_STMT
     list<Statement> body;
-    Absyn.Info info;
+    SourceInfo info;
   end FAILURE_STMT;
 
 end Statement;
@@ -430,7 +430,7 @@ public uniontype EntryOrigin
   record INHERITED_ORIGIN
     "An entry that has been inherited through an extends clause."
     Absyn.Path baseClass "The path of the baseclass the entry was inherited from.";
-    Absyn.Info info "The info of the extends clause.";
+    SourceInfo info "The info of the extends clause.";
     list<EntryOrigin> origin "The origins of the element in the baseclass.";
     Env originEnv "The environment the entry was inherited from.";
     Integer index "Index used to identify the extends clause for optimization.";
@@ -445,7 +445,7 @@ public uniontype EntryOrigin
   record IMPORTED_ORIGIN
     "An entry that has been imported with an import statement."
     Absyn.Import imp;
-    Absyn.Info info;
+    SourceInfo info;
     Env originEnv "The environment the entry was imported from.";
   end IMPORTED_ORIGIN;
 end EntryOrigin;

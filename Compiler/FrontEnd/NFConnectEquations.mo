@@ -577,7 +577,7 @@ end compareCrefStreamSet;
 public function generateAssertion
   input Connector inLhsConnector;
   input Connector inRhsConnector;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input list<Equation> inEquations;
   output list<Equation> outEquations;
   output Boolean outIsOnlyConst;
@@ -624,7 +624,7 @@ protected function generateAssertion2
   input DAE.Exp inLhsExp;
   input DAE.Exp inRhsExp;
   input DAE.Type inType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input list<Equation> inEquations;
   output list<Equation> outEquations;
   output Boolean outIsOnlyConst;
@@ -703,7 +703,7 @@ end generateAssertion2;
 
 protected function makeAssertion
   input DAE.Exp inCondition;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Equation outAssert;
 protected
   DAE.Exp cond_exp, msg_exp;
@@ -722,7 +722,7 @@ protected function generateAssertion3
   input list<DAE.Var> inRhsVar;
   input DAE.ComponentRef inLhsCref;
   input DAE.ComponentRef inRhsCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input list<Equation> inEquations;
   input Boolean inIsOnlyConst;
   output list<Equation> outEquations;
@@ -756,7 +756,7 @@ protected function generateAssertion4
   input DAE.Var inRhsVar;
   input DAE.ComponentRef inLhsCref;
   input DAE.ComponentRef inRhsCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input list<Equation> inEquations;
   output list<Equation> outEquations;
   output Boolean outIsOnlyConst;

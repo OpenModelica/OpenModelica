@@ -101,7 +101,7 @@ algorithm
       String name;
       Graph g;
       SCode.ClassDef cdef;
-      Absyn.Info info;
+      SourceInfo info;
 
     // class (we don't care here if is replaceable or not we can get that from the class)
     case (SCode.CLASS( classDef = _), _, _, g)
@@ -128,7 +128,7 @@ algorithm
       SCode.Element cls;
       String name;
       Graph g;
-      Absyn.Info info;
+      SourceInfo info;
       Node n;
       Ref nr;
 
@@ -1142,7 +1142,7 @@ algorithm
       SCode.EEquation equ, equf, equr;
       SCode.Ident iter_name;
       Ref ref;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.ComponentRef cref1;
       Graph g;
       Kind k;
@@ -1217,7 +1217,7 @@ algorithm
     local
       Ref ref;
       SCode.Statement stmt;
-      Absyn.Info info;
+      SourceInfo info;
       list<SCode.Statement> parforBody;
       String iter_name;
       Graph g;

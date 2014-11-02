@@ -136,14 +136,12 @@ protected
   String mp,name;
   Boolean isDir;
   Absyn.Class cl;
-  Absyn.TimeStamp ts;
 algorithm
   (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
   // print("System.getLoadModelPath: " + id + " {" + stringDelimitList(prios,",") + "} " + stringDelimitList(mps,",") + " => " + mp + " " + name + " " + boolString(isDir));
   Config.setLanguageStandardFromMSL(name);
   cl := loadClassFromMp(id, mp, name, isDir, encoding);
-  ts := Absyn.getNewTimeStamp();
-  outProgram := Absyn.PROGRAM({cl},Absyn.TOP(),ts);
+  outProgram := Absyn.PROGRAM({cl},Absyn.TOP());
 end loadClassFromMps;
 
 protected function loadClassFromMp
@@ -201,7 +199,7 @@ algorithm
       list<Absyn.NamedArg> ca;
       list<Absyn.ClassPart> cp;
       Option<String> cmt;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Path path;
       Absyn.Within w2;
       list<PackageOrder> reverseOrder;
@@ -317,19 +315,18 @@ algorithm
       Absyn.Class cl;
       list<Absyn.Class> cs;
       Absyn.Within w2;
-      Absyn.TimeStamp ts;
       list<String> classNames;
-      Absyn.Info info;
+      SourceInfo info;
       String str,s1,s2,cname;
       Absyn.ClassDef body;
 
     case (_,_,_,_,_)
       equation
         true = System.regularFileExists(name);
-        Absyn.PROGRAM(cs,w2,ts) = Parser.parse(name,encoding);
+        Absyn.PROGRAM(cs,w2) = Parser.parse(name,encoding);
         classNames = List.map(cs, Absyn.getClassName);
         str = stringDelimitList(classNames,", ");
-        Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, Absyn.INFO(name,true,0,0,0,0,ts));
+        Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, SOURCEINFO(name,true,0,0,0,0,0.0));
         cl::{} = cs;
         Absyn.CLASS(name=cname,body=body,info=info) = cl;
         Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
@@ -370,7 +367,7 @@ algorithm
       String contents, duplicatesStr, differencesStr, classFilename;
       list<String> duplicates, namesToFind, mofiles, subdirs, differences, intersection;
       list<Absyn.ClassPart> cp;
-      Absyn.Info info;
+      SourceInfo info;
       list<PackageOrder> po1, po2;
 
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
@@ -382,7 +379,7 @@ algorithm
           namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
           duplicates = List.sortedDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
           duplicatesStr = stringDelimitList(duplicates, ", ");
-          Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
+          Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
 
           // get all the .mo files in the directory!
           mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
@@ -392,13 +389,13 @@ algorithm
           // build a list
           intersection = List.intersectionOnTrue(subdirs,mofiles,stringEq);
           differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
-          Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
+          Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
           mofiles = listAppend(subdirs,mofiles);
           // check if all are present in the package.order
           differences = List.setDifference(mofiles, namesToFind);
           // issue a warning if not all are present
           differencesStr = stringDelimitList(differences, "\n\t");
-          Error.assertionOrAddSourceMessage(List.isEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
+          Error.assertionOrAddSourceMessage(List.isEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
           po1 = getPackageContentNamesinParts(namesToFind,cp,{});
           List.map2_0(po1,checkPackageOrderFilesExist,mp,info);
 
@@ -454,7 +451,7 @@ end makeClassLoad;
 protected function checkPackageOrderFilesExist
   input PackageOrder po;
   input String mp;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (po,mp,info)
     local
@@ -526,7 +523,7 @@ algorithm
       list<String> namesToSort,names,compNames;
       list<Absyn.ElementItem> elts;
       Boolean b;
-      Absyn.Info info;
+      SourceInfo info;
       list<Absyn.ComponentItem> comps;
       Absyn.ElementItem ei;
       PackageOrder orderElt,load;
@@ -573,7 +570,7 @@ end getPackageContentNamesinElts;
 protected function matchCompNames
   input list<String> names;
   input list<String> comps;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<String> outNames;
   output Boolean matchedNames;
 algorithm
@@ -628,7 +625,7 @@ algorithm
   dummy := match mod
     local
       String str;
-      Absyn.Info info;
+      SourceInfo info;
     case SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(info=info,exp=Absyn.STRING(str))))
       equation
         Error.addSourceMessage(Error.COMPILER_NOTIFICATION_SCRIPTING,{str},info);

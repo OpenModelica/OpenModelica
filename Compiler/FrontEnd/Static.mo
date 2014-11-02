@@ -129,7 +129,7 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
@@ -148,7 +148,7 @@ protected function elabExpList2 "Expression elaboration of Absyn.Exp list, i.e. 
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
@@ -210,7 +210,7 @@ public function elabExpListList
   input Option<GlobalScript.SymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<list<DAE.Exp>> outExpExpLstLst;
   output list<list<DAE.Properties>> outTypesPropertiesLstLst;
@@ -253,7 +253,7 @@ protected function elabExpOptAndMatchType "
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache cache;
   output Option<DAE.Exp> outExp;
   output DAE.Properties prop;
@@ -286,7 +286,7 @@ function: elabExp
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -329,7 +329,7 @@ function: elabExp
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -346,7 +346,7 @@ public function elabExpInExpression "Like elabExp but casts PROP_TUPLE to a PROP
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -377,7 +377,7 @@ public function checkAssignmentToInput
   input DAE.Attributes inAttributes;
   input FCore.Graph inEnv;
   input Boolean inAllowTopLevelInputs;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inExp, inAttributes, inEnv, inAllowTopLevelInputs, inInfo)
 
@@ -405,7 +405,7 @@ end checkAssignmentToInput;
 protected function checkAssignmentToInput2
   input Absyn.Exp inExp;
   input DAE.Attributes inAttributes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inExp, inAttributes, inInfo)
     local
@@ -429,7 +429,7 @@ public function checkAssignmentToInputs
   input list<Absyn.Exp> inExpCrefs;
   input list<DAE.Attributes> inAttributes;
   input FCore.Graph inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inExpCrefs, inAttributes, inEnv, inInfo)
     case (_, _, _, _)
@@ -456,7 +456,7 @@ public function elabExpCrefNoEvalList
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Integer numErrorMessages;
   output FCore.Cache outCache;
   output list<DAE.Exp> outExpLst;
@@ -525,7 +525,7 @@ function: elabExp
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Integer numErrorMessages;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -942,7 +942,7 @@ Note: Because of this, the function has to rollback or delete an ErrorExt checkp
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean vect;
   input Prefix.Prefix pre;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties prop;
@@ -994,7 +994,7 @@ This is used by Inst.mo when handling a var := {...} statement"
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -1058,7 +1058,7 @@ algorithm
       FCore.Graph localEnv;
       Prefix.Prefix pre;
       Option<Absyn.Comment> comment;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Equation first;
       list<Absyn.EquationItem> rest;
       list<Absyn.AlgorithmItem> alg;
@@ -1095,7 +1095,7 @@ algorithm
       FCore.Graph localEnv;
       Prefix.Prefix pre;
       Option<Absyn.Comment> comment;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Equation first;
       list<Absyn.EquationItem> rest;
       list<Absyn.AlgorithmItem> alg;
@@ -1140,7 +1140,7 @@ end fromEquationBranchesToAlgBranches;
 protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
   input Absyn.Equation eq;
   input Option<Absyn.Comment> comment;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<Absyn.AlgorithmItem> algStatement;
 algorithm
   algStatement := matchcontinue (eq,comment,info)
@@ -1153,7 +1153,7 @@ algorithm
       Absyn.AlgorithmItem algItem,algItem1,algItem2;
       Absyn.Equation eq2;
       Option<Absyn.Comment> comment2;
-      Absyn.Info info2;
+      SourceInfo info2;
       Absyn.AlgorithmItem res;
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
@@ -1288,7 +1288,7 @@ protected function elabCallReduction
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -1377,7 +1377,7 @@ protected function elabCallReductionIterators
   input Option<GlobalScript.SymbolTable> inSt;
   input Boolean doVect;
   input Prefix.Prefix pre;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph envWithIterators;
   output list<DAE.ReductionIterator> outIterators;
@@ -1489,7 +1489,7 @@ protected function reductionType
   input DAE.Type unboxedType;
   input DAE.Dimensions dims;
   input Boolean hasGuardExp;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Type outType;
@@ -1657,7 +1657,7 @@ protected function checkReductionType1
   input FCore.Graph inEnv;
   input Absyn.Path inPath;
   input list<DAE.Type> fnTypes;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Type typeA;
   output DAE.Type typeB;
   output DAE.Type resType;
@@ -1703,7 +1703,7 @@ protected function checkReductionType2
   input DAE.Type typeC;
   input Boolean equivAB;
   input Boolean equivBC;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Exp outExp;
   output DAE.Type outTy;
 algorithm
@@ -1826,7 +1826,7 @@ public function elabGraphicsExp
   input Absyn.Exp inExp;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -2093,7 +2093,7 @@ protected function elabRange
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean inVect;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProps;
@@ -2272,7 +2272,7 @@ protected function elabTuple "This function does elaboration of tuples, i.e. fun
   input Boolean inBoolean;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
@@ -2321,7 +2321,7 @@ protected function elabPartEvalFunction
   input Boolean inImpl;
   input Boolean inVect;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -2437,7 +2437,7 @@ protected function elabArray
   input list<DAE.Exp> inExpl;
   input list<DAE.Properties> inProps;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<DAE.Exp> outExpLst;
   output DAE.Properties outProperties;
 algorithm
@@ -2601,7 +2601,7 @@ protected function elabArray2
   input list<DAE.Exp> inExpl;
   input list<DAE.Properties> inProperties;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<DAE.Exp> outExpl;
   output DAE.Properties outProperties;
 protected
@@ -2653,7 +2653,7 @@ protected function elabGraphicsArray
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Properties outProperties;
@@ -2717,7 +2717,7 @@ protected function elabMatrixComma "This function is a helper function for elabM
   input Integer inInteger6;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp1;
   output DAE.Properties outProperties2;
@@ -2968,7 +2968,7 @@ protected function elabMatrixSemi
   input Integer inDims;
   input Boolean inDoVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache := inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3042,7 +3042,7 @@ protected function verifyBuiltInHandlerType "
   input extraFunc typeChecker;
   input String fnName;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3083,7 +3083,7 @@ protected function elabBuiltinCardinality
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3124,7 +3124,7 @@ protected function elabBuiltinSmooth
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3207,7 +3207,7 @@ protected function elabBuiltinSize
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3259,7 +3259,7 @@ protected function elabBuiltinSizeNoIndex
   input DAE.Type inArrayExpType;
   input DAE.Dimensions inDimensions;
   input DAE.Type inArrayType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outSizeExp;
   output DAE.Properties outProperties;
 algorithm
@@ -3323,7 +3323,7 @@ protected function elabBuiltinSizeIndex
   input DAE.Exp inIndexExp;
   input DAE.Dimensions inDimensions;
   input FCore.Graph inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Option<DAE.Exp> outSizeExp;
   output Option<DAE.Properties> outProperties;
 algorithm
@@ -3403,7 +3403,7 @@ protected function elabBuiltinNDims
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3447,7 +3447,7 @@ protected function elabBuiltinFill "This function elaborates the builtin operato
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3556,7 +3556,7 @@ public function elabBuiltinFill2
   input DAE.Const constVar;
   input Prefix.Prefix inPrefix;
   input list<Absyn.Exp> inDims;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3626,7 +3626,7 @@ protected function elabBuiltinSymmetric "This function elaborates the builtin op
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3665,7 +3665,7 @@ protected function elabBuiltinClassDirectory
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3674,7 +3674,7 @@ algorithm
     local
       String str,fileName;
 
-    case (_,_,_,_,_,_,Absyn.INFO(fileName=fileName))
+    case (_,_,_,_,_,_,SOURCEINFO(fileName=fileName))
       equation
         str = stringAppend(System.dirname(fileName),"/");
         Error.addSourceMessage(Error.NON_STANDARD_OPERATOR_CLASS_DIRECTORY, {}, info);
@@ -3682,6 +3682,39 @@ algorithm
         (inCache,DAE.SCONST(str),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST()));
   end match;
 end elabBuiltinClassDirectory;
+
+protected function elabBuiltinSourceInfo
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo info;
+  output FCore.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  {} := inAbsynExpLst;
+  (outCache,outExp,outProperties) := match info
+    local
+      list<DAE.Exp> args;
+
+    case SOURCEINFO()
+      algorithm
+        args := {
+           DAE.SCONST(info.fileName),
+           DAE.BCONST(info.isReadOnly),
+           DAE.ICONST(info.lineNumberStart),
+           DAE.ICONST(info.columnNumberStart),
+           DAE.ICONST(info.lineNumberEnd),
+           DAE.ICONST(info.columnNumberEnd),
+           DAE.RCONST(info.lastModification)
+        };
+        outExp := DAE.METARECORDCALL(Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO")),args,{"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","lastEditTime"},0);
+      then (inCache,outExp,DAE.PROP(DAE.T_SOURCEINFO_DEFAULT,DAE.C_CONST()));
+  end match;
+end elabBuiltinSourceInfo;
 
 protected function elabBuiltinTranspose
   "Elaborates the builtin operator transpose."
@@ -3691,7 +3724,7 @@ protected function elabBuiltinTranspose
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3724,7 +3757,7 @@ protected function elabBuiltinSum "This function elaborates the builtin operator
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3766,7 +3799,7 @@ protected function elabBuiltinProduct "This function elaborates the builtin oper
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3846,7 +3879,7 @@ protected function elabBuiltinPre "This function elaborates the builtin operator
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3976,7 +4009,7 @@ protected function elabBuiltinInStream "This function elaborates the builtin ope
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -3990,7 +4023,7 @@ algorithm
       FCore.Graph env;
       Absyn.Exp exp;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Properties prop;
 
     // use elab_call_args to also try vectorized calls
@@ -4021,7 +4054,7 @@ protected function elabBuiltinActualStream "This function elaborates the builtin
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4035,7 +4068,7 @@ algorithm
       DAE.Const c;
       FCore.Graph env;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Properties prop;
 
     // use elab_call_args to also try vectorized calls
@@ -4064,7 +4097,7 @@ protected function elabBuiltinStreamOperator
   input String inOperator;
   input DAE.Exp inExp;
   input DAE.Type inType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outExp;
 algorithm
   outExp := match(inCache, inEnv, inOperator, inExp, inType, inInfo)
@@ -4093,7 +4126,7 @@ protected function validateBuiltinStreamOperator
   input DAE.Exp inOperand;
   input DAE.Type inType;
   input String inOperator;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inCache, inEnv, inOperand, inType, inOperator, inInfo)
     local
@@ -4175,7 +4208,7 @@ protected function elabBuiltinArray "
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4216,7 +4249,7 @@ protected function elabBuiltinArray2 "function elabBuiltinArray2.
   input list<DAE.Exp> inExpExpLst;
   input list<DAE.Properties> inTypesPropertiesLst;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Properties outProperties;
 algorithm
@@ -4285,7 +4318,7 @@ protected function elabBuiltinZeros "This function elaborates the builtin operat
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4395,7 +4428,7 @@ protected function elabBuiltinOnes "This function elaborates on the builtin opea
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4426,7 +4459,7 @@ protected function elabBuiltinMax
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4443,7 +4476,7 @@ protected function elabBuiltinMin
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4461,7 +4494,7 @@ protected function elabBuiltinMinMaxCommon
   input list<Absyn.Exp> inFnArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4526,7 +4559,7 @@ verify that the input is correct."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4588,7 +4621,7 @@ This function elaborates the builtin Clock constructor Clock(..)."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4844,7 +4877,7 @@ This function elaborates the builtin operator previous(u)."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4883,7 +4916,7 @@ This function elaborates the builtin operator hold(u)."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -4922,7 +4955,7 @@ This function elaborates the builtin operator sample(..) variants."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5009,7 +5042,7 @@ This function elaborates the builtin operator subSample(u,factor)."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5068,7 +5101,7 @@ This function elaborates the builtin operator superSample(u,factor)."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5127,7 +5160,7 @@ This function elaborates the builtin operator shiftSample(u,shiftCounter,resolut
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5195,7 +5228,7 @@ This function elaborates the builtin operator backSample(u,backCounter,resolutio
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5263,7 +5296,7 @@ This function elaborates the builtin operator noClock(u)."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5302,7 +5335,7 @@ This function elaborates the builtin operator interval(u)."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5371,7 +5404,7 @@ transition(from, to, condition, immediate=true, reset=true, synchronize=false, p
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5429,7 +5462,7 @@ Check if the \"from\" argument or the \"to\" argument is of complex type."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Ident argName;
   input Integer n;
   input String strMsg0;
@@ -5536,7 +5569,7 @@ initialState(state)."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5582,7 +5615,7 @@ activeState(state)."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5628,7 +5661,7 @@ ticksInState()."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5665,7 +5698,7 @@ timeInState()."
   input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5701,7 +5734,7 @@ protected function elabBuiltinBoolean
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5740,7 +5773,7 @@ protected function elabBuiltinIntegerEnum
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5770,7 +5803,7 @@ protected function elabBuiltinDiagonal "This function elaborates on the builtin 
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5879,7 +5912,7 @@ protected function elabBuiltinSimplify "This function elaborates the simplify fu
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5974,7 +6007,7 @@ protected function elabBuiltinNoevent "
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6008,7 +6041,7 @@ protected function elabBuiltinEdge "
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6054,7 +6087,7 @@ protected function elabBuiltinDer
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6139,7 +6172,7 @@ protected function elabBuiltinChange "author: PA
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6183,7 +6216,7 @@ protected function elabBuiltinChange2 "author: PA
   input DAE.Exp inExp;
   input DAE.Properties prop;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6252,7 +6285,7 @@ protected function elabBuiltinCat "author: PA
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6378,7 +6411,7 @@ protected function elabBuiltinIdentity "author: PA
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6428,7 +6461,7 @@ end elabBuiltinIdentity;
 protected function zeroSizeOverconstrainedOperator
   input DAE.Exp inExp;
   input DAE.Exp inFExp;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inExp, inFExp, inInfo)
     local String s;
@@ -6453,7 +6486,7 @@ protected function elabBuiltinIsRoot
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6488,7 +6521,7 @@ protected function elabBuiltinRooted
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6529,7 +6562,7 @@ protected function elabBuiltinUniqueRootIndices
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6602,7 +6635,7 @@ protected function elabBuiltinScalar "author: PA
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6684,7 +6717,7 @@ protected function elabBuiltinString "
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6757,7 +6790,7 @@ protected function elabBuiltinGetInstanceName
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache := inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6787,7 +6820,7 @@ protected function elabBuiltinVector "author: PA
   input list<Absyn.NamedArg> inNamedArg;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6866,7 +6899,7 @@ protected function checkBuiltinVectorDims
   input FCore.Graph env;
   input list<Integer> dimensions;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(expr, env, dimensions,inPrefix, inInfo)
     local
@@ -7005,7 +7038,7 @@ public function elabBuiltinMatrix
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -7044,7 +7077,7 @@ protected function elabBuiltinMatrix2
   input DAE.Exp inArg;
   input DAE.Properties inProperties;
   input DAE.Type inType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -7096,7 +7129,7 @@ end elabBuiltinMatrix2;
 protected function elabBuiltinMatrix3
   "Helper function to elabBuiltinMatrix2."
   input DAE.Exp inExp;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outExp;
 algorithm
   outExp := match(inExp, inInfo)
@@ -7132,7 +7165,7 @@ protected function arrayScalar
   input DAE.Exp inExp;
   input Integer inDim "The current dimension, used for error message.";
   input String inOperator "The current operator name, used for error message.";
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outExp;
 algorithm
   outExp := match(inExp, inDim, inOperator, inInfo)
@@ -7181,7 +7214,7 @@ protected function checkTypeScalar
   any dimension of the array isn't of size 1."
   input DAE.Dimension inDim;
   input DAE.Type ty;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inDim, ty, inInfo)
     local
@@ -7215,7 +7248,7 @@ public function elabBuiltinHandlerGeneric "
     input list<Absyn.NamedArg> inNamedArg;
     input Boolean inBoolean;
     input Prefix.Prefix inPrefix;
-    input Absyn.Info info;
+    input SourceInfo info;
     output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
@@ -7241,7 +7274,7 @@ public function elabBuiltinHandler "
     input list<Absyn.NamedArg> inNamedArg;
     input Boolean inBoolean;
     input Prefix.Prefix inPrefix;
-    input Absyn.Info info;
+    input SourceInfo info;
     output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
@@ -7337,6 +7370,10 @@ algorithm
       equation
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then elabBuiltinTimeInState;
+    case "sourceInfo"
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+      then elabBuiltinSourceInfo;
   end match;
 end elabBuiltinHandler;
 
@@ -7354,7 +7391,7 @@ public function elabBuiltinHandlerInternal "
     input list<Absyn.NamedArg> inNamedArg;
     input Boolean inBoolean;
     input Prefix.Prefix inPrefix;
-    input Absyn.Info info;
+    input SourceInfo info;
     output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
@@ -7424,7 +7461,7 @@ protected function elabCallBuiltin "This function elaborates on builtin operator
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -7435,7 +7472,7 @@ protected function elabCallBuiltin "This function elaborates on builtin operator
     input list<Absyn.NamedArg> inNamedArgs;
     input Boolean inBoolean;
     input Prefix.Prefix inPrefix;
-    input Absyn.Info info;
+    input SourceInfo info;
     output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
@@ -7520,7 +7557,7 @@ function: elabCall
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Integer numErrorMessages;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -7732,7 +7769,7 @@ public function getOptionalNamedArg " This function is used to \"elaborate\" int
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input DAE.Exp inExp;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
@@ -7775,7 +7812,7 @@ public function elabUntypedCref "This function elaborates a ComponentRef without
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.ComponentRef outComponentRef;
 algorithm
@@ -7932,7 +7969,7 @@ function: elabCallArgs
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -7949,7 +7986,7 @@ We fall back to not evaluating the parameter if we fail since the dimension may 
   input FCore.Graph env;
   input DAE.Properties inProperties;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Properties outProperties;
 algorithm
@@ -8060,7 +8097,7 @@ function: elabCallArgs
   input Util.StatefulBoolean stopElab;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Integer numErrors;
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
@@ -8384,7 +8421,7 @@ public function elabCallArgs3
   input Boolean impl;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 protected
@@ -8489,7 +8526,7 @@ protected function isValidWRTParallelScope
   input Boolean isBuiltin;
   input DAE.FunctionParallelism inFuncParallelism;
   input FCore.Graph inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean isValid;
 algorithm
   isValid := isValidWRTParallelScope_dispatch(inFn, isBuiltin, inFuncParallelism, FGraph.currentScope(inEnv), inInfo);
@@ -8500,7 +8537,7 @@ protected function isValidWRTParallelScope_dispatch
   input Boolean isBuiltin;
   input DAE.FunctionParallelism inFuncParallelism;
   input FCore.Scope inScope;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean isValid;
 algorithm
   isValid := matchcontinue(inFn,isBuiltin,inFuncParallelism,inScope,inInfo)
@@ -8709,7 +8746,7 @@ protected function elabCallArgsMetarecord
   input Util.StatefulBoolean stopElab;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 algorithm
@@ -9009,7 +9046,7 @@ end instantiateImplicitRecordConstructors;
 protected function addDefaultArgs
   "Adds default values to a list of function slots."
   input list<Slot> inSlots;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<DAE.Exp> outArgs;
   output list<Slot> outSlots;
 protected
@@ -9025,7 +9062,7 @@ protected function fillDefaultSlot
   "Fills a function slot with it's default value if it hasn't already been filled."
   input Slot inSlot;
   input array<tuple<Slot, Integer>> inSlotArray;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outArg;
   output Slot outSlot;
 algorithm
@@ -9062,7 +9099,7 @@ end fillDefaultSlot;
 protected function fillDefaultSlot2
   input tuple<Slot, Integer> inSlot;
   input array<tuple<Slot, Integer>> inSlotArray;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outArg;
   output Slot outSlot;
 algorithm
@@ -9106,7 +9143,7 @@ protected function evaluateSlotExp
    with their bindings."
   input DAE.Exp inExp;
   input array<tuple<Slot, Integer>> inSlotArray;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outExp;
 algorithm
   (outExp, _) := Expression.traverseExp(inExp, evaluateSlotExp_traverser, (inSlotArray, inInfo));
@@ -9114,9 +9151,9 @@ end evaluateSlotExp;
 
 protected function evaluateSlotExp_traverser
   input DAE.Exp inExp;
-  input tuple<array<tuple<Slot, Integer>>, Absyn.Info> inTuple;
+  input tuple<array<tuple<Slot, Integer>>, SourceInfo> inTuple;
   output DAE.Exp outExp;
-  output tuple<array<tuple<Slot, Integer>>, Absyn.Info> outTuple;
+  output tuple<array<tuple<Slot, Integer>>, SourceInfo> outTuple;
 algorithm
   (outExp,outTuple) := match (inExp,inTuple)
     local
@@ -9124,7 +9161,7 @@ algorithm
       array<tuple<Slot, Integer>> slots;
       Option<Slot> slot;
       DAE.Exp exp, orig_exp;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Only simple identifiers can be slot names.
     case (orig_exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)), (slots, info))
@@ -9174,7 +9211,7 @@ protected function getOptSlotDefaultExp
    otherwise returns the original expression if it's NONE."
   input Option<Slot> inSlot;
   input array<tuple<Slot, Integer>> inSlots;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input DAE.Exp inOrigExp;
   output DAE.Exp outExp;
 algorithm
@@ -9258,7 +9295,7 @@ protected function vectorizeCall "author: PA
   input DAE.Dimensions inDims;
   input list<Slot> inSlotLst;
   input DAE.Properties inProperties;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -9360,7 +9397,7 @@ protected function vectorizeCallUnknownDimension
   input list<Slot> inSlots;
   input list<DAE.Exp> inAcc;
   input list<DAE.ReductionIterator> found;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<DAE.Exp> oes;
   output list<DAE.ReductionIterator> ofound;
 algorithm
@@ -9611,7 +9648,7 @@ function: elabTypes
   input IsExternalObject isExternalObject;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst1;
   output list<DAE.Const> outTypesConstLst2;
@@ -9681,7 +9718,7 @@ protected function applyArgTypesToFuncType
   input DAE.Type inResultType;
   input FCore.Graph inEnv;
   input Boolean checkTypes; // If not checking types no need to do any of this. In and out.
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<DAE.FuncArg> outParameters;
   output DAE.Type outResultType;
 algorithm
@@ -9988,7 +10025,7 @@ protected function evaluateFuncParamDimAndMatchTypes
   input DAE.FuncArg inParam;
   input FCore.Graph inEnv;
   input FCore.Cache inCache;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.FuncArg outParam;
 algorithm
   outParam := matchcontinue(inSlot, inParam, inEnv, inCache, inInfo)
@@ -10131,7 +10168,7 @@ protected function slotsVectorizable
   confirms that they all are of same dimension,or no dimension, i.e. not
   vectorized. The uniform vectorized array dimension is returned."
   input list<Slot> inSlotLst;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Dimensions outTypesArrayDimLst;
 algorithm
   outTypesArrayDimLst:=
@@ -10171,7 +10208,7 @@ protected function sameSlotsVectorizable
   input DAE.Dimensions inTypesArrayDimLst;
   input String name;
   input DAE.Exp exp;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _:=
   match (inSlotLst,inTypesArrayDimLst, name, exp, info)
@@ -10204,7 +10241,7 @@ protected function sameArraydimLst
   input DAE.Dimensions inTypesArrayDimLst2;
   input String name2;
   input DAE.Exp exp2;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _:=
   matchcontinue (inTypesArrayDimLst1,name1,exp1,inTypesArrayDimLst2,name2,exp2,info)
@@ -10520,7 +10557,7 @@ protected function elabInputArgs
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input DAE.Type funcType "Used to determine which arguments are structural. We will evaluate them later to figure if they are used in dimensions. So we evaluate them here to get a more optimised DAE";
   input Absyn.Path path;
   output FCore.Cache outCache;
@@ -10680,7 +10717,7 @@ protected function fillGraphicsDefaultSlots
   input Boolean inBoolean;
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
@@ -10782,7 +10819,7 @@ protected function evalExternalObjectInput
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.Exp inExp;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
@@ -10832,7 +10869,7 @@ protected function elabPositionalInputArgs
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Path path;
   output FCore.Cache outCache;
   output list<Slot> outSlotLst;
@@ -10895,7 +10932,7 @@ protected function elabPositionalInputArg
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Path path;
   input Integer numErrors;
   output FCore.Cache outCache;
@@ -11006,7 +11043,7 @@ protected function elabNamedInputArgs
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Path path;
   output FCore.Cache outCache;
   output list<Slot> outSlotLst;
@@ -11069,7 +11106,7 @@ protected function elabNamedInputArg
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Path path;
   input Integer numErrors;
   output FCore.Cache outCache;
@@ -11209,7 +11246,7 @@ protected function fillSlot
   input DAE.Dimensions inDims;
   input list<Slot> inSlotLst;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<Slot> outSlotLst := {};
 protected
   String fa1, fa2, exp_str, c_str, pre_str;
@@ -11272,7 +11309,7 @@ function: elabCref
   input Boolean inImplict "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
@@ -11287,7 +11324,7 @@ public function elabCrefNoEval "
   input Boolean inImplict "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
@@ -11307,7 +11344,7 @@ function: elabCref
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
   input Boolean evalCref;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
@@ -11489,7 +11526,7 @@ protected function lookupFunctionsInEnvNoError
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path inPath;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
@@ -11641,7 +11678,7 @@ protected function makeASUBArrayAdressing
   input InstTypes.SplicedExpData splicedExpData;
   input Boolean doVect "if doVect is false, no vectorization and thus no ASUB addressing is performed";
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,splicedExpData,doVect,inPrefix,info)
@@ -11857,7 +11894,7 @@ protected function elabCref2
   input InstTypes.SplicedExpData splicedExpData;
   input Prefix.Prefix inPrefix;
   input Boolean evalCref;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Const outConst;
@@ -12879,7 +12916,7 @@ protected function elabCrefSubs
   input Prefix.Prefix inCrefPrefix "the accumulated cref, required for lookup";
   input Boolean inBoolean;
   input Boolean inHasZeroSizeDim;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.ComponentRef outComponentRef;
   output DAE.Const outConst "The constness of the subscripts. Note: This is not the same as
@@ -12996,7 +13033,7 @@ public function elabSubscripts
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Subscript> outExpSubscriptLst;
   output DAE.Const outConst;
@@ -13035,7 +13072,7 @@ protected function elabSubscriptsDims
   input Boolean impl;
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inCref;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Subscript> outSubs;
   output DAE.Const outConst;
@@ -13053,7 +13090,7 @@ protected function elabSubscriptsDims2
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input DAE.Const inConst;
   input list<DAE.Subscript> inElabSubscripts;
   output FCore.Cache outCache;
@@ -13122,7 +13159,7 @@ protected function elabSubscriptsDims3
   input Option<DAE.Properties> inProperties;
   input Boolean inImpl;
   input Absyn.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Subscript outSubscript;
 algorithm
@@ -13227,7 +13264,7 @@ protected function elabSubscript "This function converts an Absyn.Subscript to a
   input Absyn.Subscript inSubscript;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Subscript outSubscript;
   output DAE.Const outConst;
@@ -13281,7 +13318,7 @@ protected function elabSubscriptType
   input DAE.Type inType;
   input Absyn.Exp inAbsynExp;
   input DAE.Exp inDaeExp;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Subscript outSubscript;
 algorithm
   outSubscript := match(inType, inAbsynExp, inDaeExp, inInfo)
@@ -13416,7 +13453,7 @@ protected function makeIfexp "This function elaborates on the parts of an if exp
   input Boolean inBoolean8;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -13514,7 +13551,7 @@ protected function cevalIfexpIfConstant "author: PA
   input DAE.Type defaultType;
   input Boolean inBoolean6;
   input Option<GlobalScript.SymbolTable> inST;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Type outType;
@@ -13819,7 +13856,7 @@ public function elabCodeExp
   input FCore.Graph env;
   input DAE.CodeType ct;
   input Option<GlobalScript.SymbolTable> st;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (exp,cache,env,ct,st,info)
@@ -13980,7 +14017,7 @@ public function elabArrayDims
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Dimensions outDimensions;
 algorithm
@@ -13998,7 +14035,7 @@ protected function elabArrayDims2
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input DAE.Dimensions inElaboratedDims;
   output FCore.Cache outCache;
   output DAE.Dimensions outDimensions;
@@ -14037,7 +14074,7 @@ protected function elabArrayDim
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Dimension outDimension;
 algorithm
@@ -14144,7 +14181,7 @@ protected function elabArrayDim2
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output Option<DAE.Dimension> outDimension;
 algorithm

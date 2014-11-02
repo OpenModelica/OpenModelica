@@ -1009,21 +1009,19 @@ end Dangerous;
 
 end MetaModelica;
 
-uniontype FileInfo "The Info attribute provides location information for elements and classes."
-  record FILEINFO
+uniontype SourceInfo "The Info attribute provides location information for elements and classes."
+  record SOURCEINFO
     String fileName "fileName where the class is defined in";
     Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries";
     Integer lineNumberStart "lineNumberStart";
     Integer columnNumberStart "columnNumberStart";
     Integer lineNumberEnd "lineNumberEnd";
     Integer columnNumberEnd "columnNumberEnd";
-    TimeStamp buildTimes "Build and edit times";
-  end FILEINFO;
-end FileInfo;
+    Real lastModification "mtime in stat(2), stored as a double for increased precision on 32-bit platforms";
+  end SOURCEINFO;
+end SourceInfo;
 
-uniontype TimeStamp
- record TIMESTAMP
-   Real lastBuildTime "Last Build Time";
-   Real lastEditTime "Last Edit Time; this is the same as mtime in stat(2)";
-  end TIMESTAMP;
-end TimeStamp;
+function sourceInfo
+  output FileInfo info;
+external "builtin";
+end sourceInfo;

@@ -2345,8 +2345,8 @@ protected function removeStateSetEqn
   output Boolean b;
 algorithm
   b := match(inEqn)
-    case BackendDAE.ARRAY_EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
-    case BackendDAE.EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
+    case BackendDAE.ARRAY_EQUATION(source=DAE.SOURCE(info=SOURCEINFO(fileName="stateselection"))) then false;
+    case BackendDAE.EQUATION(source=DAE.SOURCE(info=SOURCEINFO(fileName="stateselection"))) then false;
     else true;
   end match;
 end removeStateSetEqn;

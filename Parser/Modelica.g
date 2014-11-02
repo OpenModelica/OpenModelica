@@ -96,7 +96,7 @@ goto rule ## func ## Ex; }}
   #define token_to_scon(tok) mmc_mk_scon((char*)tok->getText(tok)->chars)
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
 
-  #define PARSER_INFO(start) ((void*) Absyn__INFO(ModelicaParser_filename_OMC, mmc_mk_bcon(ModelicaParser_readonly), mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
+  #define PARSER_INFO(start) ((void*) SourceInfo__SOURCEINFO(ModelicaParser_filename_OMC, mmc_mk_bcon(ModelicaParser_readonly), mmc_mk_icon(start->line), mmc_mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mmc_mk_icon(LT(1)->line), mmc_mk_icon(LT(1)->charPosition+1), ModelicaParser_timeStamp))
   typedef struct fileinfo_struct {
     int line1;
     int line2;
@@ -121,7 +121,7 @@ stored_definition returns [void* ast]
   cl=class_definition_list?
   EOF
     {
-      ast = Absyn__PROGRAM(or_nil(cl), within ? within : Absyn__TOP, ModelicaParser_timeStamp);
+      ast = Absyn__PROGRAM(or_nil(cl), within ? within : Absyn__TOP);
     }
   ;
 
@@ -545,7 +545,7 @@ type_specifier returns [void* ast]
   ;
 
 type_specifier_list returns [void* ast]
-@init { np1.ast; np2 = 0; } :
+@init { np2 = 0; } :
   np1=type_specifier ( COMMA np2=type_specifier_list )? { ast = mmc_mk_cons($np1.ast,or_nil(np2)); }
   ;
 
@@ -1612,7 +1612,7 @@ code_algorithm_clause returns [void* ast]
 /* End Code quotation mechanism */
 
 
-top_algorithm returns [void* ast, int isExp]
+top_algorithm returns [void* ast]
 @init{ e.ast = 0; a = 0; cmt = 0; } :
   ( (expression[metamodelica_enabled()] (SEMICOLON|EOF))=> e=expression[metamodelica_enabled()]
   | ( a=top_assign_clause_a
@@ -1626,11 +1626,9 @@ top_algorithm returns [void* ast, int isExp]
   )
     {
       if (!e.ast) {
-        $ast = Absyn__ALGORITHMITEM(a, mmc_mk_some_or_none(cmt), PARSER_INFO($start));
-        $isExp = 0;
+        $ast = GlobalScript__IALG(Absyn__ALGORITHMITEM(a, mmc_mk_some_or_none(cmt), PARSER_INFO($start)));
       } else {
-        $ast = e.ast;
-        $isExp = 1;
+        $ast = GlobalScript__IEXP(e.ast, PARSER_INFO($start));
       }
     }
   ;
@@ -1654,13 +1652,10 @@ interactive_stmt returns [void* ast]
   ;
 
 interactive_stmt_list [int *last_sc] returns [void* ast]
-@init { a.ast = 0; a.isExp = 0; ss = 0; $ast = 0; } :
+@init { a.ast = 0; $ast = 0; void *val; } :
   a=top_algorithm ( (SEMICOLON ss=interactive_stmt_list[last_sc]) | (SEMICOLON { *last_sc = 1; }) | /* empty */ )
     {
-      if (!a.isExp)
-        ast = mmc_mk_cons(GlobalScript__IALG(a.ast), or_nil(ss));
-      else
-        ast = mmc_mk_cons(GlobalScript__IEXP(a.ast), or_nil(ss));
+      $ast = mmc_mk_cons(a.ast, or_nil(ss));
     }
   ;
 

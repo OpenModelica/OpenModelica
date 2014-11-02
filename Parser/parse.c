@@ -373,7 +373,7 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   members.flags = flags;
   members.readonly = 0;
   members.first_comment = 0;
-  members.timestamp = Absyn__TIMESTAMP(mmc_mk_rcon(0),mmc_mk_rcon((double)current_time));
+  members.timestamp = mmc_mk_rcon((double)current_time);
 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", members.filename_C); fflush(stderr); }
 
@@ -422,7 +422,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
    */
   struct stat st;
   stat(members.filename_C, &st);
-  members.timestamp = Absyn__TIMESTAMP(mmc_mk_rcon(0),mmc_mk_rcon((double)st.st_mtime));
+  members.timestamp = mmc_mk_rcon((double)st.st_mtime);
   if (0 == st.st_size) return parseString("",members.filename_C,ModelicaParser_flags, langStd, runningTestsuite);
 
   fName  = (pANTLR3_UINT8)fileName;

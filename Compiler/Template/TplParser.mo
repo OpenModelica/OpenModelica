@@ -92,8 +92,7 @@ end getPosition;
 
 
 type LineColumnNumber = tuple<Integer,Integer>;
-type SourceInfo = TplAbsyn.SourceInfo;
-constant SourceInfo dummySourceInfo = TplAbsyn.dummySourceInfo;// Absyn.INFO("*noname*", false, 0, 0, 0, 0, Absyn.dummyTimeStamp);
+constant SourceInfo dummySourceInfo = TplAbsyn.dummySourceInfo;
 
 public function captureStartPosition
   input list<String> inChars;
@@ -111,7 +110,7 @@ end captureStartPosition;
 
 
 //TODO: add correct TIME_STAMP
-public function sourceInfo
+public function tplSourceInfo
   input LineColumnNumber inStartLineColumnNumber;
   input list<String>     inEndChars;
   input LineInfo         inEndLineInfo;
@@ -128,10 +127,10 @@ algorithm
     case ( (startL, startC), _, endlinfo as LINE_INFO(parseInfo = PARSE_INFO(fileName = fileName)) )
       equation
         (endL, endC) = getPosition(inEndChars, endlinfo);
-        outSourceInfo = Absyn.INFO(fileName, false, startL, startC, endL, endC, Absyn.dummyTimeStamp);
+        outSourceInfo = SOURCEINFO(fileName, false, startL, startC, endL, endC, 0.0);
       then outSourceInfo;
   end match;
-end sourceInfo;
+end tplSourceInfo;
 
 
 public function startPositionFromExp
@@ -143,7 +142,7 @@ algorithm
   outLineColumnNumber :=  match inExpression
     local
       Integer startL, startC;
-   case ((_, Absyn.INFO(lineNumberStart = startL, columnNumberStart = startC)))
+   case ((_, SOURCEINFO(lineNumberStart = startL, columnNumberStart = startC)))
      then ((startL, startC));
   end match;
 end startPositionFromExp;
@@ -2871,7 +2870,7 @@ algorithm
    case (_, _, exp, {})  then exp;
    case (_, _, exp, opts as (_::_))
      equation
-       sinfo = sourceInfo(startPositionFromExp(exp), inEndChars, inEndLineInfo);
+       sinfo = tplSourceInfo(startPositionFromExp(exp), inEndChars, inEndLineInfo);
      then ((TplAbsyn.ESCAPED(exp, opts), sinfo));
   end match;
 end makeEscapedExp;
@@ -3033,7 +3032,7 @@ algorithm
         (chars, linfo) = expectChar(chars, linfo, ">");
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
-        sinfo = sourceInfo(startPositionFromExp(headExp), chars, linfo);
+        sinfo = tplSourceInfo(startPositionFromExp(headExp), chars, linfo);
       then (chars, linfo, (TplAbsyn.MAP(headExp, mexp, exp, idxNmOpt), sinfo), outIndexOffsetOption);
 
     case (chars, linfo, headExp, _, _)
@@ -3163,7 +3162,7 @@ algorithm
         (chars, linfo, lexp) = letExp(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 3), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 3), chars, linfo);
         //(chars, linfo, expLst) = concatLetExp_rest(chars, linfo, lesc, resc);
       then (chars, linfo, (TplAbsyn.LET(lexp, exp), sinfo));
 
@@ -3274,7 +3273,7 @@ algorithm
         (chars, linfo) = interleave(startChars, startLInfo);
         (chars, id) = identifier(chars);
         //capture only ident span for the letExp, the exp will have its own span
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         ("=":: chars) = chars;
         (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"b","u","f","f","e","r"}, false);
@@ -3286,7 +3285,7 @@ algorithm
       equation
         (chars, linfo) = interleave(startChars, startLInfo);
         (chars, id) = identifier(chars);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         ("+"::"=":: chars) = chars;
         (chars, linfo) = interleave(chars, linfo);
@@ -3308,7 +3307,7 @@ algorithm
         (chars, linfo, name) = pathIdentNoOpt(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, TplAbsyn.FUN_CALL(name, args)) = funCall(chars, linfo, name, lesc, resc);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
       then (chars, linfo, (TplAbsyn.NORET_CALL(name, args), sinfo));
 
   case ("("::")":: startChars, startLInfo, _, _)
@@ -3324,7 +3323,7 @@ algorithm
   case (startChars, startLInfo, lesc, resc)
       equation
         (chars, linfo, id) = identifierNoOpt(startChars, startLInfo);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "=");
         (chars, linfo) = interleave(chars, linfo);
@@ -3489,7 +3488,7 @@ algorithm
         (chars, linfo, exp) = expression_base(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expLst) = concatExp_rest(chars, linfo, lesc, resc);
-        sinfo = sourceInfo(startPositionFromExp(bexp), chars, linfo);
+        sinfo = tplSourceInfo(startPositionFromExp(bexp), chars, linfo);
       then (chars, linfo, (TplAbsyn.TEMPLATE(bexp::exp::expLst, "+", ""), sinfo) );
 
     case (chars, linfo, bexp, _, _)
@@ -3592,13 +3591,13 @@ algorithm
         //startLCN = captureStartPosition(chars, linfo, 0);
         (chars, linfo, strRevList) = stringConstant(startChars, startLInfo);
         st = makeStrTokFromRevStrList(strRevList);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
       then (chars, linfo, (TplAbsyn.STR_TOKEN(st), sinfo));
 
     case (startChars, startLInfo, _, _)
       equation
         (chars, linfo, str, ts) = literalConstant(startChars, startLInfo);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
       then (chars, linfo, (TplAbsyn.LITERAL(str, ts), sinfo));
 
    case (chars, linfo, lesc, resc)
@@ -3610,7 +3609,7 @@ algorithm
       equation
         (chars, linfo) = interleave(startChars, startLInfo);
         ("}" :: chars) = chars;
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
       then (chars, linfo, (TplAbsyn.MAP_ARG_LIST({}), sinfo));
 
    case ("{" :: startChars, startLInfo, lesc, resc)
@@ -3620,7 +3619,7 @@ algorithm
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expLst) = expressionList_rest(chars, linfo, lesc, resc);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "}");
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
       then (chars, linfo, (TplAbsyn.MAP_ARG_LIST(exp::expLst), sinfo));
 
    case ("(" :: startChars, startLInfo, lesc, resc)
@@ -3635,7 +3634,7 @@ algorithm
       equation
         (chars, linfo) = interleave(startChars, startLInfo);
         (chars, linfo, id) = identifierNoOpt(chars, linfo);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
       then (chars, linfo, (TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT(id)), sinfo));
 
    case (startChars, startLInfo, lesc, resc)
@@ -3643,7 +3642,7 @@ algorithm
         (chars, linfo, name) = pathIdent(startChars, startLInfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expB) = boundValueOrFunCall(chars, linfo, name, lesc, resc);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 0), chars, linfo);
       then (chars, linfo, (expB, sinfo));
 
   end matchcontinue;
@@ -4359,7 +4358,7 @@ algorithm
         //single quotes has no special treatment of indent and new lines
         //i.e., it takes O as the base indent, and it counts every new line
         (chars, linfo, expB) = templateBody(startChars, startLInfo, lesc, resc, true, {},{},0);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 1), chars, linfo);
       then (chars, linfo, (expB, sinfo));
 
    case ("<"::"<":: startChars, startLInfo as LINE_INFO(startOfLineChars = solChars), lesc, resc)
@@ -4370,7 +4369,7 @@ algorithm
         (chars, linfo) = takeSpaceAndNewLine(startChars, startLInfo);
         //(chars, linfo) = templStripFirstNewLine(chars, linfo);
         (chars, linfo, expB) = templateBody(chars, linfo, lesc, resc, false, {}, {}, baseInd);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
       then (chars, linfo, (expB, sinfo));
 
    //special treatment when some non-space is right after <<
@@ -4384,7 +4383,7 @@ algorithm
         //correct the indent of the line right after << to baseInd
         lineInd = lineInd + baseInd;
         (chars, linfo, expB) = restOfTemplLine(chars, startLInfo, lesc, resc, false, {}, {}, baseInd, lineInd, {});
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
       then (chars, linfo, (expB, sinfo));
   end matchcontinue;
 end templateExp;
@@ -5344,7 +5343,7 @@ algorithm
         (chars, linfo, trueBr) = thenBranch(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, elseBrOpt) = elseBranch(chars, linfo, lesc, resc);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 2), chars, linfo);
       then (chars, linfo, (TplAbsyn.CONDITION(isNot, lhsExp, rhsMExpOpt, trueBr, elseBrOpt), sinfo));
 
   end match;
@@ -5586,7 +5585,7 @@ algorithm
         mcaseLst = listAppend(mcaseLst, elseLst);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = matchEndMatch(chars, linfo);
-        sinfo = sourceInfo(captureStartPosition(startChars, startLInfo, 5), chars, linfo);
+        sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 5), chars, linfo);
       then (chars, linfo, (TplAbsyn.MATCH(exp, mcaseLst), sinfo));
 
    //implicit without 'match' keyword -> match it

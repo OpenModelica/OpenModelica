@@ -67,7 +67,7 @@ type Graph = FCore.Graph;
 type Extra = FCore.Extra;
 type Visited = FCore.Visited;
 type Import = FCore.Import;
-type Msg = Option<Absyn.Info>;
+type Msg = Option<SourceInfo>;
 
 public function path
 "@author: adrpo

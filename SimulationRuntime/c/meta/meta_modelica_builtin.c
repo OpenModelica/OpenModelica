@@ -729,3 +729,10 @@ metamodelica_string referenceDebugString(modelica_metatype fnptr)
   return mmc_mk_scon("Unknown symbol");
 }
 #endif
+
+const char* SourceInfo_SOURCEINFO__desc__fields[7] = {"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","lastEditTime"};
+struct record_description SourceInfo_SOURCEINFO__desc = {
+  "SourceInfo_SOURCEINFO",
+  "SourceInfo.SOURCEINFO",
+  SourceInfo_SOURCEINFO__desc__fields
+};

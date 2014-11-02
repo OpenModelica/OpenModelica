@@ -2077,7 +2077,7 @@ algorithm
       Boolean initialCall;
       Integer index;
       Boolean b,b1,b2,b3;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+      list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
 
     case ({},_,_,_,_) then (listReverse(inAcc),inBAcc);
 

@@ -1133,7 +1133,7 @@ algorithm
       DAE.ElementSource source;
       DAE.Else algElse;
       tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>> extraArg;
-      list<tuple<DAE.ComponentRef, Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+      list<tuple<DAE.ComponentRef, SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
 

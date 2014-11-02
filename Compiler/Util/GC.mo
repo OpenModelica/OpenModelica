@@ -31,12 +31,6 @@
 
 encapsulated package GC
 
-function status
-  output Real used;
-  output Real allocated;
-  external "C" System_getGCStatus(used,allocated) annotation(Library = "omcruntime");
-end status;
-
 function gcollect
 external "C" GC_gcollect() annotation(Library = {"gc"});
 end gcollect;

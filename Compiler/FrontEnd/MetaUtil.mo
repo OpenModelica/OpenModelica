@@ -45,6 +45,7 @@ public import SCode;
 public import SCodeUtil;
 
 protected import Config;
+protected import Dump;
 protected import Error;
 protected import Flags;
 protected import List;
@@ -183,16 +184,15 @@ algorithm
     local
       list<Absyn.Class> classes, metaClassesFlat;
       list<list<Absyn.Class>> metaClasses;
-      Absyn.Within w;
-      Absyn.TimeStamp ts;
+      Absyn.Program p;
 
-    case (Absyn.PROGRAM(classes = classes,within_ = w,globalBuildTimes=ts)) guard Config.acceptMetaModelicaGrammar()
+    case p as Absyn.PROGRAM() guard Config.acceptMetaModelicaGrammar()
       equation
-        metaClasses = List.map(classes, createMetaClasses);
+        metaClasses = List.map(p.classes, createMetaClasses);
         metaClassesFlat = List.flatten(metaClasses);
-        classes = List.map(classes, createMetaClassesFromPackage);
-        classes = listAppend(classes, metaClassesFlat);
-      then Absyn.PROGRAM(classes,w,ts);
+        classes = List.map(p.classes, createMetaClassesFromPackage);
+        p.classes = listAppend(classes, metaClassesFlat);
+      then p;
     else program;
   end match;
 end createMetaClassesInProgram;
@@ -209,7 +209,7 @@ algorithm
       Boolean     encapsulatedPrefix;
       Absyn.Restriction restriction;
       Absyn.ClassDef    body;
-      Absyn.Info        info;
+      SourceInfo        info;
       list<Absyn.ClassPart> classParts;
       Option<String>  comment;
       list<String> typeVars;
@@ -257,7 +257,7 @@ protected function createMetaClassesFromElementItem
 algorithm
   out := matchcontinue(elementItem)
     local
-      Absyn.Info info;
+      SourceInfo info;
       Boolean replaceable_;
       Absyn.Class class_, cl2;
       list<Absyn.Class> metaClasses, classes;
@@ -283,7 +283,7 @@ algorithm
       Boolean finalPrefix;
       Option<Absyn.RedeclareKeywords> redeclareKeywords;
       Absyn.InnerOuter innerOuter;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constrainClass;
       Boolean replaceable_;
     case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,info=info,constrainClass=constrainClass)),_)
@@ -310,7 +310,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Absyn.ClassDef d;
-      Absyn.Info file_info;
+      SourceInfo file_info;
 
     case(c as Absyn.CLASS(name = n,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = r,
          body = Absyn.PARTS(classParts = {Absyn.PUBLIC(contents = els)},comment = _),info = _))
@@ -424,7 +424,7 @@ algorithm
       Boolean e;
       Absyn.Restriction res;
       Absyn.ClassDef b;
-      Absyn.Info i;
+      SourceInfo i;
 
     case(Absyn.CLASS(n,p,f,e,res,b,i),_,_,_)
       equation
@@ -468,7 +468,7 @@ algorithm
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter i;
       Absyn.ElementSpec spec;
-      Absyn.Info inf;
+      SourceInfo inf;
       Option<Absyn.ConstrainClass> con;
     case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, specification=spec, info=inf, constrainClass=con),_,_,_)
       equation

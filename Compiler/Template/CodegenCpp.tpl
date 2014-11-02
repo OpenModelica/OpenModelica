@@ -10098,7 +10098,7 @@ template expTypeFromExpArray(Exp exp)
   expTypeFromExpFlag(exp, 6)
 end expTypeFromExpArray;
 
-template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, Info info,SimCode simCode,Boolean useFlatArrayNotation)
+template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, builtin.SourceInfo info,SimCode simCode,Boolean useFlatArrayNotation)
 ::=
   let &preExpCond = buffer ""
   let &preExpMsg = buffer ""
@@ -10126,10 +10126,10 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
 
 end assertCommon;
 
-template infoArgs(Info info)
+template infoArgs(builtin.SourceInfo info)
 ::=
   match info
-  case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%isReadOnly%>'
+  case SOURCEINFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%isReadOnly%>'
 end infoArgs;
 
 
@@ -11031,7 +11031,7 @@ end algStmtTupleAssign;
 
 
 
-template error(Absyn.Info srcInfo, String errMessage)
+template error(builtin.SourceInfo srcInfo, String errMessage)
 "Example source template error reporting template to be used together with the sourceInfo() magic function.
 Usage: error(sourceInfo(), <<message>>) "
 ::=
@@ -12788,10 +12788,10 @@ case STMT_TERMINATE(__) then
   >>
 end algStmtTerminate;
 
-template modelicaLine(Info info)
+template modelicaLine(builtin.SourceInfo info)
 ::=
   match info
-  case INFO(columnNumberStart=0) then "/* Dummy Line */"
+  case SOURCEINFO(columnNumberStart=0) then "/* Dummy Line */"
   else <<
   <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/'%>
   >>

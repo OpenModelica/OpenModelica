@@ -1724,7 +1724,7 @@ end traverseEquationToScalarResidualForm;
 public function equationInfo "
   Retrieve the line number information from a BackendDAE.BackendDAEequation"
   input BackendDAE.Equation eq;
-  output Absyn.Info info;
+  output SourceInfo info;
 algorithm
   info := DAEUtil.getElementSourceFileInfo(equationSource(eq));
 end equationInfo;

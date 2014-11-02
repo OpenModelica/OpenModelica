@@ -139,7 +139,7 @@ protected function elaborateNonExpandable
   output DisjointSets outSets;
 protected
   Connector conn1, conn2;
-  Absyn.Info info;
+  SourceInfo info;
   Boolean ipp;
 algorithm
   NFConnect2.CONNECTION(lhs = conn1, rhs = conn2, info = info) := inConnection;
@@ -155,7 +155,7 @@ end elaborateNonExpandable;
 protected function elaborateNonExpandable2
   input Connector inUndeclared;
   input Connector inDeclared;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input DisjointSets inSets;
   output Connector outNewConnector;
   output DisjointSets outSets;
@@ -407,7 +407,7 @@ algorithm
   (outConnection, outSets) := match(inConnection, inSets)
     local
       Connector lhs, rhs;
-      Absyn.Info info;
+      SourceInfo info;
       DisjointSets sets;
 
     case (NFConnect2.CONNECTION(lhs, rhs, info), sets)

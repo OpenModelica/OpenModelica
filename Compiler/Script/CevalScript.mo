@@ -740,7 +740,7 @@ algorithm
     case ((path,strings)::modelsToLoad,_,p,_,_,_)
       equation
         b = checkModelLoaded((path,strings),p,forceLoad,NONE());
-        pnew = if not b then ClassLoader.loadClass(path, strings, modelicaPath, NONE()) else Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp);
+        pnew = if not b then ClassLoader.loadClass(path, strings, modelicaPath, NONE()) else Absyn.PROGRAM({},Absyn.TOP());
         className = Absyn.pathString(path);
         version = if not b then getPackageVersion(path, pnew) else "";
         Error.assertionOrAddSourceMessage(b or not notifyLoad or forceLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
@@ -953,7 +953,6 @@ algorithm
       list<Boolean> blst;
       list<Error.TotalMessage> messages;
       UnitAbsyn.Unit u1,u2;
-      Absyn.TimeStamp ts;
       Real stoptime,starttime,tol,stepsize,interval;
       String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix;
       list<String> interfaceType;
@@ -1138,7 +1137,7 @@ algorithm
 
     case (cache,_,"clearProgram",{},GlobalScript.SYMBOLTABLE(lstVarVal=iv),_)
       equation
-        newst = GlobalScript.SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
+        newst = GlobalScript.SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP()),
                  NONE(),
                  {},
                  iv,
@@ -1208,7 +1207,7 @@ algorithm
         absynClass = Interactive.getPathedClassInProgram(className, p);
         absynClass = if b1 then Absyn.getFunctionInterface(absynClass) else absynClass;
         absynClass = if b2 then Absyn.getShortClass(absynClass) else absynClass;
-        p = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
+        p = Absyn.PROGRAM({absynClass},Absyn.TOP());
         cl = SCodeUtil.getElementWithPathCheckBuiltin(scodeP, className);
         str = match name
           case "Absyn" then Dump.unparseStr(p, false);
@@ -1242,15 +1241,13 @@ algorithm
       then (cache, Values.BOOL(false), st);
 
     case (cache,_, "rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))},
-       (st as GlobalScript.SYMBOLTABLE(
-            p as Absyn.PROGRAM(globalBuildTimes=ts),instClsLst = ic, lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),_)
+       (st as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(),instClsLst = ic, lstVarVal = iv, compiledFunctions = cf, loadedFiles = lf)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         classes = {absynClass};
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
         within_ = Interactive.buildWithin(classpath);
-        pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_,ts), (Absyn.PROGRAM(classes, within_,ts)));
+        pnew = BlockCallRewrite.rewriteBlockCall(Absyn.PROGRAM({absynClass}, within_), Absyn.PROGRAM(classes, within_));
         pnew = Interactive.updateProgram(pnew, p);
         newst = GlobalScriptUtil.setSymbolTableAST(st, pnew);
       then
@@ -1981,8 +1978,10 @@ algorithm
     case (cache,_,"readFile",{Values.STRING(str)},st,_)
       equation
         str_1 = System.readFile(str);
-      then
-        (cache,Values.STRING(str_1),st);
+      then (cache,Values.STRING(str_1),st);
+
+    case (cache,_,"readFile",_,st,_)
+      then (cache,Values.STRING(""),st);
 
     case (cache,_,"writeFile",{Values.STRING(str),Values.STRING(str1),Values.BOOL(false)},st,_)
       equation
@@ -2316,7 +2315,7 @@ algorithm
 
     case (cache,_,"reloadClass",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(encoding)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
-        Absyn.CLASS(info=Absyn.INFO(fileName=filename,buildTimes=Absyn.TIMESTAMP(lastEditTime=r2))) = Interactive.getPathedClassInProgram(classpath, p);
+        Absyn.CLASS(info=SOURCEINFO(fileName=filename,lastModification=r2)) = Interactive.getPathedClassInProgram(classpath, p);
         (true,_,r1) = System.stat(filename);
         b = realEq(r1,r2);
         st = if not b then reloadClass(filename, encoding, st) else st;
@@ -2350,7 +2349,7 @@ algorithm
     case (cache,_,"saveModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true) ;
+        str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP()),true);
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
@@ -2389,7 +2388,6 @@ algorithm
         (st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
-        _ = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true);
         Error.addMessage(Error.WRITING_FILE_ERROR, {name});
       then
         (cache,Values.BOOL(false),st);
@@ -2441,7 +2439,7 @@ algorithm
 
     case (cache,_,"getTimeStamp",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-        Absyn.CLASS(info=Absyn.INFO(buildTimes=Absyn.TIMESTAMP(lastEditTime=r))) = Interactive.getPathedClassInProgram(classpath,p);
+        Absyn.CLASS(info=SOURCEINFO(lastModification=r)) = Interactive.getPathedClassInProgram(classpath,p);
         str = System.ctime(r);
       then (cache,Values.TUPLE({Values.REAL(r),Values.STRING(str)}),st);
 
@@ -2579,7 +2577,7 @@ algorithm
     case (cache,_,"getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         (absynClass as Absyn.CLASS(restriction = _)) = Interactive.getPathedClassInProgram(classpath, p);
-        uses = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp));
+        uses = Interactive.getUsesAnnotation(Absyn.PROGRAM({absynClass},Absyn.TOP()));
         v = ValuesUtil.makeArray(List.map(uses,makeUsesArray));
       then
         (cache,v,st);
@@ -3615,7 +3613,7 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
+        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP())),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
         print("Load deps:      " + realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
@@ -3658,7 +3656,7 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
+        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP())),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
 
         //System.stopTimer();
         //print("\nExists+Dependency: " + realString(System.getTimerIntervalTime()));
@@ -3883,19 +3881,18 @@ algorithm
       Absyn.Msg msg;
       FCore.Cache cache;
       list<GlobalScript.LoadedFile> lf;
-      Absyn.TimeStamp ts;
       String errorMsg,retStr,s1;
       Absyn.Class cls, refactoredClass;
       Absyn.Within within_;
       Absyn.Program p1;
       Boolean strEmpty;
 
-    case (cache,_,_,(GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),_,ic,iv,cf,lf)),_)
+    case (cache,_,_,(GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(),_,ic,iv,cf,lf)),_)
       equation
         cls = Interactive.getPathedClassInProgram(className, p);
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
         within_ = Interactive.buildWithin(className);
-        p1 = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_,ts), p);
+        p1 = Interactive.updateProgram(Absyn.PROGRAM({refactoredClass}, within_), p);
         s1 = Absyn.pathString(className);
         retStr=stringAppendList({"Translation of ",s1," successful.\n"});
       then
@@ -4023,7 +4020,6 @@ algorithm
       Absyn.Program p;
       list<Absyn.Class>  cls;
       Absyn.Within       w;
-      Absyn.TimeStamp    gbt;
       String name;
       Absyn.Class parentClass;
 
@@ -4033,16 +4029,13 @@ algorithm
       then
         p;
 
-    case (Absyn.IDENT(name), _, Absyn.PROGRAM(cls, w, gbt))
+    case (Absyn.IDENT(name), _, p as Absyn.PROGRAM())
       equation
-        cls = moveClassInList(name, cls, inDirection);
-        p = Absyn.PROGRAM(cls, w, gbt);
-      then
-        p;
+        p.classes = moveClassInList(name, p.classes, inDirection);
+      then p;
 
     case (Absyn.QUALIFIED(_, _), _, p)
       equation
-        _ = Absyn.pathLastIdent(inClassName);
         parent = Absyn.stripLast(inClassName);
         _ = Interactive.getPathedClassInProgram(parent, p);
       then
@@ -4060,8 +4053,7 @@ algorithm
   outCls := inCls;
 end moveClassInList;
 
-protected function buildModel " author: x02lucpo
- translates and builds the model by running compiler script on the generated makefile"
+protected function buildModel "translates and builds the model by running compiler script on the generated makefile"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input list<Values.Value> inValues;
@@ -4095,39 +4087,6 @@ algorithm
       Absyn.Msg msg;
       FCore.Cache cache;
       Boolean existFile;
-      Absyn.TimeStamp ts;
-
-    // do not recompile.
-    case (cache,_,vals,
-          (st as GlobalScript.SYMBOLTABLE(ast = p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)))),_)
-      // If we already have an up-to-date version of the binary file, we don't need to recompile.
-      equation
-        // buildModel expects these arguments:
-        // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
-        // options, outputFormat, variableFilter, cflags, simflags
-        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
-        (Values.STRING(method_str),vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
-        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
-        (Values.STRING(outputFormat_str),vals) = getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (11 arg) from the buildModel arguments");
-        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
-        //cdef = Interactive.getPathedClassInProgram(classname,p);
-        Error.clearMessages() "Clear messages";
-        // Only compile if change occured after last build.
-        (Absyn.CLASS(info = Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_)))) = Interactive.getPathedClassInProgram(classname,p);
-        compileDir = System.pwd() + System.pathDelimiter();
-        true = build > edit;
-        init_filename = stringAppendList({filenameprefix,"_init.xml"});
-        exeFile = filenameprefix + System.getExeExt();
-        existFile = System.regularFileExists(exeFile);
-        true = existFile;
-    then (cache,st,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,zeroAdditionalSimulationResultValues);
 
     // compile the model
     case (cache,env,vals,st,msg)
@@ -4539,42 +4498,6 @@ algorithm
       then s;
   end matchcontinue;
 end selectIfNotEmpty;
-
-protected function setBuildTime "sets the build time of a class.
- This is done using traverseClasses and not using updateProgram,
- because updateProgram updates edit times"
-  input Absyn.Program p;
-  input Absyn.Path path;
-  output Absyn.Program outP;
-algorithm
-  ((outP,_,_)) := GlobalScriptUtil.traverseClasses(p,NONE(), setBuildTimeVisitor, path, false /* Skip protected */);
-end setBuildTime;
-
-protected function setBuildTimeVisitor "Visitor function to set build time"
-  input tuple<Absyn.Class, Option<Absyn.Path>,Absyn.Path> inTpl;
-  output tuple<Absyn.Class, Option<Absyn.Path>,Absyn.Path> outTpl;
-algorithm
-  outTpl := matchcontinue(inTpl)
-  local String name; Boolean p,f,e,ro; Absyn.Restriction r; Absyn.ClassDef cdef;
-    String fname; Integer i1,i2,i3,i4;
-    Absyn.Path path2,path;
-    Absyn.TimeStamp ts;
-
-    case((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),SOME(path2),path))
-      equation
-        true = Absyn.pathEqual(Absyn.joinPaths(path2,Absyn.IDENT(name)),path);
-        ts =Absyn.setTimeStampBool(ts,false);
-      then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),SOME(path),path));
-    case _ then inTpl;
-
-    case((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE(),path))
-      equation
-        true = Absyn.pathEqual(Absyn.IDENT(name),path);
-        ts =Absyn.setTimeStampBool(ts,false);
-      then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE(),path));
-    case _ then inTpl;
-  end matchcontinue;
-end setBuildTimeVisitor;
 
 protected function getWithinStatement "To get a correct Within-path with unknown input-path."
   input Absyn.Path ip;
@@ -5118,10 +5041,9 @@ algorithm
       Absyn.Within win1;
       FCore.Cache cache;
       SimCode.SimulationSettings simSettings;
-      Absyn.TimeStamp ts;
 
     // normal call
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),_,_,_,_, _,Values.STRING(filenameprefix),_},(st as GlobalScript.SYMBOLTABLE(ast = p  as Absyn.PROGRAM(globalBuildTimes=_))),msg)
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),_,_,_,_, _,Values.STRING(filenameprefix),_},(st as GlobalScript.SYMBOLTABLE(ast = p  as Absyn.PROGRAM())),msg)
       equation
         _ = Interactive.getPathedClassInProgram(classname,p);
         Error.clearMessages() "Clear messages";
@@ -5315,7 +5237,7 @@ algorithm
       list<SCode.Element> sp;
       String file,nameHeader,str;
       Integer n;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Element cl;
 
     case (cache,env,_,{},_) then (cache,env);
@@ -5324,7 +5246,7 @@ algorithm
         (cache,env) = generateFunctions2(cache,env,p,cl,name,elementLst,info,cleanCache);
         (cache,env) = generateFunctions(cache,env,p,sp,cleanCache);
       then (cache,env);
-    case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as Absyn.INFO(fileName=file))::_,_)
+    case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as SOURCEINFO(fileName=file))::_,_)
       equation
         (n,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
         Error.assertion(n > 0, "Not an encapsulated class (required for separate compilation): " + name, info);
@@ -5339,7 +5261,7 @@ protected function generateFunctions2
   input SCode.Element cl;
   input String name;
   input list<SCode.Element> elementLst;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Boolean cleanCache;
   output FCore.Cache cache;
   output FCore.Graph env;
@@ -5355,7 +5277,7 @@ algorithm
       String file,nameHeader,str;
       Integer n;
 
-    case (cache,env,_,_,_,_,Absyn.INFO(fileName=file),_)
+    case (cache,env,_,_,_,_,SOURCEINFO(fileName=file),_)
       equation
         (1,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
       then (cache,env);
@@ -5450,7 +5372,7 @@ algorithm
     case ("modelica://",name,_,mp,_)
       equation
         (name::names) = System.strtok(name,".");
-        Absyn.CLASS(info=Absyn.INFO(fileName=fileName)) = Interactive.getPathedClassInProgram(Absyn.IDENT(name),program);
+        Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) = Interactive.getPathedClassInProgram(Absyn.IDENT(name),program);
         mp = System.dirname(fileName);
         bp = findModelicaPath2(mp,names,"",true);
       then bp;
@@ -5566,7 +5488,7 @@ algorithm
       Integer id;
       Error.Severity severity;
       Error.MessageType ty;
-      Absyn.Info info;
+      SourceInfo info;
     case Error.TOTALMESSAGE(Error.MESSAGE(id,ty,severity,message),info)
       equation
         msg_str = Util.translateContent(message);
@@ -5580,7 +5502,7 @@ algorithm
 end errorToValue;
 
 protected function infoToValue
-  input Absyn.Info info;
+  input SourceInfo info;
   output Values.Value val;
 algorithm
   val := match info
@@ -5590,7 +5512,7 @@ algorithm
       Integer ls,cs,le,ce;
       String filename;
       Boolean readonly;
-    case Absyn.INFO(filename,readonly,ls,cs,le,ce,_)
+    case SOURCEINFO(filename,readonly,ls,cs,le,ce,_)
       equation
         infopath = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Scripting",Absyn.IDENT("SourceInfo"))));
         values = {Values.STRING(filename),Values.BOOL(readonly),Values.INTEGER(ls),Values.INTEGER(cs),Values.INTEGER(le),Values.INTEGER(ce)};
@@ -5956,7 +5878,7 @@ algorithm
       String str;
       Absyn.Algorithm alg;
       Option<Absyn.Comment> cmt;
-      Absyn.Info inf;
+      SourceInfo inf;
       list<Absyn.AlgorithmItem> xs;
       Integer newn,n;
     case ((Absyn.ALGORITHMITEM(algorithm_ = alg, comment = cmt, info = inf) :: _), 1)
@@ -6916,13 +6838,12 @@ algorithm
       list<GlobalScript.Variable> c;
       list<GlobalScript.CompiledCFunction> cf;
       list<GlobalScript.LoadedFile> lf;
-      Absyn.TimeStamp ts;
       String funcstr,f,fileName;
       list<GlobalScript.CompiledCFunction> newCF;
       String name;
       Boolean ppref, fpref, epref;
       Absyn.ClassDef    body;
-      Absyn.Info        info;
+      SourceInfo        info;
       Absyn.Within      w;
       list<Absyn.Path> functionDependencies;
       SCode.Element sc;
@@ -6935,7 +6856,7 @@ algorithm
       DAE.Type ty;
 
     // try function interpretation
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR( builtin = false)), vallst, _, st, msg, _)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, _, st, msg, _)
       equation
         true = Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
@@ -6963,7 +6884,7 @@ algorithm
 
     // see if function is in CF list and the build time is less than the edit time
     case (cache,env,(DAE.CALL(path = funcpath, expLst = _, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// (impl as true)
-      (st as SOME(GlobalScript.SYMBOLTABLE(ast=p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,_)),compiledFunctions=cflist))),msg, _)
+      (st as SOME(GlobalScript.SYMBOLTABLE(ast=p as Absyn.PROGRAM(),compiledFunctions=cflist))),msg, _)
       equation
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
@@ -6973,7 +6894,7 @@ algorithm
         end if;
 
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,SOURCEINFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
         // see if the build time from the class is the same as the build time from the compiled functions list
         false = stringEq(fNew,""); // see if the WE have a file or not!
         false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
@@ -6990,7 +6911,7 @@ algorithm
 
     // see if function is in CF list and the build time is less than the edit time
     case (cache,env,(DAE.CALL(path = funcpath, expLst = _, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// impl as true
-      (st as SOME(GlobalScript.SYMBOLTABLE(ast=p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),compiledFunctions=cflist))), msg, _)
+      (st as SOME(GlobalScript.SYMBOLTABLE(ast=p as Absyn.PROGRAM(),compiledFunctions=cflist))), msg, _)
       equation
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
@@ -7001,12 +6922,11 @@ algorithm
         end if;
 
         (true, funcHandle, buildTime, _) = Static.isFunctionInCflist(cflist, funcpath);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(_),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(funcpath, p);
+        Absyn.CLASS(restriction=Absyn.R_FUNCTION(_),info=SOURCEINFO(fileName = fNew, lastModification = edit)) = Interactive.getPathedClassInProgram(funcpath, p);
         // note, this should only work for classes that have no file name!
         true = stringEq(fNew,""); // see that we don't have a file!
 
         // see if the build time from the class is the same as the build time from the compiled functions list
-        true = buildTime >= build;
         true = buildTime > edit;
 
         if Flags.isSet(Flags.DYN_LOAD) then
@@ -7019,7 +6939,7 @@ algorithm
 
     // not in CF list, we have a symbol table, generate function and update symtab
     case (cache,env,(DAE.CALL(path = funcpath,expLst = _,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,
-          SOME(syt as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),a,b,c,cf,lf)), msg, _) // yeha! we have a symboltable!
+          SOME(syt as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(),a,b,c,cf,lf)), msg, _) // yeha! we have a symboltable!
       equation
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
@@ -7053,15 +6973,15 @@ algorithm
         // update the build time in the class!
         Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info) = Interactive.getPathedClassInProgram(funcpath, p);
 
-        info = Absyn.setBuildTimeInInfo(buildTime,info);
-        ts = Absyn.setTimeStampBuild(ts, buildTime);
+        /* info = Absyn.setBuildTimeInInfo(buildTime,info);
+        ts = Absyn.setTimeStampBuild(ts, buildTime); */
         w = Interactive.buildWithin(funcpath);
 
         if Flags.isSet(Flags.DYN_LOAD) then
           print("[dynload]: Updating build time for function path: " + Absyn.pathString(funcpath) + " within: " + Dump.unparseWithin(w) + "\n");
         end if;
 
-        p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
+        // p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
         f = Absyn.getFileNameFromInfo(info);
 
         syt = GlobalScript.SYMBOLTABLE(
@@ -7238,7 +7158,7 @@ algorithm
       list<DAE.Var> pubVarLst, proVarLst, varLst;
       list<String> pubVarNames, proVarNames, varNames;
       DAE.Type ty;
-      Absyn.Info info;
+      SourceInfo info;
       String str;
       Boolean bIsCompleteFunction;
 
@@ -7370,7 +7290,7 @@ public function cevalIsExternalObjectConstructor
 protected
   Absyn.Path funcpath2;
   DAE.Type tp;
-  Option<Absyn.Info> info;
+  Option<SourceInfo> info;
 algorithm
   _ := match(cache, funcpath, env, msg)
     case (_, _, FCore.EG(_), Absyn.NO_MSG()) then fail();
@@ -7470,7 +7390,7 @@ algorithm
     case ((val as Values.CODE(_)) :: xs, str1, true, p)
       equation
         absynClass = Interactive.getPathedClassInProgram(ValuesUtil.getPath(val), p);
-        p1 = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
+        p1 = Absyn.PROGRAM({absynClass},Absyn.TOP());
         /* Don't consider packages for FindInText search */
         false = Interactive.isPackage(ValuesUtil.getPath(val), inProgram);
         str = Dump.unparseStr(p1, false);
@@ -7578,7 +7498,7 @@ algorithm
   name := match simp
     local
       Absyn.Import imp;
-      Absyn.Info info;
+      SourceInfo info;
       String str;
       Absyn.Path path;
     case SCode.IMPORT(imp=Absyn.NAMED_IMPORT(path=path)) then Absyn.pathFirstIdent(path);
@@ -7732,11 +7652,11 @@ algorithm
   name := matchcontinue (elt,suffix)
     local
       String fileName;
-    case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=_)),_)
+    case (SCode.CLASS(name=name,info=SOURCEINFO(fileName=_)),_)
       equation
         false = System.regularFileExists(name + suffix);
       then name;
-    case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName)),_)
+    case (SCode.CLASS(name=name,info=SOURCEINFO(fileName=fileName)),_)
       equation
         true = System.fileIsNewerThan(fileName, name + suffix);
       then name;
@@ -7795,8 +7715,8 @@ algorithm
       String name,fileName;
       list<String> allDepends,protectedDepends;
       list<SCode.Element> elts;
-      Absyn.Info info;
-    case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info = Absyn.INFO(fileName=fileName)),_,_,_)
+      SourceInfo info;
+    case (SCode.CLASS(name=name, classDef=SCode.PARTS(elementLst=elts), info = SOURCEINFO(fileName=fileName)),_,_,_)
       equation
         protectedDepends = List.map(List.select(elts,SCode.elementIsProtectedImport),importDepenency);
         protectedDepends = List.select(protectedDepends, isNotBuiltinImport);
@@ -7879,7 +7799,7 @@ algorithm
     local
       String str,name;
       SCode.Annotation ann;
-      Absyn.Info info;
+      SourceInfo info;
     case (SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann))),name::_)
       equation
         (Absyn.STRING(str),info) = SCode.getNamedAnnotation(ann,"__OpenModelica_Interface");
@@ -7902,7 +7822,7 @@ algorithm
       String name;
       SCode.Annotation ann;
       String str;
-      Absyn.Info info;
+      SourceInfo info;
     case (SCode.CLASS(name=name,cmt=SCode.COMMENT(annotation_=SOME(ann))),_)
       equation
         (Absyn.STRING(str),info) = SCode.getNamedAnnotation(ann,"__OpenModelica_Interface");
@@ -7917,7 +7837,7 @@ end getInterfaceType;
 
 protected function getInterfaceTypeAssocElt
   input Values.Value val;
-  input Absyn.Info info;
+  input SourceInfo info;
   output tuple<String,list<String>> assoc;
 algorithm
   assoc := match (val,info)

@@ -89,7 +89,7 @@ public function instantiateExternalObject
   input DAE.Mod inMod;
   input Boolean impl;
   input SCode.Comment comment;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -159,7 +159,7 @@ algorithm
     local
       DAE.Ident id;
       DAE.Mod mod;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (DAE.NOMOD(), _) then ();
     case (DAE.MOD(subModLst = {}), _) then ();
@@ -337,7 +337,7 @@ algorithm
       list<DAE.Element> daeElts;
       list<DAE.Function> resfns;
       list<DAE.FunctionDefinition> derFuncs;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.InlineType inlineType;
       SCode.ClassDef cd;
       Boolean partialPrefixBool, isImpure;
@@ -450,7 +450,7 @@ dae and can be generated code for in case they are required"
   input InnerOuter.InstHierarchy ih;
   input list<DAE.FunctionDefinition> funcs;
   input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
 algorithm
  // print("instantiate deriative functions for "+Absyn.pathString(path)+"\n");
@@ -464,7 +464,7 @@ protected function instantiateDerivativeFuncs2 "help function"
   input InnerOuter.InstHierarchy inIH;
   input list<Absyn.Path> inPaths;
   input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
 algorithm
   (outCache) := matchcontinue(inCache,inEnv,inIH,inPaths,path,info)
@@ -543,7 +543,7 @@ algorithm
       FCore.Cache cache;
       InstanceHierarchy ih;
       list<SCode.Annotation> annotationLst;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.DAElist dae;
       list<DAE.Function> funs;
       Absyn.Path cn,fpath;
@@ -642,7 +642,7 @@ algorithm
       FCore.Cache cache;
       InstanceHierarchy ih;
       SCode.Partial partialPrefix;
-      Absyn.Info info;
+      SourceInfo info;
       list<DAE.Function> resfns1,resfns2;
       SCode.Restriction rest;
 
@@ -688,7 +688,7 @@ protected function instExtDecl
   input SCode.ClassDef inClassDef;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output InnerOuter.InstHierarchy outIH;
   output DAE.ExternalDecl outExternalDecl;
@@ -784,7 +784,7 @@ algorithm
       FCore.Cache cache;
       Absyn.InnerOuter io;
       SCode.Final finalPrefix;
-      Absyn.Info info;
+      SourceInfo info;
       InstanceHierarchy ih;
       Option<Absyn.ConstrainClass> cc;
       SCode.Prefixes prefixes;
@@ -918,7 +918,7 @@ public function addRecordConstructorFunction "Add record constructor whenever we
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.Type inType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
 algorithm
   outCache := matchcontinue (inCache,inEnv,inType,inInfo)
@@ -981,7 +981,7 @@ end isElementImportantForFunction;
 
 protected function checkExtObjOutput
   input DAE.Type inType;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (inType,info)
     local
@@ -995,13 +995,13 @@ algorithm
 end checkExtObjOutput;
 
 protected function checkExtObjOutputWork
-  input tuple<DAE.Type,tuple<Absyn.Path,Absyn.Info,Boolean>> inTpl;
-  output tuple<DAE.Type,tuple<Absyn.Path,Absyn.Info,Boolean>> outTpl;
+  input tuple<DAE.Type,tuple<Absyn.Path,SourceInfo,Boolean>> inTpl;
+  output tuple<DAE.Type,tuple<Absyn.Path,SourceInfo,Boolean>> outTpl;
 algorithm
   outTpl := match inTpl
     local
       Absyn.Path path1,path2;
-      Absyn.Info info;
+      SourceInfo info;
       String str1,str2;
       DAE.Type ty;
       Boolean b;

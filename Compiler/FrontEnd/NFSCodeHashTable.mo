@@ -295,7 +295,7 @@ algorithm
       Absyn.ComponentRef fullCref;
       Option<HashTable> optHT;
       SCode.ClassDef cDef;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (_, cl as SCode.CLASS(classDef = cDef, info = info), env, hashTable, _)
       equation
@@ -446,7 +446,7 @@ protected function hashTableFromClassDef
   input NFSCodeEnv.Env inEnv;
   input Option<HashTable> inHashTable;
   input Integer inSeqNumber;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Option<HashTable> outHashTable;
   output Integer outSeqNumber;
 algorithm
@@ -476,7 +476,7 @@ algorithm
       Option<SCode.Element> baseClassOpt;
       FlatStructure structure;
       Integer seqNumber;
-      Absyn.Info info;
+      SourceInfo info;
 
     // handle parts
     case (_, parentElement, modifiers, baseClassOpt, SCode.PARTS(els, ne, ie, na, ia, co, _, ed), env, hashTable, seqNumber, info)
@@ -562,7 +562,7 @@ algorithm
       SCode.Element el;
       list<SCode.Element> rest;
       FlatStructure structure;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.ComponentRef fullCref;
       Integer seqNumber;
 
@@ -638,7 +638,7 @@ algorithm
       Absyn.Path path;
       SCode.Element el, cl, parentElement;
       Absyn.Import imp;
-      Absyn.Info info;
+      SourceInfo info;
       NFSCodeEnv.Item item;
       SCode.Mod mod;
       SCode.Visibility vis;

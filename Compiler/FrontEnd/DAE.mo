@@ -93,7 +93,7 @@ end VarVisibility;
 
 uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
-    Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+    SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
     list<Absyn.Within> partOfLst "the model(s) this element came from";
     Option<ComponentRef> instanceOpt "the instance(s) this element is part of";
     list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
@@ -645,7 +645,7 @@ uniontype Statement "There are four kinds of statements:
     Integer index "the index of the iterator variable, to make it unique; used by the new inst";
     Exp range "range for the loop";
     list<Statement> statementLst;
-    list<tuple<ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+    list<tuple<ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
     ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_PARFOR;
 
@@ -792,27 +792,27 @@ public type TypeSource = list<Absyn.Path> "the class(es) where the type originat
 public constant TypeSource emptyTypeSource = {} "an empty origin for the type";
 
 // default constants that can be used
-public constant Type T_REAL_DEFAULT        = T_REAL({}, emptyTypeSource);
-public constant Type T_INTEGER_DEFAULT     = T_INTEGER({}, emptyTypeSource);
-public constant Type T_STRING_DEFAULT      = T_STRING({}, emptyTypeSource);
-public constant Type T_BOOL_DEFAULT        = T_BOOL({}, emptyTypeSource);
-// BTH
-public constant Type T_CLOCK_DEFAULT       = T_CLOCK({}, emptyTypeSource);
-public constant Type T_ENUMERATION_DEFAULT = T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, emptyTypeSource);
-public constant Type T_REAL_BOXED          = T_METABOXED(T_REAL_DEFAULT, emptyTypeSource);
-public constant Type T_INTEGER_BOXED       = T_METABOXED(T_INTEGER_DEFAULT, emptyTypeSource);
-public constant Type T_STRING_BOXED        = T_METABOXED(T_STRING_DEFAULT, emptyTypeSource);
-public constant Type T_BOOL_BOXED          = T_METABOXED(T_BOOL_DEFAULT, emptyTypeSource);
-public constant Type T_METABOXED_DEFAULT   = T_METABOXED(T_UNKNOWN_DEFAULT, emptyTypeSource);
-public constant Type T_METALIST_DEFAULT    = T_METALIST(T_UNKNOWN_DEFAULT, emptyTypeSource);
-public constant Type T_NONE_DEFAULT        = T_METAOPTION(T_UNKNOWN_DEFAULT, emptyTypeSource);
-public constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE(), emptyTypeSource);
-public constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN(emptyTypeSource);
-public constant Type T_NORETCALL_DEFAULT   = T_NORETCALL(emptyTypeSource);
-public constant Type T_FUNCTION_DEFAULT    = T_FUNCTION({},T_ANYTYPE_DEFAULT,FUNCTION_ATTRIBUTES_DEFAULT,emptyTypeSource);
-public constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT, emptyTypeSource);
-public constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with unknown CiState";
-public constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with record CiState";
+constant Type T_REAL_DEFAULT        = T_REAL({}, emptyTypeSource);
+constant Type T_INTEGER_DEFAULT     = T_INTEGER({}, emptyTypeSource);
+constant Type T_STRING_DEFAULT      = T_STRING({}, emptyTypeSource);
+constant Type T_BOOL_DEFAULT        = T_BOOL({}, emptyTypeSource);
+constant Type T_CLOCK_DEFAULT       = T_CLOCK({}, emptyTypeSource);
+constant Type T_ENUMERATION_DEFAULT = T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, emptyTypeSource);
+constant Type T_REAL_BOXED          = T_METABOXED(T_REAL_DEFAULT, emptyTypeSource);
+constant Type T_INTEGER_BOXED       = T_METABOXED(T_INTEGER_DEFAULT, emptyTypeSource);
+constant Type T_STRING_BOXED        = T_METABOXED(T_STRING_DEFAULT, emptyTypeSource);
+constant Type T_BOOL_BOXED          = T_METABOXED(T_BOOL_DEFAULT, emptyTypeSource);
+constant Type T_METABOXED_DEFAULT   = T_METABOXED(T_UNKNOWN_DEFAULT, emptyTypeSource);
+constant Type T_METALIST_DEFAULT    = T_METALIST(T_UNKNOWN_DEFAULT, emptyTypeSource);
+constant Type T_NONE_DEFAULT        = T_METAOPTION(T_UNKNOWN_DEFAULT, emptyTypeSource);
+constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE(), emptyTypeSource);
+constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN(emptyTypeSource);
+constant Type T_NORETCALL_DEFAULT   = T_NORETCALL(emptyTypeSource);
+constant Type T_FUNCTION_DEFAULT    = T_FUNCTION({},T_ANYTYPE_DEFAULT,FUNCTION_ATTRIBUTES_DEFAULT,emptyTypeSource);
+constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT, emptyTypeSource);
+constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with unknown CiState";
+constant Type T_COMPLEX_DEFAULT_RECORD = T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with record CiState";
+constant Type T_SOURCEINFO_DEFAULT  = T_METAUNIONTYPE({Absyn.QUALIFIED("SourceInfo",Absyn.IDENT("SOURCEINFO"))},true,Absyn.IDENT("SourceInfo")::{});
 
 // Arrays of unknown dimension, eg. Real[:]
 public constant Type T_ARRAY_REAL_NODIM    = T_ARRAY(T_REAL_DEFAULT,{DIM_UNKNOWN()}, emptyTypeSource);
@@ -1150,12 +1150,12 @@ uniontype EqMod "To generate the correct set of equations, the translator has to
     Option<Values.Value> modifierAsValue "modifier as Value option" ;
     Properties properties "properties" ;
     Absyn.Exp modifierAsAbsynExp "keep the untyped modifier as an absyn expression for modification comparison";
-    Absyn.Info info;
+    SourceInfo info;
   end TYPED;
 
   record UNTYPED
     Absyn.Exp exp;
-    Absyn.Info info;
+    SourceInfo info;
   end UNTYPED;
 
 end EqMod;
@@ -1508,9 +1508,9 @@ public uniontype MatchCase
     list<Element> localDecls;
     list<Statement> body;
     Option<Exp> result;
-    Absyn.Info resultInfo "We need to keep the line info here so we can set a breakpoint at the last statement of a match-expression";
+    SourceInfo resultInfo "We need to keep the line info here so we can set a breakpoint at the last statement of a match-expression";
     Integer jump "the number of iterations we should skip if we succeed with pattern-matching, but don't succeed";
-    Absyn.Info info;
+    SourceInfo info;
   end CASE;
 end MatchCase;
 

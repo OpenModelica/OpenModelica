@@ -172,14 +172,14 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     SimCodeVar.SimVars vars;
     list<Function> functions;
     list<String> labels;
-    //Files files "all the files from Absyn.Info and DAE.ELementSource";
+    //Files files "all the files from SourceInfo and DAE.ELementSource";
   end MODELINFO;
 end ModelInfo;
 
 type Files = list<FileInfo>;
 
 uniontype FileInfo
-  "contains all the .mo files present in all Absyn.Info and DAE.ElementSource.info
+  "contains all the .mo files present in all SourceInfo and DAE.ElementSource.info
    of all the variables, functions, etc from SimCode that have origin info.
    it is used to generate the file information in one place and use an index
    whenever we need to refer to one file from a var or function.
@@ -238,7 +238,7 @@ uniontype Function
     list<Variable> variableDeclarations;
     list<Statement> body;
     SCode.Visibility visibility;
-    Absyn.Info info;
+    SourceInfo info;
   end FUNCTION;
 
   record PARALLEL_FUNCTION
@@ -247,7 +247,7 @@ uniontype Function
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
     list<Statement> body;
-    Absyn.Info info;
+    SourceInfo info;
   end PARALLEL_FUNCTION;
 
   record KERNEL_FUNCTION
@@ -256,7 +256,7 @@ uniontype Function
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
     list<Statement> body;
-    Absyn.Info info;
+    SourceInfo info;
   end KERNEL_FUNCTION;
 
   record EXTERNAL_FUNCTION
@@ -272,7 +272,7 @@ uniontype Function
     list<String> libs "need this one for C#";
     String language "C or Fortran";
     SCode.Visibility visibility;
-    Absyn.Info info;
+    SourceInfo info;
     Boolean dynamicLoad;
   end EXTERNAL_FUNCTION;
 
@@ -281,7 +281,7 @@ uniontype Function
     list<Variable> funArgs;
     list<Variable> locals;
     SCode.Visibility visibility;
-    Absyn.Info info;
+    SourceInfo info;
     DAE.VarKind kind;
   end RECORD_CONSTRUCTOR;
 end Function;

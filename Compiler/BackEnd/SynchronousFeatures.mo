@@ -276,7 +276,7 @@ protected
   Boolean b;
   DAE.ComponentRef cr;
   String name;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   for i in n:-1:1 loop
     v := BackendVariable.getVarAt(vars, i);

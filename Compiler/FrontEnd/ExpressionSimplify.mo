@@ -706,6 +706,11 @@ algorithm
         i = listLength(el);
       then DAE.ICONST(i);
 
+    case DAE.CALL(path=Absyn.IDENT("sourceInfo"))
+      equation
+        print("sourceInfo() - simplify?\n");
+      then fail();
+
   end match;
 end simplifyMetaModelicaCalls;
 

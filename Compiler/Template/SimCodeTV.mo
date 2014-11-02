@@ -142,6 +142,18 @@ package builtin
     output TypeVar result;
   end listGet;
 
+  uniontype SourceInfo "The Info attribute provides location information for elements and classes."
+    record SOURCEINFO
+      String fileName;
+      Boolean isReadOnly;
+      Integer lineNumberStart;
+      Integer columnNumberStart;
+      Integer lineNumberEnd;
+      Integer columnNumberEnd;
+      Real lastModification;
+    end SOURCEINFO;
+  end SourceInfo;
+
 end builtin;
 
 package SimCodeVar
@@ -542,7 +554,7 @@ package SimCode
       list<Variable> variableDeclarations;
       list<Statement> body;
       SCode.Visibility visibility;
-      Absyn.Info info;
+      builtin.SourceInfo info;
     end FUNCTION;
     record PARALLEL_FUNCTION
       Absyn.Path name;
@@ -550,7 +562,7 @@ package SimCode
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
       list<Statement> body;
-      Absyn.Info info;
+      builtin.SourceInfo info;
     end PARALLEL_FUNCTION;
     record KERNEL_FUNCTION
       Absyn.Path name;
@@ -558,7 +570,7 @@ package SimCode
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
       list<Statement> body;
-      Absyn.Info info;
+      builtin.SourceInfo info;
     end KERNEL_FUNCTION;
     record EXTERNAL_FUNCTION
       Absyn.Path name;
@@ -572,7 +584,7 @@ package SimCode
       list<String> includes;
       list<String> libs;
       String language;
-      Absyn.Info info;
+      builtin.SourceInfo info;
       SCode.Visibility visibility;
       Boolean dynamicLoad;
     end EXTERNAL_FUNCTION;
@@ -580,7 +592,7 @@ package SimCode
       Absyn.Path name;
       list<Variable> funArgs;
       list<Variable> locals;
-      Absyn.Info info;
+      builtin.SourceInfo info;
       SCode.Visibility visibility;
       DAE.VarKind kind;
     end RECORD_CONSTRUCTOR;
@@ -790,7 +802,7 @@ package SimCodeUtil
 
   function functionInfo
     input SimCode.Function fn;
-    output Absyn.Info info;
+    output builtin.SourceInfo info;
   end functionInfo;
 
   function twodigit
@@ -805,7 +817,7 @@ package SimCodeUtil
 
   function eqInfo
     input SimCode.SimEqSystem eq;
-    output Absyn.Info info;
+    output builtin.SourceInfo info;
   end eqInfo;
 
   function varName
@@ -1070,7 +1082,7 @@ package Tpl
   function addSourceTemplateError
     "Wraps call to Error.addSourceMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
     input String inErrMsg;
-    input Absyn.Info inInfo;
+    input builtin.SourceInfo inInfo;
   end addSourceTemplateError;
 
   //for completeness; although the addSourceTemplateError() above is preferable
@@ -1098,17 +1110,6 @@ package Absyn
     end FULLYQUALIFIED;
   end Path;
 
-  uniontype Info
-    record INFO
-      String fileName;
-      Boolean isReadOnly;
-      Integer lineNumberStart;
-      Integer columnNumberStart;
-      Integer lineNumberEnd;
-      Integer columnNumberEnd;
-    end INFO;
-  end Info;
-
   uniontype Within "Within Clauses"
     record WITHIN "the within clause"
       Path path "the path for within";
@@ -1125,14 +1126,13 @@ package Absyn
     end THREAD;
   end ReductionIterType;
 
-  constant Info dummyInfo;
-
   function pathString2NoLeadingDot "Tail-recursive version, with string builder (stringDelimitList is optimised)"
     input Path path;
     input String delimiter;
     output String outString;
   end pathString2NoLeadingDot;
 
+  constant builtin.SourceInfo dummyInfo;
 end Absyn;
 
 
@@ -1355,7 +1355,7 @@ package DAE
       list<Element> localDecls;
       list<Statement> body;
       Option<Exp> result;
-      Absyn.Info resultInfo;
+      builtin.SourceInfo resultInfo;
       Integer jump;
     end CASE;
   end MatchCase;
@@ -1564,7 +1564,7 @@ package DAE
       Ident iter;
       Exp range;
       list<Statement> statementLst;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+      list<tuple<DAE.ComponentRef,builtin.SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       ElementSource source;
     end STMT_PARFOR;
     record STMT_WHILE
@@ -1847,7 +1847,7 @@ package DAE
 
   uniontype ElementSource
     record SOURCE
-      Absyn.Info info;
+      builtin.SourceInfo info;
       list<Absyn.Within> partOfLst;
       Option<ComponentRef> instanceOpt;
       list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst;
@@ -2206,21 +2206,21 @@ uniontype EEquation
     list<list<EEquation>> thenBranch "the true (then) branch" ;
     list<EEquation>       elseBranch "the false (else) branch" ;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end EQ_IF;
 
   record EQ_EQUALS "the equality equation"
     Absyn.Exp expLeft  "the expression on the left side of the operator";
     Absyn.Exp expRight "the expression on the right side of the operator";
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end EQ_EQUALS;
 
   record EQ_CONNECT "the connect equation"
     Absyn.ComponentRef crefLeft  "the connector/component reference on the left side";
     Absyn.ComponentRef crefRight "the connector/component reference on the right side";
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end EQ_CONNECT;
 
   record EQ_FOR "the for equation"
@@ -2228,7 +2228,7 @@ uniontype EEquation
     Absyn.Exp       range        "the range of the index";
     list<EEquation> eEquationLst "the equation list";
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end EQ_FOR;
 
   record EQ_WHEN "the when equation"
@@ -2236,34 +2236,34 @@ uniontype EEquation
     list<EEquation>  eEquationLst "the equation list";
     list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst "the elsewhen expression and equation list";
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end EQ_WHEN;
 
   record EQ_ASSERT "the assert equation"
     Absyn.Exp condition "the assert condition";
     Absyn.Exp message   "the assert message";
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end EQ_ASSERT;
 
   record EQ_TERMINATE "the terminate equation"
     Absyn.Exp message "the terminate message";
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end EQ_TERMINATE;
 
   record EQ_REINIT "a reinit equation"
     Absyn.ComponentRef cref      "the variable to initialize";
     Absyn.Exp          expReinit "the new value" ;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end EQ_REINIT;
 
   record EQ_NORETCALL "function calls without return value"
     Absyn.ComponentRef functionName "the function nanme";
     Absyn.FunctionArgs functionArgs "the function arguments";
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end EQ_NORETCALL;
 
 end EEquation;
@@ -2284,7 +2284,7 @@ uniontype Statement "The Statement type describes one algorithm statement in an 
     Absyn.Exp assignComponent "assignComponent" ;
     Absyn.Exp value "value" ;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_ASSIGN;
 
   record ALG_IF
@@ -2293,68 +2293,68 @@ uniontype Statement "The Statement type describes one algorithm statement in an 
     list<tuple<Absyn.Exp, list<Statement>>> elseIfBranch;
     list<Statement> elseBranch;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_IF;
 
   record ALG_FOR
     Absyn.ForIterators iterators;
     list<Statement> forBody "forBody" ;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_FOR;
 
   record ALG_WHILE
     Absyn.Exp boolExpr "boolExpr" ;
     list<Statement> whileBody "whileBody" ;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_WHILE;
 
   record ALG_WHEN_A
     list<tuple<Absyn.Exp, list<Statement>>> branches;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_WHEN_A;
 
   record ALG_NORETCALL
     Absyn.ComponentRef functionCall "functionCall" ;
     Absyn.FunctionArgs functionArgs "functionArgs; general fcalls without return value" ;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_NORETCALL;
 
   record ALG_RETURN
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_RETURN;
 
   record ALG_BREAK
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_BREAK;
 
   // Part of MetaModelica extension. KS
   record ALG_TRY
     list<Statement> tryBody;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_TRY;
 
   record ALG_CATCH
     list<Statement> catchBody;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_CATCH;
 
   record ALG_THROW
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_THROW;
 
   record ALG_FAILURE
     list<Statement> stmts;
     Option<Comment> comment;
-    Absyn.Info info;
+    builtin.SourceInfo info;
   end ALG_FAILURE;
   //-------------------------------
 
@@ -2425,7 +2425,7 @@ uniontype Element "- Elements
   record IMPORT "an import element"
     Absyn.Import imp                 "the import definition";
     Visibility   visibility          "the protected/public prefix";
-    Absyn.Info   info                "the import information";
+    builtin.SourceInfo   info                "the import information";
   end IMPORT;
 
   record EXTENDS "the extends element"
@@ -2433,7 +2433,7 @@ uniontype Element "- Elements
     Visibility visibility            "the protected/public prefix";
     Mod modifications                "the modifications applied to the base class";
     Option<Annotation> ann           "the extends annotation";
-    Absyn.Info info                  "the extends info";
+    builtin.SourceInfo info                  "the extends info";
   end EXTENDS;
 
   record CLASS "a class definition"
@@ -2443,7 +2443,7 @@ uniontype Element "- Elements
     Partial partialPrefix            "the partial prefix";
     Restriction restriction          "the restriction of the class";
     ClassDef classDef                "the class specification";
-    Absyn.Info info                  "the class information";
+    builtin.SourceInfo info                  "the class information";
   end CLASS;
 
   record COMPONENT "a component"
@@ -2454,7 +2454,7 @@ uniontype Element "- Elements
     Mod modifications               "the modifications to be applied to the component";
     Option<Comment> comment         "this if for extraction of comments and annotations from Absyn";
     Option<Absyn.Exp> condition     "the conditional declaration of a component";
-    Absyn.Info info                 "this is for line and column numbers, also file name.";
+    builtin.SourceInfo info                 "this is for line and column numbers, also file name.";
   end COMPONENT;
 
   record DEFINEUNIT "a unit defintion has a name and the two optional parameters exp, and weight"
@@ -2933,7 +2933,7 @@ end Patternm;
 
 package Error
   function infoStr
-    input Absyn.Info info;
+    input builtin.SourceInfo info;
     output String str;
   end infoStr;
 end Error;
@@ -3129,7 +3129,7 @@ end Algorithm;
 package DAEUtil
   function getElementSourceFileInfo
     input DAE.ElementSource source;
-    output Absyn.Info info;
+    output builtin.SourceInfo info;
   end getElementSourceFileInfo;
 end DAEUtil;
 

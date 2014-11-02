@@ -399,7 +399,7 @@ algorithm
       DaePrefixes dprefs;
       ParamType pty;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Element elem;
       Modifier mod;
       Env env;
@@ -436,7 +436,7 @@ algorithm
       Absyn.Path name;
       DaePrefixes dprefs;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Component> p;
 
     case (NFInstTypes.TYPED_COMPONENT(name, _, p, dprefs, binding, info), _)
@@ -459,7 +459,7 @@ algorithm
       array<Dimension> dims;
       Prefixes prefs;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (NFInstTypes.UNTYPED_COMPONENT(name, ty, dims, prefs, _, binding, info), _)
       then NFInstTypes.UNTYPED_COMPONENT(name, ty, dims, prefs, inParamType, binding, info);
@@ -864,7 +864,7 @@ end unwrapDimension;
 public function makeIterator
   input Absyn.Path inName;
   input DAE.Type inType;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Component outIterator;
 algorithm
   outIterator := NFInstTypes.TYPED_COMPONENT(inName, inType, NONE(),
@@ -884,7 +884,7 @@ algorithm
       SCode.Prefixes pf;
       SCode.Attributes attr;
       Prefixes prefs;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Comment comment;
       String err_str;
 
@@ -912,7 +912,7 @@ protected function makePrefixes
   input SCode.Prefixes inPrefixes;
   input SCode.Attributes inAttributes;
   input SCode.Comment inComment;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Prefixes outPrefixes;
 algorithm
   outPrefixes := match(inPrefixes, inAttributes, inComment, inInfo)
@@ -923,7 +923,7 @@ algorithm
       Absyn.InnerOuter io;
       Absyn.Direction dir;
       SCode.ConnectorType ct;
-      Absyn.Info info;
+      SourceInfo info;
       NFInstTypes.VarArgs va;
 
     // All prefixes are the default ones, same as having no prefixes.
@@ -967,7 +967,7 @@ algorithm
   outPrefixes := match(inClassName, inClass, inPrefixes)
     local
       SCode.Attributes attr;
-      Absyn.Info info;
+      SourceInfo info;
       Prefixes prefs;
 
     case (_, SCode.CLASS(classDef = SCode.DERIVED(attributes = attr), info = info), _)
@@ -983,7 +983,7 @@ end mergePrefixesWithDerivedClass;
 protected function makePrefixesFromAttributes
   "Creates an NFInstTypes.Prefixes record from an SCode.Attributes."
   input SCode.Attributes inAttributes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Prefixes outPrefixes;
 algorithm
   outPrefixes := match(inAttributes, inInfo)
@@ -1025,8 +1025,8 @@ algorithm
       SCode.Variability var1, var2;
       SCode.Final fp1, fp2;
       Absyn.InnerOuter io1, io2;
-      tuple<Absyn.Direction, Absyn.Info> dir1, dir2;
-      tuple<SCode.ConnectorType, Absyn.Info> ct1, ct2;
+      tuple<Absyn.Direction, SourceInfo> dir1, dir2;
+      tuple<SCode.ConnectorType, SourceInfo> ct1, ct2;
       NFInstTypes.VarArgs va2;
 
     // No outer prefixes => no change.
@@ -1070,8 +1070,8 @@ algorithm
       SCode.Variability var;
       SCode.Final fp;
       Absyn.InnerOuter io;
-      tuple<Absyn.Direction, Absyn.Info> dir;
-      tuple<SCode.ConnectorType, Absyn.Info> ct;
+      tuple<Absyn.Direction, SourceInfo> dir;
+      tuple<SCode.ConnectorType, SourceInfo> ct;
       NFInstTypes.VarArgs va;
 
     case (SCode.PUBLIC(), _) then inPrefixes;
@@ -1132,17 +1132,17 @@ end mergeFinal;
 
 protected function mergeDirection
   "Merges an outer and inner direction prefix."
-  input tuple<Absyn.Direction, Absyn.Info> inOuterDirection;
-  input tuple<Absyn.Direction, Absyn.Info> inInnerDirection;
+  input tuple<Absyn.Direction, SourceInfo> inOuterDirection;
+  input tuple<Absyn.Direction, SourceInfo> inInnerDirection;
   input Absyn.Path inElementName;
   input String inElementType;
-  output tuple<Absyn.Direction, Absyn.Info> outDirection;
+  output tuple<Absyn.Direction, SourceInfo> outDirection;
 algorithm
   outDirection :=
   match(inOuterDirection, inInnerDirection, inElementName, inElementType)
     local
       Absyn.Direction dir1, dir2;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
       String dir_str1, dir_str2, el_name;
 
     // If either prefix is unset, return the other.
@@ -1181,17 +1181,17 @@ end directionString;
 
 protected function mergeConnectorType
   "Merges outer and inner connector type prefixes (flow, stream)."
-  input tuple<SCode.ConnectorType, Absyn.Info> inOuterConnectorType;
-  input tuple<SCode.ConnectorType, Absyn.Info> inInnerConnectorType;
+  input tuple<SCode.ConnectorType, SourceInfo> inOuterConnectorType;
+  input tuple<SCode.ConnectorType, SourceInfo> inInnerConnectorType;
   input Absyn.Path inElementName;
   input String inElementType;
-  output tuple<SCode.ConnectorType, Absyn.Info> outConnectorType;
+  output tuple<SCode.ConnectorType, SourceInfo> outConnectorType;
 algorithm
   outConnectorType := matchcontinue(inOuterConnectorType, inInnerConnectorType,
       inElementName, inElementType)
     local
       SCode.ConnectorType ct1, ct2;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
       String ct1_str, ct2_str, el_name;
 
     // If either of the prefixes are unset, return the others.
@@ -1740,7 +1740,7 @@ algorithm
       DAE.Type ty;
       DaePrefixes pref;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (NFInstTypes.TYPED_COMPONENT(name, ty, _, pref, binding, info), SOME(_))
       then NFInstTypes.TYPED_COMPONENT(name, ty, inParent, pref, binding, info);
@@ -1984,7 +1984,7 @@ algorithm
       array<Dimension> dimensions;
       ParamType paramType;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
 
     case(NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, _, paramType, binding, info))
       then NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, NFInstTypes.DEFAULT_INPUT_PREFIXES, paramType, binding, info);
@@ -2024,7 +2024,7 @@ algorithm
       array<Dimension> dimensions;
       ParamType paramType;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
 
     case(NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, _, paramType, binding, info))
       then NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, NFInstTypes.DEFAULT_PROTECTED_PREFIXES, paramType, binding, info);

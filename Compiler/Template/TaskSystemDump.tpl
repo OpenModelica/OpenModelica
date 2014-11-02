@@ -266,7 +266,7 @@ end dumpWithin;
 template dumpElementSource(ElementSource source, Boolean withOperations)
 ::=
   match source
-    case s as SOURCE(info=info as INFO(__)) then
+    case s as SOURCE(info=info as SOURCEINFO(__)) then
       <<
       <source>
         <%dumpInfo(info)%>
@@ -283,7 +283,7 @@ template dumpElementSource(ElementSource source, Boolean withOperations)
       >>
 end dumpElementSource;
 
-template dumpOperation(SymbolicOperation op, Info info)
+template dumpOperation(SymbolicOperation op, builtin.SourceInfo info)
 ::=
   match op
     case FLATTEN(__) then
@@ -384,10 +384,10 @@ template dumpOperation(SymbolicOperation op, Info info)
     else Tpl.addSourceTemplateError("Unknown operation",info)
 end dumpOperation;
 
-template dumpInfo(Info info)
+template dumpInfo(builtin.SourceInfo info)
 ::=
   match info
-  case info as INFO(__) then
+  case info as SOURCEINFO(__) then
   '<info file="<%escapeModelicaStringToXmlString(info.fileName)%>" lineStart="<%info.lineNumberStart%>" lineEnd="<%info.lineNumberEnd%>" colStart="<%info.columnNumberStart%>" colEnd="<%info.columnNumberEnd%>"/>'
 end dumpInfo;
 

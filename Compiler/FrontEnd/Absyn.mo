@@ -107,7 +107,6 @@ uniontype Program
     list<Class>  classes "List of classes" ;
  //   list<Optimization>  optimizations "List of classes" ;
     Within       within_ "Within clause" ;
-    TimeStamp    globalBuildTimes "";
   end PROGRAM;
 end Program;
 
@@ -120,29 +119,7 @@ uniontype Within "Within Clauses"
   record TOP end TOP;
 end Within;
 
-public
-uniontype Info
-"@author adrpo
- added 2005-10-29, changed 2006-02-05
- The Info attribute provides location information for elements and classes."
-  record INFO
-    String fileName "fileName where the class is defined in" ;
-    Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries" ;
-    Integer lineNumberStart "lineNumberStart" ;
-    Integer columnNumberStart "columnNumberStart" ;
-    Integer lineNumberEnd "lineNumberEnd" ;
-    Integer columnNumberEnd "columnNumberEnd" ;
-    TimeStamp buildTimes "Build and edit times";
-  end INFO;
-
-end Info;
-
-uniontype TimeStamp
- record TIMESTAMP
-   Real lastBuildTime "Last Build Time";
-   Real lastEditTime "Last Edit Time; this is the same as mtime in stat(2)";
-  end TIMESTAMP;
-end TimeStamp;
+type Info = SourceInfo;
 
 public
 uniontype Class
@@ -1127,47 +1104,9 @@ protected import List;
 protected import Util;
 protected import Error;
 
-public constant TimeStamp dummyTimeStamp = TIMESTAMP(0.0,0.0);
-
 public constant ClassDef dummyParts = PARTS({},{},{},{},NONE());
-public constant Info dummyInfo = INFO("",false,0,0,0,0,dummyTimeStamp);
-public constant TimeStamp newTimeStamp = TIMESTAMP(0.0,1.0);
-public constant Program dummyProgram = PROGRAM({},TOP(),dummyTimeStamp);
-
-public function getNewTimeStamp
-  "generate a new timestamp with edittime>buildtime."
-  output TimeStamp ts;
-algorithm
-  ts := newTimeStamp;
-annotation(__OpenModelica_EarlyInline = true);
-end getNewTimeStamp;
-
-public function setTimeStampBool
-  input TimeStamp its;
-  input Boolean which "true for edit time, false for build time";
-  output TimeStamp ots;
-algorithm
-  ots := match(its,which)
-    local
-      Real timer;
-      TimeStamp ts;
-
-    case(_, true)
-      equation
-        timer = System.getCurrentTime();
-        ts = setTimeStampEdit(its,timer);
-      then
-        ts;
-
-    case(_, false)
-      equation
-        timer = System.getCurrentTime();
-        ts = setTimeStampBuild(its,timer);
-      then
-        ts;
-
-  end match;
-end setTimeStampBool;
+public constant Info dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
+public constant Program dummyProgram = PROGRAM({},TOP());
 
 // stefan
 public function traverseEquation
@@ -2432,30 +2371,6 @@ algorithm
   p := QUALIFIED(s1,IDENT(s2));
 annotation(__OpenModelica_EarlyInline = true);
 end makeQualifiedPathFromStrings;
-
-public function setTimeStampEdit
-  "Update current TimeStamp with a new Edit-time."
-  input TimeStamp its;
-  input Real editTime;
-  output TimeStamp ots;
-protected
-  Real buildTime;
-algorithm
-  TIMESTAMP(buildTime, _) := its;
-  ots := TIMESTAMP(buildTime, editTime);
-end setTimeStampEdit;
-
-public function setTimeStampBuild
-  "Update current TimeStamp with a new Build-time."
-  input TimeStamp its;
-  input Real buildTime;
-  output TimeStamp ots;
-protected
-  Real editTime;
-algorithm
-  TIMESTAMP(_, editTime) := its;
-  ots := TIMESTAMP(buildTime, editTime);
-end setTimeStampBuild;
 
 public function className "returns the class name of a Class as a Path"
   input Class cl;
@@ -4302,25 +4217,23 @@ public function classFilename
   input Class inClass;
   output String outFilename;
 algorithm
-  CLASS(info = INFO(fileName = outFilename)) := inClass;
+  CLASS(info = SOURCEINFO(fileName = outFilename)) := inClass;
 end classFilename;
 
-public function setClassFilename "author: PA
-  Sets the filename where the class is stored."
+public function setClassFilename "Sets the filename where the class is stored."
   input Class inClass;
-  input String inString;
-  input TimeStamp build1;
+  input String fileName;
   output Class outClass;
 algorithm
-  outClass := match (inClass,inString,build1)
+  outClass := match inClass
     local
-      Ident n,filename;
-      Boolean p,f,e;
-      Restriction r;
-      ClassDef body;
-      TimeStamp build;
-    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),filename,build)
-      then CLASS(n,p,f,e,r,body,INFO(filename,false,0,0,0,0, build)  );
+      SourceInfo info;
+      Class cl;
+    case cl as CLASS(info=info as SOURCEINFO())
+      equation
+        info.fileName = fileName;
+        cl.info = info;
+      then cl;
   end match;
 end setClassFilename;
 
@@ -4956,33 +4869,11 @@ algorithm
   end match;
 end pathReplaceIdent;
 
-public function setBuildTimeInInfo
-  input Real buildTime;
-  input Info inInfo;
-  output Info outInfo;
-algorithm
-  outInfo := match(buildTime, inInfo)
-    local
-      String fileName "fileName where the class is defined in";
-      Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries";
-      Integer lineNumberStart "lineNumberStart";
-      Integer columnNumberStart "columnNumberStart";
-      Integer lineNumberEnd "lineNumberEnd";
-      Integer columnNumberEnd "columnNumberEnd";
-      Real lastBuildTime "Last Build Time";
-      Real lastEditTime "Last Edit Time";
-    case (_, INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart,
-                          lineNumberEnd, columnNumberEnd, TIMESTAMP(_,lastEditTime)))
-    then
-      (INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd, TIMESTAMP(buildTime,lastEditTime)));
-  end match;
-end setBuildTimeInInfo;
-
 public function getFileNameFromInfo
-  input Info inInfo;
+  input SourceInfo inInfo;
   output String inFileName;
 algorithm
-  INFO(fileName = inFileName) := inInfo;
+  SOURCEINFO(fileName = inFileName) := inInfo;
 end getFileNameFromInfo;
 
 public function isOuter

@@ -776,7 +776,7 @@ algorithm
       list<DAE.Element> daeElts;
       Absyn.Path name;
       DAE.ElementSource source;
-      Absyn.Info info;
+      SourceInfo info;
       Boolean dynamicLoad, hasIncludeAnnotation, hasLibraryAnnotation;
       list<String> includeDirs;
       DAE.FunctionAttributes funAttrs;
@@ -1747,7 +1747,7 @@ algorithm
       simCode = setSimCodeLiterals(simCode, listReverse(lits));
 
       // print("*** SimCode -> collect all files started: " + realString(clock()) + "\n");
-      // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
+      // adrpo: collect all the files from SourceInfo and DAE.ElementSource
       // simCode = collectAllFiles(simCode);
       // print("*** SimCode -> collect all files done!: " + realString(clock()) + "\n");
     then (simCode, (highestSimEqIndex, equationSccMapping));
@@ -5233,8 +5233,7 @@ protected function elaborateRecordDeclarationsForRecord
   output list<SimCode.RecordDeclaration> outRecordDecls;
   output list<String> outReturnTypes;
 algorithm
-  (outRecordDecls, outReturnTypes) :=
-  matchcontinue (inRecordType, inAccRecordDecls, inReturnTypes)
+  (outRecordDecls, outReturnTypes) := match (inRecordType, inAccRecordDecls, inReturnTypes)
     local
       Absyn.Path path, name;
       list<DAE.Var> varlst;
@@ -5248,34 +5247,41 @@ algorithm
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), varLst = varlst, source = {_}), accRecDecls, rt)
       equation
         sname = Absyn.pathStringUnquoteReplaceDot(name, "_");
-        false = listMember(sname, rt);
-        vars = List.map(varlst, typesVarNoBinding);
-        vars = List.sort(vars,compareVariable);
-        rt_1 = sname :: rt;
-        (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
-        recDecl = SimCode.RECORD_DECL_FULL(sname, NONE(), name, vars);
-        accRecDecls = List.appendElt(recDecl, accRecDecls);
+        if not listMember(sname, rt) then
+          vars = List.map(varlst, typesVarNoBinding);
+          vars = List.sort(vars,compareVariable);
+          rt_1 = sname :: rt;
+          (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+          recDecl = SimCode.RECORD_DECL_FULL(sname, NONE(), name, vars);
+          accRecDecls = List.appendElt(recDecl, accRecDecls);
+        else
+          rt_2 = rt;
+        end if;
       then (accRecDecls, rt_2);
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = _), accRecDecls, rt)
     then (accRecDecls, rt);
 
+    case (DAE.T_METARECORD(source = {Absyn.QUALIFIED(name="SourceInfo")}), accRecDecls, rt)
+      then (accRecDecls, rt);
+
     case (DAE.T_METARECORD( fields = varlst, source = {path}), accRecDecls, rt)
       equation
         sname = Absyn.pathStringUnquoteReplaceDot(path, "_");
-        false = listMember(sname, rt);
-        fieldNames = List.map(varlst, generateVarName);
-        accRecDecls = SimCode.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
-        rt_1 = sname::rt;
-        (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+        if not listMember(sname, rt) then
+          fieldNames = List.map(varlst, generateVarName);
+          accRecDecls = SimCode.RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
+          rt_1 = sname::rt;
+          (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+        else
+          rt_2 = rt;
+        end if;
       then (accRecDecls, rt_2);
 
     case (_, accRecDecls, rt)
     then (accRecDecls, rt);
 
-    case (_, accRecDecls, rt) then
-      (SimCode.RECORD_DECL_FULL("#an odd record#", NONE(), Absyn.IDENT("?noname?"), {}) :: accRecDecls , rt);
-  end matchcontinue;
+  end match;
 end elaborateRecordDeclarationsForRecord;
 
 protected function generateVarName
@@ -9137,7 +9143,7 @@ end dlowvarToSimvar;
 // algorithm
 //   _ := match (oexp, source)
 //     local
-//       Absyn.Info info;
+//       SourceInfo info;
 //       String str;
 //       DAE.Exp exp;
 //     case (NONE(), _) then ();
@@ -9344,7 +9350,7 @@ algorithm
         str = CevalScript.getFullPathFromUri(program, str, false);
         istr = "\"-I"+str+"\"";
       then if System.directoryExists(str) then {istr} else {};
-        // Read Absyn.Info instead?
+        // Read SourceInfo instead?
     else {};
   end matchcontinue;
 end generateExtFunctionIncludeDirectoryFlags;
@@ -9655,7 +9661,7 @@ algorithm
       String str,fileName;
     case (_)
       equation
-        SCode.MOD(binding = SOME((Absyn.STRING(inc), _)), info = Absyn.INFO(fileName=fileName,lineNumberStart=lineNumberStart)) =
+        SCode.MOD(binding = SOME((Absyn.STRING(inc), _)), info = SOURCEINFO(fileName=fileName,lineNumberStart=lineNumberStart)) =
           Mod.getUnelabedSubMod(inMod, "Include");
         str = "#line "+intString(lineNumberStart)+" \""+fileName+"\"";
         inc_1 = System.unescapedString(inc);
@@ -10699,7 +10705,7 @@ end valueArrayNth;
 
 public function functionInfo
   input SimCode.Function fn;
-  output Absyn.Info info;
+  output SourceInfo info;
 algorithm
   info := match fn
     case SimCode.FUNCTION(info = info) then info;
@@ -10721,7 +10727,7 @@ end functionPath;
 
 public function eqInfo
   input SimCode.SimEqSystem eq;
-  output Absyn.Info info;
+  output SourceInfo info;
 algorithm
   info := match eq
     case SimCode.SES_RESIDUAL(source=DAE.SOURCE(info=info)) then info;
@@ -11323,7 +11329,7 @@ algorithm
     local
       SimCode.Files files;
       list<SimCode.Function> rest;
-      Absyn.Info info;
+      SourceInfo info;
 
     // handle empty
     case ({}, files) then files;
@@ -11784,7 +11790,7 @@ algorithm
       SimCode.VarInfo varInfo;
       SimCodeVar.SimVars vars;
       list<SimCode.Function> functions;
-      SimCode.Files files "all the files from Absyn.Info and DAE.ELementSource";
+      SimCode.Files files "all the files from SourceInfo and DAE.ELementSource";
       Option<HpcOmSimCode.Schedule> hpcOmSchedule;
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
@@ -11831,7 +11837,7 @@ algorithm
   outFiles := match(inSource, inFiles)
     local
       SimCode.Files files;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (DAE.SOURCE(info = info), files)
       equation
@@ -11842,7 +11848,7 @@ algorithm
 end getFilesFromDAEElementSource;
 
 protected function getFilesFromAbsynInfo
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input SimCode.Files inFiles;
   output SimCode.Files outFiles;
 algorithm
@@ -11853,7 +11859,7 @@ algorithm
       Boolean ro;
       SimCode.FileInfo fi;
 
-    case (Absyn.INFO(fileName = f, isReadOnly = ro), files)
+    case (SOURCEINFO(fileName = f, isReadOnly = ro), files)
       equation
         fi = SimCode.FILEINFO(f, ro);
         // add it only if is not already there!

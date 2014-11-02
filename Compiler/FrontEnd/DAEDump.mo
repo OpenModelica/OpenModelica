@@ -3526,7 +3526,7 @@ public function getSourceInformationStr
 algorithm
   outStr := matchcontinue(inSource)
     local
-      Absyn.Info i;
+      SourceInfo i;
       list<Absyn.Within> po;
       list<Option<DAE.ComponentRef>> iol;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> ceol;

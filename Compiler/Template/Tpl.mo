@@ -1780,9 +1780,9 @@ public function sourceInfo
   input Integer inLineNum;
   input Integer inColumnNum;
 
-  output Absyn.Info outSourceInfo;
+  output SourceInfo outSourceInfo;
 algorithm
-  outSourceInfo  := Absyn.INFO(inFileName, false, inLineNum, inColumnNum, inLineNum, inColumnNum, Absyn.dummyTimeStamp);
+  outSourceInfo  := SOURCEINFO(inFileName, false, inLineNum, inColumnNum, inLineNum, inColumnNum, 0.0);
 end sourceInfo;
 
 
@@ -1791,7 +1791,7 @@ end sourceInfo;
 public function addSourceTemplateError
  "Wraps call to Error.addSourceMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
   input String inErrMsg;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   Error.addSourceMessage(Error.TEMPLATE_ERROR, {inErrMsg}, inInfo);
 end addSourceTemplateError;

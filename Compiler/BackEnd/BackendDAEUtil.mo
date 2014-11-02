@@ -419,7 +419,7 @@ public function checkAssertCondition "Succeds if condition of assert is not cons
   input DAE.Exp cond;
   input DAE.Exp message;
   input DAE.Exp level;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := matchcontinue(cond,message,level,info)
     local

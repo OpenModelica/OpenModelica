@@ -238,7 +238,7 @@ algorithm
     local
       Import imp;
       list<Import> qual_imps, unqual_imps;
-      Absyn.Info info;
+      SourceInfo info;
       Boolean hidden;
 
     // Unqualified imports
@@ -288,7 +288,7 @@ protected function checkUniqueQualifiedImport
   qualified imports with the same name."
   input Import inImport;
   input list<Import> inImports;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inImport, inImports, inInfo)
     local
@@ -595,7 +595,7 @@ algorithm
       Absyn.TypeSpec t;
       SCode.Mod m;
       SCode.Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.Exp> condition;
       Data nd;
       DAE.Var i;

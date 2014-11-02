@@ -122,7 +122,7 @@ uniontype Mod "- Modifications"
     has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
     should be delayed. This can for instance be used when having A a(x = a.y) where a.y can not be
     type checked -before- a is instantiated, which is the current design in instantiation process.";
-    Absyn.Info info;
+    SourceInfo info;
   end MOD;
 
   record REDECL
@@ -266,21 +266,21 @@ uniontype EEquation
     list<list<EEquation>> thenBranch "the true (then) branch" ;
     list<EEquation>       elseBranch "the false (else) branch" ;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end EQ_IF;
 
   record EQ_EQUALS "the equality equation"
     Absyn.Exp expLeft  "the expression on the left side of the operator";
     Absyn.Exp expRight "the expression on the right side of the operator";
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end EQ_EQUALS;
 
   record EQ_CONNECT "the connect equation"
     Absyn.ComponentRef crefLeft  "the connector/component reference on the left side";
     Absyn.ComponentRef crefRight "the connector/component reference on the right side";
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end EQ_CONNECT;
 
   record EQ_FOR "the for equation"
@@ -288,7 +288,7 @@ uniontype EEquation
     Option<Absyn.Exp> range "the range of the index";
     list<EEquation> eEquationLst "the equation list";
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end EQ_FOR;
 
   record EQ_WHEN "the when equation"
@@ -296,7 +296,7 @@ uniontype EEquation
     list<EEquation>  eEquationLst "the equation list";
     list<tuple<Absyn.Exp, list<EEquation>>> elseBranches "the elsewhen expression and equation list";
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end EQ_WHEN;
 
   record EQ_ASSERT "the assert equation"
@@ -304,26 +304,26 @@ uniontype EEquation
     Absyn.Exp message   "the assert message";
     Absyn.Exp level;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end EQ_ASSERT;
 
   record EQ_TERMINATE "the terminate equation"
     Absyn.Exp message "the terminate message";
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end EQ_TERMINATE;
 
   record EQ_REINIT "a reinit equation"
     Absyn.ComponentRef cref      "the variable to initialize";
     Absyn.Exp          expReinit "the new value" ;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end EQ_REINIT;
 
   record EQ_NORETCALL "function calls without return value"
     Absyn.Exp exp;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end EQ_NORETCALL;
 
 end EEquation;
@@ -350,7 +350,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
     Absyn.Exp assignComponent "assignComponent" ;
     Absyn.Exp value "value" ;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_ASSIGN;
 
   record ALG_IF
@@ -359,7 +359,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
     list<tuple<Absyn.Exp, list<Statement>>> elseIfBranch;
     list<Statement> elseBranch;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_IF;
 
   record ALG_FOR
@@ -367,7 +367,7 @@ public uniontype Statement "The Statement type describes one algorithm statement
     Option<Absyn.Exp> range "the range of the index";
     list<Statement> forBody "forBody";
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_FOR;
 
   record ALG_PARFOR
@@ -375,55 +375,55 @@ public uniontype Statement "The Statement type describes one algorithm statement
     Option<Absyn.Exp> range "the range of the index";
     list<Statement> parforBody "parallel for loop body";
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_PARFOR;
 
   record ALG_WHILE
     Absyn.Exp boolExpr "boolExpr" ;
     list<Statement> whileBody "whileBody" ;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_WHILE;
 
   record ALG_WHEN_A
     list<tuple<Absyn.Exp, list<Statement>>> branches;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_WHEN_A;
 
   record ALG_NORETCALL
     Absyn.Exp exp;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_NORETCALL;
 
   record ALG_RETURN
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_RETURN;
 
   record ALG_BREAK
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_BREAK;
 
   // MetaModelica extensions
   record ALG_FAILURE
     list<Statement> stmts;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_FAILURE;
 
   record ALG_TRY
     list<Statement> body;
     list<Statement> elseBody;
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_TRY;
 
   record ALG_CONTINUE
     Comment comment;
-    Absyn.Info info;
+    SourceInfo info;
   end ALG_CONTINUE;
 
 end Statement;
@@ -511,7 +511,7 @@ uniontype Element "- Elements
   record IMPORT "an import element"
     Absyn.Import imp                 "the import definition";
     Visibility   visibility          "the protected/public prefix";
-    Absyn.Info   info                "the import information";
+    SourceInfo   info                "the import information";
   end IMPORT;
 
   record EXTENDS "the extends element"
@@ -519,7 +519,7 @@ uniontype Element "- Elements
     Visibility visibility            "the protected/public prefix";
     Mod modifications                "the modifications applied to the base class";
     Option<Annotation> ann           "the extends annotation";
-    Absyn.Info info                  "the extends info";
+    SourceInfo info                  "the extends info";
   end EXTENDS;
 
   record CLASS "a class definition"
@@ -530,7 +530,7 @@ uniontype Element "- Elements
     Restriction restriction          "the restriction of the class";
     ClassDef classDef                "the class specification";
     Comment cmt                      "the class annotation and string-comment";
-    Absyn.Info info                  "the class information";
+    SourceInfo info                  "the class information";
   end CLASS;
 
   record COMPONENT "a component"
@@ -541,7 +541,7 @@ uniontype Element "- Elements
     Mod modifications               "the modifications to be applied to the component";
     Comment comment                 "this if for extraction of comments and annotations from Absyn";
     Option<Absyn.Exp> condition     "the conditional declaration of a component";
-    Absyn.Info info                 "this is for line and column numbers, also file name.";
+    SourceInfo info                 "this is for line and column numbers, also file name.";
   end COMPONENT;
 
   record DEFINEUNIT "a unit defintion has a name and the two optional parameters exp, and weight"
@@ -620,7 +620,7 @@ algorithm
       Final fp;
       Each ep;
       Option<tuple<Absyn.Exp, Boolean>> binding;
-      Absyn.Info info;
+      SourceInfo info;
 
     case MOD(fp, ep, _, binding, info)
       then MOD(fp, ep, {}, binding, info);
@@ -825,11 +825,11 @@ end componentName;
 
 public function elementInfo "retrieves the element info"
   input Element e;
-  output Absyn.Info info;
+  output SourceInfo info;
 algorithm
   info := match(e)
     local
-      Absyn.Info i;
+      SourceInfo i;
 
     case(COMPONENT(info = i)) then i;
     case(CLASS(info = i)) then i;
@@ -853,12 +853,12 @@ end elementName;
 public function elementNameInfo
   input Element inElement;
   output String outName;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   (outName, outInfo) := match(inElement)
     local
       String name;
-      Absyn.Info info;
+      SourceInfo info;
 
     case COMPONENT(name = name, info = info) then (name, info);
     case CLASS(name = name, info = info) then (name, info);
@@ -899,7 +899,7 @@ algorithm
       Partial pp;
       Restriction res;
       ClassDef cdef;
-      Absyn.Info i;
+      SourceInfo i;
       Attributes attr;
       Absyn.TypeSpec ty;
       Mod mod;
@@ -1016,7 +1016,7 @@ algorithm
       Partial partialPrefix;
       Restriction restr;
       ClassDef def;
-      Absyn.Info info;
+      SourceInfo info;
       Prefixes prefixes;
       Comment cmt;
 
@@ -1697,7 +1697,7 @@ algorithm
       Partial p;
       Encapsulated e;
       Ident id;
-      Absyn.Info info;
+      SourceInfo info;
       Prefixes prefixes;
       Restriction oldR;
       Comment cmt;
@@ -1724,7 +1724,7 @@ algorithm
       ClassDef parts;
       Partial p;
       Encapsulated e;
-      Absyn.Info info;
+      SourceInfo info;
       Prefixes prefixes;
       Restriction r;
       Ident id;
@@ -1753,7 +1753,7 @@ algorithm
       ClassDef parts;
       Encapsulated e;
       Ident id;
-      Absyn.Info info;
+      SourceInfo info;
       Restriction restriction;
       Prefixes prefixes;
       Partial oldPartialPrefix;
@@ -1984,7 +1984,7 @@ public function makeEnumType
   "Creates an EnumType element from an enumeration literal and an optional
   comment."
   input Enum inEnum;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Element outEnumType;
 protected
   String literal;
@@ -2031,7 +2031,7 @@ algorithm
       String iterator;
       Option<Absyn.Exp> range;
       Absyn.FunctionArgs functionArgs;
-      Absyn.Info info;
+      SourceInfo info;
       list<Absyn.Exp> conditions;
       list<list<Statement>> stmtsList;
       list<Statement> body,trueBranch,elseBranch;
@@ -2225,7 +2225,7 @@ end findIteratorInElseIfBranch;
 
 public function equationFileInfo
   input EEquation eq;
-  output Absyn.Info info;
+  output SourceInfo info;
 algorithm
   info := match eq
     case EQ_IF(info=info) then info;
@@ -2366,7 +2366,7 @@ algorithm
       list<EEquation> else_branch, eql;
       list<tuple<Absyn.Exp, list<EEquation>>> else_when;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
       Ident index;
 
     case (EQ_IF(expl1, then_branch, else_branch, comment, info), tup)
@@ -2469,7 +2469,7 @@ algorithm
       list<EEquation> else_branch, eql;
       list<tuple<Absyn.Exp, list<EEquation>>> else_when;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.ComponentRef cr1, cr2;
       Ident index;
 
@@ -2796,7 +2796,7 @@ algorithm
       list<Statement> stmts1, stmts2;
       list<tuple<Absyn.Exp, list<Statement>>> branches;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
       String iter;
       Option<Absyn.Exp> range;
 
@@ -2917,7 +2917,7 @@ algorithm
       list<Statement> stmts1, stmts2;
       list<tuple<Absyn.Exp, list<Statement>>> branches;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (ALG_ASSIGN(e1, e2, comment, info), traverser, arg)
       equation
@@ -3073,13 +3073,13 @@ algorithm
 end isBuiltinFunction;
 
 public function getEEquationInfo
-  "Extracts the Absyn.Info from an EEquation."
+  "Extracts the SourceInfo from an EEquation."
   input EEquation inEEquation;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   outInfo := match(inEEquation)
     local
-      Absyn.Info info;
+      SourceInfo info;
 
     case EQ_IF(info = info) then info;
     case EQ_EQUALS(info = info) then info;
@@ -3094,13 +3094,13 @@ algorithm
 end getEEquationInfo;
 
 public function getStatementInfo
-  "Extracts the Absyn.Info from a Statement."
+  "Extracts the SourceInfo from a Statement."
   input Statement inStatement;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   outInfo := match(inStatement)
     local
-      Absyn.Info info;
+      SourceInfo info;
 
     case ALG_ASSIGN(info = info) then info;
     case ALG_IF(info = info) then info;
@@ -3161,7 +3161,7 @@ protected
   Partial pp;
   Encapsulated ep;
   Restriction r;
-  Absyn.Info i;
+  SourceInfo i;
   Comment cmt;
 algorithm
   CLASS(n, pf, ep, pp, r, _, cmt, i) := inElement;
@@ -3732,7 +3732,7 @@ public function getNamedAnnotation
   input Annotation inAnnotation;
   input String inName;
   output Absyn.Exp exp;
-  output Absyn.Info info;
+  output SourceInfo info;
 protected
   list<SubMod> submods;
 algorithm
@@ -3872,7 +3872,7 @@ algorithm
       SubMod inline_mod;
       Final fp;
       Each ep;
-      Absyn.Info info;
+      SourceInfo info;
 
     case ANNOTATION(MOD(fp, ep, submods, _, info))
       equation
@@ -3907,7 +3907,7 @@ algorithm
       Each ep;
       list<SubMod> mods1, mods2;
       Option<tuple<Absyn.Exp, Boolean>> b;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (_, COMMENT(NONE(), cmt))
       then COMMENT(SOME(inAnnotation), cmt);
@@ -3924,11 +3924,11 @@ end appendAnnotationToComment;
 
 public function getModifierInfo
   input Mod inMod;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   outInfo := match(inMod)
     local
-      Absyn.Info info;
+      SourceInfo info;
       Element el;
 
     case MOD(info = info) then info;
@@ -3960,7 +3960,7 @@ protected
   Absyn.TypeSpec ty;
   Mod mod;
   Comment cmt;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   COMPONENT(name, pf, attr, ty, mod, cmt, _, info) := inElement;
   outElement := COMPONENT(name, pf, attr, ty, mod, cmt, NONE(), info);
@@ -3996,7 +3996,7 @@ algorithm
       Mod mod;
       Comment cmt;
       Option<Absyn.Exp> cnd;
-      Absyn.Info info;
+      SourceInfo info;
       Redeclare rdp;
       Final fp;
       Absyn.InnerOuter io;
@@ -4180,7 +4180,7 @@ algorithm
       Partial partialPrefix "the partial prefix";
       Restriction restriction "the restriction of the class";
       ClassDef classDef "the class specification";
-      Absyn.Info info "the class information";
+      SourceInfo info "the class information";
       Comment cmt;
 
     // a class with parts, non derived
@@ -4369,7 +4369,7 @@ protected
   Visibility v;
   Mod m;
   Option<Annotation> a;
-  Absyn.Info i;
+  SourceInfo i;
 algorithm
   EXTENDS(bc, v, m, a, i) := inE;
   outE := EXTENDS(inBcPath, v, m, a, i);
@@ -4385,7 +4385,7 @@ protected
   Visibility v;
   Mod m;
   Option<Annotation> a;
-  Absyn.Info i;
+  SourceInfo i;
 algorithm
   EXTENDS(baseClassPath = outBcPath) := inE;
 end getBaseClassPath;
@@ -4407,7 +4407,7 @@ protected
   Visibility v;
   Mod m;
   Option<Annotation> a;
-  Absyn.Info i;
+  SourceInfo i;
 algorithm
   COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
   outE := COMPONENT(n, pr, atr, inTypeSpec, m, cmt, cnd, i);
@@ -4440,7 +4440,7 @@ protected
   Visibility v;
   Mod m;
   Option<Annotation> a;
-  Absyn.Info i;
+  SourceInfo i;
 algorithm
   COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
   outE := COMPONENT(n, pr, atr, ts, inMod, cmt, cnd, i);
@@ -4480,7 +4480,7 @@ protected
   Partial pp;
   Restriction res;
   ClassDef cd;
-  Absyn.Info i;
+  SourceInfo i;
   Absyn.TypeSpec ts;
   Option<Annotation> ann;
   Comment cmt;
@@ -4522,7 +4522,7 @@ algorithm
       ClassDef parts;
       Encapsulated e;
       Ident id;
-      Absyn.Info info;
+      SourceInfo info;
       Restriction restriction;
       Prefixes prefixes;
       Partial pp;
@@ -4740,7 +4740,7 @@ algorithm
       Absyn.TypeSpec ty;
       Comment cmt;
       Option<Absyn.Exp> cnd;
-      Absyn.Info i;
+      SourceInfo i;
       Encapsulated ep;
       Partial pp;
       Restriction res;
@@ -4919,7 +4919,7 @@ algorithm
       Mod mod;
       Comment cmt;
       Option<Absyn.Exp> cond;
-      Absyn.Info info;
+      SourceInfo info;
       Encapsulated ep;
       Partial pp;
       Restriction res;
@@ -5043,7 +5043,7 @@ algorithm
       Option<Absyn.Exp> cond1, cond2;
       ClassDef cd1,cd2;
       Comment cm;
-      Absyn.Info i;
+      SourceInfo i;
       Mod mCCNew, mCCOld;
 
     // for functions return the new one!
@@ -5109,7 +5109,7 @@ algorithm
       Each e1, e2;
       list<SubMod> sl1, sl2, sl;
       Option<tuple<Absyn.Exp, Boolean>> b1, b2, b;
-      Absyn.Info i1, i2;
+      SourceInfo i1, i2;
       Mod m;
 
     case (NOMOD(), _) then inOldMod;
@@ -5206,7 +5206,7 @@ algorithm
       Mod m1,m2,m;
       Comment c1,c2;
       Option<Absyn.Exp> cnd1,cnd2;
-      Absyn.Info i1,i2;
+      SourceInfo i1,i2;
       Element c;
 
     case (COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1),
@@ -5324,7 +5324,7 @@ protected
   Mod mod;
   Comment cmt;
   Option<Absyn.Exp> cond;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   COMPONENT(prefixes = pref1, attributes = attr1) := inOriginalVar;
   COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info) := inNewVar;
@@ -5345,7 +5345,7 @@ protected
   Restriction res;
   ClassDef cdef;
   Comment cmt;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   CLASS(prefixes = pref1) := inOriginalClass;
   CLASS(name, pref2, ep, pp, res, cdef, cmt, info) := inNewClass;
@@ -5548,10 +5548,10 @@ public function checkSameRestriction
 "check if the restrictions are the same for redeclared classes"
   input Restriction inResNew;
   input Restriction inResOrig;
-  input Absyn.Info inInfoNew;
-  input Absyn.Info inInfoOrig;
+  input SourceInfo inInfoNew;
+  input SourceInfo inInfoOrig;
   output Restriction outRes;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   (outRes, outInfo) := match(inResNew, inResOrig, inInfoNew, inInfoOrig)
     case (_, _, _, _)
@@ -5579,7 +5579,7 @@ protected
   Visibility v;
   Mod m;
   Option<Annotation> a;
-  Absyn.Info i;
+  SourceInfo i;
 algorithm
   COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
   outE := COMPONENT(inName, pr, atr, ts, m, cmt, cnd, i);

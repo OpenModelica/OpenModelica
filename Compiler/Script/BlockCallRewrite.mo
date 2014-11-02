@@ -37,18 +37,13 @@ end rewriteBlockCall;
 
 protected function parseProgram
   input Absyn.Program inPg, defs;
-  output Absyn.Program outPg;
+  output Absyn.Program outPg := inPg;
 algorithm
-  outPg := match(inPg)
-    local
-      list< Absyn.Class>  classes, new_classes;
-      Absyn.Within       within_ ;
-      Absyn.TimeStamp    gbT;
-    case (Absyn.PROGRAM(classes, within_, gbT))
+  outPg := match outPg
+    case Absyn.PROGRAM()
       equation
-        new_classes = parseClasses(classes, defs);
-      then
-        Absyn.PROGRAM(new_classes, within_, gbT);
+        outPg.classes = parseClasses(outPg.classes, defs);
+      then outPg;
   end match;
 end parseProgram;
 
@@ -87,7 +82,7 @@ algorithm
       Boolean     partialPrefix, finalPrefix, encapsulatedPrefix;
       Absyn.Restriction restriction;
       Absyn.ClassDef    body, nbody;
-      Absyn.Info       info ;
+      SourceInfo       info ;
     case(Absyn.CLASS(name, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, body, info))
       equation
         nbody = parseClassDef(body, defs);
@@ -223,7 +218,7 @@ algorithm
       Absyn.Equation eq, neq;
       Option<Absyn.Comment> cmt;
       String comment;
-      Absyn.Info info ;
+      SourceInfo info ;
       list<Absyn.EquationItem> r_classes, nr_classes;
       list<Absyn.EquationItem> eqs1, eqs2;
       list<Absyn.ElementItem> elems1, elems2;
@@ -399,7 +394,7 @@ algorithm
       Absyn.Equation eq, neq;
       Option<Absyn.Comment> cmt;
       String comment;
-      Absyn.Info info ;
+      SourceInfo info ;
       list<tuple<Absyn.Exp, Absyn.Exp>> r_tuple_list, ntuples;
       list<Absyn.EquationItem> eqs1, eqs2, eqs3;
       list<Absyn.ElementItem> elems1, elems2, elems3;
@@ -477,13 +472,9 @@ protected function getDefinition
   output Integer newInstNo;
 algorithm
   (newEqs, newModif, found, newInstNo)  := match(defs)
-    local
-      list< Absyn.Class>  classes;
-      Absyn.Within       within_ ;
-      Absyn.TimeStamp    gbT;
-    case (Absyn.PROGRAM(classes, within_, gbT))
+    case Absyn.PROGRAM()
     then
-      parseClassesDefs(id, instNo, classes, fargs, oldEqs, oldModif);
+      parseClassesDefs(id, instNo, defs.classes, fargs, oldEqs, oldModif);
   end match;
 end getDefinition;
 

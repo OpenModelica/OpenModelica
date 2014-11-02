@@ -188,7 +188,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Type lt, rt;
       Absyn.Direction direction;
-      Absyn.Info info;
+      SourceInfo info;
 
     case ((DAE.CREF(componentRef=DAE.WILD())), _, rhs, _, _, _, _)
       then DAE.STMT_NORETCALL(rhs, source);
@@ -587,7 +587,7 @@ algorithm
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> xs;
       String e_str, t_str;
       DAE.Type t;
-      Absyn.Info info;
+      SourceInfo info;
 
     case ({}, {}, _) then DAE.NOELSE();  /* This removes empty else branches */
     case ({}, fb, _) then DAE.ELSE(fb);
@@ -660,7 +660,7 @@ public function makeParFor "This function creates a DAE.STMT_PARFOR construct, c
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
   input list<DAE.Statement> inStatementLst;
-  input list<tuple<DAE.ComponentRef, Absyn.Info>> inLoopPrlVars;
+  input list<tuple<DAE.ComponentRef, SourceInfo>> inLoopPrlVars;
   input DAE.ElementSource source;
   output DAE.Statement outStatement;
 algorithm
@@ -786,7 +786,7 @@ public function makeAssert "Creates an assert statement from two expressions.
 algorithm
   outStatement := matchcontinue (cond, msg, level, inProperties3, inProperties4, inProperties5, source)
     local
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Type t1, t2, t3;
       String strTy, strExp;
     case (DAE.BCONST(true), _, _, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), DAE.PROP(type_ = DAE.T_STRING(varLst = _)), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)

@@ -5255,7 +5255,7 @@ case var as VARIABLE(__) then
 else let &parArgList += '    #error Unknown variable type in as function argument funArgDefinitionKernelFunctionBody2<%\n%>' ""
 end funArgDefinitionKernelFunctionBody2;
 
-template parFunArgDefinitionFromLooptupleVar(tuple<DAE.ComponentRef,Absyn.Info> tupleVar)
+template parFunArgDefinitionFromLooptupleVar(tuple<DAE.ComponentRef,builtin.SourceInfo> tupleVar)
 ::=
 match tupleVar
 case tupleVar as ((cref as CREF_IDENT(identType = T_ARRAY(__)),_)) then
@@ -5280,7 +5280,7 @@ case tupleVar as ((cref as CREF_IDENT(__),_)) then
 
 end parFunArgDefinitionFromLooptupleVar;
 
-template reconstructKernelArraysFromLooptupleVars(tuple<DAE.ComponentRef,Absyn.Info> tupleVar, Text &reconstructedArrs)
+template reconstructKernelArraysFromLooptupleVars(tuple<DAE.ComponentRef,builtin.SourceInfo> tupleVar, Text &reconstructedArrs)
  "reconstructs modelica arrays in the kernels."
 ::=
 match tupleVar
@@ -5883,7 +5883,7 @@ case var as VARIABLE(__) then
 end setKernelArg_ith;
 
 
-template setKernelArgFormTupleLoopVars_ith(tuple<DAE.ComponentRef,Absyn.Info> tupleVar, Text &KernelName, Text &argNr, Text &parVarList, Context context /*BUFPA*/)
+template setKernelArgFormTupleLoopVars_ith(tuple<DAE.ComponentRef,builtin.SourceInfo> tupleVar, Text &KernelName, Text &argNr, Text &parVarList, Context context /*BUFPA*/)
 ::=
 match tupleVar
 //function args will have nill instdims even if they are arrays. handled here
@@ -7467,7 +7467,7 @@ case STMT_PARFOR(range=rng as RANGE(__)) then
   algStmtParForRangeInterface_impl(rng, iter, identType, identTypeShort, loopPrlVars, stmtStr, context, &varDecls, &auxFunction)
 end algStmtParForRangeInterface;
 
-template algStmtParForRangeInterface_impl(Exp range, Ident iterator, String type, String shortType, list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars, Text body, Context context, Text &varDecls, Text &auxFunction)
+template algStmtParForRangeInterface_impl(Exp range, Ident iterator, String type, String shortType, list<tuple<DAE.ComponentRef,builtin.SourceInfo>> loopPrlVars, Text body, Context context, Text &varDecls, Text &auxFunction)
  "The implementation of algStmtParForRangeInterface."
 ::=
 match range
@@ -10696,13 +10696,13 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
   else error(sourceInfo(), 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>')
 end patternMatch;
 
-template infoArgs(Info info)
+template infoArgs(SourceInfo info)
 ::=
   match info
-  case INFO(__) then '"<%Util.escapeModelicaStringToCString(testsuiteFriendly(fileName))%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
+  case SOURCEINFO(__) then '"<%Util.escapeModelicaStringToCString(testsuiteFriendly(fileName))%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
 end infoArgs;
 
-template assertCommon(Exp condition, list<Exp> messages, Exp level, Context context, Text &varDecls, Text &auxFunction, Info info)
+template assertCommon(Exp condition, list<Exp> messages, Exp level, Context context, Text &varDecls, Text &auxFunction, builtin.SourceInfo info)
 ::=
   let &preExpCond = buffer ""
   let condVar = daeExp(condition, context, &preExpCond, &varDecls, &auxFunction)
@@ -10759,7 +10759,7 @@ template expToFormatString(Exp exp, Context context, Text &preExp, Text &varDecl
   pre + daeExp(exp, context, &preExp, &varDecls, &auxFunction) + post
 end expToFormatString;
 
-template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preExpMsg, Text &varDecls, Info info)
+template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preExpMsg, Text &varDecls, builtin.SourceInfo info)
 ::=
   match context
   case FUNCTION_CONTEXT(__) then
@@ -11066,10 +11066,10 @@ template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String class
       >>
 end ScalarVariableAttribute;
 
-template getInfoArgs(Info info)
+template getInfoArgs(builtin.SourceInfo info)
 ::=
   match info
-    case INFO(__) then 'fileName = "<%Util.escapeModelicaStringToXmlString(fileName)%>" startLine = "<%lineNumberStart%>" startColumn = "<%columnNumberStart%>" endLine = "<%lineNumberEnd%>" endColumn = "<%columnNumberEnd%>" fileWritable = "<%if isReadOnly then false else true%>"'
+    case SOURCEINFO(__) then 'fileName = "<%Util.escapeModelicaStringToXmlString(fileName)%>" startLine = "<%lineNumberStart%>" startColumn = "<%columnNumberStart%>" endLine = "<%lineNumberEnd%>" endColumn = "<%columnNumberEnd%>" fileWritable = "<%if isReadOnly then false else true%>"'
 end getInfoArgs;
 
 template getCausality(Causality c)
@@ -11092,7 +11092,7 @@ template addRootsTempArray()
       >>
 end addRootsTempArray;
 
-template modelicaLine(Info info)
+template modelicaLine(builtin.SourceInfo info)
 ::=
   if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
 end modelicaLine;

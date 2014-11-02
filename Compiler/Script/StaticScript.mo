@@ -62,7 +62,7 @@ protected function calculateSimulationTimes
   input Boolean inImplInst;
   input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input GlobalScript.SimulationOptions inSimOpt;
   output FCore.Cache outCache;
   output DAE.Exp startTime "start time, default 0.0";
@@ -77,7 +77,7 @@ algorithm
       Boolean impl;
       GlobalScript.SymbolTable st;
       Prefix.Prefix pre;
-      Absyn.Info info;
+      SourceInfo info;
       Integer intervals;
       Real rstepTime, rstopTime, rstartTime;
       FCore.Cache cache;
@@ -145,7 +145,7 @@ public function getSimulationArguments
   input Boolean inImplInst;
   input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Option<GlobalScript.SimulationOptions> defaultOption;
   output FCore.Cache outCache;
   output list<DAE.Exp> outSimulationArguments;
@@ -158,7 +158,7 @@ algorithm
       Boolean impl;
       GlobalScript.SymbolTable st;
       Prefix.Prefix pre;
-      Absyn.Info info;
+      SourceInfo info;
       String cname_str;
       Absyn.Path className;
       DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
@@ -250,7 +250,7 @@ public function elabCallInteractive "This function elaborates the functions defi
   input Boolean inImplInst;
   input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -482,7 +482,7 @@ function: elabExp
   input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -501,7 +501,7 @@ function: Auxiliary function to elabExp that considers elabCallInteractive. If t
   input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Integer numErrorMessages;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -550,7 +550,7 @@ function: elabCall
   input Boolean inImplInst;
   input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Integer numErrorMessages;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
@@ -585,7 +585,7 @@ public function elabGraphicsExp
   input Absyn.Exp inExp;
   input Boolean inImplInst;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;

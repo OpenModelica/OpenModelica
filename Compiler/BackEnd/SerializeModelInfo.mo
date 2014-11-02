@@ -196,7 +196,7 @@ function serializeSource
   input DAE.ElementSource source;
   input Boolean withOperations;
 protected
-  Absyn.Info info;
+  SourceInfo info;
   list<Absyn.Path> paths,typeLst;
   list<Absyn.Within> partOfLst;
   Option<DAE.ComponentRef> iopt;
@@ -239,10 +239,10 @@ end serializeSource;
 
 function serializeInfo
   input File.File file;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match i as info
-    case Absyn.INFO()
+    case SOURCEINFO()
       equation
         File.write(file, "{\"file\":\"");
         File.writeEscape(file, i.fileName,escape=File.Escape.JSON);

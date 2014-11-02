@@ -5536,7 +5536,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
   else 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>'
 end patternMatch;
 
-template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, Info info)
+template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, builtin.SourceInfo info)
 ::=
   let &preExpCond = buffer ""
   let &preExpMsg = buffer ""
@@ -5639,7 +5639,7 @@ template literalExpConstBoxedVal(Exp lit)
   else error(sourceInfo(), 'literalExpConstBoxedVal failed: <%printExpStr(lit)%>')
 end literalExpConstBoxedVal;
 
-template error(Absyn.Info srcInfo, String errMessage)
+template error(builtin.SourceInfo srcInfo, String errMessage)
 "Example source template error reporting template to be used together with the sourceInfo() magic function.
 Usage: error(sourceInfo(), <<message>>) "
 ::=

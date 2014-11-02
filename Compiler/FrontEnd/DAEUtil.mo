@@ -2006,7 +2006,7 @@ public function toDaeParallelism "Converts scode parallelsim to dae parallelism.
   input DAE.ComponentRef inCref;
   input SCode.Parallelism inParallelism;
   input ClassInf.State inState;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.VarParallelism outParallelism;
 algorithm
   outParallelism := matchcontinue (inCref,inParallelism,inState,inInfo)
@@ -2210,7 +2210,7 @@ algorithm
       FCore.Cache cache;
       FCore.Graph env;
       DAE.ElementSource source;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,_,cname,{},_) then (cache,Values.RECORD(cname,{},{},-1));  /* impl */
     case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs),
@@ -2677,7 +2677,7 @@ end getNamedFunction;
 public function getNamedFunctionWithError "Return the FUNCTION with the given name. Fails if not found."
   input Absyn.Path path;
   input DAE.FunctionTree functions;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Function outElement;
 algorithm
   outElement := matchcontinue (path,functions,info)
@@ -2958,7 +2958,7 @@ algorithm
       DAE.ElementSource source "the element origin";
       list<list<DAE.ComponentRef>> crefslist;
       Boolean b;
-      Absyn.Info info;
+      SourceInfo info;
 
     case({},acc) then acc;
 
@@ -3892,7 +3892,7 @@ algorithm
       list<DAE.Exp> expl;
       DAE.ElementSource source "the origin of the element";
       Type_a extraArg;
-      Absyn.Info info;
+      SourceInfo info;
 
     case(DAE.VAR(cr,kind,dir,prl,prot,tp,optExp,dims,ct,source,attr,cmt,io),_,extraArg)
       equation
@@ -4225,7 +4225,7 @@ algorithm
       DAE.ElementSource source;
       DAE.Else algElse,algElse1;
       Type_a extraArg;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+      list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       list<DAE.ComponentRef> conditions;
       Boolean initialCall,b;
 
@@ -4434,7 +4434,7 @@ algorithm
       DAE.ElementSource source;
       DAE.Else algElse;
       Type_a extraArg;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+      list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       list<DAE.ComponentRef> conditions;
       Boolean initialCall;
 
@@ -4723,7 +4723,7 @@ public function getElementSourceFileInfo
 "Gets the file information associated with an element.
 If there are several candidates, select the first one."
   input DAE.ElementSource source;
-  output Absyn.Info info;
+  output SourceInfo info;
 algorithm
   info := match source
     case DAE.SOURCE(info = info) then info;
@@ -4864,7 +4864,7 @@ protected function addElementSourceType
 algorithm
   outSource := match(inSource, classPath)
     local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
       Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
@@ -4901,7 +4901,7 @@ public function addElementSourcePartOf
 algorithm
   outSource := match(inSource, withinPath)
     local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
       Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
@@ -4937,7 +4937,7 @@ end addElementSourcePartOfOpt;
 
 public function addElementSourceFileInfo
   input DAE.ElementSource source;
-  input Absyn.Info fileInfo;
+  input SourceInfo fileInfo;
   output DAE.ElementSource outSource;
 algorithm
   outSource := match (source,fileInfo)
@@ -4946,7 +4946,7 @@ algorithm
       list<Absyn.Within> partOfLst "the models this element came from" ;
       Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      Absyn.Info info;
+      SourceInfo info;
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> comment;
     case (DAE.SOURCE(_,partOfLst,instanceOpt,connectEquationOptLst,typeLst,operations,comment), info)
@@ -4961,7 +4961,7 @@ protected function addElementSourceInstanceOpt
 algorithm
   outSource := match(inSource, instanceOpt)
     local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
@@ -4984,7 +4984,7 @@ public function addElementSourceConnectOpt
 algorithm
   outSource := matchcontinue(inSource, connectEquationOpt)
     local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
       Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
@@ -5027,7 +5027,7 @@ public function mergeSources
 algorithm
   mergedSrc := match(src1,src2)
     local
-      Absyn.Info info;
+      SourceInfo info;
       list<Absyn.Within> partOfLst1,partOfLst2,p;
       Option<DAE.ComponentRef> instanceOpt1,instanceOpt2,i;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1,connectEquationOptLst2,c;
@@ -5054,7 +5054,7 @@ public function addCommentToSource
 algorithm
   mergedSrc := match(src1,commentIn)
     local
-      Absyn.Info info;
+      SourceInfo info;
       list<Absyn.Within> partOfLst1;
       Option<DAE.ComponentRef> instanceOpt1;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1;
@@ -5075,7 +5075,7 @@ end addCommentToSource;
 function createElementSource
 "@author: adrpo
  set the various sources of the element"
-  input Absyn.Info fileInfo;
+  input SourceInfo fileInfo;
   input Option<Absyn.Path> partOf "the model(s) this element came from";
   input Option<DAE.ComponentRef> instanceOpt "the instance(s) this element is part of";
   input Option<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOpt "this element came from this connect(s)";
@@ -6354,7 +6354,7 @@ public function addSymbolicTransformation
 algorithm
   outSource := matchcontinue (source,op)
     local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
       Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
@@ -6420,7 +6420,7 @@ public function addSymbolicTransformationFlattenedEqs
 algorithm
   outSource := match (source,elt)
     local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
       Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
@@ -6751,7 +6751,7 @@ public function addAdditionalComment
 algorithm
   outSource := match (source,message)
     local
-      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
       Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;

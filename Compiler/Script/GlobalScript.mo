@@ -79,11 +79,12 @@ uniontype Statement
  an Algorithm statement or an expression.
  - GlobalScript.Statement"
   record IALG
-    Absyn.AlgorithmItem algItem "algItem" ;
+    Absyn.AlgorithmItem algItem;
   end IALG;
 
   record IEXP
-    Absyn.Exp exp "exp" ;
+    Absyn.Exp exp;
+    SourceInfo info;
   end IEXP;
 
 end Statement;
@@ -189,7 +190,7 @@ uniontype ComponentReplacementRules
 end ComponentReplacementRules;
 
 public constant SymbolTable emptySymboltable =
-     SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
+     SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP()),
                  NONE(),
                  {},
                  {},

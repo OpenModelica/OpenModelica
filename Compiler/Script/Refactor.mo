@@ -82,7 +82,7 @@ algorithm
       Boolean part,f,e;
       Absyn.Restriction r;
       Absyn.ClassDef d;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.Path cPath;
       FCore.Graph env;
 
@@ -327,7 +327,7 @@ algorithm
       Absyn.EquationItem ei;
       Option<String> com;
       list<Absyn.ElementArg> annList;
-      Absyn.Info info;
+      SourceInfo info;
 
     case(Absyn.EQUATIONITEM(equation_ = e, info = info, comment =
       SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs = annList)),comment = com))),p,_,_)
@@ -354,7 +354,7 @@ algorithm
       Absyn.Algorithm alg;
       Option<String> com;
       list<Absyn.ElementArg> annList;
-      Absyn.Info info;
+      SourceInfo info;
     case(Absyn.ALGORITHMITEM(algorithm_ = alg, info = info, comment =
       SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com))),_,_,_)
       equation
@@ -390,7 +390,7 @@ algorithm
       Option<Absyn.RedeclareKeywords> rdk;
       Absyn.InnerOuter io;
       Absyn.ElementSpec es,resultSpec;
-      Absyn.Info i;
+      SourceInfo i;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Path cPath;
       FCore.Graph env;
@@ -572,7 +572,7 @@ algorithm
       Option<String> com;
       Option<Real> rot;
       FCore.Graph env;
-      Absyn.Info info;
+      SourceInfo info;
 
 
     case({},_,res,_,_,_,_) then res ;
@@ -1206,7 +1206,7 @@ algorithm
       Absyn.Each e;
       Option<String> com;
       Absyn.EqMod eqMod;
-      Absyn.Info info, mod_info;
+      SourceInfo info, mod_info;
 
     case({},_,res,_) then res ;
 
@@ -1306,7 +1306,7 @@ algorithm
       Absyn.Each e;
       Option<String> com;
       Absyn.EqMod eqMod;
-      Absyn.Info info, mod_info;
+      SourceInfo info, mod_info;
 
     case({},_,res,_) then res ;
 
@@ -1437,7 +1437,7 @@ algorithm
       Absyn.Each e;
       Option<String> com;
       Absyn.EqMod eqMod;
-      Absyn.Info info;
+      SourceInfo info;
 
     case ({},_)
     then
@@ -2143,7 +2143,7 @@ algorithm
       Boolean fi;
       Absyn.Each e;
       Option<String> com;
-      Absyn.Info info;
+      SourceInfo info;
 
     case({}) then {};
     case(Absyn.MODIFICATION(finalPrefix = _, eachPrefix = _, path = Absyn.IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(elementArgLst= _)), comment = _) :: rest)

@@ -230,7 +230,7 @@ protected
   list<Integer> unmatched,unmatched1,vars;
   String eqn_str,var_str;
   DAE.ElementSource source;
-  Absyn.Info info;
+  SourceInfo info;
   array<Integer> mapIncRowEqn;
   BackendDAE.EqSystem syst;
 algorithm

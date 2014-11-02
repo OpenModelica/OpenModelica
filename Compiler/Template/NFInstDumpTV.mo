@@ -29,7 +29,7 @@ package NFConnect2
     record CONNECTION
       Connector lhs;
       Connector rhs;
-      Absyn.Info info;
+      SourceInfo info;
     end CONNECTION;
   end Connection;
 
@@ -38,20 +38,20 @@ package NFConnect2
   //    Connector lhs;
   //    Connector rhs;
   //    Boolean breakable;
-  //    Absyn.Info info;
+  //    SourceInfo info;
   //  end BRANCH;
   //end Branch;
 
   uniontype Root
     record ROOT
       DAE.ComponentRef name;
-      Absyn.Info info;
+      SourceInfo info;
     end ROOT;
 
     record POTENTIAL_ROOT
       DAE.ComponentRef name;
       Integer priority;
-      Absyn.Info info;
+      SourceInfo info;
     end POTENTIAL_ROOT;
   end Root;
 
@@ -162,21 +162,21 @@ package NFInstTypes
       NFEnv.Env env;
       Prefix prefix;
       Integer propagatedDims;
-      Absyn.Info info;
+      SourceInfo info;
     end RAW_BINDING;
 
     record UNTYPED_BINDING
       DAE.Exp bindingExp;
       Boolean isProcessing;
       Integer propagatedDims;
-      Absyn.Info info;
+      SourceInfo info;
     end UNTYPED_BINDING;
 
     record TYPED_BINDING
       DAE.Exp bindingExp;
       DAE.Type bindingType;
       Integer propagatedDims;
-      Absyn.Info info;
+      SourceInfo info;
     end TYPED_BINDING;
   end Binding;
 
@@ -188,7 +188,7 @@ package NFInstTypes
       Prefixes prefixes;
       ParamType paramType;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
     end UNTYPED_COMPONENT;
 
     record TYPED_COMPONENT
@@ -196,7 +196,7 @@ package NFInstTypes
       DAE.Type ty;
       DaePrefixes prefixes;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
     end TYPED_COMPONENT;
 
     record CONDITIONAL_COMPONENT
@@ -207,7 +207,7 @@ package NFInstTypes
       Prefixes prefixes;
       NFEnv.Env env;
       Prefix prefix;
-      Absyn.Info info;
+      SourceInfo info;
     end CONDITIONAL_COMPONENT;
 
     record DELETED_COMPONENT
@@ -243,7 +243,7 @@ package NFInstTypes
       SCode.Each eachPrefix;
       Binding binding;
       list<Modifier> subModifiers;
-      Absyn.Info info;
+      SourceInfo info;
     end MODIFIER;
 
     record REDECLARE
@@ -263,8 +263,8 @@ package NFInstTypes
       SCode.Variability variability;
       SCode.Final finalPrefix;
       Absyn.InnerOuter innerOuter;
-      tuple<Absyn.Direction, Absyn.Info> direction;
-      tuple<SCode.ConnectorType, Absyn.Info> connectorType;
+      tuple<Absyn.Direction, SourceInfo> direction;
+      tuple<SCode.ConnectorType, SourceInfo> connectorType;
       VarArgs varArgs;
     end PREFIXES;
   end Prefixes;
@@ -291,7 +291,7 @@ package NFInstTypes
     record EQUALITY_EQUATION
       DAE.Exp lhs;
       DAE.Exp rhs;
-      Absyn.Info info;
+      SourceInfo info;
     end EQUALITY_EQUATION;
 
     record CONNECT_EQUATION
@@ -302,7 +302,7 @@ package NFInstTypes
       NFConnect2.Face rhsFace;
       DAE.Type rhsType;
       Prefix prefix;
-      Absyn.Info info;
+      SourceInfo info;
     end CONNECT_EQUATION;
 
     record FOR_EQUATION
@@ -311,39 +311,39 @@ package NFInstTypes
       DAE.Type indexType;
       Option<DAE.Exp> range;
       list<Equation> body;
-      Absyn.Info info;
+      SourceInfo info;
     end FOR_EQUATION;
 
     record IF_EQUATION
       list<tuple<DAE.Exp, list<Equation>>> branches;
-      Absyn.Info info;
+      SourceInfo info;
     end IF_EQUATION;
 
     record WHEN_EQUATION
       list<tuple<DAE.Exp, list<Equation>>> branches;
-      Absyn.Info info;
+      SourceInfo info;
     end WHEN_EQUATION;
 
     record ASSERT_EQUATION
       DAE.Exp condition;
       DAE.Exp message;
-      Absyn.Info info;
+      SourceInfo info;
     end ASSERT_EQUATION;
 
     record TERMINATE_EQUATION
       DAE.Exp message;
-      Absyn.Info info;
+      SourceInfo info;
     end TERMINATE_EQUATION;
 
     record REINIT_EQUATION
       DAE.ComponentRef cref;
       DAE.Exp reinitExp;
-      Absyn.Info info;
+      SourceInfo info;
     end REINIT_EQUATION;
 
     record NORETCALL_EQUATION
       DAE.Exp exp;
-      Absyn.Info info;
+      SourceInfo info;
     end NORETCALL_EQUATION;
   end Equation;
 
@@ -351,7 +351,7 @@ package NFInstTypes
     record ASSIGN_STMT
       DAE.Exp lhs;
       DAE.Exp rhs;
-      Absyn.Info info;
+      SourceInfo info;
     end ASSIGN_STMT;
 
     record FOR_STMT
@@ -359,58 +359,58 @@ package NFInstTypes
       DAE.Type indexType;
       Option<DAE.Exp> range;
       list<Statement> body;
-      Absyn.Info info;
+      SourceInfo info;
     end FOR_STMT;
 
     record IF_STMT
       list<tuple<DAE.Exp, list<Statement>>> branches;
-      Absyn.Info info;
+      SourceInfo info;
     end IF_STMT;
 
     record WHEN_STMT
       list<tuple<DAE.Exp, list<Statement>>> branches;
-      Absyn.Info info;
+      SourceInfo info;
     end WHEN_STMT;
 
     record ASSERT_STMT
       DAE.Exp condition;
       DAE.Exp message;
-      Absyn.Info info;
+      SourceInfo info;
     end ASSERT_STMT;
 
     record TERMINATE_STMT
       DAE.Exp message;
-      Absyn.Info info;
+      SourceInfo info;
     end TERMINATE_STMT;
 
     record REINIT_STMT
       DAE.ComponentRef cref;
       DAE.Exp reinitExp;
-      Absyn.Info info;
+      SourceInfo info;
     end REINIT_STMT;
 
     record NORETCALL_STMT
       DAE.Exp exp;
-      Absyn.Info info;
+      SourceInfo info;
     end NORETCALL_STMT;
 
     record WHILE_STMT
       DAE.Exp exp;
       list<Statement> statementLst;
-      Absyn.Info info;
+      SourceInfo info;
     end WHILE_STMT;
 
     record RETURN_STMT
-      Absyn.Info info;
+      SourceInfo info;
     end RETURN_STMT;
 
     record BREAK_STMT
-      Absyn.Info info;
+      SourceInfo info;
     end BREAK_STMT;
 
     record FAILURE_STMT
       list<Statement> body;
-      Absyn.Info info;
+      SourceInfo info;
     end FAILURE_STMT;
 
   end Statement;

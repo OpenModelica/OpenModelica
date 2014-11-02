@@ -336,14 +336,14 @@ static char* SystemImpl__readFile(const char* filename)
   res = stat(filename, &statstr);
 
   if (res != 0) {
-    const char *c_tokens[1]={filename};
+    const char *c_tokens[2]={strerror(errno),filename};
     c_add_message(NULL,85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
       ErrorLevel_error,
-      gettext("Error opening file: %s."),
+      gettext("Error opening file: %s: %s."),
       c_tokens,
-      1);
-    return "No such file";
+      2);
+    MMC_THROW();
   }
 
   /* adrpo: if size is larger than the max string, return a different string */
@@ -356,17 +356,33 @@ static char* SystemImpl__readFile(const char* filename)
       gettext("File too large to fit into a MetaModelica string: %s."),
       c_tokens,
       1);
-    fclose(file);
-    return "File too large";
+    MMC_THROW();
   }
 #endif
 
   file = fopen(filename,"rb");
+  if (file == NULL) {
+    const char *c_tokens[2]={strerror(errno),filename};
+    c_add_message(NULL, 85, /* ERROR_OPENING_FILE */
+      ErrorType_scripting,
+      ErrorLevel_error,
+      gettext("Error opening file: %s (its size is known, but failed to open it): %s"),
+      c_tokens,
+      2);
+    MMC_THROW();
+  }
   buf = (char*) GC_malloc_atomic(statstr.st_size+1);
 
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size) {
+    const char *c_tokens[2]={strerror(errno),filename};
+    c_add_message(NULL,85, /* ERROR_OPENING_FILE */
+      ErrorType_scripting,
+      ErrorLevel_error,
+      gettext("Failed to read the entire file: %s: %s"),
+      c_tokens,
+      2);
     fclose(file);
-    return "Failed while reading file";
+    MMC_THROW();
   }
   buf[statstr.st_size] = '\0';
   fclose(file);

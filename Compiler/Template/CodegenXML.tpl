@@ -4003,7 +4003,7 @@ template dimensionXml(Dimension d)
   else "INVALID_DIMENSION"
 end dimensionXml;
 
-template assertCommonXml(Exp condition, Exp message, Context context, Text &varDecls, Info info)
+template assertCommonXml(Exp condition, Exp message, Context context, Text &varDecls, builtin.SourceInfo info)
 ::=
   let &preExpCond = buffer ""
   let &preExpMsg = buffer ""
@@ -4021,7 +4021,7 @@ template assertCommonXml(Exp condition, Exp message, Context context, Text &varD
   >>
 end assertCommonXml;
 
-template error(Absyn.Info srcInfo, String errMessage)
+template error(builtin.SourceInfo srcInfo, String errMessage)
 "Example source template error reporting template to be used together with the sourceInfo() magic function.
 Usage: error(sourceInfo(), <<message>>) "
 ::=
@@ -4031,18 +4031,6 @@ let() = Tpl.addSourceTemplateError(errMessage, srcInfo)
 #error "<% Error.infoStr(srcInfo) %> <% errMessage %>"<%\n%>
 >>
 end error;
-
-template modelicaLineXml(Info info)
-::=
-  match info
-  case INFO(columnNumberStart=0) then "/* Dummy Line */"
-  else '/*#modelicaLine <%infoStr(info)%>*/'
-end modelicaLineXml;
-
-template endModelicaLineXml()
-::=
-  "/*#endModelicaLine*/"
-end endModelicaLineXml;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenXML;

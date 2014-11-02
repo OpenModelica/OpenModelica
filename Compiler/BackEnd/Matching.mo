@@ -3909,7 +3909,7 @@ algorithm
       String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
-      Absyn.Info info;
+      SourceInfo info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,l_label1,r_label1;
@@ -6227,7 +6227,7 @@ protected
   list<Integer> unmatched,unmatched1,vars;
   String eqn_str,var_str;
   DAE.ElementSource source;
-  Absyn.Info info;
+  SourceInfo info;
   array<Integer> mapIncRowEqn;
   BackendDAE.EqSystem syst;
 algorithm

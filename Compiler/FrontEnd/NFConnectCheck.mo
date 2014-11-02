@@ -62,7 +62,7 @@ public type Root = NFConnect2.Root;
 
 public type Component = NFInstTypes.Component;
 
-public type TupleErrorInfo = tuple<DAE.ComponentRef, DAE.ComponentRef, Absyn.Info>;
+public type TupleErrorInfo = tuple<DAE.ComponentRef, DAE.ComponentRef, SourceInfo>;
 public type ConnectorTuple = tuple<DAE.Type, ConnectorType, DAE.VarKind, DAE.VarDirection>;
 
 protected uniontype ConnectorStatus
@@ -78,7 +78,7 @@ public function crefIsValidNode
   input DAE.ComponentRef inNode;
   input String inFuncName;
   input Boolean isFirst;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inNode, inFuncName, isFirst, inInfo)
     local
@@ -109,7 +109,7 @@ protected function crefIsValidNode2
   input DAE.Type inType2;
   input String inFuncName;
   input Boolean isFirst;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inType1, inType2, inFuncName, isFirst, inInfo)
     case (_, _, _, _, _)
@@ -133,7 +133,7 @@ public function checkComponentIsConnector
   input Component inComponent;
   input Option<Component> inPrefixComponent;
   input DAE.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inComponent, inPrefixComponent, inCref, inInfo)
     local
@@ -173,7 +173,7 @@ public function compatibleConnectors
    connecting them."
   input Connector inLhsConnector;
   input Connector inRhsConnector;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   DAE.ComponentRef lhs_name, rhs_name;
   ConnectorTuple lhs_conn, rhs_conn;
@@ -250,7 +250,7 @@ algorithm
       DAE.VarDirection lhs_dir, rhs_dir;
       TupleErrorInfo err_info;
       DAE.ComponentRef lhs_cref, rhs_cref;
-      Absyn.Info info;
+      SourceInfo info;
       String cref_str1, cref_str2;
 
     // Both connectors are non-expandable, check them.
@@ -320,7 +320,7 @@ algorithm
   _ := matchcontinue(inLhsType, inRhsType, inErrorInfo)
     local
       DAE.ComponentRef lhs_cref, rhs_cref;
-      Absyn.Info info;
+      SourceInfo info;
       String cref_str1, cref_str2, cty_str1, cty_str2;
       list<String> err_strl;
 
@@ -360,7 +360,7 @@ algorithm
       DAE.ComponentRef lhs_cref, rhs_cref;
       String cref_str1, cref_str2, dir_str1, dir_str2;
       list<String> err_strl;
-      Absyn.Info info;
+      SourceInfo info;
 
     // None or both are input/output => ok.
     case (_, _, _)
@@ -404,7 +404,7 @@ algorithm
     local
       Boolean ipc;
       DAE.ComponentRef lhs_cref, rhs_cref;
-      Absyn.Info info;
+      SourceInfo info;
       ConnectorType lhs_cty, rhs_cty;
       DAE.VarKind lhs_var, rhs_var;
 
@@ -432,7 +432,7 @@ algorithm
     local
       Boolean ipc1, ipc2;
       DAE.ComponentRef cref1, cref2;
-      Absyn.Info info;
+      SourceInfo info;
       String lhs_str, rhs_str, lhs_var_str, rhs_var_str;
       list<String> tokens;
 
@@ -471,7 +471,7 @@ protected function compatibleVariability2
   input ConnectorType inConnectorType;
   input DAE.VarKind inVariability;
   input DAE.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inIsParamOrConst, inType, inConnectorType,
       inVariability, inCref, inInfo)
@@ -550,7 +550,7 @@ algorithm
     local
       DAE.ComponentRef lhs_cref, rhs_cref;
       ConnectorTuple lhs_conn, rhs_conn;
-      Absyn.Info info;
+      SourceInfo info;
       TupleErrorInfo err_info;
 
     case (_, _, (lhs_cref, rhs_cref, info))

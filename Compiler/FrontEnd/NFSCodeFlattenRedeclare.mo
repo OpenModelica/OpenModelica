@@ -122,7 +122,7 @@ algorithm
   outEnv := matchcontinue(inRedeclare, inEnv)
     local
       SCode.Ident  name;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Path env_path;
       list<Absyn.Path> ext_pathl;
       Env env;
@@ -153,7 +153,7 @@ end addElementRedeclarationsToEnv2;
 protected function lookupElementRedeclaration
   input SCode.Ident inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<Absyn.Path> outPaths;
 algorithm
   outPaths := matchcontinue(inName, inEnv, inInfo)
@@ -180,7 +180,7 @@ protected function addRedeclareToEnvExtendsTable
   input Item inRedeclaredElement;
   input list<Absyn.Path> inBaseClasses;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Env outEnv;
 protected
   list<Extends> bcl;
@@ -206,7 +206,7 @@ algorithm
       list<Absyn.Path> rest_bc;
       list<NFSCodeEnv.Redeclaration> el;
       Integer index;
-      Absyn.Info info;
+      SourceInfo info;
       NFSCodeEnv.Redeclaration redecl;
 
     case (_, bc1 :: rest_bc, NFSCodeEnv.EXTENDS(bc2, el, index, info) :: exl)
@@ -412,7 +412,7 @@ algorithm
     local
       SCode.Ident name, scope_name;
       Item item;
-      Absyn.Info info;
+      SourceInfo info;
       list<Absyn.Path> bcl;
       tuple<Env, Replacements> envRpl;
 
@@ -525,7 +525,7 @@ algorithm
       list<NFSCodeEnv.Extends> rest_exts;
       list<NFSCodeEnv.Redeclaration> redecls;
       Integer index;
-      Absyn.Info info;
+      SourceInfo info;
       list<String> bc_strl;
       String bcl_str, err_msg;
 
@@ -696,7 +696,7 @@ protected
   SCode.Mod mod;
   SCode.Comment cmt;
   Option<Absyn.Exp> cond;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   SCode.COMPONENT(prefixes = pref1, attributes = attr1) := inOriginalVar;
   SCode.COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info) := inNewVar;
@@ -716,7 +716,7 @@ protected
   SCode.Partial pp;
   SCode.Restriction res;
   SCode.ClassDef cdef;
-  Absyn.Info info;
+  SourceInfo info;
   SCode.Comment cmt;
 algorithm
   SCode.CLASS(prefixes = pref1) := inOriginalClass;

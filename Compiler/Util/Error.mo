@@ -117,7 +117,7 @@ public
 uniontype TotalMessage
   record TOTALMESSAGE
     Message msg;
-    Absyn.Info info;
+    SourceInfo info;
   end TOTALMESSAGE;
 end TotalMessage;
 
@@ -878,13 +878,13 @@ public function updateCurrentComponent "Function: updateCurrentComponent
 This function takes a String and set the global var to
 which the current variable the compiler is working with."
   input String component;
-  input Absyn.Info info;
+  input SourceInfo info;
 protected
   String filename;
   Integer ls, le, cs, ce;
   Boolean ro;
 algorithm
-  Absyn.INFO(filename, ro, ls, cs, le, ce, _) := info;
+  SOURCEINFO(filename, ro, ls, cs, le, ce, _) := info;
   ErrorExt.updateCurrentComponent(component, ro, Util.testsuiteFriendly(filename), ls, le, cs, ce);
 end updateCurrentComponent;
 
@@ -919,7 +919,7 @@ public function addSourceMessage "
   The rest of the info is looked up in the message table."
   input Message inErrorMsg;
   input MessageTokens inMessageTokens;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match (inErrorMsg,inMessageTokens,inInfo)
     local
@@ -931,7 +931,7 @@ algorithm
       Boolean isReadOnly;
       Util.TranslatableContent msg;
     case (MESSAGE(error_id, msg_type, severity, msg), tokens,
-        Absyn.INFO(fileName = file,isReadOnly = isReadOnly,
+        SOURCEINFO(fileName = file,isReadOnly = isReadOnly,
           lineNumberStart = sline, columnNumberStart = scol,
           lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
@@ -946,7 +946,7 @@ public function addSourceMessageAndFail
   "Same as addSourceMessage, but fails after adding the error."
   input Message inErrorMsg;
   input MessageTokens inMessageTokens;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   addSourceMessage(inErrorMsg, inMessageTokens, inInfo);
   fail();
@@ -958,12 +958,12 @@ public function addMultiSourceMessage
    file infos are used to print a trace of where the error came from."
   input Message inErrorMsg;
   input MessageTokens inMessageTokens;
-  input list<Absyn.Info> inInfo;
+  input list<SourceInfo> inInfo;
 algorithm
   _ := match(inErrorMsg, inMessageTokens, inInfo)
     local
-      Absyn.Info info;
-      list<Absyn.Info> rest_info;
+      SourceInfo info;
+      list<SourceInfo> rest_info;
 
     // Only one info left, print out the message.
     case (_, _, {info})
@@ -997,11 +997,11 @@ public function addMessageOrSourceMessage
   If the source file info is present a source message is added"
   input Message inErrorMsg;
   input MessageTokens inMessageTokens;
-  input Option<Absyn.Info> inInfoOpt;
+  input Option<SourceInfo> inInfoOpt;
 algorithm
   _ := match (inErrorMsg, inMessageTokens, inInfoOpt)
     local
-      Absyn.Info info;
+      SourceInfo info;
 
     // we DON'T have an info, add message
     case (_, _, NONE())
@@ -1154,16 +1154,16 @@ algorithm
 end selectString;
 
 public function infoStr "
-  Converts an Absyn.Info into a string ready to be used in error messages.
+  Converts an SourceInfo into a string ready to be used in error messages.
   Format is [filename:line start:column start-line end:column end]"
-  input Absyn.Info info;
+  input SourceInfo info;
   output String str;
 algorithm
   str := match(info)
     local
       String filename, info_str;
       Integer line_start, line_end, col_start, col_end;
-    case (Absyn.INFO(fileName = filename, lineNumberStart = line_start,
+    case (SOURCEINFO(fileName = filename, lineNumberStart = line_start,
         columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end))
         equation
           info_str = "[" + Util.testsuiteFriendly(filename) + ":" +
@@ -1178,7 +1178,7 @@ public function assertion "
   to be shown to a user, but rather to show internal error messages."
   input Boolean b;
   input String message;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (b,message,info)
     case (true, _, _) then ();
@@ -1195,7 +1195,7 @@ public function assertionOrAddSourceMessage "
   input Boolean inCond;
   input Message inErrorMsg;
   input MessageTokens inMessageTokens;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match (inCond, inErrorMsg, inMessageTokens, inInfo)
     case (true, _, _, _) then ();

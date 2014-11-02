@@ -314,9 +314,10 @@ algorithm
       Boolean outres;
       Absyn.Exp exp;
       Boolean partialInst, gen, evalfunc, keepArrays;
+      SourceInfo info;
 
     // evaluate graphical API
-    case ((stmts as GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(function_ = _))})),st)
+    case ((stmts as GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL())})),st)
       equation
         // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
         partialInst = System.getPartialInstantiation();
@@ -332,7 +333,7 @@ algorithm
         (str_1,newst);
 
     // Evaluate algorithm statements in evaluateAlgStmt()
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM(algorithm_ = _)))}, semicolon = _),st)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM()))}, semicolon = _),st)
       equation
         Inst.initInstHashTable();
         (str,st_1) = evaluateAlgStmt(algitem, st);
@@ -341,10 +342,10 @@ algorithm
         (str_1,st_1);
 
     // Evaluate expressions in evaluate_exprToStr()
-    case ((GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = exp)})),st)
+    case ((GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = exp, info = info)})),st)
       equation
         Inst.initInstHashTable();
-        (str,st_1) = evaluateExprToStr(exp, st, Absyn.dummyInfo);
+        (str,st_1) = evaluateExprToStr(exp, st, info);
         str_1 = stringAppend(str, "\n");
       then
         (str_1,st_1);
@@ -385,7 +386,7 @@ algorithm
       Absyn.Exp starte, stepe, stope;
       Absyn.ComponentRef cr;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.FunctionArgs fargs;
       list<Absyn.Subscript> asubs;
       list<DAE.Subscript> dsubs;
@@ -607,7 +608,7 @@ protected function evaluateWhileStmt
   input Absyn.Exp inExp;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input GlobalScript.SymbolTable inSymbolTable;
-  input Absyn.Info info;
+  input SourceInfo info;
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable:=
@@ -658,7 +659,7 @@ protected function evaluatePartOfIfStatement
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input GlobalScript.SymbolTable inSymbolTable;
-  input Absyn.Info info;
+  input SourceInfo info;
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable:=
@@ -702,7 +703,7 @@ protected function evaluateIfStatementLst
   (i.e. a list of exp  statements)"
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input GlobalScript.SymbolTable inSymbolTable;
-  input Absyn.Info info;
+  input SourceInfo info;
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable:=
@@ -759,7 +760,7 @@ protected function evaluateExpr
    Output: Values.Value - Resulting value of the expression"
   input Absyn.Exp inExp;
   input GlobalScript.SymbolTable inSymbolTable;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Values.Value outValue;
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
@@ -825,7 +826,7 @@ protected function evaluateExprToStr
    Output: string - The resulting value represented as a string"
   input Absyn.Exp inExp;
   input GlobalScript.SymbolTable inSymbolTable;
-  input Absyn.Info info;
+  input SourceInfo info;
   output String outString;
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
@@ -854,7 +855,7 @@ protected function makeTupleCrefs
   input list<DAE.Type> inTypes;
   input FCore.Graph inEnv;
   input FCore.Cache inCache;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
   outCrefs := List.threadMap3(inCrefs, inTypes, makeTupleCref, inEnv, inCache, inInfo);
@@ -866,7 +867,7 @@ protected function makeTupleCref
   input DAE.Type inType;
   input FCore.Graph inEnv;
   input FCore.Cache inCache;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.ComponentRef outCref;
 algorithm
   outCref := match(inCref, inType, inEnv, inCache, inInfo)
@@ -1099,7 +1100,7 @@ algorithm
         newp = updateProgram(
           Absyn.PROGRAM({Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
                          Absyn.dummyParts,Absyn.dummyInfo)},
-                         Absyn.TOP(),Absyn.dummyTimeStamp), p);
+                         Absyn.TOP()), p);
         newst = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         ("true",newst);
@@ -1116,7 +1117,7 @@ algorithm
           Absyn.PROGRAM({
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
                       Absyn.dummyParts,Absyn.dummyInfo)},
-                      Absyn.WITHIN(wpath),Absyn.dummyTimeStamp), p);
+                      Absyn.WITHIN(wpath)), p);
         newst = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         ("true",newst);
@@ -1130,7 +1131,7 @@ algorithm
         newp = updateProgram(
           Absyn.PROGRAM({
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),Absyn.dummyParts,Absyn.dummyInfo)
-          }, Absyn.WITHIN(path_1),Absyn.dummyTimeStamp), p);
+          }, Absyn.WITHIN(path_1)), p);
         newst = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
         ("true",newst);
@@ -1452,8 +1453,8 @@ algorithm
         path = Absyn.crefToPath(cr);
         cls = getPathedClassInProgram(path, p);
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
-        p = updateProgram(Absyn.PROGRAM({refactoredClass}, Absyn.TOP(), Absyn.dummyTimeStamp), p);
-         resstr = Dump.unparseStr(Absyn.PROGRAM({refactoredClass},Absyn.TOP(),Absyn.dummyTimeStamp),false);
+        p = updateProgram(Absyn.PROGRAM({refactoredClass}, Absyn.TOP()), p);
+         resstr = Dump.unparseStr(Absyn.PROGRAM({refactoredClass},Absyn.TOP()),false);
         st = GlobalScriptUtil.setSymbolTableAST(st, p);
       then
         (resstr, st);
@@ -1969,7 +1970,7 @@ protected
 algorithm
    path := Absyn.crefToPath(cr);
    cl := getPathedClassInProgram(path, p);
-   classStr := Dump.unparseStr(Absyn.PROGRAM({cl},Absyn.TOP(),Absyn.dummyTimeStamp),false);
+   classStr := Dump.unparseStr(Absyn.PROGRAM({cl},Absyn.TOP()),false);
 end listClass;
 
 protected function extractAllComponentreplacements
@@ -2016,7 +2017,7 @@ input Absyn.Class cl;
 output Boolean readOnly;
 algorithm
   readOnly := match(cl)
-    case(Absyn.CLASS(info = Absyn.INFO(isReadOnly=readOnly))) then readOnly;
+    case(Absyn.CLASS(info = SOURCEINFO(isReadOnly=readOnly))) then readOnly;
   end match;
 end isClassReadOnly;
 
@@ -2110,7 +2111,7 @@ algorithm
         cl = getPathedClassInProgram(model_path, p);
         cl = renameComponentInClass(cl, old_comp, new_comp);
         w = buildWithin(Absyn.makeFullyQualified(model_path));
-        p = updateProgram(Absyn.PROGRAM({cl}, w, Absyn.dummyTimeStamp), p);
+        p = updateProgram(Absyn.PROGRAM({cl}, w), p);
         str = Absyn.pathString(model_path);
         paths_2 = stringAppendList({"{",str,"}"});
       then
@@ -2212,7 +2213,7 @@ algorithm
       Boolean a,b,c;
       Absyn.Restriction d;
       Absyn.ClassDef e;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.ComponentRef old_comp,new_comp;
       GlobalScript.ComponentReplacement args;
       Option<Absyn.Path> opath;
@@ -2252,7 +2253,7 @@ algorithm
       Boolean partialPrefix,finalPrefix,encapsulatedPrefix;
       Absyn.Restriction restriction;
       Option<String> a,c;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.ComponentRef old_comp,new_comp;
       list<Absyn.ElementArg> b;
       Absyn.Class class_;
@@ -2376,7 +2377,7 @@ algorithm
       Boolean finalPrefix;
       Option<Absyn.RedeclareKeywords> redeclare_;
       Absyn.InnerOuter inner_outer;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.ComponentRef old_comp,new_comp;
     case ({},_,_) then {};  /* the old name for the component */
@@ -2483,7 +2484,7 @@ algorithm
       list<Absyn.EquationItem> res_1,res;
       Absyn.Equation equation_1,equation_;
       Option<Absyn.Comment> cmt;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.ComponentRef old_comp,new_comp;
       Absyn.EquationItem equation_item;
     case ({},_,_) then {};  /* the old name for the component */
@@ -2727,7 +2728,7 @@ algorithm
       Absyn.ElementSpec element_spec_1,element_spec2_1,element_spec,element_spec2;
       Absyn.RedeclareKeywords redecl;
       Option<Absyn.Comment> c;
-      Absyn.Info info, mod_info;
+      SourceInfo info, mod_info;
     /* the old name for the component */
     case (Absyn.MODIFICATION(finalPrefix = b,eachPrefix = each_,path = p,modification = SOME(Absyn.CLASSMOD(element_args,Absyn.EQMOD(exp,info))),comment = str,info = mod_info),old_comp,new_comp)
       equation
@@ -2781,7 +2782,7 @@ algorithm
       Absyn.ElementSpec elementspec_1,elementspec;
       Option<Absyn.RedeclareKeywords> redeclare_;
       Absyn.InnerOuter inner_outer;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Exp exp_1,exp;
       list<Absyn.ElementArg> element_args_1,element_args;
@@ -3760,7 +3761,7 @@ algorithm
       Boolean a,b,c;
       Absyn.Restriction d;
       Absyn.ClassDef e;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.Program p;
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = _,body = _,info = file_info)),SOME(pa),(comps,p,env)))
       equation
@@ -3786,11 +3787,11 @@ algorithm
 end extractAllComponentsVisitor;
 
 protected function isReadOnly
-  input Absyn.Info file_info;
+  input SourceInfo file_info;
   output Boolean res;
 algorithm
   res := match(file_info)
-    case(Absyn.INFO(isReadOnly = res)) then res;
+    case(SOURCEINFO(isReadOnly = res)) then res;
   end match;
 end isReadOnly;
 
@@ -3809,7 +3810,7 @@ algorithm
       GlobalScript.Components comps_1,comps;
       String id;
       Absyn.ClassDef classdef;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Path pa;
       FCore.Graph env;
     case (Absyn.CLASS(name = _,body = classdef),pa,comps,env) /* the QUALIFIED path */
@@ -4414,13 +4415,12 @@ algorithm
       String varname,variability,causality;
       Boolean finalPrefix,flowPrefix,streamPrefix,prot,repl;
       list<Boolean> dyn_ref;
-      Absyn.TimeStamp ts;
-    case (p_class,Absyn.CREF_IDENT(name = varname),finalPrefix,flowPrefix,streamPrefix,prot,repl, /*parallelism,*/ variability,dyn_ref,causality,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (p_class,Absyn.CREF_IDENT(name = varname),finalPrefix,flowPrefix,streamPrefix,prot,repl, /*parallelism,*/ variability,dyn_ref,causality,p as Absyn.PROGRAM())
       equation
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setComponentPropertiesInClass(cdef, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, "" /*parallelism*/, variability, dyn_ref, causality);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         ("Ok",newp);
     case (_,_,_,_,_,_,_,/*_,*/_,_,_,p) then ("Error",p);
@@ -4462,7 +4462,7 @@ algorithm
       Boolean p,f,e,finalPrefix,flowPrefix,streamPrefix,prot,repl;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Boolean> dyn_ref;
       list<Absyn.ElementArg> mod;
       list<String> typeVars;
@@ -4670,7 +4670,7 @@ algorithm
       Absyn.ElementSpec spec_1,spec;
       String cr,va,cau,prl;
       list<Absyn.ComponentItem> ellst;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
       Boolean finalPrefix,flowPrefix,streamPrefix,repl;
       list<Boolean> dr;
@@ -4882,11 +4882,11 @@ end selectString;
 
 protected function getCrefInfo
 " author: adrpo@ida
-   date  : 2005-11-03, changed 2006-02-05 to match new Absyn.INFO
+   date  : 2005-11-03, changed 2006-02-05 to match new SOURCEINFO
    Retrieves the Info attribute of a Class.
    When parsing classes, the source:
    file name + isReadOnly + start lineno + start columnno + end lineno + end columnno is added to the Class
-   definition and to all Elements, see Absyn.Info. This function retrieves the
+   definition and to all Elements, see SourceInfo. This function retrieves the
    Info contents.
    inputs:   (Absyn.ComponentRef, /* class */
                 Absyn.Program)
@@ -4909,7 +4909,7 @@ algorithm
       equation
         p_class = Absyn.crefToPath(class_);
         cdef = getPathedClassInProgram(p_class, p);
-        Absyn.CLASS(name = _,info = Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)) = cdef;
+        Absyn.CLASS(name = _,info = SOURCEINFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)) = cdef;
         filename = Util.testsuiteFriendly(filename);
         str_sline = intString(sline);
         str_scol = intString(scol);
@@ -5026,8 +5026,8 @@ algorithm
       Absyn.Restriction restr;
       Integer sline,scol,eline,ecol;
       Absyn.ElementSpec elementSpec;
-      Absyn.Info info;
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = restr,info = Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))))) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
+      SourceInfo info;
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = restr,info = SOURCEINFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))))) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
       equation
         finalPrefix = boolString(f);
         r_1 = keywordReplaceable(r);
@@ -5050,7 +5050,7 @@ algorithm
           ", replaceable=",repl,", inout=",inout_str,", ",element_str});
       then
         str;
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = elementSpec,info = Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))) /* if is not a classdef, just follow the normal stuff */
+    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = elementSpec,info = SOURCEINFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))) /* if is not a classdef, just follow the normal stuff */
       equation
         finalPrefix = boolString(f);
         r_1 = keywordReplaceable(r);
@@ -5138,11 +5138,11 @@ end appendNonEmptyStrings;
 
 protected function getElementsInfo
 " author: adrpo@ida
-   date  : 2005-11-11, changed 2006-02-06 to mirror the new Absyn.INFO
+   date  : 2005-11-11, changed 2006-02-06 to mirror the new SOURCEINFO
    Retrieves the Info attribute of an element.
    When parsing elements of the class composition, the source:
     -> file name + readonly + start lineno + start columnno + end lineno + end columnno is added to the Element
-   and to the Class definition, see Absyn.Info.
+   and to the Class definition, see SourceInfo.
    This function retrieves the Info contents of the elements of a class."
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
@@ -5247,14 +5247,13 @@ algorithm
       Absyn.Within within_;
       Absyn.Program newp,p;
       String filename;
-      Absyn.TimeStamp ts;
 
-    case (_,filename,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (_,filename,p as Absyn.PROGRAM())
       equation
         cdef = getPathedClassInProgram(path, p);
         within_ = buildWithin(path);
-        cdef_1 = Absyn.setClassFilename(cdef, filename, ts);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
+        cdef_1 = Absyn.setClassFilename(cdef, filename);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (true,newp);
     case (_,_,p) then (false,p);
@@ -5290,9 +5289,8 @@ algorithm
       Absyn.Program newp,p;
       Absyn.ComponentRef class_,inheritclass,subident;
       Absyn.Modification mod;
-      Absyn.TimeStamp ts;
 
-    case (class_,inheritclass,subident,mod,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (class_,inheritclass,subident,mod,p as Absyn.PROGRAM())
       equation
         p_class = Absyn.crefToPath(class_);
         inherit_class = Absyn.crefToPath(inheritclass);
@@ -5300,7 +5298,7 @@ algorithm
         cdef = getPathedClassInProgram(p_class, p);
         env = getClassEnv(p, p_class);
         cdef_1 = setExtendsSubmodifierInClass(cdef, inherit_class, subident, mod, env);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (newp,"Ok");
     case (_,_,_,_,p) then (p,"Error");
@@ -5333,7 +5331,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.Path inherit_name;
       Absyn.ComponentRef submod;
       Absyn.Modification mod;
@@ -5475,7 +5473,7 @@ algorithm
       Absyn.InnerOuter i;
       Absyn.Path path,inherit,path_1;
       list<Absyn.ElementArg> eargs,eargs_1;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
       Absyn.ComponentRef submod;
       FCore.Graph env;
@@ -5871,15 +5869,14 @@ algorithm
       Absyn.ComponentRef class_,subident;
       String varname;
       Absyn.Modification mod;
-      Absyn.TimeStamp ts;
 
-    case (class_,Absyn.CREF_IDENT(name = varname),subident,mod,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (class_,Absyn.CREF_IDENT(name = varname),subident,mod,p as Absyn.PROGRAM())
       equation
         p_class = Absyn.crefToPath(class_);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setComponentSubmodifierInClass(cdef, varname, Absyn.crefToPath(subident), mod);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (newp,"Ok");
     case (_,_,_,_,p) then (p,"Error");
@@ -5907,7 +5904,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.Path submodident;
       Absyn.Modification mod;
       list<Absyn.ElementArg> modif;
@@ -6041,7 +6038,7 @@ algorithm
       String varname;
       Absyn.ElementAttributes attr;
       Absyn.TypeSpec tp;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
       Absyn.Path submodident;
       Absyn.Modification mod;
@@ -6181,7 +6178,7 @@ algorithm
       list<Absyn.ElementArg> rest,args_1,args,res,submods;
       Absyn.ElementArg m;
       Absyn.EqMod eqMod;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Path p,p1,p2;
 
     case ({},_,Absyn.CLASSMOD({},Absyn.NOMOD())) then {}; // Empty modification.
@@ -6573,22 +6570,21 @@ algorithm
       Absyn.Program newp,p;
       Absyn.ComponentRef class_,name;
       Absyn.Exp exp;
-      Absyn.TimeStamp ts;
       Boolean b;
 
-    case (class_,name,exp,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (class_,name,exp,p as Absyn.PROGRAM())
       equation
         p_class = Absyn.crefToPath(class_);
         Absyn.IDENT(varname) = Absyn.crefToPath(name);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         (cdef_1, b) = setVariableBindingInClass(cdef, varname, exp);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
         str = if b then "Ok" else ("Error: component with name: " + varname + " in class: " + Absyn.pathString(p_class) + " not found.");
       then
         (newp,str);
 
-    case (class_,name,_,p as Absyn.PROGRAM(globalBuildTimes=_))
+    case (class_,name,_,p as Absyn.PROGRAM())
       equation
         p_class = Absyn.crefToPath(class_);
         Absyn.IDENT(_) = Absyn.crefToPath(name);
@@ -6620,7 +6616,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.Exp exp;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
@@ -6746,7 +6742,7 @@ algorithm
       String id;
       Absyn.ElementAttributes attr;
       Absyn.TypeSpec tp;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
       Absyn.Exp exp;
       Absyn.Element elt;
@@ -6943,7 +6939,7 @@ algorithm
       Boolean a,b,c,changed;
       Absyn.Restriction d;
       Absyn.ClassDef e;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.Program p;
       list<String> path_str_lst;
       FCore.Graph env,cenv;
@@ -7027,7 +7023,7 @@ algorithm
       String name, baseClassName;
       Absyn.Restriction restriction;
       Option<String> comment;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.Path old_comp,new_comp,path_1,path,new_path;
       FCore.Graph env,cenv;
       list<Absyn.ElementArg> modifications,elementarg;
@@ -7139,7 +7135,7 @@ algorithm
       Absyn.ElementItem element_1,element;
       Option<Absyn.RedeclareKeywords> redeclare_;
       Absyn.InnerOuter inner_outer;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constrainClass;
       Absyn.Path old_comp,new_comp;
       FCore.Graph env;
@@ -7189,7 +7185,7 @@ algorithm
       Absyn.ElementSpec spec;
       Option<Absyn.Comment> cmt;
       list<Absyn.ElementArg> elargs;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule */
       equation
@@ -7347,9 +7343,8 @@ algorithm
       Absyn.ComponentRef class_;
       list<Absyn.Class> clist,clist_1;
       Absyn.Within w;
-      Absyn.TimeStamp ts;
 
-    case (class_,(p as Absyn.PROGRAM(classes = _,within_ = _,globalBuildTimes=ts)))
+    case (class_,(p as Absyn.PROGRAM()))
       equation
         cpath = Absyn.crefToPath(class_) "Class inside another class, inside another class" ;
         parentcpath = Absyn.stripLast(cpath);
@@ -7357,26 +7352,26 @@ algorithm
         cdef = getPathedClassInProgram(cpath, p);
         parentcdef = getPathedClassInProgram(parentcpath, p);
         parentcdef_1 = removeInnerClass(cdef, parentcdef);
-        newp = updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath)), p);
       then
         ("true",newp);
-    case (class_,(p as Absyn.PROGRAM(classes = _,within_ = _,globalBuildTimes=ts)))
+    case (class_,(p as Absyn.PROGRAM()))
       equation
         cpath = Absyn.crefToPath(class_) "Class inside other class" ;
         parentcpath = Absyn.stripLast(cpath);
         cdef = getPathedClassInProgram(cpath, p);
         parentcdef = getPathedClassInProgram(parentcpath, p);
         parentcdef_1 = removeInnerClass(cdef, parentcdef);
-        newp = updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP(),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP()), p);
       then
         ("true",newp);
-    case (class_,(p as Absyn.PROGRAM(classes = clist,within_ = w,globalBuildTimes=ts)))
+    case (class_,(p as Absyn.PROGRAM()))
       equation
         cpath = Absyn.crefToPath(class_) "Top level class" ;
         cdef = getPathedClassInProgram(cpath, p);
-        clist_1 = deleteClassFromList(cdef, clist);
+        p.classes = deleteClassFromList(cdef, p.classes);
       then
-        ("true",Absyn.PROGRAM(clist_1,w,ts));
+        ("true",p);
     case (_,p)
       then ("false",p);
   end matchcontinue;
@@ -7433,14 +7428,13 @@ algorithm
       Absyn.Class cdef,cdef_1;
       Absyn.Program newp,p;
       String str;
-      Absyn.TimeStamp ts;
 
-    case (p_class,str,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (p_class,str,p as Absyn.PROGRAM())
       equation
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setClassCommentInClass(cdef, str);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (newp,true);
 
@@ -7461,7 +7455,7 @@ algorithm
       String id,cmt;
       Boolean p,f,e;
       Absyn.Restriction r;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = cdef,info = info),cmt)
       equation
@@ -7556,7 +7550,7 @@ protected
   Integer sl,sc,el,ec;
 algorithm
   path := Absyn.crefToPath(cr);
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,Absyn.INFO(file,isReadOnly,sl,sc,el,ec,_)) := getPathedClassInProgram(path, p);
+  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := getPathedClassInProgram(path, p);
   strPartial := boolString(partialPrefix) "handling boolean attributes of the class" ;
   strFinal := boolString(finalPrefix);
   strEncapsulated := boolString(encapsulatedPrefix);
@@ -7698,7 +7692,7 @@ protected
   Integer sl,sc,el,ec;
 algorithm
   path := Absyn.crefToPath(cr);
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,Absyn.INFO(file,isReadOnly,sl,sc,el,ec,_)) := getPathedClassInProgram(path, p);
+  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := getPathedClassInProgram(path, p);
   strPartial := boolString(partialPrefix) "handling boolean attributes of the class" ;
   strFinal := boolString(finalPrefix);
   strEncapsulated := boolString(encapsulatedPrefix);
@@ -8823,14 +8817,13 @@ algorithm
       String name;
       list<Absyn.Class> c2,c3;
       Absyn.Within w2;
-      Absyn.TimeStamp ts2;
 
     case ({},_,prg) then prg;
 
-    case ((c1 as Absyn.CLASS(name = name)) :: c2,Absyn.TOP(), (p2 as Absyn.PROGRAM(classes = c3,within_ = w2,globalBuildTimes=ts2)))
+    case ((c1 as Absyn.CLASS(name = name)) :: c2,Absyn.TOP(), (p2 as Absyn.PROGRAM(classes = c3,within_ = w2)))
       equation
         false = classInProgram(name, p2);
-        newp = updateProgram2(c2,w,Absyn.PROGRAM((c1 :: c3),w2,ts2));
+        newp = updateProgram2(c2,w,Absyn.PROGRAM((c1 :: c3),w2));
       then
         newp;
 
@@ -8868,26 +8861,25 @@ algorithm
       list<Absyn.Class> cls;
       list<GlobalScript.Variable> vars;
       Absyn.Within w;
-      Absyn.TimeStamp ts;
       Absyn.Program p;
 
-    case (Absyn.PROGRAM(classes = cls,within_ = Absyn.TOP(),globalBuildTimes=ts),vars)
+    case (Absyn.PROGRAM(classes = cls,within_ = Absyn.TOP()),vars)
       equation
         Values.CODE(Absyn.C_TYPENAME(path)) = getVariableValue("scope", vars);
       then
-        Absyn.PROGRAM(cls,Absyn.WITHIN(path),ts);
+        Absyn.PROGRAM(cls,Absyn.WITHIN(path));
 
-    case (Absyn.PROGRAM(classes = cls,within_ = w,globalBuildTimes=ts),vars)
+    case (Absyn.PROGRAM(classes = cls,within_ = w),vars)
       equation
         failure(_ = getVariableValue("scope", vars));
       then
-        Absyn.PROGRAM(cls,w,ts);
-    case (Absyn.PROGRAM(classes = cls,within_ = Absyn.WITHIN(path = path2),globalBuildTimes=ts),vars)
+        Absyn.PROGRAM(cls,w);
+    case (Absyn.PROGRAM(classes = cls,within_ = Absyn.WITHIN(path = path2)),vars)
       equation
         Values.CODE(Absyn.C_TYPENAME(path)) = getVariableValue("scope", vars) "This should probably be forbidden." ;
         newpath = Absyn.joinPaths(path, path2);
       then
-        Absyn.PROGRAM(cls,Absyn.WITHIN(newpath),ts);
+        Absyn.PROGRAM(cls,Absyn.WITHIN(newpath));
     case (p,_) then p;
   end matchcontinue;
 end addScope;
@@ -8978,15 +8970,14 @@ algorithm
       Absyn.Path newpath,path,inmodel,innewpath,respath;
       Absyn.Program p;
       String s1,s2;
-      Absyn.TimeStamp ts;
 
-    case (path,inmodel,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (path,inmodel,p as Absyn.PROGRAM())
       equation
         //fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " + Absyn.pathString(path) + " in: " + Absyn.pathString(inmodel));
         // remove self reference, otherwise we go into an infinite loop!
         path = InstUtil.removeSelfReference(Absyn.pathLastIdent(inmodel),path);
         inmodeldef = getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
-        cdef = getPathedClassInProgram(path, Absyn.PROGRAM({inmodeldef},Absyn.TOP(),ts));
+        cdef = getPathedClassInProgram(path, Absyn.PROGRAM({inmodeldef},Absyn.TOP()));
         newpath = Absyn.joinPaths(inmodel, path);
       then
         (cdef,newpath);
@@ -9054,7 +9045,6 @@ algorithm
       Absyn.Program p,newp;
       Absyn.Class cdef,newcdef;
       Absyn.Within w;
-      Absyn.TimeStamp ts;
 
     case (_,model_,p)
       equation
@@ -9063,22 +9053,22 @@ algorithm
       then
         (p,"false\n");
 
-    case (name,(model_ as Absyn.CREF_QUAL(name = _)),(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (name,(model_ as Absyn.CREF_QUAL(name = _)),(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         modelwithin = Absyn.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteComponentFromClass(name, cdef);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
       then
         (newp,"true\n");
 
-    case (name,(model_ as Absyn.CREF_IDENT(name = _)),(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (name,(model_ as Absyn.CREF_IDENT(name = _)),(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteComponentFromClass(name, cdef);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
       then
         (newp,"true\n");
 
@@ -9104,7 +9094,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.Ident bcpath;
       list<Absyn.ElementArg> mod;
       list<String> typeVars;
@@ -9239,7 +9229,6 @@ algorithm
       Absyn.InnerOuter io;
       Option<Absyn.RedeclareKeywords> redecl;
       Absyn.ElementAttributes attr;
-      Absyn.TimeStamp ts;
 
     // class cannot be found
     case (_,_,model_,_,p)
@@ -9250,7 +9239,7 @@ algorithm
         (p,"false\n");
 
     // adding component to model that resides inside package
-    case (name,tp,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (name,tp,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         modelwithin = Absyn.stripLast(modelpath);
@@ -9264,13 +9253,13 @@ algorithm
           Absyn.ELEMENT(false,redecl,io,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE()),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
-          Absyn.INFO("",false,0,0,0,0,ts),NONE())));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
+          SOURCEINFO("",false,0,0,0,0,0.0),NONE())));
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
       then
         (newp,"Ok\n");
 
     // adding component to model that resides on top level
-    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
@@ -9283,8 +9272,8 @@ algorithm
           Absyn.ELEMENT(false,redecl,io,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,NONE()),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
-          Absyn.INFO("",false,0,0,0,0,ts),NONE())));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
+          SOURCEINFO("",false,0,0,0,0,0.0),NONE())));
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
       then
         (newp,"Ok\n");
 
@@ -9432,7 +9421,7 @@ algorithm
       String name;
       Absyn.ElementAttributes attr;
       list<Absyn.ComponentItem> items;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
       Absyn.ArrayDim arrayDimensions;
       Option<Absyn.Modification> mod,modification;
@@ -9441,10 +9430,9 @@ algorithm
       Absyn.ComponentRef model_;
       list<Absyn.NamedArg> nargs;
       Absyn.Within w;
-      Absyn.TimeStamp ts;
 
     // Updating a public component to model that resides inside package
-    case (name,_,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (name,_,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         modelwithin = Absyn.stripLast(modelpath);
@@ -9461,12 +9449,12 @@ algorithm
           Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
       then
         (newp,"true");
 
     // Updating a protected component to model that resides inside package
-    case (name,_,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (name,_,(model_ as Absyn.CREF_QUAL(name = _)),nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         modelwithin = Absyn.stripLast(modelpath);
@@ -9483,12 +9471,12 @@ algorithm
           Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
       then
         (newp,"true");
 
     // Updating a public component to model that resides on top level
-    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
@@ -9506,12 +9494,12 @@ algorithm
           Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
       then
         (newp,"true");
 
     // Updating a protected component to model that resides on top level
-    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (name,tp,(model_ as Absyn.CREF_IDENT(name = _)),nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
@@ -9529,7 +9517,7 @@ algorithm
           Absyn.ELEMENT(finalPrefix,repl,inout,
           Absyn.COMPONENTS(attr,Absyn.TPATH(tppath,x),{
           Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_)}),info,constr)));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
       then
         (newp,"true");
 
@@ -9559,23 +9547,22 @@ algorithm
       Absyn.Program newp,p;
       Absyn.ComponentRef model_;
       list<Absyn.NamedArg> nargs;
-      Absyn.TimeStamp ts;
       Absyn.Exp exp;
-    case ((model_ as Absyn.CREF_QUAL(name = _)),nargs, p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case ((model_ as Absyn.CREF_QUAL(name = _)),nargs, p as Absyn.PROGRAM())
       equation
         modelpath = Absyn.crefToPath(model_) "Class inside other class" ;
         modelwithin = Absyn.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         cdef_1 = addClassAnnotationToClass(cdef, nargs);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.WITHIN(modelwithin),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.WITHIN(modelwithin)), p);
       then
         newp;
-    case ((model_ as Absyn.CREF_IDENT(name = _)),nargs,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case ((model_ as Absyn.CREF_IDENT(name = _)),nargs,p as Absyn.PROGRAM())
       equation
         modelpath = Absyn.crefToPath(model_) "Class on top level" ;
         cdef = getPathedClassInProgram(modelpath, p);
         cdef_1 = addClassAnnotationToClass(cdef, nargs);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.TOP(),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},Absyn.TOP()), p);
       then
         newp;
   end match;
@@ -9600,7 +9587,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
@@ -9991,7 +9978,7 @@ algorithm
       list<Absyn.ElementItem> elt;
       list<Absyn.ClassPart> lst;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Absyn.Annotation> ann;
 
     // a class with parts
@@ -10543,43 +10530,42 @@ algorithm
       Absyn.Within w;
       Option<Absyn.Comment> cmt;
       list<Absyn.NamedArg> nargs;
-      Absyn.TimeStamp ts;
 
-    case ((model_ as Absyn.CREF_IDENT(name = _)),c1,c2,{},(p as Absyn.PROGRAM(within_ = w,globalBuildTimes=ts)))
+    case ((model_ as Absyn.CREF_IDENT(name = _)),c1,c2,{},(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),Absyn.dummyInfo));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},w,ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
       then
         ("Ok",newp);
 
-    case ((model_ as Absyn.CREF_QUAL(name = _)),c1,c2,{},(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case ((model_ as Absyn.CREF_QUAL(name = _)),c1,c2,{},(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         package_ = Absyn.stripLast(modelpath);
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),Absyn.dummyInfo));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         ("Ok",newp);
-    case ((model_ as Absyn.CREF_IDENT(name = _)),c1,c2,nargs,(p as Absyn.PROGRAM(within_ = w,globalBuildTimes=ts)))
+    case ((model_ as Absyn.CREF_IDENT(name = _)),c1,c2,nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         cmt = annotationListToAbsynComment(nargs,NONE());
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,Absyn.dummyInfo));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},w,ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
       then
         ("Ok",newp);
-    case ((model_ as Absyn.CREF_QUAL(name = _)),c1,c2,nargs,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case ((model_ as Absyn.CREF_QUAL(name = _)),c1,c2,nargs,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         package_ = Absyn.stripLast(modelpath);
         cmt = annotationListToAbsynComment(nargs,NONE());
         newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,Absyn.dummyInfo));
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
       then
         ("Ok",newp);
   end matchcontinue;
@@ -10609,26 +10595,25 @@ algorithm
       Absyn.Program newp,p;
       Absyn.ComponentRef model_,c1,c2;
       Absyn.Within w;
-      Absyn.TimeStamp ts;
 
-    case (model_,c1,c2,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (model_,c1,c2,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         modelwithin = Absyn.stripLast(modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteEquationInClass(cdef, c1, c2);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
       then
         ("Ok",newp);
-    case (model_,c1,c2,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=ts)))
+    case (model_,c1,c2,(p as Absyn.PROGRAM()))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         newcdef = deleteEquationInClass(cdef, c1, c2);
-        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP(),ts), p);
+        newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
       then
         ("Ok",newp);
-    case (_,_,_,(p as Absyn.PROGRAM(within_ = _,globalBuildTimes=_))) then ("Error",p);
+    case (_,_,_,(p as Absyn.PROGRAM())) then ("Error",p);
   end matchcontinue;
 end deleteConnection;
 
@@ -10648,7 +10633,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.ComponentRef c1,c2;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
@@ -10718,8 +10703,7 @@ algorithm
       Absyn.Program p;
       Absyn.ComponentRef class_,cr1;
       String cmt;
-      Absyn.TimeStamp ts;
-    case (class_,cr1,p as Absyn.PROGRAM(globalBuildTimes=_))
+    case (class_,cr1,p as Absyn.PROGRAM())
       equation
         p_class = Absyn.crefToPath(class_);
         cdef = getPathedClassInProgram(p_class, p);
@@ -10816,7 +10800,7 @@ algorithm
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter inout;
       String cmt;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
       list<Absyn.ElementItem> es;
       Absyn.ComponentRef cr1;
@@ -10917,15 +10901,14 @@ algorithm
       Absyn.Program newp,p;
       Absyn.ComponentRef class_,cr1;
       String cmt;
-      Absyn.TimeStamp ts;
 
-    case (class_,cr1,cmt,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (class_,cr1,cmt,p as Absyn.PROGRAM())
       equation
         p_class = Absyn.crefToPath(class_);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setComponentCommentInClass(cdef, cr1, cmt);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         ("Ok",newp);
 
@@ -10950,7 +10933,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction restr;
       Option<String> pcmt;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.ComponentRef cr1;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
@@ -11040,7 +11023,7 @@ algorithm
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter inout;
       String cmt;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constr;
       list<Absyn.ElementItem> es,es_1;
       Absyn.ComponentRef cr1;
@@ -11135,14 +11118,13 @@ algorithm
       Absyn.Program newp,p;
       Absyn.ComponentRef class_,cr1,cr2;
       String cmt;
-      Absyn.TimeStamp ts;
-    case (class_,cr1,cr2,cmt,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (class_,cr1,cr2,cmt,p as Absyn.PROGRAM())
       equation
         p_class = Absyn.crefToPath(class_);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setConnectionCommentInClass(cdef, cr1, cr2, cmt);
-        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
+        newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (newp,"Ok");
     case (_,_,_,_,p) then (p,"Error");
@@ -11166,7 +11148,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction restr;
       Option<String> pcmt;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.ComponentRef cr1,cr2;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
@@ -11241,7 +11223,7 @@ algorithm
       list<Absyn.EquationItem> es,es_1;
       String cmt;
       Absyn.EquationItem e;
-      Absyn.Info info;
+      SourceInfo info;
     case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),comment = eqcmt, info = info) :: es),cr1,cr2,cmt)
       equation
         true = Absyn.crefEqual(cr1, c1);
@@ -11584,17 +11566,16 @@ algorithm
       String id;
       list<Absyn.Class> rest;
       Absyn.Within w;
-      Absyn.TimeStamp ts;
 
     case Absyn.PROGRAM(classes = {}) then {};
-    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id,restriction = Absyn.R_PACKAGE()) :: rest),within_ = w,globalBuildTimes=ts))
+    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id,restriction = Absyn.R_PACKAGE()) :: rest),within_ = w))
       equation
-        res = getTopPackagesInProgram(Absyn.PROGRAM(rest,w,ts));
+        res = getTopPackagesInProgram(Absyn.PROGRAM(rest,w));
       then
         (id :: res);
-    case (Absyn.PROGRAM(classes = (_ :: rest),within_ = w,globalBuildTimes=ts))
+    case (Absyn.PROGRAM(classes = (_ :: rest),within_ = w))
       equation
-        res = getTopPackagesInProgram(Absyn.PROGRAM(rest,w,ts));
+        res = getTopPackagesInProgram(Absyn.PROGRAM(rest,w));
       then
         res;
   end matchcontinue;
@@ -11745,17 +11726,16 @@ algorithm
       String id;
       list<Absyn.Class> rest;
       Absyn.Within w;
-      Absyn.TimeStamp ts;
 
     case Absyn.PROGRAM(classes = {}) then {};
-    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: rest),within_ = w,globalBuildTimes=ts))
+    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: rest),within_ = w))
       equation
-        res = getTopClassnamesInProgram(Absyn.PROGRAM(rest,w,ts));
+        res = getTopClassnamesInProgram(Absyn.PROGRAM(rest,w));
       then
         (id :: res);
-    case (Absyn.PROGRAM(classes = (_ :: rest),within_ = w,globalBuildTimes=ts))
+    case (Absyn.PROGRAM(classes = (_ :: rest),within_ = w))
       equation
-        res = getTopClassnamesInProgram(Absyn.PROGRAM(rest,w,ts));
+        res = getTopClassnamesInProgram(Absyn.PROGRAM(rest,w));
       then
         res;
   end matchcontinue;
@@ -11775,18 +11755,17 @@ algorithm
       list<Absyn.Path> res;
       list<Absyn.Class> rest;
       Absyn.Within w;
-      Absyn.TimeStamp ts;
       Absyn.Path p;
 
     case Absyn.PROGRAM(classes = {}) then {};
-    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: rest),within_ = w, globalBuildTimes=ts))
+    case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: rest),within_ = w))
       equation
         p = Absyn.joinWithinPath(w, Absyn.IDENT(id));
-        res = getTopQualifiedClassnames(Absyn.PROGRAM(rest,w,ts));
+        res = getTopQualifiedClassnames(Absyn.PROGRAM(rest,w));
       then p::res;
-    case (Absyn.PROGRAM(classes = (_ :: rest),within_ = w, globalBuildTimes=ts))
+    case (Absyn.PROGRAM(classes = (_ :: rest),within_ = w))
       equation
-        res = getTopQualifiedClassnames(Absyn.PROGRAM(rest,w,ts));
+        res = getTopQualifiedClassnames(Absyn.PROGRAM(rest,w));
       then
         res;
   end matchcontinue;
@@ -12507,7 +12486,7 @@ algorithm
       Absyn.Program p;
       Integer n,c1,c2;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Absyn.Annotation> ann;
 
     case (modelpath,Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: _))),p,n)
@@ -12697,7 +12676,7 @@ algorithm
       list<Absyn.ElementItem> elt;
       list<Absyn.ClassPart> lst;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.Class cdef;
       list<Absyn.Annotation> ann;
 
@@ -12815,7 +12794,7 @@ end countConnectors;
 
 protected function getConnectionAnnotationStrElArgs
   input list<Absyn.ElementArg> inElArgLst;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
@@ -12874,7 +12853,7 @@ algorithm
       String gexpstr;
       list<String> res;
       list<Absyn.ElementArg>  annotations;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (Absyn.EQUATIONITEM(info=info, equation_ = Absyn.EQ_CONNECT(connector1 = _),
       comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annotations)),_))),
@@ -13214,7 +13193,7 @@ algorithm
       list<String> res;
       list<Absyn.ElementArg> mod, rest;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
 
     // handle empty
     case ({},_,_,_,_) then {};
@@ -13565,7 +13544,7 @@ algorithm
       DAE.Properties prop;
       Absyn.Program graphicProgram;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(path = Absyn.IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
           _,
@@ -13582,7 +13561,7 @@ algorithm
         placementc = getClassInProgram("Icon", graphicProgram);
         placementclass = SCodeUtil.translateClass(placementc);
 
-        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT("Icon"), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
+        (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Mod.COMPONENT("Icon"), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add SourceInfo to this function's input
         (cache,_,_,_,dae,_,_,_,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, mod_2, Prefix.NOPRE(),
             placementclass, {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
@@ -13591,7 +13570,7 @@ algorithm
 
         // print("Env: " + FGraph.printGraphStr(env) + "\n");
 
-        (_,graphicexp2,prop) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false, Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
+        (_,graphicexp2,prop) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false, Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add SourceInfo to this function's input
         (cache, graphicexp2, prop) = Ceval.cevalIfConstant(cache, env, graphicexp2, prop, false, Absyn.dummyInfo);
         (graphicexp2,_) = ExpressionSimplify.simplify1(graphicexp2);
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations.";
@@ -13646,7 +13625,7 @@ algorithm
 
         // print("Env: " + FGraph.printGraphStr(env) + "\n");
 
-        (_,graphicexp2,_) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false,Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
+        (_,graphicexp2,_) = StaticScript.elabGraphicsExp(cache, env, graphicexp, false,Prefix.NOPRE(), Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add SourceInfo to this function's input
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = ExpressionDump.printExpStr(graphicexp2);
         totstr = stringAppendList({str, ",", gexpstr});
@@ -13780,7 +13759,7 @@ algorithm
       list<Absyn.Element> lst1,lst2,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> lst;
-      Absyn.Info file_info;
+      SourceInfo file_info;
 
     case (Absyn.CLASS(name = _,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = _,
                       body = Absyn.PARTS(classParts = {}))) then {};
@@ -13845,7 +13824,7 @@ algorithm
       list<Absyn.Element> lst1,lst2,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> lst;
-      Absyn.Info file_info;
+      SourceInfo file_info;
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elts) :: lst),ann=ann,comment = cmt),
@@ -13902,7 +13881,7 @@ algorithm
       list<Absyn.Element> lst1,lst2,res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> lst;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Absyn.Annotation> ann;
 
     case (Absyn.CLASS(name = _,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = _,
@@ -13994,7 +13973,7 @@ algorithm
       list<Absyn.ElementItem> elt;
       list<Absyn.ClassPart> lst,rest;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Absyn.Annotation> ann;
 
     case (Absyn.CLASS(name = _,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = _,
@@ -14131,7 +14110,7 @@ algorithm
       Absyn.ElementAttributes e;
       Absyn.TypeSpec f;
       Absyn.ComponentItem item;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> i;
       Integer numcomps,newn,n,n_1;
       Absyn.Element res;
@@ -14674,7 +14653,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.ElementItem eitem;
       list<Absyn.ElementArg> modifications;
       list<String> typeVars;
@@ -14744,7 +14723,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.ElementItem eitem;
       list<Absyn.ElementArg> modifications;
       list<String> typeVars;
@@ -14814,7 +14793,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.EquationItem eitem;
       list<Absyn.ElementArg> modifications;
       list<String> typeVars;
@@ -14911,11 +14890,10 @@ protected
   String cls_name1, cls_name2;
   list<Absyn.Class> clst;
   Absyn.Within w;
-  Absyn.TimeStamp ts;
   Boolean replaced;
 algorithm
   Absyn.CLASS(name = cls_name1) := inClass;
-  Absyn.PROGRAM(classes = clst, within_ = w, globalBuildTimes = ts) := inProgram;
+  Absyn.PROGRAM(classes = clst, within_ = w) := inProgram;
   (clst, replaced) := List.replaceOnTrue(inClass, clst,
     function replaceClassInProgram2(inClassName = cls_name1));
 
@@ -14923,7 +14901,7 @@ algorithm
     clst := listAppend(clst, {inClass});
   end if;
 
-  outProgram := Absyn.PROGRAM(clst, w, ts);
+  outProgram := Absyn.PROGRAM(clst, w);
 end replaceClassInProgram;
 
 protected function insertClassInProgram
@@ -14941,22 +14919,21 @@ algorithm
       Absyn.Program pnew,p;
       Absyn.Within w;
       String n1,s1,s2,name;
-      Absyn.TimeStamp ts;
       list<Absyn.Path> paths;
 
-    case (c1,(w as Absyn.WITHIN(path = Absyn.QUALIFIED(name = n1))),p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (c1,(w as Absyn.WITHIN(path = Absyn.QUALIFIED(name = n1))),p as Absyn.PROGRAM())
       equation
         c2 = getClassInProgram(n1, p);
         c3 = insertClassInClass(c1, w, c2);
-        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP(),ts), p);
+        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p);
       then
         pnew;
 
-    case (c1,(w as Absyn.WITHIN(path = Absyn.IDENT(name = n1))),p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (c1,(w as Absyn.WITHIN(path = Absyn.IDENT(name = n1))),p as Absyn.PROGRAM())
       equation
         c2 = getClassInProgram(n1, p);
         c3 = insertClassInClass(c1, w, c2);
-        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP(),ts), p);
+        pnew = updateProgram(Absyn.PROGRAM({c3},Absyn.TOP()), p);
       then
         pnew;
 
@@ -15052,7 +15029,7 @@ algorithm
       Boolean b,c,d;
       Absyn.Restriction e;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
@@ -15155,7 +15132,7 @@ algorithm
       Boolean b,c,d;
       Absyn.Restriction e;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Absyn.ElementArg> modif;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
@@ -15245,7 +15222,7 @@ algorithm
       String name1,name;
       Boolean a,e;
       Option<Absyn.RedeclareKeywords> b;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> h;
       Absyn.InnerOuter io;
 
@@ -15293,7 +15270,6 @@ algorithm
       Absyn.Class c1,c;
       list<Absyn.ClassPart> parts;
       String name,str,s1;
-      Absyn.TimeStamp ts;
       Integer handle;
 
     // class found in public
@@ -15328,11 +15304,11 @@ algorithm
       then
         c1;
 
-    case (c as Absyn.CLASS(info = Absyn.INFO(buildTimes = ts)),name)
+    case (c as Absyn.CLASS(),name)
       equation
         handle = Print.saveAndClearBuf();
         Print.printBuf("Interactive.getInnerClass failed, c:");
-        Dump.dump(Absyn.PROGRAM({c},Absyn.TOP(), ts));
+        Dump.dump(Absyn.PROGRAM({c},Absyn.TOP()));
         Print.printBuf("name :");
         Print.printBuf(name);
         _ = Print.getString();
@@ -15704,27 +15680,24 @@ end getClassFromElementitemlist;
 protected function classInProgram
 "This function takes a name and a Program and returns
   true if the name exists as a top class in the program."
-  input String inString;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  input String name;
+  input Absyn.Program p;
+  output Boolean b;
 algorithm
-  outBoolean := matchcontinue (inString,inProgram)
+  b := match p
     local
-      String str,c1;
-      Boolean res;
-      list<Absyn.Class> p;
-      Absyn.Within w;
-      Absyn.TimeStamp ts;
-
-    case (_,Absyn.PROGRAM(classes = {}, globalBuildTimes=_)) then false;
-    case (str,Absyn.PROGRAM(classes = (Absyn.CLASS(name = c1) :: p),within_ = w,globalBuildTimes=ts))
-      equation
-        false = stringEq(str, c1);
-        res = classInProgram(str, Absyn.PROGRAM(p,w,ts));
-      then
-        res;
-    case (_,_) then true;
-  end matchcontinue;
+      String str;
+    case Absyn.PROGRAM()
+      algorithm
+        for cl in p.classes loop
+          Absyn.CLASS(name=str) := cl;
+          if str == name then
+            b := true;
+            return;
+          end if;
+        end for;
+      then false;
+  end match;
 end classInProgram;
 
 public function getPathedClassInProgram
@@ -15757,10 +15730,8 @@ algorithm
       Absyn.Class c1,c1def,res;
       String str;
       Absyn.Program p;
-      list<Absyn.Class> classes;
       Absyn.Path path,prest;
       Absyn.Within w;
-      Absyn.TimeStamp ts;
 
     case (Absyn.IDENT(name = str),p)
       equation
@@ -15774,11 +15745,11 @@ algorithm
       then
         res;
 
-    case (Absyn.QUALIFIED(name = str,path = prest),(p as Absyn.PROGRAM(within_ = w,globalBuildTimes=ts)))
+    case (Absyn.QUALIFIED(name = str,path = prest),(p as Absyn.PROGRAM()))
       equation
         c1def = getClassInProgram(str, p);
-        classes = getClassesInClass(Absyn.IDENT(str), p, c1def);
-        res = getPathedClassInProgramWork(prest, Absyn.PROGRAM(classes,w,ts));
+        p.classes = getClassesInClass(Absyn.IDENT(str), p, c1def);
+        res = getPathedClassInProgramWork(prest, p);
       then
         res;
 
@@ -16272,19 +16243,13 @@ protected function removeInnerDiffFiledClasses
    inputs: (Absyn.Program /* package as program. */)
    outputs: Absyn.Program"
   input Absyn.Program inProgram;
-  output Absyn.Program outProgram;
+  output Absyn.Program p := inProgram;
 algorithm
-  outProgram:=
-  match (inProgram)
-    local
-      list<Absyn.Class> classlst_1,classlst;
-      Absyn.Within within_;
-      Absyn.TimeStamp ts;
-    case (Absyn.PROGRAM(classes = classlst,within_ = within_,globalBuildTimes=ts))
+  p := match p
+    case Absyn.PROGRAM()
       equation
-        classlst_1 = List.map(classlst, removeInnerDiffFiledClass);
-      then
-        Absyn.PROGRAM(classlst_1,within_,ts);
+        p.classes = List.map(p.classes, removeInnerDiffFiledClass);
+      then p;
   end match;
 end removeInnerDiffFiledClasses;
 
@@ -16305,7 +16270,7 @@ algorithm
       Boolean b,c,d;
       Absyn.Restriction e;
       Option<String> cmt;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       list<Absyn.ElementArg> modifications;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
@@ -16313,7 +16278,7 @@ algorithm
 
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann,comment = cmt),
-                      info = (file_info as Absyn.INFO(fileName = file))))
+                      info = (file_info as SOURCEINFO(fileName = file))))
       equation
         publst = getPublicList(parts);
         publst2 = removeClassDiffFiledInElementitemlist(publst, file);
@@ -16328,7 +16293,7 @@ algorithm
                                                  parts = parts,
                                                  ann = ann,
                                                  comment = cmt),
-                      info = (file_info as Absyn.INFO(fileName = file))))
+                      info = (file_info as SOURCEINFO(fileName = file))))
       equation
         publst = getPublicList(parts);
         publst2 = removeClassDiffFiledInElementitemlist(publst, file);
@@ -16350,7 +16315,7 @@ algorithm
       String filename;
 
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
-        Absyn.CLASSDEF(class_ = Absyn.CLASS(info = Absyn.INFO(fileName = filename)))))
+        Absyn.CLASSDEF(class_ = Absyn.CLASS(info = SOURCEINFO(fileName = filename)))))
       then stringEq(inFilename, filename);
 
     else true;
@@ -16377,21 +16342,19 @@ protected function getSurroundingPackage
 " author: PA
    This function investigates the surrounding packages and returns
    the outermost package that has the same filename as the class"
-  input Absyn.Path inPath;
+  input Absyn.Path classpath;
   input Absyn.Program inProgram;
-  output Absyn.Program outProgram;
+  output Absyn.Program p := inProgram;
 algorithm
-  outProgram:=
-  matchcontinue (inPath,inProgram)
+  p := matchcontinue p
     local
       Absyn.Class cdef,pdef;
       String filename1,filename2;
-      Absyn.Path ppath,classpath;
-      Absyn.Program res,p;
+      Absyn.Path ppath;
+      Absyn.Program res;
       Absyn.Within within_;
-      Absyn.TimeStamp ts;
 
-    case (classpath,p)
+    case _
       equation
         cdef = getPathedClassInProgram(classpath, p);
         filename1 = Absyn.classFilename(cdef);
@@ -16404,12 +16367,11 @@ algorithm
         res;
 
     /* No package with same filename */
-    case (classpath,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case Absyn.PROGRAM()
       equation
-        cdef = getPathedClassInProgram(classpath, p) ;
-        within_ = buildWithin(classpath);
-      then
-        Absyn.PROGRAM({cdef},within_,ts);
+        p.classes = {getPathedClassInProgram(classpath, p)};
+        p.within_ = buildWithin(classpath);
+      then p;
   end matchcontinue;
 end getSurroundingPackage;
 
@@ -16438,7 +16400,7 @@ algorithm
       Option<Absyn.Path> pa;
       Boolean a,b,c;
       Absyn.Restriction d;
-      Absyn.Info file_info;
+      SourceInfo file_info;
       Absyn.ClassDef cdef,cdef1;
       Integer i;
 
@@ -16559,7 +16521,7 @@ algorithm
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter io;
       Absyn.ElementSpec spec,spec1;
-      Absyn.Info info ;
+      SourceInfo info ;
       Option<Absyn.ConstrainClass> constr;
     case (Absyn.TEXT(optName=_)) then elt;
     case(Absyn.ELEMENT(f,r,io,spec,info,constr))
@@ -16685,7 +16647,7 @@ algorithm
       Absyn.Each e;
       Option<Absyn.Modification> mod,mod1;
       Option<String> cmt;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Path p;
 
     case(Absyn.MODIFICATION(f,e,p,mod,cmt,info))
@@ -16706,7 +16668,7 @@ protected function transformFlatModificationOption
 algorithm
   outMod := match(mod)
     local
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Exp e,e1;
       list<Absyn.ElementArg> eltArgs,eltArgs1;
     case (SOME(Absyn.CLASSMOD(eltArgs,Absyn.EQMOD(e,info))))
@@ -16748,7 +16710,7 @@ algorithm
     local
       Option<Absyn.Comment> cmt;
       Absyn.Equation eqn,eqn1;
-      Absyn.Info info;
+      SourceInfo info;
     case(Absyn.EQUATIONITEM(eqn,cmt,info))
       equation
         eqn1 = transformFlatEquation(eqn);
@@ -16911,7 +16873,7 @@ algorithm
     local
       Option<Absyn.Comment> cmt;
       Absyn.Algorithm alg,alg1;
-      Absyn.Info info;
+      SourceInfo info;
     case(Absyn.ALGORITHMITEM(alg,cmt,info))
       equation
         alg1 = transformFlatAlgorithm(alg);

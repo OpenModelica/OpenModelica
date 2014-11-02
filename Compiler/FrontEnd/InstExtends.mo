@@ -127,7 +127,7 @@ algorithm
       Prefix.Prefix pre;
       SCode.Mod scodeMod;
       SCode.Final finalPrefix;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Comment cmt;
       SCode.Visibility vis;
       SCode.Element comp;
@@ -518,7 +518,7 @@ algorithm
       tuple<SCode.Element, DAE.Mod, Boolean> first;
       SCode.Mod mods, derivedMod;
       DAE.Mod mod1,emod;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
       Boolean b;
       SCode.Attributes attrs;
       Absyn.TypeSpec derivedTySpec;
@@ -600,7 +600,7 @@ public function instDerivedClasses
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input Boolean inBoolean;
-  input Absyn.Info inInfo "File information of the extends element";
+  input SourceInfo inInfo "File information of the extends element";
   output FCore.Cache outCache;
   output FCore.Graph outEnv1;
   output InnerOuter.InstHierarchy outIH;
@@ -628,7 +628,7 @@ protected function instDerivedClassesWork
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input Boolean inBoolean;
-  input Absyn.Info inInfo "File information of the extends element";
+  input SourceInfo inInfo "File information of the extends element";
   input Boolean overflow;
   input Integer numIter;
   output FCore.Cache outCache;
@@ -660,7 +660,7 @@ algorithm
       String n,name,str1,str2,strDepth,cn;
       Option<SCode.ExternalDecl> extdecl;
       Prefix.Prefix pre;
-      Absyn.Info info;
+      SourceInfo info;
 
     // from basic types return nothing
     case (cache,env,ih,_,_,SCode.CLASS(name = name),_,_,_,_)
@@ -1007,7 +1007,7 @@ algorithm
       SCode.Mod modifications;
       SCode.Comment comment;
       Option<Absyn.Exp> condition;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.ClassDef classDef;
       SCode.Restriction restriction;
       Option<SCode.Annotation> optAnnotation;
@@ -1238,7 +1238,7 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> whenlst;
       SCode.Comment comment;
       Option<Absyn.Exp> optExp;
-      Absyn.Info info;
+      SourceInfo info;
       FCore.Cache cache;
       FCore.Graph env;
       HashTableStringToPath.HashTable ht;
@@ -1394,7 +1394,7 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifbranch,whenlst;
       list<SCode.Statement> truebranch,elsebranch,forbody,whilebody;
       SCode.Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
       FCore.Cache cache;
       FCore.Graph env;
       HashTableStringToPath.HashTable ht;
@@ -1752,7 +1752,7 @@ algorithm
       FCore.Graph env;
       HashTableStringToPath.HashTable ht;
       SCode.Mod mod;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,_,SCode.NOMOD(),_) then (cache,SCode.NOMOD());
 

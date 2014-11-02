@@ -104,7 +104,7 @@ public function lookupClassName
   "Calls lookupName with the 'Class not found' error message."
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Entry outEntry;
   output Env outEnv;
 protected
@@ -119,7 +119,7 @@ public function lookupBaseClassName
   "Calls lookupName with the 'Baseclass not found' error message."
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Entry outEntry;
   output Env outEnv;
 protected
@@ -134,7 +134,7 @@ public function lookupVariableName
   "Calls lookupName with the 'Variable not found' error message."
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Entry outEntry;
   output Env outEnv;
 protected
@@ -167,7 +167,7 @@ public function lookupFunctionName
   "Calls lookupName with the 'Function not found' error message."
   input Absyn.Path inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Entry outEntry;
   output Env outEnv;
 protected
@@ -191,7 +191,7 @@ end lookupLocalName;
 public function lookupImportPath
   input Absyn.Path inPath;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Entry outEntry;
   output Env outEnv;
 algorithm
@@ -224,7 +224,7 @@ public function lookupTypeSpec
    scopes of the type."
   input Absyn.TypeSpec inTypeSpec;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Entry outEntry;
   output Env outEnv;
 algorithm
@@ -360,7 +360,7 @@ protected function lookupName
   input Absyn.Path inName;
   input Env inEnv;
   input LookupState inState;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Error.Message inErrorType;
   output Entry outEntry;
   output Env outEnv;
@@ -421,7 +421,7 @@ algorithm
   _ := matchcontinue(inEntry)
     local
       String name;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (_)
       equation
@@ -447,12 +447,12 @@ protected function validateEndState
   input LookupState inExpectedState;
   input Entry inEntry;
   input Absyn.Path inName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inEndState, inExpectedState, inEntry, inName, inInfo)
     local
       String name, name2, full_name, found_str, expected_str;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Found the expected kind of element.
     case (STATE_COMP(),         STATE_COMP(), _, _, _) then ();
@@ -562,7 +562,7 @@ protected function printFoundWrongTypeError
   input LookupState inFoundState;
   input LookupState inExpectedState;
   input Absyn.Path inName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   String name, found_str, expected_str;
 algorithm
@@ -606,7 +606,7 @@ algorithm
   _ := matchcontinue(inElement, inCurrentState)
     local
       String name;
-      Absyn.Info info;
+      SourceInfo info;
 
     // The first part of a name is allowed to be protected, i.e. when accessing
     // protected elements locally.
@@ -742,7 +742,7 @@ algorithm
   _ := matchcontinue(inCurrentState, inElement, inEnv)
     local
       String name, env_str;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Nothing to check in packages or components.
     case (STATE_BEGIN(), _, _) then ();
@@ -976,7 +976,7 @@ algorithm
     local
       Env env;
       SCode.ClassDef cdef;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.TypeSpec ty;
       Entry entry;
       list<Modifier> ext_mods;
@@ -1058,7 +1058,7 @@ protected function populateEnvWithClassDef
   input list<EntryOrigin> inOrigins;
   input Env inEnv;
   input SplitFunc inSplitFunc;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Env inAccumEnv;
   output Env outAccumEnv;
   output list<Modifier> outExtendsMods;
@@ -1268,7 +1268,7 @@ algorithm
   outEnv := match(inImport, inTopScope, inEnv)
     local
       Absyn.Import imp;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Path path;
       Entry entry;
       Env env;
@@ -1294,7 +1294,7 @@ protected function populateEnvWithImport2
   input Absyn.Import inImport;
   input Entry inEntry;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Env inAccumEnv;
   output Env outAccumEnv;
 algorithm
@@ -1384,7 +1384,7 @@ algorithm
       EntryOrigin origin;
       list<EntryOrigin> origins;
       Absyn.Path bc;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Visibility vis;
       SCode.Mod smod;
       Modifier mod;
@@ -1419,7 +1419,7 @@ protected function checkRecursiveExtends
   input Absyn.Path inExtendedClass;
   input Env inFoundEnv;
   input Env inOriginEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inExtendedClass, inFoundEnv, inOriginEnv, inInfo)
     local

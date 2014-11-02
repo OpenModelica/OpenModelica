@@ -697,7 +697,7 @@ public function equalityConstraint
     corresponding DAE.EqualityConstraint."
   input FCore.Graph inEnv;
   input list<SCode.Element> inCdefelts;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.EqualityConstraint outResult;
 algorithm
   outResult := matchcontinue(inEnv,inCdefelts,info)
@@ -1395,7 +1395,7 @@ algorithm
       SCode.Mod modifications "the modifications to be applied to the component";
       SCode.Comment comment "this if for extraction of comments and annotations from Absyn";
       Option<Absyn.Exp> condition "the conditional declaration of a component";
-      Absyn.Info info "this is for line and column numbers, also file name.";
+      SourceInfo info "this is for line and column numbers, also file name.";
 
     case ({}) then {};
 
@@ -1427,7 +1427,7 @@ algorithm
       SCode.Mod modifications "the modifications to be applied to the component";
       SCode.Comment comment "this if for extraction of comments and annotations from Absyn";
       Option<Absyn.Exp> condition "the conditional declaration of a component";
-      Absyn.Info info "this is for line and column numbers, also file name.";
+      SourceInfo info "this is for line and column numbers, also file name.";
 
     case ({}) then {};
 
@@ -2417,7 +2417,7 @@ algorithm
       list<SCode.Enum> enumLst;
       Boolean impl;
       InstanceHierarchy ih;
-      Absyn.Info info;
+      SourceInfo info;
       Prefix.Prefix pre;
       String s;
       SCode.Comment cmt;
@@ -2670,7 +2670,7 @@ algorithm
       list<SCode.Equation> eqns;
       InstDims instdims;
       Option<Absyn.Exp> aExp;
-      Absyn.Info aInfo;
+      SourceInfo aInfo;
       InstanceHierarchy ih;
       FCore.Cache cache;
       Absyn.TypeSpec tss;
@@ -2810,7 +2810,7 @@ algorithm
       SCode.Comment comment;
       list<tuple<SCode.Element, DAE.Mod>> xs,comps;
       InstDims inst_dims;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.Exp> condition;
       InstanceHierarchy ih;
       FCore.Cache cache;
@@ -2943,7 +2943,7 @@ algorithm
       Option<tuple<Absyn.Exp, Boolean>> b;
       SCode.Mod m,m2;
       SCode.SubMod sm;
-      Absyn.Info info;
+      SourceInfo info;
 
     // outer B(redeclare X = Y), inner B(redeclare Y = Z) -> B(redeclare X = Z)
     case (_,SCode.REDECL(f, e, SCode.CLASS(name = nInner, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(nDerivedInner))))))
@@ -3050,7 +3050,7 @@ algorithm
       FCore.Cache cache;
       Integer cnt;
       Boolean delayTpCheck;
-      Absyn.Info info;
+      SourceInfo info;
 
     // true to delay type checking/elabExp
     case(cache,id,SCode.MOD(fi,ea,subs,SOME((e,_)), info))
@@ -3271,7 +3271,7 @@ algorithm
       FCore.Cache cache;
       SCode.Element c1, c2;
       Absyn.Path tpath1, tpath2;
-      Absyn.Info old_info, new_info;
+      SourceInfo old_info, new_info;
       SCode.Prefixes prefixes1, prefixes2;
       SCode.Attributes attr1,attr2;
       Absyn.TypeSpec tp1,tp2;
@@ -3372,7 +3372,7 @@ algorithm
       list<String> sl1,sl2;
       list<SCode.Enum> enumLst;
       list<SCode.Element> elementLst;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
 
     //   Special cases for checking enumerations which can be represented differently
     case(SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)), SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)))
@@ -3637,7 +3637,7 @@ public function checkModificationOnOuter
   input SCode.Variability inVariability;
   input Absyn.InnerOuter inInnerOuter;
   input Boolean inImpl;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inCache, inEnv, inIH, inPrefix, inName, inCref, inMod,
       inVariability, inInnerOuter, inImpl, inInfo)
@@ -3682,7 +3682,7 @@ public function checkFunctionVar
   input String inName;
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inName, inAttributes, inPrefixes, inInfo)
     // Public non-formal parameters are not allowed, but since they're used in
@@ -3718,7 +3718,7 @@ public function checkFunctionVarType
   input DAE.Type inType;
   input ClassInf.State inState;
   input String inVarName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inType, inState, inVarName, inInfo)
     local
@@ -3770,7 +3770,7 @@ Helper to makeVariableBinding. Author -- alleb"
   input Prefix.Prefix pre;
   input String name;
   input DAE.Exp binding;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := matchcontinue(compConst,bindConst,pre,name,binding,info)
   local
@@ -3874,7 +3874,7 @@ algorithm
       Boolean impl;
       FCore.Cache cache;
       InstanceHierarchy ih;
-      Absyn.Info info;
+      SourceInfo info;
       list<SCode.Element> els;
       SCode.Path path;
 
@@ -4120,7 +4120,7 @@ public function instWholeDimFromMod
   input DAE.Dimension dimensionExp;
   input DAE.Mod modifier;
   input String inVarName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Dimension outDimension;
 algorithm
   outDimension := matchcontinue(dimensionExp, modifier, inVarName, inInfo)
@@ -4163,7 +4163,7 @@ public function propagateAttributes
   input DAE.DAElist inDae;
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.DAElist outDae;
 protected
   list<DAE.Element> elts;
@@ -4178,7 +4178,7 @@ protected function propagateAllAttributes
   input DAE.Element inElement;
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Element outElement;
 algorithm
   outElement := match(inElement, inAttributes, inPrefixes, inInfo)
@@ -4273,7 +4273,7 @@ protected function propagateDirection
   input DAE.VarDirection inVarDirection;
   input Absyn.Direction inDirection;
   input DAE.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.VarDirection outVarDirection;
 algorithm
   outVarDirection := match(inVarDirection, inDirection, inCref, inInfo)
@@ -4307,7 +4307,7 @@ protected function propagateParallelism
   input DAE.VarParallelism inVarParallelism;
   input SCode.Parallelism inParallelism;
   input DAE.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.VarParallelism outVarParallelism;
 algorithm
   outVarParallelism := matchcontinue(inVarParallelism, inParallelism, inCref, inInfo)
@@ -4427,7 +4427,7 @@ protected function propagateConnectorType
   input DAE.ConnectorType inVarConnectorType;
   input SCode.ConnectorType inConnectorType;
   input DAE.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.ConnectorType outVarConnectorType;
 algorithm
   outVarConnectorType :=
@@ -4488,7 +4488,7 @@ public function elabComponentArraydimFromEnv
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.ComponentRef inComponentRef;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Dimensions outDimensionLst;
 algorithm
@@ -4581,7 +4581,7 @@ public function elabArraydimOpt
   input Option<GlobalScript.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   input list<list<DAE.Dimension>> inInstDims;
   output FCore.Cache outCache;
   output DAE.Dimensions outDimensionLst;
@@ -4632,7 +4632,7 @@ public function elabArraydim
   input Boolean performVectorization;
   input Boolean isFunctionInput;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input list<list<DAE.Dimension>> inInstDims;
   output FCore.Cache outCache;
   output DAE.Dimensions outDimensionLst;
@@ -4658,7 +4658,7 @@ algorithm
       Absyn.Exp aexp;
       Option<DAE.EqMod> eq;
       InstDims inst_dims;
-      Absyn.Info info;
+      SourceInfo info;
 
     // The size of function input arguments should not be set here, since they
     // may vary depending on the inputs. So we ignore any modifications on input
@@ -4783,7 +4783,7 @@ protected function elabArraydimType
   input Absyn.Path path "class of declaration, primarily used for error messages";
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef componentRef;
-  input Absyn.Info info;
+  input SourceInfo info;
   input list<list<DAE.Dimension>> inInstDims;
   output DAE.Dimensions outDimensionLst;
 algorithm
@@ -5016,7 +5016,7 @@ helper function for InstFunction.implicitFunctionInstantiation, returns derivati
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<DAE.FunctionDefinition> element;
 algorithm
   element := matchcontinue(cd,cmt,baseFunc,inCache,inEnv,inIH,inPrefix,info)
@@ -5044,7 +5044,7 @@ helper function for getDeriveAnnotation"
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<DAE.FunctionDefinition> element;
 algorithm
   (element) := match(ann,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
@@ -5068,7 +5068,7 @@ Author: bjozac
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<DAE.FunctionDefinition> element;
 algorithm element := matchcontinue(inSubs,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info)
   local
@@ -5128,7 +5128,7 @@ Extracts conditions for derivative."
   input FCore.Graph inEnv;
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output list<tuple<Integer,DAE.derivativeCond>> outconds;
 algorithm
   outconds := matchcontinue(inSubs,elemDecl,inCache,inEnv,inIH,inPrefix,info)
@@ -5366,13 +5366,13 @@ algorithm
       Absyn.TypeSpec typeSpc;
       SCode.Comment comm;
       Option<Absyn.Exp> cond;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Final modFinPre;
       SCode.Each modEachPre;
       list<SCode.SubMod> modSubML;
       SCode.Element e;
       SCode.Mod modBla;
-      Absyn.Info mod_info;
+      SourceInfo mod_info;
 
     case (      SCode.COMPONENT(
           name = id,
@@ -5821,7 +5821,7 @@ protected function elabExpListExt
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
@@ -5863,7 +5863,7 @@ protected function elabExpExt
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -5920,7 +5920,7 @@ public function instExtGetFargs
   input SCode.ExternalDecl inExternalDecl;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.ExtArg> outDAEExtArgLst;
 algorithm
@@ -5961,7 +5961,7 @@ protected function instExtGetFargs2
   input list<DAE.Exp> inExpExpLst;
   input list<DAE.Properties> inTypesPropertiesLst;
   input Option<String> lang;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.ExtArg> outDAEExtArgLst;
 algorithm
@@ -5996,7 +5996,7 @@ protected function instExtGetFargsSingle
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
   input Option<String> lang;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Option<DAE.ExtArg> outExtArg;
 algorithm
@@ -6087,7 +6087,7 @@ public function instExtGetRettype
   input SCode.ExternalDecl inExternalDecl;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.ExtArg outExtArg;
 algorithm
@@ -6129,7 +6129,7 @@ protected function assertExtArgOutputIsCrefVariable
   input DAE.ExtArg arg;
   input DAE.Type ty;
   input DAE.Const c;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (lang,arg,ty,c,info)
     local
@@ -6217,7 +6217,7 @@ algorithm
       DAE.FunctionAttributes funcattr;
       DAE.TypeSource ts;
       String pstr;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (p,ClassInf.TYPE_INTEGER(path = _),v,_,_,_)
       equation
@@ -6483,7 +6483,7 @@ protected function checkProt
   input SCode.Visibility inVisibility;
   input DAE.Mod inMod;
   input DAE.ComponentRef inComponentRef;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := matchcontinue (inVisibility,inMod,inComponentRef,info)
     local
@@ -6596,14 +6596,14 @@ public function extractCurrentName
 " Extracts SCode.Element name."
   input SCode.Element sele;
   output String ostring;
-  output Absyn.Info oinfo;
+  output SourceInfo oinfo;
 algorithm
   (ostring ,oinfo) := match(sele)
     local
       Absyn.Path path;
       String name,ret;
       Absyn.Import imp;
-      Absyn.Info info;
+      SourceInfo info;
 
     case(SCode.CLASS(name = name, info = info)) then (name, info);
     case(SCode.COMPONENT(name = name, info=info)) then (name, info);
@@ -6646,7 +6646,7 @@ algorithm
       Absyn.ComponentRef crefLeft, crefRight;
       FCore.Cache cache;
       FCore.Graph env;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Type ty1,ty2;
       DAE.ComponentRef c1_1,c2_1;
 
@@ -7254,7 +7254,7 @@ algorithm
       SCode.Each each_;
       list<SCode.SubMod> subs;
       Option<tuple<Absyn.Exp,Boolean>> eq;
-      Absyn.Info info;
+      SourceInfo info;
 
     case(SCode.NOMOD()) then SCode.NOMOD();
 
@@ -7296,7 +7296,7 @@ algorithm
       Option<Absyn.Exp> cond;
       Absyn.Path p;
       Option<SCode.Annotation> ann;
-      Absyn.Info info;
+      SourceInfo info;
 
     case SCode.COMPONENT(name,prefixes,attr,tySpec,oldmod,cmt,cond,info)
       equation
@@ -7416,7 +7416,7 @@ algorithm
     Option<tuple<Absyn.Exp,Boolean>> tup,tup2;
     list<list<Absyn.Exp>> exps;
     list<Option<Absyn.Exp>> expOpts;
-    Absyn.Info info;
+    SourceInfo info;
 
     case (_,_,_,SCode.NOMOD(),_,_,_) then SCode.NOMOD();
     case (_,_,_,mod as SCode.REDECL(finalPrefix=_),_,_,_) then mod;  // Though redeclarations may need some processing as well
@@ -7724,7 +7724,7 @@ public function instElementCondExp
   input FCore.Graph inEnv;
   input SCode.Element component;
   input Prefix.Prefix prefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Option<Boolean> outCondValue;
   output FCore.Cache outCache;
 algorithm
@@ -7751,7 +7751,7 @@ protected function instConditionalDeclaration
   input FCore.Graph inEnv;
   input Absyn.Exp inCondition;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean outIsConditional;
   output FCore.Cache outCache;
 protected
@@ -7853,7 +7853,7 @@ public function propagateAbSCDirection
   input SCode.Variability inVariability;
   input SCode.Attributes inAttributes;
   input Option<SCode.Attributes> inClassAttributes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output SCode.Attributes outAttributes;
 algorithm
   outAttributes := match(inVariability, inAttributes, inClassAttributes, inInfo)
@@ -7876,7 +7876,7 @@ Author BZ 2008-05
 This function merged derived SCode.Attributes with the current input SCode.Attributes."
   input Absyn.Direction v1;
   input Option<SCode.Attributes> optDerAttr;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Absyn.Direction v3;
 algorithm
   v3 := match(v1, optDerAttr, inInfo)
@@ -8147,7 +8147,7 @@ algorithm
       Option<String> str1,str2,str;
       Option<SCode.Comment> cmt;
       list<SCode.SubMod> mods1,mods2,mods;
-      Absyn.Info info;
+      SourceInfo info;
     case (SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(subModLst=mods1,info=info))),str1),SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(subModLst=mods2))),str2))
       equation
         str = if Util.isSome(str1) then str1 else str2;
@@ -8240,7 +8240,7 @@ public function checkFunctionElement
 public input/output, protected variable/parameter/constant or algorithm section"
   input DAE.Element elt;
   input Boolean isExternal;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (elt,isExternal,info)
     local
@@ -8591,7 +8591,7 @@ algorithm
       list<DAE.Element> localDecls;
       list<DAE.Statement> body;
       Option<DAE.Exp> patternGuard;
-      Absyn.Info resultInfo,info;
+      SourceInfo resultInfo,info;
       Integer jump;
       DAE.MatchCase case_;
       DAE.Exp exp,exp1;
@@ -8693,7 +8693,7 @@ end numStructuralParameterScopes;
 public function checkFunctionDefUse
   "Finds any variable that might be used without first being defined"
   input list<DAE.Element> elts;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := matchcontinue (elts,info)
     local
@@ -8714,7 +8714,7 @@ protected function checkFunctionDefUse2
   input Option<list<DAE.Statement>> alg "NONE() in first iteration";
   input list<String> inUnbound "{} in first iteration";
   input list<String> inOutputs "List of variables that are also used, when returning";
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<String> outUnbound;
 algorithm
   outUnbound := match (elts,alg,inUnbound,inOutputs,inInfo)
@@ -8773,7 +8773,7 @@ end checkFunctionDefUse2;
 
 protected function checkOutputDefUse
   input String name;
-  input Absyn.Info info;
+  input SourceInfo info;
   input list<String> inUnbound;
   output list<String> outUnbound;
 protected
@@ -8802,7 +8802,7 @@ algorithm
       Boolean b,b1,b2;
       DAE.Else else_;
       list<DAE.Statement> stmts;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (_,_,(true,_,_)) then inUnbound;
     case (_,_,(false,true,_))
@@ -8905,7 +8905,7 @@ protected function checkFunctionDefUseElse
   input DAE.Else inElse;
   input list<String> inUnbound;
   input Boolean inLoop;
-  input Absyn.Info info;
+  input SourceInfo info;
   output tuple<Boolean,Boolean,list<String>> outUnbound;
 algorithm
   outUnbound := match (inElse,inUnbound,inLoop,info)
@@ -8996,7 +8996,7 @@ end patternFiltering;
 
 protected function traverseCrefSubs
   input DAE.Exp exp;
-  input Absyn.Info info;
+  input SourceInfo info;
   input list<String> inUnbound;
   output list<String> outUnbound;
 algorithm
@@ -9014,20 +9014,20 @@ end traverseCrefSubs;
 
 protected function findUnboundVariableUse "Check if the expression is used before it is defined"
   input DAE.Exp inExp;
-  input tuple<list<String>,Absyn.Info> inTpl;
+  input tuple<list<String>,SourceInfo> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<list<String>,Absyn.Info> outTpl;
+  output tuple<list<String>,SourceInfo> outTpl;
 algorithm
   (outExp,cont,outTpl) := match (inExp,inTpl)
     local
       DAE.Exp exp;
       list<String> unbound,unboundLocal;
-      Absyn.Info info;
+      SourceInfo info;
       String str;
       DAE.ComponentRef cr;
       Boolean b;
-      tuple<list<String>,Absyn.Info> arg;
+      tuple<list<String>,SourceInfo> arg;
       list<DAE.Exp> inputs;
       list<DAE.Element> localDecls;
       list<DAE.MatchCase> cases;
@@ -9059,7 +9059,7 @@ protected function findUnboundVariableUseInCase "Check if the expression is used
 algorithm
   unbound := match (case_,inUnbound)
     local
-      Absyn.Info info,resultInfo;
+      SourceInfo info,resultInfo;
       Option<DAE.Exp> patternGuard,result;
       list<DAE.Pattern> patterns;
       list<DAE.Statement> body;
@@ -9077,7 +9077,7 @@ public function checkParallelismWRTEnv
   input FCore.Graph inEnv;
   input String inName;
   input SCode.Attributes inAttr;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean isValid;
 algorithm
   isValid := matchcontinue(inEnv,inName,inAttr,inInfo)

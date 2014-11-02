@@ -439,7 +439,7 @@ algorithm
       list<DAE.Element> daeElts1,daeElts2;
       list<list<DAE.Element>> daeLLst;
       DAE.Const cnst;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Element daeElt2;
       list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec;
       Integer i1,ipriority;
@@ -870,7 +870,7 @@ algorithm
       list<DAE.Element> daeElts1,daeElts2;
       list<list<DAE.Element>> daeLLst;
       DAE.Const cnst;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Element daeElt2;
       list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec;
       Integer i1,ipriority;
@@ -996,7 +996,7 @@ end handleConnectionsOperators;
 
 protected function potentialRootArguments
   input Absyn.FunctionArgs inFunctionArgs;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Prefix.Prefix inPrefix;
   input SCode.EEquation inEEquation;
   output Absyn.ComponentRef outCref;
@@ -1019,7 +1019,7 @@ end potentialRootArguments;
 
 protected function uniqueRootArguments
   input Absyn.FunctionArgs inFunctionArgs;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Prefix.Prefix inPrefix;
   input SCode.EEquation inEEquation;
   output Absyn.ComponentRef outCref;
@@ -1046,7 +1046,7 @@ protected function checkReinitType
   input DAE.Type inType;
   input DAE.Properties inProperties;
   input DAE.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean outSucceeded;
 algorithm
   outSucceeded := matchcontinue(inType, inProperties, inCref, inInfo)
@@ -1105,7 +1105,7 @@ protected function checkTupleCallEquationMessage "A version of checkTupleCallEqu
 which produces appropriate error message if the check fails"
   input Absyn.Exp left;
   input Absyn.Exp right;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := matchcontinue (left,right,info)
     local
@@ -1199,7 +1199,7 @@ This function detect this case and elaborates expressions without vectorization.
   input DAE.Properties iprop2 "To determine if array equation";
   input Boolean impl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outE1;
   output DAE.Exp outE2;
@@ -1447,7 +1447,7 @@ algorithm
       String e1_str,t1_str,e2_str,t2_str,s1,s2;
       DAE.Const c;
       DAE.TupleConst tp;
-      Absyn.Info info;
+      SourceInfo info;
 
       /* TODO: Weird hack to make backend happy */
     case (e1 as DAE.CREF(componentRef=_), (p1 as DAE.PROP(type_ = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),
@@ -2077,7 +2077,7 @@ protected function unrollForLoop
   input String iterator;
   input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
-  input Absyn.Info info;
+  input SourceInfo info;
   input DAE.ElementSource source;
   input SCode.Initial inInitial;
   input Boolean inBool;
@@ -2143,7 +2143,7 @@ protected function instForStatement
   input String iterator;
   input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
-  input Absyn.Info info;
+  input SourceInfo info;
   input DAE.ElementSource source;
   input SCode.Initial inInitial;
   input Boolean inBool;
@@ -2193,7 +2193,7 @@ protected function instForStatement_dispatch
   input String iterator;
   input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
-  input Absyn.Info info;
+  input SourceInfo info;
   input DAE.ElementSource inSource;
   input SCode.Initial inInitial;
   input Boolean inBool;
@@ -2282,7 +2282,7 @@ algorithm
   dae := matchcontinue(lhs,rhs,tp,source,initial_)
     local
       String s;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Records
     case(_,_,_,_,_)
@@ -2375,7 +2375,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       DAE.DAElist dae;
       String s;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,env,ih,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,_,graph) /* impl */
       equation
@@ -2621,7 +2621,7 @@ algorithm
       Prefix.Prefix pre;
       InstanceHierarchy ih;
       SCode.Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
       list<DAE.Exp> eexpl;
       Absyn.Path ap;
       String str,iter;
@@ -3186,7 +3186,7 @@ algorithm
   _ := match(inEquation)
     local
       Absyn.ComponentRef cr1, cr2;
-      Absyn.Info info;
+      SourceInfo info;
       list<SCode.EEquation> eqs;
       String cr1_str, cr2_str;
 
@@ -3221,7 +3221,7 @@ protected function instElseIfs
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> outElseIfBranches;
 algorithm
@@ -3275,7 +3275,7 @@ protected function instConnect "
   input Absyn.ComponentRef inComponentRefRight;
   input Boolean inImplicit;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -3447,7 +3447,7 @@ Author BZ, 2009-09
   input FCore.Graph env;
   input String affectedConnector;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := matchcontinue(inrefs,cache,env,affectedConnector,inPrefix,info)
   local
@@ -3492,7 +3492,7 @@ protected function connectExpandableConnectors
   input Absyn.ComponentRef inComponentRefRight;
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -4043,7 +4043,7 @@ protected function connectExpandableVariables
   input list<String> inVariablesUnion;
   input Boolean inBoolean;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -4153,7 +4153,7 @@ protected function validConnector
 "This function tests whether a type is a eligible to be used in connections."
   input DAE.Type inType;
   input DAE.ComponentRef inCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue (inType, inCref, inInfo)
     local
@@ -4224,7 +4224,7 @@ protected function checkConnectTypes
   input DAE.Type inRhsType;
   input Connect.Face inRhsFace;
   input DAE.Attributes inRhsAttributes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 protected
   SCode.ConnectorType lhs_ct, rhs_ct;
   Absyn.Direction lhs_dir, rhs_dir;
@@ -4249,7 +4249,7 @@ protected function checkConnectTypesType
   input DAE.Type inRhsType;
   input DAE.ComponentRef inLhsCref;
   input DAE.ComponentRef inRhsCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inLhsType, inRhsType, inLhsCref, inRhsCref, inInfo)
     local
@@ -4304,7 +4304,7 @@ protected function checkConnectTypesFlowStream
   input SCode.ConnectorType inRhsConnectorType;
   input DAE.ComponentRef inLhsCref;
   input DAE.ComponentRef inRhsCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inLhsConnectorType, inRhsConnectorType, inLhsCref,
       inRhsCref, inInfo)
@@ -4343,7 +4343,7 @@ protected function checkConnectTypesDirection
   input SCode.Visibility inRhsVisibility;
   input DAE.ComponentRef inLhsCref;
   input DAE.ComponentRef inRhsCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inLhsDirection, inLhsFace, inLhsVisibility, inRhsDirection,
       inRhsFace, inRhsVisibility, inLhsCref, inRhsCref, inInfo)
@@ -4389,7 +4389,7 @@ protected function checkConnectTypesInnerOuter
   input Absyn.InnerOuter inRhsIO;
   input DAE.ComponentRef inLhsCref;
   input DAE.ComponentRef inRhsCref;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inLhsIO, inRhsIO, inLhsCref, inRhsCref, inInfo)
     local
@@ -4432,7 +4432,7 @@ public function connectComponents "
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -4795,7 +4795,7 @@ protected function connectArrayComponents
   input Absyn.InnerOuter inRhsIO;
   input SCode.ConnectorType inConnectorType;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -4859,7 +4859,7 @@ protected function connectVars
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -5051,7 +5051,7 @@ algorithm
     local
       Boolean b1, b2;
       Absyn.Exp exp;
-      Absyn.Info info;
+      SourceInfo info;
       list<SCode.Statement> algs;
 
     // add an error
@@ -5075,7 +5075,7 @@ protected function checkForNestedWhenInStatements
 algorithm
   _ := match(inWhenAlgorithm)
     local
-      Absyn.Info info;
+      SourceInfo info;
       list<SCode.Statement> algs;
 
     // continue if when equations are not nested
@@ -5116,7 +5116,7 @@ algorithm
     local
       Boolean b1, b2;
       Absyn.Exp exp;
-      Absyn.Info info;
+      SourceInfo info;
       list<SCode.EEquation> el;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
 
@@ -5142,7 +5142,7 @@ protected function checkForNestedWhenInEquation
 algorithm
   _ := match(inWhenEq)
     local
-      Absyn.Info info;
+      SourceInfo info;
       list<SCode.EEquation> eqs;
       list<list<SCode.EEquation>> eqs_lst;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
@@ -5177,7 +5177,7 @@ algorithm
       list<SCode.EEquation> eqs;
       list<list<SCode.EEquation>> eqs_lst;
       Absyn.ComponentRef cr1, cr2;
-      Absyn.Info info;
+      SourceInfo info;
       String cr1_str, cr2_str;
 
     case SCode.EQ_WHEN(info = info)
@@ -5248,7 +5248,7 @@ algorithm
       Prefix.Prefix pre;
       Absyn.Exp var;
       Absyn.Exp value;
-      Absyn.Info info;
+      SourceInfo info;
       String str;
       DAE.Type t;
 
@@ -5276,7 +5276,7 @@ protected function instAssignment2
   input Absyn.Exp var;
   input DAE.Exp value;
   input DAE.Properties props;
-  input Absyn.Info info;
+  input SourceInfo info;
   input DAE.ElementSource inSource;
   input SCode.Initial initial_;
   input Boolean inBoolean;
@@ -5478,7 +5478,7 @@ end instAssignment2;
 
 protected function generateNoConstantBindingError
   input Option<Values.Value> emptyValueOpt;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match(emptyValueOpt, info)
     local
@@ -5500,7 +5500,7 @@ end generateNoConstantBindingError;
 protected function getIteratorType
   input DAE.Type ty;
   input String id;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Type oty;
 algorithm
   oty := match (ty,id,info)
@@ -5529,7 +5529,7 @@ protected function instParForStatement
   input String iterator;
   input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
-  input Absyn.Info info;
+  input SourceInfo info;
   input DAE.ElementSource source;
   input SCode.Initial inInitial;
   input Boolean inBool;
@@ -5579,7 +5579,7 @@ protected function instParForStatement_dispatch
   input String iterator;
   input Option<Absyn.Exp> range;
   input list<SCode.Statement> inForBody;
-  input Absyn.Info info;
+  input SourceInfo info;
   input DAE.ElementSource inSource;
   input SCode.Initial inInitial;
   input Boolean inBool;
@@ -5608,7 +5608,7 @@ algorithm
       DAE.Const cnst;
       InstanceHierarchy ih;
       DAE.ElementSource source;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars;
+      list<tuple<DAE.ComponentRef,SourceInfo>> loopPrlVars;
       DAE.ComponentRef parforIter;
 
     // one iterator
@@ -5678,7 +5678,7 @@ protected function isCrefParGlobalOrForIterator
 "Checks if a component reference is referencing a parglobal
 variable or the loop iterator(implicitly declared is OK).
 All other references are errors."
-  input tuple<DAE.ComponentRef,Absyn.Info> inCrefInfo;
+  input tuple<DAE.ComponentRef,SourceInfo> inCrefInfo;
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
 algorithm
@@ -5686,7 +5686,7 @@ algorithm
     local
       String errorString;
       DAE.ComponentRef cref;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Parallelism prl;
       Boolean isParglobal;
       Option<DAE.Const> cnstForRange;
@@ -5726,13 +5726,13 @@ end isCrefParGlobalOrForIterator;
 
 
 protected function crefInfoListCrefsEqual
-"Compares if two <DAE.ComponentRef,Absyn.Info> tuples have
+"Compares if two <DAE.ComponentRef,SourceInfo> tuples have
 are the same in the sense that they have the same cref (which
 means they are references to the same component).
 The info is
 just for error messages."
   input DAE.ComponentRef inFoundCref;
-  input tuple<DAE.ComponentRef,Absyn.Info> inCrefInfos;
+  input tuple<DAE.ComponentRef,SourceInfo> inCrefInfos;
   output Boolean outBoolean;
 algorithm
   outBoolean := match(inFoundCref,inCrefInfos)
@@ -5752,18 +5752,18 @@ components declared to outside of the parfor loop need to be
 collected.
 We need the list of referenced variables for Code generation in the backend.
 EXPENSIVE operation but needs to be done."
-  input list<tuple<DAE.ComponentRef,Absyn.Info>> inCrefInfos;
+  input list<tuple<DAE.ComponentRef,SourceInfo>> inCrefInfos;
   input list<DAE.Statement> inStatments;
-  output list<tuple<DAE.ComponentRef,Absyn.Info>> outCrefInfos;
+  output list<tuple<DAE.ComponentRef,SourceInfo>> outCrefInfos;
 
 algorithm
   outCrefInfos := matchcontinue(inCrefInfos,inStatments)
     local
       list<DAE.Statement> restStmts, stmtList;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> crefInfoList;
+      list<tuple<DAE.ComponentRef,SourceInfo>> crefInfoList;
       DAE.ComponentRef foundCref;
       DAE.Exp exp1,exp2;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Ident iter;
       DAE.Type iterType;
       DAE.Statement debugStmt;
@@ -5836,16 +5836,16 @@ end collectParallelVariables;
 
 
 protected function collectParallelVariablesinExps
-  input list<tuple<DAE.ComponentRef,Absyn.Info>> inCrefInfos;
+  input list<tuple<DAE.ComponentRef,SourceInfo>> inCrefInfos;
   input list<DAE.Exp> inExps;
-  input Absyn.Info inInfo;
-  output list<tuple<DAE.ComponentRef,Absyn.Info>> outCrefInfos;
+  input SourceInfo inInfo;
+  output list<tuple<DAE.ComponentRef,SourceInfo>> outCrefInfos;
 
 algorithm
   outCrefInfos := matchcontinue(inCrefInfos,inExps,inInfo)
     local
       list<DAE.Exp> restExps;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> crefInfoList;
+      list<tuple<DAE.ComponentRef,SourceInfo>> crefInfoList;
       DAE.ComponentRef foundCref;
       DAE.Exp exp1,exp2,exp3;
       list<DAE.Exp> expLst1;
@@ -5967,16 +5967,16 @@ end collectParallelVariablesinExps;
 
 
 protected function collectParallelVariablesInSubscriptList
-  input list<tuple<DAE.ComponentRef,Absyn.Info>> inCrefInfos;
+  input list<tuple<DAE.ComponentRef,SourceInfo>> inCrefInfos;
   input list<DAE.Subscript> inSubscriptLst;
-  input Absyn.Info inInfo;
-  output list<tuple<DAE.ComponentRef,Absyn.Info>> outCrefInfos;
+  input SourceInfo inInfo;
+  output list<tuple<DAE.ComponentRef,SourceInfo>> outCrefInfos;
 
 algorithm
   outCrefInfos := matchcontinue(inCrefInfos,inSubscriptLst,inInfo)
     local
       list<DAE.Subscript> restSubs;
-      list<tuple<DAE.ComponentRef,Absyn.Info>> crefInfoList;
+      list<tuple<DAE.ComponentRef,SourceInfo>> crefInfoList;
       DAE.Exp exp1;
 
 
@@ -5999,7 +5999,7 @@ end collectParallelVariablesInSubscriptList;
 
 protected function checkValidNoRetcall
   input DAE.Exp exp;
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match (exp,info)
     local

@@ -123,21 +123,21 @@ public uniontype Binding
     NFSCodeEnv.Env env;
     Prefix prefix;
     Integer propagatedDims "See NFSCodeMod.propagateMod.";
-    Absyn.Info info;
+    SourceInfo info;
   end RAW_BINDING;
 
   record UNTYPED_BINDING
     DAE.Exp bindingExp;
     Boolean isProcessing;
     Integer propagatedDims "See NFSCodeMod.propagateMod.";
-    Absyn.Info info;
+    SourceInfo info;
   end UNTYPED_BINDING;
 
   record TYPED_BINDING
     DAE.Exp bindingExp;
     DAE.Type bindingType;
     Integer propagatedDims "See NFSCodeMod.propagateMod.";
-    Absyn.Info info;
+    SourceInfo info;
   end TYPED_BINDING;
 end Binding;
 
@@ -149,7 +149,7 @@ public uniontype Component
     Prefixes prefixes;
     ParamType paramType;
     Binding binding;
-    Absyn.Info info;
+    SourceInfo info;
   end UNTYPED_COMPONENT;
 
   record TYPED_COMPONENT
@@ -158,7 +158,7 @@ public uniontype Component
     Option<Component> parent; //NO_COMPONENT?
     DaePrefixes prefixes;
     Binding binding;
-    Absyn.Info info;
+    SourceInfo info;
   end TYPED_COMPONENT;
 
   record CONDITIONAL_COMPONENT
@@ -169,7 +169,7 @@ public uniontype Component
     Prefixes prefixes;
     NFSCodeEnv.Env env;
     Prefix prefix;
-    Absyn.Info info;
+    SourceInfo info;
   end CONDITIONAL_COMPONENT;
 
   record DELETED_COMPONENT
@@ -198,7 +198,7 @@ public uniontype Modifier
     SCode.Each eachPrefix;
     Binding binding;
     list<Modifier> subModifiers;
-    Absyn.Info info;
+    SourceInfo info;
   end MODIFIER;
 
   record REDECLARE

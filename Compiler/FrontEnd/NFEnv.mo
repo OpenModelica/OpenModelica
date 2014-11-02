@@ -158,7 +158,7 @@ public function makeInheritedOrigin
   output EntryOrigin outOrigin;
 protected
   Absyn.Path bc;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   SCode.EXTENDS(baseClassPath = bc, info = info) := inExtends;
   outOrigin := NFInstTypes.INHERITED_ORIGIN(bc, info, {}, inEnv, inIndex);
@@ -170,7 +170,7 @@ public function makeImportedOrigin
   output EntryOrigin outOrigin;
 protected
   Absyn.Import imp;
-  Absyn.Info info;
+  SourceInfo info;
 algorithm
   SCode.IMPORT(imp = imp, info = info) := inImport;
   outOrigin := NFInstTypes.IMPORTED_ORIGIN(imp, info, inEnv);
@@ -326,7 +326,7 @@ algorithm
     local
       Absyn.Path bc1, bc2;
       list<EntryOrigin> origin1, origin2, rest_origins;
-      Absyn.Info info;
+      SourceInfo info;
       EntryOrigin origin;
       Env env;
       Integer idx;
@@ -459,7 +459,7 @@ algorithm
     local
       Absyn.Import imp;
       String name;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
 
     case (NFInstTypes.IMPORTED_ORIGIN(imp = imp, info = info1), NFInstTypes.IMPORTED_ORIGIN(info = info2))
       equation
@@ -481,7 +481,7 @@ protected function printImportShadowWarning
   input SCode.Element inShadowElement;
 protected
   Absyn.Import imp;
-  Absyn.Info info1, info2;
+  SourceInfo info1, info2;
   String import_str;
 algorithm
   info1 := SCode.elementInfo(inShadowElement);
@@ -495,7 +495,7 @@ protected function printDoubleDeclarationError
   input SCode.Element inOldElement;
   input SCode.Element inNewElement;
 protected
-  Absyn.Info info1, info2;
+  SourceInfo info1, info2;
   String name;
 algorithm
   (name, info1) := SCode.elementNameInfo(inNewElement);
@@ -537,7 +537,7 @@ protected function collapseInheritedOrigins2
   output EntryOrigin outOrigin;
 protected
   Absyn.Path bc;
-  Absyn.Info info;
+  SourceInfo info;
   list<EntryOrigin> origins;
   Env env;
   Integer idx;

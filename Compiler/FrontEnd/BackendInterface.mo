@@ -91,7 +91,7 @@ public function elabCallInteractive
   input Boolean inImplInst;
   input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;

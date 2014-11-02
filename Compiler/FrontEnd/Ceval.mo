@@ -129,7 +129,7 @@ protected function cevalWork1
 algorithm
   (outCache,outValue,outST) := match (inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter,iterReached)
     local
-      Absyn.Info info;
+      SourceInfo info;
       String str1,str2,str3;
     case (_,_,_,_,_,_,_,false)
       equation
@@ -206,7 +206,7 @@ algorithm
       list<DAE.Type> tys;
       DAE.ReductionIterators iterators;
       list<list<Values.Value>> valMatrix;
-      Absyn.Info info;
+      SourceInfo info;
       list<Values.Value> orderd;
       list<String> comp;
       DAE.ClockKind ck;
@@ -881,7 +881,7 @@ public function cevalIfConstant
   input DAE.Exp inExp;
   input DAE.Properties inProp;
   input Boolean impl;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
@@ -959,7 +959,7 @@ protected function cevalWholedimRetCall
   input DAE.Exp inExp;
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Integer numIter;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
@@ -995,7 +995,7 @@ public function cevalRangeIfConstant
   input DAE.Exp inExp;
   input DAE.Properties inProp;
   input Boolean impl;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
@@ -1481,7 +1481,7 @@ algorithm
       list<DAE.Exp> es;
       FCore.Cache cache;
       list<list<DAE.Exp>> mat;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Dimension ddim;
 
     case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(1),_,st,_,_)
@@ -2724,8 +2724,8 @@ algorithm
       String name,fileName,dir;
       Values.Value v;
       Boolean b;
-    case (SCode.CLASS(info=Absyn.INFO(fileName="<interactive>")),_) then acc;
-    case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName)),_)
+    case (SCode.CLASS(info=SOURCEINFO(fileName="<interactive>")),_) then acc;
+    case (SCode.CLASS(name=name,info=SOURCEINFO(fileName=fileName)),_)
       equation
         dir = System.dirname(fileName);
         fileName = System.basename(fileName);
@@ -2746,8 +2746,8 @@ algorithm
       String name,fileName,dir;
       Values.Value v;
       Boolean b;
-    case (Absyn.CLASS(info=Absyn.INFO(fileName="<interactive>")),_) then acc;
-    case (Absyn.CLASS(name=name,info=Absyn.INFO(fileName=fileName)),_)
+    case (Absyn.CLASS(info=SOURCEINFO(fileName="<interactive>")),_) then acc;
+    case (Absyn.CLASS(name=name,info=SOURCEINFO(fileName=fileName)),_)
       equation
         dir = System.dirname(fileName);
         fileName = System.basename(fileName);
@@ -2972,7 +2972,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,env,{exp},impl,st, msg,_)
       equation
@@ -3401,7 +3401,7 @@ algorithm
       Absyn.Msg msg;
       String exp1_str,exp2_str,lh_str,rh_str;
       FCore.Cache cache; Boolean b;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
@@ -3499,7 +3499,7 @@ algorithm
       Integer ri,ri1,ri2,ri_1;
       String lhs_str,rhs_str;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
@@ -3733,7 +3733,7 @@ algorithm
       Real r1,r2,r;
       Boolean b1,b2,b;
       String s1,s2,s;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (Values.INTEGER(i1), Values.INTEGER(i2), _)
       equation
@@ -3814,7 +3814,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,_,{exp1},_,st,_,_)
       equation
@@ -3856,7 +3856,7 @@ algorithm
       Absyn.Msg msg;
       String exp1_str,exp2_str;
       FCore.Cache cache;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
@@ -4077,7 +4077,7 @@ algorithm
       Absyn.Msg msg;
       FCore.Cache cache;
       Values.Value res;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -4125,7 +4125,7 @@ algorithm
       Absyn.Msg msg;
       FCore.Cache cache;
       Values.Value v;
-      Absyn.Info info;
+      SourceInfo info;
       String str;
 
     case (cache,env,s1,impl,st,matrixDimension,row,{},msg,_)
@@ -4229,7 +4229,7 @@ algorithm
       Absyn.Msg msg;
       FCore.Cache cache;
       String str;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,env,{xe,ye},impl,st,msg,_)
       equation
@@ -4703,7 +4703,7 @@ algorithm
       DAE.Type ty;
       DAE.Attributes attr;
       InstTypes.SplicedExpData splicedExpData;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Try to lookup the variables binding and constant evaluate it.
     case (cache, env, c, impl, msg, _)
@@ -4757,7 +4757,7 @@ algorithm
       FCore.Cache cache;
       Values.Value v;
       String str, scope_str, s1, s2, s3;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Variability variability;
 
     // A variable with no binding and SOME for range constness -> a for iterator
@@ -4779,7 +4779,7 @@ algorithm
         s3 = Types.printTypeStr(inType);
         v = Types.typeToValue(inType);
         v = Values.EMPTY(s1, s2, v, s3);
-        // i would really like to have Absyn.Info to put in Values.EMPTY here!
+        // i would really like to have SourceInfo to put in Values.EMPTY here!
         // to easier report errors later on and also to have DAE.ComponentRef and DAE.Type
         // but unfortunately DAE depends on Values and they should probably be merged !
         // Actually, at a second thought we SHOULD NOT HAVE VALUES AT ALL, WE SHOULD HAVE
@@ -4828,7 +4828,7 @@ algorithm
       Absyn.Path tpath;
       DAE.Type ty;
       Absyn.Ident id;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Binding binding;
 
     /*
@@ -5606,7 +5606,7 @@ public function cevalAstExp
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Absyn.Exp outExp;
 algorithm
@@ -5732,7 +5732,7 @@ public function cevalAstExpList
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<Absyn.Exp> outAbsynExpLst;
 algorithm
@@ -5765,7 +5765,7 @@ protected function cevalAstExpListList "function: cevalAstExpListList"
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<list<Absyn.Exp>> outAbsynExpLstLst;
 algorithm
@@ -5814,13 +5814,13 @@ algorithm
       String file;
       Absyn.ElementAttributes attr;
       Absyn.TypeSpec tp;
-      Absyn.Info info;
+      SourceInfo info;
       Integer sline,scolumn,eline,ecolumn;
       Option<Absyn.ConstrainClass> c;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       FCore.Cache cache;
-    case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = _,lineNumberStart = _,columnNumberStart = _,lineNumberEnd = _,columnNumberEnd = _)),constrainClass = c),impl,st,msg)
+    case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as SOURCEINFO(fileName = _,lineNumberStart = _,columnNumberStart = _,lineNumberEnd = _,columnNumberEnd = _)),constrainClass = c),impl,st,msg)
       equation
         (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg, info);
       then
@@ -5836,7 +5836,7 @@ protected function cevalAstCitems
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<Absyn.ComponentItem> outAbsynComponentItemLst;
 algorithm
@@ -5879,7 +5879,7 @@ protected function cevalAstModopt
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Option<Absyn.Modification> outAbsynModificationOption;
 algorithm
@@ -5909,7 +5909,7 @@ protected function cevalAstModification "This function evaluates Eval(variable) 
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Absyn.Modification outModification;
 algorithm
@@ -5923,7 +5923,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       FCore.Cache cache;
-      Absyn.Info info2;
+      SourceInfo info2;
     case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.EQMOD(e,info2)),impl,st,msg,_)
       equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
@@ -5945,7 +5945,7 @@ protected function cevalAstEltargs "Helper function to cevalAstModification."
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
 algorithm
@@ -5962,7 +5962,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st;
       Absyn.ElementArg m;
       FCore.Cache cache;
-      Absyn.Info mod_info;
+      SourceInfo mod_info;
       Absyn.Path p;
 
     case (cache,_,{},_,_,_,_) then (cache,{});
@@ -5988,7 +5988,7 @@ protected function cevalAstArraydim "Helper function to cevaAstCitems"
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output Absyn.ArrayDim outArrayDim;
 algorithm
@@ -6025,7 +6025,7 @@ protected function cevalAstExpexpList
   input Boolean inBoolean;
   input Option<GlobalScript.SymbolTable> inST;
   input Absyn.Msg inMsg;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<tuple<Absyn.Exp, Absyn.Exp>> outExpTpls;
 algorithm

@@ -76,7 +76,7 @@ algorithm
   outClass := match(inClass)
     local
       SCode.ClassDef cDef, ncDef;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Ident n;
       SCode.Prefixes pref;
       SCode.Encapsulated ecpf;

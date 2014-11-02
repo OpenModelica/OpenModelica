@@ -1119,7 +1119,7 @@ algorithm
         index_str = intString(index);
         err_str = "Invalid flag " + name + " with index " + index_str +
           " in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly.";
-        Error.addMessage(Error.INTERNAL_ERROR, {err_str});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {err_str}, sourceInfo());
       then fail();
   end matchcontinue;
 end checkDebugFlag;
@@ -1158,7 +1158,7 @@ algorithm
         index_str = intString(index);
         err_str = "Invalid flag " + name + " with index " + index_str +
           " in Flags.allConfigFlags. Make sure that all flags are present and ordered correctly.";
-        Error.addMessage(Error.INTERNAL_ERROR, {err_str});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {err_str}, sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -1518,14 +1518,8 @@ algorithm
         INT_FLAG(i);
 
     // A real value.
-    case ({_}, REAL_FLAG(data = _), _, _)
-      equation
-        //r = System.stringReal(s);
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"Flags.stringFlagData: RML doesn't have stringReal, enable this for the bootstrapped compiler"});
-      then
-        fail();
-        //REAL_FLAG(r);
+    case ({s}, REAL_FLAG(data = _), _, _)
+      then REAL_FLAG(System.stringReal(s));
 
     // A string value.
     case ({s}, STRING_FLAG(data = _), SOME(options), _)

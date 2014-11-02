@@ -452,7 +452,7 @@ end dotPath;
  *********************************************************************
  *********************************************************************/
 
-template error(Absyn.Info srcInfo, String errMessage)
+template error(SourceInfo srcInfo, String errMessage)
 "Example source template error reporting template to be used together with the sourceInfo() magic function.
 Usage: error(sourceInfo(), <<message>>) "
 ::=

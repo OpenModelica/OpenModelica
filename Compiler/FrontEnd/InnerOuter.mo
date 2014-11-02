@@ -482,7 +482,7 @@ algorithm
       Boolean inner1, inner2, outer1, outer2, added;
       Prefix.Prefix scope;
       DAE.ElementSource source "the origin of the element";
-      Absyn.Info info;
+      SourceInfo info;
       Connect.Sets sets;
       ConnectionGraph.ConnectionGraph graph;
 
@@ -581,7 +581,7 @@ protected function addOuterConnectIfEmpty
   input DAE.ComponentRef cr2;
   input Absyn.InnerOuter iio2;
   input Connect.Face f2;
-  input Absyn.Info info;
+  input SourceInfo info;
   input ConnectionGraph.ConnectionGraph inCGraph;
   output Connect.Sets outSets;
   output ConnectionGraph.ConnectionGraph outCGraph;
@@ -656,7 +656,7 @@ protected function addOuterConnectIfEmptyNoEnv
   input DAE.ComponentRef cr2;
   input Absyn.InnerOuter iio2;
   input Connect.Face f2;
-  input Absyn.Info info;
+  input SourceInfo info;
   output Connect.Sets outSets;
 algorithm
   outSets := matchcontinue(inCache,inEnv,inIH,inPre,inSets,added,cr1,iio1,f1,cr2,iio2,f2,info)
@@ -838,7 +838,7 @@ algorithm
       list<DAE.ComponentRef> crs, res;
       Absyn.InnerOuter io;
       DAE.ElementSource source;
-      Absyn.Info info;
+      SourceInfo info;
 
     case(DAE.VAR(componentRef=cr, innerOuter = io, source = source),_)
       equation
@@ -1055,7 +1055,7 @@ According to specification modifiers on outer elements is not allowed."
   input DAE.Mod inMod;
   input Absyn.InnerOuter io;
   input Boolean impl;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean modd;
 algorithm
   modd := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl,inInfo)

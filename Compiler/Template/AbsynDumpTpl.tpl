@@ -282,12 +282,12 @@ match elem
     '/* Absyn.TEXT(SOME("<%name_str%>"), "<%string%>", "<%info_str%>"); */'
 end dumpElement;
 
-template dumpInfo(Absyn.Info info)
+template dumpInfo(builtin.SourceInfo info)
 ::=
 match info
-  case INFO(__) then
+  case SOURCEINFO(__) then
     let rm_str = if isReadOnly then "readonly" else "writable"
-    'Absyn.INFO("<%fileName%>", <%rm_str%>, <%lineNumberStart%>, <%columnNumberStart%>, <%lineNumberEnd%>, <%columnNumberEnd%>)\n'
+    'SOURCEINFO("<%fileName%>", <%rm_str%>, <%lineNumberStart%>, <%columnNumberStart%>, <%lineNumberEnd%>, <%columnNumberEnd%>)\n'
 end dumpInfo;
 
 template dumpAnnotation(Absyn.Annotation ann)

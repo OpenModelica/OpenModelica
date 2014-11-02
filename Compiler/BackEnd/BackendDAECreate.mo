@@ -2386,7 +2386,7 @@ algorithm
       list<DAE.Exp> functionArgs;
       list<DAE.ComponentRef> crefLst;
       String str;
-      Absyn.Info info;
+      SourceInfo info;
       list<BackendDAE.Equation> eqns, reqns;
       list<DAE.Statement> assrtLst;
 

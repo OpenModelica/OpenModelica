@@ -2043,7 +2043,7 @@ algorithm
       BackendDAE.VarKind varKind;
       HashSet.HashSet hs;
       String s, str, sv;
-      Absyn.Info info;
+      SourceInfo info;
 
     // state
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty), (vars, fixvars, eqns, hs)) equation

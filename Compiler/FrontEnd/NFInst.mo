@@ -283,7 +283,7 @@ algorithm
       inClassMod, inPrefixes, inEnv, inPrefix, inGlobals)
     local
       Absyn.ArrayDim dims;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Path path;
       Absyn.TypeSpec dty;
       Class cls;
@@ -490,7 +490,7 @@ end instClassExtends;
 //      SCode.Mod mod;
 //      SCode.Element scls, ext;
 //      Absyn.Path bc_path;
-//      Absyn.Info info;
+//      SourceInfo info;
 //      String name;
 //      Item item;
 //      Env base_env, ext_env;
@@ -524,12 +524,12 @@ end instClassExtends;
 //protected function getClassExtendsBaseClass
 //  input Env inClassEnv;
 //  output Absyn.Path outPath;
-//  output Absyn.Info outInfo;
+//  output SourceInfo outInfo;
 //algorithm
 //  (outPath, outInfo) := matchcontinue(inClassEnv)
 //    local
 //      Absyn.Path bc;
-//      Absyn.Info info;
+//      SourceInfo info;
 //      String name;
 //
 //    case (NFSCodeEnv.FRAME(extendsTable = NFSCodeEnv.EXTENDS_TABLE(
@@ -578,7 +578,7 @@ algorithm
       list<Modifier> submods;
       list<DAE.Var> vars;
       SCode.Element el;
-      Absyn.Info info;
+      SourceInfo info;
       Globals globals;
 
     case (NFInstTypes.NOMOD(), _, globals) then ({}, globals);
@@ -616,7 +616,7 @@ algorithm
       DAE.Binding binding;
       Env env;
       Globals globals;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (NFInstTypes.MODIFIER(name = ident, subModifiers = {}, binding =
         NFInstTypes.RAW_BINDING(bindingExp = bind_exp, env = env), info = info), _, globals)
@@ -634,7 +634,7 @@ end instBasicTypeAttribute;
 protected function getBasicTypeAttributeType
   input String inTypeName;
   input String inAttributeName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue(inTypeName, inAttributeName, inInfo)
@@ -1011,7 +1011,7 @@ algorithm
     local
       String enum_idx_str, name;
       Absyn.Path tpath, path;
-      Absyn.Info info;
+      SourceInfo info;
       Integer enum_idx;
       Entry cls_entry;
       Env env;
@@ -1062,7 +1062,7 @@ algorithm
       String name;
       Absyn.ArrayDim ad;
       Absyn.Path path, tpath;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Mod smod;
       Env env, mod_env;
       Globals globals;
@@ -1137,7 +1137,7 @@ end instComponent;
 protected function checkInstanceRestriction
   input Entry inClass;
   input String inName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inClass, inName, inInfo)
     local
@@ -1165,7 +1165,7 @@ end checkInstanceRestriction;
 
 protected function checkPartialInstance
   input Entry inEntry;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inEntry, inInfo)
     local
@@ -1203,7 +1203,7 @@ algorithm
       inPrefixes, inEnv, inExtendsState, inGlobals)
     local
       Absyn.Path path;
-      Absyn.Info info;
+      SourceInfo info;
       Entry entry;
       Env env;
       Class cls;
@@ -1297,7 +1297,7 @@ algorithm
       DAE.Exp dexp;
       Env env;
       Integer pl, cd;
-      Absyn.Info info;
+      SourceInfo info;
       Globals globals;
 
     case (NFInstTypes.RAW_BINDING(aexp, env, pl, info), _, globals)
@@ -1314,7 +1314,7 @@ end instBinding;
 protected function instDimensions
   input list<Absyn.Subscript> inSubscript;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output list<DAE.Dimension> outDimensions;
   output Globals outGlobals;
@@ -1326,7 +1326,7 @@ end instDimensions;
 protected function instDimension
   input Absyn.Subscript inSubscript;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.Dimension outDimension;
   output Globals outGlobals;
@@ -1352,7 +1352,7 @@ end instDimension;
 protected function instSubscripts
   input list<Absyn.Subscript> inSubscripts;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output list<DAE.Subscript> outSubscripts;
   output Globals outGlobals;
@@ -1364,7 +1364,7 @@ end instSubscripts;
 protected function instSubscript
   input Absyn.Subscript inSubscript;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.Subscript outSubscript;
   output Globals outGlobals;
@@ -1404,7 +1404,7 @@ protected function liftArrayType
   input Absyn.ArrayDim inDims;
   input DAE.Type inType;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.Type outType;
   output Globals outGlobals;
@@ -1463,7 +1463,7 @@ end addDimensionsFromType;
 protected function instExpList
   input list<Absyn.Exp> inExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output list<DAE.Exp> outExp;
   output Globals outGlobals;
@@ -1475,7 +1475,7 @@ end instExpList;
 protected function instExpOpt
   input Option<Absyn.Exp> inExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output Option<DAE.Exp> outExp;
   output Globals outGlobals;
@@ -1561,7 +1561,7 @@ end instExpOpt;
 //  input Absyn.Exp inExp;
 //  input Env inEnv;
 //  input Prefix inPrefix;
-//  input Absyn.Info inInfo;
+//  input SourceInfo inInfo;
 //  input Globals inGlobals;
 //  output DAE.Exp outExp;
 //  output Globals outGlobals;
@@ -1843,7 +1843,7 @@ end instExpOpt;
 protected function instFunctionCallDispatch
   input Absyn.Exp inExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.Exp outExp;
   output Globals outGlobals;
@@ -1903,7 +1903,7 @@ end instFunctionCallDispatch;
 protected function instExp
   input Absyn.Exp inExp;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.Exp outExp;
   output Globals outGlobals;
@@ -2061,7 +2061,7 @@ end instExp;
 protected function instArray
   input list<Absyn.Exp> inExpl;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.Exp outArray;
   output Globals outGlobals;
@@ -2112,7 +2112,7 @@ protected function instCref
    be uniquely identified in the symbol table."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.ComponentRef outCref;
   output Globals outGlobals;
@@ -2156,7 +2156,7 @@ protected function instCref2
    typing later on)."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.ComponentRef outCref;
   output Globals outGlobals;
@@ -2199,7 +2199,7 @@ protected function prefixCref
   input DAE.ComponentRef inCref;
   input Absyn.Path inCrefPath;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.ComponentRef outCref;
   output Globals outGlobals;
@@ -2346,7 +2346,7 @@ protected function instPackageConstant
   input Entry inEntry;
   input Env inEnv;
   input Option<Prefix> inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output Globals outGlobals;
 algorithm
@@ -2404,7 +2404,7 @@ protected function instPackageEnumType
   input Entry inEntry;
   input Env inEnv;
   input Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output Globals outGlobals;
 algorithm
@@ -2505,7 +2505,7 @@ protected function instEnumTypeComponent
    literals as binding."
   input list<String> inLiterals;
   input Absyn.Path inEnumPath;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Component outComponent;
 protected
   DAE.Type ty;
@@ -2558,7 +2558,7 @@ protected function instFunctionCall
   input list<Absyn.Exp> inPositionalArgs;
   input list<Absyn.NamedArg> inNamedArgs;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output DAE.Exp outCallExp;
   output Globals outGlobals;
@@ -2597,7 +2597,7 @@ end instFunctionCall;
 protected function instBuiltinSize
   input list<DAE.Exp> inPositionalArgs;
   input list<Absyn.NamedArg> inNamedArgs;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output DAE.Exp outSizeExp;
 algorithm
   outSizeExp := match(inPositionalArgs, inNamedArgs, inInfo)
@@ -2629,7 +2629,7 @@ end instBuiltinSize;
 protected function instFunction
   input Absyn.ComponentRef inName;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output Absyn.Path outName;
   output Function outFunction;
@@ -2682,7 +2682,7 @@ end instFunction;
 
 protected function instFunctionName
   input Absyn.ComponentRef inName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Absyn.Path outName;
 algorithm
   outName := matchcontinue(inName, inInfo)
@@ -2875,7 +2875,7 @@ algorithm
       DAE.Exp exp;
       list<String> deps,allPossible;
       list<Statement> allStatements;
-      Absyn.Info info;
+      SourceInfo info;
       String name;
       list<DAE.Dimension> dims;
       list<DAE.Exp> exps;
@@ -2937,7 +2937,7 @@ protected function stripInitBinding
 algorithm
   (outElt,outBindings) := match (inElt,inBindings)
     local
-      Absyn.Info info,bindingInfo;
+      SourceInfo info,bindingInfo;
       String name;
       Class cls;
       DAE.Type baseType;
@@ -2965,7 +2965,7 @@ protected function dimensionDeps
 algorithm
   (outElt,outBindings) := match (inElt,inBindings)
     local
-      Absyn.Info info;
+      SourceInfo info;
       String name;
       Class cls;
       array<Dimension> dimensions;
@@ -2987,7 +2987,7 @@ end dimensionDeps;
 protected function instNamedArg
   input Absyn.NamedArg inNamedArg;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output tuple<String, DAE.Exp> outNamedArg;
   output Globals outGlobals;
@@ -3044,7 +3044,7 @@ algorithm
       Prefixes prefs;
       Absyn.Path name;
       DAE.Type ty;
-      Absyn.Info info;
+      SourceInfo info;
       Element el;
       list<Element> rest_el;
       list<Element> inputs, outputs, locals;
@@ -3076,7 +3076,7 @@ end getFunctionParameters2;
 protected function getFunctionParameters3
   input Absyn.Path inName;
   input Prefixes inPrefixes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Element inElement;
   input list<Element> inAccumInputs;
   input list<Element> inAccumOutputs;
@@ -3113,7 +3113,7 @@ protected function validateFunctionVariable
   input Absyn.Path inName;
   input DAE.Type inType;
   input Prefixes inPrefixes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inName, inType, inPrefixes, inInfo)
     local
@@ -3152,7 +3152,7 @@ end validateFunctionVariable;
 protected function validateFormalParameter
   input Absyn.Path inName;
   input Prefixes inPrefixes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inName, inPrefixes, inInfo)
     local
@@ -3175,7 +3175,7 @@ end validateFormalParameter;
 protected function validateLocalFunctionVariable
   input Absyn.Path inName;
   input Prefixes inPrefixes;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inName, inPrefixes, inInfo)
     local
@@ -3199,7 +3199,7 @@ protected function fillFunctionSlots
   input list<tuple<String, DAE.Exp>> inNamedArgs;
   input list<Element> inInputs;
   input Absyn.Path inFuncName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<DAE.Exp> outArgs;
 protected
   list<FunctionSlot> slots;
@@ -3216,7 +3216,7 @@ protected function makeFunctionSlots
   input list<DAE.Exp> inPositionalArgs;
   input list<FunctionSlot> inAccumSlots;
   input Absyn.Path inFuncName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output list<FunctionSlot> outSlots;
 algorithm
   outSlots := match(inInputs, inPositionalArgs, inAccumSlots, inFuncName, inInfo)
@@ -3515,7 +3515,7 @@ algorithm
       array<Dimension> dims;
       Prefixes prefs;
       Binding binding;
-      Absyn.Info info;
+      SourceInfo info;
       SymbolTable st;
       Component comp;
 
@@ -3643,7 +3643,7 @@ algorithm
       DAE.Exp dexp1, dexp2, dexp3;
       Absyn.ComponentRef cref1, cref2;
       DAE.ComponentRef dcref1, dcref2;
-      Absyn.Info info;
+      SourceInfo info;
       Integer index;
       String for_index,str;
       list<SCode.EEquation> eql;
@@ -3798,7 +3798,7 @@ algorithm
   (outStatement, outGlobals) := match(statement, inEnv, inGlobals)
     local
       Absyn.Exp exp1, exp2, if_condition;
-      Absyn.Info info;
+      SourceInfo info;
       DAE.Exp dexp1, dexp2;
       Env env;
       list<SCode.Statement> if_branch, else_branch, body;
@@ -3880,7 +3880,7 @@ protected function instIfBranch
   input Absyn.Exp inCondition;
   input list<SCode.EEquation> inBody;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output tuple<DAE.Exp, list<Equation>> outIfBranch;
   output Globals outGlobals;
@@ -3896,7 +3896,7 @@ end instIfBranch;
 protected function instStatementBranch
   input tuple<Absyn.Exp,list<SCode.Statement>> tpl;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output tuple<DAE.Exp, list<Statement>> outIfBranch;
   output Globals outGlobals;
@@ -3915,7 +3915,7 @@ end instStatementBranch;
 protected function instWhenBranch
   input tuple<Absyn.Exp, list<SCode.EEquation>> inBranch;
   input Env inEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input Globals inGlobals;
   output tuple<DAE.Exp, list<Equation>> outBranch;
   output Globals outGlobals;
@@ -4069,7 +4069,7 @@ end instWhenBranch;
 //      DAE.Exp cond_exp;
 //      DAE.Type ty;
 //      Condition cond;
-//      Absyn.Info info;
+//      SourceInfo info;
 //      Absyn.Path name;
 //      Modifier mod;
 //      Option<Element> el;
@@ -4156,7 +4156,7 @@ end instWhenBranch;
 //  input DAE.Exp inExp;
 //  input DAE.Type inType;
 //  input Absyn.Path inName;
-//  input Absyn.Info inInfo;
+//  input SourceInfo inInfo;
 //  output Condition outCondition;
 //algorithm
 //  outCondition := match(inExp, inType, inName, inInfo)

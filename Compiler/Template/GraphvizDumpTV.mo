@@ -608,7 +608,7 @@ interface package GraphvizDumpTV
     function addSourceTemplateError
       "Wraps call to Error.addSourceMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
       input String inErrMsg;
-      input Absyn.Info inInfo;
+      input SourceInfo inInfo;
     end addSourceTemplateError;
 
     //for completeness; although the addSourceTemplateError() above is preferable

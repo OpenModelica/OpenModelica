@@ -123,7 +123,7 @@ public function elabMod "
   input SCode.Mod inMod;
   input Boolean inBoolean;
   input ModScope inModScope;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Mod outMod;
 algorithm
@@ -145,7 +145,7 @@ algorithm
       SCode.Element elem;
       FCore.Cache cache;
       InstanceHierarchy ih;
-      Absyn.Info info;
+      SourceInfo info;
       String str;
 
     // no modifications
@@ -210,7 +210,7 @@ public function elabModForBasicType "
   input SCode.Mod inMod;
   input Boolean inBoolean;
   input ModScope inModScope;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Mod outMod;
 algorithm
@@ -263,7 +263,7 @@ protected function elabModRedeclareElement
   input SCode.Element inElt;
   input Boolean impl;
   input ModScope inModScope;
-  input Absyn.Info info;
+  input SourceInfo info;
   output tuple<SCode.Element, DAE.Mod> modElts "the elaborated modifiers";
 algorithm
   modElts := matchcontinue(inCache,inEnv,inIH,inPrefix,finalPrefix,inElt,impl,inModScope,info)
@@ -283,7 +283,7 @@ algorithm
       SCode.Attributes attr;
       SCode.Mod mod, modOriginal;
       Option<Absyn.Exp> cond;
-      Absyn.Info i;
+      SourceInfo i;
       InstanceHierarchy ih;
       SCode.Attributes attr1;
       list<SCode.Enum> enumLst;
@@ -365,7 +365,7 @@ protected function elabModQualifyTypespec
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Boolean impl;
-  input Absyn.Info info;
+  input SourceInfo info;
   input Absyn.Ident name;
   input Absyn.TypeSpec tp;
   output FCore.Cache outCache;
@@ -411,7 +411,7 @@ protected function elabModValue
   input DAE.Exp inExp;
   input DAE.Properties inProp;
   input Boolean impl;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output Option<Values.Value> outValuesValueOption;
 algorithm
@@ -455,7 +455,7 @@ algorithm
       SCode.Element elem;
       DAE.Exp dexp;
       String str;
-      Absyn.Info info;
+      SourceInfo info;
       Values.Value v;
 
     case (DAE.NOMOD()) then SCode.NOMOD();
@@ -574,7 +574,7 @@ public function updateMod
   input Prefix.Prefix inPrefix;
   input DAE.Mod inMod;
   input Boolean inBoolean;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Mod outMod;
 algorithm
@@ -595,7 +595,7 @@ algorithm
       FCore.Cache cache;
       InstanceHierarchy ih;
       String str;
-      Absyn.Info info;
+      SourceInfo info;
 
     case (cache,_,_,_,DAE.NOMOD(),_,_) then (cache,DAE.NOMOD());
 
@@ -643,7 +643,7 @@ protected function updateSubmods ""
   input Prefix.Prefix inPrefix;
   input list<DAE.SubMod> inTypesSubModLst;
   input Boolean inBoolean;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
@@ -676,7 +676,7 @@ protected function updateSubmod " "
   input Prefix.Prefix inPrefix;
   input DAE.SubMod inSubMod;
   input Boolean inBoolean;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
@@ -727,7 +727,7 @@ algorithm
       Absyn.Exp e;
       SCode.Element elem;
       String s;
-      Absyn.Info info;
+      SourceInfo info;
     case (SCode.NOMOD(),_,_,_) then DAE.NOMOD();
     case ((SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),env,pre,_)
       equation
@@ -762,7 +762,7 @@ protected function elabSubmods
   input list<SCode.SubMod> inSCodeSubModLst;
   input Boolean inBoolean;
   input ModScope inModScope;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.SubMod> outTypesSubModLst;
 protected
@@ -781,7 +781,7 @@ protected function elabSubmods2
   input Prefix.Prefix inPrefix;
   input list<SCode.SubMod> inSubMods;
   input Boolean inImpl;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   input list<DAE.SubMod> inAccumMods;
   output FCore.Cache outCache;
   output list<DAE.SubMod> outSubMods;
@@ -891,7 +891,7 @@ algorithm
       SCode.Each ep;
       list<SCode.SubMod> submods1, submods2;
       Option<tuple<Absyn.Exp, Boolean>> binding;
-      Absyn.Info info1, info2;
+      SourceInfo info1, info2;
       SCode.Mod mod1, mod2;
 
     // The second modifier has no binding, use the binding from the first.
@@ -952,7 +952,7 @@ protected function elabSubmod
   input Prefix.Prefix inPrefix;
   input SCode.SubMod inSubMod;
   input Boolean inBoolean;
-  input Absyn.Info info;
+  input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.SubMod outSubMod;
 protected
@@ -1242,7 +1242,7 @@ algorithm
       list<DAE.Var> varLst;
       DAE.Mod mod;
       DAE.Exp e;
-      Absyn.Info info;
+      SourceInfo info;
 
     case(NONE(),_,_,_) then DAE.NOMOD();
 
@@ -1265,7 +1265,7 @@ protected function lookupComplexCompModification2 "Help function to lookupComple
   input String name;
   input SCode.Final finalPrefix;
   input SCode.Each each_;
-  input Absyn.Info info;
+  input SourceInfo info;
   output DAE.Mod mod;
 algorithm
   mod := matchcontinue(inValues,inNames,inVars,name,finalPrefix,each_,info)
@@ -1562,7 +1562,7 @@ algorithm
       Integer x;
       list<Integer> xs;
       DAE.EqMod eq;
-      Absyn.Info info;
+      SourceInfo info;
       String exp_str;
       Absyn.Exp ae;
 
@@ -1731,7 +1731,7 @@ algorithm
       Option<DAE.EqMod> ass,ass1,ass2;
       SCode.Each each1,each2;
       Option<Absyn.Exp> cond;
-      Absyn.Info info, info1, info2;
+      SourceInfo info, info1, info2;
       SCode.Element celm,elementOne,el;
       SCode.ClassDef cdef;
       SCode.Encapsulated ep;
@@ -3302,11 +3302,11 @@ end isEmptyMod;
 
 public function getModInfo
   input DAE.Mod inMod;
-  output Absyn.Info outInfo;
+  output SourceInfo outInfo;
 algorithm
   outInfo := match(inMod)
     local
-      Absyn.Info info;
+      SourceInfo info;
 
     case DAE.MOD(eqModOption = SOME(DAE.TYPED(info = info))) then info;
     case DAE.MOD(eqModOption = SOME(DAE.UNTYPED(info = info))) then info;

@@ -45,16 +45,17 @@ encapsulated package Dump
   used to print smaller portions of a program."
 
 // public imports
-public import Absyn;
+import Absyn;
 
 // protected imports
-protected import AbsynDumpTpl;
-protected import Config;
-protected import Error;
-protected import List;
-protected import Print;
-protected import Tpl;
-protected import Util;
+protected
+import AbsynDumpTpl;
+import Config;
+import Error;
+import List;
+import Print;
+import Tpl;
+import Util;
 
 public function dumpExpStr
   input Absyn.Exp exp;
@@ -99,7 +100,7 @@ end dump;
 public function unparseStr
 "Prettyprints the Program, i.e. the whole AST, to a string."
   input Absyn.Program inProgram;
-  input Boolean markup "
+  input Boolean markup := false "
     Used by MathCore, and dependencies to other modules requires this to also be in OpenModelica.
     Contact peter.aronsson@mathcore.com for an explanation.
 
@@ -116,8 +117,7 @@ public function unparseClassList
   input list<Absyn.Class> inClasses;
   output String outString;
 algorithm
-  outString := Tpl.tplString(AbsynDumpTpl.dump,
-    Absyn.PROGRAM(inClasses, Absyn.TOP(), Absyn.TIMESTAMP(0.0, 0.0)));
+  outString := Tpl.tplString(AbsynDumpTpl.dump, Absyn.PROGRAM(inClasses, Absyn.TOP()));
 end unparseClassList;
 
 public function unparseClassStr
@@ -306,18 +306,18 @@ end unparseRestrictionStr;
 public function printInfo
 "author: adrpo, 2006-02-05
   Dumps an Info to the Print buffer."
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match (inInfo)
     local
       String s1,s2,s3,s4,filename;
       Boolean isReadOnly;
       Integer sline,scol,eline,ecol;
-    case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,
+    case (SOURCEINFO(fileName = filename,isReadOnly = isReadOnly,
                      lineNumberStart = sline,columnNumberStart = scol,
                      lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
-        Print.printBuf("Absyn.INFO(\"");
+        Print.printBuf("SOURCEINFO(\"");
         Print.printBuf(filename);
         Print.printBuf("\", ");
         printBool(isReadOnly);
@@ -342,7 +342,7 @@ end printInfo;
 public function unparseInfoStr
 "author: adrpo, 2006-02-05
   Translates Info to a string representation"
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output String outString;
 algorithm
   outString:=
@@ -351,7 +351,7 @@ algorithm
       String s1,s2,s3,s4,s5,str,filename;
       Boolean isReadOnly;
       Integer sline,scol,eline,ecol;
-    case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,
+    case (SOURCEINFO(fileName = filename,isReadOnly = isReadOnly,
                      lineNumberStart = sline,columnNumberStart = scol,
                      lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
@@ -360,7 +360,7 @@ algorithm
         s3 = intString(scol);
         s4 = intString(eline);
         s5 = intString(ecol);
-        str = stringAppendList({"Absyn.INFO(\"",filename,"\", ",s1,", ",s2,", ",s3,", ",s4,", ",s5,")\n"});
+        str = stringAppendList({"SOURCEINFO(\"",filename,"\", ",s1,", ",s2,", ",s3,", ",s4,", ",s5,")\n"});
       then
         str;
   end match;
@@ -377,7 +377,7 @@ algorithm
       Boolean p,f,e;
       Absyn.Restriction r;
       Absyn.ClassDef cdef;
-      Absyn.Info info;
+      SourceInfo info;
     case (Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = cdef,info = info))
       equation
         Print.printBuf("Absyn.CLASS(\""); Print.printBuf(n);
@@ -796,7 +796,7 @@ algorithm
       Absyn.InnerOuter inout;
       String name,text;
       Absyn.ElementSpec spec;
-      Absyn.Info info;
+      SourceInfo info;
     case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = _,innerOuter = inout,
                         specification = spec,info = info,constrainClass = NONE()))
       equation
@@ -3049,15 +3049,12 @@ algorithm
     local
       list<Absyn.Class> classes;
       Absyn.Within within_;
-      Absyn.TimeStamp globalBuildTimes;
-    case Absyn.PROGRAM(classes = classes, within_ = within_, globalBuildTimes = globalBuildTimes)
+    case Absyn.PROGRAM(classes = classes, within_ = within_)
       equation
         Print.printBuf("record Absyn.PROGRAM\nclasses = ");
         printListAsCorbaString(classes,printClassAsCorbaString,",\n");
         Print.printBuf(",\nwithin_ = ");
         printWithinAsCorbaString(within_);
-        Print.printBuf(",\nglobalBuildTimes = ");
-        printTimeStampAsCorbaString(globalBuildTimes);
         Print.printBuf("\nend Absyn.PROGRAM;");
       then ();
   end match;
@@ -3150,23 +3147,6 @@ algorithm
   end match;
 end printWithinAsCorbaString;
 
-protected function printTimeStampAsCorbaString
-  input Absyn.TimeStamp timeStamp;
-algorithm
-  _ := match timeStamp
-    local
-      Real r1,r2;
-    case Absyn.TIMESTAMP(lastBuildTime = r1, lastEditTime = r2)
-      equation
-        Print.printBuf("record Absyn.TIMESTAMP lastBuildTime = ");
-        Print.printBuf(realString(r1));
-        Print.printBuf(", lastEditTime = ");
-        Print.printBuf(realString(r2));
-        Print.printBuf(" end Absyn.TIMESTAMP;");
-      then ();
-  end match;
-end printTimeStampAsCorbaString;
-
 protected function printClassAsCorbaString
   input Absyn.Class cl;
 algorithm
@@ -3176,7 +3156,7 @@ algorithm
       Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
       Absyn.Restriction restriction;
       Absyn.ClassDef    body;
-      Absyn.Info info;
+      SourceInfo info;
     case Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info)
       equation
         Print.printBuf("record Absyn.CLASS name = \"");
@@ -3200,17 +3180,17 @@ algorithm
 end printClassAsCorbaString;
 
 protected function printInfoAsCorbaString
-  input Absyn.Info info;
+  input SourceInfo info;
 algorithm
   _ := match info
     local
       String fileName;
       Boolean isReadOnly;
       Integer lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd;
-      Absyn.TimeStamp buildTimes;
-    case Absyn.INFO(fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,buildTimes)
+      Real lastModified;
+    case SOURCEINFO(fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,lastModified)
       equation
-        Print.printBuf("record Absyn.INFO fileName = \"");
+        Print.printBuf("record SOURCEINFO fileName = \"");
         Print.printBuf(fileName);
         Print.printBuf("\", isReadOnly = ");
         Print.printBuf(boolString(isReadOnly));
@@ -3222,9 +3202,9 @@ algorithm
         Print.printBuf(intString(lineNumberEnd));
         Print.printBuf(", columnNumberEnd = ");
         Print.printBuf(intString(columnNumberEnd));
-        Print.printBuf(", buildTimes = ");
-        printTimeStampAsCorbaString(buildTimes);
-        Print.printBuf(" end Absyn.INFO;");
+        Print.printBuf(", lastModified = ");
+        Print.printBuf(realString(lastModified));
+        Print.printBuf(" end SOURCEINFO;");
       then ();
     else equation Error.addMessage(Error.INTERNAL_ERROR,{"printInfoAsCorbaString failed"}); then fail();
   end match;
@@ -3644,7 +3624,7 @@ algorithm
       Absyn.InnerOuter innerOuter;
       String name, string;
       Absyn.ElementSpec specification;
-      Absyn.Info info;
+      SourceInfo info;
       Option<Absyn.ConstrainClass> constrainClass;
       list<Absyn.NamedArg> args;
       Option<String> optName;
@@ -3761,7 +3741,7 @@ algorithm
       Option<Absyn.Annotation> annotationOpt;
       list<Absyn.ElementArg> elementArg;
       Absyn.Path path;
-      Absyn.Info info;
+      SourceInfo info;
     case Absyn.CLASSDEF(replaceable_,class_)
       equation
         Print.printBuf("record Absyn.CLASSDEF replaceable_ = ");
@@ -3869,7 +3849,7 @@ algorithm
   _ := match eqMod
     local
       Absyn.Exp exp;
-      Absyn.Info info;
+      SourceInfo info;
     case Absyn.NOMOD()
       equation
         Print.printBuf("record Absyn.NOMOD end Absyn.NOMOD;");
@@ -3893,7 +3873,7 @@ algorithm
       Absyn.Equation equation_;
       Option<Absyn.Comment> comment;
       Absyn.Annotation annotation_;
-      Absyn.Info info;
+      SourceInfo info;
     case Absyn.EQUATIONITEM(equation_,comment,info)
       equation
         Print.printBuf("\nrecord Absyn.EQUATIONITEM equation_ = ");
@@ -3989,7 +3969,7 @@ algorithm
       Absyn.Algorithm algorithm_;
       Option<Absyn.Comment> comment;
       Absyn.Annotation annotation_;
-      Absyn.Info info;
+      SourceInfo info;
     case Absyn.ALGORITHMITEM(algorithm_,comment,info)
       equation
         Print.printBuf("\nrecord Absyn.ALGORITHMITEM algorithm_ = ");
@@ -4337,7 +4317,7 @@ algorithm
       Absyn.RedeclareKeywords redeclareKeywords;
       Absyn.ElementSpec elementSpec;
       Option<Absyn.ConstrainClass> constrainClass;
-      Absyn.Info info;
+      SourceInfo info;
       Absyn.Path p;
     case Absyn.MODIFICATION(finalPrefix,eachPrefix,p,modification,comment,info)
       equation
@@ -4660,7 +4640,7 @@ algorithm
     local
       Absyn.Exp pattern;
       Option<Absyn.Exp> patternGuard;
-      Absyn.Info patternInfo,info,resultInfo;
+      SourceInfo patternInfo,info,resultInfo;
       list<Absyn.ElementItem> localDecls;
       Absyn.ClassPart classPart;
       Absyn.Exp result;

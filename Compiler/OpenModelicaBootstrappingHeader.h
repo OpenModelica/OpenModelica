@@ -947,7 +947,7 @@ extern struct record_description GlobalScript_Statement_IALG__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef GlobalScript_Statement_IEXP__desc_added
 #define GlobalScript_Statement_IEXP__desc_added
-ADD_METARECORD_DEFINITIONS const char* GlobalScript_Statement_IEXP__desc__fields[1] = {"exp"};
+ADD_METARECORD_DEFINITIONS const char* GlobalScript_Statement_IEXP__desc__fields[2] = {"exp","info"};
 ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_Statement_IEXP__desc = {
   "GlobalScript_Statement_IEXP",
   "GlobalScript.Statement.IEXP",
@@ -957,8 +957,8 @@ ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_Statement_IEXP
 #else /* Only use the file as a header */
 extern struct record_description GlobalScript_Statement_IEXP__desc;
 #endif
-#define GlobalScript__IEXP_3dBOX1 4
-#define GlobalScript__IEXP(exp) (mmc_mk_box2(4,&GlobalScript_Statement_IEXP__desc,exp))
+#define GlobalScript__IEXP_3dBOX2 4
+#define GlobalScript__IEXP(exp,info) (mmc_mk_box3(4,&GlobalScript_Statement_IEXP__desc,exp,info))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef GlobalScript_Statements_ISTMTS__desc_added
 #define GlobalScript_Statements_ISTMTS__desc_added
@@ -1127,7 +1127,7 @@ extern struct record_description Absyn_ForIterator_ITERATOR__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Program_PROGRAM__desc_added
 #define Absyn_Program_PROGRAM__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Program_PROGRAM__desc__fields[3] = {"classes","within_","globalBuildTimes"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Program_PROGRAM__desc__fields[2] = {"classes","within_"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Program_PROGRAM__desc = {
   "Absyn_Program_PROGRAM",
   "Absyn.Program.PROGRAM",
@@ -1137,8 +1137,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Program_PROGRAM__desc
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Program_PROGRAM__desc;
 #endif
-#define Absyn__PROGRAM_3dBOX3 3
-#define Absyn__PROGRAM(classes,within_,globalBuildTimes) (mmc_mk_box4(3,&Absyn_Program_PROGRAM__desc,classes,within_,globalBuildTimes))
+#define Absyn__PROGRAM_3dBOX2 3
+#define Absyn__PROGRAM(classes,within_) (mmc_mk_box3(3,&Absyn_Program_PROGRAM__desc,classes,within_))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Within_WITHIN__desc_added
 #define Absyn_Within_WITHIN__desc_added
@@ -1170,36 +1170,6 @@ extern struct record_description Absyn_Within_TOP__desc;
 #define Absyn__TOP_3dBOX0 4
 static const MMC_DEFSTRUCTLIT(Absyn__TOP__struct,1,4) {&Absyn_Within_TOP__desc}};
 static void *Absyn__TOP = MMC_REFSTRUCTLIT(Absyn__TOP__struct);
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Absyn_Info_INFO__desc_added
-#define Absyn_Info_INFO__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Info_INFO__desc__fields[7] = {"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","buildTimes"};
-ADD_METARECORD_DEFINITIONS struct record_description Absyn_Info_INFO__desc = {
-  "Absyn_Info_INFO",
-  "Absyn.Info.INFO",
-  Absyn_Info_INFO__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_Info_INFO__desc;
-#endif
-#define Absyn__INFO_3dBOX7 3
-#define Absyn__INFO(fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,buildTimes) (mmc_mk_box8(3,&Absyn_Info_INFO__desc,fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,buildTimes))
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Absyn_TimeStamp_TIMESTAMP__desc_added
-#define Absyn_TimeStamp_TIMESTAMP__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_TimeStamp_TIMESTAMP__desc__fields[2] = {"lastBuildTime","lastEditTime"};
-ADD_METARECORD_DEFINITIONS struct record_description Absyn_TimeStamp_TIMESTAMP__desc = {
-  "Absyn_TimeStamp_TIMESTAMP",
-  "Absyn.TimeStamp.TIMESTAMP",
-  Absyn_TimeStamp_TIMESTAMP__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_TimeStamp_TIMESTAMP__desc;
-#endif
-#define Absyn__TIMESTAMP_3dBOX2 3
-#define Absyn__TIMESTAMP(lastBuildTime,lastEditTime) (mmc_mk_box3(3,&Absyn_TimeStamp_TIMESTAMP__desc,lastBuildTime,lastEditTime))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Class_CLASS__desc_added
 #define Absyn_Class_CLASS__desc_added

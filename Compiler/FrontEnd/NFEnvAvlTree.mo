@@ -187,7 +187,7 @@ algorithm
       Integer h;
       AvlTree t;
       Option<AvlTreeValue> oval;
-      Absyn.Info info;
+      SourceInfo info;
 
     // Insert into right subtree.
     case (NFInstTypes.AVLTREENODE(value = oval, height = h, left = left, right = right),

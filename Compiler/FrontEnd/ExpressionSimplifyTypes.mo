@@ -8,13 +8,13 @@
  * All rights reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS OSMC LICENSE (OSMC-PL) VERSION 1.2.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC LICENSE OR THE GPL VERSION 3,
  * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * Consortium (OSMC) License (OSMC-PL) are obtained
  * from OSMC, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
  * http://www.openmodelica.org, and in the OpenModelica distribution.
@@ -25,7 +25,7 @@
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
- * See the full OSMC Public License conditions for more details.
+ * See the full OSMC License conditions for more details.
  *
  */
 
@@ -38,45 +38,45 @@ encapsulated package ExpressionSimplifyTypes
 
   This file contains types for the module ExpressionSimplify"
 
-public import DAE;
-public import SCode;
+import DAE;
+import SCode;
 
-public uniontype Evaluate "The expression should be evaluated to a literal value; return an error if this fails"
+uniontype Evaluate "The expression should be evaluated to a literal value; return an error if this fails"
   record NO_EVAL end NO_EVAL;
   record DO_EVAL end DO_EVAL;
 end Evaluate;
 
-public type SymbolTable = Integer /* TODO: Make replaceable type or specialized package for bootstrapping */;
+type SymbolTable = Integer /* TODO: Make replaceable type or specialized package for bootstrapping */;
 
-public type SymbolTableInterface = tuple<SymbolTableLookupValue,SymbolTableLookupVariability,SymbolTableAddScope,SymbolTableRemoveScope>;
+type SymbolTableInterface = tuple<SymbolTableLookupValue,SymbolTableLookupVariability,SymbolTableAddScope,SymbolTableRemoveScope>;
 
-public partial function SymbolTableLookupValue
+partial function SymbolTableLookupValue
   input SymbolTable st;
   input DAE.ComponentRef cr;
   output DAE.Exp exp;
 end SymbolTableLookupValue;
 
-public partial function SymbolTableLookupVariability
+partial function SymbolTableLookupVariability
   input SymbolTable st;
   input DAE.ComponentRef cr;
   output SCode.Variability var;
 end SymbolTableLookupVariability;
 
-public partial function SymbolTableAddScope
+partial function SymbolTableAddScope
   input SymbolTable st;
   input DAE.ComponentRef cr;
   input DAE.Exp exp;
   output SymbolTable ost;
 end SymbolTableAddScope;
 
-public partial function SymbolTableRemoveScope
+partial function SymbolTableRemoveScope
   input SymbolTable st;
   output SymbolTable ost;
 end SymbolTableRemoveScope;
 
-public type Options = tuple<Option<tuple<SymbolTable,SymbolTableInterface>>,Evaluate> "I am a stupid tuple because MM does not like type variables in records";
+type Options = tuple<Option<tuple<SymbolTable,SymbolTableInterface>>,Evaluate> "I am a stupid tuple because MM does not like type variables in records";
 
-public uniontype IntOp
+uniontype IntOp
   record MULOP end MULOP;
   record DIVOP end DIVOP;
   record ADDOP end ADDOP;
@@ -84,7 +84,7 @@ public uniontype IntOp
   record POWOP end POWOP;
 end IntOp;
 
-public constant Options optionSimplifyOnly = (NONE(),NO_EVAL());
+constant Options optionSimplifyOnly = (NONE(),NO_EVAL());
 
 annotation(__OpenModelica_Interface="frontend");
 end ExpressionSimplifyTypes;

@@ -480,21 +480,21 @@ package SCode
       list<list<EEquation>> thenBranch;
       list<EEquation>       elseBranch;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end EQ_IF;
 
     record EQ_EQUALS
       Absyn.Exp expLeft;
       Absyn.Exp expRight;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end EQ_EQUALS;
 
     record EQ_CONNECT
       Absyn.ComponentRef crefLeft;
       Absyn.ComponentRef crefRight;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end EQ_CONNECT;
 
     record EQ_FOR
@@ -502,7 +502,7 @@ package SCode
       Option<Absyn.Exp> range;
       list<EEquation> eEquationLst;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end EQ_FOR;
 
     record EQ_WHEN
@@ -510,33 +510,33 @@ package SCode
       list<EEquation> eEquationLst;
       list<tuple<Absyn.Exp, list<EEquation>>> elseBranches;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end EQ_WHEN;
 
     record EQ_ASSERT
       Absyn.Exp condition;
       Absyn.Exp message;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end EQ_ASSERT;
 
     record EQ_TERMINATE
       Absyn.Exp message;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end EQ_TERMINATE;
 
     record EQ_REINIT
       Absyn.ComponentRef cref;
       Absyn.Exp expReinit;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end EQ_REINIT;
 
     record EQ_NORETCALL
       Absyn.Exp exp;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end EQ_NORETCALL;
 
   end EEquation;
@@ -553,7 +553,7 @@ package SCode
       Absyn.Exp assignComponent;
       Absyn.Exp value;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_ASSIGN;
 
     record ALG_IF
@@ -562,7 +562,7 @@ package SCode
       list<tuple<Absyn.Exp, list<Statement>>> elseIfBranch;
       list<Statement> elseBranch;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_IF;
 
     record ALG_FOR
@@ -570,65 +570,65 @@ package SCode
       Option<Absyn.Exp> range;
       list<Statement> forBody;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_FOR;
 
     record ALG_WHILE
       Absyn.Exp boolExpr;
       list<Statement> whileBody;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_WHILE;
 
     record ALG_WHEN_A
       list<tuple<Absyn.Exp, list<Statement>>> branches;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_WHEN_A;
 
     record ALG_NORETCALL
       Absyn.Exp exp;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_NORETCALL;
 
     record ALG_RETURN
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_RETURN;
 
     record ALG_BREAK
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_BREAK;
 
     record ALG_CATCH
       list<Statement> catchBody;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_CATCH;
 
     record ALG_THROW
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_THROW;
 
     record ALG_FAILURE
       list<Statement> stmts;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_FAILURE;
 
     record ALG_TRY
       list<Statement> body;
       list<Statement> elseBody;
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_TRY;
 
     record ALG_CONTINUE
       Comment comment;
-      Absyn.Info info;
+      SourceInfo info;
     end ALG_CONTINUE;
 
   end Statement;
@@ -698,7 +698,7 @@ package SCode
     record IMPORT
       Absyn.Import imp;
       Visibility   visibility;
-      Absyn.Info   info;
+      SourceInfo   info;
     end IMPORT;
 
     record EXTENDS
@@ -706,7 +706,7 @@ package SCode
       Visibility visibility;
       Mod modifications;
       Option<Annotation> ann;
-      Absyn.Info info;
+      SourceInfo info;
     end EXTENDS;
 
     record CLASS
@@ -717,7 +717,7 @@ package SCode
       Restriction restriction;
       ClassDef classDef;
       Comment cmt;
-      Absyn.Info info;
+      SourceInfo info;
     end CLASS;
 
     record COMPONENT
@@ -728,7 +728,7 @@ package SCode
       Mod modifications;
       Comment comment;
       Option<Absyn.Exp> condition;
-      Absyn.Info info;
+      SourceInfo info;
     end COMPONENT;
 
     record DEFINEUNIT

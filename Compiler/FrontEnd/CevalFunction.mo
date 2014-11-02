@@ -2849,7 +2849,7 @@ algorithm
       list<list<String>> names;
       list<String> cycles_strs;
       String cycles_str, scope_str;
-      Absyn.Info info;
+      SourceInfo info;
 
     case ({}, _) then ();
 

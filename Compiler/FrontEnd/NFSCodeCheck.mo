@@ -54,7 +54,7 @@ public function checkRecursiveShortDefinition
   input Absyn.TypeSpec inTypeSpec;
   input String inTypeName;
   input NFSCodeEnv.Env inTypeEnv;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inTypeSpec, inTypeName, inTypeEnv, inInfo)
     local
@@ -103,11 +103,11 @@ end isSelfReference;
 
 public function checkClassExtendsReplaceability
   input NFSCodeEnv.Item inBaseClass;
-  input Absyn.Info inOriginInfo;
+  input SourceInfo inOriginInfo;
 algorithm
   _ := match(inBaseClass, inOriginInfo)
     local
-      Absyn.Info info;
+      SourceInfo info;
       String name;
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
@@ -153,7 +153,7 @@ algorithm
   _ := matchcontinue(inModifier, inBaseClass, inEnv)
     local
       Absyn.TypeSpec ty;
-      Absyn.Info info;
+      SourceInfo info;
       String name, ty_str;
       Absyn.Path ty_path;
 
@@ -180,7 +180,7 @@ end checkRedeclareModifier2;
 public function checkModifierIfRedeclare
   input NFSCodeEnv.Item inItem;
   input SCode.Mod inModifier;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inItem, inModifier, inInfo)
     local
@@ -201,14 +201,14 @@ public function checkRedeclaredElementPrefix
   and non-final, otherwise an error is printed."
   input NFSCodeEnv.Item inItem;
   input SCode.Element inReplacement;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inItem, inReplacement, inInfo)
     local
       SCode.Replaceable repl;
       SCode.Final fin;
       SCode.Ident name;
-      Absyn.Info info;
+      SourceInfo info;
       SCode.Variability var;
       SCode.Restriction res;
       SCode.Visibility vis1, vis2;
@@ -276,8 +276,8 @@ protected function checkClassRedeclarationReplaceable
   input SCode.Ident inName;
   input String inType;
   input SCode.Replaceable inReplaceable;
-  input Absyn.Info inOriginInfo;
-  input Absyn.Info inInfo;
+  input SourceInfo inOriginInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inName, inType, inReplaceable, inOriginInfo, inInfo)
     case (_, _, SCode.REPLACEABLE(cc = _), _, _) then ();
@@ -297,8 +297,8 @@ protected function checkCompRedeclarationReplaceable
   input SCode.Replaceable inReplaceable;
   input Absyn.TypeSpec inType1;
   input Absyn.TypeSpec inType2;
-  input Absyn.Info inOriginInfo;
-  input Absyn.Info inInfo;
+  input SourceInfo inOriginInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inName, inReplaceable, inType1, inType2, inOriginInfo, inInfo)
     local
@@ -328,8 +328,8 @@ protected function checkRedeclarationFinal
   input SCode.Ident inName;
   input String inType;
   input SCode.Final inFinal;
-  input Absyn.Info inOriginInfo;
-  input Absyn.Info inInfo;
+  input SourceInfo inOriginInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inName, inType, inFinal, inOriginInfo, inInfo)
     case (_, _, SCode.NOT_FINAL(), _, _) then ();
@@ -348,8 +348,8 @@ protected function checkRedeclarationVariability
   input SCode.Ident inName;
   input String inType;
   input SCode.Variability inVariability;
-  input Absyn.Info inOriginInfo;
-  input Absyn.Info inInfo;
+  input SourceInfo inOriginInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inName, inType, inVariability, inOriginInfo, inInfo)
     case (_, _, SCode.CONST(), _, _)
@@ -369,8 +369,8 @@ protected function checkRedeclarationVisibility
   input String inType;
   input SCode.Visibility inOriginalVisibility;
   input SCode.Visibility inNewVisibility;
-  input Absyn.Info inOriginInfo;
-  input Absyn.Info inNewInfo;
+  input SourceInfo inOriginInfo;
+  input SourceInfo inNewInfo;
 algorithm
   _ := match(inName, inType, inOriginalVisibility, inNewVisibility,
       inOriginInfo, inNewInfo)
@@ -396,7 +396,7 @@ end checkRedeclarationVisibility;
 
 public function checkValidEnumLiteral
   input String inLiteral;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inLiteral, inInfo)
     case (_, _)
@@ -419,7 +419,7 @@ public function checkDuplicateRedeclarations
 protected
   SCode.Element el;
   String el_name;
-  Absyn.Info el_info;
+  SourceInfo el_info;
 algorithm
   (el_name, el_info) := NFSCodeEnv.getRedeclarationNameInfo(inRedeclare);
   false := checkDuplicateRedeclarations2(el_name, el_info, inRedeclarations);
@@ -428,7 +428,7 @@ end checkDuplicateRedeclarations;
 protected function checkDuplicateRedeclarations2
   "Helper function to checkDuplicateRedeclarations."
   input String inRedeclareName;
-  input Absyn.Info inRedeclareInfo;
+  input SourceInfo inRedeclareInfo;
   input list<NFSCodeEnv.Redeclaration> inRedeclarations;
   output Boolean outIsDuplicate;
 algorithm
@@ -438,7 +438,7 @@ algorithm
       NFSCodeEnv.Redeclaration redecl;
       list<NFSCodeEnv.Redeclaration> rest_redecls;
       String el_name;
-      Absyn.Info el_info;
+      SourceInfo el_info;
 
     case (_, _, {}) then false;
 
@@ -469,7 +469,7 @@ public function checkRecursiveComponentDeclaration
      end A;
   "
   input String inComponentName;
-  input Absyn.Info inComponentInfo;
+  input SourceInfo inComponentInfo;
   input NFSCodeEnv.Env inTypeEnv;
   input NFSCodeEnv.Item inTypeItem;
   input NFSCodeEnv.Env inComponentEnv;
@@ -516,7 +516,7 @@ public function checkIdentNotEqTypeName
   "Checks that a simple identifier is not the same as a type name."
   input String inIdent;
   input Absyn.TypeSpec inTypeName;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
   output Boolean outIsNotEq;
 algorithm
   outIsNotEq := matchcontinue(inIdent, inTypeName, inInfo)
@@ -551,7 +551,7 @@ end checkComponentsEqual;
 public function checkInstanceRestriction
   input NFSCodeEnv.Item inItem;
   input NFInstTypes.Prefix inPrefix;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := matchcontinue(inItem, inPrefix, inInfo)
     local
@@ -587,7 +587,7 @@ public function checkPartialInstance
   "Checks if the given item is partial, and prints out an error message in that
    case."
   input NFSCodeEnv.Item inItem;
-  input Absyn.Info inInfo;
+  input SourceInfo inInfo;
 algorithm
   _ := match(inItem, inInfo)
     local
