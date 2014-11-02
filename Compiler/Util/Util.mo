@@ -85,7 +85,6 @@ public uniontype DateTime
   end DATETIME;
 end DateTime;
 
-public import Absyn;
 protected import Config;
 protected import Error;
 protected import Flags;
@@ -94,6 +93,7 @@ protected import List;
 protected import Print;
 protected import System;
 
+public constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 public constant String derivativeNamePrefix="$DER";
 public constant String pointStr = "$P";
 public constant String leftBraketStr = "$lB";

@@ -37,7 +37,6 @@ encapsulated package TplParser
   $Id$
 "
 
-public import Absyn;
 public import Tpl;
 public import TplAbsyn;
 

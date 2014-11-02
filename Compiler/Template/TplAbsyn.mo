@@ -43,7 +43,6 @@ protected import Flags;
 protected import List;
 protected import System;
 protected import Util;
-public import Absyn;
 
 public import Tpl;
 protected import TplCodegen;

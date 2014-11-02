@@ -64,7 +64,6 @@ protected import List;
 protected import Print;
 protected import Settings;
 protected import System;
-public import Absyn;
 public import Util;
 
 public uniontype DebugFlag
@@ -1269,7 +1268,7 @@ algorithm
 
   outArgs := listAppend(listReverse(outArgs), rest_args);
   _ := List.map2(outArgs,System.iconv,"UTF-8","UTF-8");
-  Error.assertionOrAddSourceMessage(numError == Error.getNumErrorMessages(), Error.UTF8_COMMAND_LINE_ARGS, {}, Absyn.dummyInfo);
+  Error.assertionOrAddSourceMessage(numError == Error.getNumErrorMessages(), Error.UTF8_COMMAND_LINE_ARGS, {}, Util.dummyInfo);
   saveFlags(flags);
 end readArgs;
 

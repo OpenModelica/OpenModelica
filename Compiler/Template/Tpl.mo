@@ -8,7 +8,6 @@ encapsulated package Tpl
   $Id$
 "
 
-public import Absyn;
 protected import Config;
 protected import ClockIndexes;
 protected import Debug;

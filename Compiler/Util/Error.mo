@@ -127,8 +127,6 @@ type MessageTokens = list<String>   "\"Tokens\" to insert into message at
             - %s for string
             - %n for string number n" ;
 
-public import Absyn;
-
 public constant Message LOOKUP_ERROR = MESSAGE(3, TRANSLATION(), ERROR(),
   Util.gettext("Class %s not found in scope %s."));
 public constant Message LOOKUP_ERROR_COMPNAME = MESSAGE(4, TRANSLATION(), ERROR(),
