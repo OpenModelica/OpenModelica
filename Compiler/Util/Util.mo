@@ -1627,7 +1627,7 @@ algorithm
     case (true,_)
       algorithm
         newName := if System.os() == "Windows_NT" then System.stringReplace(name, "\\", "/") else name;
-        (i,strs) := System.regex(newName, "^(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 5, true, false);
+        (i,strs) := System.regex(newName, "^(.*/Compiler/)?(.*/testsuite/)?(.*/lib/omlibrary/)?(.*/build/)?(.*)$", 6, true, false);
         friendly := listGet(strs,i);
       then
         friendly;
