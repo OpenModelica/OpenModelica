@@ -130,13 +130,16 @@ public function map<TI, TO>
   end FuncType;
 protected
   Integer len := arrayLength(inArray);
+  TO res;
 algorithm
   // If the array is empty, use list transformations to fix the types!
   if len == 0 then
     outArray := listArray({});
   else
     // If the array isn't empty, use the first element to create the new array.
-    outArray := arrayCreateNoInit(len, inFunc(arrayGetNoBoundsChecking(inArray, 1)));
+    res := inFunc(arrayGetNoBoundsChecking(inArray, 1));
+    outArray := arrayCreateNoInit(len, res);
+    arrayUpdate(outArray, 1, res);
 
     for i in 2:len loop
       arrayUpdate(outArray, i, inFunc(arrayGetNoBoundsChecking(inArray, i)));
