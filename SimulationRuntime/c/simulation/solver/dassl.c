@@ -68,7 +68,7 @@ static const char *dasslJacobianMethodDescStr[DASSL_JAC_MAX] = {"unknown",
 
 /* experimental flag for SKF TLM Master Solver Interface
  *  - it's used with -noEquidistantTimeGrid flag.
- *  - it's set to 1 if the continuous system is evaluated 
+ *  - it's set to 1 if the continuous system is evaluated
  *    when dassl finished a step, otherwise it's 0.
  */
 int RHSFinalFlag;
