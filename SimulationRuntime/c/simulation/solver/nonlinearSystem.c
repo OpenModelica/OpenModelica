@@ -422,7 +422,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
  *
  *  \author wbraun
  */
-double extraPolate(DATA *data, double old1, double old2)
+double extraPolate(DATA *data, const double old1, const double old2, const double minValue, const double maxValue)
 {
   double retValue;
 
@@ -433,6 +433,11 @@ double extraPolate(DATA *data, double old1, double old2)
   else
   {
     retValue = old2 + ((data->localData[0]->timeValue - data->localData[2]->timeValue)/(data->localData[1]->timeValue - data->localData[2]->timeValue)) * (old1-old2);
+   //if(retValue < minValue)  retValue = minValue; //./simulation/libraries/msl31/Modelica.Electrical.Analog.Examples.HeatingRectifier.mos fail
+    if(retValue < minValue){
+       if(fabs(retValue-minValue)/(fabs(retValue) + fabs(minValue))  < 0.85) retValue = minValue;
+    }
+    if(retValue > maxValue) retValue = maxValue;
   }
 
   return retValue;

@@ -4009,15 +4009,15 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
         let namestr = cref(name)
         <<
         data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>] = <%namestr%>;
-        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
-        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old1*/;
+        data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsxExtrapolation[<%i0%>] = extraPolate(data, _<%namestr%>(1) /*old1*/, _<%namestr%>(2) /*old2*/,$P$ATTRIBUTE<%namestr%>.min, $P$ATTRIBUTE<%namestr%>.max);
         >>
       ;separator="\n"%>
       retValue = solve_nonlinear_system(data, <%indexNonLinearSystem%>);
       /* check if solution process was sucessful */
       if (retValue > 0){
-        int indexes[2] = {1,<%index%>};
-        throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", time);
+        const int indexes[2] = {1,<%index%>};
+        throwStreamPrintWithEquationIndexes(threadData, indexes, "Solving non-linear system <%index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", time);
       }
       /* write solution */
       <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>

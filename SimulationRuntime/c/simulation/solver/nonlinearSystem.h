@@ -83,7 +83,7 @@ int updateStaticDataOfNonlinearSystems(DATA *data);
 int freeNonlinearSystems(DATA *data);
 int solve_nonlinear_system(DATA *data, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);
-double extraPolate(DATA *data, double old1, double old2);
+double extraPolate(DATA *data, const double old1, const double old2, const double minValue, const double maxValue);
 
 #ifdef __cplusplus
 }
