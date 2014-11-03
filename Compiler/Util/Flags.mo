@@ -190,8 +190,8 @@ constant DebugFlag CGRAPH_GRAPHVIZ_FILE = DEBUG_FLAG(12, "cgraphGraphVizFile", f
   Util.gettext("Generates a graphviz file of the connection graph."));
 constant DebugFlag CGRAPH_GRAPHVIZ_SHOW = DEBUG_FLAG(13, "cgraphGraphVizShow", false,
   Util.gettext("Displays the connection graph with the GraphViz lefty tool."));
-constant DebugFlag USEDEP = DEBUG_FLAG(14, "usedep", false,
-  Util.gettext("Turns on/off dependency analysis for getTotalProgram."));
+constant DebugFlag GC_PROF = DEBUG_FLAG(14, "gcProfiling", false,
+  Util.gettext("Prints garbage collection stats to standard output."));
 constant DebugFlag CHECK_DAE_CREF_TYPE = DEBUG_FLAG(15, "checkDAECrefType", false,
   Util.gettext("Enables extra type checking for cref expressions."));
 constant DebugFlag CHECK_ASUB = DEBUG_FLAG(16, "checkASUB", false,
@@ -410,8 +410,6 @@ constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(122, "showExpandableInfo", 
   Util.gettext("Show information about expandable connector handling."));
 constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(123, "dumpHomotopy", false,
   Util.gettext("Dumps the results of the postOptModule optimizeHomotopyCalls."));
-constant DebugFlag GC_PROF = DEBUG_FLAG(124, "gcProfiling", false,
-  Util.gettext("Prints garbage collection stats to standard output."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -432,7 +430,7 @@ constant list<DebugFlag> allDebugFlags = {
   GENERATE_CODE_CHEAT,
   CGRAPH_GRAPHVIZ_FILE,
   CGRAPH_GRAPHVIZ_SHOW,
-  USEDEP,
+  GC_PROF,
   CHECK_DAE_CREF_TYPE,
   CHECK_ASUB,
   INSTANCE,
@@ -541,8 +539,7 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_DAE_GENERATION,
   RESHUFFLE_POST,
   SHOW_EXPANDABLE_INFO,
-  DUMP_HOMOTOPY,
-  GC_PROF
+  DUMP_HOMOTOPY
 };
 
 public
