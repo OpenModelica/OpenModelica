@@ -45,7 +45,7 @@
 #include "linearSolverTotalPivot.h"
 #include "blaswrap.h"
 
-void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, int m) 
+void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, int m)
 {
   if(ACTIVE_STREAM(logName))
   {
@@ -59,12 +59,12 @@ void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, i
       buffer[0] = 0;
       for(j=0; j<m; j++)
         if (sparsity) {
-          if (fabs(matrix[i + j*(m-1)])<1e-12) 
+          if (fabs(matrix[i + j*(m-1)])<1e-12)
             sprintf(buffer, "%s 0", buffer);
           else
             sprintf(buffer, "%s *", buffer);
         } else {
-          sprintf(buffer, "%s%12.4g ", buffer, matrix[i + j*(m-1)]); 
+          sprintf(buffer, "%s%12.4g ", buffer, matrix[i + j*(m-1)]);
         }
       infoStreamPrint(logName, 0, "%s", buffer);
     }
@@ -72,7 +72,7 @@ void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, i
   }
 }
 
-void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n) 
+void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
 {
    if(ACTIVE_STREAM(logName))
   {
@@ -163,7 +163,7 @@ void getIndicesOfPivotElementLS(int *n, int *m, int *l, double* A, int *indRow, 
    for (j = *l; j < *m; j++) {
       if (abs(A[indRow[i] + indCol[j]* *n]) > *absMax) {
         *absMax = abs(A[indRow[i] + indCol[j]* *n]);
-        *pCol = j; 
+        *pCol = j;
         *pRow = i;
       }
     }
@@ -179,7 +179,7 @@ void getIndicesOfPivotElementLS(int *n, int *m, int *l, double* A, int *indRow, 
  *
  *  \author bbachmann
  */
- 
+
 int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, int* indCol, int *rank)
 {
    int i, k, j, l, m=n+1, nrsh=1, singular=0;
@@ -189,7 +189,7 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
    double absMax;
    int r,s;
    int permutation = 1;
-   
+
    /* assume full rank of matrix [n x (n+1)] */
    *rank = n;
 
@@ -199,7 +199,7 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
    for (i=0; i<m; i++) {
       indCol[i] = i;
    }
-   
+
    for (i = 0; i < n; i++) {
     getIndicesOfPivotElementLS(&n, &m, &i, A, indRow, indCol, &pRow, &pCol, &absMax);
     /* this criteria should be evaluated and may be improved in future */
@@ -221,7 +221,7 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
       indCol[i] = indCol[pCol];
       indCol[pCol] = hInt;
     }
-    
+
     /* Gauss elimination of row indRow[i] */
     for (k=i+1; k<n; k++) {
       hValue = -A[indRow[k] + indCol[i]*n]/A[indRow[i] + indCol[i]*n];
@@ -231,7 +231,7 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
       A[indRow[k] + indCol[i]*n] = 0;
     }
   }
-  
+
   /* solve even singular matrix !!! */
   for (i=n-1;i>=0; i--) {
     if (i>=*rank) {
@@ -245,7 +245,7 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
     }
   }
   x[indCol[m-1]]=1.0;
-  
+
   /* rescale vector for solution purposes */
   /* this criteria should be evaluated and may be improved in future */
   if (abs(x[n])<1e-12) {
@@ -260,7 +260,7 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
     }
   }
   x[n] = 1.0;
-  
+
   return 0;
 }
 
@@ -274,7 +274,7 @@ typedef struct DATA_TOTALPIVOT
   /* used for pivot strategy */
   int* indRow;
   int* indCol;
-  
+
 } DATA_TOTALPIVOT;
 
 /*! \fn allocate memory for linear system solver totalpivot
@@ -310,7 +310,7 @@ int freeTotalPivotData(void **voiddata)
   free(data->Ab);
   free(data->b);
   free(data->x);
-  
+
    /* used for pivot strategy */
   free(data->indRow);
   free(data->indCol);
@@ -433,8 +433,8 @@ int solveTotalPivot(DATA *data, int sysNumber)
     /* calculate vector b (rhs) -> -b is last column of matrix Ab */
     wrapper_fvec_totalpivot(systemData->x, solverData->Ab + n*n, data, sysNumber);
   }
-  debugMatrixDoubleLS(LOG_LS_V,"LGS: matrix Ab",solverData->Ab, n, n+1); 
- 
+  debugMatrixDoubleLS(LOG_LS_V,"LGS: matrix Ab",solverData->Ab, n, n+1);
+
   if (solveSystemWithTotalPivotSearchLS(n, solverData->x, solverData->Ab, solverData->indRow, solverData->indCol, &rank) != 0)
   {
     warningStreamPrint(LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f.", (int)systemData->equationIndex, data->localData[0]->timeValue);

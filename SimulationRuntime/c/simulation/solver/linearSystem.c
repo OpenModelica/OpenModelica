@@ -206,7 +206,7 @@ int solve_linear_system(DATA *data, int sysNumber)
     success = solveLis(data, sysNumber);
     break;
 
-    
+
   case LS_TOTALPIVOT:
     success = solveTotalPivot(data, sysNumber);
     break;
