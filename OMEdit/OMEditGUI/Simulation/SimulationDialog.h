@@ -240,6 +240,7 @@ private:
   SimulationMessage parseXMLLogMessageTag(QDomNode messageNode, int level);
   void writeSimulationMessage(SimulationMessage &simulationMessage);
   void processFinished(int exitCode, QProcess::ExitStatus exitStatus);
+public:
   void runSimulationExecutable(SimulationOptions simulationOptions);
 public slots:
   void showIntegrationHelp();
