@@ -860,19 +860,13 @@ end getMaxAttrFail;
 public function setVariableAttributes "sets the attributes of a DAE.Element that is VAR"
   input DAE.Element var;
   input Option<DAE.VariableAttributes> varOpt;
-  output DAE.Element outVar;
+  output DAE.Element v := var;
 algorithm
-  outVar := match(var,varOpt)
-    local
-      DAE.ComponentRef cr; DAE.VarKind k;
-      DAE.VarDirection d ; DAE.VarParallelism prl;
-      DAE.VarVisibility v; DAE.Type ty; Option<DAE.Exp> b;
-      DAE.InstDims  dims; DAE.ConnectorType ct;
-      DAE.ElementSource source "the origin of the element";
-      Option<SCode.Comment> cmt; Absyn.InnerOuter io;
-
-    case(DAE.VAR(cr,k,d,prl,v,ty,b,dims,ct,source,_,cmt,io),_)
-      then DAE.VAR(cr,k,d,prl,v,ty,b,dims,ct,source,varOpt,cmt,io);
+  v := match v
+    case DAE.VAR()
+      algorithm
+        v.variableAttributesOption := varOpt;
+      then v;
   end match;
 end setVariableAttributes;
 
@@ -882,18 +876,14 @@ public function setStateSelect "
   input DAE.StateSelect s;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
-  outAttr:=
-  match (attr,s)
+  outAttr := match attr
     local
-      Option<DAE.Exp> q,u,du,f,n,so,start,min,max;
-      Option<DAE.Uncertainty> unc;
-      Option<DAE.Distribution> distOpt;
-      Option<DAE.Exp> eb;
-      Option<Boolean> ip,fn;
-
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,start,f,n,_,unc,distOpt,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,start,f,n,SOME(s),unc,distOpt,eb,ip,fn,so));
-    case (NONE(),_)
+      DAE.VariableAttributes va;
+    case SOME(va as DAE.VAR_ATTR_REAL())
+      algorithm
+        va.stateSelectOption := SOME(s);
+      then SOME(va);
+    case NONE()
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(s),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setStateSelect;
@@ -904,29 +894,7 @@ public function setStartAttr "
   input DAE.Exp start;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
-  outAttr:=
-  match (attr,start)
-    local
-      Option<DAE.Exp> q,u,du,f,n,so,min,max;
-      Option<DAE.StateSelect> ss;
-      Option<DAE.Uncertainty> unc;
-      Option<DAE.Distribution> distOpt;
-      Option<DAE.Exp> eb;
-      Option<Boolean> ip,fn;
-
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,_,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,SOME(start),f,n,ss,unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_INT(q,min,max,_,f,unc,distOpt,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_INT(q,min,max,SOME(start),f,unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,SOME(start),f,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,SOME(start),eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,_,du,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,SOME(start),du,eb,ip,fn,so));
-    case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),SOME(start),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
-  end match;
+  outAttr := setStartAttrOption(attr,SOME(start));
 end setStartAttr;
 
 public function setStartAttrOption "
@@ -935,29 +903,31 @@ public function setStartAttrOption "
   input Option<DAE.Exp> start;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
-  outAttr:=
-  match (attr,start)
+  outAttr := match attr
     local
-      Option<DAE.Exp> q,u,du,f,n,so,min,max;
-      Option<DAE.StateSelect> ss;
-      Option<DAE.Uncertainty> unc;
-      Option<DAE.Distribution> distOpt;
-      Option<DAE.Exp> eb;
-      Option<Boolean> ip,fn;
-
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,_,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,start,f,n,ss,unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_INT(q,min,max,_,f,unc,distOpt,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_INT(q,min,max,start,f,unc,distOpt,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,start,f,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,start,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,_,du,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,start,du,eb,ip,fn,so));
-    case (NONE(),NONE()) then NONE();
-    case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),start,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+      DAE.VariableAttributes va;
+    case SOME(va as DAE.VAR_ATTR_REAL())
+      algorithm
+        va.start := start;
+      then SOME(va);
+    case SOME(va as DAE.VAR_ATTR_INT())
+      algorithm
+        va.start := start;
+      then SOME(va);
+    case SOME(va as DAE.VAR_ATTR_BOOL())
+      algorithm
+        va.start := start;
+      then SOME(va);
+    case SOME(va as DAE.VAR_ATTR_STRING())
+      algorithm
+        va.start := start;
+      then SOME(va);
+    case SOME(va as DAE.VAR_ATTR_ENUMERATION())
+      algorithm
+        va.start := start;
+      then SOME(va);
+    case NONE()
+      then if isNone(start) then NONE() else SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),start,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setStartAttrOption;
 
@@ -967,29 +937,31 @@ public function setStartOrigin "
   input Option<DAE.Exp> startOrigin;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
-  outAttr:=
-  match (attr,startOrigin)
+  outAttr := match attr
     local
-      Option<DAE.Exp> q,u,du,f,n,s,min,max;
-      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
-      Option<DAE.StateSelect> ss;
-      Option<DAE.Uncertainty> unc;
-      Option<DAE.Distribution> distOpt;
-      Option<DAE.Exp> eb;
-      Option<Boolean> ip,fn;
-
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,s,f,n,ss,unc,distOpt,eb,ip,fn,_)),_)
-      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,s,f,n,ss,unc,distOpt,eb,ip,fn,startOrigin));
-    case (SOME(DAE.VAR_ATTR_INT(q,min,max,s,f,unc,distOpt,eb,ip,fn,_)),_)
-      then SOME(DAE.VAR_ATTR_INT(q,min,max,s,f,unc,distOpt,eb,ip,fn,startOrigin));
-    case (SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,_)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,startOrigin));
-    case (SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,_)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,startOrigin));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,s,du,eb,ip,fn,_)),_)
-      then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,s,du,eb,ip,fn,startOrigin));
-    case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),startOrigin));
+      DAE.VariableAttributes va;
+    case SOME(va as DAE.VAR_ATTR_REAL())
+      algorithm
+        va.startOrigin := startOrigin;
+      then SOME(va);
+    case SOME(va as DAE.VAR_ATTR_INT())
+      algorithm
+        va.startOrigin := startOrigin;
+      then SOME(va);
+    case SOME(va as DAE.VAR_ATTR_BOOL())
+      algorithm
+        va.startOrigin := startOrigin;
+      then SOME(va);
+    case SOME(va as DAE.VAR_ATTR_STRING())
+      algorithm
+        va.startOrigin := startOrigin;
+      then SOME(va);
+    case SOME(va as DAE.VAR_ATTR_ENUMERATION())
+      algorithm
+        va.startOrigin := startOrigin;
+      then SOME(va);
+    case NONE()
+      then if isNone(startOrigin) then NONE() else SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),startOrigin));
   end match;
 end setStartOrigin;
 
@@ -1013,19 +985,14 @@ public function setNominalAttr "
   input DAE.Exp nominal;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
-  outAttr:=
-  match (attr,nominal)
+  outAttr := match attr
     local
-      Option<DAE.Exp> q,u,du,f,s,so,min,max;
-      Option<DAE.StateSelect> ss;
-      Option<DAE.Uncertainty> unc;
-      Option<DAE.Distribution> distOpt;
-      Option<DAE.Exp> eb;
-      Option<Boolean> ip,fn;
-
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,s,f,_,ss,unc,distOpt,eb,ip,fn,so)),_)
-      then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,s,f,SOME(nominal),ss,unc,distOpt,eb,ip,fn,so));
-    case (NONE(),_)
+      DAE.VariableAttributes va;
+    case SOME(va as DAE.VAR_ATTR_REAL())
+      algorithm
+        va.nominal := SOME(nominal);
+      then SOME(va);
+    case NONE()
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(nominal),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setNominalAttr;
@@ -1056,106 +1023,45 @@ end setUnitAttr;
 public function setElementVarVisibility "
   This function takes a VAR elemets and sets var visibility."
   input DAE.Element elt;
-  input DAE.VarVisibility inVisibility;
-  output DAE.Element outElt;
+  input DAE.VarVisibility visibility;
+  output DAE.Element e = elt;
 algorithm
-  outElt := match (elt,inVisibility)
-    local
-      DAE.ComponentRef cr;
-      DAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      DAE.Type tp;
-      DAE.InstDims dim;
-      DAE.ConnectorType ct;
-      Option<DAE.Exp> bind;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      Absyn.InnerOuter io;
-      DAE.ElementSource source "the element origin";
-
-    case (DAE.VAR(componentRef = cr,
-               kind = kind,
-               direction = dir,
-               parallelism = prl,
-               ty = tp,
-               binding = bind,
-               dims = dim,
-               connectorType = ct,
-               source = source,
-               variableAttributesOption = dae_var_attr,
-               comment = comment,
-               innerOuter=io),_)
-      then
-        DAE.VAR(cr,kind,dir,prl,inVisibility,tp,bind,dim,ct,source,dae_var_attr,comment,io);
-    else elt;
+  e := match e
+    case DAE.VAR()
+      algorithm
+        e.protection := visibility;
+      then e;
+    else e;
   end match;
 end setElementVarVisibility;
 
 public function setElementVarDirection "
   This function takes a VAR elemets and sets var direction."
   input DAE.Element elt;
-  input DAE.VarDirection inDirection;
-  output DAE.Element outElt;
+  input DAE.VarDirection direction;
+  output DAE.Element e = elt;
 algorithm
-  outElt := match (elt, inDirection)
-    local
-      DAE.ComponentRef cr;
-      DAE.VarKind kind;
-      DAE.VarParallelism prl;
-      DAE.Type tp;
-      DAE.InstDims dim;
-      DAE.ConnectorType ct;
-      DAE.VarVisibility prot;
-      Option<DAE.Exp> bind;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      Absyn.InnerOuter io;
-      DAE.ElementSource source "the element origin";
-
-    case (DAE.VAR(componentRef = cr,
-               kind = kind,
-               parallelism = prl,
-               protection = prot,
-               ty = tp,
-               binding = bind,
-               dims = dim,
-               connectorType = ct,
-               source = source,
-               variableAttributesOption = dae_var_attr,
-               comment = comment,
-               innerOuter=io),_)
-      then
-        DAE.VAR(cr,kind,inDirection,prl,prot,tp,bind,dim,ct,source,dae_var_attr,comment,io);
-    else elt;
+  e := match e
+    case DAE.VAR()
+      algorithm
+        e.direction := direction;
+      then e;
+    else e;
   end match;
 end setElementVarDirection;
 
 public function setElementVarBinding
   "Sets the binding of a VAR DAE.Element."
-  input DAE.Element inElement;
-  input Option<DAE.Exp> inBinding;
-  output DAE.Element outElement;
+  input DAE.Element elt;
+  input Option<DAE.Exp> binding;
+  output DAE.Element e := elt;
 algorithm
-  outElement := match(inElement, inBinding)
-    local
-      DAE.ComponentRef cr;
-      DAE.VarKind vk;
-      DAE.VarDirection vd;
-      DAE.VarParallelism vp;
-      DAE.VarVisibility vv;
-      DAE.Type ty;
-      DAE.InstDims dims;
-      DAE.ConnectorType ct;
-      DAE.ElementSource src;
-      Option<DAE.VariableAttributes> va;
-      Option<SCode.Comment> cmt;
-      Absyn.InnerOuter io;
-
-    case (DAE.VAR(cr, vk, vd, vp, vv, ty, _, dims, ct, src, va, cmt, io),_)
-      then DAE.VAR(cr, vk, vd, vp, vv, ty, inBinding, dims, ct, src, va, cmt, io);
-
-    else inElement;
+  e := match e
+    case DAE.VAR()
+      algorithm
+        e.binding := binding;
+      then e;
+    else e;
   end match;
 end setElementVarBinding;
 
