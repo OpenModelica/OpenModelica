@@ -776,6 +776,7 @@ package SCodeDump
       Boolean stripProtectedImports;
       Boolean stripStringComments;
       Boolean stripExternalDecl;
+      Boolean stripOutputBindings;
     end OPTIONS;
   end SCodeDumpOptions;
   constant SCodeDumpOptions defaultOptions;

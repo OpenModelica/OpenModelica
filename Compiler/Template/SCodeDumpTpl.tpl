@@ -234,7 +234,14 @@ match component
     let attr_pre_str = dumpAttributes(attributes)
     let attr_dim_str = dumpAttributeDim(attributes)
     let type_str = AbsynDumpTpl.dumpTypeSpec(typeSpec)
-    let mod_str = dumpModifier(modifications,options)
+    let mod_str1 = dumpModifier(modifications,options)
+    let mod_str = // If stripOutputBindings is set, we need to look for the direction
+      match options
+      case OPTIONS(stripOutputBindings=false) then mod_str1
+      else match attributes
+        case ATTR(direction=OUTPUT(__)) then ""
+        else mod_str1
+      end match
     let cond_str = match condition case SOME(cond) then ' if <%AbsynDumpTpl.dumpExp(cond)%>'
     let cmt_str = dumpComment(comment, options)
     '<%prefix_str%><%attr_pre_str%><%type_str%><%attr_dim_str%> <%name%><%mod_str%><%cond_str%><%cc_str%><%cmt_str%>'

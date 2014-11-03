@@ -46,7 +46,7 @@ protected import List;
 protected import SCodeDumpTpl;
 protected import Tpl;
 
-public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false,true,true,false,false);
+public constant SCodeDumpOptions defaultOptions = OPTIONS(false,false,false,false,true,true,false,false,false);
 
 public uniontype SCodeDumpOptions
   record OPTIONS
@@ -58,6 +58,7 @@ public uniontype SCodeDumpOptions
     Boolean stripGraphicalAnnotations;
     Boolean stripStringComments;
     Boolean stripExternalDecl;
+    Boolean stripOutputBindings;
   end OPTIONS;
 end SCodeDumpOptions;
 
