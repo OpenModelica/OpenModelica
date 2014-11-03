@@ -392,7 +392,7 @@ constant DebugFlag DUMP_SYNCHRONOUS = DEBUG_FLAG(113, "dumpSynchronous", false,
   Util.gettext("Dumps information of the clock partitioning."));
 constant DebugFlag STRIP_PREFIX = DEBUG_FLAG(114, "stripPrefix", true,
   Util.gettext("Strips the environment prefix from path/crefs. Defaults to true."));
-constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(115, "doSCodeDep", true,
+constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(115, "scodeDep", true,
   Util.gettext("Does scode dependency analysis prior to instantiation. Defaults to true."));
 constant DebugFlag SHOW_INST_CACHE_INFO = DEBUG_FLAG(116, "showInstCacheInfo", false,
   Util.gettext("Prints information about instantiation cache hits and additions. Defaults to false."));
