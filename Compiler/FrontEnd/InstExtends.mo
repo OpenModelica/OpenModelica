@@ -187,7 +187,7 @@ algorithm
         (cache,cenv3,ih) = InstUtil.addClassdefsToEnv(cache,cenv3,ih,pre,importelts,impl,NONE());
         (cache,cenv3,ih) = InstUtil.addClassdefsToEnv(cache,cenv3,ih,pre,cdefelts,impl,SOME(mod));
 
-        els_1 = SCodeUtil.addRedeclareAsElementsToExtends(els_1, SCodeUtil.getRedeclareAsElements(els_1));
+        els_1 = SCodeUtil.addRedeclareAsElementsToExtends(els_1, List.select(els_1, SCodeUtil.isRedeclareElement));
 
         emod_1 = Mod.elabUntypedMod(emod, env, Prefix.NOPRE(), Mod.EXTENDS(tp));
         mods_1 = Mod.merge(mod, emod_1, env, Prefix.NOPRE());

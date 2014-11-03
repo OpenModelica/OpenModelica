@@ -2195,48 +2195,21 @@ algorithm
   end match;
 end translateEach;
 
-public function getRedeclareAsElements
+public function isRedeclareElement
 "get the redeclare-as-element elements"
-  input list<SCode.Element> elements;
-  output list<SCode.Element> outElements;
+  input SCode.Element element;
+  output Boolean isElement;
 algorithm
-  outElements := matchcontinue (elements)
-    local
-      SCode.Element el;
-      list<SCode.Element> els,els1;
-
-    // empty
-    case ({}) then {};
-
+  isElement := match element
     // redeclare-as-element component
-    case ((el as SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))::els)
-      equation
-        els1 = getRedeclareAsElements(els);
-      then
-        el::els1;
-
-    // redeclare-as-element class extends, ignore!
-    case ((SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()), classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::els)
-      equation
-        els1 = getRedeclareAsElements(els);
-      then
-        els1;
-
-    // redeclare-as-element class!
-    case ((el as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))::els)
-      equation
-        els1 = getRedeclareAsElements(els);
-      then
-        el::els1;
-
-    // rest
-    case (_::els)
-      equation
-        els1 = getRedeclareAsElements(els);
-      then
-        els1;
-  end matchcontinue;
-end getRedeclareAsElements;
+    case SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
+      then true;
+    // redeclare-as-element class!, not class extends
+    case SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
+      then true;
+    else false;
+  end match;
+end isRedeclareElement;
 
 public function addRedeclareAsElementsToExtends
 "add the redeclare-as-element elements to extends"
