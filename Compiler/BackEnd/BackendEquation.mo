@@ -1316,7 +1316,7 @@ algorithm
     case (BackendDAE.EQUATION_ARRAY(numberOfElement=n), _) equation
       str = "BackendEquation.equationNth1 failed; numberOfElement=" + intString(n) + "; pos=" + intString(inPos);
       print(str + "\n");
-      Error.addInternalError(str);
+      Error.addInternalError(str, sourceInfo());
     then fail();
   end matchcontinue;
 end equationNth1;
@@ -1349,7 +1349,7 @@ algorithm
     case ({}, _, _) equation
       str = "BackendEquation.equationNthSize1 failed";
       print(str + "\n");
-      Error.addInternalError(str);
+      Error.addInternalError(str, sourceInfo());
     then fail();
 
     case (eqn::_, _, _) equation
@@ -1366,7 +1366,7 @@ algorithm
     else equation
       str = "BackendEquation.equationNthSize1 failed";
       print(str + "\n");
-      Error.addInternalError(str);
+      Error.addInternalError(str, sourceInfo());
     then fail();
   end matchcontinue;
 end equationNthSize1;
@@ -1450,7 +1450,7 @@ algorithm
 
     else equation
       print("BackendDAE.equationRemove failed\n");
-      Error.addInternalError("BackendDAE.equationRemove failed");
+      Error.addInternalError("BackendDAE.equationRemove failed", sourceInfo());
     then fail();
   end matchcontinue;
 end equationRemove;
@@ -1794,7 +1794,7 @@ algorithm
     then size;
 
     else equation
-      Error.addInternalError("BackendEquation.equationSize failed!");
+      Error.addInternalError("BackendEquation.equationSize failed!", sourceInfo());
     then fail();
   end match;
 end equationSize;
@@ -1836,7 +1836,7 @@ algorithm
     case BackendDAE.COMPLEX_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     case BackendDAE.IF_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     else equation
-      Error.addInternalError("BackendEquation.equationKind failed!");
+      Error.addInternalError("BackendEquation.equationKind failed!", sourceInfo());
     then fail();
   end match;
 end equationKind;
@@ -1962,7 +1962,7 @@ algorithm
     case BackendDAE.IF_EQUATION(attr=attr) then attr;
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function getEquationAttributes failed");
+      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function getEquationAttributes failed", sourceInfo());
     then fail();
   end match;
 end getEquationAttributes;
@@ -2024,7 +2024,7 @@ algorithm
     then BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, inAttr);
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function setEquationAttributes failed");
+      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function setEquationAttributes failed", sourceInfo());
     then fail();
   end match;
 end setEquationAttributes;
@@ -2185,7 +2185,7 @@ algorithm
 */
     else equation
       BackendDump.dumpBackendDAEEqnList({eqn}, "function BackendEquation.solveEquation failed w.r.t " + ExpressionDump.printExpStr(crefExp), true);
-      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function solveEquation failed");
+      Error.addInternalError("./Compiler/BackEnd/BackendEquation.mo: function solveEquation failed", sourceInfo());
     then fail();
   end matchcontinue;
 end solveEquation;
@@ -2640,7 +2640,7 @@ algorithm
     then BackendDAE.IF_EQUATION(conditions, eqnstrue, eqnsfalse, source, eqAttr);
 
     else equation
-      Error.addInternalError("BackendEquation.addOperation failed");
+      Error.addInternalError("BackendEquation.addOperation failed", sourceInfo());
     then fail();
   end match;
 end addOperation;

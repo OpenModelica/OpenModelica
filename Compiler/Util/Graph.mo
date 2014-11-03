@@ -505,7 +505,7 @@ algorithm
       then tmpGraph;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.transpose failed."});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.transpose failed."}, sourceInfo());
       then fail();
   end matchcontinue;
 end transposeGraph;
@@ -612,7 +612,7 @@ algorithm
       then allReachableNodesWork((M,L),inGraph,inEqualFunc);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."}, sourceInfo());
       then NONE();
   end matchcontinue;
 end allReachableNodesWork;
@@ -670,7 +670,7 @@ algorithm
       then colored;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2color failed."});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2color failed."}, sourceInfo());
       then fail();
   end matchcontinue;
 end partialDistance2color;
@@ -721,7 +721,7 @@ algorithm
       then forbiddenColor1;
       else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."}, sourceInfo());
       then fail();
   end matchcontinue;
 end addForbiddenColors;
@@ -763,7 +763,7 @@ algorithm
       then ();
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.arrayUpdateListAppend failed."});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.arrayUpdateListAppend failed."}, sourceInfo());
       then fail();
   end matchcontinue;
 end arrayUpdateListAppend;
@@ -941,7 +941,7 @@ algorithm
       then reachableNodes;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodesInt failed."});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodesInt failed."}, sourceInfo());
       then fail();
   end matchcontinue;
 end allReachableNodesInt;
@@ -982,7 +982,7 @@ algorithm
       partialDistance2colorInt(restGraph, forbiddenColor, inColors, inGraph, colored);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."}, sourceInfo());
       then fail();
   end matchcontinue;
 end partialDistance2colorInt;
@@ -1014,7 +1014,7 @@ algorithm
       then fail();
 */    else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."}, sourceInfo());
       then fail();
   end matchcontinue;
 end addForbiddenColorsInt;

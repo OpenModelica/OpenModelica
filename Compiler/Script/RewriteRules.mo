@@ -1093,7 +1093,7 @@ algorithm
 
     case _
       equation
-        Error.addInternalError("Unable to parse rewrite rules file: " + inFile);
+        Error.addInternalError("Unable to parse rewrite rules file: " + inFile, sourceInfo());
         setGlobalRoot(Global.rewriteRulesIndex, NONE());
       then
         ();
@@ -1212,8 +1212,7 @@ algorithm
 
     case (s::_, _)
       equation
-        Error.addInternalError("Unable to parse rewrite rule: " +
-          GlobalScriptDump.printIstmtStr(s));
+        Error.addInternalError("Unable to parse rewrite rule: " + GlobalScriptDump.printIstmtStr(s), sourceInfo());
       then
         fail();
 

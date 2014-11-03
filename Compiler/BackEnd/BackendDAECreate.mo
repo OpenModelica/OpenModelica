@@ -1059,9 +1059,9 @@ algorithm
     // case (DAE.VARIABLE(), cr, dir, flowPrefix)
     //  then
     //    BackendDAE.VARIABLE();
-    case (_, _, _, _)
+    else
       equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAECreate.mo: function lowerKnownVarkind failed");
+        Error.addInternalError("function lowerKnownVarkind failed", sourceInfo());
       then
         fail();
   end matchcontinue;

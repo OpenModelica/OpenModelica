@@ -115,7 +115,7 @@ algorithm
     then outDAE;
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function tearingSystem failed");
+      Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function tearingSystem failed", sourceInfo());
     then fail();
   end matchcontinue;
 end tearingSystem;
@@ -140,7 +140,7 @@ algorithm
     then CELLIER_TEARING();
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function getTearingMethod failed");
+      Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function getTearingMethod failed", sourceInfo());
     then fail();
   end matchcontinue;
 end getTearingMethod;
@@ -2074,7 +2074,7 @@ algorithm
          case "MC4" then potentialsCellier11;
          else
            equation
-             Error.addInternalError("Unknown tearing heuristic: " + heuristic);
+             Error.addInternalError("Unknown tearing heuristic: " + heuristic, sourceInfo());
            then fail();
        end match;
        potentials = potentialsFunc(m,mt,me,meT,(ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never),(mapEqnIncRow,mapIncRowEqn));

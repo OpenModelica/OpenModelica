@@ -3225,7 +3225,7 @@ algorithm
     case (BackendDAE.VARIABLES(varArr = _),_)
       equation
         BackendDump.printVariables(inVariables);
-        Error.addInternalError("BackendVariable.getVarAt failed to get the variable at index: " + intString(inInteger));
+        Error.addInternalError("BackendVariable.getVarAt failed to get the variable at index: " + intString(inInteger), sourceInfo());
       then
         fail();
   end matchcontinue;

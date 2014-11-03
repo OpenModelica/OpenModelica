@@ -472,13 +472,13 @@ algorithm
         algs = BackendDAEUtil.getAlgorithms(dae);
         header = "RS = CorrelationMatrix("+intString(numDists)+")\n";
         NONE() = Array.findFirstOnTrue(algs,hasCorrelationStatement);
-        Error.addInternalError("OpenTURNS.generateCorrelationMatrix failed because it could not find any correlation statement in algorithm.");
+        Error.addInternalError("OpenTURNS.generateCorrelationMatrix failed because it could not find any correlation statement in algorithm.", sourceInfo());
      then
        fail();
 
     else
       equation
-        Error.addInternalError("OpenTURNS.generateCorrelationMatrix failed ...");
+        Error.addInternalError("OpenTURNS.generateCorrelationMatrix failed ...", sourceInfo());
       then
         fail();
   end matchcontinue;

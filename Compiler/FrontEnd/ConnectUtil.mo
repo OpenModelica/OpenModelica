@@ -620,7 +620,7 @@ algorithm
     else
       equation
         name = Types.unparseVar(inVar);
-        Error.addInternalError("Unknown var " + name + " in ConnectUtil.daeVarToCrefs");
+        Error.addInternalError("Unknown var " + name + " in ConnectUtil.daeVarToCrefs", sourceInfo());
       then
         fail();
 

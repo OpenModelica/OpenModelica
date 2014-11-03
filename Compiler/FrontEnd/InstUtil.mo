@@ -7791,8 +7791,7 @@ algorithm
         fail();
     else
       equation
-        Error.addInternalError("- InstUtil.instConditionalDeclaration got unexpected value " +
-          ValuesUtil.valString(val));
+        Error.addInternalError("InstUtil.instConditionalDeclaration got unexpected value " + ValuesUtil.valString(val), sourceInfo());
       then
         fail();
   end match;

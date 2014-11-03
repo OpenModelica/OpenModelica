@@ -1237,8 +1237,9 @@ end addCompilerNotification;
 public function addInternalError "
   Used to make an internal error"
   input String message;
+  input SourceInfo info;
 algorithm
-  addMessage(INTERNAL_ERROR, {message});
+  addSourceMessage(INTERNAL_ERROR, {message}, info);
 end addInternalError;
 
 annotation(__OpenModelica_Interface="util");

@@ -1069,7 +1069,7 @@ algorithm
     else
       equation
         str = Dump.unparseClassPart(cp);
-        Error.addInternalError("Static.fromEquationsToAlgAssignments: Unknown classPart in match expression:\n" + str);
+        Error.addInternalError("Static.fromEquationsToAlgAssignments: Unknown classPart in match expression:\n" + str, sourceInfo());
       then fail();
   end match;
 end fromEquationsToAlgAssignments;

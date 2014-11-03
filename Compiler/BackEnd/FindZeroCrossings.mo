@@ -931,7 +931,7 @@ algorithm
     then (res2, index);
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function replaceIteratorWithStaticValues failed");
+      Error.addInternalError("function replaceIteratorWithStaticValues failed", sourceInfo());
     then fail();
   end matchcontinue;
 end replaceIteratorWithStaticValues;
@@ -975,7 +975,7 @@ algorithm
     then ((relation, inZeroCrossings, inIndex));
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function zcIndex failed for: " + ExpressionDump.printExpStr(inRelation));
+      Error.addInternalError("function zcIndex failed for: " + ExpressionDump.printExpStr(inRelation), sourceInfo());
     then fail();
   end matchcontinue;
 end zcIndex;
@@ -1004,7 +1004,7 @@ algorithm
     then res;
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function mergeZeroCrossings failed");
+      Error.addInternalError("function mergeZeroCrossings failed", sourceInfo());
     then fail();
   end matchcontinue;
 end mergeZeroCrossings;
@@ -1030,7 +1030,7 @@ algorithm
     then BackendDAE.ZERO_CROSSING(res, eq, wc);
 
     case (BackendDAE.ZERO_CROSSING(relation_=e1), BackendDAE.ZERO_CROSSING(relation_=e2)) equation
-      Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function mergeZeroCrossing failed for " + ExpressionDump.printExpStr(e1) + " and " + ExpressionDump.printExpStr(e2));
+      Error.addInternalError("function mergeZeroCrossing failed for " + ExpressionDump.printExpStr(e1) + " and " + ExpressionDump.printExpStr(e2), sourceInfo());
     then fail();
   end matchcontinue;
 end mergeZeroCrossing;
@@ -1067,7 +1067,7 @@ algorithm
     then inZCexp2;
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function getMinZeroCrossings failed for " + ExpressionDump.printExpStr(inZCexp1) + " and " + ExpressionDump.printExpStr(inZCexp2));
+      Error.addInternalError("function getMinZeroCrossings failed for " + ExpressionDump.printExpStr(inZCexp1) + " and " + ExpressionDump.printExpStr(inZCexp2), sourceInfo());
     then fail();
   end matchcontinue;
 end getMinZeroCrossings;
@@ -1243,7 +1243,7 @@ algorithm
     then ((DAE.STMT_FAILURE(stmts2, source)::xs_1, extraArg));
 
     case x::_ equation
-      Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function traverseStmtsExps failed: " + DAEDump.ppStatementStr(x));
+      Error.addInternalError("function traverseStmtsExps failed: " + DAEDump.ppStatementStr(x), sourceInfo());
     then fail();
   end match;
 end traverseStmtsExps;
@@ -1306,7 +1306,7 @@ algorithm
     then (statementLst, extraArg);
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/FindZeroCrossings.mo: function traverseStmtsForExps failed");
+      Error.addInternalError("function traverseStmtsForExps failed", sourceInfo());
     then fail();
   end matchcontinue;
 end traverseStmtsForExps;

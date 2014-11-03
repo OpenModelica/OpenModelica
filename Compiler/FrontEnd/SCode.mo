@@ -3116,7 +3116,7 @@ algorithm
     case ALG_CONTINUE(info = info) then info;
     else
       equation
-        Error.addInternalError("SCode.getStatementInfo failed");
+        Error.addInternalError("SCode.getStatementInfo failed", sourceInfo());
       then Absyn.dummyInfo;
   end match;
 end getStatementInfo;

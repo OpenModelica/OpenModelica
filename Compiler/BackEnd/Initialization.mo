@@ -539,7 +539,7 @@ algorithm
     then (stmts, leftCrs);
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function inlineWhenForInitializationWhenStmt failed");
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function inlineWhenForInitializationWhenStmt failed", sourceInfo());
     then fail();
 
   end matchcontinue;
@@ -1062,7 +1062,7 @@ algorithm
     then (inVars, inEqs, iB, inDumpVars);
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function preBalanceInitialSystem1 failed");
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function preBalanceInitialSystem1 failed", sourceInfo());
     then fail();
   end matchcontinue;
 end preBalanceInitialSystem2;
@@ -1406,7 +1406,7 @@ algorithm
     then (eqns, var::dumpVars);
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function addStartValueEquations failed");
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function addStartValueEquations failed", sourceInfo());
     then fail();
   end matchcontinue;
 end addStartValueEquations;
@@ -2264,7 +2264,7 @@ algorithm
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed for: " + BackendDump.varString(inVar));
+        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed for: " + BackendDump.varString(inVar), sourceInfo());
       then fail();
 
   end matchcontinue;
@@ -2356,7 +2356,7 @@ algorithm
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed for: " + BackendDump.varString(inVar));
+        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed for: " + BackendDump.varString(inVar), sourceInfo());
       then fail();
 
   end match;

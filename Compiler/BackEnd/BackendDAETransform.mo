@@ -111,8 +111,8 @@ algorithm
         (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets,partitionKind),comps1);
     else
       equation
-      Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function strongComponentsScalar failed
-- sorting equations (strongComponents) failed");
+      Error.addInternalError("function strongComponentsScalar failed
+- sorting equations (strongComponents) failed", sourceInfo());
       then fail();
   end matchcontinue;
 end strongComponentsScalar;
@@ -222,7 +222,7 @@ algorithm
         (compX,imark+1);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentScalar failed");
+        Error.addInternalError("function analyseStrongComponentScalar failed", sourceInfo());
       then
         fail();
   end match;
@@ -285,8 +285,8 @@ algorithm
         (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets,partitionKind),comps1);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function strongComponents failed
-- sorting equations (strongComponents) failed");
+        Error.addInternalError("function strongComponents failed
+- sorting equations (strongComponents) failed", sourceInfo());
       then fail();
   end matchcontinue;
 end strongComponents;
@@ -316,7 +316,7 @@ algorithm
         analyseStrongComponents(comps,syst,shared,inAss1,inAss2,acomp::iAcc);
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponents failed");
+        Error.addInternalError("function analyseStrongComponents failed", sourceInfo());
       then
         fail();
   end match;
@@ -350,7 +350,7 @@ algorithm
         compX;
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponent failed");
+        Error.addInternalError("function analyseStrongComponent failed", sourceInfo());
       then
         fail();
   end match;
@@ -452,20 +452,20 @@ algorithm
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         true = BackendVariable.hasDiscreteVar(var_lst);
         false = BackendVariable.hasContinousVar(var_lst);
-        msg = "./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentBlock failed
+        msg = "function analyseStrongComponentBlock failed
 Sorry - Support for Discrete Equation Systems is not yet implemented\n";
         crlst = List.map(var_lst,BackendVariable.varCref);
         slst = List.map(crlst,ComponentReference.printComponentRefStr);
         msg = msg + stringDelimitList(slst,"\n");
         slst = List.map(eqn_lst,BackendDump.equationString);
         msg = msg + "\n" + stringDelimitList(slst,"\n");
-        Error.addInternalError(msg);
+        Error.addInternalError(msg, sourceInfo());
       then
         fail();
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentBlock failed");
+        Error.addInternalError("function analyseStrongComponentBlock failed", sourceInfo());
       then
         fail();
 
@@ -770,7 +770,7 @@ algorithm
         comps;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function tarjansAlgorithm failed
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/function tarjansAlgorithm failed
 The sorting of the equations could not be done. (strongComponents failed)
 Use +d=failtrace for more information."});
       then fail();
@@ -1262,7 +1262,7 @@ algorithm
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsEqnWithSymbolicOperation failed");
+        Error.addInternalError("function traverseBackendDAEExpsEqnWithSymbolicOperation failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -1440,8 +1440,7 @@ algorithm
 
       else
         equation
-          Error.addInternalError("BackendDAETransform.mo: function
-            traverseBackendDAEExpsWhenClauseLst failed.");
+          Error.addInternalError("function traverseBackendDAEExpsWhenClauseLst failed.", sourceInfo());
         then
           fail();
     end matchcontinue;

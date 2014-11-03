@@ -506,7 +506,7 @@ algorithm
     then (inHtCr2U, inHtS2U, inHtU2S, {});
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function foldEquation failed");
+      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function foldEquation failed", sourceInfo());
     then fail();
   end match;
 end foldEquation2;
@@ -1066,7 +1066,7 @@ algorithm
 
   else
     equation
-      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function insertUnitinEquation failed");
+      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function insertUnitinEquation failed", sourceInfo());
   then fail();
 
   end matchcontinue;
@@ -1654,7 +1654,7 @@ algorithm
     then T_UNIT(unit)::tokenList;
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function lexer failed");
+      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function lexer failed", sourceInfo());
     then fail();
   end matchcontinue;
 end lexer;

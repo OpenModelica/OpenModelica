@@ -2729,7 +2729,7 @@ algorithm
     case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified";
     case BackendDAE.UNKNOWN_PARTITION() then "unknown";
     else equation
-      Error.addInternalError("./Compiler/BackEnd/BackendDump.mo: function partitionKindString failed");
+      Error.addInternalError("function partitionKindString failed", sourceInfo());
     then fail();
   end match;
 end partitionKindString;
@@ -2767,7 +2767,7 @@ algorithm
     case BackendDAE.INITIAL_EQUATION() then "initial";
     case BackendDAE.UNKNOWN_EQUATION_KIND() then "unknown";
     else equation
-      Error.addInternalError("./Compiler/BackEnd/BackendDump.mo: function equationKindString failed");
+      Error.addInternalError("function equationKindString failed", sourceInfo());
     then fail();
   end match;
 end equationKindString;
