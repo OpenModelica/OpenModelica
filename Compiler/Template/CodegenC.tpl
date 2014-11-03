@@ -10781,10 +10781,10 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preEx
     >>
 end assertCommonVar;
 
-template literalExpConst(Exp lit, Integer index, Text &preLit) "These should all be declared static X const"
+template literalExpConst(Exp lit, Integer litindex, Text &preLit) "These should all be declared static X const"
 ::=
-  let name = '_OMC_LIT<%index%>'
-  let tmp = '_OMC_LIT_STRUCT<%index%>'
+  let name = '_OMC_LIT<%litindex%>'
+  let tmp = '_OMC_LIT_STRUCT<%litindex%>'
   let meta = 'static modelica_metatype const <%name%>'
 
   match lit
@@ -10847,7 +10847,7 @@ template literalExpConst(Exp lit, Integer index, Text &preLit) "These should all
   case CONS(__) then
     /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<
-    static const MMC_DEFSTRUCTLIT(<%tmp%>,2,1) {<%literalExpConstBoxedVal(car,index + "_car", &preLit)%>,<%literalExpConstBoxedVal(cdr, index + "_cdr", &preLit)%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,2,1) {<%literalExpConstBoxedVal(car,litindex + "_car", &preLit)%>,<%literalExpConstBoxedVal(cdr, litindex + "_cdr", &preLit)%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   case LIST(__) then
@@ -10861,20 +10861,20 @@ template literalExpConst(Exp lit, Integer index, Text &preLit) "These should all
   case META_TUPLE(__) then
     /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<
-    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0) {<%listExp |> exp hasindex i0 => literalExpConstBoxedVal(exp,index+"_"+i0, &preLit); separator=","%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0) {<%listExp |> exp hasindex i0 => literalExpConstBoxedVal(exp,litindex+"_"+i0, &preLit); separator=","%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   case META_OPTION(exp=SOME(exp)) then
     /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<
-    static const MMC_DEFSTRUCTLIT(<%tmp%>,1,1) {<%literalExpConstBoxedVal(exp,index+"_1", &preLit)%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,1,1) {<%literalExpConstBoxedVal(exp,litindex+"_1", &preLit)%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   case METARECORDCALL(__) then
     /* We need to use #define's to be C-compliant. Yea, total crap :) */
     let newIndex = getValueCtor(index)
     <<
-    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp hasindex i0 => literalExpConstBoxedVal(exp,index+"_"+i0, &preLit); separator=","%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp hasindex i0 => literalExpConstBoxedVal(exp,litindex+"_"+i0, &preLit); separator=","%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
@@ -10891,7 +10891,7 @@ template literalExpConstBoxedVal(Exp lit, Text index, Text &preLit)
     let &preLit +=
     <<
     static const MMC_DEFREALLIT(<%tmp%>,<%lit.real%>);
-    #define <%name%> MMC_REFREALLIT(<%tmp%>)
+    #define <%name%> MMC_REFREALLIT(<%tmp%>)<%\n%>
     >>
     name
   case LIST(valList={}) then
