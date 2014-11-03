@@ -2360,7 +2360,7 @@ algorithm
 
     // record cref
     case DAE.CREF(ty = DAE.T_COMPLEX(varLst = vl as _ :: _))
-      then intAdd(getScalarVarSize(v) for v in vl); 
+      then intAdd(getScalarVarSize(v) for v in vl);
 
     // array cref
     case DAE.CREF(componentRef = cref)
@@ -2419,7 +2419,7 @@ algorithm
       DAE.Type ty;
       list<DAE.Var> vl;
 
-    case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(varLst = vl as _ :: _)) 
+    case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(varLst = vl as _ :: _))
       then intAdd(getScalarVarSize(v) for v in vl);
 
     case DAE.TYPES_VAR(ty = ty as DAE.T_ARRAY(_))
