@@ -123,5 +123,6 @@
         <file>Resources/icons/step-return.svg</file>
         <file>Resources/icons/breakpoint_enabled.svg</file>
         <file>Resources/icons/breakpoint_disabled.svg</file>
+        <file>Resources/icons/link-external.svg</file>
     </qresource>
 </RCC>

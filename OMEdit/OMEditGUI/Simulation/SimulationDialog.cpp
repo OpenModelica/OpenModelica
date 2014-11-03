@@ -133,7 +133,28 @@ void SimulationDialog::setUpForm()
   mpIntegrationGroupBox = new QGroupBox(tr("Integration"));
   mpMethodLabel = new Label(tr("Method:"));
   mpMethodComboBox = new QComboBox;
-  mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.split(","));
+  mpMethodComboBox->addItem("dassl");
+  mpMethodComboBox->setItemData(0, "dassl with colored numerical jacobian, with interval root finding", Qt::ToolTipRole);
+  mpMethodComboBox->addItem("euler");
+  mpMethodComboBox->addItem("rungekutta");
+  mpMethodComboBox->addItem("optimization");
+  mpMethodComboBox->addItem("radau1");
+  mpMethodComboBox->setItemData(4, "sundial/kinsol needed", Qt::ToolTipRole);
+  mpMethodComboBox->addItem("radau3");
+  mpMethodComboBox->setItemData(5, "sundial/kinsol needed", Qt::ToolTipRole);
+  mpMethodComboBox->addItem("radau5");
+  mpMethodComboBox->setItemData(6, "sundial/kinsol needed", Qt::ToolTipRole);
+  mpMethodComboBox->addItem("lobatto2");
+  mpMethodComboBox->setItemData(7, "sundial/kinsol needed", Qt::ToolTipRole);
+  mpMethodComboBox->addItem("lobatto4");
+  mpMethodComboBox->setItemData(8, "sundial/kinsol needed", Qt::ToolTipRole);
+  mpMethodComboBox->addItem("lobatto6");
+  mpMethodComboBox->setItemData(9, "sundial/kinsol needed", Qt::ToolTipRole);
+  mpMehtodHelpButton = new QToolButton;
+  mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpMehtodHelpButton->setToolTip(tr("Integration help"));
+  connect(mpMehtodHelpButton, SIGNAL(clicked()), SLOT(showIntegrationHelp()));
+  // Tolerance
   mpToleranceLabel = new Label(tr("Tolerance:"));
   mpToleranceTextBox = new QLineEdit("1e-6");
   // set the layout for integration groupbox
@@ -141,8 +162,9 @@ void SimulationDialog::setUpForm()
   pIntegrationGridLayout->setColumnStretch(1, 1);
   pIntegrationGridLayout->addWidget(mpMethodLabel, 0, 0);
   pIntegrationGridLayout->addWidget(mpMethodComboBox, 0, 1);
+  pIntegrationGridLayout->addWidget(mpMehtodHelpButton, 0, 2);
   pIntegrationGridLayout->addWidget(mpToleranceLabel, 1, 0);
-  pIntegrationGridLayout->addWidget(mpToleranceTextBox, 1, 1);
+  pIntegrationGridLayout->addWidget(mpToleranceTextBox, 1, 1, 1, 2);
   mpIntegrationGroupBox->setLayout(pIntegrationGridLayout);
   // Compiler Flags
   mpCflagsLabel = new Label(tr("Compiler Flags (Optional):"));
@@ -197,6 +219,10 @@ void SimulationDialog::setUpForm()
   mpVariableFilterTextBox = new QLineEdit;
   // Protected Variabels
   mpProtectedVariablesCheckBox = new QCheckBox(tr("Protected Variables"));
+  // Equidistant time grid
+  mpEquidistantTimeGridCheckBox = new QCheckBox(tr("Equidistant Time Grid"));
+  mpEquidistantTimeGridCheckBox->setChecked(true);
+  // store variables at events
   mpStoreVariablesAtEventsCheckBox = new QCheckBox(tr("Store Variables at Events"));
   mpStoreVariablesAtEventsCheckBox->setChecked(true);
   // show generated files checkbox
@@ -213,8 +239,9 @@ void SimulationDialog::setUpForm()
   pOutputTabLayout->addWidget(mpVariableFilterLabel, 3, 0);
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 3, 1);
   pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 4, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 5, 0, 1, 2);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 6, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 5, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 6, 0, 1, 2);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 7, 0, 1, 2);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
@@ -940,6 +967,21 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
   server.close();
 }
 
+/*!
+  Slot activated when mpMehtodHelpButton clicked signal is raised.\n
+  Opens the IntegrationAlgorithms.pdf file.
+  */
+void SimulationDialog::showIntegrationHelp()
+{
+  QUrl integrationAlgorithmsPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
+                                  .append("/share/doc/omc/SimulationRuntime/IntegrationAlgorithms/IntegrationAlgorithms.pdf"));
+  QDesktopServices::openUrl(integrationAlgorithmsPath);
+}
+
+/*!
+  Slot activated when mpBuildOnlyCheckBox checkbox is checked.\n
+  Makes sure that we only build the modelica model and don't run the simulation.
+  */
 void SimulationDialog::buildOnly(bool checked)
 {
   mpLaunchAlgorithmicDebuggerCheckBox->setEnabled(!checked);
@@ -1008,6 +1050,10 @@ void SimulationDialog::simulate()
     // emit protected variables
     if (mpProtectedVariablesCheckBox->isChecked()) {
       mSimulationFlags.append("-emit_protected");
+    }
+    // Equidistant time grid
+    if (!mpEquidistantTimeGridCheckBox->isChecked()) {
+      mSimulationFlags.append("-noEquidistantTimeGrid");
     }
     // store variables at events
     if (!mpStoreVariablesAtEventsCheckBox->isChecked()) {

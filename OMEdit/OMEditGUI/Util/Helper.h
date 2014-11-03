@@ -79,7 +79,6 @@ public:
   static QString modelicaFileFormat;
   static qreal shapesStrokeWidth;
   static int headingFontSize;
-  static QString ModelicaSimulationMethods;
   static QString ModelicaInitializationMethods;
   static QString ModelicaOptimizationMethods;
   static QString ModelicaSimulationOutputFormats;

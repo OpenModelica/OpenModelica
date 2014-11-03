@@ -134,6 +134,7 @@ private:
   QGroupBox *mpIntegrationGroupBox;
   Label *mpMethodLabel;
   QComboBox *mpMethodComboBox;
+  QToolButton *mpMehtodHelpButton;
   Label *mpToleranceLabel;
   QLineEdit *mpToleranceTextBox;
   QCheckBox *mpSaveSimulationCheckbox;
@@ -156,6 +157,7 @@ private:
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
   QCheckBox *mpProtectedVariablesCheckBox;
+  QCheckBox *mpEquidistantTimeGridCheckBox;
   QCheckBox *mpStoreVariablesAtEventsCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;
   // Simulation Flags Tab
@@ -238,8 +240,9 @@ private:
   SimulationMessage parseXMLLogMessageTag(QDomNode messageNode, int level);
   void writeSimulationMessage(SimulationMessage &simulationMessage);
   void processFinished(int exitCode, QProcess::ExitStatus exitStatus);
-public slots:
   void runSimulationExecutable(SimulationOptions simulationOptions);
+public slots:
+  void showIntegrationHelp();
   void buildOnly(bool checked);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
