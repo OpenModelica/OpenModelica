@@ -194,6 +194,34 @@ algorithm
   end for;
 end map0;
 
+public function mapList<TI, TO>
+  "As map, but takes a list in and creates an array from the result."
+  input list<TI> inList;
+  input FuncType inFunc;
+  output array<TO> outArray;
+
+  partial function FuncType
+    input TI inElement;
+    output TO outElement;
+  end FuncType;
+protected
+  Integer i := 2, len := listLength(inList);
+  TO res;
+algorithm
+  if len == 0 then
+    outArray := listArray({});
+  else
+    res := inFunc(listHead(inList));
+    outArray := arrayCreateNoInit(len, res);
+    arrayUpdate(outArray, 1, res);
+
+    for e in listRest(inList) loop
+      arrayUpdate(outArray, i, inFunc(e));
+      i := i + 1;
+    end for;
+  end if;
+end mapList;
+
 public function fold<T, FoldT>
   "Takes an array, a function, and a start value. The function is applied to
    each array element, and the start value is passed to the function and

@@ -2047,7 +2047,7 @@ algorithm
   end match;
 end generateSolvedEqnsfromOption;
 
-public function generateResidualfromRealtion "author: vitalij"
+public function generateResidualFromRelation "author: vitalij"
   input String conCrefName;
   input DAE.Exp iRhs;
   input DAE.ElementSource Source;
@@ -2125,7 +2125,7 @@ algorithm
     then ({eqn}, dummyVar);
     else fail();
   end match;
-end generateResidualfromRealtion;
+end generateResidualFromRelation;
 
 public function solveEquation "author: wbraun
   Solves an equation w.r.t. a component reference. All equations are transformed

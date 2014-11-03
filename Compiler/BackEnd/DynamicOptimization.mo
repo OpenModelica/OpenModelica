@@ -183,7 +183,7 @@ algorithm
     //BackendDump.printVariables(inVars);
     //BackendDump.printVariables(knvars);
     conCrefName = prefConCrefName + intString(inI);
-    (conEqn, dummyVar) = BackendEquation.generateResidualfromRealtion(conCrefName, e, DAE.emptyElementSource, inVars, knvars, conKind);
+    (conEqn, dummyVar) = BackendEquation.generateResidualFromRelation(conCrefName, e, DAE.emptyElementSource, inVars, knvars, conKind);
     v = BackendVariable.addNewVar(dummyVar, inVars);
     eqns = listAppend(conEqn, inEqns);
     (v, eqns)= addOptimizationVarsEqns1(conLst, inI + 1, v, eqns, knvars, prefConCrefName, conKind);

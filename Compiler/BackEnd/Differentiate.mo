@@ -51,6 +51,7 @@ public import Types;
 
 // protected imports
 protected import Algorithm;
+protected import Array;
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
@@ -2555,20 +2556,21 @@ algorithm
       Integer derivativeOrder;
       list<DAE.FuncArg> funcArg;
       list<DAE.Type> tplst;
-      list<Boolean> bl,bl1,bl2,bl3;
+      list<Boolean> bl;
       list<Absyn.Path> lowerOrderDerivatives;
       DAE.FunctionDefinition mapper;
       DAE.Type tp;
+      array<Boolean> ba;
 
     // check conditions, order=1
     case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),DAE.T_FUNCTION(funcArg=funcArg),_,_)
       equation
          true = intEq(1,derivativeOrder);
          tplst = List.map(funcArg,Types.funcArgType);
-         bl = List.map(tplst,Types.isRealOrSubTypeReal);
-         bl1 = checkDerFunctionConds(bl,cr,expl,inDiffArgs);
+         ba = Array.mapList(tplst, Types.isRealOrSubTypeReal);
+         bl = checkDerFunctionConds(ba,cr,expl,inDiffArgs);
       then
-        (inDFuncName,bl1);
+        (inDFuncName,bl);
     // check conditions, order>1
     case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),tp,_,(_,_,_,functions))
       equation
@@ -2580,12 +2582,11 @@ algorithm
          // get bool list
          (_,blst) = differentiateFunction1(fname,mapper,tp,expl,inDiffArgs);
          // count true
-         (bl1,_) = List.split1OnTrue(blst, valueEq, true);
-         bl2 = List.fill(false,listLength(blst));
-         bl = listAppend(bl2,bl1);
-         bl3 = checkDerFunctionConds(bl,cr,expl,inDiffArgs);
+         (bl,_) = List.split1OnTrue(blst, valueEq, true);
+         ba = arrayAppend(arrayCreate(listLength(blst), false), listArray(bl));
+         bl = checkDerFunctionConds(ba,cr,expl,inDiffArgs);
       then
-        (inDFuncName,bl3);
+        (inDFuncName,bl);
     // conditions failed use default
     case (_,DAE.FUNCTION_DER_MAPPER(derivedFunction=fname,derivativeFunction=_,derivativeOrder=derivativeOrder,conditionRefs=_,defaultDerivative=SOME(default),lowerOrderDerivatives=lowerOrderDerivatives),tp,_,_)
       equation
@@ -2628,74 +2629,63 @@ algorithm
 end checkDerivativeFunctionInputs;
 
 protected function checkDerFunctionConds "Author: Frenkel TUD"
-  input list<Boolean> inblst;
+  input array<Boolean> inbarr;
   input list<tuple<Integer,DAE.derivativeCond>> icrlst;
   input list<DAE.Exp> expl;
   input BackendDAE.DifferentiateInputArguments inDiffArgs;
   output list<Boolean> outblst;
+protected
+  Integer i;
+  DAE.derivativeCond dc;
+  DAE.Exp e;
+  Absyn.Path p1, p2;
+  array<Boolean> ba := inbarr;
+  DAE.ComponentRef diffwrtCref;
+  BackendDAE.DifferentiateInputData inputData;
+  BackendDAE.DifferentiationType diffType;
+  DAE.FunctionTree functionTree;
 algorithm
-  outblst := matchcontinue(inblst,icrlst,expl,inDiffArgs)
-    local
-      Integer i;
-      DAE.Exp e,de;
-      list<Boolean> bl,bl1;
-      array<Boolean> ba;
-      Absyn.Path p1,p2;
-      list<tuple<Integer,DAE.derivativeCond>> crlst;
+  (diffwrtCref, inputData, diffType, functionTree) := inDiffArgs;
 
-      DAE.ComponentRef diffwrtCref;
-      BackendDAE.DifferentiateInputData inputData;
-      BackendDAE.DifferentiationType diffType;
-      DAE.FunctionTree functionTree;
+  for tpl in icrlst loop
+    (i, dc) := tpl;
 
-    // no conditions
-    case (_,{},_,_)
-    then inblst;
+    _ := matchcontinue(dc)
+      // Zero derivative, check that it's actually zero.
+      case DAE.ZERO_DERIVATIVE()
+        algorithm
+          // Get expression.
+          e := listGet(expl, i);
+          // Differentiate exp.
+          (e, functionTree) := differentiateExp(e, diffwrtCref, inputData, diffType, functionTree);
+          true := Expression.isZero(e);
+        then
+          ();
 
-    // zeroDerivative
-    case(_,(i,DAE.ZERO_DERIVATIVE())::crlst,_,(diffwrtCref,inputData,diffType,functionTree)) equation
-      // get expression
-      e = listGet(expl,i);
-      // differentiate exp
-      (de,functionTree) = differentiateExp(e,diffwrtCref,inputData,diffType,functionTree);
-      // is differentiated exp zero
-      true = Expression.isZero(de);
-      // remove input from list
-      ba = listArray(inblst);
-      ba = arrayUpdate(ba,i,false);
-      bl1 = arrayList(ba);
-      bl = checkDerFunctionConds(bl1,crlst,expl,(diffwrtCref,inputData,diffType,functionTree));
-    then bl;
+      case DAE.NO_DERIVATIVE(binding = DAE.CALL(path = p1))
+        algorithm
+          // Get expression.
+          DAE.CALL(path = p2) := listGet(expl, i);
+          true := Absyn.pathEqual(p1, p2);
+        then
+          ();
 
-    // noDerivative
-    case(_,(i,DAE.NO_DERIVATIVE(binding=DAE.CALL(path=p1)))::crlst,_,_) equation
-      // get expression
-      DAE.CALL(path=p2) = listGet(expl,i);
-      true = Absyn.pathEqual(p1, p2);
-      // path equal
-      // remove input from list
-      ba = listArray(inblst);
-      ba = arrayUpdate(ba,i,false);
-      bl1 = arrayList(ba);
-      bl = checkDerFunctionConds(bl1,crlst,expl,inDiffArgs);
-    then bl;
+      case DAE.NO_DERIVATIVE(binding = DAE.ICONST()) then ();
 
-    // noDerivative
-    case(_,(i,DAE.NO_DERIVATIVE(binding=DAE.ICONST(_)))::crlst,_,_) equation
-      // remove input from list
-      ba = listArray(inblst);
-      ba = arrayUpdate(ba,i,false);
-      bl1 = arrayList(ba);
-      bl = checkDerFunctionConds(bl1,crlst,expl,inDiffArgs);
-    then bl;
+      else
+        algorithm
+          true := Flags.isSet(Flags.FAILTRACE);
+          Debug.traceln("-Differentiate.checkDerFunctionConds failed");
+        then
+          fail();
 
-    // failure
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("-Differentiate.checkDerFunctionConds failed\n");
-      then fail();
-  end matchcontinue;
+    end matchcontinue;
+
+    // Remove input from array.
+    arrayUpdate(ba, i, false);
+  end for;
+
+  outblst := arrayList(ba);
 end checkDerFunctionConds;
 
 protected function getlowerOrderDerivative "Author: Frenkel TUD"

@@ -3388,7 +3388,7 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       list<BackendDAE.WhenClause> whenClauseLst, whenClauseLst1;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst, relationsLst, sampleLst;
-      Integer numberOfRealtions, numMathFunctions;
+      Integer numberOfRelations, numMathFunctions;
       BackendDAE.BackendDAEType btp;
       BackendDAE.EqSystems systs, systs1;
       list<BackendDAE.Equation> eqnslst;
@@ -3398,7 +3398,7 @@ algorithm
       BackendDAE.ExtraInfo ei;
 
     case (false, _, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs, ei)), _)
+    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberOfRelations, numMathFunctions), eoc, btp, symjacs, ei)), _)
       equation
         if Flags.isSet(Flags.DUMP_REPL) then
           BackendVarTransform.dumpReplacements(repl);
@@ -3420,7 +3420,7 @@ algorithm
         // remove asserts with condition=true from removed equations
         remeqns1 = BackendEquation.listEquation(List.select(BackendEquation.equationList(remeqns1), assertWithCondTrue));
       then
-        BackendDAE.DAE(systs1, BackendDAE.SHARED(knvars1, exobj, aliasVars, inieqns, remeqns1, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs, ei));
+        BackendDAE.DAE(systs1, BackendDAE.SHARED(knvars1, exobj, aliasVars, inieqns, remeqns1, constraintsLst, clsAttrsLst, cache, graph, funcTree, BackendDAE.EVENT_INFO(timeEvents, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst, numberOfRelations, numMathFunctions), eoc, btp, symjacs, ei));
   end match;
 end removeSimpleEquationsShared;
 
