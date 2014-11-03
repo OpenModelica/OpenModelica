@@ -2204,6 +2204,9 @@ algorithm
     // redeclare-as-element component
     case SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
       then true;
+    // not redeclare class extends
+    case SCode.CLASS(classDef = SCode.CLASS_EXTENDS())
+      then false;
     // redeclare-as-element class!, not class extends
     case SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()))
       then true;
