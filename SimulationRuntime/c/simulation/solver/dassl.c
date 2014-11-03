@@ -66,6 +66,13 @@ static const char *dasslJacobianMethodDescStr[DASSL_JAC_MAX] = {"unknown",
                                                        "numerical jacobian."
                                                       };
 
+/* experimental flag for SKF TLM Master Solver Interface
+ *  - it's used with -noEquidistantTimeGrid flag.
+ *  - it's set to 1 if the continuous system is evaluated 
+ *    when dassl finished a step, otherwise it's 0.
+ */
+int RHSFinalFlag;
+
 /* provides a dummy Jacobian to be used with DASSL */
 static int
 dummy_Jacobian(double *t, double *y, double *yprime, double *deltaD,
@@ -137,6 +144,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 
   TRACE_PUSH
 
+  RHSFinalFlag = 0;
 
   dasslData->liw = 40 + data->modelData.nStates;
   dasslData->lrw = 60 + ((maxOrder + 4) * data->modelData.nStates) + (data->modelData.nStates * data->modelData.nStates)  + (3*data->modelData.nZeroCrossings);
@@ -572,8 +580,10 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
        * to emit consistent value we need to update the whole
        * continuous system with algebraic variables.
        */
+      RHSFinalFlag = 1;
       updateContinuousSystem(data);
       sim_result.emit(&sim_result, data);
+      RHSFinalFlag = 0;
 
     }
     else if (dasslData->idid == 1)
