@@ -37,6 +37,7 @@
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
 #include "linearSolverLis.h"
+#include "linearSolverTotalPivot.h"
 #include "simulation_info_xml.h"
 
 /*! \fn int initializeLinearSystems(DATA *data)
@@ -97,6 +98,11 @@ int initializeLinearSystems(DATA *data)
       allocateLisData(size, size, nnz, &linsys[i].solverData);
       break;
 
+    case LS_TOTALPIVOT:
+      linsys[i].A = (double*) malloc(size*size*sizeof(double));
+      linsys[i].setAElement = setAElementTotalPivot;
+      allocateTotalPivotData(size, &linsys[i].solverData);
+      break;
     default:
       throwStreamPrint(data->threadData, "unrecognized linear solver");
     }
@@ -162,6 +168,11 @@ int freeLinearSystems(DATA *data)
       freeLisData(&linsys[i].solverData);
       break;
 
+    case LS_TOTALPIVOT:
+      freeTotalPivotData(&linsys[i].solverData);
+      free(linsys[i].A);
+      break;
+
     default:
       throwStreamPrint(data->threadData, "unrecognized linear solver");
     }
@@ -193,6 +204,11 @@ int solve_linear_system(DATA *data, int sysNumber)
 
   case LS_LIS:
     success = solveLis(data, sysNumber);
+    break;
+
+    
+  case LS_TOTALPIVOT:
+    success = solveTotalPivot(data, sysNumber);
     break;
 
   default:
@@ -245,4 +261,10 @@ void setAElementLis(int row, int col, double value, int nth, void *data)
   LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
   DATA_LIS* sData = (DATA_LIS*) linSys->solverData;
   lis_matrix_set_value(LIS_INS_VALUE, row, col, value, sData->A);
+}
+
+void setAElementTotalPivot(int row, int col, double value, int nth, void *data)
+{
+  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
+  linsys->A[row + col * linsys->size] = value;
 }

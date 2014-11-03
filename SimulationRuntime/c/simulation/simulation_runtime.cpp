@@ -271,16 +271,20 @@ int getlinearSolverMethod(int argc, char**argv)
   const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
-    return LS_LAPACK; /* default method */
+    return LS_TOTALPIVOT; /* default method */
 
   if(*method == string("lapack"))
     return LS_LAPACK;
+
+  if(*method == string("totalpivot"))
+    return LS_TOTALPIVOT;
 
   if(*method == string("lis"))
     return LS_LIS;
 
   warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -ls %s, current options are:", method->c_str());
-  warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lapack", "default method");
+  warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lapack", "method using lapack LU factorization");
+  warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "totalpivot", "default method - using total pivoting LU factorization");
   warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lis", "Lis");
   messageClose(LOG_STDOUT);
   throwStreamPrint(NULL,"see last warning");
@@ -307,8 +311,8 @@ int getNewtonStrategy(int argc, char**argv)
   throwStreamPrint(NULL,"see last warning");
 
   return NEWTON_NONE;
-
 }
+
 
 /**
  * Signals the type of the simulation
