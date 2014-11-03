@@ -780,7 +780,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
         fprintf(pFile,"%s;%f;",optData->data->modelData.realVarsData[k].info.name,(float)optData->time.t[i][j]);
         for(jj = 0; jj < nv; ++jj){
           tmpJ = (sJ[k][jj]) ? (optData->J[i][j][k][jj]) : 0.0;
-          fprintf(pFile,"%g;", tmpJ);
+          fprintf(pFile,"%lf;", tmpJ);
         }
         fprintf(pFile,"\n");
       }
@@ -936,7 +936,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
     fprintf(pFile,"%s\n","        plt.xlabel('time')");
     fprintf(pFile,"%s\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_state\"+ str(j) + filename, format='png')\n");
     fprintf(pFile,"%s\n","    for j in xrange(self.number_of_inputs):");
-    fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j + self.number_of_states)");
     fprintf(pFile,"%s\n","      if LA.norm(J) > 0:");
     fprintf(pFile,"%s\n","        plt.figure()");
     fprintf(pFile,"%s\n","        plt.plot(self.t, J)");
@@ -958,8 +958,8 @@ static inline void debugeJac(OptData * optData, Number* vopt){
     fprintf(pFile,"%s\n","        plt.xlabel('time')");
     fprintf(pFile,"%s\n","        plt.savefig(filename = \"der_\"+ str(i) +\"_state\"+ str(j) + filename, format='png')\n");
     fprintf(pFile,"%s\n","    for j in xrange(self.number_of_inputs):");
-    fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j)");
-    fprintf(pFile,"%s\n","      J_ = J2.get_value_of_jacobian(i, j)");
+    fprintf(pFile,"%s\n","      J = self.get_value_of_jacobian(i, j+self.number_of_states)");
+    fprintf(pFile,"%s\n","      J_ = J2.get_value_of_jacobian(i, j+self.number_of_states)");
     fprintf(pFile,"%s\n","      if LA.norm(J-J_) > 0:");
     fprintf(pFile,"%s\n","        plt.figure()");
     fprintf(pFile,"%s\n","        plt.hold(False)");
