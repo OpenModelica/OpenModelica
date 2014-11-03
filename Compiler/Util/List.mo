@@ -96,7 +96,8 @@ encapsulated package List
   (element, extra arg 1, extra arg 2, fold arg) -> fold arg
 "
 
-//import MetaModelica.Dangerous.listReverseInPlace;
+protected
+import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking};
 
 public function create<T>
   "Creates a list from an element."
@@ -601,7 +602,7 @@ algorithm
     outList := e :: outList;
   end for;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end firstN;
 
 public function stripFirst<T>
@@ -700,7 +701,7 @@ algorithm
     end if;
   end while;
 
-  outDuplicates := MetaModelica.Dangerous.listReverseInPlace(outDuplicates);
+  outDuplicates := listReverseInPlace(outDuplicates);
 end sortedDuplicates;
 
 public function sortedUnique<T>
@@ -727,7 +728,7 @@ algorithm
     end if;
   end while;
 
-  outUniqueElements := MetaModelica.Dangerous.listReverseInPlace(outUniqueElements);
+  outUniqueElements := listReverseInPlace(outUniqueElements);
 end sortedUnique;
 
 public function sortedUniqueAndDuplicates<T>
@@ -757,8 +758,8 @@ algorithm
     end if;
   end while;
 
-  outUniqueElements := MetaModelica.Dangerous.listReverseInPlace(outUniqueElements);
-  outDuplicateElements := MetaModelica.Dangerous.listReverseInPlace(outDuplicateElements);
+  outUniqueElements := listReverseInPlace(outUniqueElements);
+  outDuplicateElements := listReverseInPlace(outDuplicateElements);
 end sortedUniqueAndDuplicates;
 
 protected function merge<T>
@@ -794,9 +795,9 @@ algorithm
       then
         merge(l_rest, r_rest, inCompFunc, el :: acc);
 
-    case ({}, {}) then MetaModelica.Dangerous.listReverseInPlace(acc);
-    case ({}, _) then listAppend(MetaModelica.Dangerous.listReverseInPlace(acc),inRight);
-    case (_, {}) then listAppend(MetaModelica.Dangerous.listReverseInPlace(acc),inLeft);
+    case ({}, {}) then listReverseInPlace(acc);
+    case ({}, _) then listAppend(listReverseInPlace(acc),inRight);
+    case (_, {}) then listAppend(listReverseInPlace(acc),inLeft);
 
   end match;
 end merge;
@@ -840,7 +841,7 @@ algorithm
 
   // Reverse accumulator and append the remaining elements.
   l1 := if listEmpty(l1) then l2 else l1;
-  outList := listAppend(MetaModelica.Dangerous.listReverseInPlace(outList), l1);
+  outList := listAppend(listReverseInPlace(outList), l1);
 end mergeSorted;
 
 public function sortIntN
@@ -873,7 +874,7 @@ algorithm
       outList := e :: outList;
     end if;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end unique;
 
 public function uniqueIntN
@@ -959,7 +960,7 @@ algorithm
       outList := e :: outList;
     end if;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end uniqueOnTrue;
 
 public function reverseList<T>
@@ -994,7 +995,7 @@ algorithm
     l1 := e :: l1;
   end for;
 
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(l1);
+  outList1 := listReverseInPlace(l1);
   outList2 := l2;
 end split;
 
@@ -1022,8 +1023,8 @@ algorithm
     end if;
   end while;
 
-  outTrueList := MetaModelica.Dangerous.listReverseInPlace(outTrueList);
-  outFalseList := MetaModelica.Dangerous.listReverseInPlace(outFalseList);
+  outTrueList := listReverseInPlace(outTrueList);
+  outFalseList := listReverseInPlace(outFalseList);
 end splitOnTrue;
 
 public function split1OnTrue<T, ArgT1>
@@ -1052,8 +1053,8 @@ algorithm
     end if;
   end while;
 
-  outTrueList := MetaModelica.Dangerous.listReverseInPlace(outTrueList);
-  outFalseList := MetaModelica.Dangerous.listReverseInPlace(outFalseList);
+  outTrueList := listReverseInPlace(outTrueList);
+  outFalseList := listReverseInPlace(outFalseList);
 end split1OnTrue;
 
 public function split2OnTrue<T, ArgT1, ArgT2>
@@ -1084,8 +1085,8 @@ algorithm
     end if;
   end while;
 
-  outTrueList := MetaModelica.Dangerous.listReverseInPlace(outTrueList);
-  outFalseList := MetaModelica.Dangerous.listReverseInPlace(outFalseList);
+  outTrueList := listReverseInPlace(outTrueList);
+  outFalseList := listReverseInPlace(outFalseList);
 end split2OnTrue;
 
 public function splitOnFirstMatch<T>
@@ -1114,7 +1115,7 @@ algorithm
 
     outList1 := e :: outList1;
   end while;
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
+  outList1 := listReverseInPlace(outList1);
 end splitOnFirstMatch;
 
 public function splitFirst<T>
@@ -1199,8 +1200,8 @@ algorithm
     end if;
   end while;
 
-  outTrueList := MetaModelica.Dangerous.listReverseInPlace(outTrueList);
-  outFalseList := MetaModelica.Dangerous.listReverseInPlace(outFalseList);
+  outTrueList := listReverseInPlace(outTrueList);
+  outFalseList := listReverseInPlace(outFalseList);
 end splitOnBoolList;
 
 public function partition<T>
@@ -1225,7 +1226,7 @@ algorithm
     outPartitions := lst :: outPartitions;
   end if;
 
-  outPartitions := MetaModelica.Dangerous.listReverseInPlace(outPartitions);
+  outPartitions := listReverseInPlace(outPartitions);
 end partition;
 
 public function sublist<T>
@@ -1253,7 +1254,7 @@ algorithm
     outList := e :: outList;
   end for;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end sublist;
 
 public function productMap<T1, T2, TO>
@@ -1319,7 +1320,7 @@ algorithm
     new_row := {};
 
     for j in c_len:-1:1 loop
-      new_row := MetaModelica.Dangerous.arrayGetNoBoundsChecking(arrayGet(arr, j), i) :: new_row;
+      new_row := arrayGetNoBoundsChecking(arrayGet(arr, j), i) :: new_row;
     end for;
 
     outList := new_row :: outList;
@@ -1427,7 +1428,7 @@ algorithm
     end if;
   end for;
 
-  outIntersection := MetaModelica.Dangerous.listReverseInPlace(outIntersection);
+  outIntersection := listReverseInPlace(outIntersection);
 end intersectionOnTrue;
 
 public function intersection1OnTrue<T>
@@ -1459,8 +1460,8 @@ algorithm
     end if;
   end for;
 
-  outIntersection := MetaModelica.Dangerous.listReverseInPlace(outIntersection);
-  outList1Rest := MetaModelica.Dangerous.listReverseInPlace(outList1Rest);
+  outIntersection := listReverseInPlace(outIntersection);
+  outList1Rest := listReverseInPlace(outList1Rest);
   outList2Rest := setDifferenceOnTrue(inList2, outIntersection, inCompFunc);
 end intersection1OnTrue;
 
@@ -1600,7 +1601,7 @@ algorithm
     outUnion := unionElt(e, outUnion);
   end for;
 
-  outUnion := MetaModelica.Dangerous.listReverseInPlace(outUnion);
+  outUnion := listReverseInPlace(outUnion);
 end union;
 
 public function unionAppendonUnion<T>
@@ -1645,7 +1646,7 @@ algorithm
     outUnion := unionEltOnTrue(e, outUnion, inCompFunc);
   end for;
 
-  outUnion := MetaModelica.Dangerous.listReverseInPlace(outUnion);
+  outUnion := listReverseInPlace(outUnion);
 end unionOnTrue;
 
 public function unionList<T>
@@ -1731,8 +1732,8 @@ algorithm
     outList2 := e2 :: outList2;
   end for;
 
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
 end map_2;
 
 public function map_3<TI, TO1, TO2, TO3>
@@ -1762,9 +1763,9 @@ algorithm
     outList3 := e3 :: outList3;
   end for;
 
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
-  outList3 := MetaModelica.Dangerous.listReverseInPlace(outList3);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
+  outList3 := listReverseInPlace(outList3);
 end map_3;
 
 public function mapOption<TI, TO>
@@ -1790,7 +1791,7 @@ algorithm
     end if;
   end for;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end mapOption;
 
 public function map1Option<TI, TO, ArgT>
@@ -1818,7 +1819,7 @@ algorithm
     end if;
   end for;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end map1Option;
 
 public function map2Option<TI, TO, ArgT1, ArgT2>
@@ -1848,7 +1849,7 @@ algorithm
     end if;
   end for;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end map2Option;
 
 public function map_0<T>
@@ -1961,8 +1962,8 @@ algorithm
     outList2 := e2 :: outList2;
   end for;
 
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
 end map1_2;
 
 public function map1_3<TI, TO1, TO2, TO3, ArgT1>
@@ -1994,9 +1995,9 @@ algorithm
     outList3 := e3 :: outList3;
   end for;
 
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
-  outList3 := MetaModelica.Dangerous.listReverseInPlace(outList3);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
+  outList3 := listReverseInPlace(outList3);
 end map1_3;
 
 public function map2<TI, TO, ArgT1, ArgT2>
@@ -2124,8 +2125,8 @@ algorithm
     outList2 := e2 :: outList2;
   end for;
 
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
 end map2_2;
 
 public function map2_3<TI, TO1, TO2, TO3, ArgT1, ArgT2>
@@ -2159,9 +2160,9 @@ algorithm
     outList3 := e3 :: outList3;
   end for;
 
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
-  outList3 := MetaModelica.Dangerous.listReverseInPlace(outList3);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
+  outList3 := listReverseInPlace(outList3);
 end map2_3;
 
 public function map3<TI, TO, ArgT1, ArgT2, ArgT3>
@@ -2257,8 +2258,8 @@ algorithm
     outList2 := e2 :: outList2;
   end for;
 
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
 end map3_2;
 
 public function map4<TI, TO, ArgT1, ArgT2, ArgT3, ArgT4>
@@ -2338,8 +2339,8 @@ algorithm
     outList2 := e2 :: outList2;
   end for;
 
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
 end map4_2;
 
 public function map5<TI, TO, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
@@ -2543,7 +2544,7 @@ algorithm
   for e in inList loop
     outList := listAppend(inMapFunc(e, inArg1), outList);
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end map1Flat;
 
 public function map2Flat<TI, TO, ArgT1, ArgT2>
@@ -2566,7 +2567,7 @@ algorithm
   for e in inList loop
     outList := listAppend(inMapFunc(e, inArg1, inArg2), outList);
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end map2Flat;
 
 public function mapMap<TI, TO1, TO2>
@@ -3292,7 +3293,7 @@ algorithm
     (res, outArg) := inFunc(e, outArg);
     outList := res :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end mapFold;
 
 public function map1Fold<TI, TO, FT, ArgT1>
@@ -3320,7 +3321,7 @@ algorithm
     (res, outArg) := inFunc(e, inConstArg, outArg);
     outList := res :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end map1Fold;
 
 public function map2Fold<TI, TO, FT, ArgT1, ArgT2>
@@ -3351,7 +3352,7 @@ algorithm
     (res, outArg) := inFunc(e, inConstArg, inConstArg2, outArg);
     outList := res :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end map2Fold;
 
 public function map3Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3>
@@ -3383,7 +3384,7 @@ algorithm
     (res, outArg) := inFunc(e, inConstArg, inConstArg2, inConstArg3, outArg);
     outList := res :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end map3Fold;
 
 public function map4Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3, ArgT4>
@@ -3418,7 +3419,7 @@ algorithm
         inConstArg4, outArg);
     outList := res :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end map4Fold;
 
 public function mapFoldTuple<TI, TO, FT>
@@ -3443,7 +3444,7 @@ algorithm
     ((res, outArg)) := inFunc((e, outArg));
     outList := res :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end mapFoldTuple;
 
 public function mapFoldList<TI, TO, FT>
@@ -3469,7 +3470,7 @@ algorithm
     (res, outArg) := mapFold(lst, inFunc, inArg);
     outListList := res :: outListList;
   end for;
-  outListList := MetaModelica.Dangerous.listReverseInPlace(outListList);
+  outListList := listReverseInPlace(outListList);
 end mapFoldList;
 
 public function map3FoldList<TI, TO, FT, ArgT1, ArgT2, ArgT3>
@@ -3501,7 +3502,7 @@ algorithm
     (res, outArg) := map3Fold(lst, inFunc, inConstArg1, inConstArg2, inConstArg3, inArg);
     outListList := res :: outListList;
   end for;
-  outListList := MetaModelica.Dangerous.listReverseInPlace(outListList);
+  outListList := listReverseInPlace(outListList);
 end map3FoldList;
 
 public function mapFoldListTuple<TI, TO, FT>
@@ -3526,7 +3527,7 @@ algorithm
     (res, outFoldArg) := mapFoldTuple(lst, inFunc, outFoldArg);
     outListList := res :: outListList;
   end for;
-  outListList := MetaModelica.Dangerous.listReverseInPlace(outListList);
+  outListList := listReverseInPlace(outListList);
 end mapFoldListTuple;
 
 public function foldcallN<FT>
@@ -3626,7 +3627,7 @@ algorithm
   end for;
 
   true := listEmpty(rest_e2);
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end thread;
 
 public function thread3<T>
@@ -3650,7 +3651,7 @@ algorithm
 
   true := listEmpty(rest_e2);
   true := listEmpty(rest_e3);
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end thread3;
 
 public function threadTuple<T1, T2>
@@ -3680,8 +3681,8 @@ algorithm
     outList1 := e1 :: outList1;
     outList2 := e2 :: outList2;
   end for;
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
 end unzip;
 
 public function unzipFirst<T1, T2>
@@ -3696,7 +3697,7 @@ algorithm
     (e, _) := tpl;
     outList := e :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end unzipFirst;
 
 public function unzipSecond<T1, T2>
@@ -3711,7 +3712,7 @@ algorithm
     (_, e) := tpl;
     outList := e :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end unzipSecond;
 
 public function thread3Tuple<T1, T2, T3>
@@ -4175,8 +4176,8 @@ algorithm
 
   true := listEmpty(rest_e2);
   true := listEmpty(rest_e3);
-  outList1 := MetaModelica.Dangerous.listReverseInPlace(outList1);
-  outList2 := MetaModelica.Dangerous.listReverseInPlace(outList2);
+  outList1 := listReverseInPlace(outList1);
+  outList2 := listReverseInPlace(outList2);
 end thread3Map_2;
 
 public function thread3MapFold<T1, T2, T3, TO, ArgT1>
@@ -4215,7 +4216,7 @@ algorithm
 
   true := listEmpty(rest_e2);
   true := listEmpty(rest_e3);
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end thread3MapFold;
 
 public function thread3Map3<T1, T2, T3, TO, ArgT1, ArgT2, ArgT3>
@@ -4474,7 +4475,7 @@ algorithm
   end for;
 
   true := listEmpty(rest_e2);
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end threadMapFold;
 
 public function position<T>
@@ -4725,8 +4726,8 @@ algorithm
     end if;
   end for;
 
-  outExtractedList := MetaModelica.Dangerous.listReverseInPlace(outExtractedList);
-  outRemainingList := MetaModelica.Dangerous.listReverseInPlace(outRemainingList);
+  outExtractedList := listReverseInPlace(outExtractedList);
+  outRemainingList := listReverseInPlace(outRemainingList);
 end extractOnTrue;
 
 public function extract1OnTrue<T, ArgT1>
@@ -4753,8 +4754,8 @@ algorithm
     end if;
   end for;
 
-  outExtractedList := MetaModelica.Dangerous.listReverseInPlace(outExtractedList);
-  outRemainingList := MetaModelica.Dangerous.listReverseInPlace(outRemainingList);
+  outExtractedList := listReverseInPlace(outExtractedList);
+  outRemainingList := listReverseInPlace(outRemainingList);
 end extract1OnTrue;
 
 public function filter<T>
@@ -4778,7 +4779,7 @@ algorithm
     end try;
   end for;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end filter;
 
 public function filterMap<TI, TO>
@@ -4803,7 +4804,7 @@ algorithm
     end try;
   end for;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end filterMap;
 
 public function filterMap1<TI, TO, ArgT1>
@@ -4830,7 +4831,7 @@ algorithm
     end try;
   end for;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end filterMap1;
 
 public function filterOnTrue<T>
@@ -4881,8 +4882,8 @@ algorithm
     end if;
   end for;
 
-  outList_a := MetaModelica.Dangerous.listReverseInPlace(outList_a);
-  outList_b := MetaModelica.Dangerous.listReverseInPlace(outList_b);
+  outList_a := listReverseInPlace(outList_a);
+  outList_b := listReverseInPlace(outList_b);
 end filter1OnTrueSync;
 
 public function filterOnTrueSync<T1, T2>
@@ -4915,8 +4916,8 @@ algorithm
     end if;
   end for;
 
-  outList_a := MetaModelica.Dangerous.listReverseInPlace(outList_a);
-  outList_b := MetaModelica.Dangerous.listReverseInPlace(outList_b);
+  outList_a := listReverseInPlace(outList_a);
+  outList_b := listReverseInPlace(outList_b);
 end filterOnTrueSync;
 
 public function filterOnTrueReverse<T>
@@ -4960,7 +4961,7 @@ algorithm
     end try;
   end for;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end filter1;
 
 public function filter1OnTrue<T, ArgT1>
@@ -5122,7 +5123,7 @@ algorithm
     e :: rest := rest;
 
     if valueEq(e, inElement) then
-      outList := listAppend(MetaModelica.Dangerous.listReverseInPlace(outList), rest);
+      outList := listAppend(listReverseInPlace(outList), rest);
       return;
     end if;
 
@@ -5166,7 +5167,7 @@ algorithm
     e :: rest := rest;
 
     if inCompareFunc(inValue, e) then
-      outList := listAppend(MetaModelica.Dangerous.listReverseInPlace(acc), rest);
+      outList := listAppend(listReverseInPlace(acc), rest);
       outDeletedElement := SOME(e);
       return;
     end if;
@@ -5212,7 +5213,7 @@ algorithm
     i := i + 1;
   end for;
 
-  outList := listAppend(MetaModelica.Dangerous.listReverseInPlace(outList), rest);
+  outList := listAppend(listReverseInPlace(outList), rest);
 end deletePositionsSorted;
 
 public function removeMatchesFirst
@@ -5255,7 +5256,7 @@ algorithm
   // Replace the element at the position and append the remaining elements.
   _ :: rest := rest;
   rest := inElement :: rest;
-  outList := listAppend(MetaModelica.Dangerous.listReverseInPlace(outList), rest);
+  outList := listAppend(listReverseInPlace(outList), rest);
 end replaceAt;
 
 public function replaceOnTrue<T>
@@ -5288,7 +5289,7 @@ algorithm
   end while;
 
   outList := if outReplaced then
-    listAppend(MetaModelica.Dangerous.listReverseInPlace(outList), inReplacement :: rest) else inList;
+    listAppend(listReverseInPlace(outList), inReplacement :: rest) else inList;
 end replaceOnTrue;
 
 public function replaceAtIndexFirst<T>
@@ -5328,7 +5329,7 @@ algorithm
   // Replace the element at the position and append the remaining elements.
   _ :: rest := rest;
   rest := listAppend(inReplacementList, rest);
-  outList := listAppend(MetaModelica.Dangerous.listReverseInPlace(outList), rest);
+  outList := listAppend(listReverseInPlace(outList), rest);
 end replaceAtWithList;
 
 public function replaceAtWithFill<T>
@@ -5457,7 +5458,7 @@ public function generate<T, ArgT1>
     output Boolean outContinue;
   end GenerateFunc;
 algorithm
-  outList := MetaModelica.Dangerous.listReverseInPlace(generateReverse(inArg, inFunc));
+  outList := listReverseInPlace(generateReverse(inArg, inFunc));
 end generate;
 
 public function generateReverse<T, ArgT1>
@@ -5516,7 +5517,7 @@ algorithm
     outResult := inFoldFunc(res, outResult);
     outList := eo :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end mapFoldSplit;
 
 public function map1FoldSplit<TI, TO, FT, ArgT1>
@@ -5550,7 +5551,7 @@ algorithm
     outResult := inFoldFunc(res, outResult);
     outList := eo :: outList;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end map1FoldSplit;
 
 public function accumulateMap = accumulateMapAccum;
@@ -5695,7 +5696,7 @@ algorithm
     outList := e :: outList;
   end while;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
   if outFound then
     outList := listAppend(outList, rest);
   end if;
@@ -5727,7 +5728,7 @@ algorithm
     outList := e :: outList;
   end while;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
   if outFound then
     outList := listAppend(outList, rest);
   end if;
@@ -5761,7 +5762,7 @@ algorithm
     outList := e :: outList;
   end while;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
   if outFound then
     outList := listAppend(outList, rest);
   end if;
@@ -5797,7 +5798,7 @@ algorithm
     outList := e :: outList;
   end while;
 
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
   if outFound then
     outList := listAppend(outList, rest);
   end if;
@@ -5837,7 +5838,7 @@ algorithm
     outPrefix := e1 :: outPrefix;
   end while;
 
-  outPrefix := MetaModelica.Dangerous.listReverseInPlace(outPrefix);
+  outPrefix := listReverseInPlace(outPrefix);
   outRest := rest_e1;
 end splitEqualPrefix;
 
@@ -6045,7 +6046,7 @@ algorithm
     outList := (e, pos) :: outList;
     pos := pos + 1;
   end for;
-  outList := MetaModelica.Dangerous.listReverseInPlace(outList);
+  outList := listReverseInPlace(outList);
 end toListWithPositions;
 
 public function mkOption<T>

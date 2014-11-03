@@ -2923,14 +2923,14 @@ algorithm
         simCode = TDS_updateModelInfo(simCode,idcs);
         numDupl = List.fold(List.map(duplComps,listLength),intAdd,0);
         procAss = Array.map(procAss,listReverse);
-        sccSimEqMap = Array.append(iSccSimEqMapping,listArray(listReverse(duplSccSimEqMap)));
-        comps = Array.append(inComps,listArray(listReverse(duplComps)));
-        varCompMapping = Array.append(varCompMapping,arrayCreate(numDupl,(0,0,0)));
-        eqCompMapping = Array.append(eqCompMapping,arrayCreate(numDupl,(0,0,0)));
-        nodeNames = Array.append(nodeNames,arrayCreate(numDupl,"duplicated"));
-        nodeDescs = Array.append(nodeDescs,arrayCreate(numDupl,"duplicated"));
-        exeCosts = Array.append(exeCosts,arrayCreate(numDupl,(1,1.0)));
-        nodeMark = Array.append(nodeMark,arrayCreate(numDupl,-1));
+        sccSimEqMap = arrayAppend(iSccSimEqMapping,listArray(listReverse(duplSccSimEqMap)));
+        comps = arrayAppend(inComps,listArray(listReverse(duplComps)));
+        varCompMapping = arrayAppend(varCompMapping,arrayCreate(numDupl,(0,0,0)));
+        eqCompMapping = arrayAppend(eqCompMapping,arrayCreate(numDupl,(0,0,0)));
+        nodeNames = arrayAppend(nodeNames,arrayCreate(numDupl,"duplicated"));
+        nodeDescs = arrayAppend(nodeDescs,arrayCreate(numDupl,"duplicated"));
+        exeCosts = arrayAppend(exeCosts,arrayCreate(numDupl,(1,1.0)));
+        nodeMark = arrayAppend(nodeMark,arrayCreate(numDupl,-1));
         meta = HpcOmTaskGraph.TASKGRAPHMETA(comps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
         //assign new simEqSysIndexes
         newIdxAss = arrayCreate(SimCodeUtil.getMaxSimEqSystemIndex(simCode),-1);

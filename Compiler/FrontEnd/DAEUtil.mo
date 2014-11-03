@@ -6584,12 +6584,12 @@ algorithm
   b := stringEq(name,name2);
 end typeVarIdentEqual;
 
-public function VarType
+public function varType
   input DAE.Var var;
   output DAE.Type type_;
 algorithm
   DAE.TYPES_VAR(ty=type_) := var;
-end VarType;
+end varType;
 
 public function bindingExp "
   help function to instBinding, returns the expression of a binding"

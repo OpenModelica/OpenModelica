@@ -230,7 +230,7 @@ algorithm
 
       //fileName = ("taskGraph"+filenamePrefix+"DAE.graphml");
       //daeSccMapping = listArray(List.map(SimCodeUtil.getRemovedEquationSimEqSysIdxes(simCode),List.create));
-      //daeSccMapping = Array.append(sccSimEqMapping,daeSccMapping);
+      //daeSccMapping = arrayAppend(sccSimEqMapping,daeSccMapping);
       //schedulerInfo = arrayCreate(arrayLength(taskGraphDAE), (-1,-1,-1.0));
       //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphDAE, taskGraphDataDAE,inBackendDAE, fileName, "", {}, {}, daeSccMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
       SimCodeUtil.execStat("hpcom create and dump DAE TaskGraph");

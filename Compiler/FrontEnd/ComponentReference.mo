@@ -2179,22 +2179,26 @@ sets the 'last' type of a cref."
   input DAE.Type newType;
   output DAE.ComponentRef outRef;
 algorithm
-  outRef := match (inRef,newType)
+  outRef := match (inRef)
     local
       DAE.Type ty;
       DAE.ComponentRef child;
       list<DAE.Subscript> subs;
       DAE.Ident id;
+      Integer idx;
 
-    case(DAE.CREF_IDENT(id,_,subs),_)
-      then
-        makeCrefIdent(id,newType,subs);
+    case DAE.CREF_IDENT(id,_,subs)
+      then makeCrefIdent(id,newType,subs);
 
-    case(DAE.CREF_QUAL(id,ty,subs,child),_)
+    case DAE.CREF_QUAL(id,ty,subs,child)
       equation
         child = crefSetLastType(child,newType);
       then
         makeCrefQual(id,ty,subs,child);
+
+    case DAE.CREF_ITER(id, idx, _, subs)
+      then DAE.CREF_ITER(id, idx, newType, subs);
+
   end match;
 end crefSetLastType;
 

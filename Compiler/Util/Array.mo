@@ -37,6 +37,9 @@ encapsulated package Array
   RCS: $Id$
 "
 
+protected
+import MetaModelica.Dangerous.{arrayGetNoBoundsChecking, arrayCreateNoInit};
+
 public function mapNoCopy<T>
   "Takes an array and a function over the elements of the array, which is
    applied for each element.  Since it will update the array values the returned
@@ -52,8 +55,7 @@ public function mapNoCopy<T>
   end FuncType;
 algorithm
   for i in 1:arrayLength(inArray) loop
-    arrayUpdate(inArray, i,
-      inFunc(MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, i)));
+    arrayUpdate(inArray, i, inFunc(arrayGetNoBoundsChecking(inArray, i)));
   end for;
 end mapNoCopy;
 
@@ -74,8 +76,7 @@ protected
   T e;
 algorithm
   for i in 1:arrayLength(inArray) loop
-    (e, outArg) :=
-      inFunc((MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, i), outArg));
+    (e, outArg) := inFunc((arrayGetNoBoundsChecking(inArray, i), outArg));
     arrayUpdate(inArray, i, e);
   end for;
 end mapNoCopy_1;
@@ -107,7 +108,7 @@ public function select<T>
 protected
   Integer i := 1;
 algorithm
-  outArray := arrayCreate(listLength(inIndices), inArray[1]);
+  outArray := arrayCreateNoInit(listLength(inIndices), inArray[1]);
 
   for e in inIndices loop
     arrayUpdate(outArray, i, arrayGet(inArray, e));
@@ -135,12 +136,10 @@ algorithm
     outArray := listArray({});
   else
     // If the array isn't empty, use the first element to create the new array.
-    outArray := arrayCreate(len,
-      inFunc(MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, 1)));
+    outArray := arrayCreateNoInit(len, inFunc(arrayGetNoBoundsChecking(inArray, 1)));
 
     for i in 2:len loop
-      arrayUpdate(outArray, i,
-        inFunc(MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, i)));
+      arrayUpdate(outArray, i, inFunc(arrayGetNoBoundsChecking(inArray, i)));
     end for;
   end if;
 end map;
@@ -161,18 +160,19 @@ public function map1<TI, TO, ArgT>
   end FuncType;
 protected
   Integer len := arrayLength(inArray);
+  TO res;
 algorithm
   // If the array is empty, use list transformations to fix the types!
   if len == 0 then
     outArray := listArray({});
   else
     // If the array isn't empty, use the first element to create the new array.
-    outArray := arrayCreate(len,
-      inFunc(MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, 1), inArg));
+    res := inFunc(arrayGetNoBoundsChecking(inArray, 1), inArg);
+    outArray := arrayCreateNoInit(len, res);
+    arrayUpdate(outArray, 1, res);
 
     for i in 2:len loop
-      arrayUpdate(outArray, i,
-        inFunc(MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, i), inArg));
+      arrayUpdate(outArray, i, inFunc(arrayGetNoBoundsChecking(inArray, i), inArg));
     end for;
   end if;
 end map1;
@@ -463,12 +463,16 @@ public function expand<T>
   input array<T> inArray;
   input T inFill;
   output array<T> outArray;
+protected
+  Integer len;
 algorithm
   if inN < 1 then
     outArray := inArray;
   else
-    outArray := arrayCreate(inN + arrayLength(inArray), inFill);
+    len := arrayLength(inArray);
+    outArray := arrayCreateNoInit(len + inN, inFill);
     copy(inArray, outArray);
+    setRange(len + 1, len + inN, outArray, inFill);
   end if;
 end expand;
 
@@ -481,24 +485,17 @@ public function expandOnDemand<T>
   input T inFillValue "The value to fill the new part of the array.";
   output array<T> outArray "The resulting array.";
 protected
-  Integer new_size;
+  Integer new_size, len := arrayLength(inArray);
 algorithm
-  if inNewSize <= arrayLength(inArray) then
+  if inNewSize <= len then
     outArray := inArray;
   else
-    new_size := realInt(intReal(arrayLength(inArray)) * inExpansionFactor);
-    outArray := arrayCreate(new_size, inFillValue);
+    new_size := realInt(intReal(len) * inExpansionFactor);
+    outArray := arrayCreateNoInit(new_size, inFillValue);
     copy(inArray, outArray);
+    setRange(len + 1, new_size, outArray, inFillValue);
   end if;
 end expandOnDemand;
-
-public function append<T>
-  input array<T> inArray1;
-  input array<T> inArray2;
-  output array<T> outArray;
-algorithm
-  outArray := listArray(listAppend(arrayList(inArray1), arrayList(inArray2)));
-end append;
 
 public function consToElement<T>
   "Concatenates an element to a list element of an array."
@@ -532,8 +529,7 @@ algorithm
   end if;
 
   for i in 1:arrayLength(inArraySrc) loop
-    arrayUpdate(outArray, i,
-      MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArraySrc, i));
+    arrayUpdate(outArray, i, arrayGetNoBoundsChecking(inArraySrc, i));
   end for;
 end copy;
 
@@ -550,8 +546,7 @@ algorithm
   end if;
 
   for i in 1:inN loop
-    arrayUpdate(outArray, i,
-      MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArraySrc, i));
+    arrayUpdate(outArray, i, arrayGetNoBoundsChecking(inArraySrc, i));
   end for;
 end copyN;
 
@@ -606,8 +601,8 @@ public function getMemberOnTrue<VT, ET>
   end CompFunc;
 algorithm
   for i in 1:arrayLength(inArray) loop
-    if inCompFunc(inValue, MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, i)) then
-      outElement := MetaModelica.Dangerous.arrayGetNoBoundsChecking(inArray, i);
+    if inCompFunc(inValue, arrayGetNoBoundsChecking(inArray, i)) then
+      outElement := arrayGetNoBoundsChecking(inArray, i);
       outIndex := i;
       return;
     end if;

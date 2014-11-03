@@ -366,24 +366,24 @@ algorithm
   varOffset := arrayLength(varCompMapping1);
   eqOffset := arrayLength(eqCompMapping1);
   graph2 := Array.map1(graph2In,updateTaskGraphSystem,idxOffset);
-  graphOut := Array.append(graph1In,graph2);
+  graphOut := arrayAppend(graph1In,graph2);
   inComps2 := Array.map1(inComps2,updateTaskGraphSystem,idxOffset);
-  inComps2 := Array.append(inComps1,inComps2);
+  inComps2 := arrayAppend(inComps1,inComps2);
   //varCompMapping2 := Array.map1(varCompMapping2,modifyMapping,varOffset);
   varCompMapping2 := Array.map1(varCompMapping2,modifyMapping,idxOffset);
-  varCompMapping2 := Array.append(varCompMapping1,varCompMapping2);
+  varCompMapping2 := arrayAppend(varCompMapping1,varCompMapping2);
   //eqCompMapping2 := Array.map1(eqCompMapping2,modifyMapping,eqOffset);
   eqCompMapping2 := Array.map1(eqCompMapping2,modifyMapping,idxOffset);
-  eqCompMapping2 := Array.append(eqCompMapping1,eqCompMapping2);
+  eqCompMapping2 := arrayAppend(eqCompMapping1,eqCompMapping2);
   rootNodes2 := List.map1(rootNodes2,intAdd,idxOffset);
   rootNodes2 := listAppend(rootNodes1,rootNodes2);
   nodeNames2 := Array.map1(nodeNames2,stringAppend," subsys");  //TODO: change this
-  nodeNames2 := Array.append(nodeNames1,nodeNames2);
-  nodeDescs2 := Array.append(nodeDescs1,nodeDescs2);
-  exeCosts2 := Array.append(exeCosts1,exeCosts2);
+  nodeNames2 := arrayAppend(nodeNames1,nodeNames2);
+  nodeDescs2 := arrayAppend(nodeDescs1,nodeDescs2);
+  exeCosts2 := arrayAppend(exeCosts1,exeCosts2);
   commCosts2 := Array.map1(commCosts2,updateCommCosts,idxOffset);
-  commCosts2 := Array.append(commCosts1,commCosts2);
-  nodeMark2 := Array.append(nodeMark1,nodeMark2);
+  commCosts2 := arrayAppend(commCosts1,commCosts2);
+  nodeMark2 := arrayAppend(nodeMark1,nodeMark2);
   graphDataOut := TASKGRAPHMETA(inComps2,varCompMapping2,eqCompMapping2,rootNodes2,nodeNames2,nodeDescs2,exeCosts2,commCosts2,nodeMark2);
 end taskGraphAppend;
 
@@ -5498,7 +5498,7 @@ algorithm
       //print("nodes: "+stringDelimitList(List.map(nodeLst,intLstString)," | ")+"\n");
 
       TASKGRAPHMETA(inComps = inComps1 ,varCompMapping=varCompMapping1, eqCompMapping=eqCompMapping1, rootNodes = rootNodes1, nodeNames =nodeNames1, nodeDescs= nodeDescs1, exeCosts = exeCosts1, commCosts=commCosts1, nodeMark=nodeMark1) = graphDataIn;
-      graph = Array.append(graphIn,arrayCreate(numNewComps,{}));
+      graph = arrayAppend(graphIn,arrayCreate(numNewComps,{}));
       newComps = List.intRange2(arrayLength(graphIn)+1,arrayLength(graphIn)+numNewComps);
       //print("newComps: "+stringDelimitList(List.map(newComps,intString)," | ")+"\n");
       graph =  List.threadFold(nodeVarLst,newComps,addEdgesToGraph,graph);
@@ -5508,11 +5508,11 @@ algorithm
       nodeDescs2 = listArray(List.map(eqLst,BackendDump.equationString));
       nodeMark2 = arrayCreate(numNewComps,-2);
       exeCosts2 = arrayCreate(numNewComps,(1,1.0));
-      inComps1 = Array.append(inComps1,inComps2);
-      nodeNames1 = Array.append(nodeNames1,nodeNames2);
-      nodeDescs1 = Array.append(nodeDescs1,nodeDescs2);
-      nodeMark1 = Array.append(nodeMark1,nodeMark2);
-      exeCosts1 = Array.append(exeCosts1,exeCosts2);
+      inComps1 = arrayAppend(inComps1,inComps2);
+      nodeNames1 = arrayAppend(nodeNames1,nodeNames2);
+      nodeDescs1 = arrayAppend(nodeDescs1,nodeDescs2);
+      nodeMark1 = arrayAppend(nodeMark1,nodeMark2);
+      exeCosts1 = arrayAppend(exeCosts1,exeCosts2);
       commCosts1 = List.threadFold1(nodeVarLst,newComps,setCommCostsToParent,74.0,commCosts1);
       graphData = TASKGRAPHMETA(inComps1,varCompMapping1,eqCompMapping1,rootNodes1,nodeNames1,nodeDescs1,exeCosts1,commCosts1,nodeMark1);
     then (graph,graphData);

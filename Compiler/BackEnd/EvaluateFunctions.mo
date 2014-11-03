@@ -2243,12 +2243,11 @@ algorithm
       equation
         names = List.map(varLst,DAEUtil.typeVarIdent);
         //print("the names for the scalar complex crefs: "+stringDelimitList(names,"\n;")+"\n");
-        types = List.map(varLst,DAEUtil.VarType);
+        types = List.map(varLst,DAEUtil.varType);
         crefs = List.map1(names,ComponentReference.appendStringCref,cref);
-        crefs = setTypesForScalarCrefs(crefs,types,{});
+        crefs = setTypesForScalarCrefs(crefs,types);
         crefLst = List.map1(crefs,ComponentReference.expandCref,true);
         crefs = List.flatten(crefLst);
-        crefs = listReverse(crefs);
       then
         crefs;
     case(DAE.VAR(componentRef=cref,ty=DAE.T_REAL(varLst=_, source=_), dims=dims ))
@@ -2302,86 +2301,39 @@ algorithm
     local
       list<Integer> dimints;
       list<DAE.Dimension> dims;
-    case(DAE.VAR(componentRef = _,ty=DAE.T_COMPLEX(varLst = _)))
-      then
-        false;
-    case(DAE.VAR(componentRef=_,ty=DAE.T_REAL(varLst=_, source=_), dims=dims ))
+
+    case (DAE.VAR(ty=DAE.T_COMPLEX(_))) then false;
+
+    case (DAE.VAR(ty=DAE.T_REAL(_), dims=dims))
       equation
         dimints = List.map(dims, Expression.dimensionSize);
-        true = intNe(List.first(dimints),0);
+        true = List.first(dimints) <> 0;
       then
         false;
-    case(DAE.VAR(componentRef=_,ty=DAE.T_ARRAY(ty=_, dims=_, source=_), dims=dims ))
-      equation
-      then
-        false;
-    else
-      equation
-      then
-       true;
+
+    case (DAE.VAR(ty=DAE.T_ARRAY(_))) then false;
+    else true;
   end matchcontinue;
 end isNotComplexVar;
 
 protected function setTypesForScalarCrefs
   input list<DAE.ComponentRef> allCrefs;
   input list<DAE.Type> types;
-  input list<DAE.ComponentRef> crefsIn;
   output list<DAE.ComponentRef> crefsOut;
 algorithm
-  crefsOut := match(allCrefs,types,crefsIn)
-    local
-      Integer idx;
-      DAE.ComponentRef cr1,cr2;
-      DAE.Ident id;
-      DAE.Type t1,t2;
-      list<DAE.ComponentRef> crest,crs;
-      list<DAE.Subscript> sl;
-      list<DAE.Type> trest;
-  case({},{},_)
-    equation
-      then crefsIn;
-  case(DAE.CREF_QUAL(ident=_,identType=_,subscriptLst=_,componentRef=_)::crest, t1::trest, _)
-    equation
-      cr1 = List.first(allCrefs);
-      cr1 = ComponentReference.crefSetLastType(cr1,t1);
-      crs = setTypesForScalarCrefs(crest,trest,cr1::crefsIn);
-    then
-      crs;
-  case(DAE.CREF_IDENT(ident=id,identType=_,subscriptLst=sl)::crest, t1::trest, _)
-    equation
-      cr1 = List.first(allCrefs);
-      cr1 = DAE.CREF_IDENT(id,t1,sl);
-      crs = setTypesForScalarCrefs(crest,trest,cr1::crefsIn);
-    then
-      crs;
-  case(DAE.CREF_ITER(ident=id,index=idx,identType=_,subscriptLst=sl)::crest, t1::trest, _)
-    equation
-      cr1 = List.first(allCrefs);
-      cr1 = DAE.CREF_ITER(id,idx,t1,sl);
-      crs = setTypesForScalarCrefs(crest,trest,cr1::crefsIn);
-    then
-      crs;
-  else
-    then
-      fail();
-  end match;
+  crefsOut := list(ComponentReference.crefSetLastType(cr, ty)
+    threaded for cr in allCrefs, ty in types);
 end setTypesForScalarCrefs;
 
 public function getRecordScalars"gets all crefs from a record"
   input DAE.ComponentRef crefIn;
   output list<DAE.ComponentRef> crefsOut;
 algorithm
-  crefsOut := matchcontinue(crefIn)
-    local
-  case(_)
-    equation
-      crefsOut = ComponentReference.expandCref(crefIn,true);
-    then
-      crefsOut;
+  try
+    crefsOut := ComponentReference.expandCref(crefIn, true);
   else
-    then
-      {};
-  end matchcontinue;
+    crefsOut := {};
+  end try;
 end getRecordScalars;
 
 protected function getScalarExpSize "gets the number of scalars of an expression.
@@ -2393,51 +2345,48 @@ algorithm
     local
       Boolean b;
       DAE.ComponentRef cref;
-      list<Integer> sizes;
-      list<DAE.ComponentRef> crefs;
       list<DAE.Exp> exps;
       list<DAE.Var> vl;
       list<DAE.Type> tyl;
-      list<list<DAE.Var>> vlLst;
-      DAE.Type ty;
-    case(DAE.TUPLE(exps))
-      equation
-        // tuple
-        exps = List.filterOnTrue(exps,Expression.isNotWild);
-        sizes = List.map(exps,getScalarExpSize);//check if the expressions are records or something
-        size = List.fold(sizes,intAdd,0);
-        size = intMax(size,listLength(exps));
-        then
-          size;
-    case(DAE.CREF(componentRef=_,ty=DAE.T_COMPLEX(varLst=vl)))
-      equation
-        // record cref
-        sizes = List.map(vl,getScalarVarSize);
-        size = List.fold(sizes,intAdd,0);
-        then
-          size;
-    case(DAE.CREF(componentRef=cref,ty=_))
-      equation
-        // array cref
-        b = ComponentReference.isArrayElement(cref);
-        crefs = if b then ComponentReference.expandCref(cref,true) else {cref};
-        size = listLength(crefs);
-        then
-          size;
-    case(DAE.CALL(path=_,expLst=_,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=vl),tuple_=_,builtin=_,isImpure=_,inlineType=_,tailCall=_)))
-      equation
-        sizes = List.map(vl,getScalarVarSize);
-        size = List.fold(sizes,intAdd,0);
-        then size;
-    case(DAE.CALL(path=_,expLst=exps,attr=DAE.CALL_ATTR(ty=DAE.T_TUPLE(tupleType=tyl,source=_),tuple_=_,builtin=_,isImpure=_,inlineType=_,tailCall=_)))
-      equation
-        vlLst = List.map(tyl,getVarLstFromType);
-        vl = List.flatten(vlLst);
-        sizes = List.map(vl,getScalarVarSize);
-        size = List.fold(sizes,intAdd,0);
-        then size;
-    else
-      then 0;
+      Integer exps_len;
+
+    // tuple
+    case DAE.TUPLE(exps as _ :: _)
+      algorithm
+        exps_len := intAdd(1 for exp guard(Expression.isNotWild(exp)) in exps);
+        size := intAdd(getScalarExpSize(exp) for exp in exps);
+      then
+        max(size, exps_len);
+
+    // record cref
+    case DAE.CREF(ty = DAE.T_COMPLEX(varLst = vl as _ :: _))
+      then intAdd(getScalarVarSize(v) for v in vl); 
+
+    // array cref
+    case DAE.CREF(componentRef = cref)
+      algorithm
+        size := if ComponentReference.isArrayElement(cref) then
+          listLength(ComponentReference.expandCref(cref, true)) else 1;
+      then
+        size;
+
+    case DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(varLst = vl as _ :: _)))
+      then intAdd(getScalarVarSize(v) for v in vl);
+
+    case DAE.CALL(expLst=exps, attr = DAE.CALL_ATTR(ty = DAE.T_TUPLE(tupleType = tyl as _ :: _)))
+      algorithm
+        size := 0;
+        for ty in tyl loop
+          vl := getVarLstFromType(ty);
+
+          if not listEmpty(vl) then
+            size := size + intAdd(getScalarVarSize(v) for v in vl);
+          end if;
+        end for;
+      then
+        size;
+
+    else 0;
   end match;
 end getScalarExpSize;
 
@@ -2449,25 +2398,14 @@ algorithm
   varsOut := match(tyIn)
     local
       list<DAE.Var> varLst;
-      list<list<DAE.Var>> varLst2;
       list<DAE.Type> tyLst;
-    case(DAE.T_TUPLE(tupleType=tyLst,source=_))
-      equation
-        varLst2 = List.map(tyLst,getVarLstFromType);
-        varLst = List.flatten(varLst2);
-        then
-          varLst;
-    case(DAE.T_COMPLEX(varLst = varLst))
-      equation
-        then
-          varLst;
-    case(DAE.T_SUBTYPE_BASIC(varLst = varLst))
-      equation
-        then
-          varLst;
-    else
-      then
-        {};
+
+    case DAE.T_TUPLE(tupleType = tyLst as _ :: _)
+      then listAppend(getVarLstFromType(ty) for ty in tyLst);
+
+    case DAE.T_COMPLEX(varLst = varLst) then varLst;
+    case DAE.T_SUBTYPE_BASIC(varLst = varLst) then varLst;
+    else {};
   end match;
 end getVarLstFromType;
 
@@ -2476,30 +2414,19 @@ author:Waurich TUD 2014-04"
   input DAE.Var inVar;
   output Integer size;
 algorithm
-  size := matchcontinue(inVar)
+  size := match(inVar)
     local
       DAE.Type ty;
-      list<Integer> sizes;
-      list<DAE.Exp> exps;
       list<DAE.Var> vl;
-    case(DAE.TYPES_VAR(name=_,attributes=_,ty=DAE.T_COMPLEX(complexClassType=_,varLst=vl,equalityConstraint=_,source=_),binding=_,constOfForIteratorRange=_))
-      equation
-        sizes = List.map(vl,getScalarVarSize);
-        size = List.fold(sizes,intAdd,0);
-        then
-          size;
-    case(DAE.TYPES_VAR(name=_,attributes=_,ty=DAE.T_ARRAY(ty=_,dims=_,source=_),binding=_,constOfForIteratorRange=_))
-      equation
-        ty = DAEUtil.VarType(inVar);
-        sizes = DAEUtil.expTypeArrayDimensions(ty);
-        size = List.fold(sizes,intAdd,0);
-        then
-          size;
-    else
-    equation
-      then
-        1;
-  end matchcontinue;
+
+    case DAE.TYPES_VAR(ty = DAE.T_COMPLEX(varLst = vl as _ :: _)) 
+      then intAdd(getScalarVarSize(v) for v in vl);
+
+    case DAE.TYPES_VAR(ty = ty as DAE.T_ARRAY(_))
+      then intMul(sz for sz in DAEUtil.expTypeArrayDimensions(ty));
+
+    else 1;
+  end match;
 end getScalarVarSize;
 
 
@@ -2921,51 +2848,30 @@ protected function convertTupleEquations "author:Waurich TUD 2014-04
   output BackendDAE.Equation eqOut;
   output list<BackendDAE.Equation> addEqsOut;
 algorithm
-  (eqOut, addEqsOut) := matchcontinue (eqIn, addEqsIn)
+  (eqOut, addEqsOut) := match(eqIn)
     local
-      BackendDAE.Equation eq;
       DAE.Exp lhsExp, rhsExp;
       list<DAE.Exp> lhs, rhs;
+      BackendDAE.Equation eq;
       list<BackendDAE.Equation> eqs;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=lhsExp, right=rhsExp), _) equation
-      DAE.TUPLE(lhs) = lhsExp;
-      DAE.TUPLE(rhs) = rhsExp;
-      eqs = makeBackendEquation(lhs, rhs, {});
-      eq::eqs = eqs;
-      eqs = listAppend(eqs, addEqsIn);
-    then (eq, eqs);
+    case BackendDAE.COMPLEX_EQUATION(left = DAE.TUPLE(lhs), right = DAE.TUPLE(rhs))
+      algorithm
+        eq :: eqs := list(makeBackendEquation(lh, rh) threaded for lh in lhs, rh in rhs);
+      then
+        (eq, listAppend(eqs, addEqsIn));
 
-    else
-    then (eqIn, addEqsIn);
-  end matchcontinue;
+    else (eqIn, addEqsIn);
+  end match;
 end convertTupleEquations;
 
 protected function makeBackendEquation "author:Waurich TUD 2014-04
-  builds backendEquations for the list of lhs-exps and rhs-exps"
-  input list<DAE.Exp> ls;
-  input list<DAE.Exp> rs;
-  input list<BackendDAE.Equation> eqLstIn;
-  output list<BackendDAE.Equation> eqLstOut;
+  builds a backendEquation for the lhs-exp and rhs-exp"
+  input DAE.Exp ls;
+  input DAE.Exp rs;
+  output BackendDAE.Equation eq;
 algorithm
-  eqLstOut := match(ls, rs, eqLstIn)
-    local
-      list<DAE.Exp> lrest;
-      list<DAE.Exp> rrest;
-      BackendDAE.Equation eq;
-      list<BackendDAE.Equation> eqLst;
-      DAE.Exp l;
-      DAE.Exp r;
-
-    case ({}, {}, _)
-    then eqLstIn;
-
-    case (l::lrest, r::rrest, _) equation
-      eq = BackendDAE.EQUATION(r, l, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-      eqLst = eq::eqLstIn;
-      eqLst = makeBackendEquation(lrest, rrest, eqLst);
-    then eqLst;
-  end match;
+  eq := BackendDAE.EQUATION(rs, ls, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
 end makeBackendEquation;
 
 annotation(__OpenModelica_Interface="backend");
