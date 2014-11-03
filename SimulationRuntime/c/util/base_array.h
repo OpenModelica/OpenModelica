@@ -71,9 +71,21 @@ void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* des
 int ndims_base_array(const base_array_t* a);
 static OMC_INLINE int size_of_dimension_base_array(const base_array_t a, int i)
 {
-    /* assert(base_array_ok(&a)); */
-    assert((i > 0) && (i <= a.ndims));
+  /* assert(base_array_ok(&a)); */
+  if ((i > 0) && (i <= a.ndims)) {
     return a.dim_size[i-1];
+  }
+  /* This is a weird work-around to return 0 if the dimension is out of bounds and a dimension is 0
+   * The reason is that we lose the dimensions in the DAE.ARRAY after a 0-dimension
+   * Note: We return size(arr,2)=0 if arr has dimensions [0,2], and not the expected 2
+   */
+  for (i=0; i<a.ndims; i++) {
+    if (a.dim_size[i] == 0) {
+      return 0;
+    }
+  }
+  fprintf(stderr, "size_of_dimension_base_array failed for i=%d, ndims=%d (ndims out of bounds)\n", i, a.ndims);
+  abort();
 }
 
 /* Helper functions */
