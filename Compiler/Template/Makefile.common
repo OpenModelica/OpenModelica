@@ -1,6 +1,8 @@
 .PHONY : all
 
-all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo
+GENERATED_FILES=AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo CodegenModelica.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenSparseFMI.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo TplCodegen.mo TaskSystemDump.mo
+
+all : $(GENERATED_FILES)
 
 AbsynDumpTpl.mo : AbsynDumpTpl.tpl AbsynDumpTV.mo
 	@echo " ** AbsynDumpTpl template compilation ** "
@@ -121,9 +123,11 @@ TplCodegen.mo : ../susan_codegen/TplCodegen.tpl ../susan_codegen/TplCodegenTV.mo
 	@echo " ** TplCodegen generation ** "
 	(cd ../susan_codegen && $(OMC) +d=failtrace TplCodegen.tpl) > $@.log || (cat $@.log && false)
 	cp -a ../susan_codegen/TplCodegen.mo $@
-    
+
 TaskSystemDump.mo : TaskSystemDump.tpl SimCodeTV.mo CodegenUtil.tpl SCodeDumpTpl.tpl
 	@echo " ** TaskSystemDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " " 
-    
+	@echo " "
+
+clean:
+	rm -f $(GENERATED_FILES)
