@@ -2332,7 +2332,7 @@ algorithm
       BackendDAE.SymbolicJacobian sJac;
       BackendDAE.SparsePattern sparsePattern;
       BackendDAE.SparseColoring coloring;
-      String s;      
+      String s;
   case(BackendDAE.FULL_JACOBIAN(jacobian=fJac))
     equation
       s = "FULL JACOBIAN:\n";
@@ -2348,7 +2348,7 @@ algorithm
     equation
       s = "EMPTY JACOBIAN:\n";
     then s;
-  end match;  
+  end match;
 end jacobianString;
 
 public function dumpEqnsStr

@@ -362,7 +362,7 @@ algorithm
 
    tVarsOut := tvars;
    resEqsOut := hs;
-   
+
    //-----------------------------
    // all optimization
    //-----------------------------
@@ -447,7 +447,7 @@ algorithm
       list<BackendDAE.Var> varLst;
   case(_,_,_,_,_,_)
     algorithm
-       (eqIdcs,varIdcs,resEqLst) := tplIn;     
+       (eqIdcs,varIdcs,resEqLst) := tplIn;
        // a variable is directly assignable and therefore will be removed
        {varIdx} := arrayGet(m,eqIdx);
        var := BackendVariable.getVarAt(varArr,varIdx);
@@ -1004,7 +1004,7 @@ algorithm
         rhs = listGet(arrayGet(h_iArr,iIdx+1),resIdx);
         (rhs,_) = ExpressionSimplify.simplify(rhs);
         hs_ii = BackendDAE.EQUATION(lhs,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
- 
+
         // update th a_iArr and the hs_iArr
         hs_iTmp = arrayGet(hs_iArrIn,iIdx+1);
         hs_iTmp = hs_ii::hs_iTmp;
