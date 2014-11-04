@@ -239,7 +239,7 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
       /* this criteria should be evaluated and may be improved in future */
       if (fabs(A[indRow[i] + n*n])>1e-12) {
         warningStreamPrint(LOG_LS, 0, "under-determined linear system not solvable!");
-        return -1; 
+        return -1;
       } else {
         x[indCol[i]] = 0.0;
       }
@@ -253,7 +253,7 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
   }
   x[n]=1.0;
   debugVectorDoubleLS(LOG_LS_V,"LGS: solution vector x",x, n+1);
-  
+
   return 0;
 }
 
