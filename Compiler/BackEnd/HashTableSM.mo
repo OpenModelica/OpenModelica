@@ -70,20 +70,23 @@ protected
   String name;
   Boolean isInitial;
   HashSet.HashSet edges;
-  BackendDAE.EquationArray eqs;
+  BackendDAE.EquationArray eqs, outgoing;
   list<DAE.ComponentRef> crefs;
-  list<BackendDAE.Equation> eqsList;
+  list<BackendDAE.Equation> eqsList, outgoingList;
   list<String> paths;
-  list<String> eqsDump;
+  list<String> eqsDump, outgoingDump;
 algorithm
-  StateMachineFeatures.MODE(name=name, isInitial=isInitial, edges=edges, eqs=eqs) := mode;
+  StateMachineFeatures.MODE(name=name, isInitial=isInitial, edges=edges, eqs=eqs, outgoing=outgoing) := mode;
   crefs := BaseHashSet.hashSetList(edges);
   paths := List.map(crefs, ComponentReference.printComponentRefStr);
   eqsList := BackendEquation.equationList(eqs);
+  outgoingList := BackendEquation.equationList(outgoing);
   eqsDump := List.map(eqsList, BackendDump.equationString);
+  outgoingDump := List.map(outgoingList, BackendDump.equationString);
   s := "MODE(" + stringDelimitList({name,boolString(isInitial)}, ",") + "), "
      + "EDGES(" + stringDelimitList(paths, ", ") +"), "
-     + "Equations( "+ stringDelimitList(eqsDump, ";\n\t") +")";
+     + "Equations( "+ stringDelimitList(eqsDump, ";\n\t") +"), "
+     + "OutgoingTransitions( "+ stringDelimitList(outgoingDump, ";\n\t") +")\n";
 end modeToString;
 
 annotation(__OpenModelica_Interface="backend");
