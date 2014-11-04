@@ -40,6 +40,26 @@
 #include "linearSolverTotalPivot.h"
 #include "simulation_info_xml.h"
 
+const char *LS_NAME[LS_MAX+1] = {
+  "LS_UNKNOWN",
+
+  /* LS_LAPACK */       "lapack",
+  /* LS_LIS */          "lis",
+  /* LS_TOTALPIVOT */   "totalpivot",
+
+  "LS_MAX"
+};
+
+const char *LS_DESC[LS_MAX+1] = {
+  "unknown",
+
+  /* LS_LAPACK */       "method using lapack LU factorization",
+  /* LS_LIS */          "Lis",
+  /* LS_TOTALPIVOT */   "default method - using total pivoting LU factorization",
+
+  "LS_MAX"
+};
+
 /*! \fn int initializeLinearSystems(DATA *data)
  *
  *  This function allocates memory for all linear systems.
@@ -101,7 +121,8 @@ int initializeLinearSystems(DATA *data)
     case LS_TOTALPIVOT:
       linsys[i].A = (double*) malloc(size*size*sizeof(double));
       linsys[i].setAElement = setAElementTotalPivot;
-      allocateTotalPivotData(size, &linsys[i].solverData);
+      linsys[i].solverData = (DATA_TOTALPIVOT*) malloc(sizeof(DATA_TOTALPIVOT));
+      allocateTotalPivotData(size, linsys[i].solverData);
       break;
     default:
       throwStreamPrint(data->threadData, "unrecognized linear solver");
@@ -169,7 +190,7 @@ int freeLinearSystems(DATA *data)
       break;
 
     case LS_TOTALPIVOT:
-      freeTotalPivotData(&linsys[i].solverData);
+      freeTotalPivotData(linsys[i].solverData);
       free(linsys[i].A);
       break;
 

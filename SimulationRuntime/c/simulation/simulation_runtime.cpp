@@ -267,27 +267,23 @@ int getNonlinearSolverMethod(int argc, char**argv)
 
 int getlinearSolverMethod(int argc, char**argv)
 {
+  int i;
   const char *cflags = omc_flagValue[FLAG_LS];
   const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
     return LS_TOTALPIVOT; /* default method */
 
-  if(*method == string("lapack"))
-    return LS_LAPACK;
+  for(i=1; i<LS_MAX; ++i)
+    if(*method == LS_NAME[i])
+      return i;
 
-  if(*method == string("totalpivot"))
-    return LS_TOTALPIVOT;
-
-  if(*method == string("lis"))
-    return LS_LIS;
-
-  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -ls %s, current options are:", method->c_str());
-  warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lapack", "method using lapack LU factorization");
-  warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "totalpivot", "default method - using total pivoting LU factorization");
-  warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lis", "Lis");
+  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -ls=%s, current options are:", method->c_str());
+  for(i=1; i<LS_MAX; ++i)
+    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LS_NAME[i], LS_DESC[i]);
   messageClose(LOG_STDOUT);
   throwStreamPrint(NULL,"see last warning");
+
   return LS_NONE;
 }
 

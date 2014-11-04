@@ -48,22 +48,28 @@ extern "C" {
 enum LINEAR_SOLVER
 {
   LS_NONE = 0,
+
   LS_LAPACK,
   LS_LIS,
   LS_TOTALPIVOT,
+
   LS_MAX
 };
+
+extern const char *LS_NAME[LS_MAX+1];
+extern const char *LS_DESC[LS_MAX+1];
 
 typedef void* LS_SOLVER_DATA;
 
 int initializeLinearSystems(DATA *data);
-int updateStaticDataOfLinearSystems(DATA *data);int freeLinearSystems(DATA *data);
+int updateStaticDataOfLinearSystems(DATA *data);
+int freeLinearSystems(DATA *data);
 int solve_linear_system(DATA *data, int sysNumber);
 int check_linear_solutions(DATA *data, int printFailingSystems);
 
-void setAElementLAPACK(int row, int col, double value, int nth, void *data );
-void setAElementLis(int row, int col, double value, int nth, void *data );
-void setAElementTotalPivot(int row, int col, double value, int nth, void *data );
+void setAElementLAPACK(int row, int col, double value, int nth, void *data);
+void setAElementLis(int row, int col, double value, int nth, void *data);
+void setAElementTotalPivot(int row, int col, double value, int nth, void *data);
 
 #ifdef __cplusplus
 }

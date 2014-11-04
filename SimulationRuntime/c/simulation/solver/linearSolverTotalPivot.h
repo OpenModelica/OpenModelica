@@ -48,8 +48,21 @@
   }
 #endif
 
-int allocateTotalPivotData(int size, void **data);
-int freeTotalPivotData(void **data);
+typedef struct DATA_TOTALPIVOT
+{
+  /* memory for linear system */
+  double* Ab;
+  double* b;
+  double* x;
+
+  /* used for pivot strategy */
+  int* indRow;
+  int* indCol;
+
+} DATA_TOTALPIVOT;
+
+int allocateTotalPivotData(int size, DATA_TOTALPIVOT *data);
+int freeTotalPivotData(DATA_TOTALPIVOT *data);
 int solveTotalPivot(DATA *data, int sysNumber);
 
 #endif

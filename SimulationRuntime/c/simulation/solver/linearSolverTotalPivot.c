@@ -264,27 +264,12 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
   return 0;
 }
 
-typedef struct DATA_TOTALPIVOT
-{
-  /* memory for linear system */
-  double* Ab;
-  double* b;
-  double* x;
-
-  /* used for pivot strategy */
-  int* indRow;
-  int* indCol;
-
-} DATA_TOTALPIVOT;
-
 /*! \fn allocate memory for linear system solver totalpivot
  *
  *  \author bbachmann
  */
-int allocateTotalPivotData(int size, void** voiddata)
+int allocateTotalPivotData(int size, DATA_TOTALPIVOT *data)
 {
-  DATA_TOTALPIVOT* data = (DATA_TOTALPIVOT*) malloc(sizeof(DATA_TOTALPIVOT));
-
   /* memory for linear system */
   data->Ab = (double*) calloc((size*(size+1)),sizeof(double));
   data->b = (double*) malloc(size*sizeof(double));
@@ -294,7 +279,6 @@ int allocateTotalPivotData(int size, void** voiddata)
   data->indRow =(int*) calloc(size,sizeof(int));
   data->indCol =(int*) calloc(size+1,sizeof(int));
 
-  *voiddata = (void*)data;
   return 0;
 }
 
@@ -302,10 +286,8 @@ int allocateTotalPivotData(int size, void** voiddata)
  *
  *  \author bbachmann
  */
-int freeTotalPivotData(void **voiddata)
+int freeTotalPivotData(DATA_TOTALPIVOT *data)
 {
-  DATA_TOTALPIVOT* data = (DATA_TOTALPIVOT*) *voiddata;
-
   /* memory for linear system */
   free(data->Ab);
   free(data->b);
