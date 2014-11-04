@@ -122,6 +122,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   : QGraphicsView(parent), mViewType(viewType), mSkipBackground(false)
 {
   setFrameShape(QFrame::StyledPanel);
+  setDragMode(QGraphicsView::RubberBandDrag);
   setAcceptDrops(true);
   setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   setMouseTracking(true);
