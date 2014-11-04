@@ -156,13 +156,13 @@ void getIndicesOfPivotElementLS(int *n, int *m, int *l, double* A, int *indRow, 
 {
   int i, j;
 
-  *absMax = abs(A[indRow[*l] + indCol[*l]* *n]);
+  *absMax = fabs(A[indRow[*l] + indCol[*l]* *n]);
   *pCol = *l;
   *pRow = *l;
   for (i = *l; i < *n; i++) {
    for (j = *l; j < *m; j++) {
-      if (abs(A[indRow[i] + indCol[j]* *n]) > *absMax) {
-        *absMax = abs(A[indRow[i] + indCol[j]* *n]);
+      if (fabs(A[indRow[i] + indCol[j]* *n]) > *absMax) {
+        *absMax = fabs(A[indRow[i] + indCol[j]* *n]);
         *pCol = j;
         *pRow = i;
       }
@@ -201,9 +201,9 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
    }
 
    for (i = 0; i < n; i++) {
-    getIndicesOfPivotElementLS(&n, &m, &i, A, indRow, indCol, &pRow, &pCol, &absMax);
+    getIndicesOfPivotElementLS(&n, &n, &i, A, indRow, indCol, &pRow, &pCol, &absMax);
     /* this criteria should be evaluated and may be improved in future */
-    if (absMax<1e-12) {
+    if (absMax<DBL_EPSILON) {
       *rank = i;
       warningStreamPrint(LOG_LS, 0, "Matrix singular!");
       debugIntLS(LOG_LS,"rank = ", *rank);
@@ -232,35 +232,28 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
     }
   }
 
+  debugMatrixDoubleLS(LOG_LS_V,"LGS: matrix Ab manipulated",A, n, n+1);
   /* solve even singular matrix !!! */
   for (i=n-1;i>=0; i--) {
     if (i>=*rank) {
-      x[indCol[i]] = 0.0;
+      /* this criteria should be evaluated and may be improved in future */
+      if (fabs(A[indRow[i] + n*n])>1e-12) {
+        warningStreamPrint(LOG_LS, 0, "under-determined linear system not solvable!");
+        return -1; 
+      } else {
+        x[indCol[i]] = 0.0;
+      }
     } else {
-      x[indCol[i]] = -A[indRow[i] + indCol[m-1]*n];
+      x[indCol[i]] = -A[indRow[i] + n*n];
       for (j=n-1; j>i; j--) {
         x[indCol[i]] = x[indCol[i]] - A[indRow[i] + indCol[j]*n]*x[indCol[j]];
       }
       x[indCol[i]]=x[indCol[i]]/A[indRow[i] + indCol[i]*n];
     }
   }
-  x[indCol[m-1]]=1.0;
-
-  /* rescale vector for solution purposes */
-  /* this criteria should be evaluated and may be improved in future */
-  if (abs(x[n])<1e-12) {
-    warningStreamPrint(LOG_LS, 0, "under-determined linear system not solvable!");
-    return -1;
-  }
-  if (*rank<n)
-    warningStreamPrint(LOG_LS, 0, "under-determined linear system solvable!");
-  for (i=0; i<m; i++) {
-    if (i!=n){
-      x[i]=x[i]/x[n];
-    }
-  }
-  x[n] = 1.0;
-
+  x[n]=1.0;
+  debugVectorDoubleLS(LOG_LS_V,"LGS: solution vector x",x, n+1);
+  
   return 0;
 }
 
