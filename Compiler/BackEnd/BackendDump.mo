@@ -2320,6 +2320,37 @@ algorithm
   end match;
 end jacobianTypeStr;
 
+public function jacobianString"dumps a string representation of a jacobian.
+author: Waurich TUD 2014-10"
+  input BackendDAE.Jacobian jacIn;
+  output String sOut;
+algorithm
+  sOut := match(jacIn)
+    local
+      BackendDAE.BackendDAE dae;
+      BackendDAE.FullJacobian fJac;
+      BackendDAE.SymbolicJacobian sJac;
+      BackendDAE.SparsePattern sparsePattern;
+      BackendDAE.SparseColoring coloring;
+      String s;      
+  case(BackendDAE.FULL_JACOBIAN(jacobian=fJac))
+    equation
+      s = "FULL JACOBIAN:\n";
+      s = s + dumpJacobianStr(fJac);
+    then s;
+  case(BackendDAE.GENERIC_JACOBIAN(jacobian=sJac))
+    equation
+      ((dae,_,_,_,_)) = sJac;
+      s = "GENERIC JACOBIAN:\n";
+      dumpBackendDAE(dae,"Jacobian System");
+    then s;
+  case(BackendDAE.EMPTY_JACOBIAN())
+    equation
+      s = "EMPTY JACOBIAN:\n";
+    then s;
+  end match;  
+end jacobianString;
+
 public function dumpEqnsStr
 "Helper function to dump."
   input list<BackendDAE.Equation> eqns;

@@ -4669,5 +4669,15 @@ algorithm
   end matchcontinue;
 end isRecordVar;
 
+public function varExp
+  input BackendDAE.Var var;
+  output DAE.Exp exp;
+protected
+  DAE.ComponentRef cref;
+algorithm
+  BackendDAE.VAR(varName=cref) := var;
+  exp := Expression.crefExp(cref);
+end varExp;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendVariable;
