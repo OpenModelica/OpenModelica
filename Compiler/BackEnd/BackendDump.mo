@@ -288,8 +288,8 @@ algorithm
   dumpVariables(aliasVars, "AliasVariables");
   dumpEquationArray(removedEqs, "Simple Equations");
   dumpEquationArray(initialEqs, "Initial Equations");
-  dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings (number of relations: " + intString(relationsNumber) + ")");
-  dumpZeroCrossingList(relationsLst, "Relations (number of relations: " + intString(relationsNumber) + ")");
+  dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings");
+  dumpZeroCrossingList(relationsLst, "Relations");
   dumpZeroCrossingList(sampleLst, "Samples");
   dumpWhenClauseList(whenClauseLst, "When Clauses");
   dumpConstraintList(constraints, "Constraints");
@@ -515,7 +515,6 @@ end setIncidenceMatrix1;
 //   - dumpEqnsSolved
 //   - dumpEqSystem
 //   - dumpEqSystems
-//   - dumpEquation
 //   - dumpEquationArray
 //   - dumpEquationList
 //   - dumpHashSet
@@ -619,29 +618,29 @@ algorithm
   print("\n");
 end dumpStateSets;
 
-public function dumpZeroCrossingList "function dumpZeroCrossingList"
+public function dumpZeroCrossingList
   input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
   input String heading;
 algorithm
-  print("\n" + heading + "\n" + UNDERLINE + "\n");
+  print("\n" + heading + " (" + intString(listLength(inZeroCrossingList)) + ")\n" + UNDERLINE + "\n");
   print(zeroCrossingListString(inZeroCrossingList));
   print("\n");
 end dumpZeroCrossingList;
 
-protected function dumpWhenClauseList "function dumpWhenClauseList"
+protected function dumpWhenClauseList
   input list<BackendDAE.WhenClause> inWhenClauseList;
   input String heading;
 algorithm
-  print("\n" + heading + "\n" + UNDERLINE + "\n");
+  print("\n" + heading + " (" + intString(listLength(inWhenClauseList)) + ")\n" + UNDERLINE + "\n");
   print(whenClauseListString(inWhenClauseList));
   print("\n");
 end dumpWhenClauseList;
 
-protected function dumpConstraintList "function dumpConstraintArray"
+protected function dumpConstraintList
   input list<DAE.Constraint> inConstraintArray;
   input String heading;
 algorithm
-  print("\n" + heading + "\n" + UNDERLINE + "\n");
+  print("\n" + heading + " (" + intString(listLength(inConstraintArray)) + ")\n" + UNDERLINE + "\n");
   dumpConstraints(inConstraintArray, 0);
   print("\n");
 end dumpConstraintList;
@@ -677,37 +676,8 @@ algorithm
   printSparsityPattern(pattern);
 end dumpSparsityPattern;
 
-public function dumpEquation "author: Frenkel TUD"
-  input BackendDAE.Equation inEquation;
-algorithm
-  _:=
-  match (inEquation)
-    local
-      String s1,s2,res;
-      DAE.Exp e1,e2;
-      DAE.ComponentRef cr;
-      BackendDAE.WhenEquation w;
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2))
-      equation
-        ExpressionDump.dumpExp(e1);
-        print("=\n");
-        ExpressionDump.dumpExp(e2);
-      then
-        ();
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e1))
-      equation
-        ExpressionDump.dumpExp(e1);
-        print("\n");
-      then
-        ();
-    case (_)
-      then
-        ();
-  end match;
-end dumpEquation;
-
-public function dumpTearing
-"  author: Frenkel TUD
+public function dumpTearing "
+  author: Frenkel TUD
   Dump tearing vars and residual equations."
   input list<list<Integer>> inResEqn;
   input list<list<Integer>> inTearVar;
@@ -743,9 +713,9 @@ public function dumpBackendDAEEqnList
   input String header;
   input Boolean printExpTree;
 algorithm
-   print(header + "\n");
-   dumpBackendDAEEqnList2(inBackendDAEEqnList,printExpTree);
-   print("===================\n");
+  print(header + "\n");
+  dumpBackendDAEEqnList2(inBackendDAEEqnList,printExpTree);
+  print("===================\n");
 end dumpBackendDAEEqnList;
 
 protected function dumpBackendDAEEqnList2
