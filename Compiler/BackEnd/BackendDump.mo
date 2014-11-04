@@ -288,8 +288,8 @@ algorithm
   dumpVariables(aliasVars, "AliasVariables");
   dumpEquationArray(removedEqs, "Simple Equations");
   dumpEquationArray(initialEqs, "Initial Equations");
-  dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings");
-  dumpZeroCrossingList(relationsLst, "Relations");
+  dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings (number of relations: " + intString(relationsNumber) + ")");
+  dumpZeroCrossingList(relationsLst, "Relations (number of relations: " + intString(relationsNumber) + ")");
   dumpZeroCrossingList(sampleLst, "Samples");
   dumpWhenClauseList(whenClauseLst, "When Clauses");
   dumpConstraintList(constraints, "Constraints");
@@ -619,29 +619,29 @@ algorithm
   print("\n");
 end dumpStateSets;
 
-public function dumpZeroCrossingList
+public function dumpZeroCrossingList "function dumpZeroCrossingList"
   input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(inZeroCrossingList)) + ")\n" + UNDERLINE + "\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
   print(zeroCrossingListString(inZeroCrossingList));
   print("\n");
 end dumpZeroCrossingList;
 
-protected function dumpWhenClauseList
+protected function dumpWhenClauseList "function dumpWhenClauseList"
   input list<BackendDAE.WhenClause> inWhenClauseList;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(inWhenClauseList)) + ")\n" + UNDERLINE + "\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
   print(whenClauseListString(inWhenClauseList));
   print("\n");
 end dumpWhenClauseList;
 
-protected function dumpConstraintList
+protected function dumpConstraintList "function dumpConstraintArray"
   input list<DAE.Constraint> inConstraintArray;
   input String heading;
 algorithm
-  print("\n" + heading + " (" + intString(listLength(inConstraintArray)) + ")\n" + UNDERLINE + "\n");
+  print("\n" + heading + "\n" + UNDERLINE + "\n");
   dumpConstraints(inConstraintArray, 0);
   print("\n");
 end dumpConstraintList;
