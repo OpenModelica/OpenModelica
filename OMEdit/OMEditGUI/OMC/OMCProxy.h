@@ -160,7 +160,7 @@ public:
   QString changeDirectory(QString directory = QString());
   bool loadModel(QString library, QString version = QString("default"));
   bool loadFile(QString fileName, QString encoding = Helper::utf8);
-  bool loadString(QString value);
+  bool loadString(QString value, bool checkError = true);
   bool parseFile(QString fileName, QString encoding = Helper::utf8);
   QStringList parseString(QString value);
   bool createClass(QString type, QString className, QString extendsClass);

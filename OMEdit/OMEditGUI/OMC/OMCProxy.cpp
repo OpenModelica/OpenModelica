@@ -1549,11 +1549,13 @@ bool OMCProxy::loadFile(QString fileName, QString encoding)
   \param value - the string to load.
   \return true on success
   */
-bool OMCProxy::loadString(QString value)
+bool OMCProxy::loadString(QString value, bool checkError)
 {
   sendCommand("loadString(\"" + value.replace("\"", "\\\"") + "\")");
   bool result = StringHandler::unparseBool(getResult());
-  printMessagesStringInternal();
+  if (checkError) {
+    printMessagesStringInternal();
+  }
   return result;
 }
 
@@ -1597,14 +1599,13 @@ QStringList OMCProxy::parseString(QString value)
   */
 bool OMCProxy::createClass(QString type, QString className, QString extendsClass)
 {
-  if (extendsClass.isEmpty())
-    sendCommand(type + " " + className + " end " + className + ";");
-  else
-    sendCommand(type + " " + className + " extends " + extendsClass + "; end " + className + ";");
-  if (getResult().toLower().contains("error"))
-    return false;
-  else
-    return true;
+  QString expression;
+  if (extendsClass.isEmpty()) {
+    expression = type + " " + className + " end " + className + ";";
+  } else {
+    expression = type + " " + className + " extends " + extendsClass + "; end " + className + ";";
+  }
+  return loadString(StringHandler::escapeString(expression), false);
 }
 
 /*!
@@ -1616,14 +1617,13 @@ bool OMCProxy::createClass(QString type, QString className, QString extendsClass
   */
 bool OMCProxy::createSubClass(QString type, QString className, QString parentClassName, QString extendsClass)
 {
-  if (extendsClass.isEmpty())
-    sendCommand("within " + parentClassName + "; " + type + " " + className + " end " + className + ";");
-  else
-    sendCommand("within " + parentClassName + "; " + type + " " + className + " extends " + extendsClass + "; end " + className + ";");
-  if (getResult().toLower().contains("error"))
-    return false;
-  else
-    return true;
+  QString expression;
+  if (extendsClass.isEmpty()) {
+    expression = "within " + parentClassName + "; " + type + " " + className + " end " + className + ";";
+  } else {
+    expression = "within " + parentClassName + "; " + type + " " + className + " extends " + extendsClass + "; end " + className + ";";
+  }
+  return loadString(StringHandler::escapeString(expression), false);
 }
 
 /*!
