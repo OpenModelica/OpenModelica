@@ -550,7 +550,10 @@ end appendToElement;
 
 public function copy<T>
   "Copies all values from inArraySrc to inArrayDest. Fails if inArraySrc is
-   larger than inArrayDest."
+   larger than inArrayDest.
+
+   NOTE: There's also a builtin arrayCopy operator that should be used if the
+         purpose is only to duplicate an array."
   input array<T> inArraySrc;
   input array<T> inArrayDest;
   output array<T> outArray := inArrayDest;

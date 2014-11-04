@@ -589,10 +589,8 @@ algorithm
     case (BackendDAE.NO_MATCHING()) then BackendDAE.NO_MATCHING();
     case (BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps))
       equation
-        cass1 = arrayCreate(arrayLength(ass1),0);
-        _ = Array.copy(ass1, cass1);
-        cass2 = arrayCreate(arrayLength(ass2),0);
-        _ = Array.copy(ass2, cass2);
+        cass1 = arrayCopy(ass1);
+        cass2 = arrayCopy(ass2);
       then BackendDAE.MATCHING(cass1,cass2,comps);
   end match;
 end copyMatching;
@@ -3730,8 +3728,7 @@ algorithm
     case (NONE()) then NONE();
     case (SOME(m))
       equation
-        m1 = arrayCreate(arrayLength(m),{});
-        m1 = Array.copy(m, m1);
+        m1 = arrayCopy(m);
       then SOME(m1);
    end match;
 end copyIncidenceMatrix;

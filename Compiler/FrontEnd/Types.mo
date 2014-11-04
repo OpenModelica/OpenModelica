@@ -787,7 +787,7 @@ public function isString "Return true if Type is the builtin String type."
   output Boolean outBoolean;
 algorithm
   outBoolean := match(inType)
-    case (DAE.T_STRING(varLst = _)) then true;
+    case (DAE.T_STRING()) then true;
     else false;
   end match;
 end isString;
@@ -797,7 +797,7 @@ public function isEnumeration "Return true if Type is the builtin String type."
   output Boolean outBoolean;
 algorithm
   outBoolean := match(inType)
-    case (DAE.T_ENUMERATION(index = _)) then true;
+    case (DAE.T_ENUMERATION()) then true;
     else false;
   end match;
 end isEnumeration;

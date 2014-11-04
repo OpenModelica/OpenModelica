@@ -838,14 +838,14 @@ protected function omcTearing2 " function to determine tvars and do cheap matchi
   output list<Integer> outTVars;
   output Integer oMark;
 algorithm
-  (outTVars,oMark) := matchcontinue(unsolvables,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
+  (outTVars,oMark) := matchcontinue(unsolvables,tSel_always)
     local
       Integer tvar;
       array<Integer> ass1_;
       list<Integer> unassigned,rest,ass1List, unsolv;
       BackendDAE.AdjacencyMatrixElementEnhanced vareqns;
     // if there are no unsolvables choose tvar by heuristic
-    case ({},{},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case ({},{})
       equation
         // select tearing var
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -872,7 +872,7 @@ algorithm
       then
         (outTVars,oMark);
     // if there are unsolvables choose unsolvables as tvars
-    case (tvar::rest,{},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (tvar::rest,{})
       equation
         if listMember(tvar,tSel_never) then
           Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
@@ -899,15 +899,14 @@ algorithm
         (outTVars,oMark) = omcTearing3(unassigned,rest,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
         (outTVars,oMark);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_)
       equation
         if Flags.isSet(Flags.TEARING_DUMP) then
           print("\nForced selection of Tearing Variables:\n" + UNDERLINE + "\n");
           print("Variables with annotation attribute 'always' as tVars: " + stringDelimitList(List.map(tSel_always,intString),",")+"\n");
         end if;
         // mark tearing var
-        ass1List = markTVars(tSel_always,arrayList(ass1));
-        ass1_ = Array.copy(listArray(ass1List),ass1);
+        markTVars(tSel_always,ass1);
         (_,unsolv,_) = List.intersection1OnTrue(unsolvables,tSel_always,intEq);
         // equations not yet assigned containing the tvars
         vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always,{});
@@ -917,10 +916,10 @@ algorithm
           print("\n");
         end if;
         // cheap matching
-        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1_,ass2,{});
+        tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
         // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1_,{});
-        (outTVars,oMark) = omcTearing3(unassigned,unsolv,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1_,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
+        unassigned = Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) = omcTearing3(unassigned,unsolv,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
       then
         (outTVars,oMark);
     else
@@ -1941,6 +1940,8 @@ algorithm
     BackendDAE.IncidenceMatrix m;
     BackendDAE.IncidenceMatrixT mt;
     Boolean causal;
+    array<Integer> assa1;
+
   case(true,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
     equation
      then
@@ -2003,7 +2004,8 @@ algorithm
         print("Variables with annotation attribute 'always' as tVars: "+ stringDelimitList(List.map(tSel_always,intString),",")+"\n");
       end if;
       // mark tvars in ass1
-      ass1 = markTVars(tvars,ass1In);
+      assa1 = markTVars(tvars, listArray(ass1In));
+      ass1 = arrayList(assa1);
       // remove tearing var from incidence matrix and transposed inc matrix
       m = updateIncidence2(mIn,tvars,1);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -3264,25 +3266,21 @@ algorithm
    end match;
 end getpossibleEqn;
 
-
 protected function markTVars
 " marks several tVars in ass1
   author: ptaeuber FHB 2013-10"
-  input list<Integer> tVars, ass1In;
-  output list<Integer> ass1Out;
+  input list<Integer> tVars;
+  input array<Integer> ass1In;
+  output array<Integer> ass1Out := ass1In;
+protected
+  Integer len;
 algorithm
- ass1Out := match(tVars,ass1In)
-  local
-    Integer tVar;
-  list<Integer> rest,ass1;
-  case({},_) then ass1In;
-  case(tVar::rest,_)
-   equation
-     ass1 = List.set(ass1In,tVar,listLength(ass1In)*2);
-  then markTVars(rest,ass1);
- end match;
-end markTVars;
+  len := arrayLength(ass1In);
 
+  for i in tVars loop
+    arrayUpdate(ass1Out, i, len * 2);
+  end for;
+end markTVars;
 
 protected function countMultiples "counts multiple entries in array<list<Integer row(list)-wise.
 counter gives the maximum amount of same entries and value gives the corresponding entry.

@@ -190,8 +190,7 @@ protected
   array<Option<BackendDAE.Equation>> equOptArr, newEquOptArr;
 algorithm
   BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr) := inEquationArray;
-  newEquOptArr := arrayCreate(arrSize, NONE());
-  newEquOptArr := Array.copy(equOptArr, newEquOptArr);
+  newEquOptArr := arrayCopy(equOptArr);
   outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, newEquOptArr);
 end copyEquationArray;
 
@@ -2058,7 +2057,7 @@ public function generateResidualFromRelation "author: vitalij"
   output list<BackendDAE.Equation> outEqn;
   output BackendDAE.Var vout;
 algorithm
-  (outEqn, vout) :=  match (conCrefName, iRhs, Source, inVars, knvars, conKind)
+  (outEqn, vout) :=  match (conCrefName, iRhs)
     local
       DAE.Exp rhs, e1, e2 , expNull, lowBound;
       DAE.ComponentRef lhs, cr;
@@ -2066,7 +2065,7 @@ algorithm
       BackendDAE.Variables mergeVars;
       BackendDAE.Equation eqn;
 
-    case (_, DAE.RELATION(e1, DAE.LESS(_), e2, _, _), _,_,_,_) equation
+    case (_, DAE.RELATION(e1, DAE.LESS(_), e2, _, _)) equation
       lhs = ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       rhs = Expression.expSub(e1,e2);
@@ -2076,7 +2075,7 @@ algorithm
       dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.LESSEQ(_), e2, _, _), _,_,_,_) equation
+    case (_, DAE.RELATION(e1, DAE.LESSEQ(_), e2, _, _)) equation
       lhs = ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       rhs = Expression.expSub(e1,e2);
@@ -2086,7 +2085,7 @@ algorithm
       dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.GREATER(_), e2, _, _), _,_,_,_) equation
+    case (_, DAE.RELATION(e1, DAE.GREATER(_), e2, _, _)) equation
       lhs = ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       rhs =  Expression.expSub(e2,e1);
@@ -2096,7 +2095,7 @@ algorithm
       dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.GREATEREQ(_), e2, _, _), _,_,_,_) equation
+    case (_, DAE.RELATION(e1, DAE.GREATEREQ(_), e2, _, _)) equation
       lhs = ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       rhs =  Expression.expSub(e2,e1);
@@ -2106,7 +2105,7 @@ algorithm
       dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(lowBound), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case (_, DAE.RELATION(e1, DAE.EQUAL(_), e2, _, _), _,_,_,_) equation
+    case (_, DAE.RELATION(e1, DAE.EQUAL(_), e2, _, _)) equation
       lhs = ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
       dummyVar = BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       rhs =  Expression.expSub(e2,e1);
@@ -2115,7 +2114,7 @@ algorithm
       dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(expNull), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case(_,e1 as DAE.CREF(componentRef = cr),_,_,_,_) equation
+    case(_,e1 as DAE.CREF(componentRef = cr)) equation
       mergeVars =  BackendVariable.mergeVariables(inVars, knvars);
       ({v},_)= BackendVariable.getVar(cr,mergeVars);
       lhs = ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});

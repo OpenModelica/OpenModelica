@@ -2111,10 +2111,8 @@ protected
 algorithm
   BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars) := inVarArray;
   BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr) := varArr;
-  crefIdxLstArr1 := arrayCreate(bucketSize, {});
-  crefIdxLstArr1 := Array.copy(crefIdxLstArr, crefIdxLstArr1);
-  varOptArr1 := arrayCreate(size1, NONE());
-  varOptArr1 := Array.copy(varOptArr, varOptArr1);
+  crefIdxLstArr1 := arrayCopy(crefIdxLstArr);
+  varOptArr1 := arrayCopy(varOptArr);
   outVarArray := BackendDAE.VARIABLES(crefIdxLstArr1,BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
 end copyVariables;
 
@@ -2880,23 +2878,17 @@ public function existsVar
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.Variables inVariables;
   input Boolean skipDiscrete;
-  output Boolean outBoolean;
+  output Boolean outExists;
+protected
+  list<BackendDAE.Var> varlst;
 algorithm
-  outBoolean := matchcontinue(inComponentRef,inVariables,skipDiscrete)
-    local
-      list<BackendDAE.Var> varlst;
-    case (_,_,_)
-      equation
-        (varlst,_) = getVar(inComponentRef,inVariables);
-        varlst = if skipDiscrete then List.select(varlst, isVarNonDiscrete) else varlst;
-      then
-        List.isNotEmpty(varlst);
-    case (_,_,_)
-      equation
-        failure((_,_) = getVar(inComponentRef,inVariables));
-      then
-        false;
-  end matchcontinue;
+  try
+    varlst := getVar(inComponentRef, inVariables);
+    varlst := if skipDiscrete then List.select(varlst, isVarNonDiscrete) else varlst;
+    outExists := List.isNotEmpty(varlst);
+  else
+    outExists := false;
+  end try;
 end existsVar;
 
 public function addVarDAE
@@ -3063,51 +3055,28 @@ public function addVar
   input BackendDAE.Var inVar;
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
+protected
+  DAE.ComponentRef cr;
+  array<list<BackendDAE.CrefIndex>> hashvec;
+  BackendDAE.VariableArray varr;
+  Integer bsize, num_vars, idx;
+  list<BackendDAE.CrefIndex> indices;
 algorithm
-  outVariables := matchcontinue (inVar,inVariables)
-    local
-      Integer indx,newpos,n_1,bsize,n,indx_1;
-      BackendDAE.VariableArray varr_1,varr;
-      list<BackendDAE.CrefIndex> indexes;
-      array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
-      BackendDAE.Var v,newv;
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars;
-    /* adrpo: ignore records!
-    case ((v as BackendDAE.VAR(varName = cr,origVarName = name,flowPrefix = flowPrefix, varType = DAE.COMPLEX(_,_))),
-          (vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
-    then
-      vars;
-    */
-    case ((v as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = _)))
-      equation
-        failure((_,_) = getVar(cr, vars));
-        // print("adding when not existing previously\n");
-        indx = ComponentReference.hashComponentRefMod(cr, bsize);
-        indx_1 = indx + 1;
-        newpos = vararrayLength(varr);
-        varr_1 = vararrayAdd(varr, v);
-        indexes = hashvec[indx_1];
-        hashvec_1 = arrayUpdate(hashvec, indx_1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
-        n_1 = vararrayLength(varr_1);
-        //fastht = BaseHashTable.add((cr,{newpos}),fastht);
-      then
-        BackendDAE.VARIABLES(hashvec_1,varr_1,bsize,n_1);
+  BackendDAE.VAR(varName = cr) := inVar;
+  BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars) := inVariables;
 
-    case ((newv as BackendDAE.VAR(varName = cr)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
-      equation
-        (_,{indx}) = getVar(cr, vars);
-        // print("adding when already present => Updating value\n");
-        varr_1 = vararraySetnth(varr, indx, newv);
-      then
-        BackendDAE.VARIABLES(hashvec,varr_1,bsize,n);
+  try
+    (_, {idx}) := getVar(cr, inVariables);
+    varr := vararraySetnth(varr, idx, inVar);
+  else
+    idx := ComponentReference.hashComponentRefMod(cr, bsize) + 1;
+    varr := vararrayAdd(varr, inVar);
+    indices := hashvec[idx];
+    arrayUpdate(hashvec, idx, (BackendDAE.CREFINDEX(cr, num_vars) :: indices));
+    num_vars := num_vars + 1;
+  end try;
 
-    else
-      equation
-        print("- addVar failed\n");
-      then
-        fail();
-  end matchcontinue;
+  outVariables := BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars);
 end addVar;
 
 public function addNewVar
@@ -3118,33 +3087,20 @@ public function addNewVar
   input BackendDAE.Var inVar;
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
+protected
+  DAE.ComponentRef cr;
+  array<list<BackendDAE.CrefIndex>> hashvec;
+  BackendDAE.VariableArray varr;
+  Integer bsize, num_vars, idx;
+  list<BackendDAE.CrefIndex> indices;
 algorithm
-  outVariables := matchcontinue (inVar,inVariables)
-    local
-      Integer indx,newpos,n_1,bsize,n;
-      BackendDAE.VariableArray varr_1,varr;
-      list<BackendDAE.CrefIndex> indexes;
-      array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
-      BackendDAE.Var v;
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars;
-    case ((v as BackendDAE.VAR(varName = cr)),(BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = _)))
-      equation
-        indx = ComponentReference.hashComponentRefMod(cr, bsize);
-        newpos = vararrayLength(varr);
-        varr_1 = vararrayAdd(varr, v);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
-        n_1 = vararrayLength(varr_1);
-      then
-        BackendDAE.VARIABLES(hashvec_1,varr_1,bsize,n_1);
-
-    case (_,_)
-      equation
-        print("- addNewVar failed\n");
-      then
-        fail();
-  end matchcontinue;
+  BackendDAE.VAR(varName = cr) := inVar;
+  BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars) := inVariables;
+  idx := ComponentReference.hashComponentRefMod(cr, bsize) + 1;
+  varr := vararrayAdd(varr, inVar);
+  indices := hashvec[idx];
+  arrayUpdate(hashvec, idx, (BackendDAE.CREFINDEX(cr, num_vars) :: indices));
+  outVariables := BackendDAE.VARIABLES(hashvec, varr, bsize, num_vars + 1);
 end addNewVar;
 
 public function expandVarsDAE
