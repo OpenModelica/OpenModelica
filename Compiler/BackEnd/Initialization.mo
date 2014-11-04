@@ -159,7 +159,7 @@ algorithm
                                  cache,
                                  graph,
                                  functionTree,
-                                 BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0),
+                                 BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0),
                                  {},
                                  BackendDAE.INITIALSYSTEM(),
                                  {},

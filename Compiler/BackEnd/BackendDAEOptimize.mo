@@ -256,14 +256,14 @@ protected
   list<BackendDAE.TimeEvent> timeEvents;
   list<BackendDAE.WhenClause> whenClauseLst;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
-  Integer relationsNumber, numberMathEvents;
+  Integer numberMathEvents;
 algorithm
-  BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, relationsNumber, numberMathEvents) := iEventInfo;
+  BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents) := iEventInfo;
   (whenClauseLst, outTypeA) := traverseWhenClauseExps(whenClauseLst, func, inTypeA, {});
   (zeroCrossingLst, outTypeA) := traverseZeroCrossingExps(zeroCrossingLst, func, outTypeA, {});
   (sampleLst, outTypeA) := traverseZeroCrossingExps(sampleLst, func, outTypeA, {});
   (relationsLst, outTypeA) := traverseZeroCrossingExps(relationsLst, func, outTypeA, {});
-  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, relationsNumber, numberMathEvents);
+  oEventInfo := BackendDAE.EVENT_INFO(timeEvents, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberMathEvents);
 end traverseEventInfoExps;
 
 protected function traverseWhenClauseExps<T>
@@ -3861,7 +3861,6 @@ protected
   list<BackendDAE.ZeroCrossing> zeroCrossingLst;
   list<BackendDAE.ZeroCrossing> sampleLst;
   list<BackendDAE.ZeroCrossing> relationsLst;
-  Integer relationsNumber;
   Integer numberMathEvents;
 
   Integer index;
@@ -3893,7 +3892,6 @@ algorithm
                         zeroCrossingLst=zeroCrossingLst,
                         sampleLst=sampleLst,
                         relationsLst=relationsLst,
-                        relationsNumber=relationsNumber,
                         numberMathEvents=numberMathEvents) := eventInfo;
 
   ht := HashTableExpToIndex.emptyHashTable();
@@ -3915,7 +3913,6 @@ algorithm
                                      zeroCrossingLst,
                                      sampleLst,
                                      relationsLst,
-                                     relationsNumber,
                                      numberMathEvents);
   shared := BackendDAE.SHARED(knownVars,
                               externalObjects,

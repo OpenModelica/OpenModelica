@@ -263,7 +263,6 @@ protected
   list<DAE.Constraint> constraints;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
   list<BackendDAE.WhenClause> whenClauseLst;
-  Integer relationsNumber;
   BackendDAE.ExternalObjectClasses extObjClasses;
   BackendDAE.BackendDAEType backendDAEType;
   BackendDAE.SymbolicJacobians symjacs;
@@ -274,7 +273,7 @@ algorithm
                     initialEqs=initialEqs,
                     removedEqs=removedEqs,
                     constraints=constraints,
-                    eventInfo=BackendDAE.EVENT_INFO(relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst, sampleLst=sampleLst, whenClauseLst=whenClauseLst, relationsNumber=relationsNumber),
+                    eventInfo=BackendDAE.EVENT_INFO(relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst, sampleLst=sampleLst, whenClauseLst=whenClauseLst),
                     extObjClasses=extObjClasses,
                     backendDAEType=backendDAEType,
                     symjacs=symjacs) := inShared;

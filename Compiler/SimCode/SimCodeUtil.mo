@@ -2771,7 +2771,7 @@ algorithm
       list<list<Integer>> zcEqns;
       list<Integer> wcEqns;
       BackendDAE.EquationArray eqnArr;
-    case (BackendDAE.EQSYSTEM(orderedEqs=eqnArr), BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst)))
+    case (BackendDAE.EQSYSTEM(orderedEqs=eqnArr), BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zcLst)))
       equation
         zcEqns = List.map(zcLst, zeroCrossingEquations);
         wcEqns = whenEquationsIndices(eqnArr);
@@ -2967,7 +2967,7 @@ algorithm
         ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source)}, iuniqueEqIndex+1, itempvars);
 
     // when eq without else
-    case (_, _,  BackendDAE.EQSYSTEM(orderedVars=_, orderedEqs=eqns), BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=_)), _, _, _)
+    case (_, _,  BackendDAE.EQSYSTEM(orderedVars=_, orderedEqs=eqns), BackendDAE.SHARED(), _, _, _)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) = BackendEquation.equationNth1(eqns, eqNum);
         BackendDAE.WHEN_EQ(cond, left, right, NONE()) = whenEquation;
@@ -5806,7 +5806,7 @@ algorithm
       graph = FGraph.empty();
       funcs = DAEUtil.avlTreeNew();
       syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared = BackendDAE.SHARED(evars, evars, evars, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
+      shared = BackendDAE.SHARED(evars, evars, evars, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
       subsystem_dae = BackendDAE.DAE({syst}, shared);
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
       (equations_, _, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
@@ -6187,7 +6187,7 @@ algorithm
       funcs = DAEUtil.avlTreeNew();
       vars1 = BackendVariable.listVar1(vars);
       syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
+      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
       subsystem_dae = BackendDAE.DAE({syst}, shared);
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
       (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
@@ -6210,7 +6210,7 @@ algorithm
       funcs = DAEUtil.avlTreeNew();
       vars1 = BackendVariable.listVar1(vars);
       syst = BackendDAE.EQSYSTEM(vars1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
+      shared = BackendDAE.SHARED(evars, evars, av, eeqns, eeqns, {}, {}, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), {}, BackendDAE.ARRAYSYSTEM(), {}, iextra);
       subsystem_dae = BackendDAE.DAE({syst}, shared);
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE());
       (equations_, noDiscequations, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
@@ -6778,7 +6778,7 @@ algorithm
         kn = BackendVariable.listVar(lkn);
         funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-        shared = BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
+        shared = BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
         (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
         v1 = listArray(lv1);
         v2 = listArray(lv2);

@@ -459,7 +459,6 @@ uniontype EventInfo
     // TODO: sampleLst and relationsLst could be removed if cpp runtime is prepared to handle zero crossing conditions
     list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
     list<ZeroCrossing> relationsLst    "list of zero crossing function as before, used by cpp runtime";
-    Integer relationsNumber            "stores the number of relation in all zero-crossings";
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
 end EventInfo;

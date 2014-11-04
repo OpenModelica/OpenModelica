@@ -1086,32 +1086,34 @@ void setZCtol(double relativeTol)
   TRACE_PUSH
 
   /* lochel: force tolZC > 0 */
-  tolZC = max(TOL_HYSTERESIS_ZEROCROSSINGS*relativeTol, TOL_HYSTERESIS_ZEROCROSSINGS*MINIMAL_STEP_SIZE);
+  tolZC = TOL_HYSTERESIS_ZEROCROSSINGS * max(relativeTol, MINIMAL_STEP_SIZE);
   infoStreamPrint(LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 
   TRACE_POP
 }
 
+/* TODO: fix this */
 modelica_boolean LessZC(double a, double b, modelica_boolean direction)
 {
-  double eps = (direction) ? tolZC*fabs(b)+tolZC : tolZC*fabs(a)+tolZC;
-  return (direction) ? (a - b <= eps) : (a - b <= -eps);
+  double eps = tolZC * fmax(fabs(a), fabs(b)) + tolZC;
+  return direction ? (a - b <= eps) : (a - b <= -eps);
 }
 
 modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
 {
-  return (!GreaterZC(a, b, !direction));
+  return !GreaterZC(a, b, !direction);
 }
 
+/* TODO: fix this */
 modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
-  double eps = (direction) ? tolZC*fabs(a)+tolZC : tolZC*fabs(b)+tolZC;
-  return (direction) ? (a - b >= -eps ) : (a - b >= eps);
+  double eps = tolZC * fmax(fabs(a), fabs(b)) + tolZC;
+  return direction ? (a - b >= -eps ) : (a - b >= eps);
 }
 
 modelica_boolean GreaterEqZC(double a, double b, modelica_boolean direction)
 {
-  return (!LessZC(a, b, !direction));
+  return !LessZC(a, b, !direction);
 }
 
 modelica_boolean Less(double a, double b)

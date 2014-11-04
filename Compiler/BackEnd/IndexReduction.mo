@@ -4347,12 +4347,12 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst, relationsLst, sampleLst;
-      Integer numberOfRelations, numberOfMathEventFunctions;
+      Integer numberOfMathEventFunctions;
       BackendDAE.BackendDAEType btp;
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ExtraInfo ei;
 
-    case (BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,BackendDAE.EVENT_INFO(timeEvents,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei),_)
+    case (BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,BackendDAE.EVENT_INFO(timeEvents,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,numberOfMathEventFunctions),eoc,btp,symjacs,ei),_)
       equation
         // replace dummy_derivatives in knvars,aliases,ineqns,remeqns
         (aliasVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceDummyDerivativesVar,ht);
@@ -4361,7 +4361,7 @@ algorithm
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
         (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,Expression.traverseSubexpressionsHelper,(replaceDummyDerivativesExp,ht));
       then
-        BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,BackendDAE.EVENT_INFO(timeEvents,whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
+        BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcTree,BackendDAE.EVENT_INFO(timeEvents,whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
 
   end match;
 end replaceDummyDerivativesShared;

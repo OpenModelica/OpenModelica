@@ -112,7 +112,6 @@ protected
   list<BackendDAE.TimeEvent> timeEvents;
   list<BackendDAE.ZeroCrossing> zero_crossings;
   list<BackendDAE.ZeroCrossing> relations, sampleLst;
-  Integer countRelations;
   Integer countMathFunctions;
   Option<BackendDAE.IncidenceMatrix> m, mT;
   BackendDAE.BackendDAEType btp;
@@ -128,19 +127,18 @@ algorithm
   BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := inSyst;
   BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
     cache, graph, funcs, BackendDAE.EVENT_INFO(timeEvents=timeEvents, zeroCrossingLst=zero_crossings,
-    sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations,
-    relationsNumber=countRelations, numberMathEvents=countMathFunctions),
+    sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations, numberMathEvents=countMathFunctions),
     eoc, btp, symjacs, ei) := inShared;
 
   eqs_lst := BackendEquation.equationList(eqns);
-  (zero_crossings, eqs_lst1, _, countRelations, countMathFunctions, relations, sampleLst) := findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, countMathFunctions, zero_crossings, relations, sampleLst, {}, {});
+  (zero_crossings, eqs_lst1, _, _, countMathFunctions, relations, sampleLst) := findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, listLength(relations), countMathFunctions, zero_crossings, relations, sampleLst, {}, {});
   eqs_lst1 := listReverse(eqs_lst1);
   if Flags.isSet(Flags.RELIDX) then
-    print("findZeroCrossings1 number of relations: " + intString(countRelations) + "\n");
+    print("findZeroCrossings1 number of relations: " + intString(listLength(relations)) + "\n");
     print("findZeroCrossings1 sample index: " + intString(listLength(sampleLst)) + "\n");
   end if;
   eqns1 := BackendEquation.listEquation(eqs_lst1);
-  einfo1 := BackendDAE.EVENT_INFO(timeEvents, whenclauses, zero_crossings, sampleLst, relations, countRelations, countMathFunctions);
+  einfo1 := BackendDAE.EVENT_INFO(timeEvents, whenclauses, zero_crossings, sampleLst, relations, countMathFunctions);
   outSyst := BackendDAE.EQSYSTEM(vars, eqns1, m, mT, matching, stateSets, partitionKind);
   outShared := BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo1, eoc, btp, symjacs, ei);
 end findZeroCrossings1;

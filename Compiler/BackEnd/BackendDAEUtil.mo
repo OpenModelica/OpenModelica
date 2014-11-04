@@ -787,15 +787,16 @@ public function numberOfZeroCrossings "author: lochel"
   output Integer outNumMathEventFunctions;
 protected
   list<BackendDAE.TimeEvent> timeEvents;
-  list<ZeroCrossing> zeroCrossingLst;
+  list<ZeroCrossing> zeroCrossingLst, relationsLst;
 algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents,
                                                                           zeroCrossingLst=zeroCrossingLst,
-                                                                          relationsNumber=outNumRelations,
+                                                                          relationsLst=relationsLst,
                                                                           numberMathEvents=outNumMathEventFunctions))) := inBackendDAE;
 
-  outNumTimeEvents := listLength(timeEvents);
   outNumZeroCrossings := listLength(zeroCrossingLst);
+  outNumTimeEvents := listLength(timeEvents);
+  outNumRelations := listLength(relationsLst);
 end numberOfZeroCrossings;
 
 public function numberOfDiscreteVars "author: lochel"
@@ -2047,17 +2048,17 @@ algorithm
       DAE.FunctionTree funcs;
       list<BackendDAE.WhenClause> wclst,wclst1;
       list<ZeroCrossing> zc, rellst, smplLst;
-      Integer numberOfRelations, numberOfMathEventFunctions;
+      Integer numberOfMathEventFunctions;
       ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAEType btp;
       list<BackendDAE.TimeEvent> timeEvents;
       BackendDAE.ExtraInfo ei;
 
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei))
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst,zc,smplLst,rellst,numberOfMathEventFunctions),eoc,btp,symjacs,ei))
       equation
         wclst1 = listAppend(wclst,inWcLst);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst1,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst1,zc,smplLst,rellst,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
 
   end match;
 end whenClauseAddDAE;
