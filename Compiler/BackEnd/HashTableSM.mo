@@ -9,7 +9,8 @@ protected import HashSet;
 protected import BaseHashSet;
 protected import List;
 protected import BackendDAE;
-
+protected import BackendDump;
+protected import BackendEquation;
 
 public type Key = DAE.ComponentRef;
 public type Value = StateMachineFeatures.Mode;
@@ -69,14 +70,20 @@ protected
   String name;
   Boolean isInitial;
   HashSet.HashSet edges;
+  BackendDAE.EquationArray eqs;
   list<DAE.ComponentRef> crefs;
+  list<BackendDAE.Equation> eqsList;
   list<String> paths;
+  list<String> eqsDump;
 algorithm
-  StateMachineFeatures.MODE(name=name, isInitial=isInitial, edges=edges) := mode;
+  StateMachineFeatures.MODE(name=name, isInitial=isInitial, edges=edges, eqs=eqs) := mode;
   crefs := BaseHashSet.hashSetList(edges);
   paths := List.map(crefs, ComponentReference.printComponentRefStr);
+  eqsList := BackendEquation.equationList(eqs);
+  eqsDump := List.map(eqsList, BackendDump.equationString);
   s := "MODE(" + stringDelimitList({name,boolString(isInitial)}, ",") + "), "
-     + "EDGES(" + stringDelimitList(paths, ", ") +"))";
+     + "EDGES(" + stringDelimitList(paths, ", ") +"), "
+     + "Equations( "+ stringDelimitList(eqsDump, ";\n\t") +")";
 end modeToString;
 
 annotation(__OpenModelica_Interface="backend");

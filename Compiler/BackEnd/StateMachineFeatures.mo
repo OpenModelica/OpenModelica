@@ -55,6 +55,7 @@ protected import Util;
 protected import HashSet;
 protected import BaseHashSet;
 protected import HashTableSM;
+protected import Array;
 
 /*
 public
@@ -132,8 +133,8 @@ protected
   list<FlatAutomaton> flatAutomata;
   list<Composition> compositions;
   list<String> ss;
-  BackendDAE.EqSystem syst;
-  BackendDAE.Shared shared;
+  BackendDAE.EqSystem syst, systNew;
+  BackendDAE.Shared shared, sharedNew;
 algorithm
   (syst, shared) := match inDAE
     local
@@ -144,7 +145,6 @@ algorithm
       BackendDAE.DAE({syst1}, shared1) = BackendDAEOptimize.collapseIndependentBlocks(inDAE);
     then (syst1, shared1);
   end match;
-  outDAE := BackendDAE.DAE({syst}, shared); // dummy assignment as long as elabortion is not implemented
 
   // Identify modes in the system
   modes := identifyModes(shared);
@@ -177,7 +177,10 @@ algorithm
   print(stringDelimitList(ss, ",\n") + "\n");
 
   print("SMF-stateMachineElab: annotate modes with additional information\n");
-  modes := annotateModes(modes, syst, shared);
+  (modes, systNew, sharedNew) := annotateModes(modes, syst, shared);
+  BaseHashTable.dumpHashTable(modes);
+
+  outDAE := BackendDAE.DAE({syst}, shared); // dummy assignment as long as elabortion is not implemented
 
 end stateMachineElab;
 
@@ -188,55 +191,132 @@ Tbd."
   input ModeTable modesIn;
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
-  //output list<BackendDAE.EqSystem> outSysts;
   output ModeTable modesOut;
+  output BackendDAE.EqSystem outSyst;
+  output BackendDAE.Shared outShared;
 protected
-  BackendDAE.EquationArray removedEqs, orderedEqs;
-  //BackendDAE.Variables vars;
-  //BackendDAE.EquationArray eqs;
-  //BackendDAE.StateSets stateSets;
+  BackendDAE.EquationArray orderedEqsNew, removedEqsNew;
+  // Fields EQSYSTEM:
+  BackendDAE.Variables orderedVars;
+  BackendDAE.EquationArray orderedEqs;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  // Fields SHARED:
+  BackendDAE.Variables knownVars;
+  BackendDAE.Variables externalObjects;
+  BackendDAE.Variables aliasVars;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EquationArray removedEqs;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.EventInfo eventInfo;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo info;
+  // Fields of EQUATION_ARRAY
+  Integer orderedSize, removedSize;
+  Integer orderedNumberOfElement, removedNumberOfElement;
+  Integer orderedArrSize, removedArrSize;
+  array<Option<BackendDAE.Equation>> orderedEquOptArr, removedEquOptArr;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := inSyst;
-  BackendDAE.SHARED(removedEqs=removedEqs) := inShared;
+  BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) := inSyst;
+  BackendDAE.SHARED(knownVars, externalObjects, aliasVars, initialEqs, removedEqs, constraints,
+    classAttrs, cache, graph, functionTree, eventInfo, extObjClasses,backendDAEType, symjacs, info) := inShared;
 
-  modesOut := BackendEquation.traverseBackendDAEEqns(orderedEqs, annotateMode, modesIn);
-  modesOut := BackendEquation.traverseBackendDAEEqns(removedEqs, annotateMode, modesOut);
+  BackendDAE.EQUATION_ARRAY(orderedSize, orderedNumberOfElement, orderedArrSize, orderedEquOptArr) := orderedEqs;
+  BackendDAE.EQUATION_ARRAY(removedSize, removedNumberOfElement, removedArrSize, removedEquOptArr) := removedEqs;
+  (orderedEquOptArr, modesOut) := Array.mapNoCopy_1(orderedEquOptArr, annotateMode, modesIn);
+  (removedEquOptArr, modesOut) := Array.mapNoCopy_1(removedEquOptArr, annotateMode, modesOut);
 
-  //BackendDAE.EQSYSTEM(vars, eqs, _, _, _, stateSets, _) := inSyst;
-  //outSysts := {inSyst};
+  orderedEqsNew := BackendDAE.EQUATION_ARRAY(orderedSize, orderedNumberOfElement, orderedArrSize, orderedEquOptArr);
+  removedEqsNew := BackendDAE.EQUATION_ARRAY(removedSize, removedNumberOfElement, removedArrSize, removedEquOptArr);
+
+  //(orderedEqsNew, modesOut) := BackendEquation.traverseBackendDAEEqnsWithUpdate(orderedEqs, annotateMode, modesIn);
+  //(removedEqsNew, modesOut) := BackendEquation.traverseBackendDAEEqnsWithUpdate(removedEqs, annotateMode, modesOut);
+
+  // A lot of code bloat just for updating fields "orderedEqs" and "removedEqs" in "EQSYSTEM" and "SHARED" ...
+  outSyst := BackendDAE.EQSYSTEM(orderedVars, orderedEqsNew, m, mT, matching, stateSets, partitionKind);
+  outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars, initialEqs, removedEqsNew, constraints,
+    classAttrs, cache, graph, functionTree, eventInfo, extObjClasses,backendDAEType, symjacs, info);
+
+  // TODO Could use new features https://trac.openmodelica.org/OpenModelica/changeset/23138 for updating...
+  // What syntax would be even nicer to fight the code bloat?
+  //outShared := inShared(removedEqs=removedEqsNew);
+  //outShared := BackendDAE.SHARED(removedEqs=removedEqsNew) <- inShared
+  //outShared := inShared -> BackendDAE.SHARED(removedEqs=removedEqsNew)
+  //outShared := inShared /. BackendDAE.SHARED(removedEqs=removedEqsNew)
 end annotateModes;
 
-protected function annotateMode "
+function annotateMode "
 Author: BTH
 Helper function to annotateModes
-Tbd."
-  input BackendDAE.Equation inEq;
-  input ModeTable inA;
-  output BackendDAE.Equation outEq;
-  output ModeTable outA;
+Tbd"
+  input tuple<Option<BackendDAE.Equation>, ModeTable> inEqModeTable;
+  output tuple<Option<BackendDAE.Equation>, ModeTable> outEqModeTable;
 protected
-      DAE.ElementSource source "origin of equation";
-      Option<DAE.ComponentRef> instanceOpt "the instance(s) this element is part of";
+  Option<BackendDAE.Equation> eqOpt;
+  ModeTable modeTable;
+  Option<DAE.ElementSource> sourceOpt "origin of equation";
+  Option<DAE.ComponentRef> instanceOpt "the instance(s) this element is part of";
+  Option<Mode> optMode;
 algorithm
+  (eqOpt, modeTable) := inEqModeTable;
   // Just match any possible Equation type and extract the source field.
   // TODO More specific handling with error handling (e.g., WHEN_EQUATION not allowed in a state)
-  source := match (inEq, inA)
+  sourceOpt := match (eqOpt)
     local
       DAE.ElementSource source1;
-    case (BackendDAE.EQUATION(source=source1),_) then source1;
-    case (BackendDAE.ARRAY_EQUATION(source=source1),_) then source1;
-    case (BackendDAE.SOLVED_EQUATION(source=source1),_) then source1;
-    case (BackendDAE.RESIDUAL_EQUATION(source=source1),_) then source1;
-    case (BackendDAE.ALGORITHM(source=source1),_) then source1;
-    case (BackendDAE.WHEN_EQUATION(source=source1),_) then source1;
-    case (BackendDAE.COMPLEX_EQUATION(source=source1),_) then source1;
-    case (BackendDAE.IF_EQUATION(source=source1),_) then source1;
+    case SOME((BackendDAE.EQUATION(source=source1))) then SOME(source1);
+    case SOME((BackendDAE.ARRAY_EQUATION(source=source1))) then SOME(source1);
+    case SOME((BackendDAE.SOLVED_EQUATION(source=source1))) then SOME(source1);
+    case SOME((BackendDAE.RESIDUAL_EQUATION(source=source1))) then SOME(source1);
+    case SOME((BackendDAE.ALGORITHM(source=source1))) then SOME(source1);
+    case SOME((BackendDAE.WHEN_EQUATION(source=source1))) then SOME(source1);
+    case SOME((BackendDAE.COMPLEX_EQUATION(source=source1))) then SOME(source1);
+    case SOME((BackendDAE.IF_EQUATION(source=source1))) then SOME(source1);
+    else NONE();
   end match;
 
-  DAE.SOURCE(instanceOpt=instanceOpt) := source;
-  // TODO
-  outEq := inEq; // TODO
-  outA := inA; // TODO
+  instanceOpt := match (sourceOpt)
+    local
+      Option<DAE.ComponentRef> crefOpt;
+    case SOME(DAE.SOURCE(instanceOpt=crefOpt)) then crefOpt;
+    else NONE();
+  end match;
+
+  // Is there a mode/state that corresponds to the instance?
+  optMode := match (instanceOpt)
+    local
+      DAE.ComponentRef cref;
+    case SOME(cref) guard BaseHashTable.hasKey(cref, modeTable)
+      then SOME(BaseHashTable.get(cref, modeTable));
+    else NONE();
+  end match;
+
+  outEqModeTable := match (optMode, instanceOpt, eqOpt)
+    local
+      DAE.ComponentRef cref;
+      BackendDAE.Equation eq;
+      ModeTable modeTableNew;
+      String name;
+      Boolean isInitial;
+      HashSet.HashSet edges;
+      BackendDAE.EquationArray eqs;
+    case (SOME(MODE(name,isInitial,edges,eqs)), SOME(cref), SOME(eq))
+      equation
+        eqs = BackendEquation.addEquation(eq, eqs);
+        modeTableNew = BaseHashTable.update((cref, MODE(name,isInitial,edges,eqs)), modeTable);
+      then (NONE(), modeTableNew);
+    else (eqOpt, modeTable);
+  end match;
+
 end annotateMode;
 
 
