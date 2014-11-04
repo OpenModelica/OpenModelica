@@ -2115,12 +2115,17 @@ QString OMCProxy::checkAllModelsRecursive(QString className)
   \param className - the name of the class.
   \return the instantiated model
   */
-QString OMCProxy::instantiateModel(QString className)
+QString OMCProxy::instantiateModel(QString className, bool *instantiateModelSuccess)
 {
   sendCommand("instantiateModel(" + className + ")", true, className);
   QString result = StringHandler::unparse(getResult());
-  printMessagesStringInternal();
-  return result;
+  if (result.isEmpty()) {
+    *instantiateModelSuccess = false;
+    return getErrorString();
+  } else {
+    *instantiateModelSuccess = true;
+    return result;
+  }
 }
 
 /*!

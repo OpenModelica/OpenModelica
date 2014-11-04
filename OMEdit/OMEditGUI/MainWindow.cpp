@@ -758,20 +758,11 @@ void MainWindow::instantiatesModel(LibraryTreeNode *pLibraryTreeNode)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
-  QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeNode->getNameStructure());
-  if (instantiateModelResult.length())
-  {
-    QString windowTitle = QString(Helper::instantiateModel).append(" - ").append(pLibraryTreeNode->getName());
-    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, instantiateModelResult, true, this);
-    pInformationDialog->show();
-  }
-  else
-  {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                         "Instantiation of " + pLibraryTreeNode->getName() + " failed.",
-                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                         mpMessagesWidget->getMessagesTreeWidget()));
-  }
+  bool instantiateModelSuccess = false;
+  QString instantiateModelResult = mpOMCProxy->instantiateModel(pLibraryTreeNode->getNameStructure(), &instantiateModelSuccess);
+  QString windowTitle = QString(Helper::instantiateModel).append(" - ").append(pLibraryTreeNode->getName());
+  InformationDialog *pInformationDialog = new InformationDialog(windowTitle, instantiateModelResult, instantiateModelSuccess, this);
+  pInformationDialog->show();
   // hide progress bar
   hideProgressBar();
   // clear the status bar message
@@ -792,19 +783,9 @@ void MainWindow::checkModel(LibraryTreeNode *pLibraryTreeNode)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   QString checkModelResult = mpOMCProxy->checkModel(pLibraryTreeNode->getNameStructure());
-  if (checkModelResult.length())
-  {
-    QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeNode->getName());
-    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
-    pInformationDialog->show();
-  }
-  else
-  {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                         "Check of " + pLibraryTreeNode->getName() + " failed.",
-                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                         mpMessagesWidget->getMessagesTreeWidget()));
-  }
+  QString windowTitle = QString(Helper::checkModel).append(" - ").append(pLibraryTreeNode->getName());
+  InformationDialog *pInformationDialog = new InformationDialog(windowTitle, checkModelResult, false, this);
+  pInformationDialog->show();
   // hide progress bar
   hideProgressBar();
   // clear the status bar message

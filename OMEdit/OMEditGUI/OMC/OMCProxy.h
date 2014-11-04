@@ -174,7 +174,7 @@ public:
   bool saveModifiedModel(QString modelText);
   bool saveTotalSCode(QString fileName, QString className);
   QString list(QString className);
-  QString instantiateModel(QString className);
+  QString instantiateModel(QString className, bool *instantiateModelSuccess);
   bool addClassAnnotation(QString className, QString annotation);
   QString getDefaultComponentName(QString className);
   QString getDefaultComponentPrefixes(QString className);
