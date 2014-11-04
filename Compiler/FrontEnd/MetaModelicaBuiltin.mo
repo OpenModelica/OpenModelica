@@ -1022,6 +1022,6 @@ uniontype SourceInfo "The Info attribute provides location information for eleme
 end SourceInfo;
 
 function sourceInfo
-  output FileInfo info;
+  output SourceInfo info;
 external "builtin";
 end sourceInfo;
