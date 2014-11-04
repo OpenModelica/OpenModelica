@@ -774,6 +774,8 @@ public constant Message CLASS_NOT_FOUND = MESSAGE(555, SCRIPTING(), WARNING(),
   Util.gettext("Class %s not found inside class %s."));
 public constant Message NOTIFY_LOAD_MODEL_FAILED = MESSAGE(556, SCRIPTING(), NOTIFICATION(),
   Util.gettext("Skipped loading package %s (%s) using MODELICAPATH %s (uses-annotation may be wrong)."));
+public constant Message ROOT_USER_INTERACTIVE = MESSAGE(557, SCRIPTING(), ERROR(),
+  Util.gettext("You are trying to run OpenModelica as a server using the root user.\nThis is a very bad idea:\n* The socket interface does not authenticate the user.\n* OpenModelica allows execution of arbitrary commands."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

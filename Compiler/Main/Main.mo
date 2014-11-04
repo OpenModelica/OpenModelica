@@ -844,13 +844,10 @@ algorithm
   end if;
 
   // Don't allow running omc as root due to security risks.
-  if System.userIsRoot() then
-    print(System.gettext("You are trying to run OpenModelica as root.\n"));
-    print("This is a very bad idea. Why you ask?\n");
-    print("* The socket interface does not authenticate the user.\n");
-    print("* OpenModelica allows execution of arbitrary commands.\n");
-    print("The good news is there is no reason to run OpenModelica as root.\n");
-    return;
+  if System.userIsRoot() and (Flags.isSet(Flags.INTERACTIVE) or Flags.isSet(Flags.INTERACTIVE_CORBA)) then
+    Error.addMessage(Error.ROOT_USER_INTERACTIVE, {});
+    print(ErrorExt.printMessagesStr(false));
+    fail();
   end if;
 
   // Setup mingw path only once
