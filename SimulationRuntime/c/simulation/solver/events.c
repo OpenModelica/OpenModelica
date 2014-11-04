@@ -34,7 +34,7 @@
 #include "simulation_data.h"
 #include "simulation/results/simulation_result.h"
 #include "openmodelica.h"         /* for modelica types */
-#include "openmodelica_func.h"    /* for modelica fucntion */
+#include "openmodelica_func.h"    /* for modelica functions */
 #include "simulation/simulation_runtime.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/model_help.h"
@@ -553,7 +553,7 @@ void saveZeroCrossingsAfterEvent(DATA *data)
 
   TRACE_PUSH
 
-  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event"); /* ??? */
+  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event at time=%g", data->localData[0]->timeValue); /* ??? */
 
   data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings);
   for(i=0; i<data->modelData.nZeroCrossings; i++)
