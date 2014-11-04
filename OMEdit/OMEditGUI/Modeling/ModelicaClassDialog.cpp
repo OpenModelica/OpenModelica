@@ -1039,8 +1039,8 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   qreal horizontal = mpHorizontalSpinBox->value();
   qreal vertical = mpVerticalSpinBox->value();
   mpGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
-  mpGraphicsView->setSceneRect(left, bottom, fabs(left - right), fabs(bottom - top));
-  mpGraphicsView->fitInView(mpGraphicsView->sceneRect(), Qt::KeepAspectRatio);
+  mpGraphicsView->setExtentRectangle(left, bottom, right, top);
+  mpGraphicsView->fitInView(mpGraphicsView->getExtentRectangle(), Qt::KeepAspectRatio);
   mpGraphicsView->setIsCustomScale(false);
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
@@ -1057,8 +1057,8 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
     pGraphicsView->getCoOrdinateSystem()->setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
     pGraphicsView->getCoOrdinateSystem()->setInitialScale(mpScaleFactorSpinBox->value());
     pGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
-    pGraphicsView->setSceneRect(left, bottom, fabs(left - right), fabs(bottom - top));
-    pGraphicsView->fitInView(pGraphicsView->sceneRect(), Qt::KeepAspectRatio);
+    pGraphicsView->setExtentRectangle(left, bottom, right, top);
+    pGraphicsView->fitInView(pGraphicsView->getExtentRectangle(), Qt::KeepAspectRatio);
     pGraphicsView->setIsCustomScale(false);
     pGraphicsView->addClassAnnotation();
     pGraphicsView->setCanAddClassAnnotation(true);

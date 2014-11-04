@@ -101,6 +101,7 @@ private:
   StringHandler::ViewType mViewType;
   ModelWidget *mpModelWidget;
   CoOrdinateSystem *mpCoOrdinateSystem;
+  QRectF mExtentRectangle;
   bool mIsCustomScale;
   bool mCanAddClassAnnotation;
   bool mIsCreatingConnection;
@@ -137,6 +138,8 @@ public:
   StringHandler::ViewType getViewType();
   ModelWidget* getModelWidget();
   CoOrdinateSystem* getCoOrdinateSystem();
+  void setExtentRectangle(qreal x1, qreal y1, qreal x2, qreal y2);
+  QRectF getExtentRectangle() {return mExtentRectangle;}
   void setIsCustomScale(bool enable);
   bool isCustomScale();
   void setCanAddClassAnnotation(bool enable);

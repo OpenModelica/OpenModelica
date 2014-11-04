@@ -122,7 +122,6 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   : QGraphicsView(parent), mViewType(viewType), mSkipBackground(false)
 {
   setFrameShape(QFrame::StyledPanel);
-  setDragMode(QGraphicsView::RubberBandDrag);
   setAcceptDrops(true);
   setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   setMouseTracking(true);
@@ -143,7 +142,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   qreal horizontal = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridHorizontal() : pGraphicalViewsPage->getDiagramViewGridHorizontal();
   qreal vertical = (mViewType == StringHandler::Icon) ? pGraphicalViewsPage->getIconViewGridVertical() : pGraphicalViewsPage->getDiagramViewGridVertical();
   mpCoOrdinateSystem->setGrid(QPointF(horizontal, vertical));
-  setSceneRect(left, bottom, fabs(left - right), fabs(bottom - top));
+  setExtentRectangle(left, bottom, right, top);
   centerOn(sceneRect().center());
   scale(1.0, -1.0);     // invert the drawing area.
   setStyleSheet(QString("QGraphicsView{background-color: lightGray;}"));
@@ -174,6 +173,13 @@ ModelWidget* GraphicsView::getModelWidget()
 CoOrdinateSystem* GraphicsView::getCoOrdinateSystem()
 {
   return mpCoOrdinateSystem;
+}
+
+void GraphicsView::setExtentRectangle(qreal left, qreal bottom, qreal right, qreal top)
+{
+  mExtentRectangle = QRectF(left, bottom, fabs(left - right), fabs(bottom - top));
+  QRectF sceneRectangle = mExtentRectangle.adjusted(left * 2, bottom * 2, right * 2, top * 2);
+  setSceneRect(sceneRectangle);
 }
 
 void GraphicsView::setIsCustomScale(bool enable)
@@ -985,7 +991,7 @@ void GraphicsView::resetZoom()
   resizeEvent(new QResizeEvent(QSize(0,0), QSize(0,0)));
 }
 
-//! Increases zoom factor by 15%.
+//! Increases zoom factor by 12%.
 //! @see resetZoom()
 //! @see zoomOut()
 void GraphicsView::zoomIn()
@@ -994,7 +1000,7 @@ void GraphicsView::zoomIn()
   setIsCustomScale(true);
 }
 
-//! Decreases zoom factor by 13.04% (1 - 1/1.15).
+//! Decreases zoom factor by 12%.
 //! @see resetZoom()
 //! @see zoomIn()
 void GraphicsView::zoomOut()
@@ -1167,7 +1173,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   // draw scene rectangle white background
   painter->setPen(Qt::NoPen);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
-  painter->drawRect(sceneRect());
+  painter->drawRect(getExtentRectangle());
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines())
   {
     painter->setBrush(Qt::NoBrush);
@@ -1213,7 +1219,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   }
   // draw scene rectangle
   painter->setPen(QColor(192, 192, 192));
-  painter->drawRect(sceneRect());
+  painter->drawRect(getExtentRectangle());
 }
 
 //! Defines what happens when clicking in a GraphicsView.
@@ -1622,7 +1628,7 @@ void GraphicsView::resizeEvent(QResizeEvent *event)
 {
   // only resize the view if user has not set any custom scaling like zoom in and zoom out.
   if (!isCustomScale())
-    fitInView(sceneRect(), Qt::KeepAspectRatio);
+    fitInView(getExtentRectangle(), Qt::KeepAspectRatio);
   QGraphicsView::resizeEvent(event);
 }
 
@@ -2347,8 +2353,8 @@ void ModelWidget::getModelIconDiagramShapes(QString className, QString annotatio
   qreal horizontal = list.at(6).toFloat();
   qreal vertical = list.at(7).toFloat();
   pGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
-  pGraphicsView->setSceneRect(left, bottom, fabs(left - right), fabs(bottom - top));
-  pGraphicsView->fitInView(pGraphicsView->sceneRect(), Qt::KeepAspectRatio);
+  pGraphicsView->setExtentRectangle(left, bottom, right, top);
+  pGraphicsView->fitInView(pGraphicsView->getExtentRectangle(), Qt::KeepAspectRatio);
   pGraphicsView->setIsCustomScale(false);
   // read the shapes
   if (list.size() < 9)
