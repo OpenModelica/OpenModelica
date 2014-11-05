@@ -51,8 +51,7 @@
   \param componentName - the name of the component.
   */
 Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
-                     QString componentClassName, QString componentName, bool parametersOnly, bool inheritedComponent,
-                     QString inheritedClassName)
+                     QString componentClassName, QString componentName, bool inheritedComponent, QString inheritedClassName)
 {
   mpNameLabel = new Label(pComponentInfo->getName());
   mpValueTextBox = new QLineEdit;
@@ -92,16 +91,8 @@ Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString
     value = pOMCProxy->getParameterValue(componentClassName, pComponentInfo->getName());
   mpValueTextBox->setText(value);
   mpValueTextBox->setCursorPosition(0); /* move the cursor to start so that parameter value will show up from start instead of end. */
-  /*
-    Do not get the unit if we are using the ComponentParameters dialog for TextAnnotation display of Component.
-    parametersOnly will be false if ComponentParameters dialog is created from Component::getParameterDisplayString
-    */
-  if (!parametersOnly)
-  {
-    mpUnitLabel = new Label;
-    mpCommentLabel = new Label;
-    return;
-  }
+  mpUnitLabel = new Label;
+  mpCommentLabel = new Label;
   /*
     Get unit value
     First check if unit is defined with in the component modifier.
@@ -295,13 +286,11 @@ QVBoxLayout *ParametersScrollArea::getLayout()
   \param pComponent - pointer to Component
   \param pMainWindow - pointer to MainWindow
   */
-ComponentParameters::ComponentParameters(bool parametersOnly, Component *pComponent, MainWindow *pMainWindow)
+ComponentParameters::ComponentParameters(Component *pComponent, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Component Parameters")));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
-  mParametersOnly = parametersOnly;
   mpComponent = pComponent;
   mpMainWindow = pMainWindow;
   setUpDialog();
@@ -430,7 +419,7 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
     QString tab = "";
     QString groupBox = "";
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
-    if ((pComponentInfo->getVariablity().compare("parameter") == 0) || (dialogAnnotation.size() > 0) || !mParametersOnly)
+    if ((pComponentInfo->getVariablity().compare("parameter") == 0) || (dialogAnnotation.size() > 0))
     {
       if (dialogAnnotation.size() > 0)
       {
@@ -508,7 +497,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
     bool enable = true;
     QString groupImage = "";
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
-    if ((pComponentInfo->getVariablity().compare("parameter") == 0) || (dialogAnnotation.size() > 0) || !mParametersOnly)
+    if ((pComponentInfo->getVariablity().compare("parameter") == 0) || (dialogAnnotation.size() > 0))
     {
       if (dialogAnnotation.size() > 0)
       {
@@ -537,7 +526,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
           pGroupBox->show();
           /* create a parameter */
           Parameter *pParameter = new Parameter(pComponentInfo, pOMCProxy, className, componentBaseClassName, componentClassName,
-                                                componentName, mParametersOnly, inheritedComponent, inheritedClassName);
+                                                componentName, inheritedComponent, inheritedClassName);
           pParameter->setEnabled(enable);
           /*
             Show a line under the inherited parameter and display the name of the
@@ -662,7 +651,6 @@ ComponentAttributes::ComponentAttributes(Component *pComponent, MainWindow *pMai
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Component Attributes")));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
   mpComponent = pComponent;
   mpMainWindow = pMainWindow;
   setUpDialog();

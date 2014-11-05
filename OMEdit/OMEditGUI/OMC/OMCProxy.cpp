@@ -1166,7 +1166,11 @@ QStringList OMCProxy::getParameterNames(QString className)
 QString OMCProxy::getParameterValue(QString className, QString parameter)
 {
   sendCommand("getParameterValue(" + className + "," + parameter + ")", true, className);
-  return getResult();
+  if (getResult().toLower().contains("error")) {
+    return "";
+  } else {
+    return getResult();
+  }
 }
 
 /*!

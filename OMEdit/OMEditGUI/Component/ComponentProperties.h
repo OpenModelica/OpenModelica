@@ -45,7 +45,7 @@ class Parameter
 {
 public:
   Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
-            QString componentClassName, QString componentName, bool parametersOnly, bool inheritedComponent, QString inheritedClassName);
+            QString componentClassName, QString componentName, bool inheritedComponent, QString inheritedClassName);
   Label* getNameLabel();
   QLineEdit* getValueTextBox();
   Label* getUnitLabel();
@@ -91,7 +91,7 @@ class ComponentParameters : public QDialog
 {
   Q_OBJECT
 public:
-  ComponentParameters(bool parametersOnly, Component *pComponent, MainWindow *pMainWindow);
+  ComponentParameters(Component *pComponent, MainWindow *pMainWindow);
   ~ComponentParameters();
   void setUpDialog();
   void createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString componentClassName, QString componentBaseClassName = QString());

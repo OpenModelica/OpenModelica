@@ -779,24 +779,43 @@ void Component::componentParameterHasChanged()
   */
 QString Component::getParameterDisplayString(QString parameterName)
 {
-  /*
-    Use the ComponentParameters class to get the parameters list and then check the parameterString against them.
-    Don't call show of the ComponentParameters class.
+  /*How to get the display value,
+    1.  Check if the value is available in component modifier.
+    2.  Check if the value is available in the component's class as a parameter or variable.
+    3.  Find the value in extends classes and check if the value is present in extends modifier.
+    3.3 If there is no extends modifier then finally check if value is present in extends classes.
     */
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  ComponentParameters *pComponentParameters = new ComponentParameters(false, this, pMainWindow);
-  QList<Parameter*> parametersList = pComponentParameters->getParametersList();
-  QString result;
-  foreach (Parameter *pParameter, parametersList)
-  {
-    if (pParameter->getNameLabel()->text().compare(parameterName) == 0)
-    {
-      result = pParameter->getValueTextBox()->text();
-      break;
+  QString displayString = "";
+  QString modelName = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+  /* case 1 */
+  displayString = mpOMCProxy->getComponentModifierValue(modelName, mName + "." + parameterName);
+  /* case 2 */
+  if (displayString.isEmpty()) {
+    QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(mClassName);
+    foreach (ComponentInfo *pComponentInfo, componentInfoList) {
+      if (pComponentInfo->getName().compare(parameterName) == 0) {
+        displayString = mpOMCProxy->getParameterValue(mClassName, parameterName);
+        break;
+      }
     }
   }
-  pComponentParameters->deleteLater();
-  return result;
+  /* case 3 */
+  if (displayString.isEmpty()) {
+    foreach (Component *pInheritedComponent, mpInheritanceList) {
+      QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(pInheritedComponent->getClassName());
+      foreach (ComponentInfo *pComponentInfo, componentInfoList) {
+        if (pComponentInfo->getName().compare(parameterName) == 0) {
+          displayString = mpOMCProxy->getExtendsModifierValue(mClassName, pInheritedComponent->getClassName(), parameterName);
+          /* case 3.3 */
+          if (displayString.isEmpty()) {
+            displayString = mpOMCProxy->getParameterValue(pInheritedComponent->getClassName(), parameterName);
+          }
+          break;
+        }
+      }
+    }
+  }
+  return displayString;
 }
 
 void Component::duplicateHelper(GraphicsView *pGraphicsView)
@@ -1276,8 +1295,13 @@ void Component::moveShiftRight()
 void Component::showParameters()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  ComponentParameters *pComponentParameters = new ComponentParameters(true, this, pMainWindow);
-  pComponentParameters->show();
+  pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mClassName).arg(mName));
+  pMainWindow->getProgressBar()->setRange(0, 0);
+  pMainWindow->showProgressBar();
+  ComponentParameters *pComponentParameters = new ComponentParameters(this, pMainWindow);
+  pMainWindow->hideProgressBar();
+  pMainWindow->getStatusBar()->clearMessage();
+  pComponentParameters->exec();
 }
 
 //! Slot that opens up the component attributes dialog.
@@ -1285,8 +1309,13 @@ void Component::showParameters()
 void Component::showAttributes()
 {
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 attributes window").arg(mClassName).arg(mName));
+  pMainWindow->getProgressBar()->setRange(0, 0);
+  pMainWindow->showProgressBar();
   ComponentAttributes *pComponentAttributes = new ComponentAttributes(this, pMainWindow);
-  pComponentAttributes->show();
+  pMainWindow->hideProgressBar();
+  pMainWindow->getStatusBar()->clearMessage();
+  pComponentAttributes->exec();
 }
 
 //! Slot that opens up the component Modelica class in a new tab/window.
