@@ -190,7 +190,7 @@ algorithm
         end if;
         // build the new components, the new variables and the new equations
         (varsNew,eqsNew,_,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
-     
+
         // add the new vars and equations to the original EqSystem
         BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) = matchingNew;
         BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, stateSets = stateSets, partitionKind=partitionKind) = systIn;
@@ -202,7 +202,7 @@ algorithm
         eqLst = List.fold2(List.intRange(listLength(resEqIdcs)),replaceAtPositionFromList,resEqs,resEqIdcs,eqLst);  // replaces the old residualEquations with the new ones
         vars = BackendVariable.listVar1(varLst);  // !!! BackendVariable.listVar outputs the reversed order therefore listVar1
         eqs = BackendEquation.listEquation(eqLst);
-        if Flags.isSet(Flags.HPCOM_DUMP) then 
+        if Flags.isSet(Flags.HPCOM_DUMP) then
           print("number of added equations: "+intString(listLength(eqsNew))+" and the size of the linear torn system: "+intString(listLength(tvarIdcs))+"\n");
         end if;
 
@@ -369,7 +369,7 @@ algorithm
    (rComps,resEqsOut,tVarsOut) := buildEqSystemComponent(residualEqs,tearingVars,resEqsOut,tVarsOut,a_iArr);
    oComps := listAppend(compsNew,rComps);
        //BackendDump.dumpComponents(oComps);
-   
+
    matchingOut := BackendDAE.MATCHING(ass1New,ass2New,oComps);
 
    //printPartLinTornInfo(tcrs,reqns,otherEqnsLst,ovcrs,xa_i_lst,g_i_lst,r_i_lst,h_i_lst,a_i_lst,hs_i_lst,hs,compsNew);
@@ -403,10 +403,10 @@ algorithm
   (_,varIdcs,_) := List.intersection1OnTrue(List.intRange(size),varIdcs,intEq);
   (_,eqIdcs,_) := List.intersection1OnTrue(List.intRange(size),eqIdcs,intEq);
   eqsOut := BackendEquation.getEqns(eqIdcs,eqArr);
-  varsOut := List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,varArr); 
+  varsOut := List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,varArr);
   if numIter<>0 then (eqsOut,varsOut,resEqsOut) := simplifyNewEquations(eqsOut,varsOut,resEqsOut,numIter-1);
   else (eqsOut,varsOut,resEqsOut) := (eqsOut,varsOut,resEqsOut);
-  end if;  
+  end if;
 end simplifyNewEquations;
 
 protected function simplifyNewEquations1
@@ -449,7 +449,7 @@ algorithm
        updEqIdcs := arrayGet(mt,varIdx);
        eqLst := BackendEquation.getEqns(updEqIdcs,eqArr);
        (eqLst,_) := BackendVarTransform.replaceEquations(eqLst,repl,NONE());
-       (resEqLst,_) := BackendVarTransform.replaceEquations(resEqLst,repl,NONE());     
+       (resEqLst,_) := BackendVarTransform.replaceEquations(resEqLst,repl,NONE());
        _ := List.threadFold(updEqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqArr);
        // remove these later
        varIdcs := varIdx::varIdcs;
@@ -579,7 +579,7 @@ algorithm
   (sccEqs, noSccEqs) := tplIn;
   row := arrayGet(m,idx);
   isAss := List.hasOneElement(row);
-  if isAss then noSccEqs := idx::noSccEqs; else sccEqs := idx::sccEqs; end if;  
+  if isAss then noSccEqs := idx::noSccEqs; else sccEqs := idx::sccEqs; end if;
   tplOut := (sccEqs,noSccEqs);
 end getSccEqs;
 
