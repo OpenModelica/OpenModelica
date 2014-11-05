@@ -37,6 +37,7 @@
  */
 
 #include "TransformationsWidget.h"
+#include <qjson/parser.h>
 
 /*!
   \class TVariablesTreeItem
@@ -277,34 +278,28 @@ QModelIndex TVariablesTreeModel::tVariablesTreeItemIndexHelper(const TVariablesT
   return QModelIndex();
 }
 
-void TVariablesTreeModel::insertTVariablesItems()
+void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariable> variables)
 {
-  QHashIterator<QString, OMVariable> variables(mpTVariablesTreeView->getTransformationsWidget()->getInfoXMLFileHandler()->variables);
   while (variables.hasNext())
   {
     variables.next();
-    OMVariable variable = variables.value();
+    const OMVariable &variable = variables.value();
     if (variable.name.startsWith("$PRE."))
       continue;
 
     QStringList tVariables;
     QString parentTVariable;
-    if (variable.name.startsWith("der("))
-    {
+    if (variable.name.startsWith("der(")) {
       QString str = variable.name;
       str.chop((str.lastIndexOf("der(")/4)+1);
       tVariables = StringHandler::makeVariableParts(str.mid(str.lastIndexOf("der(") + 4));
-    }
-    else
-    {
+    } else {
       tVariables = StringHandler::makeVariableParts(variable.name);
     }
     int count = 1;
     TVariablesTreeItem *pParentTVariablesTreeItem = 0;
-    foreach (QString tVariable, tVariables)
-    {
-      if (count == 1) /* first loop iteration */
-      {
+    foreach (QString tVariable, tVariables) {
+      if (count == 1) /* first loop iteration */ {
         pParentTVariablesTreeItem = mpRootTVariablesTreeItem;
       }
       QString findVariable;
@@ -327,12 +322,9 @@ void TVariablesTreeModel::insertTVariablesItems()
         If pParentTVariablesTreeItem is 0 and it is first loop iteration then use mpRootTVariablesTreeItem as parent.
         If loop iteration is not first and pParentTVariablesTreeItem is 0 then find the parent item.
         */
-      if (!pParentTVariablesTreeItem && count > 1)
-      {
+      if (!pParentTVariablesTreeItem && count > 1) {
         pParentTVariablesTreeItem = findTVariablesTreeItem(parentTVariable, mpRootTVariablesTreeItem);
-      }
-      else
-      {
+      } else {
         pParentTVariablesTreeItem = mpRootTVariablesTreeItem;
       }
       QModelIndex index = tVariablesTreeItemIndex(pParentTVariablesTreeItem);
@@ -340,19 +332,21 @@ void TVariablesTreeModel::insertTVariablesItems()
       QString parentVarName = pParentTVariablesTreeItem->getVariableName();
       parentVarName = parentVarName.isEmpty() ? parentVarName : parentVarName.append(".");
       /* if last item */
-      if (tVariables.size() == count && variable.name.startsWith("der("))
+      if (tVariables.size() == count && variable.name.startsWith("der(")) {
         tVariableData << variable.name << "der(" + tVariable + ")" << variable.comment << variable.info.lineStart << variable.info.file;
-      else
+      } else {
         tVariableData << parentVarName + tVariable << tVariable << variable.comment << variable.info.lineStart << variable.info.file;
+      }
       TVariablesTreeItem *pTVariablesTreeItem = new TVariablesTreeItem(tVariableData, pParentTVariablesTreeItem);
       int row = rowCount(index);
       beginInsertRows(index, row, row);
       pParentTVariablesTreeItem->insertChild(row, pTVariablesTreeItem);
       endInsertRows();
-      if (count == 1)
+      if (count == 1) {
         parentTVariable = tVariable;
-      else
+      } else {
         parentTVariable += "." + tVariable;
+      }
       count++;
     }
   }
@@ -755,17 +749,73 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   }
 }
 
-void TransformationsWidget::loadTransformations()
+static OMOperation* variantToOperationPtr(QVariantMap var)
 {
-  QFile infoXMLFile(mInfoXMLFullFileName);
-  mpInfoXMLFileHandler = new MyHandler(infoXMLFile);
-  mpTVariablesTreeModel->insertTVariablesItems();
-  /* load equations */
-  parseProfiling(mProfJSONFullFileName);
-  fetchEquations();
+  QStringList lst;
+  lst << var["display"].toString();
+  OMOperation *op = new OMOperationBeforeAfter(var["op"].toString(),lst);
+  qDebug() << op->toString();
+  return op;
 }
 
-void TransformationsWidget::fetchDefinedInEquations(OMVariable &variable)
+
+static void variantToSource(QVariantMap var, OMInfo &info, QStringList &types, QList<OMOperation*> &ops)
+{
+  QVariantMap vinfo = var["info"].toMap();
+  info.file = vinfo["file"].toString();
+  info.lineStart = vinfo["lineStart"].toInt();
+  info.lineEnd = vinfo["lineEnd"].toInt();
+  info.colStart = vinfo["colStart"].toInt();
+  info.colEnd = vinfo["colEnd"].toInt();
+  info.isValid = true;
+  QVariantList vops = var["operations"].toList();
+  foreach (QVariant vop, vops) {
+    ops += variantToOperationPtr(vop.toMap());
+  }
+}
+
+static OMEquation* getOMEquation(QList<OMEquation*> equations, int index)
+{
+  for (int i = 1 ; i < equations.size() ; i++) {
+    if (equations[i]->index == index)
+      return equations[i];
+  }
+  return NULL;
+}
+
+void TransformationsWidget::loadTransformations()
+{
+  QFile file(mInfoXMLFullFileName);
+  mEquations.clear();
+  mVariables.clear();
+  if (mInfoXMLFullFileName.endsWith(".json")) {
+    QJson::Parser parser;
+    bool ok;
+    QVariantMap result = parser.parse(&file, &ok).toMap();
+    QVariantMap vars = result["variables"].toMap();
+    QVariantList eqs = result["equations"].toList();
+    for(QVariantMap::const_iterator iter = vars.begin(); iter != vars.end(); ++iter) {
+      QVariantMap value = iter.value().toMap();
+      OMVariable *var = new OMVariable();
+      var->name = iter.key();
+      var->comment = value["comment"].toString();
+      variantToSource(value["source"].toMap(), var->info, var->types, var->ops);
+      foreach (OMOperation *op, var->ops) {
+        qDebug() << "op: " << op->toString();
+      }
+      mVariables[iter.key()] = *var;
+    }
+    mpTVariablesTreeModel->insertTVariablesItems(mVariables);
+  } else {
+    mpInfoXMLFileHandler = new MyHandler(file,mVariables,mEquations);
+    mpTVariablesTreeModel->insertTVariablesItems(mVariables);
+    /* load equations */
+    parseProfiling(mProfJSONFullFileName);
+    fetchEquations();
+  }
+}
+
+void TransformationsWidget::fetchDefinedInEquations(const OMVariable &variable)
 {
   /* Clear the defined in tree. */
   clearTreeWidgetItems(mpDefinedInEquationsTreeWidget);
@@ -774,7 +824,7 @@ void TransformationsWidget::fetchDefinedInEquations(OMVariable &variable)
   {
     if (variable.definedIn[i])
     {
-      OMEquation *equation = mpInfoXMLFileHandler->getOMEquation(variable.definedIn[i]);
+      OMEquation *equation = getOMEquation(mEquations, variable.definedIn[i]);
       QStringList values;
       values << QString::number(variable.definedIn[i]) << OMEquationTypeToString(equation->kind) << equation->toString();
       QTreeWidgetItem *pDefinedInTreeItem = new IntegerTreeWidgetItem(values, mpDefinedInEquationsTreeWidget);
@@ -786,7 +836,7 @@ void TransformationsWidget::fetchDefinedInEquations(OMVariable &variable)
   }
 }
 
-void TransformationsWidget::fetchUsedInEquations(OMVariable &variable)
+void TransformationsWidget::fetchUsedInEquations(const OMVariable &variable)
 {
   /* Clear the used in tree. */
   clearTreeWidgetItems(mpUsedInEquationsTreeWidget);
@@ -795,7 +845,7 @@ void TransformationsWidget::fetchUsedInEquations(OMVariable &variable)
   {
     foreach (int index, variable.usedIn[i])
     {
-      OMEquation *equation = mpInfoXMLFileHandler->getOMEquation(index);
+      OMEquation *equation = getOMEquation(mEquations, index);
       QStringList values;
       values << QString::number(index) << OMEquationTypeToString(equation->kind) << equation->toString();
       QTreeWidgetItem *pUsedInTreeItem = new IntegerTreeWidgetItem(values, mpUsedInEquationsTreeWidget);
@@ -807,7 +857,7 @@ void TransformationsWidget::fetchUsedInEquations(OMVariable &variable)
   }
 }
 
-void TransformationsWidget::fetchOperations(OMVariable &variable)
+void TransformationsWidget::fetchOperations(const OMVariable &variable)
 {
   /* Clear the operations tree. */
   clearTreeWidgetItems(mpVariableOperationsTreeWidget);
@@ -843,7 +893,7 @@ void TransformationsWidget::fetchOperations(OMVariable &variable)
 
 QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationIndex, int allowChild)
 {
-  OMEquation *equation = mpInfoXMLFileHandler->equations[equationIndex];
+  OMEquation *equation = mEquations[equationIndex];
   if (!allowChild && equation->parent) {
     return NULL; // Only output equations in one position
   }
@@ -870,7 +920,7 @@ QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationI
 
 void TransformationsWidget::fetchEquations()
 {
-  for (int i = 1 ; i < mpInfoXMLFileHandler->equations.size() ; i++)
+  for (int i = 1 ; i < mEquations.size() ; i++)
   {
     QTreeWidgetItem *pEquationTreeItem = makeEquationTreeWidgetItem(i,0);
     if (pEquationTreeItem) {
@@ -882,7 +932,7 @@ void TransformationsWidget::fetchEquations()
 
 void TransformationsWidget::fetchNestedEquations(QTreeWidgetItem *pParentTreeWidgetItem, int index)
 {
-  foreach (int nestedIndex, mpInfoXMLFileHandler->equations[index]->eqs)
+  foreach (int nestedIndex, mEquations[index]->eqs)
   {
     // OMEquation *nestedEquation = mpInfoXMLFileHandler->equations[nestedIndex];
     QTreeWidgetItem *pNestedEquationTreeItem = makeEquationTreeWidgetItem(nestedIndex,1);
@@ -910,7 +960,7 @@ QTreeWidgetItem* TransformationsWidget::findEquationTreeItem(int equationIndex)
 
 void TransformationsWidget::fetchEquationData(int equationIndex)
 {
-  OMEquation *equation = mpInfoXMLFileHandler->getOMEquation(equationIndex);
+  OMEquation *equation = getOMEquation(mEquations, equationIndex);
   /* fetch defines */
   fetchDefines(equation);
   /* fetch depends */
@@ -1104,7 +1154,7 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
   if (!pTVariableTreeItem || pTVariableTreeItem->getChildren().size() != 0)
     return;
 
-  OMVariable variable = mpInfoXMLFileHandler->variables.value(pTVariableTreeItem->getVariableName());
+  const OMVariable &variable = mVariables.value(pTVariableTreeItem->getVariableName());
   /* fetch defined in equations */
   fetchDefinedInEquations(variable);
   /* fetch used in equations */
@@ -1149,8 +1199,6 @@ void TransformationsWidget::fetchEquationData(QTreeWidgetItem *pEquationTreeItem
   fetchEquationData(equationIndex);
 }
 
-#include <qjson/parser.h>
-
 void TransformationsWidget::parseProfiling(QString fileName)
 {
   QFile *file = new QFile(fileName);
@@ -1169,11 +1217,11 @@ void TransformationsWidget::parseProfiling(QString fileName)
     QVariantMap eq = list[i].toMap();
     long id = eq["id"].toInt();
     double time = eq["time"].toDouble();
-    mpInfoXMLFileHandler->equations[id]->ncall = eq["ncall"].toInt();
-    mpInfoXMLFileHandler->equations[id]->maxTime = eq["maxTime"].toDouble();
-    mpInfoXMLFileHandler->equations[id]->time = time;
-    mpInfoXMLFileHandler->equations[id]->fraction = time / totalStepsTime;
-    mpInfoXMLFileHandler->equations[id]->profileBlock = i + functions.size();
+    mEquations[id]->ncall = eq["ncall"].toInt();
+    mEquations[id]->maxTime = eq["maxTime"].toDouble();
+    mEquations[id]->time = time;
+    mEquations[id]->fraction = time / totalStepsTime;
+    mEquations[id]->profileBlock = i + functions.size();
   }
   delete file;
 }

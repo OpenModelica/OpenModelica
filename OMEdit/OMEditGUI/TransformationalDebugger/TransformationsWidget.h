@@ -92,7 +92,7 @@ public:
   QModelIndex tVariablesTreeItemIndex(const TVariablesTreeItem *pTVariablesTreeItem) const;
   QModelIndex tVariablesTreeItemIndexHelper(const TVariablesTreeItem *pTVariablesTreeItem, const TVariablesTreeItem *pParentTVariablesTreeItem,
                                            const QModelIndex &parentIndex) const;
-  void insertTVariablesItems();
+  void insertTVariablesItems(QHashIterator<QString, OMVariable> variables);
   void clearTVariablesTreeItems();
 private:
   TVariablesTreeView *mpTVariablesTreeView;
@@ -172,9 +172,9 @@ public:
   QSplitter* getTransformationsVerticalSplitter() {return mpTransformationsVerticalSplitter;}
   QSplitter* getTransformationsHorizontalSplitter() {return mpTransformationsHorizontalSplitter;}
   void loadTransformations();
-  void fetchDefinedInEquations(OMVariable &variable);
-  void fetchUsedInEquations(OMVariable &variable);
-  void fetchOperations(OMVariable &variable);
+  void fetchDefinedInEquations(const OMVariable &variable);
+  void fetchUsedInEquations(const OMVariable &variable);
+  void fetchOperations(const OMVariable &variable);
   void fetchEquations();
   void fetchNestedEquations(QTreeWidgetItem *pParentTreeWidgetItem, int index);
   QTreeWidgetItem* findEquationTreeItem(int equationIndex);
@@ -214,6 +214,8 @@ private:
   QSplitter *mpEquationsHorizontalSplitter;
   QSplitter *mpTransformationsVerticalSplitter;
   QSplitter *mpTransformationsHorizontalSplitter;
+  QHash<QString,OMVariable> mVariables;
+  QList<OMEquation*> mEquations;
 
   void parseProfiling(QString fileName);
   QTreeWidgetItem* makeEquationTreeWidgetItem(int equationIndex, int allowChild);

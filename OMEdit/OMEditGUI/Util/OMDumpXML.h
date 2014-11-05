@@ -60,6 +60,14 @@ public:
   QString diffHtml(QString &before, QString &after);
 };
 
+class OMOperationJSON : public OMOperation {
+public:
+  QVariant var;
+  OMOperationJSON(QVariant var);
+  QString toString();
+  QString toHtml();
+};
+
 class OMOperationBeforeAfter : public OMOperation
 {
 public:
@@ -165,7 +173,7 @@ struct OMVariable {
   QString comment;
   OMInfo info;
   QStringList types;
-  int definedIn[equationTypeSize];
+  int definedIn[equationTypeSize] = {0};
   QList<int> usedIn[equationTypeSize];
   QList<OMOperation*> ops;
   OMVariable();
@@ -190,13 +198,12 @@ struct OMEquation {
 
 class MyHandler : private QXmlDefaultHandler {
 public:
-  QHash<QString,OMVariable> variables;
-  QList<OMEquation*> equations;
   bool hasOperationsEnabled;
-  MyHandler(QFile &file);
+  MyHandler(QFile &file, QHash<QString,OMVariable> &variables, QList<OMEquation*> &equations);
   ~MyHandler();
-  OMEquation* getOMEquation(int index);
 private:
+  QHash<QString,OMVariable> &variables;
+  QList<OMEquation*> &equations;
   OMVariable currentVariable;
   OMEquation *currentEquation;
   QList<int> nestedEquations;

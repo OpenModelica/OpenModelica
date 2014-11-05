@@ -67,6 +67,20 @@ QString OMOperation::diffHtml(QString &before, QString &after)
   return dmp.diff_prettyHtml(diffs);
 }
 
+OMOperationJSON::OMOperationJSON(QVariant var) : var(var)
+{
+}
+
+QString OMOperationJSON::toString()
+{
+  return var.toString();
+}
+
+QString OMOperationJSON::toHtml()
+{
+  return var.toString();
+}
+
 OMOperationBeforeAfter::OMOperationBeforeAfter(QString name, QStringList ops) : name(name)
 {
   before = ops.size() > 0 ? ops[0] : "";
@@ -192,6 +206,7 @@ OMVariable::OMVariable(const OMVariable &var)
     usedIn[i] = var.usedIn[i];
   }
   foreach (OMOperation *op, var.ops) {
+    qDebug() << "dynamic_cast op: " << op->toString();
     if (dynamic_cast<OMOperationSimplify*>(op))
       ops.append(new OMOperationSimplify(*dynamic_cast<OMOperationSimplify*>(op)));
     else if (dynamic_cast<OMOperationScalarize*>(op))
@@ -214,6 +229,8 @@ OMVariable::OMVariable(const OMVariable &var)
       ops.append(new OMOperationDummyDerivative(*dynamic_cast<OMOperationDummyDerivative*>(op)));
     else if (dynamic_cast<OMOperationFlattening*>(op))
       ops.append(new OMOperationFlattening(*dynamic_cast<OMOperationFlattening*>(op)));
+    else if (dynamic_cast<OMOperationJSON*>(op))
+      ops.append(new OMOperationJSON(*dynamic_cast<OMOperationJSON*>(op)));
     else
       ops.append(new OMOperation(*op));
   }
@@ -253,7 +270,7 @@ QString OMEquation::toString()
   }
 }
 
-MyHandler::MyHandler(QFile &file)
+MyHandler::MyHandler(QFile &file, QHash<QString,OMVariable> &variables, QList<OMEquation*> &equations) : variables(variables), equations(equations)
 {
   hasOperationsEnabled = false;
   QXmlSimpleReader xmlReader;
@@ -269,18 +286,10 @@ MyHandler::MyHandler(QFile &file)
 
 MyHandler::~MyHandler()
 {
+
   foreach (OMEquation *eq, equations) {
     delete eq;
   }
-}
-
-OMEquation* MyHandler::getOMEquation(int index)
-{
-  for (int i = 1 ; i < equations.size() ; i++) {
-    if (equations[i]->index == index)
-      return equations[i];
-  }
-  return NULL;
 }
 
 bool MyHandler::startDocument()
