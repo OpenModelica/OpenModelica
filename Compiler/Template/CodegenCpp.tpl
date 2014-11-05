@@ -93,7 +93,7 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
     virtual void setInitial(bool);
     virtual void initialize();
     virtual void initEquations();
-  
+
   private:
     <%initeqs%>
     void initializeAlgVars();
@@ -147,7 +147,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   public:
     <%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Jacobian();
-  
+
   protected:
     void initialize();
     <%
@@ -172,7 +172,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       ublas::vector<double> _<%name%>jac_y;
       ublas::vector<double> _<%name%>jac_tmp;
       ublas::vector<double> _<%name%>jac_x;
-	  
+
     public:
       /*needed for colored Jacs*/
       int _<%name%>_sizeCols;
@@ -312,7 +312,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     void setAMatrix(unsigned int index, DynArrayDim2<int>& A);
     bool getAMatrix(unsigned int index, DynArrayDim1<int>& A);
     void setAMatrix(unsigned int index, DynArrayDim1<int>& A);
-	
+
   protected:
     void initialize();
   };
@@ -445,8 +445,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void setAMatrix(unsigned int index, DynArrayDim2<int>& A);
     virtual bool getAMatrix(unsigned int index,DynArrayDim1<int>& A);
     virtual void setAMatrix(unsigned int index,DynArrayDim1<int>& A);
-  
-  
+
+
     /*colored jacobians*/
     virtual void getA_sparsePattern_leadindex(int* A_sparsePattern_leadindex, int size);
     virtual int getA_sizeof_sparsePattern_leadindex();
@@ -531,7 +531,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    /* #include <Core/Modelica.h>
    #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Jacobian.h" */
-   
+
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData)
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, simData)
        , _A_sparsePattern_leadindex(NULL)
@@ -549,7 +549,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    if(_A_sparsePattern_colorCols)
      delete []  _A_sparsePattern_colorCols;
    }
-   
+
    <%functionAnalyticJacobians(jacobianMatrixes,simCode,useFlatArrayNotation)%>
 
    //testmaessig aus der cruntime
@@ -577,7 +577,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%lastIdentOfPath(modelInfo.name)%>StateSelection::~<%lastIdentOfPath(modelInfo.name)%>StateSelection()
    {
    }
-   
+
    <%functionDimStateSets(stateSets, simCode)%>
    <%functionStateSets(stateSets, simCode,useFlatArrayNotation)%>
    >>
@@ -604,7 +604,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
      delete _historyImpl;
    }
-   
+
    IHistory* <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory()
    {
      return _historyImpl;
@@ -643,7 +643,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    {
    }
-   
+
    <%lastIdentOfPath(modelInfo.name)%>Extension::~<%lastIdentOfPath(modelInfo.name)%>Extension()
    {
    }
@@ -671,7 +671,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      getAJacobian(matrix);
 
    }
-   
+
    void <%lastIdentOfPath(modelInfo.name)%>Extension::getStateSetJacobian(unsigned int index,SparseMatrix& matrix)
    {
      switch (index)
@@ -691,7 +691,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         throw std::invalid_argument("Not supported statset index");
       }
    }
-   
+
    bool <%lastIdentOfPath(modelInfo.name)%>Extension::handleSystemEvents(bool* events)
    {
      return <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(events);
@@ -701,7 +701,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
      return <%lastIdentOfPath(modelInfo.name)%>::saveAll();
    }
-   
+
    void <%lastIdentOfPath(modelInfo.name)%>Extension::initEquations()
    {
      <%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations();
@@ -716,32 +716,32 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
      return <%lastIdentOfPath(modelInfo.name)%>WriteOutput::getHistory();
    }
-   
+
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimStateSets() const
    {
      return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimStateSets();
    }
-   
+
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimStates(unsigned int index) const
    {
      return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimStates(index);
    }
-   
+
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimCanditates(unsigned int index) const
    {
      return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimCanditates(index);
    }
-   
+
    int <%lastIdentOfPath(modelInfo.name)%>Extension::getDimDummyStates(unsigned int index) const
    {
      return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getDimDummyStates(index);
    }
-   
+
    void <%lastIdentOfPath(modelInfo.name)%>Extension::getStates(unsigned int index,double* z)
    {
      <%lastIdentOfPath(modelInfo.name)%>StateSelection::getStates(index,z);
-   } 
-   
+   }
+
    void <%lastIdentOfPath(modelInfo.name)%>Extension::setStates(unsigned int index,const double* z)
    {
      <%lastIdentOfPath(modelInfo.name)%>StateSelection::setStates(index,z);
@@ -761,7 +761,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
      <%lastIdentOfPath(modelInfo.name)%>StateSelection::setAMatrix(index,A);
    }
-   
+
    bool <%lastIdentOfPath(modelInfo.name)%>Extension::getAMatrix(unsigned int index,DynArrayDim1<int> & A)
    {
      return <%lastIdentOfPath(modelInfo.name)%>StateSelection::getAMatrix(index,A);
@@ -832,18 +832,18 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     {
       return 0;
     }
-    
-	int <%classname%>StateSelection::getDimStates(unsigned int index) const
+
+  int <%classname%>StateSelection::getDimStates(unsigned int index) const
     {
       return 0;
     }
-    
-	int <%classname%>StateSelection::getDimCanditates(unsigned int index) const
+
+  int <%classname%>StateSelection::getDimCanditates(unsigned int index) const
     {
       return 0;
     }
-    
-	int <%classname%>StateSelection::getDimDummyStates(unsigned int index) const
+
+  int <%classname%>StateSelection::getDimDummyStates(unsigned int index) const
     {
       return 0;
     }
@@ -854,7 +854,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     {
       return <%listLength(stateSets)%>;
     }
-	
+
     int <%classname%>StateSelection::getDimStates(unsigned int index) const
     {
        switch (index)
@@ -874,7 +874,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       }
 
     }
-	
+
     int <%classname%>StateSelection::getDimCanditates(unsigned int index) const
     {
        switch (index)
@@ -894,7 +894,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       }
 
     }
-	
+
     int <%classname%>StateSelection::getDimDummyStates(unsigned int index) const
     {
       switch (index)
@@ -990,34 +990,34 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      void <%classname%>StateSelection::getStates(unsigned int index, double* z)
      {
      }
-	 
+
      void <%classname%>StateSelection::setStates(unsigned int index, const double* z)
      {
      }
-	 
+
      void <%classname%>StateSelection::getStateCanditates(unsigned int index, double* z)
      {
 
      }
-     
+
      bool <%classname%>StateSelection::getAMatrix(unsigned int index, DynArrayDim2<int> & A)
      {
        return false;
      }
-	 
+
      bool <%classname%>StateSelection::getAMatrix(unsigned int index, DynArrayDim1<int> & A)
      {
        return false;
      }
-	 
+
      void <%classname%>StateSelection::setAMatrix(unsigned int index, DynArrayDim2<int>& A)
      {
      }
-	 
+
      void <%classname%>StateSelection::setAMatrix(unsigned int index, DynArrayDim1<int>& A)
      {
      }
-	 
+
      void <%classname%>StateSelection::initialize()
      {
      }
@@ -1397,7 +1397,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   Functions::~Functions()
   {
   }
-  
+
   void Functions::Assert(bool cond, string msg)
   {
     if(!cond)
@@ -2151,7 +2151,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    %>
    {
         <%varDecls%>
-		
+
         //prebody
         <%prebody%>
         //body
@@ -4398,13 +4398,13 @@ match simCode
 case SIMCODE(__) then
   <<
   <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
-  
+
   <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
-  
+
   <%createEvaluate(odeEquations,whenClauses,simCode,contextOther)%>
-  
+
   <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther)%>
-  
+
   <%createEvaluateConditions(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
   >>
 end Update;
@@ -6796,7 +6796,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo=VARINFO(numAlgVars= numAlgVars, numDi
         '("<%cref(name, useFlatArrayNotation)%>",(<%i4%>+<%n4%>))'
       ;separator=" "; align=10;alignSeparator="\n"   )}
      ;separator=" "%>;
-	 
+
       insert( vars2 )
       <%{
        (vars.algVars |> SIMVAR(__) hasindex i0 =>
@@ -8550,7 +8550,7 @@ case SES_SIMPLE_ASSIGN(__) then
   >>
   else
   <<
-  <%preExp%>  
+  <%preExp%>
   <%cref1(cref, simCode, context, varDecls,useFlatArrayNotation)%> = <%expPart%>;
   >>
  end match
@@ -8598,7 +8598,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
         IContinuous::UPDATETYPE calltype = _callType;
         try
         {
-     		if( _callType == IContinuous::DISCRETE )
+         if( _callType == IContinuous::DISCRETE )
             {
                 _algLoop<%index%>->evaluate();
                 while(restart<%index%> && !(iterations<%index%>++>500))
@@ -12373,7 +12373,7 @@ case {} then
   void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
   }
-  
+
   void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
   {
   }
@@ -12385,7 +12385,7 @@ case _ then
   void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
   }
-  
+
   void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
   {
   }
@@ -12414,7 +12414,7 @@ _<%matrixName%>jac_x.clear();
 
   <<
   <%jacMats%>
-  
+
   void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
   {
     <%jacvals%>
