@@ -833,17 +833,17 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       return 0;
     }
 
-  int <%classname%>StateSelection::getDimStates(unsigned int index) const
+    int <%classname%>StateSelection::getDimStates(unsigned int index) const
     {
       return 0;
     }
 
-  int <%classname%>StateSelection::getDimCanditates(unsigned int index) const
+    int <%classname%>StateSelection::getDimCanditates(unsigned int index) const
     {
       return 0;
     }
 
-  int <%classname%>StateSelection::getDimDummyStates(unsigned int index) const
+    int <%classname%>StateSelection::getDimDummyStates(unsigned int index) const
     {
       return 0;
     }
