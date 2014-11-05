@@ -197,17 +197,16 @@ extern int omc__escapedStringLength(const char* str, int nl, int *hasEscape)
  */
 extern char* omc__escapedString(const char* str, int nl)
 {
-  int len1,len2;
+  int len;
   char *res;
   const char *origstr = str;
   int i=0;
   int hasEscape = 0;
-  len1 = strlen(str);
-  len2 = omc__escapedStringLength(str,nl,&hasEscape);
+  len = omc__escapedStringLength(str,nl,&hasEscape);
   if (!hasEscape) {
     return NULL;
   }
-  res = (char*) malloc(len2+1);
+  res = (char*) malloc(len+1);
   while(*str) {
     switch (*str) {
       case '"': res[i++] = '\\'; res[i++] = '"'; break;

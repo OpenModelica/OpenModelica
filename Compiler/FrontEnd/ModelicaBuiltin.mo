@@ -29,7 +29,7 @@
  *
  */
 
-function der "derivative of the input expression"
+function der "Derivative of the input expression"
   input Real x(unit="'p");
   output Real dx(unit="'p/s");
 external "builtin";
@@ -38,7 +38,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end der;
 
-impure function initial
+impure function initial "True if in initialization phase"
   output Boolean isInitial;
 external "builtin";
 annotation(__OpenModelica_Impure=true, Documentation(info="<html>
@@ -46,7 +46,7 @@ annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 </html>"));
 end initial;
 
-impure function terminal
+impure function terminal "True after successful analysis"
   output Boolean isTerminal;
 external "builtin";
 annotation(__OpenModelica_Impure=true, Documentation(info="<html>
@@ -57,7 +57,7 @@ end terminal;
 type AssertionLevel = enumeration(error, warning) annotation(__OpenModelica_builtin=true,
   Documentation(info="<html>Used by <a href=\"modelica://assert\">assert()</a></html>"));
 
-function assert
+function assert "Check an assertion condition"
   input Boolean condition;
   input String message;
   input AssertionLevel level = AssertionLevel.error;
@@ -112,7 +112,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end sqrt;
 
-function sign
+function sign "Sign of real or integer number"
   input Real v;
   output Integer _sign;
 external "builtin";
@@ -126,7 +126,7 @@ algorithm
  */
 end sign;
 
-function identity
+function identity "Identity matrix of given size"
   input Integer arraySize;
   output Integer[arraySize,arraySize] outArray;
 external "builtin";
@@ -146,7 +146,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end semiLinear;
 
-function edge
+function edge "Indicate rising edge"
   input Boolean b;
   output Boolean edgeEvent;
   // TODO: Ceval parameters? Needed to remove the builtin handler
@@ -284,7 +284,7 @@ annotation(version="Modelica 3.2",Documentation(info="<html>
 </html>"));
 end homotopy;
 
-function linspace
+function linspace "Real vector with equally spaced elements"
   input Real x1 "start";
   input Real x2 "end";
   input Integer n "number";
@@ -380,21 +380,21 @@ function max "Returns the largest element"
 </html>"));
 end max;
 
-function sum
+function sum "Sum of all array elements"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sum()'\">sum()</a>
 </html>"));
 end sum;
 
-function product
+function product "Product of all array elements"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'product()'\">product()</a>
 </html>"));
 end product;
 
-function transpose
+function transpose "Transpose a matrix"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'transpose()'\">transpose()</a>
@@ -431,7 +431,7 @@ function cardinality "Number of connectors in connection"
 </html>"),version="Deprecated");
 end cardinality;
 
-function array
+function array "Constructs an array"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'array()'\">array()</a>
@@ -494,7 +494,7 @@ function previous "Access previous value of a clocked variable"
 </html>"));
 end previous;
 
-function hold "Conversion from clocked discrete-time to continous time"
+function hold "Conversion from clocked discrete-time to continuous time"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'hold()'\">hold()</a>
@@ -606,28 +606,28 @@ function size "Returns dimensions of an array"
 </html>"));
 end size;
 
-function scalar
+function scalar "Returns a one-element array as scalar"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'scalar()'\">scalar()</a>
 </html>"));
 end scalar;
 
-function vector
+function vector "Returns an array as vector"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'vector()'\">vector()</a>
 </html>"));
 end vector;
 
-function matrix
+function matrix "Returns the first two dimensions of an array as matrix"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'matrix()'\">matrix()</a>
 </html>"));
 end matrix;
 
-function cat
+function cat "Concatenate arrays along given dimension"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cat()'\">cat()</a>
