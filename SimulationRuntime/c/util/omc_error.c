@@ -379,7 +379,6 @@ void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *
     messageFunction(LOG_TYPE_DEBUG, stream, indentNext, logBuffer, 0, indexes);
   }
 }
-
 #endif
 
 static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)

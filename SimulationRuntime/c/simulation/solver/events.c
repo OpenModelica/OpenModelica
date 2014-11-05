@@ -263,24 +263,29 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     data->simulationInfo.chatteringInfo.lastSteps[data->simulationInfo.chatteringInfo.currentIndex]=1;
     data->simulationInfo.chatteringInfo.lastTimes[data->simulationInfo.chatteringInfo.currentIndex]=time;
 
-    if (!data->simulationInfo.chatteringInfo.messageEmitted && data->simulationInfo.chatteringInfo.lastStepsNumStateEvents == data->simulationInfo.chatteringInfo.numEventLimit) {
+    if (!data->simulationInfo.chatteringInfo.messageEmitted && data->simulationInfo.chatteringInfo.lastStepsNumStateEvents == data->simulationInfo.chatteringInfo.numEventLimit)
+    {
       int numEventLimit = data->simulationInfo.chatteringInfo.numEventLimit;
       int currentIndex = data->simulationInfo.chatteringInfo.currentIndex;
       double t0 = data->simulationInfo.chatteringInfo.lastTimes[(currentIndex+1) % numEventLimit];
-      if (time - t0 < data->simulationInfo.stepSize) {
+      if (time - t0 < data->simulationInfo.stepSize)
+      {
         long ix = *((long*) listNodeData(listFirstNode(eventLst)));
         int *eq_indexes;
         const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
         infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than the step size %.12g). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEventLimit, data->simulationInfo.stepSize, exp_str);
         data->simulationInfo.chatteringInfo.messageEmitted = 1;
-        if (omc_flag[FLAG_ABORT_SLOW]) {
+        if (omc_flag[FLAG_ABORT_SLOW])
+        {
           throwStreamPrintWithEquationIndexes(data->threadData, eq_indexes, "Aborting simulation due to chattering being detected and the simulation flags requesting we do not continue further.");
         }
       }
     }
 
     listClear(eventLst);
-  } else {
+  }
+  else
+  {
     data->simulationInfo.chatteringInfo.lastSteps[data->simulationInfo.chatteringInfo.currentIndex]=0;
     /* Setting time does not matter */
   }
@@ -346,7 +351,8 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
   assert(states_right);
   assert(states_left);
 
-  for(it=listFirstNode(eventList); it; it=listNextNode(it)) {
+  for(it=listFirstNode(eventList); it; it=listNextNode(it))
+  {
     infoStreamPrint(LOG_ZEROCROSSINGS, 0, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
   }
 
@@ -360,7 +366,8 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
   if(listLen(tmpEventList) == 0)
   {
     double value = fabs(data->simulationInfo.zeroCrossings[*((long*) listFirstData(eventList))]);
-    for(it = listFirstNode(eventList); it; it = listNextNode(it)) {
+    for(it = listFirstNode(eventList); it; it = listNextNode(it))
+    {
       double fvalue = fabs(data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))]);
       if(value > fvalue)
       {

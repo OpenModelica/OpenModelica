@@ -97,6 +97,7 @@ void copyStartValuestoInitValues(DATA *data);
 
 void printAllVars(DATA *data, int ringSegment, int stream);
 void printRelations(DATA *data, int stream);
+void printZeroCrossings(DATA *data, int stream);
 void printParameters(DATA *data, int stream);
 
 void overwriteOldSimulationData(DATA *data);

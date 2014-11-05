@@ -1139,6 +1139,9 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
   data->callback->function_storeDelayed(data);
   data->callback->function_updateRelations(data, 1);
+  
+  printRelations(data, LOG_EVENTS);
+  printZeroCrossings(data, LOG_EVENTS);
 
   /* valid system for the first time! */
   TRACE_POP

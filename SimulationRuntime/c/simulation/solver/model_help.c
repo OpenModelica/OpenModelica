@@ -85,7 +85,7 @@ void updateDiscreteSystem(DATA *data)
 
   relationChanged = checkRelations(data);
   discreteChanged = data->callback->checkForDiscreteChanges(data);
-  while(!initial() && (discreteChanged || data->simulationInfo.needToIterate || relationChanged))
+  while(!data->simulationInfo.initial && (discreteChanged || data->simulationInfo.needToIterate || relationChanged))
   {
     if(data->simulationInfo.needToIterate)
       debugStreamPrint(LOG_EVENTS_V, 0, "reinit() call. Iteration needed!");
@@ -381,7 +381,38 @@ void printRelations(DATA *data, int stream)
 
   infoStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
   for(i=0; i<data->modelData.nRelations; i++)
-    infoStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+    infoStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i+1, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+  messageClose(stream);
+
+  TRACE_POP
+}
+
+/*! \fn printZeroCrossings
+ *
+ *  print all zero crossings
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [stream]
+ */
+void printZeroCrossings(DATA *data, int stream)
+{
+  long i;
+
+  TRACE_PUSH
+
+  if (!ACTIVE_STREAM(stream))
+  {
+    TRACE_POP
+    return;
+  }
+
+  infoStreamPrint(stream, 1, "status of zero crossings at time=%.12g", data->localData[0]->timeValue);
+  for(i=0; i<data->modelData.nZeroCrossings; i++)
+  {
+    int *eq_indexes;
+    const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
+    infoStreamPrintWithEquationIndexes(stream, 0, eq_indexes, "[%ld] %s = %g | pre(%s) = %g", i+1, exp_str, data->simulationInfo.zeroCrossings[i], exp_str, data->simulationInfo.zeroCrossingsPre[i]);
+  }
   messageClose(stream);
 
   TRACE_POP
@@ -949,7 +980,8 @@ void deInitializeDataStruc(DATA *data)
   TRACE_PUSH
 
   /* prepair RingBuffer */
-  for(i=0; i<SIZERINGBUFFER; i++){
+  for(i=0; i<SIZERINGBUFFER; i++)
+  {
     SIMULATION_DATA* tmpSimData = (SIMULATION_DATA*) data->localData[i];
     /* free buffer for all variable values */
     free(tmpSimData->realVars);
