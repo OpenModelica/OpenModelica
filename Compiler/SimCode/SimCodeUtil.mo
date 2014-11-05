@@ -2764,20 +2764,17 @@ protected function zeroCrossingsEquations "
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   output list<Integer> eqns;
+protected
+  list<BackendDAE.ZeroCrossing> zeroCrossingLst;
+  list<list<Integer>> zcEqns;
+  list<Integer> wcEqns;
+  BackendDAE.EquationArray orderedEqs;
 algorithm
-  eqns := match (syst, shared)
-    local
-      list<BackendDAE.ZeroCrossing> zcLst;
-      list<list<Integer>> zcEqns;
-      list<Integer> wcEqns;
-      BackendDAE.EquationArray eqnArr;
-    case (BackendDAE.EQSYSTEM(orderedEqs=eqnArr), BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zcLst)))
-      equation
-        zcEqns = List.map(zcLst, zeroCrossingEquations);
-        wcEqns = whenEquationsIndices(eqnArr);
-        eqns = List.unionList(listAppend(zcEqns, {wcEqns}));
-      then eqns;
-  end match;
+  BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := syst;
+  BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zeroCrossingLst)) := shared;
+  zcEqns := List.map(zeroCrossingLst, zeroCrossingEquations);
+  wcEqns := whenEquationsIndices(orderedEqs);
+  eqns := List.unionList(listAppend(zcEqns, {wcEqns}));
 end zeroCrossingsEquations;
 
 protected function zeroCrossingEquations "
@@ -2793,11 +2790,7 @@ protected function whenEquationsIndices "
   input BackendDAE.EquationArray eqns;
   output list<Integer> res;
 algorithm
-   res := match (eqns)
-     case _ equation
-         res=whenEquationsIndices2(1, BackendDAEUtil.equationArraySize(eqns), eqns);
-       then res;
-   end match;
+  res := whenEquationsIndices2(1, BackendDAEUtil.equationArraySize(eqns), eqns);
 end whenEquationsIndices;
 
 protected function whenEquationsIndices2
@@ -5431,40 +5424,6 @@ algorithm
   end matchcontinue;
 end createAlgorithmAndEquationAsserts;
 
-protected function assertCollector
-  input DAE.Statement inStmt;
-  input list<DAE.Algorithm> inAcc;
-  output list<DAE.Algorithm> outAcc;
-algorithm
-  outAcc := match(inStmt, inAcc)
-    case (DAE.STMT_ASSERT(cond =_), _)
-      then
-        DAE.ALGORITHM_STMTS({inStmt})::inAcc;
-    else
-      then
-        inAcc;
-  end match;
-end assertCollector;
-
-protected function createAlgorithmAndEquationAssertsFromAlgsEqnTraverser
-  "Help function to e.g. traverserexpandDerEquation"
-  input tuple<BackendDAE.Equation, list<DAE.Algorithm>> tpl;
-  output tuple<BackendDAE.Equation, list<DAE.Algorithm>> outTpl;
-algorithm
-  outTpl := match(tpl)
-    local
-      list<DAE.Algorithm> res;
-      list<DAE.Statement> stmts;
-      BackendDAE.Equation eqn;
-    // get Modelica Asserts
-    case ((eqn as BackendDAE.ALGORITHM(alg= DAE.ALGORITHM_STMTS(stmts)), res))
-      equation
-        res = List.fold(stmts, assertCollector, res);
-      then
-        ((eqn, res));
-  end match;
-end createAlgorithmAndEquationAssertsFromAlgsEqnTraverser;
-
 protected function createRemovedEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -5559,41 +5518,6 @@ algorithm
     else (inVar,inTpl);
   end matchcontinue;
 end traversingisVarDiscreteCrefFinder;
-
-protected function extractDiscEqs
-  input list<BackendDAE.Equation> disc_eqn;
-  input list<BackendDAE.Var> disc_var;
-  input Integer inUniqueEqIndex;
-  output list<SimCode.SimEqSystem> discEqsOut;
-  output Integer uniqueEqIndex;
-algorithm
-  (discEqsOut,uniqueEqIndex) :=
-  match (disc_eqn, disc_var, inUniqueEqIndex)
-    local
-      list<SimCode.SimEqSystem> restEqs;
-      DAE.ComponentRef cr;
-      DAE.Exp varexp, expr, e1, e2;
-      list<BackendDAE.Equation> eqns;
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vs;
-      DAE.ElementSource source;
-    case ({}, _, _) then ({},inUniqueEqIndex);
-    case ((BackendDAE.EQUATION(exp = e1, scalar = e2, source = source) :: eqns), (v :: vs), _)
-      equation
-        cr = BackendVariable.varCref(v);
-        varexp = Expression.crefExp(cr);
-        (expr, _) = solve(e1, e2, varexp);
-        (restEqs,uniqueEqIndex) = extractDiscEqs(eqns, vs, inUniqueEqIndex);
-      then
-        (SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, expr, source) :: restEqs,uniqueEqIndex+1);
-    // failure
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function extractDiscEqs failed!"});
-      then
-        fail();
-  end match;
-end extractDiscEqs;
 
 protected function jacToSimjac
   input tuple<Integer, Integer, BackendDAE.Equation> jac;
@@ -6539,49 +6463,6 @@ algorithm
         (SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements), iuniqueEqIndex+1);
   end match;
 end dlowAlgToSimEqSystem;
-
-protected function filterNonConstant
-  input BackendDAE.Equation eq;
-  output Boolean b;
-algorithm
-  b := matchcontinue (eq)
-    local
-      DAE.Exp exp, e1, e2;
-      Boolean b1;
-      DAE.ElementSource source;
-    case (BackendDAE.RESIDUAL_EQUATION(exp=exp)) then (not Expression.isConst(exp));
-
-    case (BackendDAE.EQUATION(exp = e1, scalar = e2))
-      equation
-        true = Expression.isConst(e1);
-        true = Expression.isConst(e2);
-        _ = Expression.expEqual(e1, e2);
-        // Error.addSourceMessage(inErrorMsg, inMessageTokens, inInfo)
-      then
-        false;
-
-    case (BackendDAE.ARRAY_EQUATION(left = e1, right = e2))
-      equation
-        true = Expression.isConst(e1);
-        true = Expression.isConst(e2);
-        _ = Expression.expEqual(e1, e2);
-        // Error.addSourceMessage(inErrorMsg, inMessageTokens, inInfo)
-      then
-        false;
-
-    case (BackendDAE.COMPLEX_EQUATION(left = e1, right = e2))
-      equation
-        true = Expression.isConst(e1);
-        true = Expression.isConst(e2);
-        _ = Expression.expEqual(e1, e2);
-        // Error.addSourceMessage(inErrorMsg, inMessageTokens, inInfo)
-      then
-        false;
-    else
-     then
-       true;
-  end matchcontinue;
-end filterNonConstant;
 
 protected function createVarNominalAssertFromVars
   input BackendDAE.EqSystem syst;
@@ -8543,30 +8424,6 @@ end unparseCommentOptionNoAnnotationNoQuote;
 //
 // =============================================================================
 
-protected function isMixedSystem "author: PA
-  Returns true if the list of variables is an equation system contains
-  both discrete and continuous variables."
-  input list<BackendDAE.Var> inBackendDAEVarLst;
-  input list<BackendDAE.Equation> inEqns;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inBackendDAEVarLst, inEqns)
-    local list<BackendDAE.Var> vs;
-      list<BackendDAE.Equation> eqns;
-      /* A single algorithm section (consists of several eqns) is not mixed system */
-    case (_, BackendDAE.ALGORITHM(alg=_)::{})
-      then false;
-    case (vs, _)
-      equation
-        true = BackendVariable.hasDiscreteVar(vs);
-        true = BackendVariable.hasContinousVar(vs);
-      then
-        true;
-    case (_, _) then false;
-  end matchcontinue;
-end isMixedSystem;
-
 protected function solveTrivialArrayEquation "Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
   input DAE.ComponentRef v;
   input DAE.Exp e1;
@@ -8775,75 +8632,6 @@ algorithm
 end addDestructor2;
 
 // =============================================================================
-// section for something with paths
-//
-// =============================================================================
-
-protected function getCallPath "Retrive the function name from a CALL expression."
-  input DAE.Exp inExp;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match (inExp)
-    local
-      Absyn.Path path;
-      DAE.ComponentRef cref;
-
-    case DAE.CALL(path = path) then path;
-
-    case DAE.CREF(componentRef = cref)
-      equation
-        path = ComponentReference.crefToPath(cref);
-      then
-        path;
-  end match;
-end getCallPath;
-
-protected function removeDuplicatePaths "Remove duplicate Paths in a list of Paths."
-  input list<Absyn.Path> inAbsynPathLst;
-  output list<Absyn.Path> outAbsynPathLst;
-algorithm
-  outAbsynPathLst:=
-  match (inAbsynPathLst)
-    local
-      list<Absyn.Path> restwithoutfirst, recresult, rest;
-      Absyn.Path first;
-    case {} then {};
-    case (first :: rest)
-      equation
-        restwithoutfirst = removePathFromList(rest, first);
-        recresult = removeDuplicatePaths(restwithoutfirst);
-      then
-        (first :: recresult);
-  end match;
-end removeDuplicatePaths;
-
-protected function removePathFromList
-  input list<Absyn.Path> inAbsynPathLst;
-  input Absyn.Path inPath;
-  output list<Absyn.Path> outAbsynPathLst;
-algorithm
-  outAbsynPathLst:=
-  matchcontinue (inAbsynPathLst, inPath)
-    local
-      list<Absyn.Path> res, rest;
-      Absyn.Path first, path;
-    case ({}, _) then {};
-    case ((first :: rest), path)
-      equation
-        true = Absyn.pathEqual(first, path);
-        res = removePathFromList(rest, path);
-      then
-        res;
-    case ((first :: rest), path)
-      equation
-        false = Absyn.pathEqual(first, path);
-        res = removePathFromList(rest, path);
-      then
-        (first :: res);
-  end matchcontinue;
-end removePathFromList;
-
-// =============================================================================
 // section for ???
 //
 // =============================================================================
@@ -8944,18 +8732,6 @@ algorithm
         fail();
   end match;
 end getCrefFromExp;
-
-
-/*TODO: mahge: Remove me*/
-protected function indexSubscriptToExp
-  input DAE.Subscript subscript;
-  output DAE.Exp exp_;
-algorithm
-  exp_ := match (subscript)
-    case (DAE.INDEX(exp_)) then exp_;
-    else DAE.ICONST(99); // TODO: Why do we end up here?
-  end match;
-end indexSubscriptToExp;
 
 protected function scodeParallelismToDAEParallelism
   input SCode.Parallelism inParallelism;
@@ -9907,52 +9683,6 @@ algorithm
 
 end addDivExpErrorMsgtoSimEqSystemTuple;
 
-protected function solve
-  input DAE.Exp lhs;
-  input DAE.Exp rhs;
-  input DAE.Exp exp;
-  output DAE.Exp solvedExp;
-  output list<DAE.Statement> outAsserts;
-algorithm
-  (solvedExp, outAsserts) := matchcontinue(lhs, rhs, exp)
-    local
-      DAE.ComponentRef cr;
-      DAE.Exp e1, e2, solved_exp;
-      list<DAE.Statement> asserts;
-
-    case (_, _, DAE.CREF(componentRef = cr))
-      equation
-        false = crefIsDerivative(cr);
-        (solved_exp, asserts) = ExpressionSolve.solve(lhs, rhs, exp);
-      then
-        (solved_exp, asserts);
-
-    case (_, _, DAE.CREF(componentRef = cr))
-      equation
-        true = crefIsDerivative(cr);
-        (e1, _) = Expression.replaceDerOpInExpCond(lhs, SOME(cr));
-        (e2, _) = Expression.replaceDerOpInExpCond(rhs, SOME(cr));
-        (solved_exp, asserts) = ExpressionSolve.solve(e1, e2, exp);
-      then
-        (solved_exp, asserts);
-  end matchcontinue;
-end solve;
-
-protected function crefIsDerivative
-  "Returns true if a component reference is a derivative, otherwise false."
-  input DAE.ComponentRef cr;
-  output Boolean isDer;
-algorithm
-  isDer := matchcontinue(cr)
-    local DAE.Ident ident; Boolean b;
-    case (DAE.CREF_QUAL(ident = ident))
-      equation
-        b = stringEq(ident, DAE.derivativeNamePrefix);
-      then b;
-    case (_) then false;
-  end matchcontinue;
-end crefIsDerivative;
-
 protected function extractVarUnit "author: asodja, 2010-03-11
   Extract variable's unit and displayUnit as strings from
   DAE.VariablesAttributes structures."
@@ -10199,21 +9929,6 @@ end keyEqual;
  hashTable := HASHTABLE(arr, VALUE_ARRAY(0, 0, emptyarr), 0, 0);
  end nullHashTable;
  */
-
-protected function emptyHashTable "
-  author: PA
-  Returns an empty HashTable.
-  Using the bucketsize 100 and array size 10."
-  output SimCode.HashTableCrefToSimVar hashTable;
-protected
-  array<list<tuple<SimCode.Key, Integer>>> arr;
-  list<Option<tuple<SimCode.Key, SimCode.Value>>> lst;
-  array<Option<tuple<SimCode.Key, SimCode.Value>>> emptyarr;
-algorithm
-  arr := arrayCreate(1000, {});
-  emptyarr := arrayCreate(100, NONE());
-  hashTable := SimCode.HASHTABLE(arr, SimCode.VALUE_ARRAY(0, 100, emptyarr), 1000, 0);
-end emptyHashTable;
 
 protected function emptyHashTableSized "
   author: PA
@@ -11205,37 +10920,6 @@ end dimensions;
 
 /******************/
 /******************/
-protected function stateindex
-
-  input DAE.ComponentRef var;
-  input list<tuple<DAE.ComponentRef, Integer>> odered_vars;
-  output Integer new_index;
-algorithm (new_index) := matchcontinue(var, odered_vars)
-  local DAE.ComponentRef cr;
-        list<tuple<DAE.ComponentRef, Integer>> rest;
-        Integer i;
-  case (_, {}) then (-1);
-  case (_, ((cr, i)::_))
-    equation
-      true = ComponentReference.crefEqual(var, cr);
-      if Flags.isSet(Flags.FAILTRACE) then
-        BackendDump.debugStrCrefStrIntStr(" found state variable ", var, " with index: ", i, "\n");
-      end if;
-  // fcall(Flags.FAILTRACE, print, + " with index: " + intString(i) + "\n");
-    then
-      (i);
-  case(_, _::rest)
-    equation
-
-      (i)=stateindex(var, rest);
-      if Flags.isSet(Flags.FAILTRACE) then
-        BackendDump.debugStrCrefStrIntStr(" state variable ", var, " with index: ", i, "\n");
-      end if;
-
-   // fcall(Flags.FAILTRACE, print, + " with index: " + intString(i) + "\n");
-    then (i);
-end matchcontinue;
-end stateindex;
 
 public function varIndex
   input SimCodeVar.SimVar var;
@@ -14256,13 +13940,6 @@ algorithm
       then ();
   end match;
 end execStat2;
-
-protected function bytesToRealMBString
-  input Real bytes;
-  output String str;
-algorithm
-  str := System.snprintff("%.4g",20,realDiv(bytes,realMul(1024.0,1024.0)));
-end bytesToRealMBString;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;
