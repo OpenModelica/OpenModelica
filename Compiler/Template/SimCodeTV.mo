@@ -2890,6 +2890,7 @@ package Flags
   constant DebugFlag GEN_DEBUG_SYMBOLS;
   constant DebugFlag WRITE_TO_BUFFER;
   constant DebugFlag HPCOM_ANALYZATION_MODE;
+  constant DebugFlag MODEL_INFO_JSON;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;

@@ -387,13 +387,13 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
     {
       warningStreamPrint(LOG_NLS, 0, "proper start-values for some of the following iteration variables might help");
     }
-    for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
+    for(j=0; j<modelInfoGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
       int done=0;
       long k;
       const MODEL_DATA *mData = &(data->modelData);
       for(k=0; k<mData->nVariablesReal && !done; ++k)
       {
-        if (!strcmp(mData->realVarsData[k].info.name, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
+        if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
         {
         done = 1;
         warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
@@ -404,7 +404,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
       }
       if (!done)
       {
-        warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
+        warningStreamPrint(LOG_NLS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
       }
     }
     messageCloseWarning(LOG_NLS);

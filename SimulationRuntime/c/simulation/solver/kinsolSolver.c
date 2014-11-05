@@ -80,7 +80,7 @@
     NLS_KINSOL_DATA *kinsolData;
 
     if (useStream[LOG_NLS]) {
-      infoStreamPrint(LOG_NLS, 1, "allocate memory for %d", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).id);
+      infoStreamPrint(LOG_NLS, 1, "allocate memory for %d", modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).id);
       messageClose(LOG_NLS);
     }
 
@@ -150,7 +150,7 @@
 
     if(ACTIVE_STREAM(LOG_NLS))
     {
-      warningStreamPrint(LOG_NLS, 1, "kinsol failed for %d", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).id);
+      warningStreamPrint(LOG_NLS, 1, "kinsol failed for %d", modelInfoGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).id);
       warningStreamPrint(LOG_NLS, 0, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
       warningStreamPrint(LOG_NLS, 0, "%s", msg);
 
@@ -252,7 +252,7 @@
     for(i=0; i<size; ++i)
     {
       kinsolData->nlsData->nlsx[i] = NV_Ith_S(z, i);
-      infoStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i],  kinsolData->nlsData->nlsx[i]);
+      infoStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "[%ld] %s = %g", i+1, modelInfoGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i],  kinsolData->nlsData->nlsx[i]);
     }
 
     infoStreamPrint(LOG_NLS, 0, "KINGetNumNonlinSolvIters = %5ld", nni);

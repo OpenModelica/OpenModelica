@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef SIMULATION_INFO_XML_H
-#define SIMULATION_INFO_XML_H
+#ifndef SIMULATION_INFO_JSON_H
+#define SIMULATION_INFO_JSON_H
 
 #include "simulation_data.h"
 
@@ -37,12 +37,11 @@
 extern "C" {
 #endif
 
-extern FUNCTION_INFO (*modelInfoGetFunction)(MODEL_DATA_XML*,size_t);
-extern void (*modelInfoInit)(MODEL_DATA_XML*);
-extern EQUATION_INFO (*modelInfoGetEquation)(MODEL_DATA_XML*,size_t);
-extern EQUATION_INFO (*modelInfoGetEquationIndexByProfileBlock)(MODEL_DATA_XML*,size_t);
-extern void (*freeModelInfo)(MODEL_DATA_XML*);
-void setupModelInfoFunctions(int isJson);
+FUNCTION_INFO modelInfoJsonGetFunction(MODEL_DATA_XML*,size_t);
+void modelInfoJsonInit(MODEL_DATA_XML*);
+EQUATION_INFO modelInfoJsonGetEquation(MODEL_DATA_XML*,size_t);
+EQUATION_INFO modelInfoJsonGetEquationIndexByProfileBlock(MODEL_DATA_XML*,size_t);
+void freeModelInfoJson(MODEL_DATA_XML*);
 
 #ifdef __cplusplus
 }

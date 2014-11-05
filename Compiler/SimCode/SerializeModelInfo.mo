@@ -60,7 +60,7 @@ import Util;
 function serializeWork "Always succeeds in order to clean-up external objects"
   input SimCode.SimCode code;
   input Boolean withOperations;
-  output Boolean success; // We always need to return
+  output Boolean success; // We always need to return in order to clean up external objects
   output String fileName;
 protected
   File.File file = File.File();
@@ -86,6 +86,7 @@ algorithm
         eqs = SimCodeUtil.sortEqSystems(code.initialEquations);
         File.write(file,"{\"eqIndex\":0,\"tag\":\"dummy\"}");
         min(serializeEquation(file,eq,"initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations));
+        min(serializeEquation(file,eq,"removed-initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.removedInitialEquations));
         min(serializeEquation(file,eq,"residual",withOperations) for eq in SimCodeUtil.sortEqSystems(code.residualEquations));
         min(serializeEquation(file,eq,"regular",withOperations) for eq in SimCodeUtil.sortEqSystems(code.allEquations));
         min(serializeEquation(file,eq,"start",withOperations) for eq in SimCodeUtil.sortEqSystems(code.startValueEquations));
@@ -101,7 +102,7 @@ algorithm
       then (true,fileName);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SerializeModelInfo.serialize failed"});
+        Error.addInternalError("SerializeModelInfo.serialize failed", sourceInfo());
       then (false,"");
   end matchcontinue;
 end serializeWork;
@@ -216,7 +217,7 @@ algorithm
     File.write(file,"]");
   end if;
 
-  if Util.isSome(iopt) then
+  if isSome(iopt) then
     File.write(file,",\"instance\":\"");
     File.writeEscape(file,crefStr(Util.getOption(iopt)),escape=File.Escape.JSON);
     File.write(file,"\"");
@@ -230,7 +231,7 @@ algorithm
 
   if withOperations and not List.isEmpty(operations) then
     File.write(file,",\"operations\":[");
-    serializeList(file,operations,serializeOperation);
+    serializeList(file, operations, serializeOperation);
     File.write(file,"]}");
   else
     File.write(file,"}");
@@ -374,7 +375,7 @@ algorithm
       then ();
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"serializeOperation failed"});
+        Error.addInternalError("serializeOperation failed", sourceInfo());
       then fail();
   end match;
 end serializeOperation;
@@ -384,6 +385,7 @@ function serializeEquation
   input SimCode.SimEqSystem eq;
   input String section;
   input Boolean withOperations;
+  input Integer parent := 0 "No parent";
   input Boolean first := false;
   output Boolean success;
 algorithm
@@ -399,6 +401,10 @@ algorithm
       equation
         File.write(file, "\n{\"eqIndex\":");
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"residual\",\"uses\":[");
@@ -413,6 +419,10 @@ algorithm
       equation
         File.write(file, "\n{\"eqIndex\":");
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
@@ -429,6 +439,10 @@ algorithm
       equation
         File.write(file, "\n{\"eqIndex\":");
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"assign\",\"defines\":[\"");
@@ -445,8 +459,24 @@ algorithm
       equation
         i = listLength(eq.beqs);
         j = listLength(eq.simJac);
-        File.write(file, "\n{\"eqIndex\":");
+
+        jeqs = match eq.jacobianMatrix
+          case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then jeqs;
+          else {};
+        end match;
+        eqs = SimCodeUtil.sortEqSystems(listAppend(eq.residual,jeqs));
+        if List.isEmpty(eqs) then
+          File.write(file, "\n{\"eqIndex\":");
+        else
+          serializeEquation(file,listGet(eqs,1),section,withOperations,parent=eq.index,first=true);
+          min(serializeEquation(file,e,section,withOperations,parent=eq.index) for e in listRest(eqs));
+          File.write(file, ",\n{\"eqIndex\":");
+        end if;
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         // Ax=b
@@ -455,8 +485,10 @@ algorithm
                                 for v in eq.vars));
         File.write(file, "],\"equation\":{\"size\":");
         File.write(file,intString(i));
-        File.write(file,",\"density\":");
-        File.write(file,realString(j / (i*i)));
+        if i <> 0 then
+          File.write(file,",\"density\":");
+          File.write(file,realString(j / (i*i)));
+        end if;
         File.write(file,",\"A\":[");
         serializeList1(file,eq.simJac,withOperations,serializeLinearCell);
         File.write(file,"],\"b\":[");
@@ -467,6 +499,10 @@ algorithm
       equation
         File.write(file, "\n{\"eqIndex\":");
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"algorithm\",\"equation\":[");
@@ -479,6 +515,10 @@ algorithm
       equation
         File.write(file, "\n{\"eqIndex\":");
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"algorithm\",\"equation\":[]}");
@@ -486,8 +526,8 @@ algorithm
     case SimCode.SES_NONLINEAR()
       equation
         eqs = SimCodeUtil.sortEqSystems(eq.eqs);
-        serializeEquation(file,listGet(eqs,1),section,withOperations,first=true);
-        min(serializeEquation(file,e,section,withOperations) for e in List.rest(eqs));
+        serializeEquation(file,listGet(eqs,1),section,withOperations,parent=eq.index,first=true);
+        min(serializeEquation(file,e,section,withOperations,parent=eq.index) for e in List.rest(eqs));
         jeqs = match eq.jacobianMatrix
           case SOME(({(jeqs,_,_)},_,_,_,_,_,_)) then SimCodeUtil.sortEqSystems(jeqs);
           else {};
@@ -496,11 +536,16 @@ algorithm
 
         File.write(file, ",\n{\"eqIndex\":");
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
+        File.write(file, ",\"section\":\"");
+        File.write(file, section);
+        File.write(file, "\",\"tag\":\"container\",\"display\":\"non-linear\"");
         File.write(file, ",\"defines\":[");
         serializeUses(file,eq.crefs);
-        File.write(file, "],\"section\":\"");
-        File.write(file, section);
-        File.write(file, "\",\"tag\":\"container\",\"display\":\"non-linear\",\"equation\":[[");
+        File.write(file, "],\"equation\":[[");
         serializeList(file,eqs,serializeEquationIndex);
         File.write(file, "],[");
         serializeList(file,jeqs,serializeEquationIndex);
@@ -513,6 +558,10 @@ algorithm
         min(serializeEquation(file,e,section,withOperations) for e in List.rest(eqs));
         File.write(file, ",\n{\"eqIndex\":");
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"if-equation\",\"display\":\"if-equation\",\"equation\":[");
@@ -527,6 +576,10 @@ algorithm
         min(serializeEquation(file,e,section,withOperations) for e in eq.discEqs);
         File.write(file, ",\n{\"eqIndex\":");
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"container\",\"display\":\"mixed\",\"defines\":[");
@@ -540,6 +593,10 @@ algorithm
       equation
         File.write(file, "\n{\"eqIndex\":");
         File.write(file, intString(eq.index));
+        if parent <> 0 then
+          File.write(file, ",\"parent\":");
+          File.write(file, intString(parent));
+        end if;
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"when\",\"defines\":[");
@@ -558,7 +615,7 @@ algorithm
       then true;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"serializeEquation failed: " + anyString(eq)});
+        Error.addInternalError("serializeEquation failed: " + anyString(eq), sourceInfo());
       then fail();
   end match;
 end serializeEquation;

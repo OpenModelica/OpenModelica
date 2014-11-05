@@ -40,51 +40,52 @@ encapsulated package SimCodeMain
   RCS: $Id$"
 
 // public imports
-public import Absyn;
-public import BackendDAE;
-public import BackendDAEUtil;
-public import Ceval;
-public import DAE;
-public import FCore;
-public import GlobalScript;
-public import HashTableExpToIndex;
-public import HashTableStringToPath;
-public import Tpl;
-public import Values;
-public import SimCode;
+public
+import Absyn;
+import BackendDAE;
+import BackendDAEUtil;
+import Ceval;
+import DAE;
+import FCore;
+import GlobalScript;
+import HashTableExpToIndex;
+import HashTableStringToPath;
+import Tpl;
+import Values;
+import SimCode;
 
 // protected imports
-protected import BackendDAECreate;
-protected import BackendQSS;
-protected import BaseHashTable;
-protected import ClockIndexes;
-protected import CevalScript;
-protected import CodegenC;
-protected import CodegenFMU;
-protected import CodegenFMUCpp;
-protected import CodegenQSS;
-protected import CodegenAdevs;
-protected import CodegenSparseFMI;
-protected import CodegenCSharp;
-protected import CodegenCpp;
-protected import CodegenCppHpcom;
-protected import CodegenXML;
-protected import CodegenJava;
-protected import CodegenJS;
-protected import Config;
-protected import DAEUtil;
-protected import Debug;
-protected import Error;
-protected import Flags;
-protected import FMI;
-protected import HpcOmSimCodeMain;
-protected import SimCodeDump;
-protected import TaskSystemDump;
-protected import SimCodeUtil;
-protected import System;
-protected import Util;
-
-// protected import SerializeModelInfo; // TODO: Add me once we have switched to bootstrapped omc
+protected
+import BackendDAECreate;
+import BackendQSS;
+import BaseHashTable;
+import ClockIndexes;
+import CevalScript;
+import CodegenC;
+import CodegenFMU;
+import CodegenFMUCpp;
+import CodegenQSS;
+import CodegenAdevs;
+import CodegenSparseFMI;
+import CodegenCSharp;
+import CodegenCpp;
+import CodegenCppHpcom;
+import CodegenXML;
+import CodegenJava;
+import CodegenJS;
+import Config;
+import DAEUtil;
+import Debug;
+import Error;
+import Flags;
+import FMI;
+import HpcOmSimCodeMain;
+import SerializeModelInfo;
+import SimCodeDump;
+import TaskSystemDump;
+import SimCodeUtil;
+import System;
+import Util;
 
 public function createSimulationSettings
   input Real startTime;
@@ -487,11 +488,14 @@ algorithm
         Tpl.tplNoret2(CodegenC.translateInitFile, simCode, guid);
         // print("SimCode -> init.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
         // System.realtimeTick(ClockIndexes.RT_PROFILER0);
-        Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+        if Flags.isSet(Flags.MODEL_INFO_JSON) then
+          SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+        else
+          Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+        end if;
         dumpTaskSystemIfFlag(simCode);
         // print("SimCode -> info.xml: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
         // System.realtimeTick(ClockIndexes.RT_PROFILER0);
-        // SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS)); // TODO: Add this once we switch to the bootstrapped compiler
         // print("SimCode -> info.json: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
         Tpl.tplNoret2(CodegenC.translateModel, simCode, guid);
         // print("SimCode -> C-files: " + realString(System.realtimeTock(ClockIndexes.RT_PROFILER0)*1000) + "ms\n");
@@ -559,22 +563,27 @@ protected function callTargetTemplatesFMU
   input String target;
   input String FMUVersion;
 algorithm
-  _ := match (simCode,target,FMUVersion)
+  _ := match (simCode,target)
     local
-      String str,version;
+      String str;
 
-    case (_,"C",version)
-      equation
-        Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
-        Tpl.tplNoret2(CodegenFMU.translateModel, simCode, version);
+    case (SimCode.SIMCODE(),"C")
+      algorithm
+        if Flags.isSet(Flags.MODEL_INFO_JSON) then
+          SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
+          true := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", simCode.fileNamePrefix+"_info.c");
+        else
+          Tpl.tplNoret2(SimCodeDump.dumpSimCodeToC, simCode, false);
+        end if;
+        Tpl.tplNoret2(CodegenFMU.translateModel, simCode, FMUVersion);
       then ();
-    case (_,"Cpp",_)
+    case (_,"Cpp")
       equation
         Tpl.tplNoret2(CodegenFMUCpp.translateModel, simCode, true);
       then ();
-    case (_,_,_)
+    else
       equation
-        str = "Unknown template target: " + target;
+        str = "Unknown FMU template target: " + target;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end match;

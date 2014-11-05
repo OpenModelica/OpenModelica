@@ -873,7 +873,8 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nInitAlgorithms = <%varInfo.numInitialAlgorithms%>;
     data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;    /* data->modelData.nInitEquations + data->modelData.nInitAlgorithms */
     data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
-    data->modelData.modelDataXml.fileName = "<%fileNamePrefix%>_info.xml";
+    setupModelInfoFunctions(<%if Flags.isSet(Flags.MODEL_INFO_JSON) then 1 else 0%>);
+    data->modelData.modelDataXml.fileName = "<%fileNamePrefix%>_info.<%if Flags.isSet(Flags.MODEL_INFO_JSON) then "json" else "xml"%>";
     data->modelData.modelDataXml.modelInfoXmlLength = 0;
     data->modelData.modelDataXml.nFunctions = <%listLength(functions)%>;
     data->modelData.modelDataXml.nProfileBlocks = 0;
@@ -1614,7 +1615,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
          const int equationIndexes[2] = {1,<%eq.index%>};
          <%varDeclsRes%>
          <% if profileAll() then 'SIM_PROF_TICK_EQ(<%eq.index%>);' %>
-         <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%eq.index%>).profileBlockIndex,1);' %>
+         <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%eq.index%>).profileBlockIndex,1);' %>
          <%xlocs%>
          <%prebody%>
          <%body%>
@@ -1795,7 +1796,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
        const int equationIndexes[2] = {1,<%index%>};
        <%varDecls%>
        <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
-       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,1);' %>
+       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,1);' %>
        <%xlocs%>
        <%prebody%>
        <%body%>
@@ -3958,11 +3959,11 @@ match eq
 case e as SES_LINEAR(__) then
   <<
   /* Linear equation system */
-  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
   <%vars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.linearSystemData[<%e.indexLinearSystem%>].x[<%i0%>] = _<%cref(name)%>(1);' ;separator="\n"%>
   solve_linear_system(data, <%indexLinearSystem%>);
   <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = data->simulationInfo.linearSystemData[<%indexLinearSystem%>].x[<%i0%>];' ;separator="\n"%>
-  <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
   >>
 end equationLinear;
 
@@ -3976,11 +3977,11 @@ case eqn as SES_MIXED(__) then
   let numDiscVarsStr = listLength(discVars)
   <<
   /* Continuous equation part in <%contEqs%> */
-  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <% if profileSome() then 'SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
   <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.mixedSystemData[<%eqn.indexMixedSystem%>].iterationVarsPtr[<%i0%>] = (modelica_boolean*)&<%cref(name)%>;' ;separator="\n"%>;
   <%discVars |> SIMVAR(__) hasindex i0 => 'data->simulationInfo.mixedSystemData[<%eqn.indexMixedSystem%>].iterationPreVarsPtr[<%i0%>] = (modelica_boolean*)&$P$PRE<%cref(name)%>;' ;separator="\n"%>;
   solve_mixed_system(data, <%indexMixedSystem%>);
-  <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+  <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
   >>
 end equationMixed;
 
@@ -4000,8 +4001,8 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
       int retValue;
       <% if profileSome() then
       <<
-      SIM_PROF_TICK_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
-      SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,-1);
+      SIM_PROF_TICK_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
+      SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,-1);
       >>
       %>
       /* extrapolate data */
@@ -4023,7 +4024,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
       <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
       /* update inner equations */
       <%innerBody%>
-      <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
+      <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
       >>
 end equationNonlinear;
 

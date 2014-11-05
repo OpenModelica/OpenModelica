@@ -1097,7 +1097,7 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo.chatteringInfo.lastTimes);
 
   /* TODO: Make a free xml function */
-  freeModelInfoXml(&data->modelData.modelDataXml);
+  freeModelInfo(&data->modelData.modelDataXml);
 
   /* free delay structure */
   for(i=0; i<data->modelData.nDelayExpressions; i++)

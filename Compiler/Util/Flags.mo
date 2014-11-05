@@ -410,6 +410,8 @@ constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(122, "showExpandableInfo", 
   Util.gettext("Show information about expandable connector handling."));
 constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(123, "dumpHomotopy", false,
   Util.gettext("Dumps the results of the postOptModule optimizeHomotopyCalls."));
+constant DebugFlag MODEL_INFO_JSON = DEBUG_FLAG(124, "modelInfoJson", false,
+  Util.gettext("Experimental: Generates a file with suffix _info.json instead of _info.xml."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -539,7 +541,8 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_DAE_GENERATION,
   RESHUFFLE_POST,
   SHOW_EXPANDABLE_INFO,
-  DUMP_HOMOTOPY
+  DUMP_HOMOTOPY,
+  MODEL_INFO_JSON
 };
 
 public

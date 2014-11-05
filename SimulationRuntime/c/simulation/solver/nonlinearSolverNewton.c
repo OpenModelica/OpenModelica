@@ -320,7 +320,7 @@ int solveNewton(DATA *data, int sysNumber)
 
     /* check for proper inputs */
     if(solverData->info == 0)
-      printErrorEqSyst(IMPROPER_INPUT, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
+      printErrorEqSyst(IMPROPER_INPUT, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
 
     if(solverData->info > 0)
     {
@@ -400,7 +400,7 @@ int solveNewton(DATA *data, int sysNumber)
     }
     else
     {
-      printErrorEqSyst(ERROR_AT_TIME, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
+      printErrorEqSyst(ERROR_AT_TIME, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
       if(ACTIVE_STREAM(LOG_NLS))
       {
         infoStreamPrint(LOG_NLS, 0, "### No Solution! ###\n after %d restarts", retries);

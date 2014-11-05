@@ -338,7 +338,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   setAllVarsToStart(comp->fmuData);
   setAllParamsToStart(comp->fmuData);
   read_input_xml(&(comp->fmuData->modelData), &(comp->fmuData->simulationInfo));
-  modelInfoXmlInit(&(comp->fmuData->modelData.modelDataXml));
+  modelInfoInit(&(comp->fmuData->modelData.modelDataXml));
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   return comp;
 }

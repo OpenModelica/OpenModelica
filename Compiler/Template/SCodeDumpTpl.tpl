@@ -59,7 +59,9 @@ end dumpClassDefSpacing;
 template dumpElement(SCode.Element element, String each, SCodeDumpOptions options)
 ::=
 match element
-  case IMPORT(__) then dumpImport(element)
+  case IMPORT(__) then
+    match visibility
+      case PROTECTED(__) then (match options case OPTIONS(stripProtectedImports=true) then "" else dumpImport(element)) else dumpImport(element)
   case EXTENDS(__) then dumpExtends(element,options)
   case CLASS(__) then dumpClass(element, each, options)
   case COMPONENT(__) then dumpComponent(element, each, options)
