@@ -1528,12 +1528,16 @@ algorithm
     // sin function
     case("asin",DAE.CALL(expLst={e}))
       equation
-        r = realAsin(Expression.getRealConst(e));
+        r = Expression.getRealConst(e);
+        true = r >= -1.0 and r <= 1.0;
+        r = realAsin(r);
       then DAE.RCONST(r);
 
     // cos function
     case("acos",DAE.CALL(expLst={e}))
       equation
+        r = Expression.getRealConst(e);
+        true = r >= -1.0 and r <= 1.0;
         r = realAcos(Expression.getRealConst(e));
       then DAE.RCONST(r);
 
@@ -1554,14 +1558,18 @@ algorithm
     // log function
     case("log",DAE.CALL(expLst={e}))
       equation
-        r = realLn(Expression.getRealConst(e));
+        r = Expression.getRealConst(e);
+        true = r > 0;
+        r = realLn(r);
       then
         DAE.RCONST(r);
 
     // log10 function
     case("log10",DAE.CALL(expLst={e}))
       equation
-        r = realLog10(Expression.getRealConst(e));
+        r = Expression.getRealConst(e);
+        true = r > 0;
+        r = realLog10(r);
       then
         DAE.RCONST(r);
 

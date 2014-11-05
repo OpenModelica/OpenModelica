@@ -8964,6 +8964,24 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let &preExp += '<%tmp%> = <%argStr%>;<%retPre%>'
     'log10(<%tmp%>)'
 
+  case CALL(path=IDENT(name="acos"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
+    let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    let tmp = tempDecl("modelica_real",&varDecls)
+    let ass = '(<%tmp%> >= -1.0 && <%tmp%> <= 1.0)'
+    let &preExpMsg = buffer ""
+    let retPre = assertCommonVar(ass,'"Model error: Argument of <%Util.escapeModelicaStringToCString(printExpStr(call))%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
+    let &preExp += '<%tmp%> = <%argStr%>;<%retPre%>'
+    'acos(<%tmp%>)'
+
+  case CALL(path=IDENT(name="asin"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
+    let argStr = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    let tmp = tempDecl("modelica_real",&varDecls)
+    let ass = '(<%tmp%> >= -1.0 && <%tmp%> <= 1.0)'
+    let &preExpMsg = buffer ""
+    let retPre = assertCommonVar(ass,'"Model error: Argument of <%Util.escapeModelicaStringToCString(printExpStr(call))%> outside the domain -1.0 <= %g <= 1.0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
+    let &preExp += '<%tmp%> = <%argStr%>;<%retPre%>'
+    'asin(<%tmp%>)'
+
   /* Begin code generation of event triggering math functions */
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2, index}, attr=CALL_ATTR(ty = ty)) then

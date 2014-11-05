@@ -1273,11 +1273,13 @@ algorithm
 
     case ("acos",{Values.REAL(real = rv)},_)
       equation
+        true = rv >= -1.0 and rv <= 1.0;
         rv_1 = realAcos(rv);
       then
         Values.REAL(rv_1);
     case ("asin",{Values.REAL(real = rv)},_)
       equation
+        true = rv >= -1.0 and rv <= 1.0;
         rv_1 = realAsin(rv);
       then
         Values.REAL(rv_1);
@@ -1308,11 +1310,13 @@ algorithm
         Values.REAL(rv_1);
     case ("log",{Values.REAL(real = rv)},_)
       equation
+        true = rv > 0;
         rv_1 = realLn(rv);
       then
         Values.REAL(rv_1);
     case ("log10",{Values.REAL(real = rv)},_)
       equation
+        true = rv > 0;
         rv_1 = realLog10(rv);
       then
         Values.REAL(rv_1);
@@ -3145,6 +3149,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
+        true = rv > 0; // TODO: Print error-message?
         rv_1 = realLn(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3176,6 +3181,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
+        true = rv > 0; // TODO: Print error-message?
         rv_1 = realLog10(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3274,6 +3280,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
+        true = rv >= -1.0 and rv <= 1.0;
         rv_1 = realAsin(rv);
       then
         (cache,Values.REAL(rv_1),st);
@@ -3306,6 +3313,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg,_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
+        true = rv >= -1.0 and rv <= 1.0;
         rv_1 = realAcos(rv);
       then
         (cache,Values.REAL(rv_1),st);
