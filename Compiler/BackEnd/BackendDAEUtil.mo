@@ -2869,106 +2869,103 @@ end incidenceRowExp;
 
 public function traversingincidenceRowExpSolvableFinder "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>> inTpl;
+  input tuple<BackendDAE.Variables, list<Integer>,Option<DAE.FunctionTree>> inTpl;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>> outTpl;
+  output tuple<BackendDAE.Variables, list<Integer>,Option<DAE.FunctionTree>> outTpl;
 algorithm
-  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp, cont, outTpl) := matchcontinue (inExp, inTpl)
     local
-      list<Integer> p,pa,ilst;
+      list<Integer> p, pa, ilst;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e,e1,e2,startvalue,stopvalue,stepvalue;
+      DAE.Exp e1, e2, startvalue, stopvalue, stepvalue;
       list<BackendDAE.Var> varslst;
       Boolean b;
       list<DAE.Exp> explst;
       Option<DAE.Exp> stepvalueopt;
-      Integer istart,istep,istop, i;
+      Integer istart, istep, istop, i;
       list<DAE.ComponentRef> crlst;
       Option<DAE.FunctionTree> ofunctionTree;
       DAE.FunctionTree functionTree;
-      tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>> tpl;
+      tuple<BackendDAE.Variables, list<Integer>,Option<DAE.FunctionTree>> tpl;
       Integer diffindx;
-      String str;
 
-    case (e as DAE.LBINARY(exp1 = _),tpl)
-      then (e,false,tpl);
-    case (e as DAE.RELATION(exp1 = _),tpl)
-      then (e,false,tpl);
-    case (e as DAE.IFEXP(expThen = e1,expElse = e2),tpl)
-      equation
-        (_,tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
-        (_,tpl) = Expression.traverseExpTopDown(e2, traversingincidenceRowExpSolvableFinder, tpl);
-      then (e,false,tpl);
-    case (e as DAE.RANGE(ty = _),tpl)
-      then (e,false,tpl);
+    case (DAE.LBINARY(),tpl)
+    then (inExp, false, tpl);
 
-    case (e as DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub=explst),(vars,pa,ofunctionTree))
-      equation
-        {DAE.RANGE(start=startvalue,step=stepvalueopt,stop=stopvalue)} = ExpressionSimplify.simplifyList(explst, {});
-        stepvalue = Util.getOptionOrDefault(stepvalueopt,DAE.ICONST(1));
-        istart = Expression.expInt(startvalue);
-        istep = Expression.expInt(stepvalue);
-        istop = Expression.expInt(stopvalue);
-        ilst = List.intRange3(istart,istep,istop);
-        crlst = List.map1r(ilst,ComponentReference.subscriptCrefWithInt,cr);
-        (varslst,p) = BackendVariable.getVarLst(crlst,vars,{},{});
-        pa = incidenceRowExp1(varslst,p,pa,0);
-      then (e,false,(vars,pa,ofunctionTree));
+    case (DAE.RELATION(), tpl)
+    then (inExp, false, tpl);
 
-    case (e as DAE.ASUB(exp = e1, sub={DAE.ICONST(i)}),tpl)
-      equation
-        e1 = Expression.nthArrayExp(e1, i);
-        (_,tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
-      then (e, false, tpl);
+    case (DAE.IFEXP(expThen=e1, expElse=e2), tpl) equation
+      (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
+      (_, tpl) = Expression.traverseExpTopDown(e2, traversingincidenceRowExpSolvableFinder, tpl);
+    then (inExp, false, tpl);
+
+    case (DAE.RANGE(), tpl)
+    then (inExp, false, tpl);
+
+    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub=explst), (vars, pa, ofunctionTree)) equation
+      {DAE.RANGE(start=startvalue, step=stepvalueopt, stop=stopvalue)} = ExpressionSimplify.simplifyList(explst, {});
+      stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
+      istart = Expression.expInt(startvalue);
+      istep = Expression.expInt(stepvalue);
+      istop = Expression.expInt(stopvalue);
+      ilst = List.intRange3(istart, istep, istop);
+      crlst = List.map1r(ilst, ComponentReference.subscriptCrefWithInt, cr);
+      (varslst, p) = BackendVariable.getVarLst(crlst, vars,{},{});
+      pa = incidenceRowExp1(varslst, p, pa, 0);
+    then (inExp, false, (vars, pa, ofunctionTree));
+
+    case (DAE.ASUB(exp=e1, sub={DAE.ICONST(i)}),tpl) equation
+      e1 = Expression.nthArrayExp(e1, i);
+      (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
+    then (inExp, false, tpl);
 
     // otherwise
-    case (e as DAE.ASUB(exp = e1),tpl)
-      then fail();
+    case (DAE.ASUB(),tpl)
+    then fail();
 
-    case (e as DAE.TSUB(exp = e1),tpl)
-      equation
-        (_,tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
-      then (e,false,tpl);
+    case (DAE.TSUB(exp=e1),tpl) equation
+      (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
+    then (inExp, false, tpl);
 
-    case (e as DAE.CREF(componentRef = cr),(vars,pa,ofunctionTree))
-      equation
-        (varslst,p) = BackendVariable.getVar(cr, vars);
-        pa = incidenceRowExp1(varslst,p,pa,0);
-      then (e,false,(vars,pa,ofunctionTree));
+    case (DAE.CREF(componentRef=cr),(vars, pa, ofunctionTree)) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      pa = incidenceRowExp1(varslst, p, pa, 0);
+    then (inExp, false,(vars, pa, ofunctionTree));
 
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,ofunctionTree))
-      equation
-        (varslst,p) = BackendVariable.getVar(cr, vars);
-        pa = incidenceRowExp1(varslst,p,pa,1);
-      then (e,false,(vars,pa,ofunctionTree));
+    case (DAE.CALL(path=Absyn.IDENT(name="der"),expLst={DAE.CREF(componentRef=cr)}),(vars, pa, ofunctionTree)) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      pa = incidenceRowExp1(varslst, p, pa, 1);
+    then (inExp, false,(vars, pa, ofunctionTree));
+
     /* higher derivative, is only present during index reduction */
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(diffindx)}),(vars,pa,ofunctionTree))
-      equation
-        (varslst,p) = BackendVariable.getVar(cr, vars);
-        pa = incidenceRowExp1(varslst,p,pa,diffindx);
-      then (e,false,(vars,pa,ofunctionTree));
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr), DAE.ICONST(diffindx)}), (vars, pa, ofunctionTree)) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      pa = incidenceRowExp1(varslst, p, pa, diffindx);
+    then (inExp, false,(vars, pa, ofunctionTree));
 
     // lochel: internally generated call start(v) depends not on v
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "$_start")), tpl) then (e, false, tpl);
+    case (DAE.CALL(path=Absyn.IDENT(name="$_start")), tpl)
+    then (inExp, false, tpl);
 
     /* pre(v) is considered a known variable */
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")),tpl) then (e,false,tpl);
+    case (DAE.CALL(path=Absyn.IDENT(name="pre")), tpl)
+    then (inExp, false, tpl);
 
-    /* delay(e) can be used to break algebraic loops given some solver options */
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),tpl)
-      equation
-        b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
-      then (e,not b,tpl);
+    /* delay(...) can be used to break algebraic loops given some solver options */
+    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst = {_, _, e1, e2}), tpl) equation
+      b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
+    then (inExp, not b, tpl);
 
     // use the inlined function to analyze the ocuring variables
-    case (e as DAE.CALL(path = _), tpl as (_, _, SOME(functionTree)))
-      equation
-        (e1,(_,true,_)) = Inline.forceInlineCall(e, ((SOME(functionTree), {DAE.NORM_INLINE(),DAE.NO_INLINE()}),false,{}));
-        (_,tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
-      then (e, false, tpl);
-    else (inExp,true,inTpl);
+    case (DAE.CALL(), tpl as (_, _, SOME(functionTree))) equation
+      (e1,(_, true, _)) = Inline.forceInlineCall(inExp, ((SOME(functionTree), {DAE.NORM_INLINE(),DAE.NO_INLINE()}),false,{}));
+      (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
+    then (inExp, false, tpl);
+
+    else (inExp, true, inTpl);
   end matchcontinue;
 end traversingincidenceRowExpSolvableFinder;
 
@@ -5110,109 +5107,98 @@ protected function adjacencyRowExpEnhanced
   input list<Integer> inRow;
   output list<Integer> outRow;
 algorithm
-  (_,(_,_,_,outRow)) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpSolvableEnhancedFinder, (inVariables,false,inTpl,inRow));
+  (_,(_,_,_,outRow)) := Expression.traverseExpTopDown(inExp, traversingAdjacencyRowExpSolvableEnhancedFinder, (inVariables,false,inTpl,inRow));
 end adjacencyRowExpEnhanced;
 
-protected function traversingadjacencyRowExpSolvableEnhancedFinder "Helper for adjacencyRowExpEnhanced"
+protected function traversingAdjacencyRowExpSolvableEnhancedFinder "Helper for adjacencyRowExpEnhanced"
   input DAE.Exp inExp;
-  input tuple<BackendDAE.Variables,Boolean,tuple<Integer,array<Integer>>,list<Integer>> inTpl "(exp,(variables,unsolvable,(mark,rowmark),row))";
+  input tuple<BackendDAE.Variables, Boolean, tuple<Integer, array<Integer>>, list<Integer>> inTpl "(exp, (variables, unsolvable, (mark, rowmark), row))";
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<BackendDAE.Variables,Boolean,tuple<Integer,array<Integer>>,list<Integer>> outTpl;
+  output tuple<BackendDAE.Variables, Boolean, tuple<Integer, array<Integer>>, list<Integer>> outTpl;
 algorithm
-  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp, cont, outTpl) := matchcontinue (inExp, inTpl)
     local
-      list<Integer> p,pa,res;
+      list<Integer> p, pa, res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      DAE.Exp e,e1,e2,e3;
-      list<DAE.Exp> elst;
+      DAE.Exp e1, e2, e3;
       list<BackendDAE.Var> varslst;
-      Boolean b,bs;
-      Integer mark,i;
+      Boolean b, bs;
+      Integer mark, i;
       array<Integer> rowmark;
       BinaryTree.BinTree bt;
-    case (e as DAE.LUNARY(exp = e1),(vars,bs,(mark,rowmark),pa))
-      equation
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-      then (e,false,(vars,bs,(mark,rowmark),pa));
 
-    case (e as DAE.LBINARY(exp1 = e1,exp2=e2),(vars,bs,(mark,rowmark),pa))
-      equation
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e2, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-      then (e,false,(vars,bs,(mark,rowmark),pa));
+    case (DAE.LUNARY(exp=e1), (vars, bs, (mark, rowmark), pa)) equation
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+    then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
-    case (e as DAE.RELATION(exp1 = e1,exp2=e2),(vars,bs,(mark,rowmark),pa))
-      equation
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e2, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-      then (e,false,(vars,bs,(mark,rowmark),pa));
+    case (DAE.LBINARY(exp1=e1, exp2=e2), (vars, bs, (mark, rowmark), pa)) equation
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e2, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+    then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
-    case (e as DAE.IFEXP(expCond=e3,expThen = e1,expElse = e2),(vars,bs,(mark,rowmark),pa))
-      equation
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,bs,(mark,rowmark),pa));
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e2, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,bs,(mark,rowmark),pa));
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e3, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-        // mark all vars which are not in alle branches unsolvable
-        (_,bt) = Expression.traverseExpTopDown(e,getIfExpBranchVarOccurency,BinaryTree.emptyBinTree);
-        (_,(_,_,_,_)) = Expression.traverseExp(e1,markBranchVars,(mark,rowmark,vars,bt));
-        (_,(_,_,_,_)) = Expression.traverseExp(e2,markBranchVars,(mark,rowmark,vars,bt));
-      then (e,false,(vars,bs,(mark,rowmark),pa));
+    case (DAE.RELATION(exp1=e1, exp2=e2), (vars, bs, (mark, rowmark), pa)) equation
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e2, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+    then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
-    case (e as DAE.RANGE(start = e1,step=NONE(),stop=e2),(vars,bs,(mark,rowmark),pa))
-      equation
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e2, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-      then (e,false,(vars,bs,(mark,rowmark),pa));
+    case (DAE.IFEXP(expCond=e3, expThen=e1, expElse=e2), (vars, bs, (mark, rowmark), pa)) equation
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, (mark, rowmark), pa));
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e2, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, (mark, rowmark), pa));
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e3, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+      // mark all vars which are not in alle branches unsolvable
+      (_, bt) = Expression.traverseExpTopDown(inExp, getIfExpBranchVarOccurency, BinaryTree.emptyBinTree);
+      (_, (_, _, _, _)) = Expression.traverseExp(e1, markBranchVars, (mark, rowmark, vars, bt));
+      (_, (_, _, _, _)) = Expression.traverseExp(e2, markBranchVars, (mark, rowmark, vars, bt));
+    then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
-    case (e as DAE.RANGE(start = e1,step=SOME(e3),stop=e2),(vars,bs,(mark,rowmark),pa))
-      equation
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e2, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e3, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
-      then (e,false,(vars,bs,(mark,rowmark),pa));
+    case (DAE.RANGE(start=e1, step=NONE(), stop=e2), (vars, bs, (mark, rowmark), pa)) equation
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e2, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+    then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
-    case (e as DAE.ASUB(exp = e1,sub={DAE.ICONST(i)}),(vars,bs,(mark,rowmark),pa))
-      equation
-        e1 = Expression.nthArrayExp(e1, i);
-        (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,bs,(mark,rowmark),pa));
-      then (e,false,(vars,bs,(mark,rowmark),pa));
+    case (DAE.RANGE(start=e1, step=SOME(e3), stop=e2), (vars, bs, (mark, rowmark), pa)) equation
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e2, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e3, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, (mark, rowmark), pa));
+    then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
-    case (e as DAE.ASUB(exp = e1,sub=elst),(vars,bs,(mark,rowmark),pa))
-      then fail();
+    case (DAE.ASUB(exp=e1, sub={DAE.ICONST(i)}), (vars, bs, (mark, rowmark), pa)) equation
+      e1 = Expression.nthArrayExp(e1, i);
+      (_, (vars, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, (mark, rowmark), pa));
+    then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
-    case (e as DAE.CREF(componentRef = cr),(vars,bs,(mark,rowmark),pa))
-      equation
-        (varslst,p) = BackendVariable.getVar(cr, vars);
-        res = adjacencyRowExpEnhanced1(varslst,p,pa,true,mark,rowmark,bs);
-      then (e,false,(vars,bs,(mark,rowmark),res));
+    case (DAE.ASUB(), (vars, bs, (mark, rowmark), pa))
+    then fail();
 
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,bs,(mark,rowmark),pa))
-      equation
-        (varslst,p) = BackendVariable.getVar(cr, vars);
-        res = adjacencyRowExpEnhanced1(varslst,p,pa,false,mark,rowmark,bs);
-      then (e,false,(vars,bs,(mark,rowmark),res));
+    case (DAE.CREF(componentRef=cr), (vars, bs, (mark, rowmark), pa)) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      res = adjacencyRowExpEnhanced1(varslst, p, pa, true, mark, rowmark, bs);
+    then (inExp, false, (vars, bs, (mark, rowmark), res));
 
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr),DAE.ICONST(_)}),(vars,bs,(mark,rowmark),pa))
-      equation
-        (varslst,p) = BackendVariable.getVar(cr, vars);
-        res = adjacencyRowExpEnhanced1(varslst,p,pa,false,mark,rowmark,bs);
-      then (e,false,(vars,bs,(mark,rowmark),res));
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, bs, (mark, rowmark), pa)) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      res = adjacencyRowExpEnhanced1(varslst, p, pa, false, mark, rowmark, bs);
+    then (inExp, false, (vars, bs, (mark, rowmark), res));
+
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr), DAE.ICONST(_)}), (vars, bs, (mark, rowmark), pa)) equation
+      (varslst, p) = BackendVariable.getVar(cr, vars);
+      res = adjacencyRowExpEnhanced1(varslst, p, pa, false, mark, rowmark, bs);
+    then (inExp, false, (vars, bs, (mark, rowmark), res));
+
     // pre(v) is considered a known variable
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = _)}),(vars,bs,(mark,rowmark),pa))
-      then (e,false,(vars,bs,(mark,rowmark),pa));
+    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=_)}), (vars, bs, (mark, rowmark), pa))
+    then (inExp, false, (vars, bs, (mark, rowmark), pa));
 
     // delay(e) can be used to break algebraic loops given some solver options
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),(vars,bs,(mark,rowmark),pa))
-      equation
-        b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
-      then (e,not b,(vars,bs,(mark,rowmark),pa));
+    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={_, _, e1, e2}), (vars, bs, (mark, rowmark), pa)) equation
+      b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1, e2);
+    then (inExp, not b, (vars, bs, (mark, rowmark), pa));
 
-    else (inExp,true,inTpl);
-
+    else (inExp, true, inTpl);
   end matchcontinue;
-end traversingadjacencyRowExpSolvableEnhancedFinder;
+end traversingAdjacencyRowExpSolvableEnhancedFinder;
 
 protected function markBranchVars "mark all vars of a if expression which are not in all branches as unsolvable"
   input DAE.Exp inExp;
@@ -5343,7 +5329,7 @@ end getIfExpBranchVarOccurency;
 
 protected function adjacencyRowExpEnhanced1
 "author: Frenkel TUD 2012-05
-  Helper function to traversingadjacencyRowExpSolvableEnhancedFinder, fill the variable indexes
+  Helper function to traversingAdjacencyRowExpSolvableEnhancedFinder, fill the variable indexes
   in the list and update the array to mark the variables."
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;

@@ -1862,37 +1862,31 @@ algorithm
   end match;
 end subscriptIsFirst;
 
-public function nthArrayExp
-"author: PA
+public function nthArrayExp "author: PA
   Returns the nth expression of an array expression."
   input DAE.Exp inExp;
   input Integer inInteger;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp,inInteger)
+  outExp := matchcontinue (inExp)
     local
-      DAE.Exp e, e1, e2, e_1, e_2, eres;
+      DAE.Exp e1, e2, e_1, e_2;
       list<DAE.Exp> expl;
-      Integer indx;
       Operator op;
       Type ty;
-    case (e as DAE.BINARY(operator = op, exp1 = e1, exp2 = e2),_)
-      equation
-        ty = typeofOp(op);
-        true = Types.isArray(ty, {});
-        e_1 = nthArrayExp(e1, inInteger);
-        e_2 = nthArrayExp(e2, inInteger);
-        eres = DAE.BINARY(e_1, op, e_2);
-      then
-        eres;
 
-    case ((e as DAE.ARRAY(array = expl)),indx)
-      equation
-        e1 = listNth(expl, indx-1);
-      then
-        e1;
+    case DAE.BINARY(operator=op, exp1=e1, exp2=e2) equation
+      ty = typeofOp(op);
+      true = Types.isArray(ty, {});
+      e_1 = nthArrayExp(e1, inInteger);
+      e_2 = nthArrayExp(e2, inInteger);
+    then DAE.BINARY(e_1, op, e_2);
 
-    case (_, _) then inExp;
+    case DAE.ARRAY(array=expl) equation
+      e1 = listNth(expl, inInteger-1);
+    then e1;
+
+    else inExp;
   end matchcontinue;
 end nthArrayExp;
 
