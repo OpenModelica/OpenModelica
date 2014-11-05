@@ -94,7 +94,7 @@ algorithm
       BackendDAE.Shared shared;
     case(BackendDAE.DAE(eqs=eqs,shared=shared))
      equation
-       true = Flags.isSet(Flags.PARTLINTORNSYSTEM);
+       //true = Flags.isSet(Flags.PARTLINTORNSYSTEM);
        (eqs,_) = List.map1Fold(eqs,reduceLinearTornSystem,shared,1);
     then BackendDAE.DAE(eqs,shared);
     else then daeIn;
@@ -184,7 +184,7 @@ algorithm
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear, jac = jac) = comp;
         true = linear;
         true = intLe(listLength(tvarIdcs),2);
-        print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
+        //print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
         if Flags.isSet(Flags.HPCOM_DUMP) then
           print("handle linear torn systems of size: "+intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+"\n");
         end if;
@@ -353,7 +353,7 @@ algorithm
    //-----------------------------
    // all optimization
    //-----------------------------
-   (eqsNewOut,varsNewOut,resEqsOut) := simplifyNewEquations(eqsNewOut,varsNewOut,resEqsOut,2);
+   (eqsNewOut,varsNewOut,resEqsOut) := simplifyNewEquations(eqsNewOut,varsNewOut,resEqsOut,listLength(List.flatten(arrayList(xa_iArr))),2);
      //BackendDump.dumpVarList(varsNewOut,"varsNew2");
      //BackendDump.dumpEquationList(eqsNewOut,"eqsNew2");
      //BackendDump.dumpEquationList(resEqsOut,"new residuals2");
@@ -379,6 +379,7 @@ protected function simplifyNewEquations
   input list<BackendDAE.Equation> eqsIn;
   input list<BackendDAE.Var> varsIn;
   input list<BackendDAE.Equation> resEqsIn;
+  input Integer numAuxiliaryVars; // to prevent replacement of coefficients
   input Integer numIter;
   output list<BackendDAE.Equation> eqsOut;
   output list<BackendDAE.Var> varsOut;
@@ -388,25 +389,30 @@ protected
   BackendDAE.Variables varArr;
   BackendDAE.EqSystem eqSys;
   BackendDAE.IncidenceMatrix m, mT;
-  Integer size;
+  Integer size,numIterNew, numAux;
   list<Integer> varIdcs,eqIdcs;
   list<tuple<Integer,Integer>> simplifyPairs;
   list<BackendDAE.Equation> eqLst;
   list<BackendDAE.Var> varLst;
 algorithm
   eqArr := BackendEquation.listEquation(eqsIn);
-  varArr := BackendVariable.listVar(varsIn);
+  varArr := BackendVariable.listVar1(varsIn);
   eqSys := BackendDAE.EQSYSTEM(varArr,eqArr,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
   (m,mT) := BackendDAEUtil.incidenceMatrix(eqSys,BackendDAE.ABSOLUTE(),NONE());
   size := listLength(eqsIn);
-  (eqIdcs,varIdcs,resEqsOut) := List.fold(List.intRange(size),function simplifyNewEquations1(eqArr=eqArr,varArr=varArr,m=m,mt=mT),({},{},resEqsIn));
+  (eqIdcs,varIdcs,resEqsOut) := List.fold(List.intRange(size),function simplifyNewEquations1(eqArr=eqArr,varArr=varArr,m=m,mt=mT,numAuxiliaryVars=numAuxiliaryVars),({},{},resEqsIn));
+  numAux := numAuxiliaryVars-listLength(varIdcs);
+  if List.isEmpty(varIdcs) then numIterNew:=0;
+    else numIterNew := numIter;
+    end if;
+  //take the non-assigned vars only
   (_,varIdcs,_) := List.intersection1OnTrue(List.intRange(size),varIdcs,intEq);
   (_,eqIdcs,_) := List.intersection1OnTrue(List.intRange(size),eqIdcs,intEq);
   eqsOut := BackendEquation.getEqns(eqIdcs,eqArr);
   varsOut := List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,varArr);
-  if numIter<>0 then (eqsOut,varsOut,resEqsOut) := simplifyNewEquations(eqsOut,varsOut,resEqsOut,numIter-1);
-  else (eqsOut,varsOut,resEqsOut) := (eqsOut,varsOut,resEqsOut);
-  end if;
+  if numIterNew<>0 then (eqsOut,varsOut,resEqsOut) := simplifyNewEquations(eqsOut,varsOut,resEqsOut,numAux,numIterNew-1);
+    else (eqsOut,varsOut,resEqsOut) := (eqsOut,varsOut,resEqsOut);
+    end if;
 end simplifyNewEquations;
 
 protected function simplifyNewEquations1
@@ -415,6 +421,7 @@ protected function simplifyNewEquations1
   input BackendDAE.Variables varArr;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrix mt;
+  input Integer numAuxiliaryVars;
   input tuple<list<Integer>,list<Integer>,list<BackendDAE.Equation>> tplIn; //these can be removed afterwards (eqIdcs,varIdcs,_)
   output tuple<list<Integer>,list<Integer>,list<BackendDAE.Equation>> tplOut;
 algorithm
@@ -435,6 +442,7 @@ algorithm
        (eqIdcs,varIdcs,resEqLst) := tplIn;
        // a variable is directly assignable and therefore will be removed
        {varIdx} := arrayGet(m,eqIdx);
+       true := varIdx <= numAuxiliaryVars;
        var := BackendVariable.getVarAt(varArr,varIdx);
        eq := BackendEquation.equationNth1(eqArr,eqIdx);
        //solve for it
@@ -443,6 +451,7 @@ algorithm
        rhs := BackendEquation.getEquationRHS(eq);
        lhs := BackendEquation.getEquationLHS(eq);
        (rhs,_) := ExpressionSolve.solve(lhs,rhs,varExp);
+       (rhs,_) := ExpressionSimplify.simplify(rhs);
        // replace
        repl := BackendVarTransform.emptyReplacements();
        repl := BackendVarTransform.addReplacement(repl,varCref,rhs,NONE());
