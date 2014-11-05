@@ -67,29 +67,38 @@ Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString
     */
   QString value;
   QString classNameToUse = className;
+  bool defaultValue = true;
   /* case 1 */
-  if (inheritedComponent)
-  {
+  if (inheritedComponent) {
     QStringList extendsModifierNames = pOMCProxy->getExtendsModifierNames(className, inheritedClassName);
-    foreach (QString extendsModifierName, extendsModifierNames)
-    {
-      if (extendsModifierName.compare(QString(componentName).append(".").append(pComponentInfo->getName())) == 0)
-      {
+    foreach (QString extendsModifierName, extendsModifierNames) {
+      if (extendsModifierName.compare(QString(componentName).append(".").append(pComponentInfo->getName())) == 0) {
         value = pOMCProxy->getExtendsModifierValue(className, inheritedClassName, extendsModifierName);
+        defaultValue = true;
       }
     }
     classNameToUse = inheritedClassName;
   }
   /* case 2 */
-  if (value.isEmpty() && !componentName.isEmpty())
+  if (value.isEmpty() && !componentName.isEmpty()) {
     value = pOMCProxy->getComponentModifierValue(classNameToUse, QString(componentName).append(".").append(pComponentInfo->getName()));
+    defaultValue = false;
+  }
   /* case 3 */
-  if (value.isEmpty() && !componentBaseClassName.isEmpty())
+  if (value.isEmpty() && !componentBaseClassName.isEmpty()) {
     value = pOMCProxy->getExtendsModifierValue(componentBaseClassName, componentClassName, pComponentInfo->getName());
+    defaultValue = true;
+  }
   /* case 4 */
-  if (value.isEmpty())
+  if (value.isEmpty()) {
     value = pOMCProxy->getParameterValue(componentClassName, pComponentInfo->getName());
-  mpValueTextBox->setText(value);
+    defaultValue = true;
+  }
+  if (defaultValue) {
+    mpValueTextBox->setPlaceholderText(value);
+  } else {
+    mpValueTextBox->setText(value);
+  }
   mpValueTextBox->setCursorPosition(0); /* move the cursor to start so that parameter value will show up from start instead of end. */
   mpUnitLabel = new Label;
   mpCommentLabel = new Label;
@@ -100,10 +109,10 @@ Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString
     A derived class can be inherited, so look recursively.
     */
   QString unit = pOMCProxy->getComponentModifierValue(componentClassName, QString(pComponentInfo->getName()).append(".unit"));
-  if (unit.isEmpty())
-  {
-    if (!pOMCProxy->isBuiltinType(pComponentInfo->getClassName()))
+  if (unit.isEmpty()) {
+    if (!pOMCProxy->isBuiltinType(pComponentInfo->getClassName())) {
       unit = getUnitFromDerivedClass(pOMCProxy, pComponentInfo->getClassName());
+    }
   }
   mpUnitLabel = new Label(StringHandler::removeFirstLastQuotes(unit));
   mpCommentLabel = new Label(pComponentInfo->getComment());
