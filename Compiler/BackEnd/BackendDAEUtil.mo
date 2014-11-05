@@ -2884,12 +2884,13 @@ algorithm
       Boolean b;
       list<DAE.Exp> explst;
       Option<DAE.Exp> stepvalueopt;
-      Integer istart,istep,istop;
+      Integer istart,istep,istop, i;
       list<DAE.ComponentRef> crlst;
       Option<DAE.FunctionTree> ofunctionTree;
       DAE.FunctionTree functionTree;
       tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>> tpl;
       Integer diffindx;
+      String str;
 
     case (e as DAE.LBINARY(exp1 = _),tpl)
       then (e,false,tpl);
@@ -2902,6 +2903,7 @@ algorithm
       then (e,false,tpl);
     case (e as DAE.RANGE(ty = _),tpl)
       then (e,false,tpl);
+
     case (e as DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub=explst),(vars,pa,ofunctionTree))
       equation
         {DAE.RANGE(start=startvalue,step=stepvalueopt,stop=stopvalue)} = ExpressionSimplify.simplifyList(explst, {});
@@ -2915,11 +2917,15 @@ algorithm
         pa = incidenceRowExp1(varslst,p,pa,0);
       then (e,false,(vars,pa,ofunctionTree));
 
-    // if it could not simplified take all found
-    case (e as DAE.ASUB(exp = e1),tpl)
+    case (e as DAE.ASUB(exp = e1, sub={DAE.ICONST(i)}),tpl)
       equation
+        e1 = Expression.nthArrayExp(e1, i);
         (_,tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
-      then (e,false,tpl);
+      then (e, false, tpl);
+        
+    // otherwise 
+    case (e as DAE.ASUB(exp = e1),tpl)
+      then fail();
 
     case (e as DAE.TSUB(exp = e1),tpl)
       equation
@@ -3117,6 +3123,8 @@ algorithm
       DAE.Exp e,e1,e2;
       list<BackendDAE.Var> varslst;
       Boolean b;
+      Integer i;
+      String str;
 
     case (e as DAE.CREF(componentRef = cr),(vars,pa))
       equation
@@ -3154,6 +3162,15 @@ algorithm
         b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
       then (inExp,not b,inTpl);
 
+    case (e as DAE.ASUB(exp = e1, sub={DAE.ICONST(i)}),(vars,pa))
+      equation
+        e1 = Expression.nthArrayExp(e1, i);
+        (_, (_, res)) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpFinder, (vars, pa));
+      then (inExp, false, (vars, res));
+
+    case (e as DAE.ASUB(exp = e1),(vars,pa))
+      then fail();
+          
     else (inExp,true,inTpl);
   end matchcontinue;
 end traversingincidenceRowExpFinder;
@@ -5112,7 +5129,7 @@ algorithm
       list<DAE.Exp> elst;
       list<BackendDAE.Var> varslst;
       Boolean b,bs;
-      Integer mark;
+      Integer mark,i;
       array<Integer> rowmark;
       BinaryTree.BinTree bt;
     case (e as DAE.LUNARY(exp = e1),(vars,bs,(mark,rowmark),pa))
@@ -5156,11 +5173,14 @@ algorithm
         (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e3, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
       then (e,false,(vars,bs,(mark,rowmark),pa));
 
-    case (e as DAE.ASUB(exp = e1,sub=elst),(vars,bs,(mark,rowmark),pa))
+    case (e as DAE.ASUB(exp = e1,sub={DAE.ICONST(i)}),(vars,bs,(mark,rowmark),pa))
       equation
+        e1 = Expression.nthArrayExp(e1, i);
         (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,bs,(mark,rowmark),pa));
-        (_,(vars,_,_,pa)) = Expression.traverseExpListTopDown(elst, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
       then (e,false,(vars,bs,(mark,rowmark),pa));
+        
+    case (e as DAE.ASUB(exp = e1,sub=elst),(vars,bs,(mark,rowmark),pa))
+      then fail();
 
     case (e as DAE.CREF(componentRef = cr),(vars,bs,(mark,rowmark),pa))
       equation
