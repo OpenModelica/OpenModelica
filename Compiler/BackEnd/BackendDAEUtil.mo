@@ -2922,8 +2922,8 @@ algorithm
         e1 = Expression.nthArrayExp(e1, i);
         (_,tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
       then (e, false, tpl);
-        
-    // otherwise 
+
+    // otherwise
     case (e as DAE.ASUB(exp = e1),tpl)
       then fail();
 
@@ -3170,7 +3170,7 @@ algorithm
 
     case (e as DAE.ASUB(exp = e1),(vars,pa))
       then fail();
-          
+
     else (inExp,true,inTpl);
   end matchcontinue;
 end traversingincidenceRowExpFinder;
@@ -5178,7 +5178,7 @@ algorithm
         e1 = Expression.nthArrayExp(e1, i);
         (_,(vars,_,_,pa)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,bs,(mark,rowmark),pa));
       then (e,false,(vars,bs,(mark,rowmark),pa));
-        
+
     case (e as DAE.ASUB(exp = e1,sub=elst),(vars,bs,(mark,rowmark),pa))
       then fail();
 

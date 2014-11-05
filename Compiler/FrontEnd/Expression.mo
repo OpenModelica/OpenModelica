@@ -1875,7 +1875,7 @@ algorithm
       list<DAE.Exp> expl;
       Integer indx;
       Operator op;
-      Type ty; 
+      Type ty;
     case (e as DAE.BINARY(operator = op, exp1 = e1, exp2 = e2),_)
       equation
         ty = typeofOp(op);
@@ -1884,14 +1884,14 @@ algorithm
         e_2 = nthArrayExp(e2, inInteger);
         eres = DAE.BINARY(e_1, op, e_2);
       then
-        eres; 
-          
+        eres;
+
     case ((e as DAE.ARRAY(array = expl)),indx)
       equation
         e1 = listNth(expl, indx-1);
       then
         e1;
-        
+
     case (_, _) then inExp;
   end matchcontinue;
 end nthArrayExp;
