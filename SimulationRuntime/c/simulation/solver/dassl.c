@@ -449,7 +449,9 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
   double tout = 0;
   int i = 0;
   unsigned int ui = 0;
-  int retVal = 0;
+  int retVal = 1;
+  int saveJumpState;
+  threadData_t *threadData = data->threadData;
 
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
 
@@ -467,6 +469,14 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
   dasslData->rpar[1] = (double*) (void*) dasslData;
 
   TRACE_PUSH
+
+  saveJumpState = data->threadData->currentErrorStage;
+  data->threadData->currentErrorStage = ERROR_INTEGRATOR;
+
+  /* try */
+#if !defined(OMC_EMCC)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
 
   assertStreamPrint(data->threadData, 0 != dasslData->rpar, "could not passed to DDASKR");
 
@@ -510,7 +520,7 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
     solverInfo->currentTime = tout;
 
     TRACE_POP
-    return retVal;
+    return 0;
   }
 
   /* If dasslsteps is selected, we just use the outer ring buffer */
@@ -597,6 +607,13 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
 
   } while(dasslData->idid == 1 ||
           (dasslData->idid == -1 && solverInfo->currentTime <= data->simulationInfo.stopTime));
+  retVal = 0;
+
+#if !defined(OMC_EMCC)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+  data->threadData->currentErrorStage = saveJumpState;
+
 
   if (!dasslData->dasslSteps)
   {

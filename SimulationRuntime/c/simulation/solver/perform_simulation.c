@@ -162,7 +162,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       }
       solverInfo->currentStepSize = (double)(__currStepNo*(simInfo->stopTime-simInfo->startTime))/(simInfo->numSteps) + simInfo->startTime - solverInfo->currentTime;
 
-      // if retry reduce stepsize
+      /* if retry reduce stepsize */
       if(0 != retry)
       {
         solverInfo->currentStepSize /= 2;
@@ -348,6 +348,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         restoreOldValues(data);
         solverInfo->currentTime = data->localData[0]->timeValue;
         overwriteOldSimulationData(data);
+        updateDiscreteSystem(data);
         warningStreamPrint(LOG_STDOUT, 0, "Integrator attempt to handle a problem with a called assert.");
         retry = 1;
         solverInfo->didEventStep = 1;
