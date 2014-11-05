@@ -173,7 +173,7 @@ struct OMVariable {
   QString comment;
   OMInfo info;
   QStringList types;
-  int definedIn[equationTypeSize] = {0};
+  int definedIn[equationTypeSize];
   QList<int> usedIn[equationTypeSize];
   QList<OMOperation*> ops;
   OMVariable();

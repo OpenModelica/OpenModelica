@@ -191,7 +191,9 @@ QString OMInfo::toString() {
 
 OMVariable::OMVariable()
 {
-
+  for (int i=0; i<equationTypeSize; i++) {
+    definedIn[i] = 0;
+  }
 }
 
 OMVariable::OMVariable(const OMVariable &var)
