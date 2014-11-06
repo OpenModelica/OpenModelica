@@ -141,22 +141,23 @@ algorithm
       FuncKeyString keystrFunc;
       String s;
 
-    // Adding when not existing previously.
     case ((v as (key,_)),
         ((hashvec, varr, bsize, n, fntpl as (hashFunc,_,_,_))))
       equation
-        failure((_) = get(key, hashTable));
-        indx = hashFunc(key, bsize);
-        newpos = valueArrayLength(varr);
-        varr = valueArrayAdd(varr, v);
-        indexes = hashvec[indx + 1];
-        hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-        n = valueArrayLength(varr);
-      then
-        ((hashvec, varr, bsize, n, fntpl));
-
-    // Adding when already present => update value.
-    case (_, _) then update(entry, hashTable);
+        if hasKey(key, hashTable) then
+          // Adding when already present => update value.
+          outHashTable = update(entry, hashTable);
+        else
+          // Adding when not existing previously.
+          indx = hashFunc(key, bsize);
+          newpos = valueArrayLength(varr);
+          varr = valueArrayAdd(varr, v);
+          indexes = hashvec[indx + 1];
+          hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+          n = valueArrayLength(varr);
+          outHashTable = (hashvec, varr, bsize, n, fntpl);
+        end if;
+      then outHashTable;
 
     case (((key,_)),
         ((_, _, bsize, _, (hashFunc, _, keystrFunc, _))))
@@ -283,7 +284,8 @@ protected
 algorithm
   (key, _) := inEntry;
   (hashvec, varr, bsize, n, functpl) := inHashTable;
-  (_, index) := get1(key, inHashTable);
+  index := hasKeyIndex(key, inHashTable);
+  true := valueArrayKeyIndexExists(varr, index);
   varr := valueArraySetnth(varr, index, inEntry);
   outHashTable := (hashvec, varr, bsize, n, functpl);
 end update;
@@ -297,70 +299,49 @@ public function delete
   input HashTable hashTable;
   output HashTable outHashTable;
 algorithm
-  outHashTable := matchcontinue(key, hashTable)
+  outHashTable := match hashTable
     local
       Integer indx, n, bsize;
       ValueArray varr;
       HashVector hashvec;
       FuncsTuple fntpl;
 
-    case (_, (hashvec, varr, bsize, n, fntpl))
+    case (hashvec, varr, bsize, n, fntpl)
       equation
-        (_, indx) = get1(key, hashTable);
+        indx = hasKeyIndex(key, hashTable);
+        if not valueArrayKeyIndexExists(varr, indx) then
+          print("BaseHashTable.delete failed\n");
+          fail();
+        end if;
         varr = valueArrayClearnth(varr, indx);
-      then
-        ((hashvec, varr, bsize, n, fntpl));
+      then (hashvec, varr, bsize, n, fntpl);
 
-    else
-      equation
-        print("-HashTable.delete failed\n");
-      then
-        fail();
-
-  end matchcontinue;
+  end match;
 end delete;
 
-public function hasKey"checks if the given key is in the hashTable"
+public function hasKey "checks if the given key is in the hashTable"
   input Key key;
   input HashTable hashTable;
   output Boolean b;
+protected
+  ValueArray varr;
 algorithm
-   b := matchcontinue(key,hashTable)
-    local
-      list<Key> keys;
-    case(_, _)
-      equation
-        _ = get(key, hashTable);
-      then
-        true;
-    else
-      then
-        false;
-  end matchcontinue;
+  (_, varr, _, _, _) := hashTable;
+   b := valueArrayKeyIndexExists(varr, hasKeyIndex(key, hashTable));
 end hasKey;
 
 public function anyKeyInHashTable "Returns true if any of the keys are present in the hashtable. Stops and returns true upon first occurence"
-  input list<Key> inKeys;
-  input HashTable inHt;
+  input list<Key> keys;
+  input HashTable ht;
   output Boolean res;
 algorithm
-  res := matchcontinue(inKeys,inHt)
-    local
-      Key key;
-      list<Key> keys;
-
-    case({}, _) then false;
-
-    case(key::_, _)
-      equation
-        _ = get(key, inHt);
-      then
-        true;
-
-    case(_::keys, _)
-      then anyKeyInHashTable(keys, inHt);
-
-  end matchcontinue;
+  for key in keys loop
+    if hasKey(key, ht) then
+      res := true;
+      return;
+    end if;
+  end for;
+  res := false;
 end anyKeyInHashTable;
 
 public function get
@@ -368,65 +349,59 @@ public function get
   input Key key;
   input HashTable hashTable;
   output Value value;
+protected
+  Integer i;
+  ValueArray varr;
 algorithm
-  (value, _) := get1(key, hashTable);
+  i := hasKeyIndex(key, hashTable);
+  false := i == -1;
+  (_, varr, _, _, _) := hashTable;
+  (_, value) := valueArrayNth(varr, i);
 end get;
 
-protected function get1
-  "help function to get"
+protected function hasKeyIndex
+  "help function to get and hasKey"
   input Key key;
   input HashTable hashTable;
-  output Value value;
   output Integer indx;
 algorithm
-  (value, indx) := match(key, hashTable)
+  indx := match hashTable
     local
       Integer hashindx, bsize, n;
       HashNode indexes;
       Value v;
       HashVector hashvec;
-      ValueArray varr;
       Key k;
       FuncEq keyEqual;
       FuncHash hashFunc;
       Boolean eq;
 
-    case (_, (hashvec, varr, bsize, n, (hashFunc, keyEqual, _, _)))
+    case (hashvec, _, bsize, _, (hashFunc, keyEqual, _, _))
       equation
         hashindx = hashFunc(key, bsize);
-        (k,n)::indexes = hashvec[hashindx + 1];
-        eq = keyEqual(k,key);
-        indx = get2(eq, n, key, indexes, keyEqual);
-        (_, v) = valueArrayNth(varr, indx);
-      then
-        (v, indx);
+        indexes = hashvec[hashindx + 1];
+      then hasKeyIndex2(key, indexes, keyEqual);
 
   end match;
-end get1;
+end hasKeyIndex;
 
-protected function get2
+protected function hasKeyIndex2
   "Helper function to get"
-  input Boolean b;
-  input Integer indexIfTrue;
   input Key key;
   input HashNode keyIndices;
   input FuncEq keyEqual;
-  output Integer index;
+  output Integer index "Returns -1 on failure";
+protected
+  Key key2;
 algorithm
-  index := match (b,indexIfTrue,key,keyIndices,keyEqual)
-    local
-      Key key2;
-      HashNode xs;
-      Boolean eq;
-    case (true,_,_,_,_) then indexIfTrue;
-    // search for the key, found the good one? stop and use the index
-    case (_,_,_,(key2,index) :: xs,_)
-      equation
-        eq = keyEqual(key, key2);
-      then get2(eq, index, key, xs, keyEqual);
-
-  end match;
-end get2;
+  for keyIndex in keyIndices loop
+    (key2,index) := keyIndex;
+    if keyEqual(key, key2) then
+      return;
+    end if;
+  end for;
+  index := -1 "Mark the failure so we can do hasKey without matchcontinue";
+end hasKeyIndex2;
 
 public function dumpHashTable
   input HashTable t;
@@ -586,33 +561,29 @@ algorithm
   end matchcontinue;
 end valueArraySetnth;
 
-public function valueArrayClearnth
+protected
+function valueArrayClearnth
   "Clears the n:th variable in the ValueArray (set to NONE())."
   input ValueArray valueArray;
   input Integer pos;
   output ValueArray outValueArray;
 algorithm
-  outValueArray := matchcontinue(valueArray, pos)
+  outValueArray := match valueArray
     local
       array<Option<HashEntry>> arr;
       Integer n, size;
 
-    case ((n, size, arr), _)
+    case (n, size, arr)
       equation
-        (pos < size) = true;
+        true = pos < size;
         arr = arrayUpdate(arr, pos + 1,NONE());
-      then
-        ((n, size, arr));
+      then valueArray;
 
-    else
-      equation
-        print("-HashTable.valueArrayClearnth failed\n");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end valueArrayClearnth;
 
-public function valueArrayNth
+protected
+function valueArrayNth
   "Retrieve the n:th Value from ValueArray, index from 0..n-1."
   input ValueArray valueArray;
   input Integer pos;
@@ -628,13 +599,33 @@ algorithm
 
     case ((n, _, arr), _)
       equation
-        (pos <= n) = true;
+        true = pos <= n;
         SOME((k, v)) = arr[pos + 1];
       then
         (k, v);
 
   end match;
 end valueArrayNth;
+
+function valueArrayKeyIndexExists
+  "Checks if the given index exists in the value array"
+  input ValueArray valueArray;
+  input Integer pos;
+  output Boolean b;
+algorithm
+  b := match (valueArray, pos)
+    local
+      Key k;
+      Value v;
+      Integer n;
+      array<Option<HashEntry>> arr;
+
+    case (_, -1) then false;
+    case ((n, _, arr), _)
+      then if pos <= n then isSome(arr[pos + 1]) else false;
+
+  end match;
+end valueArrayKeyIndexExists;
 
 public function copy
   "Makes a copy of a hashtable."
