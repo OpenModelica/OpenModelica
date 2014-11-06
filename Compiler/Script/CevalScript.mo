@@ -1609,7 +1609,7 @@ algorithm
         simValue = Values.BOOL(true);
       then
         (cache,simValue,st);
-        
+
     // adrpo: some error happened!
     case (cache,_,"moveClass",{Values.CODE(Absyn.C_TYPENAME(className)),
                                         Values.STRING(_)},
@@ -1642,7 +1642,7 @@ algorithm
         ret_val = Values.BOOL(true);
       then
         (cache,ret_val,st);
-    
+
     case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(_))::_),st_1,_)
       equation
 
