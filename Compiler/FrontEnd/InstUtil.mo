@@ -2804,7 +2804,6 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec t;
       SCode.Mod m;
-      SCode.Comment comment;
       list<tuple<SCode.Element, DAE.Mod>> xs,comps;
       InstDims inst_dims;
       SourceInfo info;
@@ -2815,8 +2814,7 @@ algorithm
     // a component
     case (cache,env,ih,mods,pre,ci_state,
           ((comp as SCode.COMPONENT(name=n,prefixes=SCode.PREFIXES(vis,_,_,io,_),
-                                    attributes=SCode.ATTR(_,ct,prl,var,dir),
-                                    comment=comment),cmod) :: xs),
+                                    attributes=SCode.ATTR(_,ct,prl,var,dir)),cmod) :: xs),
           inst_dims,impl)
       equation
         // compmod = Mod.getModifs(mods, n, m);

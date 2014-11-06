@@ -372,7 +372,7 @@ algorithm
       then (NONE(), modeTableNew);
 
     // Remove initialState(..) statement
-    case (SOME(MODE(_,_,_,_,_)), _, SOME((_,INITIAL_STATE())), SOME(_))
+    case (SOME(MODE()), _, SOME((_,INITIAL_STATE())), SOME(_))
       then (NONE(), modeTable);
 
     // return structures without any modifications

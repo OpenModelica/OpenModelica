@@ -400,6 +400,7 @@ algorithm
       list<tuple<DAE.Pattern,String,DAE.Type>> namedPatterns;
       Boolean knownSingleton;
       FCore.Cache cache;
+      Boolean allWild;
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
       algorithm
@@ -420,6 +421,21 @@ algorithm
               else ();
             end match;
           end for;
+          if listEmpty(namedArgList) and not listEmpty(funcArgs) then
+            allWild := true;
+            for arg in funcArgs loop
+              allWild := match arg
+                case Absyn.CREF(Absyn.WILD()) then true;
+                else false;
+              end match;
+              if not allWild then
+                break;
+              end if;
+            end for;
+            if allWild then
+              Error.addSourceMessage(Error.META_ALL_EMPTY, {Absyn.pathString(callPath)}, info);
+            end if;
+          end if;
         end if;
 
         (funcArgs,namedArgList) := checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
@@ -505,7 +521,7 @@ protected function checkForAllWildCall "Converts a call REC(__) to REC(_,_,_,_)"
 algorithm
   (outArgs,outNamed) := match (args,named,numFields)
     case ({Absyn.CREF(Absyn.ALLWILD())},{},_)
-      then (List.fill(Absyn.CREF(Absyn.WILD()),numFields),{});
+      then ({},{});
     else (args,named);
   end match;
 end checkForAllWildCall;

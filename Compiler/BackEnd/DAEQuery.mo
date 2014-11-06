@@ -296,7 +296,7 @@ algorithm
       DAE.ElementSource source;
 
     case ({},_) then "";
-    case (((BackendDAE.VAR(varName = cr, varDirection = dir)) :: {}),varno)
+    case (((BackendDAE.VAR(varName = cr)) :: {}),_)
       equation
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
@@ -321,7 +321,7 @@ algorithm
       then
         str;
 
-      case (((BackendDAE.VAR(varName = cr, varDirection = dir)) :: xs),varno)
+      case (((BackendDAE.VAR(varName = cr)) :: xs),varno)
       equation
         str1 = ComponentReference.printComponentRefStr(cr);
         /*

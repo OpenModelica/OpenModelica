@@ -4089,7 +4089,7 @@ algorithm
       Absyn.Restriction restriction;
       Absyn.ClassDef classDef;
       SourceInfo file_info;
-    case (Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
+    case (Absyn.CLASS(partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
           body = classDef,info = file_info), newName, within_, p)
       equation
         newp = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(newName, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, classDef, file_info)},

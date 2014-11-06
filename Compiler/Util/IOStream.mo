@@ -188,7 +188,7 @@ algorithm
       then
         ();
 
-    case (IOSTREAM(data = LIST_DATA(_)))
+    case (IOSTREAM(data = LIST_DATA()))
       then
         ();
 

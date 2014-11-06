@@ -841,6 +841,8 @@ public constant Message META_UNUSED_ASSIGNMENT = MESSAGE(5034, TRANSLATION(), NO
   Util.gettext("Removing unused assignment to: %s."));
 public constant Message META_EMPTY_CALL_PATTERN = MESSAGE(5035, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Removing empty call named pattern argument: %s."));
+public constant Message META_ALL_EMPTY = MESSAGE(5036, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("All patterns in call were empty: %s."));
 
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));

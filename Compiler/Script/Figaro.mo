@@ -740,7 +740,7 @@ algorithm
   outTokenList := matchcontinue inTokenList
     local
       list<Token> rest;
-    case TEXT(_) :: rest
+    case TEXT() :: rest
       then rest;
     case _
       then inTokenList;

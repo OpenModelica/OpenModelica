@@ -524,7 +524,7 @@ algorithm
    Option<AvlTreeValue> v;
    AvlValue val;
    Integer hl,hr,height;
- case(NODE(value=v as SOME(VALUE(_,_)),left=l,right=r)) equation
+ case(NODE(value=v as SOME(VALUE()),left=l,right=r)) equation
     hl = getHeight(l);
     hr = getHeight(r);
     height = intMax(hl,hr) + 1;

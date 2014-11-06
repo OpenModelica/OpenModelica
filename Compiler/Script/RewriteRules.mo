@@ -1128,7 +1128,7 @@ algorithm
 
     case ({}) then {};
 
-    case ((r as FRONTEND_RULE(_,_))::rest)
+    case ((r as FRONTEND_RULE())::rest)
       equation
         lst = getRulesFrontEnd(rest);
       then r::lst;
@@ -1149,7 +1149,7 @@ algorithm
 
     case ({}) then {};
 
-    case ((r as BACKEND_RULE(_,_))::rest)
+    case ((r as BACKEND_RULE())::rest)
       equation
         lst = getRulesBackEnd(rest);
       then r::lst;

@@ -972,13 +972,13 @@ algorithm
     // no prefix, this is an error!
     // disabled as this is used in Interactive.getComponents
     // and makes mosfiles/interactive_api_attributes.mos to fail!
-    case (TOP_INSTANCE(_, _, _, _), Prefix.PREFIX(compPre = Prefix.NOCOMPPRE()),  _)
+    case (TOP_INSTANCE(), Prefix.PREFIX(compPre = Prefix.NOCOMPPRE()),  _)
       then lookupInnerInIH(inTIH, Prefix.NOPRE(), inComponentIdent);
 
     // no prefix, this is an error!
     // disabled as this is used in Interactive.getComponents
     // and makes mosfiles/interactive_api_attributes.mos to fail!
-    case (TOP_INSTANCE(_, _, _, _), Prefix.NOPRE(),  name)
+    case (TOP_INSTANCE(), Prefix.NOPRE(),  name)
       equation
         // fprintln(Flags.INNER_OUTER, "Error: outer component: " + name + " defined at the top level!");
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " + PrefixUtil.printPrefixStr(Prefix.NOPRE()) + "/" + name + " REACHED TOP LEVEL!");
@@ -1034,7 +1034,7 @@ algorithm
         instInner;
 
     // if we fail return nothing
-    case (TOP_INSTANCE(_, _, _, _), prefix, name)
+    case (TOP_INSTANCE(), prefix, name)
       equation
         // fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " + PrefixUtil.printPrefixStr(prefix) + "/" + name + " NOT FOUND!");
         // dumpInstHierarchyHashTable(ht);

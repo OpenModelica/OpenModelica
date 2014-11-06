@@ -930,7 +930,7 @@ public function isRecord
   output Boolean outBoolean;
 algorithm
   outBoolean := match(inClass)
-    case CLASS(restriction = R_RECORD(_)) then true;
+    case CLASS(restriction = R_RECORD()) then true;
     else false;
   end match;
 end isRecord;
@@ -952,7 +952,7 @@ public function isFunction
   output Boolean outBoolean;
 algorithm
   outBoolean := match(inClass)
-    case CLASS(restriction = R_FUNCTION(_)) then true;
+    case CLASS(restriction = R_FUNCTION()) then true;
     else false;
   end match;
 end isFunction;
@@ -963,7 +963,7 @@ public function isFunctionRestriction
   output Boolean outBoolean;
 algorithm
   outBoolean := match(inRestriction)
-    case R_FUNCTION(_) then true;
+    case R_FUNCTION() then true;
     else false;
   end match;
 end isFunctionRestriction;
@@ -975,8 +975,8 @@ public function isFunctionOrExtFunctionRestriction
   output Boolean res;
 algorithm
   res := match(r)
-    case (R_FUNCTION(FR_NORMAL_FUNCTION(_))) then true;
-    case (R_FUNCTION(FR_EXTERNAL_FUNCTION(_))) then true;
+    case (R_FUNCTION(FR_NORMAL_FUNCTION())) then true;
+    case (R_FUNCTION(FR_EXTERNAL_FUNCTION())) then true;
     else false;
   end match;
 end isFunctionOrExtFunctionRestriction;
@@ -3048,15 +3048,15 @@ algorithm
       String outVar1,outVar2;
       list<String> argsStr;
       list<Absyn.Exp> args;
-    case (CLASS(name=name,restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
+    case (CLASS(name=name,restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
       then name;
-    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
+    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
       then name;
     case (CLASS(name=name,restriction=R_FUNCTION(FR_PARALLEL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
       then name;
     case (CLASS(restriction=R_FUNCTION(FR_PARALLEL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
       then name;
-    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),_,{outVar1})
+    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),_,{outVar1})
       equation
         true = listMember(name,knownExternalCFunctions);
         true = outVar2 == outVar1;
@@ -3064,7 +3064,7 @@ algorithm
         equality(argsStr = inVars);
       then name;
     case (CLASS(name=name,
-      restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION(_)),
+      restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),
       classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
       equation
         true = listMember(name,knownExternalCFunctions);
@@ -3282,7 +3282,7 @@ public function replaceableBool
   output Boolean bReplaceable;
 algorithm
   bReplaceable := match(inReplaceable)
-    case (REPLACEABLE(_)) then true;
+    case (REPLACEABLE()) then true;
     case (NOT_REPLACEABLE()) then false;
   end match;
 end replaceableBool;
@@ -3704,7 +3704,7 @@ public function isConnector
   output Boolean isConnector;
 algorithm
   isConnector := match(inRestriction)
-    case (R_CONNECTOR(_)) then true;
+    case (R_CONNECTOR()) then true;
     else false;
   end match;
 end isConnector;
@@ -4876,7 +4876,7 @@ public function isExternalFunctionRestriction
   output Boolean isExternal;
 algorithm
   isExternal := match(inRestr)
-    case (FR_EXTERNAL_FUNCTION(_)) then true;
+    case (FR_EXTERNAL_FUNCTION()) then true;
     else false;
   end match;
 end isExternalFunctionRestriction;
@@ -5525,7 +5525,7 @@ algorithm
   outIsInstantiable := match(inRestriction)
     case R_CLASS() then true;
     case R_MODEL() then true;
-    case R_RECORD(_) then true;
+    case R_RECORD() then true;
     case R_BLOCK() then true;
     case R_CONNECTOR() then true;
     case R_TYPE() then true;

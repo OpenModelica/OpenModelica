@@ -1278,7 +1278,7 @@ algorithm
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromExp(exp, {}, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
         //pop the let scope
-        (LET_SCOPE(_, _, _, _) :: scEnv) = scEnv;
+        (LET_SCOPE() :: scEnv) = scEnv;
         //TODO: worn when not used
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
@@ -1312,7 +1312,7 @@ algorithm
         scEnv = RECURSIVE_SCOPE(ident, encIdent) :: scEnv;
         (stmts, locals, scEnv, accMMDecls, _)
           = statementsFromExp(txtexp, {}, stmts, encIdent, encIdent, locals, scEnv, tplPackage, accMMDecls);
-        (RECURSIVE_SCOPE(_,_) :: scEnv) = scEnv;
+        (RECURSIVE_SCOPE() :: scEnv) = scEnv;
 
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromExp(exp, {}, stmts, intxt, outtxt, locals, scEnv, tplPackage, accMMDecls);
@@ -1931,7 +1931,7 @@ algorithm
         ( stmts, locals, scEnv, accMMDecls, intxt);
 
     //an option -> match it case SOME(val) then val // if exp = SOME(val) then val
-    case (_, mmexp, exptype as OPTION_TYPE(_), _, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
+    case (_, mmexp, exptype as OPTION_TYPE(), _, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
       equation
         warnIfSomeOptions(mmopts);
         //internal encodeing of val is not needed as the val is bound tightly, it hides possible val from upper scope
@@ -1947,7 +1947,7 @@ algorithm
         ( (stmt :: stmts), locals, scEnv, accMMDecls, intxt);
 
     //a list expression -> concat
-    case (_, mmexp, exptype as LIST_TYPE(_), _, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
+    case (_, mmexp, exptype as LIST_TYPE(), _, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
       equation
         mapctx = MAP_CONTEXT(BIND_MATCH("it"), (BOUND_VALUE(IDENT("it")),dummySourceInfo) , mmopts, NONE(), false);
         (stmts, locals, scEnv, accMMDecls, intxt)
@@ -2755,7 +2755,7 @@ algorithm
                          useIter = useiter),
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
-        failure(LIST_TYPE(_) = deAliasedType(argtype, astDefs));
+        failure(LIST_TYPE() = deAliasedType(argtype, astDefs));
 
         ofbindEnc = typeCheckMatchingExp(ofbind, argtype, astDefs);
         //ofbindEnc = encodeMatchingExp(ofbindEnc);
@@ -3437,7 +3437,7 @@ algorithm
     */
 
     //otherwise it is like REST_MATCH ... nothing to check
-    case ( mexp as BIND_MATCH(_), _, _)
+    case ( mexp as BIND_MATCH(), _, _)
       then
         mexp;
 
@@ -3468,7 +3468,7 @@ algorithm
     // TODO - failure message when not Option
     case ( mexp as NONE_MATCH(), mtype, astDefs)
       equation
-        OPTION_TYPE(_) = deAliasedType(mtype, astDefs);
+        OPTION_TYPE() = deAliasedType(mtype, astDefs);
       then
         mexp;
 
@@ -3508,7 +3508,7 @@ algorithm
         LIST_CONS_MATCH(mexp, restmexp);
 
     // TODO - failure message when not equal types
-    case ( mexp as STRING_MATCH(_),
+    case ( mexp as STRING_MATCH(),
            mtype, astDefs )
       equation
         STRING_TYPE() = deAliasedType(mtype, astDefs);
@@ -4067,7 +4067,7 @@ algorithm
         isAlwaysMatched(mexp);
       then ();
 
-    case ( BIND_MATCH(_) )
+    case ( BIND_MATCH() )
       then ();
 
     case ( TUPLE_MATCH(tupleArgs = mexplst) )
@@ -4184,11 +4184,11 @@ algorithm
     */
 
     // List ... if valLst then / if not valLst then
-    case ( LIST_TYPE(_), isnot,NONE(), tbranch, ebranchOpt, _)
+    case ( LIST_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
       then
        casesForTrueFalseCondition(isnot, LIST_MATCH({}), tbranch, ebranchOpt);
     // Option
-    case ( OPTION_TYPE(_), isnot,NONE(), tbranch, ebranchOpt, _)
+    case ( OPTION_TYPE(), isnot,NONE(), tbranch, ebranchOpt, _)
       then
        casesForTrueFalseCondition(isnot, NONE_MATCH(), tbranch, ebranchOpt);
     // String and Text (auto-converted to String)
@@ -4434,7 +4434,7 @@ algorithm
     case (TEXT_TYPE(),_, _, _) then inType;
 
     //already handled by checkResolvedType
-    case (UNRESOLVED_TYPE(_),_ , _, _) then inType;
+    case (UNRESOLVED_TYPE(),_ , _, _) then inType;
 
     case ( ts, _, msg, _)
       equation
@@ -4476,7 +4476,7 @@ algorithm
         (MM_LITERAL(litstr), lt);
 
     // Error - a template in a value context ... maybe, this can be with lower priority, after of trying of imlicit record lookup
-    case ( TEMPLATE_DEF(_,_,_,_), ident)
+    case ( TEMPLATE_DEF(), ident)
       equation
         reason = "Unresolved identifier - the template '" + ident + "'in a value context found (missing parenthesis ?) .";
         idtype = UNRESOLVED_TYPE(reason);
@@ -4657,7 +4657,7 @@ algorithm
                     + typeSignatureString(mtype));
         end if;
         (idtype, mexp) = lookupUpdateMExpDotPath(ident, path, mexp, mtype, astdefs);
-        failure(UNRESOLVED_TYPE(_) = idtype);
+        failure(UNRESOLVED_TYPE() = idtype);
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.traceln("\n [it.]path for '" + pathIdentString(path) + "' : "
                     + typeSignatureString(idtype));
@@ -5495,7 +5495,7 @@ algorithm
       then
         ( SOME(IDENT(pckgident)), typeident);
 
-    case ( PATH_IDENT(ident = pckgident, path = typepath as PATH_IDENT(_,_) ) )
+    case ( PATH_IDENT(ident = pckgident, path = typepath as PATH_IDENT() ) )
       equation
         (SOME(typepckg), typeident) = splitPackageAndIdent(typepath);
       then
@@ -5682,7 +5682,7 @@ algorithm
         typesEqualList(otaLst, otbLst, tyVars, setTyVars, astDefs);
 
     //concrete named type with PathIdent that is not a type variable
-    case ( NAMED_TYPE(name = PATH_IDENT(_,_)), tyConcrete, _, setTyVars, astDefs )
+    case ( NAMED_TYPE(name = PATH_IDENT()), tyConcrete, _, setTyVars, astDefs )
       equation
         ty = deAliasedType(inType, astDefs);
         tyConcrete = deAliasedType(tyConcrete, astDefs);
@@ -5738,7 +5738,7 @@ algorithm
 
 
     //?? don't know if this is needed
-    case ( UNRESOLVED_TYPE(_), UNRESOLVED_TYPE(_), _, setTyVars, _ )
+    case ( UNRESOLVED_TYPE(), UNRESOLVED_TYPE(_), _, setTyVars, _ )
       then
         setTyVars;
 
@@ -5890,7 +5890,7 @@ algorithm
     //except NAMED_TYPE with ident that was dealt above
     case ( tyConcrete, _, _)
       equation
-        failure(NAMED_TYPE(name = IDENT(_)) = tyConcrete);
+        failure(NAMED_TYPE(name = IDENT()) = tyConcrete);
       then
         tyConcrete;
 
@@ -6033,8 +6033,8 @@ algorithm
     case ( _, typeinfo, _ )
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        failure(TI_UNION_TYPE(_) = typeinfo);
-        failure(TI_RECORD_TYPE(_) = typeinfo);
+        failure(TI_UNION_TYPE() = typeinfo);
+        failure(TI_RECORD_TYPE() = typeinfo);
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("- getFields failed - the typeinfo is neither union nor record type.\n");
       then
         fail();
@@ -6234,7 +6234,7 @@ algorithm
         ts;
 
     //convert  Tpl.Text -> TEXT_TYPE()
-    case ( NAMED_TYPE(name = na as PATH_IDENT(_,_)),  _, _ )
+    case ( NAMED_TYPE(name = na as PATH_IDENT()),  _, _ )
       equation
         ts = convertNameTypeIfIntrinsic(na);
       then
@@ -6309,7 +6309,7 @@ algorithm
       then
         LITERAL_DEF(str, litType);
 
-    case ( def as STR_TOKEN_DEF(_), _)
+    case ( def as STR_TOKEN_DEF(), _)
       then
         def;
 

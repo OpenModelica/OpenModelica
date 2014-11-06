@@ -3964,7 +3964,6 @@ algorithm
 
     // constraining type on the component
     case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = ((( redComp as SCode.COMPONENT(name = n1,
-                          prefixes = SCode.PREFIXES(finalPrefix = finalPrefix),
                             modifications = mod,
                             info = info
                             )),rmod) :: _))),
@@ -3999,11 +3998,9 @@ algorithm
     // no constraining type on comp, throw away modifiers prior to redeclaration
     case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = (((redComp as
           SCode.COMPONENT(name = n1,
-                          prefixes = SCode.PREFIXES(
-                            finalPrefix = finalPrefix),
-                            modifications = mod,
-                            info = info
-                            )),rmod) :: _))),
+                          modifications = mod,
+                          info = info
+                          )),rmod) :: _))),
           // adrpo: always take the inner outer from the component, not the redeclaration!!!!
           comp as SCode.COMPONENT(name = n2,
                           prefixes = SCode.PREFIXES(

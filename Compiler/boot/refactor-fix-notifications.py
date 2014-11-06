@@ -45,9 +45,11 @@ UNUSED_AS = (Literal("Notification: Removing unused as-binding: ") + IDENT + "."
   lambda s,s2: {'unused_as':s2[1]})
 EMPTY_CALL_NAMED_ARG = (Literal("Notification: Removing empty call named pattern argument: ") + IDENT + "." + StringEnd() ).setParseAction(
   lambda s,s2: {'empty_call_named_arg':s2[1]})
+ALL_EMPTY = (Literal("Notification: All patterns in call were empty: ") + IDENT + "." + StringEnd() ).setParseAction(
+  lambda s,s2: {'all_empty':s2[1]})
 UNKNOWN = Suppress("Notification:")
 
-NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|UNUSED_ASSIGN|DEAD_STATEMENT|USE_MATCH|EMPTY_CALL_NAMED_ARG|UNKNOWN))
+NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|UNUSED_ASSIGN|DEAD_STATEMENT|USE_MATCH|EMPTY_CALL_NAMED_ARG|ALL_EMPTY|UNKNOWN))
 
 def runOMC(arg):
   try:
@@ -136,6 +138,16 @@ def fixFileIter(stamp,moFile,logFile):
         maxLine = startLine
         continue
       print s
+    elif len(n)==2 and n[1].has_key('all_empty'):
+      ident = n[1]['all_empty']
+      split = re.split("%s[(][ _,]*[)]" % ident, lineContentsOfInfo, maxsplit=1)
+      if len(split) <> 2:
+        printWarning(info,'Failed to find pattern call to %s with only wild patterns in %s' % (ident,lineContentsOfInfo.strip()))
+        continue
+      updated = split[0] + ident + "()" + split[1]
+      updateContents(moContents,startLine,endLine,startCol,endCol,updated)
+      printInfo(info, 'Removed pattern call to %s with only wild argument in %s with replacement %s' % (ident,lineContentsOfInfo.strip(),updated))
+      maxLine = startLine
     elif len(n)==2 and n[1].has_key('empty_call_named_arg'):
       ident = n[1]['empty_call_named_arg']
       split = re.split(", *%s *= *_" % ident, lineContentsOfInfo, maxsplit=1)

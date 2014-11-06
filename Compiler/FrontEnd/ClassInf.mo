@@ -219,14 +219,14 @@ algorithm
     case HAS_RESTRICTIONS(hasEquations = false, hasAlgorithms = false, hasConstraints = false) then "new def";
     case HAS_RESTRICTIONS(hasEquations = b1, hasAlgorithms = b2)
       then "has" + (if b1 then " equations" else "") + (if b2 then " algorithms" else "") + (if b1 then " constraints" else "");
-    case EXTERNAL_OBJ(_) then "ExternalObject";
-    case META_TUPLE(_) then "tuple";
-    case META_LIST(_) then "list";
-    case META_OPTION(_) then "Option";
-    case META_RECORD(_) then "meta_record";
-    case META_POLYMORPHIC(_) then "polymorphic";
-    case META_ARRAY(_) then "meta_array";
-    case META_UNIONTYPE(_) then "uniontype";
+    case EXTERNAL_OBJ() then "ExternalObject";
+    case META_TUPLE() then "tuple";
+    case META_LIST() then "list";
+    case META_OPTION() then "Option";
+    case META_RECORD() then "meta_record";
+    case META_POLYMORPHIC() then "polymorphic";
+    case META_ARRAY() then "meta_array";
+    case META_UNIONTYPE() then "uniontype";
     case _ then "#printStateStr failed#";
   end matchcontinue;
 end printStateStr;
@@ -577,7 +577,7 @@ algorithm
     // BTH
     case (TYPE_CLOCK(),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_ENUM(),SCode.R_CONNECTOR(_)) then (); // used in Modelica.Electrical.Digital where we have an enum as a connector
-    case (ENUMERATION(_),SCode.R_CONNECTOR(_)) then ();      // used in Modelica.Electrical.Digital where we have an enum as a connector
+    case (ENUMERATION(),SCode.R_CONNECTOR(_)) then ();      // used in Modelica.Electrical.Digital where we have an enum as a connector
 
     case (TYPE(),SCode.R_TYPE()) then ();
     case (TYPE_INTEGER(),SCode.R_TYPE()) then ();
@@ -587,19 +587,19 @@ algorithm
     // BTH
     case (TYPE_CLOCK(),SCode.R_TYPE()) then ();
     case (TYPE_ENUM(),SCode.R_TYPE()) then ();
-    case (ENUMERATION(_),SCode.R_TYPE()) then ();
+    case (ENUMERATION(),SCode.R_TYPE()) then ();
 
     case (PACKAGE(),SCode.R_PACKAGE()) then ();
     case (HAS_RESTRICTIONS(hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_PACKAGE()) then ();
 
     case (FUNCTION(),SCode.R_FUNCTION(_)) then ();
     case (HAS_RESTRICTIONS(hasEquations=false,hasConstraints=false),SCode.R_FUNCTION(_)) then ();
-    case (META_TUPLE(_),SCode.R_TYPE()) then ();
-    case (META_LIST(_),SCode.R_TYPE()) then ();
-    case (META_OPTION(_),SCode.R_TYPE()) then ();
-    case (META_RECORD(_),SCode.R_TYPE()) then ();
-    case (META_ARRAY(_),SCode.R_TYPE()) then ();
-    case (META_UNIONTYPE(_),SCode.R_TYPE()) then ();
+    case (META_TUPLE(),SCode.R_TYPE()) then ();
+    case (META_LIST(),SCode.R_TYPE()) then ();
+    case (META_OPTION(),SCode.R_TYPE()) then ();
+    case (META_RECORD(),SCode.R_TYPE()) then ();
+    case (META_ARRAY(),SCode.R_TYPE()) then ();
+    case (META_UNIONTYPE(),SCode.R_TYPE()) then ();
 
   end match;
 end valid;

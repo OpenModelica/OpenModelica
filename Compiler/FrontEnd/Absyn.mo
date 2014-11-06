@@ -1139,7 +1139,7 @@ algorithm
         ((eqilst1_1,arg_1)) = traverseEquationItemList(eqilst1,rel,arg);
         ((eeqitlst_1,arg_2)) = traverseExpEqItemTupleList(eeqitlst,rel,arg_1);
         ((eqilst2_1,arg_3)) = traverseEquationItemList(eqilst2,rel,arg_2);
-        ((EQ_IF(_,_,_,_),arg_4)) = rel((eq,arg_3));
+        ((EQ_IF(),arg_4)) = rel((eq,arg_3));
       then
         ((EQ_IF(e,eqilst1_1,eeqitlst_1,eqilst2_1),arg_4));
     case(eq as EQ_FOR(_,eqilst),rel,arg)
@@ -1158,7 +1158,7 @@ algorithm
     case(eq as EQ_FAILURE(ei),rel,arg)
       equation
         ((ei_1,arg_1)) = traverseEquationItem(ei,rel,arg);
-        ((EQ_FAILURE(_),arg_2)) = rel((eq,arg_1));
+        ((EQ_FAILURE(),arg_2)) = rel((eq,arg_1));
       then
         ((EQ_FAILURE(ei_1),arg_2));
     case(eq,rel,arg)
@@ -2612,8 +2612,8 @@ algorithm
       Path p1,p2;
       String i1,i2;
     case (FULLYQUALIFIED(p1),FULLYQUALIFIED(p2)) then pathCompare(p1,p2);
-    case (FULLYQUALIFIED(_),_) then 1;
-    case (_,FULLYQUALIFIED(_)) then -1;
+    case (FULLYQUALIFIED(),_) then 1;
+    case (_,FULLYQUALIFIED()) then -1;
     case (QUALIFIED(i1,p1),QUALIFIED(i2,p2))
       equation
         o = stringCompare(i1,i2);
@@ -3470,7 +3470,7 @@ algorithm
       then
         res;
 
-    case (CODE(_),_,_) then {};
+    case (CODE(),_,_) then {};
 
     case (AS(exp = e1),_,_) then getCrefFromExp(e1,includeSubs,includeFunctions);
 
@@ -4115,7 +4115,7 @@ algorithm
       ComponentRef cr2,cr_1,cr;
     case (CREF_IDENT(name = id,subscripts = sub),cr2)
       equation
-        failure(CREF_FULLYQUALIFIED(_) = cr2);
+        failure(CREF_FULLYQUALIFIED() = cr2);
       then CREF_QUAL(id,sub,cr2);
     case (CREF_QUAL(name = id,subscripts = sub,componentRef = cr),cr2)
       equation
@@ -4368,7 +4368,7 @@ public function isFunctionRestriction "checks if restriction is a function or no
   output Boolean outIsFunction;
 algorithm
   outIsFunction := match(inRestriction)
-    case R_FUNCTION(_) then true;
+    case R_FUNCTION() then true;
     else false;
   end match;
 end isFunctionRestriction;
@@ -4865,7 +4865,7 @@ algorithm
     local Path p; String n,s;
     case (FULLYQUALIFIED(p),s) equation p = pathReplaceIdent(p,s); then FULLYQUALIFIED(p);
     case (QUALIFIED(n,p),s) equation p = pathReplaceIdent(p,s); then QUALIFIED(n,p);
-    case (IDENT(_),s) then IDENT(s);
+    case (IDENT(),s) then IDENT(s);
   end match;
 end pathReplaceIdent;
 
@@ -5141,7 +5141,7 @@ algorithm
       then (inExp, lst::rest);
 
     // crefs, add to list
-    case (CREF(_), lst::rest) then (inExp,(inExp::lst)::rest);
+    case (CREF(), lst::rest) then (inExp,(inExp::lst)::rest);
     // anything else, return the same!
     else (inExp,inLst);
 
@@ -5337,7 +5337,7 @@ public function isCref
   output Boolean b;
 algorithm
   b := match exp
-    case CREF(_) then true;
+    case CREF() then true;
     else false;
   end match;
 end isCref;
@@ -5347,7 +5347,7 @@ public function isDerCref
   output Boolean b;
 algorithm
   b := match exp
-    case CALL(CREF_IDENT("der",{}),FUNCTIONARGS({CREF(_)},{})) then true;
+    case CALL(CREF_IDENT("der",{}),FUNCTIONARGS({CREF()},{})) then true;
     else false;
   end match;
 end isDerCref;
@@ -5355,7 +5355,7 @@ end isDerCref;
 public function isDerCrefFail
   input Exp exp;
 algorithm
-  CALL(CREF_IDENT("der",{}),FUNCTIONARGS({CREF(_)},{})) := exp;
+  CALL(CREF_IDENT("der",{}),FUNCTIONARGS({CREF()},{})) := exp;
 end isDerCrefFail;
 
 public function getExpsFromArrayDim
@@ -5631,7 +5631,7 @@ algorithm
       Path p;
       String n;
 
-    case (IDENT(_), _) then inLastIdent;
+    case (IDENT(), _) then inLastIdent;
 
     case (QUALIFIED(n, p), _)
       equation

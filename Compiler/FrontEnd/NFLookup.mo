@@ -934,7 +934,7 @@ algorithm
 
     // An error has occured, return the entry found so far and let the caller
     // handle the error reporting.
-    case (_, _, _, STATE_ERROR(_))
+    case (_, _, _, STATE_ERROR())
       then (inEntry, inEnv, inState);
 
     case (_, _, _, _)

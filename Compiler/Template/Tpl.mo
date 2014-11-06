@@ -379,7 +379,7 @@ algorithm
         ();
 
     //a new-line at the end
-    case ( ST_LINE(_) )
+    case ( ST_LINE() )
       then
         ();
 
@@ -1077,7 +1077,7 @@ algorithm
 
 
     //iter block, no tokens ... should be impossible, but ...
-    case (BT_ITER(_,_), {}, nchars, isstart, aind)
+    case (BT_ITER(), {}, nchars, isstart, aind)
       then
         (nchars, isstart, aind);
 
