@@ -402,23 +402,35 @@ algorithm
       FCore.Cache cache;
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
-      equation
-        (cache,DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,knownSingleton = knownSingleton,source = {fqPath}),_) =
+      algorithm
+        (cache,DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,knownSingleton = knownSingleton,source = {fqPath}),_) :=
           Lookup.lookupType(cache, env, callPath, NONE());
         validUniontype(utPath1,utPath2,info,lhs);
 
-        fieldTypeList = List.map(fieldVarList, Types.getVarType);
-        fieldNameList = List.map(fieldVarList, Types.getVarName);
+        fieldTypeList := List.map(fieldVarList, Types.getVarType);
+        fieldNameList := List.map(fieldVarList, Types.getVarName);
 
-        (funcArgs,namedArgList) = checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
+        if Flags.isSet(Flags.PATTERNM_ALL_INFO) then
+          for namedArg in namedArgList loop
+            _ := match namedArg
+              case Absyn.NAMEDARG(argValue=Absyn.CREF(Absyn.WILD()))
+                equation
+                  Error.addSourceMessage(Error.META_EMPTY_CALL_PATTERN, {namedArg.argName}, info);
+                then ();
+              else ();
+            end match;
+          end for;
+        end if;
 
-        numPosArgs = listLength(funcArgs);
-        (_,fieldNamesNamed) = List.split(fieldNameList, numPosArgs);
+        (funcArgs,namedArgList) := checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
+
+        numPosArgs := listLength(funcArgs);
+        (_,fieldNamesNamed) := List.split(fieldNameList, numPosArgs);
         checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
-        (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
-        funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
-        Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
-        (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
+        (funcArgsNamedFixed,invalidArgs) := generatePositionalArgs(fieldNamesNamed,namedArgList,{});
+        funcArgs := listAppend(funcArgs,funcArgsNamedFixed);
+        Util.SUCCESS() := checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
+        (cache,patterns) := elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
       then (cache,DAE.PAT_CALL(fqPath,index,patterns,fieldVarList,knownSingleton));
 
     case (cache,_,_,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,_,_)
@@ -818,13 +830,13 @@ algorithm
         (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_INTEGER_DEFAULT,allSubPatternsMatch,numPatternsInMatrix);
       then (ty,extraarg);
 
-    case ({},_,DAE.T_STRING(varLst = _),_,_)
+    case ({},_,DAE.T_STRING(),_,_)
       equation
         true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
         ix = findMinMod(ixs,1);
       then (DAE.T_STRING_DEFAULT,ix);
 
-    case ({_},_,DAE.T_STRING(varLst = _),_,1)
+    case ({_},_,DAE.T_STRING(),_,1)
       equation
         true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
         ix = findMinMod(ixs,1);
@@ -1456,7 +1468,7 @@ algorithm
         pat = DAE.PAT_CONS(pat1,pat2);
         outTpl = func((pat,a));
       then outTpl;
-    case ((pat as DAE.PAT_CONSTANT(ty=_),a),_)
+    case ((pat as DAE.PAT_CONSTANT(),a),_)
       equation
         outTpl = func((pat,a));
       then outTpl;
@@ -1779,7 +1791,7 @@ algorithm
 
     case (DAE.PAT_WILD(),_) then false;
     case (_,DAE.PAT_WILD()) then false;
-    case (DAE.PAT_AS_FUNC_PTR(id=_),_) then false;
+    case (DAE.PAT_AS_FUNC_PTR(),_) then false;
     case (DAE.PAT_AS(pat=p1),p2)
       then patternsDoNotOverlap(p1,p2);
     case (p1,DAE.PAT_AS(pat=p2))
@@ -1812,8 +1824,8 @@ algorithm
     // Constant patterns...
     case (DAE.PAT_CONSTANT(exp=e1),DAE.PAT_CONSTANT(exp=e2))
       then not Expression.expEqual(e1, e2);
-    case (DAE.PAT_CONSTANT(exp=_),_) then true;
-    case (_,DAE.PAT_CONSTANT(exp=_)) then true;
+    case (DAE.PAT_CONSTANT(),_) then true;
+    case (_,DAE.PAT_CONSTANT()) then true;
 
     else false;
   end match;
@@ -2084,7 +2096,7 @@ algorithm
       SourceInfo i;
 
     case (true,b,e,i) then (b,e,i);
-    case (_,b,elabCr2 as DAE.CREF(ty=_),_)
+    case (_,b,elabCr2 as DAE.CREF(),_)
       equation
         (DAE.STMT_ASSIGN(exp1=elabCr1,exp=e,source=DAE.SOURCE(info=i)),b) = List.splitLast(b);
         true = Expression.expEqual(elabCr1,elabCr2);
@@ -2472,11 +2484,11 @@ algorithm
       equation
         (_,i) = Expression.traverseExp(exp,constantComplexity,i);
       then ((p,i));
-    case ((p as DAE.PAT_CONS(head=_),i))
+    case ((p as DAE.PAT_CONS(),i))
       then ((p,i+5));
     case ((p as DAE.PAT_CALL(knownSingleton=false),i))
       then ((p,i+5));
-    case ((p as DAE.PAT_SOME(pat=_),i))
+    case ((p as DAE.PAT_SOME(),i))
       then ((p,i+5));
     else inTpl;
   end match;
@@ -2704,7 +2716,7 @@ algorithm
       then (DAE.STMT_WHILE(exp,body,source),useTree);
 
     // No PARFOR in MetaModelica
-    case (DAE.STMT_PARFOR(source=_),_,_) then fail();
+    case (DAE.STMT_PARFOR(),_,_) then fail();
 
     case (DAE.STMT_ASSERT(cond=cond,msg=msg,level=level),_,_)
       equation
@@ -2720,21 +2732,21 @@ algorithm
       then (inStatement,useTree);
 
     // No when or reinit in functions
-    case (DAE.STMT_WHEN(source=_),_,_) then fail();
-    case (DAE.STMT_REINIT(source=_),_,_) then fail();
+    case (DAE.STMT_WHEN(),_,_) then fail();
+    case (DAE.STMT_REINIT(),_,_) then fail();
 
     // There is no use after this one, so we can reset the tree
     case (DAE.STMT_NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("fail"))),_,_) then (inStatement,AvlTreeString.avlTreeNew());
-    case (DAE.STMT_RETURN(source=_),_,_) then (inStatement,AvlTreeString.avlTreeNew());
+    case (DAE.STMT_RETURN(),_,_) then (inStatement,AvlTreeString.avlTreeNew());
 
     case (DAE.STMT_NORETCALL(exp=exp),_,_)
       equation
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
       then (inStatement,useTree);
 
-    case (DAE.STMT_BREAK(source=_),_,_) then (inStatement,inUseTree);
-    case (DAE.STMT_CONTINUE(source=_),_,_) then (inStatement,inUseTree);
-    case (DAE.STMT_ARRAY_INIT(source=_),_,_) then (inStatement,inUseTree);
+    case (DAE.STMT_BREAK(),_,_) then (inStatement,inUseTree);
+    case (DAE.STMT_CONTINUE(),_,_) then (inStatement,inUseTree);
+    case (DAE.STMT_ARRAY_INIT(),_,_) then (inStatement,inUseTree);
     case (DAE.STMT_FAILURE(body=body,source=source),_,_)
       equation
         (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);

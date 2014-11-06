@@ -213,7 +213,7 @@ algorithm
     case (DAE.BCONST(bool = false),_,_) then "False";
     case (DAE.BCONST(bool = true),_,_) then "True";
 
-    case (DAE.CREF(componentRef = cr,ty = _),_,_) equation
+    case (DAE.CREF(componentRef = cr),_,_) equation
         s = printComponentRefMmaStr(cr,vars,knvars);
     then s;
 
@@ -397,7 +397,7 @@ algorithm
       then
         res;
         /* We prevent casts since we probably do not want numerical values, e.g. Sqrt[2.0] should probably be Sqrt[2] instead*/
-    case (DAE.CAST(ty =  DAE.T_REAL(_,_),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))),_,_)
+    case (DAE.CAST(ty =  DAE.T_REAL(_,_),exp = DAE.UNARY(operator = DAE.UMINUS(),exp = DAE.ICONST(integer = ival))),_,_)
       equation
         res = intString(ival);
         res2 = stringAppend("-", res);
@@ -589,12 +589,12 @@ protected function relopSymbolMma "
   output String outString;
 algorithm
   outString := match (inOperator)
-    case (DAE.LESS(ty = _)) then " < ";
-    case (DAE.LESSEQ(ty = _)) then " <= ";
-    case (DAE.GREATER(ty = _)) then " > ";
-    case (DAE.GREATEREQ(ty = _)) then " >= ";
-    case (DAE.EQUAL(ty = _)) then " == ";
-    case (DAE.NEQUAL(ty = _)) then " != "; // differs from Modelica which has '<>'
+    case (DAE.LESS()) then " < ";
+    case (DAE.LESSEQ()) then " <= ";
+    case (DAE.GREATER()) then " > ";
+    case (DAE.GREATEREQ()) then " >= ";
+    case (DAE.EQUAL()) then " == ";
+    case (DAE.NEQUAL()) then " != "; // differs from Modelica which has '<>'
   end match;
 end relopSymbolMma;
 
@@ -744,7 +744,7 @@ algorithm
   local DAE.ComponentRef name;
     String nameStr;
     case (BackendDAE.VAR(varName=DAE.CREF_IDENT("$dummy",DAE.T_UNKNOWN(_),{})),_,_) then "";
-    case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(index=_)),true,_)
+    case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE()),true,_)
       equation
         nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;

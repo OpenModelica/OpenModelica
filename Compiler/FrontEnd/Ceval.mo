@@ -310,14 +310,14 @@ algorithm
 
     // MetaModelica Partial Function. sjoelund
     case (_,_,DAE.CREF(componentRef = cr,
-        ty = DAE.T_FUNCTION_REFERENCE_VAR(source = _)),_,_,Absyn.MSG(info = info),_)
+        ty = DAE.T_FUNCTION_REFERENCE_VAR()),_,_,Absyn.MSG(info = info),_)
       equation
         str = ComponentReference.crefStr(cr);
         Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
       then
         fail();
 
-    case (_,_,DAE.CREF(componentRef = cr, ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = _)),
+    case (_,_,DAE.CREF(componentRef = cr, ty = DAE.T_FUNCTION_REFERENCE_FUNC()),
         _, _, Absyn.MSG(info = info),_)
       equation
         str = ComponentReference.crefStr(cr);
@@ -402,13 +402,13 @@ algorithm
       then (cache,value,stOpt);
 
     // Try Interactive functions last
-    case (cache,env,(e as DAE.CALL(path = _)),(true),SOME(st),msg,_)
+    case (cache,env,(e as DAE.CALL()),(true),SOME(st),msg,_)
       equation
         (cache,value,st) = BackendInterface.cevalInteractiveFunctions(cache, env, e, st,msg,numIter+1);
       then
         (cache,value,SOME(st));
 
-    case (_,_,e as DAE.CALL(path = _),_,_,_,_)
+    case (_,_,e as DAE.CALL(),_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Ceval.ceval DAE.CALL failed: ");
@@ -424,7 +424,7 @@ algorithm
         (cache,Values.RECORD(funcpath,vallst,fieldNames,-1),stOpt);
 
     // Strings
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_STRING(varLst = _)),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_STRING()),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.STRING(lhvStr),_) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.STRING(rhvStr),_) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -433,7 +433,7 @@ algorithm
         (cache,Values.STRING(str),stOpt);
 
     // Numerical
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_REAL(varLst = _)),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_REAL()),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.REAL(lhvReal),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.REAL(rhvReal),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -442,7 +442,7 @@ algorithm
         (cache,Values.REAL(sum),stOpt);
 
     // Array addition
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARR(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -451,7 +451,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array subtraction
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_ARR(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -460,7 +460,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array multiplication
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARR(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -469,7 +469,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array division
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARR(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARR(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -478,7 +478,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array power
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARR2(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARR2(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(vlst1,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(vlst2,_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -487,7 +487,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array multipled scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARRAY_SCALAR(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
@@ -496,7 +496,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array add scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARRAY_SCALAR(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
@@ -505,7 +505,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array subtract scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_SCALAR_ARRAY(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -514,7 +514,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array power scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_SCALAR_ARRAY(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -523,7 +523,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array power scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARRAY_SCALAR(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
@@ -532,7 +532,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // scalar div array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_SCALAR_ARRAY(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -541,7 +541,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // array div scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARRAY_SCALAR(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1);
         (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
@@ -550,7 +550,7 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // scalar multiplied array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_SCALAR_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_SCALAR_PRODUCT(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(valueLst = rhvals),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         (cache,Values.ARRAY(valueLst = lhvals),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
@@ -559,7 +559,7 @@ algorithm
         (cache,resVal,stOpt);
 
     // array multipled array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(valueLst = (lhvals as (elt1 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter) "{{..}..{..}}  {...}" ;
         (cache,Values.ARRAY(valueLst = (rhvals as (elt2 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -570,7 +570,7 @@ algorithm
         (cache,resVal,stOpt);
 
     // array multiplied array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(valueLst = (rhvals as (elt1 :: _))),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter) "{...}  {{..}..{..}}" ;
         (cache,Values.ARRAY(valueLst = (lhvals as (elt2 :: _))),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
@@ -581,7 +581,7 @@ algorithm
         (cache,resVal,stOpt);
 
     // array multiplied array
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY((rhvals as (elt1 :: _)),_),stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter+1) "{{..}..{..}}  {{..}..{..}}" ;
         (cache,Values.ARRAY((lhvals as (elt2 :: _)),_),stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter+1);
@@ -592,7 +592,7 @@ algorithm
         (cache,ValuesUtil.makeArray(vallst),stOpt);
 
     //POW (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW(ty=_),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -601,7 +601,7 @@ algorithm
         (cache,resVal,stOpt);
 
     //MUL (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL(ty=_),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -610,7 +610,7 @@ algorithm
         (cache,resVal,stOpt);
 
     //DIV (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty=_),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -619,7 +619,7 @@ algorithm
         (cache,resVal,stOpt);
 
     //DIV (handle div by zero)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty =_), exp2 = rh),
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(), exp2 = rh),
         impl, stOpt, msg as Absyn.MSG(info = info),_)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -631,7 +631,7 @@ algorithm
         fail();
 
     //ADD (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty=_),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -640,7 +640,7 @@ algorithm
         (cache,resVal,stOpt);
 
     //SUB (integer or real)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB(ty=_),exp2 = rh),impl,stOpt,msg,_)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB(),exp2 = rh),impl,stOpt,msg,_)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, lh, impl, stOpt,msg,numIter);
         (cache,rhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
@@ -649,7 +649,7 @@ algorithm
         (cache,resVal,stOpt);
 
     //  unary minus of array
-    case (cache,env,DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = daeExp),impl,stOpt,msg,_)
+    case (cache,env,DAE.UNARY(operator = DAE.UMINUS_ARR(),exp = daeExp),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(arr,dims),stOpt) = ceval(cache,env, daeExp, impl, stOpt,msg,numIter+1);
         arr_1 = List.map(arr, ValuesUtil.valueNeg);
@@ -657,7 +657,7 @@ algorithm
         (cache,Values.ARRAY(arr_1,dims),stOpt);
 
     // unary minus of expression
-    case (cache,env,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = daeExp),impl,stOpt,msg,_)
+    case (cache,env,DAE.UNARY(operator = DAE.UMINUS(),exp = daeExp),impl,stOpt,msg,_)
       equation
         (cache,v,stOpt) = ceval(cache,env, daeExp, impl, stOpt,msg,numIter+1);
         v_1 = ValuesUtil.valueNeg(v);
@@ -719,7 +719,7 @@ algorithm
       then
         (cache,v,stOpt);
 
-    case (cache, env, DAE.RANGE(ty = DAE.T_BOOL(varLst = _), start = start, step = NONE(),stop = stop), impl, stOpt, msg,_)
+    case (cache, env, DAE.RANGE(ty = DAE.T_BOOL(), start = start, step = NONE(),stop = stop), impl, stOpt, msg,_)
       equation
         (cache, Values.BOOL(bstart), stOpt) = ceval(cache, env, start, impl, stOpt,msg,numIter+1);
         (cache, Values.BOOL(bstop), stOpt) = ceval(cache, env, stop, impl, stOpt,msg,numIter+1);
@@ -729,7 +729,7 @@ algorithm
         (cache, ValuesUtil.makeArray(arr), stOpt);
 
     // range first:last for integers
-    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg,_)
+    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(),start = start,step = NONE(),stop = stop),impl,stOpt,msg,_)
       equation
         (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
         (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt,msg,numIter+1);
@@ -738,7 +738,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:step:last for integers
-    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(varLst = _),start = start,step = SOME(step),stop = stop),impl,stOpt,msg,_)
+    case (cache,env,DAE.RANGE(ty = DAE.T_INTEGER(),start = start,step = SOME(step),stop = stop),impl,stOpt,msg,_)
       equation
         (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
         (cache,Values.INTEGER(step_1),stOpt) = ceval(cache,env, step, impl, stOpt,msg,numIter+1);
@@ -748,7 +748,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:last for enumerations.
-    case (cache,env,DAE.RANGE(ty = t as DAE.T_ENUMERATION(path = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg,_)
+    case (cache,env,DAE.RANGE(ty = t as DAE.T_ENUMERATION(),start = start,step = NONE(),stop = stop),impl,stOpt,msg,_)
       equation
         (cache,Values.ENUM_LITERAL(index = start_1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
         (cache,Values.ENUM_LITERAL(index = stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt,msg,numIter+1);
@@ -757,7 +757,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:last for reals
-    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),start = start,step = NONE(),stop = stop),impl,stOpt,msg,_)
+    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(),start = start,step = NONE(),stop = stop),impl,stOpt,msg,_)
       equation
         (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
         (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt,msg,numIter+1);
@@ -768,7 +768,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // range first:step:last for reals
-    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(varLst = _),start = start,step = SOME(step),stop = stop),impl,stOpt,msg,_)
+    case (cache,env,DAE.RANGE(ty = DAE.T_REAL(),start = start,step = SOME(step),stop = stop),impl,stOpt,msg,_)
       equation
         (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt,msg,numIter+1);
         (cache,Values.REAL(realStep1),stOpt) = ceval(cache,env, step, impl, stOpt,msg,numIter+1);
@@ -778,7 +778,7 @@ algorithm
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
     // cast integer to real
-    case (cache,env,DAE.CAST(ty = DAE.T_REAL(varLst = _),exp = e),impl,stOpt,msg,_)
+    case (cache,env,DAE.CAST(ty = DAE.T_REAL(),exp = e),impl,stOpt,msg,_)
       equation
         (cache,Values.INTEGER(i),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1);
         r = intReal(i);
@@ -786,7 +786,7 @@ algorithm
         (cache,Values.REAL(r),stOpt);
 
     // cast real to integer
-    case (cache,env,DAE.CAST(ty = DAE.T_INTEGER(varLst = _), exp = e),impl,stOpt,msg,_)
+    case (cache,env,DAE.CAST(ty = DAE.T_INTEGER(), exp = e),impl,stOpt,msg,_)
       equation
         (cache,Values.REAL(r),stOpt) = ceval(cache, env, e, impl, stOpt,msg,numIter+1);
         i = realInt(r);
@@ -803,7 +803,7 @@ algorithm
         (cache, Values.ENUM_LITERAL(path, i), stOpt);
 
     // cast integer array to real array
-    case (cache,env,DAE.CAST(ty = DAE.T_ARRAY(ty = DAE.T_REAL(varLst = _)),exp = e),impl,stOpt,msg,_)
+    case (cache,env,DAE.CAST(ty = DAE.T_ARRAY(ty = DAE.T_REAL()),exp = e),impl,stOpt,msg,_)
       equation
         (cache,Values.ARRAY(ivals,dims),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1);
         rvals = ValuesUtil.typeConvert(DAE.T_INTEGER_DEFAULT, DAE.T_REAL_DEFAULT, ivals);
@@ -916,7 +916,7 @@ algorithm
       then
         (cache, e, inProp);
 
-    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _)
+    case (_, _, e, DAE.PROP_TUPLE(), _, _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
         (cache, v, _) = ceval(inCache, inEnv, e, false, NONE(), Absyn.NO_MSG(), 0);
@@ -924,7 +924,7 @@ algorithm
       then
         (cache, e, inProp);
 
-    case (_, _, _, DAE.PROP_TUPLE(tupleConst = _), _, _) // BoschRexroth specifics
+    case (_, _, _, DAE.PROP_TUPLE(), _, _) // BoschRexroth specifics
       equation
         false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
         DAE.C_PARAM() = Types.propAllConst(inProp);
@@ -938,7 +938,7 @@ algorithm
         false = Config.acceptMetaModelicaGrammar();
         // false = Expression.isConstValue(e);
         // print("Try ceval: " + ExpressionDump.printExpStr(e) + "; expect " + Types.unparseType(Types.getPropType(inProp)) + "\n");
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), 0);
+        (_, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), 0);
         // print("Ceval'ed constant: " + ExpressionDump.printExpStr(inExp) + " => " + ValuesUtil.valString(v) + "\n");
         e = ValuesUtil.valueExp(v);
         // print("Ceval'ed constant: " + ExpressionDump.printExpStr(inExp) + "\n");
@@ -1076,7 +1076,7 @@ algorithm
         (cache,v,st) = handler(cache, env, args, impl, st,msg,numIter+1);
       then
         (cache,v,st);
-    case (cache,env,(e as DAE.CALL(path = _,expLst = expl,attr = DAE.CALL_ATTR(builtin = true))),impl,(st as NONE()),msg,_)
+    case (cache,env,(e as DAE.CALL(expLst = expl,attr = DAE.CALL_ATTR(builtin = true))),impl,(st as NONE()),msg,_)
       equation
         (cache,vallst,st) = cevalList(cache, env, expl, impl, st, msg, numIter);
         (cache,newval,st) = BackendInterface.cevalCallFunction(cache, env, e, vallst, impl, st,msg,numIter+1);
@@ -1520,7 +1520,7 @@ algorithm
       then
         (cache,Values.INTEGER(i),st_1);
 
-    case (cache,env,DAE.CREF(componentRef = cr,ty = _),dimExp,(impl as false),st,msg,_)
+    case (cache,env,DAE.CREF(componentRef = cr),dimExp,(impl as false),st,msg,_)
       equation
         (cache,dims) = InstUtil.elabComponentArraydimFromEnv(cache,env,cr,Absyn.dummyInfo)
         "If component not instantiated yet, recursive definition.
@@ -1558,7 +1558,7 @@ algorithm
         fail();
 
     // For crefs with value binding e.g. size(x,1) when Real x[:]=fill(0,1);
-    case (cache,env,(DAE.CREF(componentRef = cr,ty = _)),dimExp,impl,st,msg,_)
+    case (cache,env,(DAE.CREF(componentRef = cr)),dimExp,impl,st,msg,_)
       equation
         (cache,_,_,binding,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr)  ;
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg,numIter+1);
@@ -1569,7 +1569,7 @@ algorithm
 
     case (cache,env,DAE.ARRAY(array = (exp :: es)),dimExp,impl,st,msg,_)
       equation
-        expTp = Expression.typeof(exp) "Special case for array expressions with nonconstant
+        _ = Expression.typeof(exp) "Special case for array expressions with nonconstant
                                         values For now: only arrays of scalar elements:
                                         TODO generalize to arbitrary dimensions";
         (cache,Values.INTEGER(1),st_1) = ceval(cache, env, dimExp, impl, st, msg, numIter+1);
@@ -1591,7 +1591,7 @@ algorithm
       then
         (cache,v2,st_1);
 
-    case (_,_,exp,_,_,_,Absyn.MSG(info = _),_)
+    case (_,_,exp,_,_,_,Absyn.MSG(),_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
@@ -2837,7 +2837,7 @@ algorithm
         dim_1 = dim - 1;
         v_lst_lst_1 = catDimension2(v_lst_lst, dim_1);
         v_lst_1 = List.map(v_lst_lst_1, ValuesUtil.makeArray);
-        (Values.ARRAY(valueLst = _, dimLst = i2::il) :: _) = v_lst_1;
+        (Values.ARRAY(dimLst = i2::il) :: _) = v_lst_1;
         i1 = listLength(v_lst_1);
         v_lst_1 = cevalBuiltinTranspose2(v_lst_1, 1, i2::i1::il);
       then
@@ -3655,7 +3655,7 @@ protected function cevalBuiltinMaxArr "Helper function to cevalBuiltinMax."
   input Values.Value inValue;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue (inValue)
+  outValue := match (inValue)
     local
       Integer i1,i2,resI,i;
       Real r,r1,r2,resR;
@@ -3687,7 +3687,7 @@ algorithm
         //print("- Ceval.cevalBuiltinMax2 failed\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end cevalBuiltinMaxArr;
 
 protected function cevalBuiltinMin "author: PA
@@ -3769,7 +3769,7 @@ protected function cevalBuiltinMinArr "Helper function to cevalBuiltinMin."
   input Values.Value inValue;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue (inValue)
+  outValue := match (inValue)
     local
       Integer i1,i2,resI,i;
       Values.Value v1,v2,v,vl;
@@ -3796,7 +3796,7 @@ algorithm
       then
         v;
 
-  end matchcontinue;
+  end match;
 end cevalBuiltinMinArr;
 
 protected function cevalBuiltinSimplify "author: LP
@@ -4448,12 +4448,12 @@ algorithm
       Values.Value v1, v2;
       DAE.Operator op;
 
-    case (v1, DAE.GREATER(ty = _), v2) then cevalRelationLess(v2, v1);
-    case (v1, DAE.LESS(ty = _), v2) then cevalRelationLess(v1, v2);
-    case (v1, DAE.LESSEQ(ty = _), v2) then cevalRelationLessEq(v1, v2);
-    case (v1, DAE.GREATEREQ(ty = _), v2) then cevalRelationGreaterEq(v1, v2);
-    case (v1, DAE.EQUAL(ty = _), v2) then cevalRelationEqual(v1, v2);
-    case (v1, DAE.NEQUAL(ty = _), v2) then cevalRelationNotEqual(v1, v2);
+    case (v1, DAE.GREATER(), v2) then cevalRelationLess(v2, v1);
+    case (v1, DAE.LESS(), v2) then cevalRelationLess(v1, v2);
+    case (v1, DAE.LESSEQ(), v2) then cevalRelationLessEq(v1, v2);
+    case (v1, DAE.GREATEREQ(), v2) then cevalRelationGreaterEq(v1, v2);
+    case (v1, DAE.EQUAL(), v2) then cevalRelationEqual(v1, v2);
+    case (v1, DAE.NEQUAL(), v2) then cevalRelationNotEqual(v1, v2);
 
     case (v1, op, v2)
       equation
@@ -4486,7 +4486,7 @@ algorithm
       then (r1 < r2);
     case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
       then true;
-    case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
+    case (Values.BOOL(), Values.BOOL())
       then false;
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 < i2);
@@ -4516,7 +4516,7 @@ algorithm
       then (r1 <= r2);
     case (Values.BOOL(boolean = true), Values.BOOL(boolean = false))
       then false;
-    case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
+    case (Values.BOOL(), Values.BOOL())
       then true;
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 <= i2);
@@ -4546,7 +4546,7 @@ algorithm
       then (r1 >= r2);
     case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
       then false;
-    case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
+    case (Values.BOOL(), Values.BOOL())
       then true;
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 >= i2);
@@ -4773,7 +4773,7 @@ algorithm
 
     // A variable without a binding -> error in a simulation model
     // and we can only check that at the DAE level!
-    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, Absyn.MSG(info=_), _)
+    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, Absyn.MSG(), _)
       equation
         str = ComponentReference.printComponentRefStr(inCref);
         scope_str = FGraph.printGraphPathStr(inEnv);
@@ -4880,7 +4880,7 @@ algorithm
     // REDUCTION bindings
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg,_)
       equation
-        DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = Absyn.IDENT(name = _)),expr = _, iterators = {DAE.REDUCTIONITER(id=_,exp=_)}) = exp;
+        DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = Absyn.IDENT()), iterators = {DAE.REDUCTIONITER()}) = exp;
         (cache,v,_) = ceval(cache, env, exp, impl,NONE(),msg,numIter+1);
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl,msg,numIter+1);
@@ -4977,7 +4977,7 @@ public function cevalSubscriptValue "Helper function to cevalCrefBinding. It app
   output FCore.Cache outCache;
   output Values.Value outValue;
 algorithm
-  (outCache,outValue) := matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg,numIter)
+  (outCache,outValue) := match (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg,numIter)
     local
       Integer n,n_1;
       Values.Value subval,res,v;
@@ -5016,7 +5016,7 @@ algorithm
         (cache,res);
 
     // we have a wholedim, so just pass the whole array on.
-    case (cache, env, (DAE.WHOLEDIM() :: subs), subval as Values.ARRAY(valueLst = _), impl, msg,_)
+    case (cache, env, (DAE.WHOLEDIM() :: subs), subval as Values.ARRAY(), impl, msg,_)
       equation
         (cache, res) = cevalSubscriptValue(cache, env, subs, subval, impl,msg,numIter+1);
       then
@@ -5037,7 +5037,7 @@ algorithm
         );
       then
         fail();*/
-  end matchcontinue;
+  end match;
 end cevalSubscriptValue;
 
 protected function cevalSubscriptValueList "Applies subscripts to array values to extract array elements."
@@ -5148,7 +5148,7 @@ algorithm
     case (cache,_,DAE.WHOLEDIM(),_,_,_,_) then (cache,DAE.WHOLEDIM());
 
     // An enumeration literal is already constant
-    case (cache, _, DAE.INDEX(exp = DAE.ENUM_LITERAL(name = _)), _, _, _, _)
+    case (cache, _, DAE.INDEX(exp = DAE.ENUM_LITERAL()), _, _, _, _)
       then (cache, inSubscript);
 
     // an expression index that can be constant evaluated, indexing using enum or bool
@@ -5157,14 +5157,14 @@ algorithm
         (cache,v1,_) = ceval(cache, env, e1, impl, NONE(), msg, numIter+1);
         e1_1 = match (v1)
                  case Values.INTEGER(_) then ValuesUtil.valueExp(v1);
-                 case Values.ENUM_LITERAL(index = _) then ValuesUtil.valueExp(v1);
+                 case Values.ENUM_LITERAL() then ValuesUtil.valueExp(v1);
                  case Values.BOOL(_) then ValuesUtil.valueExp(v1);
                end match;
       then
         (cache,DAE.INDEX(e1_1));
 
     // an expression slice that can be constant evaluated
-    case (cache,env,DAE.SLICE(exp = e1),dim,impl,msg,_)
+    case (cache,env,DAE.SLICE(exp = e1),_,impl,msg,_)
       equation
         (cache,v1,_) = ceval(cache,env, e1, impl,NONE(),msg,numIter+1);
         e1_1 = ValuesUtil.valueExp(v1);
@@ -5256,7 +5256,7 @@ algorithm
       equation
         vals = listReverse(vals);
       then (cache, SOME(Values.LIST(vals)), st);
-    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), _, _, _, _, _, _, {}, _, _, st, _, _)
+    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(_)), _, _, _, _, _, _, {}, _, _, st, _, _)
       then (cache, inCurValue, st);
     case (cache, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, _, _, {}, _, _, st, _, _)
       equation
@@ -5635,11 +5635,11 @@ algorithm
       DAE.Exp daeExp;
       list<list<Absyn.Exp>> lstExpl_1,lstExpl;
 
-    case (cache,_,(e as Absyn.INTEGER(value = _)),_,_,_,_) then (cache,e);
-    case (cache,_,(e as Absyn.REAL(value = _)),_,_,_,_) then (cache,e);
-    case (cache,_,(e as Absyn.CREF(componentRef = _)),_,_,_,_) then (cache,e);
-    case (cache,_,(e as Absyn.STRING(value = _)),_,_,_,_) then (cache,e);
-    case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.INTEGER()),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.REAL()),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.CREF()),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.STRING()),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.BOOL()),_,_,_,_) then (cache,e);
 
     case (cache,env,Absyn.BINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg,_)
       equation
@@ -5690,7 +5690,7 @@ algorithm
       then
         (cache,exp);
 
-    case (cache,_,(e as Absyn.CALL(function_ = _,functionArgs = _)),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.CALL()),_,_,_,_) then (cache,e);
 
     case (cache,env,Absyn.ARRAY(arrayExp = expl),impl,st,msg,_)
       equation
@@ -5727,7 +5727,7 @@ algorithm
 
     case (cache,_,Absyn.END(),_,_,_,_) then (cache,Absyn.END());
 
-    case (cache,_,(e as Absyn.CODE(code = _)),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.CODE()),_,_,_,_) then (cache,e);
 
   end matchcontinue;
 end cevalAstExp;
@@ -5828,7 +5828,7 @@ algorithm
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
       FCore.Cache cache;
-    case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as SOURCEINFO(fileName = _,lineNumberStart = _,columnNumberStart = _,lineNumberEnd = _,columnNumberEnd = _)),constrainClass = c),impl,st,msg)
+    case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as SOURCEINFO()),constrainClass = c),impl,st,msg)
       equation
         (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg, info);
       then

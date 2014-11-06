@@ -337,7 +337,7 @@ algorithm
       list<DAE.Var> varLst;
 
     // Real
-    case (cache,env,mod,DAE.T_REAL(varLst = varLst, source = _),index_list)
+    case (cache,env,mod,DAE.T_REAL(varLst = varLst),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
         (unit_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
@@ -363,7 +363,7 @@ algorithm
           start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Integer
-    case (cache,env,mod,DAE.T_INTEGER(varLst = varLst, source = _),index_list)
+    case (cache,env,mod,DAE.T_INTEGER(varLst = varLst),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
         (min_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "min",false);
@@ -379,7 +379,7 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,min_val,max_val,start_val,fixed_val,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
 
     // Boolean
-    case (cache,_,mod,tp as DAE.T_BOOL(varLst = varLst, source = _),index_list)
+    case (cache,_,mod,tp as DAE.T_BOOL(varLst = varLst),index_list)
       equation
         (quantity_str) = instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
@@ -389,12 +389,12 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // BTH Clock
-    case (cache,_,mod,tp as DAE.T_CLOCK(varLst = varLst, source = _),index_list)
+    case (cache,_,_,DAE.T_CLOCK(),_)
       then
         (cache,SOME(DAE.VAR_ATTR_CLOCK(NONE(),NONE())));
 
     // String
-    case (cache,_,mod,tp as DAE.T_STRING(varLst = varLst, source = _),index_list)
+    case (cache,_,mod,tp as DAE.T_STRING(varLst = varLst),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, tp, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
@@ -403,7 +403,7 @@ algorithm
         (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // Enumeration
-    case (cache,_,mod,enumtype as DAE.T_ENUMERATION(attributeLst = varLst, source = _),index_list)
+    case (cache,_,mod,enumtype as DAE.T_ENUMERATION(attributeLst = varLst),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
         (exp_bind_min) = instBinding(mod, varLst, enumtype, index_list, "min",false);
@@ -591,7 +591,7 @@ algorithm
 
     case (_,_,DAE.MOD(eqModOption = NONE()),_,_) then DAE.emptyDae;
     case (_,_,DAE.NOMOD(),_,_) then DAE.emptyDae;
-    case (_,_,DAE.REDECL(finalPrefix = _),_,_) then DAE.emptyDae;
+    case (_,_,DAE.REDECL(),_,_) then DAE.emptyDae;
 
     case (c,ty1,m,_,_)
       equation
@@ -650,7 +650,7 @@ algorithm
 
     case (cache,_,_,DAE.NOMOD(),_,_,_,_) then (cache,DAE.UNBOUND());
 
-    case (cache,_,_,DAE.REDECL(finalPrefix = _),_,_,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,_,DAE.REDECL(),_,_,_,_) then (cache,DAE.UNBOUND());
 
     // adrpo: if the binding is missing for a parameter and
     //        the parameter has a start value modification,
@@ -1010,7 +1010,7 @@ algorithm
 
     else
       equation
-        failure(SOME(DAE.TYPED(info=_)) = Mod.modEquation(mod));
+        failure(SOME(DAE.TYPED()) = Mod.modEquation(mod));
       then
         NONE();
   end matchcontinue;

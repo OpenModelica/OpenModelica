@@ -1499,17 +1499,17 @@ algorithm
       ValidOptions options;
 
     // A boolean value.
-    case ({s}, BOOL_FLAG(data = _), _, _)
+    case ({s}, BOOL_FLAG(), _, _)
       equation
         b = Util.stringBool(s);
       then
         BOOL_FLAG(b);
 
     // No value, but a boolean flag => enable the flag.
-    case ({}, BOOL_FLAG(data = _), _, _) then BOOL_FLAG(true);
+    case ({}, BOOL_FLAG(), _, _) then BOOL_FLAG(true);
 
     // An integer value.
-    case ({s}, INT_FLAG(data = _), _, _)
+    case ({s}, INT_FLAG(), _, _)
       equation
         i = stringInt(s);
         true = stringEq(intString(i), s);
@@ -1517,19 +1517,19 @@ algorithm
         INT_FLAG(i);
 
     // A real value.
-    case ({s}, REAL_FLAG(data = _), _, _)
+    case ({s}, REAL_FLAG(), _, _)
       then REAL_FLAG(System.stringReal(s));
 
     // A string value.
-    case ({s}, STRING_FLAG(data = _), SOME(options), _)
+    case ({s}, STRING_FLAG(), SOME(options), _)
       equation
         flags = getValidStringOptions(options);
         true = listMember(s,flags);
       then STRING_FLAG(s);
-    case ({s}, STRING_FLAG(data = _), NONE(), _) then STRING_FLAG(s);
+    case ({s}, STRING_FLAG(), NONE(), _) then STRING_FLAG(s);
 
     // A multiple-string value.
-    case (_, STRING_LIST_FLAG(data = _), _, _) then STRING_LIST_FLAG(inValues);
+    case (_, STRING_LIST_FLAG(), _, _) then STRING_LIST_FLAG(inValues);
 
     // An enumeration value.
     case ({s}, ENUM_FLAG(validValues = enums), _, _)
@@ -1569,11 +1569,11 @@ algorithm
       list<tuple<String, Integer>> enums;
       list<String> enum_strs;
 
-    case BOOL_FLAG(data = _) then "a boolean value";
-    case INT_FLAG(data = _) then "an integer value";
-    case REAL_FLAG(data = _) then "a floating-point value";
-    case STRING_FLAG(data = _) then "a string";
-    case STRING_LIST_FLAG(data = _) then "a comma-separated list of strings";
+    case BOOL_FLAG() then "a boolean value";
+    case INT_FLAG() then "an integer value";
+    case REAL_FLAG() then "a floating-point value";
+    case STRING_FLAG() then "a string";
+    case STRING_LIST_FLAG() then "a comma-separated list of strings";
     case ENUM_FLAG(validValues = enums)
       equation
         enum_strs = List.map(enums, Util.tuple21);

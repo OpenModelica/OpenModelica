@@ -111,7 +111,7 @@ algorithm
       BackendDAE.BaseClockPartitionKind partitionKind;
     case(_,(sharedIn,sysIdx))
       equation
-        BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=_,mT=_,stateSets=stateSets,partitionKind=partitionKind) = eqSysIn;
+        BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,stateSets=stateSets,partitionKind=partitionKind) = eqSysIn;
         eqLst = BackendEquation.equationList(eqs);
         varLst = BackendVariable.varList(vars);
 
@@ -1262,7 +1262,7 @@ algorithm
       sameCref = ComponentReference.crefEqualNoStringCompare(crefIn,cref);
     then
       (sameCref,true);
-  case(DAE.BINARY(exp1=exp1, operator = DAE.SUB(ty=_), exp2=exp2),_)
+  case(DAE.BINARY(exp1=exp1, operator = DAE.SUB(), exp2=exp2),_)
     equation
       //exp1-exp2
       (exists1,sign1) = expIsCref(exp1,crefIn);
@@ -1273,7 +1273,7 @@ algorithm
       sign = if exists2 then sign2 else sign;
     then
       (exists,sign);
-  case(DAE.BINARY(exp1=exp1, operator = DAE.ADD(ty=_), exp2=exp2),_)
+  case(DAE.BINARY(exp1=exp1, operator = DAE.ADD(), exp2=exp2),_)
     equation
       //exp1+exp2
       (exists1,sign1) = expIsCref(exp1,crefIn);
@@ -1283,14 +1283,14 @@ algorithm
       sign = if exists2 then sign2 else sign;
     then
       (exists,sign);
-  case(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=exp1),_)
+  case(DAE.UNARY(operator=DAE.UMINUS(),exp=exp1),_)
     equation
       // -(exp)
       (exists,sign) = expIsCref(exp1,crefIn);
       sign = boolNot(sign);
     then
       (exists,sign);
-  case(DAE.RCONST(real=_),_)
+  case(DAE.RCONST(),_)
     equation
       // constant
     then
@@ -1489,7 +1489,7 @@ algorithm
       DAE.Operator op;
       DAE.ComponentRef cref;
       DAE.Type ty;
-    case (DAE.CREF(componentRef=_),true)
+    case (DAE.CREF(),true)
       equation
         //x
       then (inExp,inB);
@@ -1498,17 +1498,17 @@ algorithm
         // (-x)
         (_,b) = isAddOrSubExp(exp1,true);
       then (inExp,b);
-    case (DAE.RCONST(real=_),true)  // maybe we have to remove this, because this is just for kirchhoffs current law
+    case (DAE.RCONST(),true)  // maybe we have to remove this, because this is just for kirchhoffs current law
       equation
         //const.
       then (inExp,true);
-    case (DAE.BINARY(exp1 = exp1,operator = DAE.ADD(ty=_),exp2 = exp2),true)
+    case (DAE.BINARY(exp1 = exp1,operator = DAE.ADD(),exp2 = exp2),true)
       equation
         //x + y
         (_,b) = isAddOrSubExp(exp1,true);
         (_,b) = isAddOrSubExp(exp2,b);
       then (inExp,b);
-    case (DAE.BINARY(exp1=exp1,operator = DAE.SUB(ty=_),exp2=exp2),true)
+    case (DAE.BINARY(exp1=exp1,operator = DAE.SUB(),exp2=exp2),true)
       equation
         //x - y
         (_,b) = isAddOrSubExp(exp1,true);
@@ -2049,7 +2049,6 @@ algorithm
         BackendDAE.EQUATION(exp=lhs1,scalar=rhs1,source=source,attr=attr) = eq1;
         BackendDAE.EQUATION(exp=lhs2,scalar=rhs2) = eq2;
         (eqExp,_) = ExpressionSolve.solve(lhs1,rhs1,varExp);
-        eq1 = BackendDAE.EQUATION(varExp,eqExp,source,attr);
           //BackendDump.dumpEquationList({eq1},"solved Eq");
 
         ((lhs2,_)) = Expression.replaceExp(lhs2,varExp,eqExp);

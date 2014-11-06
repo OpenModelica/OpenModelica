@@ -1062,7 +1062,7 @@ algorithm
     local
       String s1,s2,s;
     // if we don't have the same modification on inner report error!
-    case(_,_,_,_,_,_,DAE.MOD(finalPrefix = _),Absyn.OUTER(),_,_)
+    case(_,_,_,_,_,_,DAE.MOD(),Absyn.OUTER(),_,_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Mod.prettyPrintMod(inMod, 0);
@@ -1129,7 +1129,7 @@ public function switchInnerToOuterAndPrefix
         (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,ct,source,dae_var_attr,comment,io) :: r_1);
 
     // If var already have inner/outer, keep it.
-    case ( (v as DAE.VAR(componentRef = _)) :: r,_,_)
+    case ( (v as DAE.VAR()) :: r,_,_)
       equation
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
@@ -1463,7 +1463,7 @@ algorithm
         ih;*/
 
     // no hashtable, create one!
-    case({},_,_,INST_INNER(name=_))
+    case({},_,_,INST_INNER())
       equation
         // print ("InnerOuter.updateInstHierarchy creating an empty hash table! \n");
         ht = emptyInstHierarchyHashTable();
@@ -1487,7 +1487,7 @@ algorithm
         TOP_INSTANCE(pathOpt, ht, outerPrefixes, sm)::restIH;
 
     // failure
-    case(_,_,_,INST_INNER(io=_))
+    case(_,_,_,INST_INNER())
       equation
         // prefix the name!
         //(_,cref) = PrefixUtil.prefixCref(FCore.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));
@@ -2184,13 +2184,13 @@ algorithm
       tuple<Key,Value> elt;
       Integer lastpos,n,size;
       list<tuple<Key,Value>> lst;
-    case (VALUE_ARRAY(numberOfElements = 0,valueArray = _)) then {};
+    case (VALUE_ARRAY(numberOfElements = 0)) then {};
     case (VALUE_ARRAY(numberOfElements = 1,valueArray = arr))
       equation
         SOME(elt) = arr[0 + 1];
       then
         {elt};
-    case (VALUE_ARRAY(numberOfElements = n,arrSize = _,valueArray = arr))
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr))
       equation
         lastpos = n - 1;
         lst = valueArrayList2(arr, 0, lastpos);
@@ -2346,7 +2346,7 @@ public function valueArrayNth
   output Key key;
   output Value value;
 algorithm
-  (key, value) := matchcontinue (valueArray,pos)
+  (key, value) := match (valueArray,pos)
     local
       Key k;
       Value v;
@@ -2360,7 +2360,7 @@ algorithm
       then
         (k, v);
 
-  end matchcontinue;
+  end match;
 end valueArrayNth;
 
 annotation(__OpenModelica_Interface="frontend");

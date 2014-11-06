@@ -177,7 +177,7 @@ algorithm
       String str;
       SourceInfo info;
 
-    case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = _,  info = info),
+    case (NFInstTypes.UNTYPED_COMPONENT(name = name,  info = info),
         _, _, _)
       equation
         str = "Found untyped component: " + Absyn.pathString(name);
@@ -187,7 +187,7 @@ algorithm
 
     // check and convert if needed the type of
     // the binding vs the type of the component
-    case (NFInstTypes.TYPED_COMPONENT(name=_), _, _, st)
+    case (NFInstTypes.TYPED_COMPONENT(), _, _, st)
       equation
         comp = NFInstUtil.setComponentParent(inComponent, inParent);
         comp = checkComponentBindingType(comp);
@@ -214,7 +214,7 @@ algorithm
       then
         fail();
 
-    case (NFInstTypes.DELETED_COMPONENT(name=_), _, _, st)
+    case (NFInstTypes.DELETED_COMPONENT(), _, _, st)
       then (inComponent, st);
 
   end match;

@@ -103,7 +103,7 @@ algorithm
          Boolean didInline;
 
      // handle tuple op non_tuple
-     case (_, _, _, props1 as DAE.PROP_TUPLE(type_ = _), _, DAE.PROP(type_ = _), _, _, _, _, _, _, _, _)
+     case (_, _, _, props1 as DAE.PROP_TUPLE(), _, DAE.PROP(), _, _, _, _, _, _, _, _)
        equation
          false = Config.acceptMetaModelicaGrammar();
          (prop as DAE.PROP(type1, _)) = Types.propTupleFirstProp(props1);
@@ -113,7 +113,7 @@ algorithm
          (inCache, exp, prop);
 
      // handle non_tuple op tuple
-     case (_, _, _, DAE.PROP(type_ = _), _, props2 as DAE.PROP_TUPLE(type_ = _), _, _, _, _, _, _, _, _)
+     case (_, _, _, DAE.PROP(), _, props2 as DAE.PROP_TUPLE(), _, _, _, _, _, _, _, _)
        equation
          false = Config.acceptMetaModelicaGrammar();
          (prop as DAE.PROP(type2, _)) = Types.propTupleFirstProp(props2);
@@ -136,7 +136,7 @@ algorithm
        then
          (inCache,exp, prop);
 
-     case(cache, env, aboper, DAE.PROP(type1, const1), _, DAE.PROP(type2, const2), _, _, absexp1, absexp2, _, _, _, _)
+     case(cache, env, aboper, DAE.PROP(type1, const1), _, DAE.PROP(type2, const2), _, _, _, _, _, _, _, _)
        equation
          true = Types.isRecord(Types.arrayElementType(type1)) or Types.isRecord(Types.arrayElementType(type2));
          (cache, exp, _, otype) = binaryUserdef(cache,env,aboper,inExp1,inExp2,type1,type2,inImpl,inSymTab,inPre,inInfo);
@@ -194,7 +194,7 @@ algorithm
        Absyn.Exp  absexp1;
 
      // handle op tuple
-     case (_, _, _, DAE.PROP_TUPLE(type_ = _), exp1, _, _, _, _, _, _)
+     case (_, _, _, DAE.PROP_TUPLE(), exp1, _, _, _, _, _, _)
        equation
          false = Config.acceptMetaModelicaGrammar();
          (prop as DAE.PROP(type1, _)) = Types.propTupleFirstProp(inProp1);
@@ -416,7 +416,7 @@ algorithm
         tuple<DAE.Exp,Option<DAE.Type>> tpl;
 
     // Matching types. Yay.
-    case ((funcTy as DAE.T_FUNCTION(source={path},funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::DAE.FUNCARG(ty=ty2)::restArgs))::types, _, _, _, _, acc)
+    case ((DAE.T_FUNCTION(source={path},funcResultType=ty,functionAttributes=attr,funcArg=DAE.FUNCARG(ty=ty1)::DAE.FUNCARG(ty=ty2)::restArgs))::types, _, _, _, _, acc)
       equation
         (lhs,_) = Types.matchType(inLhs,lhsType,ty1,false);
         (rhs,_) = Types.matchType(inRhs,rhsType,ty2,false);
@@ -576,7 +576,7 @@ resulting expression. "
   output DAE.Type outType;
 algorithm
   (outCache,outExp,foldType,outType) :=
-  matchcontinue (inCache, inEnv, inOper,inExp1,inExp2,inType1,inType2,impl,st,pre,info)
+  match (inCache, inEnv, inOper,inExp1,inExp2,inType1,inType2,impl,st,pre,info)
     local
       Boolean bool1,bool2;
       String opStr;
@@ -620,7 +620,7 @@ algorithm
       then
         (cache,daeExp,foldType,Expression.typeof(daeExp) /*FIXME?*/);
 
-  end matchcontinue;
+  end match;
 end binaryUserdef;
 
 function binaryUserdefArray
@@ -720,7 +720,7 @@ algorithm
         foldName = Util.getTempVariableIndex();
         resultName = Util.getTempVariableIndex();
         cr = DAE.CREF(DAE.CREF_IDENT(iterName,newType1,{}),newType1);
-        (cache,exp,foldType,resType) = binaryUserdef(cache,env,op,cr,inExp2,newType1,inType2,impl,st,pre,info);
+        (cache,exp,_,resType) = binaryUserdef(cache,env,op,cr,inExp2,newType1,inType2,impl,st,pre,info);
         resType = Types.liftArray(resType,dim1);
         exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp1,NONE(),newType1)::{});
         // exp = ExpressionSimplify.simplify1(exp);
@@ -740,7 +740,7 @@ algorithm
         foldName = Util.getTempVariableIndex();
         resultName = Util.getTempVariableIndex();
         cr = DAE.CREF(DAE.CREF_IDENT(iterName,newType2,{}),newType2);
-        (cache,exp,foldType,resType) = binaryUserdef(cache,env,op,inExp1,cr,inType1,newType2,impl,st,pre,info);
+        (cache,exp,_,resType) = binaryUserdef(cache,env,op,inExp1,cr,inType1,newType2,impl,st,pre,info);
         resType = DAE.T_ARRAY(resType,{dim2},{});
         exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp2,NONE(),newType2)::{});
         // exp = ExpressionSimplify.simplify1(exp);
@@ -1293,20 +1293,20 @@ algorithm
       DAE.Type op_ty;
       DAE.Operator op;
 
-    case (_, DAE.T_ENUMERATION(path = _), DAE.T_ENUMERATION(path = _))
+    case (_, DAE.T_ENUMERATION(), DAE.T_ENUMERATION())
       equation
         op_ty = Types.simplifyType(inType1);
         op = Expression.setOpType(inOp, op_ty);
       then ((op, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
 
-    case (_, DAE.T_ENUMERATION(path = _), _)
+    case (_, DAE.T_ENUMERATION(), _)
       equation
         op_ty = Types.simplifyType(inType1);
         op = Expression.setOpType(inOp, op_ty);
       then
         ((op, {inType1, inType1}, DAE.T_BOOL_DEFAULT));
 
-    case (_, _, DAE.T_ENUMERATION(path = _))
+    case (_, _, DAE.T_ENUMERATION())
       equation
         op_ty = Types.simplifyType(inType1);
         op = Expression.setOpType(inOp, op_ty);
@@ -1483,13 +1483,13 @@ algorithm
       DAE.Type ty1,ty2;
       Absyn.Path p;
       Boolean b;
-    case (DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE(source=_)),_,_) then false;
-    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::DAE.FUNCARG(ty=ty2,defaultBinding=NONE())::_,source={p}),_,_)
+    case (DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE()),_,_) then false;
+    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::DAE.FUNCARG(ty=ty2,defaultBinding=NONE())::_,source={_}),_,_)
       equation
         b = Types.equivtypesOrRecordSubtypeOf(Types.arrayElementType(ty1),opType) or Types.equivtypesOrRecordSubtypeOf(Types.arrayElementType(ty2),opType);
         checkOperatorFunctionOneOutputError(b,opType,ty,info);
       then b;
-    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::_,source={p}),_,_)
+    case (DAE.T_FUNCTION(funcArg=DAE.FUNCARG(ty=ty1,defaultBinding=NONE())::_,source={_}),_,_)
       equation
         b = Types.equivtypesOrRecordSubtypeOf(Types.arrayElementType(ty1),opType);
         checkOperatorFunctionOneOutputError(b,opType,ty,info);
@@ -1693,19 +1693,19 @@ algorithm
       DAE.Dimension n1,n2,m,n,m1,m2,p;
       Prefix.Prefix pre;
 
-    case (DAE.ADD_ARR(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.ADD_ARR(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.ADD_ARR(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.ADD_ARR(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.ADD_ARR(ty = _),{typ1,typ2},_,pre, _)
+    case (DAE.ADD_ARR(),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -1715,19 +1715,19 @@ algorithm
       then
         fail();
 
-    case (DAE.SUB_ARR(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.SUB_ARR(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.SUB_ARR(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.SUB_ARR(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.SUB_ARR(ty = _),{typ1,typ2},_,pre, _)
+    case (DAE.SUB_ARR(),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -1737,19 +1737,19 @@ algorithm
       then
         fail();
 
-    case (DAE.MUL_ARR(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.MUL_ARR(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.MUL_ARR(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.MUL_ARR(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.MUL_ARR(ty = _),{typ1,typ2},_,pre, _)
+    case (DAE.MUL_ARR(),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -1759,19 +1759,19 @@ algorithm
       then
         fail();
 
-    case (DAE.DIV_ARR(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.DIV_ARR(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.DIV_ARR(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.DIV_ARR(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.DIV_ARR(ty = _),{typ1,typ2},_,pre, _)
+    case (DAE.DIV_ARR(),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -1782,7 +1782,7 @@ algorithm
         fail();
 
     // Matrix[n,m]^i
-    case (DAE.POW_ARR(ty = _),{typ1,_},_,_, _)
+    case (DAE.POW_ARR(),{typ1,_},_,_, _)
       equation
         2 = nDims(typ1);
         n = Types.getDimensionNth(typ1, 1);
@@ -1791,19 +1791,19 @@ algorithm
       then
         typ1;
 
-    case (DAE.POW_ARR2(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.POW_ARR2(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
 
-    case (DAE.POW_ARR2(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.POW_ARR2(),{typ1,typ2},_,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
 
-    case (DAE.POW_ARR2(ty = _),{typ1,typ2},_,pre, _)
+    case (DAE.POW_ARR2(),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -1813,19 +1813,19 @@ algorithm
       then
         fail();
 
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_, _)
+    case (DAE.MUL_SCALAR_PRODUCT(),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         rtype;
 
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_, _)
+    case (DAE.MUL_SCALAR_PRODUCT(),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         rtype;
 
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},_,pre, _)
+    case (DAE.MUL_SCALAR_PRODUCT(),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -1836,7 +1836,7 @@ algorithm
         fail();
 
     // Vector[n]*Matrix[n,m] = Vector[m]
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.MUL_MATRIX_PRODUCT(),{typ1,typ2},_,_, _)
       equation
         1 = nDims(typ1);
         2 = nDims(typ2);
@@ -1852,7 +1852,7 @@ algorithm
         rtype;
 
     // Matrix[n,m]*Vector[m] = Vector[n]
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.MUL_MATRIX_PRODUCT(),{typ1,typ2},_,_, _)
       equation
         2 = nDims(typ1);
         1 = nDims(typ2);
@@ -1868,7 +1868,7 @@ algorithm
         rtype;
 
     // Matrix[n,m] * Matrix[m,p] = Matrix[n, p]
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_, _)
+    case (DAE.MUL_MATRIX_PRODUCT(),{typ1,typ2},_,_, _)
       equation
         2 = nDims(typ1);
         2 = nDims(typ2);
@@ -1884,7 +1884,7 @@ algorithm
       then
         rtype;
 
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,pre, _)
+    case (DAE.MUL_MATRIX_PRODUCT(),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -1894,41 +1894,41 @@ algorithm
       then
         fail();
 
-    case (DAE.MUL_ARRAY_SCALAR(ty = _),{typ1,_},_,_, _) then typ1;  /* rtype */
+    case (DAE.MUL_ARRAY_SCALAR(),{typ1,_},_,_, _) then typ1;  /* rtype */
 
-    case (DAE.ADD_ARRAY_SCALAR(ty = _),{typ1,_},_,_, _) then typ1;  /* rtype */
+    case (DAE.ADD_ARRAY_SCALAR(),{typ1,_},_,_, _) then typ1;  /* rtype */
 
-    case (DAE.SUB_SCALAR_ARRAY(ty = _),{_,typ2},_,_, _) then typ2;  /* rtype */
+    case (DAE.SUB_SCALAR_ARRAY(),{_,typ2},_,_, _) then typ2;  /* rtype */
 
-    case (DAE.DIV_SCALAR_ARRAY(ty = _),{_,typ2},_,_, _) then typ2;  /* rtype */
+    case (DAE.DIV_SCALAR_ARRAY(),{_,typ2},_,_, _) then typ2;  /* rtype */
 
-    case (DAE.DIV_ARRAY_SCALAR(ty = _),{typ1,_},_,_, _) then typ1;  /* rtype */
+    case (DAE.DIV_ARRAY_SCALAR(),{typ1,_},_,_, _) then typ1;  /* rtype */
 
-    case (DAE.POW_ARRAY_SCALAR(ty = _),{typ1,_},_,_, _) then typ1;  /* rtype */
+    case (DAE.POW_ARRAY_SCALAR(),{typ1,_},_,_, _) then typ1;  /* rtype */
 
-    case (DAE.POW_SCALAR_ARRAY(ty = _),{_,typ2},_,_, _) then typ2;  /* rtype */
+    case (DAE.POW_SCALAR_ARRAY(),{_,typ2},_,_, _) then typ2;  /* rtype */
 
-    case (DAE.ADD(ty = _),_,typ,_, _) then typ;
+    case (DAE.ADD(),_,typ,_, _) then typ;
 
-    case (DAE.SUB(ty = _),_,typ,_, _) then typ;
+    case (DAE.SUB(),_,typ,_, _) then typ;
 
-    case (DAE.MUL(ty = _),_,typ,_, _) then typ;
+    case (DAE.MUL(),_,typ,_, _) then typ;
 
-    case (DAE.DIV(ty = _),_,typ,_, _) then typ;
+    case (DAE.DIV(),_,typ,_, _) then typ;
 
-    case (DAE.POW(ty = _),_,typ,_, _) then typ;
+    case (DAE.POW(),_,typ,_, _) then typ;
 
-    case (DAE.UMINUS(ty = _),_,typ,_, _) then typ;
+    case (DAE.UMINUS(),_,typ,_, _) then typ;
 
-    case (DAE.UMINUS_ARR(ty = _),(typ1 :: _),_,_, _) then typ1;
+    case (DAE.UMINUS_ARR(),(typ1 :: _),_,_, _) then typ1;
 
-    case (DAE.AND(ty = _), {typ1, typ2}, _, _, _)
+    case (DAE.AND(), {typ1, typ2}, _, _, _)
       equation
         true = Types.equivtypes(typ1, typ2);
       then
         typ1;
 
-    case (DAE.AND(ty = _), {typ1, typ2}, _, pre, _)
+    case (DAE.AND(), {typ1, typ2}, _, pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -1938,13 +1938,13 @@ algorithm
       then
         fail();
 
-    case (DAE.OR(ty = _), {typ1, typ2}, _, _, _)
+    case (DAE.OR(), {typ1, typ2}, _, _, _)
       equation
         true = Types.equivtypes(typ1, typ2);
       then
         typ1;
 
-    case (DAE.OR(ty = _), {typ1, typ2}, _, pre, _)
+    case (DAE.OR(), {typ1, typ2}, _, pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
@@ -1954,21 +1954,21 @@ algorithm
       then
         fail();
 
-    case (DAE.NOT(ty = _),{typ1},_,_, _) then typ1;
+    case (DAE.NOT(),{typ1},_,_, _) then typ1;
 
-    case (DAE.LESS(ty = _),_,typ,_, _) then typ;
+    case (DAE.LESS(),_,typ,_, _) then typ;
 
-    case (DAE.LESSEQ(ty = _),_,typ,_, _) then typ;
+    case (DAE.LESSEQ(),_,typ,_, _) then typ;
 
-    case (DAE.GREATER(ty = _),_,typ,_, _) then typ;
+    case (DAE.GREATER(),_,typ,_, _) then typ;
 
-    case (DAE.GREATEREQ(ty = _),_,typ,_, _) then typ;
+    case (DAE.GREATEREQ(),_,typ,_, _) then typ;
 
-    case (DAE.EQUAL(ty = _),_,typ,_, _) then typ;
+    case (DAE.EQUAL(),_,typ,_, _) then typ;
 
-    case (DAE.NEQUAL(ty = _),_,typ,_, _) then typ;
+    case (DAE.NEQUAL(),_,typ,_, _) then typ;
 
-    case (DAE.USERDEFINED(fqName = _),_,typ,_, _) then typ;
+    case (DAE.USERDEFINED(),_,typ,_, _) then typ;
   end matchcontinue;
 end computeReturnType;
 
@@ -1980,10 +1980,10 @@ algorithm
     local
       Integer ns;
       DAE.Type t;
-    case (DAE.T_INTEGER(varLst = _)) then 0;
-    case (DAE.T_REAL(varLst = _)) then 0;
-    case (DAE.T_STRING(varLst = _)) then 0;
-    case (DAE.T_BOOL(varLst = _)) then 0;
+    case (DAE.T_INTEGER()) then 0;
+    case (DAE.T_REAL()) then 0;
+    case (DAE.T_STRING()) then 0;
+    case (DAE.T_BOOL()) then 0;
     case (DAE.T_ARRAY(ty = t))
       equation
         ns = nDims(t);
@@ -2019,10 +2019,10 @@ function elementType "Returns the element type of a type, i.e. for arrays, retur
 algorithm
   outType := match (inType)
     local DAE.Type t,t_1;
-    case ((t as DAE.T_INTEGER(varLst = _))) then t;
-    case ((t as DAE.T_REAL(varLst = _))) then t;
-    case ((t as DAE.T_STRING(varLst = _))) then t;
-    case ((t as DAE.T_BOOL(varLst = _))) then t;
+    case ((t as DAE.T_INTEGER())) then t;
+    case ((t as DAE.T_REAL())) then t;
+    case ((t as DAE.T_STRING())) then t;
+    case ((t as DAE.T_BOOL())) then t;
     case (DAE.T_ARRAY(ty = t))
       equation
         t_1 = elementType(t);

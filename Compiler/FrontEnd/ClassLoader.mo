@@ -93,7 +93,7 @@ algorithm
       then
         p;
     /* Qualified names: First check if it is defined in a file pack.mo */
-    case (Absyn.QUALIFIED(name = pack,path = _),_,mp,_)
+    case (Absyn.QUALIFIED(name = pack),_,mp,_)
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
@@ -256,7 +256,7 @@ protected function loadCompletePackageFromMp2
   input list<Absyn.ClassPart> acc;
   output list<Absyn.ClassPart> cps;
 algorithm
-  cps := matchcontinue (po,mp,encoding,w1,acc)
+  cps := match (po,mp,encoding,w1,acc)
     local
       Absyn.ElementItem ei;
       String pd,file,id;
@@ -298,7 +298,7 @@ algorithm
         end if;
       then cps;
 
-  end matchcontinue;
+  end match;
 end loadCompletePackageFromMp2;
 
 public function parsePackageFile
@@ -574,7 +574,7 @@ protected function matchCompNames
   output list<String> outNames;
   output Boolean matchedNames;
 algorithm
-  (outNames,matchedNames) := matchcontinue (names,comps,info)
+  (outNames,matchedNames) := match (names,comps,info)
     local
       Boolean b, b1;
       String n1,n2;
@@ -594,7 +594,7 @@ algorithm
         end if;
       then (rest1,b1);
 
-  end matchcontinue;
+  end match;
 end matchCompNames;
 
 protected function packageOrderName

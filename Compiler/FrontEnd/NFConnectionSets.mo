@@ -504,7 +504,7 @@ algorithm
       equation
         // Look up the parent to this node and continue looking.
         parent = arrayGet(inNodes, parent_id);
-        (parent as NODE(index = _)) = findRoot(parent, inNodes);
+        (parent as NODE()) = findRoot(parent, inNodes);
 
         // Path compression. Any node found while looking for the root may as
         // well be attached to the root node directly so that future look up is

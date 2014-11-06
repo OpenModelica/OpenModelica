@@ -310,7 +310,7 @@ algorithm
 
     // One inside, one outside:
     // cr1 = cr2;
-    case ({NFConnect2.CONNECTOR(name = cr1, face = _),
+    case ({NFConnect2.CONNECTOR(name = cr1),
            NFConnect2.CONNECTOR(name = cr2, face = _)})
       equation
         e1 = Expression.crefExp(cr1);
@@ -592,7 +592,7 @@ algorithm
       DAE.Type lhs_ty, rhs_ty, ty;
 
     // Variable simple connection, nothing to do.
-    case (NFConnect2.CONNECTOR(ty = _), NFConnect2.CONNECTOR(ty = _), _, _)
+    case (NFConnect2.CONNECTOR(), NFConnect2.CONNECTOR(ty = _), _, _)
       equation
         false = NFConnectUtil2.isConstOrComplexConnector(inLhsConnector);
         false = NFConnectUtil2.isConstOrComplexConnector(inRhsConnector);
@@ -654,7 +654,7 @@ algorithm
         (assertion :: inEquations, true);
 
     // Array connectors.
-    case (_, _, DAE.T_ARRAY(ty = _), _, _)
+    case (_, _, DAE.T_ARRAY(), _, _)
       equation
         /* ------------------------------------------------------------------*/
         // TODO: Implement this.

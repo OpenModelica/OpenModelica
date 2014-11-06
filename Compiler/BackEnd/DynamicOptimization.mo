@@ -145,7 +145,7 @@ algorithm
 
         Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
        then (v, e,{DAE.OPTIMIZATION_ATTRS(mayer1, lagrange1, NONE(), NONE())});
-    case (v, e, false, _, _, _, true)
+    case (_, _, false, _, _, _, true)
       equation
         Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
         (v, e, tmpClassAttr) =  addOptimizationVarsEqns(inVars, inEqns, true, inClassAttr, inConstraint, knvars, true);
@@ -288,7 +288,7 @@ algorithm
     case(SOME(e1), SOME(e2)) equation
       e3 = Expression.expAdd(e1,e2);
     then SOME(e3);
-    case(NONE(), SOME(e2)) then inmayer2;
+    case(NONE(), SOME(_)) then inmayer2;
     case(_, NONE()) then inmayer1;
 
   end match;

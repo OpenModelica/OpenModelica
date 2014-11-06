@@ -315,12 +315,12 @@ algorithm
 
     // The modified element is a class but the modifier has no binding, e.g.
     // c(A(x = 3)). This is ok.
-    case (SCode.CLASS(name = _), NFInstTypes.UNBOUND(), _, _)
+    case (SCode.CLASS(), NFInstTypes.UNBOUND(), _, _)
       then ();
 
     // The modified element is a class but the modifier has a binding. This is
     // not ok, tell the user that the redeclare keyword is missing.
-    case (SCode.CLASS(name = _), _, _, _)
+    case (SCode.CLASS(), _, _, _)
       equation
         Error.addSourceMessage(Error.MISSING_REDECLARE_IN_CLASS_MOD,
           {inName}, inInfo);
@@ -495,7 +495,7 @@ algorithm
 
     // The outer modifier has a binding which takes priority over the inner
     // modifiers binding.
-    case (NFInstTypes.MODIFIER(name, fp, ep, binding as NFInstTypes.RAW_BINDING(bindingExp = _),
+    case (NFInstTypes.MODIFIER(name, fp, ep, binding as NFInstTypes.RAW_BINDING(),
             submods1, info1),
           NFInstTypes.MODIFIER(subModifiers = submods2, info = info2))
       equation
@@ -506,7 +506,7 @@ algorithm
 
     // The inner modifier has a binding, but not the outer, so keep it.
     case (NFInstTypes.MODIFIER(subModifiers = submods1, info = info1),
-          NFInstTypes.MODIFIER(name, fp, ep, binding as NFInstTypes.RAW_BINDING(bindingExp = _),
+          NFInstTypes.MODIFIER(name, fp, ep, binding as NFInstTypes.RAW_BINDING(),
             submods2, info2))
       equation
         checkModifierFinalOverride(name, inOuterMod, info1, inInnerMod, info2);
@@ -520,7 +520,7 @@ algorithm
     //      NFInstTypes.REDECLARE(constrainingClass = NONE()))
     //  then inOuterMod;
 
-    case (NFInstTypes.REDECLARE(element = _),
+    case (NFInstTypes.REDECLARE(),
           NFInstTypes.REDECLARE(element = _))
       equation
         // Merge outer modifier with outer constraining class.
@@ -528,7 +528,7 @@ algorithm
       then
         inOuterMod;
 
-    case (NFInstTypes.MODIFIER(name = _),
+    case (NFInstTypes.MODIFIER(),
       NFInstTypes.REDECLARE(fp, ep, el, env, mod, cc))
       equation
         mod = mergeMod(inOuterMod, mod);
@@ -537,7 +537,7 @@ algorithm
         NFInstTypes.REDECLARE(fp, ep, el, env, mod, cc);
 
     case (NFInstTypes.REDECLARE(fp, ep, el, env, mod, cc),
-          NFInstTypes.MODIFIER(name = _))
+          NFInstTypes.MODIFIER())
       equation
         mod = mergeMod(mod, inInnerMod);
       then
@@ -1075,7 +1075,7 @@ algorithm
 
     case ({}, _) then {};
 
-    case (SCode.NAMEMOD(ident = _, mod = SCode.MOD(binding = SOME((e, _))))::rest, _)
+    case (SCode.NAMEMOD(mod = SCode.MOD(binding = SOME((e, _))))::rest, _)
       equation
         cl = Absyn.getCrefFromExp(e,true,true);
         true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);
@@ -1201,7 +1201,7 @@ algorithm
       then
         SCode.MOD(fp, ep, sl, binding, i);
 
-    case (SCode.REDECL(element = _)) then SCode.NOMOD();
+    case (SCode.REDECL()) then SCode.NOMOD();
 
     else inMod;
 

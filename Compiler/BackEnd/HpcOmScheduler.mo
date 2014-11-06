@@ -1252,7 +1252,7 @@ algorithm
       equation
         tmpScheduleInfo = arrayUpdate(tmpScheduleInfo,taskIdx,(threadIdx,taskNumber,timeFinished));
       then ((tmpScheduleInfo,taskNumber+1));
-    case (HpcOmSimCode.DEPTASK(sourceTask=_,targetTask=_,outgoing=_),_) then iScheduleInfo;
+    case (HpcOmSimCode.DEPTASK(),_) then iScheduleInfo;
     else
       equation
         print("HpcOmScheduler.convertScheduleStrucToInfo1 failed. Unknown Task-Type.\n");
@@ -1296,7 +1296,7 @@ protected function convertScheduleStrucToInfoLevel1
   input array<tuple<Integer,Integer,Real>> iScheduleInfo; //maps each Task to <threadId, orderId, startCalcTime>
   output array<tuple<Integer,Integer,Real>> oScheduleInfo;
 algorithm
-  oScheduleInfo := matchcontinue(tasks,sectionsNumber,sectionIdx,iScheduleInfo)
+  oScheduleInfo := match(tasks,sectionsNumber,sectionIdx,iScheduleInfo)
     local
       Integer numNodes, threadIdx;
       list<Integer> nodeIdc;
@@ -1313,7 +1313,7 @@ algorithm
         tuplLst = List.threadMap1(List.fill(threadIdx,numNodes),List.fill(-1,numNodes),Util.make3Tuple,0.0);
         List.threadMap1_0(nodeIdc,tuplLst,Array.updateIndexFirst,iScheduleInfo);
       then convertScheduleStrucToInfoLevel1(rest,sectionsNumber,sectionIdx+1,iScheduleInfo);
-  end matchcontinue;
+  end match;
 end convertScheduleStrucToInfoLevel1;
 
 //-----------------
@@ -1387,7 +1387,7 @@ author: Waurich TUD 2014-07"
   input Real targetCosts;
   output list<list<Integer>> sectionsOut;
 algorithm
-sectionsOut := matchcontinue(sectionsIn,iMeta,targetCosts)
+sectionsOut := match(sectionsIn,iMeta,targetCosts)
   local
     list<list<Real>> costs;
     list<list<Integer>> mergedSectionIdcs, sectionsNew;
@@ -1402,7 +1402,7 @@ sectionsOut := matchcontinue(sectionsIn,iMeta,targetCosts)
       sectionsNew = List.map(sectionsNewUnflattened,List.flatten);
       sectionsNew = List.map1(sectionsNew,List.sort,intGt);  // restore the calculation order
   then sectionsNew;
-  end matchcontinue;
+  end match;
 end BLS_mergeSmallSections;
 
 protected function BLS_generateSchedule"generates a level schedule for the given levels. if a level contains only one section build a serial task.
@@ -1430,7 +1430,7 @@ algorithm
         task = makeCalcLevelTask(simEqSysIdcs,section);
         taskLst = HpcOmSimCode.SERIALTASKLIST({task}, true);
     then taskLst;
-    case(section::_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
+    case(_::_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
       equation
         // generate parallel sections
         sectionComps = List.mapList1_1(level,Array.getIndexFirst,inComps);
@@ -1475,7 +1475,7 @@ algorithm
     then listReverse(sectionsIn);
     case(_,_,critPathNode::{},_,_,_,_,_,_,_)
       equation
-        critPathCost = HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
+        _ = HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
         critNodeLevel = arrayGet(levelAssIn,critPathNode);
         //print("critPathNode (last): \n"+intString(critPathNode)+" of level: "+intString(critNodeLevel)+"\n");
 
@@ -1534,13 +1534,13 @@ algorithm
 
         // the critical path node in this section is BIG enough, gather as much as possible nodes in this level
         true = critPathCost >= targetCosts;
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
+        _ = Flags.getConfigInt(Flags.NUM_PROC);
           //print("critPathNode (big): \n"+intString(critPathNode)+" of level: "+intString(critNodeLevel)+"\n");
 
         // get the nodes that are necessary to compute the next critical path node
         levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
         (levelNodes,_) = List.deleteMemberOnTrue(critPathNode,levelNodes,intEq);
-        necessaryPredecessors = arrayGet(iGraphT,List.first(restCritNodes));
+        _ = arrayGet(iGraphT,List.first(restCritNodes));
           //print("necessaryPredecessors: \n"+stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+"\n");
 
         // use the unassigned nodes first to fill the sections
@@ -1572,7 +1572,7 @@ author:Waurich TUD 2014-07"
   input list<list<Integer>> sectionsIn;
   output list<list<Integer>> sectionsOut;
 algorithm
-  sectionsOut := matchcontinue(nodesIn,iGraph,iGraphT,sectionsIn)
+  sectionsOut := match(nodesIn,iGraph,iGraphT,sectionsIn)
     local
       Integer node;
       list<Integer> rest,dependentNodes,section;
@@ -1591,7 +1591,7 @@ algorithm
       //print("section: \n"+stringDelimitList(List.map(section,intString)," ; ")+"\n");
       sections = BLS_mergeDependentLevelTask(rest,iGraph,iGraphT,section::sectionsIn);
     then sections;
-  end matchcontinue;
+  end match;
 end BLS_mergeDependentLevelTask;
 
 protected function BLS_getDependentGroups"gathers the dependent successors and predecessors among all referenceNodes for the given task.
@@ -2766,7 +2766,7 @@ protected function insertLocksInSchedule1
   input tuple<list<list<HpcOmSimCode.Task>>,list<HpcOmSimCode.Task>> foldIn; //<threads, outgoingDepTasks>
   output tuple<list<list<HpcOmSimCode.Task>>,list<HpcOmSimCode.Task>> foldOut;
 algorithm
-  foldOut := matchcontinue(threadsIn,iTaskGraphTransposed,taskProcAss,iAllCalcTasks,iCommCosts,iCompTaskMapping,iSimVarMapping,foldIn)
+  foldOut := match(threadsIn,iTaskGraphTransposed,taskProcAss,iAllCalcTasks,iCommCosts,iCompTaskMapping,iSimVarMapping,foldIn)
     local
       HpcOmTaskGraph.TaskGraph iTaskGraph, iTaskGraphT;
       Integer idx,thr;
@@ -2781,7 +2781,7 @@ algorithm
       equation
         threads = {}::threads;
       then ((threads,outgoingDepTasks));
-    case(HpcOmSimCode.CALCTASK(index=idx,threadIdx=thr)::rest,(iTaskGraph,iTaskGraphT),(taskAss,procAss),_,_,_,_,(threads,outgoingDepTasks))
+    case(HpcOmSimCode.CALCTASK(index=idx,threadIdx=thr)::rest,(iTaskGraph,iTaskGraphT),(taskAss,_),_,_,_,_,(threads,outgoingDepTasks))
       equation
         task = List.first(threadsIn);
         //print("node "+intString(idx)+"\n");
@@ -2810,7 +2810,7 @@ algorithm
         outgoingDepTasks = listAppend(assLocks,outgoingDepTasks);
         ((threads,outgoingDepTasks)) = insertLocksInSchedule1(rest,iTaskGraphTransposed,taskProcAss,iAllCalcTasks,iCommCosts,iCompTaskMapping,iSimVarMapping,(threads,outgoingDepTasks));
       then ((threads,outgoingDepTasks));
-  end matchcontinue;
+  end match;
 end insertLocksInSchedule1;
 
 protected function TDS_schedule1"takes the initial Cluster and compactes or duplicates them to the given number of threads.
@@ -2883,7 +2883,7 @@ algorithm
         //print("clusters:\n"+stringDelimitList(List.map(clusters,intListString),"\n")+"\n");
 
         // extract object stuff
-        SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars), odeEquations=odes, jacobianEquations=jacobianEquations) = iSimCode;
+        SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars), odeEquations=odes) = iSimCode;
         SimCodeVar.SIMVARS(algVars=algVars) = simVars;
         HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark) = iTaskGraphMeta;
         /*
@@ -2969,7 +2969,7 @@ author:Waurich TUD 2014-07"
   input array<Integer> assIn;
   output HpcOmSimCode.Schedule scheduleOut;
 algorithm
-  scheduleOut := matchcontinue(scheduleIn,assIn)
+  scheduleOut := match(scheduleIn,assIn)
     local
       array<list<HpcOmSimCode.Task>> threadTasks;
       list<HpcOmSimCode.Task> outgoingDepTasks;
@@ -2980,7 +2980,7 @@ algorithm
       scheduledTasks = List.map1(scheduledTasks,TDS_replaceSimEqSysIdxsInTask,assIn);
       threadTasks = Array.map1(threadTasks,TDS_replaceSimEqSysIdxsInTaskLst,assIn);
     then HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,scheduledTasks,allCalcTasks);
-  end matchcontinue;
+  end match;
 end TDS_replaceSimEqSysIdxsInSchedule;
 
 protected function TDS_replaceSimEqSysIdxsInTask"replaces the simEqSys indexes with the assigned ones in a tasks
@@ -3131,7 +3131,7 @@ algorithm
   list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
   Option<SimCode.JacobianMatrix> jacobianMatrix;
   list<DAE.ElementSource> sources;
-    case(SimCode.SES_NONLINEAR(eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing),ass)
+    case(SimCode.SES_NONLINEAR(eqs=eqs,crefs=crefs,indexNonLinearSystem=indexNonLinearSystem,jacobianMatrix=jacobianMatrix,linearTearing=linearTearing),_)
       equation
         eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
         oldIdx = SimCodeUtil.eqIndex(simEqIn);
@@ -3369,7 +3369,7 @@ author: Waurich TUD 2014-05"
   output list<list<Integer>> duplSccSimEqMapOut;
   output list<list<Integer>> duplCompsOut;
 algorithm
-  (taskAssOut,procAssOut,taskGraphOut,taskDuplAssOut,idcsOut,simCodeOut,scheduleOut,duplSccSimEqMapOut,duplCompsOut) := matchcontinue(clustersIn,taskAssIn,procAssIn,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,scheduleIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn)
+  (taskAssOut,procAssOut,taskGraphOut,taskDuplAssOut,idcsOut,simCodeOut,scheduleOut,duplSccSimEqMapOut,duplCompsOut) := match(clustersIn,taskAssIn,procAssIn,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,scheduleIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn)
     local
       Integer threadIdx,compIdx,simVarIdx,simEqSysIdx,taskIdx,lsIdx,nlsIdx,mIdx;
       list<Integer> cluster;
@@ -3395,7 +3395,7 @@ algorithm
         repl = BackendVarTransform.emptyReplacements();
         //traverse the cluster and build schedule
         (taskAss,procAss,taskGraph,taskDuplAss,thread,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),simCode,duplSccSimEqMap,duplComps) = TDS_duplicateTasks1(cluster,clustersIn,repl,taskAssIn,procAssIn,{},idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
-        SimCode.SIMCODE(odeEquations=odes) = simCode;
+        SimCode.SIMCODE() = simCode;
         //print("the simEqSysts after cluster: "+intString(threadIdx)+" \n"+stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+"\n");
 
         HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks) = scheduleIn;
@@ -3405,7 +3405,7 @@ algorithm
         (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = TDS_duplicateTasks(rest,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,schedule,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
       then
         (taskAssIn,procAssIn,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps);
-  end matchcontinue;
+  end match;
 end TDS_duplicateTasks;
 
 protected function TDS_duplicateTasks1"traverses one cluster.No locks are added.
@@ -3469,7 +3469,7 @@ algorithm
         ass = arrayGet(taskAssIn,node);
         true = intEq(ass,-1);
         // assign task
-        (threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx) = idcsIn;
+        (threadIdx,_,_,_,_,_,_,_) = idcsIn;
         HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) = iTaskGraphMeta;
         //print("node "+intString(node)+"\n" );
         taskAss = arrayUpdate(taskAssIn,node,threadIdx);
@@ -3741,7 +3741,7 @@ algorithm
       list<SimCode.SimEqSystem> eqSysLst;
     case(_,_)
       equation
-      idx = SimCodeUtil.eqIndex(eqSysIn);
+      _ = SimCodeUtil.eqIndex(eqSysIn);
       pos = List.positionOnTrue(eqSysIn,eqSysLstIn,SimCodeUtil.equationIndexEqual);
       eqSysLst = List.replaceAt(eqSysIn,pos,eqSysLstIn);
     then eqSysLst;
@@ -3869,7 +3869,7 @@ algorithm
         simJac = List.map1(simJac,replaceInSimJac,replIn);
         simEqSys = SimCode.SES_LINEAR(idx,pom,simVars,expLst,simJac,simEqSysLst,jac,sources,idxLS);
     then (simEqSys,changed);
-    case(SimCode.SES_NONLINEAR(index=idx,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,linearTearing=lt),_)
+    case(SimCode.SES_NONLINEAR(index=idx,eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,linearTearing=lt),_)
       equation
         expLst = List.map(crefs,Expression.crefExp);
         (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE(),{},false);
@@ -4392,7 +4392,7 @@ algorithm
       list<list<HpcOmSimCode.Task>> tasksOfLevels;
       HpcOmSimCode.Schedule schedule;
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
-    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=_),_,_)
+    case(HpcOmSimCode.LEVELSCHEDULE(),_,_)
       then
         scheduleIn;
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks),_,_)
@@ -4440,7 +4440,7 @@ algorithm
       HpcOmSimCode.Schedule schedule;
       HpcOmSimCode.Task task;
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
-    case(_,_,SOME({}),_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(outgoingDepTasks=_))
+    case(_,_,SOME({}),_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE())
       equation
       then
         (scheduleIn,removeLocksIn);
@@ -4479,7 +4479,7 @@ algorithm
         (schedule,removeLocks) = createScheduleFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocks,orderIn,iCommCosts,iCompTaskMapping,iSimVarMapping,schedule);
       then
         (schedule,removeLocks);
-    case(_,_,NONE(),_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(outgoingDepTasks=_))
+    case(_,_,NONE(),_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE())
       equation
         print("createSchedulerFromAssignments failed.implement this!\n");
       then
@@ -4505,15 +4505,15 @@ algorithm
       Integer id1,id2;
       list<Integer> nodeIdc1, nodeIdc2;
       HpcOmSimCode.Task sourceTask1, sourceTask2, targetTask1, targetTask2;
-    case(HpcOmSimCode.CALCTASK(weighting=_,index=id1,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_),HpcOmSimCode.CALCTASK(weighting=_,index=id2,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
+    case(HpcOmSimCode.CALCTASK(index=id1),HpcOmSimCode.CALCTASK(index=id2))
       equation
         isEq = intEq(id1,id2);
       then isEq;
-    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=_,nodeIdc=nodeIdc1,threadIdx=_),HpcOmSimCode.CALCTASK_LEVEL(eqIdc=_,nodeIdc=nodeIdc2,threadIdx=_))
+    case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc1),HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc2))
       equation
         isEq = List.isEqual(nodeIdc1, nodeIdc2, true);
       then isEq;
-    case(HpcOmSimCode.DEPTASK(sourceTask=sourceTask1,targetTask=targetTask1,outgoing=_), HpcOmSimCode.DEPTASK(sourceTask=sourceTask2,targetTask=targetTask2,outgoing=_))
+    case(HpcOmSimCode.DEPTASK(sourceTask=sourceTask1,targetTask=targetTask1), HpcOmSimCode.DEPTASK(sourceTask=sourceTask2,targetTask=targetTask2))
       equation
         isEq = tasksEqual(sourceTask1, sourceTask2);
         isEq = boolAnd(isEq, tasksEqual(targetTask1, targetTask2));
@@ -5044,7 +5044,7 @@ algorithm
       maxLevel = List.fold(childTDSLevels,realMax,0.0);
       maxAlap = List.fold(childAlaps,realMax,0.0);
       maxLast = List.fold(childLasts,realMax,0.0);
-      maxLact = List.fold(childLacts,realMax,0.0);
+      _ = List.fold(childLacts,realMax,0.0);
       tdsLevel = arrayUpdate(tdsLevelIn,nodeIdx,nodeExeCost + maxLevel);
       alap = arrayUpdate(alapIn,nodeIdx,nodeExeCost + maxAlap);
       last = arrayUpdate(lastIn,nodeIdx,nodeExeCost + maxLast);
@@ -5543,7 +5543,7 @@ algorithm
       HpcOmSimCode.Task latestTask,startTask;
       array<HpcOmSimCode.Task> checkedTasks;
       array<list<HpcOmSimCode.Task>> threadTasks;
-    case(HpcOmSimCode.CALCTASK(weighting=_,index=taskID,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_),_,_,_,_,_,_)
+    case(HpcOmSimCode.CALCTASK(index=taskID),_,_,_,_,_,_)
       equation
         parentLst = arrayGet(taskGraphTIn,taskID);
         // gets the parentIdcs which are not yet checked and computes the latest finishingTime of all parentNodes
@@ -5554,7 +5554,7 @@ algorithm
         ((threadTasks,checkedTasks)) = if isComputable then computeFinishingTimeForOneTask((threadTasksIn,checkedTasksIn,taskIdxIn,threadIdxIn,latestTask,taskGraphMetaIn)) else (threadTasksIn,checkedTasksIn);
       then
         (threadTasks,checkedTasks,taskIdxNew);
-    case(HpcOmSimCode.DEPTASK(sourceTask=_,targetTask=_,outgoing=_),_,_,_,_,_,_)
+    case(HpcOmSimCode.DEPTASK(),_,_,_,_,_,_)
       equation
         //skip the assignlock
         taskIdxNew = taskIdxIn+1;
@@ -5703,7 +5703,7 @@ algorithm
   finishingTime := match(taskIn)
   local
     Real fTime;
-  case(HpcOmSimCode.CALCTASK(weighting=_,index=_,calcTime=_,timeFinished=fTime,threadIdx=_,eqIdc=_))
+  case(HpcOmSimCode.CALCTASK(timeFinished=fTime))
     then
       fTime;
   case(HpcOmSimCode.TASKEMPTY())
@@ -5723,7 +5723,7 @@ algorithm
   threadId := match(taskIn)
   local
     Integer threadIdx;
-  case(HpcOmSimCode.CALCTASK(weighting=_,index=_,calcTime=_,timeFinished=_,threadIdx=threadIdx,eqIdc=_))
+  case(HpcOmSimCode.CALCTASK(threadIdx=threadIdx))
     then
       threadIdx;
   else
@@ -5740,7 +5740,7 @@ algorithm
   idx := match(taskIn)
     local
       Integer taskIdx;
-    case(HpcOmSimCode.CALCTASK(weighting=_,index=taskIdx,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
+    case(HpcOmSimCode.CALCTASK(index=taskIdx))
       then
         taskIdx;
     else
@@ -5755,7 +5755,7 @@ author:Waurich TUD 2013-11"
   output Boolean isCalc;
 algorithm
   isCalc := match(taskIn)
-  case(HpcOmSimCode.CALCTASK(weighting=_,index=_,calcTime=_,timeFinished=_,threadIdx=_,eqIdc=_))
+  case(HpcOmSimCode.CALCTASK())
     then
       true;
   else

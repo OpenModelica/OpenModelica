@@ -389,7 +389,7 @@ algorithm
 
     // External functions should also have their type in env, but no dae.
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix, prefixes=SCode.PREFIXES(visibility=visibility), name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
-        classDef = cd as (parts as SCode.PARTS(elementLst = _)), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
+        classDef = cd as (parts as SCode.PARTS()), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
@@ -558,9 +558,9 @@ algorithm
       list<Absyn.Path> paths;
 
     // For external functions, include everything essential
-    case (cache,env,ih,SCode.CLASS(name = _,
-                                   encapsulatedPrefix = _,partialPrefix = _,restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(_)),
-                                   classDef = SCode.PARTS(elementLst = _,externalDecl=_)))
+    case (cache,env,ih,SCode.CLASS(
+                                   restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(_)),
+                                   classDef = SCode.PARTS()))
       equation
         // stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},{},{},extDecl),cmt,info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
@@ -571,8 +571,8 @@ algorithm
 
     // The function type can be determined without the body. Annotations need to be preserved though.
     case (cache,env,ih,SCode.CLASS(name = id,prefixes = prefixes,
-                                   encapsulatedPrefix = e,partialPrefix = p,restriction = _,
-                                   classDef = SCode.PARTS(elementLst = elts,externalDecl=_),cmt=cmt, info = info))
+                                   encapsulatedPrefix = e,partialPrefix = p,
+                                   classDef = SCode.PARTS(elementLst = elts),cmt=cmt, info = info))
       equation
         elts = List.select(elts,isElementImportantForFunction);
         stripped_class = SCode.CLASS(id,prefixes,e,p,SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(false)),SCode.PARTS(elts,{},{},{},{},{},{},NONE()),cmt,info);
@@ -583,11 +583,11 @@ algorithm
         (cache,env_1,ih);
 
     // Short class definitions.
-    case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = _,encapsulatedPrefix = _,restriction = _,
-                                   classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = _),
+    case (cache,env,ih,SCode.CLASS(name = id,
+                                   classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn),
                                                             modifications = mod1),info = info))
       equation
-        (cache,(c as SCode.CLASS(name = _, restriction = _)),cenv) = Lookup.lookupClass(cache, env, cn, false); // Makes MultiBody gravityacceleration hacks shit itself
+        (cache,(c as SCode.CLASS()),cenv) = Lookup.lookupClass(cache, env, cn, false); // Makes MultiBody gravityacceleration hacks shit itself
         (cache,mod2) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod1, false, Mod.DERIVED(cn), info);
 
         (cache,_,ih,_,_,_,ty,_,_,_) =
@@ -602,8 +602,8 @@ algorithm
       then
         (cache,env_1,ih);
 
-    case (cache,env,ih,SCode.CLASS(name = _,partialPrefix = _,encapsulatedPrefix = _,restriction = _,
-                                   classDef = SCode.OVERLOAD(pathLst=_)))
+    case (cache,env,ih,SCode.CLASS(
+                                   classDef = SCode.OVERLOAD()))
       equation
          (cache,env,ih,_) = implicitFunctionInstantiation2(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), inClass, {}, true);
       then
@@ -652,7 +652,7 @@ algorithm
     case (cache,env,ih,_,(fn :: fns))
       equation
         // print("instOvl: " + Absyn.pathString(fn) + "\n");
-        (cache,(c as SCode.CLASS(name=_,encapsulatedPrefix=_,restriction=rest)),cenv) =
+        (cache,(c as SCode.CLASS(restriction=rest)),cenv) =
            Lookup.lookupClass(cache, env, fn, true);
         true = SCode.isFunctionRestriction(rest);
 
@@ -708,7 +708,7 @@ algorithm
       InstanceHierarchy ih;
       Prefix.Prefix pre;
 
-    case (cache,env,ih,n,SCode.PARTS(elementLst=_,externalDecl = SOME(extdecl)),impl,pre,_) /* impl */
+    case (cache,env,ih,n,SCode.PARTS(externalDecl = SOME(extdecl)),impl,pre,_) /* impl */
       equation
         InstUtil.isExtExplicitCall(extdecl);
         fname = InstUtil.instExtGetFname(extdecl, n);
@@ -792,7 +792,7 @@ algorithm
     case (cache,env,ih,
           SCode.COMPONENT(name = id,
                           prefixes = prefixes as SCode.PREFIXES(
-                            replaceablePrefix = _,
+                            
                             visibility = vis,
 
                             innerOuter = _
@@ -817,7 +817,7 @@ algorithm
         (cache,dimexp) = InstUtil.elabArraydim(cache, env, owncref, t, dim, NONE(), false, NONE(), true, false, Prefix.NOPRE(), info, {});
 
         // cenv = FGraph.createVersionScope(env, cenv, SCode.elementName(cl), id, Prefix.NOPRE(), mod_1);
-        (cache,compenv,ih,_,_,_,tp_1,_) = InstVar.instVar(cache, cenv, ih, UnitAbsyn.noStore, ClassInf.FUNCTION(Absyn.IDENT(""), false), mod_1, Prefix.NOPRE(),
+        (cache,_,ih,_,_,_,tp_1,_) = InstVar.instVar(cache, cenv, ih, UnitAbsyn.noStore, ClassInf.FUNCTION(Absyn.IDENT(""), false), mod_1, Prefix.NOPRE(),
           id, cl, attr, prefixes, dimexp, {}, {}, impl, comment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
         (cache,bind) = InstBinding.makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);

@@ -846,7 +846,7 @@ algorithm
           else // assert detected
             true = listLength(assrtStmts) == 1;
             assrt = listGet(assrtStmts,1);
-            DAE.STMT_ASSERT(source=_) = assrt;
+            DAE.STMT_ASSERT() = assrt;
             newExp = getReplacementCheckComplex(repl,cr,ty); // the function that replaces the output variable
             argmap = List.threadTuple(crefs,args);
             (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
@@ -1161,7 +1161,7 @@ algorithm
       list<tuple<DAE.ComponentRef,DAE.ComponentRef>> creftpllst;
     case ({},ht) then ({},ht);
       /* All elements of the record have correct type already. No cast needed. */
-    case((c,(DAE.CAST(exp=e,ty=DAE.T_COMPLEX(varLst=_))))::res,ht)
+    case((c,(DAE.CAST(exp=e,ty=DAE.T_COMPLEX())))::res,ht)
       equation
         (new1,ht1) = extendCrefRecords((c,e)::res,ht);
       then (new1,ht1);
@@ -1402,7 +1402,7 @@ algorithm
       then (e,(argmap,checkcr,false));
 
     // TODO: Use the inlineType of the function reference!
-    case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,isImpure,_,_,tc)),(argmap,checkcr,true))
+    case (DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(),tuple_,false,isImpure,_,_,tc)),(argmap,checkcr,true))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
@@ -1416,7 +1416,7 @@ algorithm
         (e,_) = ExpressionSimplify.simplify(e);
       then (e,(argmap,checkcr,true));
 
-    case (e as DAE.CALL(path,_,DAE.CALL_ATTR(ty=DAE.T_METATYPE(ty = _),builtin=false)),(argmap,checkcr,true))
+    case (e as DAE.CALL(path,_,DAE.CALL_ATTR(ty=DAE.T_METATYPE(),builtin=false)),(argmap,checkcr,true))
       equation
         cref = ComponentReference.pathToCref(path);
         _ = BaseHashTable.get(cref,checkcr);

@@ -169,7 +169,7 @@ algorithm
       true = intEq(i7, j7);
     then true;
 
-    case (MASTER(lcr), MASTER(lcr2)) //equation
+    case (MASTER(lcr), MASTER(_)) //equation
       // lcr comparison????
     then true;
 

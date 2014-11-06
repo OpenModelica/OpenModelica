@@ -245,13 +245,13 @@ algorithm
         // lookup in IH
         InnerOuter.INST_INNER(
            innerPrefix,
-           nInner,
-           ioInner,
-           fullName,
-           typePath,
-           innerScope,
-           instResult as SOME(InnerOuter.INST_RESULT(cache,compenv,store,outerDAE,_,ty,graph)),
-           outers,_) =
+           _,
+           _,
+           _,
+           _,
+           _,
+           SOME(InnerOuter.INST_RESULT(cache,compenv,store,_,_,ty,graph)),
+           _,_) =
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
 
@@ -597,7 +597,7 @@ algorithm
     // e.g. Point p => Real p[3]; These must be handled separately since even if they do not
     // appear to be an array, they can. Therefore we need to collect
     // the full dimensionality and call instVar2
-    case (cache,env,ih,store,ci_state,mod,pre,n,SCode.CLASS(name = _),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
+    case (cache,env,ih,store,ci_state,mod,pre,n,SCode.CLASS(),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
       equation
         // Collect dimensions
         p1 = Absyn.IDENT(n);
@@ -624,7 +624,7 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // Generic case: fall through
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name = _)),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets)
+    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS()),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets)
       equation
         p1 = Absyn.IDENT(n);
         p1 = PrefixUtil.prefixPath(p1,pre);
@@ -806,7 +806,7 @@ algorithm
         //   R1 r2(v1=1, v1=2);     // <= Here
         // end out;
         // see testsuit/mofiles/RecordBindings.mo.
-     case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = _, eqModOption = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
+     case (cache,env,ih,store,ci_state,mod as DAE.MOD(eqModOption = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
@@ -844,7 +844,7 @@ algorithm
 
     // mahge: function variables with eqMod modifications.
     // FIXHERE: They might have subMods too (variable attributes). see testsuite/mofiles/Sequence.mo
-    case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = _, eqModOption = SOME(_)),pre,n,cl,attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
+    case (cache,env,ih,store,ci_state,mod as DAE.MOD(eqModOption = SOME(_)),pre,n,cl,attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
@@ -882,7 +882,7 @@ algorithm
 
 
     // Function variables without binding
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name=_)),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
+    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS()),attr,pf,dims,_,inst_dims,impl,comment,info,graph,csets)
        equation
         true = ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);
@@ -1166,10 +1166,10 @@ algorithm
     // Component without input/output.
     case (_, SCode.ATTR(direction = Absyn.BIDIR()), _) then inAttributes;
     // Non-qualified identifier = top-level component.
-    case (DAE.CREF_IDENT(ident = _), _, _) then inAttributes;
+    case (DAE.CREF_IDENT(), _, _) then inAttributes;
     // Single-qualified identifier in connector = component in top-level connector.
-    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT(ident = _)), _,
-      ClassInf.CONNECTOR(path = _)) then inAttributes;
+    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), _,
+      ClassInf.CONNECTOR()) then inAttributes;
     // Everything else, strip the input/output prefix.
     else SCode.setAttributesDirection(inAttributes, Absyn.BIDIR());
   end match;
@@ -1194,7 +1194,7 @@ algorithm
       DAE.DAElist dae, cls_dae;
 
     // Constant with binding.
-    case (_, _, SCode.CONST(), DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))),
+    case (_, _, SCode.CONST(), DAE.MOD(eqModOption = SOME(DAE.TYPED())),
         _, _, _, _)
       equation
         dae = DAEUtil.joinDaes(inClassDae, inDae);
@@ -1232,7 +1232,7 @@ algorithm
       then dae;
 
     // Parameter with binding.
-    case (_, _, SCode.PARAM(), DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))),
+    case (_, _, SCode.PARAM(), DAE.MOD(eqModOption = SOME(DAE.TYPED())),
         _, _, _, _)
       equation
         dae = InstBinding.instModEquation(inCref, inType, inMod, inSource, inImpl);
@@ -1271,7 +1271,7 @@ algorithm
     // Check if the component is of record type, and if any equations have been
     // generated for the component's binding.
     case (DAE.DAE(elementLst = els),
-          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)),
+          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()),
           DAE.DAE(elementLst = eqs as _ :: _))
       equation
         // This assumes that the equations are ordered the same as the variables.
@@ -1407,7 +1407,7 @@ algorithm
 
     // Only check modifiers which are not marked with 'each'.
     case (DAE.MOD(eachPrefix = SCode.NOT_EACH(), subModLst = submods,
-        eqModOption = eqmod), _, _, _, _)
+        eqModOption = _), _, _, _, _)
       equation
         List.map4_0(submods, checkArraySubModDimSize, inDimension, inPrefix, inIdent, inInfo);
       then
@@ -1561,7 +1561,7 @@ algorithm
       UnitAbsyn.InstStore store;
 
     // component environment If is a function var.
-    case (cache,env,ih,store,(ClassInf.FUNCTION(path = _)),mod,pre,n,(cl,_),_,_,dim,_,_,inst_dims,_,_,_,graph, csets)
+    case (cache,env,ih,store,(ClassInf.FUNCTION()),mod,pre,n,(cl,_),_,_,dim,_,_,inst_dims,_,_,_,graph, csets)
       equation
         true = Expression.dimensionUnknownOrExp(dim);
         SOME(DAE.TYPED(e,_,p,_,_)) = Mod.modEquation(mod);
@@ -1750,14 +1750,14 @@ algorithm
       UnitAbsyn.InstStore store;
 
     // Stop=true
-    case (cache,env,ih,store,_,mod,pre,n,(cl,_),_,0,_,_,_,_,_,_,graph,csets,dae) then (cache,env,ih,store,dae,csets,DAE.T_UNKNOWN_DEFAULT,graph);
+    case (cache,env,ih,store,_,_,_,_,(_,_),_,0,_,_,_,_,_,_,graph,csets,dae) then (cache,env,ih,store,dae,csets,DAE.T_UNKNOWN_DEFAULT,graph);
 
     // Stop=false
 
     // adrpo: if a class is derived WITH AN ARRAY DIMENSION we should instVar2 the derived from type not the actual type!!!
     case (cache,env,ih,store,ci_state,mod,pre,n,
           (cl as SCode.CLASS(classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path,SOME(_)),
-                                                    modifications=scodeMod,attributes=_)),
+                                                    modifications=scodeMod)),
                                                     attr),
           pf,i,dims,idxs,_,impl,comment,_,graph, _, _)
       equation

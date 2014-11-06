@@ -655,16 +655,16 @@ algorithm
     case (BackendDAE.VAR(values= NONE()),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
-    case (BackendDAE.VAR(varName=_,values=SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
-    case (BackendDAE.VAR(varName=_,values=SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
-    case (BackendDAE.VAR(varName=_,values=SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
-    case (BackendDAE.VAR(varName=_,values=SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(_))))),_,_,_,_,_,_,_,_,_)
       then
         (var,iKnVars,iCache,iRepl,iMark);
     case (BackendDAE.VAR(varName=cr,values=attr as SOME(DAE.VAR_ATTR_REAL(fixed=SOME(e))),source=source),_,_,_,_,_,_,_,_,_)
@@ -781,7 +781,7 @@ algorithm
         (e, (_,b,hs)) = Expression.traverseExp(e, replaceCrefWithBindStartExp, (vars,b,hs));
       then (e, (vars,b,hs));
     // true if crefs in expression
-    case (e as DAE.CREF(componentRef=_), (vars,_,hs))
+    case (e as DAE.CREF(), (vars,_,hs))
       then (e, (vars,true,hs));
     else (inExp,inTuple);
   end matchcontinue;
@@ -963,7 +963,7 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
       DAE.ComponentRef cr;
       Boolean b,b1;
-    case (exp as DAE.CREF(componentRef=_),(repl,b))
+    case (exp as DAE.CREF(),(repl,b))
       equation
         (exp,b1) = BackendVarTransform.replaceExp(exp,repl,NONE());
       then (exp,(repl,b or b1));
@@ -1015,7 +1015,7 @@ algorithm
       DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> attr;
       Boolean b;
-    case (v as BackendDAE.VAR(varName=_,bindExp=SOME(e),values=attr),(knVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate))
+    case (v as BackendDAE.VAR(bindExp=SOME(e),values=attr),(knVars,m,ieqns,cache,graph,mark,markarr,repl,replEvaluate))
       equation
         // apply replacements
         (e1,true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());

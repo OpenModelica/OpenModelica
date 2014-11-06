@@ -357,7 +357,7 @@ algorithm
 
     // A derived class, look up the inherited class and instantiate it.
     case (_, SCode.CLASS(name = name, classDef = SCode.DERIVED(modifications = smod,
-          typeSpec = dty, attributes = _), restriction = res, info = info),
+          typeSpec = dty), restriction = res, info = info),
         _, _, _, _, _, globals)
       equation
         // Look up the inherited class.
@@ -394,7 +394,7 @@ algorithm
       then
         (cls, ty, prefs, globals);
 
-    case (_, SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)),
+    case (_, SCode.CLASS(classDef = SCode.CLASS_EXTENDS()),
         _, _, _, _, _, globals)
       equation
         (cls, ty, globals) =
@@ -452,7 +452,7 @@ algorithm
       Globals globals;
       String name;
 
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = _,
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(
         composition = _)), _, _, _, _)
       equation
         print("instClassExtends");
@@ -814,7 +814,7 @@ algorithm
         (res :: inAccumEl, inExtendsMods, inExtendsState, globals);
 
     // An extends clause.
-    case (SCode.EXTENDS(baseClassPath = _), mod :: ext_mods, _, _, _, es, globals)
+    case (SCode.EXTENDS(), mod :: ext_mods, _, _, _, es, globals)
       equation
         (res, es, globals) = instExtends(inElement, mod, inPrefixes, inEnv,
           es, globals);
@@ -1392,7 +1392,7 @@ protected function makeSubscript
   output DAE.Subscript outSubscript;
 algorithm
   outSubscript := match(inExp)
-    case DAE.RANGE(ty = _)
+    case DAE.RANGE()
       then DAE.SLICE(inExp);
 
     else DAE.INDEX(inExp);
@@ -1876,7 +1876,7 @@ algorithm
         (dexp1, globals);
 
     // failure
-    case (Absyn.CALL(function_ = _), _, _, _)
+    case (Absyn.CALL(), _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         //bval = isBuiltinFunctionName(funcName);
@@ -1970,7 +1970,7 @@ algorithm
       then
         (DAE.LBINARY(dexp1, dop, dexp2), globals);
 
-    case (Absyn.LUNARY(op = _, exp = aexp1), _, _, globals)
+    case (Absyn.LUNARY(exp = aexp1), _, _, globals)
       equation
         (dexp1, globals) = instExp(aexp1, inEnv, inInfo, globals);
         //dop = instOperator(aop);
@@ -1999,7 +1999,7 @@ algorithm
       then
         (DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl), globals);
 
-    case (Absyn.CALL(function_ = _), _, _, _)
+    case (Absyn.CALL(), _, _, _)
       equation
         (dexp1, globals) = instFunctionCallDispatch(inExp, inEnv, inInfo, inGlobals);
       then
@@ -2032,7 +2032,7 @@ algorithm
       then
         (DAE.CONS(dexp1, dexp2), globals);
 
-    case (Absyn.IFEXP(ifExp = _), _, _, globals)
+    case (Absyn.IFEXP(), _, _, globals)
       equation
         Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(inExp);
         (dexp1, globals) = instExp(e1, inEnv, inInfo, globals);
@@ -3229,7 +3229,7 @@ algorithm
       list<FunctionSlot> slots;
 
     // ignore cond components
-    case (NFInstTypes.CONDITIONAL_ELEMENT(component = _) :: rest_inputs, _, slots, _, _)
+    case (NFInstTypes.CONDITIONAL_ELEMENT() :: rest_inputs, _, slots, _, _)
       then
         makeFunctionSlots(rest_inputs, inPositionalArgs, slots, inFuncName, inInfo);
 
@@ -3532,13 +3532,13 @@ algorithm
       then
         st;
 
-    case (NFInstTypes.OUTER_COMPONENT(name = _), _)
+    case (NFInstTypes.OUTER_COMPONENT(), _)
       equation
         print("NFInst.markComponentAsStructural: IMPLEMENT ME!\n");
       then
         fail();
 
-    case (NFInstTypes.CONDITIONAL_COMPONENT(name = _), _)
+    case (NFInstTypes.CONDITIONAL_COMPONENT(), _)
       equation
         print("NFInst.markComponentAsStructural: conditional component used as structural parameter!\n");
       then

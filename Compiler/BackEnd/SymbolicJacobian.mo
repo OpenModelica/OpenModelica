@@ -218,7 +218,7 @@ algorithm
   backendDAE2 := BackendDAEUtil.copyBackendDAE(inBackendDAE);
   backendDAE2 := BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
   backendDAE2 := BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-  BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = _)},BackendDAE.SHARED(knownVars = kv)) := backendDAE2;
+  BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)},BackendDAE.SHARED(knownVars = kv)) := backendDAE2;
 
   // Prepare all needed variables
   varlst := BackendVariable.varList(v);
@@ -255,7 +255,7 @@ algorithm
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
     System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
-    BackendDAE.SHARED(constraints=constraints) = shared;
+    BackendDAE.SHARED(constraints=_) = shared;
     (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
     shared = addBackendDAESharedJacobians(linearModelMatrixes, shared);
     functionTree = BackendDAEUtil.getFunctions(shared);
@@ -339,12 +339,12 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var var;
       list<DAE.Exp> explst;
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=_)})}),(vars,explst))
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)})}),(vars,explst))
       equation
         (var::{},_) = BackendVariable.getVar(cr, vars);
         true = BackendVariable.isVarOnTopLevelAndInput(var);
       then (e,false,(vars,e::explst));
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=_)}),(vars,explst))
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,explst))
       equation
         (var::{},_) = BackendVariable.getVar(cr, vars);
         true = BackendVariable.isVarOnTopLevelAndInput(var);
@@ -551,7 +551,7 @@ algorithm
       DAE.Type tp;
       DAE.Exp e;
     case ({},{},{},_,vars,eqns,_) then (vars,eqns,ishared);
-    case ((BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE(index=_),varType=tp))::varlst,r::rlst,_::slst,_::vindxs,vars,eqns,_)
+    case ((BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE(),varType=tp))::varlst,r::rlst,_::slst,_::vindxs,vars,eqns,_)
       equation
         e = Expression.makeCrefExp(cref, tp);
         e = Expression.expDer(e);
@@ -1159,7 +1159,7 @@ algorithm
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
         backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v, orderedEqs = _)}, BackendDAE.SHARED(knownVars = kv)) = backendDAE2;
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(knownVars = kv)) = backendDAE2;
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
@@ -1228,7 +1228,7 @@ algorithm
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
         backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v, orderedEqs = _)}, BackendDAE.SHARED(knownVars = kv)) = backendDAE2;
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(knownVars = kv)) = backendDAE2;
 
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
@@ -1586,7 +1586,7 @@ algorithm
       jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, graph, DAE.emptyFuncTree, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}, ei));
     then (jacobian, functions);
 
-    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars,   functionTree=functions, info=_)), diffVars, diffedVars, _, _, _, _, matrixName) equation
+    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars,   functionTree=functions)), diffVars, diffedVars, _, _, _, _, matrixName) equation
 
       // Generate tmp varibales
       dummyVarName = ("dummyVar" + matrixName);
@@ -1691,11 +1691,11 @@ algorithm
     then ({},{});
 
     // skip for dicrete variable
-    case(var as BackendDAE.VAR(varName=_,varKind=BackendDAE.DISCRETE()), _::restVar, _ ) equation
+    case(var as BackendDAE.VAR(varKind=BackendDAE.DISCRETE()), _::restVar, _ ) equation
       (r2,res) = generateJacobianVars2(var, restVar, inMatrixName);
     then (r2,res);
 
-    case(var as BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE(index=_)), currVar::restVar, _) equation
+    case(var as BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE()), currVar::restVar, _) equation
       cref = ComponentReference.crefPrefixDer(cref);
       derivedCref = Differentiate.differentiateVarWithRespectToX(cref, currVar, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
@@ -1737,11 +1737,11 @@ algorithm
     case({}, _, _, _, _,_)
     then listReverse(iVars);
     // skip for dicrete variable
-    case(BackendDAE.VAR(varName=_,varKind=BackendDAE.DISCRETE())::restVar,cref,_,_, _, _) equation
+    case(BackendDAE.VAR(varKind=BackendDAE.DISCRETE())::restVar,cref,_,_, _, _) equation
      then
        createAllDiffedVars(restVar,cref,inAllVars,inIndex, inMatrixName,iVars);
 
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE(index=_))::restVar,cref,_,_, _, _) equation
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
       ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
@@ -1756,7 +1756,7 @@ algorithm
     then
       createAllDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
 
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE(index=_))::restVar,cref,_,_, _, _) equation
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
@@ -2155,7 +2155,7 @@ algorithm
             {}, BackendDAE.ALGEQSYSTEM(), {}, einfo));
 
         backendDAE = BackendDAEUtil.transformBackendDAE(backendDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars, orderedEqs = _)}, BackendDAE.SHARED(knownVars = knvars)) = backendDAE;
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars)}, BackendDAE.SHARED(knownVars = knvars)) = backendDAE;
 
         // prepare creation of symbolic jacobian
         // create dependent variables
@@ -2920,7 +2920,7 @@ algorithm
     case (e as DAE.CALL(path=Absyn.IDENT(name = "pre")),(vars,b))
       then (e,false,(vars,b));
 
-    case (e,(vars,b)) then (e,not b,tpl);
+    case (e,(_,b)) then (e,not b,tpl);
   end matchcontinue;
 end traverserjacobianNonlinearExp;
 
@@ -2985,17 +2985,17 @@ algorithm
         // check if vars occurs not in argument list
         (_,(_,b)) = Expression.traverseExpListTopDown(expLst, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
       then (e,false,(vars,b));
-    case (e as DAE.LBINARY(exp1=_),(vars,b))
+    case (e as DAE.LBINARY(),(vars,b))
       equation
         // check if vars not in condition
         (_,(_,b)) = Expression.traverseExpTopDown(e, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
       then (e,false,(vars,b));
-    case (e as DAE.LUNARY(exp=_),(vars,b))
+    case (e as DAE.LUNARY(),(vars,b))
       equation
         // check if vars not in condition
         (_,(_,b)) = Expression.traverseExpTopDown(e, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
       then (e,false,(vars,b));
-    case (e as DAE.RELATION(exp1=_),(vars,b))
+    case (e as DAE.RELATION(),(vars,b))
       equation
         // check if vars not in condition
         (_,(_,b)) = Expression.traverseExpTopDown(e, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
@@ -3008,7 +3008,7 @@ algorithm
           (_,(_,b)) = Expression.traverseExpListTopDown(expLst, BackendDAEUtil.getEqnsysRhsExp2, (vars,b));
         end if;
       then (e,false,(vars,b));
-    case (e,(vars,b)) then (e,b,inTpl);
+    case (e,(_,b)) then (e,b,inTpl);
   end match;
 end varsNotInRelations;
 

@@ -454,7 +454,7 @@ algorithm
       then
         ((key :: klst),(value :: vlst));
 
-    case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = _),klst,vlst)
+    case (TREENODE(value = NONE(),leftSubTree = left),klst,vlst)
       equation
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);

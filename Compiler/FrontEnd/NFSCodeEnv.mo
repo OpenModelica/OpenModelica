@@ -319,14 +319,14 @@ algorithm
       Env class_env;
       Item item;
 
-    case SCode.CLASS(name = _)
+    case SCode.CLASS()
       equation
         class_env = makeClassEnvironment(inElement, true);
         item = newClassItem(inElement, class_env, USERDEFINED());
       then
         item;
 
-    case SCode.COMPONENT(name = _) then newVarItem(inElement, false);
+    case SCode.COMPONENT() then newVarItem(inElement, false);
 
   end match;
 end newItem;
@@ -566,7 +566,7 @@ algorithm
     case VAR(isUsed = SOME(is_used))
       then Util.getStatefulBoolean(is_used);
 
-    case ALIAS(name = _) then true;
+    case ALIAS() then true;
 
     case REDECLARED_ITEM(item = item) then isItemUsed(item);
 
@@ -620,7 +620,7 @@ algorithm
     local
       Item item;
 
-    case CLASS(cls = _) then true;
+    case CLASS() then true;
     case REDECLARED_ITEM(item = item) then isClassItem(item);
     else false;
   end match;
@@ -634,7 +634,7 @@ algorithm
     local
       Item item;
 
-    case VAR(var = _) then true;
+    case VAR() then true;
     case REDECLARED_ITEM(item = item) then isVarItem(item);
     else false;
   end match;
@@ -669,7 +669,7 @@ algorithm
       SourceInfo info;
 
     // A class extends.
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS()), _)
       then
         NFEnvExtends.extendEnvWithClassExtends(inClassDefElement, inEnv);
 
@@ -793,7 +793,7 @@ algorithm
       Option<Util.StatefulBoolean> is_used;
 
     // Unqualified imports
-    case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)),
+    case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT()),
         FRAME(name, ty, tree, exts,
           IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
       equation
@@ -803,7 +803,7 @@ algorithm
           IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest;
 
     // Qualified imports
-    case (SCode.IMPORT(imp = imp, info = info), FRAME(name, ty, tree, exts,
+    case (SCode.IMPORT(imp = imp), FRAME(name, ty, tree, exts,
         IMPORT_TABLE(hidden, qual_imps, unqual_imps), is_used) :: rest)
       equation
         imp = translateQualifiedImportToNamed(imp);
@@ -825,7 +825,7 @@ algorithm
       Absyn.Path path;
 
     // Already named.
-    case Absyn.NAMED_IMPORT(name = _) then inImport;
+    case Absyn.NAMED_IMPORT() then inImport;
 
     // Get the last identifier from the import and use that as the name.
     case Absyn.QUAL_IMPORT(path = path)
@@ -942,7 +942,7 @@ algorithm
       SCode.Ident name;
 
     // redeclare-as-element component
-    case (SCode.COMPONENT(name = _, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
+    case (SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
       equation
         env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);
         env = extendEnvWithVar(inElement, env);
@@ -950,7 +950,7 @@ algorithm
         env;
 
     // normal component
-    case (SCode.COMPONENT(name = _), _)
+    case (SCode.COMPONENT(), _)
       equation
         env = extendEnvWithVar(inElement, inEnv);
       then
@@ -965,25 +965,25 @@ algorithm
         env;
 
     // normal class
-    case (SCode.CLASS(name = _), _)
+    case (SCode.CLASS(), _)
       equation
         env = extendEnvWithClassDef(inElement, inEnv);
       then
         env;
 
-    case (SCode.EXTENDS(baseClassPath = _), _)
+    case (SCode.EXTENDS(), _)
       equation
         env = extendEnvWithExtends(inElement, inEnv);
       then
         env;
 
-    case (SCode.IMPORT(imp = _), _)
+    case (SCode.IMPORT(), _)
       equation
         env = extendEnvWithImport(inElement, inEnv);
       then
         env;
 
-    case (SCode.DEFINEUNIT(name = _), _)
+    case (SCode.DEFINEUNIT(), _)
       then inEnv;
 
   end matchcontinue;
@@ -1189,7 +1189,7 @@ algorithm
       Absyn.Path path;
       Env rest;
 
-    case (FRAME(frameType = IMPLICIT_SCOPE(iterIndex=_)) :: rest)
+    case (FRAME(frameType = IMPLICIT_SCOPE()) :: rest)
       then getEnvPath(rest);
 
     case ({FRAME(name = SOME(name))})
@@ -1850,7 +1850,7 @@ algorithm
   outString := match(inFrame)
     case NORMAL_SCOPE() then "Normal";
     case ENCAPSULATED_SCOPE() then "Encapsulated";
-    case IMPLICIT_SCOPE(iterIndex=_) then "Implicit";
+    case IMPLICIT_SCOPE() then "Implicit";
   end match;
 end printFrameTypeStr;
 
@@ -1888,10 +1888,10 @@ algorithm
       Absyn.Path path;
       Item i;
 
-    case (AVLTREEVALUE(key = key_str, value = CLASS(cls = _)))
+    case (AVLTREEVALUE(key = key_str, value = CLASS()))
       then "\t\tClass " + key_str + "\n";
 
-    case (AVLTREEVALUE(key = key_str, value = VAR(var = _)))
+    case (AVLTREEVALUE(key = key_str, value = VAR()))
       then "\t\tVar " + key_str + "\n";
 
     case (AVLTREEVALUE(key = key_str, value = ALIAS(name = name, path = SOME(path))))

@@ -214,7 +214,7 @@ algorithm
         rf = fcElement(fb, ft, program, cn, first);
         rr = fcElementList(fb, ft, program, cn, rest);
       then listAppend(rf, rr);
-    case (fb, ft, program, cn, first :: rest)
+    case (fb, ft, program, cn, _ :: rest)
       then fcElementList(fb, ft, program, cn, rest);
   end matchcontinue;
 end fcElementList;
@@ -243,9 +243,9 @@ algorithm
       list<SCode.SubMod> rest;
     case {}
       then "";
-    case first :: rest
+    case first :: _
       then fcSubMod(first);
-    case first :: rest
+    case _ :: rest
       then fcSubModList(rest);
   end matchcontinue;
 end fcSubModList;
@@ -312,7 +312,7 @@ algorithm
       String tn;
       String c;
       FigaroObject fo;
-    case (fcl, SCode.CLASS(name = n, classDef = cd))
+    case (fcl, SCode.CLASS(classDef = cd))
       then foClassDef(fcl, cd);
     case (fcl, SCode.COMPONENT(name = n, typeSpec = ts, modifications = m))
       equation
@@ -358,7 +358,7 @@ algorithm
         rf = foElement(fcl, first);
         rr = foElementList(fcl, rest);
       then listAppend(rf, rr);
-    case (fcl, first :: rest)
+    case (fcl, _ :: rest)
       then foElementList(fcl, rest);
   end matchcontinue;
 end foElementList;
@@ -376,11 +376,11 @@ algorithm
       String tn;
     case (_, {})
       then fail();
-    case (p, first :: rest)
+    case (p, first :: _)
       equation
         tn = getFigaroTypeName(p, first);
       then tn;
-    case (p, first :: rest)
+    case (p, _ :: rest)
       equation
         tn = findFigaroTypeName(p, rest);
       then tn;
@@ -428,9 +428,9 @@ algorithm
       list<SCode.SubMod> rest;
     case {}
       then "";
-    case first :: rest
+    case first :: _
       then foSubMod(first);
-    case first :: rest
+    case _ :: rest
       then foSubModList(rest);
   end matchcontinue;
 end foSubModList;
@@ -590,7 +590,7 @@ protected function interpret "Interprets XML from the Figaro processor."
   input String inString "XML to interpret";
   output list<String> outStringList "errors found";
 algorithm
-  outStringList := matchcontinue inString
+  outStringList := match inString
     local
       String s;
       list<String> sl, sl2;
@@ -607,7 +607,7 @@ algorithm
       equation
         // Report unknown error. Bad XML.
       then fail();
-  end matchcontinue;
+  end match;
 end interpret;
 
 protected function scan "Lexer main function."
@@ -691,7 +691,7 @@ algorithm
       list<String> rest;
     case {}
       then ({}, "");
-    case "<" :: rest
+    case "<" :: _
       then (inStringList, inText);
     case first :: rest
       then scanText(rest, inText + first);
@@ -791,7 +791,7 @@ protected function parse "Parser main function."
   input list<Token> inTokenList "token sequence to parse";
   output list<String> outStringList "list of error messages";
 algorithm
-  outStringList := matchcontinue inTokenList
+  outStringList := match inTokenList
     local
       String tn;
       list<Token> rest;
@@ -801,7 +801,7 @@ algorithm
       equation
         true = tn == "ANSWERS";
       then parseAnswers(rest);
-  end matchcontinue;
+  end match;
 end parse;
 
 protected function parseAnswers
@@ -819,7 +819,7 @@ protected function parseAnswerList
   output list<String> outStringList "list of error messages";
   output list<Token> outTokenList;
 algorithm
-  (outStringList, outTokenList) := matchcontinue inTokenList
+  (outStringList, outTokenList) := match inTokenList
     local
       String tn;
       list<String> sl, sl2;
@@ -834,7 +834,7 @@ algorithm
       equation
         true = tn == "ANSWERS";
       then ({}, rest);
-  end matchcontinue;
+  end match;
 end parseAnswerList;
 
 protected function parseAnswer
@@ -850,7 +850,7 @@ protected function parseErrorList
   output list<String> outStringList "list of error messages";
   output list<Token> outTokenList;
 algorithm
-  (outStringList, outTokenList) := matchcontinue inTokenList
+  (outStringList, outTokenList) := match inTokenList
     local
       String tn;
       list<String> sl, sl2;
@@ -865,7 +865,7 @@ algorithm
       equation
         true = tn == "ANSWER";
       then ({}, rest);
-  end matchcontinue;
+  end match;
 end parseErrorList;
 
 protected function parseError
@@ -887,7 +887,7 @@ protected function parseInfoList
   output list<tuple<String, String>> outStringTupleList;
   output list<Token> outTokenList;
 algorithm
-  (outStringTupleList, outTokenList) := matchcontinue inTokenList
+  (outStringTupleList, outTokenList) := match inTokenList
     local
       String tn, s;
       list<tuple<String, String>> stl;
@@ -901,7 +901,7 @@ algorithm
       equation
         true = tn == "ERROR";
       then ({}, rest);
-  end matchcontinue;
+  end match;
 end parseInfoList;
 
 protected function parseInfo
@@ -909,13 +909,13 @@ protected function parseInfo
   output String outString;
   output list<Token> outTokenList;
 algorithm
-  (outString, outTokenList) := matchcontinue inTokenList
+  (outString, outTokenList) := match inTokenList
     local
       String s;
       list<Token> rest;
     case TEXT(s) :: _ :: rest
       then (s, rest);
-  end matchcontinue;
+  end match;
 end parseInfo;
 
 protected function isToBeReported "Answers whether an error should be reported."
@@ -930,7 +930,7 @@ algorithm
       list<tuple<String, String>> rest;
     case {}
       then false;
-    case (k, v) :: rest
+    case (k, v) :: _
       equation
         true = k == "CRITICITY";
       then listMember(v, errorsToReport);
@@ -947,7 +947,7 @@ algorithm
     local
       String k, v;
       list<tuple<String, String>> rest;
-    case (k, v) :: rest
+    case (k, v) :: _
       equation
         true = k == "LABEL";
       then v;
@@ -992,7 +992,7 @@ algorithm
         printFigaroClass(first);
         printFigaroClassList(rest);
       then ();
-    case first :: rest
+    case _ :: rest
       equation
         printFigaroClassList(rest);
       then ();
@@ -1027,7 +1027,7 @@ algorithm
         print(figaroObjectToString(first));
         printFigaroObjectList(rest);
       then ();
-    case first :: rest
+    case _ :: rest
       equation
         printFigaroObjectList(rest);
       then ();
@@ -1049,7 +1049,7 @@ algorithm
         print("\n");
         printTokenList(rest);
       then ();
-    case first :: rest
+    case _ :: rest
       equation
         printTokenList(rest);
       then ();
@@ -1059,7 +1059,7 @@ end printTokenList;
 protected function printToken
   input Token inToken;
 algorithm
-  _ := matchcontinue inToken
+  _ := match inToken
     local
       String s;
     case OPENTAG(tagName = s)
@@ -1074,7 +1074,7 @@ algorithm
       equation
         print("\"" + s + "\"");
       then ();
-  end matchcontinue;
+  end match;
 end printToken;
 
 annotation(__OpenModelica_Interface="frontend");

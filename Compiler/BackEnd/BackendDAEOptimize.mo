@@ -632,7 +632,7 @@ algorithm
     case ({_,_},_,_,_,_)
       equation
         eqns = BackendEquation.getEqnsFromEqSystem(syst);
-        (eqn as BackendDAE.EQUATION(source=_)) = BackendEquation.equationNth1(eqns,pos);
+        (eqn as BackendDAE.EQUATION()) = BackendEquation.equationNth1(eqns,pos);
         _ = BackendEquation.aliasEquation(eqn);
       then ();
   end matchcontinue;
@@ -1040,14 +1040,14 @@ algorithm
         DAE.Exp e1,e2;
         DAE.Operator op;
 
-      case (DAE.CREF(componentRef = _),DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef = _)),_)
+      case (DAE.CREF(),DAE.UNARY(operator=DAE.UMINUS(),exp=DAE.CREF()),_)
         then fail();
-      case (DAE.CREF(componentRef = _),DAE.CREF(componentRef = _),_)
+      case (DAE.CREF(),DAE.CREF(),_)
         then fail();
-      case (DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef = _)),DAE.CREF(componentRef = _),_)
+      case (DAE.UNARY(operator=DAE.UMINUS(),exp=DAE.CREF()),DAE.CREF(),_)
         then fail();
       // a = -f(...);
-      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e2),_)
+      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(),exp=e2),_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (DAE.UNARY(op,e1),e2);
@@ -1057,7 +1057,7 @@ algorithm
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (e1,e2);
       // a = -f(...);
-      case (DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e1),e2 as DAE.CREF(componentRef = cr),_)
+      case (DAE.UNARY(operator=op as DAE.UMINUS(),exp=e1),e2 as DAE.CREF(componentRef = cr),_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (DAE.UNARY(op,e2),e1);
@@ -1217,9 +1217,9 @@ algorithm
       BackendDAE.Var v;
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
-    case (v as BackendDAE.VAR(varName = _,varKind = BackendDAE.PARAM()),(vars,vars1))
+    case (v as BackendDAE.VAR(varKind = BackendDAE.PARAM()),(vars,vars1))
       then (v,(vars,vars1));
-    case (v as BackendDAE.VAR(varName = _),(vars,vars1))
+    case (v as BackendDAE.VAR(),(vars,vars1))
       equation
         vars1 = BackendVariable.addVar(v,vars1);
       then (v,(vars,vars1));
@@ -1271,14 +1271,14 @@ algorithm
       then (e, (vars,vars1));
 
     // Special Case for Arrays
-    case (e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,vars1))
+    case (e as DAE.CREF(ty = DAE.T_ARRAY()),(vars,vars1))
       equation
         (e1,true) = Expression.extendArrExp(e,false);
         (_,(vars,vars1)) = Expression.traverseExp(e1,checkUnusedParameterExp,(vars,vars1));
       then (e, (vars,vars1));
 
     // case for functionpointers
-    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),_)
+    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()),_)
       then (e, inTuple);
 
     // already there
@@ -1386,14 +1386,14 @@ algorithm
       then (e, (vars,vars1));
 
     // Special Case for Arrays
-    case (e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,vars1))
+    case (e as DAE.CREF(ty = DAE.T_ARRAY()),(vars,vars1))
       equation
         (e1,true) = Expression.extendArrExp(e,false);
         (_,(vars,vars1)) = Expression.traverseExp(e1,checkUnusedVariablesExp,(vars,vars1));
       then (e, (vars,vars1));
 
     // case for functionpointers
-    case (DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),_)
+    case (DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()),_)
       then (inExp, inTuple);
 
     // already there
@@ -2009,7 +2009,7 @@ algorithm
     case (BackendDAE.EQUATION(e1,e2,source,eqAttr),i)
       equation
         // This is ok, because EQUATION is not an array equation :D
-        DAE.T_REAL(source = _) = Expression.typeof(e1);
+        DAE.T_REAL() = Expression.typeof(e1);
         false = Expression.isZero(e1) or Expression.isZero(e2);
         e = DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2);
         (e,_) = ExpressionSimplify.simplify(e);
@@ -2105,7 +2105,7 @@ algorithm
         (_,tpl) = Expression.traverseExpList(explst,countOperationsExp,tpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=_))::rest,_,_,_)
+    case ((comp as BackendDAE.EQUATIONSYSTEM())::rest,_,_,_)
       equation
         (eqnlst,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
         tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),countOperationsExp,inTpl);
@@ -2141,7 +2141,7 @@ algorithm
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, otherEqnVarTpl=_, linear=true))::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+    case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=true))::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
         tpl = addJacSpecificOperations(listLength(vlst),inTpl);
@@ -2150,7 +2150,7 @@ algorithm
         (_,tpl) = Expression.traverseExpList(explst,countOperationsExp,tpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, otherEqnVarTpl=_, linear=false))::rest,_,BackendDAE.SHARED(functionTree=_),_)
+    case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=false))::rest,_,BackendDAE.SHARED(),_)
       equation
         (eqnlst,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
         ((i1_1,i2_1,i3_1,i4_1)) = addJacSpecificOperations(listLength(vlst),(0,0,0,0));
@@ -2236,7 +2236,7 @@ algorithm
       String opName;
       Absyn.Path path;
       list<DAE.Exp> expLst;
-    case (e as DAE.BINARY(operator=DAE.POW(ty=_),exp2=DAE.RCONST(rexp2)),(i1,i2,i3,i4)) equation
+    case (e as DAE.BINARY(operator=DAE.POW(),exp2=DAE.RCONST(rexp2)),(i1,i2,i3,i4)) equation
       iexp2 = realInt(rexp2);
       true = realEq(rexp2, intReal(iexp2));
       i2_1 = i2+intAbs(iexp2)-1;
@@ -2267,17 +2267,17 @@ algorithm
     local
       DAE.Type tp;
       Integer i;
-    case (DAE.ADD(ty=_),_,_,_,_)
+    case (DAE.ADD(),_,_,_,_)
       then (inInt1+1,inInt2,inInt3,inInt4);
-    case (DAE.SUB(ty=_),_,_,_,_)
+    case (DAE.SUB(),_,_,_,_)
       then (inInt1+1,inInt2,inInt3,inInt4);
-    case (DAE.MUL(ty=_),_,_,_,_)
+    case (DAE.MUL(),_,_,_,_)
       then (inInt1,inInt2+1,inInt3,inInt4);
-    case (DAE.DIV(ty=_),_,_,_,_)
+    case (DAE.DIV(),_,_,_,_)
       then (inInt1,inInt2+1,inInt3,inInt4);
-    case (DAE.POW(ty=_),_,_,_,_)
+    case (DAE.POW(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.UMINUS(ty=_),_,_,_,_)
+    case (DAE.UMINUS(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
     case (DAE.UMINUS_ARR(ty=tp),_,_,_,_) equation
       i = Expression.sizeOf(tp);
@@ -2297,47 +2297,47 @@ algorithm
     case (DAE.MUL_ARRAY_SCALAR(ty=tp),_,_,_,_) equation
       i = Expression.sizeOf(tp);
       then (inInt1,inInt2+i,inInt3,inInt4);
-    case (DAE.ADD_ARRAY_SCALAR(ty=_),_,_,_,_)
+    case (DAE.ADD_ARRAY_SCALAR(),_,_,_,_)
       then (inInt1+1,inInt2,inInt3,inInt4);
-    case (DAE.SUB_SCALAR_ARRAY(ty=_),_,_,_,_)
+    case (DAE.SUB_SCALAR_ARRAY(),_,_,_,_)
       then (inInt1+1,inInt2,inInt3,inInt4);
-    case (DAE.MUL_SCALAR_PRODUCT(ty=_),_,_,_,_)
+    case (DAE.MUL_SCALAR_PRODUCT(),_,_,_,_)
       then (inInt1,inInt2+1,inInt3,inInt4);
-    case (DAE.MUL_MATRIX_PRODUCT(ty=_),_,_,_,_)
+    case (DAE.MUL_MATRIX_PRODUCT(),_,_,_,_)
       then (inInt1,inInt2+1,inInt3,inInt4);
-    case (DAE.DIV_ARRAY_SCALAR(ty=_),_,_,_,_)
+    case (DAE.DIV_ARRAY_SCALAR(),_,_,_,_)
       then (inInt1,inInt2+1,inInt3,inInt4);
-    case (DAE.DIV_SCALAR_ARRAY(ty=_),_,_,_,_)
+    case (DAE.DIV_SCALAR_ARRAY(),_,_,_,_)
       then (inInt1,inInt2+1,inInt3,inInt4);
-    case (DAE.POW_ARRAY_SCALAR(ty=_),_,_,_,_)
+    case (DAE.POW_ARRAY_SCALAR(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.POW_SCALAR_ARRAY(ty=_),_,_,_,_)
+    case (DAE.POW_SCALAR_ARRAY(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.POW_ARR(ty=_),_,_,_,_)
+    case (DAE.POW_ARR(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.POW_ARR2(ty=_),_,_,_,_)
+    case (DAE.POW_ARR2(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.AND(ty=_),_,_,_,_)
+    case (DAE.AND(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.OR(ty=_),_,_,_,_)
+    case (DAE.OR(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.NOT(ty=_),_,_,_,_)
+    case (DAE.NOT(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.NOT(ty=_),_,_,_,_)
+    case (DAE.NOT(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.LESS(ty=_),_,_,_,_)
+    case (DAE.LESS(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.LESSEQ(ty=_),_,_,_,_)
+    case (DAE.LESSEQ(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.GREATER(ty=_),_,_,_,_)
+    case (DAE.GREATER(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.GREATEREQ(ty=_),_,_,_,_)
+    case (DAE.GREATEREQ(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.EQUAL(ty=_),_,_,_,_)
+    case (DAE.EQUAL(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.NEQUAL(ty=_),_,_,_,_)
+    case (DAE.NEQUAL(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
-    case (DAE.USERDEFINED(fqName=_),_,_,_,_)
+    case (DAE.USERDEFINED(),_,_,_,_)
       then (inInt1,inInt2,inInt3+1,inInt4);
     else
       then(inInt1,inInt2,inInt3+1,inInt4);
@@ -2676,7 +2676,7 @@ algorithm
         ht = BaseHashTable.add((cr,exp), iHt);
       then
         simplifySolvedIfEqns1(condition,rest,ht);
-    case (_,BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(ty=_), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
+    case (_,BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
       equation
         false = Expression.expHasCref(e, cr);
         exp = BaseHashTable.get(cr, iHt);
@@ -2712,7 +2712,7 @@ algorithm
         ht = BaseHashTable.add((cr,e), iHt);
       then
         simplifySolvedIfEqnsElse(rest,ht);
-    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(ty=_), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
+    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
       equation
         failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCref(e, cr);
@@ -4538,13 +4538,13 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
     // case for arrays
-    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=_, ty = DAE.T_ARRAY(dims=_))}), (vars, shared as BackendDAE.SHARED(functionTree=funcs), b))
+    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_ARRAY())}), (vars, shared as BackendDAE.SHARED(), b))
       equation
         (e2, true) = Expression.extendArrExp(e1, false);
         (e,tpl) = Expression.traverseExp(e2, expandDerExp, (vars, shared, b));
       then (e,tpl);
     // case for records
-    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=_, ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))}), (vars, shared as BackendDAE.SHARED(functionTree=funcs), b))
+    case (e1 as DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))}), (vars, shared as BackendDAE.SHARED(), b))
       equation
         (e2, true) = Expression.extendArrExp(e1, false);
         (e,tpl) = Expression.traverseExp(e2, expandDerExp, (vars, shared, b));

@@ -142,7 +142,7 @@ algorithm
         (cache, t, env);
 
     // For simple names
-    case (cache,env,(path as Absyn.IDENT(name = _)),_)
+    case (cache,env,(path as Absyn.IDENT()),_)
       equation
         (cache,t,env_1) = lookupTypeInEnv(cache,env,path);
       then
@@ -196,7 +196,7 @@ algorithm
       DAE.TypeSource ts;
 
     // Record constructors
-    case (cache,env_1,_,c as SCode.CLASS(name=_,restriction=SCode.R_RECORD(_)))
+    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_RECORD(_)))
       equation
         (cache,env_1,t) = buildRecordType(cache,env_1,c);
       then
@@ -225,7 +225,7 @@ algorithm
         (cache,t,env_3);
 
     // Metamodelica extension, Uniontypes
-    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_METARECORD(index=_)))
+    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_METARECORD()))
       equation
         (cache,env_2,t) = buildMetaRecordType(cache,env_1,c);
       then
@@ -569,7 +569,7 @@ algorithm
       then (cache,c,env,prevFrames);
 
     // class is an instance of a component
-    case (cache,env,_,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_,_,_)
+    case (cache,env,_,SCode.CLASS(name=id),NONE(),_,_,_)
       equation
         r = FNode.child(FGraph.lastScopeRef(env), id);
         FCore.CL(status = FCore.CLS_INSTANCE(_)) = FNode.refData(r);
@@ -988,14 +988,14 @@ algorithm
       SCode.Visibility vis;
 
     // unqualified component reference
-    case(cache,env,DAE.CREF_IDENT(ident=_))
+    case(cache,env,DAE.CREF_IDENT())
       equation
         (cache,attr1,ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
       then
         (cache,attr1,ty1);
 
     // qualified component reference
-    case(cache,env,DAE.CREF_QUAL(ident=_))
+    case(cache,env,DAE.CREF_QUAL())
       equation
         (cache,DAE.ATTR(ct,prl,var,dir,_,vis),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
         cr1 = ComponentReference.crefStripLastIdent(cr);
@@ -1158,7 +1158,7 @@ algorithm
       FCore.Scope rs;
 
     // look into the current frame
-    case (cache, FCore.G(scope = r :: rs), ref, _)
+    case (cache, FCore.G(scope = r :: _), ref, _)
       equation
         ht = FNode.children(FNode.fromRef(r));
         (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarF(cache, ht, ref, inEnv);
@@ -1166,7 +1166,7 @@ algorithm
         (cache,attr,ty,binding,cnstForRange,splicedExpData,inEnv,componentEnv,name);
 
     // look in the next frame, only if current frame is a for loop scope.
-    case (cache, FCore.G(scope = r :: rs), ref, _)
+    case (cache, FCore.G(scope = r :: _), ref, _)
       equation
         true = FNode.isImplicitRefName(r);
         (env, _) = FGraph.stripLastScopeRef(inEnv);
@@ -1257,7 +1257,7 @@ algorithm
     case (cache,env,DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_)
       equation
         (of,prevFrames) = lookupPrevFrames(id,prevFrames);
-        _ = matchcontinue(of)
+        _ = match(of)
           // first part of name is a previous frame
           case (SOME(f))
             equation
@@ -1292,14 +1292,14 @@ algorithm
                     Connect.emptySet, NONE());
               end if;
             then ();
-        end matchcontinue;
+        end match;
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
     // Why is this done? It is already done done in lookupVar!
     // BZ: This is due to recursive call when it might become DAE.CREF_IDENT calls.
-    case (cache,env,(cr as DAE.CREF_IDENT(ident = _,subscriptLst = _)),_,_)
+    case (cache,env,(cr as DAE.CREF_IDENT()),_,_)
       equation
         (cache,attr,ty,bind,cnstForRange,splicedExpData,_,componentEnv,name) = lookupVarLocal(cache, env, cr);
         Util.setStatefulBoolean(inState,true);
@@ -1315,7 +1315,7 @@ algorithm
         (cache, env, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name);
 
     // Search among imports
-    case (cache,env,DAE.CREF_IDENT(ident = id,subscriptLst = _),prevFrames,_)
+    case (cache,env,DAE.CREF_IDENT(ident = id),prevFrames,_)
       equation
         node = FNode.fromRef(FGraph.lastScopeRef(env));
         (qimports, uqimports) = FNode.imports(node);
@@ -1420,7 +1420,7 @@ algorithm
         (cache,fv,c,m,i,componentEnv);
 
     // Look in the next frame, if the current frame is a for loop scope.
-    case (cache, FCore.G(scope = r::rs), id)
+    case (cache, FCore.G(scope = r::_), id)
       equation
         true = FNode.isImplicitRefName(r);
         (env, _) = FGraph.stripLastScopeRef(inEnv);
@@ -1490,7 +1490,7 @@ algorithm
       then
         (cache,fv,c,m,i,inEnv);
 
-    case (cache, FCore.G(scope = _::rs),id)
+    case (cache, FCore.G(scope = _::_),id)
       equation
         (e, _) = FGraph.stripLastScopeRef(inEnv);
         (cache,fv,c,m,i,e) = lookupIdent(cache, e, id);
@@ -1690,13 +1690,13 @@ algorithm
         (cache,res);
 
     // Simple name, if class with restriction function found in frame instantiate to get type.
-    case (cache, FCore.G(scope = r::rs), id as Absyn.IDENT(name = str),_,_)
+    case (cache, FCore.G(scope = r::_), id as Absyn.IDENT(name = str),_,_)
       equation
         // adrpo: do not search in the entire environment as we anyway recurse with the fs argument!
         //        just search in {f} not f::fs as otherwise we might get us in an infinite loop
         // Bjozac: Readded the f::fs search frame, otherwise we might get caught in a inifinite loop!
         //           Did not investigate this further then that it can crasch the kernel.
-        (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=_,restriction=restr)),env_1) = lookupClass(cache, inEnv, id, false);
+        (cache,(c as SCode.CLASS(name=str,restriction=restr)),env_1) = lookupClass(cache, inEnv, id, false);
         true = SCode.isFunctionRestriction(restr);
         // get function dae from instantiation
         // fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " + FGraph.printGraphPathStr(env_1) + "." + str);
@@ -1740,7 +1740,7 @@ algorithm
       then
         (cache,res);
 
-    case (cache, FCore.G(scope = r::_),id as Absyn.IDENT(name = _),false,_)
+    case (cache, FCore.G(scope = r::_),id as Absyn.IDENT(),false,_)
       equation
         true = FNode.isEncapsulated(FNode.fromRef(r));
         env = FGraph.topScope(inEnv); // (cache,env) = Builtin.initialGraph(cache);
@@ -1903,13 +1903,13 @@ algorithm
         fail();
 
     // Record constructor function
-    case (cache,FCore.N(data = FCore.CL(e = cdef as SCode.CLASS(name=_,restriction=SCode.R_RECORD(_)))),env,_)
+    case (cache,FCore.N(data = FCore.CL(e = cdef as SCode.CLASS(restriction=SCode.R_RECORD(_)))),env,_)
       equation
         (cache,env_3,ty) = buildRecordType(cache,env,cdef);
       then
         (cache,ty,env_3);
 
-    case (cache,FCore.N(data = FCore.CL(e = cdef as SCode.CLASS(name=_,restriction=SCode.R_METARECORD(index=_)))),env,_)
+    case (cache,FCore.N(data = FCore.CL(e = cdef as SCode.CLASS(restriction=SCode.R_METARECORD()))),env,_)
       equation
         (cache,env_3,ty) = buildMetaRecordType(cache,env,cdef);
       then
@@ -2306,7 +2306,7 @@ algorithm
       then
         (cache, env, SCode.COMPONENT(id,SCode.PREFIXES(vis, redecl, f, io, repl),SCode.ATTR(d,ct,prl,var,dir),tp,umod,comment,cond,info) :: res);
 
-    case (cache, env, (comp,cmod)::_, _)
+    case (_, _, (comp,cmod)::_, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Lookup.buildRecordConstructorElts failed " + SCodeDump.unparseElementStr(comp,SCodeDump.defaultOptions) + " with mod: " + Mod.printModStr(cmod) + " and: " + Mod.printModStr(mods));
@@ -2370,7 +2370,7 @@ algorithm
       then
         (cache,c,env_1,prevFrames);
 
-    case (cache,env as FCore.G(scope = r :: rs),_,prevFrames,_,_)
+    case (cache,env as FCore.G(scope = r :: _),_,prevFrames,_,_)
       equation
         false = FNode.isRefTop(r);
         frame = FNode.fromRef(r);
@@ -2409,7 +2409,7 @@ algorithm
         (cache,c,env_1,prevFrames);
 
     // if not found and not encapsulated, and no ident has been previously found, look in next enclosing scope
-    case (cache,env as FCore.G(scope = r::rs),_,prevFrames,_,msgflag)
+    case (cache,env as FCore.G(scope = r::_),_,prevFrames,_,msgflag)
       equation
         false = FNode.isRefTop(r);
         frame = FNode.fromRef(r);
@@ -2534,7 +2534,7 @@ algorithm
         r = FNode.avlTreeGet(ht, id);
         fv = FNode.refInstVar(r);
         s = FNode.refRefTargetScope(r);
-        FCore.N(data = FCore.CO(c,m,k,i)) = FNode.fromRef(r);
+        FCore.N(data = FCore.CO(c,m,_,i)) = FNode.fromRef(r);
         env = FGraph.setScope(inGraph, s);
       then
         (cache,fv,c,m,i,env);
@@ -2544,7 +2544,7 @@ algorithm
         true = Flags.isSet(Flags.LOOKUP);
         false = Config.acceptMetaModelicaGrammar(); // MetaModelica function references generate too much failtrace...
         r = FNode.avlTreeGet(ht, id);
-        FCore.N(data = FCore.CL(e = SCode.CLASS(name = name, restriction = restr))) = FNode.fromRef(r);
+        FCore.N(data = FCore.CL(e = SCode.CLASS(name = name))) = FNode.fromRef(r);
         name = id + " = " + FGraph.printGraphPathStr(inGraph) + "." + name;
         Debug.traceln("- Lookup.lookupVar2 failed because we find a class instead of a variable: " + name);
       then
@@ -2581,7 +2581,7 @@ algorithm
     case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
           (DAE.SLICE(exp = DAE.ARRAY(array = se)) :: ys))
       equation
-        sz = Expression.dimensionSize(dim);
+        _ = Expression.dimensionSize(dim);
         t_1 = checkSubscripts(t, ys);
         dim_int = listLength(se) "FIXME: Check range IMPLEMENTED 2007-05-18 BZ" ;
       then
@@ -2595,7 +2595,7 @@ algorithm
       then
         DAE.T_ARRAY(t_1, {dim}, ts);
 
-    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = _),
+    case (DAE.T_ARRAY(dims = {dim}, ty = t),
           (DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
       equation
         sz = Expression.dimensionSize(dim);
@@ -2607,7 +2607,7 @@ algorithm
 
     // HJ: Subscripts needn't be constant. No range-checking can be done
     case (DAE.T_ARRAY(dims = {dim}, ty = t),
-          (DAE.INDEX(exp = _) :: ys))
+          (DAE.INDEX() :: ys))
       equation
         true = Expression.dimensionKnown(dim);
         t_1 = checkSubscripts(t, ys);
@@ -2615,14 +2615,14 @@ algorithm
         t_1;
 
     case (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t),
-          (DAE.INDEX(exp = _) :: ys))
+          (DAE.INDEX() :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
 
-    case (DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t),
-          (DAE.INDEX(exp = _) :: ys))
+    case (DAE.T_ARRAY(dims = {DAE.DIM_EXP()}, ty = t),
+          (DAE.INDEX() :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
@@ -2724,7 +2724,7 @@ algorithm
         (cache,DAE.ATTR(ct,prl,vt,di,io,vis),tyChild,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
 
         ltCref = elabComponentRecursive((texp));
-        _ = matchcontinue ltCref
+        _ = match ltCref
           case (tCref::_) // with a spliced exp
             equation
              ty = if Types.isBoxedType(tyParent) and not Types.isUnknownType(tyParent)
@@ -2743,7 +2743,7 @@ algorithm
             equation
               oSplicedExp = NONE();
              then ();
-        end matchcontinue;
+        end match;
         vt = SCode.variabilityOr(vt,vt2);
         binding = lookupBinding(inComponentRef, tyParent, ty, parentBinding, binding);
       then
@@ -2787,7 +2787,7 @@ algorithm
       list<DAE.Exp> exps;
       list<String> comp;
 
-    case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.EQBOUND(e, ov, c, s), _)
+    case (DAE.CREF_QUAL(_, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.EQBOUND(e, _, c, s), _)
       equation
         true = Types.isArray(inParentType, {});
         tyElement = Types.arrayElementType(inParentType);
@@ -2815,7 +2815,7 @@ algorithm
       then
         inChildBinding;*/
 
-    case (DAE.CREF_QUAL(id, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.VALBOUND(v, s), _)
+    case (DAE.CREF_QUAL(_, _, ss, DAE.CREF_IDENT(cId, _, {})), _, _, DAE.VALBOUND(v, s), _)
       equation
         true = Types.isArray(inParentType, {});
         tyElement = Types.arrayElementType(inParentType);
@@ -2915,7 +2915,7 @@ algorithm
       then
         DAE.SLICE(DAE.ARRAY(DAE.T_BOOL_DEFAULT, true, expl));
     // Array with enumeration dimension.
-    case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l, size = _)
+    case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l)
       equation
         expl = makeEnumLiteralIndices(enum_name, l, 1);
       then
@@ -2965,7 +2965,7 @@ algorithm
     // but nothing in inSlice because it only contains integers (see
     // addArrayDimensions above). This case makes sure that for-iterators are
     // not lost here.
-    case (((sub1 as DAE.INDEX(exp = DAE.CREF(componentRef = _))) :: subs1),
+    case (((sub1 as DAE.INDEX(exp = DAE.CREF())) :: subs1),
       subs2)
       equation
         subs2 = expandWholeDimSubScript(subs1, subs2);

@@ -154,7 +154,7 @@ algorithm
   outState := matchcontinue(inState, inEntry)
     case (_, _)
       equation
-        SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = _)) =
+        SCode.CLASS(classDef = SCode.ENUMERATION()) =
           NFEnv.entryElement(inEntry);
       then
         STATE_COMP();
@@ -636,10 +636,10 @@ protected function elementState
   output LookupState outState;
 algorithm
   outState := match(inElement)
-    case SCode.COMPONENT(name = _) then STATE_COMP();
+    case SCode.COMPONENT() then STATE_COMP();
     case SCode.CLASS(restriction = SCode.R_PACKAGE()) then STATE_PACKAGE();
     case SCode.CLASS(restriction = SCode.R_FUNCTION(_)) then STATE_FUNC();
-    case SCode.CLASS(restriction = _) then STATE_CLASS();
+    case SCode.CLASS() then STATE_CLASS();
   end match;
 end elementState;
 
@@ -1024,16 +1024,16 @@ protected function elementSplitterRegular
 algorithm
   (outClsAndVars, outExtends, outImports) :=
   match(inElement, inClsAndVars, inExtends, inImports)
-    case (SCode.COMPONENT(name = _), _, _, _)
+    case (SCode.COMPONENT(), _, _, _)
       then (inElement :: inClsAndVars, inExtends, inImports);
 
-    case (SCode.CLASS(name = _), _, _, _)
+    case (SCode.CLASS(), _, _, _)
       then (inElement :: inClsAndVars, inExtends, inImports);
 
-    case (SCode.EXTENDS(baseClassPath = _), _, _, _)
+    case (SCode.EXTENDS(), _, _, _)
       then (inClsAndVars, inElement :: inExtends, inImports);
 
-    case (SCode.IMPORT(imp = _), _, _, _)
+    case (SCode.IMPORT(), _, _, _)
       then (inClsAndVars, inExtends, inElement :: inImports);
 
     else (inClsAndVars, inExtends, inImports);
@@ -1315,14 +1315,14 @@ algorithm
         env;
 
     // A qualified import, 'import A.B.C'.
-    case (Absyn.QUAL_IMPORT(path = _), _, _, _, _)
+    case (Absyn.QUAL_IMPORT(), _, _, _, _)
       equation
         env = NFEnv.insertEntry(inEntry, inAccumEnv);
       then
         env;
 
     // An unqualified import, 'import A.B.*'.
-    case (Absyn.UNQUAL_IMPORT(path = _), _, _, _, _)
+    case (Absyn.UNQUAL_IMPORT(), _, _, _, _)
       equation
         SCode.CLASS(classDef = cdef) = NFEnv.entryElement(inEntry);
         origins = NFEnv.entryOrigins(inEntry);
@@ -1333,7 +1333,7 @@ algorithm
 
     // Group imports are split into separate imports by
     // SCodeUtil.translateImports and should not occur here.
-    case (Absyn.GROUP_IMPORT(prefix = _), _, _, _, _)
+    case (Absyn.GROUP_IMPORT(), _, _, _, _)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,
           {"NFEnv.populateEnvWithImport2 got unhandled group import!\n"}, inInfo);
@@ -1455,13 +1455,13 @@ protected function elementSplitterExtends
 algorithm
   (outClsAndVars, outExtends, outImports) :=
   match(inElement, inClsAndVars, inExtends, inImports)
-    case (SCode.COMPONENT(name = _), _, _, _)
+    case (SCode.COMPONENT(), _, _, _)
       then (inElement :: inClsAndVars, inExtends, inImports);
 
-    case (SCode.CLASS(name = _), _, _, _)
+    case (SCode.CLASS(), _, _, _)
       then (inElement :: inClsAndVars, inExtends, inImports);
 
-    case (SCode.IMPORT(imp = _), _, _, _)
+    case (SCode.IMPORT(), _, _, _)
       then (inClsAndVars, inExtends, inElement :: inImports);
 
     else (inClsAndVars, inExtends, inImports);
@@ -1480,13 +1480,13 @@ protected function elementSplitterInherited
 algorithm
   (outClsAndVars, outExtends, outImports) :=
   match(inElement, inClsAndVars, inExtends, inImports)
-    case (SCode.COMPONENT(name = _), _, _, _)
+    case (SCode.COMPONENT(), _, _, _)
       then (inElement :: inClsAndVars, inExtends, inImports);
 
-    case (SCode.CLASS(name = _), _, _, _)
+    case (SCode.CLASS(), _, _, _)
       then (inElement :: inClsAndVars, inExtends, inImports);
 
-    case (SCode.EXTENDS(baseClassPath = _), _, _, _)
+    case (SCode.EXTENDS(), _, _, _)
       then (inClsAndVars, inElement :: inExtends, inImports);
 
     else (inClsAndVars, inExtends, inImports);

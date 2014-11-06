@@ -187,7 +187,7 @@ protected function isNotImport
   input SCode.Element inElement;
 algorithm
   _ := match(inElement)
-    case SCode.IMPORT(imp = _) then fail();
+    case SCode.IMPORT() then fail();
     else ();
   end match;
 end isNotImport;
@@ -215,14 +215,14 @@ algorithm
         (elem, env);
 
     // Lookup class definitions.
-    case (SCode.CLASS(name = _), _)
+    case (SCode.CLASS(), _)
       equation
         (elem, env) = flattenClass(inElement, inEnv);
       then
         (elem, env);
 
     // Lookup base class and modifications in extends clauses.
-    case (SCode.EXTENDS(baseClassPath = _), _)
+    case (SCode.EXTENDS(), _)
       then (flattenExtends(inElement, inEnv), inEnv);
 
     else (inElement, inEnv);
@@ -543,17 +543,17 @@ algorithm
       SCode.Comment cmt;
 
     case (SCode.CLASS(name, prefixes, ep, pp, res,
-          cdef as SCode.DERIVED(typeSpec = _), cmt, info), _)
+          cdef as SCode.DERIVED(), cmt, info), _)
       equation
         cdef2 = flattenDerivedClassDef(cdef, inEnv, info);
       then
         SCode.CLASS(name, prefixes, ep, pp, res, cdef2, cmt, info);
 
-    case (SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = _)), _)
+    case (SCode.CLASS(classDef = SCode.ENUMERATION()), _)
       then
         inElement;
 
-    case (SCode.COMPONENT(name = _), _)
+    case (SCode.COMPONENT(), _)
       equation
         element = flattenComponent(inElement, inEnv);
       then
@@ -663,7 +663,7 @@ algorithm
       then
         (Absyn.PARTEVALFUNCTION(cref, args), tup);
 
-    case (exp as Absyn.MATCHEXP(matchTy = _), (env, info))
+    case (exp as Absyn.MATCHEXP(), (env, info))
       equation
         env = NFSCodeEnv.extendEnvWithMatch(exp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
       then
@@ -684,13 +684,13 @@ algorithm
       Env env;
       SourceInfo info;
 
-    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),
-        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info))
+    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG()),
+        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE()) :: env, info))
       then
         (inExp, (env, info));
 
-    case (Absyn.MATCHEXP(matchTy = _),
-        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info))
+    case (Absyn.MATCHEXP(),
+        (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE()) :: env, info))
       then
         (inExp, (env, info));
 

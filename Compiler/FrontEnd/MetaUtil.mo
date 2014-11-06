@@ -139,7 +139,7 @@ public function classHasMetaRestriction
   output Boolean outBoolean;
 algorithm
   outBoolean := match(cl)
-    case(SCode.CLASS(restriction = SCode.R_METARECORD(index=_))) then true;
+    case(SCode.CLASS(restriction = SCode.R_METARECORD())) then true;
     else false;
   end match;
 end classHasMetaRestriction;
@@ -300,8 +300,8 @@ algorithm
       Absyn.ClassDef d;
       SourceInfo file_info;
 
-    case(c as Absyn.CLASS(name = n,partialPrefix = _,finalPrefix = _,encapsulatedPrefix = _,restriction = r,
-         body = Absyn.PARTS(classParts = {Absyn.PUBLIC(contents = els)},comment = _),info = _))
+    case(c as Absyn.CLASS(name = n,restriction = r,
+         body = Absyn.PARTS(classParts = {Absyn.PUBLIC(contents = els)})))
       equation
         r_1 = SCodeUtil.translateRestriction(c, r); // uniontype will not get elaborated!
         SCode.R_UNIONTYPE() = r_1;

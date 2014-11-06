@@ -372,7 +372,7 @@ algorithm
       then (NONE(), modeTableNew);
 
     // Remove initialState(..) statement
-    case (SOME(MODE(name,isInitial,edges,eqs,outgoing)), _, SOME((_,INITIAL_STATE())), SOME(eq))
+    case (SOME(MODE(_,_,_,_,_)), _, SOME((_,INITIAL_STATE())), SOME(_))
       then (NONE(), modeTable);
 
     // return structures without any modifications
@@ -831,14 +831,14 @@ algorithm
           then BaseHashTable.get(cstate1, inA)
             else MODE(ComponentReference.crefLastIdent(cstate1), true, HashSet.emptyHashSet(),
                       BackendEquation.emptyEqns(), BackendEquation.emptyEqns());
-        MODE(name1,isInitial1,edges1,eqs1,outgoing1) = mode1;
+        MODE(name1,_,edges1,eqs1,outgoing1) = mode1;
         mode1 = MODE(name1,true,edges1,eqs1,outgoing1);
         modes = BaseHashTable.add((cstate1, mode1), inA);
       then modes;
     case ("transition", DAE.CREF(componentRef=cstate1)::DAE.CREF(componentRef=cstate2)::_)
       equation
         //print("SMF-printEq2: "+anyString(cstate1)+"\n");
-        tmp = ComponentReference.crefDepth(cstate1);
+        _ = ComponentReference.crefDepth(cstate1);
         //printArgs(expLst);
         mode1 = if BaseHashTable.hasKey(cstate1, inA)
           then BaseHashTable.get(cstate1, inA)

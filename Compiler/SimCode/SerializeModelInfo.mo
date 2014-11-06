@@ -83,7 +83,7 @@ algorithm
         serializeVars(file,vars,withOperations);
         File.write(file, "\n},\n\"equations\":[");
         // Handle no comma for the first equation
-        eqs = SimCodeUtil.sortEqSystems(code.initialEquations);
+        _ = SimCodeUtil.sortEqSystems(code.initialEquations);
         File.write(file,"{\"eqIndex\":0,\"tag\":\"dummy\"}");
         min(serializeEquation(file,eq,"initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations));
         min(serializeEquation(file,eq,"removed-initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.removedInitialEquations));

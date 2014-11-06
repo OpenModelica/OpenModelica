@@ -1333,7 +1333,7 @@ algorithm
 
     case ( (LET(letExp = (NORET_CALL(name = fname, args = explst),sinfo2),
                exp = exp), _),
-           mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs=_), accMMDecls )
+           mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(), accMMDecls )
       equation
         warnIfSomeOptions(mmopts);
         if Flags.isSet(Flags.FAILTRACE) then
@@ -1365,7 +1365,7 @@ algorithm
       then ( stmts, locals, scEnv, accMMDecls, intxt);
 
     case ( (LET(letExp = (NORET_CALL(name = fname),sinfo2)), _),
-           _, _, _, _, _, _, tplPackage as TEMPL_PACKAGE(astDefs=_), _ )
+           _, _, _, _, _, _, tplPackage as TEMPL_PACKAGE(), _ )
       equation
         (fname,_, oargs,_) = getFunSignature(fname, sinfo2, tplPackage);
         //fprint(Flags.FAILTRACE," after fname = " + pathIdentString(fname) + "\n");
@@ -2496,7 +2496,7 @@ algorithm
       list<MMExp> stmts;
       TypedIdents locals;
 
-    case ( mmarg as MM_FN_CALL(fnName = _), targettype, stmts, locals)
+    case ( mmarg as MM_FN_CALL(), targettype, stmts, locals)
       equation
          //make a separate locally bound return value
         retval = returnTempVarNamePrefix + intString(listLength(locals));
@@ -2507,7 +2507,7 @@ algorithm
 
     case ( mmarg, _, stmts, locals)
       equation
-        failure(MM_FN_CALL(fnName = _) = mmarg);
+        failure(MM_FN_CALL() = mmarg);
       then
         (mmarg, stmts, locals);
 
@@ -3442,7 +3442,7 @@ algorithm
         mexp;
 
     //TODO: a HACK!!; this only can happen for "if" condition with a TEXT argument to be tested for emptiness
-    case ( mexp as RECORD_MATCH(tagName = _), TEXT_TYPE(), _ )
+    case ( mexp as RECORD_MATCH(), TEXT_TYPE(), _ )
       then
         mexp;
 
@@ -4463,7 +4463,7 @@ algorithm
       String litstr, reason;
 
     // string constants are of StringToken type and does not involve a type conversion, use them through idents
-    case ( STR_TOKEN_DEF(value = _), ident)
+    case ( STR_TOKEN_DEF(), ident)
       equation
         ident = constantNamePrefix + ident; //no encoding needed, just prefix, it is a constant
       then
@@ -4576,7 +4576,7 @@ algorithm
 
     //let scope, found
     case (ident, _, _,
-          LET_SCOPE(ident = letIdent, idType = idtype, freshIdent = freshIdent, isUsed = _) :: restEnv, _)
+          LET_SCOPE(ident = letIdent, idType = idtype, freshIdent = freshIdent) :: restEnv, _)
       equation
         true = stringEq(ident, letIdent);
       then
@@ -4585,7 +4585,7 @@ algorithm
 
     //let scope failed - look up
     case (ident, path, _,
-          (scope as LET_SCOPE(ident = _)) :: restEnv, astdefs)
+          (scope as LET_SCOPE()) :: restEnv, astdefs)
       equation
         // false = stringEq(ident, letIdent);
         (ident, idtype, restEnv)
@@ -4848,7 +4848,7 @@ algorithm
         true;
 
     case (_, _,
-           LET_SCOPE(ident = _) :: restEnv)
+           LET_SCOPE() :: restEnv)
       //equation
         //false = stringEq(_, letIdent) and stringEq(_, freshIdent);
       then
@@ -4863,7 +4863,7 @@ algorithm
         true;
 
     case (_, _,
-           RECURSIVE_SCOPE(recIdent = _) :: restEnv)
+           RECURSIVE_SCOPE() :: restEnv)
       //equation
         //false = stringEq(_, letIdent) and stringEq(_, freshIdent);
       then
@@ -5457,7 +5457,7 @@ algorithm
       then
         (fields, typepath);
 
-    case ( NAMED_TYPE(name = _), tagpath, _)
+    case ( NAMED_TYPE(), tagpath, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Error - (getFieldsForRecord) for case tag '" + pathIdentString(tagpath) + "' failed for reason above.\n");
@@ -5748,7 +5748,7 @@ algorithm
     //except NAMED_TYPE that was matched above
     case ( ty, tyConcrete, _, setTyVars,_ )
       equation
-        failure(NAMED_TYPE(name = _) = ty);
+        failure(NAMED_TYPE() = ty);
         equality(ty = tyConcrete);
       then
         setTyVars;
@@ -5782,7 +5782,7 @@ algorithm
     //non-NAME_TYPE can call typesEqual ... the above case prevents infinite recursion loop for NAMED_TYPE
     case ( tyA, tyB, astDefs )
       equation
-        failure(NAMED_TYPE(name = _) = tyA);
+        failure(NAMED_TYPE() = tyA);
         _ = typesEqual(tyA, tyB, {},{}, astDefs);
       then
         ();
@@ -6023,7 +6023,7 @@ algorithm
       then
         fields;
 
-    case ( tagident, TI_RECORD_TYPE(fields=_), typeident )
+    case ( tagident, TI_RECORD_TYPE(), typeident )
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         false = stringEq(tagident, typeident);
@@ -6062,7 +6062,7 @@ algorithm
         _ = lookupTupleList(rectags, tagident);
       then ();
 
-    case ( tagident, TI_RECORD_TYPE(fields = _), typeident )
+    case ( tagident, TI_RECORD_TYPE(), typeident )
       equation
         true = stringEq(tagident, typeident);
       then ();
@@ -6094,7 +6094,7 @@ algorithm
 
     case ( AST_DEF(
             importPackage = importckg,
-            isDefault     = _,
+            
             types         = typeLst) :: _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);

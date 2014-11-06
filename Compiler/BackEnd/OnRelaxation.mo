@@ -1960,13 +1960,13 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       DAE.Exp cexp;
-    case (_,DAE.CREF(componentRef=_),_,_)
+    case (_,DAE.CREF(),_,_)
       then
         (inVars,inEqns,e,inTpl);
-    case (_,DAE.UNARY(exp=DAE.CREF(componentRef=_)),_,_)
+    case (_,DAE.UNARY(exp=DAE.CREF()),_,_)
       then
         (inVars,inEqns,e,inTpl);
-    case (_,DAE.RCONST(real=_),_,_)
+    case (_,DAE.RCONST(),_,_)
       then
         (inVars,inEqns,e,inTpl);
     case (_,_,_,_)
@@ -3227,12 +3227,12 @@ algorithm
       DAE.Type ty;
       DAE.Ident ident;
       list<DAE.Subscript> subscriptLst;
-    case (cr as DAE.CREF_IDENT(ident=_),_,NONE())
+    case (cr as DAE.CREF_IDENT(),_,NONE())
       equation
         crlst = ComponentReference.expandCref(cr,true);
         set = List.fold(cr::crlst,BaseHashSet.add,ihs);
       then set;
-    case (cr as DAE.CREF_IDENT(ident=_),_,SOME(precr))
+    case (cr as DAE.CREF_IDENT(),_,SOME(precr))
       equation
         crlst = ComponentReference.expandCref(cr,true);
         crlst = List.map1r(cr::crlst,ComponentReference.joinCrefs,precr);

@@ -79,7 +79,7 @@ public function isReinitStatement "returns true if statement is a reinit"
   output Boolean res;
 algorithm
   res := match(stmt)
-    case(DAE.STMT_REINIT(var = _)) then true;
+    case(DAE.STMT_REINIT()) then true;
     else false;
   end match;
 end isReinitStatement;
@@ -89,7 +89,7 @@ public function isNotAssertStatement "returns true if statement is NOT an assert
   output Boolean res;
 algorithm
   res := match(stmt)
-    case(DAE.STMT_ASSERT(cond = _)) then false;
+    case(DAE.STMT_ASSERT()) then false;
     else true;
   end match;
 end isNotAssertStatement;
@@ -156,7 +156,7 @@ algorithm
       DAE.Exp lhs1;
       DAE.ComponentRef cr;
     case (true,_,_,_,_,_) then DAE.STMT_NORETCALL(rhs, source);
-    case (_,true,DAE.T_TUPLE(types=(ty1 as DAE.T_ARRAY(ty=_))::_),DAE.CREF(componentRef=cr)::_,_,_)
+    case (_,true,DAE.T_TUPLE(types=(ty1 as DAE.T_ARRAY())::_),DAE.CREF(componentRef=cr)::_,_,_)
       then DAE.STMT_ASSIGN_ARR(ty1, cr, DAE.TSUB(rhs, 1, ty1), source);
     case (_,true,DAE.T_TUPLE(types=ty1::_),lhs1::_,_,_)
       then DAE.STMT_ASSIGN(ty1, lhs1, DAE.TSUB(rhs,1,ty1), source);
@@ -226,7 +226,7 @@ algorithm
         outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);
       then outStatement;
 
-    case (lhs, lhprop, rhs, rhprop, DAE.ATTR(direction=_), _, _)
+    case (lhs, lhprop, rhs, rhprop, DAE.ATTR(), _, _)
       equation
         DAE.C_VAR() = Types.propAnyConst(lhprop);
         outStatement = makeAssignment2(lhs, lhprop, rhs, rhprop, source);
@@ -279,7 +279,7 @@ algorithm
       DAE.Type t, ty;
       list<DAE.Exp> ea2;
 
-    case (DAE.CREF(componentRef = _, ty = _), _, _, _, _)
+    case (DAE.CREF(), _, _, _, _)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, true);
         false = Types.isPropArray(lhprop);
@@ -295,7 +295,7 @@ algorithm
       then
         DAE.STMT_ASSIGN(t, e1, rhs_1);
       */
-    case (DAE.CREF(componentRef = c, ty = _), _, _, _, _)
+    case (DAE.CREF(componentRef = c), _, _, _, _)
       equation
         (rhs_1, _) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         true = Types.isPropArray(lhprop);
@@ -415,7 +415,7 @@ algorithm
             several output args are not clearly defined. */
       then makeTupleAssignmentNoTypeCheck(ty, expl, rhs, source);
     // a tuple in rhs
-    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = ty as DAE.T_TUPLE(types = tpl), tupleConst = DAE.TUPLE_CONST(tupleConstLst = _)), _, _)
+    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = ty as DAE.T_TUPLE(types = tpl), tupleConst = DAE.TUPLE_CONST()), _, _)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -591,8 +591,8 @@ algorithm
 
     case ({}, {}, _) then DAE.NOELSE();  /* This removes empty else branches */
     case ({}, fb, _) then DAE.ELSE(fb);
-    case (((DAE.BCONST(true), DAE.PROP(type_ = _), b) :: _), _, _) then DAE.ELSE(b);
-    case (((DAE.BCONST(false), DAE.PROP(type_ = _), _) :: xs), fb, _) then makeElse(xs, fb, inSource);
+    case (((DAE.BCONST(true), DAE.PROP(), b) :: _), _, _) then DAE.ELSE(b);
+    case (((DAE.BCONST(false), DAE.PROP(), _) :: xs), fb, _) then makeElse(xs, fb, inSource);
     case (((e, DAE.PROP(type_ = t), b) :: xs), fb, _)
       equation
         (e, _) = Types.matchType(e, t, DAE.T_BOOL_DEFAULT, true);
@@ -706,7 +706,7 @@ algorithm
       list<DAE.Statement> stmts;
       String e_str, t_str;
       DAE.Type t;
-    case (e, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), stmts, _) then DAE.STMT_WHILE(e, stmts, source);
+    case (e, DAE.PROP(type_ = DAE.T_BOOL()), stmts, _) then DAE.STMT_WHILE(e, stmts, source);
     case (e, DAE.PROP(type_ = t), _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -734,8 +734,8 @@ algorithm
       Option<DAE.Statement> elsew;
       String e_str, t_str;
       DAE.Type t;
-    case (e, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
-    case (e, DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL(varLst = _))), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
+    case (e, DAE.PROP(type_ = DAE.T_BOOL()), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
+    case (e, DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL())), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
     case (e, DAE.PROP(type_ = t), _, _, _)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -789,9 +789,9 @@ algorithm
       SourceInfo info;
       DAE.Type t1, t2, t3;
       String strTy, strExp;
-    case (DAE.BCONST(true), _, _, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), DAE.PROP(type_ = DAE.T_STRING(varLst = _)), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)
+    case (DAE.BCONST(true), _, _, DAE.PROP(type_ = DAE.T_BOOL()), DAE.PROP(type_ = DAE.T_STRING()), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)
       then {};
-    case (_, _, _, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), DAE.PROP(type_ = DAE.T_STRING(varLst = _)), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)
+    case (_, _, _, DAE.PROP(type_ = DAE.T_BOOL()), DAE.PROP(type_ = DAE.T_STRING()), DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))), _)
       then {DAE.STMT_ASSERT(cond, msg, level, source)};
     case (_, _, _, DAE.PROP(type_ = t1), DAE.PROP(type_ = t2), DAE.PROP(type_ = t3), _)
       equation
@@ -819,7 +819,7 @@ public function makeTerminate "
   output DAE.Statement outStatement;
 algorithm
   outStatement := match (msg, props, source)
-    case (_, DAE.PROP(type_ = DAE.T_STRING(varLst = _)), _) then DAE.STMT_TERMINATE(msg, source);
+    case (_, DAE.PROP(type_ = DAE.T_STRING()), _) then DAE.STMT_TERMINATE(msg, source);
   end match;
 end makeTerminate;
 

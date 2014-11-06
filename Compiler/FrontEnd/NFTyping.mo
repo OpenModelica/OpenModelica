@@ -213,7 +213,7 @@ algorithm
       then
         (comp, st);
 
-    case (NFInstTypes.TYPED_COMPONENT(name = _), _, _, st, _) then (inComponent, st);
+    case (NFInstTypes.TYPED_COMPONENT(), _, _, st, _) then (inComponent, st);
 
     case (NFInstTypes.OUTER_COMPONENT(innerName = SOME(name)), _, _, st, _)
       equation
@@ -549,7 +549,7 @@ algorithm
       then
         NFInstSymbolTable.updateComponent(comp, inSymbolTable);
 
-    case (NFInstTypes.UNTYPED_COMPONENT(binding = _), _) then inSymbolTable;
+    case (NFInstTypes.UNTYPED_COMPONENT(), _) then inSymbolTable;
 
     else
       equation
@@ -592,7 +592,7 @@ algorithm
       then
         (NFInstTypes.TYPED_BINDING(binding, ty, pd, info), st);
 
-    case (NFInstTypes.TYPED_BINDING(bindingExp = _), _, _, st, _)
+    case (NFInstTypes.TYPED_BINDING(), _, _, st, _)
       then (inBinding, st);
 
     else (NFInstTypes.UNBOUND(), inSymbolTable);
@@ -797,19 +797,19 @@ algorithm
       DAE.CallAttributes attrs;
       Function func;
 
-    case (DAE.ICONST(integer = _), _, _, st, _)
+    case (DAE.ICONST(), _, _, st, _)
       then (inExp, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
 
-    case (DAE.RCONST(real = _), _, _, st, _)
+    case (DAE.RCONST(), _, _, st, _)
       then (inExp, DAE.T_REAL_DEFAULT, DAE.C_CONST(), st);
 
-    case (DAE.SCONST(string = _), _, _, st, _)
+    case (DAE.SCONST(), _, _, st, _)
       then (inExp, DAE.T_STRING_DEFAULT, DAE.C_CONST(), st);
 
-    case (DAE.BCONST(bool = _), _, _, st, _)
+    case (DAE.BCONST(), _, _, st, _)
       then (inExp, DAE.T_BOOL_DEFAULT, DAE.C_CONST(), st);
     // BTH
-    case (DAE.CLKCONST(clk = _), _, _, st, _)
+    case (DAE.CLKCONST(), _, _, st, _)
       then (inExp, DAE.T_CLOCK_DEFAULT, DAE.C_CONST(), st);
 
     case (DAE.ENUM_LITERAL(name = name), _, _, st, _)
@@ -897,7 +897,7 @@ algorithm
       then
         (DAE.RANGE(ty, e1, oe, e2), ty, const, st);
 
-    case (DAE.MATRIX(ty = _), _, _, _, _)
+    case (DAE.MATRIX(), _, _, _, _)
       equation
         /* ------------------------------------------------------------------*/
         // TODO: Remove MATRIX from DAE when we remove the old instantiation.
@@ -1154,7 +1154,7 @@ algorithm
       then
         (DAE.CREF(cref, ty), ty, st);
 
-    case (_, NFInstTypes.UNTYPED_COMPONENT(name = _), true, _, c, st, _)
+    case (_, NFInstTypes.UNTYPED_COMPONENT(), true, _, c, st, _)
       equation
         (NFInstTypes.TYPED_COMPONENT(ty = ty, binding = binding), st) =
           typeComponent(inComponent, NONE(), c, st, inFunctionTable);
@@ -1165,14 +1165,14 @@ algorithm
       then
         (exp, ty, st);
 
-    case (_, NFInstTypes.UNTYPED_COMPONENT(name = _), false, _, c, st, _)
+    case (_, NFInstTypes.UNTYPED_COMPONENT(), false, _, c, st, _)
       equation
         (ty, st) = typeComponentDims(inComponent, c, st, inFunctionTable);
         ty = propagateCrefSubsToType(ty, inCref);
       then
         (DAE.CREF(inCref, ty), ty, st);
 
-    case (_, NFInstTypes.OUTER_COMPONENT(name = _), se, ep, c, st, _)
+    case (_, NFInstTypes.OUTER_COMPONENT(), se, ep, c, st, _)
       equation
         (inner_comp, st) = typeComponent(inComponent, NONE(), c, st, inFunctionTable);
         inner_name = NFInstUtil.getComponentName(inner_comp);
@@ -1825,7 +1825,7 @@ algorithm
     // might also be part of an expandable connector. In that case, strip the
     // last identifier and look again to see if we can find a deleted component
     // that is a prefix of the given cref.
-    case (DAE.CREF_QUAL(ident = _), _)
+    case (DAE.CREF_QUAL(), _)
       equation
         cref = ComponentReference.crefStripLastIdent(inCref);
         (opt_comp, opt_pre_comp) = lookupConnectorCref2(cref, inSymbolTable);
@@ -1847,7 +1847,7 @@ algorithm
       DAE.Type ty;
 
     // A deleted component, return nothing.
-    case (SOME(NFInstTypes.DELETED_COMPONENT(name = _)), _)
+    case (SOME(NFInstTypes.DELETED_COMPONENT()), _)
       then (NONE(), NONE());
 
     // A component that should be added to an expandable connector. The
@@ -1985,7 +1985,7 @@ algorithm
         branches = List.map3(branches, typeBranchStatement, c, st, ft);
       then
         NFInstTypes.IF_STMT(branches, info) :: inAcc;
-    case (NFInstTypes.FOR_STMT(info=_),_,_,_,_)
+    case (NFInstTypes.FOR_STMT(),_,_,_,_)
       then
         inStmt :: inAcc;
     else
@@ -2013,7 +2013,7 @@ algorithm
       equation
         false = List.exist(el,Expression.isNotCref);
       then NFInstTypes.ASSIGN_STMT(lhs,rhs,info)::inAcc;
-    case (DAE.CREF(componentRef=_),_,_,_)
+    case (DAE.CREF(),_,_,_)
       then NFInstTypes.ASSIGN_STMT(lhs,rhs,info)::inAcc;
   end matchcontinue;
 end typeAssignment;

@@ -105,26 +105,26 @@ public function binopSymbol1
   output String outString;
 algorithm
   outString := match (inOperator)
-    case (DAE.ADD(ty = _)) then " + ";
-    case (DAE.SUB(ty = _)) then " - ";
-    case (DAE.MUL(ty = _)) then " * ";
-    case (DAE.DIV(ty = _)) then " / ";
-    case (DAE.POW(ty = _)) then " ^ ";
-    case (DAE.ADD_ARR(ty = _)) then " + ";
-    case (DAE.SUB_ARR(ty = _)) then " - ";
-    case (DAE.MUL_ARR(ty = _)) then " * ";
-    case (DAE.DIV_ARR(ty = _)) then " / ";
-    case (DAE.POW_ARR(ty = _)) then " ^ ";
-    case (DAE.POW_ARR2(ty = _)) then " ^ ";
-    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " * ";
-    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " + ";
-    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - ";
-    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " ^ ";
-    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ^ ";
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " * ";
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " * ";
-    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " / ";
-    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " / ";
+    case (DAE.ADD()) then " + ";
+    case (DAE.SUB()) then " - ";
+    case (DAE.MUL()) then " * ";
+    case (DAE.DIV()) then " / ";
+    case (DAE.POW()) then " ^ ";
+    case (DAE.ADD_ARR()) then " + ";
+    case (DAE.SUB_ARR()) then " - ";
+    case (DAE.MUL_ARR()) then " * ";
+    case (DAE.DIV_ARR()) then " / ";
+    case (DAE.POW_ARR()) then " ^ ";
+    case (DAE.POW_ARR2()) then " ^ ";
+    case (DAE.MUL_ARRAY_SCALAR()) then " * ";
+    case (DAE.ADD_ARRAY_SCALAR()) then " + ";
+    case (DAE.SUB_SCALAR_ARRAY()) then " - ";
+    case (DAE.POW_SCALAR_ARRAY()) then " ^ ";
+    case (DAE.POW_ARRAY_SCALAR()) then " ^ ";
+    case (DAE.MUL_SCALAR_PRODUCT()) then " * ";
+    case (DAE.MUL_MATRIX_PRODUCT()) then " * ";
+    case (DAE.DIV_SCALAR_ARRAY()) then " / ";
+    case (DAE.DIV_ARRAY_SCALAR()) then " / ";
     else " <UNKNOWN_SYMBOL> ";
   end match;
 end binopSymbol1;
@@ -135,27 +135,27 @@ public function debugBinopSymbol
   output String outString;
 algorithm
   outString := match (inOperator)
-    case (DAE.ADD(ty = _)) then " + ";
-    case (DAE.SUB(ty = _)) then " - ";
-    case (DAE.MUL(ty = _)) then " * ";
-    case (DAE.DIV(ty = _)) then " / ";
-    case (DAE.POW(ty = _)) then " ^ ";
-    case (DAE.EQUAL(ty = _)) then " = ";
-    case (DAE.ADD_ARR(ty = _)) then " +ARR ";
-    case (DAE.SUB_ARR(ty = _)) then " -ARR ";
-    case (DAE.MUL_ARR(ty = _)) then " *ARR ";
-    case (DAE.DIV_ARR(ty = _)) then " /ARR ";
-    case (DAE.POW_ARR(ty = _)) then " ^ARR ";
-    case (DAE.POW_ARR2(ty = _)) then " ^ARR2 ";
-    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " ARR*S ";
-    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " ARR+S ";
-    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - ";
-    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " S^ARR ";
-    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ARR^S ";
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " Dot ";
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " MatrixProd ";
-    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " S/ARR ";
-    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " ARR/S ";
+    case (DAE.ADD()) then " + ";
+    case (DAE.SUB()) then " - ";
+    case (DAE.MUL()) then " * ";
+    case (DAE.DIV()) then " / ";
+    case (DAE.POW()) then " ^ ";
+    case (DAE.EQUAL()) then " = ";
+    case (DAE.ADD_ARR()) then " +ARR ";
+    case (DAE.SUB_ARR()) then " -ARR ";
+    case (DAE.MUL_ARR()) then " *ARR ";
+    case (DAE.DIV_ARR()) then " /ARR ";
+    case (DAE.POW_ARR()) then " ^ARR ";
+    case (DAE.POW_ARR2()) then " ^ARR2 ";
+    case (DAE.MUL_ARRAY_SCALAR()) then " ARR*S ";
+    case (DAE.ADD_ARRAY_SCALAR()) then " ARR+S ";
+    case (DAE.SUB_SCALAR_ARRAY()) then " - ";
+    case (DAE.POW_SCALAR_ARRAY()) then " S^ARR ";
+    case (DAE.POW_ARRAY_SCALAR()) then " ARR^S ";
+    case (DAE.MUL_SCALAR_PRODUCT()) then " Dot ";
+    case (DAE.MUL_MATRIX_PRODUCT()) then " MatrixProd ";
+    case (DAE.DIV_SCALAR_ARRAY()) then " S/ARR ";
+    case (DAE.DIV_ARRAY_SCALAR()) then " ARR/S ";
   end match;
 end debugBinopSymbol;
 
@@ -197,7 +197,7 @@ algorithm
       then
         s;
 
-    case (DAE.POW(ty = _)) then " ^ ";
+    case (DAE.POW()) then " ^ ";
     case (DAE.ADD_ARR(ty = t))
       equation
         ts = Types.unparseType(t);
@@ -210,24 +210,24 @@ algorithm
         s = stringAppendList({" -<SUB_ARR><", ts, "> "});
       then
         s;
-    case (DAE.MUL_ARR(ty = _)) then " *<MUL_ARRAY> ";
+    case (DAE.MUL_ARR()) then " *<MUL_ARRAY> ";
     case (DAE.DIV_ARR(ty = t))
       equation
         ts = Types.unparseType(t);
         s = stringAppendList({" /<DIV_ARR><", ts, "> "});
       then
         s;
-    case (DAE.POW_ARR(ty = _)) then " ^<POW_ARR> ";
-    case (DAE.POW_ARR2(ty = _)) then " ^<POW_ARR2> ";
-    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " *<MUL_ARRAY_SCALAR> ";
-    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " +<ADD_ARRAY_SCALAR> ";
-    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " -<SUB_SCALAR_ARRAY> ";
-    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " ^<POW_SCALAR_ARRAY> ";
-    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ^<POW_ARRAY_SCALAR> ";
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " *<MUL_SCALAR_PRODUCT> ";
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " *<MUL_MATRIX_PRODUCT> ";
-    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " /<DIV_SCALAR_ARRAY> ";
-    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " /<DIV_ARRAY_SCALAR> ";
+    case (DAE.POW_ARR()) then " ^<POW_ARR> ";
+    case (DAE.POW_ARR2()) then " ^<POW_ARR2> ";
+    case (DAE.MUL_ARRAY_SCALAR()) then " *<MUL_ARRAY_SCALAR> ";
+    case (DAE.ADD_ARRAY_SCALAR()) then " +<ADD_ARRAY_SCALAR> ";
+    case (DAE.SUB_SCALAR_ARRAY()) then " -<SUB_SCALAR_ARRAY> ";
+    case (DAE.POW_SCALAR_ARRAY()) then " ^<POW_SCALAR_ARRAY> ";
+    case (DAE.POW_ARRAY_SCALAR()) then " ^<POW_ARRAY_SCALAR> ";
+    case (DAE.MUL_SCALAR_PRODUCT()) then " *<MUL_SCALAR_PRODUCT> ";
+    case (DAE.MUL_MATRIX_PRODUCT()) then " *<MUL_MATRIX_PRODUCT> ";
+    case (DAE.DIV_SCALAR_ARRAY()) then " /<DIV_SCALAR_ARRAY> ";
+    case (DAE.DIV_ARRAY_SCALAR()) then " /<DIV_ARRAY_SCALAR> ";
   end match;
 end binopSymbol2;
 
@@ -238,8 +238,8 @@ public function unaryopSymbol
 algorithm
   outString:=
   match (inOperator)
-    case (DAE.UMINUS(ty = _)) then if Config.typeinfo() then "-<UMINUS>" else "-";
-    case (DAE.UMINUS_ARR(ty = _)) then if Config.typeinfo() then "-<UMINUS_ARR>" else "-";
+    case (DAE.UMINUS()) then if Config.typeinfo() then "-<UMINUS>" else "-";
+    case (DAE.UMINUS_ARR()) then if Config.typeinfo() then "-<UMINUS_ARR>" else "-";
   end match;
 end unaryopSymbol;
 
@@ -272,12 +272,12 @@ public function relopSymbol
 algorithm
   outString:=
   match (inOperator)
-    case (DAE.LESS(ty = _)) then " < ";
-    case (DAE.LESSEQ(ty = _)) then " <= ";
-    case (DAE.GREATER(ty = _)) then " > ";
-    case (DAE.GREATEREQ(ty = _)) then " >= ";
-    case (DAE.EQUAL(ty = _)) then " == ";
-    case (DAE.NEQUAL(ty = _)) then " <> ";
+    case (DAE.LESS()) then " < ";
+    case (DAE.LESSEQ()) then " <= ";
+    case (DAE.GREATER()) then " > ";
+    case (DAE.GREATEREQ()) then " >= ";
+    case (DAE.EQUAL()) then " == ";
+    case (DAE.NEQUAL()) then " <> ";
   end match;
 end relopSymbol;
 
@@ -524,13 +524,13 @@ algorithm
 
     case (DAE.BCONST(bool = b), _, _, _) then boolString(b);
 
-    case (DAE.CREF(componentRef = c,ty = _), _, SOME((pcreffunc,creffuncparam)), _)
+    case (DAE.CREF(componentRef = c), _, SOME((pcreffunc,creffuncparam)), _)
       equation
         s = pcreffunc(c,creffuncparam);
       then
         s;
 
-    case (DAE.CREF(componentRef = c,ty = _), _, _, _)
+    case (DAE.CREF(componentRef = c), _, _, _)
       equation
         s = ComponentReference.printComponentRefStr(c);
       then
@@ -622,7 +622,7 @@ algorithm
       then
         str;
 
-    case (e as DAE.CALL(path = _,expLst = _), _, _, SOME(pcallfunc))
+    case (e as DAE.CALL(), _, _, SOME(pcallfunc))
       equation
         s_2 = pcallfunc(e,stringDelimiter,opcreffunc);
       then
@@ -646,7 +646,7 @@ algorithm
       then
         s;
 
-    case (DAE.ARRAY(array = es,ty=_), _, _, _)
+    case (DAE.ARRAY(array = es), _, _, _)
       equation
         // s3 = Types.unparseType(tp); // adrpo: not used!
         s = stringDelimitList(
@@ -663,7 +663,7 @@ algorithm
       then
         s;
 
-    case (DAE.MATRIX(matrix = lstes,ty=_), _, _, _)
+    case (DAE.MATRIX(matrix = lstes), _, _, _)
       equation
         // s3 = Types.unparseType(tp); // adrpo: not used!
         s = stringDelimitList(List.map1(lstes, printRowStr, stringDelimiter), "},{");
@@ -832,37 +832,37 @@ algorithm
     case DAE.RCONST(_) then "RCONST";
     case DAE.SCONST(_) then "SCONST";
     case DAE.BCONST(_) then "BCONST";
-    case DAE.ENUM_LITERAL(name = _) then "ENUM_LITERAL";
-    case DAE.CREF(componentRef = _) then "CREF";
-    case DAE.BINARY(exp1 = _) then "BINARY";
-    case DAE.UNARY(exp = _) then "UNARY";
-    case DAE.LBINARY(exp1 = _) then "LBINARY";
-    case DAE.LUNARY(exp = _) then "LUNARY";
-    case DAE.RELATION(exp1 = _) then "RELATION";
-    case DAE.IFEXP(expCond = _) then "IFEXP";
-    case DAE.CALL(path = _) then "CALL";
-    case DAE.PARTEVALFUNCTION(path = _) then "PARTEVALFUNCTION";
-    case DAE.ARRAY(ty = _) then "ARRAY";
-    case DAE.MATRIX(ty = _) then "MATRIX";
-    case DAE.RANGE(ty = _) then "RANGE";
-    case DAE.TUPLE(PR = _) then "TUPLE";
-    case DAE.CAST(ty = _) then "CAST";
-    case DAE.ASUB(exp = _) then "ASUB";
-    case DAE.TSUB(exp = _) then "TSUB";
-    case DAE.SIZE(exp = _) then "SIZE";
-    case DAE.CODE(code = _) then "CODE";
-    case DAE.EMPTY(scope = _) then "EMPTY";
-    case DAE.REDUCTION(reductionInfo = _) then "REDUCTION";
-    case DAE.LIST(valList = _) then "LIST";
-    case DAE.CONS(car = _) then "CAR";
-    case DAE.META_TUPLE(listExp = _) then "META_TUPLE";
-    case DAE.META_OPTION(exp = _) then "META_OPTION";
-    case DAE.METARECORDCALL(path = _) then "METARECORDCALL";
-    case DAE.MATCHEXPRESSION(matchType = _) then "MATCHEXPRESSION";
-    case DAE.BOX(exp = _) then "BOX";
-    case DAE.UNBOX(exp = _) then "UNBOX";
-    case DAE.SHARED_LITERAL(index = _) then "SHARED_LITERAL";
-    case DAE.PATTERN(pattern = _) then "PATTERN";
+    case DAE.ENUM_LITERAL() then "ENUM_LITERAL";
+    case DAE.CREF() then "CREF";
+    case DAE.BINARY() then "BINARY";
+    case DAE.UNARY() then "UNARY";
+    case DAE.LBINARY() then "LBINARY";
+    case DAE.LUNARY() then "LUNARY";
+    case DAE.RELATION() then "RELATION";
+    case DAE.IFEXP() then "IFEXP";
+    case DAE.CALL() then "CALL";
+    case DAE.PARTEVALFUNCTION() then "PARTEVALFUNCTION";
+    case DAE.ARRAY() then "ARRAY";
+    case DAE.MATRIX() then "MATRIX";
+    case DAE.RANGE() then "RANGE";
+    case DAE.TUPLE() then "TUPLE";
+    case DAE.CAST() then "CAST";
+    case DAE.ASUB() then "ASUB";
+    case DAE.TSUB() then "TSUB";
+    case DAE.SIZE() then "SIZE";
+    case DAE.CODE() then "CODE";
+    case DAE.EMPTY() then "EMPTY";
+    case DAE.REDUCTION() then "REDUCTION";
+    case DAE.LIST() then "LIST";
+    case DAE.CONS() then "CAR";
+    case DAE.META_TUPLE() then "META_TUPLE";
+    case DAE.META_OPTION() then "META_OPTION";
+    case DAE.METARECORDCALL() then "METARECORDCALL";
+    case DAE.MATCHEXPRESSION() then "MATCHEXPRESSION";
+    case DAE.BOX() then "BOX";
+    case DAE.UNBOX() then "UNBOX";
+    case DAE.SHARED_LITERAL() then "SHARED_LITERAL";
+    case DAE.PATTERN() then "PATTERN";
     else "#UNKNOWN EXPRESSION#";
   end match;
 end printExpTypeStr;
@@ -944,14 +944,14 @@ algorithm
     case (DAE.RCONST(_)) then 0;
     case (DAE.SCONST(_)) then 0;
     case (DAE.BCONST(_)) then 0;
-    case (DAE.ENUM_LITERAL(name = _)) then 0;
+    case (DAE.ENUM_LITERAL()) then 0;
     case (DAE.CREF(_,_)) then 0;
     case (DAE.ASUB(_,_)) then 0;
     case (DAE.CAST(_,_)) then 0;
-    case (DAE.CALL(path=_)) then 0;
-    case (DAE.PARTEVALFUNCTION(path=_)) then 0;
-    case (DAE.ARRAY(ty = _)) then 0;
-    case (DAE.MATRIX(ty= _)) then 0;
+    case (DAE.CALL()) then 0;
+    case (DAE.PARTEVALFUNCTION()) then 0;
+    case (DAE.ARRAY()) then 0;
+    case (DAE.MATRIX()) then 0;
     case (DAE.BINARY(operator = DAE.POW(_))) then 3;
     case (DAE.BINARY(operator = DAE.POW_ARR(_))) then 3;
     case (DAE.BINARY(operator = DAE.POW_ARR2(_))) then 3;
@@ -983,8 +983,8 @@ algorithm
     case (DAE.LUNARY(operator = DAE.NOT(_))) then 13;
     case (DAE.LBINARY(operator = DAE.AND(_))) then 15;
     case (DAE.LBINARY(operator = DAE.OR(_))) then 17;
-    case (DAE.RANGE(ty = _)) then 19;
-    case (DAE.IFEXP(expCond = _)) then 21;
+    case (DAE.RANGE()) then 19;
+    case (DAE.IFEXP()) then 21;
     case (DAE.TUPLE(_)) then 23;  /* Not valid in inner expressions, only included here for completeness */
     case (_) then 25;
   end matchcontinue;
@@ -1443,7 +1443,7 @@ algorithm
       then
         res_str;
 
-    case (DAE.ASUB(exp = e,sub = _),level)
+    case (DAE.ASUB(exp = e),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1484,7 +1484,7 @@ algorithm
       then
         res_str;
 
-    case (DAE.RECORD(path=fcn, exps=args,comp=_,ty=_),level)
+    case (DAE.RECORD(path=fcn, exps=args),level)
       equation
         gen_str = genStringNTime("   |", level);
         fs = Absyn.pathString(fcn);
@@ -1504,7 +1504,7 @@ algorithm
       then
         res_str;
 
-     case (DAE.UNBOX(exp=e,ty=_),level)
+     case (DAE.UNBOX(exp=e),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1628,7 +1628,7 @@ algorithm
       Integer size;
     case DAE.DIM_UNKNOWN() then ":";
 
-    case DAE.DIM_ENUM(enumTypeName = p, size =size)
+    case DAE.DIM_ENUM(enumTypeName = p)
       equation
         s = Absyn.pathString(p);
       then

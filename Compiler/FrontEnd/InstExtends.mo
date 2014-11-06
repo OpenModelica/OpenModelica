@@ -137,7 +137,7 @@ algorithm
     case (cache,env,ih,mod,_,{},_,_,_,_,_) then (cache,env,ih,mod,{},{},{},{},{});
 
     // instantiate a basic type base class
-    case (cache,env,ih,mod,pre,(SCode.EXTENDS( baseClassPath = tp, modifications = _, visibility = _)) :: rest,elsExtendsScope,ci_state,className,impl,_)
+    case (cache,env,ih,mod,pre,(SCode.EXTENDS( baseClassPath = tp)) :: rest,elsExtendsScope,ci_state,className,impl,_)
       equation
         Absyn.IDENT(cn) = Absyn.makeNotFullyQualified(tp);
         true = InstUtil.isBuiltInClass(cn);
@@ -223,7 +223,7 @@ algorithm
         (cache,env2,ih,mods_1,compelts3,eq,ieq,alg,ialg);
 
     // base class was not found
-    case (cache,env,_,_,_,(SCode.EXTENDS(info = info, baseClassPath = tp,modifications = _) :: _),_,_,_,_,_)
+    case (cache,env,_,_,_,(SCode.EXTENDS(info = info, baseClassPath = tp) :: _),_,_,_,_,_)
       equation
         failure((_,_,_) = Lookup.lookupClass(cache, env, tp, false));
         s = Absyn.pathString(tp);
@@ -234,10 +234,10 @@ algorithm
 
     // extending a component means copying it. It might fail above, try again
     case (cache,env,ih,mod,pre,
-         (elt as SCode.COMPONENT(name = _, attributes =
+         (elt as SCode.COMPONENT(attributes =
           SCode.ATTR(variability = var),
-          modifications = _,
-          prefixes = SCode.PREFIXES(finalPrefix=_),
+          
+          prefixes = SCode.PREFIXES(),
           comment = _)) :: rest,elsExtendsScope,
           ci_state,className,impl,_)
       equation
@@ -251,7 +251,7 @@ algorithm
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);
 
     // Classdefs
-    case (cache,env,ih,mod,pre,(elt as SCode.CLASS(name = _)) :: rest, elsExtendsScope,
+    case (cache,env,ih,mod,pre,(elt as SCode.CLASS()) :: rest, elsExtendsScope,
           ci_state,className,impl,_)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
@@ -260,7 +260,7 @@ algorithm
         (cache,env_1,ih,mods,((elt,DAE.NOMOD(),false) :: compelts2),eq2,initeq2,alg2,ialg2);
 
     // instantiate elements that are not extends
-    case (cache,env,ih,mod,pre,(elt as SCode.IMPORT(imp = _)) :: rest, elsExtendsScope, ci_state,className,impl,_)
+    case (cache,env,ih,mod,pre,(elt as SCode.IMPORT()) :: rest, elsExtendsScope, ci_state,className,impl,_)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
         instExtendsList(cache,env,ih, mod, pre, rest, elsExtendsScope, ci_state, className, impl, isPartialInst);
@@ -524,7 +524,7 @@ algorithm
       Absyn.TypeSpec derivedTySpec;
 
     // found the base class with parts
-    case (_,emod,name1,classExtendsElt,(cl as SCode.CLASS(name = name2, classDef = SCode.PARTS(elementLst = _)),mod1,b)::rest)
+    case (_,emod,name1,classExtendsElt,(cl as SCode.CLASS(name = name2, classDef = SCode.PARTS()),mod1,b)::rest)
       equation
         true = name1 == name2; // Compare the name before pattern-matching to speed this up
 
@@ -547,7 +547,7 @@ algorithm
         (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
 
     // found the base class which is derived
-    case (_,emod,name1,classExtendsElt,(cl as SCode.CLASS(name = name2, classDef = SCode.DERIVED(typeSpec = _)),mod1,b)::rest)
+    case (_,emod,name1,classExtendsElt,(cl as SCode.CLASS(name = name2, classDef = SCode.DERIVED()),mod1,b)::rest)
       equation
         true = name1 == name2; // Compare the name before pattern-matching to speed this up
 
@@ -730,7 +730,7 @@ algorithm
       list<SCode.Element> elt,rest;
       SCode.Element e;
     case {} then {};
-    case (SCode.IMPORT(imp = _) :: rest)
+    case (SCode.IMPORT() :: rest)
       equation
         elt = noImportElements(rest);
       then
@@ -778,7 +778,7 @@ algorithm
       Boolean b;
       SCode.Mod m;
 
-    case ((comp as SCode.COMPONENT(name = id, modifications = _), cmod, b), _, _)
+    case ((comp as SCode.COMPONENT(name = id), cmod, b), _, _)
       equation
         // Debug.traceln(" comp: " + id + " " + Mod.printModStr(mod));
         // take ONLY the modification from the equation if is typed
@@ -790,10 +790,10 @@ algorithm
       then
         ((comp, cmod, b), mod_rest);
 
-    case ((SCode.EXTENDS(baseClassPath = _), _, _), _, _)
+    case ((SCode.EXTENDS(), _, _), _, _)
       then (inComponent, inMod);
 
-    case ((comp as SCode.IMPORT(imp = _), _, b), _ , _)
+    case ((comp as SCode.IMPORT(), _, b), _ , _)
       then ((comp, DAE.NOMOD(), b), inMod);
 
     case ((comp1 as SCode.CLASS(name = id, prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), cmod1, b), _, _)
@@ -1097,7 +1097,7 @@ algorithm
       then
         (cache,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info));
 
-    case (cache,_,SCode.IMPORT(imp = _),_) then (cache,inElt);
+    case (cache,_,SCode.IMPORT(),_) then (cache,inElt);
 
     case (_,_,elt,_)
       equation
@@ -1168,9 +1168,9 @@ algorithm
         (cache,mod) = fixModifications(cache,env,mod,ht);
       then (cache,SCode.DERIVED(ts,mod,attr));
 
-    case (cache,_,cd as SCode.ENUMERATION(enumLst = _),_) then (cache,cd);
-    case (cache,_,cd as SCode.OVERLOAD(pathLst = _),_) then (cache,cd);
-    case (cache,_,cd as SCode.PDER(functionPath = _),_) then (cache,cd);
+    case (cache,_,cd as SCode.ENUMERATION(),_) then (cache,cd);
+    case (cache,_,cd as SCode.OVERLOAD(),_) then (cache,cd);
+    case (cache,_,cd as SCode.PDER(),_) then (cache,cd);
 
     case (_,_,cd,_)
       equation

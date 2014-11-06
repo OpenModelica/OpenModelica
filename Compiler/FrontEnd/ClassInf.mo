@@ -200,24 +200,24 @@ algorithm
     local
       Absyn.Path p;
       Boolean b1,b2,b3;
-    case UNKNOWN(path = _) then "unknown";
-    case OPTIMIZATION(path = _) then "optimization";
-    case MODEL(path = _) then "model";
-    case RECORD(path = _) then "record";
-    case BLOCK(path = _) then "block";
-    case CONNECTOR(path = _) then "connector";
-    case TYPE(path = _) then "type";
-    case PACKAGE(path = _) then "package";
-    case FUNCTION(path = _, isImpure = true) then "impure function";
-    case FUNCTION(path = _) then "function";
-    case TYPE_INTEGER(path = _) then "Integer";
-    case TYPE_REAL(path = _) then "Real";
-    case TYPE_STRING(path = _) then "String";
-    case TYPE_BOOL(path = _) then "Boolean";
+    case UNKNOWN() then "unknown";
+    case OPTIMIZATION() then "optimization";
+    case MODEL() then "model";
+    case RECORD() then "record";
+    case BLOCK() then "block";
+    case CONNECTOR() then "connector";
+    case TYPE() then "type";
+    case PACKAGE() then "package";
+    case FUNCTION(isImpure = true) then "impure function";
+    case FUNCTION() then "function";
+    case TYPE_INTEGER() then "Integer";
+    case TYPE_REAL() then "Real";
+    case TYPE_STRING() then "String";
+    case TYPE_BOOL() then "Boolean";
     // BTH
-    case TYPE_CLOCK(path = _) then "Clock";
-    case HAS_RESTRICTIONS(path = _, hasEquations = false, hasAlgorithms = false, hasConstraints = false) then "new def";
-    case HAS_RESTRICTIONS(path = _, hasEquations = b1, hasAlgorithms = b2, hasConstraints = _)
+    case TYPE_CLOCK() then "Clock";
+    case HAS_RESTRICTIONS(hasEquations = false, hasAlgorithms = false, hasConstraints = false) then "new def";
+    case HAS_RESTRICTIONS(hasEquations = b1, hasAlgorithms = b2)
       then "has" + (if b1 then " equations" else "") + (if b2 then " algorithms" else "") + (if b1 then " constraints" else "");
     case EXTERNAL_OBJ(_) then "ExternalObject";
     case META_TUPLE(_) then "tuple";
@@ -438,7 +438,7 @@ algorithm
     case (SCode.R_PREDEFINED_ENUMERATION(),p) then TYPE_ENUM(p);
      /* Meta Modelica extensions */
     case (SCode.R_UNIONTYPE(),p) then META_UNIONTYPE(p);
-    case (SCode.R_METARECORD(index=_),p) then META_RECORD(p);
+    case (SCode.R_METARECORD(),p) then META_RECORD(p);
   end match;
 end start_dispatch;
 
@@ -459,32 +459,32 @@ algorithm
       String s;
       list<String> msg;
     case (UNKNOWN(path = p),NEWDEF()) then HAS_RESTRICTIONS(p,false,false,false);  /* Event `NEWDEF\' */
-    case (OPTIMIZATION(path = _),NEWDEF()) then inState;
-    case (MODEL(path = _),NEWDEF()) then inState;
-    case (RECORD(path = _),NEWDEF()) then inState;
-    case (BLOCK(path = _),NEWDEF()) then inState;
-    case (CONNECTOR(path = _),NEWDEF()) then inState;
+    case (OPTIMIZATION(),NEWDEF()) then inState;
+    case (MODEL(),NEWDEF()) then inState;
+    case (RECORD(),NEWDEF()) then inState;
+    case (BLOCK(),NEWDEF()) then inState;
+    case (CONNECTOR(),NEWDEF()) then inState;
     case (TYPE(path = p),NEWDEF()) then TYPE(p); // A type can be constructed with long definition
     case (PACKAGE(path = p),NEWDEF()) then PACKAGE(p);
-    case (FUNCTION(path = _),NEWDEF()) then inState;
-    case (ENUMERATION(path = _),NEWDEF()) then inState;
-    case (TYPE_INTEGER(path = _),NEWDEF()) then inState;
-    case (TYPE_REAL(path = _),NEWDEF()) then inState;
-    case (TYPE_STRING(path = _),NEWDEF()) then inState;
-    case (TYPE_BOOL(path = _),NEWDEF()) then inState;
+    case (FUNCTION(),NEWDEF()) then inState;
+    case (ENUMERATION(),NEWDEF()) then inState;
+    case (TYPE_INTEGER(),NEWDEF()) then inState;
+    case (TYPE_REAL(),NEWDEF()) then inState;
+    case (TYPE_STRING(),NEWDEF()) then inState;
+    case (TYPE_BOOL(),NEWDEF()) then inState;
     // BTH
-    case (TYPE_CLOCK(path = _),NEWDEF()) then inState;
-    case (TYPE_ENUM(path = _),NEWDEF()) then inState;
-    case (META_UNIONTYPE(path = _),NEWDEF()) then inState;  // Added 2009-05-11. sjoelund
-    case (META_RECORD(path = _),NEWDEF()) then inState;  // Added 2009-08-18. sjoelund
+    case (TYPE_CLOCK(),NEWDEF()) then inState;
+    case (TYPE_ENUM(),NEWDEF()) then inState;
+    case (META_UNIONTYPE(),NEWDEF()) then inState;  // Added 2009-05-11. sjoelund
+    case (META_RECORD(),NEWDEF()) then inState;  // Added 2009-08-18. sjoelund
 
    /* Event 'FOUND_COMPONENT' */
-    case (UNKNOWN(path = p),FOUND_COMPONENT(name = _)) then HAS_RESTRICTIONS(p,false,false,false);  /* Event `NEWDEF\' */
-    case (OPTIMIZATION(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (MODEL(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (RECORD(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (BLOCK(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (CONNECTOR(path = _),FOUND_COMPONENT(name = _)) then inState;
+    case (UNKNOWN(path = p),FOUND_COMPONENT()) then HAS_RESTRICTIONS(p,false,false,false);  /* Event `NEWDEF\' */
+    case (OPTIMIZATION(),FOUND_COMPONENT()) then inState;
+    case (MODEL(),FOUND_COMPONENT()) then inState;
+    case (RECORD(),FOUND_COMPONENT()) then inState;
+    case (BLOCK(),FOUND_COMPONENT()) then inState;
+    case (CONNECTOR(),FOUND_COMPONENT()) then inState;
     case (TYPE(path = p),FOUND_COMPONENT(name = s)) // A type can not contain new components
       equation
         if not isBasicTypeComponentName(s) then
@@ -494,36 +494,36 @@ algorithm
       then TYPE(p);
     /* adrpo 2009-05-15: type Orientation can contain equalityConstraint function! */
     //case (TYPE(path = p),FOUND_COMPONENT()) then TYPE(p);
-    case (PACKAGE(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (FUNCTION(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (ENUMERATION(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (HAS_RESTRICTIONS(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (TYPE_INTEGER(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (TYPE_REAL(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (TYPE_STRING(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (TYPE_BOOL(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (TYPE_CLOCK(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (TYPE_ENUM(path = _),FOUND_COMPONENT(name = _)) then inState;
-    case (META_RECORD(path = _),FOUND_COMPONENT(name = _)) then inState;  // Added 2009-08-19. sjoelund
+    case (PACKAGE(),FOUND_COMPONENT()) then inState;
+    case (FUNCTION(),FOUND_COMPONENT()) then inState;
+    case (ENUMERATION(),FOUND_COMPONENT()) then inState;
+    case (HAS_RESTRICTIONS(),FOUND_COMPONENT()) then inState;
+    case (TYPE_INTEGER(),FOUND_COMPONENT()) then inState;
+    case (TYPE_REAL(),FOUND_COMPONENT()) then inState;
+    case (TYPE_STRING(),FOUND_COMPONENT()) then inState;
+    case (TYPE_BOOL(),FOUND_COMPONENT()) then inState;
+    case (TYPE_CLOCK(),FOUND_COMPONENT()) then inState;
+    case (TYPE_ENUM(),FOUND_COMPONENT()) then inState;
+    case (META_RECORD(),FOUND_COMPONENT()) then inState;  // Added 2009-08-19. sjoelund
 
    /* Event `FOUND_EQUATION\' */
     case (UNKNOWN(path = p),FOUND_EQUATION()) then HAS_RESTRICTIONS(p,true,false,false);
-    case (OPTIMIZATION(path = _),FOUND_EQUATION()) then inState;
-    case (OPTIMIZATION(path = _),FOUND_CONSTRAINT()) then inState;
-    case (OPTIMIZATION(path = _),FOUND_ALGORITHM()) then inState;
+    case (OPTIMIZATION(),FOUND_EQUATION()) then inState;
+    case (OPTIMIZATION(),FOUND_CONSTRAINT()) then inState;
+    case (OPTIMIZATION(),FOUND_ALGORITHM()) then inState;
 
-    case (MODEL(path = _),FOUND_EQUATION()) then inState;
-    case (BLOCK(path = _),FOUND_EQUATION()) then inState;
+    case (MODEL(),FOUND_EQUATION()) then inState;
+    case (BLOCK(),FOUND_EQUATION()) then inState;
 
-    case (MODEL(path = _),FOUND_ALGORITHM()) then inState;
-    case (BLOCK(path = _),FOUND_ALGORITHM()) then inState;
-    case (FUNCTION(path = _),FOUND_ALGORITHM()) then inState;
+    case (MODEL(),FOUND_ALGORITHM()) then inState;
+    case (BLOCK(),FOUND_ALGORITHM()) then inState;
+    case (FUNCTION(),FOUND_ALGORITHM()) then inState;
 
-    case (HAS_RESTRICTIONS(path=p,hasEquations=_,hasAlgorithms=b2,hasConstraints=b3),FOUND_EQUATION()) then HAS_RESTRICTIONS(p,true,b2,b3);
-    case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2,hasConstraints=_),FOUND_CONSTRAINT()) then HAS_RESTRICTIONS(p,b1,b2,true);
-    case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=_,hasConstraints=b3),FOUND_ALGORITHM()) then HAS_RESTRICTIONS(p,b1,true,b3);
+    case (HAS_RESTRICTIONS(path=p,hasAlgorithms=b2,hasConstraints=b3),FOUND_EQUATION()) then HAS_RESTRICTIONS(p,true,b2,b3);
+    case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2),FOUND_CONSTRAINT()) then HAS_RESTRICTIONS(p,b1,b2,true);
+    case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasConstraints=b3),FOUND_ALGORITHM()) then HAS_RESTRICTIONS(p,b1,true,b3);
 
-    case (FUNCTION(path = _),FOUND_EXT_DECL()) then inState;
+    case (FUNCTION(),FOUND_EXT_DECL()) then inState;
     case (_,FOUND_EXT_DECL()) then fail();
 
     case (_,FOUND_EQUATION()) then fail();
@@ -552,48 +552,48 @@ algorithm
   _ := match (inState,inRestriction)
     local Absyn.Path p;
 
-    case (UNKNOWN(path = _),_) then ();
+    case (UNKNOWN(),_) then ();
 
-    case (HAS_RESTRICTIONS(path = _),SCode.R_CLASS()) then ();
-    case (HAS_RESTRICTIONS(path = _),SCode.R_MODEL()) then ();
-    case (HAS_RESTRICTIONS(path = _),SCode.R_OPTIMIZATION()) then ();
-    case (MODEL(path = _),SCode.R_MODEL()) then ();
+    case (HAS_RESTRICTIONS(),SCode.R_CLASS()) then ();
+    case (HAS_RESTRICTIONS(),SCode.R_MODEL()) then ();
+    case (HAS_RESTRICTIONS(),SCode.R_OPTIMIZATION()) then ();
+    case (MODEL(),SCode.R_MODEL()) then ();
 
 
-    case (RECORD(path = _),SCode.R_RECORD(_)) then ();
-    case (RECORD(path = _),SCode.R_CONNECTOR(_)) then ();
-    case (HAS_RESTRICTIONS(path = _,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_RECORD(_)) then ();
+    case (RECORD(),SCode.R_RECORD(_)) then ();
+    case (RECORD(),SCode.R_CONNECTOR(_)) then ();
+    case (HAS_RESTRICTIONS(hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_RECORD(_)) then ();
 
-    case (BLOCK(path = _),SCode.R_BLOCK()) then ();
-    case (MODEL(path = _),SCode.R_MODEL()) then ();
+    case (BLOCK(),SCode.R_BLOCK()) then ();
+    case (MODEL(),SCode.R_MODEL()) then ();
 
-    case (CONNECTOR(path = _,isExpandable=false),SCode.R_CONNECTOR(false)) then ();
-    case (CONNECTOR(path = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();
-    case (HAS_RESTRICTIONS(path = _,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_CONNECTOR(_)) then ();
-    case (TYPE_INTEGER(path = _),SCode.R_CONNECTOR(_)) then ();
-    case (TYPE_REAL(path = _),SCode.R_CONNECTOR(_)) then ();
-    case (TYPE_STRING(path = _),SCode.R_CONNECTOR(_)) then ();
-    case (TYPE_BOOL(path = _),SCode.R_CONNECTOR(_)) then ();
+    case (CONNECTOR(isExpandable=false),SCode.R_CONNECTOR(false)) then ();
+    case (CONNECTOR(isExpandable=true),SCode.R_CONNECTOR(true)) then ();
+    case (HAS_RESTRICTIONS(hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_CONNECTOR(_)) then ();
+    case (TYPE_INTEGER(),SCode.R_CONNECTOR(_)) then ();
+    case (TYPE_REAL(),SCode.R_CONNECTOR(_)) then ();
+    case (TYPE_STRING(),SCode.R_CONNECTOR(_)) then ();
+    case (TYPE_BOOL(),SCode.R_CONNECTOR(_)) then ();
     // BTH
-    case (TYPE_CLOCK(path = _),SCode.R_CONNECTOR(_)) then ();
-    case (TYPE_ENUM(path = _),SCode.R_CONNECTOR(_)) then (); // used in Modelica.Electrical.Digital where we have an enum as a connector
+    case (TYPE_CLOCK(),SCode.R_CONNECTOR(_)) then ();
+    case (TYPE_ENUM(),SCode.R_CONNECTOR(_)) then (); // used in Modelica.Electrical.Digital where we have an enum as a connector
     case (ENUMERATION(_),SCode.R_CONNECTOR(_)) then ();      // used in Modelica.Electrical.Digital where we have an enum as a connector
 
-    case (TYPE(path = _),SCode.R_TYPE()) then ();
-    case (TYPE_INTEGER(path = _),SCode.R_TYPE()) then ();
-    case (TYPE_REAL(path = _),SCode.R_TYPE()) then ();
-    case (TYPE_STRING(path = _),SCode.R_TYPE()) then ();
-    case (TYPE_BOOL(path = _),SCode.R_TYPE()) then ();
+    case (TYPE(),SCode.R_TYPE()) then ();
+    case (TYPE_INTEGER(),SCode.R_TYPE()) then ();
+    case (TYPE_REAL(),SCode.R_TYPE()) then ();
+    case (TYPE_STRING(),SCode.R_TYPE()) then ();
+    case (TYPE_BOOL(),SCode.R_TYPE()) then ();
     // BTH
-    case (TYPE_CLOCK(path = _),SCode.R_TYPE()) then ();
-    case (TYPE_ENUM(path = _),SCode.R_TYPE()) then ();
+    case (TYPE_CLOCK(),SCode.R_TYPE()) then ();
+    case (TYPE_ENUM(),SCode.R_TYPE()) then ();
     case (ENUMERATION(_),SCode.R_TYPE()) then ();
 
-    case (PACKAGE(path = _),SCode.R_PACKAGE()) then ();
-    case (HAS_RESTRICTIONS(path = _,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_PACKAGE()) then ();
+    case (PACKAGE(),SCode.R_PACKAGE()) then ();
+    case (HAS_RESTRICTIONS(hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_PACKAGE()) then ();
 
-    case (FUNCTION(path = _),SCode.R_FUNCTION(_)) then ();
-    case (HAS_RESTRICTIONS(path = _,hasEquations=false,hasConstraints=false),SCode.R_FUNCTION(_)) then ();
+    case (FUNCTION(),SCode.R_FUNCTION(_)) then ();
+    case (HAS_RESTRICTIONS(hasEquations=false,hasConstraints=false),SCode.R_FUNCTION(_)) then ();
     case (META_TUPLE(_),SCode.R_TYPE()) then ();
     case (META_LIST(_),SCode.R_TYPE()) then ();
     case (META_OPTION(_),SCode.R_TYPE()) then ();
@@ -670,22 +670,22 @@ algorithm
       list<State> rest;
       Boolean res;
     case (_,{}) then false;
-    case (UNKNOWN(path = _),(UNKNOWN(path = _) :: _)) then true;
-    case (MODEL(path = _),(MODEL(path = _) :: _)) then true;
-    case (RECORD(path = _),(RECORD(path = _) :: _)) then true;
-    case (BLOCK(path = _),(BLOCK(path = _) :: _)) then true;
-    case (CONNECTOR(path = _),(CONNECTOR(path = _) :: _)) then true;
-    case (TYPE(path = _),(TYPE(path = _) :: _)) then true;
-    case (PACKAGE(path = _),(PACKAGE(path = _) :: _)) then true;
-    case (FUNCTION(path = _),(FUNCTION(path = _) :: _)) then true;
-    case (ENUMERATION(path = _),(ENUMERATION(path = _) :: _)) then true;
-    case (TYPE_INTEGER(path = _),(TYPE_INTEGER(path = _) :: _)) then true;
-    case (TYPE_REAL(path = _),(TYPE_REAL(path = _) :: _)) then true;
-    case (TYPE_STRING(path = _),(TYPE_STRING(path = _) :: _)) then true;
-    case (TYPE_BOOL(path = _),(TYPE_BOOL(path = _) :: _)) then true;
+    case (UNKNOWN(),(UNKNOWN() :: _)) then true;
+    case (MODEL(),(MODEL() :: _)) then true;
+    case (RECORD(),(RECORD() :: _)) then true;
+    case (BLOCK(),(BLOCK() :: _)) then true;
+    case (CONNECTOR(),(CONNECTOR() :: _)) then true;
+    case (TYPE(),(TYPE() :: _)) then true;
+    case (PACKAGE(),(PACKAGE() :: _)) then true;
+    case (FUNCTION(),(FUNCTION() :: _)) then true;
+    case (ENUMERATION(),(ENUMERATION() :: _)) then true;
+    case (TYPE_INTEGER(),(TYPE_INTEGER() :: _)) then true;
+    case (TYPE_REAL(),(TYPE_REAL() :: _)) then true;
+    case (TYPE_STRING(),(TYPE_STRING() :: _)) then true;
+    case (TYPE_BOOL(),(TYPE_BOOL() :: _)) then true;
     // BTH
-    case (TYPE_CLOCK(path = _),(TYPE_CLOCK(path = _) :: _)) then true;
-    case (TYPE_ENUM(path = _),(TYPE_ENUM(path = _) :: _)) then true;
+    case (TYPE_CLOCK(),(TYPE_CLOCK() :: _)) then true;
+    case (TYPE_ENUM(),(TYPE_ENUM() :: _)) then true;
     case (st,(_ :: rest))
       equation
         res = matchingState(st, rest);
@@ -700,7 +700,7 @@ public function isFunction
   output Boolean b;
 algorithm
   b := match (inState)
-    case FUNCTION(path = _) then true;
+    case FUNCTION() then true;
     else false;
   end match;
 end isFunction;
@@ -710,8 +710,8 @@ public function isFunctionOrRecord "Fails for states that are not FUNCTION or RE
   output Boolean b;
 algorithm
   b := match (inState)
-    case FUNCTION(path = _) then true;
-    case RECORD(path = _) then true;
+    case FUNCTION() then true;
+    case RECORD() then true;
     else false;
   end match;
 end isFunctionOrRecord;
@@ -723,7 +723,7 @@ public function isConnector "
 algorithm
   _:=
   match (inState)
-    case CONNECTOR(path = _) then ();
+    case CONNECTOR() then ();
   end match;
 end isConnector;
 
@@ -754,8 +754,8 @@ public function isTypeOrRecord
   output Boolean outIsTypeOrRecord;
 algorithm
   outIsTypeOrRecord := match(inState)
-    case TYPE(path = _) then true;
-    case RECORD(path = _) then true;
+    case TYPE() then true;
+    case RECORD() then true;
     else false;
   end match;
 end isTypeOrRecord;

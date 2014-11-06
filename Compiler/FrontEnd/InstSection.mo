@@ -513,7 +513,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
+        DAE.PROP(DAE.T_BOOL(),cnst) = Types.propsAnd(props);
         true = Types.isParameterOrConstant(cnst);
         (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Absyn.NO_MSG(),0);
         // check if valList contains Values.EMPTY()
@@ -534,7 +534,7 @@ algorithm
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache, _,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        DAE.PROP(DAE.T_BOOL(varLst = _),DAE.C_PARAM()) = Types.propsAnd(props);
+        DAE.PROP(DAE.T_BOOL(),DAE.C_PARAM()) = Types.propsAnd(props);
         b = List.selectFirstBoolList({true}, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, pre, csets, ci_state, instEEquation, b, impl, alwaysUnroll, graph);
       then
@@ -545,7 +545,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
+        DAE.PROP(DAE.T_BOOL(),cnst) = Types.propsAnd(props);
         true = Types.isParameterOrConstant(cnst);
         (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Absyn.NO_MSG(),0);
         blist = List.map(valList,ValuesUtil.valueBool);
@@ -558,7 +558,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info = info),SCode.NON_INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
+        DAE.PROP(DAE.T_BOOL(),_) = Types.propsAnd(props);
         (cache,expl1) = PrefixUtil.prefixExpList(cache, env, ih, expl1, pre);
 
         // set the source of this element
@@ -577,7 +577,7 @@ algorithm
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb, info = info),SCode.INITIAL(),impl,graph,_)
       equation
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
-        DAE.PROP(DAE.T_BOOL(varLst = _),_) = Types.propsAnd(props);
+        DAE.PROP(DAE.T_BOOL(),_) = Types.propsAnd(props);
         (cache,expl1) = PrefixUtil.prefixExpList(cache, env, ih, expl1, pre);
 
         // set the source of this element
@@ -690,9 +690,9 @@ algorithm
 
     // for i in <expr> loop .. end for;
     // where <expr> is not constant or parameter expression
-    case (cache,env,_,pre,_,_,SCode.EQ_FOR(index = _,range = SOME(e),eEquationLst = _,info=info),_,impl,_,_)
+    case (cache,env,_,pre,_,_,SCode.EQ_FOR(range = SOME(e),info=info),_,impl,_,_)
       equation
-        (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = _), constFlag = DAE.C_VAR()),_)
+        (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(), constFlag = DAE.C_VAR()),_)
           = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
 
         s = ExpressionDump.printExpStr(e_1);
@@ -703,8 +703,8 @@ algorithm
     // assert statements
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message = e2,level = e3, info = info),_,impl,graph,_)
       equation
-        (cache,e1_1,prop1 as DAE.PROP(DAE.T_BOOL(varLst = _),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info) "assert statement" ;
-        (cache,e2_1,prop2 as DAE.PROP(DAE.T_STRING(varLst = _),_),_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
+        (cache,e1_1,prop1 as DAE.PROP(DAE.T_BOOL(),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info) "assert statement" ;
+        (cache,e2_1,prop2 as DAE.PROP(DAE.T_STRING(),_),_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache,e3_1,prop3 as DAE.PROP(DAE.T_ENUMERATION(path = Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel"))),_),_) = Static.elabExp(cache,env, e3, impl,NONE(),true,pre,info);
 
         (cache,e1_1,prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
@@ -726,7 +726,7 @@ algorithm
     // terminate statements
     case (cache,env,ih,pre,csets,ci_state,SCode.EQ_TERMINATE(message= e1, info=info),_,impl,graph,_)
       equation
-        (cache,e1_1,prop1 as DAE.PROP(DAE.T_STRING(varLst = _),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info);
+        (cache,e1_1,prop1 as DAE.PROP(DAE.T_STRING(),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info);
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
 
@@ -762,7 +762,7 @@ algorithm
         (cache,env,ih,dae,csets,ci_state,graph);
 
     // handle Connections.* operators
-    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),_,impl,graph,_)
+    case (cache,env,ih,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e),_,impl,graph,_)
       equation
         true = isConnectionsOperator(e);
         (cache,env,ih,dae,csets,ci_state,graph) = handleConnectionsOperators(cache,env,ih,pre,csets,ci_state,inEEquation,inInitial,impl,graph,flattenOp);
@@ -911,7 +911,7 @@ algorithm
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
               functionArgs = functionArgs)),_,_,graph,_)
       equation
-        (cr, ipriority) = potentialRootArguments(functionArgs, info, pre, inEEquation);
+        (cr,_) = potentialRootArguments(functionArgs, info, pre, inEEquation);
         (cache,SOME((DAE.ARRAY(array = {}),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         s = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
         Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO, {s}, info);
@@ -935,7 +935,7 @@ algorithm
               function_ = Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("uniqueRoot", {})),
               functionArgs = functionArgs)),_,_,graph,_)
       equation
-        (cr, msg) = uniqueRootArguments(functionArgs, info, pre, inEEquation);
+        (cr,_) = uniqueRootArguments(functionArgs, info, pre, inEEquation);
         (cache,SOME((DAE.ARRAY(array = {}),_,_))) = Static.elabCref(cache,env, cr, false /* ??? */,false,pre,info);
         s = SCodeDump.equationStr(inEEquation,SCodeDump.defaultOptions);
         Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO, {s}, info);
@@ -1111,7 +1111,7 @@ algorithm
     local
       list<Absyn.Exp> crs;
       String s1,s2,s;
-    case (Absyn.TUPLE(crs),Absyn.CALL(functionArgs = _),_)
+    case (Absyn.TUPLE(crs),Absyn.CALL(),_)
       equation
         _ = List.map(crs,Absyn.expCref);
       then ();
@@ -1450,8 +1450,8 @@ algorithm
       SourceInfo info;
 
       /* TODO: Weird hack to make backend happy */
-    case (e1 as DAE.CREF(componentRef=_), (p1 as DAE.PROP(type_ = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),
-          e2, (p2 as DAE.PROP(type_ = _, constFlag = c)), _, initial_, _) /* If it fails then this rule is matched. */
+    case (e1 as DAE.CREF(), (p1 as DAE.PROP(type_ = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),
+          e2, (p2 as DAE.PROP(constFlag = c)), _, initial_, _) /* If it fails then this rule is matched. */
       equation
         (e2_1, DAE.PROP(t_1, _)) = Types.matchProp(e2, p2, p1, true);
         (e1,_) = ExpressionSimplify.simplify(e1);
@@ -1460,7 +1460,7 @@ algorithm
       then
         dae;
 
-    case (e1, (p1 as DAE.PROP(type_ = _)),
+    case (e1, (p1 as DAE.PROP()),
           e2, (p2 as DAE.PROP(constFlag = c)), _, initial_, _) /* If e2 is not of e1's type, check if e1 has e2's type instead */
       equation
         (e1_1, DAE.PROP(t_1, _)) = Types.matchProp(e1, p1, p2, false);
@@ -1471,8 +1471,8 @@ algorithm
         dae;
 
       /* TODO: Make testsuite run properly even if this is the first case... Unknown dimensions are not matched fine here and should possibly be disallowed. */
-    case (e1, (p1 as DAE.PROP(type_ = _)),
-          e2, (p2 as DAE.PROP(type_ = _, constFlag = c)), _, initial_, _) /* If it fails then this rule is matched. */
+    case (e1, (p1 as DAE.PROP()),
+          e2, (p2 as DAE.PROP(constFlag = c)), _, initial_, _) /* If it fails then this rule is matched. */
       equation
         (e2_1, DAE.PROP(t_1, _)) = Types.matchProp(e2, p2, p1, true);
         (e1,_) = ExpressionSimplify.simplify(e1);
@@ -1480,8 +1480,8 @@ algorithm
         dae = instEqEquation2(e1, e2_1, t_1, c, source, initial_);
       then dae;
 
-    case (e1, (p1 as DAE.PROP_TUPLE(type_ = _)),
-          e2, (p2 as DAE.PROP_TUPLE(type_ = _, tupleConst = tp)), _, initial_, _) /* PR. */
+    case (e1, (p1 as DAE.PROP_TUPLE()),
+          e2, (p2 as DAE.PROP_TUPLE(tupleConst = tp)), _, initial_, _) /* PR. */
       equation
         (e1_1, DAE.PROP_TUPLE(t_1, _)) = Types.matchProp(e1, p1, p2, false);
         (e1_1,_) = ExpressionSimplify.simplify(e1_1);
@@ -1491,8 +1491,8 @@ algorithm
       then
         dae;
 
-    case (e1, (p1 as DAE.PROP_TUPLE(type_ = _)),
-          e2, (p2 as DAE.PROP_TUPLE(type_ = _, tupleConst = tp)), _, initial_, _) /* PR.
+    case (e1, (p1 as DAE.PROP_TUPLE()),
+          e2, (p2 as DAE.PROP_TUPLE(tupleConst = tp)), _, initial_, _) /* PR.
       An assignment to a variable of T_ENUMERATION type is an explicit
       assignment to the value componnent of the enumeration, i.e. having
       a type T_ENUM
@@ -1506,10 +1506,10 @@ algorithm
       then
         dae;
 
-    case ((e1 as DAE.CREF(componentRef = _)),
-           DAE.PROP(type_ = DAE.T_ENUMERATION(names = _)),
+    case ((e1 as DAE.CREF()),
+           DAE.PROP(type_ = DAE.T_ENUMERATION()),
            e2,
-           DAE.PROP(type_ = t as DAE.T_ENUMERATION(names = _), constFlag = c), _, initial_, _)
+           DAE.PROP(type_ = t as DAE.T_ENUMERATION(), constFlag = c), _, initial_, _)
       equation
         (e1,_) = ExpressionSimplify.simplify(e1);
         (e2,_) = ExpressionSimplify.simplify(e2);
@@ -1519,8 +1519,8 @@ algorithm
 
     // Assignment to a single component with a function returning multiple
     // values.
-    case (e1, p1 as DAE.PROP(type_ = _),
-          e2, DAE.PROP_TUPLE(type_ = _), _, initial_, _)
+    case (e1, p1 as DAE.PROP(),
+          e2, DAE.PROP_TUPLE(), _, initial_, _)
       equation
         p2 = Types.propTupleFirstProp(inProperties4);
         DAE.PROP(constFlag = c) = p2;
@@ -1571,47 +1571,47 @@ algorithm
       list<DAE.Type> tys;
       Boolean b;
 
-    case (e1,e2,DAE.T_INTEGER(varLst = _),_,_,initial_)
+    case (e1,e2,DAE.T_INTEGER(),_,_,initial_)
       equation
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,DAE.T_REAL(varLst = _),_,_,initial_)
+    case (e1,e2,DAE.T_REAL(),_,_,initial_)
       equation
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,DAE.T_STRING(varLst = _),_,_,initial_)
+    case (e1,e2,DAE.T_STRING(),_,_,initial_)
       equation
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,DAE.T_BOOL(varLst = _),_,_,initial_)
+    case (e1,e2,DAE.T_BOOL(),_,_,initial_)
       equation
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
     //BTH
-    case (e1,e2,DAE.T_CLOCK(varLst = _),_,_,initial_)
+    case (e1,e2,DAE.T_CLOCK(),_,_,initial_)
       equation
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
 
-    case (DAE.CREF(componentRef = cr,ty = _),e2,DAE.T_ENUMERATION(names = _),_,_,initial_)
+    case (DAE.CREF(componentRef = cr),e2,DAE.T_ENUMERATION(),_,_,initial_)
       equation
         dae = makeDaeDefine(cr, e2, source, initial_);
       then
         dae;
 
     // array equations
-    case (e1,e2,tt as DAE.T_ARRAY(ty = _),_,_,initial_)
+    case (e1,e2,tt as DAE.T_ARRAY(),_,_,initial_)
       equation
         dae = instArrayEquation(e1, e2, tt, inConst, source, initial_);
       then dae;
 
     // tuples
-    case (DAE.TUPLE(exps1),e2,DAE.T_TUPLE(types = t::tys),_,_,initial_)
+    case (DAE.TUPLE(exps1),e2,DAE.T_TUPLE(types = _::_),_,_,initial_)
       equation
         exps1 = List.map(exps1,Expression.emptyToWild);
         e1 = DAE.TUPLE(exps1);
@@ -1667,7 +1667,7 @@ algorithm
       then dae;
 
    /* all other COMPLEX equations */
-   case (e1,e2, tt as DAE.T_COMPLEX(varLst = _),_,_,initial_)
+   case (e1,e2, tt as DAE.T_COMPLEX(),_,_,initial_)
      equation
        dae = instComplexEquation(e1,e2,tt,source,initial_);
      then dae;
@@ -1745,7 +1745,7 @@ algorithm
 
     case(Values.RECORD(orderd = {},comp = {}),_,_) then {};
 
-    case(Values.RECORD(_, Values.RECORD(comp=_)::_,_::_,_),_,_)
+    case(Values.RECORD(_, Values.RECORD()::_,_::_,_),_,_)
       equation
         print(" implement assignComplexConstantConstruct for records of records\n");
       then fail();
@@ -1957,7 +1957,7 @@ algorithm
       then
         dae;
 
-    case (_, _, DAE.T_ARRAY(ty = _, dims = {dim}), _, source, _)
+    case (_, _, DAE.T_ARRAY(dims = {dim}), _, source, _)
       equation
         true = Config.splitArrays();
         true = Expression.dimensionKnown(dim);
@@ -2632,7 +2632,7 @@ algorithm
 
 
     // assign
-    case (cache,env,ih,pre,_,SCode.ALG_ASSIGN(info = _),source,_,impl,_,_)
+    case (cache,env,ih,pre,_,SCode.ALG_ASSIGN(),source,_,impl,_,_)
       equation
         (cache,stmts) = instAssignment(cache,env,ih,pre,inAlgorithm,source,initial_,impl,unrollForLoops,Error.getNumErrorMessages());
       then (cache,stmts);
@@ -2806,7 +2806,7 @@ algorithm
         (cache,{stmt});
 
     // return
-    case (cache,_,_,_,ClassInf.FUNCTION(path=_),SCode.ALG_RETURN( info = info),source,_,_,_,_)
+    case (cache,_,_,_,ClassInf.FUNCTION(),SCode.ALG_RETURN( info = info),source,_,_,_,_)
       equation
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_RETURN(source);
@@ -2875,7 +2875,7 @@ algorithm
     // If the RHS is a function that returns a tuple while the LHS is a single
     // value, make a tuple of the LHS and fill in the missing elements with
     // wildcards.
-    case (_, DAE.PROP(type_ = _), DAE.CALL(path = _), DAE.PROP_TUPLE(type_ = _), _, _, _)
+    case (_, DAE.PROP(), DAE.CALL(), DAE.PROP_TUPLE(), _, _, _)
       equation
         _ :: wild_props = Types.propTuplePropList(inRhsProps);
         wild_count = listLength(wild_props);
@@ -2908,7 +2908,7 @@ algorithm
     case ({}) then false;
 
     // yeha! we have a when!
-    case (SCode.ALG_WHEN_A(branches=_)::_)
+    case (SCode.ALG_WHEN_A()::_)
       then true;
 
     // search deeper inside if
@@ -3594,7 +3594,7 @@ algorithm
         (cache,env,ih,sets,dae,graph);
 
     // c1 is expandable, catch error that c1 is an IDENT! it should be at least a.x
-    case (cache,env,_,_,pre,c1 as Absyn.CREF_IDENT(name=_),c2,impl,_,_)
+    case (cache,env,_,_,pre,c1 as Absyn.CREF_IDENT(),c2,impl,_,_)
       equation
         // c1 is expandable
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
@@ -3607,7 +3607,7 @@ algorithm
 
     // c1 is expandable and c2 is existing BUT contains MORE THAN 1 component
     // c1 is expandable and SHOULD be qualified!
-    case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(name=_),c2,impl,graph,_)
+    case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(),c2,impl,graph,_)
       equation
         // c1 is expandable
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
@@ -3695,7 +3695,7 @@ algorithm
         (cache,env,ih,sets,dae,graph);
 
     // c1 is expandable and SHOULD be qualified!
-    case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(name=_),c2,impl,graph,_)
+    case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(),c2,impl,graph,_)
       equation
         // c1 is expandable
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
@@ -3994,7 +3994,7 @@ algorithm
         updatedEnv;
 
     // if we have a.b.x, update b with x and call us recursively with a.b
-    case (cache, topEnv, veCref as DAE.CREF_QUAL(componentRef = _), veAttr, veTy, veBinding, veCnstForRange, veEnv)
+    case (cache, topEnv, veCref as DAE.CREF_QUAL(), veAttr, veTy, veBinding, veCnstForRange, veEnv)
       equation
         // get the last one
         currentName = ComponentReference.crefLastIdent(veCref);
@@ -4161,11 +4161,11 @@ algorithm
       DAE.Type tp;
       String str;
 
-    case (DAE.T_REAL(varLst = _), _, _) then ();
-    case (DAE.T_INTEGER(varLst = _), _, _) then ();
-    case (DAE.T_STRING(varLst = _), _, _) then ();
-    case (DAE.T_BOOL(varLst = _), _, _) then ();
-    case (DAE.T_ENUMERATION(index = _), _, _) then ();
+    case (DAE.T_REAL(), _, _) then ();
+    case (DAE.T_INTEGER(), _, _) then ();
+    case (DAE.T_STRING(), _, _) then ();
+    case (DAE.T_BOOL(), _, _) then ();
+    case (DAE.T_ENUMERATION(), _, _) then ();
 
     case (DAE.T_COMPLEX(complexClassType = state), _, _)
       equation
@@ -4570,8 +4570,8 @@ algorithm
         c2,f2,DAE.T_ARRAY(dims = {dim2}, ty = t2),_,
         ct as SCode.POTENTIAL(),_,_,graph,_)
       equation
-        DAE.T_COMPLEX(complexClassType=_) = Types.arrayElementType(t1);
-        DAE.T_COMPLEX(complexClassType=_) = Types.arrayElementType(t2);
+        DAE.T_COMPLEX() = Types.arrayElementType(t1);
+        DAE.T_COMPLEX() = Types.arrayElementType(t2);
 
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         _ = Expression.dimensionSize(dim1);
@@ -4606,8 +4606,8 @@ algorithm
 
     // Connection of arrays
     case (cache,env,ih,sets,pre,
-        c1, f1, t1 as DAE.T_ARRAY(ty = _), _,
-        c2, f2, t2 as DAE.T_ARRAY(ty = _), _,
+        c1, f1, t1 as DAE.T_ARRAY(), _,
+        c2, f2, t2 as DAE.T_ARRAY(), _,
         ct,_,_,graph,_)
       equation
         dims = Types.getDimensions(t1);
@@ -5121,7 +5121,7 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
 
     // Add an error for when initial() then reinit().
-    case SCode.EQ_WHEN(condition = exp, eEquationLst = el, elseBranches = _, info = info)
+    case SCode.EQ_WHEN(condition = exp, eEquationLst = el, info = info)
       equation
         true = Absyn.expContainsInitial(exp);
         true = SCode.equationsContainReinit(el);
@@ -5199,7 +5199,7 @@ algorithm
       then
         ();
 
-    case SCode.EQ_EQUALS(info = _) then ();
+    case SCode.EQ_EQUALS() then ();
 
     // connect is not allowed in when equations.
     case SCode.EQ_CONNECT(crefLeft = cr1, crefRight = cr2, info = info)
@@ -5210,10 +5210,10 @@ algorithm
       then
         fail();
 
-    case SCode.EQ_ASSERT(info = _) then ();
-    case SCode.EQ_TERMINATE(info = _) then ();
-    case SCode.EQ_REINIT(info = _) then ();
-    case SCode.EQ_NORETCALL(info = _) then ();
+    case SCode.EQ_ASSERT() then ();
+    case SCode.EQ_TERMINATE() then ();
+    case SCode.EQ_REINIT() then ();
+    case SCode.EQ_NORETCALL() then ();
 
     case _
       equation
@@ -5258,7 +5258,7 @@ algorithm
         (cache,stmts) = instAssignment2(cache,env,ih,pre,var,e_1,eprop,info,source,initial_,impl,unrollForLoops,numError);
       then (cache,stmts);
 
-    case (cache,env,_,pre,SCode.ALG_ASSIGN(assignComponent=_,value=value,info=info),_,_,_,_,_)
+    case (cache,env,_,pre,SCode.ALG_ASSIGN(value=value,info=info),_,_,_,_,_)
       equation
         true = numError == Error.getNumErrorMessages();
         failure((_,_,_,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info));
@@ -5354,7 +5354,7 @@ algorithm
     case (cache,env,ih,pre,e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) ),e_1,eprop,_,source,_,impl,_,_)
       equation
         (cache,SOME((_,cprop,attr))) = Static.elabCrefNoEval(cache,env, cr, impl,false,pre,info);
-        (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
+        (cache,(e2_2 as DAE.CALL()),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache,e2_2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_2, pre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -5380,7 +5380,7 @@ algorithm
     case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,_,source,_,impl,_,_)
       equation
         true = MetaUtil.onlyCrefExpressions(expl);
-        (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
+        (cache, e_1 as DAE.CALL(), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
         Static.checkAssignmentToInputs(expl, attrs, env, info);
@@ -5396,7 +5396,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         true = MetaUtil.onlyCrefExpressions(expl);
         true = Types.isTuple(Types.getPropType(eprop));
-        (cache, e_1 as DAE.MATCHEXPRESSION(matchType=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
+        (cache, e_1 as DAE.MATCHEXPRESSION(), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
         Static.checkAssignmentToInputs(expl, attrs, env, info);
@@ -5440,7 +5440,7 @@ algorithm
 
     case (cache,env,_,pre,e1 as Absyn.TUPLE(expressions = expl),e_2,prop2,_,_,_,impl,_,_)
       equation
-        DAE.CALL(path = _) = e_2;
+        DAE.CALL() = e_2;
         _ = List.map(expl,Absyn.expCref);
         (cache,e_1,prop1,_) = Static.elabExp(cache,env,e1,impl,NONE(),false,pre,info);
         lt = Types.getPropType(prop1);
@@ -5459,7 +5459,7 @@ algorithm
     case (_,_,_,_,Absyn.TUPLE(expressions = expl),e_1,_,_,_,_,_,_,_)
       equation
         _ = List.map(expl,Absyn.expCref);
-        failure(DAE.CALL(path = _) = e_1);
+        failure(DAE.CALL() = e_1);
         s = ExpressionDump.printExpStr(e_1);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
       then
@@ -6004,8 +6004,8 @@ algorithm
   _ := match (exp,info)
     local
       String str;
-    case (DAE.CALL(path=_),_) then ();
-    case (DAE.REDUCTION(expr=_),_) then ();
+    case (DAE.CALL(),_) then ();
+    case (DAE.REDUCTION(),_) then ();
     case (DAE.TUPLE({}),_) then ();
     else
       equation

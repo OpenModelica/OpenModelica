@@ -145,7 +145,7 @@ algorithm
       Prefix rest_prefix;
       Absyn.Path path;
 
-    case EMPTY_PREFIX(classPath = _) then "";
+    case EMPTY_PREFIX() then "";
     case PREFIX(name = name) then name;
 
   end match;
@@ -163,7 +163,7 @@ algorithm
       Prefix rest_prefix;
       DAE.ComponentRef cref;
 
-    case (_, EMPTY_PREFIX(classPath = _)) then inCref;
+    case (_, EMPTY_PREFIX()) then inCref;
 
     case (_, PREFIX(name = name, restPrefix = rest_prefix))
       equation
@@ -186,7 +186,7 @@ algorithm
       Prefix rest_prefix;
       Absyn.Path path;
 
-    case (_, EMPTY_PREFIX(classPath = _)) then inPath;
+    case (_, EMPTY_PREFIX()) then inPath;
 
     case (_, PREFIX(name = name, restPrefix = rest_prefix))
       equation
@@ -207,7 +207,7 @@ algorithm
     local
       String str;
 
-    case (_, EMPTY_PREFIX(classPath = _)) then inString;
+    case (_, EMPTY_PREFIX()) then inString;
 
     else
       equation
@@ -230,7 +230,7 @@ algorithm
       Prefix rest_prefix;
       DAE.ComponentRef cref;
 
-    case (PREFIX(name = name, restPrefix = EMPTY_PREFIX(classPath = _)))
+    case (PREFIX(name = name, restPrefix = EMPTY_PREFIX()))
       then
         DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
 
@@ -254,7 +254,7 @@ algorithm
       Prefix rest_prefix;
       Absyn.Path path;
 
-    case PREFIX(name = name, restPrefix = EMPTY_PREFIX(classPath = _))
+    case PREFIX(name = name, restPrefix = EMPTY_PREFIX())
       then Absyn.IDENT(name);
 
     case PREFIX(name = name, restPrefix = rest_prefix)
@@ -332,9 +332,9 @@ algorithm
       String name, str;
       Prefix rest_prefix;
 
-    case EMPTY_PREFIX(classPath = _) then "";
+    case EMPTY_PREFIX() then "";
 
-    case PREFIX(name = name, restPrefix = EMPTY_PREFIX(classPath = _))
+    case PREFIX(name = name, restPrefix = EMPTY_PREFIX())
       then name;
 
     case PREFIX(name = name, restPrefix = rest_prefix)
@@ -408,7 +408,7 @@ algorithm
       then
         PREFIX(name, dims, rest_prefix);
 
-    case EMPTY_PREFIX(classPath = _) then EMPTY_PREFIX(NONE());
+    case EMPTY_PREFIX() then EMPTY_PREFIX(NONE());
 
   end match;
 end toPackagePrefix;

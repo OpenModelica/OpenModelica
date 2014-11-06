@@ -461,7 +461,7 @@ algorithm
       then
         st;
 
-    case (NFInstTypes.BASIC_TYPE(name = _), _) then inSymbolTable;
+    case (NFInstTypes.BASIC_TYPE(), _) then inSymbolTable;
 
     else
       equation
@@ -603,7 +603,7 @@ algorithm
     // The component already exists in the symboltable as a conditional
     // component, in which case we should replace it with the instantiated
     // component.
-    case (_, _, SOME(NFInstTypes.CONDITIONAL_COMPONENT(name = _)), st)
+    case (_, _, SOME(NFInstTypes.CONDITIONAL_COMPONENT()), st)
       equation
         st = addNoUpdCheck(inName, inNewComponent, st);
       then
@@ -811,7 +811,7 @@ algorithm
     // A non-qualified name means that the outer component is at the top level,
     // so no inner component can exist. When checking a model we should somehow
     // add dummy inner components, otherwise this is an error.
-    case (Absyn.IDENT(name = _), _)
+    case (Absyn.IDENT(), _)
       equation
         print("Outer component at top level\n");
       then
@@ -1010,7 +1010,7 @@ algorithm
       DAE.Exp exp;
       list<DAE.Exp> deps;
 
-    case (exp as DAE.CREF(componentRef = _), deps)
+    case (exp as DAE.CREF(), deps)
       then (exp, exp :: deps);
 
     else (inExp,inExps);

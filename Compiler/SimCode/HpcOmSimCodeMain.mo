@@ -210,7 +210,7 @@ algorithm
       equationSccMapping = if intEq(highestSccIdx, compCountPlusDummy) then equationSccMapping1 else equationSccMapping;
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simeqCompMapping = convertToSimeqCompMapping(equationSccMapping, lastEqMappingIdx);
-      simEqIdxSimEqMapping = getSimEqIdxSimEqMapping(allEquations, arrayLength(simeqCompMapping));
+      _ = getSimEqIdxSimEqMapping(allEquations, arrayLength(simeqCompMapping));
 
       //dumpSimEqSCCMapping(simeqCompMapping);
       //dumpSccSimEqMapping(sccSimEqMapping);
@@ -252,7 +252,7 @@ algorithm
       SimCodeUtil.execStat("hpcom create and dump event TaskGraph");
 
       HpcOmSimCode.TASKDEPSCHEDULE(tasks=eventSystemTasks) = HpcOmScheduler.createTaskDepSchedule(taskGraphEvent, taskGraphDataEvent, sccSimEqMapping);
-      eventSystemTaskList = List.map(eventSystemTasks, Util.tuple21);
+      _ = List.map(eventSystemTasks, Util.tuple21);
 
       //Create Costs
       //------------
@@ -430,7 +430,7 @@ algorithm
     else
       equation
         numProcSys = System.numProcessors();
-        numProc = if intGt(numProcFlag,numProcSys) then numProcSys else numProcFlag; // the system does not provide so many cores
+        _ = if intGt(numProcFlag,numProcSys) then numProcSys else numProcFlag; // the system does not provide so many cores
         if intGt(numProcFlag,numProcSys) and Flags.isSet(Flags.HPCOM_DUMP) then
           print("Warning: Your system provides only "+intString(numProcSys)+" processors!\n");
         end if;
@@ -1174,7 +1174,7 @@ algorithm
       BackendDAE.EquationArray eqns;
        BackendDAE.Variables vars;
 
-   case(BackendDAE.SINGLEEQUATION(eqn=_,var=_),_,_,_)
+   case(BackendDAE.SINGLEEQUATION(),_,_,_)
       equation
         //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
         //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
@@ -1185,7 +1185,7 @@ algorithm
         others = -1;
         print("\tSE\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
       then ();
-   case(BackendDAE.EQUATIONSYSTEM(eqns=eqs,vars=_,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac)),jacType=_),_,_,_)
+   case(BackendDAE.EQUATIONSYSTEM(eqns=eqs,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac))),_,_,_)
       equation
         //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
         //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
@@ -1196,7 +1196,7 @@ algorithm
         others = -1;
         print("\tEQS\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
       then ();
-    case(BackendDAE.TORNSYSTEM(tearingvars=_,residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac))),_,_,_)
+    case(BackendDAE.TORNSYSTEM(residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac))),_,_,_)
       equation
         //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
         //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
@@ -1207,7 +1207,7 @@ algorithm
         others = listLength(otherEqnVarTpl);
         print("\tTLS1\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
       then ();
-    case(BackendDAE.TORNSYSTEM(tearingvars=_,residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.GENERIC_JACOBIAN(jacobian = _,sparsePattern=_,coloring=_)),_,_,_)
+    case(BackendDAE.TORNSYSTEM(residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.GENERIC_JACOBIAN()),_,_,_)
       equation
         //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
         //BackendDump.dumpEqnsSolved2({comp},eqns,vars);

@@ -775,7 +775,7 @@ algorithm
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=_, exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
+    case (BackendDAE.SOLVED_EQUATION(exp=e, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res,_) equation
       print("SOLVED_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
@@ -820,7 +820,7 @@ algorithm
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
 
-    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/), source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/),  attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::res, _) equation
       print("WHEN_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
@@ -1445,7 +1445,7 @@ algorithm
       str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
     then str2;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(operator=_),occurEquLst = eq,occurWhenLst = wc) equation
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(),occurEquLst = eq,occurWhenLst = wc) equation
       eq_s_list = List.map(eq, intString);
       eq_s = stringDelimitList(eq_s_list, ",");
       wc_s_list = List.map(wc, intString);
@@ -1454,7 +1454,7 @@ algorithm
       str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
     then str2;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(operator=_),occurEquLst = eq,occurWhenLst = wc) equation
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(),occurEquLst = eq,occurWhenLst = wc) equation
       eq_s_list = List.map(eq, intString);
       eq_s = stringDelimitList(eq_s_list, ",");
       wc_s_list = List.map(wc, intString);
@@ -1463,7 +1463,7 @@ algorithm
       str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
     then str2;
 
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT(name = _)),occurEquLst = eq,occurWhenLst = wc) equation
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT()),occurEquLst = eq,occurWhenLst = wc) equation
       eq_s_list = List.map(eq, intString);
       eq_s = stringDelimitList(eq_s_list, ",");
       wc_s_list = List.map(wc, intString);
@@ -1874,10 +1874,10 @@ algorithm
     local
       String s1,s2,str;
       list<String> l;
-    case DAE.T_INTEGER(source = _) then "Integer ";
-    case DAE.T_REAL(source = _) then "Real ";
-    case DAE.T_BOOL(source = _) then "Boolean ";
-    case DAE.T_STRING(source = _) then "String ";
+    case DAE.T_INTEGER() then "Integer ";
+    case DAE.T_REAL() then "Real ";
+    case DAE.T_BOOL() then "Boolean ";
+    case DAE.T_STRING() then "String ";
 
     case DAE.T_ENUMERATION(names = l)
       equation
@@ -1888,7 +1888,7 @@ algorithm
         str;
     case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)) then "ExternalObject ";
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) then "Record ";
-    case DAE.T_ARRAY(ty = _) then "Array ";
+    case DAE.T_ARRAY() then "Array ";
   end match;
 end dumpTypeStr;
 
@@ -2646,7 +2646,7 @@ algorithm
      then str;
     case SOME(DAE.VAR_ATTR_INT(min=NONE(),max=NONE(),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE(),uncertainOption=NONE()))
      then "";
-    case SOME(DAE.VAR_ATTR_INT(min=min,max=max,start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=_,uncertainOption=uncertainopt))
+    case SOME(DAE.VAR_ATTR_INT(min=min,max=max,start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,uncertainOption=uncertainopt))
       equation
         str = optExpressionString(min,"min") + optExpressionString(max,"max") + optExpressionString(start,"start") + optExpressionString(fixed,"fixed")
              + optBooleanString(isProtected,"protected") + optBooleanString(finalPrefix,"final") + optUncertainty(uncertainopt);
@@ -2724,7 +2724,7 @@ protected function partitionKindString
   output String outString;
 algorithm
   outString := match(inPartitionKind)
-    case BackendDAE.CLOCKED_PARTITION(clockKind=_) then "clocked";
+    case BackendDAE.CLOCKED_PARTITION() then "clocked";
     case BackendDAE.CONTINUOUS_TIME_PARTITION() then "continuous time";
     case BackendDAE.UNSPECIFIED_PARTITION() then "unspecified";
     case BackendDAE.UNKNOWN_PARTITION() then "unknown";
@@ -3701,22 +3701,22 @@ algorithm
       tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> teqsys;
       list<tuple<Integer,list<Integer>>> eqnvartpllst;
 
-    case (BackendDAE.SINGLEEQUATION(eqn=_),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
+    case (BackendDAE.SINGLEEQUATION(),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
     then ((seq+1,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys));
 
-    case (BackendDAE.SINGLEARRAY(eqn=_),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
+    case (BackendDAE.SINGLEARRAY(),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
     then ((seq,salg,sarr+1,sce,swe,sie,eqsys,meqsys,teqsys));
 
-    case (BackendDAE.SINGLEIFEQUATION(eqn=_),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
+    case (BackendDAE.SINGLEIFEQUATION(),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
     then ((seq,salg,sarr,sce,swe,sie+1,eqsys,meqsys,teqsys));
 
-    case (BackendDAE.SINGLEALGORITHM(eqn=_),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
+    case (BackendDAE.SINGLEALGORITHM(),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
     then ((seq,salg+1,sarr,sce,swe,sie,eqsys,meqsys,teqsys));
 
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=_),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
+    case (BackendDAE.SINGLECOMPLEXEQUATION(),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
     then((seq,salg,sarr,sce+1,swe,sie,eqsys,meqsys,teqsys));
 
-    case (BackendDAE.SINGLEWHENEQUATION(eqn=_),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
+    case (BackendDAE.SINGLEWHENEQUATION(),(seq,salg,sarr,sce,swe,sie,eqsys,meqsys,teqsys))
     then ((seq,salg,sarr,sce,swe+1,sie,eqsys,meqsys,teqsys));
 
     case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_CONSTANT()),(seq,salg,sarr,sce,swe,sie,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys)) equation

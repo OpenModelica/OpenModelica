@@ -217,7 +217,7 @@ algorithm
       then
         el;
 
-    case (NFInstTypes.ELEMENT(component = _, cls = cls), _, _, _)
+    case (NFInstTypes.ELEMENT(cls = cls), _, _, _)
       equation
         el = expandClass(cls, {} :: inSubscripts, inAccumEl);
       then
@@ -258,7 +258,7 @@ algorithm
       then
         el;
 
-    case (NFInstTypes.TYPED_COMPONENT(ty = _), _, _, _)
+    case (NFInstTypes.TYPED_COMPONENT(), _, _, _)
       equation
         el = expandScalar(inComponent, {} :: inSubscripts, inAccumEl);
       then
@@ -280,7 +280,7 @@ algorithm
       then
         inAccumEl;
 
-    case (NFInstTypes.OUTER_COMPONENT(name = _), _, _, _)
+    case (NFInstTypes.OUTER_COMPONENT(), _, _, _)
       then inAccumEl;
 
   end match;
@@ -490,7 +490,7 @@ algorithm
       then
         fail();
 
-    case (NFInstTypes.OUTER_COMPONENT(name = _), _, _)
+    case (NFInstTypes.OUTER_COMPONENT(), _, _)
       then inAccumEl;
 
   end match;
@@ -575,7 +575,7 @@ algorithm
       then
         fail();
 
-    case (Absyn.IDENT(name = _), _)
+    case (Absyn.IDENT(), _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"NFSCodeExpand.subscriptPath got too many subscripts!\n"});
@@ -647,7 +647,7 @@ algorithm
       then
         inCref;
 
-    case (DAE.CREF_IDENT(ident = _), _, _, _)
+    case (DAE.CREF_IDENT(), _, _, _)
       equation
         str = "NFSCodeExpand.subscriptCref got too many subscripts on cref: " +
           ComponentReference.printComponentRefStr(inCrefFull) + " reached: " +
@@ -731,7 +731,7 @@ algorithm
       then
         accum_el;
 
-    case (NFInstTypes.CONNECT_EQUATION(lhs = _), _, _)
+    case (NFInstTypes.CONNECT_EQUATION(), _, _)
       equation
         print("Skipping expansion of connect\n");
       then
@@ -848,7 +848,7 @@ algorithm
     case (DAE.RCONST(_), _, _) then inExp;
     case (DAE.SCONST(_), _, _) then inExp;
     case (DAE.BCONST(_), _, _) then inExp;
-    case (DAE.ENUM_LITERAL(name = _), _, _) then inExp;
+    case (DAE.ENUM_LITERAL(), _, _) then inExp;
 
     case (DAE.CREF(cref, ty), _, _)
       equation
@@ -864,7 +864,7 @@ algorithm
       then
         DAE.BINARY(e1, op, e2);
 
-    case (DAE.ARRAY(ty = _), _, _)
+    case (DAE.ARRAY(), _, _)
       equation
         e1 = subscriptArrayElements(inExp, inAllSubscripts);
         e2 = DAE.ASUB(e1, inEqSubscripts);
@@ -893,7 +893,7 @@ algorithm
       Boolean scalar;
       list<DAE.Exp> expl;
 
-    case (DAE.ARRAY(ty as DAE.T_ARRAY(ty = DAE.T_ARRAY(ty = _)), scalar, expl), _)
+    case (DAE.ARRAY(ty as DAE.T_ARRAY(ty = DAE.T_ARRAY()), scalar, expl), _)
       equation
         expl = List.map1(expl, subscriptArrayElements, inAllSubscripts);
       then

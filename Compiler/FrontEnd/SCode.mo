@@ -687,7 +687,7 @@ algorithm
       then
         elt;
 
-    case (id2,(EXTENDS(baseClassPath = _) :: xs))
+    case (id2,(EXTENDS() :: xs))
       equation
         elt = getElementNamedFromElts(id2, xs);
       then
@@ -715,7 +715,7 @@ check if an element is of type EXTENDS or not."
   output Boolean isExtend;
 algorithm
   isExtend := match(ele)
-    case EXTENDS(baseClassPath = _) then true;
+    case EXTENDS() then true;
     else false;
   end match;
 end isElementExtends;
@@ -726,7 +726,7 @@ check if an element is not of type CLASS_EXTENDS."
   output Boolean isExtend;
 algorithm
   isExtend := match(ele)
-    case CLASS(classDef = CLASS_EXTENDS(baseClassName = _)) then false;
+    case CLASS(classDef = CLASS_EXTENDS()) then false;
     else true;
   end match;
 end isNotElementClassExtends;
@@ -1814,7 +1814,7 @@ algorithm
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_FOR(index = id_1, range = SOME(e_1), eEquationLst = _))
+      case (id,EQ_FOR(index = id_1, range = SOME(e_1)))
         equation
           true = stringEq(id, id_1);
           lst=Absyn.findIteratorInExp(id,e_1);
@@ -1824,7 +1824,7 @@ algorithm
           false = stringEq(id, id_1);
           lst=findIteratorInEEquationLst(id,eeqLst);
         then lst;
-      case (id,EQ_FOR(index = id_1, range = NONE(), eEquationLst = _))
+      case (id,EQ_FOR(index = id_1, range = NONE()))
         equation
           true = stringEq(id, id_1);
         then {};
@@ -2273,7 +2273,7 @@ public function isComponent
   output Boolean b;
 algorithm
   b := match(elt)
-    case COMPONENT(attributes = _) then true;
+    case COMPONENT() then true;
     else false;
   end match;
 end isComponent;
@@ -2283,7 +2283,7 @@ public function isNotComponent
   output Boolean b;
 algorithm
   b := match(elt)
-    case COMPONENT(attributes = _) then false;
+    case COMPONENT() then false;
     else true;
   end match;
 end isNotComponent;
@@ -2293,8 +2293,8 @@ public function isClassOrComponent
   output Boolean outIsClassOrComponent;
 algorithm
   outIsClassOrComponent := match(inElement)
-    case CLASS(name = _) then true;
-    case COMPONENT(name = _) then true;
+    case CLASS() then true;
+    case COMPONENT() then true;
   end match;
 end isClassOrComponent;
 
@@ -3000,7 +3000,7 @@ public function elementIsClass
   output Boolean b;
 algorithm
   b := match el
-    case CLASS(classDef=_) then true;
+    case CLASS() then true;
     else false;
   end match;
 end elementIsClass;
@@ -3030,7 +3030,7 @@ public function getElementClass
   output Element cl;
 algorithm
   cl := match(el)
-    case CLASS(name=_) then el;
+    case CLASS() then el;
     case _ then fail();
   end match;
 end getElementClass;
@@ -3694,7 +3694,7 @@ public function isDerivedClassDef
   output Boolean isDerived;
 algorithm
   isDerived := match(inClassDef)
-    case DERIVED(typeSpec = _) then true;
+    case DERIVED() then true;
     else false;
   end match;
 end isDerivedClassDef;
@@ -4461,7 +4461,7 @@ public function isDerivedClass
   output Boolean isDerived;
 algorithm
   isDerived := match(inClass)
-    case CLASS(classDef = DERIVED(typeSpec = _)) then true;
+    case CLASS(classDef = DERIVED()) then true;
     else false;
   end match;
 end isDerivedClass;
@@ -4579,7 +4579,7 @@ algorithm
       list<list<EEquation>> eqs_lst;
       list<tuple<Absyn.Exp, list<EEquation>>> tpl_el;
 
-    case EQ_REINIT(info = _) then true;
+    case EQ_REINIT() then true;
     case EQ_WHEN(eEquationLst = eqs, elseBranches = tpl_el)
       equation
         b = equationsContainReinit(eqs);
@@ -4690,7 +4690,7 @@ public function isRedeclareSubMod
   output Boolean outIsRedeclare;
 algorithm
   outIsRedeclare := match(inSubMod)
-    case NAMEMOD(mod = REDECL(element = _)) then true;
+    case NAMEMOD(mod = REDECL()) then true;
     else false;
   end match;
 end isRedeclareSubMod;
@@ -4829,35 +4829,35 @@ algorithm
       Element el;
       list<Element> rest_el, comp, cls, ext, imp, def;
 
-    case ((el as COMPONENT(name = _)) :: rest_el, comp, cls, ext, imp, def)
+    case ((el as COMPONENT()) :: rest_el, comp, cls, ext, imp, def)
       equation
         (comp, cls, ext, imp, def) =
           partitionElements2(rest_el, el :: comp, cls, ext, imp, def);
       then
         (comp, cls, ext, imp, def);
 
-    case ((el as CLASS(name = _)) :: rest_el, comp, cls, ext, imp, def)
+    case ((el as CLASS()) :: rest_el, comp, cls, ext, imp, def)
       equation
         (comp, cls, ext, imp, def) =
           partitionElements2(rest_el, comp, el :: cls, ext, imp, def);
       then
         (comp, cls, ext, imp, def);
 
-    case ((el as EXTENDS(info = _)) :: rest_el, comp, cls, ext, imp, def)
+    case ((el as EXTENDS()) :: rest_el, comp, cls, ext, imp, def)
       equation
         (comp, cls, ext, imp, def) =
           partitionElements2(rest_el, comp, cls, el :: ext, imp, def);
       then
         (comp, cls, ext, imp, def);
 
-    case ((el as IMPORT(imp = _)) :: rest_el, comp, cls, ext, imp, def)
+    case ((el as IMPORT()) :: rest_el, comp, cls, ext, imp, def)
       equation
         (comp, cls, ext, imp, def) =
           partitionElements2(rest_el, comp, cls, ext, el :: imp, def);
       then
         (comp, cls, ext, imp, def);
 
-    case ((el as DEFINEUNIT(name = _)) :: rest_el, comp, cls, ext, imp, def)
+    case ((el as DEFINEUNIT()) :: rest_el, comp, cls, ext, imp, def)
       equation
         (comp, cls, ext, imp, def) =
           partitionElements2(rest_el, comp, cls, ext, imp, el :: def);
@@ -5007,7 +5007,7 @@ public function isOverloadedFunction
   output Boolean isOverloaded;
 algorithm
   isOverloaded := match(inElement)
-    case CLASS(classDef = OVERLOAD(pathLst = _)) then true;
+    case CLASS(classDef = OVERLOAD()) then true;
     else false;
   end match;
 end isOverloadedFunction;
@@ -5114,7 +5114,7 @@ algorithm
 
     case (NOMOD(), _) then inOldMod;
     case (_, NOMOD()) then inNewMod;
-    case (REDECL(element = _), _) then inNewMod;
+    case (REDECL(), _) then inNewMod;
 
     case (MOD(f1, e1, sl1, b1, i1),
           MOD(_, _, sl2, b2, _))
@@ -5411,7 +5411,7 @@ public function isValidPackageElement
 algorithm
   outIsValid := match(inElement)
     case COMPONENT(attributes = ATTR(variability = CONST())) then true;
-    case COMPONENT(name = _) then false;
+    case COMPONENT() then false;
     else true;
   end match;
 end isValidPackageElement;
@@ -5527,7 +5527,7 @@ algorithm
     case R_MODEL() then true;
     case R_RECORD(_) then true;
     case R_BLOCK() then true;
-    case R_CONNECTOR(isExpandable = _) then true;
+    case R_CONNECTOR() then true;
     case R_TYPE() then true;
     case R_ENUMERATION() then true;
     else false;

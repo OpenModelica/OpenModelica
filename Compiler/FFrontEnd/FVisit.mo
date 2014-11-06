@@ -600,7 +600,7 @@ algorithm
       Option<AvlTree> l,r;
       Integer h;
 
-    case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(_,rval)),height = _,left = l,right = r))
+    case (FCore.VAVLTREENODE(value = SOME(FCore.VAVLTREEVALUE(_,rval)),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);

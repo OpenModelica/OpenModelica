@@ -392,31 +392,31 @@ algorithm
       list<String> slst;
       Boolean jacConstant;
 
-    case (compelem::{},BackendDAE.ALGORITHM(size = _)::{},var_varindx_lst,_,_,_,_,false)
+    case (compelem::{},BackendDAE.ALGORITHM()::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEALGORITHM(compelem,varindxs);
 
-    case (compelem::{},BackendDAE.ARRAY_EQUATION(dimSize = _)::{},var_varindx_lst,_,_,_,_,false)
+    case (compelem::{},BackendDAE.ARRAY_EQUATION()::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEARRAY(compelem,varindxs);
 
-    case (compelem::{},BackendDAE.IF_EQUATION(conditions = _)::{},var_varindx_lst,_,_,_,_,false)
+    case (compelem::{},BackendDAE.IF_EQUATION()::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEIFEQUATION(compelem,varindxs);
 
-    case (compelem::{},BackendDAE.COMPLEX_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
+    case (compelem::{},BackendDAE.COMPLEX_EQUATION()::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLECOMPLEXEQUATION(compelem,varindxs);
 
-    case (compelem::{},BackendDAE.WHEN_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
+    case (compelem::{},BackendDAE.WHEN_EQUATION()::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
@@ -425,7 +425,7 @@ algorithm
     case (compelem::{},_,(_,v)::{},_,_,_,_,false)
       then BackendDAE.SINGLEEQUATION(compelem,v);
 
-    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=_,orderedEqs=_),shared,_,_,_)
+    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(),shared,_,_,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         //false = BackendVariable.hasDiscreteVar(var_lst); //lochel: mixed systems and non-linear systems are treated the same
@@ -447,7 +447,7 @@ algorithm
       then
         BackendDAE.EQUATIONSYSTEM(comp,varindxs,BackendDAE.FULL_JACOBIAN(jac),jac_tp);
 
-    case (_,eqn_lst,var_varindx_lst,BackendDAE.EQSYSTEM(orderedVars=_,orderedEqs=_),_,_,_,_)
+    case (_,eqn_lst,var_varindx_lst,BackendDAE.EQSYSTEM(),_,_,_,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         true = BackendVariable.hasDiscreteVar(var_lst);
@@ -544,7 +544,7 @@ algorithm
       DAE.ElementSource source;
 
     case (BackendDAE.VAR(varName = cr,
-      varKind = BackendDAE.STATE(index=_),
+      varKind = BackendDAE.STATE(),
       varDirection = dir,
       varParallelism = prl,
       varType = tp,

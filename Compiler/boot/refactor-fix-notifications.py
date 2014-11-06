@@ -43,9 +43,11 @@ USE_MATCH = Literal("Notification: This matchcontinue expression has no overlapp
   lambda s,s2: {'mc_to_match':True})
 UNUSED_AS = (Literal("Notification: Removing unused as-binding: ") + IDENT + "." + StringEnd() ).setParseAction(
   lambda s,s2: {'unused_as':s2[1]})
+EMPTY_CALL_NAMED_ARG = (Literal("Notification: Removing empty call named pattern argument: ") + IDENT + "." + StringEnd() ).setParseAction(
+  lambda s,s2: {'empty_call_named_arg':s2[1]})
 UNKNOWN = Suppress("Notification:")
 
-NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|UNUSED_ASSIGN|DEAD_STATEMENT|USE_MATCH|UNKNOWN))
+NOTIFICATION = (Suppress("[") + FILEINFO + Suppress("]") + (UNUSED_LOCAL|UNUSED_AS|UNUSED_ASSIGN|DEAD_STATEMENT|USE_MATCH|EMPTY_CALL_NAMED_ARG|UNKNOWN))
 
 def runOMC(arg):
   try:
@@ -95,7 +97,8 @@ def fixFileIter(stamp,moFile,logFile):
     log = open(logFile, 'r')
   except:
     return # It's ok; there were no messages
-  lst = [NOTIFICATION.parseString(line.strip()) for line in log.readlines()]
+  allLines = log.readlines()
+  lst = [NOTIFICATION.parseString(line.strip()) for line in allLines]
   len1 = len(lst)
   lst = [n for n in lst if n[0]['fileName'] == moFile]
   len2 = len(lst)
@@ -133,6 +136,23 @@ def fixFileIter(stamp,moFile,logFile):
         maxLine = startLine
         continue
       print s
+    elif len(n)==2 and n[1].has_key('empty_call_named_arg'):
+      ident = n[1]['empty_call_named_arg']
+      split = re.split(", *%s *= *_" % ident, lineContentsOfInfo, maxsplit=1)
+      if len(split) <> 2:
+        split = re.split("%s *= *_ *, *" % ident, lineContentsOfInfo, maxsplit=1)
+      if len(split) <> 2:
+        split = re.split("[(] *%s *= *_ *[)]" % ident, lineContentsOfInfo, maxsplit=1)
+        if len(split) == 2:
+          split[0] += "("
+          split[1] = ")" + split[1]
+      if len(split) <> 2:
+        printWarning(info,'Failed to find empty named arg %s in %s' % (ident,lineContentsOfInfo.strip()))
+        continue
+      updated = "".join(split)
+      updateContents(moContents,startLine,endLine,startCol,endCol,updated)
+      printInfo(info, 'Removed empty named arg %s in %s with %s' % (ident,lineContentsOfInfo.strip(),updated))
+      maxLine = startLine
     elif len(n)==2 and n[1].has_key('unused_assign'):
       ident = n[1]['unused_assign']
       split = re.split("(^|[(,]) *%s *([,)=]|:=)" % ident, lineContentsOfInfo, maxsplit=1)
@@ -244,7 +264,7 @@ def runStamp(arg):
     print('Expected all arguments to have suffix .stamp.mos')
     sys.exit(1)
   f = open(arg)
-  moFile = f.readline().split('"')[1]
+  moFile = os.path.realpath(f.readline().split('"')[1])
   logFile = arg.replace('.stamp.mos','.log')
   if os.path.exists(moFile.replace('.mo','.tpl')):
     print 'Skipping Susan-generated file %s' % arg

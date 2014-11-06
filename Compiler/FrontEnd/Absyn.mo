@@ -1584,10 +1584,10 @@ algorithm
       list<Case> match_cases;
       Option<String> cmt;
 
-    case (INTEGER(value = _), _, _, _) then (inExp, inArg);
-    case (REAL(value = _), _, _, _) then (inExp, inArg);
-    case (STRING(value = _), _, _, _) then (inExp, inArg);
-    case (BOOL(value = _), _, _, _) then (inExp, inArg);
+    case (INTEGER(), _, _, _) then (inExp, inArg);
+    case (REAL(), _, _, _) then (inExp, inArg);
+    case (STRING(), _, _, _) then (inExp, inArg);
+    case (BOOL(), _, _, _) then (inExp, inArg);
 
     case (CREF(componentRef = cref), _, _, arg)
       equation
@@ -1705,7 +1705,7 @@ algorithm
       then
         (LIST(expl), arg);
 
-    case (CODE(code = _), _, _, _)
+    case (CODE(), _, _, _)
       then (inExp, inArg);
 
     else
@@ -2083,7 +2083,7 @@ algorithm
       then
         (ALGORITHMITEM(alg, cmt, info), arg);
 
-    case (ALGORITHMITEMCOMMENT(comment=_), _, _, _) then (inAlgorithmItem,inArg);
+    case (ALGORITHMITEMCOMMENT(), _, _, _) then (inAlgorithmItem,inArg);
   end match;
 end traverseAlgorithmItemBidir;
 
@@ -2619,8 +2619,8 @@ algorithm
         o = stringCompare(i1,i2);
         o = if o == 0 then pathCompare(p1, p2) else o;
       then o;
-    case (QUALIFIED(name=_),_) then 1;
-    case (_,QUALIFIED(name=_)) then -1;
+    case (QUALIFIED(),_) then 1;
+    case (_,QUALIFIED()) then -1;
     case (IDENT(i1),IDENT(i2))
       then stringCompare(i1,i2);
   end match;
@@ -2642,8 +2642,8 @@ algorithm
         o = stringCompare(i1,i2);
         o = if o == 0 then pathCompare(p1, p2) else o;
       then o;
-    case (QUALIFIED(name=_),_) then 1;
-    case (_,QUALIFIED(name=_)) then -1;
+    case (QUALIFIED(),_) then 1;
+    case (_,QUALIFIED()) then -1;
     case (IDENT(i1),IDENT(i2))
       then stringCompare(i1,i2);
   end match;
@@ -2700,7 +2700,7 @@ public function pathString2 "Tail-recursive version, with string builder (string
   output String outString;
 algorithm
   outString := match (path,delimiter)
-    case (FULLYQUALIFIED(path=_),_)
+    case (FULLYQUALIFIED(),_)
       then "." + stringDelimitList(pathToStringList(path),delimiter);
     else
       then stringDelimitList(pathToStringList(path),delimiter);
@@ -2812,7 +2812,7 @@ algorithm
     local
       Path p;
 
-    case QUALIFIED(path = IDENT(name = _)) then inPath;
+    case QUALIFIED(path = IDENT()) then inPath;
     case QUALIFIED(path = p) then pathTwoLastIdents(p);
     case FULLYQUALIFIED(path = p) then pathTwoLastIdents(p);
   end match;
@@ -2844,7 +2844,7 @@ algorithm
       Path p;
 
     case (FULLYQUALIFIED(path = p)) then pathFirstIdent(p);
-    case (QUALIFIED(name = n,path = _)) then n;
+    case (QUALIFIED(name = n)) then n;
     case (IDENT(name = n)) then n;
   end match;
 end pathFirstIdent;
@@ -2876,7 +2876,7 @@ algorithm
       Ident n;
 
     case (FULLYQUALIFIED(path = p)) then pathPrefix(p);
-    case (QUALIFIED(name = n, path = IDENT(name = _))) then IDENT(n);
+    case (QUALIFIED(name = n, path = IDENT())) then IDENT(n);
     case (QUALIFIED(name = n, path = p))
       equation
         p = pathPrefix(p);
@@ -2952,7 +2952,7 @@ algorithm
       then true;
     case(_,FULLYQUALIFIED(path = p))
       then pathSuffixOf(suffix_path,p);
-    case(_,QUALIFIED(name=_,path = p))
+    case(_,QUALIFIED(path = p))
       then pathSuffixOf(suffix_path,p);
     else false;
   end matchcontinue;
@@ -3005,7 +3005,7 @@ algorithm
       Path p;
     // Should not be possible to replace FQ paths
     case (QUALIFIED(path = p), _) then joinPaths(replPath,p);
-    case (IDENT(name = _), _) then replPath;
+    case (IDENT(), _) then replPath;
   end match;
 end pathReplaceFirstIdent;
 
@@ -3361,10 +3361,10 @@ algorithm
       list<list<ComponentRef>> lstres1;
       list<list<ComponentRef>> crefll;
 
-    case (INTEGER(value = _),_,_) then {};
-    case (REAL(value = _),_,_) then {};
-    case (STRING(value = _),_,_) then {};
-    case (BOOL(value = _),_,_) then {};
+    case (INTEGER(),_,_) then {};
+    case (REAL(),_,_) then {};
+    case (STRING(),_,_) then {};
+    case (BOOL(),_,_) then {};
     case (CREF(componentRef = ALLWILD()),_,_) then {};
     case (CREF(componentRef = WILD()),_,_) then {};
     case (CREF(componentRef = cr),false,_) then {cr};
@@ -3411,7 +3411,7 @@ algorithm
       then
         res;
 
-    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = _),_,_)
+    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),_,_)
       equation
         l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
         l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
@@ -3489,7 +3489,7 @@ algorithm
       then
         res;
 
-    case (MATCHEXP(matchTy = _),_,_) then fail();
+    case (MATCHEXP(),_,_) then fail();
 
     case (e1,_,_)
       equation
@@ -3693,7 +3693,7 @@ algorithm
       Ident str;
       Path p;
 
-    case QUALIFIED(name = str, path = IDENT(name = _))
+    case QUALIFIED(name = str, path = IDENT())
       then IDENT(str);
 
     case QUALIFIED(name = str, path = p)
@@ -3719,7 +3719,7 @@ algorithm
     local
       Path p;
 
-    case IDENT(name = _) then NONE();
+    case IDENT() then NONE();
 
     else
       equation
@@ -3741,8 +3741,8 @@ algorithm
       ComponentRef c_1, c;
       list<Subscript> subs;
 
-    case (CREF_IDENT(name = _)) then fail();
-    case (CREF_QUAL(name = str,subscripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs);
+    case (CREF_IDENT()) then fail();
+    case (CREF_QUAL(name = str,subscripts = subs, componentRef = CREF_IDENT())) then CREF_IDENT(str,subs);
     case (CREF_QUAL(name = str,subscripts = subs,componentRef = c))
       equation
         c_1 = crefStripLast(c);
@@ -3795,7 +3795,7 @@ algorithm
   match (inPath)
     local
       Path p;
-    case (QUALIFIED(name = _,path = p)) then p;
+    case (QUALIFIED(path = p)) then p;
     case(FULLYQUALIFIED(p)) then stripFirst(p);
   end match;
 end stripFirst;
@@ -3956,7 +3956,7 @@ public function crefIsIdent
   output Boolean outIsIdent;
 algorithm
   outIsIdent := match(inComponentRef)
-    case CREF_IDENT(name = _) then true;
+    case CREF_IDENT() then true;
     else false;
   end match;
 end crefIsIdent;
@@ -3967,8 +3967,8 @@ public function crefIsQual
   output Boolean outIsQual;
 algorithm
   outIsQual := match(inComponentRef)
-    case CREF_QUAL(name = _) then true;
-    case CREF_FULLYQUALIFIED(componentRef = _) then true;
+    case CREF_QUAL() then true;
+    case CREF_FULLYQUALIFIED() then true;
     else false;
   end match;
 end crefIsQual;
@@ -3983,7 +3983,7 @@ algorithm
       Ident id;
       list<Subscript> subs,res;
       ComponentRef cr;
-    case (CREF_IDENT(name = _,subscripts= subs)) then subs;
+    case (CREF_IDENT(subscripts= subs)) then subs;
     case (CREF_QUAL(componentRef = cr))
       equation
         res = crefLastSubs(cr);
@@ -4007,9 +4007,9 @@ algorithm
       Boolean b;
       ComponentRef c;
 
-    case CREF_IDENT(name = _,subscripts = {}) then false;
+    case CREF_IDENT(subscripts = {}) then false;
 
-    case CREF_QUAL(name = _,subscripts = {},componentRef = c)
+    case CREF_QUAL(subscripts = {},componentRef = c)
       equation
         b = crefHasSubscripts(c);
       then
@@ -4088,7 +4088,7 @@ algorithm
       Ident id;
       list<Subscript> subs,s;
       ComponentRef cr_1,cr;
-    case (CREF_IDENT(name = id,subscripts= _)) then CREF_IDENT(id,{});
+    case (CREF_IDENT(name = id)) then CREF_IDENT(id,{});
     case (CREF_QUAL(name= id,subscripts= s,componentRef = cr))
       equation
         cr_1 = crefStripLastSubs(cr);
@@ -4163,7 +4163,7 @@ public function crefMakeFullyQualified
   output ComponentRef outComponentRef;
 algorithm
   outComponentRef := match(inComponentRef)
-    case CREF_FULLYQUALIFIED(componentRef = _) then inComponentRef;
+    case CREF_FULLYQUALIFIED() then inComponentRef;
     else CREF_FULLYQUALIFIED(inComponentRef);
   end match;
 end crefMakeFullyQualified;
@@ -4966,7 +4966,7 @@ public function makeFullyQualified
   output Path outPath;
 algorithm
   outPath := match(inPath)
-    case FULLYQUALIFIED(path = _) then inPath;
+    case FULLYQUALIFIED() then inPath;
     else FULLYQUALIFIED(inPath);
   end match;
 end makeFullyQualified;
@@ -5214,7 +5214,7 @@ public function pathIsFullyQualified
   output Boolean outIsQualified;
 algorithm
   outIsQualified := match(inPath)
-    case FULLYQUALIFIED(path = _) then true;
+    case FULLYQUALIFIED() then true;
     else false;
   end match;
 end pathIsFullyQualified;
@@ -5489,8 +5489,8 @@ algorithm
       Restriction re;
       ClassDef body;
       Info info;
-    case CLASS(body=PARTS(comment=_)) then fail();
-    case CLASS(body=CLASS_EXTENDS(comment=_)) then fail();
+    case CLASS(body=PARTS()) then fail();
+    case CLASS(body=CLASS_EXTENDS()) then fail();
     case CLASS(name,pa,fi,en,re,body,info)
       equation
         body = stripClassDefComment(body);
@@ -5568,7 +5568,7 @@ end getFunctionInterfaceParts;
 protected function filterAnnotationItem
   input ElementItem elt;
 algorithm
-  ELEMENTITEM(element = _) := elt;
+  ELEMENTITEM() := elt;
 end filterAnnotationItem;
 
 public function getExternalDecl
@@ -5589,7 +5589,7 @@ protected function getExternalFromClassPart
   input ClassPart inClassPart;
   output ClassPart outExternal;
 algorithm
-  EXTERNAL(externalDecl = _) := inClassPart;
+  EXTERNAL() := inClassPart;
   outExternal := inClassPart;
 end getExternalFromClassPart;
 
@@ -5598,7 +5598,7 @@ public function isParts
   output Boolean b;
 algorithm
   b := match cl
-    case PARTS(comment=_) then true;
+    case PARTS() then true;
     else false;
   end match;
 end isParts;
@@ -5747,7 +5747,7 @@ public function mergeAnnotations
   output Annotation outAnnotation;
 algorithm
   outAnnotation:=
-  matchcontinue (inAnnotation1,inAnnotation2)
+  match (inAnnotation1,inAnnotation2)
     local
       list<ElementArg> neweltargs,oldrest,eltargs,eltargs_1;
       ElementArg mod;
@@ -5764,7 +5764,7 @@ algorithm
 
     case (ANNOTATION(elementArgs = {}),a) then a;
 
-  end matchcontinue;
+  end match;
 end mergeAnnotations;
 
 protected function modificationInElementargs
@@ -6134,7 +6134,7 @@ algorithm
       Element e;
       list<ElementItem> rest;
     case {} then {};
-    case (ELEMENTITEM(e as DEFINEUNIT(name=_))::rest)
+    case (ELEMENTITEM(e as DEFINEUNIT())::rest)
       equation
         outElts = getDefineUnitsInElements(rest);
       then e::outElts;

@@ -172,37 +172,37 @@ algorithm
     local
       Absyn.Path p;
       DAE.Type ty;
-    case(DAE.ADD(ty=_)) then " ADD ";
-    case(DAE.SUB(ty=_)) then " SUB ";
-    case(DAE.MUL(ty=_)) then " MUL ";
-    case(DAE.DIV(ty=_)) then " DIV ";
-    case(DAE.POW(ty=_)) then " POW ";
-    case(DAE.UMINUS(ty=_)) then " UMINUS ";
-    case(DAE.UMINUS_ARR(ty=_)) then " UMINUS_ARR ";
-    case(DAE.ADD_ARR(ty=_)) then " ADD_ARR ";
-    case(DAE.SUB_ARR(ty=_)) then " SUB_ARR ";
-    case(DAE.MUL_ARR(ty=_)) then " MUL_ARR ";
-    case(DAE.DIV_ARR(ty=_)) then " DIV_ARR ";
-    case(DAE.MUL_ARRAY_SCALAR(ty=_)) then " MUL_ARRAY_SCALAR ";
-    case(DAE.ADD_ARRAY_SCALAR(ty=_)) then " ADD_ARRAY_SCALAR ";
-    case(DAE.SUB_SCALAR_ARRAY(ty=_)) then " SUB_SCALAR_ARRAY ";
-    case(DAE.MUL_SCALAR_PRODUCT(ty=_)) then " MUL_SCALAR_PRODUCT ";
-    case(DAE.MUL_MATRIX_PRODUCT(ty=_)) then " MUL_MATRIX_PRODUCT ";
-    case(DAE.DIV_ARRAY_SCALAR(ty=_)) then " DIV_ARRAY_SCALAR ";
-    case(DAE.DIV_SCALAR_ARRAY(ty=_)) then " DIV_SCALAR_ARRAY ";
-    case(DAE.POW_ARRAY_SCALAR(ty=_)) then " POW_ARRAY_SCALAR ";
-    case(DAE.POW_SCALAR_ARRAY(ty=_)) then " POW_SCALAR_ARRAY ";
-    case(DAE.POW_ARR(ty=_)) then " POW_ARR ";
-    case(DAE.POW_ARR2(ty=_)) then " POW_ARR2 ";
+    case(DAE.ADD()) then " ADD ";
+    case(DAE.SUB()) then " SUB ";
+    case(DAE.MUL()) then " MUL ";
+    case(DAE.DIV()) then " DIV ";
+    case(DAE.POW()) then " POW ";
+    case(DAE.UMINUS()) then " UMINUS ";
+    case(DAE.UMINUS_ARR()) then " UMINUS_ARR ";
+    case(DAE.ADD_ARR()) then " ADD_ARR ";
+    case(DAE.SUB_ARR()) then " SUB_ARR ";
+    case(DAE.MUL_ARR()) then " MUL_ARR ";
+    case(DAE.DIV_ARR()) then " DIV_ARR ";
+    case(DAE.MUL_ARRAY_SCALAR()) then " MUL_ARRAY_SCALAR ";
+    case(DAE.ADD_ARRAY_SCALAR()) then " ADD_ARRAY_SCALAR ";
+    case(DAE.SUB_SCALAR_ARRAY()) then " SUB_SCALAR_ARRAY ";
+    case(DAE.MUL_SCALAR_PRODUCT()) then " MUL_SCALAR_PRODUCT ";
+    case(DAE.MUL_MATRIX_PRODUCT()) then " MUL_MATRIX_PRODUCT ";
+    case(DAE.DIV_ARRAY_SCALAR()) then " DIV_ARRAY_SCALAR ";
+    case(DAE.DIV_SCALAR_ARRAY()) then " DIV_SCALAR_ARRAY ";
+    case(DAE.POW_ARRAY_SCALAR()) then " POW_ARRAY_SCALAR ";
+    case(DAE.POW_SCALAR_ARRAY()) then " POW_SCALAR_ARRAY ";
+    case(DAE.POW_ARR()) then " POW_ARR ";
+    case(DAE.POW_ARR2()) then " POW_ARR2 ";
     case(DAE.OR(_)) then " OR ";
     case(DAE.AND(_)) then " AND ";
     case(DAE.NOT(_)) then " NOT ";
-    case(DAE.LESSEQ(ty=_)) then " LESSEQ ";
-    case(DAE.GREATER(ty=_)) then " GREATER ";
-    case(DAE.GREATEREQ(ty=_)) then " GREATEREQ ";
-    case(DAE.LESS(ty=_)) then " LESS ";
-    case(DAE.EQUAL(ty=_)) then " EQUAL ";
-    case(DAE.NEQUAL(ty=_)) then " NEQUAL ";
+    case(DAE.LESSEQ()) then " LESSEQ ";
+    case(DAE.GREATER()) then " GREATER ";
+    case(DAE.GREATEREQ()) then " GREATEREQ ";
+    case(DAE.LESS()) then " LESS ";
+    case(DAE.EQUAL()) then " EQUAL ";
+    case(DAE.NEQUAL()) then " NEQUAL ";
     case(DAE.USERDEFINED(p)) then " Userdefined:" + Absyn.pathString(p) + " ";
     else " --UNDEFINED-- ";
   end match;
@@ -324,17 +324,17 @@ algorithm
       DAE.Attributes attr;
 
     case DAE.NOEXTARG() then "";
-    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(connectorType =_,variability = _,direction = _),type_ = _)
+    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR())
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
       then
         crstr;
-    case DAE.EXTARGEXP(exp = exp,type_ = _)
+    case DAE.EXTARGEXP(exp = exp)
       equation
         crstr = ExpressionDump.printExpStr(exp);
       then
         crstr;
-    case DAE.EXTARGSIZE(componentRef = cr,attributes = _,type_ = _,exp = dim)
+    case DAE.EXTARGSIZE(componentRef = cr,exp = dim)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
         dimstr = ExpressionDump.printExpStr(dim);
@@ -1180,7 +1180,7 @@ algorithm
         ();
 
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
-                      type_ = _, isImpure = isImpure, comment = c)
+                      isImpure = isImpure, comment = c)
       equation
         impureStr = if isImpure then "impure " else "";
         Print.printBuf(impureStr);
@@ -1449,7 +1449,7 @@ algorithm
       then
         ();
 
-    case (stmt as DAE.STMT_WHEN(exp = _),i)
+    case (stmt as DAE.STMT_WHEN(),i)
       equation
         indent(i);
         Print.printBuf(ppWhenStmtStr(stmt,1));
@@ -1467,14 +1467,14 @@ algorithm
       then
         ();
 
-    case (DAE.STMT_RETURN(source = _),i)
+    case (DAE.STMT_RETURN(),i)
       equation
         indent(i);
         Print.printBuf("return;\n");
       then
         ();
 
-    case (DAE.STMT_BREAK(source = _),i)
+    case (DAE.STMT_BREAK(),i)
       equation
         indent(i);
         Print.printBuf("break;\n");
@@ -1668,7 +1668,7 @@ algorithm
       then
         str;
 
-    case (stmt as DAE.STMT_WHEN(exp = _),i)
+    case (stmt as DAE.STMT_WHEN(),i)
       equation
         s1 = indentStr(i);
         s2 = ppWhenStmtStr(stmt,i);
@@ -1701,14 +1701,14 @@ algorithm
       then
         str;
 
-    case (DAE.STMT_RETURN(source = _),i)
+    case (DAE.STMT_RETURN(),i)
       equation
         s1 = indentStr(i);
         str = stringAppend(s1, "return;\n");
       then
         str;
 
-    case (DAE.STMT_BREAK(source = _),i)
+    case (DAE.STMT_BREAK(),i)
       equation
         s1 = indentStr(i);
         str = stringAppend(s1, "break;\n");
@@ -1988,7 +1988,7 @@ algorithm
       list<DAE.Element> l;
     case DAE.VAR(componentRef = cr,
              kind = vk,
-             direction = _,
+             
              binding = NONE(),
              variableAttributesOption = dae_var_attr,
              comment = comment)
@@ -2007,7 +2007,7 @@ algorithm
         ();
     case DAE.VAR(componentRef = cr,
              kind = vk,
-             direction = _,
+             
              binding = SOME(e),
              variableAttributesOption = dae_var_attr,
              comment = comment)
@@ -2072,12 +2072,12 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case DAE.ALGORITHM(algorithm_ = _)
+    case DAE.ALGORITHM()
       equation
         Print.printBuf("ALGORITHM()");
       then
         ();
-    case DAE.INITIALALGORITHM(algorithm_ = _)
+    case DAE.INITIALALGORITHM()
       equation
         Print.printBuf("INITIALALGORITHM()");
       then
@@ -2127,22 +2127,22 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case DAE.IF_EQUATION(condition1 = _)
+    case DAE.IF_EQUATION()
       equation
         Print.printBuf("IF_EQUATION()");
       then
         ();
-    case DAE.INITIAL_IF_EQUATION(condition1 = _)
+    case DAE.INITIAL_IF_EQUATION()
       equation
         Print.printBuf("INITIAL_IF_EQUATION()");
       then
         ();
-    case DAE.WHEN_EQUATION(condition = _)
+    case DAE.WHEN_EQUATION()
       equation
         Print.printBuf("WHEN_EQUATION()");
       then
         ();
-    case DAE.EXTOBJECTCLASS(path = _)
+    case DAE.EXTOBJECTCLASS()
       equation
         Print.printBuf("EXTOBJECTCLASS()");
       then
@@ -2163,12 +2163,12 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case DAE.REINIT(exp = _)
+    case DAE.REINIT()
       equation
         Print.printBuf("REINIT()");
       then
         ();
-    case DAE.NORETCALL(exp = _)
+    case DAE.NORETCALL()
       equation
         Print.printBuf("NORETCALL()");
       then
@@ -2385,13 +2385,13 @@ algorithm
       DAE.Exp exp,e1,e2;
       list<Graphviz.Node> nodes;
       list<DAE.Element> elts;
-    case DAE.VAR(componentRef = cr,kind = vk,direction = _,binding = NONE())
+    case DAE.VAR(componentRef = cr,kind = vk,binding = NONE())
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
       then
         Graphviz.LNODE("VAR",{crstr,vkstr},{},{});
-    case DAE.VAR(componentRef = cr,kind = vk,direction = _,binding = SOME(exp))
+    case DAE.VAR(componentRef = cr,kind = vk,binding = SOME(exp))
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
         vkstr = dumpKindStr(vk);
@@ -2418,7 +2418,7 @@ algorithm
         e2str = printExpStrSpecial(Expression.crefExp(cr2));
       then
         Graphviz.LNODE("EQUEQUATION",{e1str,"=",e2str},{},{});
-    case DAE.ALGORITHM(algorithm_ = _) then Graphviz.NODE("ALGORITHM",{},{});
+    case DAE.ALGORITHM() then Graphviz.NODE("ALGORITHM",{},{});
     case DAE.INITIALDEFINE(componentRef = cr,exp = exp)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
@@ -2432,7 +2432,7 @@ algorithm
         e2str = printExpStrSpecial(e2);
       then
         Graphviz.LNODE("INITIALEQUATION",{e1str,"=",e2str},{},{});
-    case DAE.INITIALALGORITHM(algorithm_ = _) then Graphviz.NODE("INITIALALGORITHM",{},{});
+    case DAE.INITIALALGORITHM() then Graphviz.NODE("INITIALALGORITHM",{},{});
     case DAE.COMP(ident = n,dAElist = elts)
       equation
         nodes = buildGrList(elts);
@@ -2469,7 +2469,7 @@ algorithm
       then
         name + dim_str;
 
-    case DAE.T_SUBTYPE_BASIC(complexType = ty as DAE.T_SUBTYPE_BASIC(complexType = _))
+    case DAE.T_SUBTYPE_BASIC(complexType = ty as DAE.T_SUBTYPE_BASIC())
       then unparseType(ty);
 
     case DAE.T_SUBTYPE_BASIC(complexType = bc_tp) then Types.unparseType(bc_tp);
@@ -2691,7 +2691,7 @@ algorithm
     case (DAE.FUNCTION(comment = cmt), _, _)
       then not SCode.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_builtin");
     // Hide record constructors if requested.
-    case (DAE.RECORD_CONSTRUCTOR(path = _), true, _) then false;
+    case (DAE.RECORD_CONSTRUCTOR(), true, _) then false;
     else true;
   end match;
 end isVisibleFunction;
@@ -3393,7 +3393,7 @@ algorithm
       String s;
       Integer hnd;
 
-    case DAE.EXTOBJECTCLASS(path = _)
+    case DAE.EXTOBJECTCLASS()
       equation
         hnd = Print.saveAndClearBuf();
         dumpExtObjectClass(inElement);
@@ -3450,7 +3450,7 @@ algorithm
         str;
 
       case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),
-                         type_ = _, isImpure = isImpure, comment = c), str)
+                         isImpure = isImpure, comment = c), str)
       equation
         fstr = Absyn.pathStringNoQual(fpath);
         impureStr = if isImpure then "impure " else "";

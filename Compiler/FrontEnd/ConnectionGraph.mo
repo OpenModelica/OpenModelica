@@ -248,7 +248,7 @@ algorithm
     // just one component reference
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
                 branches = branches,connections = connections),
-                roots as DAE.CREF(root, _), _)
+                DAE.CREF(root, _), _)
       equation
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReference.printComponentRefStr(root) + ", " + ExpressionDump.printExpStr(inMessage) + ")");
@@ -257,16 +257,16 @@ algorithm
         GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
 
     // array of component references, empty case
-    case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
-                branches = branches,connections = connections),
-                roots as DAE.ARRAY(_, _, {}), _)
+    case (GRAPH(
+                connections = connections),
+                DAE.ARRAY(_, _, {}), _)
       then
         inGraph;
 
     // array of component references, something still there
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,uniqueRoots = uniqueRoots,
                 branches = branches,connections = connections),
-                roots as DAE.ARRAY(ty, scalar, DAE.CREF(root, _)::rest), _)
+                DAE.ARRAY(ty, scalar, DAE.CREF(root, _)::rest), _)
       equation
         if Flags.isSet(Flags.CGRAPH) then
           Debug.traceln("- ConnectionGraph.addUniqueRoots(" + ComponentReference.printComponentRefStr(root) + ", " + ExpressionDump.printExpStr(inMessage) + ")");
@@ -753,7 +753,7 @@ protected function orderConnectsGuidedByUser
   input list<tuple<String,String>> inUserSelectedBreaking;
   output DaeEdges outOrderedConnections;
 algorithm
-  outOrderedConnections := matchcontinue(inConnections, inUserSelectedBreaking)
+  outOrderedConnections := match(inConnections, inUserSelectedBreaking)
     local
       String sc1,sc2;
       DAE.ComponentRef c1, c2;
@@ -785,7 +785,7 @@ algorithm
       then
         ordered;
 
-  end matchcontinue;
+  end match;
 end orderConnectsGuidedByUser;
 
 protected function printTupleStr
@@ -1334,12 +1334,12 @@ algorithm
       DaeEdges connections, connections1, connections2;
 
     // left is empty, return right
-    case (_, GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},uniqueRoots = {},branches = {},connections = {}))
+    case (_, GRAPH(definiteRoots = {},potentialRoots = {},uniqueRoots = {},branches = {},connections = {}))
       then
         inGraph1;
 
     // right is empty, return left
-    case (GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},uniqueRoots = {},branches = {},connections = {}), _)
+    case (GRAPH(definiteRoots = {},potentialRoots = {},uniqueRoots = {},branches = {},connections = {}), _)
       then
         inGraph2;
 

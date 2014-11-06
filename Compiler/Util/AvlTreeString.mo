@@ -160,7 +160,7 @@ algorithm
       AvlTree t_1,t,bt;
 
       /* empty tree*/
-    case (NODE(value = NONE(),height=_,left = NONE(),right = NONE()),key,value)
+    case (NODE(value = NONE(),left = NONE(),right = NONE()),key,value)
       then NODE(SOME(VALUE(key,value)),1,NONE(),NONE());
 
       /* Replace this node.*/

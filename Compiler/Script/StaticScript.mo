@@ -84,7 +84,7 @@ algorithm
       FCore.Graph env;
 
     // special case for Parham Vaseles OpenModelica Interactive, where buildModel takes stepSize instead of startTime, stopTime and numberOfIntervals
-    case (cache,env,{Absyn.CREF(componentRef = _)},args,impl,SOME(st),pre,info,_)
+    case (cache,env,{Absyn.CREF()},args,impl,SOME(st),pre,info,_)
       equation
         // An ICONST is used as the default value of stepSize so that this case
         // fails if stepSize isn't given as argument to buildModel.
@@ -109,7 +109,7 @@ algorithm
         (cache, startTime, stopTime, numberOfIntervals);
 
     // normal case, fill in defaults
-    case (cache,env,{Absyn.CREF(componentRef = _)},args,impl,SOME(st),pre,info,_)
+    case (cache,env,{Absyn.CREF()},args,impl,SOME(st),pre,info,_)
       equation
         // An ICONST is used as the default value of stepSize so that this case
         // fails if stepSize isn't given as argument to buildModel.
@@ -279,7 +279,7 @@ public function elabCallInteractive "This function elaborates the functions defi
       Absyn.Path className;
       list<DAE.Exp> simulationArgs;
       String name;
-    case (cache,env,cr2 as Absyn.CREF_IDENT(name=_),_,_,impl,SOME(st),_,_)
+    case (cache,env,cr2 as Absyn.CREF_IDENT(),_,_,impl,SOME(st),_,_)
       equation
         ErrorExt.setCheckpoint("Scripting");
         cr = Absyn.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
@@ -287,12 +287,12 @@ public function elabCallInteractive "This function elaborates the functions defi
         ErrorExt.delCheckpoint("Scripting");
       then (cache,exp_1,prop,st_1);
 
-    case (_,_,Absyn.CREF_IDENT(name = _),_,_,_,SOME(_),_,_)
+    case (_,_,Absyn.CREF_IDENT(),_,_,_,SOME(_),_,_)
       equation
         ErrorExt.rollBack("Scripting");
       then fail();
 
-    case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
+    case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF()},args,_,SOME(st),_,_)
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
       then
@@ -369,42 +369,42 @@ public function elabCallInteractive "This function elaborates the functions defi
         (cache,Expression.makePureBuiltinCall("exportDAEtoMatlab",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
+    case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF()},args,_,SOME(st),_,_)
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_)
+    case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF()},args,_,SOME(st),_,_)
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF()},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF()},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
         recordtype = CevalScript.getDrModelicaSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF()},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "optimize"),{Absyn.CREF(componentRef = _)},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
+    case (cache,env,Absyn.CREF_IDENT(name = "optimize"),{Absyn.CREF()},args,_,SOME(st),_,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inSymbolTable, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();

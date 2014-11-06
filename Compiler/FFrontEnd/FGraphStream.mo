@@ -127,7 +127,7 @@ algorithm
         false = FNode.isIn(n, FNode.isRefDims);
 
         id = intString(FNode.id(n));
-        (color, _, nds) = FGraphDump.graphml(n, false);
+        (_, _, nds) = FGraphDump.graphml(n, false);
         GraphStream.addNode("default", "omc", -1, id);
         GraphStream.addNodeAttribute("default", "omc", -1, id, "ui.label", Values.STRING(nds));
       then

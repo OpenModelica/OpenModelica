@@ -155,7 +155,7 @@ algorithm
        UnitParserExt.registerWeight(n,w);
        registerUnitWeightDefineunits2(du);
      then ();
-     case(SCode.DEFINEUNIT(name=_,weight = NONE())::du) equation
+     case(SCode.DEFINEUNIT(weight = NONE())::du) equation
        registerUnitWeightDefineunits2(du);
      then ();
      case(_::du) equation
@@ -197,7 +197,7 @@ algorithm
     list<Absyn.Element> defunits;
     list<Absyn.ElementItem> elts;
     String n;
-    case((cl as Absyn.CLASS(name=_),pa,i)) equation
+    case((cl as Absyn.CLASS(),pa,i)) equation
       elts = Absyn.getElementItemsInClass(cl);
       defunits = Absyn.getDefineUnitsInElements(elts);
       registerDefineunits(defunits);
@@ -272,7 +272,7 @@ algorithm
      then ();*/
 
      /* Derived unit without weigth */
-     case ((du as Absyn.DEFINEUNIT(name=_))::rest)
+     case ((du as Absyn.DEFINEUNIT())::rest)
        equation
          {SCode.DEFINEUNIT(name,_,SOME(exp),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
          UnitParserExt.addDerived(name,exp);
@@ -280,7 +280,7 @@ algorithm
        then ();
 
        /* base unit does not not have weight*/
-     case((du as Absyn.DEFINEUNIT(name=_))::rest)
+     case((du as Absyn.DEFINEUNIT())::rest)
        equation
          {SCode.DEFINEUNIT(name,_,NONE(),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
          UnitParserExt.addBase(name);
@@ -1073,7 +1073,7 @@ algorithm
         terms = listAppend(terms,uts);
       then (ut,terms,store);
 
-    case(_,e as DAE.CALL(path=_),_,_,_) equation
+    case(_,e as DAE.CALL(),_,_,_) equation
       print("buildTermDAE.CALL failed exp: "+ExpressionDump.printExpStr(e)+"\n");
     then fail();
   end matchcontinue;
@@ -1287,7 +1287,7 @@ algorithm
       then str;
     case(DAE.T_REAL(_::varLst,ts)) then getUnitStr(DAE.T_REAL(varLst,ts));
     case(DAE.T_REAL({},_)) then "";
-    case(DAE.T_INTEGER(varLst = _)) then "";
+    case(DAE.T_INTEGER()) then "";
     case(DAE.T_ARRAY(ty=tp)) then getUnitStr(tp);
     case(tp) equation print("getUnitStr for type "+Types.unparseType(tp)+" failed\n"); then fail();
   end matchcontinue;
@@ -1338,10 +1338,10 @@ protected function buildTermOp "Takes two UnitTerms and and DAE.Operator and cre
   output UnitAbsyn.UnitTerm ut;
 algorithm
   ut := match(ut1,ut2,op,origExp)
-    case (_,_,DAE.ADD(ty=_),_) then UnitAbsyn.ADD(ut1,ut2,origExp);
-    case (_,_,DAE.SUB(ty=_),_) then UnitAbsyn.SUB(ut1,ut2,origExp);
-    case (_,_,DAE.MUL(ty=_),_) then UnitAbsyn.MUL(ut1,ut2,origExp);
-    case (_,_,DAE.DIV(ty=_),_) then UnitAbsyn.DIV(ut1,ut2,origExp);
+    case (_,_,DAE.ADD(),_) then UnitAbsyn.ADD(ut1,ut2,origExp);
+    case (_,_,DAE.SUB(),_) then UnitAbsyn.SUB(ut1,ut2,origExp);
+    case (_,_,DAE.MUL(),_) then UnitAbsyn.MUL(ut1,ut2,origExp);
+    case (_,_,DAE.DIV(),_) then UnitAbsyn.DIV(ut1,ut2,origExp);
   end match;
 end buildTermOp;
 
@@ -1377,7 +1377,7 @@ algorithm
       then (store,ht);
 
     /* Failed to parse will give unspecified unit*/
-    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=_)::_),_,_)
+    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr)::_),_,_)
       equation
         (store,indx) = add(UnitAbsyn.UNSPECIFIED(),inStore);
         ht = BaseHashTable.add((cr,indx),inHt);

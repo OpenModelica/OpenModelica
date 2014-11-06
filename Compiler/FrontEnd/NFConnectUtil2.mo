@@ -468,7 +468,7 @@ algorithm
       list<Element> sub_comps;
       list<NFConnect2.Connector> flows;
 
-    case (NFInstTypes.ELEMENT(component = comp as NFInstTypes.TYPED_COMPONENT(ty=_),
+    case (NFInstTypes.ELEMENT(component = comp as NFInstTypes.TYPED_COMPONENT(),
         cls = cls as NFInstTypes.COMPLEX_CLASS(components = sub_comps)), flows)
       equation
         true = NFInstUtil.isConnectorComponent(comp);
@@ -477,7 +477,7 @@ algorithm
       then
         flows;
 
-    case (NFInstTypes.ELEMENT(cls = cls as NFInstTypes.COMPLEX_CLASS(components = _)), _)
+    case (NFInstTypes.ELEMENT(cls = cls as NFInstTypes.COMPLEX_CLASS()), _)
       then collectFlowConnectors2(cls, inAccumFlows);
 
     else inAccumFlows;
@@ -553,7 +553,7 @@ algorithm
       list<NFConnect2.Connector> connl;
       ConnectorAttr attr;
 
-    case NFConnect2.CONNECTOR(name as DAE.CREF_IDENT(ident = _), ty, face, cty, attr)
+    case NFConnect2.CONNECTOR(name as DAE.CREF_IDENT(), ty, face, cty, attr)
       then expandConnector2(name, ty, face, cty, attr);
 
     case NFConnect2.CONNECTOR(name, ty, face, cty, attr)
@@ -577,7 +577,7 @@ algorithm
       list<DAE.ComponentRef> prefixes;
       DAE.ComponentRef pre_cr, last_cr;
 
-    case DAE.CREF_IDENT(ident = _) then ({}, inCref);
+    case DAE.CREF_IDENT() then ({}, inCref);
     else
       equation
         (pre_cr, last_cr) = ComponentReference.splitCrefLast(inCref);
@@ -650,7 +650,7 @@ algorithm
       list<NFConnect2.Connector> connl;
       Connector conn;
 
-    case (_, DAE.T_ARRAY(ty = _), _, _, _)
+    case (_, DAE.T_ARRAY(), _, _, _)
       equation
         crefs = ComponentReference.expandCref(inCref, false);
         connl = List.map4(crefs, makeConnector2, inType, inFace, inConnectorType,
@@ -688,13 +688,13 @@ algorithm
       Face face;
 
     // Non-qualified connector crefs are always outside.
-    case (DAE.CREF_IDENT(ident = _), _) then NFConnect2.OUTSIDE();
+    case (DAE.CREF_IDENT(), _) then NFConnect2.OUTSIDE();
 
     // Qualified connector crefs are allowed to be on two forms: m.c or
     // c1.c2.c3..., where m is a non-connector component and cN a connector.
     // To determine the face of a connector we only need to look at the parent
     // of the given connector element.
-    case (DAE.CREF_QUAL(ident = _), _)
+    case (DAE.CREF_QUAL(), _)
       equation
         SOME(comp) = NFInstUtil.getComponentParent(inComponent);
         is_conn = NFInstUtil.isConnectorComponent(comp);
@@ -714,7 +714,7 @@ algorithm
     local
       DAE.VarKind var;
 
-    case NFConnect2.CONNECTOR(ty = DAE.T_COMPLEX(varLst = _)) then true;
+    case NFConnect2.CONNECTOR(ty = DAE.T_COMPLEX()) then true;
     case NFConnect2.CONNECTOR(attr = NFConnect2.CONN_ATTR(variability = var))
       then DAEUtil.isParamOrConstVarKind(var);
 
@@ -739,7 +739,7 @@ public function isUndeclaredConnector
   output Boolean outIsUndeclared;
 algorithm
   outIsUndeclared := match(inConnector)
-    case NFConnect2.CONNECTOR(ty = DAE.T_UNKNOWN(source = _)) then true;
+    case NFConnect2.CONNECTOR(ty = DAE.T_UNKNOWN()) then true;
     else false;
   end match;
 end isUndeclaredConnector;

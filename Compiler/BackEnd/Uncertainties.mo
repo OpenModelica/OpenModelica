@@ -2055,7 +2055,7 @@ algorithm
     case(BackendDAE.DAE(
       (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind))::systList,
       (shared as BackendDAE.SHARED(
-                                   functionTree=_,
+                                   
                                    info=_))),_,false)
     equation
        syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching,stateSets,partitionKind);

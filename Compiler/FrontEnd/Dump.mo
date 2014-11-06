@@ -463,7 +463,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.OVERLOAD(functionNames = _))
+    case (Absyn.OVERLOAD())
       equation
         Print.printBuf("Absyn.OVERLOAD( fill in )");
       then
@@ -554,7 +554,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case (Absyn.REDECLARATION(finalPrefix = f,redeclareKeywords = _,eachPrefix = _,elementSpec = spec))
+    case (Absyn.REDECLARATION(finalPrefix = f,elementSpec = spec))
       equation
         Print.printBuf("Absyn.REDECLARATION(");
         printBool(f);
@@ -797,7 +797,7 @@ algorithm
       String name,text;
       Absyn.ElementSpec spec;
       SourceInfo info;
-    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = _,innerOuter = inout,
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,innerOuter = inout,
                         specification = spec,info = info,constrainClass = NONE()))
       equation
         Print.printBuf("Absyn.ELEMENT(");
@@ -812,7 +812,7 @@ algorithm
         Print.printBuf("),NONE())");
       then
         ();
-    case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = _,innerOuter = inout,
+    case (Absyn.ELEMENT(finalPrefix = finalPrefix,innerOuter = inout,
                         specification = spec,info = info,constrainClass = SOME(_)))
       equation
         Print.printBuf("Absyn.ELEMENT(");
@@ -1190,7 +1190,7 @@ algorithm
       Absyn.Component c;
       Option<Absyn.Exp> optcond;
       Option<Absyn.Comment> optcmt;
-    case (Absyn.COMPONENTITEM(component = c,condition = _,comment = optcmt))
+    case (Absyn.COMPONENTITEM(component = c,comment = optcmt))
       equation
         Print.printBuf("Absyn.COMPONENTITEM(");
         printComponent(c);
@@ -1393,12 +1393,12 @@ public function equationName
   output String name;
 algorithm
   name := match eq
-    case Absyn.EQ_IF(ifExp = _) then "if";
-    case Absyn.EQ_EQUALS(leftSide = _) then "equals";
-    case Absyn.EQ_CONNECT(connector1 = _) then "connect";
-    case Absyn.EQ_WHEN_E(whenExp = _) then "when";
-    case Absyn.EQ_NORETCALL(functionName = _) then "function call";
-    case Absyn.EQ_FAILURE(equ = _) then "failure";
+    case Absyn.EQ_IF() then "if";
+    case Absyn.EQ_EQUALS() then "equals";
+    case Absyn.EQ_CONNECT() then "connect";
+    case Absyn.EQ_WHEN_E() then "when";
+    case Absyn.EQ_NORETCALL() then "function call";
+    case Absyn.EQ_FAILURE() then "failure";
   end match;
 end equationName;
 
@@ -1646,7 +1646,7 @@ algorithm
       then
         ();
 
-    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = _)
+    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al)
       /* rule  Print.print_buf \"WHEN_E \" & print_exp(e) &
          Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
          ----------------------------------------------------------
@@ -2030,7 +2030,7 @@ algorithm
       then
         ();
 
-    case (Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = _))
+    case (Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f))
       equation
         Print.printBuf("Absyn.IFEXP(");
         printExp(cond);
@@ -2360,7 +2360,7 @@ algorithm
     local
       Integer diff;
 
-    case (Absyn.UNARY(op = _), _, _) then true;
+    case (Absyn.UNARY(), _, _) then true;
 
     else
       equation
@@ -2395,7 +2395,7 @@ algorithm
       Absyn.Operator op;
 
     case Absyn.BINARY(op = op) then isAssociativeOp(op);
-    case Absyn.LBINARY(op = _) then true;
+    case Absyn.LBINARY() then true;
     else false;
   end match;
 end isAssociativeExp;
@@ -2431,12 +2431,12 @@ algorithm
 
     case (Absyn.BINARY(op = op), false) then priorityBinopRhs(op);
     case (Absyn.BINARY(op = op), true) then priorityBinopLhs(op);
-    case (Absyn.UNARY(op = _), _) then 4;
+    case (Absyn.UNARY(), _) then 4;
     case (Absyn.LBINARY(op = op), _) then priorityLBinop(op);
-    case (Absyn.LUNARY(op = _), _) then 7;
-    case (Absyn.RELATION(op=_), _) then 6;
-    case (Absyn.RANGE(start = _), _) then 10;
-    case (Absyn.IFEXP(ifExp = _), _) then 11;
+    case (Absyn.LUNARY(), _) then 7;
+    case (Absyn.RELATION(), _) then 6;
+    case (Absyn.RANGE(), _) then 10;
+    case (Absyn.IFEXP(), _) then 11;
     else 0;
   end match;
 end expPriority;

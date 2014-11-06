@@ -478,7 +478,7 @@ algorithm
     case (_, SOME(path as Absyn.QUALIFIED(name = "$E")), _, _, _) then path;
 
     // If the rest of the path is fully qualified it overwrites everything before.
-    case (_, SOME(path as Absyn.FULLYQUALIFIED(path = _)), _, _, _) then path;
+    case (_, SOME(path as Absyn.FULLYQUALIFIED()), _, _, _) then path;
 
     // If inFirstPath is the very first part of the path, use the environment to
     // get the whole path.
@@ -594,12 +594,12 @@ algorithm
       then makeExtendsError(inBaseClass, inPartName, BASECLASS_INHERITED_ERROR);
 
     // Not inherited class, ok!
-    case (_, _, _, NFSCodeEnv.CLASS(cls = _), _, _, _)
+    case (_, _, _, NFSCodeEnv.CLASS(), _, _, _)
       then NONE();
 
     // The base class part is actually not a class but a component, which is not
     // allowed either.
-    case (_, _, _, NFSCodeEnv.VAR(var = _), _, _, _)
+    case (_, _, _, NFSCodeEnv.VAR(), _, _, _)
       equation
         part = NFSCodeEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
       then
@@ -1089,7 +1089,7 @@ algorithm
 
     case (QUALIFIED_EXTENDS(ext = ext), _) then SOME(ext);
 
-    case (UNQUALIFIED_EXTENDS(ext = NFSCodeEnv.EXTENDS(baseClass = _)), _)
+    case (UNQUALIFIED_EXTENDS(ext = NFSCodeEnv.EXTENDS()), _)
       then NONE();
 
   end match;
@@ -1227,7 +1227,7 @@ algorithm
 
     case (_, _, _, _, cls_frame :: env)
       equation
-        (path, item) = lookupClassExtendsBaseClass(inName, env, inInfo);
+        (path,_) = lookupClassExtendsBaseClass(inName, env, inInfo);
         ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
         {cls_frame} = NFSCodeEnv.extendEnvWithExtends(ext, {cls_frame});
         cls = SCode.addElementToClass(ext, inClass);

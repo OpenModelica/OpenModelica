@@ -839,6 +839,8 @@ public constant Message STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING = MESSA
   Util.gettext("Could not evaluate structural parameter (or constant): %s which gives dimensions of array: %s. Array dimensions must be known at compile time."));
 public constant Message META_UNUSED_ASSIGNMENT = MESSAGE(5034, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Removing unused assignment to: %s."));
+public constant Message META_EMPTY_CALL_PATTERN = MESSAGE(5035, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("Removing empty call named pattern argument: %s."));
 
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));

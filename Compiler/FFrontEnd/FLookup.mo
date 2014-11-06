@@ -176,14 +176,14 @@ algorithm
         (g, r);
 
     // top node reached
-    case (g, _, _, OPTIONS(_, _, false), _)
+    case (_, _, _, OPTIONS(_, _, false), _)
       equation
         false = FNode.hasParents(FNode.fromRef(inRef));
       then
         fail();
 
     // failure
-    case (g, _, _, _, SOME(_))
+    case (_, _, _, _, SOME(_))
       equation
         print("FLookup.id failed for: " + inName + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
@@ -227,7 +227,7 @@ algorithm
         (g, r);
 
     // failure
-    case (g, _, _, _, SOME(_))
+    case (_, _, _, _, SOME(_))
       equation
         print("FLookup.search failed for: " + inName + " in: " +
            FNode.toPathStr(FNode.fromRef(List.first(inRefs))) + "\n");
@@ -292,7 +292,7 @@ algorithm
       then
         (g, r);
 
-    case (g, _, _, _, SOME(_))
+    case (_, _, _, _, SOME(_))
       equation
         print("FLookup.name failed for: " + Absyn.pathString(inPath) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then
@@ -434,7 +434,7 @@ algorithm
         (g, r);
 
     // Partial match, return failure
-    case (g, _, _, Absyn.NAMED_IMPORT(name = name) :: _, _, _)
+    case (_, _, _, Absyn.NAMED_IMPORT(name = name) :: _, _, _)
       equation
         true = stringEqual(inName, name);
       then
@@ -572,7 +572,7 @@ algorithm
       then
         (g, r);
 
-    case (g, _, _, _, SOME(_))
+    case (_, _, _, _, SOME(_))
       equation
         print("FLookup.cr failed for: " + Absyn.crefString(inCref) + " in: " + FNode.toPathStr(FNode.fromRef(inRef)) + "\n");
       then

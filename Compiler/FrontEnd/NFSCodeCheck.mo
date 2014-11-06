@@ -111,7 +111,7 @@ algorithm
       String name;
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
-        replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _)
+        replaceablePrefix = SCode.REPLACEABLE()))), _)
       then ();
 
     //case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
@@ -135,7 +135,7 @@ algorithm
       SCode.Element e;
 
     case (NFSCodeEnv.RAW_MODIFIER(e as SCode.CLASS(classDef =
-        SCode.DERIVED(typeSpec = _))), _, _)
+        SCode.DERIVED())), _, _)
       equation
         checkRedeclareModifier2(e, inBaseClass, inEnv);
       then
@@ -218,7 +218,7 @@ algorithm
 
     case (NFSCodeEnv.VAR(var =
         SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(
-            visibility = _, finalPrefix = fin, replaceablePrefix = repl),
+            finalPrefix = fin, replaceablePrefix = repl),
           attributes = SCode.ATTR(variability = var), typeSpec = ty1, info = info)),
         SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = _), typeSpec = ty2), _)
       equation
@@ -234,7 +234,7 @@ algorithm
 
     case (NFSCodeEnv.CLASS(cls =
         SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
-          visibility = _, finalPrefix = fin, replaceablePrefix = repl),
+          finalPrefix = fin, replaceablePrefix = repl),
           restriction = res, info = info)),
         SCode.CLASS(prefixes = SCode.PREFIXES(visibility = _)), _)
       equation
@@ -280,7 +280,7 @@ protected function checkClassRedeclarationReplaceable
   input SourceInfo inInfo;
 algorithm
   _ := match(inName, inType, inReplaceable, inOriginInfo, inInfo)
-    case (_, _, SCode.REPLACEABLE(cc = _), _, _) then ();
+    case (_, _, SCode.REPLACEABLE(), _, _) then ();
 
     case (_, _, SCode.NOT_REPLACEABLE(), _, _)
       equation
@@ -305,7 +305,7 @@ algorithm
       SCode.Element var;
       Absyn.TypeSpec ty1, ty2;
 
-    case (_, SCode.REPLACEABLE(cc = _), _, _, _, _) then ();
+    case (_, SCode.REPLACEABLE(), _, _, _, _) then ();
 
     case (_, SCode.NOT_REPLACEABLE(), _, _, _, _)
       equation

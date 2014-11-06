@@ -167,14 +167,14 @@ algorithm
       String id;
       Absyn.Path rest_path;
 
-    case (Absyn.IDENT(name = _), _, true, _, _)
+    case (Absyn.IDENT(), _, true, _, _)
       equation
         (item, _, env) =
           NFSCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
       then
         (item, env);
 
-    case (Absyn.IDENT(name = _), _, false, _, _)
+    case (Absyn.IDENT(), _, false, _, _)
       equation
         (item, _, env) =
           NFSCodeLookup.lookupNameSilentNoBuiltin(inPath, inEnv, inInfo);
@@ -261,7 +261,7 @@ algorithm
       String name;
       SourceInfo info;
 
-    case NFSCodeEnv.CLASS(cls = _) then ();
+    case NFSCodeEnv.CLASS() then ();
 
     // We found a component instead, which might happen if the user tries to use
     // a variable name as a type.
@@ -296,7 +296,7 @@ algorithm
         ();
 
     // A component, mark it and it's environment as used.
-    case (NFSCodeEnv.VAR(var = _), env)
+    case (NFSCodeEnv.VAR(), env)
       equation
         markItemAsUsed(inItem, env);
       then
@@ -372,7 +372,7 @@ algorithm
       SCode.Comment cmt;
 
     // A component, mark it and it's environment as used.
-    case (NFSCodeEnv.VAR(var = _), env)
+    case (NFSCodeEnv.VAR(), env)
       equation
         markItemAsUsed(inItem, env);
       then
@@ -430,7 +430,7 @@ algorithm
 
     case (NFSCodeEnv.VAR(isUsed = NONE()), _) then ();
 
-    case (NFSCodeEnv.CLASS(env = {cls_env}, cls = SCode.CLASS(name=_)), _)
+    case (NFSCodeEnv.CLASS(env = {cls_env}, cls = SCode.CLASS()), _)
       equation
         markFrameAsUsed(cls_env);
         markEnvAsUsed(inEnv);
@@ -492,7 +492,7 @@ algorithm
     local
       String name;
 
-    case (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)), _) then ();
+    case (NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE()), _) then ();
 
     case (NFSCodeEnv.FRAME(name = SOME(name)), _)
       equation
@@ -554,7 +554,7 @@ algorithm
         ();
 
     // A class extends.
-    case (SCode.CLASS_EXTENDS(baseClassName = _), _, _, _, _)
+    case (SCode.CLASS_EXTENDS(), _, _, _, _)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,
           {"NFSCodeDependency.analyseClassDef failed on CLASS_EXTENDS"}, inInfo);
@@ -562,7 +562,7 @@ algorithm
         fail();
 
     // A derived class definition.
-    case (SCode.DERIVED(typeSpec = ty, modifications = mods, attributes = _),
+    case (SCode.DERIVED(typeSpec = ty, modifications = mods),
         _, _ :: env, _, _)
       equation
         env = if inInModifierScope then inEnv else env;
@@ -580,12 +580,12 @@ algorithm
         ();
 
     // Other cases which doesn't need to be analysed.
-    case (SCode.ENUMERATION(enumLst = _), _, _, _, _) then ();
+    case (SCode.ENUMERATION(), _, _, _, _) then ();
     case (SCode.OVERLOAD(pathLst = paths), _, _, _, _)
       equation
         List.map2_0(paths,analyseClass,inEnv,inInfo);
       then ();
-    case (SCode.PDER(functionPath = _), _, _, _, _) then ();
+    case (SCode.PDER(), _, _, _, _) then ();
 
   end matchcontinue;
 end analyseClassDef;
@@ -759,12 +759,12 @@ algorithm
       Item item;
       String name;
 
-    case (SCode.CLASS(name = _), _)
+    case (SCode.CLASS(), _)
       equation
         false = SCode.isElementRedeclare(inClass);
       then ();
 
-    case (SCode.CLASS(name=_), _)
+    case (SCode.CLASS(), _)
       equation
         item = NFSCodeEnv.CLASS(inClass, NFSCodeEnv.emptyEnv, NFSCodeEnv.USERDEFINED());
         analyseRedeclaredClass2(item, inEnv);
@@ -872,7 +872,7 @@ algorithm
       then fail();
 
     // An extends-clause.
-    case (SCode.EXTENDS(baseClassPath = _, modifications = mods, info = info), _,
+    case (SCode.EXTENDS(modifications = mods, info = info), _,
         NFSCodeEnv.EXTENDS(baseClass = bc) :: exts, _)
       equation
         //print("bc = " + Absyn.pathString(bc) + "\n");
@@ -964,7 +964,7 @@ algorithm
       then
         inExtends;
 
-    case (SCode.CLASS(name = name, info = info, classDef=SCode.CLASS_EXTENDS(baseClassName = _)), _, _, _)
+    case (SCode.CLASS(name = name, info = info, classDef=SCode.CLASS_EXTENDS()), _, _, _)
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
@@ -1042,7 +1042,7 @@ protected function markAsUsedOnRestriction2
   output Boolean isRestricted;
 algorithm
   isRestricted := match(inRestriction)
-    case SCode.R_CONNECTOR(isExpandable = _) then true;
+    case SCode.R_CONNECTOR() then true;
     case SCode.R_RECORD(_) then true;
     else false;
   end match;
@@ -1559,19 +1559,19 @@ algorithm
       then
         env;
 
-    case (Absyn.CALL(function_ = cref, functionArgs = _), _, _)
+    case (Absyn.CALL(function_ = cref), _, _)
       equation
         analyseCref(cref, inEnv, inInfo);
       then
         inEnv;
 
-    case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = _), _, _)
+    case (Absyn.PARTEVALFUNCTION(function_ = cref), _, _)
       equation
         analyseCref(cref, inEnv, inInfo);
       then
         inEnv;
 
-    case (Absyn.MATCHEXP(matchTy = _), _, _)
+    case (Absyn.MATCHEXP(), _, _)
       equation
         env = NFSCodeEnv.extendEnvWithMatch(inExp, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), inEnv);
       then
@@ -1625,11 +1625,11 @@ algorithm
 
     // Remove any scopes added by the enter function.
 
-    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG(iterators = _)),(NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info))
+    case (Absyn.CALL(functionArgs = Absyn.FOR_ITER_FARG()),(NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE()) :: env, info))
       then
         (inExp, (env, info));
 
-    case (Absyn.MATCHEXP(matchTy = _),(NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: env, info))
+    case (Absyn.MATCHEXP(),(NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE()) :: env, info))
       then
         (inExp, (env, info));
 
@@ -1823,7 +1823,7 @@ algorithm
       then
         ();
 
-    case (NFSCodeEnv.AVLTREEVALUE(key = _, value = NFSCodeEnv.CLASS(cls = cls,
+    case (NFSCodeEnv.AVLTREEVALUE(value = NFSCodeEnv.CLASS(cls = cls,
         env = {cls_env}, classType = cls_ty)), _)
       equation
         env = NFSCodeEnv.enterFrame(cls_env, inEnv);
@@ -1929,7 +1929,7 @@ algorithm
     // Try to collect the first class in the list.
     case (_, _, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env)
       equation
-        (cls_el as SCode.CLASS(name = _), env) = collectUsedClass(cls, inEnv, clsAndVars,
+        (cls_el as SCode.CLASS(), env) = collectUsedClass(cls, inEnv, clsAndVars,
           inClassName, env, Absyn.IDENT(name));
         (rest_prog, env) =
           collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);
@@ -2099,7 +2099,7 @@ algorithm
         (SCode.CLASS_EXTENDS(bc, mods,
           SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl)), env);
 
-    case (SCode.ENUMERATION(enumLst = _), _, _, _, _)
+    case (SCode.ENUMERATION(), _, _, _, _)
       then (inClassDef, {inClassEnv});
 
     else (inClassDef, {inClassEnv});

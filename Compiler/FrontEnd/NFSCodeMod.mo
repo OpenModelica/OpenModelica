@@ -270,13 +270,13 @@ algorithm
 
     // The modified element is a class but the modifier has no binding, e.g.
     // c(A(x = 3)). This is ok.
-    case (NFSCodeEnv.CLASS(cls = _),
+    case (NFSCodeEnv.CLASS(),
         (_, NFInstTypesOld.MODIFIER(binding = NFInstTypesOld.UNBOUND())), _)
       then ();
 
     // The modified element is a class but the modifier has a binding. This is
     // not ok, tell the user that the redeclare keyword is missing.
-    case (NFSCodeEnv.CLASS(cls = _), (name, mod), _)
+    case (NFSCodeEnv.CLASS(), (name, mod), _)
       equation
         info = getModifierInfo(mod);
         pre_str = NFInstDump.prefixStr(inPrefix);
@@ -372,14 +372,14 @@ algorithm
       then
         ((inElement, mod), inExtends);
 
-    case (SCode.EXTENDS(baseClassPath = _), _,
+    case (SCode.EXTENDS(), _,
         NFSCodeEnv.EXTENDS(baseClass = bc) :: rest_exts)
       equation
         mod = BaseHashTable.get(bc, inTable);
       then
         ((inElement, mod), rest_exts);
 
-    case (SCode.EXTENDS(baseClassPath = _), _, _ :: rest_exts)
+    case (SCode.EXTENDS(), _, _ :: rest_exts)
       then ((inElement, NFInstTypesOld.NOMOD()), rest_exts);
 
     else ((inElement, NFInstTypesOld.NOMOD()), inExtends);
@@ -418,7 +418,7 @@ algorithm
 
     // The outer modifier has a binding which takes priority over the inner
     // modifiers binding.
-    case (NFInstTypesOld.MODIFIER(name, fp, ep, binding as NFInstTypesOld.RAW_BINDING(bindingExp = _),
+    case (NFInstTypesOld.MODIFIER(name, fp, ep, binding as NFInstTypesOld.RAW_BINDING(),
             submods1, info1),
           NFInstTypesOld.MODIFIER(subModifiers = submods2, info = info2))
       equation
@@ -429,7 +429,7 @@ algorithm
 
     // The inner modifier has a binding, but not the outer, so keep it.
     case (NFInstTypesOld.MODIFIER(subModifiers = submods1, info = info1),
-          NFInstTypesOld.MODIFIER(name, fp, ep, binding as NFInstTypesOld.RAW_BINDING(bindingExp = _),
+          NFInstTypesOld.MODIFIER(name, fp, ep, binding as NFInstTypesOld.RAW_BINDING(),
             submods2, info2))
       equation
         checkModifierFinalOverride(name, inOuterMod, info1, inInnerMod, info2);
@@ -437,10 +437,10 @@ algorithm
       then
         NFInstTypesOld.MODIFIER(name, fp, ep, binding, submods2, info1);
 
-    case (NFInstTypesOld.MODIFIER(name = _), NFInstTypesOld.REDECLARE(element = _))
+    case (NFInstTypesOld.MODIFIER(), NFInstTypesOld.REDECLARE())
       then inOuterMod;
 
-    case (NFInstTypesOld.REDECLARE(element = _), _) then inInnerMod;
+    case (NFInstTypesOld.REDECLARE(), _) then inInnerMod;
 
     else
       equation
@@ -602,7 +602,7 @@ algorithm
       Boolean found;
 
     // Filter out redeclarations, they have already been applied.
-    case (NFInstTypesOld.REDECLARE(element = _), _, _)
+    case (NFInstTypesOld.REDECLARE(), _, _)
       then inMods;
 
     case (NFInstTypesOld.MODIFIER(name = id), _, _)
@@ -686,8 +686,8 @@ algorithm
         NFInstTypesOld.MODIFIER(name, fp, ep, binding, submods1, info2);
 
     // Both modifiers have bindings, show duplicate modification error.
-    case (NFInstTypesOld.MODIFIER(binding = NFInstTypesOld.RAW_BINDING(bindingExp = _), info = info1),
-          NFInstTypesOld.MODIFIER(binding = NFInstTypesOld.RAW_BINDING(bindingExp = _), info = info2), _, _)
+    case (NFInstTypesOld.MODIFIER(binding = NFInstTypesOld.RAW_BINDING(), info = info1),
+          NFInstTypesOld.MODIFIER(binding = NFInstTypesOld.RAW_BINDING(), info = info2), _, _)
       equation
         comp_str = NFInstDump.prefixStr(inPrefix);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info2);
@@ -895,7 +895,7 @@ algorithm
 
     case ({}, _) then {};
 
-    case (SCode.NAMEMOD(ident = _, mod = SCode.MOD(binding = SOME((e, _))))::rest, _)
+    case (SCode.NAMEMOD(mod = SCode.MOD(binding = SOME((e, _))))::rest, _)
       equation
         cl = Absyn.getCrefFromExp(e,true,true);
         true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);
@@ -1020,7 +1020,7 @@ algorithm
       then
         SCode.MOD(fp, ep, sl, binding, i);
 
-    case (SCode.REDECL(element = _)) then SCode.NOMOD();
+    case (SCode.REDECL()) then SCode.NOMOD();
 
     else inMod;
 

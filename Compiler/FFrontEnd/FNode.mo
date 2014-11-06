@@ -242,7 +242,7 @@ algorithm
       Boolean hidden;
 
     // Unqualified imports
-    case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)),
+    case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT()),
           FCore.IMPORT_TABLE(hidden, qual_imps, unqual_imps))
       equation
         unqual_imps = List.unique(imp :: unqual_imps);
@@ -272,7 +272,7 @@ algorithm
       Absyn.Path path;
 
     // Already named.
-    case Absyn.NAMED_IMPORT(name = _) then inImport;
+    case Absyn.NAMED_IMPORT() then inImport;
 
     // Get the last identifier from the import and use that as the name.
     case Absyn.QUAL_IMPORT(path = path)
@@ -629,10 +629,10 @@ algorithm
 
     case (FCore.TOP()) then "TOP";
     case (FCore.IT(_)) then "I";
-    case (FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))) then "CE";
-    case (FCore.CL(e = _)) then "C";
-    case (FCore.CO(e = _)) then "c";
-    case (FCore.EX(e =_)) then "E";
+    case (FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))) then "CE";
+    case (FCore.CL()) then "C";
+    case (FCore.CO()) then "c";
+    case (FCore.EX()) then "E";
     case (FCore.DU(_)) then "U";
     case (FCore.FT(_)) then "FT";
     case (FCore.AL(_, _)) then "ALG";
@@ -649,7 +649,7 @@ algorithm
     case (FCore.CC(_)) then "CC";
     case (FCore.ND(_)) then "ND";
     case (FCore.REF(_)) then "REF";
-    case (FCore.VR(source = _)) then "VR";
+    case (FCore.VR()) then "VR";
     case (FCore.IM(_)) then "IM";
     case (FCore.ASSERT(m)) then "assert(" + m + ")";
 
@@ -741,12 +741,12 @@ public function isImplicitScope
 algorithm
   b := match(inNode)
     case FCore.N(data = FCore.TOP()) then false;
-    case FCore.N(data = FCore.CL(e = _)) then false;
-    case FCore.N(data = FCore.CO(e = _)) then false;
-    case FCore.N(data = FCore.CC(cc = _)) then false;
-    case FCore.N(data = FCore.FS(fis = _)) then false;
-    case FCore.N(data = FCore.MS(e = _)) then false;
-    case FCore.N(data = FCore.VR(source = _)) then false;
+    case FCore.N(data = FCore.CL()) then false;
+    case FCore.N(data = FCore.CO()) then false;
+    case FCore.N(data = FCore.CC()) then false;
+    case FCore.N(data = FCore.FS()) then false;
+    case FCore.N(data = FCore.MS()) then false;
+    case FCore.N(data = FCore.VR()) then false;
     else true;
   end match;
 end isImplicitScope;
@@ -765,7 +765,7 @@ public function isEncapsulated
 algorithm
   b := matchcontinue(inNode)
     case FCore.N(data = FCore.CL(e = SCode.CLASS(encapsulatedPrefix = SCode.ENCAPSULATED()))) then true;
-    case FCore.N(data = FCore.CO(e = _))
+    case FCore.N(data = FCore.CO())
       equation
         true = boolEq(Config.acceptMetaModelicaGrammar(), false) and boolNot(Flags.isSet(Flags.GRAPH_INST));
       then true;
@@ -778,7 +778,7 @@ public function isReference
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.REF(target = _)) then true;
+    case FCore.N(data = FCore.REF()) then true;
     else false;
   end match;
 end isReference;
@@ -818,7 +818,7 @@ public function isExtends
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.EX(e = _)) then true;
+    case FCore.N(data = FCore.EX()) then true;
     else false;
   end match;
 end isExtends;
@@ -839,7 +839,7 @@ public function isClass
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.CL(e = _)) then true;
+    case FCore.N(data = FCore.CL()) then true;
     else false;
   end match;
 end isClass;
@@ -870,7 +870,7 @@ public function isClassExtends
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))) then true;
+    case FCore.N(data = FCore.CL(e = SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))) then true;
     else false;
   end match;
 end isClassExtends;
@@ -880,7 +880,7 @@ public function isComponent
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.CO(e = _)) then true;
+    case FCore.N(data = FCore.CO()) then true;
     else false;
   end match;
 end isComponent;
@@ -890,7 +890,7 @@ public function isConstrainClass
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.CC(cc = _)) then true;
+    case FCore.N(data = FCore.CC()) then true;
     else false;
   end match;
 end isConstrainClass;
@@ -900,7 +900,7 @@ public function isCref
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.CR(r = _)) then true;
+    case FCore.N(data = FCore.CR()) then true;
     else false;
   end match;
 end isCref;
@@ -965,8 +965,8 @@ public function isSection
   output Boolean b;
 algorithm
   b := match(inNode)
-    case (FCore.N(data = FCore.AL(name = _))) then true;
-    case (FCore.N(data = FCore.EQ(name = _))) then true;
+    case (FCore.N(data = FCore.AL())) then true;
+    case (FCore.N(data = FCore.EQ())) then true;
     else false;
   end match;
 end isSection;
@@ -976,7 +976,7 @@ public function isMod
   output Boolean b;
 algorithm
   b := match(inNode)
-    case (FCore.N(data = FCore.MO(m = _))) then true;
+    case (FCore.N(data = FCore.MO())) then true;
     else false;
   end match;
 end isMod;
@@ -987,7 +987,7 @@ public function isModHolder
 algorithm
   b := match(inNode)
     local Name n;
-    case (FCore.N(name = n, data = FCore.MO(m = _))) then stringEq(n, modNodeName);
+    case (FCore.N(name = n, data = FCore.MO())) then stringEq(n, modNodeName);
     else false;
   end match;
 end isModHolder;
@@ -1012,7 +1012,7 @@ public function isVersion
   output Boolean b;
 algorithm
   b := match(inNode)
-    case FCore.N(data = FCore.VR(source = _)) then true;
+    case FCore.N(data = FCore.VR()) then true;
     else false;
   end match;
 end isVersion;
@@ -1022,7 +1022,7 @@ public function isDims
   output Boolean b;
 algorithm
   b := match(inNode)
-    case (FCore.N(data = FCore.DIMS(name = _))) then true;
+    case (FCore.N(data = FCore.DIMS())) then true;
     else false;
   end match;
 end isDims;
@@ -1068,7 +1068,7 @@ algorithm
 
     case ({}) then fail();
 
-    case (r::rest)
+    case (r::_)
       equation
         false = isRefImplicitScope(r);
       then
@@ -1117,14 +1117,14 @@ algorithm
       Name name;
 
     // bah, error!
-    case (r, name, _)
+    case (r, _, _)
       equation
         true = isRefTop(r);
       then
         {};
 
     // we're done, return
-    case (r, name, _)
+    case (r, _, _)
       equation
         true = stringEq(inName, refName(r));
       then
@@ -1995,7 +1995,7 @@ public function cloneTree
   output Graph outGraph;
   output Children outChildren;
 algorithm
-  (outGraph, outChildren) := matchcontinue(inChildren, inParentRef, inGraph)
+  (outGraph, outChildren) := match(inChildren, inParentRef, inGraph)
     local
       Integer h;
       Option<AvlTree> l, r;
@@ -2019,7 +2019,7 @@ algorithm
       then
         (g, FCore.CAVLTREENODE(v, h, l, r));
 
-  end matchcontinue;
+  end match;
 end cloneTree;
 
 public function cloneTreeOpt
@@ -2140,7 +2140,7 @@ protected function updateRefInGraph
   input tuple<Ref, Graph> inTopRefAndGraph;
   output tuple<Ref, Graph> outTopRefAndGraph;
 algorithm
-  outTopRefAndGraph := matchcontinue(inRef, inTopRefAndGraph)
+  outTopRefAndGraph := match(inRef, inTopRefAndGraph)
     local
       Ref r, t;
       Graph g;
@@ -2156,11 +2156,11 @@ algorithm
         FCore.N(n, i, p, c, d) = fromRef(inRef);
         p = List.map1r(p, lookupRefFromRef, t);
         d = updateRefInData(d, t);
-        r = updateRef(inRef, FCore.N(n, i, p, c, d));
+        _ = updateRef(inRef, FCore.N(n, i, p, c, d));
       then
         ((t, g));
 
-  end matchcontinue;
+  end match;
 end updateRefInGraph;
 
 public function lookupRefFromRef
@@ -2170,7 +2170,7 @@ public function lookupRefFromRef
   input Ref inOldRef;
   output Ref outRef;
 algorithm
-  outRef := matchcontinue(inRef, inOldRef)
+  outRef := match(inRef, inOldRef)
     local
       Ref r;
       Scope s;
@@ -2181,7 +2181,7 @@ algorithm
         r = lookupRef(inRef, s);
       then
         r;
-  end matchcontinue;
+  end match;
 end lookupRefFromRef;
 
 protected function updateRefInData
@@ -2271,7 +2271,7 @@ protected function copyTree
   input Children inChildren;
   output Children outChildren;
 algorithm
-  outChildren := matchcontinue(inChildren)
+  outChildren := match(inChildren)
     local
       Integer h;
       Option<AvlTree> l, r;
@@ -2288,7 +2288,7 @@ algorithm
       then
         FCore.CAVLTREENODE(v, h, l, r);
 
-  end matchcontinue;
+  end match;
 end copyTree;
 
 protected function copyTreeOpt
@@ -2886,7 +2886,7 @@ algorithm
       Option<AvlTree> l,r;
       Integer h;
 
-    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(_,rval)),height = _,left = l,right = r))
+    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(_,rval)),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);

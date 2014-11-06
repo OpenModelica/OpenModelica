@@ -140,7 +140,7 @@ algorithm
     case (_, _, DAE.FUNCTION(
         path = p,
         functions = _ :: _,
-        type_ = _,
+        
         partialPrefix = partialPrefix), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -564,7 +564,7 @@ algorithm
       DAE.Dimensions dims;
 
     // Matrix value, array type => convert.
-    case (_, Values.ARRAY(valueLst = vals as Values.ARRAY(valueLst = _) :: _, dimLst = dim :: _), _)
+    case (_, Values.ARRAY(valueLst = vals as Values.ARRAY() :: _, dimLst = dim :: _), _)
       equation
         (DAE.T_ARRAY(ty = ty, dims = dims), _) = getVariableTypeAndBinding(inCref, inEnv);
         false = Types.isArray(ty, dims);
@@ -1060,7 +1060,7 @@ algorithm
       then
         (cache, env, NEXT(), st);
 
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = _), _, _, st)
+    case (DAE.STMT_TUPLE_ASSIGN(), _, _, st)
       equation
         (cache, env, st) =
           evaluateTupleAssignStatement(inStatement, inCache, inEnv, st);
@@ -1074,14 +1074,14 @@ algorithm
       then
         (cache, env, NEXT(), st);
 
-    case (DAE.STMT_IF(exp = _), _, _, st)
+    case (DAE.STMT_IF(), _, _, st)
       equation
         (cache, env, loop_ctrl, st) =
           evaluateIfStatement(inStatement, inCache, inEnv, st);
       then
         (cache, env, loop_ctrl, st);
 
-    case (DAE.STMT_FOR(type_ = _), _, _, st)
+    case (DAE.STMT_FOR(), _, _, st)
       equation
         (cache, env, loop_ctrl, st) =
           evaluateForStatement(inStatement, inCache, inEnv, st);
@@ -1124,11 +1124,11 @@ algorithm
       then
         (cache, inEnv, NEXT(), st);
 
-    case (DAE.STMT_RETURN(source = _), _, _, _)
+    case (DAE.STMT_RETURN(), _, _, _)
       then
         (inCache, inEnv, RETURN(), inST);
 
-    case (DAE.STMT_BREAK(source = _), _, _, _)
+    case (DAE.STMT_BREAK(), _, _, _)
       then
         (inCache, inEnv, BREAK(), inST);
 
@@ -1769,7 +1769,7 @@ algorithm
       FCore.Ref parent, child;
       FCore.Node node;
 
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _),varLst = var_lst), _, _, _, st)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(),varLst = var_lst), _, _, _, st)
       equation
         parent = FGraph.lastScopeRef(inGraph);
         (graph, node) = FGraph.node(inGraph, FNode.feNodeName, {parent}, FCore.ND(NONE()));
@@ -2004,7 +2004,7 @@ algorithm
 
     // A record assignment.
     case (DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
-        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _, _, _, st)
+        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())), _, _, _, st)
       equation
         (_, var, _, _, inst_status, env) =
           Lookup.lookupIdentLocal(inCache, inEnv, id);
@@ -2426,11 +2426,11 @@ algorithm
       list<DAE.Var> vars;
       list<String> var_names;
 
-    case (DAE.T_INTEGER(varLst = _)) then Values.INTEGER(0);
-    case (DAE.T_REAL(varLst = _)) then Values.REAL(0.0);
-    case (DAE.T_STRING(varLst = _)) then Values.STRING("");
-    case (DAE.T_BOOL(varLst = _)) then Values.BOOL(false);
-    case (DAE.T_ENUMERATION(index = _))
+    case (DAE.T_INTEGER()) then Values.INTEGER(0);
+    case (DAE.T_REAL()) then Values.REAL(0.0);
+    case (DAE.T_STRING()) then Values.STRING("");
+    case (DAE.T_BOOL()) then Values.BOOL(false);
+    case (DAE.T_ENUMERATION())
       then Values.ENUM_LITERAL(Absyn.IDENT(""), 0);
 
     case (DAE.T_ARRAY(dims = {dim}, ty = ty))
@@ -2520,7 +2520,7 @@ algorithm
 
     // A record doesn't have a value, but an environment with it's components.
     // So we need to assemble the records value.
-    case (_, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)), _)
+    case (_, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()), _)
       equation
         p = ComponentReference.crefToPath(inCref);
         val = getRecordValue(p, inType, inEnv);
@@ -2581,7 +2581,7 @@ algorithm
     // The component is a record itself.
     case (DAE.TYPES_VAR(
         name = id,
-        ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _)
+        ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD())), _)
       equation
         val = getRecordValue(Absyn.IDENT(id), ty, inEnv);
       then
@@ -2900,7 +2900,7 @@ algorithm
         exp = Expression.makeCrefExp(cref, ety);
       then (exp, env);
 
-    case (DAE.TSUB(exp = DAE.TUPLE(exp::_), ix = 1, ty = _), env)
+    case (DAE.TSUB(exp = DAE.TUPLE(exp::_), ix = 1), env)
       then (exp, env);
 
     else (inExp,inEnv);

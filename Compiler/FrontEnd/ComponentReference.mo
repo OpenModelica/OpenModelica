@@ -652,7 +652,7 @@ NOTE Only used for debugging."
   input DAE.ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString := matchcontinue (inComponentRef)
+  outString := match (inComponentRef)
     local
       DAE.Ident s,str,str2,strrest,str_1;
       list<DAE.Subscript> subs;
@@ -689,7 +689,7 @@ algorithm
       then
         str;
 
-  end matchcontinue;
+  end match;
 end debugPrintComponentRefTypeStr;
 
 
@@ -836,12 +836,12 @@ algorithm
        then
          crefLexicalCompareubsAtEnd2(0, rest1,rest2);
 
-    case (0, sub1::rest1, sub2::rest2)
+    case (0, sub1::_, sub2::_)
       equation
         true = intGe(sub1,sub2);
        then 1;
 
-    case (0, sub1::rest1, sub2::rest2)
+    case (0, _::_, _::_)
        then -1;
 
     case (_, _, _)
@@ -867,7 +867,7 @@ algorithm
       Boolean res;
 
     // a qualified cref cannot be contained in an ident cref.
-    case (DAE.CREF_IDENT(ident = _), DAE.CREF_QUAL(componentRef = _)) then false;
+    case (DAE.CREF_IDENT(), DAE.CREF_QUAL()) then false;
 
     // see if they are equal
     case (full, partOf)
@@ -907,7 +907,7 @@ algorithm
       list<DAE.Subscript> ss1,ss2;
 
     // first is qualified, second is an unqualified ident, return false!
-    case (DAE.CREF_QUAL(ident = _), DAE.CREF_IDENT(ident = _)) then false;
+    case (DAE.CREF_QUAL(), DAE.CREF_IDENT()) then false;
 
     // both are qualified, dive into
     case (DAE.CREF_QUAL(ident = id1, subscriptLst = ss1,componentRef = cr1),
@@ -922,7 +922,7 @@ algorithm
     // adrpo: 2010-10-07: first is an ID, second is qualified, see if one is prefix of the other
     //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
-          DAE.CREF_QUAL(ident = id2,subscriptLst = _))
+          DAE.CREF_QUAL(ident = id2))
       then stringEq(id1, id2);
 
     // first is an ID, second is qualified, see if one is prefix of the other
@@ -936,7 +936,7 @@ algorithm
     // adrpo: 2010-10-07: first is an ID, second is an ID, see if one is prefix of the other
     //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
-          DAE.CREF_IDENT(ident = id2,subscriptLst = _))
+          DAE.CREF_IDENT(ident = id2))
       then stringEq(id1, id2);
 
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
@@ -969,7 +969,7 @@ public function crefNotPrefixOf "negation of crefPrefixOf"
 algorithm
   outBoolean := matchcontinue(cr1, cr2)
     // first is qualified, second is an unqualified ident, return false!
-    case (DAE.CREF_QUAL(ident = _), DAE.CREF_IDENT(ident = _)) then true;
+    case (DAE.CREF_QUAL(), DAE.CREF_IDENT()) then true;
     else (not crefPrefixOf(cr1,cr2));
   end matchcontinue;
 end crefNotPrefixOf;
@@ -1252,8 +1252,8 @@ algorithm
   b := match(cr)
   local
     DAE.ComponentRef comp;
-    case(DAE.CREF_IDENT(identType = DAE.T_ARRAY(ty=_))) then true;
-    case(DAE.CREF_QUAL(identType = DAE.T_ARRAY(ty=_))) then true;
+    case(DAE.CREF_IDENT(identType = DAE.T_ARRAY())) then true;
+    case(DAE.CREF_QUAL(identType = DAE.T_ARRAY())) then true;
     case(DAE.CREF_QUAL(componentRef=comp)) then isArrayElement(comp);
     else false;
   end match;
@@ -1567,7 +1567,7 @@ algorithm
       DAE.Ident id;
       DAE.ComponentRef res,cr;
 
-    case (DAE.CREF_IDENT(ident = _)) then inComponentRef;
+    case (DAE.CREF_IDENT()) then inComponentRef;
 
     case (DAE.CREF_QUAL(componentRef = cr))
       equation
@@ -1655,7 +1655,7 @@ algorithm
       list<DAE.Subscript> subs,res;
       DAE.ComponentRef cr;
 
-    case (DAE.CREF_IDENT(ident = _,subscriptLst = subs)) then subs;
+    case (DAE.CREF_IDENT(subscriptLst = subs)) then subs;
 
     case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
       equation
@@ -1676,7 +1676,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
 
-    case (DAE.CREF_IDENT(ident=_, subscriptLst=subs))
+    case (DAE.CREF_IDENT(subscriptLst=subs))
     then subs;
 
     case (DAE.CREF_QUAL(componentRef=cr)) equation
@@ -2141,7 +2141,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.ComponentRef cr;
 
-    case (DAE.CREF_IDENT(ident=id, identType=tp, subscriptLst=_), _)
+    case (DAE.CREF_IDENT(ident=id, identType=tp), _)
     then makeCrefIdent(id, tp, inSubs);
 
     case (DAE.CREF_QUAL(ident=id, identType=tp, subscriptLst=subs, componentRef=cr) ,_) equation
@@ -2167,7 +2167,7 @@ algorithm
       then
         makeCrefIdent(id,newType,subs);
 
-    case(DAE.CREF_QUAL(id,ty,subs,child),_)
+    case(DAE.CREF_QUAL(id,_,subs,child),_)
       then
         makeCrefQual(id,newType,subs,child);
   end match;
@@ -2357,7 +2357,7 @@ algorithm
 
     case({}) then {};
 
-    case(DAE.SLICE(exp=_)::rest) then removeSliceSubs(rest);
+    case(DAE.SLICE()::rest) then removeSliceSubs(rest);
 
     case (s::rest)
       equation
@@ -2451,7 +2451,7 @@ algorithm
       DAE.ComponentRef cr_1,cr;
       DAE.Type t2;
 
-    case (DAE.CREF_IDENT(ident = id,identType = t2,subscriptLst = _))
+    case (DAE.CREF_IDENT(ident = id,identType = t2))
       then
         makeCrefIdent(id,t2,{});
 
@@ -2534,7 +2534,7 @@ public function printComponentRef
 "Print a ComponentRef."
   input DAE.ComponentRef inComponentRef;
 algorithm
-  _ := matchcontinue (inComponentRef)
+  _ := match (inComponentRef)
     local
       DAE.Ident s;
       list<DAE.Subscript> subs;
@@ -2566,7 +2566,7 @@ algorithm
         end if;
       then
         ();
-  end matchcontinue;
+  end match;
 end printComponentRef;
 
 protected function printComponentRef2
@@ -2683,7 +2683,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.ComponentRef prefix, last;
 
-    case DAE.CREF_QUAL(id, ty, subs, last as DAE.CREF_IDENT(ident = _))
+    case DAE.CREF_QUAL(id, ty, subs, last as DAE.CREF_IDENT())
       then (DAE.CREF_IDENT(id, ty, subs), last);
 
     case DAE.CREF_QUAL(id, ty, subs, last)
@@ -2748,7 +2748,7 @@ algorithm
       DAE.ComponentRef n;
 
     case (DAE.WILD()) then 0;
-    case (DAE.CREF_IDENT(ident = _)) then 1;
+    case (DAE.CREF_IDENT()) then 1;
     case (DAE.CREF_QUAL(componentRef = n))
       then
         crefDepth1(n,1);
@@ -2766,7 +2766,7 @@ algorithm
       DAE.ComponentRef n;
 
     case (DAE.WILD(),_) then iDepth;
-    case (DAE.CREF_IDENT(ident = _),_) then 1+iDepth;
+    case (DAE.CREF_IDENT(),_) then 1+iDepth;
     case (DAE.CREF_QUAL(componentRef = n),_)
       then
         crefDepth1(n,1+iDepth);
@@ -2824,7 +2824,7 @@ algorithm
         List.map1Flat(crefs,expandCref_impl,true);
 
     // A simple cref without subscripts but array type.
-    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), {}),true)
+    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty=DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), {}),true)
       equation
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
@@ -2833,7 +2833,7 @@ algorithm
         expandCrefLst(crefs,varLst,{});
 
     // A simple cref without subscripts but array type.
-    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty, dims = dims), {}),_)
+    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY( dims = dims), {}),_)
       equation
         // Create a list of : subscripts to generate all elements.
         subs = List.fill(DAE.WHOLEDIM(), listLength(dims));
@@ -2841,7 +2841,7 @@ algorithm
         expandCref2(id, correctTy, subs, dims);
 
     // A simple cref with subscripts and array type.
-    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), subs),true)
+    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty=DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)), dims = dims), subs),true)
       equation
         // Use the subscripts to generate only the wanted elements.
          crefs = expandCref2(id, correctTy, subs, dims);
@@ -2849,14 +2849,14 @@ algorithm
         expandCrefLst(crefs,varLst,{});
 
     // A simple cref with subscripts and array type.
-    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY(ty = ty, dims = dims), subs),_)
+    case (DAE.CREF_IDENT(id, correctTy as DAE.T_ARRAY( dims = dims), subs),_)
         // Use the subscripts to generate only the wanted elements.
       then
         expandCref2(id, correctTy, subs, dims);
 
 
     // A qualified cref with array type.
-    case (DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(ty = _ ,dims=dims, source=source), subs, cref),_)
+    case (DAE.CREF_QUAL(id, ty as DAE.T_ARRAY(dims=dims, source=source), subs, cref),_)
       equation
         // Expand the rest of the cref.
         crefs = expandCref_impl(cref,expandRecord);
@@ -3021,7 +3021,7 @@ algorithm
         ident1 = stringAppendList({ident, "_", str, "_"});
       then
         DAE.CREF_IDENT(ident1,identType,{});
-    case DAE.CREF_ITER(ident=_)
+    case DAE.CREF_ITER()
       then
         inCref;
     case DAE.WILD()
@@ -3049,7 +3049,7 @@ algorithm
       then
         DAE.CREF_QUAL(ident, ty, subs, cref);
 
-    case (DAE.CREF_IDENT(ident = _), _) then inNewLast;
+    case (DAE.CREF_IDENT(), _) then inNewLast;
 
   end match;
 end replaceLast;

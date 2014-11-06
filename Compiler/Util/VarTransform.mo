@@ -1347,7 +1347,7 @@ TODO: find out why array residual functions containing arrays as xloc[] does not
   output DAE.Exp outExp;
 algorithm  outExp := matchcontinue(inExp,inType)
   local DAE.ComponentRef cr;
-  case(DAE.CREF(cr,DAE.T_UNKNOWN(source = _)),_) then Expression.makeCrefExp(cr,inType);
+  case(DAE.CREF(cr,DAE.T_UNKNOWN()),_) then Expression.makeCrefExp(cr,inType);
   case (_,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
@@ -1494,7 +1494,7 @@ algorithm
       then
         (DAE.IFEXP(e1_1,e2_1,e3_1),true);
       /* Special case when a variable in pre() is an alias for unary minus of another */
-    case (DAE.CALL(path = path as Absyn.IDENT("pre"),expLst = {e as DAE.CREF(componentRef = _)},attr=attr),repl,cond)
+    case (DAE.CALL(path = path as Absyn.IDENT("pre"),expLst = {e as DAE.CREF()},attr=attr),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (DAE.UNARY(DAE.UMINUS(ety),e_1),true) = replaceExp(e, repl, cond);

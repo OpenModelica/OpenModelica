@@ -244,7 +244,7 @@ algorithm
       SCode.Element el;
       Env cls_env;
 
-   case (NFSCodeEnv.RAW_MODIFIER(modifier = el as SCode.CLASS(name = _)), _, _)
+   case (NFSCodeEnv.RAW_MODIFIER(modifier = el as SCode.CLASS()), _, _)
       equation
         cls_env = NFSCodeEnv.makeClassEnvironment(el, true);
         el_item = NFSCodeEnv.newClassItem(el, cls_env, NFSCodeEnv.USERDEFINED());
@@ -252,14 +252,14 @@ algorithm
       then
         NFSCodeEnv.PROCESSED_MODIFIER(redecl_item);
 
-    case (NFSCodeEnv.RAW_MODIFIER(modifier = el as SCode.COMPONENT(name = _)), _, _)
+    case (NFSCodeEnv.RAW_MODIFIER(modifier = el as SCode.COMPONENT()), _, _)
       equation
         el_item = NFSCodeEnv.newVarItem(el, true);
         redecl_item = NFSCodeEnv.REDECLARED_ITEM(el_item, inEnv);
       then
         NFSCodeEnv.PROCESSED_MODIFIER(redecl_item);
 
-    case (NFSCodeEnv.PROCESSED_MODIFIER(modifier = _), _, _) then inRedeclare;
+    case (NFSCodeEnv.PROCESSED_MODIFIER(), _, _) then inRedeclare;
 
     else
       equation
@@ -643,14 +643,14 @@ algorithm
       NFSCodeEnv.ClassType ty1, ty2;
       Item item;
 
-    case (NFSCodeEnv.VAR(var = el1, isUsed = _),
+    case (NFSCodeEnv.VAR(var = el1),
           NFSCodeEnv.VAR(var = el2, isUsed = iu2))
       equation
         el2 = propagateAttributesVar(el1, el2);
       then
         NFSCodeEnv.VAR(el2, iu2);
 
-    case (NFSCodeEnv.CLASS(cls = el1, env = _, classType = _),
+    case (NFSCodeEnv.CLASS(cls = el1),
           NFSCodeEnv.CLASS(cls = el2, env = env2, classType = ty2))
       equation
         el2 = propagateAttributesClass(el1, el2);
@@ -663,8 +663,8 @@ algorithm
     // attributes. If the new item is an alias, look up the referenced item and
     // apply the attributes to it.
     /*************************************************************************/
-    case (NFSCodeEnv.ALIAS(path = _), _) then inNewItem;
-    case (_, NFSCodeEnv.ALIAS(path = _)) then inNewItem;
+    case (NFSCodeEnv.ALIAS(), _) then inNewItem;
+    case (_, NFSCodeEnv.ALIAS()) then inNewItem;
 
     case (NFSCodeEnv.REDECLARED_ITEM(item = item), _)
       then propagateItemPrefixes(item, inNewItem);

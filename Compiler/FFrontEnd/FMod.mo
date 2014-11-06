@@ -222,7 +222,7 @@ algorithm
         SCode.NAMEMOD(id, SCode.MOD(fp, ep, submods1, binding, info2));
 
     // The first modifier has no binding, use the binding from the second.
-    case (SCode.NAMEMOD(ident = id, mod = mod1), SCode.NAMEMOD(mod = mod2), _, _)
+    case (SCode.NAMEMOD(ident = _, mod = mod1), SCode.NAMEMOD(mod = mod2), _, _)
       equation
         info1 = SCode.getModifierInfo(mod1);
         info2 = SCode.getModifierInfo(mod2);

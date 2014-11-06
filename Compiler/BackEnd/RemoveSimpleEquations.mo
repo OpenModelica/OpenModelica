@@ -721,101 +721,101 @@ algorithm
       then List.threadFold2(elstlst1, elstlst2, simpleEquationAcausalLst, eqnAttributes, true, inTpl);
 
     // a = {b1, b2, b3, ..}
-    case (DAE.CREF(componentRef = _), DAE.ARRAY(ty=ty), _, _, _)
+    case (DAE.CREF(), DAE.ARRAY(ty=ty), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.CREF(componentRef = _), DAE.MATRIX(ty=ty), _, _, _)
+    case (DAE.CREF(), DAE.MATRIX(ty=ty), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // -a = {b1, b2, b3, ..}
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = _)), DAE.ARRAY(ty=ty), _, _, _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.ARRAY(ty=ty), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = _)), DAE.MATRIX(ty=ty), _, _, _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.MATRIX(ty=ty), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // a = -{b1, b2, b3, ..}
-    case (DAE.CREF(componentRef = _), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.ARRAY(ty=ty)), _, _, _)
+    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.ARRAY(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.CREF(componentRef = _), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.MATRIX(ty=ty)), _, _, _)
+    case (DAE.CREF(), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.MATRIX(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // -a = -{b1, b2, b3, ..}
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = _)), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF()), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = _)), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF()), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
     // {a1, a2, a3, ..} = b
-    case (DAE.ARRAY(ty=ty), DAE.CREF(componentRef = _), _, _, _)
+    case (DAE.ARRAY(ty=ty), DAE.CREF(), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.MATRIX(ty=ty), DAE.CREF(componentRef = _), _, _, _)
+    case (DAE.MATRIX(ty=ty), DAE.CREF(), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // -{a1, a2, a3, ..} = b
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.ARRAY(ty=ty)), DAE.CREF(componentRef = _), _, _, _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.ARRAY(ty=ty)), DAE.CREF(), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.MATRIX(ty=ty)), DAE.CREF(componentRef = _), _, _, _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), DAE.MATRIX(ty=ty)), DAE.CREF(), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // {a1, a2, a3, ..} = -b
-    case (DAE.ARRAY(ty=ty), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = _)), _, _, _)
+    case (DAE.ARRAY(ty=ty), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.MATRIX(ty=ty), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = _)), _, _, _)
+    case (DAE.MATRIX(ty=ty), DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // -{a1, a2, a3, ..} = -b
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.ARRAY(ty=ty)), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.CREF(componentRef = _)), _, _, _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.ARRAY(ty=ty)), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.CREF()), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
-    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.MATRIX(ty=ty)), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.CREF(componentRef = _)), _, _, _)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.MATRIX(ty=ty)), DAE.UNARY(DAE.UMINUS_ARR(_), e2 as DAE.CREF()), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
     // not a = {b1, b2, b3, ..}
-    case (DAE.LUNARY(DAE.NOT(_), DAE.CREF(componentRef = _)), DAE.ARRAY(ty=ty), _, _, _)
+    case (DAE.LUNARY(DAE.NOT(_), DAE.CREF()), DAE.ARRAY(ty=ty), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.LUNARY(DAE.NOT(_), DAE.CREF(componentRef = _)), DAE.MATRIX(ty=ty), _, _, _)
+    case (DAE.LUNARY(DAE.NOT(_), DAE.CREF()), DAE.MATRIX(ty=ty), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // a = not {b1, b2, b3, ..}
-    case (DAE.CREF(componentRef = _), DAE.LUNARY(DAE.NOT(_), DAE.ARRAY(ty=ty)), _, _, _)
+    case (DAE.CREF(), DAE.LUNARY(DAE.NOT(_), DAE.ARRAY(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.CREF(componentRef = _), DAE.LUNARY(DAE.NOT(_), DAE.MATRIX(ty=ty)), _, _, _)
+    case (DAE.CREF(), DAE.LUNARY(DAE.NOT(_), DAE.MATRIX(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // not a = not {b1, b2, b3, ..}
-    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.CREF(componentRef = _)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
+    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.CREF()), DAE.LUNARY(DAE.NOT(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
-    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.CREF(componentRef = _)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
+    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.CREF()), DAE.LUNARY(DAE.NOT(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
     // {a1, a2, a3, ..} = not b
-    case (DAE.ARRAY(ty=ty), DAE.LUNARY(DAE.NOT(_), DAE.CREF(componentRef = _)), _, _, _)
+    case (DAE.ARRAY(ty=ty), DAE.LUNARY(DAE.NOT(_), DAE.CREF()), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.MATRIX(ty=ty), DAE.LUNARY(DAE.NOT(_), DAE.CREF(componentRef = _)), _, _, _)
+    case (DAE.MATRIX(ty=ty), DAE.LUNARY(DAE.NOT(_), DAE.CREF()), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // not {a1, a2, a3, ..} = b
-    case (DAE.LUNARY(DAE.NOT(_), DAE.ARRAY(ty=ty)), DAE.CREF(componentRef = _), _, _, _)
+    case (DAE.LUNARY(DAE.NOT(_), DAE.ARRAY(ty=ty)), DAE.CREF(), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
-    case (DAE.LUNARY(DAE.NOT(_), DAE.MATRIX(ty=ty)), DAE.CREF(componentRef = _), _, _, _)
+    case (DAE.LUNARY(DAE.NOT(_), DAE.MATRIX(ty=ty)), DAE.CREF(), _, _, _)
       then simpleArrayEquationAcausal(lhs, rhs, ty, eqnAttributes, inTpl);
 
     // not {a1, a2, a3, ..} = not b
-    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.ARRAY(ty=ty)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF(componentRef = _)), _, _, _)
+    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.ARRAY(ty=ty)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF()), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
-    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.MATRIX(ty=ty)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF(componentRef = _)), _, _, _)
+    case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.MATRIX(ty=ty)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF()), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
     // time independent equations
@@ -988,15 +988,15 @@ algorithm
       then addSimpleEquationAcausal(cr1, DAE.UNARY(DAE.UMINUS_ARR(ty), e1), false, cr2, e2, true, eqnAttributes, selfCalled, inTpl);
 
     // a - b = 0 => a = b
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB(ty=_), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB(), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
       then addSimpleEquationAcausal(cr1, e1, false, cr2, e2, false, eqnAttributes, selfCalled, inTpl);
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB_ARR(ty=_), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB_ARR(), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
       then addSimpleEquationAcausal(cr1, e1, false, cr2, e2, false, eqnAttributes, selfCalled, inTpl);
 
     // -a + b = 0 => a = b
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD(ty=_), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD(), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
       then addSimpleEquationAcausal(cr1, e1, false, cr2, e2, false, eqnAttributes, selfCalled, inTpl);
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD_ARR(ty=_), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD_ARR(), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
       then addSimpleEquationAcausal(cr1, e1, false, cr2, e2, false, eqnAttributes, selfCalled, inTpl);
 
     // -a - b = 0 => -a = b
@@ -1006,27 +1006,27 @@ algorithm
       then addSimpleEquationAcausal(cr1, e1, true, cr2,  DAE.UNARY(DAE.UMINUS_ARR(ty), e2), false, eqnAttributes, selfCalled, inTpl);
 
     // a + {b1, b2, b3} = 0 => a = -{b1, b2, b3}
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = _), DAE.ADD_ARR(tp), e2 as DAE.ARRAY(ty=ty)), _, _, _)
+    case (DAE.BINARY(e1 as DAE.CREF(), DAE.ADD_ARR(tp), e2 as DAE.ARRAY(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, DAE.UNARY(DAE.UMINUS_ARR(tp), e2), ty, eqnAttributes, inTpl);
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = _), DAE.ADD_ARR(tp), e2 as DAE.MATRIX(ty=ty)), _, _, _)
+    case (DAE.BINARY(e1 as DAE.CREF(), DAE.ADD_ARR(tp), e2 as DAE.MATRIX(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, DAE.UNARY(DAE.UMINUS_ARR(tp), e2), ty, eqnAttributes, inTpl);
 
     // a - {b1, b2, b3} = 0 => a = {b1, b2, b3}
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = _), DAE.SUB_ARR(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
+    case (DAE.BINARY(e1 as DAE.CREF(), DAE.SUB_ARR(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = _), DAE.SUB_ARR(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
+    case (DAE.BINARY(e1 as DAE.CREF(), DAE.SUB_ARR(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
     // -a + {b1, b2, b3} = 0 => a = {b1, b2, b3}
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = _)), DAE.ADD_ARR(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF()), DAE.ADD_ARR(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = _)), DAE.ADD_ARR(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF()), DAE.ADD_ARR(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, e2, ty, eqnAttributes, inTpl);
 
     // -a - {b1, b2, b3} = 0 => -a = {b1, b2, b3}
-    case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = _)), DAE.SUB_ARR(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
+    case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.SUB_ARR(_), e2 as DAE.ARRAY(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, DAE.UNARY(DAE.UMINUS_ARR(ty), e2), ty, eqnAttributes, inTpl);
-    case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF(componentRef = _)), DAE.SUB_ARR(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
+    case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_), DAE.CREF()), DAE.SUB_ARR(_), e2 as DAE.MATRIX(ty=ty)), _, _, _)
       then simpleArrayEquationAcausal(e1, DAE.UNARY(DAE.UMINUS_ARR(ty), e2), ty, eqnAttributes, inTpl);
 
     // time independent equations
@@ -1946,15 +1946,15 @@ algorithm
        then
          (rmax, smax, unremovable, const, cont);
 
-    case (PARAMETERALIAS(visited=_), _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (PARAMETERALIAS(), _, _, _, _, _, _, _, _, _, _, _, _, _)
        then
         (NONE(), NONE(), NONE(), SOME(r), false);
 
-    case (TIMEALIAS(visited=_), _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (TIMEALIAS(), _, _, _, _, _, _, _, _, _, _, _, _, _)
       then
         (NONE(), NONE(), NONE(), SOME(r), false);
 
-    case (TIMEINDEPENTVAR(visited=_), _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (TIMEINDEPENTVAR(), _, _, _, _, _, _, _, _, _, _, _, _, _)
       then
         (NONE(), NONE(), NONE(), SOME(r), false);
 
@@ -2581,7 +2581,7 @@ algorithm
       then
         (vars, eqnslst, shared, repl, vsattr);
 
-    case (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, (source, _), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, _, (source, _), _), _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // report error
         cr = if intEq(i1, ilast) then cr2 else cr1;
@@ -2760,7 +2760,7 @@ algorithm
       ((_, start, _)) = equalNonFreeStartValues(values, knVars, (start1, start, cr));
     then BackendVariable.setVarStartValueOption(v, start);
 
-    case (_, true, (_, values), BackendDAE.SHARED(knownVars=_)) equation
+    case (_, true, (_, values), BackendDAE.SHARED()) equation
       v = BackendVariable.setVarFixed(inVar, true);
       // get all nonzero values
       zerofreevalues = List.fold(values, getZeroFreeValues, {});
@@ -3145,7 +3145,7 @@ algorithm
       then
         (e, (vars, true, hs));
     // true if crefs in expression
-    case (e as DAE.CREF(componentRef=_), (vars, _, hs))
+    case (e as DAE.CREF(), (vars, _, hs))
       then
         (e, (vars, true, hs));
     else (inExp,inTuple);
@@ -4107,8 +4107,8 @@ algorithm
       then
         unReplaceable;
 
-    case (DAE.CREF_ITER(ident = _), _, _) then iUnreplaceable;
-    case (DAE.OPTIMICA_ATTR_INST_CREF(componentRef = _), _, _) then iUnreplaceable;
+    case (DAE.CREF_ITER(), _, _) then iUnreplaceable;
+    case (DAE.OPTIMICA_ATTR_INST_CREF(), _, _) then iUnreplaceable;
     case (DAE.WILD(), _, _) then iUnreplaceable;
   end match;
 end traverseCrefUnreplaceable;

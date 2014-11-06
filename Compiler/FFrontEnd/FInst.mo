@@ -121,7 +121,7 @@ algorithm
         FGraphDump.dumpGraph(g, "F:\\dev\\" + Absyn.pathString(inPath) + ".graph.graphml");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        gclone = FGraph.clone(g);
+        _ = FGraph.clone(g);
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("FGraph->clone:  " + realString(List.first(lst)) + "\n");
 
@@ -178,7 +178,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
         // resolve all references on path
-        (g, r) = FExpand.path(g, inPath);
+        (g,_) = FExpand.path(g, inPath);
         lst = List.consr(lst, System.realtimeTock(ClockIndexes.RT_CLOCK_FINST));
         print("FExpand.path:   " + realString(List.first(lst)) + "\n");
 

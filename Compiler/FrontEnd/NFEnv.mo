@@ -240,7 +240,7 @@ algorithm
     // Merge the origins to make sure that it's a valid insertion.
     // Then update the old entry with the new origins.
     case (NFInstTypes.ENTRY(name, old_element, old_mod, old_origins),
-        NFInstTypes.ENTRY(element = new_element, mod = _, origins = new_origins))
+        NFInstTypes.ENTRY(element = new_element, origins = new_origins))
       equation
         // New entries should only have one origin.
         origin = getSingleOriginFromList(new_origins);
@@ -284,7 +284,7 @@ algorithm
       list<EntryOrigin> rest_origins;
 
     // The new origin is inherited, try to merge it with an existing origin.
-    case (NFInstTypes.INHERITED_ORIGIN(baseClass = _), _)
+    case (NFInstTypes.INHERITED_ORIGIN(), _)
       then mergeInheritedOrigin(inNewOrigin, inOldOrigins);
 
     // The first origin is local. Keep it at the head of the list, so that we
@@ -375,17 +375,17 @@ algorithm
     // so we can't print an error for that here.
 
     // The new element was imported from an unqualified import, keep the old.
-    case (NFInstTypes.IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT(path = _)), _, _, _)
+    case (NFInstTypes.IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT()), _, _, _)
       then inOldElement;
 
     // The old element was imported from an unqualified import, replace with the new.
-    case (_, NFInstTypes.IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT(path = _)) :: _, _, _)
+    case (_, NFInstTypes.IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT()) :: _, _, _)
       then inNewElement;
 
     // The new element is imported by a named or qualified import, which means
     // that we either have conflicting imports or that the imported element is
     // shadowed by a local/inherited element.
-    case (NFInstTypes.IMPORTED_ORIGIN(imp = _), _, _, _)
+    case (NFInstTypes.IMPORTED_ORIGIN(), _, _, _)
       equation
         // Check if we have conflicting imports.
         List.map1_0(inOldOrigins, checkOriginImportConflict, inNewOrigin);
@@ -401,7 +401,7 @@ algorithm
     // element. Note that if the old element would have had more than one
     // origin, then we would already have printed a warning in the case above
     // when it was added.
-    case (_, {origin as NFInstTypes.IMPORTED_ORIGIN(imp = _)}, _, _)
+    case (_, {origin as NFInstTypes.IMPORTED_ORIGIN()}, _, _)
       equation
         printImportShadowWarning(origin, inNewElement);
       then
@@ -410,7 +410,7 @@ algorithm
     // The new element was inherited, check that it's identical to the existing
     // element. Keep the old one in that case, so that e.g. error messages favor
     // the local elements.
-    case (NFInstTypes.INHERITED_ORIGIN(baseClass = _), _, _, _)
+    case (NFInstTypes.INHERITED_ORIGIN(), _, _, _)
       equation
         /*********************************************************************/
         // TODO: Check duplicate elements due to inheritance here.
@@ -871,7 +871,7 @@ public function isClassEntry
   output Boolean outIsClass;
 algorithm
   outIsClass := match(inEntry)
-    case NFInstTypes.ENTRY(element = SCode.CLASS(name = _)) then true;
+    case NFInstTypes.ENTRY(element = SCode.CLASS()) then true;
     else false;
   end match;
 end isClassEntry;
@@ -901,7 +901,7 @@ algorithm
       Env env;
 
     case (NFInstTypes.FRAME(name = SOME(name),
-        scopeType = NFInstTypes.NORMAL_SCOPE(isEncapsulated = _)) :: env, _)
+        scopeType = NFInstTypes.NORMAL_SCOPE()) :: env, _)
       then scopeNames2(env, name :: inAccumNames);
 
     case (_ :: env, _) then scopeNames2(env, inAccumNames);
@@ -918,7 +918,7 @@ algorithm
     local
       Env rest_env;
 
-    case NFInstTypes.FRAME(scopeType = NFInstTypes.IMPLICIT_SCOPE(iterIndex = _)) :: rest_env
+    case NFInstTypes.FRAME(scopeType = NFInstTypes.IMPLICIT_SCOPE()) :: rest_env
       then stripImplicitScopes(rest_env);
 
     else inEnv;
@@ -948,10 +948,10 @@ algorithm
       Env env;
 
     case (NFInstTypes.FRAME(name = SOME(name),
-        scopeType = NFInstTypes.NORMAL_SCOPE(isEncapsulated = _)) :: env, _)
+        scopeType = NFInstTypes.NORMAL_SCOPE()) :: env, _)
       then envPath2(env, Absyn.QUALIFIED(name, inAccumPath));
 
-    case (NFInstTypes.FRAME(scopeType = NFInstTypes.IMPLICIT_SCOPE(iterIndex =_)) :: env, _)
+    case (NFInstTypes.FRAME(scopeType = NFInstTypes.IMPLICIT_SCOPE()) :: env, _)
       then envPath2(env, inAccumPath);
 
     else inAccumPath;

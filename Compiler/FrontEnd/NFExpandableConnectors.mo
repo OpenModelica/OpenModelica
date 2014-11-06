@@ -243,7 +243,7 @@ algorithm
       Connector conn;
       DAE.Var var;
 
-    case (_, NFConnect2.CONNECTOR(name = _))
+    case (_, NFConnect2.CONNECTOR())
       equation
         conn = NFConnectUtil2.renameConnector(inUndeclaredName, inDeclared);
         name = ComponentReference.crefLastCref(inUndeclaredName);

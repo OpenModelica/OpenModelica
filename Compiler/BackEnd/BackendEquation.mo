@@ -138,14 +138,14 @@ algorithm
       Integer n, size;
       list<BackendDAE.Equation> lst;
 
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement=0, equOptArr=_))
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement=0))
     then {};
 
     case (BackendDAE.EQUATION_ARRAY(numberOfElement=1, equOptArr=arr)) equation
       SOME(elt) = arr[1];
     then {elt};
 
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement=n, arrSize=_, equOptArr=arr)) equation
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement=n, equOptArr=arr)) equation
       lst = equationList2(arr, n, {});
     then lst;
 
@@ -329,7 +329,7 @@ algorithm
     then (e, (vars, bt));
 
     // case for function pointers
-    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)), (vars, bt))
+    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()), (vars, bt))
     then (e, (vars, bt));
 
     // add it
@@ -449,24 +449,24 @@ algorithm
       then (e, outTuple);
 
     // special case for arrays
-    case (e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)), _)
+    case (e as DAE.CREF(ty = DAE.T_ARRAY()), _)
       equation
         (e1, true) = Expression.extendArrExp(e, false);
         (_, outTuple) = Expression.traverseExp(e1, checkEquationsUnknownCrefsExp, inTuple);
       then (e, outTuple);
 
     // case for function pointers
-    case (DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)), _)
+    case (DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()), _)
       then (inExp, inTuple);
 
     // already there
-    case (DAE.CREF(componentRef = cr), (vars, knvars, ht))
+    case (DAE.CREF(componentRef = cr), (_, _, ht))
       equation
         _ = BaseHashTable.get(cr, ht);
       then (inExp, inTuple);
 
     // known
-    case (DAE.CREF(componentRef = cr), (vars, knvars, ht))
+    case (DAE.CREF(componentRef = cr), (vars, _, _))
       equation
        (_, _) = BackendVariable.getVar(cr, vars);
       then (inExp, inTuple);
@@ -762,7 +762,7 @@ algorithm
         end if;
       then (b, ext_arg);
 
-    case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst=_)), _, _)
+    case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS()), _, _)
       equation
         print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseBackendDAEExpsEqnWithStop\n");
        // (stmts1, ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts, func, inTypeA);
@@ -1564,16 +1564,16 @@ algorithm
       eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 
-    case (backendEq as BackendDAE.COMPLEX_EQUATION(source=_))
+    case (backendEq as BackendDAE.COMPLEX_EQUATION())
     then {backendEq};
 
-    case (backendEq as BackendDAE.RESIDUAL_EQUATION(source=_))
+    case (backendEq as BackendDAE.RESIDUAL_EQUATION())
     then {backendEq};
 
-    case (backendEq as BackendDAE.ALGORITHM(alg=_))
+    case (backendEq as BackendDAE.ALGORITHM())
     then {backendEq};
 
-    case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation=_))
+    case (backendEq as BackendDAE.WHEN_EQUATION())
     then {backendEq};
 
     else
@@ -1610,12 +1610,12 @@ algorithm
     then ((i+1, eqs));
 
     // a scalar real
-    case (DAE.CREF(ty=DAE.T_REAL(source=_)), _, _, _, (i, eqs)) equation
+    case (DAE.CREF(ty=DAE.T_REAL()), _, _, _, (i, eqs)) equation
       eqs = BackendDAE.RESIDUAL_EQUATION(DAE.TSUB(exp, i, DAE.T_REAL_DEFAULT), inSource, inEqAttr)::eqs;
     then ((i+1, eqs));
 
     // create a sum for arrays...
-    case (DAE.CREF(ty=DAE.T_ARRAY(ty=DAE.T_REAL(source=_))), _, _, _, (i, eqs)) equation
+    case (DAE.CREF(ty=DAE.T_ARRAY(ty=DAE.T_REAL())), _, _, _, (i, eqs)) equation
       e = Expression.makePureBuiltinCall("sum", {DAE.TSUB(exp, i, DAE.T_REAL_DEFAULT)}, DAE.T_REAL_DEFAULT);
       eqs = BackendDAE.RESIDUAL_EQUATION(e, inSource, inEqAttr)::eqs;
     then ((i+1, eqs));
@@ -1663,13 +1663,13 @@ algorithm
       (e, _) = ExpressionSimplify.simplify(exp);
     then BackendDAE.RESIDUAL_EQUATION(e, source, eqAttr);
 
-    case (backendEq as BackendDAE.RESIDUAL_EQUATION(exp=_))
+    case (backendEq as BackendDAE.RESIDUAL_EQUATION())
     then backendEq;
 
-    case (backendEq as BackendDAE.ALGORITHM(alg=_))
+    case (backendEq as BackendDAE.ALGORITHM())
     then backendEq;
 
-    case (backendEq as BackendDAE.WHEN_EQUATION(whenEquation=_))
+    case (backendEq as BackendDAE.WHEN_EQUATION())
     then backendEq;
 
     else
@@ -1766,17 +1766,17 @@ algorithm
       Integer size;
       list<BackendDAE.Equation> eqnsfalse;
 
-    case BackendDAE.EQUATION(source=_)
+    case BackendDAE.EQUATION()
     then 1;
 
     case BackendDAE.ARRAY_EQUATION(dimSize=ds) equation
       size = List.fold(ds, intMul, 1);
     then size;
 
-    case BackendDAE.SOLVED_EQUATION(source=_)
+    case BackendDAE.SOLVED_EQUATION()
     then 1;
 
-    case BackendDAE.RESIDUAL_EQUATION(source=_)
+    case BackendDAE.RESIDUAL_EQUATION()
     then 1;
 
     case BackendDAE.WHEN_EQUATION(size=size)
@@ -2481,17 +2481,17 @@ algorithm
     then (cr1, cr2, DAE.UNARY(DAE.UMINUS_ARR(ty), e1), DAE.UNARY(DAE.UMINUS_ARR(ty), e2), true)::inTpls;
 
     // a - b
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB(ty=_), e2 as DAE.CREF(componentRef = cr2)), _)
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB(), e2 as DAE.CREF(componentRef = cr2)), _)
     then (cr1, cr2, e1, e2, false)::inTpls;
 
-    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB_ARR(ty=_), e2 as DAE.CREF(componentRef = cr2)), _)
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1), DAE.SUB_ARR(), e2 as DAE.CREF(componentRef = cr2)), _)
     then (cr1, cr2, e1, e2, false)::inTpls;
 
     // -a + b
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD(ty=_), e2 as DAE.CREF(componentRef = cr2)), _)
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD(), e2 as DAE.CREF(componentRef = cr2)), _)
     then (cr1, cr2, e1, e2, false)::inTpls;
 
-    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD_ARR(ty=_), e2 as DAE.CREF(componentRef = cr2)), _)
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_), e1 as DAE.CREF(componentRef = cr1)), DAE.ADD_ARR(), e2 as DAE.CREF(componentRef = cr2)), _)
     then (cr1, cr2, e1, e2, false)::inTpls;
 
     // -a - b = 0
@@ -2649,7 +2649,7 @@ public function isWhenEquation
   output Boolean b;
 algorithm
   b := match (inEqn)
-    case BackendDAE.WHEN_EQUATION(whenEquation=_) then true;
+    case BackendDAE.WHEN_EQUATION() then true;
     else false;
   end match;
 end isWhenEquation;
@@ -2659,7 +2659,7 @@ public function isArrayEquation
   output Boolean b;
 algorithm
   b := match (inEqn)
-    case BackendDAE.ARRAY_EQUATION(source=_) then true;
+    case BackendDAE.ARRAY_EQUATION() then true;
     else false;
   end match;
 end isArrayEquation;
@@ -2669,7 +2669,7 @@ public function isAlgorithm
   output Boolean b;
 algorithm
   b := match (inEqn)
-    case BackendDAE.ALGORITHM(source=_) then true;
+    case BackendDAE.ALGORITHM() then true;
     else false;
   end match;
 end isAlgorithm;
@@ -2717,10 +2717,10 @@ algorithm
       eqAttr = markDifferentiated2(eqAttr);
     then BackendDAE.COMPLEX_EQUATION(size, e1, e2, source, eqAttr);
 
-    case BackendDAE.ALGORITHM(source=_)
+    case BackendDAE.ALGORITHM()
     then inEqn;
 
-    case BackendDAE.WHEN_EQUATION(source=_)
+    case BackendDAE.WHEN_EQUATION()
     then inEqn;
 
     case BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source, attr=eqAttr) equation

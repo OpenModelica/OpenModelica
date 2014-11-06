@@ -598,8 +598,8 @@ algorithm
       then
         true;
     // check the class equality only for functions, made of derived
-    case (SCode.CLASS(classDef=cd1 as SCode.DERIVED(typeSpec=_)),
-          SCode.CLASS(classDef=cd2 as SCode.DERIVED(typeSpec=_)))
+    case (SCode.CLASS(classDef=cd1 as SCode.DERIVED()),
+          SCode.CLASS(classDef=cd2 as SCode.DERIVED()))
       equation
         // only check class definitions are the same!
         equality(cd1 = cd2);
@@ -982,17 +982,17 @@ algorithm
       then
         ();
 
-    case((SCode.EXTENDS(modifications=_))::elems,_,_)
+    case((SCode.EXTENDS())::elems,_,_)
       equation matchModificationToComponents(elems,inmod,callingScope); then ();
         //TODO: only remove modifiers on replaceable classes, make special case for redeclaration of local classes
 
-    case((SCode.CLASS(name=cn,prefixes=SCode.PREFIXES(replaceablePrefix=_/*SCode.REPLACEABLE(_)*/)))::elems,mod,_)
+    case((SCode.CLASS(name=cn,prefixes=SCode.PREFIXES()))::elems,mod,_)
       equation
         mod = Mod.removeMod(mod,cn);
         matchModificationToComponents(elems,mod,callingScope);
       then ();
 
-    case((SCode.IMPORT(imp=_))::elems,_,_)
+    case((SCode.IMPORT())::elems,_,_)
       equation
         matchModificationToComponents(elems,inmod,callingScope);
       then ();
@@ -1157,7 +1157,7 @@ algorithm
       then
         selem::outComps;
         */
-    case( ((selem as SCode.CLASS(name=name2)))::comps,SOME(DAE.CREF_IDENT(ident=_)),allComps,_,existing)
+    case( ((selem as SCode.CLASS(name=name2)))::comps,SOME(DAE.CREF_IDENT()),allComps,_,existing)
       equation
         //false = stringEq(name,name2);
         allComps = selem::allComps;
@@ -1182,20 +1182,20 @@ algorithm
         allComps = selem::allComps;
       then extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
 
-    case((compMod as SCode.EXTENDS(baseClassPath=_))::comps,(SOME(DAE.CREF_IDENT(ident=_))),allComps,_,existing)
+    case((compMod as SCode.EXTENDS())::comps,(SOME(DAE.CREF_IDENT())),allComps,_,existing)
       equation
         allComps = compMod::allComps;
         recDeps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
         then
           compMod::recDeps;
-    case((compMod as SCode.IMPORT(imp=_))::comps,(SOME(DAE.CREF_IDENT(ident=_))),allComps,_,existing)
+    case((compMod as SCode.IMPORT())::comps,(SOME(DAE.CREF_IDENT())),allComps,_,existing)
       equation
         allComps = compMod::allComps;
         recDeps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
       then
         compMod::recDeps;
 
-    case((compMod as SCode.DEFINEUNIT(name=_))::comps,(SOME(DAE.CREF_IDENT(ident=_))),allComps,_,existing)
+    case((compMod as SCode.DEFINEUNIT())::comps,(SOME(DAE.CREF_IDENT())),allComps,_,existing)
       equation
         allComps = compMod::allComps;
         recDeps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
@@ -1331,7 +1331,7 @@ algorithm
     case ({}) then {};
 
     // constants
-    case ((el as SCode.COMPONENT(attributes=attr, comment =  _))::els)
+    case ((el as SCode.COMPONENT(attributes=attr))::els)
      equation
         true = SCode.isConstant(SCode.attrVariability(attr)); // or SCode.getEvaluateAnnotation(cmt);
         els1 = constantEls(els);
@@ -1459,7 +1459,7 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> elems;
 
     case(_,{}) then DAE.NOMOD();
-    case(dep,((SCode.COMPONENT(name=_),DAE.NOMOD()))::elems)
+    case(dep,((SCode.COMPONENT(),DAE.NOMOD()))::elems)
       then getModsForDep(dep,elems);
     case(dep,((SCode.COMPONENT(name=name1),cmod))::_)
       equation
@@ -1861,8 +1861,8 @@ algorithm
         deps;
 
     // For input and output variables in function scope return no dependencies so they stay in order!
-    case ((SCode.COMPONENT( condition = _,
-                           attributes = SCode.ATTR(arrayDims = _, direction = direction),
+    case ((SCode.COMPONENT(
+                           attributes = SCode.ATTR(direction = direction),
                            modifications = _), _), (_, true))
       equation
         true = Absyn.isInputOrOutput(direction);
@@ -1873,7 +1873,7 @@ algorithm
     case ((SCode.COMPONENT(name = name, condition = cExpOpt,
                            prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                            attributes = SCode.ATTR(arrayDims = ad),
-                           modifications = mod), daeMod), (inAllElements, isFunctionScope))
+                           modifications = mod), daeMod), (inAllElements, _))
       equation
         (_, exps) = Absyn.getExpsFromArrayDim(ad);
         (bexps, sexps) = getExpsFromMod(mod);
@@ -1921,8 +1921,8 @@ algorithm
     // see ExternalMedia.Media.ExternalTwoPhaseMedium.FluidConstants
     //     which depends on function calls which depend on package constants inside external decl
     case ((SCode.CLASS(name = name,
-                       prefixes = SCode.PREFIXES(replaceablePrefix = _),
-                       classDef = SCode.PARTS(elementLst = _, externalDecl = externalDecl)),
+                       prefixes = SCode.PREFIXES(),
+                       classDef = SCode.PARTS(externalDecl = externalDecl)),
            _), (inAllElements, _))
       equation
         exps = getExpsFromExternalDecl(externalDecl);
@@ -2026,7 +2026,7 @@ algorithm
         (exp, (all_el, stack, e :: accum_el));
 
     // The condition expression is always used
-    case (exp as Absyn.IFEXP(ifExp = _), (all_el, stack, accum_el))
+    case (exp as Absyn.IFEXP(), (all_el, stack, accum_el))
       then (exp,(all_el,accum_el::stack,{}));
 
     else (inExp,inTuple);
@@ -2215,7 +2215,7 @@ algorithm
         (cdefs,els) = classdefElts2(xs,partialPrefix);
       then
         (cdef::cdefs,els);
-    case (((cdef as SCode.CLASS(name = _),_)) :: xs,SCode.NOT_PARTIAL())
+    case (((cdef as SCode.CLASS(),_)) :: xs,SCode.NOT_PARTIAL())
       equation
         (cdefs,els) = classdefElts2(xs,partialPrefix);
       then
@@ -2248,13 +2248,13 @@ algorithm
 
     case ({}) then ({},{});
 
-    case (((cdef as SCode.CLASS(name = _)) :: xs))
+    case (((cdef as SCode.CLASS()) :: xs))
       equation
         (cdefElts,restElts) = classdefAndImpElts(xs);
       then
         (cdef :: restElts,restElts);
 
-    case (((imp as SCode.IMPORT(imp = _)) :: xs))
+    case (((imp as SCode.IMPORT()) :: xs))
       equation
         (cdefElts,restElts) = classdefAndImpElts(xs);
       then
@@ -2305,7 +2305,7 @@ algorithm
       list<SCode.Element> res,xs;
       SCode.Element cdef;
     case ({}) then {};
-    case (((cdef as SCode.COMPONENT(name = _)) :: xs))
+    case (((cdef as SCode.COMPONENT()) :: xs))
       equation
         res = componentElts(xs);
       then
@@ -2425,7 +2425,7 @@ algorithm
       DAE.Mod m;
 
     // we do have a redeclaration of class.
-    case (cache,env,ih,pre,( (sel1 as SCode.CLASS(name = _))),_,SOME(m))
+    case (cache,env,ih,pre,( (sel1 as SCode.CLASS())),_,SOME(m))
       equation
         false = valueEq(m, DAE.NOMOD());
         env_1 = FGraph.mkClassNode(env, sel1, pre, m);
@@ -2436,7 +2436,7 @@ algorithm
         (cache,env_1,ih);
 
     // otherwise, extend frame with in class.
-    case (cache,env,ih,pre,(sel1 as SCode.CLASS(classDef = _)),_,_)
+    case (cache,env,ih,pre,(sel1 as SCode.CLASS()),_,_)
       equation
         // Debug.traceln("Extend frame " + FGraph.printGraphPathStr(env) + " with " + SCode.className(cl));
         env_1 = FGraph.mkClassNode(env, sel1, pre, DAE.NOMOD());
@@ -2447,13 +2447,13 @@ algorithm
     // adrpo: we should have no imports after SCodeFlatten!
     // unfortunately we do because of the way we evaluate
     // programs for interactive evaluation
-    case (cache,env,ih,_,(imp as SCode.IMPORT(imp = _)),_,_)
+    case (cache,env,ih,_,(imp as SCode.IMPORT()),_,_)
       equation
         env_1 = FGraph.mkImportNode(env, imp);
       then
         (cache,env_1,ih);
 
-    case(cache,env,ih,_,((elt as SCode.DEFINEUNIT(name=_))), _,_)
+    case(cache,env,ih,_,((elt as SCode.DEFINEUNIT())), _,_)
       equation
         env_1 = FGraph.mkDefunitNode(env,elt);
       then (cache,env_1,ih);
@@ -2747,15 +2747,15 @@ algorithm
         (cache,env_1,ih);
 
     // Import statement
-    case (cache,env,ih,_,_,_,(SCode.IMPORT(imp = _),_),_,_,_,_)
+    case (cache,env,ih,_,_,_,(SCode.IMPORT(),_),_,_,_,_)
       then (cache,env,ih);
 
     // Extends elements
-    case (cache,env,ih,_,_,_,(SCode.EXTENDS(info=_),_),_,_,_,_)
+    case (cache,env,ih,_,_,_,(SCode.EXTENDS(),_),_,_,_,_)
       then (cache,env,ih);
 
     // classes
-    case (cache,env,ih,_,_,_,(SCode.CLASS(name = _),_),_,_,_,_)
+    case (cache,env,ih,_,_,_,(SCode.CLASS(),_),_,_,_,_)
       equation
       then
         (cache,env,ih);
@@ -2908,7 +2908,7 @@ public function chainRedeclares "
   input SCode.Mod inModInner "the inner mod";
   output SCode.Mod outMod;
 algorithm
-  outMod := matchcontinue(inModOuter,inModInner)
+  outMod := match(inModOuter,inModInner)
       /*
       case(_, _)
         equation
@@ -2922,7 +2922,7 @@ algorithm
         equation
           outMod = chainRedeclare_dispatch(inModOuter,inModInner);
         then outMod;
-  end matchcontinue;
+  end match;
 end chainRedeclares;
 
 public function chainRedeclare_dispatch "
@@ -2963,7 +2963,7 @@ algorithm
         SCode.REDECL(f, e, cls);
 
     // a mod with a name mod
-    case (_, SCode.MOD(f, e, SCode.NAMEMOD(name, m as SCode.REDECL(finalPrefix = _))::rest, b, info))
+    case (_, SCode.MOD(f, e, SCode.NAMEMOD(name, m as SCode.REDECL())::rest, b, info))
       equation
         // lookup the class mod in the outer
         m2 = chainRedeclare_dispatch(inModOuter, m);
@@ -3157,14 +3157,14 @@ algorithm
 
     // If a component definition is replaceable, skip check
     case (_,_,_,_,_,
-          ((SCode.COMPONENT(name = _, prefixes = SCode.PREFIXES(replaceablePrefix=SCode.REPLACEABLE(_))),_)),_,_)
+          ((SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix=SCode.REPLACEABLE(_))),_)),_,_)
       equation
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
     // If a comopnent definition is redeclaration, skip check
     case (_,_,_,_,_,
-          ((SCode.COMPONENT(name = _),DAE.REDECL(_,_,_))),_,_)
+          ((SCode.COMPONENT(),DAE.REDECL(_,_,_))),_,_)
       equation
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
@@ -3198,7 +3198,7 @@ algorithm
 
     // If a class definition is redeclaration, skip check
     case (_,_,_,_,_,
-          ((SCode.CLASS(prefixes = _),DAE.REDECL(_,_,_))),_,_)
+          ((SCode.CLASS(),DAE.REDECL(_,_,_))),_,_)
       equation
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
@@ -3651,7 +3651,7 @@ algorithm
     case (_, _, _, _, _, _, _, SCode.PARAM(), _, _, _)
       then ();
 
-    case (_, _, InnerOuter.TOP_INSTANCE(sm=sm)::_, _, _, _, DAE.MOD(finalPrefix = _), _, Absyn.OUTER(), _, _)
+    case (_, _, InnerOuter.TOP_INSTANCE(sm=sm)::_, _, _, _, DAE.MOD(), _, Absyn.OUTER(), _, _)
       equation
         // BTH: we check if the outer variable is in an instance that is
         //      part of a Modelica state machine. In that case we have added
@@ -3701,7 +3701,7 @@ algorithm
       then ();
 
     // Protected formal parameters are not allowed.
-    case (_, SCode.ATTR(direction = _),
+    case (_, SCode.ATTR(),
         SCode.PREFIXES(visibility = SCode.PROTECTED()), _)
       equation
         Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
@@ -3889,7 +3889,7 @@ algorithm
       then (cache,{},cl,DAE.NOMOD());
 
     case (cache, _, _, _, cl as SCode.CLASS(restriction = SCode.R_RECORD(_),
-                                        classDef = SCode.PARTS(elementLst = _)), _, _) then (cache,{},cl,DAE.NOMOD());
+                                        classDef = SCode.PARTS()), _, _) then (cache,{},cl,DAE.NOMOD());
 
     //------------------------
     // MetaModelica extension
@@ -3908,7 +3908,7 @@ algorithm
 
     // Partial function definitions with no output - stefan
     case (cache, _, _, _,
-      cl as SCode.CLASS(name = _,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_)),
+      cl as SCode.CLASS(restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(_)),
                         partialPrefix = SCode.PARTIAL()), _, _)
       then
         (cache,{},cl,DAE.NOMOD());
@@ -3922,7 +3922,7 @@ algorithm
 
     // MetaModelica Uniontype. Added 2009-05-11 sjoelund
     case (cache, _, _, _,
-      cl as SCode.CLASS(name = _,restriction = SCode.R_UNIONTYPE()), _, _)
+      cl as SCode.CLASS(restriction = SCode.R_UNIONTYPE()), _, _)
       then (cache,{},cl,DAE.NOMOD());
       /*----------------------*/
 
@@ -3951,7 +3951,7 @@ algorithm
 
     // extended classes type Y = Real[3]; class X extends Y;
     case (cache, env, ih, pre,
-      SCode.CLASS(name = _, restriction = _,
+      SCode.CLASS(
                   classDef = SCode.PARTS(elementLst=els,
                   normalEquationLst = {},
                   initialEquationLst = {},
@@ -3969,7 +3969,7 @@ algorithm
       then
         (cache,res,cl,type_mods);
 
-    case (cache, _, _, _, cl as SCode.CLASS(name = _), _, _)
+    case (cache, _, _, _, cl as SCode.CLASS(), _, _)
       then (cache,{},cl,DAE.NOMOD());
 
     case (_, _, _, _, SCode.CLASS(name = id), _, _)
@@ -4558,7 +4558,7 @@ algorithm
       FCore.Graph env;
       FCore.Cache cache;
 
-    case (cache,DAE.TYPED(modifierAsExp = _,properties = DAE.PROP(type_ = t)),_)
+    case (cache,DAE.TYPED(properties = DAE.PROP(type_ = t)),_)
       equation
         lst = Types.getDimensionSizes(t);
         lst_1 = List.map(lst, Expression.intDimension);
@@ -4669,7 +4669,7 @@ algorithm
       then
         (cache, dim);
 
-    case (cache,env,cref,_,{},_,impl,st,doVect,_,pre,info,_) then (cache, {});
+    case (cache,_,_,_,{},_,_,_,_,_,_,_,_) then (cache, {});
 
     case (cache,env,cref,_,ad,NONE(),impl,st,doVect,_,pre,info,_) /* impl */
       equation
@@ -4755,8 +4755,8 @@ algorithm
     case (DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()) then DAE.DIM_UNKNOWN();
     case (_, DAE.DIM_UNKNOWN()) then inDimension1;
     case (DAE.DIM_UNKNOWN(), _) then inDimension2;
-    case (_, DAE.DIM_EXP(exp = _)) then inDimension1;
-    case (DAE.DIM_EXP(exp = _), _) then inDimension2;
+    case (_, DAE.DIM_EXP()) then inDimension1;
+    case (DAE.DIM_EXP(), _) then inDimension2;
     case (_, _)
       equation
         true = intEq(Expression.dimensionSize(inDimension1),
@@ -4876,14 +4876,14 @@ algorithm
         l;
     */
 
-    case (DAE.T_ARRAY(dims = {d}, ty = t, source = _), ad, dim::rest)
+    case (DAE.T_ARRAY(dims = {d}, ty = t), ad, dim::rest)
       equation
          _ = compatibleArraydim(d,dim);
         l = elabArraydimType2(t,ad,rest);
       then
         l;
 
-    case (DAE.T_ARRAY(dims = {d}, ty = t, source = _), (_ :: ad), {})
+    case (DAE.T_ARRAY(dims = {d}, ty = t), (_ :: ad), {})
       equation
         l = elabArraydimType2(t,ad,{});
       then
@@ -5161,7 +5161,7 @@ algorithm
     then
       (varPos,DAE.ZERO_DERIVATIVE())::outconds;
 
-    case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(binding=_)))::subs,_,_,_,_,_,_)
+    case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD()))::subs,_,_,_,_,_,_)
     equation
       (cache,DAE.MOD(subModLst={sub})) = Mod.elabMod(inCache, inEnv, inIH, inPrefix, m, false, Mod.COMPONENT("noDerivative"), info);
       (name,cond) = extractNameAndExp(sub);
@@ -5200,7 +5200,7 @@ algorithm
             currPos;
 
        /* Non-matching input, increase inputarg pos*/
-    case(SCode.COMPONENT(name=_,attributes =SCode.ATTR(direction=Absyn.INPUT()))::elemDecl,_,_)
+    case(SCode.COMPONENT(attributes =SCode.ATTR(direction=Absyn.INPUT()))::elemDecl,_,_)
       then setFunctionInputIndex(elemDecl,str,currPos+1);
 
        /* Other element, do not increaese inputarg pos*/
@@ -5531,7 +5531,7 @@ algorithm
     local
       DAE.Exp exp;
       DAE.ComponentRef cr;
-    case (DAE.VAR(componentRef=_),DAE.VAR(direction=DAE.INPUT())) then false;
+    case (DAE.VAR(),DAE.VAR(direction=DAE.INPUT())) then false;
     case (DAE.VAR(componentRef=cr),DAE.VAR(binding=SOME(exp))) then Expression.expHasCref(exp,cr);
     else false;
   end match;
@@ -5727,11 +5727,11 @@ algorithm
     case SCode.COMPONENT(
            name = id,
            prefixes = SCode.PREFIXES(
-                        finalPrefix = _,
-                        replaceablePrefix = _,
+
+
                         visibility = _),
            attributes = SCode.ATTR(arrayDims = dims),
-           typeSpec = _,
+
            modifications = _)
       equation
         sizelist = instExtMakeCrefs2(id, dims, 1);
@@ -5937,7 +5937,7 @@ algorithm
       Boolean impl;
       FCore.Cache cache;
       Prefix.Prefix pre;
-    case (cache,env,SCode.EXTERNALDECL(funcName = _,lang = lang,output_ = _,args = absexps),impl,pre,_)
+    case (cache,env,SCode.EXTERNALDECL(lang = lang,args = absexps),impl,pre,_)
       equation
         (cache,exps,props,_) = elabExpListExt(cache,env, absexps, impl,NONE(),pre,info);
         (cache,extargs) = instExtGetFargs2(cache, env, absexps, exps, props, lang, info);
@@ -6017,7 +6017,7 @@ algorithm
       Values.Value val;
       String str;
 
-    case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_QUAL(ident = _)),
+    case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_QUAL()),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
         (cache, attr, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
@@ -6030,14 +6030,14 @@ algorithm
       then
         (cache, SOME(DAE.EXTARG(cref, attr, ty)));
 
-    case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT(ident = _)),
+    case (_, _, _, DAE.CREF(componentRef = cref as DAE.CREF_IDENT()),
         DAE.PROP(constFlag = DAE.C_VAR()), _, _)
       equation
         (cache, attr, ty,_, _, _, _, _, _) = Lookup.lookupVarLocal(inCache, inEnv, cref);
       then
         (cache,SOME(DAE.EXTARG(cref, attr, ty)));
 
-    case (cache,env,_,DAE.CREF(componentRef = cref),DAE.PROP(constFlag = _),_,_)
+    case (cache,env,_,DAE.CREF(componentRef = cref),DAE.PROP(),_,_)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,cref));
         crefstr = ComponentReference.printComponentRefStr(cref);
@@ -6046,7 +6046,7 @@ algorithm
       then
         (cache, NONE());
 
-    case (cache,env,_,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = _),sz = SOME(dim)),DAE.PROP(type_ = _),_,_)
+    case (cache,env,_,DAE.SIZE(exp = DAE.CREF(componentRef = cref),sz = SOME(dim)),DAE.PROP(),_,_)
       equation
         (cache,attr,varty,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
@@ -6069,7 +6069,7 @@ algorithm
     case (cache,_,Absyn.CREF(_),_,DAE.PROP(type_ = ty),_,_)
       then (cache,SOME(DAE.EXTARGEXP(inExp, ty)));
 
-    case (cache,_,_,exp,DAE.PROP(type_ = _,constFlag = _),_,_)
+    case (cache,_,_,exp,DAE.PROP(),_,_)
       equation
         str = ExpressionDump.printExpStr(exp);
         Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,{str},info);
@@ -6107,7 +6107,7 @@ algorithm
 
     case (cache,_,SCode.EXTERNALDECL(output_ = NONE()),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */
 
-    case (cache,env,SCode.EXTERNALDECL(funcName = _,lang = lang,output_ = SOME(cref)),impl,pre,_)
+    case (cache,env,SCode.EXTERNALDECL(lang = lang,output_ = SOME(cref)),impl,pre,_)
       equation
         (cache,SOME((exp,prop,_))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
         (cache,SOME(extarg)) = instExtGetFargsSingle(cache,env,Absyn.CREF(cref),exp,prop,lang,info);
@@ -6135,12 +6135,12 @@ algorithm
     local
       String str;
     case (SOME("builtin"),_,_,_,_) then ();
-    case (_,_,DAE.T_ARRAY(ty = _),_,_)
+    case (_,_,DAE.T_ARRAY(),_,_)
       equation
         str = Types.unparseType(ty);
         Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,{str},info);
       then fail();
-    case (_,DAE.EXTARG(type_=_),_,DAE.C_VAR(),_) then ();
+    case (_,DAE.EXTARG(),_,DAE.C_VAR(),_) then ();
     case (_,_,_,DAE.C_VAR(),_)
       equation
         str = DAEDump.dumpExtArgStr(arg);
@@ -6219,28 +6219,28 @@ algorithm
       String pstr;
       SourceInfo info;
 
-    case (p,ClassInf.TYPE_INTEGER(path = _),v,_,_,_)
+    case (p,ClassInf.TYPE_INTEGER(),v,_,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
       then
         DAE.T_INTEGER(v, ts);
 
-    case (p,ClassInf.TYPE_REAL(path = _),v,_,_,_)
+    case (p,ClassInf.TYPE_REAL(),v,_,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
       then
         DAE.T_REAL(v, ts);
 
-    case (p,ClassInf.TYPE_STRING(path = _),v,_,_,_)
+    case (p,ClassInf.TYPE_STRING(),v,_,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
       then
         DAE.T_STRING(v, ts);
 
-    case (p,ClassInf.TYPE_BOOL(path = _),v,_,_,_)
+    case (p,ClassInf.TYPE_BOOL(),v,_,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
@@ -6248,14 +6248,14 @@ algorithm
         DAE.T_BOOL(v, ts);
 
     // BTH
-    case (p,ClassInf.TYPE_CLOCK(path = _),v,_,_,_)
+    case (p,ClassInf.TYPE_CLOCK(),v,_,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
       then
         DAE.T_CLOCK(v, ts);
 
-    case (p,ClassInf.TYPE_ENUM(path = _),_,_,_,_)
+    case (p,ClassInf.TYPE_ENUM(),_,_,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
@@ -6263,7 +6263,7 @@ algorithm
         DAE.T_ENUMERATION(NONE(), p, {}, {}, {}, ts);
 
     // Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION
-    case (p,(ClassInf.FUNCTION(path = _)),vl,_,_,cl)
+    case (p,(ClassInf.FUNCTION()),vl,_,_,cl)
       equation
         funcattr = getFunctionAttributes(cl,vl);
         functype = Types.makeFunctionType(p, vl, funcattr);
@@ -6277,7 +6277,7 @@ algorithm
         enumtype;
 
     // Array of type extending from base type, adrpo: WITH NO EQUALITY CONSTRAINT, otherwise we loose it!
-    case (p, ClassInf.TYPE(path = _), _, SOME(DAE.T_ARRAY(ty = arrayType)), NONE(), _)
+    case (_, ClassInf.TYPE(), _, SOME(DAE.T_ARRAY(ty = arrayType)), NONE(), _)
       equation
         classState = arrayTTypeToClassInfState(arrayType);
         resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass);
@@ -6285,7 +6285,7 @@ algorithm
         resType;
 
     // Array of type extending from base type, adrpo: WITH EQUALITY CONSTRAINT, build a T_SUBTYPE_BASIC
-    case (p, ClassInf.TYPE(path = _), _, SOME(DAE.T_ARRAY(ty = arrayType)), SOME(_), _)
+    case (p, ClassInf.TYPE(), _, SOME(DAE.T_ARRAY(ty = arrayType)), SOME(_), _)
       equation
         classState = arrayTTypeToClassInfState(arrayType);
         resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass);
@@ -6339,12 +6339,12 @@ algorithm
       DAE.Type t;
       ClassInf.State cs;
 
-    case (DAE.T_INTEGER(varLst = _)) then ClassInf.TYPE_INTEGER(Absyn.IDENT(""));
-    case (DAE.T_REAL(varLst = _)) then ClassInf.TYPE_REAL(Absyn.IDENT(""));
-    case (DAE.T_STRING(varLst = _)) then ClassInf.TYPE_STRING(Absyn.IDENT(""));
-    case (DAE.T_BOOL(varLst = _)) then ClassInf.TYPE_BOOL(Absyn.IDENT(""));
+    case (DAE.T_INTEGER()) then ClassInf.TYPE_INTEGER(Absyn.IDENT(""));
+    case (DAE.T_REAL()) then ClassInf.TYPE_REAL(Absyn.IDENT(""));
+    case (DAE.T_STRING()) then ClassInf.TYPE_STRING(Absyn.IDENT(""));
+    case (DAE.T_BOOL()) then ClassInf.TYPE_BOOL(Absyn.IDENT(""));
     // BTH FIXME Dont understand for what this function is good to. Just adding clock anyway
-    case (DAE.T_CLOCK(varLst = _)) then ClassInf.TYPE_CLOCK(Absyn.IDENT(""));
+    case (DAE.T_CLOCK()) then ClassInf.TYPE_CLOCK(Absyn.IDENT(""));
     case (DAE.T_ARRAY(ty = t))
       equation
         cs = arrayTTypeToClassInfState(t);
@@ -6384,28 +6384,28 @@ algorithm
       then
         tp;
 
-    case (p,ClassInf.TYPE_INTEGER(path = _),v,_,_)
+    case (p,ClassInf.TYPE_INTEGER(),v,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
       then
         DAE.T_INTEGER(v, ts);
 
-    case (p,ClassInf.TYPE_REAL(path = _),v,_,_)
+    case (p,ClassInf.TYPE_REAL(),v,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
       then
         DAE.T_REAL(v, ts);
 
-    case (p,ClassInf.TYPE_STRING(path = _),v,_,_)
+    case (p,ClassInf.TYPE_STRING(),v,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
       then
         DAE.T_STRING(v, ts);
 
-    case (p,ClassInf.TYPE_BOOL(path = _),v,_,_)
+    case (p,ClassInf.TYPE_BOOL(),v,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
@@ -6413,14 +6413,14 @@ algorithm
         DAE.T_BOOL(v, ts);
 
     // BTH
-    case (p,ClassInf.TYPE_CLOCK(path = _),v,_,_)
+    case (p,ClassInf.TYPE_CLOCK(),v,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
       then
         DAE.T_CLOCK(v, ts);
 
-    case (p,ClassInf.TYPE_ENUM(path = _),_,_,_)
+    case (p,ClassInf.TYPE_ENUM(),_,_,_)
       equation
         somep = getOptPath(p);
         ts = Types.mkTypeSource(somep);
@@ -6428,14 +6428,14 @@ algorithm
         DAE.T_ENUMERATION(NONE(), p,{},{},{}, ts);
 
     // Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION
-    case (p,(ClassInf.FUNCTION(path = _)),vl,_,cl)
+    case (p,(ClassInf.FUNCTION()),vl,_,cl)
       equation
         funcattr = getFunctionAttributes(cl,vl);
         functype = Types.makeFunctionType(p, vl, funcattr);
       then
         functype;
 
-    case (p, ClassInf.ENUMERATION(path = _), _, SOME(enumtype), _)
+    case (p, ClassInf.ENUMERATION(), _, SOME(enumtype), _)
       equation
         enumtype = Types.makeEnumerationType(p, enumtype);
       then
@@ -6660,42 +6660,11 @@ algorithm
     // handle empty case
     case (cache, _, _, _, {}, _, eEq, nEq) then (cache, listReverse(eEq), listReverse(nEq));
 
-    /*/ connect, expandable non existing, expandable, put it in front and at the end!
-    case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
-      equation
-        (cache,NONE()) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
-        crefLeft = Absyn.crefStripLast(crefLeft);
-        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
-        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
-
-        // type of left var is an expandable connector!
-        true = InstSection.isExpandableConnectorType(ty1);
-        // type of right left var is an expandable connector!
-        true = InstSection.isExpandableConnectorType(ty2);
-        (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, env, inIH, inPre, rest, impl, eq::eEq, listAppend(nEq, {eq}));
-      then
-        (cache, eEq, nEq);
-
-    // connect, expandable, expandable non existing, put it in front and at the end!
-    case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
-      equation
-        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
-        (cache,NONE()) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
-        crefRight = Absyn.crefStripLast(crefRight);
-        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
-        // type of left var is an expandable connector!
-        true = InstSection.isExpandableConnectorType(ty1);
-        // type of right left var is an expandable connector!
-        true = InstSection.isExpandableConnectorType(ty2);
-        (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, env, inIH, inPre, rest, impl, eq::eEq, listAppend(nEq, {eq}));
-      then
-        (cache, eEq, nEq);*/
-
     // connect, both expandable
     case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
       equation
-        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
-        (cache,SOME((DAE.CREF(componentRef=_),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
+        (cache,SOME((DAE.CREF(),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
+        (cache,SOME((DAE.CREF(),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
 
         // type of left var is an expandable connector!
         true = InstSection.isExpandableConnectorType(ty1);
@@ -6821,7 +6790,7 @@ algorithm
     case ({}) then ({},{},{});
 
     // inner components
-    case ( ( comp as (SCode.COMPONENT(name=_,prefixes=SCode.PREFIXES(innerOuter = io)), _) ) :: rest)
+    case ( ( comp as (SCode.COMPONENT(prefixes=SCode.PREFIXES(innerOuter = io)), _) ) :: rest)
       equation
         true = Absyn.isInner(io);
         false = Absyn.isOuter(io);
@@ -6830,7 +6799,7 @@ algorithm
         (comp::innerComps,innerouterComps,otherComps);
 
     // inner outer components
-    case ( ( comp as (SCode.COMPONENT(name=_,prefixes=SCode.PREFIXES(innerOuter = io)), _) ) :: rest)
+    case ( ( comp as (SCode.COMPONENT(prefixes=SCode.PREFIXES(innerOuter = io)), _) ) :: rest)
       equation
         true = Absyn.isInner(io);
         true = Absyn.isOuter(io);
@@ -6897,42 +6866,42 @@ algorithm
     case ({}) then ({},{},{},{});
 
     // class definitions with class extends
-    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::xs)
+    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::xs)
       equation
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
         (cdefImpElts,cdef :: classextendsElts,extElts,comps);
 
     // class definitions without class extends
-    case (((cdef as SCode.CLASS(name = _)) :: xs))
+    case (((cdef as SCode.CLASS()) :: xs))
       equation
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
         (cdef :: cdefImpElts,classextendsElts,extElts,comps);
 
     // imports
-    case (((imp as SCode.IMPORT(imp = _)) :: xs))
+    case (((imp as SCode.IMPORT()) :: xs))
       equation
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
         (imp :: cdefImpElts,classextendsElts,extElts,comps);
 
     // units
-    case (((imp as SCode.DEFINEUNIT(name = _)) :: xs))
+    case (((imp as SCode.DEFINEUNIT()) :: xs))
       equation
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
         (imp :: cdefImpElts,classextendsElts,extElts,comps);
 
     // extends elements
-    case((ext as SCode.EXTENDS(baseClassPath =_))::xs)
+    case((ext as SCode.EXTENDS())::xs)
       equation
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
         (cdefImpElts,classextendsElts,ext::extElts,comps);
 
     // components
-    case ((comp as SCode.COMPONENT(name=_)) :: xs)
+    case ((comp as SCode.COMPONENT()) :: xs)
       equation
         (cdefImpElts,classextendsElts,extElts,comps) = splitElts(xs);
       then
@@ -6961,28 +6930,28 @@ algorithm
     case ({}) then ({},{},{},{});
 
     // class definitions with class extends
-    case ((elt as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::xs)
+    case ((elt as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::xs)
       equation
         (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
       then
         (impElts,defElts,elt::classextendsElts,filtered);
 
     // class definitions without class extends
-    case (((elt as SCode.CLASS(name = _)) :: xs))
+    case (((elt as SCode.CLASS()) :: xs))
       equation
         (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
       then
         (impElts,elt::defElts,classextendsElts,elt::filtered);
 
     // imports
-    case (((elt as SCode.IMPORT(imp = _)) :: xs))
+    case (((elt as SCode.IMPORT()) :: xs))
       equation
         (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
       then
         (elt::impElts,defElts,classextendsElts,filtered);
 
     // units
-    case (((elt as SCode.DEFINEUNIT(name = _)) :: xs))
+    case (((elt as SCode.DEFINEUNIT()) :: xs))
       equation
         (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
       then
@@ -7023,42 +6992,42 @@ algorithm
     case ({}) then ({},{},{},{},{});
 
     // class definitions with class extends
-    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::xs)
+    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::xs)
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
         (cdefImpElts,cdef :: classextendsElts,extElts,innerComps,otherComps);
 
     // class definitions without class extends
-    case (((cdef as SCode.CLASS(name = _)) :: xs))
+    case (((cdef as SCode.CLASS()) :: xs))
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
         (cdef :: cdefImpElts,classextendsElts,extElts,innerComps,otherComps);
 
     // imports
-    case (((imp as SCode.IMPORT(imp = _)) :: xs))
+    case (((imp as SCode.IMPORT()) :: xs))
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
         (imp :: cdefImpElts,classextendsElts,extElts,innerComps,otherComps);
 
     // units
-    case (((imp as SCode.DEFINEUNIT(name = _)) :: xs))
+    case (((imp as SCode.DEFINEUNIT()) :: xs))
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
         (imp :: cdefImpElts,classextendsElts,extElts,innerComps,otherComps);
 
     // extends elements
-    case((ext as SCode.EXTENDS(baseClassPath =_))::xs)
+    case((ext as SCode.EXTENDS())::xs)
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
         (cdefImpElts,classextendsElts,ext::extElts,innerComps,otherComps);
 
     // inner components
-    case ((comp as SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = io))) :: xs)
+    case ((comp as SCode.COMPONENT(prefixes = SCode.PREFIXES(innerOuter = io))) :: xs)
       equation
         true = Absyn.isInner(io);
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
@@ -7066,7 +7035,7 @@ algorithm
         (cdefImpElts,classextendsElts,extElts,comp::innerComps,otherComps);
 
     // any other components
-    case ((comp as SCode.COMPONENT(name=_) ):: xs)
+    case ((comp as SCode.COMPONENT() ):: xs)
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
@@ -7087,23 +7056,23 @@ algorithm
       list<SCode.Element> compElts;
 
     // input/output come first!
-    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(direction = Absyn.INPUT())), _)
+    case (SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.INPUT())), _)
       then inComp::inCompElts;
-    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(direction = Absyn.OUTPUT())), _)
+    case (SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.OUTPUT())), _)
       then inComp::inCompElts;
     // put inner/outer in front.
-    case (SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER())), _)
+    case (SCode.COMPONENT(prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER())), _)
       then inComp::inCompElts;
-    case (SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER_OUTER())), _)
+    case (SCode.COMPONENT(prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER_OUTER())), _)
       then inComp::inCompElts;
     // put constants in front
-    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(variability = SCode.CONST())), _)
+    case (SCode.COMPONENT(attributes = SCode.ATTR(variability = SCode.CONST())), _)
       then inComp::inCompElts;
     // put parameters in front
-    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(variability = SCode.PARAM())), _)
+    case (SCode.COMPONENT(attributes = SCode.ATTR(variability = SCode.PARAM())), _)
       then inComp::inCompElts;
     // all other append to the end.
-    case (SCode.COMPONENT(name=_), _)
+    case (SCode.COMPONENT(), _)
       equation
         compElts = listAppend(inCompElts, {inComp});
       then compElts;
@@ -7124,7 +7093,7 @@ algorithm
       SCode.Element cdef;
     case ({}) then ({},{});
 
-    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::xs)
+    case ((cdef as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::xs)
       equation
         (classextendsElts,res) = splitClassExtendsElts(xs);
       then
@@ -7171,7 +7140,7 @@ algorithm
         (mo2,_) = extractCorrectClassMod2(lsm,str,{});
         // fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3 after extractCorrectClassMod2: " + Mod.printModStr(mo2) + " class name: " + str);
         // TODO: classinf below should be FQ
-        (cache, env2, ih, sele2 as SCode.CLASS(name = _) , _) =
+        (cache, env2, ih, sele2 as SCode.CLASS() , _) =
         Inst.redeclareType(cache, env, ih, mo2, sele, pre, ClassInf.MODEL(Absyn.IDENT(str)), true, DAE.NOMOD());
       then
         (cache,env2,ih,sele2);
@@ -7304,8 +7273,8 @@ algorithm
       then
         SCode.COMPONENT(name,prefixes,attr,tySpec,mod,cmt,cond,info);
 
-    case SCode.IMPORT(imp = _) then inElement;
-    case SCode.CLASS(name = _) then inElement;
+    case SCode.IMPORT() then inElement;
+    case SCode.CLASS() then inElement;
 
     case SCode.EXTENDS(p,vis,mod,ann,info)
       equation
@@ -7419,19 +7388,13 @@ algorithm
     SourceInfo info;
 
     case (_,_,_,SCode.NOMOD(),_,_,_) then SCode.NOMOD();
-    case (_,_,_,mod as SCode.REDECL(finalPrefix=_),_,_,_) then mod;  // Though redeclarations may need some processing as well
+    case (_,_,_,mod as SCode.REDECL(),_,_,_) then mod;  // Though redeclarations may need some processing as well
     case (cache,env,pre,SCode.MOD(f, SCode.NOT_EACH(),submods,tup, info),exps,expOpts,_)
       equation
         submods2 = traverseModAddDims5(cache,env,pre,submods,exps,expOpts);
         tup2 = insertSubsInTuple2(tup,exps);
       then
         SCode.MOD(f, SCode.NOT_EACH(),submods2,tup2, info);
-/*    case (SCode.MOD(f, Absyn.EACH(),submods,tup),exps,expOpts,is_top)
-      equation
-        submods2 = traverseModAddDims3(submods,exps,expOpts);
-        tup2 = insertSubsInTuple(tup,exps);
-      then
-        SCode.MOD(f, Absyn.NON_EACH(),submods2,tup2); */
   end match;
 end traverseModAddDims4;
 
@@ -7462,83 +7425,6 @@ algorithm
         SCode.NAMEMOD(n,mod2)::smods2;
   end match;
 end traverseModAddDims5;
-
-
-/*protected function traverseModAddDims2
-"Helper function  for traverseModAddDims"
-  input SCode.Mod inMod;
-  input list<Absyn.Exp> inExps;
-  input list<Option<Absyn.Exp>> inExpOpts;
-  input Boolean inIsTop;
-  output SCode.Mod outMod;
-algorithm
-  outMod := matchcontinue(inMod,inExps,inExpOpts,inIsTop)
-  local
-    SCode.Mod mod;
-    Boolean f,is_top;
-    list<SCode.SubMod> submods,submods2;
-    Option<tuple<Absyn.Exp,Boolean>> tup,tup2;
-    list<Absyn.Exp> exps;
-    list<Option<Absyn.Exp>> expOpts;
-
-    case (SCode.NOMOD(),_,_,_) then SCode.NOMOD();
-    case (mod as SCode.REDECL(finalPrefix=_),_,_,_) then mod;  // Though redeclarations may need some processing as well
-    case (SCode.MOD(f, Absyn.NON_EACH(),submods,tup),exps,expOpts,_)
-      equation
-        submods2 = traverseModAddDims3(submods,exps,expOpts);
-        tup2 = insertSubsInTuple(tup,exps);
-      then
-        SCode.MOD(f, Absyn.NON_EACH(),submods2,tup2);
-  end matchcontinue;
-end traverseModAddDims2;
-
-protected function traverseModAddDims3
-"Helper function  for traverseModAddDims2"
-  input list<SCode.SubMod> inMods;
-  input list<Absyn.Exp> inExps;
-  input list<Option<Absyn.Exp>> inExpOpts;
-  output list<SCode.SubMod> outMods;
-algorithm
-  outMods := match(inMods,inExps,inExpOpts)
-  local
-    SCode.Mod mod,mod2;
-    list<SCode.SubMod> smods,smods2;
-    Ident n;
-    case ({},_,_) then {};
-    case (SCode.NAMEMOD(n,mod)::smods,inExps,inExpOpts)
-      equation
-        mod2 = traverseModAddDims2(mod,inExps,inExpOpts,false);
-        smods2 = traverseModAddDims3(smods,inExps,inExpOpts);
-      then
-        SCode.NAMEMOD(n,mod2)::smods2;
-  end match;
-end traverseModAddDims3;
-
-protected function insertSubsInTuple
-input Option<tuple<Absyn.Exp,Boolean>> inOpt;
-input list<Absyn.Exp> inExps;
-output Option<tuple<Absyn.Exp,Boolean>> outOpt;
-algorithm
-  outOpt := matchcontinue(inOpt,inExps)
-  local
-    list<Absyn.Exp> exps;
-    Absyn.Exp e,e2;
-    Boolean b;
-    list<Absyn.Subscript> subs;
-    list<Absyn.Ident> vars;
-    tuple<Absyn.Exp,Boolean> tp;
-
-    case (NONE(),_) then NONE();
-    case (SOME(tp as (e,b)), exps)
-      equation
-        vars = generateUnusedNames(e,exps);
-        subs = stringsSubs(vars);
-        ((e2,_)) = Absyn.traverseExp(e,Absyn.crefInsertSubscripts2, subs);
-        e2 = wrapIntoFor(e2,vars,exps);
-      then
-        SOME((e2,b));
-  end matchcontinue;
-end insertSubsInTuple;*/
 
 protected function insertSubsInTuple2
 input Option<tuple<Absyn.Exp,Boolean>> inOpt;
@@ -8102,7 +7988,7 @@ public function isFunctionInput
   output Boolean functionInput;
 algorithm
   functionInput := matchcontinue(classState, direction)
-    case (ClassInf.FUNCTION(path = _), Absyn.INPUT()) then true;
+    case (ClassInf.FUNCTION(), Absyn.INPUT()) then true;
     else false;
   end matchcontinue;
 end isFunctionInput;
@@ -8222,7 +8108,7 @@ algorithm
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION())),_)
       then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), true, false, false, DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
 
-    case (SCode.CLASS(restriction=restriction,name=name),_)
+    case (SCode.CLASS(restriction=restriction),_)
       equation
         inlineType = isInlineFunc(cl);
         hasOutVars = List.exist(vl,Types.isOutputVar);
@@ -8246,16 +8132,16 @@ algorithm
       String str;
 
     // Variables have already been checked in checkFunctionVar.
-    case (DAE.VAR(componentRef = _), _, _) then ();
+    case (DAE.VAR(), _, _) then ();
 
     case (DAE.ALGORITHM(algorithm_= DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(
-        exp = DAE.METARECORDCALL(path = _))})), _, _)
+        exp = DAE.METARECORDCALL())})), _, _)
       equation
         // We need to know the inlineType to make a good notification
         // Error.addSourceMessage(true,Error.COMPILER_NOTIFICATION, {"metarecordcall"}, info);
       then ();
 
-    case (DAE.ALGORITHM(algorithm_ = _), false, _) then ();
+    case (DAE.ALGORITHM(), false, _) then ();
 
     else
       equation
@@ -8305,7 +8191,7 @@ algorithm
     case ({}) then ({},{});
 
     // components
-    case ((e as SCode.COMPONENT(name = _),m)::rest)
+    case ((e as SCode.COMPONENT(),m)::rest)
       equation
         (clsdefs, compdefs) = splitClassDefsAndComponents(rest);
       then
@@ -8415,7 +8301,7 @@ algorithm
         str = Absyn.pathString(path);
         Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},DAEUtil.getElementSourceFileInfo(source));
       then optimizeFunctionCheckForLocals(path,elts,SOME(elt1),elt2::acc,invars,outvars);
-    case (_,(elt as DAE.ALGORITHM(source=_))::elts,NONE(),_,_,_)
+    case (_,(elt as DAE.ALGORITHM())::elts,NONE(),_,_,_)
       then optimizeFunctionCheckForLocals(path,elts,SOME(elt),acc,invars,outvars);
     case (_,(elt as DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),direction=DAE.OUTPUT()))::elts,_,_,_,_)
       then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,name::outvars);
@@ -8859,9 +8745,9 @@ algorithm
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, true, (false,false,unbound));
       then ((b,b,unbound));
-    case (DAE.STMT_ASSERT(cond=DAE.BCONST(false),msg=exp2,source=source),_,(_,_,unbound)) // TODO: Re-write these earlier from assert(false,msg) to terminate(msg)
+    case (DAE.STMT_ASSERT(cond=DAE.BCONST(false),source=source),_,(_,_,_)) // TODO: Re-write these earlier from assert(false,msg) to terminate(msg)
       equation
-        info = DAEUtil.getElementSourceFileInfo(source);
+        _ = DAEUtil.getElementSourceFileInfo(source);
       then ((true,true,{}));
     case (DAE.STMT_ASSERT(cond=exp1,msg=exp2,source=source),_,(_,_,unbound))
       equation
@@ -8879,10 +8765,10 @@ algorithm
         info = DAEUtil.getElementSourceFileInfo(source);
         (_,(unbound,_)) = Expression.traverseExpTopDown(exp,findUnboundVariableUse,(unbound,info));
       then ((false,false,unbound));
-    case (DAE.STMT_BREAK(source=_),_,(_,_,unbound)) then ((true,false,unbound));
-    case (DAE.STMT_RETURN(source=_),_,(_,_,unbound)) then ((true,true,unbound));
-    case (DAE.STMT_CONTINUE(source=_),_,(_,_,unbound)) then ((false,false,unbound));
-    case (DAE.STMT_ARRAY_INIT(name=_),_,_) then inUnbound;
+    case (DAE.STMT_BREAK(),_,(_,_,unbound)) then ((true,false,unbound));
+    case (DAE.STMT_RETURN(),_,(_,_,unbound)) then ((true,true,unbound));
+    case (DAE.STMT_CONTINUE(),_,(_,_,unbound)) then ((false,false,unbound));
+    case (DAE.STMT_ARRAY_INIT(),_,_) then inUnbound;
     case (DAE.STMT_FAILURE(body=stmts),_,(_,_,unbound))
       equation
         ((_,b,unbound)) = List.fold1(stmts, checkFunctionDefUseStmt, inLoop, (false,false,unbound));
@@ -9031,7 +8917,7 @@ algorithm
       list<DAE.Element> localDecls;
       list<DAE.MatchCase> cases;
       list<list<String>> unbounds;
-    case (exp as DAE.SIZE(exp=_),arg) then (exp,false,arg);
+    case (exp as DAE.SIZE(),arg) then (exp,false,arg);
     case (exp as DAE.CREF(componentRef=cr),(unbound,info))
       equation
         b = listMember(ComponentReference.crefFirstIdent(cr),unbound);

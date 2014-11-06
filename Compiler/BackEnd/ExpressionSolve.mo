@@ -116,7 +116,7 @@ algorithm
         (res,asserts);
 
     // solving linear equation system using newton iteration ( converges directly )
-    case (_,_,DAE.CREF(componentRef = _),_)
+    case (_,_,DAE.CREF(),_)
       equation
         (res,asserts) = solve2(inExp1, inExp2, inExp3, linearExps);
         (res,_) = ExpressionSimplify.simplify1(res);
@@ -250,14 +250,13 @@ algorithm
        equation
          true = Expression.expHasCref(e1, cr);
          false = Expression.expHasCref(inExp2, cr);
-         tp = DAE.T_REAL_DEFAULT;
          res = DAE.RCONST(2.0);
          //e2 = DAE.BINARY(inExp2,DAE.POW(tp),res);
          e2 = Expression.expPow(inExp2,res);
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
     // semiLinear(0, a, b) = 0 => a = b // rule 1
-    case (DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {DAE.RCONST(real = 0.0), e1, e2}),DAE.RCONST(real = 0.0),DAE.CREF(componentRef = cr))
+    case (DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {DAE.RCONST(real = 0.0), e1, e2}),DAE.RCONST(real = 0.0),DAE.CREF())
        equation
          (res, asserts) = solve(e1,e2,inExp3);
        then (res, asserts);
@@ -299,28 +298,28 @@ algorithm
          (res,asserts);
 
     // -cr = exp
-    case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
+    case (DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
         false = Expression.expHasCrefNoPreorDer(inExp2,cr);
       then
         (Expression.negate(inExp2),{});
-    case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
+    case (DAE.UNARY(operator = DAE.UMINUS_ARR(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
         false = Expression.expHasCrefNoPreorDer(inExp2,cr);
       then
         (Expression.negate(inExp2),{});
-    case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
+    case (DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
         false = Expression.expHasDerCref(inExp2,cr);
       then
         (Expression.negate(inExp2),{});
-    case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
+    case (DAE.UNARY(operator = DAE.UMINUS_ARR(), exp = DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)})),_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
@@ -329,7 +328,7 @@ algorithm
         (Expression.negate(inExp2),{});
 
     // !cr = exp
-    case (DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
+    case (DAE.LUNARY(operator = DAE.NOT(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
@@ -576,7 +575,7 @@ algorithm
       then(res, asserts);
 
     // 0 = a*(b-c)  solve for b
-    case (_,_,DAE.CREF(componentRef = _),_)
+    case (_,_,DAE.CREF(),_)
       equation
         true = Expression.isZero(inExp1);
         (e,a) = solve3(inExp2,inExp3);

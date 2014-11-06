@@ -555,7 +555,7 @@ algorithm
     local
       list<Absyn.ElementItem> elts;
 
-    case Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_=_))) :: _ then true;
+    case Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF())) :: _ then true;
     case _ :: elts then eltsHasLocalClass(elts);
     else then false;
   end matchcontinue;
@@ -754,7 +754,7 @@ algorithm
           (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,io,Absyn.CLASSDEF(repl,cl),info,constr))::elts_1),pa_2,args_2));
 
    /* Visitor failed in elementspec, remove class */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = _,constrainClass = _)) :: elts),pa,visitor,args,visit_prot)
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT()) :: elts),pa,visitor,args,visit_prot)
       equation
         ((elts_1,pa_2,args_2)) = traverseInnerClassElements(elts, pa, visitor, args, visit_prot);
       then
@@ -801,9 +801,9 @@ algorithm
       then
         ((Absyn.CLASSDEF(repl,class_2),pa_2,args_2));
 
-    case (elt_spec as Absyn.EXTENDS(path=_),pa,_,args,_) then ((elt_spec,pa,args));
-    case (elt_spec as Absyn.IMPORT(import_=_),pa,_,args,_) then ((elt_spec,pa,args));
-    case (elt_spec as Absyn.COMPONENTS(attributes=_),pa,_,args,_) then ((elt_spec,pa,args));
+    case (elt_spec as Absyn.EXTENDS(),pa,_,args,_) then ((elt_spec,pa,args));
+    case (elt_spec as Absyn.IMPORT(),pa,_,args,_) then ((elt_spec,pa,args));
+    case (elt_spec as Absyn.COMPONENTS(),pa,_,args,_) then ((elt_spec,pa,args));
   end match;
 end traverseInnerClassElementspec;
 

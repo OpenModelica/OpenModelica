@@ -181,7 +181,7 @@ algorithm
         // strongComponent is a linear tornSystem
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
-        BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear, jac = jac) = comp;
+        BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
         true = intLe(listLength(tvarIdcs),2);
         //print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
@@ -215,7 +215,7 @@ algorithm
 
         // get the otherComps and and update the matching for the othercomps
         matchingOther = getOtherComps(otherEqnVarTpl,ass1All,ass2All);
-        BackendDAE.MATCHING(ass1=_, ass2=_, comps=otherComps) = matchingOther;
+        BackendDAE.MATCHING(comps=otherComps) = matchingOther;
 
         // insert the new components into the BLT instead of the TornSystem, append the updated blocks for the other equations, update matching for the new equations
         numNewSingleEqs = listLength(compsNew)-listLength(tvarIdcs);
@@ -531,7 +531,7 @@ author:Waurich TUD 2014-11"
   output list<Integer> unassEqs;
   output list<Integer> unassVars;
 algorithm
-  (compsOut,unassEqs,unassVars) := matchcontinue(eqIdcs,varIdcs,m,mT,onlySccsLeft,compsIn)
+  (compsOut,unassEqs,unassVars) := match(eqIdcs,varIdcs,m,mT,onlySccsLeft,compsIn)
     local
       Boolean nothingMatched;
       list<Integer> noSccEqs,sccEqs,assVars;
@@ -554,7 +554,7 @@ algorithm
       equation
         assVars = List.unique(List.flatten(List.map1(matchThese,Array.getIndexFirst,m)));
       then (compsIn,listReverse(matchThese),listReverse(assVars));
-  end matchcontinue;
+  end match;
 end buildEqSystemComponent2;
 
 protected function updateIncidence"updates m and deletes the eq-rows and the ass var entries"
@@ -1302,7 +1302,7 @@ algorithm
     equation
       true = iValue > 0;
       str1 = "$xa"+intString(tornSysIdx)+intString(iValue);
-      str2 = "$g"+intString(tornSysIdx)+intString(iValue);
+      _ = "$g"+intString(tornSysIdx)+intString(iValue);
       tVarCRef = listGet(tVarCRefLstIn,iValue);
       tVarCRefLst1 = listDelete(tVarCRefLstIn,iValue);
       replTmp = BackendVarTransform.emptyReplacementsSized(size);
@@ -1508,7 +1508,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,mT;
       list<BackendDAE.Equation> compEqLst;
       list<BackendDAE.Var> compVarLst;
-  case((comp as BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,vars=varIdcs)),_,_,_)
+  case((BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,vars=varIdcs)),_,_,_)
     equation
       compEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
       compVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
@@ -1517,13 +1517,13 @@ algorithm
 
       numEqs = listLength(compEqLst);
       numVars = listLength(compVarLst);
-      (m,mT) = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs, BackendDAE.ABSOLUTE());
+      (m,_) = BackendDAEUtil.incidenceMatrixDispatch(compVars,compEqs, BackendDAE.ABSOLUTE());
 
       varAtts = List.threadMap(List.fill(false,numVars),List.fill("",numVars),Util.makeTuple);
       eqAtts = List.threadMap(List.fill(false,numEqs),List.fill("",numEqs),Util.makeTuple);
       dumpEquationSystemBipartiteGraph2(compVars,compEqs,m,varAtts,eqAtts,"rL_eqSys_"+graphName);
     then ();
-  case((comp as BackendDAE.TORNSYSTEM(residualequations=rEqIdcs,tearingvars=tVarIdcs,otherEqnVarTpl=otherEqnVarTplIdcs)),_,_,_)
+  case((BackendDAE.TORNSYSTEM(residualequations=rEqIdcs,tearingvars=tVarIdcs,otherEqnVarTpl=otherEqnVarTplIdcs)),_,_,_)
     equation
       //gather equations ans variables
       eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
@@ -1794,7 +1794,7 @@ algorithm
       array<Integer> nodeMark;
     case (_,_,_,_,_) equation
       true = false;
-      BackendDAE.DAE(eqs=eqSysts, shared=shared) = inDAE;
+      BackendDAE.DAE(eqs=eqSysts) = inDAE;
       (_,taskLst) = pts_traverseEqSystems(eqSysts,sccSimEqMapping,simVarMapping,1,{});
       // calculate the node idcs for the dae-task-gaph
       daeNodes = List.map(taskLst,getScheduledTaskCompIdx);
@@ -1887,7 +1887,7 @@ algorithm
   case({},_,_,_,_,_,_)
     equation
     then (compIdxIn,taskLstIn);
-  case((comp as BackendDAE.TORNSYSTEM(residualequations=resEqs,tearingvars=tVars,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_,_,_,_)
+  case((comp as BackendDAE.TORNSYSTEM(residualequations=resEqs,otherEqnVarTpl=otherEqnVarTplIdcs))::rest,_,_,_,_,_,_)
     equation
       eqIdcs = List.map(otherEqnVarTplIdcs,Util.tuple21);
       varIdcsLsts = List.map(otherEqnVarTplIdcs,Util.tuple22);
@@ -1941,7 +1941,7 @@ algorithm
       //HpcOmScheduler.printTask(task);
       (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,simVarMapping,compIdxIn+1,task::taskLstIn);
     then (compIdx,taskLst);
-  case(comp::rest,_,_,_,_,_,_)
+  case(_::rest,_,_,_,_,_,_)
     equation
       (compIdx,taskLst) = pts_traverseCompsAndParallelize(rest,eqsIn,varsIn,sccSimEqMapping,simVarMapping,compIdxIn+1,taskLstIn);
     then (compIdx,taskLst);
@@ -1966,7 +1966,7 @@ algorithm
       array<list<HpcOmSimCode.Task>> threadTasks;
       list<list<HpcOmSimCode.Task>> threadTasksLst;
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
-    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=levelTasks),_,_)
+    case(HpcOmSimCode.LEVELSCHEDULE(),_,_)
       equation
         print("levelScheduling is not supported for heterogenious scheduling\n");
       then

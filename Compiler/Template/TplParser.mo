@@ -329,7 +329,7 @@ algorithm
     case (LINE_INFO( parseInfo = PARSE_INFO(fileName = fname, errors = errLst, wasFatalError = wasFatalError),
                                      lineNumber = lnum, lineLength = llen, startOfLineChars = solchars
                            ),
-          LINE_INFO(parseInfo = PARSE_INFO(errors = errLstToAdd, wasFatalError = _ ) ))
+          LINE_INFO(parseInfo = PARSE_INFO(errors = errLstToAdd ) ))
       equation
         errLst = listAppend(errLstToAdd, errLst); //error lists are in reversed order
         //let the fatal error state from the first, leading file, only add errors from the other file
@@ -726,7 +726,7 @@ algorithm
       TplAbsyn.Ident id;
       TplAbsyn.TypeSignature litType;
       TplAbsyn.TypedIdents iargs, oargs;
-    case ( (id, TplAbsyn.STR_TOKEN_DEF(value=_)) )
+    case ( (id, TplAbsyn.STR_TOKEN_DEF()) )
       then ( (id, TplAbsyn.TI_CONST_TYPE(TplAbsyn.STRING_TOKEN_TYPE())) );
 
     case ( (id, TplAbsyn.LITERAL_DEF(litType = litType)) )

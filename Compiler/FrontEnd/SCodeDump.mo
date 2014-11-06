@@ -166,7 +166,7 @@ algorithm
     case SCode.R_TYPE() then "type";
     case SCode.R_PACKAGE() then "package";
     case SCode.R_ENUMERATION() then "enumeration";
-    case SCode.R_METARECORD(index=_) then "metarecord";
+    case SCode.R_METARECORD() then "metarecord";
     case SCode.R_UNIONTYPE() then "uniontype";
     // predefined types
     case SCode.R_PREDEFINED_INTEGER() then "Integer";
@@ -222,14 +222,14 @@ algorithm
       then
         res;
 
-    case SCode.COMPONENT(name = _)
+    case SCode.COMPONENT()
       equation
         res = unparseElementStr(inElement,defaultOptions);
       then
         res;
 
-    case SCode.CLASS(name = _, partialPrefix = _, prefixes = SCode.PREFIXES(innerOuter = _, redeclarePrefix = _, replaceablePrefix = _),
-                     classDef = SCode.DERIVED(typeSpec = _))
+    case SCode.CLASS(prefixes = SCode.PREFIXES(),
+                     classDef = SCode.DERIVED())
       equation
         res = unparseElementStr(inElement,defaultOptions);
       then
@@ -244,7 +244,7 @@ algorithm
         res;
 
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp),
-                     classDef = SCode.ENUMERATION(enumLst = _))
+                     classDef = SCode.ENUMERATION())
       equation
         ioStr = Dump.unparseInnerouterStr(io) + redeclareStr(rdp) + replaceablePrefixStr(rpp) + partialStr(pp);
         res = stringAppendList({ioStr, "class ",n," enumeration;"});
@@ -503,7 +503,7 @@ algorithm
     case (SCode.IMPORT(visibility=SCode.PROTECTED()),OPTIONS(stripProtectedImports=true)) then false;
     case (SCode.CLASS(prefixes=SCode.PREFIXES(visibility=SCode.PROTECTED())),OPTIONS(stripProtectedClasses=true)) then false;
     case (SCode.COMPONENT(prefixes=SCode.PREFIXES(visibility=SCode.PROTECTED())),OPTIONS(stripProtectedComponents=true)) then false;
-    case (SCode.CLASS(restriction=SCode.R_METARECORD(index=_)),OPTIONS(stripMetaRecords=true)) then false;
+    case (SCode.CLASS(restriction=SCode.R_METARECORD()),OPTIONS(stripMetaRecords=true)) then false;
     else true;
   end match;
 end filterElement;

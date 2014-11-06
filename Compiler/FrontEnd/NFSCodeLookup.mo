@@ -518,7 +518,7 @@ algorithm
 
     // Look in the next scope only if the current scope is an implicit scope
     // (for example a for or match/matchcontinue scope).
-    case (_, NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE(iterIndex=_)) :: rest_env, _)
+    case (_, NFSCodeEnv.FRAME(frameType = NFSCodeEnv.IMPLICIT_SCOPE()) :: rest_env, _)
       equation
         (opt_item, opt_path, opt_env) =
           lookupInLocalScope(inName, rest_env, inVisitedScopes);
@@ -948,7 +948,7 @@ algorithm
         (item, cref);
 
     // Qualified identifier, what we get back is fully qualified, i.e. from import!
-    case (Absyn.CREF_QUAL(name = name, subscripts = _,
+    case (Absyn.CREF_QUAL(name = name,
         componentRef = cref_rest), _)
       equation
         // Look in the local scope.
@@ -1106,7 +1106,7 @@ algorithm
       list<Item> items;
       list<Absyn.Path> bcl;
 
-    case (NFSCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = _,
+    case (NFSCodeEnv.EXTENDS(baseClass = bc,
         info = info), _, _, _)
       equation
         // Look up the base class.
@@ -1220,12 +1220,12 @@ algorithm
       SCode.Replaceable rpp;
 
     // Replaceable element which is not a redeclaration => return the element.
-    case (_, SCode.NOT_REDECLARE(), SCode.REPLACEABLE(cc = _), _, _)
+    case (_, SCode.NOT_REDECLARE(), SCode.REPLACEABLE(), _, _)
       then (inItem, inEnv);
 
     // Replaceable element which is a redeclaration => continue.
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = name)),
-        SCode.REDECLARE(), SCode.REPLACEABLE(cc = _), _, _)
+        SCode.REDECLARE(), SCode.REPLACEABLE(), _, _)
       equation
         (SOME(item), _, SOME(env)) = lookupInBaseClasses(name, inEnv,
           IGNORE_REDECLARES(), {});
@@ -1410,7 +1410,7 @@ algorithm
       Absyn.Path path;
 
     // The second path is fully qualified, return only that path.
-    case (_, Absyn.FULLYQUALIFIED(path = _)) then inPath2;
+    case (_, Absyn.FULLYQUALIFIED()) then inPath2;
 
     // Neither of the paths are fully qualified, just join them.
     case (Absyn.IDENT(name = id), _) then Absyn.QUALIFIED(id, inPath2);
@@ -1622,7 +1622,7 @@ algorithm
         cref;
 
     // adrpo: leave it as stripped as you can if you can't match it above!
-    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = _),
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}),
           Absyn.IDENT(name = id2))
       equation
         false = stringEqual(id1, id2);
@@ -1646,7 +1646,7 @@ algorithm
 
     // Special case for StateSelect, do nothing.
     case (Absyn.CREF_QUAL(name = "StateSelect", subscripts = {},
-        componentRef = Absyn.CREF_IDENT(name = _)), _, _)
+        componentRef = Absyn.CREF_IDENT()), _, _)
       then inCref;
 
     // Wildcard.
@@ -1740,7 +1740,7 @@ public function joinCrefs
   output Absyn.ComponentRef outCref;
 algorithm
   outCref := match(inCref1, inCref2)
-    case (_, Absyn.CREF_FULLYQUALIFIED(componentRef = _)) then inCref2;
+    case (_, Absyn.CREF_FULLYQUALIFIED()) then inCref2;
     else Absyn.joinCrefs(inCref1, inCref2);
   end match;
 end joinCrefs;

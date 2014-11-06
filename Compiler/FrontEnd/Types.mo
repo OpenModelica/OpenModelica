@@ -86,12 +86,12 @@ public function discreteType "Succeeds for all the discrete types, Integer, Stri
 algorithm
   _ := match (inType)
     local Type ty;
-    case (DAE.T_INTEGER(varLst = _)) then ();
-    case (DAE.T_STRING(varLst = _)) then ();
-    case (DAE.T_BOOL(varLst = _)) then ();
+    case (DAE.T_INTEGER()) then ();
+    case (DAE.T_STRING()) then ();
+    case (DAE.T_BOOL()) then ();
     // BTH
-    case (DAE.T_CLOCK(varLst = _)) then ();
-    case (DAE.T_ENUMERATION(names = _)) then ();
+    case (DAE.T_CLOCK()) then ();
+    case (DAE.T_ENUMERATION()) then ();
     case (DAE.T_SUBTYPE_BASIC(complexType = ty))
       equation
         discreteType(ty);
@@ -127,7 +127,7 @@ public function makePropsNotConst
 algorithm outProperties := match (inProperties)
   local
     Type t;
-  case(DAE.PROP(type_=t,constFlag=_)) then DAE.PROP(t,DAE.C_VAR());
+  case(DAE.PROP(type_=t)) then DAE.PROP(t,DAE.C_VAR());
   end match;
 end makePropsNotConst;
 
@@ -144,12 +144,12 @@ algorithm
       list<DAE.Properties> pcdr;
       TupleConst tc;
     case({}) then {};
-    case(DAE.PROP(type_=_,constFlag=c) :: pcdr)
+    case(DAE.PROP(constFlag=c) :: pcdr)
       equation
         ccdr = getConstList(pcdr);
       then
         c :: ccdr;
-    case(DAE.PROP_TUPLE(type_=_,tupleConst=tc) :: pcdr)
+    case(DAE.PROP_TUPLE(tupleConst=tc) :: pcdr)
       equation
         c = propertiesListToConst2(tc);
         ccdr = getConstList(pcdr);
@@ -289,13 +289,13 @@ public function isSimpleType
 algorithm
   b := match (inType)
     local DAE.Type t;
-    case (DAE.T_REAL(varLst = _)) then true;
-    case (DAE.T_INTEGER(varLst = _)) then true;
-    case (DAE.T_STRING(varLst = _)) then true;
-    case (DAE.T_BOOL(varLst = _)) then true;
+    case (DAE.T_REAL()) then true;
+    case (DAE.T_INTEGER()) then true;
+    case (DAE.T_STRING()) then true;
+    case (DAE.T_BOOL()) then true;
     // BTH
-    case (DAE.T_CLOCK(varLst = _)) then true;
-    case (DAE.T_ENUMERATION(path = _)) then true;
+    case (DAE.T_CLOCK()) then true;
+    case (DAE.T_ENUMERATION()) then true;
     case (DAE.T_SUBTYPE_BASIC(complexType = t)) then isSimpleType(t);
     else false;
   end match;
@@ -308,8 +308,8 @@ public function isSimpleNumericType
 algorithm
   b := match (inType)
     local DAE.Type t;
-    case (DAE.T_REAL(varLst = _)) then true;
-    case (DAE.T_INTEGER(varLst = _)) then true;
+    case (DAE.T_REAL()) then true;
+    case (DAE.T_INTEGER()) then true;
     case (DAE.T_SUBTYPE_BASIC(complexType = t)) then isSimpleNumericType(t);
     else false;
   end match;
@@ -335,8 +335,8 @@ public function isConnector
   output Boolean outIsConnector;
 algorithm
   outIsConnector := match(inType)
-    case DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path = _)) then true;
-    case DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(path = _)) then true;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR()) then true;
+    case DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR()) then true;
     else false;
   end match;
 end isConnector;
@@ -348,7 +348,7 @@ public function isComplexConnector
   output Boolean outIsComplexConnector;
 algorithm
   outIsComplexConnector := match(inType)
-    case DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path = _)) then true;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR()) then true;
     else false;
   end match;
 end isComplexConnector;
@@ -490,7 +490,7 @@ public function isMetaTuple "Returns true if type is TUPLE"
   output Boolean b;
 algorithm
   b := match(tp)
-    case (DAE.T_METATUPLE(types = _)) then true;
+    case (DAE.T_METATUPLE()) then true;
     else false;
   end match;
 end isMetaTuple;
@@ -579,7 +579,7 @@ algorithm
     local
       Type ty;
 
-    case DAE.T_REAL(varLst = _) then true;
+    case DAE.T_REAL() then true;
     case DAE.T_SUBTYPE_BASIC(complexType = ty) then isScalarReal(ty);
     else false;
   end match;
@@ -704,7 +704,7 @@ algorithm
     local
       Type ty;
 
-    case DAE.T_INTEGER(varLst = _) then true;
+    case DAE.T_INTEGER() then true;
     case DAE.T_SUBTYPE_BASIC(complexType = ty) then isScalarInteger(ty);
     else false;
   end match;
@@ -725,7 +725,7 @@ algorithm
     local
       Type ty;
 
-    case DAE.T_BOOL(varLst = _) then true;
+    case DAE.T_BOOL() then true;
     case DAE.T_SUBTYPE_BASIC(complexType = ty) then isScalarBoolean(ty);
     else false;
   end match;
@@ -738,8 +738,8 @@ public function integerOrReal "author: PA
 algorithm
   _ := match (inType)
     local Type tp;
-    case (DAE.T_REAL(varLst = _)) then ();
-    case (DAE.T_INTEGER(varLst = _)) then ();
+    case (DAE.T_REAL()) then ();
+    case (DAE.T_INTEGER()) then ();
     case (DAE.T_SUBTYPE_BASIC(complexType = tp))
       equation
         integerOrReal(tp);
@@ -760,7 +760,7 @@ algorithm
     // several (at least 2) dimensions means array!
     case (_, _::_::_) then true;
     // if the type is an array, then is an array
-    case (DAE.T_ARRAY(ty = _),_) then true;
+    case (DAE.T_ARRAY(),_) then true;
     // if is a type extending basic type
     case (DAE.T_SUBTYPE_BASIC(complexType = t),_) then isArray(t, {});
     case (DAE.T_TUPLE(types = tys), _)
@@ -865,13 +865,13 @@ algorithm
       then
         true;
 
-    case (DAE.T_ARRAY(dims = {}, ty = tp, source = _))
+    case (DAE.T_ARRAY(dims = {}, ty = tp))
       equation
         true = dimensionsKnown(tp);
       then
         true;
 
-    case (DAE.T_ARRAY(dims = _))
+    case (DAE.T_ARRAY())
       then false;
 
     case (DAE.T_SUBTYPE_BASIC(complexType = tp))
@@ -1077,10 +1077,10 @@ algorithm
 
     case Values.EMPTY(ty = valType) then typeOfValue(valType);
 
-    case (Values.INTEGER(integer = _)) then (DAE.T_INTEGER_DEFAULT);
-    case (Values.REAL(real = _)) then (DAE.T_REAL_DEFAULT);
-    case (Values.STRING(string = _)) then (DAE.T_STRING_DEFAULT);
-    case (Values.BOOL(boolean = _)) then (DAE.T_BOOL_DEFAULT);
+    case (Values.INTEGER()) then (DAE.T_INTEGER_DEFAULT);
+    case (Values.REAL()) then (DAE.T_REAL_DEFAULT);
+    case (Values.STRING()) then (DAE.T_STRING_DEFAULT);
+    case (Values.BOOL()) then (DAE.T_BOOL_DEFAULT);
     case (Values.ENUM_LITERAL(name = path, index = index))
       equation
         path = Absyn.pathPrefix(path);
@@ -1155,13 +1155,13 @@ algorithm
 
     case Values.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
 
-    case Values.CODE(A=Absyn.C_TYPENAME(path=_))
+    case Values.CODE(A=Absyn.C_TYPENAME())
       then DAE.T_CODE(DAE.C_TYPENAME(), {});
 
-    case Values.CODE(A=Absyn.C_VARIABLENAME(componentRef=_))
+    case Values.CODE(A=Absyn.C_VARIABLENAME())
       then DAE.T_CODE(DAE.C_VARIABLENAME(), {});
 
-    case Values.CODE(A=Absyn.C_EXPRESSION(exp=_))
+    case Values.CODE(A=Absyn.C_EXPRESSION())
       then DAE.T_CODE(DAE.C_EXPRESSION(), {});
 
     case (v)
@@ -1178,13 +1178,13 @@ public function basicType "Test whether a type is one of the builtin types."
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inType)
-    case (DAE.T_INTEGER(source = _)) then true;
-    case (DAE.T_REAL(source = _)) then true;
-    case (DAE.T_STRING(source = _)) then true;
-    case (DAE.T_BOOL(source = _)) then true;
+    case (DAE.T_INTEGER()) then true;
+    case (DAE.T_REAL()) then true;
+    case (DAE.T_STRING()) then true;
+    case (DAE.T_BOOL()) then true;
     // BTH
-    case (DAE.T_CLOCK(source = _)) then true;
-    case (DAE.T_ENUMERATION(source = _)) then true;
+    case (DAE.T_CLOCK()) then true;
+    case (DAE.T_ENUMERATION()) then true;
     else false;
   end match;
 end basicType;
@@ -1194,7 +1194,7 @@ public function extendsBasicType "Test whether a type extends one of the builtin
   output Boolean outBoolean;
 algorithm
   outBoolean := match(inType)
-    case DAE.T_SUBTYPE_BASIC(complexType = _) then true;
+    case DAE.T_SUBTYPE_BASIC() then true;
     else false;
   end match;
 end extendsBasicType;
@@ -1218,7 +1218,7 @@ public function arrayType "Test whether a type is an array type."
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inType)
-    case (DAE.T_ARRAY(dims = _)) then true;
+    case (DAE.T_ARRAY()) then true;
     else false;
   end matchcontinue;
 end arrayType;
@@ -1392,17 +1392,17 @@ algorithm
       DAE.Exp e1,e2;
       DAE.TypeSource ts;
 
-    case (DAE.T_ANYTYPE(anyClassType = _),_,_) then true;
-    case (_,DAE.T_ANYTYPE(anyClassType = _),_) then true;
-    case (DAE.T_INTEGER(varLst = _),DAE.T_INTEGER(varLst = _),_) then true;
-    case (DAE.T_REAL(varLst = _),DAE.T_REAL(varLst = _),_) then true;
-    case (DAE.T_STRING(varLst = _),DAE.T_STRING(varLst = _),_) then true;
-    case (DAE.T_BOOL(varLst = _),DAE.T_BOOL(varLst = _),_) then true;
+    case (DAE.T_ANYTYPE(),_,_) then true;
+    case (_,DAE.T_ANYTYPE(),_) then true;
+    case (DAE.T_INTEGER(),DAE.T_INTEGER(),_) then true;
+    case (DAE.T_REAL(),DAE.T_REAL(),_) then true;
+    case (DAE.T_STRING(),DAE.T_STRING(),_) then true;
+    case (DAE.T_BOOL(),DAE.T_BOOL(),_) then true;
     // BTH
-    case (DAE.T_CLOCK(varLst = _),DAE.T_CLOCK(varLst = _),_) then true;
+    case (DAE.T_CLOCK(),DAE.T_CLOCK(),_) then true;
 
-    case (DAE.T_ENUMERATION(names = {}),DAE.T_ENUMERATION(names = _),_) then true;
-    case (DAE.T_ENUMERATION(names = _),DAE.T_ENUMERATION(names = {}),_) then true;
+    case (DAE.T_ENUMERATION(names = {}),DAE.T_ENUMERATION(),_) then true;
+    case (DAE.T_ENUMERATION(),DAE.T_ENUMERATION(names = {}),_) then true;
 
     case (DAE.T_ENUMERATION(names = names1),
           DAE.T_ENUMERATION(names = names2),_)
@@ -1450,8 +1450,8 @@ algorithm
       then
         true;
 
-    case (DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t1),
-          DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t2), _)
+    case (DAE.T_ARRAY(dims = {DAE.DIM_EXP()}, ty = t1),
+          DAE.T_ARRAY(dims = {DAE.DIM_EXP()}, ty = t2), _)
       equation
         /* HUGE TODO: FIXME: After MSL is updated? */
         // true = Expression.expEqual(e1,e2);
@@ -1460,13 +1460,13 @@ algorithm
         true;
 
     case (DAE.T_ARRAY(ty = t1),
-          DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t2), _)
+          DAE.T_ARRAY(dims = {DAE.DIM_EXP()}, ty = t2), _)
       equation
         true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;
 
-    case (DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t1),
+    case (DAE.T_ARRAY(dims = {DAE.DIM_EXP()}, ty = t1),
           DAE.T_ARRAY(ty = t2), _)
       equation
         true = subtype2(t1, t2, requireRecordNamesEqual);
@@ -1502,14 +1502,14 @@ algorithm
         true;
 
     // A complex type that extends a basic type is checked against the baseclass basic type
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = _,varLst = _,complexType = tp1),tp2,_)
+    case (DAE.T_SUBTYPE_BASIC(complexType = tp1),tp2,_)
       equation
         res = subtype2(tp1, tp2, requireRecordNamesEqual);
       then
         res;
 
     // A complex type that extends a basic type is checked against the baseclass basic type
-    case (tp1,DAE.T_SUBTYPE_BASIC(complexClassType = _,varLst = _,complexType = tp2),_)
+    case (tp1,DAE.T_SUBTYPE_BASIC(complexType = tp2),_)
       equation
         res = subtype2(tp1, tp2, requireRecordNamesEqual);
       then
@@ -1565,11 +1565,11 @@ algorithm
       then Absyn.pathEqual(p1,p2);
 
     // <uniontype> = <uniontype>
-    case (DAE.T_METAUNIONTYPE(paths = _, source = {p1}), DAE.T_METAUNIONTYPE(paths = _, source = {p2}),_)
+    case (DAE.T_METAUNIONTYPE(source = {p1}), DAE.T_METAUNIONTYPE(source = {p2}),_)
       then Absyn.pathEqual(p1,p2);
-    case (DAE.T_METAUNIONTYPE(paths = _, source = {p1}), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}),_)
+    case (DAE.T_METAUNIONTYPE(source = {p1}), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}),_)
       then Absyn.pathEqual(p1,p2);
-    case(DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}), DAE.T_METAUNIONTYPE(paths = _, source = {p1}),_)
+    case(DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}), DAE.T_METAUNIONTYPE(source = {p1}),_)
       then Absyn.pathEqual(p1,p2);
 
     case (DAE.T_CODE(ty = c1),DAE.T_CODE(ty = c2),_) then valueEq(c1,c2);
@@ -1688,26 +1688,26 @@ algorithm
       then
         v;
 
-    case (DAE.T_COMPLEX(complexClassType = _,varLst = cs),id)
+    case (DAE.T_COMPLEX(varLst = cs),id)
       equation
         v = lookupComponent2(cs, id);
       then
         v;
 
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = _,varLst = cs),id)
+    case (DAE.T_SUBTYPE_BASIC(varLst = cs),id)
       equation
         v = lookupComponent2(cs, id);
       then
         v;
 
-    case (DAE.T_ARRAY(dims = {dim},ty = DAE.T_COMPLEX(complexClassType = _,varLst = cs)),id)
+    case (DAE.T_ARRAY(dims = {dim},ty = DAE.T_COMPLEX(varLst = cs)),id)
       equation
         DAE.TYPES_VAR(n,attr,ty,bnd,cnstForRange) = lookupComponent2(cs, id);
         ty_1 = DAE.T_ARRAY(ty,{dim},DAE.emptyTypeSource);
       then
         DAE.TYPES_VAR(n,attr,ty_1,bnd,cnstForRange);
 
-    case (DAE.T_ARRAY(dims = {dim},ty = DAE.T_SUBTYPE_BASIC(complexClassType = _,varLst = cs)),id)
+    case (DAE.T_ARRAY(dims = {dim},ty = DAE.T_SUBTYPE_BASIC(varLst = cs)),id)
       equation
         DAE.TYPES_VAR(n,attr,ty,bnd,cnstForRange) = lookupComponent2(cs, id);
         ty_1 = DAE.T_ARRAY(ty,{dim},DAE.emptyTypeSource);
@@ -2098,7 +2098,7 @@ algorithm
     case (DAE.T_STRING(varLst = {})) then "String";
     case (DAE.T_BOOL(varLst = {})) then "Boolean";
     // BTH
-    case (DAE.T_CLOCK(varLst = _)) then "Clock";
+    case (DAE.T_CLOCK()) then "Clock";
 
     case (DAE.T_INTEGER(varLst = vs))
       equation
@@ -2120,7 +2120,7 @@ algorithm
         s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 = "Boolean(" + s1 + ")";
       then s2;
-    case (DAE.T_ENUMERATION(path = path, names = l, literalVarLst=_))
+    case (DAE.T_ENUMERATION(path = path, names = l))
       equation
         s1 = if Config.typeinfo() then " /*" + Absyn.pathString(path) + "*/ (" else "(";
         s2 = stringDelimitList(l, ", ");
@@ -2130,7 +2130,7 @@ algorithm
       then
         str;
 
-    case (ty as DAE.T_ARRAY(ty = _))
+    case (ty as DAE.T_ARRAY())
       equation
         (ty,dimlst) = flattenArrayTypeOpt(ty);
         tystr = unparseType(ty);
@@ -2158,7 +2158,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = ci_state, varLst = _, complexType = bc_tp))
+    case (DAE.T_SUBTYPE_BASIC(complexClassType = ci_state, complexType = bc_tp))
       equation
         st_str = Absyn.pathString(ClassInf.getStateName(ci_state));
         res = ClassInf.printStateStr(ci_state);
@@ -2167,7 +2167,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_COMPLEX(complexClassType = ci_state,varLst = _))
+    case (DAE.T_COMPLEX(complexClassType = ci_state))
       equation
         st_str = Absyn.pathString(ClassInf.getStateName(ci_state));
         res = ClassInf.printStateStr(ci_state);
@@ -2241,7 +2241,7 @@ algorithm
         res = stringAppendList({"metarecord ",str,"\n",vstr,"end ", str, ";"});
       then res;
 */
-    case (DAE.T_METARECORD(fields = _, source = {p}))
+    case (DAE.T_METARECORD(source = {p}))
       then Absyn.pathStringNoQual(p);
 
     // MetaModelica boxed type
@@ -2264,7 +2264,7 @@ algorithm
 
     case (DAE.T_NORETCALL(_))              then "#NORETCALL#";
     case (DAE.T_UNKNOWN(_))                then "#T_UNKNOWN#";
-    case (DAE.T_ANYTYPE(anyClassType = _)) then "#ANYTYPE#";
+    case (DAE.T_ANYTYPE()) then "#ANYTYPE#";
     case (DAE.T_CODE(ty = codeType)) then printCodeTypeStr(codeType);
     case (DAE.T_FUNCTION_REFERENCE_VAR(functionType=ty)) then "#FUNCTION_REFERENCE_VAR#" + unparseType(ty);
     case (DAE.T_FUNCTION_REFERENCE_FUNC(functionType=ty)) then "#FUNCTION_REFERENCE_FUNC#" + unparseType(ty);
@@ -2399,7 +2399,7 @@ algorithm
       then
         str;
 
-    case (DAE.T_ENUMERATION(names = _, literalVarLst = vars))
+    case (DAE.T_ENUMERATION(literalVarLst = vars))
       equation
         s1 = List.toString(vars, printVarStr, "Enumeration", "(", ", ", ")", false);
         str = s1 + printTypeSourceStr(getTypeSource(inType));
@@ -2588,7 +2588,7 @@ algorithm
       String isExpandableStr;
       Type t;
 
-    case(DAE.T_COMPLEX(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)),varLst = vars, source = _))
+    case(DAE.T_COMPLEX(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)),varLst = vars))
       equation
         varNames = List.map(vars,varName);
         isExpandableStr = if isExpandable then "/* expandable */ " else "";
@@ -2598,7 +2598,7 @@ algorithm
         (s,s2);
 
     // TODO! check if we can get T_SUBTYPE_BASIC here??!!
-    case(DAE.T_SUBTYPE_BASIC(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)), varLst = vars, complexType = t, source = _))
+    case(DAE.T_SUBTYPE_BASIC(complexClassType = (ClassInf.CONNECTOR(connectorName,isExpandable)), varLst = vars, complexType = t))
       equation
         varNames = List.map(vars,varName);
         isExpandableStr = if isExpandable then "/* expandable */ " else "";
@@ -3056,7 +3056,7 @@ algorithm
   outVars := match(inType)
     local list<DAE.Var> vars;
     case (DAE.T_COMPLEX(
-          complexClassType = ClassInf.CONNECTOR(path = _),
+          complexClassType = ClassInf.CONNECTOR(),
           varLst = vars))
       then vars;
   end match;
@@ -3423,7 +3423,7 @@ algorithm
         res = boolOr(r1,r2);
       then res;
 
-    case (DAE.T_REAL(varLst = _) :: _) then true;
+    case (DAE.T_REAL() :: _) then true;
 
     case (_ :: xs)
       equation
@@ -3501,7 +3501,7 @@ algorithm
         (ty_1, dimlist);
 
     // Complex type extending basetype with equality constraint
-    case (DAE.T_SUBTYPE_BASIC(complexType = ty, equalityConstraint = SOME(_)))
+    case (DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)))
       then
         (inType,{});
 
@@ -3528,12 +3528,12 @@ algorithm
       DAE.Type ty,arrayty;
       list<Integer> dims;
       list<String> dimstrs;
-    case (DAE.T_INTEGER(varLst = _)) then "Integer";
-    case (DAE.T_REAL(varLst = _)) then "Real";
-    case (DAE.T_STRING(varLst = _)) then "String";
-    case (DAE.T_BOOL(varLst = _)) then "Boolean";
+    case (DAE.T_INTEGER()) then "Integer";
+    case (DAE.T_REAL()) then "Real";
+    case (DAE.T_STRING()) then "String";
+    case (DAE.T_BOOL()) then "Boolean";
     // BTH
-    case (DAE.T_CLOCK(varLst = _)) then "Clock";
+    case (DAE.T_CLOCK()) then "Clock";
     case (DAE.T_COMPLEX(complexClassType = st))
       equation
         n = Absyn.pathString(ClassInf.getStateName(st));
@@ -3544,7 +3544,7 @@ algorithm
         n = Absyn.pathString(ClassInf.getStateName(st));
       then
         n;
-    case (arrayty as DAE.T_ARRAY(ty = _))
+    case (arrayty as DAE.T_ARRAY())
       equation
         (ty,dims) = flattenArrayType(arrayty);
         dimstrs = List.map(dims, intString);
@@ -3735,7 +3735,7 @@ algorithm
   b := matchcontinue (p)
     case _
       equation
-        DAE.T_TUPLE(source = _) = getPropType(p);
+        DAE.T_TUPLE() = getPropType(p);
       then
         true;
     else false;
@@ -3868,20 +3868,20 @@ algorithm
       DAE.EqualityConstraint ec;
       DAE.TypeSource ts;
 
-    case (DAE.T_FUNCTION(source = _)) then DAE.T_FUNCTION_REFERENCE_VAR(inType,DAE.emptyTypeSource);
+    case (DAE.T_FUNCTION()) then DAE.T_FUNCTION_REFERENCE_VAR(inType,DAE.emptyTypeSource);
 
-    case (DAE.T_METAUNIONTYPE(source = _)) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
-    case (DAE.T_METARECORD(source = _)) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
-    case (DAE.T_METAPOLYMORPHIC(source = _)) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
-    case (DAE.T_METALIST(source = _)) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
-    case (DAE.T_METAARRAY(source = _)) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
-    case (DAE.T_METAOPTION(source = _)) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
-    case (DAE.T_METATUPLE(source = _)) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
+    case (DAE.T_METAUNIONTYPE()) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
+    case (DAE.T_METARECORD()) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
+    case (DAE.T_METAPOLYMORPHIC()) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
+    case (DAE.T_METALIST()) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
+    case (DAE.T_METAARRAY()) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
+    case (DAE.T_METAOPTION()) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
+    case (DAE.T_METATUPLE()) then DAE.T_METATYPE(inType, DAE.emptyTypeSource);
 
-    case (DAE.T_UNKNOWN(source = _)) then DAE.T_UNKNOWN_DEFAULT;
-    case (DAE.T_ANYTYPE(source = _)) then DAE.T_UNKNOWN_DEFAULT;
+    case (DAE.T_UNKNOWN()) then DAE.T_UNKNOWN_DEFAULT;
+    case (DAE.T_ANYTYPE()) then DAE.T_UNKNOWN_DEFAULT;
 
-    case (t as DAE.T_ARRAY(source = _))
+    case (t as DAE.T_ARRAY())
       equation
         (t,dims) = flattenArrayTypeOpt(t);
         t_1 = simplifyType(t);
@@ -3889,22 +3889,22 @@ algorithm
         DAE.T_ARRAY(t_1,dims,DAE.emptyTypeSource);
 
     // do NOT simplify out equality constraint
-    case (DAE.T_SUBTYPE_BASIC(complexType = t, equalityConstraint = SOME(_))) then inType;
+    case (DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_))) then inType;
     case (DAE.T_SUBTYPE_BASIC(complexType = t)) then simplifyType(t);
 
-    case (DAE.T_INTEGER(source = _)) then DAE.T_INTEGER_DEFAULT;
-    case (DAE.T_REAL(source = _)) then DAE.T_REAL_DEFAULT;
-    case (DAE.T_BOOL(source = _)) then DAE.T_BOOL_DEFAULT;
+    case (DAE.T_INTEGER()) then DAE.T_INTEGER_DEFAULT;
+    case (DAE.T_REAL()) then DAE.T_REAL_DEFAULT;
+    case (DAE.T_BOOL()) then DAE.T_BOOL_DEFAULT;
     // BTH watch out: Due to simplification some type info is lost here
-    case (DAE.T_CLOCK(source = _)) then DAE.T_CLOCK_DEFAULT;
-    case (DAE.T_STRING(source = _)) then DAE.T_STRING_DEFAULT;
-    case (DAE.T_NORETCALL(source = _)) then DAE.T_NORETCALL_DEFAULT;
+    case (DAE.T_CLOCK()) then DAE.T_CLOCK_DEFAULT;
+    case (DAE.T_STRING()) then DAE.T_STRING_DEFAULT;
+    case (DAE.T_NORETCALL()) then DAE.T_NORETCALL_DEFAULT;
     case (DAE.T_TUPLE(types = tys))
       equation
         tys = List.map(tys, simplifyType);
       then DAE.T_TUPLE(tys, DAE.emptyTypeSource);
 
-    case (DAE.T_ENUMERATION(source = _)) then inType;
+    case (DAE.T_ENUMERATION()) then inType;
 
     // for metamodelica we need this for some reson!
     case (DAE.T_COMPLEX(CIS, varLst, ec, ts))
@@ -4119,7 +4119,7 @@ algorithm
 
     // The problem with MetaModelica tuple is that it is a datatype (should use PROP instead of PROP_TUPLE)
     // this case converts a TUPLE to META_TUPLE
-    case (e,DAE.PROP_TUPLE(type_ = gt as DAE.T_TUPLE(source = _),tupleConst = tc1), DAE.PROP(type_ = et as DAE.T_METATUPLE(source = _),constFlag = c2),_)
+    case (e,DAE.PROP_TUPLE(type_ = gt as DAE.T_TUPLE(),tupleConst = tc1), DAE.PROP(type_ = et as DAE.T_METATUPLE(),constFlag = c2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
@@ -4127,7 +4127,7 @@ algorithm
         c = constAnd(c_1, c2);
       then
         (e_1,DAE.PROP(t_1,c));
-    case (e,DAE.PROP_TUPLE(type_ = gt as DAE.T_TUPLE(source = _),tupleConst = tc1), DAE.PROP(type_ = et as DAE.T_METABOXED(source = _),constFlag = c2),_)
+    case (e,DAE.PROP_TUPLE(type_ = gt as DAE.T_TUPLE(),tupleConst = tc1), DAE.PROP(type_ = et as DAE.T_METABOXED(),constFlag = c2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
@@ -4136,7 +4136,7 @@ algorithm
       then
         (e_1,DAE.PROP(t_1,c));
 
-    case (e,DAE.PROP(type_ = gt,constFlag = _),DAE.PROP_TUPLE(type_ = _),_)
+    case (e,DAE.PROP(type_ = gt),DAE.PROP_TUPLE(),_)
       equation
         prop = propTupleFirstProp(inExpectedType);
         (e_1, prop) = matchProp(e, inActualType, prop, printFailtrace);
@@ -4145,7 +4145,7 @@ algorithm
       then
         (e_1, prop);
 
-    case (e,DAE.PROP_TUPLE(type_ = _),DAE.PROP(type_ = _),_)
+    case (e,DAE.PROP_TUPLE(),DAE.PROP(),_)
       equation
         (prop as DAE.PROP(type_ = gt)) = propTupleFirstProp(inActualType);
         (e_1, prop) = matchProp(e, prop, inExpectedType, printFailtrace);
@@ -4479,7 +4479,7 @@ algorithm
     // Array expressions: expression dimension [dim1], expected dimension [:]
     case (DAE.ARRAY(array = elist),
           DAE.T_ARRAY(dims = {dim1},ty = ty1),
-          DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = ty2, source = _),
+          DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = ty2),
           _)
       equation
         true = Expression.dimensionKnown(dim1);
@@ -4496,7 +4496,7 @@ algorithm
         (DAE.ARRAY(DAE.T_ARRAY(ety1, dims, DAE.emptyTypeSource),sc,elist_1), ty2);
 
     // Full range expressions, e.g. 1:2:10
-    case (DAE.RANGE(ty = _,start = begin,step = SOME(step),stop = stop),
+    case (DAE.RANGE(start = begin,step = SOME(step),stop = stop),
           DAE.T_ARRAY(dims = {dim1},ty = ty1),
           DAE.T_ARRAY(dims = {dim2}, ty = ty2, source = ts),
           _)
@@ -4510,7 +4510,7 @@ algorithm
         (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),DAE.T_ARRAY(ty2,{dim1},ts));
 
     // Range expressions, e.g. 1:10
-    case (DAE.RANGE(ty = _,start = begin,step = NONE(),stop = stop),
+    case (DAE.RANGE(start = begin,step = NONE(),stop = stop),
           DAE.T_ARRAY(dims = {dim1}, ty = ty1),
           DAE.T_ARRAY(dims = {dim2}, ty = ty2, source = ts),
           _)
@@ -4611,7 +4611,7 @@ algorithm
     // by, for instance, Modelica.Electrical.Digital.
     // Enable with +intEnumConversion.
     case (exp as DAE.ICONST(oi),
-          DAE.T_INTEGER(source = _),
+          DAE.T_INTEGER(),
           t2 as DAE.T_ENUMERATION(path = tp, names = l),
           _)
        equation
@@ -4626,8 +4626,8 @@ algorithm
 
     // Implicit conversion from Integer to Real
     case (e,
-          DAE.T_INTEGER(varLst = _),
-          DAE.T_REAL(varLst = _),
+          DAE.T_INTEGER(),
+          DAE.T_REAL(),
           _)
       then
         (DAE.CAST(DAE.T_REAL_DEFAULT,e),expected);
@@ -4689,7 +4689,7 @@ algorithm
       then
         (DAE.META_TUPLE(elist_1),DAE.T_METATUPLE(tys_1,ts2));
 
-    case (DAE.TUPLE(elist),DAE.T_TUPLE(types = tys1),ty2 as DAE.T_METABOXED(ty = DAE.T_UNKNOWN(source =_), source = ts2),_)
+    case (DAE.TUPLE(elist),DAE.T_TUPLE(types = tys1),ty2 as DAE.T_METABOXED(ty = DAE.T_UNKNOWN(), source = ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         tys2 = List.fill(ty2, listLength(tys1));
@@ -4706,7 +4706,7 @@ algorithm
     //   someListFunction(a); // Is expanded to the line below
     //   someListFunction({a[1],a[2],a[3]});
     //   / sjoelund 2009-08-13
-    case (DAE.ARRAY(DAE.T_ARRAY(ty = _),_,elist),
+    case (DAE.ARRAY(DAE.T_ARRAY(),_,elist),
           DAE.T_ARRAY(ty=t1),
           DAE.T_METALIST(t2,_),_)
       equation
@@ -4717,7 +4717,7 @@ algorithm
         t2 = DAE.T_METALIST(t2,DAE.emptyTypeSource);
       then (e_1, t2);
 
-    case (DAE.ARRAY(DAE.T_ARRAY(ty = _),_,elist),
+    case (DAE.ARRAY(DAE.T_ARRAY(),_,elist),
           DAE.T_ARRAY(ty=t1),
           DAE.T_METABOXED(t2,_),_)
       equation
@@ -4730,7 +4730,7 @@ algorithm
         t2 = DAE.T_METALIST(t2,DAE.emptyTypeSource);
       then (e_1, t2);
 
-    case (DAE.MATRIX(DAE.T_ARRAY(ty = _),_,elist_big),t1,t2,_)
+    case (DAE.MATRIX(DAE.T_ARRAY(),_,elist_big),t1,t2,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (elist,ty2) = typeConvertMatrixToList(elist_big,t1,t2,printFailtrace);
@@ -4746,7 +4746,7 @@ algorithm
         t2 = DAE.T_METALIST(t2,DAE.emptyTypeSource);
       then (e_1, t2);
 
-    case (e, t1 as DAE.T_INTEGER(varLst = _), DAE.T_METABOXED(ty = t2),_)
+    case (e, t1 as DAE.T_INTEGER(), DAE.T_METABOXED(ty = t2),_)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
@@ -4754,7 +4754,7 @@ algorithm
         e = Expression.boxExp(e);
       then (e,t2);
 
-    case (e, t1 as DAE.T_BOOL(varLst = _), DAE.T_METABOXED(ty = t2),_)
+    case (e, t1 as DAE.T_BOOL(), DAE.T_METABOXED(ty = t2),_)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
@@ -4762,7 +4762,7 @@ algorithm
         e = Expression.boxExp(e);
       then (e,t2);
 
-    case (e, t1 as DAE.T_REAL(varLst = _), DAE.T_METABOXED(ty = t2),_)
+    case (e, t1 as DAE.T_REAL(), DAE.T_METABOXED(ty = t2),_)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
@@ -4770,7 +4770,7 @@ algorithm
         e = Expression.boxExp(e);
       then (e,t2);
 
-    case (e, t1 as DAE.T_ARRAY(ty = _), DAE.T_METABOXED(ty = t2), _)
+    case (e, t1 as DAE.T_ARRAY(), DAE.T_METABOXED(ty = t2), _)
       equation
         // true = Config.acceptMetaModelicaGrammar();
         (e, t1) = matchType(e, t1, unboxedType(t2), printFailtrace);
@@ -4810,9 +4810,9 @@ algorithm
         e_1 = DAE.METARECORDCALL(path1, elist, l, -1);
       then (e_1,t2);
 
-    case (DAE.CALL(path = _),
-          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = _),
-          DAE.T_METABOXED(ty = _),_)
+    case (DAE.CALL(),
+          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),
+          DAE.T_METABOXED(),_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Not yet implemented: Converting record calls (not constructor) into boxed records\n");
@@ -4843,28 +4843,28 @@ algorithm
         (e_1,t2) = matchType(e,t1,t2,printFailtrace);
       then (e_1,t2);
 
-    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_INTEGER(varLst = _),_)
+    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_INTEGER(),_)
       equation
         true = subtype(t1,t2);
         (_,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
-    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_REAL(varLst = _),_)
+    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_REAL(),_)
       equation
         true = subtype(t1,t2);
         (_,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
-    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_BOOL(varLst = _),_)
+    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_BOOL(),_)
       equation
         true = subtype(t1,t2);
         (_,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
-    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = _),_)
+    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)
       equation
         true = subtype(t1,t2);
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
@@ -5113,8 +5113,8 @@ algorithm
       then
         DAE.PROP(t1,c);
     // enums
-    case (DAE.PROP(type_ = t as DAE.T_ENUMERATION(literalVarLst = _),constFlag = c1),
-          DAE.PROP(type_ = DAE.T_ENUMERATION(index = _, source = ts2),constFlag = c2), false)
+    case (DAE.PROP(type_ = t as DAE.T_ENUMERATION(),constFlag = c1),
+          DAE.PROP(type_ = DAE.T_ENUMERATION(source = ts2),constFlag = c2), false)
       equation
         c = constAnd(c1, c2) "Have enum and both Enum" ;
         tt = setTypeSource(t,ts2);
@@ -5122,13 +5122,13 @@ algorithm
         DAE.PROP(tt,c);
     // reals
     case (DAE.PROP(type_ = DAE.T_REAL(varLst = v),constFlag = c1),
-          DAE.PROP(type_ = DAE.T_REAL(varLst = _, source = ts2),constFlag = c2),true)
+          DAE.PROP(type_ = DAE.T_REAL(source = ts2),constFlag = c2),true)
       equation
         c = constAnd(c1, c2) "Have real and both Real" ;
       then
         DAE.PROP(DAE.T_REAL(v,ts2),c);
     // integer vs. real
-    case (DAE.PROP(type_ = DAE.T_INTEGER(varLst = _),constFlag = c1),
+    case (DAE.PROP(type_ = DAE.T_INTEGER(),constFlag = c1),
           DAE.PROP(type_ = DAE.T_REAL(varLst = v, source = ts2),constFlag = c2),true)
       equation
         c = constAnd(c1, c2) "Have real and first Integer" ;
@@ -5136,14 +5136,14 @@ algorithm
         DAE.PROP(DAE.T_REAL(v,ts2),c);
     // real vs. integer
     case (DAE.PROP(type_ = DAE.T_REAL(varLst = v),constFlag = c1),
-          DAE.PROP(type_ = DAE.T_INTEGER(varLst = _, source = ts2),constFlag = c2),true)
+          DAE.PROP(type_ = DAE.T_INTEGER(source = ts2),constFlag = c2),true)
       equation
         c = constAnd(c1, c2) "Have real and second Integer" ;
       then
         DAE.PROP(DAE.T_REAL(v,ts2),c);
     // both integers
-    case (DAE.PROP(type_ = DAE.T_INTEGER(varLst = _),constFlag = c1),
-          DAE.PROP(type_ = DAE.T_INTEGER(varLst = _, source = _),constFlag = c2),true)
+    case (DAE.PROP(type_ = DAE.T_INTEGER(),constFlag = c1),
+          DAE.PROP(type_ = DAE.T_INTEGER(),constFlag = c2),true)
       equation
         c = constAnd(c1, c2) "Have real and both Integer" ;
       then
@@ -5428,8 +5428,8 @@ algorithm
     case DAE.T_STRING(varLst = vars)  then getAllExpsVars(vars);
     case DAE.T_BOOL(varLst = vars)    then getAllExpsVars(vars);
     // BTH return empty list for clock since it doesn't have attributes
-    case DAE.T_CLOCK(varLst = _) then {};
-    case DAE.T_ENUMERATION(names = _, literalVarLst = vars, attributeLst = attrs)
+    case DAE.T_CLOCK() then {};
+    case DAE.T_ENUMERATION(literalVarLst = vars, attributeLst = attrs)
       equation
         exps = getAllExpsVars(vars);
         tyexps = getAllExpsVars(attrs);
@@ -5463,16 +5463,16 @@ algorithm
       then
         exps;
 
-    case DAE.T_METAUNIONTYPE(paths=_) then {};
+    case DAE.T_METAUNIONTYPE() then {};
 
     case DAE.T_METAOPTION(ty = ty) then getAllExps(ty);
     case DAE.T_METALIST(ty = ty)     then getAllExps(ty);
     case DAE.T_METAARRAY(ty = ty)          then getAllExps(ty);
     case DAE.T_METABOXED(ty = ty)          then getAllExps(ty);
-    case DAE.T_METAPOLYMORPHIC(name = _) then {};
+    case DAE.T_METAPOLYMORPHIC() then {};
 
-    case(DAE.T_UNKNOWN(source = _)) then {};
-    case(DAE.T_NORETCALL(source = _)) then {};
+    case(DAE.T_UNKNOWN()) then {};
+    case(DAE.T_NORETCALL()) then {};
 
     case tty
       equation
@@ -5505,7 +5505,7 @@ algorithm
       DAE.Type ty;
       DAE.Binding bnd;
 
-    case DAE.TYPES_VAR(name = _,ty = ty,binding = bnd)
+    case DAE.TYPES_VAR(ty = ty,binding = bnd)
       equation
         tyexps = getAllExps(ty);
         bndexp = getAllExpsBinding(bnd);
@@ -5524,9 +5524,9 @@ algorithm
       DAE.Exp exp;
       Const cnst;
       Values.Value v;
-    case DAE.EQBOUND(exp = exp,constant_ = _) then {exp};
+    case DAE.EQBOUND(exp = exp) then {exp};
     case DAE.UNBOUND() then {};
-    case DAE.VALBOUND(valBound = _) then {};
+    case DAE.VALBOUND() then {};
     case _
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -5693,11 +5693,11 @@ algorithm
       list<DAE.Type> type_list1,type_list2;
       Absyn.Path path1,path2;
 
-    case (DAE.T_ANYTYPE(source = _),t2) then t2;
-    case (t1,DAE.T_ANYTYPE(source = _)) then t1;
-    case (DAE.T_UNKNOWN(source = _),t2) then t2;
-    case (t1,DAE.T_UNKNOWN(source = _)) then t1;
-    case (_,t2 as DAE.T_METAPOLYMORPHIC(source = _)) then t2;
+    case (DAE.T_ANYTYPE(),t2) then t2;
+    case (t1,DAE.T_ANYTYPE()) then t1;
+    case (DAE.T_UNKNOWN(),t2) then t2;
+    case (t1,DAE.T_UNKNOWN()) then t1;
+    case (_,t2 as DAE.T_METAPOLYMORPHIC()) then t2;
 
     case (DAE.T_TUPLE(types = type_list1),DAE.T_TUPLE(types = type_list2))
       equation
@@ -5758,10 +5758,10 @@ algorithm
         true = Absyn.pathEqual(path1,path2);
       then DAE.T_METAUNIONTYPE({},false,{path1});
 
-    case (DAE.T_INTEGER(source = _),DAE.T_REAL(source = _))
+    case (DAE.T_INTEGER(),DAE.T_REAL())
       then DAE.T_REAL_DEFAULT;
 
-    case (DAE.T_REAL(source = _),DAE.T_INTEGER(source = _))
+    case (DAE.T_REAL(),DAE.T_INTEGER())
       then DAE.T_REAL_DEFAULT;
 
     case (t1,t2)
@@ -6288,7 +6288,7 @@ algorithm
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(tys);
         (_,tys) = matchTypeTuple(dummyExpList, tys, dummyBoxedTypeList, false);
       then DAE.T_TUPLE(tys,ts);
-    case (ty as DAE.T_NORETCALL(source = _)) then ty;
+    case (ty as DAE.T_NORETCALL()) then ty;
     case ty1
       equation
         ({e},{ty2}) = makeDummyExpAndTypeLists({ty1});
@@ -6331,7 +6331,7 @@ algorithm
       list<DAE.Type> tys;
       Type ty;
     case DAE.T_TUPLE(types = tys) then tys;
-    case DAE.T_NORETCALL(source = _) then {};
+    case DAE.T_NORETCALL() then {};
     case ty then {ty};
   end matchcontinue;
 end resTypeToListTypes;
@@ -6348,8 +6348,8 @@ algorithm
       DAE.Dimension d;
       DAE.Dimensions dims;
 
-    case (DAE.T_REAL(source = _)) then {};
-    case (DAE.T_INTEGER(source = _)) then {};
+    case (DAE.T_REAL()) then {};
+    case (DAE.T_INTEGER()) then {};
     case (DAE.T_SUBTYPE_BASIC(complexType = ty))
       then getRealOrIntegerDimensions(ty);
 
@@ -6761,11 +6761,11 @@ algorithm
         ty2 = unboxedType(ty2);
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
 
-    case (DAE.T_NORETCALL(source = _),DAE.T_NORETCALL(source = _),_,bindings) then bindings;
-    case (DAE.T_INTEGER(source = _),DAE.T_INTEGER(source = _),_,bindings) then bindings;
-    case (DAE.T_REAL(source = _),DAE.T_INTEGER(source = _),_,bindings) then bindings;
-    case (DAE.T_STRING(source = _),DAE.T_STRING(source = _),_,bindings) then bindings;
-    case (DAE.T_BOOL(source = _),DAE.T_BOOL(source = _),_,bindings) then bindings;
+    case (DAE.T_NORETCALL(),DAE.T_NORETCALL(),_,bindings) then bindings;
+    case (DAE.T_INTEGER(),DAE.T_INTEGER(),_,bindings) then bindings;
+    case (DAE.T_REAL(),DAE.T_INTEGER(),_,bindings) then bindings;
+    case (DAE.T_STRING(),DAE.T_STRING(),_,bindings) then bindings;
+    case (DAE.T_BOOL(),DAE.T_BOOL(),_,bindings) then bindings;
 
     case (DAE.T_METAARRAY(ty = ty1),DAE.T_METAARRAY(ty = ty2),_,bindings)
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
@@ -6810,14 +6810,14 @@ algorithm
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
 
-    case (DAE.T_UNKNOWN(source = _),ty2,_,bindings)
+    case (DAE.T_UNKNOWN(),ty2,_,bindings)
       equation
         tys = getAllInnerTypesOfType(ty2, isPolymorphic);
         ids = List.map(tys, polymorphicTypeName);
         bindings = List.fold1(ids, addPolymorphicBinding, actual, bindings);
       then bindings;
 
-    case (DAE.T_ANYTYPE(source = _),ty2,_,bindings)
+    case (DAE.T_ANYTYPE(),ty2,_,bindings)
       equation
         tys = getAllInnerTypesOfType(ty2, isPolymorphic);
         ids = List.map(tys, polymorphicTypeName);
@@ -6940,7 +6940,7 @@ public function isFunctionType
   output Boolean b;
 algorithm
   b := match ty
-    case DAE.T_FUNCTION(funcArg = _) then true;
+    case DAE.T_FUNCTION() then true;
     else false;
   end match;
 end isFunctionType;
@@ -6967,7 +6967,7 @@ public function makeExpDimensionsUnknown
   output Integer odummy := dummy;
 algorithm
   oty := match oty
-    case DAE.T_ARRAY(dims={DAE.DIM_EXP(exp=_)})
+    case DAE.T_ARRAY(dims={DAE.DIM_EXP()})
       algorithm
         oty.dims := {DAE.DIM_UNKNOWN()};
       then oty;
@@ -7302,9 +7302,9 @@ public function varHasMetaRecordType
   output Boolean b;
 algorithm
   b := match var
-    case DAE.TYPES_VAR(ty = DAE.T_METABOXED(ty = DAE.T_METARECORD(utPath=_)))
+    case DAE.TYPES_VAR(ty = DAE.T_METABOXED(ty = DAE.T_METARECORD()))
       then true;
-    case DAE.TYPES_VAR(ty = DAE.T_METARECORD(utPath = _))
+    case DAE.TYPES_VAR(ty = DAE.T_METARECORD())
       then true;
     case DAE.TYPES_VAR(ty = DAE.T_METABOXED(ty = DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_))))
       then true;
@@ -7320,14 +7320,14 @@ public function scalarSuperType
 algorithm
   ty := matchcontinue (ity1,ity2)
     local Type ty1, ty2;
-    case (DAE.T_INTEGER(varLst = _),DAE.T_INTEGER(varLst = _)) then DAE.T_INTEGER_DEFAULT;
-    case (DAE.T_REAL(varLst = _),DAE.T_REAL(varLst = _))       then DAE.T_REAL_DEFAULT;
-    case (DAE.T_INTEGER(varLst = _),DAE.T_REAL(varLst = _))    then DAE.T_REAL_DEFAULT;
-    case (DAE.T_REAL(varLst = _),DAE.T_INTEGER(varLst = _))    then DAE.T_REAL_DEFAULT;
+    case (DAE.T_INTEGER(),DAE.T_INTEGER()) then DAE.T_INTEGER_DEFAULT;
+    case (DAE.T_REAL(),DAE.T_REAL())       then DAE.T_REAL_DEFAULT;
+    case (DAE.T_INTEGER(),DAE.T_REAL())    then DAE.T_REAL_DEFAULT;
+    case (DAE.T_REAL(),DAE.T_INTEGER())    then DAE.T_REAL_DEFAULT;
     case (DAE.T_SUBTYPE_BASIC(complexType = ty1),ty2)          then scalarSuperType(ty1,ty2);
     case (ty1,DAE.T_SUBTYPE_BASIC(complexType = ty2))          then scalarSuperType(ty1,ty2);
 
-    case (DAE.T_BOOL(varLst = _),DAE.T_BOOL(varLst = _))       then DAE.T_BOOL_DEFAULT;
+    case (DAE.T_BOOL(),DAE.T_BOOL())       then DAE.T_BOOL_DEFAULT;
     // adrpo: TODO? Why not string here?
     // case (DAE.T_STRING(varLst = _),DAE.T_STRING(varLst = _))   then DAE.T_STRING_DEFAULT;
   end matchcontinue;
@@ -7362,10 +7362,10 @@ algorithm
       Values.Value v;
       list<Values.Value> valueLst, ordered;
 
-    case (DAE.T_INTEGER(varLst = _)) then Values.INTEGER(0);
-    case (DAE.T_REAL(varLst = _)) then Values.REAL(0.0);
-    case (DAE.T_STRING(varLst = _)) then Values.STRING("<EMPTY>");
-    case (DAE.T_BOOL(varLst = _)) then Values.BOOL(false);
+    case (DAE.T_INTEGER()) then Values.INTEGER(0);
+    case (DAE.T_REAL()) then Values.REAL(0.0);
+    case (DAE.T_STRING()) then Values.STRING("<EMPTY>");
+    case (DAE.T_BOOL()) then Values.BOOL(false);
     case (DAE.T_ENUMERATION(index = iOpt, path = path))
       equation
         i = optInteger(iOpt);
@@ -7594,11 +7594,11 @@ protected function isValidFunctionVarState
   output Boolean outIsValid;
 algorithm
   outIsValid := match(inState)
-    case ClassInf.MODEL(path = _) then false;
-    case ClassInf.BLOCK(path = _) then false;
-    case ClassInf.CONNECTOR(path = _) then false;
-    case ClassInf.OPTIMIZATION(path = _) then false;
-    case ClassInf.PACKAGE(path = _) then false;
+    case ClassInf.MODEL() then false;
+    case ClassInf.BLOCK() then false;
+    case ClassInf.CONNECTOR() then false;
+    case ClassInf.OPTIMIZATION() then false;
+    case ClassInf.PACKAGE() then false;
     else true;
   end match;
 end isValidFunctionVarState;
@@ -7619,10 +7619,10 @@ algorithm
       list<DAE.Exp> expl;
       DAE.Type ety;
 
-    case (DAE.T_INTEGER(varLst = _)) then DAE.ICONST(0);
-    case (DAE.T_REAL(varLst = _)) then DAE.RCONST(0.0);
-    case (DAE.T_STRING(varLst = _)) then DAE.SCONST("");
-    case (DAE.T_BOOL(varLst = _)) then DAE.BCONST(false);
+    case (DAE.T_INTEGER()) then DAE.ICONST(0);
+    case (DAE.T_REAL()) then DAE.RCONST(0.0);
+    case (DAE.T_STRING()) then DAE.SCONST("");
+    case (DAE.T_BOOL()) then DAE.BCONST(false);
     case (DAE.T_ENUMERATION(path = p)) then DAE.ENUM_LITERAL(p, 1);
     case (DAE.T_ARRAY(ty = ty, dims = {dim}))
       equation
@@ -7650,8 +7650,8 @@ public function isUnknownType
   output Boolean b;
 algorithm
   b := match(inType)
-    case (DAE.T_UNKNOWN(source = _)) then true;
-    case (DAE.T_ANYTYPE(source = _)) then true;
+    case (DAE.T_UNKNOWN()) then true;
+    case (DAE.T_ANYTYPE()) then true;
     else false;
   end match;
 end isUnknownType;
@@ -7967,7 +7967,7 @@ public function dimNotFixed
 algorithm
   b := match dim
     case DAE.DIM_UNKNOWN() then true;
-    case DAE.DIM_EXP(exp=_) then true;
+    case DAE.DIM_EXP() then true;
     else false;
   end match;
 end dimNotFixed;
@@ -8058,7 +8058,7 @@ algorithm
   b := match ty
     case DAE.T_TUPLE(types={}) then true;
     case DAE.T_METATUPLE(types={}) then true;
-    case DAE.T_NORETCALL(source=_) then true;
+    case DAE.T_NORETCALL() then true;
     else false;
   end match;
 end isEmptyOrNoRetcall;

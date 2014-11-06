@@ -178,7 +178,7 @@ algorithm
       Integer e,index;
       array<Integer> ass1,ass2;
       BackendDAE.Var var;
-    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=_)),(index,ass1,ass2))
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE()),(index,ass1,ass2))
       equation
         e = ass1[index];
         ass1 = arrayUpdate(ass1,index,-1);

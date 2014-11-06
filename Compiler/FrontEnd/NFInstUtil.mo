@@ -175,13 +175,13 @@ algorithm
         DAE.TYPES_VAR(name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
           DAE.UNBOUND(), NONE());
 
-    case NFInstTypes.COMPONENT_ALIAS(componentName = _)
+    case NFInstTypes.COMPONENT_ALIAS()
       equation
         print("Got component alias in componentToDaeVar\n");
       then
         fail();
 
-    case NFInstTypes.DELETED_COMPONENT(name = _)
+    case NFInstTypes.DELETED_COMPONENT()
       equation
         print("Got deleted component\n");
       then
@@ -647,7 +647,7 @@ public function isSpecialExtends
   output Boolean outResult;
 algorithm
   outResult := match(inType)
-    case DAE.T_COMPLEX(varLst = _) then false;
+    case DAE.T_COMPLEX() then false;
     else true;
   end match;
 end isSpecialExtends;
@@ -1307,7 +1307,7 @@ algorithm
     case (NFInstTypes.ELEMENT(cls = cls), _)
       then 1 + countElementsInClass(cls) + inCount;
 
-    case (NFInstTypes.CONDITIONAL_ELEMENT(component = _), _)
+    case (NFInstTypes.CONDITIONAL_ELEMENT(), _)
       then 1 + inCount;
 
   end match;
@@ -1326,7 +1326,7 @@ algorithm
       DAE.Type ty;
       list<DAE.Subscript> subs;
 
-    case (Absyn.IDENT(name = _), _)
+    case (Absyn.IDENT(), _)
       equation
         cref = ComponentReference.crefLastCref(inOuterCref);
       then
@@ -1685,7 +1685,7 @@ public function isArrayAllocation
   input NFInstTypes.Statement stmt;
   output Boolean b;
 algorithm
-  b := match stmt case NFInstTypes.FUNCTION_ARRAY_INIT(name=_) then true; else false; end match;
+  b := match stmt case NFInstTypes.FUNCTION_ARRAY_INIT() then true; else false; end match;
 end isArrayAllocation;
 
 public function isFlowComponent

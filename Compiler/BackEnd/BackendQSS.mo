@@ -539,7 +539,7 @@ algorithm
 
        case (_,{h},_,_,_,_,true,_,_)
        equation
-         BackendDAE.EQUATION(scalar=_) = BackendEquation.equationNth1(eqs,h);
+         BackendDAE.EQUATION() = BackendEquation.equationNth1(eqs,h);
          s = stringAppend("/* We are adding a new discrete variable for ","");
          s = stringAppend(s,ExpressionDump.printExpStr(condition));
          s = stringAppend(s,"*/\n");
@@ -571,7 +571,7 @@ algorithm
        then s;
        case (_,{h},_,_,_,_,false,_,_)
        equation
-         BackendDAE.EQUATION(scalar=_) = BackendEquation.equationNth1(eqs,h);
+         BackendDAE.EQUATION() = BackendEquation.equationNth1(eqs,h);
          s = stringAppend("/* We are adding a new discrete variable for ","");
          s = stringAppend(s,ExpressionDump.printExpStr(condition));
          s = stringAppend(s,"*/\n");

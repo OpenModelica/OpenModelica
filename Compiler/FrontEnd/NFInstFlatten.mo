@@ -294,7 +294,7 @@ algorithm
         cls = NFInstTypes.COMPLEX_CLASS(components = {})), st, _, _, accum_el)
       then (accum_el, st);
 
-    case (NFInstTypes.EXTENDED_ELEMENTS(cls = NFInstTypes.BASIC_TYPE(name = _)),
+    case (NFInstTypes.EXTENDED_ELEMENTS(cls = NFInstTypes.BASIC_TYPE()),
         st, _, _, accum_el)
       then (inElement :: accum_el, st);
 

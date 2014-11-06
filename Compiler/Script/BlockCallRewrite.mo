@@ -405,7 +405,7 @@ algorithm
       equation
        // print("in equation item\n");
         (nexp1, eqs1, elems1, count1) = parseExpression(exp1, defs, oldEqs, oldElems, instNo);
-        (nexp2, eqs2, elems2, count2) = parseExpression(exp2, defs, eqs1, elems1, count1);
+        (nexp2,_,_,_) = parseExpression(exp2, defs, eqs1, elems1, count1);
         (ntuples, eqs3, elems3, count3) = parseExpressionTuple(r_tuple_list, defs, eqs1, elems1, count1);
       then
         ((nexp1, nexp2) :: ntuples, eqs3, elems3, count3);
@@ -504,14 +504,14 @@ algorithm
       list<Absyn.EquationItem> eqs;
     case({}) then ({}, {}, false, instNo);
       //R_PACKAGE
-     case(Absyn.CLASS(id2, _, _, _, Absyn.R_PACKAGE(), Absyn.PARTS(_, _, classParts, _, _), _) :: r_classes)
+     case(Absyn.CLASS(_, _, _, _, Absyn.R_PACKAGE(), Absyn.PARTS(_, _, classParts, _, _), _) :: _)
        equation
       // print("In package: "); print(id2); print(" \n");
 
        (eqs, mods, true) = lookThroughClasses(id, instNo,  fargs, classParts, oldEqs, oldModif);
        then
        (eqs, mods, true, instNo + 1) ;
-    case(Absyn.CLASS(id2, _, _, _, Absyn.R_BLOCK(), Absyn.PARTS(_, _, classParts, _, _), _) :: r_classes)
+    case(Absyn.CLASS(id2, _, _, _, Absyn.R_BLOCK(), Absyn.PARTS(_, _, classParts, _, _), _) :: _)
       equation
         //print("TESTING1: "); print(id); print(" "); print(id2); print(" \n");
         true = (id2 == id);
@@ -546,7 +546,7 @@ algorithm
 
     case({})
         then (oldEqs, oldModif, false);
-    case(Absyn.PUBLIC(elems1) :: r_classes)
+    case(Absyn.PUBLIC(elems1) :: _)
       equation
         (eq1, modif, true) = lookThroughElems(id, instNo, fargs, elems1, oldEqs, oldModif);
         then (eq1, modif, true);
@@ -582,14 +582,14 @@ algorithm
 
     case({}) then (oldEqs, oldModif, false);
    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,
-       Absyn.CLASSDEF(_, Absyn.CLASS(id2, _, _, _, Absyn.R_BLOCK(), Absyn.PARTS(_, _, classParts, _, _), _)),_,_)) :: r_elems)
+       Absyn.CLASSDEF(_, Absyn.CLASS(id2, _, _, _, Absyn.R_BLOCK(), Absyn.PARTS(_, _, classParts, _, _), _)),_,_)) :: _)
        equation
           true = (id2 == id);
         (eqs, mods) = parseArgs("_autogen_" + id + intString(instNo), classParts, fargs, oldEqs, oldModif);
       then
         (eqs, mods, true);
      case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,
-       Absyn.CLASSDEF(_, Absyn.CLASS(id2, _, _, _, Absyn.R_PACKAGE(), Absyn.PARTS(_, _, classParts, _, _), _)),_,_)) :: r_elems)
+       Absyn.CLASSDEF(_, Absyn.CLASS(_, _, _, _, Absyn.R_PACKAGE(), Absyn.PARTS(_, _, classParts, _, _), _)),_,_)) :: _)
     equation
         (eqs, mods, true)  =  lookThroughClasses(id, instNo, fargs, classParts, oldEqs, oldModif);
       then (eqs, mods, true);
@@ -694,12 +694,12 @@ algorithm
 
     case({}, _) then (oldEqs, oldModif, args);
     case(_, {}) then (oldEqs, oldModif, args);
-    case(arg::r_args, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_), _, comps),_,_)) :: r_elems)
+    case(_::r_args, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_), _, comps),_,_)) :: r_elems)
       equation
         (modif, r_args) = matchParamArgs(args, comps, oldModif);
       then
         matchArgsElems(elemId, r_args, r_elems, oldEqs, modif) ;
-    case(arg::r_args, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.VAR(),_,_), _, comps),_,_)) :: r_elems)
+    case(_::r_args, Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.VAR(),_,_), _, comps),_,_)) :: r_elems)
       equation
         (eqs, r_args) = matchVarArgs(elemId, args, comps, oldEqs);
       then
@@ -820,7 +820,7 @@ algorithm
       list<Absyn.ElementArg> modif;
 
     case({}) then  (oldEqs, oldModif);
-    case(Absyn.PUBLIC(elems1) :: r_classes)
+    case(Absyn.PUBLIC(elems1) :: _)
       equation
         (eq1, modif, true) = matchNamedArgElems(elemId, argName, argValue, elems1, oldEqs, oldModif);
       then
@@ -855,12 +855,12 @@ algorithm
       Absyn.Exp arg;
 
     case({}) then (oldEqs, oldModif, false);
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_), _, comps),_,_)) :: r_elems)
+    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.PARAM(),_,_), _, comps),_,_)) :: _)
       equation
         (modif, true) = matchParamNamedArg(argName, argValue, comps, oldModif);
       then
        (oldEqs, modif, true) ;
-    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.VAR(),_,_), _, comps),_,_)) :: r_elems)
+    case(Absyn.ELEMENTITEM(Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(Absyn.ATTR(_,_,_,Absyn.VAR(),_,_), _, comps),_,_)) :: _)
       equation
         (eqs, true) = matchVarNamedArg(elemId, argName, argValue, comps, oldEqs);
       then
@@ -890,7 +890,7 @@ algorithm
       Absyn.ElementArg modif;
 
     case({}) then (oldModif, false);
-    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: r_comps)
+    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: _)
       equation
         (cName == argName) = true;
         modif = Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT(cName), SOME(Absyn.CLASSMOD({}, Absyn.EQMOD(argValue, Absyn.dummyInfo))),
@@ -925,7 +925,7 @@ algorithm
       Absyn.EquationItem eq;
 
     case({}) then (oldEqs, false);
-    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: r_comps)
+    case(Absyn.COMPONENTITEM(Absyn.COMPONENT(cName,_,_), _, _) :: _)
       equation
          (cName == argName) = true;
         eq = Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(Absyn.CREF_QUAL(elemId, {}, Absyn.CREF_IDENT(cName, {}))), argValue), NONE(), Absyn.dummyInfo);

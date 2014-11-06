@@ -592,9 +592,9 @@ algorithm
       DAE.ComponentRef cr;
 
     // Scalar
-    case (DAE.TYPES_VAR(name = name, ty = DAE.T_REAL(varLst = _)))
+    case (DAE.TYPES_VAR(name = name, ty = DAE.T_REAL()))
       then {DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {})};
-    case (DAE.TYPES_VAR(name = name, ty = DAE.T_SUBTYPE_BASIC(complexType = DAE.T_REAL(varLst = _))))
+    case (DAE.TYPES_VAR(name = name, ty = DAE.T_SUBTYPE_BASIC(complexType = DAE.T_REAL())))
       then {DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {})};
 
     // Complex type
@@ -609,7 +609,7 @@ algorithm
 
     // Array
     case (DAE.TYPES_VAR(name = name,
-        ty = ty as DAE.T_ARRAY(dims = _)))
+        ty = ty as DAE.T_ARRAY()))
       equation
         dims = Types.getDimensions(ty);
         cr = DAE.CREF_IDENT(name, ty, {});
@@ -739,7 +739,7 @@ algorithm
         inSets;
 
     // Otherwise, add a new set for it.
-    case (Connect.SETS(sets, sc, c, o), _, DAE.SOURCE(info=_), _)
+    case (Connect.SETS(sets, sc, c, o), _, DAE.SOURCE(), _)
       equation
         sc = sc + 1;
         //src = DAEUtil.addAdditionalComment(inSource, " add inside flow(" +
@@ -908,7 +908,7 @@ algorithm
   // Send true as last argument to setTrieGet, so that it also matches any
   // prefix of the cref in case the cref is a subcomponent of a deleted component.
   cr := ComponentReference.crefStripSubs(inComponent);
-  Connect.SET_TRIE_DELETED(name = _) := setTrieGet(cr, inSets, true);
+  Connect.SET_TRIE_DELETED() := setTrieGet(cr, inSets, true);
 end isDeletedComponent;
 
 public function connectionContainsDeletedComponents
@@ -1099,7 +1099,7 @@ algorithm
       then
         List.map2Flat(nodes, collectOuterElements2, inFace, SOME(cr));
 
-    case (Connect.SET_TRIE_LEAF(name = _), _, _)
+    case (Connect.SET_TRIE_LEAF(), _, _)
       equation
         e = setTrieGetLeafElement(inNode, inFace);
         cr = getElementName(e);
@@ -1107,7 +1107,7 @@ algorithm
       then
         {e};
 
-    case (Connect.SET_TRIE_DELETED(name = _), _, _) then {};
+    case (Connect.SET_TRIE_DELETED(), _, _) then {};
 
   end match;
 end collectOuterElements2;
@@ -1282,7 +1282,7 @@ algorithm
       ConnectorElement el;
 
     // A simple identifier, just create a new leaf.
-    case (DAE.CREF_IDENT(ident = _), _)
+    case (DAE.CREF_IDENT(), _)
       equation
         id = ComponentReference.printComponentRefStr(inCref);
         el = setElementName(inElement, inCref);
@@ -1642,7 +1642,7 @@ algorithm
       DAE.ComponentRef cr, rest_cr;
       SetTrieNode node;
 
-    case (DAE.CREF_IDENT(ident = _), _, _, _)
+    case (DAE.CREF_IDENT(), _, _, _)
       equation
         id = ComponentReference.printComponentRefStr(inCref);
         node = Connect.SET_TRIE_LEAF(id, NONE(), NONE(), NONE(), 0);
@@ -1771,13 +1771,13 @@ algorithm
       then
         (Connect.SET_TRIE_NODE(name, cref, nodes, cc), arg);
 
-     case (Connect.SET_TRIE_LEAF(name = _), _, _)
+     case (Connect.SET_TRIE_LEAF(), _, _)
        equation
          (node, arg) = inUpdateFunc(inNode, inArg);
        then
          (node, arg);
 
-     case (Connect.SET_TRIE_DELETED(name = _), _, _)
+     case (Connect.SET_TRIE_DELETED(), _, _)
        then (inNode, inArg);
 
   end match;
@@ -2224,7 +2224,7 @@ algorithm
         set = arrayGet(inSets, inSetPointee);
         outSets = match(set)
                     // If the set pointed at is a real set, add a pointer to it.
-                    case Connect.SET(elements = _)
+                    case Connect.SET()
                       then arrayUpdate(inSets, inSetPointer, Connect.SET_POINTER(inSetPointee));
                     // If the set pointed at is itself a pointer, follow the pointer until a
                     // real set is found (path compression).
@@ -2467,7 +2467,7 @@ algorithm
     local
       Integer set;
 
-    case (Connect.SET(ty = _), _) then inSet;
+    case (Connect.SET(), _) then inSet;
     case (Connect.SET_POINTER(index = set), _)
       then setArrayGet(inSetArray, set);
   end match;
@@ -2488,7 +2488,7 @@ algorithm
       DAE.DAElist   dae;
 
     // A set pointer left from generateSetList, ignore it.
-    case (Connect.SET_POINTER(index = _), _, _, _) then inDae;
+    case (Connect.SET_POINTER(), _, _, _) then inDae;
 
     case (Connect.SET(ty = Connect.EQU(), elements = eql), _, _, _)
       equation
@@ -2759,7 +2759,7 @@ algorithm
 
     // One inside, one outside:
     // cr1 = cr2;
-    case ({Connect.CONNECTOR_ELEMENT(name = cr1, face = _, source = src1),
+    case ({Connect.CONNECTOR_ELEMENT(name = cr1, source = src1),
            Connect.CONNECTOR_ELEMENT(name = cr2, face = _, source = src2)})
       equation
         src = DAEUtil.mergeSources(src1, src2);
@@ -3442,18 +3442,18 @@ algorithm
       InnerOuter.InstHierarchy ih;
 
     // is a non-qualified cref => OUTSIDE
-    case (_,_,DAE.CREF_IDENT(ident = _))
+    case (_,_,DAE.CREF_IDENT())
       then Connect.OUTSIDE();
 
     // is a qualified cref and is a connector => OUTSIDE
-    case (_,_,DAE.CREF_QUAL(ident = id,componentRef = _))
+    case (_,_,DAE.CREF_QUAL(ident = id))
       equation
        (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_)
          = Lookup.lookupVar(FCore.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
       then Connect.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE
-    case (_,_,DAE.CREF_QUAL(componentRef =_))
+    case (_,_,DAE.CREF_QUAL())
       then Connect.INSIDE();
   end matchcontinue;
 end componentFace;
@@ -3478,11 +3478,11 @@ public function componentFaceType
 algorithm
   outFace := matchcontinue (inComponentRef)
     // is a non-qualified cref => OUTSIDE
-    case (DAE.CREF_IDENT(ident = _)) then Connect.OUTSIDE();
+    case (DAE.CREF_IDENT()) then Connect.OUTSIDE();
     // is a qualified cref and is a connector => OUTSIDE
     case (DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTSIDE();
     // is a qualified cref and is NOT a connector => INSIDE
-    case (DAE.CREF_QUAL(componentRef =_)) then Connect.INSIDE();
+    case (DAE.CREF_QUAL()) then Connect.INSIDE();
   end matchcontinue;
 end componentFaceType;
 
@@ -3686,7 +3686,7 @@ algorithm
     // determined by the size of the return value of that function.
     case (DAE.T_COMPLEX(equalityConstraint = SOME((_, n, _)))) then n;
     // The size of a basic subtype with equality constraint is ZERO.
-    case (DAE.T_SUBTYPE_BASIC(complexType = t, equalityConstraint = SOME(_))) then 0;
+    case (DAE.T_SUBTYPE_BASIC(complexType = _, equalityConstraint = SOME(_))) then 0;
     // The size of a basic subtype is the size of the extended type.
     case (DAE.T_SUBTYPE_BASIC(complexType = t)) then sizeOfVariable2(t);
     // Anything we forgot?
@@ -3733,7 +3733,7 @@ algorithm
         true;
 
     // Previous case failed, not a valid connector.
-    case (ClassInf.CONNECTOR(path = _),
+    case (ClassInf.CONNECTOR(),
       SCode.ATTR(direction = Absyn.BIDIR()), _) then false;
 
     // All other cases are ok.
@@ -3772,7 +3772,7 @@ public function removeReferenceFromConnects
   output list<ConnectorElement> outConnects;
   output Boolean wasRemoved;
 algorithm
-  (outConnects, wasRemoved) := matchcontinue(inConnects, inCref, inPrefix)
+  (outConnects, wasRemoved) := match(inConnects, inCref, inPrefix)
     local
       list<ConnectorElement> rest,  all;
       ConnectorElement e;
@@ -3795,7 +3795,7 @@ algorithm
       then
         (all, b);
 
-  end matchcontinue;
+  end match;
 end removeReferenceFromConnects;
 
 public function printSetsStr

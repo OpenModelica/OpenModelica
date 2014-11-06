@@ -102,7 +102,7 @@ algorithm
       SourceInfo info;
 
     // class (we don't care here if is replaceable or not we can get that from the class)
-    case (SCode.CLASS( classDef = _), _, _, g)
+    case (SCode.CLASS(), _, _, g)
       equation
         g = mkClassNode(inClass, inParentRef, inKind, g);
       then
@@ -383,7 +383,7 @@ algorithm
       then
         g;
 
-    case (SCode.OVERLOAD(pathlst), _, _, g)
+    case (SCode.OVERLOAD(_), _, _, g)
       equation
       then
         g;
@@ -417,14 +417,14 @@ algorithm
       SCode.Mod m;
 
     // component
-    case (SCode.COMPONENT(name = _), _, _, g)
+    case (SCode.COMPONENT(), _, _, g)
       equation
         g = mkCompNode(inElement, inParentRef, inKind, g);
       then
         g;
 
     // class
-    case (SCode.CLASS(name = _), _, _, g)
+    case (SCode.CLASS(), _, _, g)
       equation
         g = mkClassNode(inElement, inParentRef, inKind, g);
       then
@@ -441,13 +441,13 @@ algorithm
       then
         g;
 
-    case (SCode.IMPORT(imp = _), _, _, g)
+    case (SCode.IMPORT(), _, _, g)
       equation
         g = mkImportNode(inElement, inParentRef, inKind, g);
       then
         g;
 
-    case (SCode.DEFINEUNIT(name = name), _, _, g)
+    case (SCode.DEFINEUNIT(), _, _, g)
       equation
         g = mkUnitsNode(inElement, inParentRef, inKind, g);
       then
@@ -1078,19 +1078,19 @@ algorithm
       then
         g;
 
-    case (Absyn.CALL(function_ = cref, functionArgs = _), _, _, g)
+    case (Absyn.CALL(function_ = cref), _, _, g)
       equation
         g = analyseCref(cref, inRef, inKind, g);
       then
         g;
 
-    case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = _), _, _, g)
+    case (Absyn.PARTEVALFUNCTION(function_ = cref), _, _, g)
       equation
         g = analyseCref(cref, inRef, inKind, g);
       then
         g;
 
-    case (Absyn.MATCHEXP(matchTy = _), _, _, g)
+    case (Absyn.MATCHEXP(), _, _, g)
       equation
         g = addMatchScope(inExp, inRef, inKind, g);
       then
@@ -1408,7 +1408,7 @@ public function mkRefNode
   input Graph inGraph;
   output Graph outGraph;
 algorithm
-  outGraph := matchcontinue(inName, inTargetScope, inParentRef, inGraph)
+  outGraph := match(inName, inTargetScope, inParentRef, inGraph)
     local
       Node n;
       Ref rn, rc;
@@ -1424,7 +1424,7 @@ algorithm
       then
         g;
 
-  end matchcontinue;
+  end match;
 end mkRefNode;
 
 public function mkAssertNode
@@ -1435,7 +1435,7 @@ public function mkAssertNode
   output Graph outGraph;
   output Ref outRef;
 algorithm
-  (outGraph, outRef) := matchcontinue(inName, inMessage, inParentRef, inGraph)
+  (outGraph, outRef) := match(inName, inMessage, inParentRef, inGraph)
     local
       Node n;
       Ref rn, rc;
@@ -1451,7 +1451,7 @@ algorithm
       then
         (g, rn);
 
-  end matchcontinue;
+  end match;
 end mkAssertNode;
 
 /*

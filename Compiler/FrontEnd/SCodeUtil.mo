@@ -349,12 +349,12 @@ algorithm
       Option<String> cmt;
       SourceInfo file_info;
       list<Absyn.Annotation> ann;
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.EXTERNAL(externalDecl = _) :: _)))) then true;
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.EXTERNAL() :: _)))) then true;
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.PARTS(classParts = (_ :: rest),comment = cmt,ann=ann),info = file_info))
       then containsExternalFuncDecl(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info));
     /* adrpo: handling also the case model extends X external ... end X; */
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.EXTERNAL(externalDecl = _) :: _)))) then true;
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.EXTERNAL() :: _)))) then true;
     /* adrpo: handling also the case model extends X external ... end X; */
     case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
                       body = Absyn.CLASS_EXTENDS(parts = (_ :: rest),comment = cmt,ann=ann),
@@ -716,7 +716,7 @@ algorithm
         als_1;
     case (cp :: rest) /* ignore everthing other than algorithms */
       equation
-        failure(Absyn.ALGORITHMS(contents = _) = cp);
+        failure(Absyn.ALGORITHMS() = cp);
         als = translateClassdefAlgorithms(rest);
       then
         als;
@@ -748,7 +748,7 @@ algorithm
         cos_1;
     case (cp :: rest) /* ignore everthing other than Constraints */
       equation
-        failure(Absyn.CONSTRAINTS(contents = _) = cp);
+        failure(Absyn.CONSTRAINTS() = cp);
         cos = translateClassdefConstraints(rest);
       then
         cos;
@@ -999,7 +999,7 @@ algorithm
         l = listAppend(e_1, es_1);
       then l;
 
-    case ((Absyn.LEXER_COMMENT(comment = _) :: es),vis)
+    case ((Absyn.LEXER_COMMENT() :: es),vis)
       then translateEitemlist(es, vis);
 
     case ((_ :: es),vis)
@@ -1472,7 +1472,7 @@ algorithm
       then
         (e_1 :: es_1);
 
-    case (Absyn.EQUATIONITEMCOMMENT(comment = _) :: es, _) then translateEEquations(es, inIsInitial);
+    case (Absyn.EQUATIONITEMCOMMENT() :: es, _) then translateEEquations(es, inIsInitial);
 
   end match;
 end translateEEquations;
@@ -1640,7 +1640,7 @@ algorithm
       then
         SCode.EQ_IF(conditions,trueEEquations,fb_1,com,info);
 
-    case (Absyn.EQ_IF(ifExp = _,equationTrueItems = _,elseIfBranches = ((_,_) :: _),equationElseItems = _),_,_,_)
+    case (Absyn.EQ_IF(elseIfBranches = ((_,_) :: _)),_,_,_)
       equation
         /* adrpo: we do handle else if clauses in OpenModelica, what do we do with this??!
         eq = translateEquation(Absyn.EQ_IF(e,tb,{},{Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE())}));
@@ -1667,7 +1667,7 @@ algorithm
     case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2),com,info,_) then SCode.EQ_EQUALS(e1,e2,com,info);
     case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),com,info,false) then SCode.EQ_CONNECT(c1,c2,com,info);
 
-    case (Absyn.EQ_CONNECT(connector1 = _), _, info, true)
+    case (Absyn.EQ_CONNECT(), _, info, true)
       equation
         Error.addSourceMessage(Error.CONNECT_IN_INITIAL_EQUATION, {}, info);
       then
@@ -1697,7 +1697,7 @@ algorithm
       then
         SCode.EQ_FOR(i,NONE(),{eq},com,info);
 
-    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(guardExp=SOME(_))::_,forEquations = _),_,info,_)
+    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(guardExp=SOME(_))::_),_,info,_)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"For loops with guards not yet implemented"}, info);
       then
@@ -2037,10 +2037,10 @@ algorithm
     case (Absyn.BOOL(_), _) then exp;
 
     // do NOT prefix if you have qualified component references
-    case (Absyn.CREF(componentRef = Absyn.CREF_QUAL(name=_)), _) then exp;
+    case (Absyn.CREF(componentRef = Absyn.CREF_QUAL()), _) then exp;
 
     // do prefix if you have simple component references
-    case (Absyn.CREF(componentRef = c as Absyn.CREF_IDENT(name=_)), _)
+    case (Absyn.CREF(componentRef = c as Absyn.CREF_IDENT()), _)
       equation
         e = Absyn.crefExp(Absyn.CREF_QUAL(prefix, {}, c));
       then
@@ -2249,7 +2249,7 @@ algorithm
         SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::out;
 
     // failure
-    case ((el as SCode.EXTENDS(baseClassPath = _))::_, redecls)
+    case ((el as SCode.EXTENDS())::_, redecls)
       equation
         print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" + SCodeDump.shortElementStr(el) +
                  "\nredeclares:\n" + stringDelimitList(List.map1(redecls, SCodeDump.unparseElementStr, SCodeDump.defaultOptions), "\n") + "\n");
@@ -2280,7 +2280,7 @@ algorithm
       SourceInfo info;
 
     // inner is NOMOD
-    case (SCode.REDECL(finalPrefix = _), SCode.NOMOD()) then inModOuter;
+    case (SCode.REDECL(), SCode.NOMOD()) then inModOuter;
 
     // both are redeclarations
     //case (SCode.REDECL(f1, e1, redecls), SCode.REDECL(f2, e2, els))
@@ -2354,7 +2354,7 @@ algorithm
     case (_, _, {}) then {};
 
     // class extends, error!
-    case (f, e, (el as SCode.CLASS(name = _, classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::rest)
+    case (f, e, (el as SCode.CLASS(classDef = SCode.CLASS_EXTENDS()))::rest)
       equation
         // print an error here
         print("- SCodeUtil.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " + SCodeDump.unparseElementStr(el,SCodeDump.defaultOptions) + "\n");
@@ -2435,7 +2435,7 @@ algorithm
       then
         SCode.MOD(fp, ep, sl, binding, i);
 
-    case (SCode.REDECL(element = _), _) then inMod;
+    case (SCode.REDECL(), _) then inMod;
 
     else inMod;
 
@@ -2515,7 +2515,7 @@ algorithm
       then
         SCode.MOD(fp, ep, sl, binding, i);
 
-    case (SCode.REDECL(element = _), _) then inMod;
+    case (SCode.REDECL(), _) then inMod;
 
     else inMod;
 
@@ -2653,7 +2653,7 @@ algorithm
       list<Absyn.TypeSpec> tss;
       Absyn.TypeSpec ts2;
       String str;
-    case (Absyn.TPATH(path=_),_) then ();
+    case (Absyn.TPATH(),_) then ();
     case (Absyn.TCOMPLEX(path=Absyn.IDENT("tuple"),typeSpecs={ts2}),_)
       equation
         str = Absyn.typeSpecString(ts);
@@ -2694,7 +2694,7 @@ algorithm
       SCode.Variability v1, v2;
       Absyn.Direction d1, d2;
 
-    case(SCode.ATTR(ad1 as {}, ct1, p1, v1, d1), SCode.ATTR(ad2, ct2, p2, v2, d2)) then SCode.ATTR(ad2, ct1, p1, v1, d1);
+    case(SCode.ATTR({}, ct1, p1, v1, d1), SCode.ATTR(ad2, _, _, _, _)) then SCode.ATTR(ad2, ct1, p1, v1, d1);
     else fromRedeclare;
 
   end matchcontinue;

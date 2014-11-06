@@ -74,14 +74,14 @@ algorithm
 
     case (_,_,{}) then {};
 
-    case (from as DAE.T_INTEGER(varLst = _),to as DAE.T_REAL(varLst = _),(Values.INTEGER(integer = i) :: vrest))
+    case (from as DAE.T_INTEGER(),to as DAE.T_REAL(varLst = _),(Values.INTEGER(integer = i) :: vrest))
       equation
         vallst = typeConvert(from, to, vrest);
         rval = intReal(i);
       then
         (Values.REAL(rval) :: vallst);
 
-    case (from as DAE.T_REAL(varLst = _),to as DAE.T_INTEGER(varLst = _),(Values.REAL(real = r) :: vrest))
+    case (from as DAE.T_REAL(),to as DAE.T_INTEGER(varLst = _),(Values.REAL(real = r) :: vrest))
       equation
         vallst = typeConvert(from, to, vrest);
         ival = realInt(r);
@@ -117,7 +117,7 @@ algorithm
     case(Values.REAL(_)) then DAE.T_REAL_DEFAULT;
     case(Values.BOOL(_)) then DAE.T_BOOL_DEFAULT;
     case(Values.STRING(_)) then DAE.T_STRING_DEFAULT;
-    case(Values.ENUM_LITERAL(name = path, index = _))
+    case(Values.ENUM_LITERAL(name = path))
       equation
         path = Absyn.pathPrefix(path);
       then DAE.T_ENUMERATION(NONE(),path,{},{},{},DAE.emptyTypeSource);
@@ -168,7 +168,7 @@ public function isArray "Return true if Value is an array."
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inValue)
-    case (Values.ARRAY(valueLst = _)) then true;
+    case (Values.ARRAY()) then true;
     else false;
   end match;
 end isArray;
@@ -178,7 +178,7 @@ public function isRecord "Return true if Value is an array."
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inValue)
-    case (Values.RECORD(orderd = _)) then true;
+    case (Values.RECORD()) then true;
     else false;
   end match;
 end isRecord;
@@ -480,13 +480,13 @@ algorithm
       String s1,str,slenstr,sval,s2,s4;
       list<Values.Value> xs,vallst;
       Integer slen;
-    case ((Values.INTEGER(integer = _) :: xs))
+    case ((Values.INTEGER() :: xs))
       equation
         s1 = unparseDescription(xs);
         str = stringAppend("# i!\n", s1);
       then
         str;
-    case ((Values.REAL(real = _) :: xs))
+    case ((Values.REAL() :: xs))
       equation
         s1 = unparseDescription(xs);
         str = stringAppend("# r!\n", s1);
@@ -548,10 +548,10 @@ algorithm
         res = unparsePrimType(elts);
       then
         res;
-    case ((Values.INTEGER(integer = _) :: _)) then "i";
-    case ((Values.REAL(real = _) :: _)) then "r";
-    case ((Values.STRING(string = _) :: _)) then "s";
-    case ((Values.BOOL(boolean = _) :: _)) then "b";
+    case ((Values.INTEGER() :: _)) then "i";
+    case ((Values.REAL() :: _)) then "r";
+    case ((Values.STRING() :: _)) then "s";
+    case ((Values.BOOL() :: _)) then "b";
     case ({}) then "{}";
     else "error";
   end matchcontinue;
@@ -978,7 +978,7 @@ algorithm
     // Matrix
     case(Values.ARRAY(valueLst=v::xs)::xs2,dim::int_dims)
       equation
-        failure(Values.ARRAY(valueLst = _) = v);
+        failure(Values.ARRAY() = v);
         explist = List.map((v :: xs), valueExp);
         DAE.MATRIX(t,_,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
@@ -988,7 +988,7 @@ algorithm
     // Matrix last row
     case({Values.ARRAY(valueLst=v::xs)},_)
       equation
-        failure(Values.ARRAY(valueLst = _) = v);
+        failure(Values.ARRAY() = v);
         dim = listLength(v::xs);
         explist = List.map((v :: xs), valueExp);
         vt = Types.typeOfValue(v);
@@ -1633,36 +1633,36 @@ algorithm
         rres = r1 * r2;
       then
         Values.REAL(rres);
-    case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.INTEGER(integer = _) :: _)))
+    case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.INTEGER() :: _)))
       equation
         sres = multScalarProduct(v2lst, vlst);
         Values.ARRAY(vres,dim::dims) = multScalarProduct(rest, vlst);
         dim = dim+1;
       then
         Values.ARRAY(sres :: vres, dim::dims);
-    case ({},(Values.INTEGER(integer = _) :: _)) then makeArray({});
-    case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.REAL(real = _) :: _)))
+    case ({},(Values.INTEGER() :: _)) then makeArray({});
+    case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.REAL() :: _)))
       equation
         sres = multScalarProduct(v2lst, vlst);
         Values.ARRAY(vres,dim::dims) = multScalarProduct(rest, vlst);
         dim = dim+1;
       then
         Values.ARRAY(sres :: vres,dim::dims);
-    case ({},(Values.REAL(real = _) :: _)) then makeArray({});
-    case ((vlst as (Values.INTEGER(integer = _) :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
+    case ({},(Values.REAL() :: _)) then makeArray({});
+    case ((vlst as (Values.INTEGER() :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
       equation
         (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
         v = multScalarProduct(vlst, col);
         Values.ARRAY(vals,dim::dims) = multScalarProduct(vlst, mat_1);
       then
         Values.ARRAY(v :: vals, dim::dims);
-    case ((vlst as (Values.INTEGER(integer = _) :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
+    case ((vlst as (Values.INTEGER() :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
       equation
         (Values.ARRAY(valueLst = col),_) = matrixStripFirstColumn(mat);
         Values.INTEGER(i1) = multScalarProduct(vlst, col);
       then
         makeArray({Values.INTEGER(i1)});
-    case ((vlst as (Values.REAL(real = _) :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
+    case ((vlst as (Values.REAL() :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
       equation
         (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
         v = multScalarProduct(vlst, col);
@@ -1670,7 +1670,7 @@ algorithm
         dim = dim+1;
       then
         Values.ARRAY(v :: vals, dim::dims);
-    case ((vlst as (Values.REAL(real = _) :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
+    case ((vlst as (Values.REAL() :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
       equation
         (Values.ARRAY(valueLst = col),_) = matrixStripFirstColumn(mat);
         Values.REAL(r1) = multScalarProduct(vlst, col);
@@ -1734,7 +1734,7 @@ algorithm
     local
       Values.Value res1;
       list<Values.Value> res2,m1,v1lst,rest1,m2;
-    case (((Values.ARRAY(valueLst = v1lst) :: rest1)),(m2 as (Values.ARRAY(valueLst = _) :: _)))
+    case (((Values.ARRAY(valueLst = v1lst) :: rest1)),(m2 as (Values.ARRAY() :: _)))
       equation
         res1 = multScalarProduct(v1lst, m2);
         res2 = multMatrix(rest1, m2);
@@ -2351,7 +2351,7 @@ algorithm
     case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then ();
     // adrpo: ignore dimenstions here as we're just printing! otherwise it fails.
     //        TODO! FIXME! see why the dimension list is wrong!
-    case (Values.ARRAY(valueLst = (v1 :: v1s), dimLst = _),Values.ARRAY(valueLst = (v2 :: v2s), dimLst = _))
+    case (Values.ARRAY(valueLst = (v1 :: v1s)),Values.ARRAY(valueLst = (v2 :: v2s), dimLst = _))
       equation
         valString2(v1);
         Print.printBuf(",");
@@ -2568,7 +2568,7 @@ algorithm
       list<Values.Value> rest, lst;
       Option<Values.Value> vOpt;
 
-    case ((v as Values.EMPTY(scope = _))::_) then SOME(v);
+    case ((v as Values.EMPTY())::_) then SOME(v);
 
     case (Values.ARRAY(valueLst = lst)::_)
       equation

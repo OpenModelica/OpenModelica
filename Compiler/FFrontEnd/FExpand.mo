@@ -85,7 +85,7 @@ algorithm
       Graph g;
       Scope s;
 
-    case (g, p)
+    case (g, _)
       equation
         t = FGraph.top(g);
         r = t;

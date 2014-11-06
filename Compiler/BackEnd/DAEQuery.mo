@@ -165,7 +165,7 @@ algorithm
       then
         res;
 
-    case (BackendDAE.ALGORITHM(alg=_),_)
+    case (BackendDAE.ALGORITHM(),_)
       equation
         res = stringAppendList({"Algorithm\n"});
       then
@@ -297,12 +297,12 @@ algorithm
 
     case ({},_) then "";
     case (((BackendDAE.VAR(varName = cr,
-                            varKind = _,
+                            
                             varDirection = dir,
-                            varType = _,
-                            bindExp = _,
+                            
+                            
 
-                            values = _,
+                            
 
                             connectorType = _)) :: {}),varno)
       equation
@@ -332,12 +332,12 @@ algorithm
         str;
 
       case (((BackendDAE.VAR(varName = cr,
-                              varKind = _,
+                              
                               varDirection = dir,
-                              varType = _,
-                              bindExp = _,
+                              
+                              
 
-                              values = _,
+                              
 
                               connectorType = _)) :: xs),varno)
       equation
@@ -644,7 +644,7 @@ algorithm
 
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),p) =
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) =
         BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
                                  x is inserted as negative value, since it is needed by debugging and index
                                  reduction using dummy derivatives";
@@ -717,7 +717,7 @@ algorithm
       then
         pStr;
 
-    case (DAE.IFEXP(expCond = e1 as DAE.RELATION(exp1 = _, operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
+    case (DAE.IFEXP(expCond = e1 as DAE.RELATION(operator = op1, exp2 =ee2),expThen = e2,expElse = e3),vars) /* if expressions. */
       equation
         opStr = ExpressionDump.relopSymbol(op1);
         s = printExpStr(ee2);
@@ -753,7 +753,7 @@ algorithm
 */
 
     // If expression with logic sentence.
-    case (DAE.IFEXP(expCond = e1 as DAE.LBINARY(exp1 = _, operator = _, exp2 =_),expThen = e2,expElse = e3),vars) /* if expressions. */
+    case (DAE.IFEXP(expCond = e1 as DAE.LBINARY(),expThen = e2,expElse = e3),vars) /* if expressions. */
       equation
         _ = printExpStr(e1);
         //opStr = ExpressionDump.relopSymbol(op1);
@@ -771,7 +771,7 @@ algorithm
       then
         pStr;
     // if-expressions with a variable (Bool)
-    case (DAE.IFEXP(expCond = e1 as DAE.CREF(componentRef = _), expThen = e2, expElse = e3),vars) /* if expressions. */
+    case (DAE.IFEXP(expCond = e1 as DAE.CREF(), expThen = e2, expElse = e3),vars) /* if expressions. */
       equation
         //sb = printExpStr(e1);
 
@@ -804,7 +804,7 @@ algorithm
 
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)) :: _),p) = BackendVariable.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = List.map(p, intString);
       then
         pStr;
@@ -845,7 +845,7 @@ algorithm
       then
         pStr;
 
-    case (DAE.TUPLE(PR = _),_)
+    case (DAE.TUPLE(),_)
       equation
         print("- DAEQuery.incidence_row_exp TUPLE not impl. yet.");
       then

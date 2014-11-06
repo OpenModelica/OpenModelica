@@ -137,17 +137,17 @@ algorithm
         inClassDef;
 
     // handle enumeration, just return the same
-    case (SCode.ENUMERATION(enumLst = _))
+    case (SCode.ENUMERATION())
       then
         inClassDef;
 
     // handle overload
-    case (SCode.OVERLOAD(pathLst = _))
+    case (SCode.OVERLOAD())
       then
         inClassDef;
 
     // handle pder
-    case (SCode.PDER(functionPath = _))
+    case (SCode.PDER())
       then
         inClassDef;
 
@@ -184,7 +184,7 @@ algorithm
     //    els;
 
     // handle classes
-    case ((el as SCode.CLASS(name = _))::rest)
+    case ((el as SCode.CLASS())::rest)
       equation
         el2 = simplifyClass(el);
         els = simplifyElements(rest);

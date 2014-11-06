@@ -194,7 +194,7 @@ algorithm
       Prefix.ComponentPrefix c;
       ClassInf.State ci_state;
       list<DAE.Dimension> pdims;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = a, dimensions = pdims, subscripts = b,next = _,ci_state=ci_state),cp))
+    case (Prefix.PREFIX(Prefix.PRE(prefix = a, dimensions = pdims, subscripts = b,ci_state=ci_state),cp))
       then Prefix.PREFIX(Prefix.PRE(a,pdims,b,Prefix.NOCOMPPRE(),ci_state),cp);
   end match;
 end prefixFirst;
@@ -693,11 +693,11 @@ algorithm
         (cache,e);
 
     // handle literal constants
-    case (cache,_,_,(e as DAE.ICONST(integer = _)),_) then (cache,e);
-    case (cache,_,_,(e as DAE.RCONST(real = _)),_) then (cache,e);
-    case (cache,_,_,(e as DAE.SCONST(string = _)),_) then (cache,e);
-    case (cache,_,_,(e as DAE.BCONST(bool = _)),_) then (cache,e);
-    case (cache,_,_,(e as DAE.ENUM_LITERAL(name = _)), _) then (cache, e);
+    case (cache,_,_,(e as DAE.ICONST()),_) then (cache,e);
+    case (cache,_,_,(e as DAE.RCONST()),_) then (cache,e);
+    case (cache,_,_,(e as DAE.SCONST()),_) then (cache,e);
+    case (cache,_,_,(e as DAE.BCONST()),_) then (cache,e);
+    case (cache,_,_,(e as DAE.ENUM_LITERAL()), _) then (cache, e);
 
     // adrpo: handle prefixing of inner/outer variables
     case (cache,env,ih,DAE.CREF(componentRef = cr,ty = t),pre)
@@ -709,7 +709,7 @@ algorithm
       then
         (cache,crefExp);
 
-    case (cache, env, ih, DAE.CREF(componentRef = _), pre)
+    case (cache, env, ih, DAE.CREF(), pre)
       equation
         (cache, crefExp) = prefixExpCref(cache, env, ih, inExp, pre);
       then

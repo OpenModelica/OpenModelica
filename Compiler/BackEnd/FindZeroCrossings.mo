@@ -256,7 +256,7 @@ algorithm
       (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum, inWhenClauseAccum);
     then (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
-    case ((e as BackendDAE.IF_EQUATION(conditions=_))::xs, {}) equation
+    case ((e as BackendDAE.IF_EQUATION())::xs, {}) equation
       eq_count = inEqnCount + 1;
       (e, countRelations, countMathFunctions, res, relationsLst, sampleLst) = findZeroCrossingsIfEqns(e, inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfRelations, inNumberOfMathFunctions, eq_count, -1, inVariables1, knvars);
       eqnsAccum = e::inEquationLstAccum;
@@ -645,7 +645,7 @@ algorithm
     then (inExp, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars)));
 
     // coditions that are zerocrossings.
-    case (DAE.LUNARY(exp=e1, operator=op), (iterator, inExpLst, range as DAE.RANGE(start=_), (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
+    case (DAE.LUNARY(exp=e1, operator=op), (iterator, inExpLst, range as DAE.RANGE(), (zeroCrossings, relations, samples, numRelations, numMathFunctions), (alg_indx, vars, knvars))) equation
       true = Expression.expContains(inExp, iterator);
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY with Iterator: " + intString(numRelations) + "\n");
@@ -951,7 +951,7 @@ algorithm
       BackendDAE.ZeroCrossing newZeroCrossing;
       list<BackendDAE.ZeroCrossing> zcLst;
 
-    case DAE.RELATION(exp1=_) equation
+    case DAE.RELATION() equation
       {} = List.select1(inZeroCrossings, zcEqual, inZeroCrossing);
       zcLst = listAppend(inZeroCrossings, {inZeroCrossing});
     then (inRelation, zcLst, inIndex+1);
@@ -1209,15 +1209,15 @@ algorithm
       ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_WHEN(e_1, conditions, initialCall, stmts, SOME(ew_1), source)::xs_1, extraArg));
 
-    case (x as DAE.STMT_ASSERT(cond=_))::xs equation
+    case (x as DAE.STMT_ASSERT())::xs equation
       ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case (x as DAE.STMT_TERMINATE(msg=_))::xs equation
+    case (x as DAE.STMT_TERMINATE())::xs equation
       ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case (x as DAE.STMT_REINIT(var=_))::xs equation
+    case (x as DAE.STMT_REINIT())::xs equation
       ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
@@ -1226,11 +1226,11 @@ algorithm
       ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_NORETCALL(e_1, source)::xs_1, extraArg));
 
-    case (x as DAE.STMT_RETURN(source=_))::xs equation
+    case (x as DAE.STMT_RETURN())::xs equation
       ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 
-    case (x as DAE.STMT_BREAK(source=_))::xs equation
+    case (x as DAE.STMT_BREAK())::xs equation
       ((xs_1, extraArg)) = traverseStmtsExps(xs, inExtraArg, inKnvars);
     then ((x::xs_1, extraArg));
 

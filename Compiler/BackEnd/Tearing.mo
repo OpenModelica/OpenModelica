@@ -105,7 +105,7 @@ algorithm
       BackendDAE.SHARED(backendDAEType=DAEtype) = shared;
       false = stringEqual(methodString, "shuffleTearing") and stringEq("simulation",BackendDump.printBackendDAEType2String(DAEtype));
       method = getTearingMethod(methodString);
-      BackendDAE.DAE(shared=shared) = inDAE;
+      BackendDAE.DAE(shared=_) = inDAE;
       if Flags.isSet(Flags.TEARING_DUMP) then
         print("\n\n\n\n" + UNDERLINE + UNDERLINE + "\nCalling Tearing for ");
         BackendDump.printBackendDAEType(DAEtype);
@@ -946,7 +946,7 @@ protected function findVareqns
     output Boolean outIsEqual;
   end CompFunc;
 algorithm
-  vareqnsOut := matchcontinue(ass2In,inCompFunc,mt,tSel_alwaysIn,vareqnsIn)
+  vareqnsOut := match(ass2In,inCompFunc,mt,tSel_alwaysIn,vareqnsIn)
     local
     Integer tvar;
       list<Integer> rest;
@@ -957,7 +957,7 @@ algorithm
     equation
       vareqns = List.removeOnTrue(ass2In,inCompFunc,mt[tvar]);
        then findVareqns(ass2In,inCompFunc,mt,rest,listAppend(vareqnsIn,vareqns));
- end matchcontinue;
+ end match;
 end findVareqns;
 
 

@@ -575,14 +575,14 @@ algorithm
       list<DAE.Var> varLst;
       list<DAE.ComponentRef> crefs;
       String s;
-    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),NONE())
+    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),SOME(pcr))
+    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -626,7 +626,7 @@ algorithm
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (_,DAE.CREF_IDENT(ident=_),_)
+    case (_,DAE.CREF_IDENT(),_)
       then
         extendrepl;
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
@@ -966,7 +966,7 @@ TODO: find out why array residual functions containing arrays as xloc[] does not
   output DAE.Exp outExp;
 algorithm  outExp := matchcontinue(inExp,inType)
   local DAE.ComponentRef cr;
-  case(DAE.CREF(cr,DAE.T_UNKNOWN(source = _)),_) then Expression.makeCrefExp(cr,inType);
+  case(DAE.CREF(cr,DAE.T_UNKNOWN()),_) then Expression.makeCrefExp(cr,inType);
   case (_,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
@@ -1046,7 +1046,7 @@ algorithm
         true = isIterationVar(repl, ident);
       then
         (e,false);
-    case ((e as DAE.CREF(componentRef = cr,ty = _)),repl,cond)
+    case ((e as DAE.CREF(componentRef = cr)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (cr,_) = replaceCrefSubs(cr,repl,cond);
@@ -1112,7 +1112,7 @@ algorithm
         true = c1 or c2 or c3;
       then
         (DAE.IFEXP(e1_1,e2_1,e3_1),true);
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr,ty=_)}),REPLACEMENTS(derConst=SOME(derConst)),cond)
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr)}),REPLACEMENTS(derConst=SOME(derConst)),cond)
       equation
         e = BaseHashTable.get(cr,derConst);
         (e,_) = replaceExp(e, inVariableReplacements, cond);
@@ -2021,7 +2021,7 @@ algorithm
         (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
       then
         (res1,b);
-    case ((wop as BackendDAE.TERMINATE(source=_))::res,_,_,_,_)
+    case ((wop as BackendDAE.TERMINATE())::res,_,_,_,_)
       equation
         (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed,wop::iAcc);
       then
@@ -2382,9 +2382,9 @@ algorithm
   outStatementLst :=
   match (lhs,rhs,type_,source,inStatementLst)
     local DAE.Type tp;
-    case (DAE.CREF(componentRef=_),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,rhs,source)::inStatementLst;
-    case (DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(componentRef=_)),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
-    case (DAE.LUNARY(DAE.NOT(tp),DAE.CREF(componentRef=_)),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
+    case (DAE.CREF(),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,rhs,source)::inStatementLst;
+    case (DAE.UNARY(DAE.UMINUS(tp),DAE.CREF()),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
+    case (DAE.LUNARY(DAE.NOT(tp),DAE.CREF()),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
   end match;
  end validLhsAssignSTMT;
 
@@ -2577,7 +2577,7 @@ algorithm
       (divideByZero, pos, ident) = divideByZeroReplacements2(tplLst2, counter+1, BooleanControlExp, counter, str);
     then (divideByZero, pos, ident);
 
-    case((cr, exp) :: tplLst2, _, _, _, _) equation
+    case((cr, _) :: _, _, _, _, _) equation
       str = ComponentReference.printComponentRefStr(cr);
     then (true, counter, str);
   end matchcontinue;
@@ -2596,7 +2596,7 @@ algorithm
 
     case (_, true) then (inExp,true);
 
-    case (DAE.BINARY(exp1, DAE.DIV(_), exp2), false)
+    case (DAE.BINARY(_, DAE.DIV(_), exp2), false)
       equation
         b = Expression.isZero(exp2);
       then (inExp, b);

@@ -472,7 +472,7 @@ algorithm
     then ({}, leftCrs);
 
     // when equation during initialization
-    case ((stmt as DAE.STMT_WHEN(source=_))::rest, _, _, _) equation
+    case ((stmt as DAE.STMT_WHEN())::rest, _, _, _) equation
       // for when statements it is not necessary that all branches have the same left hand side variables
       // -> take care that for each left hand site an assigment is generated
       (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, false, iLeftCrs, inAcc);
@@ -881,7 +881,7 @@ algorithm
       DAE.InstDims arryDim;
 
     // unfixed state
-    case (var as BackendDAE.VAR(varName=_, varKind=BackendDAE.STATE(index=_)), vars) equation
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE()), vars) equation
       false = BackendVariable.varFixed(var);
       // ignore stateset variables
       // false = isStateSetVar(cr);
@@ -1453,7 +1453,7 @@ algorithm
 
     case (currRedundantEqn::restRedundantEqns, _, _, _, _, _, _, _, _, _) equation
       nVars = BackendVariable.varsSize(inVars);
-      nEqns = BackendDAEUtil.equationSize(inEqns);
+      _ = BackendDAEUtil.equationSize(inEqns);
     //BackendDump.dumpMatchingVars(vecVarToEqs);
     //BackendDump.dumpMatchingEqns(vecEqsToVar);
     //BackendDump.dumpVariables(inVars, "inVars");
@@ -1471,7 +1471,7 @@ algorithm
 
       // split comps in a list with all equations that are part of a algebraic
       // loop and in one list with all other equations
-      (outListComps, outLoopListComps) = splitStrongComponents(comps);
+      (_, outLoopListComps) = splitStrongComponents(comps);
     //BackendDump.dumpList(outListComps, "outListComps: ");
     //BackendDump.dumpList(outLoopListComps, "outLoopListComps: ");
 
@@ -1524,11 +1524,11 @@ algorithm
     //  true = intEq(id, inVarID);
     //then false;
 
-    case ((id, BackendDAE.SOLVABILITY_UNSOLVABLE())::elem, _) equation
+    case ((id, BackendDAE.SOLVABILITY_UNSOLVABLE())::_, _) equation
       true = intEq(id, inVarID);
     then false;
 
-    case ((id, BackendDAE.SOLVABILITY_NONLINEAR())::elem, _) equation
+    case ((id, BackendDAE.SOLVABILITY_NONLINEAR())::_, _) equation
       true = intEq(id, inVarID);
     then false;
 
@@ -1671,7 +1671,7 @@ algorithm
       markedEqns = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, markedEqns, inLoopListComps);
     then markedEqns;
 
-    case (indexUnassigned::unassignedEqns2, _, _, _, _, _) equation
+    case (_::unassignedEqns2, _, _, _, _, _) equation
       markedEqns = downCompsMarker(unassignedEqns2, vecVarToEq, m, flatComps, inMarkedEqns, inLoopListComps);
     then markedEqns;
   end matchcontinue;
@@ -1794,7 +1794,7 @@ algorithm
       Error.addCompilerNotification("The following equation is consistent and got removed from the initialization problem: " + BackendDump.equationString(eqn));
     then ({currID}, true, {});
 
-    case (currID, _, _, _, _, _, _, _) equation
+    case (_, _, _, _, _, _, _, _) equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
       true = intGt(counter, nEqns-nVars);
@@ -1842,7 +1842,7 @@ algorithm
       listVar=m[currID];
       false=intEq(0, listLength(listVar));
 
-      eqn2 = BackendEquation.equationNth1(inEqnsOrig, currID);
+      _ = BackendEquation.equationNth1(inEqnsOrig, currID);
       Error.addCompilerNotification("It was not possible to analyze the given system symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.");
     then ({}, false, {});
 
@@ -1889,17 +1889,17 @@ algorithm
       DAE.Type ty;
       String Para;
 
-    case (DAE.CREF(componentRef=DAE.CREF_QUAL(ident=Para), ty=ty), listParameter)
+    case (DAE.CREF(componentRef=DAE.CREF_QUAL(ident=Para)), listParameter)
       equation
         listParameter=listAppend({Para}, listParameter);
       then (exp, listParameter);
 
-    case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident=Para), ty=ty), listParameter)
+    case (DAE.CREF(componentRef=DAE.CREF_IDENT(ident=Para)), listParameter)
       equation
         listParameter=listAppend({Para}, listParameter);
       then (exp, listParameter);
 
-    case (DAE.CREF(componentRef=DAE.CREF_ITER(ident=Para), ty=ty), listParameter)
+    case (DAE.CREF(componentRef=DAE.CREF_ITER(ident=Para)), listParameter)
       equation
         listParameter=listAppend({Para}, listParameter);
       then (exp, listParameter);
@@ -2046,7 +2046,7 @@ algorithm
       SourceInfo info;
 
     // state
-    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty), (vars, fixvars, eqns, hs)) equation
+    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty), (vars, fixvars, eqns, hs)) equation
       isFixed = BackendVariable.varFixed(var);
       _ = BackendVariable.varStartValueOption(var);
       preUsed = BaseHashSet.has(cr, hs);
@@ -2160,7 +2160,7 @@ algorithm
     // *** MODELICA 3.1 COMPATIBLE ***
     // parameter with binding and fixed=false and no start value
     // use the binding as start value
-    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=_), (vars, fixvars, eqns, hs)) equation
+    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, fixvars, eqns, hs)) equation
       true = intLe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
@@ -2179,7 +2179,7 @@ algorithm
     // *** MODELICA 3.1 COMPATIBLE ***
     // parameter with binding and fixed=false and a start value
     // ignore the binding and use the start value
-    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp), varType=_), (vars, fixvars, eqns, hs)) equation
+    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, fixvars, eqns, hs)) equation
       true = intLe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 31);
       false = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());

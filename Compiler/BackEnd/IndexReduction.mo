@@ -812,7 +812,7 @@ algorithm
       then (e, tpl);
 
     // case for functionpointers
-    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),tpl)
+    case (e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC()),tpl)
       then
         (e, tpl);
 
@@ -1579,14 +1579,14 @@ algorithm
         statecount = if not b then statecount+1 else statecount;
       then (var, statecount);
 
-    case (var as BackendDAE.VAR(varName=_, varKind=BackendDAE.STATE(index=_,derName=SOME(_))), statecount)
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(_))), statecount)
       equation
         // do not count states with stateSelect.always, but ignore only higest state
         b = varStateSelectAlways(var);
         statecount = if b then statecount+1 else statecount;
       then (var, statecount);
 
-    case (var as BackendDAE.VAR(varName=_, varKind=BackendDAE.STATE(index=diffcount,derName=NONE())), statecount)
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount,derName=NONE())), statecount)
       equation
         statecount = diffcount + statecount;
         // do not count states with stateSelect.always, but ignore only higest state
@@ -2131,7 +2131,7 @@ algorithm
         vlst = listAppend(vlst,iVars);
       then
         vlst;
-    case(BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(index=diffindx)),_,_,_,_)
+    case(BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffindx)),_,_,_,_)
       then
          List.consOnTrue(intGt(diffindx,level),inVar,iVars);
     else iVars;
@@ -2450,7 +2450,7 @@ algorithm
       BackendDAE.Variables hov;
       list<Integer> derstatesindexs;
       Option<DAE.ComponentRef> derName;
-    case (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(derName=_)),(stateindexs,invmap,indx,nv,hov,derstatesindexs))
+    case (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE()),(stateindexs,invmap,indx,nv,hov,derstatesindexs))
       equation
         (_::_,{s}) = BackendVariable.getVar(cr, hov);
         newindx = nv+s;
@@ -3618,7 +3618,7 @@ protected function varStateSelectAlways
   output Boolean b;
 algorithm
   b := match(v)
-    case BackendDAE.VAR(varKind=BackendDAE.STATE(index=_),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))) then true;
+    case BackendDAE.VAR(varKind=BackendDAE.STATE(),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))) then true;
     else false;
   end match;
 end varStateSelectAlways;
@@ -3846,7 +3846,7 @@ algorithm
         var = BackendDAE.VAR(cr,BackendDAE.STATE(1,NONE()),dir,prl,tp,NONE(),NONE(),dim,source,odattr,comment,ct);
       then (var,ht);
    // state
-    case (BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(index=diffcount,derName=derName),varDirection=_,varParallelism=_,varType=_,arryDim=_,connectorType=_),_,_)
+    case (BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount,derName=derName)),_,_)
       equation
         true = intGt(diffcount,1);
         var = BackendVariable.setVarKind(inVar, BackendDAE.STATE(1,derName));
@@ -4055,12 +4055,12 @@ algorithm
       Integer diffcount;
       list<BackendDAE.Var> varlst;
     // state with stateSelect.always, diffed once
-    case (var as BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffcount),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
       equation
         true = intEq(diffcount,1);
       then (var,(vars,so,varlst,ht));
     // state with stateSelect.always, diffed more than once, known derivative
-    case (var as BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(derName=SOME(cr)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=SOME(cr)),values = SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS())))),(vars,so,varlst,ht))
       equation
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,SOME(cr)));
       then (var,(vars,so,varlst,ht));
@@ -4074,7 +4074,7 @@ algorithm
         var = BackendVariable.setVarKind(var, BackendDAE.STATE(1,NONE()));
       then (var,(vars,so,varlst,ht));
     // state, replaceable with known derivative
-    case (var as BackendDAE.VAR(name,BackendDAE.STATE(index=_,derName=SOME(_)),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht))
+    case (var as BackendDAE.VAR(name,BackendDAE.STATE(derName=SOME(_)),dir,prl,tp,bind,value,dim,source,attr,comment,ct),(vars,so,varlst,ht))
       equation
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(1,1,name,name,var,vars,so,varlst,ht);
@@ -4790,7 +4790,7 @@ algorithm
       list<Integer> ilst,changedVars;
       BackendDAE.Variables vars;
     case({},{},_,_) then (inVars,iChangedVars);
-    case((BackendDAE.VAR(varKind = BackendDAE.STATE(index=_)))::vlst,_::ilst,_,_)
+    case((BackendDAE.VAR(varKind = BackendDAE.STATE()))::vlst,_::ilst,_,_)
       equation
         (vars,changedVars) = algebraicState(vlst,ilst,inVars,iChangedVars);
       then
@@ -4988,7 +4988,7 @@ algorithm
         (outVars,outChangedVars) = changeDerVariablestoStates1(rest,ilst,vars,i::inChangedVars);
       then
         (outVars,outChangedVars);
-    case (BackendDAE.VAR(varKind=BackendDAE.STATE(index=_))::rest,_::ilst,_,_)
+    case (BackendDAE.VAR(varKind=BackendDAE.STATE())::rest,_::ilst,_,_)
       equation
         (outVars,outChangedVars) = changeDerVariablestoStates1(rest,ilst,inVars,inChangedVars);
       then
@@ -5198,7 +5198,7 @@ algorithm
         GraphML.dumpGraph(graphInfo,filename);
      then
        ();
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=_,ass2=vec2,comps={})),_,SOME(vec3),_,_)
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass2=vec2,comps={})),_,SOME(vec3),_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
@@ -5214,7 +5214,7 @@ algorithm
         GraphML.dumpGraph(graphInfo,filename);
      then
        ();
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=_,ass2=_,comps=comps)),_,NONE(),_,_)
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),_,NONE(),_,_)
       equation
         vars = BackendVariable.daeVars(isyst);
         _ = BackendEquation.getEqnsFromEqSystem(isyst);
@@ -6004,7 +6004,7 @@ algorithm
       BackendDAE.Variables vars;
       String msg;
     case ({},_,_) then inVars;
-    case ((var as BackendDAE.VAR(varName=_,varKind=BackendDAE.STATE(index=_,derName=NONE())))::vlst,
+    case ((var as BackendDAE.VAR(varKind=BackendDAE.STATE(derName=NONE())))::vlst,
           BackendDAE.VAR(varName=dcr)::dvlst,_)
       equation
         var = BackendVariable.setStateDerivative(var,SOME(dcr));

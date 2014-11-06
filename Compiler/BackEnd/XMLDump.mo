@@ -432,17 +432,17 @@ algorithm
   outString:=
   match (inOperator)
     local String error_msg;
-    case (DAE.ADD(ty = _)) then MathMLPlus;
-    case (DAE.SUB(ty = _)) then MathMLMinus;
-    case (DAE.MUL(ty = _)) then MathMLTimes;
-    case (DAE.DIV(ty = _)) then MathMLDivide;
-    case (DAE.POW(ty = _)) then MathMLPower;
-    case (DAE.ADD_ARR(ty = _)) then MathMLPlus;
-    case (DAE.SUB_ARR(ty = _)) then MathMLMinus;
-    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then MathMLTimes;
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then MathMLScalarproduct;
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then MathMLVectorproduct;
-    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then MathMLDivide;
+    case (DAE.ADD()) then MathMLPlus;
+    case (DAE.SUB()) then MathMLMinus;
+    case (DAE.MUL()) then MathMLTimes;
+    case (DAE.DIV()) then MathMLDivide;
+    case (DAE.POW()) then MathMLPower;
+    case (DAE.ADD_ARR()) then MathMLPlus;
+    case (DAE.SUB_ARR()) then MathMLMinus;
+    case (DAE.MUL_ARRAY_SCALAR()) then MathMLTimes;
+    case (DAE.MUL_SCALAR_PRODUCT()) then MathMLScalarproduct;
+    case (DAE.MUL_MATRIX_PRODUCT()) then MathMLVectorproduct;
+    case (DAE.DIV_ARRAY_SCALAR()) then MathMLDivide;
     else
       equation
         error_msg = "in XMLDump.binopSymbol2 - Unknown operator: ";
@@ -1013,9 +1013,9 @@ algorithm
 
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
-                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=_,bucketSize=_,numberOfVars=_),
-                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=_,bucketSize=_,numberOfVars=_),
-                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=_,bucketSize=_,numberOfVars=_),
+                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars),
+                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject),
+                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars),
                  ieqns,reqns,constrs,_,_,_,funcs,
                  eventInfo,
                  extObjCls,_,_,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,false)
@@ -1054,9 +1054,9 @@ algorithm
 
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
-                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=_,bucketSize=_,numberOfVars=_),
-                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=_,bucketSize=_,numberOfVars=_),
-                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=_,bucketSize=_,numberOfVars=_),
+                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars),
+                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject),
+                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars),
                  ieqns,reqns,constrs,_,_,_,funcs,
                  eventInfo,extObjCls,_,_,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,true)
       equation
@@ -1862,7 +1862,7 @@ algorithm
         dumpStrVoidTag(MathMLTrue);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CREF(componentRef = c,ty = _))
+    case (DAE.CREF(componentRef = c))
       equation
         s = ComponentReference.printComponentRefStr(c);
         dumpStrMathMLVariable(s);
@@ -2002,7 +2002,7 @@ algorithm
         dumpList(args,dumpExp2);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.ARRAY(array = es,ty=_))//Array are dumped as vector
+    case (DAE.ARRAY(array = es))//Array are dumped as vector
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLTranspose);
@@ -2020,7 +2020,7 @@ algorithm
         dumpStrCloseTag(MathMLVector);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.MATRIX(matrix = ebs,ty=_))
+    case (DAE.MATRIX(matrix = ebs))
       equation
         dumpStrOpenTag(MathMLMatrix);
         dumpStrOpenTag(MathMLMatrixrow);
@@ -2058,14 +2058,14 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = DAE.ICONST(integer = ival)))
+    case (DAE.CAST(ty = DAE.T_REAL(),exp = DAE.ICONST(integer = ival)))
       equation
         false = Config.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
       then ();
-    case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))))
+    case (DAE.CAST(ty = DAE.T_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(),exp = DAE.ICONST(integer = ival))))
       equation
         false = Config.modelicaOutput();
         rval = intReal(ival);
@@ -2075,7 +2075,7 @@ algorithm
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = e))
+    case (DAE.CAST(ty = DAE.T_REAL(),exp = e))
       equation
         false = Config.modelicaOutput();
         dumpStrOpenTag(MathMLApply);
@@ -2083,7 +2083,7 @@ algorithm
         dumpExp2(e);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = e))
+    case (DAE.CAST(ty = DAE.T_REAL(),exp = e))
       equation
         true = Config.modelicaOutput();
         dumpExp2(e);
@@ -2117,25 +2117,25 @@ algorithm
       equation
         dumpStrMathMLVariable(Absyn.pathStringNoQual(fcn));
       then ();
-    case (DAE.SIZE(exp = _,sz = SOME(_)))
+    case (DAE.SIZE(sz = SOME(_)))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (DAE.SIZE(exp = _,sz = NONE()))
+    case (DAE.SIZE(sz = NONE()))
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
-    case (DAE.REDUCTION(expr = _))
+    case (DAE.REDUCTION())
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then  ();
       // MetaModelica list
-    case (DAE.LIST(valList=_))
+    case (DAE.LIST())
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
         // MetaModelica list cons
-    case (DAE.CONS(car=_,cdr=_))
+    case (DAE.CONS())
       equation
         // NOT PART OF THE MODELICA LANGUAGE
       then ();
@@ -2491,7 +2491,7 @@ algorithm
   match (inVarKind)
     local Absyn.Path path; String error_msg;
     case BackendDAE.VARIABLE()     then (VARIABILITY_CONTINUOUS);
-    case BackendDAE.STATE(index=_)        then (VARIABILITY_CONTINUOUS_STATE);
+    case BackendDAE.STATE()        then (VARIABILITY_CONTINUOUS_STATE);
     case BackendDAE.DUMMY_DER()    then (VARIABILITY_CONTINUOUS_DUMMYDER);
     case BackendDAE.DUMMY_STATE()  then (VARIABILITY_CONTINUOUS_DUMMYSTATE);
     case BackendDAE.DISCRETE()     then (VARIABILITY_DISCRETE);
@@ -3334,10 +3334,10 @@ algorithm
     local
       DAE.Ident s1,s2,str;
       list<DAE.Ident> l;
-    case DAE.T_INTEGER(source = _) then VARTYPE_INTEGER;
-    case DAE.T_REAL(source = _)    then VARTYPE_REAL;
-    case DAE.T_BOOL(source = _)    then VARTYPE_BOOLEAN;
-    case DAE.T_STRING(source = _)  then VARTYPE_STRING;
+    case DAE.T_INTEGER() then VARTYPE_INTEGER;
+    case DAE.T_REAL()    then VARTYPE_REAL;
+    case DAE.T_BOOL()    then VARTYPE_BOOLEAN;
+    case DAE.T_STRING()  then VARTYPE_STRING;
     case DAE.T_ENUMERATION(names = l)
       equation
         s1 = stringDelimitList(l, ", ");
@@ -3601,7 +3601,7 @@ algorithm
                             varType = var_type,
                             bindExp = e,
                             bindValue = b,
-                            arryDim = _,
+                            
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
@@ -3665,7 +3665,7 @@ algorithm
                             varType = var_type,
                             bindExp = e,
                             bindValue = b,
-                            arryDim = _,
+                            
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
@@ -4103,8 +4103,8 @@ algorithm
   outString:=
   match (inOperator)
     local String error_msg;
-    case (DAE.AND(ty = _)) then MathMLAnd;
-    case (DAE.OR(ty = _)) then MathMLOr;
+    case (DAE.AND()) then MathMLAnd;
+    case (DAE.OR()) then MathMLOr;
     else
       equation
         error_msg = "in XMLDump.lbinopSymbol - Unknown operator";
@@ -4126,7 +4126,7 @@ algorithm
   outString:=
   match (inOperator)
     local String error_msg;
-    case (DAE.NOT(ty = _)) then MathMLNot;
+    case (DAE.NOT()) then MathMLNot;
     else
       equation
         error_msg = "in XMLDump.lunaryopSymbol - Unknown operator";
@@ -4148,12 +4148,12 @@ algorithm
   outString:=
   match (inOperator)
     local String error_msg;
-    case (DAE.LESS(ty = _)) then MathMLLessThan;
-    case (DAE.LESSEQ(ty = _)) then MathMLLessEqualThan;
-    case (DAE.GREATER(ty = _)) then MathMLGreaterThan;
-    case (DAE.GREATEREQ(ty = _)) then MathMLGreaterEqualThan;
-    case (DAE.EQUAL(ty = _)) then MathMLEquivalent;
-    case (DAE.NEQUAL(ty = _)) then MathMLNotEqual;
+    case (DAE.LESS()) then MathMLLessThan;
+    case (DAE.LESSEQ()) then MathMLLessEqualThan;
+    case (DAE.GREATER()) then MathMLGreaterThan;
+    case (DAE.GREATEREQ()) then MathMLGreaterEqualThan;
+    case (DAE.EQUAL()) then MathMLEquivalent;
+    case (DAE.NEQUAL()) then MathMLNotEqual;
     else
       equation
         error_msg = "in XMLDump.relopSymbol - Unknown operator";
@@ -4427,8 +4427,8 @@ function: unaryopSymbol
 algorithm
   outString:=
   match (inOperator)
-    case (DAE.UMINUS(ty = _)) then MathMLMinus;
-    case (DAE.UMINUS_ARR(ty = _)) then MathMLMinus;
+    case (DAE.UMINUS()) then MathMLMinus;
+    case (DAE.UMINUS_ARR()) then MathMLMinus;
   end match;
 end unaryopSymbol;
 

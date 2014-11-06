@@ -495,7 +495,7 @@ algorithm
       then
         (klst,vlst);
 
-    case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = _),_,_)
+    case (TREENODE(value = NONE(),leftSubTree = left),_,_)
       equation
         (klst,vlst) = bintreeToListOpt(left, inKeyLst, inValueLst);
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
