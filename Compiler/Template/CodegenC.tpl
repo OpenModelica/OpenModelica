@@ -10751,7 +10751,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   else
   let warningTriggered = tempDeclZero("static int", &varDecls)
   let &preExpLevel = buffer ""
-  let levelVar = daeExp(level, context, &preExpMsg, &varDecls, &auxFunction)
+  let levelVar = daeExp(level, context, &preExpLevel, &varDecls, &auxFunction)
   <<
   <%preExpLevel%>
   if(<%levelVar%> == 1 || !<%warningTriggered%>)
