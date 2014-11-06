@@ -53,7 +53,7 @@
 static const char *dasslJacobianMethodStr[DASSL_JAC_MAX] = {"unknown",
                                                 "coloredNumerical",
                                                 "coloredSymbolical",
-                                                "intenalNumerical",
+                                                "internalNumerical",
                                                 "symbolical",
                                                 "numerical"
                                                 };
@@ -364,8 +364,8 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   infoStreamPrint(LOG_SOLVER, 0, " - jacobian is calculated by %s", dasslJacobianMethodDescStr[dasslData->dasslJacobian]);
 
 
-  /* if FLAG_DASSL_NO_ROOTFINDUNG is set, choose dassl with out internal root finding */
-  if(omc_flag[FLAG_DASSL_NO_ROOTFINDUNG])
+  /* if FLAG_DASSL_NO_ROOTFINDING is set, choose dassl with out internal root finding */
+  if(omc_flag[FLAG_DASSL_NO_ROOTFINDING])
   {
     dasslData->dasslRootFinding = 0;
     dasslData->zeroCrossingFunction = dummy_zeroCrossing;
