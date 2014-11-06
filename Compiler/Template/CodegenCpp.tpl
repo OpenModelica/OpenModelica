@@ -1852,6 +1852,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         : SystemDefaultImplementation(globalSettings)
         , _algLoopSolverFactory(nonlinsolverfactory)
         , _simData(simData)
+        <%generateInitAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode )%>
         <%simulationInitFile(simCode, false)%>
     {
       //Number of equations
@@ -1908,10 +1909,19 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     /* Destructor */
     <%className%>::~<%className%>()
     {
+      
+      deleteObjects();
+    }
+     void <%className%>::deleteObjects()
+    {
+      
       if(_functions != NULL)
         delete _functions;
+      <%generateDeleteAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode )%>
+      
     }
-
+    
+    
     <%Update(simCode,useFlatArrayNotation)%>
 
     <%DefaultImplementationCode(simCode,useFlatArrayNotation)%>
@@ -3712,8 +3722,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode)
    let initEventHandling = eventHandlingInit(simCode)
 
-   let initALgloopSolvers = initAlgloopsolvers(odeEquations,simCode)
-
+   let initALgloopSolvers = initAlgloopsolvers(listAppend(allEquations,initialEquations),simCode)
+   let initALgloopvars = initAlgloopVars(listAppend(allEquations,initialEquations),simCode)
+   
    let initialequations  = functionInitialEquations(initialEquations,simCode, useFlatArrayNotation)
    let initextvars = functionCallExternalObjectConstructors(extObjInfo,simCode,useFlatArrayNotation)
   <<
@@ -3750,10 +3761,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
 
     <%initEventHandling%>
-
-   initEquations();
-
-      <%initALgloopSolvers%>
+    <%initALgloopvars%>
+    initEquations();
+    <%initALgloopSolvers%>
     for(int i=0;i<_dimZeroFunc;i++)
     {
        getCondition(i);
@@ -4704,14 +4714,14 @@ match modelInfo
       //Methods:
       <%getrealvars%>
       <%getintvars%>
-
+      
       bool isConsistent();
       //Called to handle all events occured at same time
       bool handleSystemEvents(bool* events);
       //Saves all variables before an event is handled, is needed for the pre, edge and change operator
       void saveAll();
       void getJacobian(SparseMatrix& matrix);
-
+      void deleteObjects();
       //Variables:
       EventHandling _event_handling;
 
@@ -7537,18 +7547,16 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     }
     catch(std::exception &ex)
     {
+      deleteObjects();
       throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
     }
     >>
     else
     <<
     bool restart<%index%> = true;
-    bool* conditions0<%index%> = new bool[_dimZeroFunc];
-    bool* conditions1<%index%> = new bool[_dimZeroFunc];
+  
     unsigned int iterations<%index%> = 0;
-    unsigned int dim<%index%> = _algLoop<%index%>->getDimReal();
-    double* algloop<%index%>Vars = new double[dim<%index%>];
-    _algLoop<%index%>->getReal(algloop<%index%>Vars);
+    _algLoop<%index%>->getReal(_algloop<%index%>Vars);
     bool restatDiscrete<%index%> = false;
     try
       {
@@ -7557,7 +7565,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
           {
              while(restart<%index%> && !(iterations<%index%>++>500))
              {
-               getConditions(conditions0<%index%>);
+               getConditions(_conditions0<%index%>);
                _callType = IContinuous::CONTINUOUS;
                _algLoopSolver<%index%>->solve();
                _callType = IContinuous::DISCRETE;
@@ -7565,8 +7573,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
                {
                  getCondition(i);
                }
-               getConditions(conditions1<%index%>);
-               restart<%index%> = !std::equal (conditions1<%index%>, conditions1<%index%>+_dimZeroFunc,conditions0<%index%>);
+               getConditions(_conditions1<%index%>);
+               restart<%index%> = !std::equal (_conditions1<%index%>, _conditions1<%index%>+_dimZeroFunc,_conditions0<%index%>);
              }
           }
           else
@@ -7583,22 +7591,17 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
              {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
                 IContinuous::UPDATETYPE calltype = _callType;
                _callType = IContinuous::DISCRETE;
-                 _algLoop<%index%>->setReal(algloop<%index%>Vars );
+                 _algLoop<%index%>->setReal(_algloop<%index%>Vars );
                 _algLoopSolver<%index%>->solve();
                _callType = calltype;
              }
              catch(std::exception &ex)
              {
-                delete[] algloop<%index%>Vars;
-                delete[] conditions0<%index%>;
-                delete[] conditions1<%index%>;
+                deleteObjects();
                 throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
              }
       }
-      delete[] algloop<%index%>Vars;
-      delete[] conditions0<%index%>;
-      delete[] conditions1<%index%>;
-      >>
+     >>
     end match
 
 
@@ -8021,6 +8024,9 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
         _algLoop<%num%>;
    boost::shared_ptr<IAlgLoopSolver>
         _algLoopSolver<%num%>;        ///< Solver for algebraic loop */
+    bool* _conditions0<%num%>;
+    bool* _conditions1<%num%>;
+    double* _algloop<%num%>Vars; 
    >>
    end match
    case e as SES_MIXED(cont = eq_sys)
@@ -8031,12 +8037,94 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
   else
     ""
  end generateAlgloopsolverVariables2;
-
-// boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>  //Algloop  which holds equation system
-template initAlgloopsolvers(list<list<SimEqSystem>> continousEquations,SimCode simCode)
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ template generateInitAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+  let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
+      generateInitAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode);separator="\n")
+    ;separator="\n")
+
+  <<
+  <%algloopsolver%>
+  >>
+end generateInitAlgloopsolverVariables;
+
+
+template generateInitAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  match eq
+   case SES_LINEAR(__)
+  case e as SES_NONLINEAR(__)
+    then
+  let num = index
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+   <<
+    , _conditions0<%num%>(NULL)
+    ,_conditions1<%num%>(NULL)
+    , _algloop<%num%>Vars(NULL)
+   >>
+   end match
+  else
+    ""
+ end generateInitAlgloopsolverVariables2;
+ 
+ 
+  template generateDeleteAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
+      generateDelteAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode);separator="\n")
+    ;separator="\n")
+
+  <<
+  <%algloopsolver%>
+  >>
+end generateDeleteAlgloopsolverVariables;
+
+
+template generateDelteAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  match eq
+   case SES_LINEAR(__)
+  case e as SES_NONLINEAR(__)
+    then
+  let num = index
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+   <<
+      if(_conditions0<%num%>)
+        delete [] _conditions0<%num%>;
+      if(_conditions1<%num%>)
+        delete _conditions1<%num%>;
+      if(_algloop<%num%>Vars)
+        delete _algloop<%num%>Vars;
+   >>
+   end match
+  else
+    ""
+ end generateDelteAlgloopsolverVariables2;
+ 
+ 
+
+// boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>  //Algloop  which holds equation system
+template initAlgloopsolvers(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
       initAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator="\n")
 
@@ -8072,9 +8160,9 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-   // Initialize the solver
-   if(_algLoopSolver<%num%>)
-     _algLoopSolver<%num%>->initialize();
+    // Initialize the solver
+    if(_algLoopSolver<%num%>)
+       _algLoopSolver<%num%>->initialize();
    >>
    end match
    case e as SES_MIXED(cont = eq_sys)
@@ -8087,6 +8175,60 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
  end initAlgloopsolvers2;
 
 
+template initAlgloopVars(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+   let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
+      initAlgloopVars2(eq, contextOther, &varDecls /*BUFC*/,simCode))
+    ;separator="\n")
+
+  <<
+  <%algloopsolver%>
+  >>
+end initAlgloopVars;
+
+
+
+
+
+template initAlgloopVars2(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  match eq
+   case SES_LINEAR(__)
+  case  SES_NONLINEAR(__)
+    then
+  let num = index
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+   <<
+     if(_algloop<%index%>Vars)
+       delete [] _algloop<%index%>Vars;
+     if(_conditions0<%index%>)
+       delete [] _conditions0<%index%>;
+     if(_conditions1<%index%>)     
+       delete [] _conditions1<%index%>;
+     unsigned int dim<%index%> = _algLoop<%index%>->getDimReal();
+     _algloop<%index%>Vars = new double[dim<%index%>];
+     _conditions0<%index%> = new bool[_dimZeroFunc];
+     _conditions1<%index%> = new bool[_dimZeroFunc]; 
+   >>
+   end match
+   case e as SES_MIXED(cont = eq_sys)
+  then
+   <<
+   <%initAlgloopsolvers2(eq_sys,context,varDecls,simCode)%>
+   >>
+  else
+    " "
+ end initAlgloopVars2; 
+ 
+ 
+ 
+ 
+ 
 template algloopForwardDeclaration(list<SimEqSystem> allEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -8599,18 +8741,16 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
          }
          catch(std::exception& ex)
          {
+             
+             deleteObjects();
              throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
          }
          >>
       else
         <<
         bool restart<%index%> = true;
-        bool* conditions0<%index%> = new bool[_dimZeroFunc];
-        bool* conditions1<%index%> = new bool[_dimZeroFunc];
         unsigned int iterations<%index%> = 0;
-        unsigned int dim<%index%> = _algLoop<%index%>->getDimReal();
-        double* algloop<%index%>Vars = new double[dim<%index%>];
-        _algLoop<%index%>->getReal(algloop<%index%>Vars );
+        _algLoop<%index%>->getReal(_algloop<%index%>Vars );
         bool restatDiscrete<%index%>= false;
         IContinuous::UPDATETYPE calltype = _callType;
         try
@@ -8620,7 +8760,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
                 _algLoop<%index%>->evaluate();
                 while(restart<%index%> && !(iterations<%index%>++>500))
                 {
-                    getConditions(conditions0<%index%>);
+                    getConditions(_conditions0<%index%>);
                     _callType = IContinuous::CONTINUOUS;
                     _algLoopSolver<%index%>->solve();
                     _callType = IContinuous::DISCRETE;
@@ -8629,8 +8769,8 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
                         getCondition(i);
                     }
 
-                    getConditions(conditions1<%index%>);
-                    restart<%index%> = !std::equal (conditions1<%index%>, conditions1<%index%>+_dimZeroFunc,conditions0<%index%>);
+                    getConditions(_conditions1<%index%>);
+                    restart<%index%> = !std::equal (_conditions1<%index%>, _conditions1<%index%>+_dimZeroFunc,_conditions0<%index%>);
                 }
             }
             else
@@ -8647,22 +8787,18 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
             try
             {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
                 _callType = IContinuous::DISCRETE;
-                _algLoop<%index%>->setReal(algloop<%index%>Vars );
+                _algLoop<%index%>->setReal(_algloop<%index%>Vars );
                 _algLoopSolver<%index%>->solve();
                 _callType = calltype;
             }
             catch(std::exception& ex)
             {
-                delete[] algloop<%index%>Vars;
-                delete[] conditions0<%index%>;
-                delete[] conditions1<%index%>;
+                deleteObjects();
                 throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
             }
 
         }
-        delete[] algloop<%index%>Vars;
-        delete[] conditions0<%index%>;
-        delete[] conditions1<%index%>;
+ 
         >>
       end match
   end match
