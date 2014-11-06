@@ -1611,38 +1611,38 @@ algorithm
       then dae;
 
     // tuples
-    case (DAE.TUPLE(exps1),e2,DAE.T_TUPLE(tupleType = t::tys),_,_,initial_)
+    case (DAE.TUPLE(exps1),e2,DAE.T_TUPLE(types = t::tys),_,_,initial_)
       equation
         exps1 = List.map(exps1,Expression.emptyToWild);
         e1 = DAE.TUPLE(exps1);
         dae = makeDaeEquation(e1, e2, source, initial_);
       then dae;
 
-    case (e1,e2,DAE.T_TUPLE(tupleType = _),_,_,initial_)
+    case (e1,e2,DAE.T_TUPLE(),_,_,initial_)
       equation
         dae = makeDaeEquation(e1, e2, source, initial_);
       then dae;
 
     // MetaModelica types
-    case (e1,e2,DAE.T_METALIST(listType = _),_,_,initial_)
+    case (e1,e2,DAE.T_METALIST(),_,_,initial_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,DAE.T_METATUPLE(types = _),_,_,initial_)
+    case (e1,e2,DAE.T_METATUPLE(),_,_,initial_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,DAE.T_METAOPTION(optionType = _),_,_,initial_)
+    case (e1,e2,DAE.T_METAOPTION(),_,_,initial_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,DAE.T_METAUNIONTYPE(paths=_),_,_,initial_)
+    case (e1,e2,DAE.T_METAUNIONTYPE(),_,_,initial_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
@@ -5507,7 +5507,7 @@ algorithm
     local
       String str;
     case (DAE.T_ARRAY(ty = oty),_,_) then oty;
-    case (DAE.T_METALIST(listType = oty),_,_) then Types.boxIfUnboxedType(oty);
+    case (DAE.T_METALIST(ty = oty),_,_) then Types.boxIfUnboxedType(oty);
     case (DAE.T_METAARRAY(ty = oty),_,_) then Types.boxIfUnboxedType(oty);
     else
       equation

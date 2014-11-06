@@ -2043,7 +2043,7 @@ algorithm
       then
         nr;
 
-    case DAE.T_TUPLE(tupleType=typs)
+    case DAE.T_TUPLE(types=typs)
       equation
         lstInt = List.map(typs,sizeOf);
         nr = List.reduce(lstInt, intAdd);
@@ -2165,7 +2165,7 @@ algorithm
     case (DAE.LBINARY(operator = op)) then typeofOp(op);
     case (DAE.LUNARY(operator = op)) then typeofOp(op);
     case (DAE.RELATION(operator = op)) then typeofRelation(typeofOp(op));
-    case (DAE.IFEXP(expCond = _,expThen = e2,expElse = _)) then typeof(e2);
+    case (DAE.IFEXP(expThen = e2)) then typeof(e2);
     case (DAE.CALL(attr = DAE.CALL_ATTR(ty=tp))) then tp;
     case (DAE.RECORD(ty=tp)) then tp;
     case (DAE.PARTEVALFUNCTION(ty=tp)) then tp;

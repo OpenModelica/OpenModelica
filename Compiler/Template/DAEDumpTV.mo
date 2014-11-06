@@ -1009,7 +1009,7 @@ package DAE
     end T_FUNCTION_REFERENCE_FUNC;
 
     record T_TUPLE
-      list<Type> tupleType "For functions returning multiple values.";
+      list<Type> types "For functions returning multiple values.";
       TypeSource source;
     end T_TUPLE;
 
@@ -1025,7 +1025,7 @@ package DAE
 
     // MetaModelica extensions
     record T_METALIST "MetaModelica list type"
-      Type listType "listType";
+      Type ty "listType";
       TypeSource source;
     end T_METALIST;
 
@@ -1035,11 +1035,11 @@ package DAE
     end T_METATUPLE;
 
     record T_METAOPTION "MetaModelica option type"
-      Type optionType;
+      Type ty;
       TypeSource source;
     end T_METAOPTION;
 
-    record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
+    record T_METAUNIONTYPE "MetaModelica Uniontype"
       list<Absyn.Path> paths;
       Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
       TypeSource source;

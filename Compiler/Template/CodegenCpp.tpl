@@ -13224,7 +13224,7 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
   case TSUB(ix=1) then
     let tuple_val = daeExp(exp, context, &preExp, &varDecls, simCode, useFlatArrayNotation)
      'boost::get<0>(<%tuple_val%>.data)'
-  //case TSUB(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(tupleType=tys)))) then
+  //case TSUB(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(types=tys)))) then
   case TSUB(exp=CALL(path=p,attr=CALL_ATTR(ty=tys as T_TUPLE(__)))) then
     //let v = tempDecl(expTypeArrayIf(listGet(tys,ix)), &varDecls)
     //let additionalOutputs = List.restOrEmpty(tys) |> ty hasindex i1 fromindex 2 => if intEq(i1,ix) then ', &<%v%>' else ", NULL"
@@ -13269,7 +13269,7 @@ template generateTypeCast(Type ty, list<DAE.Exp> es, Boolean isClosure, Text &pr
     else "modelica_metatype")
   let inputs = es |> e => ', <%expTypeFromExpArrayIf(e,context, &preExp ,&varDecls ,simCode, useFlatArrayNotation)%>'
   let outputs = match ty
-    case T_TUPLE(tupleType=_::tys) then (tys |> t => ', <%expTypeArrayIf(t)%>')
+    case T_TUPLE(types=_::tys) then (tys |> t => ', <%expTypeArrayIf(t)%>')
   '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
 end generateTypeCast;
 

@@ -909,7 +909,7 @@ public uniontype Type "models the different front-end and back-end types"
   end T_FUNCTION_REFERENCE_FUNC;
 
   record T_TUPLE
-    list<Type> tupleType "For functions returning multiple values.";
+    list<Type> types "For functions returning multiple values.";
     TypeSource source;
   end T_TUPLE;
 
@@ -925,7 +925,7 @@ public uniontype Type "models the different front-end and back-end types"
 
   // MetaModelica extensions
   record T_METALIST "MetaModelica list type"
-    Type listType "listType";
+    Type ty "listType";
     TypeSource source;
   end T_METALIST;
 
@@ -935,7 +935,7 @@ public uniontype Type "models the different front-end and back-end types"
   end T_METATUPLE;
 
   record T_METAOPTION "MetaModelica option type"
-    Type optionType;
+    Type ty;
     TypeSource source;
   end T_METAOPTION;
 

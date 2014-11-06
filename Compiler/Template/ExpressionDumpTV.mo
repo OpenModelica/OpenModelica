@@ -727,7 +727,7 @@ package DAE
     end T_FUNCTION_REFERENCE_FUNC;
 
     record T_TUPLE
-      list<Type> tupleType;
+      list<Type> types;
     end T_TUPLE;
 
     record T_CODE
@@ -739,7 +739,7 @@ package DAE
     end T_ANYTYPE;
 
     record T_METALIST
-      Type listType;
+      Type ty;
     end T_METALIST;
 
     record T_METATUPLE
@@ -747,7 +747,7 @@ package DAE
     end T_METATUPLE;
 
     record T_METAOPTION
-      Type optionType;
+      Type ty;
     end T_METAOPTION;
 
     record T_METAUNIONTYPE

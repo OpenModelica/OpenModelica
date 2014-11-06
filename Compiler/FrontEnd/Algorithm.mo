@@ -156,9 +156,9 @@ algorithm
       DAE.Exp lhs1;
       DAE.ComponentRef cr;
     case (true,_,_,_,_,_) then DAE.STMT_NORETCALL(rhs, source);
-    case (_,true,DAE.T_TUPLE(tupleType=(ty1 as DAE.T_ARRAY(ty=_))::_),DAE.CREF(componentRef=cr)::_,_,_)
+    case (_,true,DAE.T_TUPLE(types=(ty1 as DAE.T_ARRAY(ty=_))::_),DAE.CREF(componentRef=cr)::_,_,_)
       then DAE.STMT_ASSIGN_ARR(ty1, cr, DAE.TSUB(rhs, 1, ty1), source);
-    case (_,true,DAE.T_TUPLE(tupleType=ty1::_),lhs1::_,_,_)
+    case (_,true,DAE.T_TUPLE(types=ty1::_),lhs1::_,_,_)
       then DAE.STMT_ASSIGN(ty1, lhs1, DAE.TSUB(rhs,1,ty1), source);
     else DAE.STMT_TUPLE_ASSIGN(ty,lhs,rhs,source);
   end match;
@@ -405,7 +405,7 @@ algorithm
       then
         fail();
     // a normal prop in rhs that contains a T_TUPLE!
-    case (expl, lhprops, rhs, DAE.PROP(type_ = ty as DAE.T_TUPLE(tupleType = tpl)), _, _)
+    case (expl, lhprops, rhs, DAE.PROP(type_ = ty as DAE.T_TUPLE(types = tpl)), _, _)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -415,7 +415,7 @@ algorithm
             several output args are not clearly defined. */
       then makeTupleAssignmentNoTypeCheck(ty, expl, rhs, source);
     // a tuple in rhs
-    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = ty as DAE.T_TUPLE(tupleType = tpl), tupleConst = DAE.TUPLE_CONST(tupleConstLst = _)), _, _)
+    case (expl, lhprops, rhs, DAE.PROP_TUPLE(type_ = ty as DAE.T_TUPLE(types = tpl), tupleConst = DAE.TUPLE_CONST(tupleConstLst = _)), _, _)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -634,7 +634,7 @@ algorithm
         isArray = Types.isArray(t, dims);
       then DAE.STMT_FOR(t, isArray, i, -1, e, stmts, source);
 
-    case (i, e, DAE.PROP(type_ = DAE.T_METALIST(listType = t)), stmts, _)
+    case (i, e, DAE.PROP(type_ = DAE.T_METALIST(ty = t)), stmts, _)
       equation
         t = Types.simplifyType(t);
       then DAE.STMT_FOR(t, false, i, -1, e, stmts, source);

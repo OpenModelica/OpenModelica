@@ -406,7 +406,7 @@ algorithm
 
         ty1 = InstUtil.setFullyQualifiedTypename(ty,fpath);
         checkExtObjOutput(ty1,info);
-        ((ty1,_)) = Types.traverseType((ty1,-1),Types.makeExpDimensionsUnknown);
+        (ty1,_) = Types.traverseType(ty1, -1, Types.makeExpDimensionsUnknown);
         env_1 = FGraph.mkTypeNode(cenv, n, ty1);
         vis = SCode.PUBLIC();
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
@@ -989,30 +989,31 @@ algorithm
       DAE.Type ty;
     case (DAE.T_FUNCTION(funcResultType=ty,source={path}),_)
       equation
-        ((_,(_,_,true))) = Types.traverseType((ty,(path,info,true)),checkExtObjOutputWork);
+        (_,(_,_,true)) = Types.traverseType(ty,(path,info,true),checkExtObjOutputWork);
       then ();
   end match;
 end checkExtObjOutput;
 
 protected function checkExtObjOutputWork
-  input tuple<DAE.Type,tuple<Absyn.Path,SourceInfo,Boolean>> inTpl;
-  output tuple<DAE.Type,tuple<Absyn.Path,SourceInfo,Boolean>> outTpl;
+  input DAE.Type ty;
+  input tuple<Absyn.Path,SourceInfo,Boolean> inTpl;
+  output DAE.Type oty = ty;
+  output tuple<Absyn.Path,SourceInfo,Boolean> outTpl;
 algorithm
-  outTpl := match inTpl
+  outTpl := match (ty,inTpl)
     local
       Absyn.Path path1,path2;
       SourceInfo info;
       String str1,str2;
-      DAE.Type ty;
       Boolean b;
-    case ((ty as DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path1)),(path2,info,true)))
+    case (DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path1)),(path2,info,true))
       equation
         path1 = Absyn.joinPaths(path1,Absyn.IDENT("constructor"));
         str1 = Absyn.pathStringNoQual(path2);
         str2 = Absyn.pathStringNoQual(path1);
         b = Absyn.pathEqual(path1,path2);
         Error.assertionOrAddSourceMessage(b, Error.FUNCTION_RETURN_EXT_OBJ, {str1,str2}, info);
-        outTpl = if b then inTpl else (ty,(path2,info,false));
+        outTpl = if b then inTpl else (path2,info,false);
       then outTpl;
     else inTpl;
   end match;

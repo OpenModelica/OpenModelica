@@ -2198,7 +2198,7 @@ algorithm
       DAE.Dimensions dims;
       list<DAE.Type> tys;
 
-    case (DAE.T_TUPLE(tupleType = tys), _, _, _, _) equation
+    case (DAE.T_TUPLE(types = tys), _, _, _, _) equation
       expLst = createPartialArgumentsTuple(tys, inArgs, inDiffedArgs, inOrginalExpl, 1, inCall, {});
     then DAE.TUPLE(expLst);
 

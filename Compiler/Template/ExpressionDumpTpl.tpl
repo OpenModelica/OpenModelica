@@ -350,17 +350,17 @@ match ty
   case T_FUNCTION_REFERENCE_VAR(__) then dumpType(functionType)
   case T_FUNCTION_REFERENCE_FUNC(__) then dumpType(functionType)
   case T_TUPLE(__) then
-    let ty_str = (tupleType |> ty => dumpType(ty) ;separator=", ")
+    let ty_str = (types |> ty => dumpType(ty) ;separator=", ")
     '(<%ty_str%>'
   case T_CODE(__) then '#T_CODE#'
   case T_METALIST(__) then
-    let ty_str = dumpType(listType)
+    let ty_str = dumpType(ty)
     'list<<%ty_str%>>'
   case T_METATUPLE(__) then
     let ty_str = (types |> ty => dumpType(ty) ;separator=", ")
     'tuple<<%ty_str%>>'
   case T_METAOPTION(__) then
-    let ty_str = dumpType(optionType)
+    let ty_str = dumpType(ty)
     'Option<<%ty_str%>>'
   case T_METAUNIONTYPE(source = {p}) then AbsynDumpTpl.dumpPath(p)
   case T_METARECORD(source = {p}) then AbsynDumpTpl.dumpPath(p)

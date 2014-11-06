@@ -51,18 +51,6 @@ protected import Flags;
 protected import List;
 protected import Types;
 
-public function isList "author: KS
-  Return true if list
-"
-  input DAE.Properties prop;
-  output Boolean bool;
-algorithm
-  bool := matchcontinue (prop)
-    case (DAE.PROP(DAE.T_METALIST(listType = _),_)) then true;
-    else false;
-  end matchcontinue;
-end isList;
-
 public function transformArrayNodesToListNodes "function: transformArrayNodesToListNodes"
   input list<Absyn.Exp> inList;
   input list<Absyn.Exp> accList;

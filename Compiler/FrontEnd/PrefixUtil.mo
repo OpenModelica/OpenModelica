@@ -1276,7 +1276,7 @@ algorithm
 
     else
       equation
-        ((outTy, (outCache, _, _, _))) = Types.traverseType((inTy, (inCache, inEnv, inIH, inPre)), prefixArrayDimensions);
+        (outTy, (outCache, _, _, _)) = Types.traverseType(inTy, (inCache, inEnv, inIH, inPre), prefixArrayDimensions);
       then
         (outCache, outTy);
   end matchcontinue;
@@ -1285,12 +1285,13 @@ end prefixExpressionsInType;
 protected function prefixArrayDimensions
 "@author: adrpo
  this function prefixes all the expressions in types to be found by the back-end or code generation!"
-  input tuple<DAE.Type,tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix>> tpl;
-  output tuple<DAE.Type,tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix>> otpl;
+  input DAE.Type ty;
+  input tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix> tpl;
+  output DAE.Type oty := ty;
+  output tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix> otpl;
 algorithm
-  otpl := match tpl
+  (oty,otpl) := match (oty,tpl)
     local
-      DAE.Type ty;
       DAE.TypeSource ts;
       FCore.Cache cache;
       FCore.Graph env;
@@ -1298,13 +1299,14 @@ algorithm
       Prefix.Prefix pre;
       DAE.Dimensions dims;
 
-    case ((DAE.T_ARRAY(ty,dims,ts),(cache, env, ih, pre)))
+    case (DAE.T_ARRAY(),(cache, env, ih, pre))
       equation
-        (cache, dims) = prefixDimensions(cache, env, ih, pre, dims);
+        (cache, dims) = prefixDimensions(cache, env, ih, pre, oty.dims);
+        oty.dims = dims;
       then
-        ((DAE.T_ARRAY(ty,dims,ts),(cache, env, ih, pre)));
+        (oty,(cache, env, ih, pre));
 
-    else tpl;
+    else (oty,tpl);
 
   end match;
 end prefixArrayDimensions;

@@ -918,14 +918,14 @@ algorithm
       DAE.VarKind kind;
       DAE.VarParallelism prl;
 
-    case (DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_TUPLE(tupleType = tys))), _)
+    case (DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_TUPLE(types = tys))), _)
       equation
         var_args = List.map1(args, typesSimFunctionArg, NONE());
         tys = List.map(tys, Types.simplifyType);
       then
         SimCode.FUNCTION_PTR(name, tys, var_args, binding);
 
-    case (DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_NORETCALL(source = _))), _)
+    case (DAE.FUNCARG(name=name, ty=DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_NORETCALL())), _)
       equation
         var_args = List.map1(args, typesSimFunctionArg, NONE());
       then

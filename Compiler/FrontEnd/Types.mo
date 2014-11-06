@@ -480,7 +480,7 @@ public function isTuple "Returns true if type is TUPLE"
   output Boolean b;
 algorithm
   b := match(tp)
-    case (DAE.T_TUPLE(tupleType = _)) then true;
+    case (DAE.T_TUPLE()) then true;
     else false;
   end match;
 end isTuple;
@@ -763,7 +763,7 @@ algorithm
     case (DAE.T_ARRAY(ty = _),_) then true;
     // if is a type extending basic type
     case (DAE.T_SUBTYPE_BASIC(complexType = t),_) then isArray(t, {});
-    case (DAE.T_TUPLE(tupleType = tys), _)
+    case (DAE.T_TUPLE(types = tys), _)
       equation
         b = List.applyAndFold1(tys, boolOr, isArray, {}, false);
       then
@@ -1292,19 +1292,13 @@ end setVarProtected;
 protected function setVarType "Sets a DAE.Var's type"
   input DAE.Var var;
   input DAE.Type ty;
-  output DAE.Var outV;
+  output DAE.Var outV := var;
 algorithm
-  outV := match(var,ty)
-    local
-      String name;
-      DAE.Type tp;
-      DAE.Binding bind;
-      Option<DAE.Const> cnstForRange;
-      DAE.Attributes attr;
-
-    case (DAE.TYPES_VAR(name,attr,_,bind,cnstForRange),_)
-    then DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange);
-
+  outV := match outV
+    case DAE.TYPES_VAR()
+      algorithm
+        outV.ty := ty;
+      then outV;
   end match;
 end setVarType;
 
@@ -1522,21 +1516,21 @@ algorithm
         res;
 
     // Check of tuples, similar to complex. Just that identifier name do not have to be checked. Only types are checked.
-    case (DAE.T_TUPLE(tupleType = type_list1),
-          DAE.T_TUPLE(tupleType = type_list2),_)
+    case (DAE.T_TUPLE(types = type_list1),
+          DAE.T_TUPLE(types = type_list2),_)
       equation
         true = subtypeTypelist(type_list1, type_list2, requireRecordNamesEqual);
       then
         true;
 
     // Part of MetaModelica extension. KS
-    case (DAE.T_METALIST(listType = t1),DAE.T_METALIST(listType = t2),_) then subtype(t1,t2);
+    case (DAE.T_METALIST(ty = t1),DAE.T_METALIST(ty = t2),_) then subtype(t1,t2);
     case (DAE.T_METAARRAY(ty = t1),DAE.T_METAARRAY(ty = t2),_) then subtype(t1,t2);
     case (DAE.T_METATUPLE(types = tList1),DAE.T_METATUPLE(types = tList2),_)
       equation
         res = subtypeTypelist(tList1,tList2,requireRecordNamesEqual);
       then res;
-    case (DAE.T_METAOPTION(optionType = t1),DAE.T_METAOPTION(optionType = t2),_)
+    case (DAE.T_METAOPTION(ty = t1),DAE.T_METAOPTION(ty = t2),_)
       then subtype2(t1,t2,requireRecordNamesEqual);
 
     case (DAE.T_METABOXED(ty = t1),DAE.T_METABOXED(ty = t2),_) then subtype2(t1,t2,requireRecordNamesEqual);
@@ -1986,7 +1980,7 @@ algorithm
   (outType,dim) := match (inType)
     local
       Type ty;
-    case (DAE.T_METALIST(listType = ty)) then (boxIfUnboxedType(ty),DAE.DIM_UNKNOWN());
+    case (DAE.T_METALIST(ty = ty)) then (boxIfUnboxedType(ty),DAE.DIM_UNKNOWN());
     case (DAE.T_ARRAY(dims = {dim},ty = ty)) then (ty,dim);
     case (DAE.T_SUBTYPE_BASIC(complexType = ty))
       equation
@@ -2191,7 +2185,7 @@ algorithm
       then
         res;
 
-    case (DAE.T_TUPLE(tupleType = tys))
+    case (DAE.T_TUPLE(types = tys))
       equation
         tystrs = List.map(tys, unparseType);
         tystr = stringDelimitList(tystrs, ", ");
@@ -2209,7 +2203,7 @@ algorithm
         res;
 
      // MetaModelica list
-    case (DAE.T_METALIST(listType = ty))
+    case (DAE.T_METALIST(ty = ty))
       equation
         tystr = unparseType(ty);
         res = stringAppendList({"list<",tystr,">"});
@@ -2258,8 +2252,8 @@ algorithm
       then res;
 
     // MetaModelica Option type
-    case (DAE.T_METAOPTION(optionType = DAE.T_UNKNOWN(_))) then "Option<Any>";
-    case (DAE.T_METAOPTION(optionType = ty))
+    case (DAE.T_METAOPTION(ty = DAE.T_UNKNOWN())) then "Option<Any>";
+    case (DAE.T_METAOPTION(ty = ty))
       equation
         tystr = unparseType(ty);
         res = stringAppendList({"Option<",tystr,">"});
@@ -2449,7 +2443,7 @@ algorithm
       then
         str;
 
-    case (DAE.T_TUPLE(tupleType = tys))
+    case (DAE.T_TUPLE(types = tys))
       equation
         s1 = stringDelimitList(List.map(tys, printTypeStr),", ");
         str = stringAppendList({"(",s1,")"});
@@ -2466,7 +2460,7 @@ algorithm
         str;
 
     // MetaModelica list
-    case (DAE.T_METALIST(listType = ty))
+    case (DAE.T_METALIST(ty = ty))
       equation
         s1 = printTypeStr(ty);
         str = stringAppendList({"list<",s1,">"});
@@ -2475,7 +2469,7 @@ algorithm
         str;
 
     // MetaModelica Option
-    case (DAE.T_METAOPTION(optionType = ty))
+    case (DAE.T_METAOPTION(ty = ty))
       equation
         s1 = printTypeStr(ty);
         str = stringAppendList({"Option<",s1,">"});
@@ -3561,7 +3555,7 @@ algorithm
         str;
 
     // MetaModelica type
-    case (DAE.T_METALIST(listType = ty))
+    case (DAE.T_METALIST(ty = ty))
       equation
         n = getTypeName(ty);
       then
@@ -3766,7 +3760,7 @@ protected
   Type ty;
   DAE.Const c;
 algorithm
-  DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = ty :: _),
+  DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(types = ty :: _),
     tupleConst = DAE.TUPLE_CONST(tupleConstLst = DAE.SINGLE_CONST(const = c) :: _)) := inTupleProp;
   outFirstProp := DAE.PROP(ty, c);
 end propTupleFirstProp;
@@ -3781,7 +3775,7 @@ algorithm
       list<DAE.Properties> pl;
       list<DAE.Type> tl;
       list<TupleConst> cl;
-    case (DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tl),
+    case (DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(types = tl),
                          tupleConst = DAE.TUPLE_CONST(tupleConstLst = cl)))
       equation
         pl = propTuplePropList2(tl, cl);
@@ -3905,7 +3899,7 @@ algorithm
     case (DAE.T_CLOCK(source = _)) then DAE.T_CLOCK_DEFAULT;
     case (DAE.T_STRING(source = _)) then DAE.T_STRING_DEFAULT;
     case (DAE.T_NORETCALL(source = _)) then DAE.T_NORETCALL_DEFAULT;
-    case (DAE.T_TUPLE(tupleType = tys))
+    case (DAE.T_TUPLE(types = tys))
       equation
         tys = List.map(tys, simplifyType);
       then DAE.T_TUPLE(tys, DAE.emptyTypeSource);
@@ -4052,8 +4046,8 @@ algorithm
       then
         true;
 
-    case (DAE.T_TUPLE(tupleType = types1),
-          DAE.T_TUPLE(tupleType = types2))
+    case (DAE.T_TUPLE(types = types1),
+          DAE.T_TUPLE(types = types2))
       then List.isEqualOnTrue(types1, types2,
           typesElabEquivalent);
 
@@ -4424,7 +4418,7 @@ algorithm
 
     // if we expect notTuple and we get Tuple do DAE.TSUB(e, 1)
     // we try subtype of the first tuple element with the other type!
-    case (e, DAE.T_TUPLE(tupleType = ty1::_), ty2, _)
+    case (e, DAE.T_TUPLE(types = ty1::_), ty2, _)
       equation
         false = Config.acceptMetaModelicaGrammar();
         false = isTuple(ty2);
@@ -4604,8 +4598,8 @@ algorithm
 
     // Tuple
     case (DAE.TUPLE(PR = elist),
-          DAE.T_TUPLE(tupleType = tys1),
-          DAE.T_TUPLE(tupleType = tys2, source = ts2),
+          DAE.T_TUPLE(types = tys1),
+          DAE.T_TUPLE(types = tys2, source = ts2),
           _)
       equation
         (elist_1,tys_1) = typeConvertList(elist, tys1, tys2, printFailtrace);
@@ -4656,7 +4650,7 @@ algorithm
       then (e, t2);
 
     // MetaModelica Option
-    case (DAE.META_OPTION(SOME(e)),DAE.T_METAOPTION(optionType = t1),DAE.T_METAOPTION(t2,ts2),_)
+    case (DAE.META_OPTION(SOME(e)),DAE.T_METAOPTION(ty = t1),DAE.T_METAOPTION(t2,ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (e_1, t_1) = matchType(e,t1,t2,printFailtrace);
@@ -4670,7 +4664,7 @@ algorithm
         (DAE.META_OPTION(NONE()),DAE.T_METAOPTION(t2,ts2));
 
     // MetaModelica Tuple
-    case (DAE.TUPLE(elist),DAE.T_TUPLE(tupleType = tys1),DAE.T_METATUPLE(tys2,ts2),_)
+    case (DAE.TUPLE(elist),DAE.T_TUPLE(types = tys1),DAE.T_METATUPLE(tys2,ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         tys2 = List.map(tys2, boxIfUnboxedType);
@@ -4695,7 +4689,7 @@ algorithm
       then
         (DAE.META_TUPLE(elist_1),DAE.T_METATUPLE(tys_1,ts2));
 
-    case (DAE.TUPLE(elist),DAE.T_TUPLE(tupleType = tys1),ty2 as DAE.T_METABOXED(ty = DAE.T_UNKNOWN(source =_), source = ts2),_)
+    case (DAE.TUPLE(elist),DAE.T_TUPLE(types = tys1),ty2 as DAE.T_METABOXED(ty = DAE.T_UNKNOWN(source =_), source = ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         tys2 = List.fill(ty2, listLength(tys1));
@@ -4743,7 +4737,7 @@ algorithm
         e_1 = DAE.LIST(elist);
       then (e_1,ty2);
 
-    case (DAE.LIST(elist),DAE.T_METALIST(listType = t1),DAE.T_METALIST(t2,_),_)
+    case (DAE.LIST(elist),DAE.T_METALIST(ty = t1),DAE.T_METALIST(t2,_),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
@@ -4989,7 +4983,7 @@ algorithm
       DAE.Exp e;
 
     case ({},_,_,_) then ({},DAE.T_UNKNOWN_DEFAULT);
-    case (expl::rest, DAE.T_ARRAY(ty=DAE.T_ARRAY(ty=t1)), DAE.T_METALIST(DAE.T_METALIST(listType=t2),_),_)
+    case (expl::rest, DAE.T_ARRAY(ty=DAE.T_ARRAY(ty=t1)), DAE.T_METALIST(DAE.T_METALIST(ty=t2),_),_)
       equation
         (e,t1) = typeConvertMatrixRowToList(expl, t1, t2, printFailtrace);
         _ = simplifyType(t1);
@@ -5456,7 +5450,7 @@ algorithm
       then
         exps;
 
-    case DAE.T_TUPLE(tupleType = tys)
+    case DAE.T_TUPLE(types = tys)
       equation
         explist = List.map(tys, getAllExps);
         exps = List.flatten(explist);
@@ -5471,8 +5465,8 @@ algorithm
 
     case DAE.T_METAUNIONTYPE(paths=_) then {};
 
-    case DAE.T_METAOPTION(optionType = ty) then getAllExps(ty);
-    case DAE.T_METALIST(listType = ty)     then getAllExps(ty);
+    case DAE.T_METAOPTION(ty = ty) then getAllExps(ty);
+    case DAE.T_METALIST(ty = ty)     then getAllExps(ty);
     case DAE.T_METAARRAY(ty = ty)          then getAllExps(ty);
     case DAE.T_METABOXED(ty = ty)          then getAllExps(ty);
     case DAE.T_METAPOLYMORPHIC(name = _) then {};
@@ -5547,21 +5541,21 @@ public function isBoxedType
   output Boolean b;
 algorithm
   b := matchcontinue (ty)
-    case (DAE.T_STRING(varLst = _)) then true;
-    case (DAE.T_METAOPTION(optionType = _)) then true;
-    case (DAE.T_METALIST(listType = _)) then true;
-    case (DAE.T_METATUPLE(types = _)) then true;
-    case (DAE.T_METAUNIONTYPE(paths=_)) then true;
-    case (DAE.T_METARECORD(utPath=_)) then true;
-    case (DAE.T_METAPOLYMORPHIC(name = _)) then true;
-    case (DAE.T_METAARRAY(ty = _)) then true;
-    case (DAE.T_FUNCTION(funcArg = _)) then true;
-    case (DAE.T_METABOXED(ty = _)) then true;
-    case (DAE.T_ANYTYPE(anyClassType = _)) then true;
-    case (DAE.T_UNKNOWN(_)) then true;
-    case (DAE.T_METATYPE(ty = _)) then true;
-    case (DAE.T_NORETCALL(source = _)) then true;
-    case (DAE.T_CODE(source = _)) then true;
+    case (DAE.T_STRING()) then true;
+    case (DAE.T_METAOPTION()) then true;
+    case (DAE.T_METALIST()) then true;
+    case (DAE.T_METATUPLE()) then true;
+    case (DAE.T_METAUNIONTYPE()) then true;
+    case (DAE.T_METARECORD()) then true;
+    case (DAE.T_METAPOLYMORPHIC()) then true;
+    case (DAE.T_METAARRAY()) then true;
+    case (DAE.T_FUNCTION()) then true;
+    case (DAE.T_METABOXED()) then true;
+    case (DAE.T_ANYTYPE()) then true;
+    case (DAE.T_UNKNOWN()) then true;
+    case (DAE.T_METATYPE()) then true;
+    case (DAE.T_NORETCALL()) then true;
+    case (DAE.T_CODE()) then true;
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_))) then true;
     case _ then false;
   end matchcontinue;
@@ -5575,7 +5569,7 @@ algorithm
     local
       list<DAE.Type> tys;
 
-    case (DAE.T_TUPLE(tupleType = tys))
+    case (DAE.T_TUPLE(types = tys))
       equation
         tys = List.map(tys, boxIfUnboxedType);
       then DAE.T_METATUPLE(tys,DAE.emptyTypeSource); // TODO?! should now propagate the type source?
@@ -5596,13 +5590,13 @@ algorithm
 
     case DAE.T_METABOXED(ty = ty) then unboxedType(ty);
 
-    case DAE.T_METAOPTION(optionType = ty)
+    case DAE.T_METAOPTION(ty = ty)
       equation
         ty = unboxedType(ty);
         ty = boxIfUnboxedType(ty);
       then DAE.T_METAOPTION(ty,DAE.emptyTypeSource);
 
-    case DAE.T_METALIST(listType = ty)
+    case DAE.T_METALIST(ty = ty)
       equation
         ty = unboxedType(ty);
         ty = boxIfUnboxedType(ty);
@@ -5705,21 +5699,21 @@ algorithm
     case (t1,DAE.T_UNKNOWN(source = _)) then t1;
     case (_,t2 as DAE.T_METAPOLYMORPHIC(source = _)) then t2;
 
-    case (DAE.T_TUPLE(tupleType = type_list1),DAE.T_TUPLE(tupleType = type_list2))
+    case (DAE.T_TUPLE(types = type_list1),DAE.T_TUPLE(types = type_list2))
       equation
         type_list1 = List.map(type_list1, boxIfUnboxedType);
         type_list2 = List.map(type_list2, boxIfUnboxedType);
         type_list1 = List.threadMap(type_list1,type_list2,superType);
       then DAE.T_METATUPLE(type_list1,DAE.emptyTypeSource);
 
-    case (DAE.T_TUPLE(tupleType = type_list1),DAE.T_METATUPLE(types = type_list2))
+    case (DAE.T_TUPLE(types = type_list1),DAE.T_METATUPLE(types = type_list2))
       equation
         type_list1 = List.map(type_list1, boxIfUnboxedType);
         type_list2 = List.map(type_list2, boxIfUnboxedType);
         type_list1 = List.threadMap(type_list1,type_list2,superType);
       then DAE.T_METATUPLE(type_list1,DAE.emptyTypeSource);
 
-    case (DAE.T_METATUPLE(types = type_list1),DAE.T_TUPLE(tupleType = type_list2))
+    case (DAE.T_METATUPLE(types = type_list1),DAE.T_TUPLE(types = type_list2))
       equation
         type_list1 = List.map(type_list1, boxIfUnboxedType);
         type_list2 = List.map(type_list2, boxIfUnboxedType);
@@ -5733,14 +5727,14 @@ algorithm
         type_list1 = List.threadMap(type_list1,type_list2,superType);
       then DAE.T_METATUPLE(type_list1,DAE.emptyTypeSource);
 
-    case (DAE.T_METALIST(listType = t1),DAE.T_METALIST(listType = t2))
+    case (DAE.T_METALIST(ty = t1),DAE.T_METALIST(ty = t2))
       equation
         t1 = boxIfUnboxedType(t1);
         t2 = boxIfUnboxedType(t2);
         tp = superType(t1,t2);
       then DAE.T_METALIST(tp,DAE.emptyTypeSource);
 
-    case (DAE.T_METAOPTION(optionType = t1), DAE.T_METAOPTION(optionType = t2))
+    case (DAE.T_METAOPTION(ty = t1), DAE.T_METAOPTION(ty = t2))
       equation
         t1 = boxIfUnboxedType(t1);
         t2 = boxIfUnboxedType(t2);
@@ -6058,7 +6052,7 @@ algorithm
         t1 = fixPolymorphicRestype2(t1, "", bindings, info);
       then t1;
 
-    case (DAE.T_METALIST(listType = t1),_,_,_)
+    case (DAE.T_METALIST(ty = t1),_,_,_)
       equation
         t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
         t2 = boxIfUnboxedType(t2);
@@ -6070,7 +6064,7 @@ algorithm
         t2 = boxIfUnboxedType(t2);
       then DAE.T_METAARRAY(t2,DAE.emptyTypeSource);
 
-    case (DAE.T_METAOPTION(optionType = t1),_,_,_)
+    case (DAE.T_METAOPTION(ty = t1),_,_,_)
       equation
         t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
         t2 = boxIfUnboxedType(t2);
@@ -6082,7 +6076,7 @@ algorithm
         tys = List.map(tys, boxIfUnboxedType);
       then DAE.T_METATUPLE(tys,DAE.emptyTypeSource);
 
-    case (DAE.T_TUPLE(tupleType = tys),_,_,_)
+    case (DAE.T_TUPLE(types = tys),_,_,_)
       equation
         tys = List.map3(tys, fixPolymorphicRestype2, prefix, bindings, info);
       then DAE.T_TUPLE(tys,DAE.emptyTypeSource);
@@ -6176,11 +6170,11 @@ algorithm
         list<DAE.Var> fields;
         list<DAE.FuncArg> funcArgs;
       case DAE.T_ARRAY(ty = ty) then {ty};
-      case DAE.T_METALIST(listType = ty) then {ty};
+      case DAE.T_METALIST(ty = ty) then {ty};
       case DAE.T_METAARRAY(ty = ty) then {ty};
       case DAE.T_METABOXED(ty = ty) then {ty};
-      case DAE.T_METAOPTION(optionType = ty) then {ty};
-      case DAE.T_TUPLE(tupleType = tys) then tys;
+      case DAE.T_METAOPTION(ty = ty) then {ty};
+      case DAE.T_TUPLE(types = tys) then tys;
       case DAE.T_METATUPLE(types = tys) then tys;
       case DAE.T_METARECORD(fields = fields)
         then List.map(fields, getVarType);
@@ -6336,7 +6330,7 @@ algorithm
     local
       list<DAE.Type> tys;
       Type ty;
-    case DAE.T_TUPLE(tupleType = tys) then tys;
+    case DAE.T_TUPLE(types = tys) then tys;
     case DAE.T_NORETCALL(source = _) then {};
     case ty then {ty};
   end matchcontinue;
@@ -6565,13 +6559,13 @@ algorithm
         solvedBindings = addPolymorphicBinding(id,ty1,solvedBindings);
       then (ty1::tys2, solvedBindings);
 
-    case (DAE.T_METAOPTION(optionType = ty1)::_,DAE.T_METAOPTION(optionType = ty2)::tys2,solvedBindings)
+    case (DAE.T_METAOPTION(ty = ty1)::_,DAE.T_METAOPTION(ty = ty2)::tys2,solvedBindings)
       equation
         ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
         ty1 = DAE.T_METAOPTION(ty1,DAE.emptyTypeSource);
       then (ty1::tys2,solvedBindings);
 
-    case (DAE.T_METALIST(listType = ty1)::_,DAE.T_METALIST(listType = ty2)::tys2,solvedBindings)
+    case (DAE.T_METALIST(ty = ty1)::_,DAE.T_METALIST(ty = ty2)::tys2,solvedBindings)
       equation
         ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
         ty1 = DAE.T_METALIST(ty1,DAE.emptyTypeSource);
@@ -6683,7 +6677,7 @@ algorithm
       DAE.Type ty,resType;
       InstTypes.PolymorphicBindings solvedBindings;
 
-    case (DAE.T_METALIST(listType = ty),solvedBindings)
+    case (DAE.T_METALIST(ty = ty),solvedBindings)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
         ty = DAE.T_METALIST(ty, DAE.emptyTypeSource);
@@ -6695,7 +6689,7 @@ algorithm
         ty = DAE.T_METAARRAY(ty,DAE.emptyTypeSource);
       then ty;
 
-    case (DAE.T_METAOPTION(optionType = ty),solvedBindings)
+    case (DAE.T_METAOPTION(ty = ty),solvedBindings)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
         ty = DAE.T_METAOPTION(ty,DAE.emptyTypeSource);
@@ -6707,7 +6701,7 @@ algorithm
         ty = DAE.T_METATUPLE(tys,DAE.emptyTypeSource);
       then ty;
 
-    case (DAE.T_TUPLE(tupleType = tys),solvedBindings)
+    case (DAE.T_TUPLE(types = tys),solvedBindings)
       equation
         tys = replaceSolvedBindings(tys,solvedBindings,false);
         ty = DAE.T_TUPLE(tys,DAE.emptyTypeSource);
@@ -6775,14 +6769,14 @@ algorithm
 
     case (DAE.T_METAARRAY(ty = ty1),DAE.T_METAARRAY(ty = ty2),_,bindings)
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
-    case (DAE.T_METALIST(listType = ty1),DAE.T_METALIST(listType = ty2),_,bindings)
+    case (DAE.T_METALIST(ty = ty1),DAE.T_METALIST(ty = ty2),_,bindings)
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
-    case (DAE.T_METAOPTION(optionType = ty1),DAE.T_METAOPTION(optionType = ty2),_,bindings)
+    case (DAE.T_METAOPTION(ty = ty1),DAE.T_METAOPTION(ty = ty2),_,bindings)
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
     case (DAE.T_METATUPLE(types = tList1),DAE.T_METATUPLE(types = tList2),_,bindings)
       then subtypePolymorphicList(tList1,tList2,envPath,bindings);
 
-    case (DAE.T_TUPLE(tupleType = tList1),DAE.T_TUPLE(tupleType = tList2),_,bindings)
+    case (DAE.T_TUPLE(types = tList1),DAE.T_TUPLE(types = tList2),_,bindings)
       then subtypePolymorphicList(tList1,tList2,envPath,bindings);
 
     case (DAE.T_METAUNIONTYPE(source = {path1}),DAE.T_METAUNIONTYPE(source = {path2}),_,bindings)
@@ -6809,7 +6803,7 @@ algorithm
       equation
         false = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1);
         prefix = "$" + Absyn.pathString(path1) + ".";
-        ((DAE.T_FUNCTION(farg1,ty1,_,_),_)) = traverseType((actual,prefix),prefixTraversedPolymorphicType);
+        (DAE.T_FUNCTION(farg1,ty1,_,_),_) = traverseType(actual, prefix, prefixTraversedPolymorphicType);
         tList1 = List.map(farg1, funcArgType);
         tList2 = List.map(farg2, funcArgType);
         bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
@@ -6952,58 +6946,79 @@ algorithm
 end isFunctionType;
 
 protected function prefixTraversedPolymorphicType
-  input tuple<Type,String> tpl;
-  output tuple<Type,String> otpl;
+  input Type ty;
+  input String prefix;
+  output Type oty = ty;
+  output String str;
 algorithm
-  otpl := match tpl
-    local
-      String id,prefix;
-      DAE.TypeSource ts;
-
-    case ((DAE.T_METAPOLYMORPHIC(id,_),prefix))
-      equation
-        id = prefix + id;
-      then
-        ((DAE.T_METAPOLYMORPHIC(id,DAE.emptyTypeSource),prefix)); // TODO! FIXME! should not propagate the ts here?
-
-    else tpl;
-
+  (oty,str) := match oty
+    case DAE.T_METAPOLYMORPHIC()
+      algorithm
+        oty.name := prefix + oty.name;
+      then (oty,prefix);
+    else (ty,prefix);
   end match;
 end prefixTraversedPolymorphicType;
 
 public function makeExpDimensionsUnknown
-  input tuple<DAE.Type,Integer/*dummy*/> tpl;
-  output tuple<DAE.Type,Integer/*dummy*/> otpl;
+  input DAE.Type ty;
+  input Integer dummy;
+  output DAE.Type oty := ty;
+  output Integer odummy := dummy;
 algorithm
-  otpl := match tpl
-    local
-      DAE.Type ty;
-      DAE.TypeSource ts;
-
-    case ((DAE.T_ARRAY(ty,{DAE.DIM_EXP(exp=_)},ts),_))
-      then ((DAE.T_ARRAY(ty,{DAE.DIM_UNKNOWN()},ts),1));
-
-    else tpl;
-
+  oty := match oty
+    case DAE.T_ARRAY(dims={DAE.DIM_EXP(exp=_)})
+      algorithm
+        oty.dims := {DAE.DIM_UNKNOWN()};
+      then oty;
+    else oty;
   end match;
 end makeExpDimensionsUnknown;
 
+public function makeKnownDimensionsInteger "In binding equations, [Boolean] and [2] match, so we need to convert them"
+  input DAE.Type ty;
+  input Integer dummy;
+  output DAE.Type oty := ty;
+  output Integer odummy := dummy;
+algorithm
+  oty := match oty
+    local
+      Integer size;
+    case DAE.T_ARRAY(dims={DAE.DIM_BOOLEAN()})
+      algorithm
+        oty.dims := {DAE.DIM_INTEGER(2)};
+      then oty;
+    case DAE.T_ARRAY(dims={DAE.DIM_ENUM(size=size)})
+      algorithm
+        oty.dims := {DAE.DIM_INTEGER(size)};
+      then oty;
+    case DAE.T_ARRAY(dims={DAE.DIM_EXP(exp=DAE.ICONST(size))})
+      algorithm
+        oty.dims := {DAE.DIM_INTEGER(size)};
+      then oty;
+    else oty;
+  end match;
+end makeKnownDimensionsInteger;
+
 public function traverseType
-  input tuple<DAE.Type,A> itpl;
+  input DAE.Type ty;
+  input A arg;
   input Func fn;
-  output tuple<DAE.Type,A> otpl;
+  output DAE.Type oty;
+  output A a := arg;
   replaceable type A subtypeof Any;
   partial function Func
-    input tuple<DAE.Type,A> itpl;
-    output tuple<DAE.Type,A> otpl;
+    input DAE.Type ty;
+    input A arg;
+    output DAE.Type oty;
+    output A oarg;
   end Func;
 algorithm
-  otpl := match (itpl,fn)
+  (oty,a) := match ty
     local
       list<DAE.Type> tys;
-      Type ty;
+      Type tyInner;
       DAE.Dimensions ad;
-      A a;
       DAE.TypeSource ts;
       String str;
       Integer index;
@@ -7014,127 +7029,106 @@ algorithm
       list<DAE.FuncArg> farg;
       DAE.FunctionAttributes functionAttributes;
       Boolean singleton, b;
-      tuple<Type,A> tpl;
 
-    case ((DAE.T_INTEGER(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    case ((DAE.T_REAL(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    case ((DAE.T_STRING(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    case ((DAE.T_BOOL(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    // BTH
-    case ((DAE.T_CLOCK(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    case ((DAE.T_ENUMERATION(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case DAE.T_INTEGER() then (ty,a);
+    case DAE.T_REAL() then (ty,a);
+    case DAE.T_STRING() then (ty,a);
+    case DAE.T_BOOL() then (ty,a);
+    case DAE.T_CLOCK() then (ty,a);
+    case DAE.T_ENUMERATION() then (ty,a);
+    case DAE.T_NORETCALL() then (ty,a);
+    case DAE.T_UNKNOWN() then (ty,a);
+    case DAE.T_METAUNIONTYPE() then (ty,a);
+    case DAE.T_METAPOLYMORPHIC() then (ty,a);
+    case DAE.T_CODE() then (ty,a);
 
-    case ((DAE.T_NORETCALL(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    case ((DAE.T_UNKNOWN(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    case ((DAE.T_ANYTYPE(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    case ((DAE.T_METAUNIONTYPE(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    case ((DAE.T_METABOXED(source = _),_),_) equation tpl = fn(itpl); then tpl;
-    case ((DAE.T_METAPOLYMORPHIC(source = _),_),_) equation tpl = fn(itpl); then tpl;
+    case oty as DAE.T_METABOXED()
+      algorithm
+        (tyInner,a) := traverseType(oty.ty, a, fn);
+        oty.ty := tyInner;
+      then (oty,a);
+    case oty as DAE.T_ARRAY()
+      algorithm
+        (tyInner,a) := traverseType(oty.ty, a, fn);
+        oty.ty := tyInner;
+      then (oty,a);
+    case oty as DAE.T_METATYPE()
+      algorithm
+        (tyInner,a) := traverseType(oty.ty, a, fn);
+        oty.ty := tyInner;
+      then (oty,a);
+    case oty as DAE.T_METALIST()
+      algorithm
+        (tyInner, a) := traverseType(oty.ty, a, fn);
+        oty.ty := tyInner;
+      then (oty,a);
+    case oty as DAE.T_METAOPTION()
+      algorithm
+        (tyInner,a) := traverseType(oty.ty, a, fn);
+        oty.ty := tyInner;
+      then (oty,a);
+    case oty as DAE.T_METAARRAY()
+      algorithm
+        (tyInner,a) := traverseType(oty.ty, a, fn);
+        oty.ty := tyInner;
+      then (oty,a);
+    case oty as DAE.T_FUNCTION_REFERENCE_VAR()
+      algorithm
+        (tyInner,a) := traverseType(oty.functionType, a, fn);
+        oty.functionType := tyInner;
+      then (oty,a);
+    case oty as DAE.T_FUNCTION_REFERENCE_FUNC()
+      algorithm
+        (tyInner,a) := traverseType(oty.functionType, a, fn);
+        oty.functionType := tyInner;
+      then (oty,a);
 
-    case ((DAE.T_ARRAY(ty,ad,ts),a),_)
-      equation
-        ((ty,a)) = traverseType((ty,a),fn);
-        ty = DAE.T_ARRAY(ty,ad,ts);
-        tpl = fn((ty,a));
-      then tpl;
+    case oty as DAE.T_METATUPLE()
+      algorithm
+        (tys,a) := traverseTupleType(oty.types, a, fn);
+        oty.types := tys;
+      then (oty,a);
+    case oty as DAE.T_TUPLE()
+      algorithm
+        (tys,a) := traverseTupleType(oty.types, a, fn);
+        oty.types := tys;
+      then (oty, a);
 
-    case ((DAE.T_METATYPE(ty,ts),a),_)
-      equation
-        ((ty,a)) = traverseType((ty,a),fn);
-        ty = DAE.T_METATYPE(ty,ts);
-        tpl = fn((ty,a));
-      then tpl;
+    case oty as DAE.T_METARECORD()
+      algorithm
+        (vars, a) := traverseVarTypes(oty.fields, a, fn);
+        oty.fields := vars;
+      then (oty, a);
+    case oty as DAE.T_COMPLEX()
+      algorithm
+        (vars, a) := traverseVarTypes(oty.varLst, a, fn);
+        oty.varLst := vars;
+      then (oty, a);
 
-    case ((DAE.T_METALIST(ty,ts),a),_)
-      equation
-        ((ty,a)) = traverseType((ty,a),fn);
-        ty = DAE.T_METALIST(ty,ts);
-        tpl = fn((ty,a));
-      then tpl;
+    case oty as DAE.T_SUBTYPE_BASIC()
+      algorithm
+        (vars, a) := traverseVarTypes(oty.varLst, a, fn);
+        (tyInner,a) := traverseType(oty.complexType, a, fn);
+        oty.varLst := vars;
+        oty.complexType := tyInner;
+      then (oty, a);
 
-    case ((DAE.T_METAOPTION(ty,ts),a),_)
-      equation
-        ((ty,a)) = traverseType((ty,a),fn);
-        ty = DAE.T_METAOPTION(ty,ts);
-        tpl = fn((ty,a));
-      then tpl;
+    case oty as DAE.T_FUNCTION()
+      algorithm
+        (farg, a) := traverseFuncArg(oty.funcArg, a, fn);
+        (tyInner, a) := traverseType(oty.funcResultType, a, fn);
+        oty.funcArg := farg;
+        oty.funcResultType := tyInner;
+      then (oty, a);
 
-    case ((DAE.T_METAARRAY(ty,ts),a),_)
-      equation
-        ((ty,a)) = traverseType((ty,a),fn);
-        ty = DAE.T_METAARRAY(ty,ts);
-        tpl = fn((ty,a));
-      then tpl;
-
-    case ((DAE.T_METATUPLE(tys,ts),a),_)
-      equation
-        (tys,a) = traverseTupleType(tys,a,fn);
-        ty = DAE.T_METATUPLE(tys,ts);
-        tpl = fn((ty,a));
-      then tpl;
-
-    case ((DAE.T_TUPLE(tys,ts),a),_)
-      equation
-        (tys,a) = traverseTupleType(tys,a,fn);
-        ty = DAE.T_TUPLE(tys,ts);
-        tpl = fn((ty,a));
-      then tpl;
-
-    case ((DAE.T_METARECORD(path,index,vars,singleton,ts),a),_)
-      equation
-        (vars,a) = traverseVarTypes(vars,a,fn);
-        ty = DAE.T_METARECORD(path,index,vars,singleton,ts);
-        tpl = fn((ty,a));
-      then tpl;
-
-    case ((DAE.T_COMPLEX(state,vars,eq,ts),a),_)
-      equation
-        (vars,a) = traverseVarTypes(vars,a,fn);
-        ty = DAE.T_COMPLEX(state,vars,eq,ts);
-        tpl = fn((ty,a));
-      then tpl;
-    case ((DAE.T_SUBTYPE_BASIC(state,vars,ty,eq,ts),a),_)
-      equation
-        (vars,a) = traverseVarTypes(vars,a,fn);
-        ((ty,a)) = traverseType((ty,a),fn);
-        ty = DAE.T_SUBTYPE_BASIC(state,vars,ty,eq,ts);
-        tpl = fn((ty,a));
-      then tpl;
-
-    case ((DAE.T_FUNCTION(farg,ty,functionAttributes,ts),a),_)
-      equation
-        (farg,a) = traverseFuncArg(farg,a,fn);
-        ((ty,a)) = traverseType((ty,a),fn);
-        ty = DAE.T_FUNCTION(farg,ty,functionAttributes,ts);
-        tpl = fn((ty,a));
-      then tpl;
-
-    case (tpl as (DAE.T_CODE(source = _),_),_)
-      equation
-        tpl = fn(tpl);
-      then tpl;
-
-    case ((DAE.T_FUNCTION_REFERENCE_VAR(ty,ts),a),_)
-      equation
-        ((ty,a)) = traverseType((ty,a),fn);
-        ty = DAE.T_FUNCTION_REFERENCE_VAR(ty,ts);
-        tpl = fn((ty,a));
-      then tpl;
-
-    case ((DAE.T_FUNCTION_REFERENCE_FUNC(b,ty,ts),a),_)
-      equation
-        ((ty,a)) = traverseType((ty,a),fn);
-        ty = DAE.T_FUNCTION_REFERENCE_FUNC(b,ty,ts);
-        tpl = fn((ty,a));
-      then tpl;
-
-    case ((ty,_),_)
+    else
       equation
         str = "Types.traverseType not implemented correctly: " + unparseType(ty);
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
         fail();
   end match;
+  (oty, a) := fn(oty, a);
 end traverseType;
 
 protected function traverseTupleType
@@ -7145,8 +7139,10 @@ protected function traverseTupleType
   output A oa;
   replaceable type A subtypeof Any;
   partial function Func
-    input tuple<Type,A> tpl;
-    output tuple<Type,A> otpl;
+    input DAE.Type ty;
+    input A arg;
+    output DAE.Type oty;
+    output A oarg;
   end Func;
 algorithm
   (otys,oa) := match (itys,ia,fn)
@@ -7158,8 +7154,8 @@ algorithm
     case ({},a,_) then ({},a);
     case (ty::tys,a,_)
       equation
-        ((ty,a)) = traverseType((ty,a),fn);
-        (tys,a) = traverseTupleType(tys,a,fn);
+        (ty,a) = traverseType(ty, a, fn);
+        (tys,a) = traverseTupleType(tys, a, fn);
       then (ty::tys,a);
   end match;
 end traverseTupleType;
@@ -7172,8 +7168,10 @@ protected function traverseVarTypes
   output A oa;
   replaceable type A subtypeof Any;
   partial function Func
-    input tuple<Type,A> tpl;
-    output tuple<Type,A> otpl;
+    input DAE.Type ty;
+    input A arg;
+    output DAE.Type oty;
+    output A oarg;
   end Func;
 algorithm
   (ovars,oa) := match (ivars,ia,fn)
@@ -7187,7 +7185,7 @@ algorithm
     case (var::vars,a,_)
       equation
         ty = getVarType(var);
-        ((ty,a)) = traverseType((ty,a),fn);
+        (ty, a) = traverseType(ty, a, fn);
         var = setVarType(var,ty);
         (vars,a) = traverseVarTypes(vars,a,fn);
       then (var::vars,a);
@@ -7202,13 +7200,14 @@ protected function traverseFuncArg
   output A oa;
   replaceable type A subtypeof Any;
   partial function Func
-    input tuple<Type,A> tpl;
-    output tuple<Type,A> otpl;
+    input DAE.Type ty;
+    input A arg;
+    output DAE.Type oty;
+    output A oarg;
   end Func;
 algorithm
-  (oargs,oa) := match (iargs,ia,fn)
+  (oargs,oa) := match (iargs,ia)
     local
-      DAE.Type ty;
       String b;
       DAE.Const c;
       DAE.VarParallelism p;
@@ -7216,14 +7215,15 @@ algorithm
       list<DAE.FuncArg> args;
       A a;
       DAE.FuncArg arg;
+      DAE.Type ty;
 
-    case ({},a,_) then ({},a);
-    case ((arg as DAE.FUNCARG(ty=ty))::args,a,_)
+    case ({},a) then ({},a);
+    case ((arg as DAE.FUNCARG())::args,a)
       equation
-        ((ty,a)) = traverseType((ty,a),fn);
-        arg = setFuncArgType(arg,ty);
+        (ty, a) = traverseType(arg.ty, a, fn);
+        arg.ty = ty;
         (args,a) = traverseFuncArg(args,a,fn);
-      then (arg::args,a);
+      then (arg::args, a);
   end match;
 end traverseFuncArg;
 
@@ -7253,7 +7253,7 @@ public function allTuple
 algorithm
   b := match itys local list<DAE.Type> tys;
     case {} then true;
-    case (DAE.T_TUPLE(tupleType = _)::tys) then allTuple(tys);
+    case (DAE.T_TUPLE()::tys) then allTuple(tys);
     else false;
   end match;
 end allTuple;
@@ -7392,7 +7392,7 @@ algorithm
       then
         Values.ARRAY(valueLst, {i});
 
-    case (DAE.T_TUPLE(tupleType = tys))
+    case (DAE.T_TUPLE(types = tys))
       equation
         valueLst = List.map(tys, typeToValue);
         v = Values.TUPLE(valueLst);
@@ -7482,14 +7482,14 @@ algorithm
       equation
         true = isInteger(arrayElementType(ty1));
         true = isReal(arrayElementType(ty2));
-        ((ty1,_)) = traverseType((ty1,-1),replaceIntegerTypeWithReal);
+        ty1 = traverseType(ty1, -1, replaceIntegerTypeWithReal);
         true = subtype(ty1,ty2);
       then ty1;
     case (ty1,_,ty2)
       equation
         true = isInteger(arrayElementType(ty2));
         true = isReal(arrayElementType(ty1));
-        ((ty2,_)) = traverseType((ty2,-1),replaceIntegerTypeWithReal);
+        ty2 = traverseType(ty2, -1, replaceIntegerTypeWithReal);
         true = subtype(ty1,ty2);
       then ty1;
     case (ty1,_,ty2)
@@ -7507,12 +7507,14 @@ algorithm
 end arraySuperType;
 
 protected function replaceIntegerTypeWithReal
-  input tuple<Type,Integer> tpl;
-  output tuple<Type,Integer> oty;
+  input Type ty;
+  input Integer dummy;
+  output Type oty;
+  output Integer odummy := dummy;
 algorithm
-  oty := match tpl
-    case ((DAE.T_INTEGER(varLst = _),_)) then ((DAE.T_REAL_DEFAULT,1));
-    else tpl;
+  oty := match ty
+    case DAE.T_INTEGER() then DAE.T_REAL_DEFAULT;
+    else ty;
   end match;
 end replaceIntegerTypeWithReal;
 
@@ -7806,19 +7808,21 @@ public function hasMetaArray
   input DAE.Type ty;
   output Boolean b;
 algorithm
-  ((_,b)) := traverseType((ty,false),hasMetaArrayWork);
+  (_,b) := traverseType(ty, false, hasMetaArrayWork);
 end hasMetaArray;
 
 protected function hasMetaArrayWork
-  input tuple<Type,Boolean> inTpl;
-  output tuple<Type,Boolean> outTpl;
+  input Type ty;
+  input Boolean b;
+  output Type oty := ty;
+  output Boolean ob := b;
 algorithm
-  outTpl := match inTpl
-    local
-      Type ty;
-    case ((ty as DAE.T_METAARRAY(ty=_), false)) then ((ty,true));
-    else inTpl;
-  end match;
+  if not b then
+    ob := match ty
+      case DAE.T_METAARRAY() then true;
+      else false;
+    end match;
+  end if;
 end hasMetaArrayWork;
 
 protected function classTypeEqualIfRecord
@@ -8052,7 +8056,7 @@ public function isEmptyOrNoRetcall
   output Boolean b;
 algorithm
   b := match ty
-    case DAE.T_TUPLE(tupleType={}) then true;
+    case DAE.T_TUPLE(types={}) then true;
     case DAE.T_METATUPLE(types={}) then true;
     case DAE.T_NORETCALL(source=_) then true;
     else false;
@@ -8142,19 +8146,18 @@ public function getUniontypeIfMetarecordReplaceAllSubtypes
   input DAE.Type inTy;
   output DAE.Type ty;
 algorithm
-  ((ty,_)) := traverseType((inTy,1),getUniontypeIfMetarecordTraverse);
+  (ty,_) := traverseType(inTy, 1, getUniontypeIfMetarecordTraverse);
 end getUniontypeIfMetarecordReplaceAllSubtypes;
 
 protected function getUniontypeIfMetarecordTraverse
-  input tuple<DAE.Type,Integer> inTpl;
-  output tuple<DAE.Type,Integer> outTpl;
+  input DAE.Type ty;
+  input Integer dummy;
+  output DAE.Type oty;
+  output Integer odummy := dummy;
 algorithm
-  outTpl := match inTpl
-    local
-      Boolean b;
-      Absyn.Path p;
-    case ((DAE.T_METARECORD(utPath=p,knownSingleton=b),_)) then ((DAE.T_METAUNIONTYPE({},b,{p}),1));
-    else inTpl;
+  oty := match ty
+    case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.knownSingleton,{ty.utPath});
+    else ty;
   end match;
 end getUniontypeIfMetarecordTraverse;
 
@@ -8285,23 +8288,20 @@ algorithm
 end makeDefaultFuncArg;
 
 public function setIsFunctionPointer
-  input tuple<DAE.Type,Integer> inTpl;
-  output tuple<DAE.Type,Integer> outTpl;
+  input DAE.Type ty;
+  input Integer dummy;
+  output DAE.Type oty := ty;
+  output Integer odummy := dummy;
 algorithm
-  outTpl := match inTpl
+  oty := match oty
     local
-      list<DAE.FuncArg> funcArg "funcArg" ;
-      DAE.Type funcResultType "Only single-result" ;
-      DAE.FunctionAttributes functionAttributes;
-      DAE.TypeSource source;
-      DAE.InlineType inline;
-      Boolean isOpenModelicaPure,isImpure;
-      DAE.FunctionBuiltin isBuiltin;
-      DAE.FunctionParallelism functionParallelism;
-
-    case ((DAE.T_FUNCTION(funcArg,funcResultType,DAE.FUNCTION_ATTRIBUTES(inline,isOpenModelicaPure,isImpure,false,isBuiltin,functionParallelism),source),_))
-      then ((DAE.T_FUNCTION(funcArg,funcResultType,DAE.FUNCTION_ATTRIBUTES(inline,isOpenModelicaPure,isImpure,true,isBuiltin,functionParallelism),source),1));
-    else inTpl;
+      DAE.FunctionAttributes attr;
+    case DAE.T_FUNCTION(functionAttributes=attr as DAE.FUNCTION_ATTRIBUTES(isFunctionPointer=false))
+      algorithm
+        attr.isFunctionPointer := true;
+        oty.functionAttributes := attr;
+      then oty;
+    else oty;
   end match;
 end setIsFunctionPointer;
 
@@ -8310,7 +8310,7 @@ public function isFunctionReferenceVar
   output Boolean b;
 algorithm
   b := match ty
-    case DAE.T_FUNCTION_REFERENCE_VAR(source=_) then true;
+    case DAE.T_FUNCTION_REFERENCE_VAR() then true;
     else false;
   end match;
 end isFunctionReferenceVar;

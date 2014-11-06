@@ -700,24 +700,32 @@ algorithm
         (cache,DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()));
     */
 
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,SOME(v),prop,_,_))),tp,_,_,_) /* default */
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,SOME(v),prop,_,_))),e_tp,_,_,_) /* default */
       equation
         c = Types.propAllConst(prop);
-        false = Types.equivtypes(Types.getPropType(prop),tp);
+        tp = Types.getPropType(prop);
+        false = Types.equivtypes(tp,e_tp);
         e_val_exp = ValuesUtil.valueExp(v);
-        (e_1, _) = Types.matchProp(e, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
+        // Handle bindings of the type Boolean b[Boolean]={true,false}, enumerations, and similar
+        // tp = Types.traverseType(tp, 1, Types.makeKnownDimensionsInteger);
+        // e_tp = Types.traverseType(e_tp, 1, Types.makeKnownDimensionsInteger);
+        (e_1, _) = Types.matchType(e, tp, e_tp, false);
         (e_1,_) = ExpressionSimplify.simplify(e_1);
-        (e_val_exp, _) = Types.matchProp(e_val_exp, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
+        (e_val_exp, _) = Types.matchType(e_val_exp, tp, e_tp, false);
         (e_val_exp,_) = ExpressionSimplify.simplify(e_val_exp);
         v = Ceval.cevalSimple(e_val_exp);
         e_val = SOME(v);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
 
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,_))),tp,_,_,_) /* default */
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,_))),e_tp,_,_,_) /* default */
       equation
         c = Types.propAllConst(prop);
-        (e_1, _) = Types.matchProp(e, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
+        tp = Types.getPropType(prop);
+        // Handle bindings of the type Boolean b[Boolean]={true,false}, enumerations, and similar
+        // tp = Types.traverseType(tp, 1, Types.makeKnownDimensionsInteger);
+        // e_tp = Types.traverseType(e_tp, 1, Types.makeKnownDimensionsInteger);
+        (e_1, _) = Types.matchType(e, tp, e_tp, false);
         (e_1,_) = ExpressionSimplify.simplify(e_1);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));

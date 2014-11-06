@@ -462,7 +462,7 @@ algorithm
       equation
         (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
         (cache,srexp,rprop,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
-        DAE.T_TUPLE(tupleType = types) = Types.getPropType(rprop);
+        DAE.T_TUPLE(types = types) = Types.getPropType(rprop);
         crefs = makeTupleCrefs(crefexps, types, env, cache, info);
         (_,Values.TUPLE(values),SOME(st_2)) = CevalScript.ceval(cache, env, srexp, true, SOME(st_1), Absyn.MSG(info),0);
         newst = GlobalScriptUtil.addVarsToSymboltable(crefs, values, env, st_2);

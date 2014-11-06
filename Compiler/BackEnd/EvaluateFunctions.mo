@@ -2278,7 +2278,7 @@ algorithm
         end if;
       then
         {};
-    case(DAE.VAR(componentRef=cref,ty=DAE.T_TUPLE(tupleType=_,source=_)))
+    case(DAE.VAR(componentRef=cref,ty=DAE.T_TUPLE()))
       equation
         if Flags.isSet(Flags.EVAL_FUNC_DUMP) then
           print("update getScalarsForComplexVar for tuple types: the tupl cref is :\n"+stringDelimitList(List.map({cref},ComponentReference.printComponentRefStr),"\n")+"\n");
@@ -2373,7 +2373,7 @@ algorithm
     case DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(varLst = vl as _ :: _)))
       then intAdd(getScalarVarSize(v) for v in vl);
 
-    case DAE.CALL(expLst=exps, attr = DAE.CALL_ATTR(ty = DAE.T_TUPLE(tupleType = tyl as _ :: _)))
+    case DAE.CALL(expLst=exps, attr = DAE.CALL_ATTR(ty = DAE.T_TUPLE(types = tyl as _ :: _)))
       algorithm
         size := 0;
         for ty in tyl loop
@@ -2400,7 +2400,7 @@ algorithm
       list<DAE.Var> varLst;
       list<DAE.Type> tyLst;
 
-    case DAE.T_TUPLE(tupleType = tyLst as _ :: _)
+    case DAE.T_TUPLE(types = tyLst as _ :: _)
       then listAppend(getVarLstFromType(ty) for ty in tyLst);
 
     case DAE.T_COMPLEX(varLst = varLst) then varLst;

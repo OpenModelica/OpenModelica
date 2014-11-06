@@ -7217,7 +7217,7 @@ template algStmtTupleAssign(DAE.Statement stmt, Context context, Text &varDecls,
 match stmt
 case STMT_TUPLE_ASSIGN(expExpLst={_}) then
   error(sourceInfo(), "A tuple assignment of only one variable is a regular assignment")
-case STMT_TUPLE_ASSIGN(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(tupleType=ntys)))) then
+case STMT_TUPLE_ASSIGN(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
   let &preExp = buffer ""
   let &postExp = buffer ""
   let lhsCrefs = (List.rest(expExpLst) |> e => match e
@@ -8774,7 +8774,7 @@ template resultVarAssignment(DAE.Type ty, Text lhs, Text rhs) "Tuple need to be 
 ::=
 match ty
 case T_TUPLE(__) then
-  (tupleType |> t hasindex i1 fromindex 1 => '<%lhs%>.c<%i1%> = <%rhs%>.c<%i1%>;' ; separator="\n")
+  (types |> t hasindex i1 fromindex 1 => '<%lhs%>.c<%i1%> = <%rhs%>.c<%i1%>;' ; separator="\n")
 else
   '<%lhs%> = <%rhs%>;'
 end resultVarAssignment;
@@ -8796,7 +8796,7 @@ template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &va
       let &varDeclInner = buffer ""
       let &ret = buffer ""
       let retInput = match t.funcResultType
-        case T_TUPLE(tupleType=_::tys) then
+        case T_TUPLE(types=_::tys) then
           (tys |> ty =>
             let name = 'tmp<%System.tmpTick()%>'
             let &ret += ', <%name%>'
@@ -9210,7 +9210,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
 
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
     let additionalOutputs = (match attr.ty
-      case T_TUPLE(tupleType=t::ts) then List.fill(", NULL",listLength(ts)))
+      case T_TUPLE(types=t::ts) then List.fill(", NULL",listLength(ts)))
     let res = daeExpCallTuple(exp, additionalOutputs, context, &preExp, &varDecls, &auxFunction)
     match context
       case FUNCTION_CONTEXT(__) then res
@@ -9221,7 +9221,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
           let tvar = match attr.ty
             case T_NORETCALL(__) then
               ""
-            case T_TUPLE(tupleType=t::_)
+            case T_TUPLE(types=t::_)
             case t
             then tempDecl(expTypeArrayIf(t),&varDecls)
           let &preExp += 'SIM_PROF_TICK_FN(<%funName%>_index);<%\n%>'
@@ -9260,7 +9260,7 @@ template generateTypeCast(Type ty, list<DAE.Exp> es, Boolean isClosure)
     else "modelica_metatype")
   let inputs = es |> e => ', <%expTypeFromExpArrayIf(e)%>'
   let outputs = match ty
-    case T_TUPLE(tupleType=_::tys) then (tys |> t => ', <%expTypeArrayIf(t)%>')
+    case T_TUPLE(types=_::tys) then (tys |> t => ', <%expTypeArrayIf(t)%>')
   '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
 end generateTypeCast;
 
@@ -9273,7 +9273,7 @@ template generateTypeCastFromType(Type ty, Boolean isClosure)
     case T_FUNCTION(__) then
       (funcArg |> fa as FUNCARG(__) => ', <%expTypeArrayIf(fa.ty)%>')
   let outputs = match ty
-    case T_FUNCTION(funcResultType=T_TUPLE(tupleType=_::tys)) then (tys |> t => ', <%expTypeArrayIf(t)%>')
+    case T_FUNCTION(funcResultType=T_TUPLE(types=_::tys)) then (tys |> t => ', <%expTypeArrayIf(t)%>')
   '(<%ret%>(*)(threadData_t*<%if isClosure then ", modelica_metatype"%><%inputs%><%outputs%>))'
 end generateTypeCastFromType;
 
@@ -9465,7 +9465,7 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
   match inExp
   case TSUB(ix=1) then
     daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  case TSUB(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(tupleType=tys)))) then
+  case TSUB(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(types=tys)))) then
     let v = tempDecl(expTypeArrayIf(listGet(tys,ix)), &varDecls)
     let additionalOutputs = List.restOrEmpty(tys) |> ty hasindex i1 fromindex 2 => if intEq(i1,ix) then ', &<%v%>' else ", NULL"
     let res = daeExpCallTuple(exp, additionalOutputs, context, &preExp, &varDecls, &auxFunction)
@@ -9817,7 +9817,7 @@ match exp
 case exp as MATCHEXPRESSION(__) then
   let res = match et
     case T_NORETCALL(__) then error(sourceInfo(), 'match expression not returning anything should be caught in a noretcall statement and not reach this code: <%printExpStr(exp)%>')
-    case T_TUPLE(tupleType={}) then error(sourceInfo(), 'match expression returning an empty tuple should be caught in a noretcall statement and not reach this code: <%printExpStr(exp)%>')
+    case T_TUPLE(types={}) then error(sourceInfo(), 'match expression returning an empty tuple should be caught in a noretcall statement and not reach this code: <%printExpStr(exp)%>')
     else tempDeclZero(expTypeModelica(et), &varDecls)
   let startIndexOutputs = "ERROR_INDEX"
   daeExpMatch2(exp,listExpLength1,res,startIndexOutputs,context,&preExp,&varDecls,&auxFunction)
@@ -10083,7 +10083,7 @@ template tempDeclTuple(DAE.Type inType, Text &varDecls)
   let &varDecls +=
   <<
   struct {
-    <%tupleType |> ty hasindex i1 fromindex 1 => '<%expTypeModelica(ty)%> c<%i1%>;<%\n%>'%>
+    <%types |> ty hasindex i1 fromindex 1 => '<%expTypeModelica(ty)%> c<%i1%>;<%\n%>'%>
   } <%tmpVar%>;
   >>
   tmpVar
@@ -10577,7 +10577,7 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
  "Generates an assigment algorithm statement."
 ::=
   match stmt
-  case s as STMT_ASSIGN(exp1=lhs as PATTERN(pattern=PAT_CALL_TUPLE(patterns=pat::patterns)),exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(tupleType=ty::tys)))) then
+  case s as STMT_ASSIGN(exp1=lhs as PATTERN(pattern=PAT_CALL_TUPLE(patterns=pat::patterns)),exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ty::tys)))) then
     let &preExp = buffer ""
     let &assignments1 = buffer ""
     let &assignments = buffer ""

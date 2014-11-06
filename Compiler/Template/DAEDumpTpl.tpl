@@ -307,16 +307,16 @@ template dumpType(Type ty, Text &attributes)
     case T_COMPLEX(__) then AbsynDumpTpl.dumpPath(ClassInf.getStateName(complexClassType))
     case T_SUBTYPE_BASIC(__) then dumpType(complexType, &attributes)
     case T_FUNCTION(__) then dumpFunctionType(ty)
-    case T_TUPLE(__) then dumpTupleType(tupleType, "(", ")")
+    case T_TUPLE(__) then dumpTupleType(types, "(", ")")
     case T_METATUPLE(__) then dumpTupleType(types, "tuple<", ">")
-    case T_METALIST(__) then 'list<<%dumpType(listType, attributes)%>>'
+    case T_METALIST(__) then 'list<<%dumpType(ty, attributes)%>>'
     case T_METAARRAY(__) then 'array<<%dumpType(ty, attributes)%>>'
     case T_METAPOLYMORPHIC(__) then 'polymorphic<<%name%>>'
     case T_METAUNIONTYPE(source = {p}) then AbsynDumpTpl.dumpPathNoQual(p)
     case T_METARECORD(source = {p}) then AbsynDumpTpl.dumpPathNoQual(p)
     case T_METABOXED(__) then '#<%dumpType(ty, attributes)%>'
-    case T_METAOPTION(optionType = DAE.T_UNKNOWN(__)) then 'Option<Any>'
-    case T_METAOPTION(__) then 'Option<<%dumpType(optionType, &attributes)%>>'
+    case T_METAOPTION(ty = DAE.T_UNKNOWN(__)) then 'Option<Any>'
+    case T_METAOPTION(__) then 'Option<<%dumpType(ty, &attributes)%>>'
     case T_METATYPE(__) then dumpType(ty, &attributes)
     case T_NORETCALL(__) then '#T_NORETCALL#'
     case T_UNKNOWN(__) then '#T_UNKNOWN#'

@@ -3624,7 +3624,7 @@ algorithm
            "\n");*/
 
         dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes, comment);
-        ((ty,_)) = Types.traverseType((ty,1),Types.setIsFunctionPointer);
+        ty = Types.traverseType(ty, 1, Types.setIsFunctionPointer);
         new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE());
 
         // Type info present. Now we can also put the binding into the dae.
@@ -3697,7 +3697,7 @@ algorithm
 
         // true in update_frame means the variable is now instantiated.
         dae_attr = DAEUtil.translateSCodeAttrToDAEAttr(attr, prefixes, comment);
-        ((ty,_)) = Types.traverseType((ty,1),Types.setIsFunctionPointer);
+        ty = Types.traverseType(ty, 1, Types.setIsFunctionPointer);
         new_var = DAE.TYPES_VAR(name, dae_attr, ty, binding, NONE()) ;
 
         // type info present Now we can also put the binding into the dae.

@@ -250,12 +250,12 @@ algorithm
         _ = validPatternType(ty,DAE.T_NONE_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(NONE(),DAE.META_OPTION(NONE())));
 
-    case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("SOME",{}),Absyn.FUNCTIONARGS({exp},{})),DAE.T_METAOPTION(optionType = ty2),_,_)
+    case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("SOME",{}),Absyn.FUNCTIONARGS({exp},{})),DAE.T_METAOPTION(ty = ty2),_,_)
       equation
         (cache,pattern) = elabPattern(cache,env,exp,ty2,info);
       then (cache,DAE.PAT_SOME(pattern));
 
-    case (cache,_,Absyn.CONS(head,tail),tyTail as DAE.T_METALIST(listType = tyHead),_,_)
+    case (cache,_,Absyn.CONS(head,tail),tyTail as DAE.T_METALIST(ty = tyHead),_,_)
       equation
         tyHead = Types.boxIfUnboxedType(tyHead);
         (cache,patternHead) = elabPattern(cache,env,head,tyHead,info);
@@ -268,7 +268,7 @@ algorithm
         (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,inLhs);
       then (cache,DAE.PAT_META_TUPLE(patterns));
 
-    case (cache,_,Absyn.TUPLE(exps),DAE.T_TUPLE(tupleType = tys),_,_)
+    case (cache,_,Absyn.TUPLE(exps),DAE.T_TUPLE(types = tys),_,_)
       equation
         (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,inLhs);
       then (cache,DAE.PAT_CALL_TUPLE(patterns));

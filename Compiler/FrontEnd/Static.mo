@@ -366,7 +366,7 @@ algorithm
     local
       DAE.Type ty;
       DAE.Const c;
-    case (_,DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = ty :: _), tupleConst = DAE.TUPLE_CONST(tupleConstLst = DAE.SINGLE_CONST(const = c) :: _)))
+    case (_,DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(types = ty :: _), tupleConst = DAE.TUPLE_CONST(tupleConstLst = DAE.SINGLE_CONST(const = c) :: _)))
       then (DAE.TSUB(inExp, 1, ty), DAE.PROP(ty,c));
     else (inExp,inProperties);
   end match;
@@ -830,7 +830,7 @@ algorithm
        {e1,e2} = MetaUtil.transformArrayNodesToListNodes({e1,e2},{});
 
        (cache,e1_1,prop1,_) = elabExpInExpression(cache,env, e1, impl, st,doVect,pre,info);
-       (cache,e2_1,DAE.PROP(DAE.T_METALIST(listType = t2),c2),_) = elabExpInExpression(cache,env, e2, impl, st,doVect,pre,info);
+       (cache,e2_1,DAE.PROP(DAE.T_METALIST(ty = t2),c2),_) = elabExpInExpression(cache,env, e2, impl, st,doVect,pre,info);
        t1 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(Types.getPropType(prop1));
        t2 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t2);
        c1 = Types.propAllConst(prop1);
@@ -848,7 +848,7 @@ algorithm
      equation
        {e1,e2} = MetaUtil.transformArrayNodesToListNodes({e1,e2},{});
        (cache,_,prop1,_) = elabExpInExpression(cache,env, e1, impl, st,doVect,pre,info);
-       (cache,_,DAE.PROP(t2 as DAE.T_METALIST(listType = _),_),_) = elabExpInExpression(cache,env, e2, impl, st,doVect,pre,info);
+       (cache,_,DAE.PROP(t2 as DAE.T_METALIST(),_),_) = elabExpInExpression(cache,env, e2, impl, st,doVect,pre,info);
        expstr = Dump.printExpStr(e);
        str1 = Types.unparseType(Types.getPropType(prop1));
        str2 = Types.unparseType(t2);
@@ -1020,7 +1020,7 @@ algorithm
 
     case (cache,_,{},prop,_,st,_,_,_) then (cache,DAE.LIST({}),prop,st);
 
-    case (cache,env,expList,DAE.PROP(DAE.T_METALIST(listType = t),c),impl,st,doVect,pre,_)
+    case (cache,env,expList,DAE.PROP(DAE.T_METALIST(ty = t),c),impl,st,doVect,pre,_)
       equation
         (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect,pre,info);
         typeList = List.map(propList, Types.getPropType);
@@ -8000,27 +8000,29 @@ algorithm
         // last scope ref in env is a class scope
         true = FGraph.checkScopeType(List.create(FGraph.lastScopeRef(env)), SOME(FCore.CLASS_SCOPE()));
         ty = Types.getPropType(inProperties);
-        ((ty,(cache,_))) = Types.traverseType((ty,(inCache,env)),elabCallArgsEvaluateArrayLength2);
+        (ty,(cache,_)) = Types.traverseType(ty,(inCache,env),elabCallArgsEvaluateArrayLength2);
       then (cache,Types.setPropType(inProperties,ty));
     else (inCache,inProperties);
   end matchcontinue;
 end elabCallArgsEvaluateArrayLength;
 
 protected function elabCallArgsEvaluateArrayLength2
-  input tuple<DAE.Type,tuple<FCore.Cache,FCore.Graph>> inTpl;
-  output tuple<DAE.Type,tuple<FCore.Cache,FCore.Graph>> outTpl;
+  input DAE.Type ty;
+  input tuple<FCore.Cache,FCore.Graph> inTpl;
+  output DAE.Type oty := ty;
+  output tuple<FCore.Cache,FCore.Graph> outTpl;
 algorithm
-  (outTpl) := matchcontinue (inTpl)
+  (oty,outTpl) := matchcontinue (oty,inTpl)
     local
       tuple<FCore.Cache,FCore.Graph> tpl;
       DAE.Dimensions dims;
       DAE.TypeSource source;
-      DAE.Type ty;
-    case ((DAE.T_ARRAY(ty,dims,source),tpl))
+    case (DAE.T_ARRAY(),tpl)
       equation
-        (dims,tpl) = List.mapFold(dims,elabCallArgsEvaluateArrayLength3,tpl);
-      then ((DAE.T_ARRAY(ty,dims,source),tpl));
-    else inTpl;
+        (dims,tpl) = List.mapFold(oty.dims,elabCallArgsEvaluateArrayLength3,tpl);
+        oty.dims = dims;
+      then (oty,tpl);
+    else (oty,inTpl);
   end matchcontinue;
 end elabCallArgsEvaluateArrayLength2;
 
@@ -9794,7 +9796,7 @@ algorithm
       list<DAE.Type> tys;
 
     // A tuple, get the dimensions of all the types.
-    case DAE.T_TUPLE(tupleType = tys)
+    case DAE.T_TUPLE(types = tys)
       then List.mapFlat(tys, Types.getDimensions);
 
     else Types.getDimensions(inOutputType);
@@ -10295,7 +10297,7 @@ algorithm
       String tystr,conststr;
 
     // At least two elements in the type list, this is a tuple. LS: Tuples are fixed before here
-    case (tt as DAE.T_TUPLE(tupleType = _),const) then DAE.PROP_TUPLE(tt,const);
+    case (tt as DAE.T_TUPLE(),const) then DAE.PROP_TUPLE(tt,const);
 
     // One type, this is a tuple with one element. The resulting properties is then identical to that of a single expression.
     case (t,DAE.TUPLE_CONST(tupleConstLst = (DAE.SINGLE_CONST(const = b) :: {}))) then DAE.PROP(t,b);
@@ -10368,7 +10370,7 @@ algorithm
       DAE.Const c;
       DAE.Type ty;
 
-    case (DAE.T_TUPLE(tupleType = tys),c)
+    case (DAE.T_TUPLE(types = tys),c)
       equation
         consts = checkConsts(tys, c);
       then
@@ -10419,20 +10421,17 @@ protected function checkConst "author: PR
   return type
   LS: Update: const is derived from the input arguments and sent here"
   input DAE.Type inType;
-  input DAE.Const inConst;
+  input DAE.Const c;
   output DAE.TupleConst outTupleConst;
 algorithm
-  outTupleConst := matchcontinue (inType,inConst)
-    local DAE.Const c;
-
-    case (DAE.T_TUPLE(tupleType = _),_)
+  outTupleConst := match inType
+    case DAE.T_TUPLE()
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"No suport for tuples built by tuples"});
-      then
-        fail();
+        Error.addInternalError("No suport for tuples built by tuples", sourceInfo());
+      then fail();
 
-    case (_,c) then DAE.SINGLE_CONST(c);
-  end matchcontinue;
+    else DAE.SINGLE_CONST(c);
+  end match;
 end checkConst;
 
 protected function splitProps "Splits the properties list into the separated types list and const list."
@@ -10975,7 +10974,7 @@ algorithm
       equation
         (cache,e_1,props,_) = elabExpInExpression(cache,env, e, impl,st, true,pre,info);
         t = Types.getPropType(props);
-        ((vt, _)) = Types.traverseType((vt, -1), Types.makeExpDimensionsUnknown);
+        vt = Types.traverseType(vt, -1, Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
@@ -10988,7 +10987,7 @@ algorithm
       equation
         (cache,e_1,props,_) = elabExpInExpression(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
-        ((vt, _)) = Types.traverseType((vt, -1), Types.makeExpDimensionsUnknown);
+        vt = Types.traverseType(vt, -1, Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, vt, c1, cache, env, e_1, info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));

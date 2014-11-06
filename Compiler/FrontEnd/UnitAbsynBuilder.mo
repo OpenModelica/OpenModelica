@@ -1163,7 +1163,7 @@ algorithm
       then ({UnitAbsyn.LOC(indx2,funcCallExp)},{UnitAbsyn.EQN(UnitAbsyn.LOC(indx2,funcCallExp),UnitAbsyn.LOC(indx,funcCallExp),funcCallExp)},store);
 
     // Tuple
-    case(DAE.T_FUNCTION(_,DAE.T_TUPLE(tupleType = typeLst),_,_),_,_,store) equation
+    case(DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE(types = typeLst)),_,_,store) equation
       (terms,extraTerms,store) = buildTupleResultTerms(typeLst,funcInstId,funcCallExp,store);
      then (terms,extraTerms,store);
     else equation
