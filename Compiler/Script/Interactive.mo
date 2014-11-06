@@ -14043,8 +14043,7 @@ algorithm
       equation
         c1 = countComponentsInElts(elt);
         newn = n - c1;
-        _ = intString(newn);
-        (newn > 0) = true;
+        true = newn > 0;
         res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info),
           newn);
       then
@@ -14065,7 +14064,7 @@ algorithm
       equation
         c1 = countComponentsInElts(elt);
         newn = n - c1;
-        (newn > 0) = true;
+        true = newn > 0;
         res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info), newn);
       then
         res;

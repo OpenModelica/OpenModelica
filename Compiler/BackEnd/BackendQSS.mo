@@ -104,11 +104,10 @@ algorithm
         print("BackEndQSS analysis initialized");
         print("\n ----------------------------\n");
         (_,_,orderedVarsList) = getAllVars(dlow);
-        _ = List.filterOnTrue(orderedVarsList,BackendVariable.isStateVar);
+        // _ = List.filterOnTrue(orderedVarsList,BackendVariable.isStateVar); // TODO: Did this do anything?
         discVarsLst = List.filterOnTrue(orderedVarsList,isDiscreteVar);
         disc = List.map(discVarsLst,BackendVariable.varCref);
         (eqsindex,zc_exps) = getEquationsWithDiscont(zeroCrossings);
-        _ = listLength(disc);
         disc = listAppend(disc, newDiscreteVariables(getEquations(eqsdae,eqsindex),0));
         //states = List.map(stateVarsList,BackendVariable.varCref);
         //algs = computeAlgs(eqs,states,{});

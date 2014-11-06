@@ -4750,7 +4750,6 @@ algorithm
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
-        _ = simplifyType(t2);
         e = Expression.boxExp(e);
       then (e,t2);
 
@@ -4758,7 +4757,6 @@ algorithm
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
-        _ = simplifyType(t2);
         e = Expression.boxExp(e);
       then (e,t2);
 
@@ -4766,7 +4764,6 @@ algorithm
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
-        _ = simplifyType(t2);
         e = Expression.boxExp(e);
       then (e,t2);
 
@@ -4775,7 +4772,6 @@ algorithm
         // true = Config.acceptMetaModelicaGrammar();
         (e, t1) = matchType(e, t1, unboxedType(t2), printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
-        _ = simplifyType(t2);
         e = Expression.boxExp(e);
       then
         (e, t2);
@@ -4986,7 +4982,6 @@ algorithm
     case (expl::rest, DAE.T_ARRAY(ty=DAE.T_ARRAY(ty=t1)), DAE.T_METALIST(DAE.T_METALIST(ty=t2),_),_)
       equation
         (e,t1) = typeConvertMatrixRowToList(expl, t1, t2, printFailtrace);
-        _ = simplifyType(t1);
         (expl,_) = typeConvertMatrixToList(rest, inType, outType, printFailtrace);
       then (e::expl,DAE.T_METALIST(t1,DAE.emptyTypeSource));
     else

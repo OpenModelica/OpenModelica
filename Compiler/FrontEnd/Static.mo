@@ -677,7 +677,6 @@ algorithm
         s = Absyn.crefLastIdent(fn);
         true = stringEq(s, "EnumToInteger");
         (cache,e_1,prop,st_1) = elabCall(cache, env, Absyn.CREF_IDENT("Integer", {}), args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
-        _ = Types.propAllConst(prop);
         (e_1,_) = ExpressionSimplify.simplify1(e_1);
       then
         (cache,e_1,prop,st_1);
@@ -736,7 +735,6 @@ algorithm
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,_,pre,_,_)
       equation
         (cache,e_1,prop,st_1) = elabCall(cache, env, fn, args, nargs, impl, st, pre, info, Error.getNumErrorMessages());
-        _ = Types.propAllConst(prop);
         (e_1,_) = ExpressionSimplify.simplify1(e_1);
       then
         (cache,e_1,prop,st_1);
@@ -760,7 +758,6 @@ algorithm
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = e, iterType=iterType, iterators=iterators)),impl,st,doVect,pre,_,_)
       equation
         (cache,e_1,prop,st_1) = elabCallReduction(cache,env, fn, e, iterType, iterators, impl, st,doVect,pre,info);
-        _ = Types.propAllConst(prop);
       then
         (cache,e_1,prop,st_1);
 
@@ -1450,7 +1447,6 @@ algorithm
     case (env,Absyn.IDENT("listReverse"),_,_,_,_) then (env,NONE());
     case (env,Absyn.IDENT("sum"),_,_,_,_)
       equation
-        _ = Absyn.pathToCref(path);
         env = FGraph.addForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         env = FGraph.addForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId,{});
@@ -1459,7 +1455,6 @@ algorithm
       then (env,SOME(exp));
     case (env,Absyn.IDENT("product"),_,_,_,_)
       equation
-        _ = Absyn.pathToCref(path);
         env = FGraph.addForIterator(env, foldId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         env = FGraph.addForIterator(env, resultId, expty, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId,{});
@@ -2010,8 +2005,7 @@ algorithm
         nmax = matrixConstrMaxDim(tps_2, 2);
         havereal = Types.containReal(tps_2);
         (cache,mexp,DAE.PROP(t,c),dim1,dim2) = elabMatrixSemi(cache,env,dess,tps,impl,NONE(),havereal,nmax,true,pre,info);
-        _ = Types.simplifyType(t);
-        _ = elabMatrixToMatrixExp(mexp);
+        _ = elabMatrixToMatrixExp(mexp); // TODO: Does this do anything?
         t_1 = Types.unliftArray(t);
         t_2 = Types.unliftArray(t_1);
       then
@@ -4032,7 +4026,7 @@ algorithm
         (_, exp_1, DAE.PROP(tp, _),_) = elabExpInExpression(cache, env, exp, inImpl, NONE(), true, inPrefix, info);
         true = Types.dimensionsKnown(tp);
         // check the stream prefix
-        _ = elabBuiltinStreamOperator(cache, env, "inStream", exp_1, tp, inInfo);
+        elabBuiltinStreamOperator(cache, env, "inStream", exp_1, tp, inInfo);
         (cache, e, prop) = elabCallArgs(cache, env, Absyn.IDENT("inStream"), {exp}, {}, inImpl, NONE(), inPrefix, info);
       then
         (cache, e, prop);
@@ -4077,7 +4071,7 @@ algorithm
         (_, exp_1, DAE.PROP(tp, _),_) = elabExpInExpression(cache, env, exp, inImpl, NONE(), true, inPrefix, info);
         true = Types.dimensionsKnown(tp);
         // check the stream prefix
-        _ = elabBuiltinStreamOperator(cache, env, "actualStream", exp_1, tp, inInfo);
+        elabBuiltinStreamOperator(cache, env, "actualStream", exp_1, tp, inInfo);
         (cache, e, prop) = elabCallArgs(cache, env, Absyn.IDENT("actualStream"), {exp}, {}, inImpl, NONE(), inPrefix, info);
       then
         (cache, e, prop);
@@ -7429,13 +7423,13 @@ algorithm
 
     case (Absyn.IDENT(name = id),_)
       equation
-        _ = elabBuiltinHandler(id);
+        elabBuiltinHandler(id);
       then
         (DAE.FUNCTION_BUILTIN(SOME(id)),true,inPath);
 
     case (Absyn.QUALIFIED("OpenModelicaInternal",Absyn.IDENT(name = id)),_)
       equation
-        _ = elabBuiltinHandlerInternal(id);
+        elabBuiltinHandlerInternal(id);
       then
         (DAE.FUNCTION_BUILTIN(SOME(id)),true,inPath);
 
@@ -7660,7 +7654,7 @@ algorithm
       String name;
     case (Absyn.CREF_IDENT(name = name,subscripts = {}))
       equation
-        _ = elabBuiltinHandler(name);
+        elabBuiltinHandler(name);
       then
         true;
     else false;
@@ -8165,7 +8159,7 @@ algorithm
         (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),  {},st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn);
         (cache,newslots2,constDefaultArgs,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, {}, pre, info);
         constlist = listAppend(constInputArgs, constDefaultArgs);
-        _ = List.fold(constlist, Types.constAnd, DAE.C_CONST());
+        // _ = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         args_2 = slotListArgs(newslots2);
 
         tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
@@ -8782,7 +8776,7 @@ algorithm
 
     case (cache,_,DAE.T_METARECORD(fields=vars,source={fqPath}),_,_,_,_,_,_,_)
       equation
-        _ = List.map(vars, Types.getVarType);
+        // _ = List.map(vars, Types.getVarType);
         DAE.TYPES_VAR(name = str) = List.selectFirst(vars, Types.varHasMetaRecordType);
         fn_str = Absyn.pathString(fqPath);
         Error.addSourceMessage(Error.METARECORD_CONTAINS_METARECORD_MEMBER,{fn_str,str},info);
@@ -9130,10 +9124,10 @@ algorithm
     // A slot with an unevaluated binding, evaluate the binding and return it.
     case ((slot as SLOT(defaultArg = da as DAE.FUNCARG(defaultBinding=SOME(exp)), dims = dims, idx = idx), 0), _, _)
       equation
-        _ = arrayUpdate(inSlotArray, idx, (slot, 1));
+        arrayUpdate(inSlotArray, idx, (slot, 1));
         exp = evaluateSlotExp(exp, inSlotArray, inInfo);
         slot = SLOT(da, true, SOME(exp), dims, idx);
-        _ = arrayUpdate(inSlotArray, idx, (slot, 2));
+        arrayUpdate(inSlotArray, idx, (slot, 2));
       then
         (exp, slot);
 
@@ -9350,7 +9344,7 @@ algorithm
     case (DAE.ARRAY(),(dim :: ad),slots,DAE.PROP(tp,c),_)
       equation
         int_dim = Expression.dimensionSize(dim);
-        _ = Types.simplifyType(Types.liftArray(tp, dim));
+        // _ = Types.simplifyType(Types.liftArray(tp, dim));
         vect_exp = vectorizeCallArray(inExp, int_dim, slots);
         tp = Types.liftArrayRight(tp, dim);
         (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c),info);
@@ -9948,7 +9942,6 @@ algorithm
         // Constant evaluate the bound expression.
         (cache, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
         exp = ValuesUtil.valueExp(val);
-        _ = Expression.typeof(exp);
         // Create a binding from the evaluated expression.
         slot = SLOT(defaultArg,true,SOME(exp),dims,idx);
         (cache,slots) = evaluateStructuralSlots2(cache,inEnv,rest,usedSlots,slot::acc);
@@ -10671,8 +10664,6 @@ algorithm
       list<Slot> slots;
 
     case({},_)
-      equation
-        _ = ClassInf.getStateName(complexClassType);
       then
         DAE.T_COMPLEX(complexClassType, {}, NONE(), DAE.emptyTypeSource);
 

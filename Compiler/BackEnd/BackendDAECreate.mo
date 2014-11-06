@@ -927,7 +927,6 @@ algorithm
         DAEUtil.setMinMax(inVarAttr, SOME(DAE.ENUM_LITERAL(namee1, 1)), SOME(DAE.ENUM_LITERAL(nameen, i)));
     case (NONE(), SOME(e), _, _, _)
       equation
-        _ = listLength(inNames);
         s1 = listGet(inNames, 1);
         namee1 = Absyn.joinPaths(inPath, Absyn.IDENT(s1));
       then
@@ -1588,7 +1587,7 @@ algorithm
         (beqns, eqns);
     case (DAE.NORETCALL(exp=exp, source=source)::eqns, NONE(), _, _, _)
       equation
-        _ = List.fold(conditions, makeIfExp, DAE.BCONST(true));
+        // _ = List.fold(conditions, makeIfExp, DAE.BCONST(true)); // TODO: Does this do anything?
         (beqns, eqns) = lowerIfEquationAsserts1(eqns, condition, conditions, brancheqns1, DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_IF(exp, {DAE.STMT_NORETCALL(exp, source)}, DAE.NOELSE(), source)}), source)::inEqns);
       then
         (beqns, eqns);
