@@ -6933,11 +6933,11 @@ algorithm
 
   // transformation phase (matching and sorting using index reduction method)
   sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
-  
+
   if Flags.isSet(Flags.GRAPHML) then
   HpcOmTaskGraph.dumpBipartiteGraph(sode,fileNamePrefix);
   end if;
-  
+
   if Flags.isSet(Flags.BLT_DUMP) then
     BackendDump.bltdump("bltdump", sode);
   end if;
