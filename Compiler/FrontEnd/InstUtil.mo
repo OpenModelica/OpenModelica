@@ -8894,7 +8894,7 @@ algorithm
       DAE.Exp exp;
       list<String> unbound,unboundLocal;
       SourceInfo info;
-      String str;
+      String str,name;
       DAE.ComponentRef cr;
       Boolean b;
       tuple<list<String>,SourceInfo> arg;
@@ -8909,6 +8909,12 @@ algorithm
         str = ComponentReference.crefFirstIdent(cr);
         Error.assertionOrAddSourceMessage(not b, Error.WARNING_DEF_USE, {str}, info);
         unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,str);
+      then (exp,true,(unbound,info));
+    case (exp as DAE.CALL(path=Absyn.IDENT(name)),(unbound,info))
+      equation
+        b = listMember(name,unbound);
+        Error.assertionOrAddSourceMessage(not b, Error.WARNING_DEF_USE, {name}, info);
+        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,name);
       then (exp,true,(unbound,info));
     case (exp as DAE.MATCHEXPRESSION(inputs=inputs,localDecls=localDecls,cases=cases),(unbound,info))
       equation
