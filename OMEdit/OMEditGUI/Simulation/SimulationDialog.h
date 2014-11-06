@@ -137,6 +137,17 @@ private:
   QToolButton *mpMehtodHelpButton;
   Label *mpToleranceLabel;
   QLineEdit *mpToleranceTextBox;
+  QGroupBox *mpDasslOptionsGroupBox;
+  Label *mpDasslJacobianLabel;
+  QComboBox *mpDasslJacobianComboBox;
+  QCheckBox *mpDasslRootFindingCheckBox;
+  QCheckBox *mpDasslRestartCheckBox;
+  Label *mpDasslInitialStepSizeLabel;
+  QLineEdit *mpDasslInitialStepSizeTextBox;
+  Label *mpDasslMaxStepSizeLabel;
+  QLineEdit *mpDasslMaxStepSizeTextBox;
+  Label *mpDasslMaxIntegrationOrderLabel;
+  QSpinBox *mpDasslMaxIntegrationOrderSpinBox;
   QCheckBox *mpSaveSimulationCheckbox;
   Label *mpCflagsLabel;
   QLineEdit *mpCflagsTextBox;
@@ -243,6 +254,7 @@ private:
 public:
   void runSimulationExecutable(SimulationOptions simulationOptions);
 public slots:
+  void enableDasslOptions(QString method);
   void showIntegrationHelp();
   void buildOnly(bool checked);
   void browseModelSetupFile();

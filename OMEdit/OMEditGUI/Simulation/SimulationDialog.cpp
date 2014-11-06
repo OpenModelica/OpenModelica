@@ -150,6 +150,7 @@ void SimulationDialog::setUpForm()
   mpMethodComboBox->setItemData(8, "sundial/kinsol needed", Qt::ToolTipRole);
   mpMethodComboBox->addItem("lobatto6");
   mpMethodComboBox->setItemData(9, "sundial/kinsol needed", Qt::ToolTipRole);
+  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableDasslOptions(QString)));
   mpMehtodHelpButton = new QToolButton;
   mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpMehtodHelpButton->setToolTip(tr("Integration help"));
@@ -157,6 +158,53 @@ void SimulationDialog::setUpForm()
   // Tolerance
   mpToleranceLabel = new Label(tr("Tolerance:"));
   mpToleranceTextBox = new QLineEdit("1e-6");
+  // dassl options
+  mpDasslOptionsGroupBox = new QGroupBox(tr("DASSL Options"));
+  // dassl jacobian
+  mpDasslJacobianLabel = new Label(tr("Jacobian:"));
+  mpDasslJacobianComboBox = new QComboBox;
+  mpDasslJacobianComboBox->addItem("coloredNumerical");
+  mpDasslJacobianComboBox->setItemData(0, "colored numerical jacobian", Qt::ToolTipRole);
+  mpDasslJacobianComboBox->addItem("coloredSymbolical");
+  mpDasslJacobianComboBox->setItemData(1, "colored symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization", Qt::ToolTipRole);
+  mpDasslJacobianComboBox->addItem("internalNumerical");
+  mpDasslJacobianComboBox->setItemData(2, "internal numerical jacobian", Qt::ToolTipRole);
+  mpDasslJacobianComboBox->addItem("symbolical");
+  mpDasslJacobianComboBox->setItemData(3, "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization", Qt::ToolTipRole);
+  mpDasslJacobianComboBox->addItem("numerical");
+  mpDasslJacobianComboBox->setItemData(4, "numerical jacobian", Qt::ToolTipRole);
+  // no root finding
+  mpDasslRootFindingCheckBox = new QCheckBox(tr("Root Finding"));
+  mpDasslRootFindingCheckBox->setToolTip(tr("Activates the internal root finding procedure of dassl"));
+  mpDasslRootFindingCheckBox->setChecked(true);
+  // no restart
+  mpDasslRestartCheckBox = new QCheckBox(tr("Restart After Event"));
+  mpDasslRestartCheckBox->setToolTip(tr("Activates the restart of dassl after an event is performed"));
+  mpDasslRestartCheckBox->setChecked(true);
+  // initial step size
+  mpDasslInitialStepSizeLabel = new Label(tr("Initial Step Size:"));
+  mpDasslInitialStepSizeTextBox = new QLineEdit;
+  // max step size
+  mpDasslMaxStepSizeLabel = new Label(tr("Maximum Step Size:"));
+  mpDasslMaxStepSizeTextBox = new QLineEdit;
+  // max integration order
+  mpDasslMaxIntegrationOrderLabel = new Label(tr("Maximum Integration Order:"));
+  mpDasslMaxIntegrationOrderSpinBox = new QSpinBox;
+  mpDasslMaxIntegrationOrderSpinBox->setRange(0, std::numeric_limits<int>::max());
+  // set the layout for DASSL options groupbox
+  QGridLayout *pDasslOptionsGridLayout = new QGridLayout;
+  pDasslOptionsGridLayout->setColumnStretch(1, 1);
+  pDasslOptionsGridLayout->addWidget(mpDasslJacobianLabel, 0, 0);
+  pDasslOptionsGridLayout->addWidget(mpDasslJacobianComboBox, 0, 1);
+  pDasslOptionsGridLayout->addWidget(mpDasslRootFindingCheckBox, 1, 0, 1, 2);
+  pDasslOptionsGridLayout->addWidget(mpDasslRestartCheckBox, 2, 0, 1, 2);
+  pDasslOptionsGridLayout->addWidget(mpDasslInitialStepSizeLabel, 3, 0);
+  pDasslOptionsGridLayout->addWidget(mpDasslInitialStepSizeTextBox, 3, 1);
+  pDasslOptionsGridLayout->addWidget(mpDasslMaxStepSizeLabel, 4, 0);
+  pDasslOptionsGridLayout->addWidget(mpDasslMaxStepSizeTextBox, 4, 1);
+  pDasslOptionsGridLayout->addWidget(mpDasslMaxIntegrationOrderLabel, 5, 0);
+  pDasslOptionsGridLayout->addWidget(mpDasslMaxIntegrationOrderSpinBox, 5, 1);
+  mpDasslOptionsGroupBox->setLayout(pDasslOptionsGridLayout);
   // set the layout for integration groupbox
   QGridLayout *pIntegrationGridLayout = new QGridLayout;
   pIntegrationGridLayout->setColumnStretch(1, 1);
@@ -165,6 +213,7 @@ void SimulationDialog::setUpForm()
   pIntegrationGridLayout->addWidget(mpMehtodHelpButton, 0, 2);
   pIntegrationGridLayout->addWidget(mpToleranceLabel, 1, 0);
   pIntegrationGridLayout->addWidget(mpToleranceTextBox, 1, 1, 1, 2);
+  pIntegrationGridLayout->addWidget(mpDasslOptionsGroupBox, 2, 0, 1, 3);
   mpIntegrationGroupBox->setLayout(pIntegrationGridLayout);
   // Compiler Flags
   mpCflagsLabel = new Label(tr("Compiler Flags (Optional):"));
@@ -968,6 +1017,21 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
 }
 
 /*!
+  Slot activated when mpMethodComboBox currentIndexChanged signal is raised.\n
+  Enables/disables the Dassl options group box
+  */
+void SimulationDialog::enableDasslOptions(QString method)
+{
+  if (method.compare("dassl") == 0) {
+    mpDasslOptionsGroupBox->setEnabled(true);
+    mpEquidistantTimeGridCheckBox->setEnabled(true);
+  } else {
+    mpDasslOptionsGroupBox->setEnabled(false);
+    mpEquidistantTimeGridCheckBox->setEnabled(false);
+  }
+}
+
+/*!
   Slot activated when mpMehtodHelpButton clicked signal is raised.\n
   Opens the IntegrationAlgorithms.pdf file.
   */
@@ -1047,12 +1111,37 @@ void SimulationDialog::simulate()
       mSimulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
     mpMainWindow->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
     // setup simulation flags
+    // dassl options
+    if (mpDasslOptionsGroupBox->isEnabled()) {
+      // dassl jacobian
+      mSimulationFlags.append(QString("-dasslJacobian=").append(mpDasslJacobianComboBox->currentText()));
+      // dassl root finding
+      if (!mpDasslRootFindingCheckBox->isChecked()) {
+        mSimulationFlags.append("-dasslnoRootFinding");
+      }
+      // dassl restart
+      if (!mpDasslRestartCheckBox->isChecked()) {
+        mSimulationFlags.append("-dasslnoRestart");
+      }
+      // dassl initial step size
+      if (!mpDasslInitialStepSizeTextBox->text().isEmpty()) {
+        mSimulationFlags.append(QString("-initialStepSize=").append(mpDasslInitialStepSizeTextBox->text()));
+      }
+      // dassl max step size
+      if (!mpDasslMaxStepSizeTextBox->text().isEmpty()) {
+        mSimulationFlags.append(QString("-maxStepSize=").append(mpDasslMaxStepSizeTextBox->text()));
+      }
+      // dassl max step size
+      if (mpDasslMaxIntegrationOrderSpinBox->value() > 0) {
+        mSimulationFlags.append(QString("-maxIntegrationOrder=").append(mpDasslMaxIntegrationOrderSpinBox->value()));
+      }
+    }
     // emit protected variables
     if (mpProtectedVariablesCheckBox->isChecked()) {
       mSimulationFlags.append("-emit_protected");
     }
     // Equidistant time grid
-    if (!mpEquidistantTimeGridCheckBox->isChecked()) {
+    if (mpEquidistantTimeGridCheckBox->isEnabled() && !mpEquidistantTimeGridCheckBox->isChecked()) {
       mSimulationFlags.append("-noEquidistantTimeGrid");
     }
     // store variables at events
