@@ -1,6 +1,7 @@
 
 #define EULER_LIB "@EULER_LIB@"
 #define CVODE_LIB "@CVODE_LIB@"
+#define PEER_LIB "@PEER_LIB@"
 #define IDAS_LIB "@IDAS_LIB@"
 #define IDA_LIB "@IDA_LIB@"
 #define SETTINGSFACTORY_LIB "@SETTINGSFACTORY_LIB@"

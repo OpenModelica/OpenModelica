@@ -46,6 +46,18 @@ public:
             }
             solver_settings_key.assign("createEulerSettings");
         }
+        else if(solvername.compare("peer")==0)
+        {
+            PATH peer_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH peer_name(PEER_LIB);
+            peer_path/=peer_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(peer_name.string(),*_solver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw std::runtime_error("Failed loading Peer solver library!");
+            }
+            solver_settings_key.assign("createPeerSettings");
+        }
         else if(solvername.compare("idas")==0)
         {
             solver_settings_key.assign("extension_export_idas");
@@ -77,8 +89,13 @@ public:
         iter = factories.find(settings);
         if (iter ==factories.end())
         {
+            std::string factoryStr = ""; std::cerr << "Available solverfactories:" << std::endl;
+            for(std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >::iterator iter = factories.begin(); iter != factories.end(); iter++)
+            {
+                factoryStr += iter->first + " ";
+            }
 
-            throw std::invalid_argument("No such Solver "+ solvername );
+            throw std::invalid_argument("No such Solver " + solvername + ". Available solver factories:" + factoryStr );
         }
         boost::shared_ptr<ISolverSettings> solver_settings  = boost::shared_ptr<ISolverSettings>(iter->second.create(globalSettings.get()));
     

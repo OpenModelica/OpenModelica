@@ -46,6 +46,7 @@ SET(ModelicaTablesName ModelicaStandardTables)
 SET(SimulationSettings ${LIBPREFIX}SimulationSettings)
 SET(SimControllerName ${LIBPREFIX}SimController)
 SET(CVodeName ${LIBPREFIX}CVode)
+SET(PeerName ${LIBPREFIX}Peer)
 SET(EulerName ${LIBPREFIX}Euler)
 SET(IdaName ${LIBPREFIX}Ida)
 SET(IdasName ${LIBPREFIX}Idas)
@@ -94,7 +95,6 @@ IF(USE_SCOREP)
 ELSE(USE_SCOREP)
   MESSAGE(STATUS "ScoreP disabled")
 ENDIF(USE_SCOREP)
-
 
 # Handle build type
 IF(OMC_BUILD)
@@ -165,6 +165,9 @@ IF(PAPI_FOUND)
   ADD_DEFINITIONS(-DUSE_PAPI)
 ENDIF(PAPI_FOUND)
 
+#Find MPI
+FIND_PACKAGE(MPI)
+SET(MPI_LIBS MPI_CXX_LIBRARIES)
 
 # Find Boost
 #  - The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.
@@ -317,7 +320,7 @@ add_subdirectory (Solver/Euler)
 add_subdirectory (Solver/Newton)
 add_subdirectory (Solver/Hybrj)
 add_subdirectory (Solver/UmfPack)
-
+add_subdirectory (Solver/Peer)
 
 
 if(REDUCE_DAE)
@@ -348,6 +351,9 @@ set (CVODE_LIB ${libCVodeName})
 set (KINSOL_LIB ${libKinsolName})
 #set (IDA_LIB ${libIdaName})
 endIf()
+
+GET_TARGET_PROPERTY(libPeer ${PeerName} LOCATION)
+GET_FILENAME_COMPONENT(libPeerName ${libPeer} NAME)
 
 GET_TARGET_PROPERTY(libNewton ${NewtonName} LOCATION)
 GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME)
@@ -392,6 +398,7 @@ set (SETTINGSFACTORY_LIB ${libSetFactoryName})
 set (MODELICASYSTEM_LIB ${libModelicaName})
 set (NEWTON_LIB ${libNewtonName})
 set (UMFPACK_LIB ${libUmfPackName})
+set (PEER_LIB ${libPeerName})
 set (SYSTEM_LIB ${libSystemName})
 set (SOLVER_LIB ${libSolverName})
 set (MATH_LIB ${libMathName})
