@@ -217,6 +217,7 @@ algorithm
         // build names
         (_,names) = SCode.getClassComponents(c);
         // generate the enumeration type
+        path = FGraph.getGraphName(env_3);
         ts = Types.mkTypeSource(SOME(path));
         t = DAE.T_ENUMERATION(NONE(), path, names, types, {}, ts);
         env_3 = FGraph.mkTypeNode(env_3, id, t);

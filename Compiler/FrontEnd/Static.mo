@@ -14095,6 +14095,7 @@ algorithm
       DAE.Properties prop;
       list<SCode.Enum> enum_lst;
       Absyn.Exp size_arg;
+      DAE.Type t;
 
     // The : operator results in an unknown dimension.
     case (_, _, _, Absyn.NOSUB(), _, _, _, _, _)
@@ -14120,29 +14121,20 @@ algorithm
       then
         (inCache, DAE.DIM_BOOLEAN());
 
-    // Array dimension from an enumeration.
-    case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(cr)), _, _, _, _, _)
+    // Array dimension from a Boolean or enumeration.
+    case (cache, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(cr)), _, _, _, _, _)
       equation
         type_path = Absyn.crefToPath(cr);
-        (_, cls as SCode.CLASS(name = name, restriction = SCode.R_ENUMERATION(),
-            classDef = SCode.PARTS(elementLst = _)), cenv) =
-          Lookup.lookupClass(inCache, inEnv, type_path, false);
-        enum_type_name = FGraph.joinScopePath(cenv, Absyn.IDENT(name));
-        enum_literals = SCode.componentNames(cls);
-        enum_size = listLength(enum_literals);
+        cache = Lookup.lookupClass(cache, inEnv, type_path, false);
+        (cache, t) = Lookup.lookupType(cache, inEnv, type_path, NONE());
+        dim = match t
+          case DAE.T_ENUMERATION(index=NONE())
+            then DAE.DIM_ENUM(t.path, t.names, listLength(t.names));
+          case DAE.T_BOOL()
+            then DAE.DIM_BOOLEAN();
+        end match;
       then
-        (inCache, DAE.DIM_ENUM(enum_type_name, enum_literals, enum_size));
-
-    // Frenkel TUD try next enum.
-    case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(cr)), _, _, _, _, _)
-      equation
-        type_path = Absyn.crefToPath(cr);
-        (_, SCode.CLASS(restriction = SCode.R_TYPE(), classDef =
-            SCode.ENUMERATION(enumLst = enum_lst)), _) =
-          Lookup.lookupClass(inCache, inEnv, type_path, false);
-        enum_size = listLength(enum_lst);
-      then
-        (inCache, DAE.DIM_INTEGER(enum_size));
+        (cache, dim);
 
     // For all other cases we need to elaborate the subscript expression, so the
     // expression is elaborated and passed on to elabArrayDim2 to avoid doing
