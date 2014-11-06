@@ -1988,7 +1988,7 @@ algorithm
       list<DAE.Element> l;
     case DAE.VAR(componentRef = cr,
              kind = vk,
-             
+
              binding = NONE(),
              variableAttributesOption = dae_var_attr,
              comment = comment)
@@ -2007,7 +2007,7 @@ algorithm
         ();
     case DAE.VAR(componentRef = cr,
              kind = vk,
-             
+
              binding = SOME(e),
              variableAttributesOption = dae_var_attr,
              comment = comment)

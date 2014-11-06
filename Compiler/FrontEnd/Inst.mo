@@ -2976,7 +2976,7 @@ algorithm
       // long class definition, the normal case, a class with parts
       case (cache,env,ih,mods,pre,ci_state,parentClass,
           SCode.PARTS(elementLst = els,
-            
+
             initialAlgorithmLst = _),
             _,inst_dims,_)
       equation
@@ -3472,7 +3472,7 @@ algorithm
         SCode.COMPONENT(
           name = name,
           prefixes = prefixes as SCode.PREFIXES(
-            
+
             finalPrefix = final_prefix,
             innerOuter = io
             ),
@@ -3973,8 +3973,8 @@ algorithm
     case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = ((( redComp as SCode.COMPONENT(name = n1,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = finalPrefix,
-                            
-                            
+
+
                             redeclarePrefix = _),
                             modifications = mod,
                             info = info
@@ -3984,10 +3984,10 @@ algorithm
                           prefixes = SCode.PREFIXES(
                             finalPrefix = SCode.NOT_FINAL(),
                             replaceablePrefix = SCode.REPLACEABLE((cc as SOME(_))),
-                            
+
                             visibility = _),
-                          
-                          
+
+
                           modifications = old_mod),
           pre,ci_state,impl,cmod)
       equation
@@ -4016,8 +4016,8 @@ algorithm
           SCode.COMPONENT(name = n1,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = finalPrefix,
-                            
-                            
+
+
                             redeclarePrefix = _),
                             modifications = mod,
                             info = info
@@ -4027,10 +4027,10 @@ algorithm
                           prefixes = SCode.PREFIXES(
                             finalPrefix = SCode.NOT_FINAL(),
                             replaceablePrefix = SCode.REPLACEABLE(NONE()),
-                            
+
                             visibility = _),
-                          
-                          
+
+
                           modifications = old_mod),
           pre,ci_state,impl,cmod)
       equation

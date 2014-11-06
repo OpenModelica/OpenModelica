@@ -140,7 +140,7 @@ algorithm
     case (_, _, DAE.FUNCTION(
         path = p,
         functions = _ :: _,
-        
+
         partialPrefix = partialPrefix), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);

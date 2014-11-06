@@ -297,12 +297,12 @@ algorithm
 
     case ({},_) then "";
     case (((BackendDAE.VAR(varName = cr,
-                            
-                            varDirection = dir,
-                            
-                            
 
-                            
+                            varDirection = dir,
+
+
+
+
 
                             connectorType = _)) :: {}),varno)
       equation
@@ -332,12 +332,12 @@ algorithm
         str;
 
       case (((BackendDAE.VAR(varName = cr,
-                              
-                              varDirection = dir,
-                              
-                              
 
-                              
+                              varDirection = dir,
+
+
+
+
 
                               connectorType = _)) :: xs),varno)
       equation

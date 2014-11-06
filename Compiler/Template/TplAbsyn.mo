@@ -6094,7 +6094,7 @@ algorithm
 
     case ( AST_DEF(
             importPackage = importckg,
-            
+
             types         = typeLst) :: _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);

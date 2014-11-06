@@ -792,7 +792,7 @@ algorithm
     case (cache,env,ih,
           SCode.COMPONENT(name = id,
                           prefixes = prefixes as SCode.PREFIXES(
-                            
+
                             visibility = vis,
 
                             innerOuter = _

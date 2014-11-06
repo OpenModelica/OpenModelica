@@ -3851,10 +3851,10 @@ algorithm
     // EQUATIONSYSTEM: continuous system of equations
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars,
                                            orderedEqs=eqns), BackendDAE.SHARED(knownVars=knvars,
-                                                                               
+
                                                                                functionTree=funcs,
-                                                                               
-                                                                               
+
+
                                                                                info = ei), comp as BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,jac=jacobian,
                                                                                                                              jacType=jac_tp), _, _, _, _, _) equation
       if Flags.isSet(Flags.FAILTRACE) then
@@ -8824,7 +8824,7 @@ algorithm
       Boolean isProtected;
     case ((v as BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.PARAM(),
-      
+
       arryDim = inst_dims,
       values = dae_var_attr,
       comment = comment,
@@ -8857,7 +8857,7 @@ algorithm
     // Start value of states may be changeable
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.STATE(),
-      
+
       arryDim = inst_dims,
       values = dae_var_attr,
       comment = comment,
@@ -8884,7 +8884,7 @@ algorithm
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, true, isProtected);
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
-      
+
       arryDim = inst_dims,
       values = dae_var_attr,
       comment = comment,

@@ -6864,7 +6864,7 @@ algorithm
         (cache,
          sc as SCode.CLASS(
           partialPrefix = SCode.NOT_PARTIAL(),
-          
+
           classDef = _),
          env) = Lookup.lookupClass(cache, env, funcpath, false);
         isCevaluableFunction(sc);
