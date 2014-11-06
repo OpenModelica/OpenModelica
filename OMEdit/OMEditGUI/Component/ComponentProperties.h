@@ -41,22 +41,34 @@
 
 #include "Component.h"
 
-class Parameter
+class Parameter : public QObject
 {
+  Q_OBJECT
 public:
   Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
-            QString componentClassName, QString componentName, bool inheritedComponent, QString inheritedClassName);
-  Label* getNameLabel();
-  QLineEdit* getValueTextBox();
-  Label* getUnitLabel();
-  Label* getCommentLabel();
+            QString componentClassName, QString componentName, bool inheritedComponent, QString inheritedClassName, bool showStartAttribute);
+  Label* getNameLabel() {return mpNameLabel;}
+  QCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
+  bool isShowStartAttribute() {return mshowStartAttribute;}
+  QLineEdit* getValueTextBox() {return mpValueTextBox;}
+  Label* getUnitLabel() {return mpUnitLabel;}
+  Label* getCommentLabel() {return mpCommentLabel;}
+  void setFixedState(QString fixed);
+  QString getFixedState();
   QString getUnitFromDerivedClass(OMCProxy *pOMCProxy, QString className);
   void setEnabled(bool enable);
 private:
   Label *mpNameLabel;
+  QCheckBox *mpFixedCheckBox;
+  bool mshowStartAttribute;
   QLineEdit *mpValueTextBox;
   Label *mpUnitLabel;
   Label *mpCommentLabel;
+public slots:
+  void showFixedMenu();
+  void trueFixedClicked();
+  void falseFixedClicked();
+  void inheritedFixedClicked();
 };
 
 class GroupBox : public QGroupBox
@@ -77,7 +89,7 @@ class ParametersScrollArea : public QScrollArea
   Q_OBJECT
 public:
   ParametersScrollArea();
-  bool eventFilter(QObject *o, QEvent *e);
+  virtual QSize minimumSizeHint() const;
   void addGroupBox(GroupBox *pGroupBox);
   GroupBox *getGroupBox(QString title);
   QVBoxLayout* getLayout();
@@ -99,7 +111,6 @@ public:
                         QString componentName, bool inheritedComponent, QString inheritedClassName, bool isInheritedCycle = false);
   QList<Parameter*> getParametersList();
 private:
-  bool mParametersOnly;
   Component *mpComponent;
   MainWindow *mpMainWindow;
   Label *mpParametersHeading;
