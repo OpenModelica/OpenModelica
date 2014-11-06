@@ -1758,8 +1758,7 @@ algorithm
         (l1, l2);
 
     // redeclare long class, investigate cc
-    case (SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp),
-                                             classDef = _)))
+    case SCode.REDECL(element = SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rp)))
       equation
         (l1, l2) = getExpsFromConstrainClass(rp);
       then
@@ -1861,9 +1860,7 @@ algorithm
         deps;
 
     // For input and output variables in function scope return no dependencies so they stay in order!
-    case ((SCode.COMPONENT(
-                           attributes = SCode.ATTR(direction = direction),
-                           modifications = _), _), (_, true))
+    case ((SCode.COMPONENT(attributes = SCode.ATTR(direction = direction)), _), (_, true))
       equation
         true = Absyn.isInputOrOutput(direction);
       then
@@ -3894,8 +3891,7 @@ algorithm
     //------------------------
     // MetaModelica extension
     case (cache, env, _, pre, cl as SCode.CLASS(name = id, info=info,
-                                       classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(_),_,arrayDim = ad),
-                                                                modifications = _)),
+                                       classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(),_,arrayDim = ad))),
           dims,impl)
       equation
         true=Config.acceptMetaModelicaGrammar();
@@ -3956,8 +3952,7 @@ algorithm
                   normalEquationLst = {},
                   initialEquationLst = {},
                   normalAlgorithmLst = {},
-                  initialAlgorithmLst = {},
-                  externalDecl = _)),
+                  initialAlgorithmLst = {})),
           _, impl)
       equation
         (_,_,{SCode.EXTENDS(path, _, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
@@ -5724,15 +5719,7 @@ algorithm
       Absyn.TypeSpec path;
       SCode.Mod mod;
 
-    case SCode.COMPONENT(
-           name = id,
-           prefixes = SCode.PREFIXES(
-
-
-                        visibility = _),
-           attributes = SCode.ATTR(arrayDims = dims),
-
-           modifications = _)
+    case SCode.COMPONENT(name = id, attributes = SCode.ATTR(arrayDims = dims))
       equation
         sizelist = instExtMakeCrefs2(id, dims, 1);
         crlist = (Absyn.CREF(Absyn.CREF_IDENT(id,{})) :: sizelist);

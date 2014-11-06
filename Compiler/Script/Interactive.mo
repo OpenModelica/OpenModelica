@@ -13976,12 +13976,10 @@ algorithm
       SourceInfo file_info;
       list<Absyn.Annotation> ann;
 
-    case (Absyn.CLASS(
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: _)),
-                      info = _),n)
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: _))),n)
       equation
         count = countComponentsInElts(elt);
-        (n <= count) = true;
+        true = n <= count;
         res = getNthComponentInElementitems(elt, n);
       then
         res;
@@ -13993,15 +13991,13 @@ algorithm
       equation
         c1 = countComponentsInElts(elt);
         newn = n - c1;
-        _ = intString(newn);
-        (newn > 0) = true;
+        true = newn > 0;
         res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info),
           newn);
       then
         res;
 
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: _)),
-                      info = _),n)
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: _))),n)
       equation
         res = getNthComponentInElementitems(elt, n);
       then
@@ -14055,8 +14051,7 @@ algorithm
         res;
 
     // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: _)),
-                      info = _),n)
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: _))),n)
       equation
         res = getNthComponentInElementitems(elt, n);
       then
@@ -14769,10 +14764,10 @@ algorithm
       then Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,(Absyn.PROTECTED({eitem}) :: parts),ann),file_info);
 
     // handle the model X = Y case
-    case (Absyn.CLASS(
-                      body = Absyn.DERIVED(),info =
-                      _),_)
+    /*
+    case (Absyn.CLASS(body = Absyn.DERIVED()),_)
       then fail();
+    */
   end matchcontinue;
 end addToProtected;
 

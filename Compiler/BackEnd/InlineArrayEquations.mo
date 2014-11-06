@@ -167,7 +167,7 @@ algorithm
       ((_, eqns)) = List.threadFold4(ea1, ea2, generateScalarArrayEqns2, source, differentiated, eqKind, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
     then (eqns,true);
 
-    case (BackendDAE.ARRAY_EQUATION(left=lhs as DAE.CREF(),right=rhs as DAE.CREF(componentRef=_), source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=eqKind)), _) equation
+    case (BackendDAE.ARRAY_EQUATION(left=lhs as DAE.CREF(),right=rhs as DAE.CREF(), source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(differentiated=differentiated, kind=eqKind)), _) equation
       (e1_1, _) = Expression.extendArrExp(lhs, false);
       (e2_1, _) = Expression.extendArrExp(rhs, false);
       ea1 = Expression.flattenArrayExpToList(e1_1);

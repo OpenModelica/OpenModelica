@@ -452,8 +452,7 @@ algorithm
       Globals globals;
       String name;
 
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(
-        composition = _)), _, _, _, _)
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS()), _, _, _, _)
       equation
         print("instClassExtends");
       then

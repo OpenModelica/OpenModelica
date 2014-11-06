@@ -220,7 +220,7 @@ algorithm
         SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(
             finalPrefix = fin, replaceablePrefix = repl),
           attributes = SCode.ATTR(variability = var), typeSpec = ty1, info = info)),
-        SCode.COMPONENT(prefixes = SCode.PREFIXES(visibility = _), typeSpec = ty2), _)
+        SCode.COMPONENT(prefixes = SCode.PREFIXES(), typeSpec = ty2), _)
       equation
         err_count = Error.getNumErrorMessages();
         ty = "component";
@@ -236,7 +236,7 @@ algorithm
         SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
           finalPrefix = fin, replaceablePrefix = repl),
           restriction = res, info = info)),
-        SCode.CLASS(prefixes = SCode.PREFIXES(visibility = _)), _)
+        SCode.CLASS(prefixes = SCode.PREFIXES()), _)
       equation
         err_count = Error.getNumErrorMessages();
         ty = SCodeDump.restrictionStringPP(res);

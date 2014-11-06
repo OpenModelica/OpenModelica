@@ -3812,8 +3812,7 @@ protected function createOdeSystem
   output list<tuple<Integer,Integer>> oeqSccMapping;
   output SimCode.BackendMapping oBackendMapping;
 algorithm
-  (equations_, noDiscequations_, ouniqueEqIndex, otempvars, oeqSccMapping, oBackendMapping) :=
-  matchcontinue(genDiscrete, skipDiscInAlgorithm, isyst, ishared, inComp, iuniqueEqIndex, itempvars, isccIndex, ieqSccMapping, iBackendMapping)
+  (equations_, noDiscequations_, ouniqueEqIndex, otempvars, oeqSccMapping, oBackendMapping) := matchcontinue (isyst, ishared, inComp)
     local
       list<BackendDAE.Equation> eqn_lst,  disc_eqn;
       list<BackendDAE.Var> var_lst,  disc_var, var_lst_1;
@@ -3849,50 +3848,43 @@ algorithm
       SimCode.BackendMapping tmpBackendMapping;
 
     // EQUATIONSYSTEM: continuous system of equations
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars,
-                                           orderedEqs=eqns), BackendDAE.SHARED(knownVars=knvars,
-
-                                                                               functionTree=funcs,
-
-
-                                                                               info = ei), comp as BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,jac=jacobian,
-                                                                                                                             jacType=jac_tp), _, _, _, _, _) equation
-      if Flags.isSet(Flags.FAILTRACE) then
-        Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create continuous system.\n");
-      end if;
-      // print("\ncreateOdeSystem -> Cont sys: ...\n");
-      // extract the variables and equations of the block.
-      (eqn_lst, var_lst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
-      // BackendDump.printEquationList(eqn_lst);
-      // BackendDump.dumpVars(var_lst);
-      eqn_lst = BackendEquation.replaceDerOpInEquationList(eqn_lst);
-      // States are solved for der(x) not x.
-      var_lst_1 = List.map(var_lst, BackendVariable.transformXToXd);
-      vars_1 = BackendVariable.listVar1(var_lst_1);
-      eqns_1 = BackendEquation.listEquation(eqn_lst);
-      (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1, knvars, eqns_1, jacobian, jac_tp, funcs, vars, iuniqueEqIndex, itempvars, ei);
-      uniqueEqIndexMapping = uniqueEqIndex-1; //a system with this index is created that contains all the equations with the indeces from iuniqueEqIndex to uniqueEqIndex-2
-      //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
-      tmpEqSccMapping = List.fold1(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
-      tmpBackendMapping = setEqMapping(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1),eqIdcs,iBackendMapping);
-    then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),
+          BackendDAE.SHARED(knownVars=knvars, functionTree=funcs, info = ei),
+          comp as BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,jac=jacobian,jacType=jac_tp))
+      equation
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create continuous system.\n");
+        end if;
+        // print("\ncreateOdeSystem -> Cont sys: ...\n");
+        // extract the variables and equations of the block.
+        (eqn_lst, var_lst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+        // BackendDump.printEquationList(eqn_lst);
+        // BackendDump.dumpVars(var_lst);
+        eqn_lst = BackendEquation.replaceDerOpInEquationList(eqn_lst);
+        // States are solved for der(x) not x.
+        var_lst_1 = List.map(var_lst, BackendVariable.transformXToXd);
+        vars_1 = BackendVariable.listVar1(var_lst_1);
+        eqns_1 = BackendEquation.listEquation(eqn_lst);
+        (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1, knvars, eqns_1, jacobian, jac_tp, funcs, vars, iuniqueEqIndex, itempvars, ei);
+        uniqueEqIndexMapping = uniqueEqIndex-1; //a system with this index is created that contains all the equations with the indeces from iuniqueEqIndex to uniqueEqIndex-2
+        //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+        tmpEqSccMapping = List.fold1(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+        tmpBackendMapping = setEqMapping(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1),eqIdcs,iBackendMapping);
+      then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
 
     // TORNSYSTEM
-    case (_, _, BackendDAE.EQSYSTEM(
-                                           orderedEqs=_), _, BackendDAE.TORNSYSTEM(tearingvars=tf,
-                                                                                              residualequations=rf,
-                                                                                              otherEqnVarTpl=eqnvartpllst,
-                                                                                              jac = jacobian,
-                                                                                              linear=b), _, _, _, _, _) equation
-      (equations_, uniqueEqIndex, tempvars) = createTornSystem(b, skipDiscInAlgorithm, tf, rf, eqnvartpllst, jacobian, isyst, ishared, iuniqueEqIndex, itempvars);
-      tmpEqSccMapping = appendSccIdx(uniqueEqIndex-1, isccIndex, ieqSccMapping);
-      tmpBackendMapping = iBackendMapping;
-    then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
+    case (_, _, BackendDAE.TORNSYSTEM(tearingvars=tf, residualequations=rf, otherEqnVarTpl=eqnvartpllst, jac = jacobian, linear=b))
+      equation
+        (equations_, uniqueEqIndex, tempvars) = createTornSystem(b, skipDiscInAlgorithm, tf, rf, eqnvartpllst, jacobian, isyst, ishared, iuniqueEqIndex, itempvars);
+        tmpEqSccMapping = appendSccIdx(uniqueEqIndex-1, isccIndex, ieqSccMapping);
+        tmpBackendMapping = iBackendMapping;
+      then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
 
-    else equation
-      msg = "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem failed for component " + BackendDump.strongComponentString(inComp);
-      Error.addMessage(Error.INTERNAL_ERROR, {msg});
-    then fail();
+    else
+      equation
+        msg = "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem failed for component " + BackendDump.strongComponentString(inComp);
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+      then fail();
   end matchcontinue;
 end createOdeSystem;
 
@@ -8824,7 +8816,6 @@ algorithm
       Boolean isProtected;
     case ((v as BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.PARAM(),
-
       arryDim = inst_dims,
       values = dae_var_attr,
       comment = comment,
@@ -8857,7 +8848,6 @@ algorithm
     // Start value of states may be changeable
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.STATE(),
-
       arryDim = inst_dims,
       values = dae_var_attr,
       comment = comment,
@@ -8884,7 +8874,6 @@ algorithm
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, true, isProtected);
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
-
       arryDim = inst_dims,
       values = dae_var_attr,
       comment = comment,

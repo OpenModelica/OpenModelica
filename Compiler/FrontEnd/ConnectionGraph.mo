@@ -257,9 +257,7 @@ algorithm
         GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
 
     // array of component references, empty case
-    case (GRAPH(
-                connections = connections),
-                DAE.ARRAY(_, _, {}), _)
+    case (GRAPH(), DAE.ARRAY(_, _, {}), _)
       then
         inGraph;
 

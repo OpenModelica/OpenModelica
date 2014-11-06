@@ -372,7 +372,7 @@ algorithm
       then outBinds;
 
     // TODO! support matchexp
-    case (Absyn.MATCHEXP(), Absyn.MATCHEXP(inputExp = _), _)
+    case (Absyn.MATCHEXP(), Absyn.MATCHEXP(), _)
       then inAcc;
 
     case (Absyn.LIST(exps1a), Absyn.LIST(exps1b), _)
@@ -817,7 +817,7 @@ algorithm
       then outBinds;
 
     // TODO! support matchexp
-    case (DAE.MATCHEXPRESSION(), DAE.MATCHEXPRESSION(inputs = _), _)
+    case (DAE.MATCHEXPRESSION(), DAE.MATCHEXPRESSION(), _)
       then inAcc;
 
     case (DAE.LIST(exps1a), DAE.LIST(exps1b), _)
@@ -956,22 +956,22 @@ algorithm
       Boolean res;
       Absyn.Path p1,p2;
 
-    case (DAE.UMINUS_ARR(),DAE.UMINUS(ty = _)) then true;
-    case (DAE.ADD_ARR(),DAE.ADD(ty = _)) then true;
-    case (DAE.SUB_ARR(),DAE.SUB(ty = _)) then true;
-    case (DAE.MUL_ARR(),DAE.MUL(ty = _)) then true;
-    case (DAE.DIV_ARR(),DAE.DIV(ty = _)) then true;
-    case (DAE.MUL_ARRAY_SCALAR(),DAE.MUL(ty = _)) then true;
-    case (DAE.ADD_ARRAY_SCALAR(),DAE.ADD(ty = _)) then true;
-    case (DAE.SUB_SCALAR_ARRAY(),DAE.SUB(ty = _)) then true;
-    case (DAE.MUL_SCALAR_PRODUCT(),DAE.MUL(ty = _)) then true;
-    case (DAE.MUL_MATRIX_PRODUCT(),DAE.MUL(ty = _)) then true;
-    case (DAE.DIV_SCALAR_ARRAY(),DAE.DIV(ty = _)) then true;
-    case (DAE.DIV_ARRAY_SCALAR(),DAE.DIV(ty = _)) then true;
-    case (DAE.POW_SCALAR_ARRAY(),DAE.POW(ty = _)) then true;
-    case (DAE.POW_ARRAY_SCALAR(),DAE.POW(ty = _)) then true;
-    case (DAE.POW_ARR(),DAE.POW(ty = _)) then true;
-    case (DAE.POW_ARR2(),DAE.POW(ty = _)) then true;
+    case (DAE.UMINUS_ARR(),DAE.UMINUS()) then true;
+    case (DAE.ADD_ARR(),DAE.ADD()) then true;
+    case (DAE.SUB_ARR(),DAE.SUB()) then true;
+    case (DAE.MUL_ARR(),DAE.MUL()) then true;
+    case (DAE.DIV_ARR(),DAE.DIV()) then true;
+    case (DAE.MUL_ARRAY_SCALAR(),DAE.MUL()) then true;
+    case (DAE.ADD_ARRAY_SCALAR(),DAE.ADD()) then true;
+    case (DAE.SUB_SCALAR_ARRAY(),DAE.SUB()) then true;
+    case (DAE.MUL_SCALAR_PRODUCT(),DAE.MUL()) then true;
+    case (DAE.MUL_MATRIX_PRODUCT(),DAE.MUL()) then true;
+    case (DAE.DIV_SCALAR_ARRAY(),DAE.DIV()) then true;
+    case (DAE.DIV_ARRAY_SCALAR(),DAE.DIV()) then true;
+    case (DAE.POW_SCALAR_ARRAY(),DAE.POW()) then true;
+    case (DAE.POW_ARRAY_SCALAR(),DAE.POW()) then true;
+    case (DAE.POW_ARR(),DAE.POW()) then true;
+    case (DAE.POW_ARR2(),DAE.POW()) then true;
 
     // all other forward to Expression.operatorEqual
     case (_,_) then Expression.operatorEqual(op1, op2);

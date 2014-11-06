@@ -236,9 +236,7 @@ algorithm
     case (cache,env,ih,mod,pre,
          (elt as SCode.COMPONENT(attributes =
           SCode.ATTR(variability = var),
-
-          prefixes = SCode.PREFIXES(),
-          comment = _)) :: rest,elsExtendsScope,
+          prefixes = SCode.PREFIXES())) :: rest,elsExtendsScope,
           ci_state,className,impl,_)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =

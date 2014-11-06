@@ -1835,7 +1835,7 @@ algorithm
         DAE.REDECL(f1,each1,{(celm,cm)});
 
     case (DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each1,subModLst = subs1,eqModOption = ass1),
-          DAE.MOD(finalPrefix = _/* SCode.NOT_FINAL(), see case above.*/,subModLst = subs2,eqModOption = ass2),env,pre)
+          DAE.MOD(subModLst = subs2,eqModOption = ass2),env,pre)
       equation
         subs = mergeSubs(subs1, subs2, env, pre);
         ass = mergeEq(ass1, ass2);

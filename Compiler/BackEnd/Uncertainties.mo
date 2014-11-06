@@ -2053,10 +2053,7 @@ algorithm
     BackendDAE.ExtraInfo ei;
 
     case(BackendDAE.DAE(
-      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind))::systList,
-      (shared as BackendDAE.SHARED(
-
-                                   info=_))),_,false)
+      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,m=m,mT=mT,matching=matching,stateSets=stateSets,partitionKind=partitionKind))::systList, shared),_,false)
     equation
        syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching,stateSets,partitionKind);
     then

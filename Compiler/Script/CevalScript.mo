@@ -1241,7 +1241,7 @@ algorithm
       then (cache, Values.BOOL(false), st);
 
     case (_,_, "rewriteBlockCall",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path))},
-       (st as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM(), loadedFiles = _)),_)
+       (st as GlobalScript.SYMBOLTABLE(p as Absyn.PROGRAM())),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         classes = {absynClass};
@@ -6907,10 +6907,7 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         // bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " + Absyn.pathString(funcpath) + "\n");
         (cache,
-         sc as SCode.CLASS(
-          partialPrefix = SCode.NOT_PARTIAL(),
-
-          classDef = _),
+         sc as SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL()),
          env) = Lookup.lookupClass(cache, env, funcpath, false);
         isCevaluableFunction(sc);
         (cache, env, _) = InstFunction.implicitFunctionInstantiation(

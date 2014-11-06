@@ -520,8 +520,7 @@ algorithm
     //      NFInstTypes.REDECLARE(constrainingClass = NONE()))
     //  then inOuterMod;
 
-    case (NFInstTypes.REDECLARE(),
-          NFInstTypes.REDECLARE(element = _))
+    case (NFInstTypes.REDECLARE(),NFInstTypes.REDECLARE())
       equation
         // Merge outer modifier with outer constraining class.
         // Merge outer modifier with inner constraining class.

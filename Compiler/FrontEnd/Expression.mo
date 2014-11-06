@@ -1714,7 +1714,7 @@ algorithm
         ty = Types.unliftArray(ty);
         es = List.map2(matrix,makeArray,ty,not Types.arrayType(ty));
       then es;
-    case DAE.CREF(componentRef=DAE.CREF_IDENT(),ty=DAE.T_ARRAY(ty,dims=DAE.DIM_INTEGER(istop)::_))
+    case DAE.CREF(componentRef=DAE.CREF_IDENT(),ty=DAE.T_ARRAY(dims=DAE.DIM_INTEGER(istop)::_))
       equation
         es = List.map(ExpressionSimplify.simplifyRange(1,1,istop), makeIntegerExp);
         es = List.map1r(es, makeASUBSingleSub, e);

@@ -577,7 +577,7 @@ algorithm
       DAE.FunctionTree funcTree;
       DAE.Type ty;
       BackendVarTransform.VariableReplacements repl;
-    case(DAE.CALL(expLst=expLst,attr=DAE.CALL_ATTR(ty=ty)),FUNCINFO(idx=_))
+    case(DAE.CALL(expLst=expLst,attr=DAE.CALL_ATTR(ty=ty)),FUNCINFO())
       equation
         true = Expression.isCall(inExp);
         true = listLength(expLst) == 1;

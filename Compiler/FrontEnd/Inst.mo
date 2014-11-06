@@ -971,8 +971,7 @@ algorithm
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
     // failure
-    case (_, env, _, _, _, _, _, SCode.CLASS(name = n,
-        classDef = _), _, _, _, _, _, _, _)
+    case (_, env, _, _, _, _, _, SCode.CLASS(name = n), _, _, _, _, _, _, _)
       equation
         //print("instClassIn(");print(n);print(") failed\n");
         true = Flags.isSet(Flags.FAILTRACE);
@@ -2974,15 +2973,10 @@ algorithm
       FCore.Ref lastRef;
 
       // long class definition, the normal case, a class with parts
-      case (cache,env,ih,mods,pre,ci_state,parentClass,
-          SCode.PARTS(elementLst = els,
-
-            initialAlgorithmLst = _),
-            _,inst_dims,_)
+      case (cache,env,ih,mods,pre,ci_state,parentClass,SCode.PARTS(elementLst = els),_,inst_dims,_)
       equation
         isPartialInst = true;
 
-        _ = SCode.getClassRestriction(parentClass);
         partialPrefix = SCode.getClassPartialPrefix(parentClass);
         className = SCode.getElementName(parentClass);
 
@@ -3461,7 +3455,7 @@ algorithm
     // these are treated in a similar way. Lookup the class name, apply
     // modifications and add the variable to the current frame in the
     // environment. Then instantiate the class with an extended prefix.
-    case (cache, env, ih, store, mods, pre, ci_state, ((el as SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(_, _))), cmod),
+    case (cache, env, ih, store, mods, pre, ci_state, ((el as SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH())), cmod),
         inst_dims, impl, _, graph, csets)
       equation
         //print("  instElement: A component: " + name + "\n");
@@ -3472,7 +3466,6 @@ algorithm
         SCode.COMPONENT(
           name = name,
           prefixes = prefixes as SCode.PREFIXES(
-
             finalPrefix = final_prefix,
             innerOuter = io
             ),
@@ -3971,11 +3964,7 @@ algorithm
 
     // constraining type on the component
     case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = ((( redComp as SCode.COMPONENT(name = n1,
-                          prefixes = SCode.PREFIXES(
-                            finalPrefix = finalPrefix,
-
-
-                            redeclarePrefix = _),
+                          prefixes = SCode.PREFIXES(finalPrefix = finalPrefix),
                             modifications = mod,
                             info = info
                             )),rmod) :: _))),
@@ -3983,11 +3972,7 @@ algorithm
           comp as SCode.COMPONENT(name = n2,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = SCode.NOT_FINAL(),
-                            replaceablePrefix = SCode.REPLACEABLE((cc as SOME(_))),
-
-                            visibility = _),
-
-
+                            replaceablePrefix = SCode.REPLACEABLE((cc as SOME(_)))),
                           modifications = old_mod),
           pre,ci_state,impl,cmod)
       equation
@@ -4015,10 +4000,7 @@ algorithm
     case (cache,env,ih,(DAE.REDECL(tplSCodeElementModLst = (((redComp as
           SCode.COMPONENT(name = n1,
                           prefixes = SCode.PREFIXES(
-                            finalPrefix = finalPrefix,
-
-
-                            redeclarePrefix = _),
+                            finalPrefix = finalPrefix),
                             modifications = mod,
                             info = info
                             )),rmod) :: _))),
@@ -4026,11 +4008,7 @@ algorithm
           comp as SCode.COMPONENT(name = n2,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = SCode.NOT_FINAL(),
-                            replaceablePrefix = SCode.REPLACEABLE(NONE()),
-
-                            visibility = _),
-
-
+                            replaceablePrefix = SCode.REPLACEABLE(NONE())),
                           modifications = old_mod),
           pre,ci_state,impl,cmod)
       equation

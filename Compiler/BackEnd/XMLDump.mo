@@ -3601,7 +3601,6 @@ algorithm
                             varType = var_type,
                             bindExp = e,
                             bindValue = b,
-
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
@@ -3665,7 +3664,6 @@ algorithm
                             varType = var_type,
                             bindExp = e,
                             bindValue = b,
-
                             source = source,
                             values = dae_var_attr,
                             comment = comment,

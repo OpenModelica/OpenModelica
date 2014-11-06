@@ -105,7 +105,7 @@ algorithm
       BackendDAE.SHARED(backendDAEType=DAEtype) = shared;
       false = stringEqual(methodString, "shuffleTearing") and stringEq("simulation",BackendDump.printBackendDAEType2String(DAEtype));
       method = getTearingMethod(methodString);
-      BackendDAE.DAE(shared=_) = inDAE;
+      BackendDAE.DAE() = inDAE;
       if Flags.isSet(Flags.TEARING_DUMP) then
         print("\n\n\n\n" + UNDERLINE + UNDERLINE + "\nCalling Tearing for ");
         BackendDump.printBackendDAEType(DAEtype);

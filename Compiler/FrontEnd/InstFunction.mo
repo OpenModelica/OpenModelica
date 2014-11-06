@@ -791,12 +791,7 @@ algorithm
 
     case (cache,env,ih,
           SCode.COMPONENT(name = id,
-                          prefixes = prefixes as SCode.PREFIXES(
-
-                            visibility = vis,
-
-                            innerOuter = _
-                          ),
+                          prefixes = prefixes as SCode.PREFIXES(visibility = vis),
                           attributes = (attr as
                           SCode.ATTR(arrayDims = dim, connectorType = ct,
                                      parallelism = prl,variability = var,direction = dir)),

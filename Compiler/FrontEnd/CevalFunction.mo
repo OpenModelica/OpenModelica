@@ -140,7 +140,6 @@ algorithm
     case (_, _, DAE.FUNCTION(
         path = p,
         functions = _ :: _,
-
         partialPrefix = partialPrefix), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -208,8 +207,7 @@ algorithm
 
     case (_, _, _, DAE.FUNCTION_EXT(body = body, externalDecl =
         DAE.EXTERNALDECL(name = ext_fun_name,
-                         args = ext_fun_args,
-                         returnArg = _)), _, _, _, st)
+                         args = ext_fun_args)), _, _, _, st)
       equation
         // Get all variables from the function. Ignore everything else, since
         // external functions shouldn't have statements.

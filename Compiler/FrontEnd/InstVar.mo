@@ -1394,25 +1394,18 @@ protected function checkArrayModDimSize
    modified components dimension. Only the first dimension is checked, since
    this function is meant to be called in instArray which is called recursively
    for a component's dimensions."
-  input DAE.Mod inModifier;
+  input DAE.Mod mod;
   input DAE.Dimension inDimension;
   input Prefix.Prefix inPrefix;
   input String inIdent;
   input SourceInfo inInfo;
 algorithm
-  _ := match(inModifier, inDimension, inPrefix, inIdent, inInfo)
-    local
-      list<DAE.SubMod> submods;
-      Option<DAE.EqMod> eqmod;
-
+  _ := match mod
     // Only check modifiers which are not marked with 'each'.
-    case (DAE.MOD(eachPrefix = SCode.NOT_EACH(), subModLst = submods,
-        eqModOption = _), _, _, _, _)
+    case DAE.MOD(eachPrefix = SCode.NOT_EACH())
       equation
-        List.map4_0(submods, checkArraySubModDimSize, inDimension, inPrefix, inIdent, inInfo);
-      then
-        ();
-
+        List.map4_0(mod.subModLst, checkArraySubModDimSize, inDimension, inPrefix, inIdent, inInfo);
+      then ();
     else ();
   end match;
 end checkArrayModDimSize;

@@ -74,14 +74,14 @@ algorithm
 
     case (_,_,{}) then {};
 
-    case (from as DAE.T_INTEGER(),to as DAE.T_REAL(varLst = _),(Values.INTEGER(integer = i) :: vrest))
+    case (from as DAE.T_INTEGER(),to as DAE.T_REAL(),(Values.INTEGER(integer = i) :: vrest))
       equation
         vallst = typeConvert(from, to, vrest);
         rval = intReal(i);
       then
         (Values.REAL(rval) :: vallst);
 
-    case (from as DAE.T_REAL(),to as DAE.T_INTEGER(varLst = _),(Values.REAL(real = r) :: vrest))
+    case (from as DAE.T_REAL(),to as DAE.T_INTEGER(),(Values.REAL(real = r) :: vrest))
       equation
         vallst = typeConvert(from, to, vrest);
         ival = realInt(r);
@@ -2351,7 +2351,7 @@ algorithm
     case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then ();
     // adrpo: ignore dimenstions here as we're just printing! otherwise it fails.
     //        TODO! FIXME! see why the dimension list is wrong!
-    case (Values.ARRAY(valueLst = (v1 :: v1s)),Values.ARRAY(valueLst = (v2 :: v2s), dimLst = _))
+    case (Values.ARRAY(valueLst = (v1 :: v1s)),Values.ARRAY(valueLst = (v2 :: v2s)))
       equation
         valString2(v1);
         Print.printBuf(",");

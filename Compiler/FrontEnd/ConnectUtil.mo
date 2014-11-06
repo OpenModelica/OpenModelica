@@ -2760,7 +2760,7 @@ algorithm
     // One inside, one outside:
     // cr1 = cr2;
     case ({Connect.CONNECTOR_ELEMENT(name = cr1, source = src1),
-           Connect.CONNECTOR_ELEMENT(name = cr2, face = _, source = src2)})
+           Connect.CONNECTOR_ELEMENT(name = cr2, source = src2)})
       equation
         src = DAEUtil.mergeSources(src1, src2);
         e1 = Expression.crefExp(cr1);
@@ -3686,7 +3686,7 @@ algorithm
     // determined by the size of the return value of that function.
     case (DAE.T_COMPLEX(equalityConstraint = SOME((_, n, _)))) then n;
     // The size of a basic subtype with equality constraint is ZERO.
-    case (DAE.T_SUBTYPE_BASIC(complexType = _, equalityConstraint = SOME(_))) then 0;
+    case (DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_))) then 0;
     // The size of a basic subtype is the size of the extended type.
     case (DAE.T_SUBTYPE_BASIC(complexType = t)) then sizeOfVariable2(t);
     // Anything we forgot?

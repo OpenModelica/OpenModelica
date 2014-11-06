@@ -255,7 +255,7 @@ algorithm
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
     System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
-    BackendDAE.SHARED(constraints=_) = shared;
+    BackendDAE.SHARED() = shared;
     (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
     shared = addBackendDAESharedJacobians(linearModelMatrixes, shared);
     functionTree = BackendDAEUtil.getFunctions(shared);

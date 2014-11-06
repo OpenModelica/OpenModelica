@@ -296,18 +296,8 @@ algorithm
       DAE.ElementSource source;
 
     case ({},_) then "";
-    case (((BackendDAE.VAR(varName = cr,
-
-                            varDirection = dir,
-
-
-
-
-
-                            connectorType = _)) :: {}),varno)
+    case (((BackendDAE.VAR(varName = cr, varDirection = dir)) :: {}),varno)
       equation
-        _ = intString(varno);
-        _ = DAEDump.dumpDirectionStr(dir);
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, Absyn.pathString);
@@ -331,18 +321,8 @@ algorithm
       then
         str;
 
-      case (((BackendDAE.VAR(varName = cr,
-
-                              varDirection = dir,
-
-
-
-
-
-                              connectorType = _)) :: xs),varno)
+      case (((BackendDAE.VAR(varName = cr, varDirection = dir)) :: xs),varno)
       equation
-        _ = intString(varno);
-        _ = DAEDump.dumpDirectionStr(dir);
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, Absyn.pathString);

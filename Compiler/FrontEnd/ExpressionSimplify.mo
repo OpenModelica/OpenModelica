@@ -1224,7 +1224,7 @@ algorithm
         tp = DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(i)},source);
       then DAE.ARRAY(tp,true,es);
 
-    case DAE.CALL(path=Absyn.IDENT("vector"),expLst=(e as DAE.ARRAY(scalar=true))::{},attr=DAE.CALL_ATTR(ty=_))
+    case DAE.CALL(path=Absyn.IDENT("vector"),expLst=(e as DAE.ARRAY(scalar=true))::{},attr=DAE.CALL_ATTR())
       then e;
 
     case DAE.CALL(path=Absyn.IDENT("vector"),expLst=DAE.MATRIX(matrix=mexpl)::{},attr=DAE.CALL_ATTR(ty=tp))
@@ -5206,7 +5206,7 @@ algorithm
         true = stringEq(name,id);
         exp = DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty);
       then (exp,tpl);
-    case (DAE.CREF(DAE.CREF_QUAL(id,_,{},DAE.CREF_IDENT(id2,_,{})),ty),tpl as (name,DAE.CALL(expLst=exps,path=callPath,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(recordPath)))),_))
+    case (DAE.CREF(componentRef=DAE.CREF_QUAL(id,_,{},DAE.CREF_IDENT(id2,_,{}))),tpl as (name,DAE.CALL(expLst=exps,path=callPath,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(recordPath)))),_))
       equation
         true = stringEq(name,id);
         true = Absyn.pathEqual(callPath,recordPath);

@@ -5236,9 +5236,7 @@ algorithm
       Ident inid, bid;
       MatchingExp mexp, inmexp;
 
-    case ( inid, inmexp as BIND_AS_MATCH(
-                             bindIdent = bid,
-                             matchingExp = _ ) )
+    case ( inid, inmexp as BIND_AS_MATCH(bindIdent = bid) )
       equation
         true = stringEq(inid, bid);
       then
@@ -6094,7 +6092,6 @@ algorithm
 
     case ( AST_DEF(
             importPackage = importckg,
-
             types         = typeLst) :: _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
