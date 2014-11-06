@@ -48,6 +48,7 @@ Kinsol::~Kinsol()
     if(_fHelp)            delete []  _fHelp;
     if(_zeroVec)          delete []  _zeroVec;
     if(_currentIterate)   delete []  _currentIterate;
+    if(_yHelp)            delete []  _yHelp;
     if(_Kin_y)
       N_VDestroy_Serial(_Kin_y);
     if(_Kin_y0)

@@ -1987,12 +1987,12 @@ match eq
        , __z(z)
        , __zDot(zDot)
    <% match eq
-    case SES_LINEAR(__) then
-   <<
-     , __A(0)
-     , __Asparse(0)
-   >>
-   %>
+
+     case SES_LINEAR(__) then
+    <<
+     ,__Asparse(NULL)
+    >>
+    %>
 
    //<%alocateLinearSystemConstructor(eq, useFlatArrayNotation)%>
        , _conditions(conditions)
@@ -2008,11 +2008,11 @@ match eq
      <% match eq
       case SES_LINEAR(__) then
       <<
-      if(__Asparse != 0)
+      if(__Asparse != NULL)
           delete __Asparse;
 
-       if(__A != 0)
-          delete __A;
+      /* if(__A != NULL)
+          delete __A;*/
       >>
      %>
    }
@@ -2088,7 +2088,7 @@ match simCode
         {
            if(_useSparseFormat)
            {
-             if(__Asparse == 0)
+             if(__Asparse == NULL)
              {
                //sometimes initialize was not called before
                <%alocateLinearSystem(eq)%>
@@ -2097,12 +2097,12 @@ match simCode
            }
            else
            {
-             if(__A == 0)
+             if(! __A )
              {
                //sometimes initialize was not called before
                <%alocateLinearSystem(eq)%>
              }
-             evaluate(__A);
+             evaluate(__A.get());
            }
         }
         >>
@@ -3726,6 +3726,12 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%varDecls%>
 
    <%initextvars%>
+   
+    initializeParameterVars();
+    initializeIntParameterVars();
+    initializeBoolParameterVars();
+    
+    
     initializeAlgVars();
     initializeDiscreteAlgVars();
     initializeIntAlgVars();
@@ -3733,9 +3739,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     initializeAliasVars();
     initializeIntAliasVars();
     initializeBoolAliasVars();
-    initializeParameterVars();
-    initializeIntParameterVars();
-    initializeBoolParameterVars();
+    
+    
+    
     initializeStateVars();
     initializeDerVars();
     <%initFunctions%>
@@ -3941,7 +3947,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         else
         {
           fill_array(*__A,0.0);
-          <%modelname%>Algloop<%index%>::initialize(__A);
+          <%modelname%>Algloop<%index%>::initialize(__A.get());
         }
      }
    >>
@@ -4377,7 +4383,7 @@ case SES_LINEAR(__) then
     if(_useSparseFormat)
       __Asparse = new sparse_inserter;
     else
-      __A = new StatArrayDim2<double,<%size%>,<%size%> ,true>(); //boost::multi_array<double,2>(boost::extents[<%size%>][<%size%>],boost::fortran_storage_order());
+      __A = boost::shared_ptr<AMATRIX>( new AMATRIX()); 
    >>
 end alocateLinearSystem;
 
@@ -4805,6 +4811,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   class <%modelname%>Algloop<%index%>: public IAlgLoop, public AlgLoopDefaultImplementation
   {
   public:
+     //typedef for A- Matrix 
+    <%match eq case SES_LINEAR(__) then
+        let size = listLength(vars)
+        <<
+        typedef  StatArrayDim2<double,<%size%>,<%size%>,true>  AMATRIX;
+        >>
+    %>
+    
       <%modelname%>Algloop<%index%>( <%systemname%>* system
                                         ,double* z,double* zDot, bool* conditions
                                        ,EventHandling& event_handling
@@ -4837,7 +4851,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%match eq case SES_LINEAR(__) then
     let size = listLength(vars)
     <<
-     StatArrayDim2<double,<%size%>,<%size%>,true>* __A; //dense
+    
+      boost::shared_ptr<AMATRIX> __A; //dense
      //b vector
      StatArrayDim1<double,<%size%> > __b;
     >>
@@ -7066,11 +7081,12 @@ end initAliasValst;
 */
 template initAliasValst(Text &varDecls ,Text type,list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
   varsLst |> sv as SIMVAR(__) =>
-
-      let &varDeclsCref = buffer "" /*BUFD*/
+  /*
+      let &varDeclsCref = buffer ""
+  
     match initialValue
       case SOME(v) then
-       let &preExp = buffer "" /*BUFD*/
+       let &preExp = buffer "" 
       match daeExp(v, contextOther, &preExp, &varDecls,simCode, useFlatArrayNotation)
       case vStr as "0"
       case vStr as "0.0"
@@ -7088,7 +7104,8 @@ template initAliasValst(Text &varDecls ,Text type,list<SimVar> varsLst, SimCode 
        set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context, useFlatArrayNotation)%>,<%vStr%>,"<%cref(sv.name, useFlatArrayNotation)%>");'
            end match
       else
-       let &preExp = buffer "" /*BUFD*/
+      */
+       let &preExp = buffer "" 
        let initval = getAliasInitVal(sv.aliasvar, contextOther, &preExp, &varDecls,simCode,useFlatArrayNotation)
         '<%preExp%>
          set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode,context,useFlatArrayNotation)%>,<%initval%>,"<%cref(sv.name, useFlatArrayNotation)%>");'
