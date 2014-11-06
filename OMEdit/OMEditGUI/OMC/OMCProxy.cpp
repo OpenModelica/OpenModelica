@@ -841,30 +841,30 @@ void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
     forceModelicaLoad = pSettings->value("forceModelicaLoad").toBool();
   pSettings->beginGroup("libraries");
   QStringList libraries = pSettings->childKeys();
+  pSettings->endGroup();
   /*
     Only force loading of Modelica & ModelicaReference if user is using OMEdit for the first time.
     Later user must use the libraries options dialog.
     */
   if (forceModelicaLoad)
   {
-    if (!pSettings->contains("Modelica"))
+    if (!pSettings->contains("libraries/Modelica"))
     {
-      pSettings->setValue("Modelica","default");
+      pSettings->setValue("libraries/Modelica","default");
       libraries.prepend("Modelica");
     }
-    if (!pSettings->contains("ModelicaReference"))
+    if (!pSettings->contains("libraries/ModelicaReference"))
     {
-      pSettings->setValue("ModelicaReference","default");
+      pSettings->setValue("libraries/ModelicaReference","default");
       libraries.prepend("ModelicaReference");
     }
   }
   foreach (QString lib, libraries)
   {
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
-    QString version = pSettings->value(lib).toString();
+    QString version = pSettings->value("libraries/" + lib).toString();
     loadModel(lib, version);
   }
-  pSettings->endGroup();
   mpMainWindow->getOptionsDialog()->readLibrariesSettings();
 }
 
@@ -877,9 +877,10 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   pSettings->beginGroup("userlibraries");
   QStringList libraries = pSettings->childKeys();
+  pSettings->endGroup();
   foreach (QString lib, libraries)
   {
-    QString encoding = pSettings->value(lib).toString();
+    QString encoding = pSettings->value("userlibraries/" + lib).toString();
     QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toStdString().c_str()));
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(fileName), Qt::AlignRight, Qt::white);
     if (parseFile(fileName, encoding))
@@ -935,7 +936,6 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
       }
     }
   }
-  pSettings->endGroup();
 }
 
 /*!
