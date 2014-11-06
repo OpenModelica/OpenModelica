@@ -598,7 +598,7 @@ algorithm
   if Config.simulationCg() then
     info := BackendDAE.EXTRA_INFO(DAEUtil.daeDescription(dae), Absyn.pathString(inClassName));
     dlow := BackendDAECreate.lower(dae, inCache, inEnv, info);
-    dlow := BackendDAEUtil.getSolvedSystem(dlow);
+    dlow := BackendDAEUtil.getSolvedSystem(dlow,"");
     simcodegen(dlow, inClassName, ap, dae);
   end if;
 end optimizeDae;

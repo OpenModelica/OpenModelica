@@ -53,6 +53,7 @@ protected import Expression;
 protected import ExpressionSolve;
 protected import Flags;
 protected import HpcOmBenchmark;
+protected import HpcOmEqSystems;
 protected import HpcOmScheduler;
 protected import List;
 protected import SCode;
@@ -104,16 +105,13 @@ end TaskGraphMeta; //TODO: Remove rootNodes from structure
 public function createTaskGraph "author: marcusw,waurich
   Creates a task graph on scc-level."
   input BackendDAE.BackendDAE inDAE;
-  input String filenamePrefix;
   output TaskGraph graphOut;
   output TaskGraphMeta graphDataOut;
 protected
   list<BackendDAE.EqSystem> systs;
-  BackendDAE.EqSystem head;
   BackendDAE.Shared shared;
   TaskGraph graph;
   TaskGraphMeta graphData;
-  String fileName;
 algorithm
   //Iterate over each system
   BackendDAE.DAE(systs,shared) := inDAE;
@@ -153,7 +151,6 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(_,_,eqSysIdx))
       equation
         //Create Taskgraph for the first EqSystem
-        //TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataIn;
         true = intEq(eqSysIdx,1);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
         //print("createTaskGraph0 with " + intString(listLength(comps)) + " components\n");
@@ -2436,6 +2433,47 @@ public uniontype GraphDumpOptions
     Boolean visualizeCommTime;
   end GRAPHDUMPOPTIONS;
 end GraphDumpOptions;
+
+public function dumpTaskGraph
+  input BackendDAE.BackendDAE dae;
+  input String fileName;
+protected
+  String name;
+  TaskGraph taskGraph;
+  TaskGraphMeta taskGraphData;
+  array<tuple<Integer,Integer,Real>> schedulerInfo;
+  array<list<Integer>> sccSimEqMapping;
+algorithm
+  (taskGraph,taskGraphData) := HpcOmTaskGraph.createTaskGraph(dae);
+  name := ("TaskGraph_"+fileName+".graphml");
+  schedulerInfo := arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
+  sccSimEqMapping := arrayCreate(arrayLength(taskGraph),{-1});
+  HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData,dae, name, "", {}, {}, sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
+end dumpTaskGraph;
+
+public function dumpBipartiteGraph
+  input BackendDAE.BackendDAE dae;
+  input String fileName;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.EqSystems eqSysts;
+  BackendDAE.IncidenceMatrix m,mT;
+  list<BackendDAE.Equation> eqLst;
+  list<BackendDAE.Var> varLst;
+  list<tuple<Boolean,String>> varAtts,eqAtts;
+algorithm
+  BackendDAE.DAE(eqs=eqSysts) := dae;
+  eqLst := List.flatten(List.map(List.map(eqSysts,BackendEquation.getEqnsFromEqSystem),BackendEquation.equationList));
+  varLst := List.flatten(List.map(List.map(eqSysts,BackendVariable.daeVars),BackendVariable.varList));
+  vars := BackendVariable.listVar1(varLst);
+  eqs := BackendEquation.listEquation(eqLst);
+   // build the incidence matrix for the whole System
+   (m,mT) := BackendDAEUtil.incidenceMatrixDispatch(vars,eqs, BackendDAE.ABSOLUTE());
+   varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
+   eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
+   HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph"+fileName);
+end dumpBipartiteGraph;
 
 public function dumpAsGraphMLSccLevel "author: marcusw, waurich
   Write out the given graph as a graphml file."

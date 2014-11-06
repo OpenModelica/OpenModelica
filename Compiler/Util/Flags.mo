@@ -412,7 +412,9 @@ constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(123, "dumpHomotopy", false,
   Util.gettext("Dumps the results of the postOptModule optimizeHomotopyCalls."));
 constant DebugFlag MODEL_INFO_JSON = DEBUG_FLAG(124, "modelInfoJson", false,
   Util.gettext("Experimental: Generates a file with suffix _info.json instead of _info.xml."));
-
+constant DebugFlag GRAPHML = DEBUG_FLAG(125, "graphml", false,
+  Util.gettext("Dumps .graphml files for the bipartite graph after Index Reduction and a task graph for the SCCs. Can be displayed with yEd. "));
+  
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -542,7 +544,8 @@ constant list<DebugFlag> allDebugFlags = {
   RESHUFFLE_POST,
   SHOW_EXPANDABLE_INFO,
   DUMP_HOMOTOPY,
-  MODEL_INFO_JSON
+  MODEL_INFO_JSON,
+  GRAPHML
 };
 
 public

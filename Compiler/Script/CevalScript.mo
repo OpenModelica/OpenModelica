@@ -4726,7 +4726,7 @@ algorithm
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
-        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow);
+        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
         xml_filename = stringAppendList({filenameprefix,".xml"});
 
         // apply rewrite rules to the back-end
@@ -4765,7 +4765,7 @@ algorithm
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
-        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow);
+        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
         xml_filename = stringAppendList({filenameprefix,".xml"});
 
         // apply rewrite rules to the back-end

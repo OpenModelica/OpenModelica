@@ -111,7 +111,7 @@ algorithm
  // Strip correlation vector from dae to be able to compile (bug in OpenModelica with vectors of records )
   strippedDae := stripCorrelationFromDae(inDaelow);
 
-  strippedDae := BackendDAEUtil.getSolvedSystem(strippedDae);
+  strippedDae := BackendDAEUtil.getSolvedSystem(strippedDae,"");
 
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);

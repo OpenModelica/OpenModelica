@@ -80,6 +80,7 @@ import Error;
 import Flags;
 import FMI;
 import HpcOmSimCodeMain;
+import HpcOmTaskGraph;
 import SerializeModelInfo;
 import SimCodeDump;
 import TaskSystemDump;
@@ -250,7 +251,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
         description = DAEUtil.daeDescription(dae);
         dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
-        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow);
+        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
@@ -325,7 +326,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
         description = DAEUtil.daeDescription(dae);
         dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
-        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow);
+        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
@@ -375,6 +376,9 @@ protected
   Absyn.ComponentRef a_cref;
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
 algorithm
+  if Flags.isSet(Flags.GRAPHML) then
+    HpcOmTaskGraph.dumpTaskGraph(inBackendDAE,filenamePrefix);
+  end if;
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
@@ -644,7 +648,7 @@ algorithm
       SimCodeUtil.execStat("Transformations before backend");
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
-      dlow_1 = BackendDAEUtil.getSolvedSystem(dlow);
+      dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
       timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
       (indexed_dlow_1, libs, file_dir, timeSimCode, timeTemplates) =

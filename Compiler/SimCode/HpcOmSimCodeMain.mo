@@ -218,7 +218,7 @@ algorithm
 
       //Get complete DAE System
       //-----------------------
-      (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
+      (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE);
 
       fileName = ("taskGraph"+filenamePrefix+".graphml");
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1,-1.0));
@@ -386,7 +386,7 @@ algorithm
   _ := match(iInitDae, iFileNamePrefix)
     case(SOME(initDAE), _)
       equation
-        (tmpTaskGraph, tmpTaskGraphMeta) = HpcOmTaskGraph.createTaskGraph(initDAE,iFileNamePrefix);
+        (tmpTaskGraph, tmpTaskGraphMeta) = HpcOmTaskGraph.createTaskGraph(initDAE);
         fileName = ("taskGraph"+iFileNamePrefix+"_init.graphml");
         schedulerInfo = arrayCreate(arrayLength(tmpTaskGraph), (-1,-1,-1.0));
         sccSimEqMapping = arrayCreate(arrayLength(tmpTaskGraph), {});

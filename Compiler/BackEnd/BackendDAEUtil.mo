@@ -85,6 +85,7 @@ protected import FindZeroCrossings;
 protected import Flags;
 protected import Global;
 protected import HpcOmEqSystems;
+protected import HpcOmTaskGraph;
 protected import IndexReduction;
 protected import InlineArrayEquations;
 protected import Initialization;
@@ -6899,6 +6900,7 @@ end traverseZeroCrossingExps;
 public function getSolvedSystem "
   Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
+  input String fileNamePrefix;
   input Option<list<String>> strPreOptModules := NONE();
   input Option<String> strmatchingAlgorithm := NONE();
   input Option<String> strdaeHandler := NONE();
@@ -6931,6 +6933,11 @@ algorithm
 
   // transformation phase (matching and sorting using index reduction method)
   sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
+  
+  if Flags.isSet(Flags.GRAPHML) then
+  HpcOmTaskGraph.dumpBipartiteGraph(sode,fileNamePrefix);
+  end if;
+  
   if Flags.isSet(Flags.BLT_DUMP) then
     BackendDump.bltdump("bltdump", sode);
   end if;
