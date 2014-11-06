@@ -1609,7 +1609,7 @@ algorithm
         simValue = Values.BOOL(true);
       then
         (cache,simValue,st);
-
+        
     // adrpo: some error happened!
     case (cache,_,"moveClass",{Values.CODE(Absyn.C_TYPENAME(className)),
                                         Values.STRING(_)},
@@ -1623,6 +1623,26 @@ algorithm
       then
         (cache,simValue,st);
 
+    case (cache,_,"copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("TopLevel")))},
+          st as GlobalScript.SYMBOLTABLE(ast = p),_)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        p = copyClass(absynClass, name, Absyn.TOP(), p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+        ret_val = Values.BOOL(true);
+      then
+        (cache,ret_val,st);
+
+    case (cache,_,"copyClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name), Values.CODE(Absyn.C_TYPENAME(path))},
+          st as GlobalScript.SYMBOLTABLE(ast = p),_)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        p = copyClass(absynClass, name, Absyn.WITHIN(path), p);
+        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+        ret_val = Values.BOOL(true);
+      then
+        (cache,ret_val,st);
+    
     case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(_))::_),st_1,_)
       equation
 
@@ -4052,6 +4072,31 @@ protected function moveClassInList
 algorithm
   outCls := inCls;
 end moveClassInList;
+
+protected function copyClass
+  input Absyn.Class inClass;
+  input String inName;
+  input Absyn.Within inWithin;
+  input Absyn.Program inProg;
+  output Absyn.Program outProg;
+algorithm
+  outProg := match(inClass, inName, inWithin, inProg)
+    local
+      Absyn.Within within_;
+      Absyn.Program p, newp;
+      String name, newName;
+      Boolean partialPrefix,finalPrefix,encapsulatedPrefix;
+      Absyn.Restriction restriction;
+      Absyn.ClassDef classDef;
+      SourceInfo file_info;
+    case (Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
+          body = classDef,info = file_info), newName, within_, p)
+      equation
+        newp = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(newName, partialPrefix, finalPrefix, encapsulatedPrefix, restriction, classDef, file_info)},
+                                         within_), p);
+      then newp;
+  end match;
+end copyClass;
 
 protected function buildModel "translates and builds the model by running compiler script on the generated makefile"
   input FCore.Cache inCache;

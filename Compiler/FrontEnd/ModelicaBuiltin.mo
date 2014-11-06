@@ -2320,7 +2320,19 @@ function moveClass
  input TypeName className "the class that should be moved";
  input String direction "up or down";
  output Boolean result;
+external "builtin";
+annotation(preferredView="text");
 end moveClass;
+
+function copyClass
+"Copies a class within the same level"
+ input TypeName className "the class that should be copied";
+ input String newClassName "the name for new class";
+ input TypeName withIn := $TypeName(TopLevel) "the with in path for new class";
+ output Boolean result;
+external "builtin";
+annotation(preferredView="text");
+end copyClass;
 
 function linearize "creates a model with symbolic linearization matrixes"
   input TypeName className "the class that should simulated";
