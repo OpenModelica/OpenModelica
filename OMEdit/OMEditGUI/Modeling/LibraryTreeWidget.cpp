@@ -568,6 +568,10 @@ void LibraryTreeWidget::createActions()
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
   connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(simulationSetup()));
+  // copy action
+  mpCopyClassAction = new QAction(QIcon(":/Resources/icons/duplicate.svg"), Helper::copy, this);
+  mpCopyClassAction->setStatusTip(tr("Creates a copy of the class"));
+  connect(mpCopyClassAction, SIGNAL(triggered()), SLOT(copyClass()));
   // unload Action
   mpUnloadClassAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
@@ -1514,6 +1518,7 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
         if (!((StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()).compare("OpenModelica") == 0)  || isSearchedTree()))
         {
           menu.addSeparator();
+          menu.addAction(mpCopyClassAction);
           menu.addAction(mpUnloadClassAction);
           /* Only used for development testing. */
           /*menu.addAction(mpRefreshAction);*/
@@ -1630,6 +1635,18 @@ void LibraryTreeWidget::checkAllModels()
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   if (pLibraryTreeNode)
     mpMainWindow->checkAllModels(pLibraryTreeNode);
+}
+
+void LibraryTreeWidget::copyClass()
+{
+  QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
+  if (selectedItemsList.isEmpty())
+    return;
+  LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
+  if (pLibraryTreeNode) {
+    CopyClassDialog *pCopyClassDialog = new CopyClassDialog(pLibraryTreeNode, mpMainWindow);
+    pCopyClassDialog->exec();
+  }
 }
 
 void LibraryTreeWidget::unloadClass()

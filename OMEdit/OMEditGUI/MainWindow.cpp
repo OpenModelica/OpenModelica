@@ -1950,7 +1950,7 @@ void MainWindow::createActions()
   mpCutAction = new QAction(QIcon(":/Resources/icons/cut.svg"), tr("Cut"), this);
   mpCutAction->setShortcut(QKeySequence("Ctrl+x"));
   // copy action
-  mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.svg"), tr("Copy"), this);
+  mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.svg"), Helper::copy, this);
   //! @todo opening this will stop copying data from messages window.
   //copyAction->setShortcut(QKeySequence("Ctrl+c"));
   // paste action

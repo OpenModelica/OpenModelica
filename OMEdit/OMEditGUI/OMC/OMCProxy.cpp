@@ -2495,6 +2495,26 @@ bool OMCProxy::exportToFigaro(QString className, QString database, QString mode,
 }
 
 /*!
+  Copies the class with new name to within path.
+  \param className - the class that should be copied
+  \param newClassName - the name for new class
+  \param withIn - the with in path for new class
+  */
+bool OMCProxy::copyClass(QString className, QString newClassName, QString withIn)
+{
+  QString expression;
+  if (withIn.isEmpty()) {
+    expression = "copyClass(" + className + ",\"" + newClassName + "\")";
+  } else {
+    expression = "copyClass(" + className + ",\"" + newClassName + "\"," + withIn + ")";
+  }
+  sendCommand(expression);
+  bool result = StringHandler::unparseBool(getResult());
+  if (!result) printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */

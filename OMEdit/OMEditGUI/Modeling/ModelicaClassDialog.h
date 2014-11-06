@@ -145,6 +145,28 @@ private slots:
   void showHideSaveContentsInOneFileCheckBox(QString text);
 };
 
+class LibraryTreeNode;
+class CopyClassDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  CopyClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow);
+private:
+  LibraryTreeNode *mpLibraryTreeNode;
+  MainWindow *mpMainWindow;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpPathLabel;
+  QLineEdit *mpPathTextBox;
+  QPushButton *mpPathBrowseButton;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+public slots:
+  void browsePath();
+  void copyClass();
+};
+
 class RenameClassDialog : public QDialog
 {
   Q_OBJECT

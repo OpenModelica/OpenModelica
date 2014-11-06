@@ -770,6 +770,96 @@ void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
 }
 
 /*!
+  \class CopyClassDialog
+  \brief Creates a dialog to allow users to copy the Modelica class.
+  */
+
+/*!
+  \param name - name of Modelica class
+  \param nameStructure - qualified name of Modelica class
+  \param pParent - pointer to MainWindow
+  */
+CopyClassDialog::CopyClassDialog(LibraryTreeNode *pLibraryTreeNode, MainWindow *pMainWindow)
+  : QDialog(pMainWindow, Qt::WindowTitleHint), mpLibraryTreeNode(pLibraryTreeNode), mpMainWindow(pMainWindow)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString(Helper::applicationName).append(" - Copy ").append(mpLibraryTreeNode->getNameStructure()));
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  mpPathLabel = new Label(Helper::path);
+  mpPathTextBox = new QLineEdit;
+  mpPathBrowseButton = new QPushButton(Helper::browse);
+  mpPathBrowseButton->setAutoDefault(false);
+  connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browsePath()));
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(copyClass()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpNameLabel, 0, 0);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1, 1, 2);
+  pMainLayout->addWidget(mpPathLabel, 1, 0);
+  pMainLayout->addWidget(mpPathTextBox, 1, 1);
+  pMainLayout->addWidget(mpPathBrowseButton, 1, 2);
+  pMainLayout->addWidget(mpButtonBox, 2, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+void CopyClassDialog::browsePath()
+{
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Path"), mpPathTextBox, mpMainWindow->getLibraryTreeWidget());
+  pLibraryBrowseDialog->exec();
+}
+
+void CopyClassDialog::copyClass()
+{
+  if (mpNameTextBox->text().isEmpty())
+  {
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("class"), Helper::ok);
+    return;
+  }
+  /* if path class doesn't exist. */
+  if (!mpPathTextBox->text().isEmpty())
+  {
+    if (!mpMainWindow->getOMCProxy()->existClass(mpPathTextBox->text()))
+    {
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
+                              GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpPathTextBox->text()), Helper::ok);
+      return;
+    }
+  }
+  // check if new class already exists
+  QString newClassPath = mpNameTextBox->text() + (mpPathTextBox->text().isEmpty() ? "" : "." + mpPathTextBox->text());
+  if (mpMainWindow->getOMCProxy()->existClass(newClassPath)) {
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg("class").arg(mpNameTextBox->text())
+                          .arg((mpPathTextBox->text().isEmpty() ? "Top Level" : mpPathTextBox->text())), Helper::ok);
+    return;
+  }
+  // if everything is fine then copy the class.
+  if (mpMainWindow->getOMCProxy()->copyClass(mpLibraryTreeNode->getNameStructure(), mpNameTextBox->text(), mpPathTextBox->text())) {
+    LibraryTreeWidget *pLibraryTreeWidget = mpMainWindow->getLibraryTreeWidget();
+    LibraryTreeNode *pLibraryTreeNode;
+    QString className = mpNameTextBox->text().trimmed();
+    pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(className, mpMainWindow->getOMCProxy()->getClassRestriction(className),
+                                                              mpPathTextBox->text().trimmed(), false);
+    pLibraryTreeNode->setSaveContentsType(mpLibraryTreeNode->getSaveContentsType());
+    pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+  }
+  accept();
+}
+
+/*!
   \class RenameClassDialog
   \brief Creates a dialog to allow users to rename the Modelica class.
   */
