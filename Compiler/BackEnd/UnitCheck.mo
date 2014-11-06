@@ -1654,7 +1654,7 @@ algorithm
     then T_UNIT(unit)::tokenList;
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/UnitCheck.mo: function lexer failed", sourceInfo());
+      Error.addInternalError("function lexer failed", sourceInfo());
     then fail();
   end matchcontinue;
 end lexer;

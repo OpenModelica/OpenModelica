@@ -1022,34 +1022,22 @@ public function addReplacementNoTransitive "Similar to addReplacement but
 does not make transitive replacement rules.
 "
   input VariableReplacements repl;
-  input DAE.ComponentRef inSrc;
-  input DAE.Exp inDst;
-  output VariableReplacements outRepl;
+  input DAE.ComponentRef src;
+  input DAE.Exp dst;
+  output VariableReplacements outRepl := repl;
+protected
+  HashTable2.HashTable ht;
+  HashTable3.HashTable invHt;
 algorithm
-  outRepl:=
-  matchcontinue (repl,inSrc,inDst)
-    local
-      DAE.ComponentRef src;
-      DAE.Exp dst,olddst;
-      HashTable2.HashTable ht,ht_1;
-      HashTable3.HashTable invHt,invHt_1;
-    case ((REPLACEMENTS(ht,_)),src,_) /* source dest */
-      equation
-        _ = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
-      then
-        fail();
-    case ((REPLACEMENTS(ht,invHt)),src,dst)
-      equation
-        ht_1 = BaseHashTable.add((src, dst),ht);
-        invHt_1 = addReplacementInv(invHt, src, dst);
-      then
-        REPLACEMENTS(ht_1,invHt_1);
-    case (_,_,_)
-      equation
-        print("-add_replacement failed\n");
-      then
-        fail();
-  end matchcontinue;
+  REPLACEMENTS(ht,invHt) := outRepl;
+/*
+  if BaseHashTable.hasKey(src, ht) then // TODO: Is this correct? Previously, we skipped this code which was a dead case
+    return;
+  end if;
+*/
+  ht := BaseHashTable.add((src, dst), ht);
+  invHt := addReplacementInv(invHt, src, dst);
+  outRepl := REPLACEMENTS(ht,invHt);
 end addReplacementNoTransitive;
 
 protected function addReplacementInv "
