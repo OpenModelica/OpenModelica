@@ -147,7 +147,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_CPU */                   "  - dumps the cpu-time into the result-file\n  - $cpuTime is the variable name inside the result-file",
   /* FLAG_DASSL_JACOBIAN */        "selects the type of the jacobians that is used for the dassl solver:"
       "\n\t -dasslJacobian=coloredNumerical  - colored numerical jacobian."
-      "\n\t -dasslJacobian=intenalNumerical  - internal dassl numerical jacobian."
+      "\n\t -dasslJacobian=internalNumerical  - internal dassl numerical jacobian."
       "\n\t -dasslJacobian=coloredSymbolical - colored symbolical jacobian. Only usable if the simulation is compiled with +generateSymbolicJacobian or +generateSymbolicLinearization."
       "\n\t -dasslJacobian=numerical - numerical jacobian"
       "\n\t -dasslJacobian=symbolical - symbolical jacobian. Only usable if the simulation is compiled with +generateSymbolicJacobian or +generateSymbolicLinearization.",
