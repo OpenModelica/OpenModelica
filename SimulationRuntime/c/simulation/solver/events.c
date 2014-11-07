@@ -285,7 +285,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     }
 
     listClear(eventLst);
-    
+
     printRelations(data, LOG_EVENTS);
     printZeroCrossings(data, LOG_EVENTS);
   }
