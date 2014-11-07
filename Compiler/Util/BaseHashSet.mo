@@ -285,7 +285,7 @@ algorithm
         false;
     case(_,_)
       equation
-        _ = get(key,hashSet);
+        get(key,hashSet);
       then
         true;
     else

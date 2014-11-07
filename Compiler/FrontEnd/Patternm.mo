@@ -247,7 +247,7 @@ algorithm
 
     case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("NONE",{}),Absyn.FUNCTIONARGS({},{})),_,_,_)
       equation
-        _ = validPatternType(ty,DAE.T_NONE_DEFAULT,inLhs,info);
+        validPatternType(ty,DAE.T_NONE_DEFAULT,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(NONE(),DAE.META_OPTION(NONE())));
 
     case (cache,_,Absyn.CALL(Absyn.CREF_IDENT("SOME",{}),Absyn.FUNCTIONARGS({exp},{})),DAE.T_METAOPTION(ty = ty2),_,_)
@@ -1022,12 +1022,12 @@ algorithm
       tuple<HashTableStringToPath.HashTable,SourceInfo> tpl;
     case ((DAE.PAT_AS(id=id,pat=pat),tpl as (ht,info)))
       equation
-        _ = BaseHashTable.get(id, ht);
+        true = BaseHashTable.hasKey(id, ht);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING, {id}, info);
       then ((pat,tpl));
     case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),tpl as (ht,_)))
       equation
-        _ = BaseHashTable.get(id, ht);
+        true = BaseHashTable.hasKey(id, ht);
       then ((pat,tpl));
     else simplifyPattern(inTpl);
   end matchcontinue;
@@ -1143,7 +1143,7 @@ algorithm
       equation
         name = ComponentReference.crefFirstIdent(cr);
         // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
-        _ = AvlTreeString.avlTreeGet(localsTree,name);
+        AvlTreeString.avlTreeGet(localsTree,name);
         failure(_ = AvlTreeString.avlTreeGet(useTree,name));
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_ASSIGNMENT,{name},info);
       then (DAE.CREF(DAE.WILD(),ty),extra);
@@ -1171,14 +1171,14 @@ algorithm
     case ((DAE.PAT_AS(id=name,pat=pat),extra as (localsTree,useTree,info)))
       equation
         // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
-        _ = AvlTreeString.avlTreeGet(localsTree,name);
+        AvlTreeString.avlTreeGet(localsTree,name);
         failure(_ = AvlTreeString.avlTreeGet(useTree,name));
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
       then ((pat,extra));
     case ((DAE.PAT_AS_FUNC_PTR(id=name,pat=pat),extra as (localsTree,useTree,info)))
       equation
         // TODO: Can skip matchcontinue and failure if there was an AvlTree.exists(key)
-        _ = AvlTreeString.avlTreeGet(localsTree,name);
+        AvlTreeString.avlTreeGet(localsTree,name);
         failure(_ = AvlTreeString.avlTreeGet(useTree,name));
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING,{name},info);
       then ((pat,extra));
@@ -2335,8 +2335,6 @@ algorithm
 
     case (cache,env,ld,_,_,_)
       equation
-        _ = FGraph.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
-
         // Tranform declarations such as Real x,y; to Real x; Real y;
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
 

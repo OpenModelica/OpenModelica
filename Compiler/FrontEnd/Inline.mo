@@ -1380,7 +1380,7 @@ algorithm
 
     case (e as DAE.CREF(componentRef = cref),(argmap,checkcr,true))
       equation
-        _ = BaseHashTable.get(cref,checkcr);
+        true = BaseHashTable.hasKey(cref,checkcr);
       then (e,(argmap,checkcr,false));
 
     case (DAE.UNBOX(DAE.CALL(path,expLst,DAE.CALL_ATTR(_,tuple_,false,isImpure,_,inlineType,tc)),ty),(argmap,checkcr,true))
@@ -1398,7 +1398,7 @@ algorithm
     case (e as DAE.UNBOX(DAE.CALL(path,_,DAE.CALL_ATTR(builtin=false)),_),(argmap,checkcr,true))
       equation
         cref = ComponentReference.pathToCref(path);
-        _ = BaseHashTable.get(cref,checkcr);
+        true = BaseHashTable.hasKey(cref,checkcr);
       then (e,(argmap,checkcr,false));
 
     // TODO: Use the inlineType of the function reference!
@@ -1419,7 +1419,7 @@ algorithm
     case (e as DAE.CALL(path,_,DAE.CALL_ATTR(ty=DAE.T_METATYPE(),builtin=false)),(argmap,checkcr,true))
       equation
         cref = ComponentReference.pathToCref(path);
-        _ = BaseHashTable.get(cref,checkcr);
+        true = BaseHashTable.hasKey(cref,checkcr);
       then (e,(argmap,checkcr,false));
 
     case (e,(argmap,checkcr,replacedfailed)) then (e,(argmap,checkcr,replacedfailed));
