@@ -139,7 +139,7 @@ protected
 algorithm
   (key, _) := entry;
   (hashvec, varr, bsize, n, fntpl as (hashFunc, keyEqual, _, _)) := hashTable;
-  
+
   hash_idx := hashFunc(key, bsize) + 1;
   indices := hashvec[hash_idx];
 

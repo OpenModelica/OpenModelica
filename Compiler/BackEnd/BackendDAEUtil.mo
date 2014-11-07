@@ -882,7 +882,7 @@ algorithm
                  backendDAEType=btp, symjacs=symjacs, info=ei)))
       algorithm
         knvars := BackendVariable.traverseBackendDAEVarsWithUpdate(
-          knvars, function calculateValueTraverser(inEnv = graph), cache); 
+          knvars, function calculateValueTraverser(inEnv = graph), cache);
         // Reverse the order of the known vars in the hashtable. This is stupid,
         // but things break otherwise.
         knvars := BackendVariable.listVar(BackendVariable.varList(knvars));

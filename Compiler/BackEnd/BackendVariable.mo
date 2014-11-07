@@ -2216,7 +2216,7 @@ algorithm
   outVariables := BackendDAE.VARIABLES(indices, arr, buckets, 0);
 end emptyVars;
 
-public function emptyVarsSized 
+public function emptyVarsSized
   "Returns a Variable datastructure that is empty."
   input Integer size;
   output BackendDAE.Variables outVariables := emptyVars(size);
@@ -2225,7 +2225,7 @@ end emptyVarsSized;
 public function varList
   "Takes a BackendDAE.Variables and returns a list of all variables in it,
    useful for e.g. dumping.
-   
+
    NOTE: This function will fail if the Variables contains more than one set.
      This is because mergeVariables doesn't do a real merging, so if we just
      append all the variables from the sets we might get duplicates."
@@ -2865,7 +2865,7 @@ algorithm
   for i in 1:num_vars loop
     ovar := vars[i];
     if isSome(ovar) then
-      SOME(var) := ovar; 
+      SOME(var) := ovar;
       outVars := addVar(var, outVars);
     end if;
   end for;
@@ -3160,7 +3160,7 @@ protected
   DAE.ComponentRef cr;
 algorithm
   BackendDAE.VARIABLES(crefIndices = indices, varArr = arr,
-    bucketSize = buckets) := inVariables; 
+    bucketSize = buckets) := inVariables;
   hash_idx := ComponentReference.hashComponentRefMod(inCref, buckets) + 1;
   cr_indices := indices[hash_idx];
   BackendDAE.CREFINDEX(index = outIndex) := List.getMemberOnTrue(inCref,

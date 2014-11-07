@@ -254,42 +254,42 @@ algorithm
       case DAE.INITIAL_COMPLEX_EQUATION()
         algorithm
           (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
-        then  
+        then
           ();
 
       // array equations
       case DAE.ARRAY_EQUATION()
         algorithm
           (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
-        then  
+        then
           ();
 
       // initial array equations
       case DAE.INITIAL_ARRAY_EQUATION()
         algorithm
           (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
-        then  
+        then
           ();
 
       // when equations
       case DAE.WHEN_EQUATION()
         algorithm
           (outEqns, outWhenClauses) := lowerWhenEqn(el, inFunctions, outEqns, outWhenClauses);
-        then  
+        then
           ();
 
       // if equation
       case DAE.IF_EQUATION()
         algorithm
           (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
-        then  
+        then
           ();
 
       // initial if equation
       case DAE.INITIAL_IF_EQUATION()
         algorithm
           (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
-        then  
+        then
           ();
 
       // algorithm
@@ -519,7 +519,7 @@ algorithm
         outEqns := BackendDAE.EQUATION(e1, e2, src, attr) :: outEqns;
       then
         ();
-      
+
     // variables: states and algebraic variables without binding equation
     case DAE.VAR(componentRef = cr, binding = NONE()) guard(isStateOrAlgvar(inElement))
       algorithm
@@ -545,7 +545,7 @@ algorithm
 
   end matchcontinue;
 end lowerVar;
-        
+
 protected function isStateOrAlgvar
   "@author adrpo
    check if this variable is a state or algebraic"
