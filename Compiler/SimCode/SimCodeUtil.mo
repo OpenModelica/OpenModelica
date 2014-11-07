@@ -4302,7 +4302,7 @@ algorithm
        eqn = BackendEquation.equationNth1(eqns, eqnindx);
        // generate comp
        comp = createTornSystemOtherEqns1(eqn, eqnindx, vars);
-       (simequations, _, uniqueEqIndex, tempvars) = createEquations(false, false, true, skipDiscInAlgorithm, isyst, ishared, {comp}, iuniqueEqIndex, itempvars);
+       (simequations, _, uniqueEqIndex, tempvars) = createEquations(true, false, true, skipDiscInAlgorithm, isyst, ishared, {comp}, iuniqueEqIndex, itempvars);
        simequations = listAppend(isimequations, simequations);
        // generade other equations
        (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(rest, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex, tempvars, simequations);
@@ -4340,6 +4340,10 @@ algorithm
     case (BackendDAE.COMPLEX_EQUATION(), _, _)
       then
         BackendDAE.SINGLECOMPLEXEQUATION(eqnindx, varindx);
+    case (BackendDAE.WHEN_EQUATION(size=_), _, _)
+      then
+        BackendDAE.SINGLEWHENEQUATION(eqnindx, varindx);
+
     else
       equation
         print("SimCodeUtil.createTornSystemOtherEqns1 failed for\n");
