@@ -81,8 +81,6 @@ void updateDiscreteSystem(DATA *data)
   data->callback->functionDAE(data);
   debugStreamPrint(LOG_EVENTS_V, 0, "updated discrete System");
 
-  printRelations(data, LOG_EVENTS_V);
-
   relationChanged = checkRelations(data);
   discreteChanged = data->callback->checkForDiscreteChanges(data);
   while(!data->simulationInfo.initial && (discreteChanged || data->simulationInfo.needToIterate || relationChanged))
@@ -98,6 +96,7 @@ void updateDiscreteSystem(DATA *data)
     updateRelationsPre(data);
 
     printRelations(data, LOG_EVENTS_V);
+    printZeroCrossings(data, LOG_EVENTS_V);
 
     data->callback->functionDAE(data);
 
@@ -722,24 +721,14 @@ void storePreValues(DATA *data)
 modelica_boolean checkRelations(DATA *data)
 {
   int i;
-  modelica_boolean check=0;
-
-  MODEL_DATA      *mData = &(data->modelData);
-  SIMULATION_INFO *sInfo = &(data->simulationInfo);
-
   TRACE_PUSH
 
-  for(i=0;i<mData->nRelations;++i)
-  {
-    if(sInfo->relationsPre[i] != sInfo->relations[i])
-    {
-      check = 1;
-      break;
-    }
-  }
+  for(i=0; i<data->modelData.nRelations; ++i)
+    if(data->simulationInfo.relationsPre[i] != data->simulationInfo.relations[i])
+      return 1;
 
   TRACE_POP
-  return check;
+  return 0;
 }
 
 /*! \fn updateRelationsPre

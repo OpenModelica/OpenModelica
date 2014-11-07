@@ -128,8 +128,8 @@ void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
  *  \param [ref] [data]
  *  \param [ref] [eventList]
  *
- *  This function checks for Events in Interval=[oldTime, timeValue]
- *  If a ZeroCrossing Function cause a sign change, root finding
+ *  This function checks for events in interval=[oldTime, timeValue]
+ *  If a zero crossing function cause a sign change, root finding
  *  process will start
  */
 int checkForStateEvent(DATA* data, LIST *eventList)
@@ -203,7 +203,8 @@ int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solv
     TRACE_POP
     return 1;
   }
-  if(listLen(eventLst)>0)
+  
+  if(listLen(eventLst) > 0)
   {
     TRACE_POP
     return 2;
@@ -285,9 +286,6 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     }
 
     listClear(eventLst);
-
-    printRelations(data, LOG_EVENTS);
-    printZeroCrossings(data, LOG_EVENTS);
   }
   else
   {
@@ -521,13 +519,12 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
 int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
 {
   LIST_NODE *it;
-
   TRACE_PUSH
 
   listClear(tmpEventList);
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection checks for condition changes");
 
-  for(it = listFirstNode(eventList); it; it = listNextNode(it))
+  for(it=listFirstNode(eventList); it; it=listNextNode(it))
   {
     /* found event in left section */
     if((data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == -1 &&
@@ -537,8 +534,8 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
     {
       infoStreamPrint(LOG_ZEROCROSSINGS, 0, "%ld changed from %s to current %s",
             *((long*) listNodeData(it)),
-            (data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))]>0) ? "TRUE" : "FALSE",
-            (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))]>0) ? "TRUE" : "FALSE");
+            (data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] > 0) ? "TRUE" : "FALSE",
+            (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] > 0) ? "TRUE" : "FALSE");
       listPushFront(tmpEventList, listNodeData(it));
     }
   }
