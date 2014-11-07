@@ -141,11 +141,14 @@ algorithm
       // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpEquationArray, eqns, "initial equations");
 
       ((vars, fixvars, eqns, reeqns, _)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs)));
+
       ((eqns, reeqns)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
 
       // replace initial(), sample(...), delay(...) and homotopy(...)
       useHomotopy = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunctions, false);
 
+      vars = BackendVariable.rehashVariables(vars);
+      fixvars = BackendVariable.rehashVariables(fixvars);
       evars = BackendVariable.emptyVars();
       eavars = BackendVariable.emptyVars();
       emptyeqns = BackendEquation.emptyEqns();

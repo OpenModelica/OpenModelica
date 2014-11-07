@@ -1892,7 +1892,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars1, orderedEqs=eqs1, stateSets=stateSets) := syst1;
   BackendDAE.EQSYSTEM(orderedVars=vars2, orderedEqs=eqs2, stateSets=statSets1) := syst2;
-  vars := BackendVariable.addVars(BackendVariable.varList(vars2), vars1);
+  vars := BackendVariable.mergeVariables(vars2, vars1);
   eqs := BackendEquation.addEquations(BackendEquation.equationList(eqs2), eqs1);
   stateSets := listAppend(stateSets, statSets1);
   syst := BackendDAE.EQSYSTEM(vars, eqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, BackendDAE.UNKNOWN_PARTITION());

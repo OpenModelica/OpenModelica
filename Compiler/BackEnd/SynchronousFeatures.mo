@@ -185,7 +185,7 @@ algorithm
         ea = arrayCreate(n, {});
         va = arrayCreate(n, {});
         i1 = BackendDAEUtil.equationSize(arr);
-        i2 = BackendVariable.numVariables(vars);
+        i2 = BackendVariable.varsSize(vars);
 
         if i1 <> i2 and not throwNoError then
           s1 = intString(i1);
@@ -224,7 +224,7 @@ algorithm
   vars := BackendVariable.listVar1(vl);
   arr := BackendEquation.listEquation(el);
   i1 := BackendDAEUtil.equationSize(arr);
-  i2 := BackendVariable.numVariables(vars);
+  i2 := BackendVariable.varsSize(vars);
 
   // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
   if i1 <> i2 and not throwNoError then

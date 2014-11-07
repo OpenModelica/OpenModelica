@@ -42,6 +42,7 @@ encapsulated package HpcOmMemory
   protected import BackendDAEUtil;
   protected import BackendDump;
   protected import BackendEquation;
+  protected import BackendVariable;
   protected import BaseHashTable;
   protected import ComponentReference;
   protected import Debug;
@@ -849,9 +850,7 @@ encapsulated package HpcOmMemory
           //print("getNodeSimCodeVarMapping0: compIdx: " + intString(compIdx) + " -> nodeIdx: " + intString(nodeIdx) + "\n");
           eqSystem = listGet(iEqSystems,eqSysIdx);
           BackendDAE.EQSYSTEM(orderedVars=orderedVars) = eqSystem;
-          BackendDAE.VARIABLES(varArr=varArr) = orderedVars;
-          BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) = varArr;
-          SOME(var) = arrayGet(varOptArr,varIdx);
+          var = BackendVariable.getVarAt(orderedVars, varIdx);
           BackendDAE.VAR(varName=varName) = var;
           varName = getModifiedVarName(var);
           //print("  getNodeSimCodeVarMapping0: varIdx: " + intString(varIdx) + " (" + ComponentReference.printComponentRefStr(varName) + ")\n");
@@ -990,9 +989,7 @@ encapsulated package HpcOmMemory
           true = intGt(compIdx,0);
           eqSystem = listGet(iEqSystems,eqSysIdx);
           BackendDAE.EQSYSTEM(orderedVars=orderedVars) = eqSystem;
-          BackendDAE.VARIABLES(varArr=varArr) = orderedVars;
-          BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) = varArr;
-          SOME(var) = arrayGet(varOptArr,varIdx-varOffset);
+          var = BackendVariable.getVarAt(orderedVars, varIdx - varOffset);
           BackendDAE.VAR(varName=varName) = var;
           varName = getModifiedVarName(var);
           scVarValues = BaseHashTable.get(varName,iVarNameSCVarIdxMapping);
@@ -1083,9 +1080,7 @@ encapsulated package HpcOmMemory
           true = intGt(nodeIdx,0);
           eqSystem = listGet(iEqSystems,eqSysIdx);
           BackendDAE.EQSYSTEM(orderedVars=orderedVars) = eqSystem;
-          BackendDAE.VARIABLES(varArr=varArr) = orderedVars;
-          BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) = varArr;
-          SOME(var) = arrayGet(varOptArr,varIdx-varOffset);
+          var = BackendVariable.getVarAt(orderedVars, varIdx - varOffset);
           BackendDAE.VAR(varName=varName) = var;
           varName = getModifiedVarName(var);
           scVarValues = BaseHashTable.get(varName,iVarNameSCVarIdxMapping);

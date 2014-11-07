@@ -2824,30 +2824,18 @@ protected function lowerVarsElementVars
   input DAE.FunctionTree functions;
   output list< BackendDAE.Var> varsLst;
   output list< BackendDAE.Equation> eqnsLst;
+protected
+  list<BackendDAE.Var> vars, knvars, exvars;
 algorithm
-  (varsLst, eqnsLst) := matchcontinue(inElementLstVars, functions)
-  local
-    BackendDAE.Variables indepVars, vars, knvars, exvars;
-    list<BackendDAE.Equation> eqns;
-    String str;
-    case (_, _)
-      equation
-        vars = BackendVariable.emptyVars();
-        knvars = BackendVariable.emptyVars();
-        exvars = BackendVariable.emptyVars();
-        (vars, knvars, exvars, eqns) = BackendDAECreate.lowerVars(inElementLstVars, functions, vars, knvars, exvars, {});
-        vars = BackendVariable.mergeVariables(knvars, vars);
-        vars = BackendVariable.mergeVariables(exvars, vars);
-        varsLst = BackendVariable.varList(vars);
-      then (varsLst, eqns);
-    else
-       equation
-        str = "Differentiate.lowerVarsElementVars failed";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
-  end matchcontinue;
+  try
+    (vars, knvars, exvars, eqnsLst) :=
+      BackendDAECreate.lowerVars(inElementLstVars, functions);
+    varsLst := listAppend(exvars, listAppend(vars, knvars));
+  else
+    true := Flags.isSet(Flags.FAILTRACE);
+    Debug.traceln("- Differentiate.lowerVarsElementVars failed.");
+  end try;
 end lowerVarsElementVars;
-
 
 protected function addElementVars2Dep
   input list<DAE.Element> inElementLstVars;

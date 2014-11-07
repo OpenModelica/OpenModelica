@@ -151,7 +151,7 @@ end BackendDAEType;
 public
 uniontype Variables
   record VARIABLES
-    array<list<CrefIndex>> crefIdxLstArr "HashTB, cref->indx";
+    array<list<CrefIndex>> crefIndices "HashTB, cref->indx";
     VariableArray varArr "Array of variables";
     Integer bucketSize "bucket size";
     Integer numberOfVars "no. of vars";

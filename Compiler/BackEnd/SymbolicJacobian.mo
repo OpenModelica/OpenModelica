@@ -1138,11 +1138,11 @@ algorithm
     local
       BackendDAE.BackendDAE backendDAE,backendDAE2;
 
-      list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars, states_inputs, conVarsList, fconVarsList;
+      list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars, states_inputs, conVarsList, fconVarsList, object;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars, comref_vars, comref_knvars;
       DAE.ComponentRef leftcref;
 
-      BackendDAE.Variables v,kv,statesarr,inputvarsarr,paramvarsarr,outputvarsarr, object, optimizer_vars, conVars;
+      BackendDAE.Variables v,kv,statesarr,inputvarsarr,paramvarsarr,outputvarsarr, optimizer_vars, conVars;
       BackendDAE.EquationArray e;
 
       BackendDAE.SymbolicJacobians linearModelMatrices;
@@ -1256,7 +1256,7 @@ algorithm
 
         //BackendDump.printVariables(conVars);
         //BackendDump.printVariables(object);
-        //print(intString(BackendVariable.numVariables(object)));
+        //print(intString(BackendVariable.varsSize(object)));
         //object = BackendVariable.listVar1(object);
 
         // Differentiate the System w.r.t states for matrices A
@@ -1272,7 +1272,7 @@ algorithm
 
         optimizer_vars = BackendVariable.mergeVariables(statesarr, conVars);
         object = checkObjectIsSet(outputvarsarr,"$OMC$objectLagrangeTerm");
-        optimizer_vars = BackendVariable.mergeVariables(optimizer_vars, object);
+        optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
@@ -1284,7 +1284,7 @@ algorithm
 
         // Differentiate the System w.r.t states for matrices C
         object = checkObjectIsSet(outputvarsarr,"$OMC$objectMayerTerm");
-        optimizer_vars = BackendVariable.mergeVariables(optimizer_vars, object);
+        optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
         (linearModelMatrix, sparsePattern, sparseColoring, funcs) = createJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C");
         functionTree = DAEUtil.joinAvlTrees(functionTree, funcs);
@@ -1522,6 +1522,7 @@ algorithm
       BackendDAE.DifferentiateInputData diffData;
 
       BackendDAE.ExtraInfo ei;
+      Integer size;
 
     case(BackendDAE.DAE(shared=BackendDAE.SHARED(cache=cache,graph=graph,info=ei)), {}, _, _, _, _, _, _) equation
       jacOrderedVars = BackendVariable.emptyVars();
@@ -1570,10 +1571,13 @@ algorithm
 
       jacOrderedVars = BackendVariable.listVar1(derivedVariables);
       // known vars: all variable from original system + seed
-      jacKnownVars = BackendVariable.emptyVars();
-      jacKnownVars = BackendVariable.mergeVariables(jacKnownVars, orderedVars);
-      jacKnownVars = BackendVariable.mergeVariables(jacKnownVars, knownVars);
-      jacKnownVars = BackendVariable.mergeVariables(jacKnownVars, inseedVars);
+      size = BackendVariable.varsSize(orderedVars) +
+             BackendVariable.varsSize(knownVars) +
+             BackendVariable.varsSize(inseedVars);
+      jacKnownVars = BackendVariable.emptyVarsSized(size);
+      jacKnownVars = BackendVariable.addVariables(orderedVars, jacKnownVars);
+      jacKnownVars = BackendVariable.addVariables(knownVars, jacKnownVars);
+      jacKnownVars = BackendVariable.addVariables(inseedVars, jacKnownVars);
       (jacKnownVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(jacKnownVars, BackendVariable.setVarDirectionTpl, (DAE.INPUT()));
       jacExternalObjects = BackendVariable.emptyVars();
       jacAliasVars =  BackendVariable.emptyVars();
@@ -1863,25 +1867,23 @@ end deriveAllHelper;
 
 protected function checkObjectIsSet
 "check: mayer or lagrange term are set"
-input BackendDAE.Variables inVars;
-input String CrefName;
-output BackendDAE.Variables outVar;
-
+  input BackendDAE.Variables inVars;
+  input String CrefName;
+  output list<BackendDAE.Var> outVars;
+protected
+  DAE.ComponentRef leftcref;
+  BackendDAE.Var dummy_var;
 algorithm
-  outVar := matchcontinue(inVars,CrefName)
-  local
-    DAE.ComponentRef leftcref;
-    BackendDAE.Var dummyVar;
-  case(_,_) equation
-    leftcref = ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
-    failure((_,_)=BackendVariable.getVar(leftcref,inVars));
-  then  BackendVariable.emptyVars();
-  else equation
-    leftcref = ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
-    dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(),  DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-    then BackendVariable.listVar1({dummyVar});
-  end matchcontinue;
+  leftcref := ComponentReference.makeCrefIdent(CrefName, DAE.T_REAL_DEFAULT, {});
 
+  try
+    BackendVariable.getVar(leftcref, inVars);
+    outVars := {BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(),
+                   DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {},
+                   DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR())};
+  else
+    outVars := {};
+  end try;
 end checkObjectIsSet;
 
 // =============================================================================
@@ -2287,8 +2289,6 @@ algorithm
         compvars = List.select1(compvars, removeStateSetStates, hs);
         // match the equations to get the residual equations
         (ceqns, oeqns) = IndexReduction.splitEqnsinConstraintAndOther(compvars, compeqns, inShared);
-        // add vars for A
-        _ = BackendVariable.addVars(varA, inVars);
         // change state vars to ders
         compvars = List.map(compvars, BackendVariable.transformXToXd);
         // replace der in equations

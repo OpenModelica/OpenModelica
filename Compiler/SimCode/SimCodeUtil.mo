@@ -4407,7 +4407,6 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, m=m, mT=mT, matching=matching as BackendDAE.MATCHING(comps=comps), stateSets=stateSets, partitionKind=partitionKind),
          (shared, (equations, uniqueEqIndex, tempvars, numStateSets)))
       equation
-
         (vars, equations, uniqueEqIndex, tempvars, numStateSets) = createStateSetsSets(stateSets, vars, eqns, shared, comps, equations, uniqueEqIndex, tempvars, numStateSets);
       then
         (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), (shared, (equations, uniqueEqIndex, tempvars, numStateSets)));

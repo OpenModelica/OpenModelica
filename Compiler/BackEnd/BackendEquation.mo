@@ -875,7 +875,7 @@ algorithm
       array<Option<BackendDAE.Equation>> equOptArr;
 
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)), _, _)
-    then BackendDAEUtil.traverseBackendDAEArrayNoCopy(equOptArr, func, traverseBackendDAEOptEqn, 1, arrayLength(equOptArr), inTypeA);
+    then BackendDAEUtil.traverseBackendDAEArrayNoCopy(equOptArr, func, traverseBackendDAEOptEqn, inTypeA);
 
     else
       equation
@@ -940,7 +940,7 @@ algorithm
       array<Option<BackendDAE.Equation>> equOptArr;
 
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)), _, _)
-    then BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(equOptArr, func, traverseBackendDAEOptEqnWithStop, 1, arrayLength(equOptArr), inTypeA);
+    then BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(equOptArr, func, traverseBackendDAEOptEqnWithStop, inTypeA);
 
     else
       equation
@@ -1010,7 +1010,7 @@ algorithm
 
     case ((BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr = equOptArr)), _, _)
       equation
-        (equOptArr, ext_arg) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(equOptArr, func, traverseBackendDAEOptEqnWithUpdate, 1, arrayLength(equOptArr), inTypeA);
+        (equOptArr, ext_arg) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(equOptArr, func, traverseBackendDAEOptEqnWithUpdate, inTypeA);
       then (BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr), ext_arg);
 
     else
@@ -2062,7 +2062,6 @@ algorithm
       DAE.Exp rhs, e1, e2 , expNull, lowBound;
       DAE.ComponentRef lhs, cr;
       BackendDAE.Var dummyVar, v;
-      BackendDAE.Variables mergeVars;
       BackendDAE.Equation eqn;
 
     case (_, DAE.RELATION(e1, DAE.LESS(_), e2, _, _)) equation
@@ -2114,13 +2113,17 @@ algorithm
       dummyVar = BackendVariable.setVarMinMax(dummyVar, SOME(expNull), SOME(expNull));
     then ({BackendDAE.SOLVED_EQUATION(lhs, rhs, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, dummyVar);
 
-    case(_,e1 as DAE.CREF(componentRef = cr)) equation
-      mergeVars =  BackendVariable.mergeVariables(inVars, knvars);
-      ({v},_)= BackendVariable.getVar(cr,mergeVars);
-      lhs = ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
-      dummyVar = BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      dummyVar = BackendVariable.mergeAliasVars(dummyVar, v, false, knvars);
-      eqn = BackendDAE.SOLVED_EQUATION(lhs, e1, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    case(_,e1 as DAE.CREF(componentRef = cr)) algorithm
+      try
+        ({v}, _) := BackendVariable.getVar(cr, inVars);
+      else
+        ({v}, _) := BackendVariable.getVar(cr, knvars);
+      end try;
+
+      lhs := ComponentReference.makeCrefIdent(conCrefName, DAE.T_REAL_DEFAULT, {});
+      dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      dummyVar := BackendVariable.mergeAliasVars(dummyVar, v, false, knvars);
+      eqn := BackendDAE.SOLVED_EQUATION(lhs, e1, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     then ({eqn}, dummyVar);
     else fail();
   end match;

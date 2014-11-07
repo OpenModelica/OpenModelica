@@ -1013,9 +1013,9 @@ algorithm
 
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
-                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars),
-                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject),
-                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars),
+                 vars_knownVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_knownVars),
+                 vars_externalObject as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_externalObject),
+                 vars_aliasVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_aliasVars),
                  ieqns,reqns,constrs,_,_,_,funcs,
                  eventInfo,
                  extObjCls,_,_,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,false)
@@ -1054,9 +1054,9 @@ algorithm
 
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
-                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars),
-                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject),
-                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars),
+                 vars_knownVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_knownVars),
+                 vars_externalObject as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_externalObject),
+                 vars_aliasVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_aliasVars),
                  ieqns,reqns,constrs,_,_,_,funcs,
                  eventInfo,extObjCls,_,_,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,true)
       equation
@@ -1146,7 +1146,7 @@ protected
   list<BackendDAE.Var> vars;
   array<list<BackendDAE.CrefIndex>> crefIdxLstArr_orderedVars;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars)) := syst;
+  BackendDAE.EQSYSTEM(orderedVars=vars_orderedVars as BackendDAE.VARIABLES(crefIndices=crefIdxLstArr_orderedVars)) := syst;
   vars := BackendVariable.varList(vars_orderedVars);
   dumpVars(vars,crefIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
 end dumpOrderedVars;

@@ -94,6 +94,7 @@ public function lower "This function translates a DAE, which is the result from 
   input BackendDAE.ExtraInfo inExtraInfo;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
+  list<BackendDAE.Var> varlst, knvarlst, extvarlst;
   BackendDAE.Variables vars, knvars, vars_1, extVars, aliasVars;
   list<BackendDAE.Equation> eqns, reqns, ieqns, algeqns, algeqns1, ialgeqns, multidimeqns, imultidimeqns, eqns_1, ceeqns, iceeqns;
   list<DAE.Constraint> constrs;
@@ -114,11 +115,11 @@ algorithm
   functionTree := FCore.getFunctionTree(inCache);
   //deactivated because of some codegen errors: functionTree := renameFunctionParameter(functionTree);
   (DAE.DAE(elems), functionTree, timeEvents) := processBuiltinExpressions(lst, functionTree);
-  vars := BackendVariable.emptyVars();
-  knvars := BackendVariable.emptyVars();
-  extVars := BackendVariable.emptyVars();
-  (vars, knvars, extVars, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, _) :=
-    lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {}, HashTableExpToExp.emptyHashTable());
+  (varlst, knvarlst, extvarlst, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, _) :=
+    lower2(listReverse(elems), functionTree, HashTableExpToExp.emptyHashTable());
+  vars := BackendVariable.listVar(varlst);
+  knvars := BackendVariable.listVar(knvarlst);
+  extVars := BackendVariable.listVar(extvarlst);
   whenclauses_1 := listReverse(whenclauses);
   aliasVars := BackendVariable.emptyVars();
   // handle alias equations
@@ -157,277 +158,221 @@ algorithm
 end lower;
 
 protected function lower2
-  "Helper function to lower."
-  input list<DAE.Element> inElements "input is in reverse order. this is faster than reversing all accumulators at the end";
-  input DAE.FunctionTree functionTree;
-  input BackendDAE.Variables inVars "The time depend Variables";
-  input BackendDAE.Variables inKnVars "The time independend Variables";
-  input BackendDAE.Variables inExVars "The external Variables";
-  input list<BackendDAE.Equation> inEqnsLst "The dynamic Equations/Algoritms";
-  input list<BackendDAE.Equation> inREqnsLst "The algebraic Equations";
-  input list<BackendDAE.Equation> inIEqnsLst "The initial Equations";
-  input list<DAE.Constraint> inConstraintLst;
-  input list<DAE.ClassAttributes> inClassAttributeLst;
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
-  input BackendDAE.ExternalObjectClasses inExtObjClasses;
-  input list<DAE.Element> iAliaseqns "List with all EqualityEquations";
-  input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
-  output BackendDAE.Variables outVariables;
-  output BackendDAE.Variables outKnownVariables;
-  output BackendDAE.Variables outExternalVariables;
-  output list<BackendDAE.Equation> oEqnsLst;
-  output list<BackendDAE.Equation> oREqnsLst;
-  output list<BackendDAE.Equation> oIEqnsLst;
-  output list<DAE.Constraint> outConstraintLst;
-  output list<DAE.ClassAttributes> outClassAttributeLst;
-  output list<BackendDAE.WhenClause> outWhenClauseLst;
-  output BackendDAE.ExternalObjectClasses outExtObjClasses;
-  output list<DAE.Element> oAliaseqns;
-  output HashTableExpToExp.HashTable oinlineHT "workaround to speed up inlining of array parameters";
+  input list<DAE.Element> inElements;
+  input DAE.FunctionTree inFunctions;
+  input HashTableExpToExp.HashTable inInlineHT "Workaround to speed up inlining of array parameters.";
+  input list<BackendDAE.Var> inVars := {};
+  input list<BackendDAE.Var> inKnVars := {};
+  input list<BackendDAE.Var> inExVars := {};
+  input list<BackendDAE.Equation> inEqns := {};
+  input list<BackendDAE.Equation> inREqns := {};
+  input list<BackendDAE.Equation> inIEqns := {};
+  input list<DAE.Constraint> inConstraints := {};
+  input list<DAE.ClassAttributes> inClassAttributes := {};
+  input list<BackendDAE.WhenClause> inWhenClauses := {};
+  input list<BackendDAE.ExternalObjectClass> inExtObjClasses := {};
+  input list<DAE.Element> inAliasEqns := {};
+  output list<BackendDAE.Var> outVars := inVars "Time dependent variables.";
+  output list<BackendDAE.Var> outKnVars := inKnVars "Time independent variables.";
+  output list<BackendDAE.Var> outExVars := inExVars "External variables.";
+  output list<BackendDAE.Equation> outEqns  := inEqns "Dynamic equations/algorithms.";
+  output list<BackendDAE.Equation> outREqns := inREqns "Algebraic equations.";
+  output list<BackendDAE.Equation> outIEqns := inIEqns "Initial equations.";
+  output list<DAE.Constraint> outConstraints := inConstraints;
+  output list<DAE.ClassAttributes> outClassAttributes := inClassAttributes;
+  output list<BackendDAE.WhenClause> outWhenClauses := inWhenClauses;
+  output list<BackendDAE.ExternalObjectClass> outExtObjClasses := inExtObjClasses;
+  output list<DAE.Element> outAliasEqns := inAliasEqns "List with all EqualityEquations.";
+  output HashTableExpToExp.HashTable outInlineHT := inInlineHT;
+protected
+  Absyn.Path path;
+  DAE.ElementSource src;
+  list<DAE.Element> dae_elts;
+  DAE.ClassAttributes class_attrs;
+  DAE.Constraint constraints;
 algorithm
-  (outVariables, outKnownVariables, outExternalVariables, oEqnsLst, oREqnsLst, oIEqnsLst,
-   outConstraintLst, outClassAttributeLst, outWhenClauseLst, outExtObjClasses, oAliaseqns, oinlineHT):=
-   match (inElements, functionTree, inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, inIEqnsLst,
-      inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT)
-    local
-      BackendDAE.Variables vars, knvars, extVars;
-      list<BackendDAE.WhenClause> whenclauses;
-      list<BackendDAE.Equation> eqns, reqns, ieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      BackendDAE.ExternalObjectClasses extObjCls;
-      DAE.Element daeEl;
-      list<DAE.Element> daeLstRest, aliaseqns;
-      HashTableExpToExp.HashTable inlineHT;
-    // the empty case
-    case ({}, _, _, _, _, _, _, _, _, _, _, _, _,_)
-      then
-        (inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, inIEqnsLst, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
+  for el in inElements loop
+    _ := match(el)
+      // class for external object
+      case DAE.EXTOBJECTCLASS(path, src)
+        algorithm
+          outExtObjClasses := BackendDAE.EXTOBJCLASS(path, src) :: outExtObjClasses;
+        then
+          ();
 
-    case (daeEl::daeLstRest, _, _, _, _, _, _, _, _, _, _, _, _,_)
-      equation
-        (vars, knvars, extVars, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, inlineHT) =
-        lower3(daeEl, functionTree, inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, inIEqnsLst, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
+      // variables
+      case DAE.VAR()
+        algorithm
+          (outVars, outKnVars, outExVars, outEqns, outInlineHT) :=
+            lowerVar(el, inFunctions, outVars, outKnVars, outExVars, outEqns, outInlineHT);
+        then
+          ();
 
-        (vars, knvars, extVars, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, inlineHT) =
-        lower2(daeLstRest, functionTree, vars, knvars, extVars, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, inlineHT);
-      then
-        (vars, knvars, extVars, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, inlineHT);
+      // scalar equations
+      case DAE.EQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then
+          ();
 
-  end match;
+      // initial equations
+      case DAE.INITIALEQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then
+          ();
+
+      // effort variable equality equations, separated to generate alias // variables
+      case DAE.EQUEQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then
+          ();
+
+      // a solved equation
+      case DAE.DEFINE()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then
+          ();
+
+      // a initial solved equation
+      case DAE.INITIALDEFINE()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then
+          ();
+
+      // complex equations
+      case DAE.COMPLEX_EQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then
+          ();
+
+      // complex initial equations
+      case DAE.INITIAL_COMPLEX_EQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then  
+          ();
+
+      // array equations
+      case DAE.ARRAY_EQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then  
+          ();
+
+      // initial array equations
+      case DAE.INITIAL_ARRAY_EQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then  
+          ();
+
+      // when equations
+      case DAE.WHEN_EQUATION()
+        algorithm
+          (outEqns, outWhenClauses) := lowerWhenEqn(el, inFunctions, outEqns, outWhenClauses);
+        then  
+          ();
+
+      // if equation
+      case DAE.IF_EQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then  
+          ();
+
+      // initial if equation
+      case DAE.INITIAL_IF_EQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns);
+        then  
+          ();
+
+      // algorithm
+      case DAE.ALGORITHM()
+        algorithm
+          (outEqns, outREqns, outIEqns) :=
+            lowerAlgorithm(el, inFunctions, outEqns, outREqns, outIEqns, DAE.EXPAND());
+        then
+          ();
+
+      // initial algorithm
+      case DAE.INITIALALGORITHM()
+        algorithm
+          (outEqns, outREqns, outIEqns) :=
+            lowerAlgorithm(el, inFunctions, outEqns, outREqns, outIEqns, DAE.EXPAND());
+        then
+          ();
+
+      // flat class / COMP
+      case DAE.COMP(dAElist = dae_elts)
+        algorithm
+          (outVars, outKnVars, outExVars, outEqns, outREqns, outIEqns, outConstraints,
+           outClassAttributes, outWhenClauses, outExtObjClasses, outAliasEqns, outInlineHT)
+          := lower2(listReverse(dae_elts), inFunctions, outInlineHT, outVars,
+            outKnVars, outExVars, outEqns, outREqns, outIEqns, outConstraints,
+            outClassAttributes, outWhenClauses, outExtObjClasses, outAliasEqns);
+        then
+          ();
+
+      // assert in equation section is converted to ALGORITHM
+      case DAE.ASSERT()
+        algorithm
+          (outEqns, outREqns, outIEqns) :=
+           lowerAlgorithm(el, inFunctions, outEqns, outREqns, outIEqns, DAE.NOT_EXPAND());
+        then
+          ();
+
+      // terminate in equation section is converted to ALGORITHM
+      case DAE.TERMINATE()
+        algorithm
+          (outEqns, outREqns, outIEqns) :=
+           lowerAlgorithm(el, inFunctions, outEqns, outREqns, outIEqns, DAE.NOT_EXPAND());
+        then
+          ();
+
+      case DAE.NORETCALL()
+        algorithm
+          (outEqns, outREqns, outIEqns) :=
+           lowerAlgorithm(el, inFunctions, outEqns, outREqns, outIEqns, DAE.NOT_EXPAND());
+        then
+          ();
+
+      // assert in equation section is converted to ALGORITHM
+      case DAE.INITIAL_NORETCALL()
+        algorithm
+          (outEqns, outREqns, outIEqns) :=
+           lowerAlgorithm(el, inFunctions, outEqns, outREqns, outIEqns, DAE.NOT_EXPAND());
+        then
+          ();
+
+      // constraint (Optimica). Just pass the constraints for now. Should
+      // anything more be done here?
+      case DAE.CONSTRAINT(constraints = constraints)
+        algorithm
+          outConstraints := constraints :: outConstraints;
+        then
+          ();
+
+      case DAE.CLASS_ATTRIBUTES(classAttrs = class_attrs)
+        algorithm
+          outClassAttributes := class_attrs :: outClassAttributes;
+        then
+          ();
+
+      else
+        algorithm
+          true := Flags.isSet(Flags.FAILTRACE);
+          Debug.traceln("- BackendDAECreate.lower2 failed on: " + DAEDump.dumpElementsStr({el}));
+        then
+          fail();
+    end match;
+  end for;
 end lower2;
-
-protected function lower3
-  "Helper function to lower."
-  input DAE.Element inElement "input is in reverse order. this is faster than reversing all accumulators at the end";
-  input DAE.FunctionTree functionTree;
-  input BackendDAE.Variables inVars "The time depend Variables";
-  input BackendDAE.Variables inKnVars "The time independend Variables";
-  input BackendDAE.Variables inExVars "The external Variables";
-  input list<BackendDAE.Equation> inEqnsLst "The dynamic Equations/Algoritms";
-  input list<BackendDAE.Equation> inREqnsLst "The algebraic Equations";
-  input list<BackendDAE.Equation> inIEqnsLst "The initial Equations";
-  input list<DAE.Constraint> inConstraintLst;
-  input list<DAE.ClassAttributes> inClassAttributeLst;
-  input list<BackendDAE.WhenClause> inWhenClauseLst;
-  input BackendDAE.ExternalObjectClasses inExtObjClasses;
-  input list<DAE.Element> iAliaseqns "List with all EqualityEquations";
-  input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
-  output BackendDAE.Variables outVariables;
-  output BackendDAE.Variables outKnownVariables;
-  output BackendDAE.Variables outExternalVariables;
-  output list<BackendDAE.Equation> oEqnsLst;
-  output list<BackendDAE.Equation> oREqnsLst;
-  output list<BackendDAE.Equation> oIEqnsLst;
-  output list<DAE.Constraint> outConstraintLst;
-  output list<DAE.ClassAttributes> outClassAttributeLst;
-  output list<BackendDAE.WhenClause> outWhenClauseLst;
-  output BackendDAE.ExternalObjectClasses outExtObjClasses;
-  output list<DAE.Element> oAliaseqns;
-  output HashTableExpToExp.HashTable oinlineHT "workaround to speed up inlining of array parameters";
-algorithm
-  (outVariables, outKnownVariables, outExternalVariables, oEqnsLst, oREqnsLst, oIEqnsLst,
-   outConstraintLst, outClassAttributeLst, outWhenClauseLst, outExtObjClasses, oAliaseqns, oinlineHT):=
-   match (inElement, functionTree, inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, inIEqnsLst,
-      inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT)
-    local
-      list<DAE.Element> daeElts, aliaseqns;
-      DAE.Constraint cons_1;
-      list<DAE.Constraint> constrs;
-      DAE.ClassAttributes clsattrs_1;
-      list<DAE.ClassAttributes> clsAttrs;
-      Absyn.Path path;
-      BackendDAE.Variables vars, knvars, extVars;
-      BackendDAE.ExternalObjectClasses extObjCls;
-      BackendDAE.ExternalObjectClass extObjCl;
-      list<BackendDAE.Equation> eqns, reqns, ieqns;
-      list<BackendDAE.WhenClause> whenclauses;
-      DAE.ElementSource source;
-      HashTableExpToExp.HashTable inlineHT;
-    // class for external object
-    case (DAE.EXTOBJECTCLASS(path, source), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        extObjCl = BackendDAE.EXTOBJCLASS(path, source);
-      then
-        (inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, inIEqnsLst, inConstraintLst, inClassAttributeLst, inWhenClauseLst, extObjCl::inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // variables
-    case (DAE.VAR(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (vars, knvars, extVars, eqns, inlineHT) = lowerVar(inElement, functionTree, inVars, inKnVars, inExVars, inEqnsLst, iInlineHT);
-      then
-        (vars, knvars, extVars, eqns, inREqnsLst, inIEqnsLst, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, inlineHT);
-
-    // scalar equations
-    case (DAE.EQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // initial equations
-    case (DAE.INITIALEQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // effort variable equality equations, seperated to generate alias variables
-    case (DAE.EQUEQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-        //eqns = inEqnsLst;
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, /*inElement::*/iAliaseqns, iInlineHT);
-
-    // a solved equation
-    case (DAE.DEFINE(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // a initial solved equation
-    case (DAE.INITIALDEFINE(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // complex equations
-    case (DAE.COMPLEX_EQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // complex initial equations
-    case (DAE.INITIAL_COMPLEX_EQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // array equations
-    case (DAE.ARRAY_EQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // initial array equations
-    case (DAE.INITIAL_ARRAY_EQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // when equations
-    case (DAE.WHEN_EQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, whenclauses) = lowerWhenEqn(inElement, functionTree, inEqnsLst, inWhenClauseLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, inREqnsLst, inIEqnsLst, inConstraintLst, inClassAttributeLst, whenclauses, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // if equation
-    case (DAE.IF_EQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // initial if equation
-    case (DAE.INITIAL_IF_EQUATION(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerEqn(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // algorithm
-    case (DAE.ALGORITHM(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.EXPAND());
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // initial algorithm
-    case (DAE.INITIALALGORITHM(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (_,_, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.EXPAND());
-      then
-        (inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // flat class / COMP
-    case (DAE.COMP(dAElist = daeElts), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (vars, knvars, extVars, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, inlineHT) = lower2(listReverse(daeElts), functionTree, inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, inIEqnsLst, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-      then
-        (vars, knvars, extVars, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns, inlineHT);
-
-    // assert in equation section is converted to ALGORITHM
-    case (DAE.ASSERT(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.NOT_EXPAND());
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // terminate in equation section is converted to ALGORITHM
-    case (DAE.TERMINATE(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.NOT_EXPAND());
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    case (DAE.NORETCALL(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.NOT_EXPAND());
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    case (DAE.INITIAL_NORETCALL(), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.NOT_EXPAND());
-      then
-        (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    // constraint (Optimica) Just pass the constraints for now. Should anything more be done here?
-    case (DAE.CONSTRAINT(constraints = cons_1), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      then
-        (inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, inIEqnsLst, cons_1::inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    case (DAE.CLASS_ATTRIBUTES(classAttrs = clsattrs_1), _, _, _, _, _, _, _, _, _, _, _, _, _)
-      then
-        (inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, inIEqnsLst, inConstraintLst, clsattrs_1::inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
-
-    case (_, _, _, _, _, _, _, _, _, _, _, _, _, _)
-      equation
-        // show only on failtrace!
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendDAECreate.lower3 failed on: " + DAEDump.dumpElementsStr({inElement}));
-      then
-        fail();
-  end match;
-end lower3;
 
 // =============================================================================
 // section for processing builtin expressions
@@ -501,142 +446,106 @@ end transformBuiltinExpression;
  */
 
 public function lowerVars
-
   input list<DAE.Element> inElements;
   input DAE.FunctionTree functionTree;
-  input BackendDAE.Variables inVars "The time depend Variables";
-  input BackendDAE.Variables inKnVars "The time independend Variables";
-  input BackendDAE.Variables inExVars "The external Variables";
-  input list<BackendDAE.Equation> inEqnsLst "The dynamic Equations/Algoritms";
-  output BackendDAE.Variables outVariables;
-  output BackendDAE.Variables outKnownVariables;
-  output BackendDAE.Variables outExternalVariables;
-  output list<BackendDAE.Equation> oEqnsLst;
+  input list<BackendDAE.Var> inVars := {} "The time depend Variables";
+  input list<BackendDAE.Var> inKnVars := {} "The time independend Variables";
+  input list<BackendDAE.Var> inExVars := {} "The external Variables";
+  input list<BackendDAE.Equation> inEqns := {} "The dynamic Equations/Algoritms";
+  output list<BackendDAE.Var> outVars := inVars;
+  output list<BackendDAE.Var> outKnVars := inKnVars;
+  output list<BackendDAE.Var> outExVars := inExVars;
+  output list<BackendDAE.Equation> outEqns := inEqns;
+protected
+  DAE.ComponentRef cr;
+  DAE.Type arr_ty;
+  list<DAE.ComponentRef> crefs;
+  list<DAE.Element> new_vars;
+  HashTableExpToExp.HashTable inline_ht := HashTableExpToExp.emptyHashTable();
 algorithm
-  (outVariables, outKnownVariables, outExternalVariables, oEqnsLst) :=
-  matchcontinue (inElements, functionTree, inVars, inKnVars, inExVars, inEqnsLst)
-    local
-      list<DAE.Element> rest, newVars;
-      DAE.Element elem,var;
-      DAE.Type tp, arrtp;
-      DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefs;
-      BackendDAE.Variables vars, knvars, exvars;
-      list<BackendDAE.Equation> eqns;
-      String str;
-      case ({}, _, _, _, _, _) then (inVars, inKnVars, inExVars, inEqnsLst);
-      case ((var as DAE.VAR(componentRef = cref, ty = DAE.T_ARRAY(ty = arrtp)))::rest,  _, _, _, _, _)
-        equation
-          crefs = ComponentReference.expandCref(cref, false);
-          elem = DAEUtil.replaceTypeInVar(arrtp, var);
-          newVars = List.map1(crefs, DAEUtil.replaceCrefInVar, elem);
-          (vars, knvars, exvars, eqns) = lowerVars(newVars, functionTree, inVars, inKnVars, inExVars, inEqnsLst);
-          //(vars, knvars, exvars, eqns, _) = lowerVar(elem, functionTree, vars, knvars, exvars, eqns, HashTableExpToExp.emptyHashTable());
-          (vars, knvars, exvars, eqns) = lowerVars(rest, functionTree, vars, knvars, exvars, eqns);
-        then (vars, knvars, exvars, eqns);
-      case ((elem as DAE.VAR())::rest,  _, _, _, _, _)
-        equation
-          (vars, knvars, exvars, eqns, _) = lowerVar(elem, functionTree, inVars, inKnVars, inExVars, inEqnsLst, HashTableExpToExp.emptyHashTable());
-          (vars, knvars, exvars, eqns) = lowerVars(rest, functionTree, vars, knvars, exvars, eqns);
-        then (vars, knvars, exvars, eqns);
-      case (elem::_,  _, _, _, _, _)
-       equation
-        str = "BackendDAECreate.lowerVars failed for " + DAEDump.dumpElementsStr({elem});
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
-
-  end matchcontinue;
+  for el in inElements loop
+    try
+      DAE.VAR(componentRef = cr, ty = DAE.T_ARRAY(ty = arr_ty)) := el;
+      crefs := ComponentReference.expandCref(cr, false);
+      el := DAEUtil.replaceTypeInVar(arr_ty, el);
+      new_vars := list(DAEUtil.replaceCrefInVar(c, el) for c in crefs);
+      (outVars, outKnVars, outExVars, outEqns) :=
+        lowerVars(new_vars, functionTree, outVars, outKnVars, outExVars, outEqns);
+    else
+      (outVars, outKnVars, outExVars, outEqns) := lowerVar(el, functionTree,
+        outVars, outKnVars, outExVars, outEqns, inline_ht);
+    end try;
+  end for;
 end lowerVars;
 
 protected function lowerVar
-"Transforms a DAE variable to DAE variable.
-  Includes changing the ComponentRef name to a simpler form
-  \'a\'.\'b\'{2}\'c\'{5} becomes
-  \'a.b{2}.c\' (as CREF_IDENT(\"a.b.c\", {2}) )
-  inputs: (DAE.Element)
-  outputs: Var"
   input DAE.Element inElement;
-  input DAE.FunctionTree functionTree;
-  input BackendDAE.Variables inVars "The time depend Variables";
-  input BackendDAE.Variables inKnVars "The time independend Variables";
-  input BackendDAE.Variables inExVars "The external Variables";
-  input list<BackendDAE.Equation> inEqnsLst "The dynamic Equations/Algoritms";
-  input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
-  output BackendDAE.Variables outVariables;
-  output BackendDAE.Variables outKnownVariables;
-  output BackendDAE.Variables outExternalVariables;
-  output list<BackendDAE.Equation> oEqnsLst;
-  output HashTableExpToExp.HashTable oInlineHT "workaround to speed up inlining of array parameters";
+  input DAE.FunctionTree inFunctions;
+  input list<BackendDAE.Var> inVars;
+  input list<BackendDAE.Var> inKnVars;
+  input list<BackendDAE.Var> inExVars;
+  input list<BackendDAE.Equation> inEqns;
+  input HashTableExpToExp.HashTable inInlineHT;
+  output list<BackendDAE.Var> outVars := inVars;
+  output list<BackendDAE.Var> outKnVars := inKnVars;
+  output list<BackendDAE.Var> outExVars := inExVars;
+  output list<BackendDAE.Equation> outEqns := inEqns;
+  output HashTableExpToExp.HashTable outInlineHT := inInlineHT;
 algorithm
-  (outVariables, outKnownVariables, outExternalVariables, oEqnsLst, oInlineHT) :=
-  matchcontinue (inElement, functionTree, inVars, inKnVars, inExVars, inEqnsLst, iInlineHT)
+  _ := matchcontinue(inElement)
     local
-      String str;
       DAE.ComponentRef cr;
-      DAE.ElementSource source;
+      DAE.ElementSource src;
       DAE.Exp e1, e2;
-      BackendDAE.Var backendVar1;
-      BackendDAE.Variables vars, knvars, extvars;
-      HashTableExpToExp.HashTable inlineHT;
-      list<BackendDAE.Equation> assrtEqs, eqLst;  // assrtEqs pop up when asserts are inlined
-      list<DAE.Statement> assrtLst;
+      BackendDAE.EquationAttributes attr;
+      BackendDAE.Var var;
+      list<BackendDAE.Equation> assert_eqs;
+
     // external object variables
-    case (DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ())), _, _, _, _, _, _)
-      equation
-        backendVar1 = lowerExtObjVar(inElement, functionTree);
-        extvars = BackendVariable.addVar(backendVar1, inExVars);
+    case DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))
+      algorithm
+        outExVars := lowerExtObjVar(inElement, inFunctions) :: outExVars;
       then
-        (inVars, inKnVars, extvars, inEqnsLst, iInlineHT);
+        ();
 
     // variables: states and algebraic variables with binding equation
-    case (DAE.VAR(componentRef = cr, binding=SOME(e2), source = source), _, _, _, _, _, _)
-      equation
-        // adrpo 2009-09-07 - according to MathCore
-        // add the binding as an equation and remove the binding from variable!
-        true = isStateOrAlgvar(inElement);
-        (backendVar1) = lowerDynamicVar(inElement, functionTree);
-        (e2, source, _,_) = Inline.inlineExp(e2, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        vars = BackendVariable.addVar(backendVar1, inVars);
-        e1 = Expression.crefExp(cr);
+    case DAE.VAR(componentRef = cr, binding = SOME(e2), source = src) guard(isStateOrAlgvar(inElement))
+      algorithm
+        // Add the binding as an equation and remove the binding from the variable.
+        outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
+        (e2, src) := Inline.inlineExp(e2, (SOME(inFunctions), {DAE.NORM_INLINE()}), src);
+        e1 := Expression.crefExp(cr);
+        attr := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
+        outEqns := BackendDAE.EQUATION(e1, e2, src, attr) :: outEqns;
       then
-        (vars, inKnVars, inExVars, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0))::inEqnsLst, iInlineHT);
-
-    // variables: states and algebraic variables with NO binding equation
-    case (DAE.VAR(binding=NONE()), _, _, _, _, _, _)
-      equation
-        true = isStateOrAlgvar(inElement);
-        (backendVar1) = lowerDynamicVar(inElement, functionTree);
-        vars = BackendVariable.addVar(backendVar1, inVars);
+        ();
+      
+    // variables: states and algebraic variables without binding equation
+    case DAE.VAR(componentRef = cr, binding = NONE()) guard(isStateOrAlgvar(inElement))
+      algorithm
+        outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
       then
-        (vars, inKnVars, inExVars, inEqnsLst, iInlineHT);
-
-    // variables: states and algebraic variables with NO binding equation
-    case (DAE.VAR(binding=NONE()), _, _, _, _, _, _)
-      equation
-        true = isStateOrAlgvar(inElement);
-        (backendVar1) = lowerDynamicVar(inElement, functionTree);
-        vars = BackendVariable.addVar(backendVar1, inVars);
-      then
-        (vars, inKnVars, inExVars, inEqnsLst, iInlineHT);
+        ();
 
     // known variables: parameters and constants
-    case (DAE.VAR(), _, _, _, _, _, _)
-      equation
-        (backendVar1, inlineHT,assrtEqs) = lowerKnownVar(inElement, functionTree, iInlineHT) "in previous rule, lower_var failed.";
-        knvars = BackendVariable.addVar(backendVar1, inKnVars);
-        eqLst = listAppend(inEqnsLst,assrtEqs);
+    case DAE.VAR()
+      algorithm
+        (var, outInlineHT, outEqns) :=
+          lowerKnownVar(inElement, inFunctions, outInlineHT, outEqns);
+        outKnVars := var :: outKnVars;
       then
-        (inVars, knvars, inExVars, eqLst, inlineHT);  // CHANGE HERE TO EQLST
+        ();
 
     else
-      equation
-        str = "BackendDAECreate.lowerVar failed for " + DAEDump.dumpElementsStr({inElement});
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
+      algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"BackendDAECreate.lowerVar failed for " + DAEDump.dumpElementsStr({inElement})});
+      then
+        fail();
 
   end matchcontinue;
 end lowerVar;
-
+        
 protected function isStateOrAlgvar
   "@author adrpo
    check if this variable is a state or algebraic"
@@ -661,7 +570,7 @@ protected function lowerDynamicVar
   input DAE.FunctionTree functionTree;
   output BackendDAE.Var outVar;
 algorithm
-  (outVar) := match (inElement, functionTree)
+  (outVar) := match (inElement)
     local
       list<DAE.Dimension> dims;
       DAE.ComponentRef name;
@@ -678,7 +587,7 @@ algorithm
       DAE.VarVisibility protection;
       Boolean b;
 
-    case (DAE.VAR(componentRef = name,
+    case DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
                   parallelism = prl,
@@ -688,7 +597,7 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  comment = comment), _)
+                  comment = comment)
       equation
         (kind_1) = lowerVarkind(kind, t, name, dir, ct, dae_var_attr);
         tp = lowerType(t);
@@ -708,11 +617,12 @@ protected function lowerKnownVar
   input DAE.Element inElement;
   input DAE.FunctionTree functionTree;
   input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
+  input list<BackendDAE.Equation> assrtEqIn;
   output BackendDAE.Var outVar;
   output HashTableExpToExp.HashTable oInlineHT "workaround to speed up inlining of array parameters";
   output list<BackendDAE.Equation> assrtEqOut;
 algorithm
-  (outVar,oInlineHT,assrtEqOut) := matchcontinue (inElement, functionTree, iInlineHT)
+  (outVar,oInlineHT,assrtEqOut) := matchcontinue (inElement)
     local
       list<DAE.Dimension> dims;
       DAE.ComponentRef name;
@@ -734,7 +644,7 @@ algorithm
       HashTableExpToExp.HashTable inlineHT;
       list<DAE.Statement> assrtLst;
       list<BackendDAE.Equation> eqLst;
-    case (DAE.VAR(componentRef = name,
+    case DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
                   parallelism = prl,
@@ -745,7 +655,7 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  comment = comment), _, _)
+                  comment = comment)
       equation
         kind_1 = lowerKnownVarkind(kind, name, dir, ct);
         // bind = fixParameterStartBinding(bind, t, dae_var_attr, kind_1);
@@ -758,7 +668,7 @@ algorithm
         fnstpl = (SOME(functionTree), {DAE.NORM_INLINE()});
         // build algorithms for the inlined asserts
         (bind1, source, inlineHT,assrtLst) = inlineExpOpt(bind, fnstpl, source, iInlineHT);
-        eqLst = buildAssertAlgorithms(assrtLst,source,{});
+        eqLst = buildAssertAlgorithms(assrtLst,source,assrtEqIn);
         // building an algorithm of the assert
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, fnstpl);
       then
@@ -778,29 +688,14 @@ author:Waurich TUD 2013-10"
   input list<DAE.Statement> assrtIn;
   input DAE.ElementSource source;
   input list<BackendDAE.Equation> eqIn;
-  output list<BackendDAE.Equation> eqOut;
+  output list<BackendDAE.Equation> eqOut := eqIn;
+protected
+  BackendDAE.Equation eq;
 algorithm
-  eqOut := matchcontinue(assrtIn,source,eqIn)
-  local
-    BackendDAE.Equation eq;
-    DAE.Statement assrt;
-    list<DAE.Statement> rest;
-    list<BackendDAE.Equation> eqLst;
-  case({},_,_)
-    then
-      eqIn;
-    case(assrt::rest,_,_)
-      equation
-      eq = BackendDAE.ALGORITHM(0,DAE.ALGORITHM_STMTS({assrt}),source,DAE.EXPAND(),BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-      eqLst = buildAssertAlgorithms(rest,source,eq::eqIn);
-    then
-      eqLst;
-    else
-      equation
-        print("buildAssertAlgorithm failed!\n");
-      then
-        fail();
-  end matchcontinue;
+  for assrt in assrtIn loop
+    eqOut := BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({assrt}), source,
+        DAE.EXPAND(), BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC) :: eqOut;
+  end for;
 end buildAssertAlgorithms;
 
 
@@ -978,62 +873,27 @@ protected function lowerVarkind
   input Option<DAE.VariableAttributes> daeAttr;
   output BackendDAE.VarKind outVarKind;
 algorithm
-  (outVarKind) := matchcontinue (inVarKind, inType, inComponentRef, inVarDirection, inConnectorType, daeAttr)
-    // variable -> state if have stateSelect=StateSelect.always
-    case (DAE.VARIABLE(), _, _, _, _, SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
-      then (BackendDAE.STATE(1,NONE()));
-    // variable -> state if have stateSelect=StateSelect.prefer
-    case (DAE.VARIABLE(), _, _, _, _, SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
-      then (BackendDAE.STATE(1,NONE()));
+  outVarKind := match(inVarKind, daeAttr)
+    // variable -> state if have stateSelect = StateSelect.always
+    case (DAE.VARIABLE(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
+      then BackendDAE.STATE(1, NONE());
 
-    case (DAE.VARIABLE(), DAE.T_BOOL(), _, _, _, _)
-      equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
-      then
-        (BackendDAE.DISCRETE());
+    // variable -> state if have stateSelect = StateSelect.prefer
+    case (DAE.VARIABLE(), SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
+      then BackendDAE.STATE(1, NONE());
 
-    case (DAE.DISCRETE(), DAE.T_BOOL(), _, _, _, _)
-      equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
+    else
+      algorithm
+        false := BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType);
       then
-        (BackendDAE.DISCRETE());
-
-    case (DAE.VARIABLE(), DAE.T_INTEGER(), _, _, _, _)
-      equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
-      then
-        (BackendDAE.DISCRETE());
-
-    case (DAE.DISCRETE(), DAE.T_INTEGER(), _, _, _, _)
-      equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
-      then
-        (BackendDAE.DISCRETE());
-
-    case (DAE.VARIABLE(), DAE.T_ENUMERATION(), _, _, _, _)
-      equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
-      then
-        (BackendDAE.DISCRETE());
-
-    case (DAE.DISCRETE(), DAE.T_ENUMERATION(), _, _, _, _)
-      equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
-      then
-        (BackendDAE.DISCRETE());
-
-    case (DAE.VARIABLE(), _, _, _, _, _)
-      equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
-      then
-        (BackendDAE.VARIABLE());
-
-    case (DAE.DISCRETE(), _, _, _, _, _)
-      equation
-        failure(BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType));
-      then
-        (BackendDAE.DISCRETE());
-  end matchcontinue;
+        match (inVarKind, inType)
+          case (DAE.VARIABLE(), DAE.T_BOOL()) then BackendDAE.DISCRETE();
+          case (DAE.VARIABLE(), DAE.T_INTEGER()) then BackendDAE.DISCRETE();
+          case (DAE.VARIABLE(), DAE.T_ENUMERATION()) then BackendDAE.DISCRETE();
+          case (DAE.VARIABLE(), _) then BackendDAE.VARIABLE();
+          case (DAE.DISCRETE(), _) then BackendDAE.DISCRETE();
+        end match;
+  end match;
 end lowerVarkind;
 
 protected function lowerKnownVarkind
@@ -1051,7 +911,7 @@ algorithm
     case (DAE.CONST(), _, _, _) then BackendDAE.CONST();
     case (DAE.VARIABLE(), _, _, _)
       equation
-        BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType);
+        true = BackendVariable.topLevelInput(inComponentRef, inVarDirection, inConnectorType);
       then
         BackendDAE.VARIABLE();
     // adrpo: topLevelInput might fail!
@@ -1073,20 +933,16 @@ protected function lowerType
 algorithm
   outType := matchcontinue(inType)
     local
-    case (DAE.T_REAL()) then DAE.T_REAL_DEFAULT;
-    case (DAE.T_INTEGER()) then DAE.T_INTEGER_DEFAULT;
-    case (DAE.T_BOOL()) then DAE.T_BOOL_DEFAULT;
-    case (DAE.T_STRING()) then DAE.T_STRING_DEFAULT;
-    case (DAE.T_CLOCK()) then DAE.T_CLOCK_DEFAULT;
-    case (DAE.T_ENUMERATION()) then inType;
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))
-      then inType;
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()))
-      then inType;
-    case (DAE.T_ARRAY())
-      then inType;
-    case (DAE.T_FUNCTION())
-      then inType;
+    case DAE.T_REAL() then DAE.T_REAL_DEFAULT;
+    case DAE.T_INTEGER() then DAE.T_INTEGER_DEFAULT;
+    case DAE.T_BOOL() then DAE.T_BOOL_DEFAULT;
+    case DAE.T_STRING() then DAE.T_STRING_DEFAULT;
+    case DAE.T_CLOCK() then DAE.T_CLOCK_DEFAULT;
+    case DAE.T_ENUMERATION() then inType;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()) then inType;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD()) then inType;
+    case DAE.T_ARRAY() then inType;
+    case DAE.T_FUNCTION() then inType;
     else equation print("lowerType: " + Types.printTypeStr(inType) + " failed\n"); then fail();
   end matchcontinue;
 end lowerType;
@@ -1099,7 +955,7 @@ protected function lowerExtObjVar
   output BackendDAE.Var outVar;
 algorithm
   outVar:=
-  match (inElement, functionTree)
+  match (inElement)
     local
       list<DAE.Dimension> dims;
       DAE.ComponentRef name;
@@ -1115,7 +971,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Type t;
 
-    case (DAE.VAR(componentRef = name,
+    case DAE.VAR(componentRef = name,
                   direction = dir,
                   parallelism = prl,
                   ty = t,
@@ -1124,7 +980,7 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  comment = comment), _)
+                  comment = comment)
       equation
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
@@ -1140,12 +996,11 @@ protected function lowerExtObjVarkind
   NOTE: Fails for everything but External objects"
   input DAE.Type inType;
   output BackendDAE.VarKind outVarKind;
+protected
+  Absyn.Path path;
 algorithm
-  outVarKind :=
-  match (inType)
-    local Absyn.Path path;
-    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=path)) then BackendDAE.EXTOBJ(path);
-  end match;
+  DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path = path)) := inType;
+  outVarKind := BackendDAE.EXTOBJ(path);
 end lowerExtObjVarkind;
 
 /*
@@ -2515,7 +2370,7 @@ algorithm
   // replace alias bindings
   (oAVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(oAVars, replaceAliasVarTraverser, repl);
   // compress vars array
-  oVars := BackendVariable.compressVariables(oVars);
+  oVars := BackendVariable.rehashVariables(oVars);
   // perform replacements
   (oEqns, _) := BackendVarTransform.replaceEquations(oEqns, repl, NONE());
   (oREqns, _) := BackendVarTransform.replaceEquations(iREqns, repl, NONE());

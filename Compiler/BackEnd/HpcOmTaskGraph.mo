@@ -148,12 +148,15 @@ algorithm
       array<String> nodeDescs;
       list<Integer> eventEqLst, eventVarLst, rootNodes, rootVars;
       Integer numberOfVars, numberOfEqs;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(_,_,eqSysIdx))
+      BackendDAE.Variables vars;
+
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=vars, orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(_,_,eqSysIdx))
       equation
         //Create Taskgraph for the first EqSystem
         true = intEq(eqSysIdx,1);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
         //print("createTaskGraph0 with " + intString(listLength(comps)) + " components\n");
+        numberOfVars = BackendVariable.varsSize(vars);
         (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), numberOfVars, numberOfEqs);
         TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark, varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataTmp;
         //print("createTaskGraph0 try to get varCompMapping\n");
@@ -166,12 +169,13 @@ algorithm
         tplOut = ((graphTmp,graphDataTmp,eqSysIdx+1));
       then
         tplOut;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars), orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=vars, orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),(graphIn,graphDataIn,eqSysIdx))
       equation
         //append the remaining equationsystems to the taskgraph
         //TASKGRAPHMETA(varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataIn;
         false = intEq(eqSysIdx,1);
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
+        numberOfVars = BackendVariable.varsSize(vars);
         //print("createTaskGraph0_case2 with " + intString(listLength(comps)) + " components\n");
         (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps), numberOfVars, numberOfEqs);
         TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark, varCompMapping=varCompMapping,eqCompMapping=eqCompMapping) = graphDataTmp;
@@ -5445,8 +5449,8 @@ algorithm
   (idx,annots) := infoIn;
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs) := syst;
   //set annotations of variables
-  annots := List.fold3(List.intRange(BackendVariable.numVariables(vars)),setAnnotationsForVar,vars,taskGraphInfo,idx,annots);
-  infoOut := (BackendVariable.numVariables(vars)+idx,annots);
+  annots := List.fold3(List.intRange(BackendVariable.varsSize(vars)),setAnnotationsForVar,vars,taskGraphInfo,idx,annots);
+  infoOut := (BackendVariable.varsSize(vars)+idx,annots);
 end setAnnotationsForTasks1;
 
 protected function setAnnotationsForVar"sets the annotations of a variable in the annotArray"

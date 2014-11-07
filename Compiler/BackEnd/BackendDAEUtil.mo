@@ -143,14 +143,16 @@ algorithm
     local
       Integer nVars, nEqns;
       Boolean samesize;
+      BackendDAE.Variables vars;
 
     case (_) equation
       false = Flags.isSet(Flags.CHECK_BACKEND_DAE);
     then ();
 
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=BackendDAE.VARIABLES(numberOfVars=nVars), orderedEqs=BackendDAE.EQUATION_ARRAY(size=nEqns))::{})) equation
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=BackendDAE.EQUATION_ARRAY(size=nEqns))::{})) equation
       //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       //Check for correct size
+      nVars = BackendVariable.varsSize(vars);
       samesize = nVars == nEqns;
       if Flags.isSet(Flags.CHECK_BACKEND_DAE) then
         print("No. of Equations: " + intString(nVars) + " No. of BackendDAE.Variables: " + intString(nEqns) + " Samesize: " + boolString(samesize) + "\n");
@@ -260,10 +262,7 @@ algorithm
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1,orderedEqs = eqns)::{},shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,
           eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))))
       equation
-        varlst1 = BackendVariable.varList(vars1);
-        varlst2 = BackendVariable.varList(vars2);
-        allvarslst = listAppend(varlst1,varlst2);
-        allvars = BackendVariable.listVar(allvarslst);
+        allvars = BackendVariable.mergeVariables(vars1, vars2);
         ((_,expcrefs)) = traverseBackendDAEExpsVars(vars1,checkBackendDAEExp,(allvars,{}));
         ((_,expcrefs1)) = traverseBackendDAEExpsVars(vars2,checkBackendDAEExp,(allvars,expcrefs));
         ((_,expcrefs2)) = traverseBackendDAEExpsEqns(eqns,checkBackendDAEExp,(allvars,expcrefs1));
@@ -881,25 +880,38 @@ algorithm
                  initialEqs = ie,removedEqs = seqns, constraints = constrs,classAttrs = clsAttrs,
                  cache=cache,graph=graph, functionTree = funcs, eventInfo = wc, extObjClasses=extObjCls,
                  backendDAEType=btp, symjacs=symjacs, info=ei)))
-      equation
-        knvarlst = BackendVariable.varList(knvars);
-        (varlst1,varlst2) = List.splitOnTrue(knvarlst,BackendVariable.isParam);
-        paramvars = BackendVariable.listVar(varlst1);
-        knvarlst = List.map3(varlst1, calculateValue, cache, graph, paramvars);
-        knvars = BackendVariable.listVar(listAppend(knvarlst,varlst2));
+      algorithm
+        knvars := BackendVariable.traverseBackendDAEVarsWithUpdate(
+          knvars, function calculateValueTraverser(inEnv = graph), cache); 
+        // Reverse the order of the known vars in the hashtable. This is stupid,
+        // but things break otherwise.
+        knvars := BackendVariable.listVar(BackendVariable.varList(knvars));
       then
         BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,extVars,av,ie,seqns,constrs,clsAttrs,cache,graph,funcs,wc,extObjCls,btp,symjacs,ei));
   end match;
 end calculateValues;
 
+protected function calculateValueTraverser
+  input BackendDAE.Var inVar;
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  output BackendDAE.Var outVar;
+  output FCore.Cache outCache := inCache;
+algorithm
+  if BackendVariable.isParam(inVar) then
+    outVar := calculateValue(inVar, inCache, inEnv);
+  else
+    outVar := inVar;
+  end if;
+end calculateValueTraverser;
+
 protected function calculateValue
   input BackendDAE.Var inVar;
   input FCore.Cache cache;
   input FCore.Graph graph;
-  input BackendDAE.Variables vars;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue(inVar, cache, graph, vars)
+  outVar := matchcontinue(inVar)
     local
       Var var;
       DAE.ComponentRef cr;
@@ -914,16 +926,16 @@ algorithm
       Option<SCode.Comment> c;
       DAE.ConnectorType ct;
       Values.Value v;
-    case (var as BackendDAE.VAR(bindValue = SOME(_)), _, _, _)
+    case BackendDAE.VAR(bindValue = SOME(_))
       equation
         print("*** Not Ceval.eval var: ");
-        BackendDump.printVar(var);
+        BackendDump.printVar(inVar);
         print("\n");
       then
-        var;
-    case (BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
+        inVar;
+    case BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
           varType = ty, bindExp = SOME(e), arryDim = dims, source = src,
-          values = va, comment = c, connectorType = ct), _, _, _)
+          values = va, comment = c, connectorType = ct)
       equation
         // wbraun: Evaluate parameter expressions only if they are
         //         constant at compile time otherwise we solve them
@@ -6136,13 +6148,13 @@ public function traverseBackendDAEExpsVars "Helper for traverseBackendDAEExps"
   end FuncExpType;
 algorithm
   outTypeA:=
-  matchcontinue (inVariables,func,inTypeA)
+  matchcontinue (inVariables)
     local
       array<Option<Var>> varOptArr;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),_,_)
+    case BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr))
       equation
-        ext_arg_1 = traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,1,arrayLength(varOptArr),inTypeA);
+        ext_arg_1 = traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,inTypeA);
       then
         ext_arg_1;
     else
@@ -6168,13 +6180,13 @@ public function traverseBackendDAEExpsVarsWithUpdate "Helper for traverseBackend
   end FuncExpType;
 algorithm
   outTypeA:=
-  matchcontinue (inVariables,func,inTypeA)
+  matchcontinue (inVariables)
     local
       array<Option<Var>> varOptArr;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),_,_)
+    case BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr))
       equation
-        (_,ext_arg_1) = traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEExpsVarWithUpdate,1,arrayLength(varOptArr),inTypeA);
+        (_,ext_arg_1) = traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEExpsVarWithUpdate,inTypeA);
       then
         ext_arg_1;
     else
@@ -6185,242 +6197,108 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsVarsWithUpdate;
 
-public function traverseBackendDAEArrayNoCopy "
- help function to traverseBackendDAEExps
- author: Frenkel TUD"
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  input array<Type_a> inArray;
-  input FuncExpType func;
-  input FuncArrayType arrayfunc;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  input Type_b inTypeB;
-  output Type_b outTypeB;
-  partial function FuncExpType
-    input Type_c inC;
-    input Type_b inB;
-    output Type_c outC;
-    output Type_b outB;
-  end FuncExpType;
-  partial function FuncArrayType
-    input Type_a inTypeA;
-    input FuncExpType func;
-    input Type_b inTypeB;
-    output Type_b outTypeB;
-    partial function FuncExpType
-      input Type_c inC;
-      input Type_b inB;
-      output Type_c outC;
-      output Type_b outB;
-    end FuncExpType;
-  end FuncArrayType;
+public function traverseBackendDAEArrayNoCopy<ArrT, ElemT, ArgT>
+  "Help function to traverseBackendDAEExps."
+  input array<ArrT> inArray;
+  input ElemFuncType inElemFunc;
+  input ArrayFuncType inArrayFunc;
+  input ArgT inArg;
+  input Integer inLength := arrayLength(inArray);
+  output ArgT outArg := inArg;
+
+  partial function ElemFuncType
+    input ElemT inElement;
+    input ArgT inArg;
+    output ElemT outElement;
+    output ArgT outArg;
+  end ElemFuncType;
+
+  partial function ArrayFuncType
+    input ArrT inElement;
+    input ElemFuncType inFunc;
+    input ArgT inArg;
+    output ArgT outArg;
+  end ArrayFuncType;
 algorithm
-  outTypeB := traverseBackendDAEArrayNoCopy_work(pos>len,inArray,func,arrayfunc,pos,len,inTypeB);
+  true := inLength <= arrayLength(inArray);
+
+  for i in 1:inLength loop
+    outArg := inArrayFunc(inArray[i], inElemFunc, outArg);
+  end for;
 end traverseBackendDAEArrayNoCopy;
 
-protected function traverseBackendDAEArrayNoCopy_work "
- help function to traverseBackendDAEExps
- author: Frenkel TUD"
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  input Boolean stop;
-  input array<Type_a> inArray;
-  input FuncExpType func;
-  input FuncArrayType arrayfunc;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  input Type_b inTypeB;
-  output Type_b outTypeB;
-  partial function FuncExpType
-    input Type_c inC;
-    input Type_b inB;
-    output Type_c outC;
-    output Type_b outB;
-  end FuncExpType;
-  partial function FuncArrayType
-    input Type_a inTypeA;
-    input FuncExpType func;
-    input Type_b inTypeB;
-    output Type_b outTypeB;
-    partial function FuncExpType
-      input Type_c inC;
-      input Type_b inB;
-      output Type_c outC;
-      output Type_b outB;
-    end FuncExpType;
-  end FuncArrayType;
-algorithm
-  outTypeB := match (stop,inArray,func,arrayfunc,pos,len,inTypeB)
-    local
-      Type_b ext_arg_1,ext_arg_2;
-    case (true,_,_,_,_,_,_) then inTypeB;
+public function traverseBackendDAEArrayNoCopyWithStop<ArrT, ElemT, ArgT>
+  "Same as traverseBackendDAEArrayNoCopy, but with an additional parameter to
+   stop the traversal."
+  input array<ArrT> inArray;
+  input ElemFuncType inElemFunc;
+  input ArrayFuncType inArrayFunc;
+  input ArgT inArg;
+  input Integer inLength := arrayLength(inArray);
+  output ArgT outArg := inArg;
 
-    else
-      equation
-        ext_arg_1 = arrayfunc(inArray[pos],func,inTypeB);
-        ext_arg_2 = traverseBackendDAEArrayNoCopy_work(pos+1>len,inArray,func,arrayfunc,pos+1,len,ext_arg_1);
-      then ext_arg_2;
-  end match;
-end traverseBackendDAEArrayNoCopy_work;
+  partial function ElemFuncType
+    input ElemT inElement;
+    input ArgT inArg;
+    output ElemT outElement;
+    output Boolean outContinue;
+    output ArgT outArg;
+  end ElemFuncType;
 
-public function traverseBackendDAEArrayNoCopyWithStop "
- help function to traverseBackendDAEArrayNoCopyWithStop
- author: Frenkel TUD
-  same like traverseBackendDAEArrayNoCopy but with a additional
-  parameter to stop the traveral."
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  input array<Type_a> inArray;
-  input FuncExpTypeWithStop func;
-  input FuncArrayTypeWithStop arrayfunc;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  input Type_b inTypeB;
-  output Type_b outTypeB;
-  partial function FuncExpTypeWithStop
-    input Type_c inC;
-    input Type_b inB;
-    output Type_c outC;
-    output Boolean cont;
-    output Type_b outB;
-  end FuncExpTypeWithStop;
-  partial function FuncArrayTypeWithStop
-    input Type_a inTypeA;
-    input FuncExpTypeWithStop func;
-    input Type_b inTypeB;
-    output Boolean outBoolean;
-    output Type_b outTypeB;
-    partial function FuncExpTypeWithStop
-      input Type_c inC;
-      input Type_b inB;
-      output Type_c outC;
-      output Boolean cont;
-      output Type_b outB;
-    end FuncExpTypeWithStop;
-  end FuncArrayTypeWithStop;
+  partial function ArrayFuncType
+    input ArrT inElement;
+    input ElemFuncType inFunc;
+    input ArgT inArg;
+    output Boolean outContinue;
+    output ArgT outArg;
+  end ArrayFuncType;
+protected
+  Boolean cont;
 algorithm
-  outTypeB := matchcontinue(inArray,func,arrayfunc,pos,len,inTypeB)
-    local
-      Type_b ext_arg_1,ext_arg_2;
-      Boolean b;
-    case(_,_,_,_,_,_) equation
-      true = pos > len;
-    then inTypeB;
-    case(_,_,_,_,_,_) equation
-      (b,ext_arg_1) = arrayfunc(inArray[pos],func,inTypeB);
-      ext_arg_2 = if b then traverseBackendDAEArrayNoCopyWithStop(inArray,func,arrayfunc,pos+1,len,ext_arg_1) else ext_arg_1;
-    then ext_arg_2;
-  end matchcontinue;
+  true := inLength <= arrayLength(inArray);
+
+  for i in 1:inLength loop
+    (cont, outArg) := inArrayFunc(inArray[i], inElemFunc, outArg);
+    if not cont then break; end if;
+  end for;
 end traverseBackendDAEArrayNoCopyWithStop;
 
-public function traverseBackendDAEArrayNoCopyWithUpdate "
- help function to traverseBackendDAEExps
- author: Frenkel TUD"
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  input array<Type_a> inArray;
-  input FuncExpType func;
-  input FuncArrayTypeWithUpdate arrayfunc;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  input Type_b inTypeB;
-  output array<Type_a> outArray;
-  output Type_b outTypeB;
-  partial function FuncExpType
-    input Type_c inC;
-    input Type_b inB;
-    output Type_c outC;
-    output Type_b outB;
-  end FuncExpType;
-  partial function FuncArrayTypeWithUpdate
-    input Type_a inTypeA;
-    input FuncExpType func;
-    input Type_b inTypeB;
-    output Type_a outTypeA;
-    output Type_b outTypeB;
-    partial function FuncExpTypeWithUpdate
-      input Type_c inC;
-      input Type_b inB;
-      output Type_c outC;
-      output Type_b outB;
-    end FuncExpTypeWithUpdate;
-  end FuncArrayTypeWithUpdate;
+public function traverseBackendDAEArrayNoCopyWithUpdate<ArrT, ElemT, ArgT>
+  input array<ArrT> inArray;
+  input ElemFuncType inElemFunc;
+  input ArrayFuncType inArrayFunc;
+  input ArgT inArg;
+  input Integer inLength := arrayLength(inArray);
+  output array<ArrT> outArray := inArray;
+  output ArgT outArg := inArg;
+
+  partial function ElemFuncType
+    input ElemT inElement;
+    input ArgT inArg;
+    output ElemT outElement;
+    output ArgT outArg;
+  end ElemFuncType;
+
+  partial function ArrayFuncType
+    input ArrT inElement;
+    input ElemFuncType inFunc;
+    input ArgT inArg;
+    output ArrT outElement;
+    output ArgT outArg;
+  end ArrayFuncType;
+protected
+  ArrT e, new_e;
 algorithm
-  (outArray,outTypeB) := traverseBackendDAEArrayNoCopyWithUpdateWork(pos>len,inArray,func,arrayfunc,pos,len,inTypeB);
+  true := inLength <= arrayLength(inArray);
+
+  for i in 1:inLength loop
+    e := inArray[i];
+    (new_e, outArg) := inArrayFunc(e, inElemFunc, outArg);
+    if not referenceEq(e, new_e) then
+      arrayUpdate(outArray, i, new_e);
+    end if;
+  end for;
 end traverseBackendDAEArrayNoCopyWithUpdate;
-
-protected function traverseBackendDAEArrayNoCopyWithUpdateWork "
- help function to traverseBackendDAEExps
- author: Frenkel TUD"
-  replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  input Boolean inStop;
-  input array<Type_a> inArray;
-  input FuncExpType func;
-  input FuncArrayTypeWithUpdate arrayfunc;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  input Type_b inTypeB;
-  output array<Type_a> outArray;
-  output Type_b outTypeB;
-  partial function FuncExpType
-    input Type_c inC;
-    input Type_b inB;
-    output Type_c outC;
-    output Type_b outB;
-  end FuncExpType;
-  partial function FuncArrayTypeWithUpdate
-    input Type_a inTypeA;
-    input FuncExpType func;
-    input Type_b inTypeB;
-    output Type_a outTypeA;
-    output Type_b outTypeB;
-    partial function FuncExpTypeWithUpdate
-      input Type_c inC;
-      input Type_b inB;
-      output Type_c outC;
-      output Type_b outB;
-    end FuncExpTypeWithUpdate;
-  end FuncArrayTypeWithUpdate;
-algorithm
-  (outArray,outTypeB) := match (inStop,inArray,func,arrayfunc,pos,len,inTypeB)
-    local
-      array<Type_a> newarray;
-      Type_a a,new_a;
-      Type_b ext_arg_1,ext_arg_2;
-    case (true,_,_,_,_,_,_) then (inArray,inTypeB);
-
-    else
-      equation
-        a = inArray[pos];
-        (new_a,ext_arg_1) = arrayfunc(a,func,inTypeB);
-        newarray = arrayUpdateCond(referenceEq(a,new_a),inArray,pos,new_a);
-        (newarray,ext_arg_2) = traverseBackendDAEArrayNoCopyWithUpdateWork(pos+1>len,newarray,func,arrayfunc,pos+1,len,ext_arg_1);
-      then (newarray,ext_arg_2);
-  end match;
-end traverseBackendDAEArrayNoCopyWithUpdateWork;
-
-protected function arrayUpdateCond
-  input Boolean b;
-  input array<Type_a> inArray;
-  input Integer pos;
-  input Type_a a;
-  output array<Type_a> outArray;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outArray := match(b,inArray,pos,a)
-    case(true,_,_,_) // equation print("equal\n");
-      then inArray;
-    case(false,_,_,_) // equation print("not equal\n");
-      then arrayUpdate(inArray,pos,a);
-  end match;
-end arrayUpdateCond;
 
 protected function traverseBackendDAEExpsVar "author: Frenkel TUD
   Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
@@ -6624,7 +6502,7 @@ algorithm
     local
       array<Option<BackendDAE.Equation>> equOptArr;
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
-      then traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,1,arrayLength(equOptArr),inTypeA);
+      then traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,inTypeA);
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6654,7 +6532,7 @@ algorithm
     local
       array<Option<BackendDAE.Equation>> equOptArr;
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
-      then traverseBackendDAEArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEExpsOptEqnWithStop,1,arrayLength(equOptArr),inTypeA);
+      then traverseBackendDAEArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEExpsOptEqnWithStop,inTypeA);
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6686,7 +6564,7 @@ algorithm
       array<Option<BackendDAE.Equation>> equOptArr;
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
       equation
-        (_,outTypeA) = traverseBackendDAEArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,1,arrayLength(equOptArr),inTypeA);
+        (_,outTypeA) = traverseBackendDAEArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,inTypeA);
       then outTypeA;
     else
       equation
@@ -7966,8 +7844,10 @@ protected function nonEmptySystem
   output Boolean nonEmpty;
 protected
   Integer num;
+  BackendDAE.Variables vars;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=BackendDAE.VARIABLES(numberOfVars=num)) := syst;
+  BackendDAE.EQSYSTEM(orderedVars=vars) := syst;
+  num := BackendVariable.varsSize(vars);
   nonEmpty := num <> 0;
 end nonEmptySystem;
 

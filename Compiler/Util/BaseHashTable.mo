@@ -126,55 +126,39 @@ public function add
   input HashEntry entry;
   input HashTable hashTable;
   output HashTable outHashTable;
+protected
+  HashVector hashvec;
+  ValueArray varr;
+  Integer bsize, n, hash_idx, arr_idx, new_pos;
+  FuncsTuple fntpl;
+  FuncHash hashFunc;
+  FuncEq keyEqual;
+  Key key, key2;
+  Value val;
+  HashNode indices;
 algorithm
-  outHashTable := matchcontinue(entry, hashTable)
-    local
-      Integer hval, indx, newpos, n, bsize;
-      ValueArray varr;
-      HashNode indexes;
-      HashVector hashvec;
-      HashEntry v;
-      Key key;
-      Value value;
-      FuncsTuple fntpl;
-      FuncHash hashFunc;
-      FuncKeyString keystrFunc;
-      String s;
+  (key, _) := entry;
+  (hashvec, varr, bsize, n, fntpl as (hashFunc, keyEqual, _, _)) := hashTable;
+  
+  hash_idx := hashFunc(key, bsize) + 1;
+  indices := hashvec[hash_idx];
 
-    case ((v as (key,_)),
-        ((hashvec, varr, bsize, n, fntpl as (hashFunc,_,_,_))))
-      equation
-        if hasKey(key, hashTable) then
-          // Adding when already present => update value.
-          outHashTable = update(entry, hashTable);
-        else
-          // Adding when not existing previously.
-          indx = hashFunc(key, bsize);
-          newpos = valueArrayLength(varr);
-          varr = valueArrayAdd(varr, v);
-          indexes = hashvec[indx + 1];
-          hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-          n = valueArrayLength(varr);
-          outHashTable = (hashvec, varr, bsize, n, fntpl);
-        end if;
-      then outHashTable;
+  for i in indices loop
+    (key2, _) := i;
 
-    case (((key,_)),
-        ((_, _, bsize, _, (hashFunc, _, keystrFunc, _))))
-      equation
-        print("- BaseHashTable.add failed: ");
-        print("bsize: ");
-        print(intString(bsize));
-        print(" key: ");
-        s = keystrFunc(key);
-        print(s + " Hash: ");
-        hval = hashFunc(key, bsize);
-        print(intString(hval));
-        print("\n");
-      then
-        fail();
+    if keyEqual(key, key2) then
+      (_, arr_idx) := i;
+      varr := valueArraySetnth(varr, arr_idx, entry);
+      outHashTable := (hashvec, varr, bsize, n, fntpl);
+      return;
+    end if;
+  end for;
 
-  end matchcontinue;
+  new_pos := valueArrayLength(varr);
+  varr := valueArrayAdd(varr, entry);
+  arrayUpdate(hashvec, hash_idx, ((key, new_pos)) :: indices);
+  n := new_pos + 1;
+  outHashTable := (hashvec, varr, bsize, n, fntpl);
 end add;
 
 public function dumpHashTableStatistics "
