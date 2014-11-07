@@ -8374,5 +8374,19 @@ algorithm
   index := List.positionOnTrue(name, vars, DAEUtil.typeVarIdentEqual);
 end lookupIndexInMetaRecord;
 
+function checkEnumDuplicateLiterals
+  input list<String> names;
+  input Absyn.Info info;
+protected
+  list<String> sortedNames;
+algorithm
+  // Sort+uniq = O(n*log(n)); naive way to check duplicates is O(n*n) but might be faster...
+  sortedNames := List.sort(names,Util.strcmpBool);
+  if not List.sortedListAllUnique(sortedNames, stringEq) then
+    Error.addSourceMessage(Error.ENUM_DUPLICATES, {stringDelimitList(List.sortedUniqueOnlyDuplicates(sortedNames, stringEq), ","), stringDelimitList(names, ",")}, info);
+    fail();
+  end if;
+end checkEnumDuplicateLiterals;
+
 annotation(__OpenModelica_Interface="frontend");
 end Types;

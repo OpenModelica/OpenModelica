@@ -704,6 +704,38 @@ algorithm
   outDuplicates := listReverseInPlace(outDuplicates);
 end sortedDuplicates;
 
+public function sortedListAllUnique<T>
+  "The input is a sorted list. The functions checks if all elements are unique."
+  input list<T> lst;
+  input CompareFunc compare;
+  output Boolean allUnique := false;
+
+  partial function CompareFunc
+    input T inElement1;
+    input T inElement2;
+    output Boolean outEqual;
+  end CompareFunc;
+protected
+  T e;
+  list<T> rest := lst;
+algorithm
+  while not listEmpty(rest) loop
+    rest := match rest
+      local
+        T e1,e2;
+      case {} then {};
+      case {_} then {};
+      case e1::(rest as e2::_)
+        algorithm
+          if compare(e1,e2) then
+            return;
+          end if;
+        then rest;
+    end match;
+  end while;
+  allUnique := true;
+end sortedListAllUnique;
+
 public function sortedUnique<T>
   "Returns a list of unique elements in a sorted list, using the given
    comparison function to check for equality."
@@ -761,6 +793,33 @@ algorithm
   outUniqueElements := listReverseInPlace(outUniqueElements);
   outDuplicateElements := listReverseInPlace(outDuplicateElements);
 end sortedUniqueAndDuplicates;
+
+public function sortedUniqueOnlyDuplicates<T>
+  "Returns a list with all duplicate elements removed, as well as a list of the
+   removed elements, using the given comparison function to check for equality."
+  input list<T> inList;
+  input CompareFunc inCompFunc;
+  output list<T> outDuplicateElements := {};
+
+  partial function CompareFunc
+    input T inElement1;
+    input T inElement2;
+    output Boolean outEqual;
+  end CompareFunc;
+protected
+  T e;
+  list<T> rest := inList;
+algorithm
+  while not listEmpty(rest) loop
+    e :: rest := rest;
+
+    if not listEmpty(rest) and inCompFunc(e, listHead(rest)) then
+      outDuplicateElements := e :: outDuplicateElements;
+    end if;
+  end while;
+
+  outDuplicateElements := listReverseInPlace(outDuplicateElements);
+end sortedUniqueOnlyDuplicates;
 
 protected function merge<T>
   "Helper function to sort, merges two sorted lists."

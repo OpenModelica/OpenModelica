@@ -1101,6 +1101,9 @@ algorithm
       (c as SCode.CLASS(name = n,restriction = SCode.R_ENUMERATION(),classDef =
       SCode.PARTS(elementLst = els),info = info)),_,inst_dims,impl,callscope,graph,_,_)
       equation
+        names = SCode.componentNames(c);
+        Types.checkEnumDuplicateLiterals(names, info);
+
         tys = instBasicTypeAttributes(cache, env, mods,
           DAE.T_ENUMERATION_DEFAULT, getEnumAttributeType, pre);
         /* uncomment this and see how checkAllModelsRecursive(Modelica.Electrical.Digital) looks like
@@ -1122,8 +1125,7 @@ algorithm
 
         (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
         eqConstraint = InstUtil.equalityConstraint(env_2, els, info);
-        _ = DAEUtil.addComponentType(dae1, fq_class);
-        names = SCode.componentNames(c);
+        // DAEUtil.addComponentType(dae1, fq_class);
         ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys, DAE.emptyTypeSource);
         bc = arrayBasictypeBaseclass(inst_dims, ty2);
         bc = if Util.isSome(bc) then bc else SOME(ty2);
@@ -1141,6 +1143,10 @@ algorithm
       equation
         ErrorExt.setCheckpoint("instClassParts");
         false = InstUtil.isBuiltInClass(n) "If failed above, no need to try again";
+        _ = match r
+          case SCode.R_ENUMERATION() then fail();
+          else ();
+        end match;
         // fprint(Flags.INSTTR, "ICLASS [");
         // _ = if_(impl, "impl] ", "expl] ");
         // fprint(Flags.INSTTR, implstr);

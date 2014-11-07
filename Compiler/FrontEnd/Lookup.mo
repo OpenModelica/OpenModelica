@@ -216,6 +216,7 @@ algorithm
           ConnectionGraph.EMPTY, Connect.emptySet, NONE());
         // build names
         (_,names) = SCode.getClassComponents(c);
+        Types.checkEnumDuplicateLiterals(names, c.info);
         // generate the enumeration type
         path = FGraph.getGraphName(env_3);
         ts = Types.mkTypeSource(SOME(path));
