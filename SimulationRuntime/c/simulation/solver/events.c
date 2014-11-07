@@ -203,7 +203,7 @@ int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solv
     TRACE_POP
     return 1;
   }
-  
+
   if(listLen(eventLst) > 0)
   {
     TRACE_POP
