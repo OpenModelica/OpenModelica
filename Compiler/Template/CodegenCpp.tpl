@@ -10131,12 +10131,12 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
   >>
   */
   <<
-  
+
   <%if msgVar then
       <<
       if(!<%condVar%>)
       {
-        
+
         <%preExpCond%>
         <%preExpMsg%>
         throw std::runtime_error(<%msgVar%>);
@@ -10149,7 +10149,7 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
         <%preExpCond%>
         <%preExpMsg%>
         throw std::runtime_error();
-      } 
+      }
       >>
    %>
   >>
