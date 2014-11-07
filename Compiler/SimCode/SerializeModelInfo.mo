@@ -351,12 +351,11 @@ algorithm
         File.writeEscape(file,expStr(op.exp),escape=File.Escape.JSON);
         File.write(file,"\"]}");
       then ();
-      // Custom operations - operations that can not be described in a general way because they are specialized
     case DAE.OP_DIFFERENTIATE()
       equation
-        File.write(file,"{\"op\":\"differentiate\",\"data\":[\"");
+        File.write(file,"{\"op\":\"before-after\",\"display\":\"differentiate d/d");
         File.writeEscape(file,crefStr(op.cr),escape=File.Escape.JSON);
-        File.write(file,"\",\"");
+        File.write(file,"\",\"data\":[\"");
         File.writeEscape(file,expStr(op.before),escape=File.Escape.JSON);
         File.write(file,"\",\"");
         File.writeEscape(file,expStr(op.after),escape=File.Escape.JSON);
@@ -365,14 +364,17 @@ algorithm
 
     case DAE.OP_SCALARIZE()
       equation
-        File.write(file,"{\"op\":\"scalarize\",\"data\":[\"");
-        writeEqExpStr(file,op.before);
-        File.write(file,"\",");
+        File.write(file,"{\"op\":\"before-after\",\"display\":\"scalarize [");
         File.write(file,intString(op.index));
-        File.write(file,",\"");
+        File.write(file,"]\",\"data\":[\"");
+        writeEqExpStr(file,op.before);
+        File.write(file,"\",\"");
         writeEqExpStr(file,op.after);
         File.write(file,"\"]}");
       then ();
+
+      // Custom operations - operations that can not be described in a general way because they are specialized
+
     else
       equation
         Error.addInternalError("serializeOperation failed", sourceInfo());
