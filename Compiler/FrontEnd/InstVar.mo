@@ -129,6 +129,15 @@ the backend. The current implementation doesn't handle cases in which the
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
+  if match inIdent
+    case "Integer" then true;
+    case "Real" then true;
+    case "Boolean" then true;
+    case "String" then true;
+    else false; end match then
+    Error.addSourceMessage(Error.RESERVED_IDENTIFIER, {inIdent}, info);
+    fail();
+  end if;
     (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
     matchcontinue (inCache, inEnv, inIH, inStore, inState, inMod, inPrefix,
       inIdent, inClass, inAttributes, inPrefixes, inDimensionLst,

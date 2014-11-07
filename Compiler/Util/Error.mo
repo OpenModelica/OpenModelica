@@ -671,6 +671,8 @@ public constant Message TCOMPLEX_TUPLE_ONE_NAME = MESSAGE(252, TRANSLATION(), NO
   Util.gettext("Tuple complex type specifiers need to have more than one type name: %s."));
 public constant Message ENUM_DUPLICATES = MESSAGE(253, TRANSLATION(), ERROR(),
   Util.gettext("Enumeration has duplicate names: %s in list of names %s."));
+public constant Message RESERVED_IDENTIFIER = MESSAGE(254, TRANSLATION(), ERROR(),
+  Util.gettext("Identifier %s is reserved for the built-in type with the same name."));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
