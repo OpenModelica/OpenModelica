@@ -279,6 +279,7 @@ public:
   static QString stepReturn;
   static QString attachToRunningProcess;
   static QString crashReport;
+  static QString parsingFailedJson;
 };
 
 class GUIMessages : public QObject

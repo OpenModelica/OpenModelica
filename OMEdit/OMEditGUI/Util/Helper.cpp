@@ -277,6 +277,7 @@ QString Helper::stepInto;
 QString Helper::stepReturn;
 QString Helper::attachToRunningProcess;
 QString Helper::crashReport;
+QString Helper::parsingFailedJson;
 
 void Helper::initHelperVariables()
 {
@@ -442,6 +443,7 @@ void Helper::initHelperVariables()
   Helper::stepReturn = tr("Step Return");
   Helper::attachToRunningProcess = tr("Attach to Running Process");
   Helper::crashReport = tr("Crash Report");
+  Helper::parsingFailedJson = tr("Parsing of JSON file failed");
 }
 
 QString GUIMessages::getMessage(int type)

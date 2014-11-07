@@ -284,7 +284,7 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
   {
     variables.next();
     const OMVariable &variable = variables.value();
-    if (variable.name.startsWith("$PRE."))
+    if (variable.name.startsWith("$PRE.") || variable.name.startsWith("$res"))
       continue;
 
     QStringList tVariables;
@@ -751,11 +751,29 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
 
 static OMOperation* variantToOperationPtr(QVariantMap var)
 {
-  QStringList lst;
-  lst << var["display"].toString();
-  OMOperation *op = new OMOperationBeforeAfter(var["op"].toString(),lst);
-  qDebug() << op->toString();
-  return op;
+  QString op = var["op"].toString();
+  QString display = var["display"].toString();
+  QStringList dataStrings;
+  foreach(QVariant v, var["data"].toList()){
+    QString s = v.toString();
+    if (s != "") {
+      dataStrings << v.toString().trimmed();
+    }
+  }
+
+  if (op == "before-after") {
+    return new OMOperationBeforeAfter(display != "" ? display : op, dataStrings);
+  } else if (op == "before-after-assert") {
+    return new OMOperationBeforeAfter(display != "" ? display : op, dataStrings);
+  } else if (op == "chain") {
+    QStringList firstLast;
+    firstLast << dataStrings.first() << dataStrings.last();
+    return new OMOperationBeforeAfter(display != "" ? display : op, firstLast);
+  } else if (op == "info") {
+    return new OMOperationInfo(display != "" ? display : op, dataStrings.join(", "));
+  }
+  // "chain"
+  return NULL;
 }
 
 
@@ -770,15 +788,19 @@ static void variantToSource(QVariantMap var, OMInfo &info, QStringList &types, Q
   info.isValid = true;
   QVariantList vops = var["operations"].toList();
   foreach (QVariant vop, vops) {
-    ops += variantToOperationPtr(vop.toMap());
+    OMOperation *op = variantToOperationPtr(vop.toMap());
+    if (op) {
+      ops += op;
+    }
   }
 }
 
 static OMEquation* getOMEquation(QList<OMEquation*> equations, int index)
 {
   for (int i = 1 ; i < equations.size() ; i++) {
-    if (equations[i]->index == index)
+    if (equations[i]->index == index) {
       return equations[i];
+    }
   }
   return NULL;
 }
@@ -788,10 +810,16 @@ void TransformationsWidget::loadTransformations()
   QFile file(mInfoXMLFullFileName);
   mEquations.clear();
   mVariables.clear();
+  hasOperationsEnabled = false;
   if (mInfoXMLFullFileName.endsWith(".json")) {
     QJson::Parser parser;
     bool ok;
-    QVariantMap result = parser.parse(&file, &ok).toMap();
+    QVariantMap result;
+    result = parser.parse(&file, &ok).toMap();
+    if (!ok) {
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + ": " + mInfoXMLFullFileName, Helper::ok);
+      return;
+    }
     QVariantMap vars = result["variables"].toMap();
     QVariantList eqs = result["equations"].toList();
     for(QVariantMap::const_iterator iter = vars.begin(); iter != vars.end(); ++iter) {
@@ -800,8 +828,8 @@ void TransformationsWidget::loadTransformations()
       var->name = iter.key();
       var->comment = value["comment"].toString();
       variantToSource(value["source"].toMap(), var->info, var->types, var->ops);
-      foreach (OMOperation *op, var->ops) {
-        qDebug() << "op: " << op->toString();
+      if (!hasOperationsEnabled && var->ops.size() > 0) {
+        hasOperationsEnabled = true;
       }
       mVariables[iter.key()] = *var;
     }
@@ -812,6 +840,7 @@ void TransformationsWidget::loadTransformations()
     /* load equations */
     parseProfiling(mProfJSONFullFileName);
     fetchEquations();
+    hasOperationsEnabled = mpInfoXMLFileHandler->hasOperationsEnabled;
   }
 }
 
@@ -862,20 +891,17 @@ void TransformationsWidget::fetchOperations(const OMVariable &variable)
   /* Clear the operations tree. */
   clearTreeWidgetItems(mpVariableOperationsTreeWidget);
   /* add operations */
-  if (mpInfoXMLFileHandler->hasOperationsEnabled)
-  {
-    foreach (OMOperation *op, variable.ops)
-    {
-      QStringList values;
-      values << op->toString();
+  if (hasOperationsEnabled) {
+    foreach (OMOperation *op, variable.ops) {
       QString toolTip = op->toString();
-      QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
+      QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem();
       pOperationTreeItem->setToolTip(0, toolTip);
       mpVariableOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+
+      Label *opText = new Label("<html><div style=\"margin:3px;\">" + op->toHtml() + "</div></html>");
+      mpVariableOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
     }
-  }
-  else
-  {
+  } else {
     QString message;
 #ifdef Q_OS_MAC
     message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG_MAC));
@@ -1066,9 +1092,7 @@ void TransformationsWidget::fetchOperations(OMEquation *equation)
       mpEquationOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
       mpEquationOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
     }
-  }
-  else
-  {
+  } else {
     QString message;
 #ifdef Q_OS_MAC
     message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG).arg(GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG_MSG_MAC));
@@ -1154,7 +1178,7 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
   if (!pTVariableTreeItem || pTVariableTreeItem->getChildren().size() != 0)
     return;
 
-  const OMVariable &variable = mVariables.value(pTVariableTreeItem->getVariableName());
+  const OMVariable &variable = mVariables[pTVariableTreeItem->getVariableName()];
   /* fetch defined in equations */
   fetchDefinedInEquations(variable);
   /* fetch used in equations */

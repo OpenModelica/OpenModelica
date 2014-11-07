@@ -216,6 +216,7 @@ private:
   QSplitter *mpTransformationsHorizontalSplitter;
   QHash<QString,OMVariable> mVariables;
   QList<OMEquation*> mEquations;
+  bool hasOperationsEnabled;
 
   void parseProfiling(QString fileName);
   QTreeWidgetItem* makeEquationTreeWidgetItem(int equationIndex, int allowChild);

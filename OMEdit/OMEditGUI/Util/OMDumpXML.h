@@ -60,10 +60,11 @@ public:
   QString diffHtml(QString &before, QString &after);
 };
 
-class OMOperationJSON : public OMOperation {
+class OMOperationInfo : public OMOperation
+{
 public:
-  QVariant var;
-  OMOperationJSON(QVariant var);
+  QString name,info;
+  OMOperationInfo(QString name, QString info);
   QString toString();
   QString toHtml();
 };

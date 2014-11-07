@@ -67,18 +67,18 @@ QString OMOperation::diffHtml(QString &before, QString &after)
   return dmp.diff_prettyHtml(diffs);
 }
 
-OMOperationJSON::OMOperationJSON(QVariant var) : var(var)
+OMOperationInfo::OMOperationInfo(QString name, QString info) : name(name), info(info)
 {
 }
 
-QString OMOperationJSON::toString()
+QString OMOperationInfo::toString()
 {
-  return var.toString();
+  return name + ": " + info;
 }
 
-QString OMOperationJSON::toHtml()
+QString OMOperationInfo::toHtml()
 {
-  return var.toString();
+  return toString();
 }
 
 OMOperationBeforeAfter::OMOperationBeforeAfter(QString name, QStringList ops) : name(name)
@@ -202,8 +202,7 @@ OMVariable::OMVariable(const OMVariable &var)
   comment = var.comment;
   info = var.info;
   types = var.types;
-  for (int i = 0; i < equationTypeSize ; i++)
-  {
+  for (int i = 0; i < equationTypeSize ; i++) {
     definedIn[i] = var.definedIn[i];
     usedIn[i] = var.usedIn[i];
   }
@@ -231,8 +230,8 @@ OMVariable::OMVariable(const OMVariable &var)
       ops.append(new OMOperationDummyDerivative(*dynamic_cast<OMOperationDummyDerivative*>(op)));
     else if (dynamic_cast<OMOperationFlattening*>(op))
       ops.append(new OMOperationFlattening(*dynamic_cast<OMOperationFlattening*>(op)));
-    else if (dynamic_cast<OMOperationJSON*>(op))
-      ops.append(new OMOperationJSON(*dynamic_cast<OMOperationJSON*>(op)));
+    else if (dynamic_cast<OMOperationInfo*>(op))
+      ops.append(new OMOperationInfo(*dynamic_cast<OMOperationInfo*>(op)));
     else
       ops.append(new OMOperation(*op));
   }
