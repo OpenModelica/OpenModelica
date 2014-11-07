@@ -2454,8 +2454,8 @@ algorithm
       equation
         (_::_,{s}) = BackendVariable.getVar(cr, hov);
         newindx = nv+s;
-        _= arrayUpdate(stateindexs,indx,newindx);
-        _= arrayUpdate(invmap,s,indx);
+        arrayUpdate(stateindexs,indx,newindx);
+        arrayUpdate(invmap,s,indx);
       then (v,(stateindexs,invmap,indx+1,nv,hov,indx::derstatesindexs));
    case (v,(stateindexs,invmap,indx,nv,hov,derstatesindexs))
       then (v,(stateindexs,invmap,indx+1,nv,hov,derstatesindexs));
@@ -2480,7 +2480,7 @@ algorithm
         // replace negative index with index from stateindexs
         row = List.map1(row,replaceStateIndex,stateindexs);
         // update m
-        _ = arrayUpdate(m,nEqns,row);
+        arrayUpdate(m,nEqns,row);
         // update mT
         (row,negrow) = List.split1OnTrue(row, intGt, 0);
         _ = List.fold1(row,Array.consToElement,nEqns,mT);
@@ -2547,7 +2547,7 @@ algorithm
         i1 = index+1;
         rowindxs = List.intRange2(sindex+1, rowSize);
         _ = List.fold1r(rowindxs,arrayUpdate,i1,mapIncRowEqn);
-        _ = arrayUpdate(mapEqnIncRow,i1,rowindxs);
+        arrayUpdate(mapEqnIncRow,i1,rowindxs);
         // replace state indexes
         row = List.map1(row,replaceStateIndex,stateindexs);
         // update m
@@ -2604,7 +2604,7 @@ algorithm
       equation
         // if unmarked then increse nsystems
         false = intGt(rowmarkarr[index],0);
-        _ = arrayUpdate(rowmarkarr,index,iNSystems);
+        arrayUpdate(rowmarkarr,index,iNSystems);
         rows = List.select(m[index], Util.intPositive);
         nsystems = partitionSystemstraverseRows(rows,{},m,mT,rowmarkarr,collmarkarr,iNSystems);
       then
@@ -2640,7 +2640,7 @@ algorithm
       equation
         // if unmarked then add
         false = intGt(collmarkarr[r],0);
-        _ = arrayUpdate(collmarkarr,r,iNSystems);
+        arrayUpdate(collmarkarr,r,iNSystems);
         colls = List.select(mT[r], Util.intPositive);
         colls = List.select1r(colls,Matching.isUnAssigned, rowmarkarr);
         _ = List.fold(colls, markTrue, (rowmarkarr,iNSystems));
@@ -2981,7 +2981,7 @@ algorithm
         (set,found) = getEqnsforDynamicStateSelectionRows(rows,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,false);
         // print("add " + boolString(found) + " equation " + intString(e) + "\n");
         set = List.consOnTrue(found, e, set);
-        _ = arrayUpdate(colummarks,e,if found then mark else colummarks[e]);
+        arrayUpdate(colummarks,e,if found then mark else colummarks[e]);
         (set,found) = getEqnsforDynamicStateSelectionPhase(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,set,found or iFound);
       then
         (set,found);
@@ -5895,7 +5895,7 @@ algorithm
       equation
         c = varcomp[v];
         false = intEq(markarray[c],mark);
-        _ = arrayUpdate(markarray,c,mark);
+        arrayUpdate(markarray,c,mark);
         (graph,_) = GraphML.addEdge("e" + intString(id),"n" + intString(c),"n" + intString(iN),GraphML.COLOR_BLACK,GraphML.LINE(),GraphML.LINEWIDTH_STANDARD,false,{},(GraphML.ARROWSTANDART(),GraphML.ARROWNONE()),{},iGraph);
         (n,graph) = addCompEdgesGraph(rest,varcomp,markarray,mark,iN,id+1,graph);
       then

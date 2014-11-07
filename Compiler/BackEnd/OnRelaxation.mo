@@ -186,16 +186,16 @@ algorithm
     /*
         (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
         temp::_ = mapEqnIncRow[72];
-        _ = arrayUpdate(ass1,90,temp);
-        _ = arrayUpdate(ass2,temp,90);
+        arrayUpdate(ass1,90,temp);
+        arrayUpdate(ass2,temp,90);
 
         temp::_ = mapEqnIncRow[97];
-        _ = arrayUpdate(ass1,125,temp);
-        _ = arrayUpdate(ass2,temp,125);
+        arrayUpdate(ass1,125,temp);
+        arrayUpdate(ass2,temp,125);
 
         temp::_ = mapEqnIncRow[99];
-        _ = arrayUpdate(ass1,128,temp);
-        _ = arrayUpdate(ass2,temp,128);
+        arrayUpdate(ass1,128,temp);
+        arrayUpdate(ass2,temp,128);
           subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
           IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemHackMatching.graphml");
 */
@@ -437,7 +437,7 @@ algorithm
         lst = orphansarray[orphan];
         true = intGt(listLength(lst),1);
         lst = List.fold1(roots,List.removeOnTrue, intEq, lst);
-        _= arrayUpdate(orphansarray,orphan,lst);
+        arrayUpdate(orphansarray,orphan,lst);
       then
         ();
     case(_,_,_)
@@ -550,7 +550,7 @@ algorithm
       equation
         true = intGt(c,0);
         lst = vec3[c];
-        _ = arrayUpdate(vec3,c,inId::lst);
+        arrayUpdate(vec3,c,inId::lst);
       then
         inId + 1;
     else
@@ -594,7 +594,7 @@ algorithm
     case (o::rest,_,_,_,_,_,_,_,_,_)
       equation
         false = intEq(colummarks[o],mark);
-        _ = arrayUpdate(colummarks,o,mark);
+        arrayUpdate(colummarks,o,mark);
         //  print("Process Residual " + intString(o) + "\n");
         rlst = m[o];
         // check for partner
@@ -671,10 +671,10 @@ algorithm
         // remove assigned equation of this row
         next = List.removeOnTrue(ass1[r], intEq, next);
         false = List.isNotEmpty(next);
-        _ = arrayUpdate(rowmarks,r,mark);
+        arrayUpdate(rowmarks,r,mark);
         e = ass1[r];
         // print("Go From " + intString(r) + " to " + intString(e) + "\n");
-        _ = arrayUpdate(colummarks,e,mark);
+        arrayUpdate(colummarks,e,mark);
         rlst = ass2[e];
         next = List.fold1(rlst,List.removeOnTrue, intEq, m[e]);
         vlst = List.map1r(next,BackendVariable.getVarAt,vars);
@@ -744,7 +744,7 @@ algorithm
         List.map2_0(rlst,doMark,rowmarks,mark);
         lst = List.select2(lst, marked, rowmarks, mark-1);
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r,intString),", ") + "\n");
-        _ = arrayUpdate(colummarks,e,mark);
+        arrayUpdate(colummarks,e,mark);
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(next,intString),", ") + "\n");
         generateCliquesResidual2(lst,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan);
         generateCliquesResidual2(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan);
@@ -826,7 +826,7 @@ algorithm
     case (o::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = intEq(rowmarks[o],mark);
-        _ = arrayUpdate(rowmarks,o,mark);
+        arrayUpdate(rowmarks,o,mark);
         elst = mt[o];
         rlst = List.flatten(List.map1r(elst,arrayGet,ass2));
         // check for partner
@@ -900,7 +900,7 @@ algorithm
         // remove assigned
         next = List.fold1(ass2[e],List.removeOnTrue, intEq, next);
         false = List.isNotEmpty(next);
-        _ = arrayUpdate(colummarks,e,mark);
+        arrayUpdate(colummarks,e,mark);
         r = ass2[e];
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r,intString),", ") + "\n");
         List.map2_0(r,doMark,rowmarks,mark);
@@ -943,7 +943,7 @@ algorithm
     case (o::rest,_,_,_,_,_,_,_,_)
       equation
         false = intEq(rowmarks[o],imark);
-        _ = arrayUpdate(rowmarks,o,imark);
+        arrayUpdate(rowmarks,o,imark);
         //  print("Process Orphan " + intString(o) + "\n");
         //  BackendDump.debuglst((mt[o],intString,", ","\n"));
         // check for partner
@@ -990,7 +990,7 @@ algorithm
         r = ass2[e];
         lst = List.unique(List.flatten(List.map1r(r,arrayGet,orphans)));
         true = listMember(preorphan,lst);
-        _ = arrayUpdate(colummarks,e,mark);
+        arrayUpdate(colummarks,e,mark);
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(r,intString),", ") + "\n");
         List.map2_0(r,doMark,rowmarks,mark);
         elst = List.select1(List.map1r(r,arrayGet,ass1),intGt,0);
@@ -1037,18 +1037,18 @@ algorithm
         // mt[r]-e
         lst = List.removeOnTrue(e, intEq, lst);
         //  print("mt[ " + intString(r) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
-        _  = arrayUpdate(mt,r,lst);
+        arrayUpdate(mt,r,lst);
         // mt[preorphan]+e
         lst = mt[orphan];
         lst = List.unique(e::lst);
         //  print("mt[ " + intString(orphan) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
-        _ = arrayUpdate(mt,orphan,lst);
+        arrayUpdate(mt,orphan,lst);
         // m[e] - r + preorphan
         lst = m[e];
         lst = List.removeOnTrue(r, intEq, lst);
         lst = List.unique(orphan::lst);
         //  print("m[ " + intString(e) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
-        _ = arrayUpdate(m,e,lst);
+        arrayUpdate(m,e,lst);
         generateClique(r,m,mt,rest,e);
      then
        ();
@@ -1075,18 +1075,18 @@ algorithm
         // mt[e]-r
         lst = List.removeOnTrue(r, intEq, lst);
         //  print("m[ " + intString(e) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
-        _ = arrayUpdate(m,e,lst);
+        arrayUpdate(m,e,lst);
         // m[orphan]+r
         lst = m[orphan];
         lst = List.unique(r::lst);
         //  print("m[ " + intString(orphan) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
-        _ = arrayUpdate(m,orphan,lst);
+        arrayUpdate(m,orphan,lst);
         // mt[r] - e + orphan
         lst = mt[r];
         lst = List.removeOnTrue(e, intEq, lst);
         lst = List.unique(orphan::lst);
         //  print("mt[ " + intString(r) + "]= " + stringDelimitList(List.map(lst,intString),", ") + "\n");
-        _ = arrayUpdate(mt,r,lst);
+        arrayUpdate(mt,r,lst);
         generateResidualClique(r,m,mt,rest,e);
      then
        ();
@@ -1117,7 +1117,7 @@ algorithm
     case (o::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         false = intEq(rowmarks[o],mark);
-        _ = arrayUpdate(rowmarks,o,mark);
+        arrayUpdate(rowmarks,o,mark);
         //  print("Process Orphan " + intString(o) + "\n");
         getOrphansOrderEdvanced1(mct[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,o,orphans,{});
       then
@@ -1245,7 +1245,7 @@ algorithm
         r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
         //  print("search in " + stringDelimitList(List.map(r,intString),", ") + "\n");
         olst = hasOrphanEdvanced(r,ass1,{});
-        _ = arrayUpdate(colummarks,e,mark);
+        arrayUpdate(colummarks,e,mark);
         //  print("Found Orphans " + stringDelimitList(List.map(olst,intString),", ") + " ChildOrphan is " + intString(preorphan) + "\n");
         addPreOrphans(preorphan,olst,orphans);
       then
@@ -1258,7 +1258,7 @@ algorithm
         r = List.fold1(r1,List.removeOnTrue, intEq, r) "needed vars of equation";
         elst = List.select1(List.map1r(r,arrayGet,ass1),intGt,0) "equations assigned with needed vars";
         next = listAppend(nextQueue, elst);
-        _ = arrayUpdate(colummarks,e,mark);
+        arrayUpdate(colummarks,e,mark);
         //  print("goto " + stringDelimitList(List.map(next,intString),", ") + "\n");
         getOrphansOrderEdvanced1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,next);
       then
@@ -1296,7 +1296,7 @@ algorithm
     case (o::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         false = intEq(rowmarks[o],mark);
-        _ = arrayUpdate(rowmarks,o,mark);
+        arrayUpdate(rowmarks,o,mark);
         //  print("Process Orphan " + intString(o) + "\n");
         getConstraintesOrphansOrderEdvanced1(mct[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,o,orphans,{});
       then
@@ -1339,7 +1339,7 @@ algorithm
         r = List.removeOnTrue(preorphan, intEq, m[e]) "vars of equation without preorphan";
         //  print("search in " + stringDelimitList(List.map(r,intString),", ") + "\n");
         olst = hasOrphanEdvanced(r,ass1,{});
-        _ = arrayUpdate(colummarks,e,mark);
+        arrayUpdate(colummarks,e,mark);
         //  print("Found Orphans " + stringDelimitList(List.map(olst,intString),", ") + " ChildOrphan is " + intString(preorphan) + "\n");
         addPreOrphans(preorphan,olst,orphans);
         r1 = ass2[e] "vars assignt with equation";
@@ -1357,7 +1357,7 @@ algorithm
         r = List.fold1(r1,List.removeOnTrue, intEq, r) "needed vars of equation";
         elst = List.select1(List.map1r(r,arrayGet,ass1),intGt,0) "equations assigned with needed vars";
         next = listAppend(nextQueue, elst);
-        _ = arrayUpdate(colummarks,e,mark);
+        arrayUpdate(colummarks,e,mark);
         //  print("goto " + stringDelimitList(List.map(next,intString),", ") + "\n");
         getConstraintesOrphansOrderEdvanced1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,preorphan,orphans,next);
       then
@@ -1411,7 +1411,7 @@ algorithm
     case(o::rest,_,_,_,_,_)
       equation
         false = intEq(rowmarks[o],mark);
-        _= arrayUpdate(rowmarks,o,mark);
+        arrayUpdate(rowmarks,o,mark);
         childs = getLinkPosition1(m[o],m,mt,mark,rowmarks,o,iAcc);
       then
         getLinkPosition(rest,m,mt,mark,rowmarks,childs);
@@ -1439,7 +1439,7 @@ algorithm
     case(o::{},_,_,_,_,_,_)
       equation
         false = intEq(rowmarks[o],mark);
-        _= arrayUpdate(rowmarks,o,mark);
+        arrayUpdate(rowmarks,o,mark);
       then
         getLinkPosition1(m[o],m,mt,mark,rowmarks,o,iAcc);
     case(o::{},_,_,_,_,_,_)
@@ -1675,7 +1675,7 @@ algorithm
       equation
         lst = m[c];
         lst = List.setDifference(lst,comps1);
-        _=arrayUpdate(m,c,listReverse(lst)) "reverse the list to traveres from the nearest to the farest orphan";
+        arrayUpdate(m,c,listReverse(lst)) "reverse the list to traveres from the nearest to the farest orphan";
         reduceOrphancMatrix1(rest,comps1,m);
       then
         ();
@@ -2029,7 +2029,7 @@ algorithm
         //  print("addRow\n");
         //  BackendDump.debuglst((elst,dumpMatrix1,", ","\n"));
         //elst = removeFromCol(col,elst,{});
-        _ = arrayUpdate(matrix,row,elst);
+        arrayUpdate(matrix,row,elst);
         (vars,eqns,tpl) = gaussElimination1(col,row+1,size,ce,matrix,vars,eqns,tpl);
       then
         (vars,eqns,tpl);
@@ -2149,7 +2149,7 @@ algorithm
         b1 = BackendEquation.isArrayEquation(eqn);
         b = func(e);
         lst = List.consOnTrue(b and b1, c, m[r]);
-        _ = arrayUpdate(m,r,lst);
+        arrayUpdate(m,r,lst);
         transformJacToIncidenceMatrix2(rest,m,mapIncRowEqn,eqns,ass1,ass2,func);
       then
         ();
@@ -2182,7 +2182,7 @@ algorithm
         b1 = intLt(ass1[c],1);
         b = func(e);
         lst = List.consOnTrue(b and b1, c, m[r]);
-        _ = arrayUpdate(m,r,lst);
+        arrayUpdate(m,r,lst);
         transformJacToIncidenceMatrix1(rest,m,ass1,ass2,func);
       then ();
    end match;
@@ -2214,8 +2214,8 @@ algorithm
         b = func(e);
         lst = List.consOnTrue(b, c, m[r]);
         lst1 = List.consOnTrue(b, r, mT[c]);
-        _ = arrayUpdate(m,r,lst);
-        _ = arrayUpdate(mT,c,lst1);
+        arrayUpdate(m,r,lst);
+        arrayUpdate(mT,c,lst1);
         transformJacToIncidenceMatrix(rest,m,mT,func);
       then
         ();
@@ -2248,7 +2248,7 @@ algorithm
       lst = matrix[row];
       lst = List.consOnTrue(not Expression.isZero(be), (col, be), lst);
       lst = listReverse(lst);
-      _ = arrayUpdate(matrix, row, lst);
+      arrayUpdate(matrix, row, lst);
       transformJacToMatrix(jac, row+1, 1, size, b1, matrix);
     then ();
 
@@ -2261,7 +2261,7 @@ algorithm
       true = intEq(c, col);
       lst = matrix[r];
       lst = (c, e)::lst;
-      _ = arrayUpdate(matrix, row, lst);
+      arrayUpdate(matrix, row, lst);
       transformJacToMatrix(rest, row, col+1, size, b, matrix);
     then ();
 
@@ -2456,7 +2456,7 @@ algorithm
         p = List.position(i, vindxs);
         ilst = listDelete(vindxs, p);
         vlst = listDelete(inVarLst, p);
-        _ = arrayUpdate(vararray,index,SOME(v));
+        arrayUpdate(vararray,index,SOME(v));
       then
         sortVarsforOrder1(rest,index+1,vlst,ilst,vararray,vars);
     case(_::rest,_,_,_,_,_)
@@ -2558,8 +2558,8 @@ algorithm
         //  print("search in " + stringDelimitList(List.map(elst,intString),", ") + "\n");
         o = hasResidualOrphan(elst,ass2);
         //  print("Found Orphanpair " + intString(o) + " <-> " + intString(orphan) + "\n");
-        _ = arrayUpdate(ass1,orphan,o);
-        _ = arrayUpdate(ass2, o, {orphan});
+        arrayUpdate(ass1,orphan,o);
+        arrayUpdate(ass2, o, {orphan});
       then
         ();
     case (r::rest,_,_,_,_,_,_,_,_,_)
@@ -2569,7 +2569,7 @@ algorithm
         next = List.select1(List.flatten(List.map1r(elst,arrayGet,ass2)),intGt,0) "vars assignt with equations";
         //  print("add to queue " + stringDelimitList(List.map(next,intString),", ") + "\n");
         next = listAppend(nextQueue, next);
-        _ = arrayUpdate(rowmarks,r,mark);
+        arrayUpdate(rowmarks,r,mark);
         //  print("goto " + stringDelimitList(List.map(next,intString),", ") + "\n");
         getOrphansPairs1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,orphan,next);
       then
@@ -2605,7 +2605,7 @@ algorithm
     case (o::rest,_,_,_,_,_,_,_,_)
       equation
         false = intEq(colummarks[o],mark);
-        _ = arrayUpdate(colummarks,o,mark);
+        arrayUpdate(colummarks,o,mark);
           print("getOrphansPairsConstraints Process Orphan " + intString(o) + "\n");
         getOrphansPairsConstraints1(mt[o],ass1,ass2,m,mt,mark,rowmarks,colummarks,eqns,o,{});
       then
@@ -2652,10 +2652,10 @@ algorithm
         //  print("search in " + stringDelimitList(List.map(next,intString),", ") + "\n");
         o = hasResidualOrphan1(next,ass2,eqnsarr);
         //  print("Found Orphanpair " + intString(o) + " <-> " + intString(orphan) + "\n");
-        _ = arrayUpdate(ass1,orphan,o);
+        arrayUpdate(ass1,orphan,o);
         ass2lst = ass2[o];
         ass2lst = orphan::ass2lst;
-        _ =arrayUpdate(ass2, o, ass2lst);
+        arrayUpdate(ass2, o, ass2lst);
 
       then
         ();
@@ -2667,7 +2667,7 @@ algorithm
         rlst = List.fold1(lst,List.removeOnTrue, intEq, rlst);
         next = List.select1(List.map1r(rlst,arrayGet,ass1),intGt,0);
         next = listAppend(nextQueue, next);
-        _ = arrayUpdate(colummarks,e,mark);
+        arrayUpdate(colummarks,e,mark);
         //  print("goto " + stringDelimitList(List.map(next,intString),", ") + "\n");
         getOrphansPairsConstraints1(rest,ass1,ass2,m,mt,mark,rowmarks,colummarks,eqnsarr,orphan,next);
       then
@@ -2738,9 +2738,9 @@ algorithm
         // set indexes
         mark = imark+2;
         ((index1,queue,rqueue)) = List.fold1(queue,setIndexQueue,(vec1,vec2,ass2,queuemark,colummarks,mark),(index,{},{}));
-        _=arrayUpdate(vec1,index1,vorphans);
-        _=arrayUpdate(vec2,index1,eorphan);
-        _=arrayUpdate(queuemark,eorphan,true);
+        arrayUpdate(vec1,index1,vorphans);
+        arrayUpdate(vec2,index1,eorphan);
+        arrayUpdate(queuemark,eorphan,true);
         mark = mark+1;
         // collect all border vars and equations
         // mark all elements of the clique
@@ -2758,19 +2758,19 @@ algorithm
         lst = List.select2(m[eorphan],unmarked,rowmarks,mark);
         lst = listAppend(listAppend(vorphans,lst),bvars);
         //  print("Set eorphan " + intString(eorphan) + ": " + stringDelimitList(List.map(lst,intString),", ") + "\n");
-        _ = arrayUpdate(m,eorphan,lst);
+        arrayUpdate(m,eorphan,lst);
 
         lst = List.select2(vorphanseqns,unmarked,colummarks,mark);
         lst = listAppend(eorphan::lst,beqns);
         //  print("Set vorphan " + intString(vorphan) + ": " + stringDelimitList(List.map(lst,intString),", ") + "\n");
-        _ = arrayUpdate(mT,vorphan,lst);
+        arrayUpdate(mT,vorphan,lst);
 
         setBoarderElemts(bvars,mT,mark,colummarks,eorphan);
         setBoarderElemts(beqns,m,mark,rowmarks,vorphan);
         // unset orphanmark so it can passed
-        //_=arrayUpdate(orowmarks,vorphan,-1);
+        //arrayUpdate(orowmarks,vorphan,-1);
         _ = List.fold1(vorphans,markOrphans,-1,orowmarks);
-        _=arrayUpdate(ocolummarks,eorphan,-1);
+        arrayUpdate(ocolummarks,eorphan,-1);
 
        vorphans = List.removeOnTrue(vorphan, intEq, vorphans);
        _ = List.fold1(vorphans,markOrphans,-1,orowmarks);
@@ -2805,7 +2805,7 @@ algorithm
     case(elem::rest,_,_,_,_)
       equation
         (lst,lst1) = List.split2OnTrue(m[elem], unmarked, arr,mark);
-        _= arrayUpdate(m,elem,lst1);
+        arrayUpdate(m,elem,lst1);
         lst = List.select2(lst,unmarked,arr,mark+1);
         List.map2_0(lst,doMark,arr,mark+1);
         lst = getBorderElements(rest,m,mark,arr,listAppend(lst,iAcc));
@@ -2829,7 +2829,7 @@ algorithm
     case(elem::rest,_,_,_,_)
       equation
         lst = List.select2(m[elem],unmarked,arr,mark);
-        _ = arrayUpdate(m,elem,orphan::lst);
+        arrayUpdate(m,elem,orphan::lst);
         //  print("Set BElement " + intString(elem) + ": " + stringDelimitList(List.map(orphan::lst,intString),", ") + "\n");
         setBoarderElemts(rest,m,mark,arr,orphan);
       then
@@ -2855,17 +2855,17 @@ algorithm
         r = ass2[col];
         false = queuemark[col];
         //  print("Index: " + intString(index) + ":" + stringDelimitList(List.map(r,intString),", ") + "  " + intString(col) + "\n");
-        _ = arrayUpdate(vec1,index,r);
-        _ = arrayUpdate(vec2,index,col);
-        _ = arrayUpdate(queuemark,col,true);
-        _ = arrayUpdate(colummark,col,mark);
+        arrayUpdate(vec1,index,r);
+        arrayUpdate(vec2,index,col);
+        arrayUpdate(queuemark,col,true);
+        arrayUpdate(colummark,col,mark);
       then
         ((index+1,col::elst,listAppend(r,rlst)));
     case (_,(_,_,ass2,_,colummark,mark),(index,elst,rlst))
       equation
         r = ass2[col];
         false = intEq(colummark[col],mark);
-        _ = arrayUpdate(colummark,col,mark);
+        arrayUpdate(colummark,col,mark);
       then
         ((index,col::elst,listAppend(r,rlst)));
     else
@@ -3087,8 +3087,8 @@ algorithm
         nextrows = List.select(m[e], Util.intPositive);
         nextrows = List.setDifferenceOnTrue(nextrows,ass2[e],intEq);
         //  print("search Subgraph: " + intString(r) + " across " + intString(e) + "\n");
-        //_ = arrayUpdate(rowmarks,r,mark);
-        _ = arrayUpdate(colummarks,e,mark);
+        //arrayUpdate(rowmarks,r,mark);
+        arrayUpdate(colummarks,e,mark);
         //  BackendDump.debuglst((nextrows,intString,", ","\n"));
         b = getIndexSubGraph(nextrows,vorphan,m,mT,mark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,false);
         markIndexSubgraph(b,ass2[e],mark,rowmarks);
@@ -3138,8 +3138,8 @@ algorithm
   case(_,_,_,_,_,_,_,_,_)
     equation
       false = intGt(i,size);
-      _ = arrayUpdate(vec1,id,ass2[i]);
-      _ = arrayUpdate(vec2,id,i);
+      arrayUpdate(vec1,id,ass2[i]);
+      arrayUpdate(vec2,id,i);
       getIndexesForEqnsRest(i+1,size,id+1,mark,colummarks,ass1,ass2,vec1,vec2);
     then
       ();
@@ -3161,7 +3161,7 @@ algorithm
     equation
       false = intGt(i,size);
       true = intGt(vec2[i],0);
-      _ = arrayUpdate(colummarks,vec2[i],mark);
+      arrayUpdate(colummarks,vec2[i],mark);
       markIndexdColums(i+1,size,mark,colummarks,vec2);
     then
       ();
@@ -3297,8 +3297,8 @@ algorithm
     case ({},_,_,_) then ();
     case (v::rest,_,_,_)
       equation
-        _ = arrayUpdate(ass1,v,e);
-        _ = arrayUpdate(ass2,e,v);
+        arrayUpdate(ass1,v,e);
+        arrayUpdate(ass2,e,v);
         assignLst(rest,e+1,ass1,ass2);
       then
         ();
@@ -3349,7 +3349,7 @@ algorithm
       equation
         //  print("Process Eqn " + intString(c) + "\n");
         rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
-        //_ = arrayUpdate(columark,c,mark);
+        //arrayUpdate(columark,c,mark);
         newqueue = onefreeMatchingBFS1(rows,c,mt,ass1,ass2,columark,mark,nextQeue);
         onefreeMatchingBFS(rest,m,mt,size,ass1,ass2,columark,mark,newqueue);
       then
@@ -3394,8 +3394,8 @@ algorithm
       equation
         //  print("Assign Var" + intString(r) + " with Eqn " + intString(c) + "\n");
         // assigen
-        _ = arrayUpdate(ass1,r,c);
-        _ = arrayUpdate(ass2,c,r);
+        arrayUpdate(ass1,r,c);
+        arrayUpdate(ass2,c,r);
         vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
         //vareqns = List.removeOnTrue((columark,mark), isMarked, vareqns);
         //markEqns(vareqns,columark,mark);

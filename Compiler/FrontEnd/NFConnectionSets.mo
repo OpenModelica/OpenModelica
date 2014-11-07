@@ -393,7 +393,7 @@ algorithm
         true = parent < 0;
         next_index = inNextIndex + 1;
         node = NODE(conn, 0, next_index);
-        _ = arrayUpdate(inNodes, index, node);
+        arrayUpdate(inNodes, index, node);
       then
         (node, next_index, true);
 
@@ -407,7 +407,7 @@ algorithm
           assignSetIndex(node, inNodes, inNextIndex);
         // Assign this node its parent's index.
         node = NODE(conn, 0, index2);
-        _ = arrayUpdate(inNodes, index, node);
+        arrayUpdate(inNodes, index, node);
       then
         (node, next_index, true);
 
@@ -516,7 +516,7 @@ algorithm
         // models to see how it behaves.
         /*********************************************************************/
         //node = NODE(conn, parent_id, index, rank);
-        //_ = arrayUpdate(inNodes, index, node);
+        //arrayUpdate(inNodes, index, node);
       then
         parent;
 

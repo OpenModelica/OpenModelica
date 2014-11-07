@@ -438,7 +438,7 @@ algorithm
     case(false,_,_,_) then ();
     case(true,_,_,_)
       equation
-        _ = arrayUpdate(inArr,index,value);
+        arrayUpdate(inArr,index,value);
       then
         ();
   end match;

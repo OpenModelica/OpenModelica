@@ -255,7 +255,7 @@ algorithm
       array<Integer> ass1_1,ass2_1;
     case (_,_,_,_,_,_,_,_)
       equation
-        _ = arrayUpdate(emark,i,imark) "Side effect";
+        arrayUpdate(emark,i,imark) "Side effect";
         (ass1_1,ass2_1) = assignOneInEqn(m, mt, i, ass1, ass2);
       then
         (ass1_1,ass2_1);
@@ -392,7 +392,7 @@ algorithm
       list<Integer> vars,vs;
     case (_,_,_,_,_,_,((v :: _)),_,_)
       equation
-        _ = arrayUpdate(vmark,v,imark);
+        arrayUpdate(vmark,v,imark);
         assarg = ass1[v];
         (ass1_1,ass2_1) = pathFound(m, mt, assarg, imark, emark, vmark, ass1, ass2);
         ass1_2 = arrayUpdate(ass1_1,v,i);
@@ -689,14 +689,14 @@ algorithm
     case (_,_,_,_,_,_)
       equation
         true = intEq(i,c);
-        _ = arrayUpdate(ass1,c,l);
-        _ = arrayUpdate(ass2,l,c);
+        arrayUpdate(ass1,c,l);
+        arrayUpdate(ass2,l,c);
       then ();
     case (_,_,_,_,_,_)
       equation
         r = ass1[c];
-        _ = arrayUpdate(ass1,c,l);
-        _ = arrayUpdate(ass2,l,c);
+        arrayUpdate(ass1,c,l);
+        arrayUpdate(ass2,l,c);
         BFSBreasign(i,parentcolum[r],parentcolum,r,ass1,ass2);
       then
         ();
@@ -727,9 +727,9 @@ algorithm
     case (_,_,_,_,_,true,_,_)
       equation
         // mark row
-        _ = arrayUpdate(rowmarks,r,rowmark);
+        arrayUpdate(rowmarks,r,rowmark);
         // store parent colum
-        _ = arrayUpdate(parentcolum,r,c);
+        arrayUpdate(parentcolum,r,c);
       then
         (rc::queue);
     else
@@ -944,7 +944,7 @@ algorithm
         rc = ass2[r];
         false = intLt(rc,0);
         true = intLt(rowmarks[r],i);
-        _ = arrayUpdate(rowmarks,r,i);
+        arrayUpdate(rowmarks,r,i);
         visitedColums = DFSBphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,ass1,ass2,rc::inVisitedColums);
       then
         DFSBtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,visitedColums);
@@ -1001,8 +1001,8 @@ algorithm
     case (c::rest,_,_,_)
       equation
         rc = ass1[c];
-        _ = arrayUpdate(ass1,c,r);
-        _ = arrayUpdate(ass2,r,c);
+        arrayUpdate(ass1,c,r);
+        arrayUpdate(ass2,r,c);
         DFSBreasign(rest,rc,ass1,ass2);
       then ();
    end match;
@@ -1182,7 +1182,7 @@ algorithm
     case ({},_) then ();
     case (e::rest,_)
       equation
-        _= arrayUpdate(arr,e,0);
+        arrayUpdate(arr,e,0);
         MC21A1fixArray(rest,arr);
       then
         ();
@@ -1289,7 +1289,7 @@ algorithm
       Integer r;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        _ = arrayUpdate(lookahead,c,l);
+        arrayUpdate(lookahead,c,l);
        then
          MC21AtraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1334,7 +1334,7 @@ algorithm
         rc = ass2[r];
         false = intLt(rc,0);
         true = intLt(rowmarks[r],i);
-        _ = arrayUpdate(rowmarks,r,i);
+        arrayUpdate(rowmarks,r,i);
         visitedColums = MC21Aphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,rc::inVisitedColums);
       then
         MC21AtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,visitedColums);
@@ -1693,7 +1693,7 @@ algorithm
       Integer r;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        _ = arrayUpdate(lookahead,c,l);
+        arrayUpdate(lookahead,c,l);
        then
          PFtraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1738,7 +1738,7 @@ algorithm
         rc = ass2[r];
         false = intLt(rc,0);
         false = intEq(rowmarks[r],i);
-        _ = arrayUpdate(rowmarks,r,i);
+        arrayUpdate(rowmarks,r,i);
         b = PFphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
       then
         PFtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b);
@@ -2047,7 +2047,7 @@ algorithm
       Integer r;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        _ = arrayUpdate(lookahead,c,l);
+        arrayUpdate(lookahead,c,l);
        then
          PFPlustraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -2093,7 +2093,7 @@ algorithm
         rc = ass2[r];
         false = intLt(rc,0);
         false = intEq(rowmarks[r],i);
-        _ = arrayUpdate(rowmarks,r,i);
+        arrayUpdate(rowmarks,r,i);
         b = PFPlusphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
       then
         PFPlustraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b,reverseRows);
@@ -2470,7 +2470,7 @@ algorithm
       equation
         // traverse all adiacent rows
         cr = List.select(m[c], Util.intPositive);
-        _ = arrayUpdate(level,c,l);
+        arrayUpdate(level,c,l);
         (queue2,rows,b) = HKBFStraverseRows(cr,{},i,l,m,mT,rowmarks,level,ass1,ass2,inRows,false);
         queue2 = listAppend(queue1,queue2);
         ll = if b then SOME(l) else lowestL;
@@ -2564,7 +2564,7 @@ algorithm
       equation
         // row is unmatched
         true = intLt(ass2[r],0);
-        _ = arrayUpdate(rowmarks,r,i);
+        arrayUpdate(rowmarks,r,i);
         (queue1,rowstpl,b) = HKBFStraverseRows(rest,queue,i,l,m,mT,rowmarks,level,ass1,ass2,(r,l)::inRows,true);
       then
         (queue1,rowstpl,b);
@@ -2573,7 +2573,7 @@ algorithm
         // row is matched
         rc = ass2[r];
         false = intLt(rc,0);
-        _ = arrayUpdate(rowmarks,r,i);
+        arrayUpdate(rowmarks,r,i);
         (queue1,rowstpl,b) = HKBFStraverseRows(rest,rc::queue,i,l,m,mT,rowmarks,level,ass1,ass2,inRows,inunmarowFound);
       then
         (queue1,rowstpl,b);
@@ -2714,7 +2714,7 @@ algorithm
         // collum is matched
         r = ass1[c];
         false = intLt(r,0);
-        _ = arrayUpdate(collummarks,c,i);
+        arrayUpdate(collummarks,c,i);
         b = HKDFSphase(r::stack,i,r,l-1,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
       then
         HKDFStraverseCollums1(b,rest,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2);
@@ -2777,8 +2777,8 @@ algorithm
     case (r::rest,_,_,_)
       equation
         cr = ass2[r];
-        _ = arrayUpdate(ass1,c,r);
-        _ = arrayUpdate(ass2,r,c);
+        arrayUpdate(ass1,c,r);
+        arrayUpdate(ass2,r,c);
         HKDFSreasign(rest,cr,ass1,ass2);
       then ();
    end match;
@@ -3064,7 +3064,7 @@ algorithm
         // collum is matched
         r = ass1[c];
         false = intLt(r,0);
-        _ = arrayUpdate(collummarks,c,i);
+        arrayUpdate(collummarks,c,i);
         b = HKDWDFSphase(r::stack,i,r,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
       then
         HKDWDFStraverseCollums1(b,rest,stack,i,nv,ne,m,mT,collummarks,ass1,ass2);
@@ -3522,8 +3522,8 @@ algorithm
         false = intEq(rowmarks[r],i);
         // row is unmatched
         true = intLt(ass2[r],0);
-        _ = arrayUpdate(level,r,L);
-        _ = arrayUpdate(rowmarks,r,i);
+        arrayUpdate(level,r,L);
+        arrayUpdate(rowmarks,r,i);
         (queue1,unmatched) = ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue,r::unMatched);
       then
         (queue1,unmatched);
@@ -3534,7 +3534,7 @@ algorithm
         // row is matched
         rc = ass2[r];
         false = intLt(rc,0);
-        _ = arrayUpdate(rowmarks,r,i);
+        arrayUpdate(rowmarks,r,i);
         (queue1,unmatched) = ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,rc::queue,unMatched);
       then
         (queue1,unmatched);
@@ -3583,7 +3583,7 @@ algorithm
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // search augmenting paths
-        _ = arrayUpdate(colptrs,r,0);
+        arrayUpdate(colptrs,r,0);
         (i_1,b) = ABMPDFSphase({r},i,r,nv,ne,m,mT,level,colptrs,ass1,ass2);
         unmatched = List.consOnTrue(not b, r, unMatched);
         ABMPDFS1(b,r,rest,unmatched,i_1,L,nv,ne,m,mT,level,colptrs,ass1,ass2);
@@ -3742,15 +3742,15 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        _ = arrayUpdate(level,r,level[r]+2);
-        _ = arrayUpdate(colptrs,r,0);
+        arrayUpdate(level,r,level[r]+2);
+        arrayUpdate(colptrs,r,0);
       then
         (i+1,false);
     case (c::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // collum is unmatched
         true = intLt(ass1[c],0);
-        _ = arrayUpdate(colptrs,r,counter);
+        arrayUpdate(colptrs,r,counter);
         HKDFSreasign(stack,c,ass1,ass2);
       then
         (i,true);
@@ -3761,7 +3761,7 @@ algorithm
         // collum is matched
         rc = ass1[c];
         true = intGt(rc,0);
-        _ = arrayUpdate(colptrs,r,counter);
+        arrayUpdate(colptrs,r,counter);
         (i_1,b) = ABMPDFSphase(rc::stack,i,rc,nv,ne,m,mT,level,colptrs,ass1,ass2);
         (i_1,b) = ABMPDFStraverseCollums1(b,counter+1,rest,stack,r,i_1,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
       then
@@ -4041,7 +4041,7 @@ algorithm
         ();
     else
       equation
-        _ = arrayUpdate(l_label,i,max);
+        arrayUpdate(l_label,i,max);
         PR_Global_Relabel_init_l_label(i+1,ne,max,l_label);
       then
         ();
@@ -4069,12 +4069,12 @@ algorithm
       equation
         false = intGt(i,nv);
         false = intGt(ass2[i],0);
-        _ = arrayUpdate(r_label,i,0);
+        arrayUpdate(r_label,i,0);
       then
         PR_Global_Relabel_init_r_label(i+1,nv,max,r_label,ass2,i::inQueue);
     else
       equation
-        _ = arrayUpdate(r_label,i,max);
+        arrayUpdate(r_label,i,max);
       then
         PR_Global_Relabel_init_r_label(i+1,nv,max,r_label,ass2,inQueue);
   end matchcontinue;
@@ -4142,11 +4142,11 @@ algorithm
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = intEq(l_label[c],max);
-        _ = arrayUpdate(l_label,c,r_label[r]+1);
+        arrayUpdate(l_label,c,r_label[r]+1);
         rc = ass1[c];
         true = intGt(rc,-1);
         true = intEq(r_label[rc] ,max);
-        _ = arrayUpdate(r_label,rc,l_label[c]+1);
+        arrayUpdate(r_label,rc,l_label[c]+1);
       then
         PR_Global_Relabel_traverseCollums(rest,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,rc::nextqueue);
     case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
@@ -4363,9 +4363,9 @@ algorithm
       equation
         true = intLt(min_label,max);
         true = intLt(ass2[min_vertex],0);
-        _ = arrayUpdate(ass2,min_vertex,max_vertex);
-        _ = arrayUpdate(ass1,max_vertex,min_vertex);
-        _ = arrayUpdate(r_label,min_vertex,min_label+2);
+        arrayUpdate(ass2,min_vertex,max_vertex);
+        arrayUpdate(ass1,max_vertex,min_vertex);
+        arrayUpdate(r_label,min_vertex,min_label+2);
       then
         inQueue;
     case(_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -4373,11 +4373,11 @@ algorithm
         true = intLt(min_label,max);
         false = intLt(ass2[min_vertex],0);
         next_vertex = ass2[min_vertex];
-        _=arrayUpdate(ass2,min_vertex,max_vertex);
-        _=arrayUpdate(ass1,max_vertex,min_vertex);
-        _=arrayUpdate(ass1,next_vertex,-1);
-        _=arrayUpdate(l_label,max_vertex,min_label+1);
-        _=arrayUpdate(r_label,min_vertex,min_label+2);
+        arrayUpdate(ass2,min_vertex,max_vertex);
+        arrayUpdate(ass1,max_vertex,min_vertex);
+        arrayUpdate(ass1,next_vertex,-1);
+        arrayUpdate(l_label,max_vertex,min_label+1);
+        arrayUpdate(r_label,min_vertex,min_label+2);
       then
         next_vertex::inQueue;
     else
@@ -4485,8 +4485,8 @@ algorithm
       equation
         // row is unmatched -> return
         true = intLt(ass2[r],0);
-        _ = arrayUpdate(ass1,c,r);
-        _ = arrayUpdate(ass2,r,c);
+        arrayUpdate(ass1,c,r);
+        arrayUpdate(ass2,r,c);
       then
         ();
   end match;
@@ -4550,8 +4550,8 @@ algorithm
       equation
         // row is unmatched -> return
         true = intLt(ass2[r],0);
-        _ = arrayUpdate(ass1,c,r);
-        _ = arrayUpdate(ass2,r,c);
+        arrayUpdate(ass1,c,r);
+        arrayUpdate(ass2,r,c);
       then
         ();
     case (_::rest,_,_,_)
@@ -4679,15 +4679,15 @@ algorithm
         equation
           true = intLt(ass2[r],0);
           true = intEq(e_id,0);
-          _ = arrayUpdate(ass1,c,r);
-          _ = arrayUpdate(ass2,r,c);
+          arrayUpdate(ass1,c,r);
+          arrayUpdate(ass2,r,c);
           stack = ks_rand_match_degree(rest,row_degrees,ass2,onerows);
         then
           (stack,r);
       case (_,r::rest,_,_,_,_,_,_)
         equation
            true = intLt(ass2[r],0);
-          _ = arrayUpdate(row_degrees,r,row_degrees[r]-1);
+          arrayUpdate(row_degrees,r,row_degrees[r]-1);
           stack = List.consOnTrue(intEq(row_degrees[r],1),r,onerows);
          (statck1,r_1) = ks_rand_cheapmatching3(e_id-1,rest,row_degrees,c,ass1,ass2,stack,r);
         then
@@ -4723,7 +4723,7 @@ algorithm
       case (c::rest,_,_,_,_)
         equation
           true = intLt(ass1[c],0);
-          _ = arrayUpdate(col_degrees,c,col_degrees[c]-1);
+          arrayUpdate(col_degrees,c,col_degrees[c]-1);
           stack = List.consOnTrue(intEq(col_degrees[c],1),c,inStack);
         then
           ks_rand_cheapmatching4(rest,count-1,col_degrees,ass1,stack);
@@ -4752,7 +4752,7 @@ algorithm
       equation
         lst = List.select(m[n], Util.intPositive);
         l = listLength(lst);
-        _= arrayUpdate(degrees,n,l);
+        arrayUpdate(degrees,n,l);
         onerows = List.consOnTrue(intEq(l,1),n,inOneRows);
      then
         getOneRows(n-1,m,degrees,onerows);
@@ -4774,8 +4774,8 @@ algorithm
       equation
         z = realInt(realMod(System.realRand(),intReal(n)))+1;
         tmp = randarr[n];
-        _ = arrayUpdate(randarr,n,randarr[z]);
-        _ = arrayUpdate(randarr,z,tmp);
+        arrayUpdate(randarr,n,randarr[z]);
+        arrayUpdate(randarr,z,tmp);
         setrandArray(n-1,randarr);
      then
        ();
@@ -4866,8 +4866,8 @@ algorithm
         equation
           true = intLt(ass2[e],0);
           lst = List.select(incidence[e], Util.intPositive);
-          _ = arrayUpdate(ass1,i,e);
-          _ = arrayUpdate(ass2,e,i);
+          arrayUpdate(ass1,i,e);
+          arrayUpdate(ass2,e,i);
         then
           ks_rand_match_degree(lst,degrees1,ass1,stack);
       case (_,_::rest,_,_,_,_,_,_)
@@ -4893,7 +4893,7 @@ algorithm
       case (e::rest,_,_,_)
         equation
           true = intLt(ass[e],0);
-          _ = arrayUpdate(degrees,e,degrees[e]-1);
+          arrayUpdate(degrees,e,degrees[e]-1);
           stack = List.consOnTrue(intEq(degrees[e],1),e,inStack);
         then
           ks_rand_match_degree(rest,degrees,ass,stack);
@@ -5899,7 +5899,7 @@ algorithm
      case (c::rest,_,_,_)
        equation
          r = ass1[c];
-         _ = arrayUpdate(rowmarks,r,ne+1);
+         arrayUpdate(rowmarks,r,ne+1);
          prune(rest,ne,rowmarks,ass1);
        then
          ();

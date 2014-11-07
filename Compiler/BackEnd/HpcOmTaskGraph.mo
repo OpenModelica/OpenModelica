@@ -1326,8 +1326,8 @@ algorithm
       equation
         //print("HpcOmTaskGraph.getvarCompMapping0 for singleEquation varCompMapping-length:" + intString(arrayLength(varCompMapping)) + " varIdx: " + intString(compVarIdx) + " varOffset: " + intString(iVarOffset) + "\n");
         //print("HpcOmTaskGraph.getvarCompMapping0 for singleEquation eqCompMapping-length:" + intString(arrayLength(eqCompMapping)) + " eqIdx: " + intString(eq) + " eqOffset: " + intString(iEqOffset) + "\n");
-        _ = arrayUpdate(varCompMapping,compVarIdx + iVarOffset,(iSccIdx,iEqSysIdx,iVarOffset));
-        _ = arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        arrayUpdate(varCompMapping,compVarIdx + iVarOffset,(iSccIdx,iEqSysIdx,iVarOffset));
+        arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then iSccIdx+1;
     case(BackendDAE.EQUATIONSYSTEM(vars = compVarIdc, eqns=eqns),_,_,_,(iVarOffset,iEqOffset),_)
       equation
@@ -1338,25 +1338,25 @@ algorithm
     case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc,eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
         _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
-        _ = arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then
         iSccIdx+1;
     case(BackendDAE.SINGLEARRAY(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
         _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
-        _ = arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
       then
         iSccIdx+1;
     case(BackendDAE.SINGLEALGORITHM(vars = compVarIdc,eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
         _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
-        _ =arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
     case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
         _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
-        _ = arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
     case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl),_,_,_,(iVarOffset,iEqOffset),_)
@@ -1371,7 +1371,7 @@ algorithm
     case(BackendDAE.SINGLEIFEQUATION(vars = compVarIdc, eqn = eq),_,_,_,(iVarOffset,iEqOffset),_)
       equation
         _ = List.fold3(compVarIdc,updateMappingTuple,iSccIdx,iEqSysIdx,iVarOffset,varCompMapping);
-        _ = arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
+        arrayUpdate(eqCompMapping,eq + iEqOffset,(iSccIdx,iEqSysIdx,iEqOffset));
         then
           iSccIdx+1;
     else
@@ -1658,7 +1658,7 @@ algorithm
         row = arrayGet(graphDAE,daeIdx);
         row = List.map1(row,Array.getIndexFirst,odeMap);
         row = List.filter1OnTrue(row,intGt,0);
-        _ = arrayUpdate(graphODE,odeIdx,row);
+        arrayUpdate(graphODE,odeIdx,row);
         (_,cutNodes) = cutTaskGraph2(rest,graphODE,cutNodesIn,graphDAE,odeMap);
       then (graphODE,cutNodes);
     case(daeIdx::rest,_,_,_,_)
@@ -2082,7 +2082,7 @@ algorithm
     case(_,_,tmpNodesWithRefZero)
       equation
         refCounter = arrayGet(iRefCounter, iNodeIdx) - 1;
-        _ = arrayUpdate(iRefCounter, iNodeIdx, refCounter);
+        arrayUpdate(iRefCounter, iNodeIdx, refCounter);
         true = intEq(refCounter, 0);
         tmpNodesWithRefZero = iNodeIdx::tmpNodesWithRefZero;
       then tmpNodesWithRefZero;
@@ -4422,7 +4422,7 @@ algorithm
       equation
         //print("\tcreateExecCost: sccs: " + stringDelimitList(List.map(iNodeSccs, intString), ",") + "\n");
         execCost = List.fold3(iNodeSccs, createExecCost0, icomps_shared, compMapping, iRequiredTime, (0,0.0));
-        _ = arrayUpdate(iExecCosts,iNodeIdx,execCost);
+        arrayUpdate(iExecCosts,iNodeIdx,execCost);
       then ();
     else
       then ();
@@ -4865,7 +4865,7 @@ algorithm
         COMMUNICATION(requiredTime=commTime) = commCost;
         //print("getCriticalPath1: " + " (" + realString(calcTime) + "+" + realString(commTime) + ")\n");
         calcTime = realAdd(calcTime, commTime);
-        _ = arrayUpdate(iNodeCriticalPaths, iNode, (calcTime, criticalPath));
+        arrayUpdate(iNodeCriticalPaths, iNode, (calcTime, criticalPath));
         //print("getCriticalPath1: Critical path of node " + intString(iNode) + " is " + realString(calcTime) + "\n");
       then ((calcTime, criticalPath));
     case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_,_)
@@ -4875,7 +4875,7 @@ algorithm
         criticalPath = iNode :: {};
         nodeComps = arrayGet(inComps, iNode);
         calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
-        _ = arrayUpdate(iNodeCriticalPaths, iNode, (calcTime, criticalPath));
+        arrayUpdate(iNodeCriticalPaths, iNode, (calcTime, criticalPath));
       then ((calcTime, criticalPath));
     else
       equation
@@ -5479,7 +5479,7 @@ algorithm
         annotString = arrayGet(annotInfoIn,taskIdx);
         cr = BackendVariable.varCref(var);
         annotString = annotString + "("+ComponentReference.printComponentRefStr(cr)+": "+DAEDump.dumpCommentAnnotationStr(annot)+") ";
-        _ = arrayUpdate(annotInfoIn,taskIdx,annotString);
+        arrayUpdate(annotInfoIn,taskIdx,annotString);
       then
         annotInfoIn;
     else

@@ -240,7 +240,7 @@ algorithm
     case(_,_,_,_)
       equation
         false = intEq(mark,markarray[c]);
-        _ = arrayUpdate(markarray,c,mark);
+        arrayUpdate(markarray,c,mark);
       then
         c::iAcc;
     else
@@ -881,10 +881,10 @@ algorithm
     case (_,_,_,_,_,_,_,_,_)
       equation
         i_1 = i + 1;
-        _ = arrayUpdate(number,v,i_1);
-        _ = arrayUpdate(lowlink,v,i_1);
+        arrayUpdate(number,v,i_1);
+        arrayUpdate(lowlink,v,i_1);
         stack_1 = (v :: stack);
-        _ = arrayUpdate(stackflag,v,true);
+        arrayUpdate(stackflag,v,true);
         eqns = reachableNodes(v, mt, a2);
         (i_1,stack_2,comps_1) = iterateReachableNodes(eqns, mt, a2, number, lowlink, stackflag, i_1, v, stack_1, comps);
         (stack_3,comp) = checkRoot(v, stack_2, number, lowlink, stackflag);
@@ -1018,7 +1018,7 @@ algorithm
         lv = lowlink[v];
         lw = lowlink[w];
         minv = intMin(lv, lw);
-        _ = arrayUpdate(lowlink,v,minv);
+        arrayUpdate(lowlink,v,minv);
       then (i1,stack,comps_1);
 
     // nw
@@ -1028,7 +1028,7 @@ algorithm
         nv = lowlink[v];
         (nw < nv) = true;
         true = stackflag[w];
-        _ = arrayUpdate(lowlink,v,nw);
+        arrayUpdate(lowlink,v,nw);
       then (i,istack,icomps);
 
     else (i,istack,icomps);
@@ -1091,7 +1091,7 @@ algorithm
     case (_,(top :: rest),_,_,_)
       equation
         true = intGe(number[top],vn);
-        _ = arrayUpdate(stackflag,top,false);
+        arrayUpdate(stackflag,top,false);
         (stack,comp) = checkStack(vn, rest, number, stackflag, top :: icomp);
       then
         (stack,comp);

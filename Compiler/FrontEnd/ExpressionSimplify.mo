@@ -1289,7 +1289,7 @@ algorithm
         v1 = arrayGet(marr, i1);
         v2 = arrayGet(marr, i2);
         exp = arrayGet(v1,i2);
-        _ = arrayUpdate(v2, i1, exp);
+        arrayUpdate(v2, i1, exp);
         simplifySymmetric(marr, if i1==1 then (i2-2) else (i1-1), if i1==1 then (i2-1) else i2);
       then ();
   end match;

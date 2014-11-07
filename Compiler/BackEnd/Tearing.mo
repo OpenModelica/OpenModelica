@@ -554,12 +554,12 @@ algorithm
         true = intGt(skip[index],0);
         row = List.select(m[index], Util.intPositive);
         row = List.select1r(row,isAssigned,rowskip);
-        _ = arrayUpdate(mnew,index,row);
+        arrayUpdate(mnew,index,row);
       then
         getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
     case (_,_,_,_,_,_)
       equation
-        _ = arrayUpdate(mnew,index,{});
+        arrayUpdate(mnew,index,{});
       then
         getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
   end matchcontinue;
@@ -579,7 +579,7 @@ algorithm
       list<Integer> rest;
     case(indx::rest,_,_)
       equation
-        _= arrayUpdate(arr,indx,value);
+        arrayUpdate(arr,indx,value);
       then
         setIntArray(rest,arr,value);
     case({},_,_) then arr;
@@ -613,7 +613,7 @@ algorithm
       vars = List.select(m[c], Util.intPositive);
       tvars = tVarsofEqn(vars, ass1, mT, visited, iMark, {});
       // update map
-      _ = arrayUpdate(mT, v, tvars);
+      arrayUpdate(mT, v, tvars);
     then getDependenciesOfVars(comps, ass1, ass2, m, mT, visited, iMark+1);
 
     case (comp::comps, _, _, _, _, _, _) equation
@@ -692,7 +692,7 @@ algorithm
     case(_,_,_,_)
       equation
         false = intEq(mark,markarray[c]);
-        _ = arrayUpdate(markarray,c,mark);
+        arrayUpdate(markarray,c,mark);
       then
         c::iAcc;
     else
@@ -758,7 +758,7 @@ oVarGlobalLocal :=
     case ({},_,_) then iVarGlobalLocal;
     case (i::tvars,_,_)
       equation
-        _= arrayUpdate(iVarGlobalLocal,i,index);
+        arrayUpdate(iVarGlobalLocal,i,index);
       then
         getGlobalLocal(tvars,index+1,iVarGlobalLocal);
   end match;
@@ -856,7 +856,7 @@ algorithm
           print("\nEND of omcTearingSelectTearingVar\n" + BORDER + "\n\n");
         end if;
         // mark tearing var
-        _ = arrayUpdate(ass1,tvar,size*2);
+        arrayUpdate(ass1,tvar,size*2);
         // equations not yet assigned containing the tvar
         vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -884,7 +884,7 @@ algorithm
           print("tVar: " + intString(tvar) + " (unsolvable in omcTearing2)\n\n\n");
         end if;
         // mark tearing var
-        _ = arrayUpdate(ass1,tvar,size*2);
+        arrayUpdate(ass1,tvar,size*2);
         // equations not yet assigned containing the tvar
         vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1357,7 +1357,7 @@ algorithm
         end if;
         // not assigned variables in equation c:
         rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
-          //_ = arrayUpdate(columark,c,mark);
+          //arrayUpdate(columark,c,mark);
         // For Equationarrays
         cnonscalar = mapIncRowEqn[c];
         eqnsize = listLength(mapEqnIncRow[cnonscalar]);
@@ -1533,8 +1533,8 @@ algorithm
            print("Assignment: Eq " + intString(c) + " - Var " + intString(r) + "\n");
         end if;
         // assign
-        _ = arrayUpdate(ass1,r,c);
-        _ = arrayUpdate(ass2,c,r);
+        arrayUpdate(ass1,r,c);
+        arrayUpdate(ass2,c,r);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("ass1: " + stringDelimitList(List.map(arrayList(ass1),intString),",")+"\n");
           print("ass2: " + stringDelimitList(List.map(arrayList(ass2),intString),",")+"\n");

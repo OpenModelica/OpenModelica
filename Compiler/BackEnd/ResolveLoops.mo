@@ -576,7 +576,7 @@ algorithm
       List.map2_0(adjVars,arrayGetDeleteInLst,loop1,mTIn);  // remove the loop eqs from the adjacent vars
       List.map2_0(adjVars,arrayGetAppendLst,{pos},mTIn);  // redirect the adjacent vars to the replaced eq
       List.map2_0(loop1,Array.updateIndexFirst,{},mIn);  //delete the eqs in the loop
-      _ = arrayUpdate(mIn,pos,adjVars);  // redirect the replaced equation to the vars outside of the loops
+      arrayUpdate(mIn,pos,adjVars);  // redirect the replaced equation to the vars outside of the loops
 
       // update remaining paths
       rest = List.map2(rest,replaceContractedNodes,pos,eqs);
@@ -629,7 +629,7 @@ algorithm
       List.map2_0(adjVars,arrayGetDeleteInLst,loop1,mTIn);  // remove the loop eqs from the adjacent vars
       List.map2_0(adjVars,arrayGetAppendLst,{pos},mTIn);  // redirect the adjacent vars to the replaced eq
       List.map2_0(loop1,Array.updateIndexFirst,{},mIn);  //delete the eqs in the loop
-      _ = arrayUpdate(mIn,pos,adjVars);  // redirect the replaced equation to the vars outside of the loops
+      arrayUpdate(mIn,pos,adjVars);  // redirect the replaced equation to the vars outside of the loops
 
       // update remaining paths
       rest = List.map2(rest,replaceContractedNodes,pos,eqs);

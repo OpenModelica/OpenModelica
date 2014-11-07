@@ -1840,7 +1840,7 @@ algorithm
       equation
         // "Mark an unmarked node/equation"
         true = intEq(iMark[eqn],0);
-        _ = arrayUpdate(iMark, eqn, 1);
+        arrayUpdate(iMark, eqn, 1);
         vlst = List.select(m[eqn], Util.intPositive) "vars of equation";
         vlst = List.removeOnTrue(arrayLength(ass1), intLt, vlst) "take care we access not behind ass1 length";
         queue = List.map1r(vlst,arrayGet,ass1) "equations of vars";
@@ -3353,7 +3353,7 @@ algorithm
         mt = Array.expand(iabs - arrayLength(mt),mt,{});
         col = mt[iabs];
         indx1 = if intLt(i,0) then -indx else indx;
-        _ = arrayUpdate(mt,iabs,indx1::col);
+        arrayUpdate(mt,iabs,indx1::col);
       then
         transposeRow(res, (mt,indx));
   end match;
@@ -4552,7 +4552,7 @@ algorithm
     case ({},_,_,_) then iRow;
     case (i::rest,_,_,_)
       equation
-        _ = arrayUpdate(rowmark,i,mark);
+        arrayUpdate(rowmark,i,mark);
       then
         adjacencyRowAlgorithmOutputs1(rest,mark,rowmark,(i,BackendDAE.SOLVABILITY_SOLVED())::iRow);
   end match;
@@ -4604,7 +4604,7 @@ algorithm
       equation
         // not allready handled
         false = intEq(intAbs(rowmark[i]),mark);
-        _ = arrayUpdate(rowmark,i,-mark);
+        arrayUpdate(rowmark,i,-mark);
       then
         adjacencyRowAlgorithmInputs1(rest,mark,rowmark,(i,BackendDAE.SOLVABILITY_UNSOLVABLE())::iRow);
     case (i::rest,_,_,_)
@@ -5261,7 +5261,7 @@ algorithm
         ();
     case(_::vlst,i::ilst,_,_,_)
       equation
-        _ = arrayUpdate(rowmark,i,-mark);
+        arrayUpdate(rowmark,i,-mark);
         markBranchVars1(vlst,ilst,mark,rowmark,bt);
       then
         ();

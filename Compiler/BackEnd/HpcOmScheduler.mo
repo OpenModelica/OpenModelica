@@ -203,7 +203,7 @@ algorithm
         tmpNodeList = listAppend(tmpNodeList, rest);
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
-        _ = arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
+        arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
         (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
       then (tmpSchedule,tmpThreadReadyTimes);
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
@@ -232,7 +232,7 @@ algorithm
         tmpNodeList = listAppend(tmpNodeList, rest);
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
-        _ = arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
+        arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
         (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
       then (tmpSchedule,tmpThreadReadyTimes);
     case({},_,_,_,_,_,_,_,_,_) then (iSchedule,iThreadReadyTimes);
@@ -2365,8 +2365,8 @@ algorithm
     case ((fromnode,tonode,cost),_,_,_,_)
       equation
         true = intEq(fromnode,actnode);
-        _ = arrayUpdate(adjwgt,imarker,cost);
-        _ = arrayUpdate(adjncy,imarker,tonode-1);
+        arrayUpdate(adjwgt,imarker,cost);
+        arrayUpdate(adjncy,imarker,tonode-1);
       then
         imarker+1;
     case (_,_,_,_,_)
@@ -2637,7 +2637,7 @@ algorithm
         tmpNodeList = listAppend(tmpNodeList, rest);
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
-        _ = arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
+        arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
         tmpSchedule = createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
       then tmpSchedule;
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
@@ -2662,7 +2662,7 @@ algorithm
         tmpNodeList = listAppend(tmpNodeList, rest);
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
-        _ = arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
+        arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
         tmpSchedule = createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
       then tmpSchedule;
     case({},_,_,_,_,_,_,_,_,_) then iSchedule;
@@ -4106,7 +4106,7 @@ algorithm
         thread = front::thread;
         clusters = List.replaceAt(thread,currThread,clustersIn);
         //print("cluster: "+intListString(thread)+"\n");
-        _ = arrayUpdate(taskAssIn,front,currThread);
+        arrayUpdate(taskAssIn,front,currThread);
         // go to predecessor
         rest = List.removeOnTrue(fpred,intEq,rest);
         rest = fpred::rest;
@@ -4123,7 +4123,7 @@ algorithm
         thread = front::thread;
         clusters = List.replaceAt(thread,currThread,clustersIn);
         //print("cluster: "+intListString(thread)+"\n");
-        _ = arrayUpdate(taskAssIn,front,currThread);
+        arrayUpdate(taskAssIn,front,currThread);
         // check for other parents to get the next fpred
         parents = arrayGet(iTaskGraphT,front);
         parentsNofpred = List.removeOnTrue(fpred,intEq,parents);// choose not the fpred
@@ -5051,7 +5051,7 @@ algorithm
       lact = arrayUpdate(lactIn,nodeIdx,maxLast);
       parentNodes = arrayGet(iTaskGraphT,nodeIdx);
       rest = listAppend(rest,parentNodes);
-      _ = arrayUpdate(visitedNodes, nodeIdx, true);
+      arrayUpdate(visitedNodes, nodeIdx, true);
       (alap,last,lact,tdsLevel) = computeGraphValuesTopDown1(rest,iTaskGraph,iTaskGraphT,iTaskGraphMeta,alap,last,lact,tdsLevel,visitedNodes);
     then (alap,last,lact,tdsLevel);
   case(nodeIdx::rest,_,_,_,_,_,_,_,_)

@@ -1151,14 +1151,14 @@ algorithm
     case ({BackendDAE.VAR(varName=cr1)}, _, {i1}, true, true, {BackendDAE.VAR(varName=cr2)}, _, {i2}, false, false, _, _, _, _)
       equation
         colum = iMT[i2];
-        _ = arrayUpdate(iMT, i2, iIndex::colum);
+        arrayUpdate(iMT, i2, iIndex::colum);
       then
         (TIMEALIAS(cr2, negatedCr2, i2, cr1, negatedCr1, i1, eqnAttributes, -1)::iSeqns, iIndex+1, iMT);
 
     case ({BackendDAE.VAR(varName=cr1)}, _, {i1}, false, false, {BackendDAE.VAR(varName=cr2)}, _, {i2}, true, true, _, _, _, _)
       equation
         colum = iMT[i1];
-        _ = arrayUpdate(iMT, i1, iIndex::colum);
+        arrayUpdate(iMT, i1, iIndex::colum);
       then
         (TIMEALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, eqnAttributes, -1)::iSeqns, iIndex+1, iMT);
 
@@ -1204,23 +1204,23 @@ algorithm
       equation
         checkEqualAlias(intEq(i1, i2), v1, negatedCr1, v2, negatedCr2, eqnAttributes);
         colum = iMT[i1];
-        _ = arrayUpdate(iMT, i1, iIndex::colum);
+        arrayUpdate(iMT, i1, iIndex::colum);
         colum = iMT[i2];
-        _ = arrayUpdate(iMT, i2, iIndex::colum);
+        arrayUpdate(iMT, i2, iIndex::colum);
       then
         (ALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, eqnAttributes, -1)::iSeqns, iIndex+1, iMT);
 
     case (BackendDAE.VAR(varName=cr1), _, _, true, BackendDAE.VAR(varName=cr2), _, _, false, _, _, _, _)
       equation
         colum = iMT[i2];
-        _ = arrayUpdate(iMT, i2, iIndex::colum);
+        arrayUpdate(iMT, i2, iIndex::colum);
       then
         (PARAMETERALIAS(cr2, negatedCr2, i2, cr1, negatedCr1, i1, eqnAttributes, -1)::iSeqns, iIndex+1, iMT);
 
     case (BackendDAE.VAR(varName=cr1), _, _, false, BackendDAE.VAR(varName=cr2), _, _, true, _, _, _, _)
       equation
         colum = iMT[i1];
-        _ = arrayUpdate(iMT, i1, iIndex::colum);
+        arrayUpdate(iMT, i1, iIndex::colum);
       then
         (PARAMETERALIAS(cr1, negatedCr1, i1, cr2, negatedCr2, i2, eqnAttributes, -1)::iSeqns, iIndex+1, iMT);
     case (BackendDAE.VAR(varName=cr1), _, _, true, BackendDAE.VAR(varName=cr2), _, _, true, (source, _), _, _, _)
@@ -1564,7 +1564,7 @@ algorithm
           BackendDump.debugStrCrefStrExpStr("Const Equation ", cr, " = ", exp, " found.\n");
         end if;
         colum = mT[i];
-        _ = arrayUpdate(mT, i, index::colum);
+        arrayUpdate(mT, i, index::colum);
       then
         ((vars, shared, eqns, TIMEINDEPENTVAR(cr, i, exp, eqnAttributes, -1)::seqns, index+1, mT, true));
 
@@ -1576,7 +1576,7 @@ algorithm
           BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
         end if;
         colum = mT[i];
-        _ = arrayUpdate(mT, i, index::colum);
+        arrayUpdate(mT, i, index::colum);
       then
         ((vars, shared, eqns, TIMEINDEPENTVAR(cr, i, exp2, eqnAttributes, -1)::seqns, index+1, mT, true));
 
@@ -1588,7 +1588,7 @@ algorithm
           BackendDump.debugStrCrefStrExpStr("Const Equation (through Ceval) ", cr, " = ", exp, " found.\n");
         end if;
         colum = mT[i];
-        _ = arrayUpdate(mT, i, index::colum);
+        arrayUpdate(mT, i, index::colum);
       then ((vars, shared, eqns, TIMEINDEPENTVAR(cr, i, exp, eqnAttributes, -1)::seqns, index+1, mT, true));
 
   end matchcontinue;
@@ -1769,7 +1769,7 @@ algorithm
     case (false, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         // set visited
-        _= arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
+        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
         // check alias connection
         (rmax, smax, unremovable, const, cont) = getAlias2(s, r, i, mark, simpleeqnsarr, iMT, vars, unReplaceable, negate, r::stack, iRmax, iSmax, iUnremovable, iConst);
         // next arm
@@ -2181,7 +2181,7 @@ algorithm
        s = simpleeqnsarr[r];
        // for parameter alias the second component reference is *ALWAYS* the parameter!
        PARAMETERALIAS(unknowncr=cr1, negatedCr1=negatedCr1, i1=i1, negatedCr2=negatedCr2, i2=i2, paramcr=cr2, eqnAttributes=eqnAttributes) = s;
-       _= arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
+       arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        negated = boolOr(negatedCr1, negatedCr2);
        // generate exp from cref an negate if necessary
        exp = Expression.crefExp(cr2);
@@ -2194,7 +2194,7 @@ algorithm
        vsattr = addVarSetAttributes(pv, negated, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        vsattr = if replaceable_ and replaceble1 then addVarSetAttributes(v, negated, mark, simpleeqnsarr, vsattr) else vsattr;
        rows = List.removeOnTrue(r, intEq, iMT[i1]);
-       _ = arrayUpdate(iMT, i1, {});
+       arrayUpdate(iMT, i1, {});
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i1, exp, SOME(expcr), negated, SOME(DAE.RCONST(0.0)), mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
      then
        (vars, eqnslst, shared, repl);
@@ -2205,7 +2205,7 @@ algorithm
        s = simpleeqnsarr[r];
        // for time alias the time variable is *ALWAYS* the second
        TIMEALIAS(cr1=cr1, i1=i1, negatedCr1=negatedCr1, negatedCr2=negatedCr2, eqnAttributes=eqnAttributes) = s;
-       _= arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
+       arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        negated = boolOr(negatedCr1,negatedCr2);
        // generate exp from cref an negate if necessary
        exp = Expression.crefExp(DAE.crefTime);
@@ -2217,7 +2217,7 @@ algorithm
        expcr = Expression.crefExp(cr1);
        vsattr = addVarSetAttributes(v, negated, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r, intEq, iMT[i1]);
-       _ = arrayUpdate(iMT, i1, {});
+       arrayUpdate(iMT, i1, {});
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i1, exp, SOME(expcr), negated, SOME(dexp), mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
      then
        (vars, eqnslst, shared, repl);
@@ -2227,7 +2227,7 @@ algorithm
      equation
        s = simpleeqnsarr[r];
        TIMEINDEPENTVAR(cr=cr, i=i, exp=exp, eqnAttributes=eqnAttributes) = s;
-       _= arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
+       arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
        (vars, shared, isState, eqnslst) = optMoveVarShared(replaceable_, v, i, eqnAttributes, exp, BackendVariable.addKnVarDAE, iMT, iVars, ishared, iEqnslst);
@@ -2239,7 +2239,7 @@ algorithm
        exp = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v, false, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r, intEq, iMT[i]);
-       _ = arrayUpdate(iMT, i, {});
+       arrayUpdate(iMT, i, {});
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp, NONE(), false, SOME(DAE.RCONST(0.0)), mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
      then
        (vars, eqnslst, shared, repl);
@@ -2249,7 +2249,7 @@ algorithm
      equation
        s = simpleeqnsarr[r];
        ALIAS(i1=i, i2=i2, eqnAttributes=eqnAttributes) = s;
-       _= arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
+       arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars, i);
        exp = if Types.isRealOrSubTypeReal(ComponentReference.crefLastType(cr)) then DAE.RCONST(0.0) else DAE.ICONST(0);
        (replaceable_, replaceble1) = replaceableAlias(v, unReplaceable);
@@ -2262,9 +2262,9 @@ algorithm
        exp = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v, false, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r, intEq, iMT[i2]);
-       _ = arrayUpdate(iMT, i2, rows);
+       arrayUpdate(iMT, i2, rows);
        rows = List.removeOnTrue(r, intEq, iMT[i]);
-       _ = arrayUpdate(iMT, i, {});
+       arrayUpdate(iMT, i, {});
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp, NONE(), false, SOME(DAE.RCONST(0.0)), mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
      then
        (vars, eqnslst, shared, repl);
@@ -2277,7 +2277,7 @@ algorithm
        vsattr = addVarSetAttributes(v, false, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        oexp = varStateDerivative(v);
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(iMT[i], i, exp, NONE(), false, oexp, mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl, vsattr);
-       _ = arrayUpdate(iMT, i, {});
+       arrayUpdate(iMT, i, {});
        vars = handleVarSetAttributes(vsattr, v, vars, shared);
      then
        (vars, eqnslst, shared, repl);
@@ -2289,7 +2289,7 @@ algorithm
        exp = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v, false, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(iMT[i], i, exp, NONE(), false, NONE(), mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl, vsattr);
-       _ = arrayUpdate(iMT, i, {});
+       arrayUpdate(iMT, i, {});
        vars = handleVarSetAttributes(vsattr, v, vars, shared);
      then
        (vars, eqnslst, shared, repl);
@@ -2301,7 +2301,7 @@ algorithm
        exp = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v, false, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(iMT[i], i, exp, NONE(), false, NONE(), mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl, vsattr);
-       _ = arrayUpdate(iMT, i, {});
+       arrayUpdate(iMT, i, {});
        vars = handleVarSetAttributes(vsattr, v, vars, shared);
      then
        (vars, eqnslst, shared, repl);
@@ -2506,7 +2506,7 @@ algorithm
     case (r::rest, _, _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
         s = simpleeqnsarr[r];
-        _= arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
+        arrayUpdate(simpleeqnsarr, r, setVisited(mark, s));
         (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree1(s, r, ilast, exp, optExp, globalnegate, derReplaceState, mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl, iAttributes);
         (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rest, ilast, exp, optExp, globalnegate, derReplaceState, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
       then
@@ -2576,7 +2576,7 @@ algorithm
         // negate if necessary
         crexp = negateExpression(negated, crexp, crexp, " ALIAS_2 ");
         rows = List.removeOnTrue(r, intEq, iMT[i]);
-        _ = arrayUpdate(iMT, i, {});
+        arrayUpdate(iMT, i, {});
         (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp, SOME(crexp), globalnegated1, derReplacement, mark, simpleeqnsarr, iMT, unReplaceable, vars, eqnslst, shared, repl, vsattr);
       then
         (vars, eqnslst, shared, repl, vsattr);

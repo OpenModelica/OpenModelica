@@ -398,36 +398,36 @@ algorithm
 
     case (NFInstTypes.UNTYPED_DIMENSION(dimension = inDim as DAE.DIM_EXP(exp = dim_exp)), _, _, st, _, _, _)
       equation
-        _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(inDim, true));
+        arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(inDim, true));
         (dim_exp, _, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), inContext, st, inFunctionTable);
         (dim_exp, _) = ExpressionSimplify.simplify(dim_exp);
         dim = NFInstUtil.makeDimension(dim_exp);
         typed_dim = NFInstTypes.TYPED_DIMENSION(dim);
-        _ = arrayUpdate(inDimensions, inIndex, typed_dim);
+        arrayUpdate(inDimensions, inIndex, typed_dim);
       then
         (dim, st);
 
     case (NFInstTypes.UNTYPED_DIMENSION(dimension = inDim as DAE.DIM_UNKNOWN()), _, CONTEXT_MODEL(), st, _, _, _)
       equation
-        _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(inDim, true));
+        arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(inDim, true));
         comp = NFInstSymbolTable.lookupName(inComponentName, st);
         (comp, st) = typeComponentBinding(comp, NONE(), NONE(), inContext, st, inFunctionTable);
         dim_count = arrayLength(inDimensions);
         dim = NFInstUtil.getComponentBindingDimension(comp, inIndex, dim_count);
         typed_dim = NFInstTypes.TYPED_DIMENSION(dim);
-        _ = arrayUpdate(inDimensions, inIndex, typed_dim);
+        arrayUpdate(inDimensions, inIndex, typed_dim);
       then
         (dim, st);
 
     case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, CONTEXT_FUNCTION(), st, _, _, _)
       equation
-        _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.TYPED_DIMENSION(dim));
+        arrayUpdate(inDimensions, inIndex, NFInstTypes.TYPED_DIMENSION(dim));
       then
         (dim, st);
 
     case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim), _, _, st, _, _, _)
       equation
-        _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.TYPED_DIMENSION(dim));
+        arrayUpdate(inDimensions, inIndex, NFInstTypes.TYPED_DIMENSION(dim));
       then
         (dim, st);
 

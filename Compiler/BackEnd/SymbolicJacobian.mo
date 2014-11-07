@@ -602,7 +602,7 @@ algorithm
     case ((i1,i2,BackendDAE.RESIDUAL_EQUATION(exp=exp)),_)
       equation
         Values.REAL(r) = Ceval.cevalSimple(exp);
-        _ = arrayUpdate(arrayGet(vals,i1),i2,r);
+        arrayUpdate(arrayGet(vals,i1),i2,r);
       then ();
   end match;
 end evaluateConstantJacobian2;
@@ -1036,7 +1036,7 @@ algorithm
       equation
         arrayElement = arrayGet(inMark, inInputVar);
         false  = intEq(inmarkValue, arrayElement);
-        _ = arrayUpdate(inMark, inInputVar, inmarkValue);
+        arrayUpdate(inMark, inInputVar, inmarkValue);
       then inInputVar::inLocalList;
    else
       then inLocalList;
@@ -1098,7 +1098,7 @@ algorithm
         index = arrayGet(inColors, i);
         lst = arrayGet(inArray, index);
         lst = listAppend({i},lst);
-        _ = arrayUpdate(inArray, index, lst);
+        arrayUpdate(inArray, index, lst);
       then
         mapIndexColors(inColors, i-1, inArray);
    else

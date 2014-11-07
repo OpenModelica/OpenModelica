@@ -362,7 +362,7 @@ algorithm
     case (_,_,_,_,_,_,_,_,_,_)
       equation
         false = intGt(markarr[i],0) "not allready evaluated";
-        _ = arrayUpdate(markarr,i,iMark);
+        arrayUpdate(markarr,i,iMark);
         // evaluate needed parameters
         (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
         // evaluate parameter
@@ -409,7 +409,7 @@ algorithm
     case (i::rest,_,_,_,_,_,_,_,_)
       equation
         false = intGt(markarr[i],0) "not allready evaluated";
-        _ = arrayUpdate(markarr,i,iMark);
+        arrayUpdate(markarr,i,iMark);
         (knVars,cache,repl,mark) = evaluateSelectedParameters1(m[i],iKnVars,m,inIEqns,iCache,graph,iMark,markarr,iRepl);
         v = BackendVariable.getVarAt(knVars,i);
         (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,graph,mark,markarr,repl);

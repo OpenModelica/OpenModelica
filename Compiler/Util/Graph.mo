@@ -759,7 +759,7 @@ algorithm
       list<NodeType> arrElem;
     case (_, _, _)
       equation
-        _ = arrayUpdate(inArray, inIndex, SOME({inNode}));
+        arrayUpdate(inArray, inIndex, SOME({inNode}));
       then ();
     else
       equation
@@ -1035,7 +1035,7 @@ algorithm
       equation
       colorIndex = arrayGet(inColored, index);
       true = intGt(colorIndex,0);
-      _ = arrayUpdate(inForbiddenColor, colorIndex, SOME({inNode}));
+      arrayUpdate(inForbiddenColor, colorIndex, SOME({inNode}));
       updateForbiddenColorArrayInt(rest, inColored, inForbiddenColor, inNode);
     then ();
     case (index::rest, _, _, _)
