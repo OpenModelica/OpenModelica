@@ -8109,9 +8109,9 @@ template generateDelteAlgloopsolverVariables2(SimEqSystem eq, Context context, T
       if(_conditions0<%num%>)
         delete [] _conditions0<%num%>;
       if(_conditions1<%num%>)
-        delete _conditions1<%num%>;
+        delete [] _conditions1<%num%>;
       if(_algloop<%num%>Vars)
-        delete _algloop<%num%>Vars;
+        delete [] _algloop<%num%>Vars;
    >>
    end match
   else
@@ -10131,14 +10131,27 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
   >>
   */
   <<
-  <%preExpCond%>
-  <%preExpMsg%>
+  
   <%if msgVar then
-      <<if(!<%condVar%>)
-        throw std::runtime_error(<%msgVar%>);>>
+      <<
+      if(!<%condVar%>)
+      {
+        
+        <%preExpCond%>
+        <%preExpMsg%>
+        throw std::runtime_error(<%msgVar%>);
+      }
+      >>
       else
-      <<if(!<%condVar%>)
-        throw std::runtime_error();>>%>
+      <<
+      if(!<%condVar%>)
+      {
+        <%preExpCond%>
+        <%preExpMsg%>
+        throw std::runtime_error();
+      } 
+      >>
+   %>
   >>
 
 end assertCommon;
