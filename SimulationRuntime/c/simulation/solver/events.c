@@ -249,12 +249,14 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     data->localData[0]->timeValue = *eventTime;
     /* time = data->localData[0]->timeValue; */
 
-    if (useStream[LOG_EVENTS]) {
-      for(it = listFirstNode(eventLst); it; it = listNextNode(it)) {
+    if (useStream[LOG_EVENTS])
+    {
+      for(it = listFirstNode(eventLst); it; it = listNextNode(it))
+      {
         long ix = *((long*) listNodeData(it));
         int *eq_indexes;
         const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
-        infoStreamPrintWithEquationIndexes(LOG_EVENTS, 0, eq_indexes, "[%ld] %s", ix, exp_str);
+        infoStreamPrintWithEquationIndexes(LOG_EVENTS, 0, eq_indexes, "[%ld] %s", ix+1, exp_str);
       }
     }
 
@@ -283,6 +285,9 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     }
 
     listClear(eventLst);
+    
+    printRelations(data, LOG_EVENTS);
+    printZeroCrossings(data, LOG_EVENTS);
   }
   else
   {

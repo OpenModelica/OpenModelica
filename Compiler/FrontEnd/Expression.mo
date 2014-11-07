@@ -1852,13 +1852,10 @@ public function subscriptIsFirst
   input DAE.Subscript inSubscript;
   output Boolean outIsFirst;
 algorithm
-  outIsFirst := match(inSubscript)
-    local
-
-    case DAE.INDEX(exp = DAE.ICONST(1)) then true;
-    case DAE.INDEX(exp = DAE.BCONST(false)) then true;
-    case DAE.INDEX(exp = DAE.ENUM_LITERAL(index = 1)) then true;
-
+  outIsFirst := match (inSubscript)
+    case DAE.INDEX(exp=DAE.ICONST(1)) then true;
+    case DAE.INDEX(exp=DAE.BCONST(false)) then true;
+    case DAE.INDEX(exp=DAE.ENUM_LITERAL(index=1)) then true;
   end match;
 end subscriptIsFirst;
 

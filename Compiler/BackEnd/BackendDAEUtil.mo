@@ -2892,7 +2892,7 @@ algorithm
       tuple<BackendDAE.Variables, list<Integer>,Option<DAE.FunctionTree>> tpl;
       Integer diffindx;
 
-    case (DAE.LBINARY(),tpl)
+    case (DAE.LBINARY(), tpl)
     then (inExp, false, tpl);
 
     case (DAE.RELATION(), tpl)
@@ -2918,25 +2918,25 @@ algorithm
       pa = incidenceRowExp1(varslst, p, pa, 0);
     then (inExp, false, (vars, pa, ofunctionTree));
 
-    case (DAE.ASUB(exp=e1, sub={DAE.ICONST(i)}),tpl) equation
+    case (DAE.ASUB(exp=e1, sub={DAE.ICONST(i)}), tpl) equation
       e1 = Expression.nthArrayExp(e1, i);
       (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
     then (inExp, false, tpl);
 
     // otherwise
-    case (DAE.ASUB(),_)
+    case (DAE.ASUB(), _)
     then fail();
 
-    case (DAE.TSUB(exp=e1),tpl) equation
+    case (DAE.TSUB(exp=e1), tpl) equation
       (_, tpl) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
     then (inExp, false, tpl);
 
-    case (DAE.CREF(componentRef=cr),(vars, pa, ofunctionTree)) equation
+    case (DAE.CREF(componentRef=cr), (vars, pa, ofunctionTree)) equation
       (varslst, p) = BackendVariable.getVar(cr, vars);
       pa = incidenceRowExp1(varslst, p, pa, 0);
     then (inExp, false,(vars, pa, ofunctionTree));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="der"),expLst={DAE.CREF(componentRef=cr)}),(vars, pa, ofunctionTree)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}), (vars, pa, ofunctionTree)) equation
       (varslst, p) = BackendVariable.getVar(cr, vars);
       pa = incidenceRowExp1(varslst, p, pa, 1);
     then (inExp, false,(vars, pa, ofunctionTree));
@@ -7769,8 +7769,8 @@ protected
    Real tg,t1,t2;
 algorithm
   tg := System.realtimeTock(ClockIndexes.RT_PROFILER0);
-  t1 := getGlobalRoot(Global.profilerTime1Index);
-  t2 := getGlobalRoot(Global.profilerTime2Index);
+  t1 := profilertime1();
+  t2 := profilertime2();
   print("Time all: "); print(realString(tg)); print("\n");
   print("Time t1: "); print(realString(t1)); print("\n");
   print("Time t2: "); print(realString(t2)); print("\n");

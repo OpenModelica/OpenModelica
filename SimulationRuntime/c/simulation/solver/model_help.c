@@ -381,7 +381,9 @@ void printRelations(DATA *data, int stream)
 
   infoStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
   for(i=0; i<data->modelData.nRelations; i++)
-    infoStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i+1, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+  {
+    infoStreamPrint(stream, 0, "[%ld] (pre: %s) %s = %s", i+1, data->simulationInfo.relationsPre[i] ? " true" : "false", data->simulationInfo.relations[i] ? " true" : "false", data->callback->relationDescription(i));
+  }
   messageClose(stream);
 
   TRACE_POP
@@ -411,7 +413,7 @@ void printZeroCrossings(DATA *data, int stream)
   {
     int *eq_indexes;
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-    infoStreamPrintWithEquationIndexes(stream, 0, eq_indexes, "[%ld] %s = %g | pre(%s) = %g", i+1, exp_str, data->simulationInfo.zeroCrossings[i], exp_str, data->simulationInfo.zeroCrossingsPre[i]);
+    infoStreamPrintWithEquationIndexes(stream, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo.zeroCrossingsPre[i], exp_str, data->simulationInfo.zeroCrossings[i], exp_str);
   }
   messageClose(stream);
 
