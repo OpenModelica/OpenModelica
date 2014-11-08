@@ -39,16 +39,23 @@ encapsulated package Parser
   The parser module is used for both parsing of files and statements in
   interactive mode."
 
-public import Absyn;
-public import GlobalScript;
-protected import Config;
-protected import Flags;
-protected import ParserExt;
-protected import SCodeUtil;
-protected import System;
-protected import Util;
+import Absyn;
+import GlobalScript;
+import HashTableStringToProgram;
 
-public function parse "Parse a mo-file"
+protected
+import Config;
+import Error;
+import ErrorExt;
+import Flags;
+import ParserExt;
+import SCodeUtil;
+import System;
+import Util;
+
+public
+
+function parse "Parse a mo-file"
   input String filename;
   input String encoding;
   output Absyn.Program outProgram;
@@ -58,14 +65,14 @@ algorithm
   _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parse;
 
-public function parseexp "Parse a mos-file"
+function parseexp "Parse a mos-file"
   input String filename;
   output GlobalScript.Statements outStatements;
 algorithm
   outStatements := ParserExt.parseexp(System.realpath(filename), Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end parseexp;
 
-public function parsestring "Parse a string as if it were a stored definition"
+function parsestring "Parse a string as if it were a stored definition"
   input String str;
   input String infoFilename := "<interactive>";
   output Absyn.Program outProgram;
@@ -75,7 +82,7 @@ algorithm
   _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parsestring;
 
-public function parsebuiltin "Like parse, but skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
+function parsebuiltin "Like parse, but skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
   input String filename;
   input String encoding;
   output Absyn.Program outProgram;
@@ -87,7 +94,7 @@ algorithm
   outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(realpath), Config.acceptedGrammar(), encoding, Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end parsebuiltin;
 
-public function parsestringexp "Parse a string as if it was a sequence of statements"
+function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
   input String infoFilename := "<interactive>";
   output GlobalScript.Statements outStatements;
@@ -96,19 +103,97 @@ algorithm
     Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end parsestringexp;
 
-public function stringPath
+function stringPath
   input String str;
   output Absyn.Path path;
 algorithm
   path := ParserExt.stringPath(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end stringPath;
 
-public function stringCref
+function stringCref
   input String str;
   output Absyn.ComponentRef cref;
 algorithm
   cref := ParserExt.stringCref(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end stringCref;
+
+function parallelParseFiles
+  input list<String> filenames;
+  input String encoding;
+  input Integer numThreads := Config.noProc();
+  output HashTableStringToProgram.HashTable ht;
+protected
+  list<tuple<String,String>> workList := list((file,encoding) for file in filenames);
+  list<ParserResult> partialResults;
+algorithm
+  partialResults := parallelParseFilesWork(filenames, encoding, numThreads);
+  ht := HashTableStringToProgram.emptyHashTableSized(Util.nextPrime(listLength(partialResults)));
+  for res in partialResults loop
+    ht := match res
+      local
+        Absyn.Program p;
+      case PARSERRESULT(program=SOME(p))
+        then BaseHashTable.add((res.filename,p), ht);
+    end match;
+  end for;
+end parallelParseFiles;
+
+function parallelParseFilesToProgramList
+  input list<String> filenames;
+  input String encoding;
+  input Integer numThreads := Config.noProc();
+  output list<Absyn.Program> result := {};
+algorithm
+  for r in parallelParseFilesWork(filenames, encoding, numThreads) loop
+    result := (match r
+      local
+        Absyn.Program p;
+      case PARSERRESULT(program=SOME(p)) then p;
+    end match) :: result;
+  end for;
+  result := MetaModelica.Dangerous.listReverseInPlace(result);
+end parallelParseFilesToProgramList;
+
+protected
+
+uniontype ParserResult
+  record PARSERRESULT
+    String filename;
+    Option<Absyn.Program> program;
+  end PARSERRESULT;
+end ParserResult;
+
+function parallelParseFilesWork
+  input list<String> filenames;
+  input String encoding;
+  input Integer numThreads;
+  output list<ParserResult> partialResults;
+protected
+  list<tuple<String,String>> workList := list((file,encoding) for file in filenames);
+algorithm
+  if Config.getRunningTestsuiteFile()<>"" or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 then
+    partialResults := list(loadFileThread(t) for t in workList);
+  else
+    // GC.disable(); // Seems to sometimes break building nightly omc
+    partialResults := System.launchParallelTasks(min(8, numThreads) /* Boehm GC does not scale to infinity */, workList, loadFileThread);
+    // GC.enable();
+  end if;
+end parallelParseFilesWork;
+
+function loadFileThread
+  input tuple<String,String> inFileEncoding;
+  output ParserResult result;
+algorithm
+  result := matchcontinue inFileEncoding
+    local
+      String filename,encoding;
+    case (filename,encoding) then PARSERRESULT(filename,SOME(Parser.parse(filename, encoding)));
+    case (filename,encoding) then PARSERRESULT(filename,NONE());
+  end matchcontinue;
+  if ErrorExt.getNumMessages() > 0 then
+    ErrorExt.moveMessagesToParentThread();
+  end if;
+end loadFileThread;
 
 annotation(__OpenModelica_Interface="frontend");
 end Parser;

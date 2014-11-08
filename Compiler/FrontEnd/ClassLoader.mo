@@ -41,17 +41,22 @@ encapsulated package ClassLoader
   loadModel function
   loadFile function"
 
-public import Absyn;
+import Absyn;
 
-protected import BackendInterface;
-protected import Config;
-protected import Debug;
-protected import Error;
-protected import Flags;
-protected import List;
-protected import Parser;
-protected import System;
-protected import Util;
+protected
+import BackendInterface;
+import BaseHashTable;
+import Config;
+import Debug;
+import Error;
+import Flags;
+import HashTableStringToProgram;
+import List;
+import Parser;
+import System;
+import Util;
+
+type HashTable = HashTableStringToProgram.HashTable;
 
 protected uniontype PackageOrder
   record CLASSPART
@@ -156,6 +161,8 @@ algorithm
     local
       String pd,encoding,encodingfile;
       Absyn.Class cl;
+      list<String> filenames;
+      HashTable ht;
 
     case (_,_,_,false,_)
       equation
@@ -163,7 +170,8 @@ algorithm
         /* Check for path/package.encoding; OpenModelica extension */
         encodingfile = stringAppendList({path,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
-        cl = parsePackageFile(path + pd + name,encoding,false,Absyn.TOP(),id);
+        ht = Parser.parallelParseFiles({path + pd + name}, encoding);
+        cl = parsePackageFile(path + pd + name, ht, false, Absyn.TOP(), id);
       then
         cl;
 
@@ -173,23 +181,39 @@ algorithm
         pd = System.pathDelimiter();
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
-        cl = loadCompletePackageFromMp(id, name, path, encoding, Absyn.TOP(), Error.getNumErrorMessages());
+
+        filenames = getAllFilesFromDirectory(path + pd + name);
+        ht = Parser.parallelParseFiles(filenames, encoding);
+        cl = loadCompletePackageFromMp(id, name, path, ht, Absyn.TOP(), Error.getNumErrorMessages());
       then
         cl;
   end match;
 end loadClassFromMp;
+
+protected function getAllFilesFromDirectory
+  input String dir;
+  input list<String> acc := {};
+  output list<String> files;
+protected
+  list<String> subdirs;
+  String pd := System.pathDelimiter();
+algorithm
+  files := (dir + pd + "package.mo") :: listAppend(list(dir + pd + f for f in System.moFiles(dir)), acc);
+  subdirs := list(dir + pd + d for d in List.filter1OnTrue(System.subDirectories(dir), existPackage, dir));
+  files := List.fold(subdirs, getAllFilesFromDirectory, files);
+end getAllFilesFromDirectory;
 
 protected function loadCompletePackageFromMp
 "Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
   input String id "actual class identifier";
   input Absyn.Ident inIdent;
   input String inString;
-  input String encoding;
+  input HashTable ht;
   input Absyn.Within inWithin;
   input Integer numError;
   output Absyn.Class cl;
 algorithm
-  cl := matchcontinue (id,inIdent,inString,encoding,inWithin,numError)
+  cl := matchcontinue (id,inIdent,inString,ht,inWithin,numError)
     local
       String pd,mp_1,packagefile,orderfile,pack,mp,name,str;
       Absyn.Within within_;
@@ -211,17 +235,18 @@ algorithm
         packagefile = stringAppendList({mp_1,pd,"package.mo"});
         orderfile = stringAppendList({mp_1,pd,"package.order"});
         existRegularFile(packagefile);
-        (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile,encoding,true,within_,id);
+        // print("Look for " + packagefile + "\n");
+        (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile, ht, true, within_, id);
+        // print("Got " + packagefile + "\n");
         reverseOrder = getPackageContentNames(cl, orderfile, mp_1, Error.getNumErrorMessages());
         path = Absyn.joinWithinPath(within_,Absyn.IDENT(id));
         w2 = Absyn.WITHIN(path);
-        cp = List.fold3(reverseOrder, loadCompletePackageFromMp2, mp_1, encoding, w2, {});
+        cp = List.fold3(reverseOrder, loadCompletePackageFromMp2, mp_1, ht, w2, {});
       then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info);
     case (_,pack,mp,_,_,_)
       equation
         true = numError == Error.getNumErrorMessages();
-        str = "loadCompletePackageFromMp failed for unknown reason: mp=" + mp + " pack=" + pack;
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        Error.addInternalError("loadCompletePackageFromMp failed for unknown reason: mp=" + mp + " pack=" + pack, sourceInfo());
       then fail();
   end matchcontinue;
 end loadCompletePackageFromMp;
@@ -251,12 +276,12 @@ protected function loadCompletePackageFromMp2
 "Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
   input PackageOrder po "mo-file or directory";
   input String mp;
-  input String encoding;
+  input HashTable ht;
   input Absyn.Within w1 "With the parent added";
   input list<Absyn.ClassPart> acc;
   output list<Absyn.ClassPart> cps;
 algorithm
-  cps := match (po,mp,encoding,w1,acc)
+  cps := match po
     local
       Absyn.ElementItem ei;
       String pd,file,id;
@@ -264,35 +289,35 @@ algorithm
       Absyn.Class cl;
       Boolean bDirectoryAndFileExists;
 
-    case (CLASSPART(cp),_,_,_,_)
+    case CLASSPART(cp)
       equation
         cps = mergeBefore(cp,acc);
       then cps;
 
-    case (ELEMENT(ei,true),_,_,_,_)
+    case ELEMENT(ei,true)
       equation
         cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
       then cps;
 
-    case (ELEMENT(ei,false),_,_,_,_)
+    case ELEMENT(ei,false)
       equation
         cps = mergeBefore(Absyn.PROTECTED({ei}),acc);
       then cps;
 
-    case (CLASSLOAD(id),_,_,_,_)
+    case CLASSLOAD(id)
       equation
         pd = System.pathDelimiter();
         file = mp + pd + id + "/package.mo";
         bDirectoryAndFileExists = System.directoryExists(mp + pd + id) and System.regularFileExists(file);
         if (bDirectoryAndFileExists)
         then
-          cl = loadCompletePackageFromMp(id,id,mp,encoding,w1,Error.getNumErrorMessages());
+          cl = loadCompletePackageFromMp(id,id,mp,ht,w1,Error.getNumErrorMessages());
           ei = Absyn.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         else
           file = mp + pd + id + ".mo";
           true = System.regularFileExists(file);
-          cl = parsePackageFile(file,encoding,false,w1,id);
+          cl = parsePackageFile(file, ht, false, w1, id);
           ei = Absyn.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         end if;
@@ -304,46 +329,34 @@ end loadCompletePackageFromMp2;
 public function parsePackageFile
   "Parses a file containing a single class that matches the within"
   input String name;
-  input String encoding;
+  input HashTable ht;
   input Boolean expectPackage;
   input Absyn.Within w1 "Expected within of the package";
   input String pack "Expected name of the package";
-  output Absyn.Class outClass;
+  output Absyn.Class cl;
+protected
+  list<Absyn.Class> cs;
+  Absyn.Within w2;
+  list<String> classNames;
+  SourceInfo info;
+  String str,s1,s2,cname;
+  Absyn.ClassDef body;
 algorithm
-  outClass := matchcontinue (name,encoding,expectPackage,w1,pack)
-    local
-      Absyn.Class cl;
-      list<Absyn.Class> cs;
-      Absyn.Within w2;
-      list<String> classNames;
-      SourceInfo info;
-      String str,s1,s2,cname;
-      Absyn.ClassDef body;
-
-    case (_,_,_,_,_)
-      equation
-        true = System.regularFileExists(name);
-        Absyn.PROGRAM(cs,w2) = Parser.parse(name,encoding);
-        classNames = List.map(cs, Absyn.getClassName);
-        str = stringDelimitList(classNames,", ");
-        Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, SOURCEINFO(name,true,0,0,0,0,0.0));
-        cl::{} = cs;
-        Absyn.CLASS(name=cname,body=body,info=info) = cl;
-        Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
-        s1 = Absyn.withinString(w1);
-        s2 = Absyn.withinString(w2);
-        Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_2_X()), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
-        Error.assertionOrAddSourceMessage((not expectPackage) or Absyn.isParts(body), Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
-      then cl;
-
-    // faliling
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("ClassLoader.parsePackageFile failed: "+name);
-      then
-        fail();
-  end matchcontinue;
+  if not BaseHashTable.hasKey(name, ht) then
+    Error.addInternalError("HashTable missing file " + name + " - all entries include:\n" + stringDelimitList(BaseHashTable.hashTableKeyList(ht), "\n"), sourceInfo());
+    fail();
+  end if;
+  Absyn.PROGRAM(cs,w2) := BaseHashTable.get(name, ht);
+  classNames := List.map(cs, Absyn.getClassName);
+  str := stringDelimitList(classNames,", ");
+  Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, SOURCEINFO(name,true,0,0,0,0,0.0));
+  cl::{} := cs;
+  Absyn.CLASS(name=cname,body=body,info=info) := cl;
+  Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
+  s1 := Absyn.withinString(w1);
+  s2 := Absyn.withinString(w2);
+  Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_2_X()), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
+  Error.assertionOrAddSourceMessage((not expectPackage) or Absyn.isParts(body), Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
 end parsePackageFile;
 
 protected function getBothPackageAndFilename

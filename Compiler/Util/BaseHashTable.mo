@@ -52,8 +52,10 @@ encapsulated package BaseHashTable
 // hashFunc - A function that maps a key to a positive integer.
 // keyEqual - A comparison function between two keys, returns true if equal.
 
-protected import Array;
-protected import List;
+protected
+import Array;
+import Error;
+import List;
 
 // Generic hashtable code below
 
@@ -114,6 +116,10 @@ protected
 protected
   Integer szArr;
 algorithm
+  if szBucket < 1 then
+    Error.addInternalError("Got internal hash table size " + intString(szBucket) + " <1", sourceInfo());
+    fail();
+  end if;
   arr := arrayCreate(szBucket, {});
   szArr := bucketToValuesSize(szBucket);
   emptyarr := arrayCreate(szArr, NONE());

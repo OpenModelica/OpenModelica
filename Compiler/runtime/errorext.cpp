@@ -31,7 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <queue>
-#include <stack>
+#include <deque>
 #include <list>
 #include <string.h>
 #include <stdlib.h>
@@ -72,7 +72,7 @@ typedef struct errorext_struct {
   int numWarningMessages;
   absyn_info finfo;
   bool haveInfo;
-  stack<ErrorMessage*> *errorMessageQueue; // Global variable of all error messages.
+  deque<ErrorMessage*> *errorMessageQueue; // Global variable of all error messages.
   vector<pair<int,string> > *checkPoints; // a checkpoint has a message index no, and a unique identifier
   string *currVariable;
   string *lastDeletedCheckpoint;
@@ -115,7 +115,7 @@ static errorext_members* getMembers(threadData_t *threadData)
   res->numErrorMessages = 0;
   res->numWarningMessages = 0;
   res->haveInfo = false;
-  res->errorMessageQueue = new stack<ErrorMessage*>;
+  res->errorMessageQueue = new deque<ErrorMessage*>;
   res->checkPoints = new vector<pair<int,string> >;
   res->currVariable = new string;
   res->lastDeletedCheckpoint = new string;
@@ -139,7 +139,7 @@ static void push_message(threadData_t *threadData,ErrorMessage *msg)
     std::cerr << msg->getFullMessage() << std::endl;
   }
   // adrpo: ALWAYS PUSH THE ERROR MESSAGE IN THE QUEUE, even if we have showErrorMessages because otherwise the numErrorMessages is completely wrong!
-  members->errorMessageQueue->push(msg);
+  members->errorMessageQueue->push_back(msg);
   if (msg->getSeverity() == ErrorLevel_error || msg->getSeverity() == ErrorLevel_internal) members->numErrorMessages++;
   if (msg->getSeverity() == ErrorLevel_warning) members->numWarningMessages++;
 }
@@ -150,11 +150,11 @@ static void pop_message(threadData_t *threadData, bool rollback)
   errorext_members *members = getMembers(threadData);
   bool pop_more;
   do {
-    ErrorMessage *msg = members->errorMessageQueue->top();
+    ErrorMessage *msg = members->errorMessageQueue->back();
     if (msg->getSeverity() == ErrorLevel_error || msg->getSeverity() == ErrorLevel_internal) members->numErrorMessages--;
     if (msg->getSeverity() == ErrorLevel_warning) members->numWarningMessages--;
-    members->errorMessageQueue->pop();
-    pop_more = (!(members->errorMessageQueue->empty()) && !(rollback && members->errorMessageQueue->size() <= members->checkPoints->back().first) && msg->getFullMessage() == members->errorMessageQueue->top()->getFullMessage());
+    members->errorMessageQueue->pop_back();
+    pop_more = (!(members->errorMessageQueue->empty()) && !(rollback && members->errorMessageQueue->size() <= members->checkPoints->back().first) && msg->getFullMessage() == members->errorMessageQueue->back()->getFullMessage());
     delete msg;
   } while (pop_more);
 }
@@ -243,7 +243,7 @@ static void printCheckpointStack(threadData_t *threadData)
     cp = (*members->checkPoints)[i];
     printf("%5d %s   message:", i, cp.second.c_str());
     while(members->errorMessageQueue->size() > cp.first && !members->errorMessageQueue->empty()){
-      res = members->errorMessageQueue->top()->getMessage(0)+string(" ")+res;
+      res = members->errorMessageQueue->back()->getMessage(0)+string(" ")+res;
       pop_message(threadData,false);
     }
     printf("%s\n", res.c_str());
@@ -297,13 +297,13 @@ extern void ErrorImpl__rollBack(threadData_t *threadData,const char* id)
     while(members->errorMessageQueue->size() > members->checkPoints->back().first && !members->errorMessageQueue->empty()){
       //printf("*** %d deleted %d ***\n",errorMessageQueue->size(),checkPoints->back().first);
       /*if(!errorMessageQueue->empty()){
-        res = res+errorMessageQueue->top()->getMessage()+string("\n");
+        res = res+errorMessageQueue->back()->getMessage()+string("\n");
         printf( (string("Deleted: ") + res).c_str());
       }*/
       pop_message(threadData,true);
     }
     /*if(!errorMessageQueue->empty()){
-      res = res+errorMessageQueue->top()->getMessage()+string("\n");
+      res = res+errorMessageQueue->back()->getMessage()+string("\n");
       printf("(%d)new bottom message: %s\n",checkPoints->size(),res.c_str());
     }*/
     pair<int,string> cp;
@@ -329,7 +329,7 @@ extern char* ErrorImpl__rollBackAndPrint(threadData_t *threadData,const char* id
   // fprintf(stderr, "rollBackAndPrint(%s)\n",id); fflush(stderr);
   if (members->checkPoints->size() > 0){
     while(members->errorMessageQueue->size() > members->checkPoints->back().first && !members->errorMessageQueue->empty()){
-      res = members->errorMessageQueue->top()->getMessage(0)+string("\n")+res;
+      res = members->errorMessageQueue->back()->getMessage(0)+string("\n")+res;
       pop_message(threadData,true);
     }
     pair<int,string> cp;
@@ -423,15 +423,15 @@ extern void* ErrorImpl__getMessages(threadData_t *threadData)
   errorext_members *members = getMembers(threadData);
   void *res = mmc_mk_nil();
   while(!members->errorMessageQueue->empty()) {
-    void *id = mmc_mk_icon(members->errorMessageQueue->top()->getID());
+    void *id = mmc_mk_icon(members->errorMessageQueue->back()->getID());
     void *ty,*severity;
-    switch (members->errorMessageQueue->top()->getSeverity()) {
+    switch (members->errorMessageQueue->back()->getSeverity()) {
     case ErrorLevel_internal: severity=Error__INTERNAL; break;
     case ErrorLevel_error: severity=Error__ERROR; break;
     case ErrorLevel_warning: severity=Error__WARNING; break;
     case ErrorLevel_notification: severity=Error__NOTIFICATION; break;
     }
-    switch (members->errorMessageQueue->top()->getType()) {
+    switch (members->errorMessageQueue->back()->getType()) {
     case ErrorType_syntax: ty=Error__SYNTAX; break;
     case ErrorType_grammar: ty=Error__GRAMMAR; break;
     case ErrorType_translation: ty=Error__TRANSLATION; break;
@@ -439,14 +439,14 @@ extern void* ErrorImpl__getMessages(threadData_t *threadData)
     case ErrorType_runtime: ty=Error__SIMULATION; break;
     case ErrorType_scripting: ty=Error__SCRIPTING; break;
     }
-    void *message = Util__notrans(mmc_mk_scon(members->errorMessageQueue->top()->getShortMessage().c_str()));
+    void *message = Util__notrans(mmc_mk_scon(members->errorMessageQueue->back()->getShortMessage().c_str()));
     void *msg = Error__MESSAGE(id,ty,severity,message);
-    void *sl = mmc_mk_icon(members->errorMessageQueue->top()->getStartLineNo());
-    void *sc = mmc_mk_icon(members->errorMessageQueue->top()->getStartColumnNo());
-    void *el = mmc_mk_icon(members->errorMessageQueue->top()->getEndLineNo());
-    void *ec = mmc_mk_icon(members->errorMessageQueue->top()->getEndColumnNo());
-    void *filename = mmc_mk_scon(members->errorMessageQueue->top()->getFileName().c_str());
-    void *readonly = mmc_mk_icon(members->errorMessageQueue->top()->getIsFileReadOnly());
+    void *sl = mmc_mk_icon(members->errorMessageQueue->back()->getStartLineNo());
+    void *sc = mmc_mk_icon(members->errorMessageQueue->back()->getStartColumnNo());
+    void *el = mmc_mk_icon(members->errorMessageQueue->back()->getEndLineNo());
+    void *ec = mmc_mk_icon(members->errorMessageQueue->back()->getEndColumnNo());
+    void *filename = mmc_mk_scon(members->errorMessageQueue->back()->getFileName().c_str());
+    void *readonly = mmc_mk_icon(members->errorMessageQueue->back()->getIsFileReadOnly());
     void *info = SourceInfo__SOURCEINFO(filename,readonly,sl,sc,el,ec,mmc_mk_rcon(0));
     void *totmsg = Error__TOTALMESSAGE(msg,info);
     res = mmc_mk_cons(totmsg,res);
@@ -463,14 +463,14 @@ extern std::string ErrorImpl__printErrorsNoWarning(threadData_t *threadData)
   errorext_members *members = getMembers(threadData);
   std::string res("");
   while(!members->errorMessageQueue->empty()) {
-    //if(strncmp(errorMessageQueue->top()->getSeverity(),"Error")==0){
-    if(members->errorMessageQueue->top()->getSeverity() == ErrorLevel_error
-        || members->errorMessageQueue->top()->getSeverity() == ErrorLevel_internal) {
-      res = members->errorMessageQueue->top()->getMessage(0)+string("\n")+res;
+    //if(strncmp(errorMessageQueue->back()->getSeverity(),"Error")==0){
+    if(members->errorMessageQueue->back()->getSeverity() == ErrorLevel_error
+        || members->errorMessageQueue->back()->getSeverity() == ErrorLevel_internal) {
+      res = members->errorMessageQueue->back()->getMessage(0)+string("\n")+res;
       members->numErrorMessages--;
     }
-    delete members->errorMessageQueue->top();
-    members->errorMessageQueue->pop();
+    delete members->errorMessageQueue->back();
+    members->errorMessageQueue->pop_back();
   }
   return res;
 }
@@ -482,7 +482,7 @@ extern std::string ErrorImpl__printMessagesStr(threadData_t *threadData, int war
   // fprintf(stderr, "-> ErrorImpl__printMessagesStr error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue->size()); fflush(NULL);
   std::string res("");
   while(!members->errorMessageQueue->empty()) {
-    res = members->errorMessageQueue->top()->getMessage(warningsAsErrors)+string("\n")+res;
+    res = members->errorMessageQueue->back()->getMessage(warningsAsErrors)+string("\n")+res;
     pop_message(threadData,false);
   }
   return res;
@@ -509,6 +509,22 @@ void OpenModelica_ErrorModule_ModelicaError(const char *str)
 {
   c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,str,NULL,0);
   MMC_THROW();
+}
+
+void Error_moveMessagesToParentThread(threadData_t *threadData)
+{
+  errorext_members *thread, *parent;
+  if (NULL == threadData->parent) {
+    return;
+  }
+  thread = getMembers(threadData);
+  pthread_mutex_lock(&threadData->parent->parentMutex);
+  parent = getMembers(threadData->parent);
+  while(!thread->errorMessageQueue->empty()) {
+    parent->errorMessageQueue->push_back(thread->errorMessageQueue->front());
+    thread->errorMessageQueue->pop_front();
+  }
+  pthread_mutex_unlock(&threadData->parent->parentMutex);
 }
 
 }

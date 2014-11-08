@@ -171,7 +171,11 @@ modelica_integer stringHashDjb2Mod(metamodelica_string_const s, modelica_integer
 
 modelica_metatype boxptr_stringHashDjb2Mod(threadData_t *threadData,modelica_metatype v,modelica_metatype mod)
 {
-  return mmc_mk_icon(stringHashDjb2Mod(v,mmc_unbox_integer(mod)));
+  modelica_integer modunbox = mmc_unbox_integer(mod);
+  if (modunbox < 1) {
+    MMC_THROW_INTERNAL();
+  }
+  return mmc_mk_icon(stringHashDjb2Mod(v,modunbox));
 }
 
 /* adrpo: see the comment above about sdbm hash */

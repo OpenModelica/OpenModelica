@@ -724,6 +724,7 @@ typedef struct thread_data {
   int len;
   void **commands;
   void **status;
+  threadData_t *parent;
 } thread_data;
 
 static void* System_launchParallelTasksThread(void *in)
@@ -738,6 +739,7 @@ static void* System_launchParallelTasksThread(void *in)
     pthread_mutex_unlock(&data->mutex);
     if (data->fail || data->current > data->len) break;
     MMC_TRY_TOP()
+    threadData->parent = data->parent;
     threadData->mmc_thread_work_exit = threadData->mmc_jumper;
     data->status[n] = data->fn(threadData,data->commands[n]);
     fail = 0;
@@ -780,6 +782,7 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
   data.commands = commands;
   data.status = status;
   data.fail = 0;
+  data.parent = threadData;
   for (i=0; i<len; i++, dataLst = MMC_CDR(dataLst)) {
     commands[i] = MMC_CAR(dataLst);
     status[i] = 0; /* just in case */

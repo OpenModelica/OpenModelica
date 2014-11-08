@@ -33,6 +33,8 @@
 #ifndef OPENMODELICA_TYPES_H_
 #define OPENMODELICA_TYPES_H_
 
+#include <pthread.h>
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -155,6 +157,8 @@ typedef struct threadData_s {
   jmp_buf *globalJumpBuffer;
   jmp_buf *simulationJumpBuffer;
   errorStage currentErrorStage;
+  struct threadData_s *parent;
+  pthread_mutex_t parentMutex; /* Prevent children from all manipulating the parent at the same time */
 } threadData_t;
 
 #if defined(__cplusplus)

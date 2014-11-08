@@ -262,6 +262,7 @@ if true then /* Suppress output */
     "../Util/HashTableExpToIndex.mo",
     "../Util/HashTablePathToFunction.mo",
     "../Util/HashTableStringToPath.mo",
+    "../Util/HashTableStringToProgram.mo",
     "../Util/HashTableStringToUnit.mo",
     "../Util/HashTableCrToUnit.mo",
     "../Util/HashTableUnitToString.mo",

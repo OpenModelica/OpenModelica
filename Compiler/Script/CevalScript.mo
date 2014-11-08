@@ -2302,23 +2302,8 @@ algorithm
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
-        false = Config.noProc()==1;
         strs = List.mapMap(vals,ValuesUtil.extractValueString,Util.testsuiteFriendlyPath);
-        GC.disable();
-        newps = System.launchParallelTasks(i, List.map1(strs,Util.makeTuple,encoding), loadFileThread);
-        GC.enable();
-        newp = List.fold(newps, Interactive.updateProgram, p);
-      then
-        (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
-
-    case (_,_,"loadFiles",{Values.ARRAY(valueLst=vals),Values.STRING(encoding),Values.INTEGER(_)},
-          (GlobalScript.SYMBOLTABLE(
-            ast = p,instClsLst = ic,
-            lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),_)
-      equation
-        strs = List.mapMap(vals,ValuesUtil.extractValueString,Util.testsuiteFriendlyPath);
-        newps = List.map(List.map1(strs,Util.makeTuple,encoding), loadFileThread);
+        newps = Parser.parallelParseFilesToProgramList(strs,encoding,numThreads=i);
         newp = List.fold(newps, Interactive.updateProgram, p);
       then
         (FCore.emptyCache(),Values.BOOL(true),GlobalScript.SYMBOLTABLE(newp,NONE(),ic,iv,cf,lf));
@@ -4053,7 +4038,7 @@ algorithm
       list<Absyn.Class>  cls;
       Absyn.Within       w;
       String name;
-      Absyn.Class parentClass;
+      Absyn.Class parentparentClass;
 
     case (Absyn.FULLYQUALIFIED(c), _, _)
       equation
@@ -7729,19 +7714,6 @@ algorithm
   b := List.exist1(str::strs,BaseHashSet.has,hs);
   // print(str + ": " +  boolString(b) + "\n");
 end isChanged;
-
-protected function loadFileThread
-  input tuple<String,String> inFileEncoding;
-  output Absyn.Program program;
-algorithm
-  program := matchcontinue inFileEncoding
-    local
-      String filename,encoding;
-    case ((filename,encoding)) then Parser.parse(filename, encoding);
-    /* TODO: Add locking mechanism to write to parent's error stream instead of stdout */
-    else equation print(Error.printMessagesStr(false)); then fail();
-  end matchcontinue;
-end loadFileThread;
 
 protected function reloadClass
   input String filename;
