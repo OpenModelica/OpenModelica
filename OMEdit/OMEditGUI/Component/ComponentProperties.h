@@ -45,12 +45,21 @@ class Parameter : public QObject
 {
   Q_OBJECT
 public:
+  enum ValueType {
+    Normal,  /* Integer, Real etc. */
+    Boolean,
+    Enumeration
+  };
   Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
             QString componentClassName, QString componentName, bool inheritedComponent, QString inheritedClassName, bool showStartAttribute);
   Label* getNameLabel() {return mpNameLabel;}
   QCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
   bool isShowStartAttribute() {return mshowStartAttribute;}
-  QLineEdit* getValueTextBox() {return mpValueTextBox;}
+  void setValueType(ValueType valueType) {mValueType = valueType;}
+  ValueType getValueType() {return mValueType;}
+  QWidget* getValueWidget();
+  bool isValueModified();
+  QString getValue();
   Label* getUnitLabel() {return mpUnitLabel;}
   Label* getCommentLabel() {return mpCommentLabel;}
   void setFixedState(QString fixed);
@@ -61,10 +70,16 @@ private:
   Label *mpNameLabel;
   QCheckBox *mpFixedCheckBox;
   bool mshowStartAttribute;
+  ValueType mValueType;
+  QComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
   Label *mpUnitLabel;
   Label *mpCommentLabel;
+
+  void createValueWidget(OMCProxy *pOMCProxy, QString className);
+  void setValueWidget(QString value, bool defaultValue);
 public slots:
+  void valueComboBoxChanged(int index);
   void showFixedMenu();
   void trueFixedClicked();
   void falseFixedClicked();

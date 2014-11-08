@@ -1014,12 +1014,24 @@ bool OMCProxy::isBuiltinType(QString typeName)
 }
 
 /*!
+  Returns true if the given type is one of the predefined types in Modelica.
+  Returns also the name of the predefined type.
+  */
+QString OMCProxy::getBuiltinType(QString typeName)
+{
+  sendCommand("getBuiltinType(" + typeName + ")");
+  QString result = StringHandler::unparse(getResult());
+  getErrorString();
+  return result;
+}
+
+/*!
   Checks the class type.
   \param type - the type to check.
   \param className - the class to check.
   \return true if the class is a specified type
   */
-bool OMCProxy::isWhat(int type, QString className)
+bool OMCProxy::isWhat(StringHandler::ModelicaClasses type, QString className)
 {
   switch (type)
   {
@@ -1058,6 +1070,9 @@ bool OMCProxy::isWhat(int type, QString className)
       break;
     case StringHandler::Optimization:
       sendCommand("isOptimization(" + className + ")", true, className);
+      break;
+    case StringHandler::Enumeration:
+      sendCommand("isEnumeration(" + className + ")", true, className);
       break;
     default:
       return false;
@@ -2512,6 +2527,19 @@ bool OMCProxy::copyClass(QString className, QString newClassName, QString withIn
   bool result = StringHandler::unparseBool(getResult());
   if (!result) printMessagesStringInternal();
   return result;
+}
+
+/*!
+  Gets the list of enumeration literals of the class.
+  \param className - the enumeration class
+  \return the list of enumeration literals
+  */
+QStringList OMCProxy::getEnumerationLiterals(QString className)
+{
+  sendCommand("getEnumerationLiterals(" + className + ")", true, className);
+  QStringList enumerationLiterals = StringHandler::unparseStrings(getResult());
+  printMessagesStringInternal();
+  return enumerationLiterals;
 }
 
 /*!

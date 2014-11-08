@@ -131,7 +131,8 @@ public:
   QStringList getClassInformation(QString className);
   bool isPackage(QString className);
   bool isBuiltinType(QString typeName);
-  bool isWhat(int type, QString className);
+  QString getBuiltinType(QString typeName);
+  bool isWhat(StringHandler::ModelicaClasses type, QString className);
   bool isProtected(QString parameter, QString className);
   bool isProtectedClass(QString className, QString nestedClassName);
   bool isPartial(QString className);
@@ -223,6 +224,7 @@ public:
   bool setDebugFlags(QString flags);
   bool exportToFigaro(QString className, QString database, QString mode, QString options, QString processor);
   bool copyClass(QString className, QString newClassName, QString withIn);
+  QStringList getEnumerationLiterals(QString className);
 signals:
   void commandFinished();
 public slots:

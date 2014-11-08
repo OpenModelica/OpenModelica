@@ -60,8 +60,19 @@ Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString
   mpFixedCheckBox->setCheckState(Qt::PartiallyChecked);
   connect(mpFixedCheckBox, SIGNAL(clicked()), SLOT(showFixedMenu()));
   mshowStartAttribute = showStartAttribute;
-  mpValueTextBox = new QLineEdit;
-  mpValueTextBox->setMinimumWidth(100);  /* Set the minimum width for so atleast it can show the value when scroll bars are on */
+  // set the value type based on component type.
+  if ((pOMCProxy->isBuiltinType(pComponentInfo->getClassName())) && (pComponentInfo->getClassName().compare("Boolean") == 0)) {
+    mValueType = Parameter::Boolean;
+  } else if (pOMCProxy->isBuiltinType(pComponentInfo->getClassName())) {
+    mValueType = Parameter::Normal;
+  } else if (pOMCProxy->isWhat(StringHandler::Enumeration, pComponentInfo->getClassName())) {
+    mValueType = Parameter::Enumeration;
+  } else if (pOMCProxy->getBuiltinType(pComponentInfo->getClassName()).compare("Boolean") == 0) {
+    mValueType = Parameter::Boolean;
+  } else {
+    mValueType = Parameter::Normal;
+  }
+  createValueWidget(pOMCProxy, pComponentInfo->getClassName());
 
   QString value;
   bool defaultValue = true;
@@ -121,12 +132,7 @@ Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString
       defaultValue = true;
     }
   }
-  if (defaultValue) {
-    mpValueTextBox->setPlaceholderText(value);
-  } else {
-    mpValueTextBox->setText(value);
-  }
-  mpValueTextBox->setCursorPosition(0); /* move the cursor to start so that parameter value will show up from start instead of end. */
+  setValueWidget(value, defaultValue);
   mpUnitLabel = new Label;
   mpCommentLabel = new Label;
   /*
@@ -143,6 +149,42 @@ Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString
   }
   mpUnitLabel = new Label(StringHandler::removeFirstLastQuotes(unit));
   mpCommentLabel = new Label(pComponentInfo->getComment());
+}
+
+QWidget* Parameter::getValueWidget()
+{
+  switch (mValueType) {
+    case Parameter::Boolean:
+    case Parameter::Enumeration:
+      return mpValueComboBox;
+    case Parameter::Normal:
+    default:
+      return mpValueTextBox;
+  }
+}
+
+bool Parameter::isValueModified()
+{
+  switch (mValueType) {
+    case Parameter::Boolean:
+    case Parameter::Enumeration:
+      return mpValueComboBox->lineEdit()->isModified();
+    case Parameter::Normal:
+    default:
+      return mpValueTextBox->isModified();
+  }
+}
+
+QString Parameter::getValue()
+{
+  switch (mValueType) {
+    case Parameter::Boolean:
+    case Parameter::Enumeration:
+      return mpValueComboBox->lineEdit()->text().trimmed();
+    case Parameter::Normal:
+    default:
+      return mpValueTextBox->text().trimmed();
+  }
 }
 
 void Parameter::setFixedState(QString fixed)
@@ -200,7 +242,81 @@ QString Parameter::getUnitFromDerivedClass(OMCProxy *pOMCProxy, QString classNam
   */
 void Parameter::setEnabled(bool enable)
 {
-  mpValueTextBox->setEnabled(enable);
+  switch (mValueType) {
+    case Parameter::Boolean:
+    case Parameter::Enumeration:
+      mpValueComboBox->setEnabled(enable);
+      break;
+    case Parameter::Normal:
+    default:
+      mpValueTextBox->setEnabled(enable);
+      break;
+  }
+}
+
+void Parameter::createValueWidget(OMCProxy *pOMCProxy, QString className)
+{
+  int i;
+  QStringList enumerationLiterals;
+  switch (mValueType) {
+    case Parameter::Boolean:
+      mpValueComboBox = new QComboBox;
+      mpValueComboBox->setEditable(true);
+      mpValueComboBox->addItem("", "");
+      mpValueComboBox->addItem("true", "true");
+      mpValueComboBox->addItem("false", "false");
+      /* Set the minimum width so atleast it can show the value when scroll bars are on */
+      mpValueComboBox->setMinimumWidth(100);
+      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      break;
+    case Parameter::Enumeration:
+      mpValueComboBox = new QComboBox;
+      mpValueComboBox->setEditable(true);
+      mpValueComboBox->addItem("", "");
+      enumerationLiterals = pOMCProxy->getEnumerationLiterals(className);
+      for (i = 0 ; i < enumerationLiterals.size(); i++) {
+        mpValueComboBox->addItem(enumerationLiterals[i], className + "." + enumerationLiterals[i]);
+      }
+      /* Set the minimum width so atleast it can show the value when scroll bars are on */
+      mpValueComboBox->setMinimumWidth(100);
+      connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      break;
+    case Parameter::Normal:
+    default:
+      mpValueTextBox = new QLineEdit;
+      /* Set the minimum width so atleast it can show the value when scroll bars are on */
+      mpValueTextBox->setMinimumWidth(100);
+      break;
+  }
+}
+
+void Parameter::setValueWidget(QString value, bool defaultValue)
+{
+  switch (mValueType) {
+    case Parameter::Boolean:
+    case Parameter::Enumeration:
+      if (defaultValue) {
+        mpValueComboBox->lineEdit()->setPlaceholderText(value);
+      } else {
+        mpValueComboBox->lineEdit()->setText(value);
+      }
+      break;
+    case Parameter::Normal:
+    default:
+      if (defaultValue) {
+        mpValueTextBox->setPlaceholderText(value);
+      } else {
+        mpValueTextBox->setText(value);
+      }
+      mpValueTextBox->setCursorPosition(0); /* move the cursor to start so that parameter value will show up from start instead of end. */
+      break;
+  }
+}
+
+void Parameter::valueComboBoxChanged(int index)
+{
+  mpValueComboBox->lineEdit()->setText(mpValueComboBox->itemData(index).toString());
+  mpValueComboBox->lineEdit()->setModified(true);
 }
 
 void Parameter::showFixedMenu()
@@ -636,7 +752,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
           if (showStartAttribute) {
             pGroupBoxGridLayout->addWidget(pParameter->getFixedCheckBox(), layoutIndex, columnIndex++);
           }
-          pGroupBoxGridLayout->addWidget(pParameter->getValueTextBox(), layoutIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
           pGroupBoxGridLayout->addWidget(pParameter->getUnitLabel(), layoutIndex, columnIndex++);
           pGroupBoxGridLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, columnIndex++);
           mParametersList.append(pParameter);
@@ -674,12 +790,11 @@ void ComponentParameters::updateComponentParameters()
   bool valueChanged = false;
   bool modifierValueChanged = false;
   foreach (Parameter *pParameter, mParametersList) {
-    QLineEdit *pValueTextBox = pParameter->getValueTextBox();
     QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
     QString componentModifier = QString(mpComponent->getName()).append(".").append(pParameter->getNameLabel()->text());
-    if (pValueTextBox->isModified()) {
+    if (pParameter->isValueModified()) {
       valueChanged = true;
-      QString componentModifierValue = pValueTextBox->text().trimmed();
+      QString componentModifierValue = pParameter->getValue();
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
         if (mpComponent->getOMCProxy()->setExtendsModifierValue(className, mpComponent->getInheritedClassName(), componentModifier, componentModifierValue.prepend("=")))
