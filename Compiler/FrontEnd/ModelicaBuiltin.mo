@@ -3038,6 +3038,17 @@ annotation(
   preferredView="text");
 end isProtectedClass;
 
+function getBuiltinType
+  input TypeName cl;
+  output String name;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the builtin type e.g Real, Integer, Boolean & String of the class.
+</html>"),
+  preferredView="text");
+end getBuiltinType;
+
 function setInitXmlStartValue
   input String fileName;
   input String variableName;

@@ -2509,6 +2509,18 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
+    case (cache,env,"getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        (_, tp, _) = Lookup.lookupType(cache, env, classpath, SOME(Absyn.dummyInfo));
+        str = Types.unparseType(tp);
+      then
+        (cache,Values.STRING(str),st);
+
+    // if the lookup fails
+    case (cache,env,"getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      then
+        (cache,Values.STRING(""),st);
+
     case (cache,_,"extendsFrom",
           {Values.CODE(Absyn.C_TYPENAME(classpath)),
            Values.CODE(Absyn.C_TYPENAME(baseClassPath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
