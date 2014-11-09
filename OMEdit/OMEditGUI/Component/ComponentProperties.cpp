@@ -265,8 +265,6 @@ void Parameter::createValueWidget(OMCProxy *pOMCProxy, QString className)
       mpValueComboBox->addItem("", "");
       mpValueComboBox->addItem("true", "true");
       mpValueComboBox->addItem("false", "false");
-      /* Set the minimum width so atleast it can show the value when scroll bars are on */
-      mpValueComboBox->setMinimumWidth(100);
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
     case Parameter::Enumeration:
@@ -277,21 +275,18 @@ void Parameter::createValueWidget(OMCProxy *pOMCProxy, QString className)
       for (i = 0 ; i < enumerationLiterals.size(); i++) {
         mpValueComboBox->addItem(enumerationLiterals[i], className + "." + enumerationLiterals[i]);
       }
-      /* Set the minimum width so atleast it can show the value when scroll bars are on */
-      mpValueComboBox->setMinimumWidth(100);
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
     case Parameter::Normal:
     default:
       mpValueTextBox = new QLineEdit;
-      /* Set the minimum width so atleast it can show the value when scroll bars are on */
-      mpValueTextBox->setMinimumWidth(100);
       break;
   }
 }
 
 void Parameter::setValueWidget(QString value, bool defaultValue)
 {
+  QFontMetrics fm = QFontMetrics(QFont());
   switch (mValueType) {
     case Parameter::Boolean:
     case Parameter::Enumeration:
@@ -300,6 +295,9 @@ void Parameter::setValueWidget(QString value, bool defaultValue)
       } else {
         mpValueComboBox->lineEdit()->setText(value);
       }
+      /* Set the minimum width so that the value text will be readable */
+      fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
+      mpValueComboBox->setMinimumWidth(fm.width(value) + 50);
       break;
     case Parameter::Normal:
     default:
@@ -308,6 +306,9 @@ void Parameter::setValueWidget(QString value, bool defaultValue)
       } else {
         mpValueTextBox->setText(value);
       }
+      /* Set the minimum width so that the value text will be readable */
+      fm = QFontMetrics(mpValueTextBox->font());
+      mpValueTextBox->setMinimumWidth(fm.width(value) + 50);
       mpValueTextBox->setCursorPosition(0); /* move the cursor to start so that parameter value will show up from start instead of end. */
       break;
   }
