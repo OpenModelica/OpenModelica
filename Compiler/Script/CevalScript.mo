@@ -2296,7 +2296,7 @@ algorithm
     case (cache,_,"loadFile",_,st,_)
       then (cache,Values.BOOL(false),st);
 
-    case (_,_,"loadFiles",{Values.ARRAY(valueLst=vals as _::_::_),Values.STRING(encoding),Values.INTEGER(i)},
+    case (_,_,"loadFiles",{Values.ARRAY(valueLst=vals),Values.STRING(encoding),Values.INTEGER(i)},
           (GlobalScript.SYMBOLTABLE(
             ast = p,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,

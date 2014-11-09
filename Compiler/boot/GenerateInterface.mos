@@ -1,5 +1,5 @@
 setCommandLineOptions("+g=MetaModelica");
-if not loadFiles({inFile}) then
+if not loadFile(inFile) then
   print("Failed to load file: " + inFile + "\n" + getErrorString());
   exit(1);
 end if;
