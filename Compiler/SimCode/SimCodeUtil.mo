@@ -3035,7 +3035,7 @@ algorithm
         // section.
         true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-        algStatements = BackendDAEUtil.removediscreteAssingments(algStatements, vars);
+        algStatements = BackendDAEUtil.removeDiscreteAssignments(algStatements, vars);
       then
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
 
@@ -6180,7 +6180,7 @@ algorithm
         // The variables solved for musst all be part of the output variables of the algorithm.
         List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-        algStatements = BackendDAEUtil.removediscreteAssingments(algStatements, BackendVariable.listVar1(vars));
+        algStatements = BackendDAEUtil.removeDiscreteAssignments(algStatements, BackendVariable.listVar1(vars));
       then
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
 

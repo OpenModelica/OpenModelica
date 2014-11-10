@@ -2113,7 +2113,7 @@ algorithm
   BackendDAE.SHARED(info=einfo) := shared;
 end getExtraInfo;
 
-public function removediscreteAssingments "
+public function removeDiscreteAssignments "
 Author: wbraun
 Function tarverse Statements and remove discrete one"
   input list<DAE.Statement> inStmts;
@@ -2146,7 +2146,7 @@ algorithm
         cref = Expression.expCref(e);
         ({v},_) = BackendVariable.getVar(cref,vars);
         true = BackendVariable.isVarDiscrete(v);
-        xs = removediscreteAssingments(rest,vars);
+        xs = removeDiscreteAssignments(rest,vars);
       then xs;
 
     /*case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1)::rest),vars)
@@ -2155,54 +2155,54 @@ algorithm
         (vlst,_) = List.map1_2(crefLst,BackendVariable.getVar,vars);
         //blst = List.map(vlst,BackendVariable.isVarDiscrete);
         //true = boolOrList(blst);
-        xs = removediscreteAssingments(rest,vars);
+        xs = removeDiscreteAssignments(rest,vars);
       then xs;
       */
     case ((DAE.STMT_ASSIGN_ARR(componentRef = cref)::rest),vars)
       equation
         ({v},_) = BackendVariable.getVar(cref,vars);
         true = BackendVariable.isVarDiscrete(v);
-        xs = removediscreteAssingments(rest,vars);
+        xs = removeDiscreteAssignments(rest,vars);
       then xs;
 
     case (((DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source))::rest),vars)
       equation
-        stmts = removediscreteAssingments(stmts,vars);
+        stmts = removeDiscreteAssignments(stmts,vars);
         algElse = removediscreteAssingmentsElse(algElse,vars);
-        xs = removediscreteAssingments(rest,vars);
+        xs = removeDiscreteAssignments(rest,vars);
       then DAE.STMT_IF(e,stmts,algElse,source)::xs;
 
     case (((DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=index,range=e,statementLst=stmts, source = source))::rest),vars)
       equation
-        stmts = removediscreteAssingments(stmts,vars);
-        xs = removediscreteAssingments(rest,vars);
+        stmts = removeDiscreteAssignments(stmts,vars);
+        xs = removeDiscreteAssignments(rest,vars);
       then DAE.STMT_FOR(tp,b1,id1,index,e,stmts,source)::xs;
 
     case (((DAE.STMT_WHILE(exp=e,statementLst=stmts, source = source))::rest),vars)
       equation
-        stmts = removediscreteAssingments(stmts,vars);
-        xs = removediscreteAssingments(rest,vars);
+        stmts = removeDiscreteAssignments(stmts,vars);
+        xs = removeDiscreteAssignments(rest,vars);
       then DAE.STMT_WHILE(e,stmts,source)::xs;
 
     case (((DAE.STMT_WHEN(exp=e,conditions=conditions,initialCall=initialCall,statementLst=stmts,elseWhen=NONE(),source=source))::rest),vars)
       equation
-        stmts = removediscreteAssingments(stmts,vars);
-        xs = removediscreteAssingments(rest,vars);
+        stmts = removeDiscreteAssignments(stmts,vars);
+        xs = removeDiscreteAssignments(rest,vars);
       then DAE.STMT_WHEN(e,conditions,initialCall,stmts,NONE(),source)::xs;
 
     case (((DAE.STMT_WHEN(exp=e,conditions=conditions,initialCall=initialCall,statementLst=stmts,elseWhen=SOME(ew),source=source))::rest),vars)
       equation
-        stmts = removediscreteAssingments(stmts,vars);
-        {ew} = removediscreteAssingments({ew},vars);
-        xs = removediscreteAssingments(rest,vars);
+        stmts = removeDiscreteAssignments(stmts,vars);
+        {ew} = removeDiscreteAssignments({ew},vars);
+        xs = removeDiscreteAssignments(rest,vars);
       then DAE.STMT_WHEN(e,conditions,initialCall,stmts,SOME(ew),source)::xs;
 
     case ((stmt::rest),vars)
       equation
-        xs = removediscreteAssingments(rest,vars);
+        xs = removeDiscreteAssignments(rest,vars);
       then  stmt::xs;
   end matchcontinue;
-end removediscreteAssingments;
+end removeDiscreteAssignments;
 
 protected function removediscreteAssingmentsElse "author: wbraun
   Helper function for traverseDAEEquationsELse"
@@ -2220,11 +2220,11 @@ algorithm
   case(DAE.ELSEIF(e,st,el),vars)
     equation
       el = removediscreteAssingmentsElse(el,vars);
-      st = removediscreteAssingments(st,vars);
+      st = removeDiscreteAssignments(st,vars);
     then DAE.ELSEIF(e,st,el);
   case(DAE.ELSE(st),vars)
     equation
-      st = removediscreteAssingments(st,vars);
+      st = removeDiscreteAssignments(st,vars);
     then DAE.ELSE(st);
 end match;
 end removediscreteAssingmentsElse;
