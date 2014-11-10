@@ -269,8 +269,8 @@ algorithm
     case (cref, _)
       equation
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.T_REAL_DEFAULT, {});
-        _ = "Template did not find the simulation variable for "+ ComponentReference.printComponentRefStr(cref) + ". ";
-        /*Todo: This also generates an error for example itearation variables, so i commented  out
+        /* Todo: This also generates an error for example itearation variables, so i commented  out
+        "Template did not find the simulation variable for "+ ComponentReference.printComponentRefStr(cref) + ". ";
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});*/
       then
          SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true);
@@ -860,8 +860,6 @@ algorithm
         biVars = List.map(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann);
-        _ = List.isNotEmpty(fn_includes);
-        _ = List.isNotEmpty(fn_libs);
         includes = List.union(fn_includes, includes);
         includeDirs = List.union(fn_includeDirs, includeDirs);
         libs = List.union(fn_libs, libs);
@@ -1981,7 +1979,7 @@ algorithm
     then sysIndexMap;
 
     case(SimCode.SES_MIXED(cont=cont, index=index, indexMixedSystem=systemIndex), _) equation
-      _ = getSystemIndexMap(cont, inSysIndexMap);
+      getSystemIndexMap(cont, inSysIndexMap);
       sysIndexMap = arrayUpdate(inSysIndexMap, index, systemIndex);
     then sysIndexMap;
 
@@ -3977,8 +3975,6 @@ algorithm
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
         // create symbolic jacobian for simulation
-        _ = BackendEquation.listEquation({});
-        _ =  BackendVariable.emptyVars();
         (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(jacobian, uniqueEqIndex, tempvars);
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, jacobianMatrix, false)}, uniqueEqIndex+1, tempvars);
@@ -4150,8 +4146,6 @@ algorithm
          // get residual eqns
          reqns = BackendEquation.getEqns(residualEqns, eqns);
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
-         // generate residual replacements
-         _ = List.map(tvars, BackendVariable.varCref);
          // generate other equations
          (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, {});
          (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
@@ -8512,7 +8506,7 @@ algorithm
       equation
         ((crefs as (cr :: _))) = List.map(expl, Expression.expCref); // Get all CRefs from exp1.
         crefs_1 = List.map(crefs, ComponentReference.crefStripLastSubs); // Strip last subscripts
-        _ = List.reduce(crefs_1, ComponentReference.crefEqualReturn); // Check if elements are equal, remove one
+        List.reduce(crefs_1, ComponentReference.crefEqualReturn); // Check if elements are equal, remove one
       then
         cr;
 
@@ -8521,7 +8515,7 @@ algorithm
         expl = List.flatten(column);
         ((crefs as (cr :: _))) = List.map(expl, Expression.expCref); // Get all CRefs from exp1.
         crefs_1 = List.map(crefs, ComponentReference.crefStripLastSubs); // Strip last subscripts
-        _ = List.reduce(crefs_1, ComponentReference.crefEqualReturn); // Check if elements are equal, remove one
+        List.reduce(crefs_1, ComponentReference.crefEqualReturn); // Check if elements are equal, remove one
       then
         cr;
   end match;
@@ -8568,7 +8562,7 @@ algorithm
 
     case (_, _, ht, _)
       equation
-        _ = BaseHashTable.get(pathstr, ht);
+        BaseHashTable.get(pathstr, ht);
       then ht;
 
     case (path, _, ht, _)
@@ -8615,15 +8609,11 @@ protected function addDestructor2
   input Absyn.Path path;
   input String pathstr;
   input HashTableStringToPath.HashTable inHt;
-  output HashTableStringToPath.HashTable outHt;
+  output HashTableStringToPath.HashTable ht := inHt;
 algorithm
-  outHt := matchcontinue (path,pathstr,inHt)
-    case (_,_,_)
-      equation
-        _ = BaseHashTable.get(pathstr, inHt);
-      then inHt;
-    else BaseHashTable.add((pathstr, path), inHt);
-  end matchcontinue;
+  if not BaseHashTable.hasKey(pathstr, ht) then
+    BaseHashTable.add((pathstr, path), ht);
+  end if;
 end addDestructor2;
 
 // =============================================================================
@@ -9216,7 +9206,6 @@ algorithm
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         isLinux = stringEq("linux",System.os());
-        _ = Flags.getConfigString(Flags.TARGET);
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs = generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
@@ -9229,7 +9218,6 @@ algorithm
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         isLinux = stringEq("linux",System.os());
-        _ = Flags.getConfigString(Flags.TARGET);
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs = generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
@@ -12592,7 +12580,7 @@ algorithm
         simVars = List.map1(crefs,get,ht);
         simVarIdcs = List.map2(simVars,getSimVarIndex,varInfo,allVars);
         varMapping = makeVarMapTuple(simVarIdcs,bVarIdcs,{});
-        _ = List.fold1(simVars, fillSimVarMapping, simVarMapping, 1);
+        List.fold1(simVars, fillSimVarMapping, simVarMapping, 1);
         //print(stringDelimitList(List.map(crefs,ComponentReference.printComponentRefStr),"\n")+"\n");
         //List.map_0(simVars,dumpVar);
       then

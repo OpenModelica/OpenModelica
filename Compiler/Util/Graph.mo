@@ -597,7 +597,7 @@ algorithm
 
     case ((node::M,L),_,_)
       equation
-        _ = List.getMemberOnTrue(node,L,inEqualFunc);
+        List.getMemberOnTrue(node,L,inEqualFunc);
       then allReachableNodesWork((M,L),inGraph,inEqualFunc);
 
     case ((node::M,L),_,_)
@@ -817,7 +817,7 @@ algorithm
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
-        _ = List.getMemberOnTrue(inNode, nodes, inEqualFunc);
+        List.getMemberOnTrue(inNode, nodes, inEqualFunc);
         //print("Not found color on index : " + intString(inIndex) + "\n");
         index = arrayFindMinColorIndex(inForbiddenColor, inNode, inIndex+1, inmaxIndex, inEqualFunc, inPrintFunc);
       then index;
@@ -1077,7 +1077,7 @@ algorithm
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
-        _ = List.getMemberOnTrue(inNode, nodes, intEq);
+        List.getMemberOnTrue(inNode, nodes, intEq);
         //print("Not found color on index : " + intString(inIndex) + "\n");
       then
         arrayFindMinColorIndexInt(inForbiddenColor, inNode, inIndex+1);
