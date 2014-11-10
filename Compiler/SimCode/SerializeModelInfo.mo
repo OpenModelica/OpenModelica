@@ -69,7 +69,6 @@ algorithm
     local
       SimCode.ModelInfo mi;
       SimCodeVar.SimVars vars;
-      // SimCode.SimEqSystem eq;
       list<SimCode.SimEqSystem> eqs;
     case SimCode.SIMCODE(modelInfo=mi as SimCode.MODELINFO(vars=vars))
       equation
@@ -83,7 +82,6 @@ algorithm
         serializeVars(file,vars,withOperations);
         File.write(file, "\n},\n\"equations\":[");
         // Handle no comma for the first equation
-        _ = SimCodeUtil.sortEqSystems(code.initialEquations);
         File.write(file,"{\"eqIndex\":0,\"tag\":\"dummy\"}");
         min(serializeEquation(file,eq,"initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations));
         min(serializeEquation(file,eq,"removed-initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.removedInitialEquations));
@@ -482,7 +480,7 @@ algorithm
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         // Ax=b
-        File.write(file, "\",\"tag\":\"linear\",\"defines\":[");
+        File.write(file, "\",\"tag\":\"container\",\"display\":\"linear\",\"defines\":[");
         serializeUses(file,list(match v case SimCodeVar.SIMVAR() then v.name; end match
                                 for v in eq.vars));
         File.write(file, "],\"equation\":{\"size\":");
