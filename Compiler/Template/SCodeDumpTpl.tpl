@@ -367,17 +367,17 @@ match for_equation
     let eq_str = (eEquationLst |> e => dumpEEquation(e, options) ;separator="\n")
     let cmt_str = dumpComment(comment, options)
     <<
-    for <%index%> in <%range_str%> loop<%cmt_str%>
+    for <%index%> in <%range_str%> loop
       <%eq_str%>
-    end for;
+    end for<%cmt_str%>;
     >>
   case EQ_FOR(__) then
     let eq_str = (eEquationLst |> e => dumpEEquation(e, options) ;separator="\n")
     let cmt_str = dumpComment(comment, options)
     <<
-    for <%index%> loop<%cmt_str%>
+    for <%index%> loop
       <%eq_str%>
-    end for;
+    end for<%cmt_str%>;
     >>
 end dumpForEEquation;
 
@@ -491,17 +491,17 @@ match for_statement
     let body_str = dumpStatements(forBody, options)
     let cmt_str = dumpComment(comment, options)
     <<
-    for <%index%> in <%range_str%> loop<%cmt_str%>
+    for <%index%> in <%range_str%> loop
       <%body_str%>
-    end for;
+    end for<%cmt_str%>;
     >>
   case ALG_FOR(__) then
     let body_str = dumpStatements(forBody, options)
     let cmt_str = dumpComment(comment, options)
     <<
-    for <%index%> loop<%cmt_str%>
+    for <%index%> loop
       <%body_str%>
-    end for;
+    end for<%cmt_str%>;
     >>
 end dumpForStatement;
 
