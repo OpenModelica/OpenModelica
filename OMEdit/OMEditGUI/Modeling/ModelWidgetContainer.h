@@ -200,26 +200,21 @@ private:
 signals:
   void keyPressDelete();
   void keyPressRotateClockwise();
-  void keyReleaseRotateClockwise();
   void keyPressRotateAntiClockwise();
-  void keyReleaseRotateAntiClockwise();
   void keyPressUp();
-  void keyReleaseUp();
   void keyPressShiftUp();
-  void keyReleaseShiftUp();
+  void keyPressCtrlUp();
   void keyPressDown();
-  void keyReleaseDown();
   void keyPressShiftDown();
-  void keyReleaseShiftDown();
+  void keyPressCtrlDown();
   void keyPressLeft();
-  void keyReleaseLeft();
   void keyPressShiftLeft();
-  void keyReleaseShiftLeft();
+  void keyPressCtrlLeft();
   void keyPressRight();
-  void keyReleaseRight();
   void keyPressShiftRight();
-  void keyReleaseShiftRight();
+  void keyPressCtrlRight();
   void keyPressDuplicate();
+  void keyRelease();
 public slots:
   void addConnection(Component *pComponent);
   void removeConnection();

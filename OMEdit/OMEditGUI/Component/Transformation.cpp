@@ -163,6 +163,21 @@ bool Transformation::getVisible()
   return mVisible;
 }
 
+void Transformation::updatePosition(qreal x, qreal y)
+{
+  switch (mViewType)
+  {
+    case StringHandler::Icon:
+      updatePositionIcon(x, y);
+      break;
+    case StringHandler::Diagram:
+    case StringHandler::ModelicaText:
+    default:
+      updatePositionDiagram(x, y);
+      break;
+  }
+}
+
 void Transformation::setOrigin(QPointF origin)
 {
   switch (mViewType)
@@ -365,12 +380,25 @@ bool Transformation::getFlipVertical()
 
 QTransform Transformation::getTransformationMatrixDiagram()
 {
-  mPositionXDiagram = mOriginDiagram.x() + ((mExtent1Diagram.x() + mExtent2Diagram.x()) / 2);
-  mPositionYDiagram = mOriginDiagram.y() + ((mExtent1Diagram.y() + mExtent2Diagram.y()) / 2);
-
+  // determine X position
+  if (mExtent1Diagram.x() + mExtent2Diagram.x() == 0) {
+    mPositionXDiagram = mOriginDiagram.x();
+  } else if ((mExtent1Diagram.x() + mExtent2Diagram.x() != 0) && mOriginDiagram.x() == 0) {
+    mPositionXDiagram = (mExtent1Diagram.x() + mExtent2Diagram.x()) / 2;
+  } else {
+    mPositionXDiagram = mOriginDiagram.x() + ((mExtent1Diagram.x() + mExtent2Diagram.x()) / 2);
+  }
+  // determine Y position
+  if (mExtent1Diagram.y() + mExtent2Diagram.y() == 0) {
+    mPositionYDiagram = mOriginDiagram.y();
+  } else if ((mExtent1Diagram.y() + mExtent2Diagram.y() != 0) && mOriginDiagram.y() == 0) {
+    mPositionYDiagram = (mExtent1Diagram.y() + mExtent2Diagram.y()) / 2;
+  } else {
+    mPositionYDiagram = mOriginDiagram.y() + ((mExtent1Diagram.y() + mExtent2Diagram.y()) / 2);
+  }
+  // get scale
   qreal tempwidth = fabs(mExtent1Diagram.x() - mExtent2Diagram.x());
   qreal tempHeight = fabs(mExtent1Diagram.y() - mExtent2Diagram.y());
-  // get scale
   mScaleDiagram = tempwidth / mWidth;
   // get aspectratio
   mAspectRatioDiagram = tempHeight / (mHeight * mScaleDiagram);
@@ -402,12 +430,25 @@ QTransform Transformation::getTransformationMatrixDiagram()
 
 QTransform Transformation::getTransformationMatrixIcon()
 {
-  mPositionXIcon = mOriginIcon.x() + ((mExtent1Icon.x() + mExtent2Icon.x()) / 2);
-  mPositionYIcon = mOriginIcon.y() + ((mExtent1Icon.y() + mExtent2Icon.y()) / 2);
-
+  // determine X position
+  if (mExtent1Icon.x() + mExtent2Icon.x() == 0) {
+    mPositionXIcon = mOriginIcon.x();
+  } else if ((mExtent1Icon.x() + mExtent2Icon.x() != 0) && mOriginIcon.x() == 0) {
+    mPositionXIcon = (mExtent1Icon.x() + mExtent2Icon.x()) / 2;
+  } else {
+    mPositionXIcon = mOriginIcon.x() + ((mExtent1Icon.x() + mExtent2Icon.x()) / 2);
+  }
+  // determine Y position
+  if (mExtent1Icon.y() + mExtent2Icon.y() == 0) {
+    mPositionYIcon = mOriginIcon.y();
+  } else if ((mExtent1Icon.y() + mExtent2Icon.y() != 0) && mOriginIcon.y() == 0) {
+    mPositionYIcon = (mExtent1Icon.y() + mExtent2Icon.y()) / 2;
+  } else {
+    mPositionYIcon = mOriginIcon.y() + ((mExtent1Icon.y() + mExtent2Icon.y()) / 2);
+  }
+  // get scale
   qreal tempwidthIcon = fabs(mExtent1Icon.x() - mExtent2Icon.x());
   qreal tempHeightIcon = fabs(mExtent1Icon.y() - mExtent2Icon.y());
-  // get scale
   mScaleIcon = tempwidthIcon / mWidth;
   // get aspectratio
   mAspectRatioIcon = tempHeightIcon / (mHeight * mScaleIcon);
@@ -435,6 +476,24 @@ QTransform Transformation::getTransformationMatrixIcon()
   m32 = mPositionYIcon;
   // return all transformations
   return QTransform (m11, m12, m21, m22, m31, m32);
+}
+
+void Transformation::updatePositionDiagram(qreal x, qreal y)
+{
+  // determine X position
+  if (mExtent1Diagram.x() + mExtent2Diagram.x() == 0) {
+    mOriginDiagram.setX(mOriginDiagram.x() +  x);
+  } else {
+    mExtent1Diagram.setX(mExtent1Diagram.x() +  x);
+    mExtent2Diagram.setX(mExtent2Diagram.x() +  x);
+  }
+  // determine Y position
+  if (mExtent1Diagram.y() + mExtent2Diagram.y() == 0) {
+    mOriginDiagram.setY(mOriginDiagram.y() +  y);
+  } else {
+    mExtent1Diagram.setY(mExtent1Diagram.y() +  y);
+    mExtent2Diagram.setY(mExtent2Diagram.y() +  y);
+  }
 }
 
 void Transformation::setOriginDiagram(QPointF origin)
@@ -500,6 +559,23 @@ void Transformation::setFlipVerticalDiagram(bool On)
 bool Transformation::getFlipVerticalDiagram()
 {
   return mFlipVerticalDiagram;
+}
+void Transformation::updatePositionIcon(qreal x, qreal y)
+{
+  // determine X position
+  if (mExtent1Icon.x() + mExtent2Icon.x() == 0) {
+    mOriginIcon.setX(mOriginIcon.x() +  x);
+  } else {
+    mExtent1Icon.setX(mExtent1Icon.x() +  x);
+    mExtent2Icon.setX(mExtent2Icon.x() +  x);
+  }
+  // determine Y position
+  if (mExtent1Icon.y() + mExtent2Icon.y() == 0) {
+    mOriginIcon.setY(mOriginIcon.y() +  y);
+  } else {
+    mExtent1Icon.setY(mExtent1Icon.y() +  y);
+    mExtent2Icon.setY(mExtent2Icon.y() +  y);
+  }
 }
 
 void Transformation::setOriginIcon(QPointF origin)

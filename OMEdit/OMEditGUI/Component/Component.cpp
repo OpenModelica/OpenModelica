@@ -1160,132 +1160,252 @@ void Component::flipVertical()
 
 /*!
   Slot that moves component upwards depending on the grid step size value
-  \see moveDown()
-  \see moveLeft()
-  \see moveRight()
-  \see moveShiftDown()
-  \see moveShiftLeft()
-  \see moveShiftRight()
+  \sa moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
 void Component::moveUp()
 {
-  int verticalStep = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x(), mpTransformation->getOrigin().y() + verticalStep));
+  mpTransformation->updatePosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  setTransform(mpTransformation->getTransformationMatrix());
+  emit componentTransformChange();
+}
+
+/*!
+  Slot that moves component upwards depending on the grid step size value multiplied by 5
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
+  */
+void Component::moveShiftUp()
+{
+  mpTransformation->updatePosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
 
 /*!
   Slot that moves component one pixel upwards
-  \see moveDown()
-  \see moveLeft()
-  \see moveRight()
-  \see moveShiftDown()
-  \see moveShiftLeft()
-  \see moveShiftRight()
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
-void Component::moveShiftUp()
+void Component::moveCtrlUp()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x(), mpTransformation->getOrigin().y() + 1));
+  mpTransformation->updatePosition(0, 1);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
 
 /*!
   Slot that moves component downwards depending on the grid step size value
-  \see moveUp()
-  \see moveLeft()
-  \see moveRight()
-  \see moveShiftUp()
-  \see moveShiftLeft()
-  \see moveShiftRight()
+  \sa moveUp(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
 void Component::moveDown()
 {
-  int verticalStep = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x(), mpTransformation->getOrigin().y() - verticalStep));
+  mpTransformation->updatePosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  setTransform(mpTransformation->getTransformationMatrix());
+  emit componentTransformChange();
+}
+
+/*!
+  Slot that moves component downwards depending on the grid step size value multiplied by 5
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
+  */
+void Component::moveShiftDown()
+{
+  mpTransformation->updatePosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
 
 /*!
   Slot that moves component one pixel downwards
-  \see moveUp()
-  \see moveLeft()
-  \see moveRight()
-  \see moveShiftUp()
-  \see moveShiftLeft()
-  \see moveShiftRight()
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
-void Component::moveShiftDown()
+void Component::moveCtrlDown()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x(), mpTransformation->getOrigin().y() - 1));
+  mpTransformation->updatePosition(0, -1);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
 
 /*!
-  Slot that moves component leftwards depending on the grid step size
-  \see moveUp()
-  \see moveDown()
-  \see moveRight()
-  \see moveShiftUp()
-  \see moveShiftDown()
-  \see moveShiftRight()
+  Slot that moves component leftwards depending on the grid step size value
+  \sa moveUp(),
+      moveDown(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
 void Component::moveLeft()
 {
-  int horizontalStep = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() - horizontalStep, mpTransformation->getOrigin().y()));
+  mpTransformation->updatePosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  setTransform(mpTransformation->getTransformationMatrix());
+  emit componentTransformChange();
+}
+
+/*!
+  Slot that moves component leftwards depending on the grid step size value multiplied by 5
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
+  */
+void Component::moveShiftLeft()
+{
+  mpTransformation->updatePosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
 
 /*!
   Slot that moves component one pixel leftwards
-  \see moveUp()
-  \see moveDown()
-  \see moveRight()
-  \see moveShiftUp()
-  \see moveShiftDown()
-  \see moveShiftRight()
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlRight()
   */
-void Component::moveShiftLeft()
+void Component::moveCtrlLeft()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() - 1, mpTransformation->getOrigin().y()));
+  mpTransformation->updatePosition(-1, 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
 
 /*!
-  Slot that moves component rightwards depending on the grid step size
-  \see moveUp()
-  \see moveDown()
-  \see moveLeft()
-  \see moveShiftUp()
-  \see moveShiftDown()
-  \see moveShiftLeft()
+  Slot that moves component rightwards depending on the grid step size value
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
 void Component::moveRight()
 {
-  int horizontalStep = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() + horizontalStep, mpTransformation->getOrigin().y()));
+  mpTransformation->updatePosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  setTransform(mpTransformation->getTransformationMatrix());
+  emit componentTransformChange();
+}
+
+/*!
+  Slot that moves component rightwards depending on the grid step size value multiplied by 5
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
+  */
+void Component::moveShiftRight()
+{
+  mpTransformation->updatePosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
 
 /*!
   Slot that moves component one pixel rightwards
-  \see moveUp()
-  \see moveDown()
-  \see moveLeft()
-  \see moveShiftUp()
-  \see moveShiftDown()
-  \see moveShiftLeft()
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft()
   */
-void Component::moveShiftRight()
+void Component::moveCtrlRight()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() + 1, mpTransformation->getOrigin().y()));
+  mpTransformation->updatePosition(1, 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1447,36 +1567,31 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
       // Only allow manipulations on component if the class is not a system library class OR component is not an inherited component.
       if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent())
       {
-        connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), SLOT(deleteMe()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), SLOT(duplicate()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), SLOT(rotateClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), SLOT(flipHorizontal()), Qt::UniqueConnection);
-        connect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), SLOT(flipVertical()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteMe()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), SLOT(duplicate()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), SLOT(rotateClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseRotateClockwise()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseRotateAntiClockwise()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressUp()), SLOT(moveUp()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseUp()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressShiftUp()), SLOT(moveShiftUp()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseShiftUp()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressDown()), SLOT(moveDown()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseDown()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressShiftDown()), SLOT(moveShiftDown()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseShiftDown()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressLeft()), SLOT(moveLeft()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseLeft()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), SLOT(moveShiftLeft()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseShiftLeft()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressRight()), SLOT(moveRight()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseRight()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyPressShiftRight()), SLOT(moveShiftRight()), Qt::UniqueConnection);
-        connect(mpGraphicsView, SIGNAL(keyReleaseShiftRight()), SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getFlipHorizontalAction(), SIGNAL(triggered()), this, SLOT(flipHorizontal()), Qt::UniqueConnection);
+        connect(mpGraphicsView->getFlipVerticalAction(), SIGNAL(triggered()), this, SLOT(flipVertical()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressShiftDown()), this, SLOT(moveShiftDown()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressCtrlDown()), this, SLOT(moveCtrlDown()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), this, SLOT(moveShiftLeft()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressCtrlLeft()), this, SLOT(moveCtrlLeft()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()), Qt::UniqueConnection);
+        connect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
       }
     }
     else
@@ -1504,25 +1619,20 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseRotateClockwise()), this, SIGNAL(componentTransformHasChanged()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseRotateAntiClockwise()), this, SIGNAL(componentTransformHasChanged()));
         disconnect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseUp()), this, SIGNAL(componentTransformHasChanged()));
         disconnect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseShiftUp()), this, SIGNAL(componentTransformHasChanged()));
+        disconnect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()));
         disconnect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseDown()), this, SIGNAL(componentTransformHasChanged()));
         disconnect(mpGraphicsView, SIGNAL(keyPressShiftDown()), this, SLOT(moveShiftDown()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseShiftDown()), this, SIGNAL(componentTransformHasChanged()));
+        disconnect(mpGraphicsView, SIGNAL(keyPressCtrlDown()), this, SLOT(moveCtrlDown()));
         disconnect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseLeft()), this, SIGNAL(componentTransformHasChanged()));
         disconnect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), this, SLOT(moveShiftLeft()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseShiftLeft()), this, SIGNAL(componentTransformHasChanged()));
+        disconnect(mpGraphicsView, SIGNAL(keyPressCtrlLeft()), this, SLOT(moveCtrlLeft()));
         disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseRight()), this, SIGNAL(componentTransformHasChanged()));
         disconnect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()));
-        disconnect(mpGraphicsView, SIGNAL(keyReleaseShiftRight()), this, SIGNAL(componentTransformHasChanged()));
+        disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
+        disconnect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(componentTransformHasChanged()));
       }
     }
   }
@@ -1536,7 +1646,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
     qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
     qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
     // refine snapping if Shift key is pressed
-    if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)){
+    if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
       stepX = stepX/10;
       stepY = stepY/10;
     }

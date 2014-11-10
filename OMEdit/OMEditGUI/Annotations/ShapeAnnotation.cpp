@@ -1276,30 +1276,60 @@ void ShapeAnnotation::rotateAntiClockwiseMouseRightClick()
   \sa moveDown(),
       moveLeft(),
       moveRight(),
+      moveShiftUp(),
       moveShiftDown(),
       moveShiftLeft(),
-      moveShiftRight()
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
 void ShapeAnnotation::moveUp()
 {
-  int verticalStep = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x(), mpTransformation->getOrigin().y() + verticalStep));
+  mpTransformation->updatePosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  setTransform(mpTransformation->getTransformationMatrix());
+  mOrigin = mpTransformation->getOrigin();
+}
+
+/*!
+  Slot that moves shape upwards depending on the grid step size value multiplied by 5
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
+  */
+void ShapeAnnotation::moveShiftUp()
+{
+  mpTransformation->updatePosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   setTransform(mpTransformation->getTransformationMatrix());
   mOrigin = mpTransformation->getOrigin();
 }
 
 /*!
   Slot that moves shape one pixel upwards
-  \sa moveDown(),
+  \sa moveUp(),
+      moveDown(),
       moveLeft(),
       moveRight(),
+      moveShiftUp(),
       moveShiftDown(),
       moveShiftLeft(),
-      moveShiftRight()
+      moveShiftRight(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
-void ShapeAnnotation::moveShiftUp()
+void ShapeAnnotation::moveCtrlUp()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x(), mpTransformation->getOrigin().y() + 1));
+  mpTransformation->updatePosition(0, 1);
   setTransform(mpTransformation->getTransformationMatrix());
   mOrigin = mpTransformation->getOrigin();
 }
@@ -1310,13 +1340,39 @@ void ShapeAnnotation::moveShiftUp()
       moveLeft(),
       moveRight(),
       moveShiftUp(),
+      moveShiftDown(),
       moveShiftLeft(),
-      moveShiftRight()
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
 void ShapeAnnotation::moveDown()
 {
-  int verticalStep = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x(), mpTransformation->getOrigin().y() - verticalStep));
+  mpTransformation->updatePosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  setTransform(mpTransformation->getTransformationMatrix());
+  mOrigin = mpTransformation->getOrigin();
+}
+
+
+/*!
+  Slot that moves shape downwards depending on the grid step size value multiplied by 5
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
+  */
+void ShapeAnnotation::moveShiftDown()
+{
+  mpTransformation->updatePosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
   setTransform(mpTransformation->getTransformationMatrix());
   mOrigin = mpTransformation->getOrigin();
 }
@@ -1324,15 +1380,20 @@ void ShapeAnnotation::moveDown()
 /*!
   Slot that moves shape one pixel downwards
   \sa moveUp(),
+      moveDown(),
       moveLeft(),
       moveRight(),
       moveShiftUp(),
+      moveShiftDown(),
       moveShiftLeft(),
-      moveShiftRight()
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
-void ShapeAnnotation::moveShiftDown()
+void ShapeAnnotation::moveCtrlDown()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x(), mpTransformation->getOrigin().y() - 1));
+  mpTransformation->updatePosition(0, -1);
   setTransform(mpTransformation->getTransformationMatrix());
   mOrigin = mpTransformation->getOrigin();
 }
@@ -1344,12 +1405,37 @@ void ShapeAnnotation::moveShiftDown()
       moveRight(),
       moveShiftUp(),
       moveShiftDown(),
-      moveShiftRight()
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
 void ShapeAnnotation::moveLeft()
 {
-  int horizontalStep = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() - horizontalStep, mpTransformation->getOrigin().y()));
+  mpTransformation->updatePosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  setTransform(mpTransformation->getTransformationMatrix());
+  mOrigin = mpTransformation->getOrigin();
+}
+
+/*!
+  Slot that moves shape leftwards depending on the grid step size value multiplied by 5
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
+  */
+void ShapeAnnotation::moveShiftLeft()
+{
+  mpTransformation->updatePosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
   setTransform(mpTransformation->getTransformationMatrix());
   mOrigin = mpTransformation->getOrigin();
 }
@@ -1358,12 +1444,17 @@ void ShapeAnnotation::moveLeft()
   Slot that moves shape one pixel leftwards
   \sa moveUp(),
       moveDown(),
+      moveLeft(),
       moveRight(),
       moveShiftUp(),
       moveShiftDown(),
-      moveShiftRight()
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlRight()
   */
-void ShapeAnnotation::moveShiftLeft()
+void ShapeAnnotation::moveCtrlLeft()
 {
   mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() - 1, mpTransformation->getOrigin().y()));
   setTransform(mpTransformation->getTransformationMatrix());
@@ -1377,12 +1468,37 @@ void ShapeAnnotation::moveShiftLeft()
       moveLeft(),
       moveShiftUp(),
       moveShiftDown(),
-      moveShiftLeft()
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
   */
 void ShapeAnnotation::moveRight()
 {
-  int horizontalStep = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() + horizontalStep, mpTransformation->getOrigin().y()));
+  mpTransformation->updatePosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  setTransform(mpTransformation->getTransformationMatrix());
+  mOrigin = mpTransformation->getOrigin();
+}
+
+/*!
+  Slot that moves shape rightwards depending on the grid step size value multiplied by 5
+  \sa moveUp(),
+      moveDown(),
+      moveLeft(),
+      moveRight(),
+      moveShiftUp(),
+      moveShiftDown(),
+      moveShiftLeft(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft(),
+      moveCtrlRight()
+  */
+void ShapeAnnotation::moveShiftRight()
+{
+  mpTransformation->updatePosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
   setTransform(mpTransformation->getTransformationMatrix());
   mOrigin = mpTransformation->getOrigin();
 }
@@ -1392,11 +1508,16 @@ void ShapeAnnotation::moveRight()
   \sa moveUp(),
       moveDown(),
       moveLeft(),
+      moveRight(),
       moveShiftUp(),
       moveShiftDown(),
-      moveShiftLeft()
+      moveShiftLeft(),
+      moveShiftRight(),
+      moveCtrlUp(),
+      moveCtrlDown(),
+      moveCtrlLeft()
   */
-void ShapeAnnotation::moveShiftRight()
+void ShapeAnnotation::moveCtrlRight()
 {
   mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() + 1, mpTransformation->getOrigin().y()));
   setTransform(mpTransformation->getTransformationMatrix());
@@ -1550,32 +1671,27 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         }
         else
         {
-          connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), SLOT(deleteMe()), Qt::UniqueConnection);
-          connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), SLOT(duplicate()), Qt::UniqueConnection);
-          connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), SLOT(rotateClockwiseMouseRightClick()), Qt::UniqueConnection);
-          connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), SLOT(rotateAntiClockwiseMouseRightClick()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteMe()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), SLOT(duplicate()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), SLOT(rotateClockwiseKeyPress()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseRotateClockwise()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), SLOT(rotateAntiClockwiseKeyPress()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseRotateAntiClockwise()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressUp()), SLOT(moveUp()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseUp()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressShiftUp()), SLOT(moveShiftUp()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseShiftUp()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressDown()), SLOT(moveDown()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseDown()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressShiftDown()), SLOT(moveShiftDown()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseShiftDown()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressLeft()), SLOT(moveLeft()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseLeft()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), SLOT(moveShiftLeft()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseShiftLeft()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressRight()), SLOT(moveRight()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseRight()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyPressShiftRight()), SLOT(moveShiftRight()), Qt::UniqueConnection);
-          connect(mpGraphicsView, SIGNAL(keyReleaseShiftRight()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwiseMouseRightClick()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwiseMouseRightClick()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwiseKeyPress()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwiseKeyPress()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressShiftDown()), this, SLOT(moveShiftDown()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressCtrlDown()), this, SLOT(moveCtrlDown()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), this, SLOT(moveShiftLeft()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressCtrlLeft()), this, SLOT(moveCtrlLeft()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
         }
       }
     }
@@ -1600,25 +1716,20 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwiseKeyPress()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseRotateClockwise()), this, SIGNAL(updateClassAnnotation()));
           disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwiseKeyPress()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseRotateAntiClockwise()), this, SIGNAL(updateClassAnnotation()));
           disconnect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseUp()), this, SIGNAL(updateClassAnnotation()));
           disconnect(mpGraphicsView, SIGNAL(keyPressShiftUp()), this, SLOT(moveShiftUp()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseShiftUp()), this, SIGNAL(updateClassAnnotation()));
+          disconnect(mpGraphicsView, SIGNAL(keyPressCtrlUp()), this, SLOT(moveCtrlUp()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseDown()), this, SIGNAL(updateClassAnnotation()));
           disconnect(mpGraphicsView, SIGNAL(keyPressShiftDown()), this, SLOT(moveShiftDown()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseShiftDown()), this, SIGNAL(updateClassAnnotation()));
+          disconnect(mpGraphicsView, SIGNAL(keyPressCtrlDown()), this, SLOT(moveCtrlDown()));
           disconnect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseLeft()), this, SIGNAL(updateClassAnnotation()));
           disconnect(mpGraphicsView, SIGNAL(keyPressShiftLeft()), this, SLOT(moveShiftLeft()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseShiftLeft()), this, SIGNAL(updateClassAnnotation()));
+          disconnect(mpGraphicsView, SIGNAL(keyPressCtrlLeft()), this, SLOT(moveCtrlLeft()));
           disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseRight()), this, SIGNAL(updateClassAnnotation()));
           disconnect(mpGraphicsView, SIGNAL(keyPressShiftRight()), this, SLOT(moveShiftRight()));
-          disconnect(mpGraphicsView, SIGNAL(keyReleaseShiftRight()), this, SIGNAL(updateClassAnnotation()));
+          disconnect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()));
+          disconnect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(updateClassAnnotation()));
         }
       }
     }

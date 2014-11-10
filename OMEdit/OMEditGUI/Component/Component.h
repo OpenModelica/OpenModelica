@@ -180,12 +180,16 @@ public slots:
   void flipVertical();
   void moveUp();
   void moveShiftUp();
+  void moveCtrlUp();
   void moveDown();
   void moveShiftDown();
+  void moveCtrlDown();
   void moveLeft();
   void moveShiftLeft();
+  void moveCtrlLeft();
   void moveRight();
   void moveShiftRight();
+  void moveCtrlRight();
   void showParameters();
   void showAttributes();
   void viewClass();

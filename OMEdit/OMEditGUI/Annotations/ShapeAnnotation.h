@@ -186,12 +186,16 @@ public slots:
   void rotateAntiClockwiseMouseRightClick();
   void moveUp();
   void moveShiftUp();
+  void moveCtrlUp();
   void moveDown();
   void moveShiftDown();
+  void moveCtrlDown();
   void moveLeft();
   void moveShiftLeft();
+  void moveCtrlLeft();
   void moveRight();
   void moveShiftRight();
+  void moveCtrlRight();
   void cornerItemPressed();
   void cornerItemReleased();
   void updateCornerItemPoint(int index, QPointF point);

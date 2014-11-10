@@ -91,15 +91,15 @@ QPointF CoOrdinateSystem::getGrid()
 qreal CoOrdinateSystem::getHorizontalGridStep()
 {
   if (mGrid.x() < 1)
-    return 20;
-  return mGrid.x() * 10;
+    return 2;
+  return mGrid.x();
 }
 
 qreal CoOrdinateSystem::getVerticalGridStep()
 {
   if (mGrid.y() < 1)
-    return 20;
-  return mGrid.y() * 10;
+    return 2;
+  return mGrid.y();
 }
 
 //! @class GraphicsScene
@@ -1180,7 +1180,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     painter->setBrush(Qt::NoBrush);
     painter->setPen(QColor(229, 229, 229));
     /* Draw left half vertical lines */
-    int horizontalGridStep = mpCoOrdinateSystem->getHorizontalGridStep();
+    int horizontalGridStep = mpCoOrdinateSystem->getHorizontalGridStep() * 10;
     qreal xAxisStep = 0;
     qreal yAxisStep = rect.y();
     xAxisStep -= horizontalGridStep;
@@ -1197,7 +1197,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
       xAxisStep += horizontalGridStep;
     }
     /* Draw left half horizontal lines */
-    int verticalGridStep = mpCoOrdinateSystem->getVerticalGridStep();
+    int verticalGridStep = mpCoOrdinateSystem->getVerticalGridStep() * 10;
     xAxisStep = rect.x();
     yAxisStep = 0;
     yAxisStep += verticalGridStep;
@@ -1465,64 +1465,45 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
 
 void GraphicsView::keyPressEvent(QKeyEvent *event)
 {
-  if (event->key() == Qt::Key_Delete)
-  {
+  bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  if (event->key() == Qt::Key_Delete) {
     emit keyPressDelete();
-  }
-  else if(!event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Up)
-  {
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
     emit keyPressUp();
-  }
-  else if(!event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Down)
-  {
-    emit keyPressDown();
-  }
-  else if(!event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Left)
-  {
-    emit keyPressLeft();
-  }
-  else if(!event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Right)
-  {
-    emit keyPressRight();
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Up)
-  {
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
     emit keyPressShiftUp();
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Down)
-  {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up) {
+    emit keyPressCtrlUp();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
+    emit keyPressDown();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
     emit keyPressShiftDown();
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Left)
-  {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down) {
+    emit keyPressCtrlDown();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
+    emit keyPressLeft();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
     emit keyPressShiftLeft();
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Right)
-  {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left) {
+    emit keyPressCtrlLeft();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
+    emit keyPressRight();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
     emit keyPressShiftRight();
-  }
-  else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_A)
-  {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right) {
+    emit keyPressCtrlRight();
+  } else if (controlModifier && event->key() == Qt::Key_A) {
     selectAll();
-  }
-  else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_D)
-  {
+  } else if (controlModifier && event->key() == Qt::Key_D) {
     emit keyPressDuplicate();
-  }
-  else if (!event->modifiers().testFlag(Qt::ShiftModifier) and event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_R)
-  {
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R) {
     emit keyPressRotateClockwise();
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) and event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_R)
-  {
+  } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R) {
     emit keyPressRotateAntiClockwise();
-  }
-  else if (event->key() == Qt::Key_Escape && isCreatingConnection())
-  {
+  } else if (event->key() == Qt::Key_Escape && isCreatingConnection()) {
     removeConnection();
-  }
-  else
-  {
+  } else {
     QGraphicsView::keyPressEvent(event);
   }
 }
@@ -1532,61 +1513,55 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
 void GraphicsView::keyReleaseEvent(QKeyEvent *event)
 {
   /* if user has pressed and hold the key. */
-  if (event->isAutoRepeat())
+  if (event->isAutoRepeat()) {
     return QGraphicsView::keyReleaseEvent(event);
+  }
+  bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   /* handle keys */
-  if(!event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Up)
-  {
-    emit keyReleaseUp();
+  if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else if(!event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Down)
-  {
-    emit keyReleaseDown();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Up) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else if(!event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Left)
-  {
-    emit keyReleaseLeft();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Up) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else if(!event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Right)
-  {
-    emit keyReleaseRight();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Up)
-  {
-    emit keyReleaseShiftUp();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Down) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Down)
-  {
-    emit keyReleaseShiftDown();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Down) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Left)
-  {
-    emit keyReleaseShiftLeft();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) && event->key() == Qt::Key_Right)
-  {
-    emit keyReleaseShiftRight();
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Left) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else if (!event->modifiers().testFlag(Qt::ShiftModifier) && event->modifiers().testFlag(Qt::ControlModifier) && event->key() == Qt::Key_R)
-  {
-    emit keyReleaseRotateClockwise();
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Left) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else if (event->modifiers().testFlag(Qt::ShiftModifier) && event->modifiers().testFlag(Qt::ControlModifier) && event->key() == Qt::Key_R)
-  {
-    emit keyReleaseRotateAntiClockwise();
+  } else if (!shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
+    emit keyRelease();
     setCanAddClassAnnotation(true);
-  }
-  else
-  {
+  } else if (shiftModifier && !controlModifier && event->key() == Qt::Key_Right) {
+    emit keyRelease();
+    setCanAddClassAnnotation(true);
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_Right) {
+    emit keyRelease();
+    setCanAddClassAnnotation(true);
+  } else if (!shiftModifier && controlModifier && event->key() == Qt::Key_R) {
+    emit keyRelease();
+    setCanAddClassAnnotation(true);
+  } else if (shiftModifier && controlModifier && event->key() == Qt::Key_R) {
+    emit keyRelease();
+    setCanAddClassAnnotation(true);
+  } else {
     QGraphicsView::keyReleaseEvent(event);
   }
 }

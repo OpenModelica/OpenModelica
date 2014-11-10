@@ -52,6 +52,7 @@ public:
   void parseTransformationString(QString value, qreal width, qreal height);
   QTransform getTransformationMatrix();
   bool getVisible();
+  void updatePosition(qreal x, qreal y);
   void setOrigin(QPointF origin);
   QPointF getOrigin();
   void setExtent1(QPointF extent);
@@ -92,6 +93,7 @@ private:
   bool mFlipVerticalIcon;
   QTransform getTransformationMatrixDiagram();
   QTransform getTransformationMatrixIcon();
+  void updatePositionDiagram(qreal x, qreal y);
   void setOriginDiagram(QPointF origin);
   QPointF getOriginDiagram();
   void setExtent1Diagram(QPointF extent);
@@ -105,6 +107,7 @@ private:
   bool getFlipHorizontalDiagram();
   void setFlipVerticalDiagram(bool On);
   bool getFlipVerticalDiagram();
+  void updatePositionIcon(qreal x, qreal y);
   void setOriginIcon(QPointF origin);
   QPointF getOriginIcon();
   void setExtent1Icon(QPointF extent);
