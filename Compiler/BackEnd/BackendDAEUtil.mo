@@ -1060,102 +1060,101 @@ protected function traversingisDiscreteExpFinder "Helper for isDiscreteExp"
   output Boolean cont;
   output tuple<BackendDAE.Variables,BackendDAE.Variables,Option<Boolean>> outTpl;
 algorithm
-  (outExp,cont,outTpl) := matchcontinue (inExp,inTpl)
+  (outExp, cont, outTpl) := matchcontinue (inExp, inTpl)
     local
-      BackendDAE.Variables vars,knvars;
+      BackendDAE.Variables vars, knvars;
       DAE.ComponentRef cr;
       VarKind kind;
-      DAE.Exp e,e1,e2;
+      DAE.Exp e, e1, e2;
       Option<Boolean> blst;
-      Boolean b,b1,b2;
+      Boolean b, b1, b2;
       Boolean res;
       Var backendVar;
 
-    case (e as DAE.ICONST(),(vars,knvars,blst))
-      equation
-        b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.RCONST(),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.SCONST(),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.BCONST(),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.ENUM_LITERAL(),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CREF(componentRef = cr),(vars,knvars,blst))
-      equation
-        ((BackendDAE.VAR(varKind = kind)::_),_) = BackendVariable.getVar(cr, vars);
-        res = isKindDiscrete(kind);
-        b = Util.getOptionOrDefault(blst,res);
-        b = Util.boolAndList({b,res});
-      then (e,false,(vars,knvars,SOME(b)));
+    case (e as DAE.ICONST(), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.RCONST(), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.SCONST(), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.BCONST(), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.ENUM_LITERAL(), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CREF(componentRef=cr), (vars, knvars, blst)) equation
+      ((BackendDAE.VAR(varKind=kind)::_), _) = BackendVariable.getVar(cr, vars);
+      res = isKindDiscrete(kind);
+      b = Util.getOptionOrDefault(blst, res);
+      b = b and res;
+    then (e, false, (vars, knvars, SOME(b)));
+
     // builtin variable time is not discrete
-    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT("time",_,_)),(vars,knvars,_)) then (e,false,(vars,knvars,SOME(false)));
+    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, knvars, _))
+    then (e, false, (vars, knvars, SOME(false)));
+
     // Known variables that are input are continuous
-    case (e as DAE.CREF(componentRef = cr),(vars,knvars,_))
-      equation
-        (backendVar::_,_) = BackendVariable.getVar(cr,knvars);
-        true = BackendVariable.isInput(backendVar);
-      then (e,false,(vars,knvars,SOME(false)));
+    case (e as DAE.CREF(componentRef=cr), (vars, knvars, _)) equation
+      (backendVar::_, _) = BackendVariable.getVar(cr, knvars);
+      true = BackendVariable.isInput(backendVar);
+    then (e, false, (vars, knvars, SOME(false)));
 
     // parameters & constants are always discrete
-    case (e as DAE.CREF(componentRef = cr),(vars,knvars,blst))
-      equation
-        ((BackendDAE.VAR()::_),_) = BackendVariable.getVar(cr, knvars);
-        b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
+    case (e as DAE.CREF(componentRef=cr), (vars, knvars, blst)) equation
+      ((BackendDAE.VAR()::_), _) = BackendVariable.getVar(cr, knvars);
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
 
-    case (e as DAE.RELATION(exp1 = e1, exp2 = e2),(vars,knvars,_))
-      equation
-       b1 = isDiscreteExp(e1,vars,knvars);
-       b2 = isDiscreteExp(e2,vars,knvars);
-       b = Util.boolAndList({b1,b2});
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "change")),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "ceil")),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "floor")),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "div")),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "mod")),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "rem")),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "initial")),(vars,knvars,blst))
-      equation
-       b = Util.getOptionOrDefault(blst,true);
-      then (e,false,(vars,knvars,SOME(b)));
+    case (e as DAE.RELATION(exp1=e1, exp2=e2), (vars, knvars, _)) equation
+      b1 = isDiscreteExp(e1, vars, knvars);
+      b2 = isDiscreteExp(e2, vars, knvars);
+      b = b1 and  b2;
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name="pre")), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name="edge")), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name="change")), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name="ceil")), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name="floor")), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name="div")), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name="mod")), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name="rem")), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
+
+    case (e as DAE.CALL(path=Absyn.IDENT(name="initial")), (vars, knvars, blst)) equation
+      b = Util.getOptionOrDefault(blst, true);
+    then (e, false, (vars, knvars, SOME(b)));
 /*
     This cases are wrong because of Modelica Specification:
 
@@ -1177,19 +1176,23 @@ algorithm
       noEvent(if v>0 then 1 else if v<0 then -1 else 0)
      Argument v needs to be an Integer or Real expression.
 
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "abs")),(vars,knvars,blst))))
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="abs")),(vars,knvars,blst))))
       equation
        b = Util.getOptionOrDefault(blst,true);
       then ((e,false,(vars,knvars,SOME(b))));
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "sign")),(vars,knvars,blst))))
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="sign")),(vars,knvars,blst))))
       equation
        b = Util.getOptionOrDefault(blst,true);
       then ((e,false,(vars,knvars,SOME(b))));
 */
-    case (e as DAE.CALL(path = Absyn.IDENT(name = "noEvent")),(vars,knvars,_)) then (e,false,(vars,knvars,SOME(false)));
+    case (e as DAE.CALL(path=Absyn.IDENT(name="noEvent")), (vars, knvars, _))
+    then (e, false, (vars, knvars, SOME(false)));
 
-    case (e,(vars,knvars,NONE())) then (e,true,(vars,knvars,NONE()));
-    case (e,(vars,knvars,SOME(b))) then (e,b,(vars,knvars,SOME(b)));
+    case (e, (vars, knvars, NONE()))
+    then (e, true, (vars, knvars, NONE()));
+
+    case (e, (vars, knvars, SOME(b)))
+    then (e, b, (vars, knvars, SOME(b)));
   end matchcontinue;
 end traversingisDiscreteExpFinder;
 
