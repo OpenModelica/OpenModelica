@@ -456,9 +456,8 @@ uniontype EventInfo
     list<TimeEvent> timeEvents         "stores all information regarding time events";
     list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation data type refer to this list by position";
     list<ZeroCrossing> zeroCrossingLst "list of zero crossing conditions";
-    // TODO: sampleLst and relationsLst could be removed if cpp runtime is prepared to handle zero crossing conditions
-    list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
-    list<ZeroCrossing> relationsLst    "list of zero crossing function as before, used by cpp runtime";
+    list<ZeroCrossing> sampleLst       "list of sample as before, only used by cpp runtime";
+    list<ZeroCrossing> relationsLst    "list of zero crossing function as before";
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
 end EventInfo;
