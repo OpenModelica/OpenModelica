@@ -12383,18 +12383,18 @@ algorithm
       String id;
       DAE.ComponentRef child;
       DAE.Exp exp1,childExp;
-      DAE.Type ety;
+      DAE.Type ety, prety;
 
     case( DAE.CREF_IDENT(ident = id,subscriptLst = ssl),ety)
       equation
         exp1 = flattenSubscript(ssl,id,ety);
       then
         exp1;
-    case( DAE.CREF_QUAL(ident = id, subscriptLst = ssl, componentRef = child),ety)
+    case( DAE.CREF_QUAL(ident = id, identType = prety, subscriptLst = ssl, componentRef = child),ety)
       equation
         childExp = elabCrefSlice(child,ety);
-        exp1 = flattenSubscript(ssl,id,ety);
-        exp1 = mergeQualWithRest(exp1,childExp,ety) ;
+        exp1 = flattenSubscript(ssl,id,prety);
+        exp1 = mergeQualWithRest(exp1,childExp,ety);
       then
         exp1;
   end match;
@@ -12455,13 +12455,12 @@ algorithm
         cref_2 = ComponentReference.makeCrefQual(id,ty2, ssl,cref);
       then Expression.makeCrefExp(cref_2,ety);
     // an array
-    case(exp1 as DAE.ARRAY(_, _, expl1), exp2 as DAE.CREF(DAE.CREF_IDENT(_,_, _),ety))
+    case(exp1 as DAE.ARRAY(ety, _, expl1), exp2 as DAE.CREF(DAE.CREF_IDENT(_,_, _),_))
       equation
         expl1 = List.map1(expl1,mergeQualWithRest2,exp2);
         exp1 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp1);
-        ety = Expression.arrayEltType(ety);
-      then DAE.ARRAY(DAE.T_ARRAY(ety, iLst, DAE.emptyTypeSource), scalar, expl1);
+      then DAE.ARRAY(ety, scalar, expl1);
   end match;
 end mergeQualWithRest2;
 
