@@ -834,6 +834,12 @@ void TransformationsWidget::loadTransformations()
       mVariables[iter.key()] = *var;
     }
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
+    for (int i=0; i<eqs.size(); i++) {
+      QVariantMap veq = eqs[i].toMap();
+      OMEquation *eq = new OMEquation();
+    }
+    parseProfiling(mProfJSONFullFileName);
+    fetchEquations();
   } else {
     mpInfoXMLFileHandler = new MyHandler(file,mVariables,mEquations);
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
@@ -849,19 +855,16 @@ void TransformationsWidget::fetchDefinedInEquations(const OMVariable &variable)
   /* Clear the defined in tree. */
   clearTreeWidgetItems(mpDefinedInEquationsTreeWidget);
   /* add defined in equations */
-  for (int i = 0; i < equationTypeSize; i++)
+  for (int i=0; i<variable.definedIn.size(); i++)
   {
-    if (variable.definedIn[i])
-    {
-      OMEquation *equation = getOMEquation(mEquations, variable.definedIn[i]);
-      QStringList values;
-      values << QString::number(variable.definedIn[i]) << OMEquationTypeToString(equation->kind) << equation->toString();
-      QTreeWidgetItem *pDefinedInTreeItem = new IntegerTreeWidgetItem(values, mpDefinedInEquationsTreeWidget);
-      pDefinedInTreeItem->setToolTip(0, values[0]);
-      pDefinedInTreeItem->setToolTip(1, values[1]);
-      pDefinedInTreeItem->setToolTip(2, values[2]);
-      mpDefinedInEquationsTreeWidget->addTopLevelItem(pDefinedInTreeItem);
-    }
+    OMEquation *equation = getOMEquation(mEquations, variable.definedIn[i]);
+    QStringList values;
+    values << QString::number(variable.definedIn[i]) << equation->section << equation->toString();
+    QTreeWidgetItem *pDefinedInTreeItem = new IntegerTreeWidgetItem(values, mpDefinedInEquationsTreeWidget);
+    pDefinedInTreeItem->setToolTip(0, values[0]);
+    pDefinedInTreeItem->setToolTip(1, values[1]);
+    pDefinedInTreeItem->setToolTip(2, values[2]);
+    mpDefinedInEquationsTreeWidget->addTopLevelItem(pDefinedInTreeItem);
   }
 }
 
@@ -870,19 +873,16 @@ void TransformationsWidget::fetchUsedInEquations(const OMVariable &variable)
   /* Clear the used in tree. */
   clearTreeWidgetItems(mpUsedInEquationsTreeWidget);
   /* add used in equations */
-  for (int i = 0; i < equationTypeSize; i++)
+  foreach (int index, variable.usedIn)
   {
-    foreach (int index, variable.usedIn[i])
-    {
-      OMEquation *equation = getOMEquation(mEquations, index);
-      QStringList values;
-      values << QString::number(index) << OMEquationTypeToString(equation->kind) << equation->toString();
-      QTreeWidgetItem *pUsedInTreeItem = new IntegerTreeWidgetItem(values, mpUsedInEquationsTreeWidget);
-      pUsedInTreeItem->setToolTip(0, values[0]);
-      pUsedInTreeItem->setToolTip(1, values[1]);
-      pUsedInTreeItem->setToolTip(2, values[2]);
-      mpUsedInEquationsTreeWidget->addTopLevelItem(pUsedInTreeItem);
-    }
+    OMEquation *equation = getOMEquation(mEquations, index);
+    QStringList values;
+    values << QString::number(index) << equation->section << equation->toString();
+    QTreeWidgetItem *pUsedInTreeItem = new IntegerTreeWidgetItem(values, mpUsedInEquationsTreeWidget);
+    pUsedInTreeItem->setToolTip(0, values[0]);
+    pUsedInTreeItem->setToolTip(1, values[1]);
+    pUsedInTreeItem->setToolTip(2, values[2]);
+    mpUsedInEquationsTreeWidget->addTopLevelItem(pUsedInTreeItem);
   }
 }
 
@@ -925,7 +925,7 @@ QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationI
   }
   QStringList values;
   values << QString::number(equation->index)
-         << OMEquationTypeToString(equation->kind)
+         << equation->section
          << equation->toString();
   if (equation->profileBlock >= 0) {
   values << QString::number(equation->ncall)

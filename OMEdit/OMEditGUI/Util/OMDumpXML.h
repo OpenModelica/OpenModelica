@@ -43,16 +43,6 @@
 #include <QXmlDefaultHandler>
 #include <QHash>
 
-enum OMEquationType {
-  start = 0,
-  parameter,
-  initial,
-  regular,
-  equationTypeSize
-};
-
-const char* OMEquationTypeToString(int);
-
 class OMOperation {
 public:
   virtual QString toString();
@@ -174,8 +164,8 @@ struct OMVariable {
   QString comment;
   OMInfo info;
   QStringList types;
-  int definedIn[equationTypeSize];
-  QList<int> usedIn[equationTypeSize];
+  QList<int> definedIn;
+  QList<int> usedIn;
   QList<OMOperation*> ops;
   OMVariable();
   OMVariable(const OMVariable& var);
@@ -183,7 +173,7 @@ struct OMVariable {
 };
 
 struct OMEquation {
-  OMEquationType kind;
+  QString section;
   int index,profileBlock,parent,ncall;
   double time,maxTime,fraction;
   QStringList text;
@@ -209,7 +199,7 @@ private:
   OMEquation *currentEquation;
   QList<int> nestedEquations;
   OMInfo currentInfo;
-  OMEquationType currentKind;
+  QString currentSection;
   QString currentText;
   QStringList texts;
   QList<OMOperation*> operations;

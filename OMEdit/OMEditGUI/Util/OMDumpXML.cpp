@@ -42,12 +42,6 @@
 #include "OMDumpXML.h"
 #include "diff_match_patch.h"
 
-const char* OMEquationTypeToString(int t)
-{
-  static const char *kindToString[equationTypeSize] = {"start","parameter","initial","regular"};
-  return kindToString[t];
-}
-
 QString OMOperation::toString()
 {
   return "unknown operation";
@@ -191,9 +185,6 @@ QString OMInfo::toString() {
 
 OMVariable::OMVariable()
 {
-  for (int i=0; i<equationTypeSize; i++) {
-    definedIn[i] = 0;
-  }
 }
 
 OMVariable::OMVariable(const OMVariable &var)
@@ -202,10 +193,8 @@ OMVariable::OMVariable(const OMVariable &var)
   comment = var.comment;
   info = var.info;
   types = var.types;
-  for (int i = 0; i < equationTypeSize ; i++) {
-    definedIn[i] = var.definedIn[i];
-    usedIn[i] = var.usedIn[i];
-  }
+  definedIn = var.definedIn;
+  usedIn = var.usedIn;
   foreach (OMOperation *op, var.ops) {
     qDebug() << "dynamic_cast op: " << op->toString();
     if (dynamic_cast<OMOperationSimplify*>(op))
@@ -299,7 +288,7 @@ bool MyHandler::startDocument()
   equations.clear();
   /* use index from 1; add dummy element 0 */
   equations.append(new OMEquation());
-  currentKind = start;
+  currentSection = "unknown section";
   return true;
 }
 
@@ -320,10 +309,8 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
   if (qName == "variable") {
     currentVariable.name = atts.value("name");
     currentVariable.comment = atts.value("comment");
-    memset(currentVariable.definedIn,0,sizeof(currentVariable.definedIn));
-    for (int i=0; i<equationTypeSize; i++) {
-      currentVariable.usedIn[i].clear();
-    }
+    currentVariable.definedIn.clear();
+    currentVariable.usedIn.clear();
     currentVariable.types.clear();
     currentInfo = OMInfo();
   } else if (qName == "info") {
@@ -337,20 +324,17 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
     currentEquation = new OMEquation();
     currentEquation->index = atts.value("index").toLong();
     currentEquation->parent = atts.value("parent").toLong(); // Returns 0 on failure, which suits us
-    currentEquation->kind = currentKind;
+    currentEquation->section = currentSection;
     nestedEquations.clear();
     currentInfo = OMInfo();
   } else if (qName == "eq") {
     nestedEquations.append(atts.value("index").toLong());
   } else if (qName == "equations" ||
-             qName == "jacobian-equations") {
-    currentKind = regular;
-  } else if (qName == "initial-equations") {
-    currentKind = initial;
-  } else if (qName == "parameter-equations") {
-    currentKind = parameter;
-  } else if (qName == "start-equations") {
-    currentKind = start;
+             qName == "jacobian-equations" ||
+             qName == "initial-equations" ||
+             qName == "parameter-equations" ||
+             qName == "start-equations") {
+    currentSection = qName;
   } else if (qName == "defines") {
     currentEquation->defines.append(atts.value("name"));
   } else if (qName == "depends") {
@@ -396,18 +380,14 @@ bool MyHandler::endElement( const QString & namespaceURI, const QString & localN
         qDebug() << "Defines " << def << " not found in variables.";
         continue;
       }
-      int prev = variables[def].definedIn[currentEquation->kind];
-      if (prev) {
-        qDebug() << "failing: multiple define of " << def << ": " << prev << " and " << currentEquation->index << " for kind: " << currentEquation->kind;
-        return false;
-      }
-      variables[def].definedIn[currentEquation->kind] = currentEquation->index;
+      variables[def].definedIn.append(currentEquation->index);
     }
     foreach (QString def, currentEquation->depends) {
-      if (variables.contains(def))
-        variables[def].usedIn[currentEquation->kind].append(currentEquation->index);
-      else
+      if (variables.contains(def)) {
+        variables[def].usedIn.append(currentEquation->index);
+      } else {
         qDebug() << "Depends " << def << " not found in variables.";
+      }
     }
   } else if (equationTags.contains(qName)) {
     currentEquation->text = texts;
