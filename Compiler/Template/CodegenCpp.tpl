@@ -1281,9 +1281,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   static long unsigned int getThreadNumber()
   {
      return 0;
-  }  
+  }
   #endif
-  
+
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
   int _tmain(int argc, const _TCHAR* argv[])

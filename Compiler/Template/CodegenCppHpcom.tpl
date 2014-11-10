@@ -387,9 +387,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             #ifdef MEASURETIME_MODELFUNCTIONS
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions_HPCOM",&measureTimeArrayHpcom);
             measureTimeArrayHpcom = std::vector<MeasureTimeData>(<%getConfigInt(NUM_PROC)%>);
-            
+
             <%List.intRange(getConfigInt(NUM_PROC)) |> threadIdx => 'measureTimeArrayHpcom[<%intSub(threadIdx,1)%>] = MeasureTimeData("evaluateODE_thread<%threadIdx%>");'; separator="\n"%>
-            
+
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
             measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
             measuredFunctionStartValues = MeasureTime::getZeroValues();
@@ -868,7 +868,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
   }
   >>
   else
-    let &mainThreadCode += 
+    let &mainThreadCode +=
     '
     _levelBarrier.wait();
     <%odeEqs%>
@@ -1306,7 +1306,7 @@ template assignLockByDepTask(Task depTask, String lockPrefix, String iType)
   match(depTask)
     case(DEPTASK(__)) then
       let lockName = getLockNameByDepTask(depTask)
-      let commInfoStr = printCommunicationInfoVariables(depTask.communicationInfo) 
+      let commInfoStr = printCommunicationInfoVariables(depTask.communicationInfo)
       <<
       <%assignLockByLockName(lockName, lockPrefix, iType)%>
       >>
@@ -1433,7 +1433,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
          >>
     end match
   %>
-  
+
   #ifdef USE_BOOST_THREAD
   #include <boost/thread.hpp>
   static long unsigned int getThreadNumber()
@@ -1445,9 +1445,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   static long unsigned int getThreadNumber()
   {
      return 0;
-  }  
+  }
   #endif
-  
+
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
   int _tmain(int argc, const _TCHAR* argv[])
@@ -1585,7 +1585,7 @@ template simulationMainFile(SimCode simCode)
        static long unsigned int getThreadNumber()
        {
           return 0;
-       }  
+       }
       #endif
 
       <%MPIHeaderInclude%>
