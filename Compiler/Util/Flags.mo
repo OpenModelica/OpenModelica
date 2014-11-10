@@ -410,7 +410,7 @@ constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(122, "showExpandableInfo", 
   Util.gettext("Show information about expandable connector handling."));
 constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(123, "dumpHomotopy", false,
   Util.gettext("Dumps the results of the postOptModule optimizeHomotopyCalls."));
-constant DebugFlag MODEL_INFO_JSON = DEBUG_FLAG(124, "modelInfoJson", false,
+constant DebugFlag MODEL_INFO_JSON = DEBUG_FLAG(124, "modelInfoJson", true,
   Util.gettext("Experimental: Generates a file with suffix _info.json instead of _info.xml."));
 constant DebugFlag GRAPHML = DEBUG_FLAG(125, "graphml", false,
   Util.gettext("Dumps .graphml files for the bipartite graph after Index Reduction and a task graph for the SCCs. Can be displayed with yEd. "));
