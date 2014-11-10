@@ -257,7 +257,7 @@ void SearchClassWidget::searchClasses()
     LibraryTreeNode *pNewLibraryTreeNode;
     QStringList info = mpMainWindow->getOMCProxy()->getClassInformation(searchedClasses[j]);
     QString fileName = info.size() < 3 ? mpMainWindow->getOMCProxy()->getSourceFile(searchedClasses[j]) : info.at(2);
-    StringHandler::ModelicaClasses type = mpMainWindow->getOMCProxy()->getClassRestriction(searchedClasses[j]);
+    StringHandler::ModelicaClasses type = info.size() < 3 ? mpMainWindow->getOMCProxy()->getClassRestriction(searchedClasses[j]) : StringHandler::getModelicaClassType(info.at(0));
     pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Modelica, searchedClasses[j], "", searchedClasses[j],
                                               StringHandler::createTooltip(info, StringHandler::getLastWordAfterDot(searchedClasses[j]), searchedClasses[j]),
                                               type, fileName, !mpLibraryTreeWidget->isFileWritAble(fileName), true, false, mpLibraryTreeWidget);
