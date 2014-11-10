@@ -934,18 +934,26 @@ algorithm
   (outExp,outUseHomotopy) := match (inExp,useHomotopy)
     local
       DAE.Exp e1, e2, e3, actual, simplified;
-    case (DAE.CALL(path = Absyn.IDENT(name="initial")), _) then (DAE.BCONST(true), useHomotopy);
-    case (DAE.CALL(path = Absyn.IDENT(name="sample")), _) then (DAE.BCONST(false), useHomotopy);
-    case (DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ), _) then (e1, useHomotopy);
-    case (DAE.CALL(path = Absyn.IDENT(name="homotopy"), expLst = actual::simplified::_ ), _)
-      equation
-        e1 = Expression.makePureBuiltinCall("homotopyParameter", {}, DAE.T_REAL_DEFAULT);
-        e2 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), actual);
-        e3 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), e1);
-        e1 = DAE.BINARY(e3, DAE.MUL(DAE.T_REAL_DEFAULT), simplified);
-        e3 = DAE.BINARY(e2, DAE.ADD(DAE.T_REAL_DEFAULT), e1);
-      then (e3, true);
-    else (inExp,useHomotopy);
+
+    case (DAE.CALL(path = Absyn.IDENT(name="initial")), _)
+    then (DAE.BCONST(true), useHomotopy);
+
+    case (DAE.CALL(path = Absyn.IDENT(name="sample")), _)
+    then (DAE.BCONST(false), useHomotopy);
+
+    case (DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ), _)
+    then (e1, useHomotopy);
+
+    case (DAE.CALL(path = Absyn.IDENT(name="homotopy"), expLst = actual::simplified::_ ), _) //equation
+    //  e1 = Expression.makePureBuiltinCall("homotopyParameter", {}, DAE.T_REAL_DEFAULT);
+    //  e2 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), actual);
+    //  e3 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), e1);
+    //  e1 = DAE.BINARY(e3, DAE.MUL(DAE.T_REAL_DEFAULT), simplified);
+    //  e3 = DAE.BINARY(e2, DAE.ADD(DAE.T_REAL_DEFAULT), e1);
+    //then (e3, true);
+    then (inExp, true);
+
+    else (inExp, useHomotopy);
   end match;
 end simplifyInitialFunctionsExp;
 

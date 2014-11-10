@@ -1451,8 +1451,7 @@ algorithm
   outWhenClauseLst := listReverse(outWhenClauseLst);
 end traverseBackendDAEExpsWhenClauseLst;
 
-public function traverseBackendDAEExpsEqnList<ArgT>
-"author: Frenkel TUD 2010-11
+public function traverseBackendDAEExpsEqnList<ArgT> "author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
   input list<BackendDAE.Equation> inEquations;
@@ -1467,7 +1466,6 @@ public function traverseBackendDAEExpsEqnList<ArgT>
     output DAE.Exp outExp;
     output ArgT outArg;
   end FuncExpType;
-protected
 algorithm
   for eq in inEquations loop
     (eq, outArg) := traverseBackendDAEExpsEqn(eq, func, outArg);

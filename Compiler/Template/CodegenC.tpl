@@ -1787,6 +1787,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
        DATA* data = (DATA*) inData;
        NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
        int i=0;
+       nlsData->homotopySupport = <%if homotopySupport then '1' else '0'%>;
        <%body_initializeStaticNLSData%>
      }
 
