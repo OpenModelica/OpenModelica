@@ -58,7 +58,9 @@ import Util;
 
 type HashTable = HashTableStringToProgram.HashTable;
 
-protected uniontype PackageOrder
+protected
+
+uniontype PackageOrder
   record CLASSPART
     Absyn.ClassPart cp;
   end CLASSPART;
@@ -70,6 +72,15 @@ protected uniontype PackageOrder
     String cl;
   end CLASSLOAD;
 end PackageOrder;
+
+uniontype LoadFileStrategy
+  record STRATEGY_HASHTABLE
+    HashTable ht;
+  end STRATEGY_HASHTABLE;
+  record STRATEGY_ON_DEMAND
+    String encoding;
+  end STRATEGY_ON_DEMAND;
+end LoadFileStrategy;
 
 public function loadClass
 "This function takes a \'Path\' and the $OPENMODELICALIBRARY as a string
@@ -162,7 +173,7 @@ algorithm
       String pd,encoding,encodingfile;
       Absyn.Class cl;
       list<String> filenames;
-      HashTable ht;
+      LoadFileStrategy strategy;
 
     case (_,_,_,false,_)
       equation
@@ -170,8 +181,8 @@ algorithm
         /* Check for path/package.encoding; OpenModelica extension */
         encodingfile = stringAppendList({path,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
-        ht = Parser.parallelParseFiles({path + pd + name}, encoding);
-        cl = parsePackageFile(path + pd + name, ht, false, Absyn.TOP(), id);
+        strategy = STRATEGY_ON_DEMAND(encoding);
+        cl = parsePackageFile(path + pd + name, strategy, false, Absyn.TOP(), id);
       then
         cl;
 
@@ -182,9 +193,13 @@ algorithm
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
 
-        filenames = getAllFilesFromDirectory(path + pd + name);
-        ht = Parser.parallelParseFiles(filenames, encoding);
-        cl = loadCompletePackageFromMp(id, name, path, ht, Absyn.TOP(), Error.getNumErrorMessages());
+        if Config.getRunningTestsuiteFile()<>"" or Config.noProc()==1 then
+          strategy = STRATEGY_ON_DEMAND(encoding);
+        else
+          filenames = getAllFilesFromDirectory(path + pd + name);
+          strategy = STRATEGY_HASHTABLE(Parser.parallelParseFiles(filenames, encoding));
+        end if;
+        cl = loadCompletePackageFromMp(id, name, path, strategy, Absyn.TOP(), Error.getNumErrorMessages());
       then
         cl;
   end match;
@@ -208,12 +223,12 @@ protected function loadCompletePackageFromMp
   input String id "actual class identifier";
   input Absyn.Ident inIdent;
   input String inString;
-  input HashTable ht;
+  input LoadFileStrategy strategy;
   input Absyn.Within inWithin;
   input Integer numError;
   output Absyn.Class cl;
 algorithm
-  cl := matchcontinue (id,inIdent,inString,ht,inWithin,numError)
+  cl := matchcontinue (id,inIdent,inString,inWithin)
     local
       String pd,mp_1,packagefile,orderfile,pack,mp,name,str;
       Absyn.Within within_;
@@ -228,7 +243,7 @@ algorithm
       Absyn.Within w2;
       list<PackageOrder> reverseOrder;
       list<Absyn.Annotation> ann;
-    case (_,pack,mp,_,within_,_)
+    case (_,pack,mp,within_)
       equation
         pd = System.pathDelimiter();
         mp_1 = stringAppendList({mp,pd,pack});
@@ -236,14 +251,14 @@ algorithm
         orderfile = stringAppendList({mp_1,pd,"package.order"});
         existRegularFile(packagefile);
         // print("Look for " + packagefile + "\n");
-        (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile, ht, true, within_, id);
+        (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile, strategy, true, within_, id);
         // print("Got " + packagefile + "\n");
         reverseOrder = getPackageContentNames(cl, orderfile, mp_1, Error.getNumErrorMessages());
         path = Absyn.joinWithinPath(within_,Absyn.IDENT(id));
         w2 = Absyn.WITHIN(path);
-        cp = List.fold3(reverseOrder, loadCompletePackageFromMp2, mp_1, ht, w2, {});
+        cp = List.fold3(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, {});
       then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info);
-    case (_,pack,mp,_,_,_)
+    case (_,pack,mp,_)
       equation
         true = numError == Error.getNumErrorMessages();
         Error.addInternalError("loadCompletePackageFromMp failed for unknown reason: mp=" + mp + " pack=" + pack, sourceInfo());
@@ -276,7 +291,7 @@ protected function loadCompletePackageFromMp2
 "Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
   input PackageOrder po "mo-file or directory";
   input String mp;
-  input HashTable ht;
+  input LoadFileStrategy strategy;
   input Absyn.Within w1 "With the parent added";
   input list<Absyn.ClassPart> acc;
   output list<Absyn.ClassPart> cps;
@@ -311,13 +326,13 @@ algorithm
         bDirectoryAndFileExists = System.directoryExists(mp + pd + id) and System.regularFileExists(file);
         if (bDirectoryAndFileExists)
         then
-          cl = loadCompletePackageFromMp(id,id,mp,ht,w1,Error.getNumErrorMessages());
+          cl = loadCompletePackageFromMp(id,id,mp,strategy,w1,Error.getNumErrorMessages());
           ei = Absyn.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         else
           file = mp + pd + id + ".mo";
           true = System.regularFileExists(file);
-          cl = parsePackageFile(file, ht, false, w1, id);
+          cl = parsePackageFile(file, strategy, false, w1, id);
           ei = Absyn.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         end if;
@@ -329,7 +344,7 @@ end loadCompletePackageFromMp2;
 public function parsePackageFile
   "Parses a file containing a single class that matches the within"
   input String name;
-  input HashTable ht;
+  input LoadFileStrategy strategy;
   input Boolean expectPackage;
   input Absyn.Within w1 "Expected within of the package";
   input String pack "Expected name of the package";
@@ -342,11 +357,7 @@ protected
   String str,s1,s2,cname;
   Absyn.ClassDef body;
 algorithm
-  if not BaseHashTable.hasKey(name, ht) then
-    Error.addInternalError("HashTable missing file " + name + " - all entries include:\n" + stringDelimitList(BaseHashTable.hashTableKeyList(ht), "\n"), sourceInfo());
-    fail();
-  end if;
-  Absyn.PROGRAM(cs,w2) := BaseHashTable.get(name, ht);
+  Absyn.PROGRAM(cs,w2) := getProgramFromStrategy(name, strategy);
   classNames := List.map(cs, Absyn.getClassName);
   str := stringDelimitList(classNames,", ");
   Error.assertionOrAddSourceMessage(listLength(cs)==1, Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, SOURCEINFO(name,true,0,0,0,0,0.0));
@@ -645,6 +656,23 @@ algorithm
       then 1;
   end match;
 end checkOnLoadMessageWork;
+
+function getProgramFromStrategy
+  input String filename;
+  input LoadFileStrategy strategy;
+  output Absyn.Program program;
+algorithm
+  program := match strategy
+    case STRATEGY_HASHTABLE()
+      equation
+        /* if not BaseHashTable.hasKey(filename, strategy.ht) then
+          Error.addInternalError("HashTable missing file " + filename + " - all entries include:\n" + stringDelimitList(BaseHashTable.hashTableKeyList(ht), "\n"), sourceInfo());
+          fail();
+        end if; */
+      then BaseHashTable.get(filename, strategy.ht);
+    case STRATEGY_ON_DEMAND() then Parser.parse(filename, strategy.encoding);
+  end match;
+end getProgramFromStrategy;
 
 annotation(__OpenModelica_Interface="frontend");
 end ClassLoader;
