@@ -97,8 +97,8 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTime
 
   virtual void setOverheadToZero();
 
-  virtual void initializeThread(unsigned long int (*threadHandle)()) = 0;
-  virtual void deinitializeThread(unsigned long int (*threadHandle)()) = 0;
+  virtual void initializeThread(unsigned long int threadNumber) = 0;
+  virtual void deinitializeThread() = 0;
 
  protected:
   static MeasureTime * instance;

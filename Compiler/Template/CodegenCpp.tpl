@@ -1270,6 +1270,20 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
          >>
     end match
   %>
+  #ifdef USE_BOOST_THREAD
+  #include <boost/thread.hpp>
+  static long unsigned int getThreadNumber()
+  {
+     boost::hash<std::string> string_hash;
+     return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
+  }
+  #else
+  static long unsigned int getThreadNumber()
+  {
+     return 0;
+  }  
+  #endif
+  
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
   int _tmain(int argc, const _TCHAR* argv[])
@@ -1285,7 +1299,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
            #ifdef USE_SCOREP
              MeasureTimeScoreP::initialize();
            #else
-             MeasureTimePAPI::initialize();
+             MeasureTimePAPI::initialize(getThreadNumber);
            #endif
            >>
           else

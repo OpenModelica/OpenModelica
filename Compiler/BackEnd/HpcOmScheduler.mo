@@ -1891,12 +1891,14 @@ protected
   HpcOmSimCode.TaskList taskList;
   list<HpcOmSimCode.Task> tasksOfLevel;
   array<list<Integer>> inComps;
+  list<Integer> sortedTasksOfLevel;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts,inComps=inComps) := iMeta;
   levelExecCosts := HpcOmTaskGraph.getCostsForContractedNodes(iTasksOfLevel, exeCosts);
   threadReadyList := arrayCreate(iNumberOfThreads, 0.0);
   threadTaskList := arrayCreate(iNumberOfThreads, {});
-  _ := List.fold(iTasksOfLevel, function createFixedLevelScheduleForTask(iLevelExecCosts=levelExecCosts, iAdviceList=iAdviceList, iThreadReadyList=threadReadyList, iGraph=iGraph, iMeta=iMeta), threadTaskList);
+  sortedTasksOfLevel := List.sort(iTasksOfLevel, function sortTasksByExecTime(iExeCosts=exeCosts));
+  _ := List.fold(sortedTasksOfLevel, function createFixedLevelScheduleForTask(iLevelExecCosts=levelExecCosts, iAdviceList=iAdviceList, iThreadReadyList=threadReadyList, iGraph=iGraph, iMeta=iMeta), threadTaskList);
   threadTaskList := Array.map(threadTaskList, listReverse);
   ((_,tasksOfLevel)) := Array.fold2(threadTaskList, createFixedLevelScheduleForLevel0, inComps, iSccSimEqMapping, (1,{}));
   taskList := HpcOmSimCode.PARALLELTASKLIST(tasksOfLevel);
@@ -2188,6 +2190,19 @@ algorithm
   //print("sortNodeLevelMapping: TaskIdx: " + intString(task1Idx) + " level: " + intString(elemLvl1) + "\n");
   oResult := intGe(elemLvl1,elemLvl2);
 end sortNodeLevelMapping;
+
+protected function sortTasksByExecTime
+  input Integer iTask1;
+  input Integer iTask2;
+  input array<tuple<Integer, Real>> iExeCosts;
+  output Boolean oResult;
+protected
+  Real exeCosts1, exeCosts2;
+algorithm
+  exeCosts1 := Util.tuple22(arrayGet(iExeCosts, iTask1));
+  exeCosts2 := Util.tuple22(arrayGet(iExeCosts, iTask2));
+  oResult := realGt(exeCosts1, exeCosts2);
+end sortTasksByExecTime;
 
 protected function filterNodeLevelMapping "author: marcusw
   Remove the second tuple argument (level number)."
@@ -5901,6 +5916,8 @@ algorithm
 end convertFixedLevelScheduleToTaskListsForLevel;
 
 protected function convertFixedLevelScheduleToTaskListsForTask
+  "Insert the given Task into the task list of the given thread advice (threadIdx).
+  author:marcusw"
   input HpcOmSimCode.Task iTask;
   input array<list<HpcOmSimCode.Task>> iThreadTasks;
   output array<list<HpcOmSimCode.Task>> oThreadTasks;

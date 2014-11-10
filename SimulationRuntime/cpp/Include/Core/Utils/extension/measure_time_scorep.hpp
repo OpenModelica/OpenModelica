@@ -41,8 +41,8 @@ class MeasureTimeScoreP : public MeasureTime
     instance->benchOverhead();
   }
 
-  virtual void initializeThread(unsigned long int (*threadHandle)());
-  virtual void deinitializeThread(unsigned long int (*threadHandle)());
+  virtual void initializeThread(unsigned long int threadNumber);
+  virtual void deinitializeThread();
 };
 
 #endif /* MEASURE_TIME_SCOREP_HPP_ */

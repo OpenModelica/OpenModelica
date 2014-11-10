@@ -18,11 +18,11 @@ MeasureTimeScoreP::~MeasureTimeScoreP()
 
 }
 
-void MeasureTimeScoreP::initializeThread(unsigned long int (*threadHandle)())
+void MeasureTimeScoreP::initializeThread(unsigned long int threadNumber)
 {
 }
 
-void MeasureTimeScoreP::deinitializeThread(unsigned long int (*threadHandle)())
+void MeasureTimeScoreP::deinitializeThread()
 {
 
 }

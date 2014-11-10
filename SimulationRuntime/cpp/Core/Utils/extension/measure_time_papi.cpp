@@ -15,7 +15,7 @@ std::string MeasureTimeValuesPAPI::serializeToJson(unsigned int numCalcs)
   return ss.str();
 }
 
-MeasureTimePAPI::MeasureTimePAPI() : MeasureTime()
+MeasureTimePAPI::MeasureTimePAPI(unsigned long int (*threadHandle)()) : MeasureTime(), threadHandle(threadHandle)
 {
   events = new int[NUM_PAPI_EVENTS];
 
@@ -30,6 +30,12 @@ MeasureTimePAPI::MeasureTimePAPI() : MeasureTime()
   if (initRetVal != PAPI_VER_CURRENT && initRetVal > 0)
   {
     std::cerr << "PAPI library init failed!" << std::endl;
+    exit(1);
+  }
+
+  if (PAPI_thread_init(threadHandle) != PAPI_OK)
+  {
+    std::cerr << "PAPI thread init failed!" << std::endl;
     exit(1);
   }
 
@@ -61,17 +67,17 @@ MeasureTimePAPI::~MeasureTimePAPI()
 
 }
 
-void MeasureTimePAPI::initializeThread(unsigned long int (*threadHandle)())
+void MeasureTimePAPI::initializeThread(unsigned long int threadNumber)
 {
 #ifdef USE_PAPI
-  int threadNumber = threadHandle();
+  //unsigned long int threadNumber = threadHandle();
 
-  if (PAPI_thread_init(threadHandle) != PAPI_OK)
-    std::cerr << "PAPI thread init failed! Thread: " << threadNumber << std::endl;
+  if (PAPI_attach(eventSet, threadNumber) != PAPI_OK)
+      std::cerr << "PAPI attach failed! Thread: " << threadNumber << std::endl;
 #endif
 }
 
-void MeasureTimePAPI::deinitializeThread(unsigned long int (*threadHandle)())
+void MeasureTimePAPI::deinitializeThread()
 {
 
 }

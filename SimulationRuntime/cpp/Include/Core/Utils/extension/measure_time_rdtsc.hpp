@@ -38,8 +38,8 @@ class MeasureTimeRDTSC : public MeasureTime
     instance->setOverheadToZero();
   }
 
-  virtual void initializeThread(unsigned long int (*threadHandle)());
-  virtual void deinitializeThread(unsigned long int (*threadHandle)());
+  virtual void initializeThread(unsigned long int threadNumber);
+  virtual void deinitializeThread();
 
  private:
   static inline unsigned long long RDTSC(); //__attribute__((always_inline));

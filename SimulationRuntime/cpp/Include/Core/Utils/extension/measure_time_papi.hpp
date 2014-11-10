@@ -38,7 +38,7 @@ public:
 class MeasureTimePAPI : public MeasureTime
 {
  protected:
-  MeasureTimePAPI();
+  MeasureTimePAPI(unsigned long int (*threadHandle)());
 
   MeasureTimeValues* getZeroValuesP();
   void getTimeValuesStartP(MeasureTimeValues *res);
@@ -47,9 +47,9 @@ class MeasureTimePAPI : public MeasureTime
  public:
   virtual ~MeasureTimePAPI();
 
-  static void initialize()
+  static void initialize(unsigned long int (*threadHandle)())
   {
-    instance = new MeasureTimePAPI();
+    instance = new MeasureTimePAPI(threadHandle);
     instance->benchOverhead();
   }
 
@@ -77,12 +77,13 @@ class MeasureTimePAPI : public MeasureTime
     instance->benchOverhead();
   }
 
-  virtual void initializeThread(unsigned long int (*threadHandle)());
-  virtual void deinitializeThread(unsigned long int (*threadHandle)());
+  virtual void initializeThread(unsigned long int threadNumber);
+  virtual void deinitializeThread();
 
  private:
   int* events;
   int eventSet;
+  unsigned long int (*threadHandle)();
 };
 
 #endif /* MEASURE_TIME_PAPI_HPP_ */

@@ -126,8 +126,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
     <<
-    /* std::vector<MeasureTimeData> measureTimeArrayHpcom;
-    MeasureTimeValues *measuredStartValuesODE, *measuredEndValuesODE; */
+    std::vector<MeasureTimeData> measureTimeArrayHpcom;
+    //MeasureTimeValues *measuredStartValuesODE, *measuredEndValuesODE;
     >>%>
     >>
 end generateAdditionalProtectedMemberDeclaration;
@@ -222,7 +222,6 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
             case ("pthreads_spin") then
                 <<
                 <%List.intRange(getConfigInt(NUM_PROC)) |> thIdx hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type)%>
-                <%createBarrierByName("evaluateBarrier","", intAdd(1, getConfigInt(NUM_PROC)), type)%>
                 <%createBarrierByName("levelBarrier","", getConfigInt(NUM_PROC), type)%>
                 <%createLockByLockName("measureTimeArrayLock", "", type)%>
                 bool _simulationFinished;
@@ -291,6 +290,7 @@ template generateHpcomSpecificIncludes(SimCode simCode)
         #include <boost/thread/mutex.hpp>
         #include <boost/thread.hpp>
         #include <boost/thread/barrier.hpp>
+        #include <Core/Utils/extension/busywaiting_barrier.hpp>
         >>
         case ("tbb") then
         <<
@@ -385,6 +385,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             #endif //MEASURETIME_PROFILEBLOCKS
 
             #ifdef MEASURETIME_MODELFUNCTIONS
+            MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions_HPCOM",&measureTimeArrayHpcom);
+            measureTimeArrayHpcom = std::vector<MeasureTimeData>(<%getConfigInt(NUM_PROC)%>);
+            
+            <%List.intRange(getConfigInt(NUM_PROC)) |> threadIdx => 'measureTimeArrayHpcom[<%intSub(threadIdx,1)%>] = MeasureTimeData("evaluateODE_thread<%threadIdx%>");'; separator="\n"%>
+            
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
             measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
             measuredFunctionStartValues = MeasureTime::getZeroValues();
@@ -461,7 +466,6 @@ template getHpcomMemberVariableDefinition(Option<Schedule> hpcOmScheduleOpt)
                 <<
                 ,_command(IContinuous::UNDEF_UPDATE)
                 ,_simulationFinished(false)
-                ,<%initializeBarrierByName("evaluateBarrier","",intAdd(1,getConfigInt(NUM_PROC)),type)%>
                 ,<%initializeBarrierByName("levelBarrier","",getConfigInt(NUM_PROC),type)%>
                 >>
             else ""
@@ -478,7 +482,7 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
         match type
             case ("pthreads")
             case ("pthreads_spin") then
-                let threadFuncs = List.intRange(getConfigInt(NUM_PROC)) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
+                let threadFuncs = List.intRange(intSub(getConfigInt(NUM_PROC),1)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
                 <<
 
                 <%threadFuncs%>
@@ -531,8 +535,10 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
             case ("pthreads_spin") then
                 <<
                 _simulationFinished = true;
-                _evaluateBarrier.wait();
-                _evaluateBarrier.wait();
+                //_evaluateBarrier.wait();
+                _levelBarrier.wait();
+                //_evaluateBarrier.wait();
+                _levelBarrier.wait();
                 >>
             else ""
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
@@ -632,7 +638,6 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
                 <<
                 /*MeasureTimeValues *valuesStart = MeasureTime::getZeroValues();
                 MeasureTimeValues *valuesEnd = MeasureTime::getZeroValues();
-                MeasureTime::getInstance()->initializeThread(getThreadNumber);
                 <%generateMeasureTimeStartCode('valuesStart', "evaluateODEInner", "MEASURETIME_MODELFUNCTIONS")%>*/
                 >>%>
 
@@ -680,7 +685,8 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
       match type
         case ("pthreads")
         case ("pthreads_spin") then
-          let eqsFuncs = arrayList(HpcOmScheduler.convertFixedLevelScheduleToTaskLists(hpcOmSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode, useFlatArrayNotation); separator="\n"
+          let &mainThreadCode = buffer "" /*BUFD*/
+          let eqsFuncs = arrayList(HpcOmScheduler.convertFixedLevelScheduleToTaskLists(hpcOmSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode, &mainThreadCode, useFlatArrayNotation); separator="\n"
           let threadLocks = List.intRange(getConfigInt(NUM_PROC)) |> tt => createLockByLockName('threadLock<%tt%>', "", type); separator="\n"
           <<
           <%eqsFuncs%>
@@ -689,8 +695,9 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           {
             /*<%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>*/
             this->_command = command;
-            _evaluateBarrier.wait(); //start calculation
-            _evaluateBarrier.wait(); //calculation finished
+            //_evaluateBarrier.wait(); //start calculation
+            <%mainThreadCode%>
+            //_evaluateBarrier.wait(); //calculation finished
             /*<%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>*/
           }
           >>
@@ -812,9 +819,10 @@ template function_HPCOM_Level0(list<SimEqSystem> allEquationsPlusWhen, Task iTas
   >>
 end function_HPCOM_Level0;
 
-template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen, list<list<HpcOmSimCode.Task>> tasksOfLevels, Integer iThreadIdx, String iType, Text &varDecls, Absyn.Path name, SimCode simCode, Boolean useFlatArrayNotation)
+template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen, list<list<HpcOmSimCode.Task>> tasksOfLevels, Integer iThreadIdx, String iType, Text &varDecls, Absyn.Path name, SimCode simCode, Text &mainThreadCode, Boolean useFlatArrayNotation)
 ::=
   let odeEqs = tasksOfLevels |> tasks => generateLevelFixedCodeForThreadLevel(allEquationsPlusWhen, tasks, iThreadIdx, iType, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+  if (intGt(iThreadIdx, 0)) then
   <<
   void <%lastIdentOfPath(name)%>::evaluateThreadFunc<%iThreadIdx%>()
   {
@@ -822,19 +830,19 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
     <<
     MeasureTimeValues *valuesStart = MeasureTime::getZeroValues();
     MeasureTimeValues *valuesEnd = MeasureTime::getZeroValues();
-    MeasureTime::getInstance()->initializeThread(getThreadNumber);
-    //<%generateMeasureTimeStartCode('valuesStart', "evaluateODEThread", "MEASURETIME_MODELFUNCTIONS")%>
     >>%>
 
     while(!_simulationFinished)
     {
-        _evaluateBarrier.wait();
+        //_evaluateBarrier.wait();
+        _levelBarrier.wait();
         if(_simulationFinished)
         {
-            _evaluateBarrier.wait();
+            //_evaluateBarrier.wait();
+            _levelBarrier.wait();
             break;
         }
-        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart", "evaluateODEThread", "MEASURETIME_MODELFUNCTIONS")%>'%>
+        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart", 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>'%>
         <%odeEqs%>
 
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
@@ -845,12 +853,12 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
 
         //_measureTimeArrayLock.lock();
         //measureTimeArrayHpcom[0].sumMeasuredValues->add(valuesEnd);
-        <%if intEq(iThreadIdx,0) then '' else 'measureTimeArrayHpcom[0].numCalcs--;'%>
         //_measureTimeArrayLock.unlock();
-        <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", "measureTimeFunctionsArray[0]", "evaluateODEThread", "MEASURETIME_MODELFUNCTIONS")%>
+        <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", 'measureTimeArrayHpcom[<%iThreadIdx%>]', 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>
         >>%>
 
-        _evaluateBarrier.wait();
+        //_evaluateBarrier.wait();
+        _levelBarrier.wait();
     }
     <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
     <<
@@ -859,6 +867,16 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
     >>%>
   }
   >>
+  else
+    let &mainThreadCode += 
+    '
+    _levelBarrier.wait();
+    <%odeEqs%>
+    _levelBarrier.wait();
+    '
+    <<
+
+    >>
 end generateLevelFixedCodeForThread;
 
 template generateLevelFixedCodeForThreadLevel(list<SimEqSystem> allEquationsPlusWhen, list<HpcOmSimCode.Task> tasksOfLevel, Integer iThreadIdx, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
@@ -1023,7 +1041,7 @@ template function_HPCOM_assignThreadLocks(list<Task> iThreadTasks, String iLockP
 ::=
   let lockAssign = iThreadTasks |> tt => '<%(
     match(tt)
-        case(task as DEPTASK(outgoing=false)) then
+        case(task as DEPTASK(outgoing=true)) then
             assignLockByDepTask(task, iLockPrefix, iType)
         else ""
     end match)%>'; separator="\n"
@@ -1039,7 +1057,7 @@ template function_HPCOM_releaseThreadLocks(list<Task> iThreadTasks, String iLock
 ::=
   let lockAssign = iThreadTasks |> tt => '<%(
     match(tt)
-        case(DEPTASK(outgoing=true)) then
+        case(DEPTASK(outgoing=false)) then
             releaseLockByDepTask(tt, iLockPrefix, iType)
         else ""
     end match)%>'; separator="\n"
@@ -1259,7 +1277,7 @@ template createBarrierByName(String lockName, String lockPrefix, Integer numOfTh
     case ("pthreads")
     case ("pthreads_spin") then
       <<
-      boost::barrier <%lockPrefix%>_<%lockName%>;
+      busywaiting_barrier <%lockPrefix%>_<%lockName%>;
       >>
 end createBarrierByName;
 
@@ -1288,8 +1306,8 @@ template assignLockByDepTask(Task depTask, String lockPrefix, String iType)
   match(depTask)
     case(DEPTASK(__)) then
       let lockName = getLockNameByDepTask(depTask)
+      let commInfoStr = printCommunicationInfoVariables(depTask.communicationInfo) 
       <<
-      /*<%printCommunicationInfoVariables(depTask.communicationInfo)%>*/
       <%assignLockByLockName(lockName, lockPrefix, iType)%>
       >>
   end match
@@ -1415,7 +1433,21 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
          >>
     end match
   %>
-
+  
+  #ifdef USE_BOOST_THREAD
+  #include <boost/thread.hpp>
+  static long unsigned int getThreadNumber()
+  {
+     boost::hash<std::string> string_hash;
+     return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
+  }
+  #else
+  static long unsigned int getThreadNumber()
+  {
+     return 0;
+  }  
+  #endif
+  
   #if defined(_MSC_VER) || defined(__MINGW32__)
   #include <tchar.h>
   int _tmain(int argc, const _TCHAR* argv[])
@@ -1431,7 +1463,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
            #ifdef USE_SCOREP
              MeasureTimeScoreP::initialize();
            #else
-             MeasureTimePAPI::initialize();
+             MeasureTimePAPI::initialize(getThreadNumber);
            #endif
            >>
           else
@@ -1542,6 +1574,19 @@ template simulationMainFile(SimCode simCode)
          >>
       end match
       %>
+      #ifdef USE_BOOST_THREAD
+       #include <boost/thread.hpp>
+       static long unsigned int getThreadNumber()
+       {
+          boost::hash<std::string> string_hash;
+          return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
+       }
+      #else
+       static long unsigned int getThreadNumber()
+       {
+          return 0;
+       }  
+      #endif
 
       <%MPIHeaderInclude%>
 
@@ -1560,7 +1605,7 @@ template simulationMainFile(SimCode simCode)
            #ifdef USE_SCOREP
              MeasureTimeScoreP::initialize();
            #else
-             MeasureTimePAPI::initialize();
+             MeasureTimePAPI::initialize(getThreadNumber);
            #endif
            >>
           else

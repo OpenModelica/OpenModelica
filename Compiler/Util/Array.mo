@@ -404,6 +404,29 @@ algorithm
   end for;
 end fold6;
 
+public function reduce<T>
+  "Takes a list and a function operating on two elements of the array.
+   The function performs a reduction of the array to a single value using the
+   function. Example:
+     reduce([1, 2, 3], intAdd) => 6"
+  input array<T> inArray;
+  input ReduceFunc inReduceFunc;
+  output T outResult;
+
+  partial function ReduceFunc
+    input T inElement1;
+    input T inElement2;
+    output T outElement;
+  end ReduceFunc;
+protected
+  list<T> rest;
+algorithm
+  outResult := arrayGet(inArray, 1);
+  for i in 2:arrayLength(inArray) loop
+    outResult := inReduceFunc(outResult, arrayGet(inArray, i));
+  end for;
+end reduce;
+
 public function updateIndexFirst<T>
   "Like arrayUpdate, but with the index first so it can be used with List.map."
   input Integer inIndex;

@@ -19,12 +19,12 @@ MeasureTimeRDTSC::~MeasureTimeRDTSC()
 {
 }
 
-void MeasureTimeRDTSC::initializeThread(unsigned long int (*threadHandle)())
+void MeasureTimeRDTSC::initializeThread(unsigned long int threadNumber)
 {
 
 }
 
-void MeasureTimeRDTSC::deinitializeThread(unsigned long int (*threadHandle)())
+void MeasureTimeRDTSC::deinitializeThread()
 {
 
 }
