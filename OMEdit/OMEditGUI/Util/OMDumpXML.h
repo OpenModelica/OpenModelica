@@ -176,8 +176,10 @@ struct OMEquation {
   QString section;
   int index,profileBlock,parent,ncall;
   double time,maxTime,fraction;
+  QString tag, display;
   QStringList text;
   OMInfo info;
+  QStringList types;
   QStringList defines;
   QStringList depends;
   QList<OMOperation*> ops;

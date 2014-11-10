@@ -245,18 +245,22 @@ OMEquation::~OMEquation() {
 
 QString OMEquation::toString()
 {
-  if (text.size() < 1) {
-    return "(dummy equation)";
-  } else if (text[0] == "assign") {
-    return QString("(assignment) %1 = %2").arg(defines[0]).arg(text[1]);
-  } else if (text[0] == "statement") {
-    return "(statement) " + text[1];
-  } else if (text[0] == "nonlinear") {
+  if (tag == "dummy") {
+    return "";
+  } else if (tag == "assign") {
+    return QString("%1 := %2").arg(defines[0]).arg(text[0]);
+  } else if (tag == "statement" || tag == "algorithm") {
+    return text.join("\n");
+  } else if (tag == "container") {
+    return QString("%1, size %2").arg(display).arg(eqs.size());
+  } else if (tag == "nonlinear") {
     return QString("nonlinear, size %1").arg(eqs.size());
-  } else if (text[0] == "linear") {
+  } else if (tag == "linear") {
     return QString("linear, size %1").arg(defines.size());
+  } else if (tag == "residual") {
+    return text[0] + " (residual)";
   } else {
-    return "(" + text.join(",") + ")";
+    return "(" + display + "): " + text.join(",");
   }
 }
 
@@ -391,7 +395,7 @@ bool MyHandler::endElement( const QString & namespaceURI, const QString & localN
     }
   } else if (equationTags.contains(qName)) {
     currentEquation->text = texts;
-    currentEquation->text.prepend(qName);
+    currentEquation->tag = qName;
     texts.clear();
   } else if (qName == "simplify") {
     operations.append(new OMOperationSimplify(texts));

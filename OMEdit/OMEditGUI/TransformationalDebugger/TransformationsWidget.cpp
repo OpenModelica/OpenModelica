@@ -749,17 +749,21 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   }
 }
 
+static QStringList variantListToStringList(const QVariantList lst)
+{
+  QStringList strs;
+  foreach(QVariant v, lst){
+    QString s = v.toString();
+    strs << v.toString().trimmed();
+  }
+  return strs;
+}
+
 static OMOperation* variantToOperationPtr(QVariantMap var)
 {
   QString op = var["op"].toString();
   QString display = var["display"].toString();
-  QStringList dataStrings;
-  foreach(QVariant v, var["data"].toList()){
-    QString s = v.toString();
-    if (s != "") {
-      dataStrings << v.toString().trimmed();
-    }
-  }
+  QStringList dataStrings = variantListToStringList(var["data"].toList());
 
   if (op == "before-after") {
     return new OMOperationBeforeAfter(display != "" ? display : op, dataStrings);
@@ -835,8 +839,44 @@ void TransformationsWidget::loadTransformations()
     }
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
     for (int i=0; i<eqs.size(); i++) {
+      mEquations << new OMEquation();
+    }
+    for (int i=0; i<eqs.size(); i++) {
       QVariantMap veq = eqs[i].toMap();
-      OMEquation *eq = new OMEquation();
+      OMEquation *eq = mEquations[i];
+      eq->section = veq["section"].toString();
+      if (veq["eqIndex"].toInt() != i) {
+        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + QString(": got index ") + veq["eqIndex"].toString() + QString(" expected ") + QString::number(i), Helper::ok);
+        return;
+      }
+      eq->index = i;
+      eq->profileBlock = -1;
+      if (veq.find("parent") != veq.end()) {
+        eq->parent = veq["parent"].toInt();
+        mEquations[eq->parent]->eqs << eq->index;
+      } else {
+        eq->parent = 0;
+      }
+      if (veq.find("defines") != veq.end()) {
+        eq->defines = variantListToStringList(veq["defines"].toList());
+        foreach (QString v, eq->defines) {
+          mVariables[v].definedIn << eq->index;
+        }
+      }
+      if (veq.find("uses") != veq.end()) {
+        eq->depends = variantListToStringList(veq["uses"].toList());
+        foreach (QString v, eq->depends) {
+          mVariables[v].usedIn << eq->index;
+        }
+      }
+      eq->text = variantListToStringList(veq["equation"].toList());
+      eq->tag = veq["tag"].toString();
+      if (veq.find("display") != veq.end()) {
+        eq->display = veq["display"].toString();
+      } else {
+        eq->display = eq->tag;
+      }
+      variantToSource(veq["source"].toMap(), eq->info, eq->types, eq->ops);
     }
     parseProfiling(mProfJSONFullFileName);
     fetchEquations();
@@ -928,7 +968,7 @@ QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationI
          << equation->section
          << equation->toString();
   if (equation->profileBlock >= 0) {
-  values << QString::number(equation->ncall)
+    values << QString::number(equation->ncall)
          << QString::number(equation->maxTime, 'g', 3)
          << QString::number(equation->time, 'g', 3)
          << QString::number(100 * equation->fraction, 'g', 3) + "%";
@@ -1081,7 +1121,7 @@ void TransformationsWidget::fetchOperations(OMEquation *equation)
   /* Clear the operations tree. */
   clearTreeWidgetItems(mpEquationOperationsTreeWidget);
   /* add operations */
-  if (mpInfoXMLFileHandler->hasOperationsEnabled)
+  if (hasOperationsEnabled)
   {
     foreach (OMOperation *op, equation->ops)
     {
