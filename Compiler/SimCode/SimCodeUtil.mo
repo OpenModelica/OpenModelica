@@ -3868,7 +3868,7 @@ algorithm
         var_lst_1 = List.map(var_lst, BackendVariable.transformXToXd);
         vars_1 = BackendVariable.listVar1(var_lst_1);
         eqns_1 = BackendEquation.listEquation(eqn_lst);
-        (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1, knvars, eqns_1, jacobian, jac_tp, funcs, vars, iuniqueEqIndex, itempvars, ei);
+        (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, vars_1, knvars, eqns_1, jacobian, jac_tp, funcs, vars, iuniqueEqIndex, itempvars, ei);
         uniqueEqIndexMapping = uniqueEqIndex-1; //a system with this index is created that contains all the equations with the indeces from iuniqueEqIndex to uniqueEqIndex-2
         //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
         tmpEqSccMapping = List.fold1(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
@@ -3893,7 +3893,6 @@ end createOdeSystem;
 
 protected function createOdeSystem2
   input Boolean mixedEvent "true if generating the mixed system event code";
-  input Boolean skipDiscInAlgorithm;
   input BackendDAE.Variables inVars;
   input BackendDAE.Variables inKnVars;
   input BackendDAE.EquationArray inEquationArray;
@@ -3908,13 +3907,9 @@ protected function createOdeSystem2
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
 algorithm
-  (equations_, ouniqueEqIndex, otempvars) :=
-  matchcontinue
-    (mixedEvent, skipDiscInAlgorithm, inVars, inKnVars, inEquationArray, inJacobian, inJacobianType, inFuncs, inAllVars, iuniqueEqIndex, itempvars, iei)
+  (equations_, ouniqueEqIndex, otempvars) := matchcontinue (inJacobian, inJacobianType)
     local
-      Integer uniqueEqIndex, uniqueEqIndex2;
-      BackendDAE.Variables v, kv,  emptyVars;
-      BackendDAE.EquationArray eqn,  emptyEqns;
+      Integer uniqueEqIndex;
       list<BackendDAE.Equation> eqn_lst;
       list<DAE.ComponentRef> crefs;
       list<SimCode.SimEqSystem> resEqs;
@@ -3936,67 +3931,59 @@ algorithm
     // constant jacobians. Linear system of equations (A x = b) where
     // A and b are constants. TODO: implement symbolic gaussian elimination
     // here. Currently uses dgesv as for next case
-    case (_, _, v, kv, eqn, BackendDAE.FULL_JACOBIAN(SOME(jac)), BackendDAE.JAC_CONSTANT(), _, _, _, _, _)
-      equation
-        if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system(const jacobian).\n");
-        end if;
-        ((simVars, _)) = BackendVariable.traverseBackendDAEVars(v, traversingdlowvarToSimvar, ({}, kv));
-        simVars = listReverse(simVars);
-        (beqs, sources) = BackendDAEUtil.getEqnSysRhs(eqn, v, SOME(inFuncs));
-        beqs = listReverse(beqs);
-        rhsVals = ValuesUtil.valueReals(List.map(beqs, Ceval.cevalSimple));
-        jacVals = SymbolicJacobian.evaluateConstantJacobian(listLength(simVars), jac);
-        (solvedVals, linInfo) = System.dgesv(jacVals, rhsVals);
-        names = List.map(simVars, varName);
-        checkLinearSystem(linInfo, names, jacVals, rhsVals);
-        // TODO: Move these to known vars :/ This is done in the wrong phase of the compiler... Also, if done as an optimization module, we can optimize more!
-        sources = List.map1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names, jacVals, rhsVals, solvedVals));
-        (equations_, uniqueEqIndex) = List.thread3MapFold(simVars, solvedVals, sources, generateSolvedEquation, iuniqueEqIndex);
-      then
-        (equations_, uniqueEqIndex, itempvars);
+    case (BackendDAE.FULL_JACOBIAN(SOME(jac)), BackendDAE.JAC_CONSTANT()) equation
+      if Flags.isSet(Flags.FAILTRACE) then
+        Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system(const jacobian).\n");
+      end if;
+      ((simVars, _)) = BackendVariable.traverseBackendDAEVars(inVars, traversingdlowvarToSimvar, ({}, inKnVars));
+      simVars = listReverse(simVars);
+      (beqs, sources) = BackendDAEUtil.getEqnSysRhs(inEquationArray, inVars, SOME(inFuncs));
+      beqs = listReverse(beqs);
+      rhsVals = ValuesUtil.valueReals(List.map(beqs, Ceval.cevalSimple));
+      jacVals = SymbolicJacobian.evaluateConstantJacobian(listLength(simVars), jac);
+      (solvedVals, linInfo) = System.dgesv(jacVals, rhsVals);
+      names = List.map(simVars, varName);
+      checkLinearSystem(linInfo, names, jacVals, rhsVals);
+      // TODO: Move these to known vars :/ This is done in the wrong phase of the compiler... Also, if done as an optimization module, we can optimize more!
+      sources = List.map1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names, jacVals, rhsVals, solvedVals));
+      (equations_, uniqueEqIndex) = List.thread3MapFold(simVars, solvedVals, sources, generateSolvedEquation, iuniqueEqIndex);
+    then (equations_, uniqueEqIndex, itempvars);
 
     // Time varying linear jacobian. Linear system of equations that needs to be solved during runtime.
-    case (_, _, v, kv, eqn, BackendDAE.FULL_JACOBIAN(SOME(jac)), BackendDAE.JAC_LINEAR(), _, _, _, _, _)
-      equation
-        if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system with jacobian.\n");
-        end if;
-        ((simVars, _)) = BackendVariable.traverseBackendDAEVars(v, traversingdlowvarToSimvar, ({}, kv));
-        simVars = listReverse(simVars);
-        (beqs, sources) = BackendDAEUtil.getEqnSysRhs(eqn, v, SOME(inFuncs));
-        beqs = listReverse(beqs);
-        simJac = List.map1(jac, jacToSimjac, v);
-      then
-        ({SimCode.SES_LINEAR(iuniqueEqIndex, mixedEvent, simVars, beqs, simJac, {}, NONE(), sources, 0)}, iuniqueEqIndex+1, itempvars);
+    case (BackendDAE.FULL_JACOBIAN(SOME(jac)), BackendDAE.JAC_LINEAR()) equation
+      if Flags.isSet(Flags.FAILTRACE) then
+        Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system with jacobian.\n");
+      end if;
+      ((simVars, _)) = BackendVariable.traverseBackendDAEVars(inVars, traversingdlowvarToSimvar, ({}, inKnVars));
+      simVars = listReverse(simVars);
+      (beqs, sources) = BackendDAEUtil.getEqnSysRhs(inEquationArray, inVars, SOME(inFuncs));
+      beqs = listReverse(beqs);
+      simJac = List.map1(jac, jacToSimjac, inVars);
+    then ({SimCode.SES_LINEAR(iuniqueEqIndex, mixedEvent, simVars, beqs, simJac, {}, NONE(), sources, 0)}, iuniqueEqIndex+1, itempvars);
 
     // Time varying nonlinear jacobian. Non-linear system of equations.
-    case (_, _, v, _, eqn, jacobian, BackendDAE.JAC_GENERIC(), _, _, _, _, _)
-      equation
-        if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create non-linear system with jacobian.");
-        end if;
-        eqn_lst = BackendEquation.equationList(eqn);
-        crefs = BackendVariable.getAllCrefFromVariables(v);
-        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
-        // create symbolic jacobian for simulation
-        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(jacobian, uniqueEqIndex, tempvars);
-        (_, homotopySupport) = BackendDAETransform.traverseBackendDAEExpsEqnList(eqn_lst, containsHomotopyCall, false);
-      then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, jacobianMatrix, false, homotopySupport)}, uniqueEqIndex+1, tempvars);
+    case (jacobian, BackendDAE.JAC_GENERIC()) equation
+      if Flags.isSet(Flags.FAILTRACE) then
+        Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create non-linear system with jacobian.");
+      end if;
+      eqn_lst = BackendEquation.equationList(inEquationArray);
+      crefs = BackendVariable.getAllCrefFromVariables(inVars);
+      (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
+      // create symbolic jacobian for simulation
+      (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(jacobian, uniqueEqIndex, tempvars);
+      (_, homotopySupport) = BackendDAETransform.traverseBackendDAEExpsEqnList(eqn_lst, containsHomotopyCall, false);
+    then ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, jacobianMatrix, false, homotopySupport)}, uniqueEqIndex+1, tempvars);
 
     // No analytic jacobian available. Generate non-linear system.
-    case (_, _, v, _, eqn, _, _, _, _, _, _, _)
-      equation
-        if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: functioncreateOdeSystem2 create non-linear system without jacobian.");
-        end if;
-        eqn_lst = BackendEquation.equationList(eqn);
-        crefs = BackendVariable.getAllCrefFromVariables(v);
-        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
-        (_, homotopySupport) = BackendDAETransform.traverseBackendDAEExpsEqnList(eqn_lst, containsHomotopyCall, false);
-      then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, NONE(), false, homotopySupport)}, uniqueEqIndex+1, tempvars);
+    case (_, _) equation
+      if Flags.isSet(Flags.FAILTRACE) then
+        Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: functioncreateOdeSystem2 create non-linear system without jacobian.");
+      end if;
+      eqn_lst = BackendEquation.equationList(inEquationArray);
+      crefs = BackendVariable.getAllCrefFromVariables(inVars);
+      (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
+      (_, homotopySupport) = BackendDAETransform.traverseBackendDAEExpsEqnList(eqn_lst, containsHomotopyCall, false);
+    then ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, NONE(), false, homotopySupport)}, uniqueEqIndex+1, tempvars);
 
     // failure
     else equation
