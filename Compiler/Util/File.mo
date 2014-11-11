@@ -106,7 +106,7 @@ static inline void om_file_write(FILE **file,const char *data)
   if (!*file) {
     ModelicaError(\"Failed to write to file (not open)\");
   }
-  if (1 != fputs(data,*file)) {
+  if (0 < fputs(data,*file)) {
     ModelicaFormatError(\"Failed to write to file: %s\\n\", strerror(errno));
   }
 }
