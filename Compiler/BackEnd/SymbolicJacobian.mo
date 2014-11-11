@@ -675,7 +675,7 @@ algorithm
       list<Integer> nodesList, nodesEqnsIndex;
       list<list<Integer>> sparsepattern,sparsepatternT, coloredlist;
       list<BackendDAE.Var> jacDiffVars, indiffVars, indiffedVars;
-      BackendDAE.Variables diffedVars,  varswithDiffs;
+      BackendDAE.Variables varswithDiffs;
       BackendDAE.EquationArray orderedEqns;
       array<Option<list<Integer>>> forbiddenColor;
       array<Integer> colored, colored1, ass1, ass2;
@@ -720,8 +720,7 @@ algorithm
         end if;
 
         // get indexes of diffed vars (rows)
-        diffedVars = BackendVariable.listVar1(indiffedVars);
-        nodesEqnsIndex = BackendVariable.getVarIndexFromVariables(diffedVars,varswithDiffs);
+        nodesEqnsIndex = BackendVariable.getVarIndexFromVars(indiffedVars,varswithDiffs);
         nodesEqnsIndex = List.map1(nodesEqnsIndex, Array.getIndexFirst, ass1);
 
         // debug dump

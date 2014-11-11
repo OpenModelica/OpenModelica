@@ -87,41 +87,29 @@ public function inlineCalls
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := matchcontinue(inITLst,inBackendDAE)
+  outBackendDAE := matchcontinue(inBackendDAE)
     local
       list<DAE.InlineType> itlst;
-      BackendDAE.Variables knownVars;
-      BackendDAE.Variables externalObjects,aliasVars "alias-variables' hashtable";
-      BackendDAE.EquationArray removedEqs;
-      BackendDAE.EquationArray initialEqs;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      BackendDAE.EventInfo eventInfo;
-      BackendDAE.ExternalObjectClasses extObjClasses;
       Inline.Functiontuple tpl;
       BackendDAE.EqSystems eqs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      DAE.FunctionTree functionTree;
-      FCore.Cache cache;
-      FCore.Graph graph;
-      BackendDAE.ExtraInfo ei;
+      BackendDAE.Shared shared;
 
-    case (itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,removedEqs=removedEqs,constraints=constrs,classAttrs=clsAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp,symjacs=symjacs,info=ei)))
-      equation
-        tpl = (SOME(functionTree),itlst);
-        eqs = List.map1(eqs,inlineEquationSystem,tpl);
-        (knownVars,_) = inlineVariables(knownVars,tpl);
-        (externalObjects,_) = inlineVariables(externalObjects,tpl);
-        (initialEqs,_) = inlineEquationArray(initialEqs,tpl);
-        (removedEqs,_) = inlineEquationArray(removedEqs,tpl);
-        eventInfo = inlineEventInfo(eventInfo,tpl);
+    case BackendDAE.DAE(eqs, shared as BackendDAE.SHARED())
+      algorithm
+        tpl := (SOME(shared.functionTree), inITLst);
+        eqs := List.map1(eqs, inlineEquationSystem, tpl);
+        shared.knownVars := inlineVariables(shared.knownVars, tpl);
+        shared.externalObjects := inlineVariables(shared.externalObjects, tpl);
+        shared.initialEqs := inlineEquationArray(shared.initialEqs, tpl);
+        shared.removedEqs := inlineEquationArray(shared.removedEqs, tpl);
+        shared.eventInfo := inlineEventInfo(shared.eventInfo, tpl);
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constrs,clsAttrs,cache,graph,functionTree,eventInfo,extObjClasses,btp,symjacs,ei));
+        BackendDAE.DAE(eqs, shared);
+
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("Inline.inlineCalls failed\n");
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("Inline.inlineCalls failed");
       then
         fail();
   end matchcontinue;
@@ -141,6 +129,7 @@ algorithm
       Boolean b1,b2;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
+
     case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching,stateSets=stateSets,partitionKind=partitionKind),_)
       equation
         (orderedVars,b1) = inlineVariables(orderedVars,tpl);
@@ -166,7 +155,7 @@ algorithm
       array<Option<BackendDAE.Equation>> eqarr;
     case(BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),fns)
       equation
-        oInlined = inlineEquationOptArray(1,eqarr,i2,fns,false);
+        oInlined = inlineEquationOptArray(eqarr,i2,fns);
       then
         (BackendDAE.EQUATION_ARRAY(size,i1,i2,eqarr),oInlined);
     else
@@ -181,31 +170,22 @@ end inlineEquationArray;
 protected function inlineEquationOptArray
 "functio: inlineEquationrOptArray
   inlines calls in a equation option"
-  input Integer Index;
   input array<Option<BackendDAE.Equation>> inEqnArray;
   input Integer arraysize;
   input Inline.Functiontuple fns;
-  input Boolean iInlined;
-  output Boolean oInlined;
+  output Boolean oInlined := false;
+protected
+  Option<BackendDAE.Equation> eqn;
+  Boolean inlined;
 algorithm
-  oInlined := matchcontinue(Index,inEqnArray,arraysize,fns,iInlined)
-    local
-      Option<BackendDAE.Equation> eqn;
-      Boolean b;
-    case(_,_,_,_,_)
-      equation
-        true = intLe(Index,arraysize);
-        eqn = inEqnArray[Index];
-        (eqn,b) = inlineEqOpt(eqn,fns);
-        updateArrayCond(b,inEqnArray,Index,eqn);
-      then
-        inlineEquationOptArray(Index+1,inEqnArray,arraysize,fns,b or iInlined);
-    else
-      equation
-        false = intLe(Index,arraysize);
-      then
-        iInlined;
-  end matchcontinue;
+  for i in 1:arraysize loop
+    (eqn, inlined) := inlineEqOpt(inEqnArray[i], fns); 
+    
+    if inlined then
+      arrayUpdate(inEqnArray, i, eqn);
+      oInlined := true;
+    end if;
+  end for;
 end inlineEquationOptArray;
 
 protected function inlineEqOpt "

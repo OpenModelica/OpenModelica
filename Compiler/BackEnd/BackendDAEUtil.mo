@@ -1801,13 +1801,12 @@ public function markZeroCrossingEquations "function: markStateEquations
 protected
   list<Integer> varindx_lst,eqns;
   BackendDAE.IncidenceMatrix m;
-  BackendDAE.Variables v,v2;
+  BackendDAE.Variables v;
   list<BackendDAE.Var> varlst;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
   (_, (_, varlst)) := traverseZeroCrossingExps(inZeroCross, varsCollector, (v,{}), {});
-  v2 := BackendVariable.listVar(varlst);
-  varindx_lst := BackendVariable.getVarIndexFromVariables(v2, v);
+  varindx_lst := BackendVariable.getVarIndexFromVars(varlst, v);
   eqns := List.map1r(varindx_lst,arrayGet,ass1);
   eqns := List.select(eqns, Util.intPositive);
   outIntegerArray := markStateEquationsWork(eqns,{},m,ass1,arr);

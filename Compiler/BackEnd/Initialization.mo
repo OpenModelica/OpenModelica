@@ -1196,7 +1196,7 @@ protected function fixInitialSystem "author: lochel
   output list<BackendDAE.Var> outDumpVars;
   output list<BackendDAE.Equation> outRemovedEqns;
 protected
-  Integer nVars, nEqns, nInitEqs, nInitVars, nAddEqs, nAddVars;
+  Integer nVars, nEqns, nInitEqs, nAddEqs, nAddVars;
   list<Integer> stateIndices, range, unassigned, initEqsIndices, redundantEqns;
   list<BackendDAE.Var> initVarList;
   array<Integer> vec1, vec2;
@@ -1218,8 +1218,7 @@ algorithm
 //BackendDump.dumpIncidenceMatrix(m_);
 
   // get state-index list
-  stateIndices := BackendVariable.getVarIndexFromVar(inInitVars, inVars);
-  nInitVars := listLength(stateIndices);
+  stateIndices := BackendVariable.getVarIndexFromVariables(inInitVars, inVars);
 //print("{" + stringDelimitList(List.map(stateIndices, intString),",") + "}\n");
 
   // get initial equation-index list

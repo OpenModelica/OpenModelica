@@ -3181,70 +3181,43 @@ algorithm
   outMatch := ComponentReference.crefEqualNoStringCompare(cr, inCref);
 end crefIndexEqualCref;
 
+public function getVarIndexFromVars
+  input list<BackendDAE.Var> inVars;
+  input BackendDAE.Variables inVariables;
+  output list<Integer> outIndices := {};
+algorithm
+  for var in inVars loop
+    (_, outIndices) := traversingVarIndexFinder(var, inVariables, outIndices);
+  end for;
+end getVarIndexFromVars;
+
 public function getVarIndexFromVariables
   input BackendDAE.Variables inVariables;
   input BackendDAE.Variables inVariables2;
   output list<Integer> v_lst;
 algorithm
-  ((_,v_lst)) := traverseBackendDAEVars(inVariables,traversingisVarIndexVarFinder,(inVariables2,{}));
+  v_lst := traverseBackendDAEVars(inVariables,
+    function traversingVarIndexFinder(inVars = inVariables2), {});
 end getVarIndexFromVariables;
-
-protected function traversingisVarIndexVarFinder
-"author: Frenkel TUD 2010-11"
- input BackendDAE.Var inVar;
- input tuple<BackendDAE.Variables, list<Integer>> inTpl;
- output BackendDAE.Var outVar;
- output tuple<BackendDAE.Variables, list<Integer>> outTpl;
-algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
-    local
-      BackendDAE.Var v;
-      BackendDAE.Variables vars;
-      list<Integer> v_lst;
-      DAE.ComponentRef cr;
-      list<Integer> indxlst;
-    case (v,(vars,v_lst))
-      equation
-        cr = varCref(v);
-       (_,indxlst) = getVar(cr, vars);
-       v_lst = listAppend(v_lst,indxlst);
-      then (v,(vars,v_lst));
-    else (inVar,inTpl);
-  end matchcontinue;
-end traversingisVarIndexVarFinder;
-
-
-public function getVarIndexFromVar
-  input BackendDAE.Variables inVariables;
-  input BackendDAE.Variables inVariables2;
-  output list<Integer> v_lst;
-algorithm
-  ((_, v_lst)) := traverseBackendDAEVars(inVariables, traversingVarIndexFinder, (inVariables2, {}));
-end getVarIndexFromVar;
 
 protected function traversingVarIndexFinder
 "author: Frenkel TUD 2010-11"
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.Variables, list<Integer>> inTpl;
-  output BackendDAE.Var outVar;
-  output tuple<BackendDAE.Variables, list<Integer>> outTpl;
+  input BackendDAE.Variables inVars;
+  input list<Integer> inIndices;
+  output BackendDAE.Var outVar := inVar;
+  output list<Integer> outIndices;
+protected
+  DAE.ComponentRef cr;
+  list<Integer> indices;
 algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
-    local
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vlst;
-      BackendDAE.Variables vars;
-      list<Integer> v_lst;
-      DAE.ComponentRef cr;
-      list<Integer> indxlst;
-    case (v,(vars,v_lst))
-      equation
-        cr = varCref(v);
-       (_,indxlst) = getVar(cr, vars);
-       v_lst = listAppend(v_lst,indxlst);
-      then (v,(vars,v_lst));
-    else (inVar,inTpl);
-  end matchcontinue;
+  try
+    cr := varCref(inVar);
+    (_, indices) := getVar(cr, inVars);
+    outIndices := listAppend(inIndices, indices);
+  else
+    outIndices := inIndices;
+  end try;
 end traversingVarIndexFinder;
 
 public function mergeVariables
