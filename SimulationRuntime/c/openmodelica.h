@@ -128,7 +128,7 @@ struct type_desc_s {
     integer_array_t int_array;
     modelica_boolean boolean;
     boolean_array_t bool_array;
-    modelica_string_const string;
+    modelica_string string;
     string_array_t string_array;
     struct _tuple {
       size_t elements;

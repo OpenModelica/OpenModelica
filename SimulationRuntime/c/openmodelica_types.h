@@ -47,16 +47,8 @@ So it needs to be void*. If we use a platform with different sizes of function-
 pointers, some changes need to be done to code generation */
 typedef void* modelica_fnptr;
 
-#ifdef __OPENMODELICA__METAMODELICA
 /* When MetaModelica grammar is enabled, all strings are boxed */
-typedef modelica_metatype modelica_string_t;
-typedef const modelica_metatype modelica_string_const;
-typedef modelica_string_t modelica_string;
-#else
-typedef char* modelica_string_t;
-typedef const char* modelica_string_const;
-typedef modelica_string_const modelica_string;
-#endif
+typedef modelica_metatype modelica_string;
 
 typedef double      m_real;
 typedef long        m_integer;

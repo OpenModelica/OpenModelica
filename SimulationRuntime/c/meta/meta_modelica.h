@@ -50,6 +50,7 @@ extern "C" {
 #include "gc/mmc_gc.h"
 #include "meta_modelica_string_lit.h"
 #include "omc_inline.h"
+#include "openmodelica.h"
 
 /*
  *
@@ -320,6 +321,23 @@ static inline void mmc_prim_set_real(struct mmc_real *p, double d)
   *(data + 1) = u.data[1];
 }
 
+static inline void* mmc_alloc_scon(size_t nbytes)
+{
+    unsigned int header = MMC_STRINGHDR(nbytes);
+    unsigned int nwords = MMC_HDRSLOTS(header) + 1;
+    struct mmc_string *p;
+    void *res;
+    if (nbytes == 0) return mmc_emptystring;
+    p = (struct mmc_string *) omc_alloc_interface.malloc_string(nwords*sizeof(void*));
+    p->header = header;
+    p->data[0] = 0;
+    res = MMC_TAGPTR(p);
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "STRING slots: %u size: %d str: %s\n", MMC_HDRSLOTS(header), nbytes, s); fflush(NULL);
+#endif
+    return res;
+}
+
 static inline void* mmc_mk_scon(const char *s)
 {
     unsigned int nbytes = strlen(s);
@@ -338,7 +356,7 @@ static inline void* mmc_mk_scon(const char *s)
     res = MMC_TAGPTR(p);
     MMC_CHECK_STRING(res);
 #ifdef MMC_MK_DEBUG
-    fprintf(stderr, "STRING slots: %u size: %d str: %s\n", MMC_HDRSLOTS(header), strlen(s), s); fflush(NULL);
+    fprintf(stderr, "STRING slots: %u size: %d str: %s\n", MMC_HDRSLOTS(header), nbytes, s); fflush(NULL);
 #endif
     return res;
 }

@@ -32,9 +32,11 @@
 #include "utility.h"
 #include "modelica_string.h"
 #include "simulation_data.h"
-#include "../simulation/options.h"
+#include "simulation/options.h"
 #include <regex.h>
 #include <string.h>
+#include "meta/meta_modelica.h"
+
 
 modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelica_integer n)
 {
@@ -124,5 +126,5 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
 
 extern int OpenModelica_regex(const char* str, const char* re, int maxn, int extended, int sensitive, const char **outMatches)
 {
-  return OpenModelica_regexImpl(str,re,maxn,extended,sensitive,(void*(*)(const char*)) init_modelica_string,(void**)outMatches);
+  return OpenModelica_regexImpl(str,re,maxn,extended,sensitive,(void*(*)(const char*)) mmc_mk_scon,(void**)outMatches);
 }

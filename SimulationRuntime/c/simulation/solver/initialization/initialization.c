@@ -47,6 +47,7 @@
 #include "read_matlab4.h"
 #include "events.h"
 #include "stateset.h"
+#include "meta/meta_modelica.h"
 
 #include "initialization_data.h"
 #include "mixedSystem.h"
@@ -304,9 +305,9 @@ void dumpInitialSolution(DATA *simData)
     for(i=0; i<mData->nVariablesString; ++i)
       infoStreamPrint(LOG_SOTI, 0, "[%ld] String %s(start=\"%s\") = \"%s\" (pre: \"%s\")", i+1,
                                    mData->stringVarsData[i].info.name,
-                                   mData->stringVarsData[i].attribute.start,
-                                   simData->localData[0]->stringVars[i],
-                                   sInfo->stringVarsPre[i]);
+                                   MMC_STRINGDATA(mData->stringVarsData[i].attribute.start),
+                                   MMC_STRINGDATA(simData->localData[0]->stringVars[i]),
+                                   MMC_STRINGDATA(sInfo->stringVarsPre[i]));
     messageClose(LOG_SOTI);
   }
 
@@ -677,14 +678,18 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     assertStreamPrint(data->threadData, 0 != booleanVars, "out of memory");
     assertStreamPrint(data->threadData, 0 != stringVars, "out of memory");
 
-    for(i=0; i<mData->nVariablesReal; ++i)
+    for(i=0; i<mData->nVariablesReal; ++i) {
       realVars[i] = mData->realVarsData[i].attribute.start;
-    for(i=0; i<mData->nVariablesInteger; ++i)
+    }
+    for(i=0; i<mData->nVariablesInteger; ++i) {
       integerVars[i] = mData->integerVarsData[i].attribute.start;
-    for(i=0; i<mData->nVariablesBoolean; ++i)
+    }
+    for(i=0; i<mData->nVariablesBoolean; ++i) {
       booleanVars[i] = mData->booleanVarsData[i].attribute.start;
-    for(i=0; i<mData->nVariablesString; ++i)
+    }
+    for(i=0; i<mData->nVariablesString; ++i) {
       stringVars[i] = mData->stringVarsData[i].attribute.start;
+    }
 
     if(ACTIVE_STREAM(LOG_INIT))
     {

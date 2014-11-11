@@ -169,7 +169,7 @@ static inline modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,mode
 extern modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype, modelica_metatype, modelica_metatype);
 
 /* Misc Operations */
-#define print(X) boxptr_print(NULL,X)
+#define print(X) fputs(MMC_STRINGDATA(X), stdout)
 extern void boxptr_print(threadData_t*,modelica_metatype);
 extern modelica_integer tick(void);
 extern modelica_real mmc_clock(void);

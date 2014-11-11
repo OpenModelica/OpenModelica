@@ -13,7 +13,7 @@ CC = @CC@
 CXX = @CXX@
 CFLAGS	+= @CFLAGS@
 CXXFLAGS = $(CFLAGS)
-CPPFLAGS = -I.. -Wall -I../c/simulation/results/ -I../c/linearization -I../c/simulation/solver/ -I../c/util/ -I../c/ -I../c/simulation/ -I../c/math-support/
+CPPFLAGS = -I.. -Wall -I../c/simulation/results/ -I../c/linearization -I../c/simulation/solver/ -I../c/util/ -I../c/ -I../c/simulation/ -I../c/math-support/ -I../../build/include/omc/c
 LDFLAGS = @LDFLAGS@
 
 OBJ = $(CPPSRC:.cpp=.o)

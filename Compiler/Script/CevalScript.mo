@@ -2682,17 +2682,17 @@ algorithm
         usercflags = Util.makeValueOrDefault(System.readEnv,"MODELICAUSERCFLAGS","");
         workdir = System.pwd();
         touch_res = 0 == System.systemCall("touch " + touch_file, "");
-        _ = 0 == System.systemCall("uname -a", touch_file);
+        System.systemCall("uname -a", touch_file);
         uname = System.readFile(touch_file);
         rm_res = 0 == System.systemCall("rm " + touch_file, "");
-        _ = System.platform();
+        // _ = System.platform();
         senddata = System.getRTLibs();
         gcc = System.getCCompiler();
         have_corba = Corba.haveCorba();
-        _ = System.systemCall("rm -f " + touch_file, "");
+        System.systemCall("rm -f " + touch_file, "");
         gcc_res = 0 == System.systemCall(gcc + " --version", touch_file);
         gccVersion = System.readFile(touch_file);
-        _ = System.systemCall("rm -f " + touch_file, "");
+        System.systemCall("rm -f " + touch_file, "");
         confcmd = System.configureCommandLine();
         vals = {Values.STRING(omhome),
                 Values.STRING(omlib),

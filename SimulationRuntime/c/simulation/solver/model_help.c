@@ -46,6 +46,7 @@
 #include "mixedSystem.h"
 #include "delay.h"
 #include "epsilon.h"
+#include "meta/meta_modelica.h"
 
 static const int IterationMax = 200;
 const size_t SIZERINGBUFFER = 3;
@@ -326,8 +327,8 @@ void printParameters(DATA *data, int stream)
     for(i=0; i<mData->nParametersString; ++i)
       infoStreamPrint(stream, 0, "[%ld] parameter String %s(start=\"%s\") = \"%s\"", i+1,
                                  mData->stringParameterData[i].info.name,
-                                 mData->stringParameterData[i].attribute.start,
-                                 data->simulationInfo.stringParameter[i]);
+                                 MMC_STRINGDATA(mData->stringParameterData[i].attribute.start),
+                                 MMC_STRINGDATA(data->simulationInfo.stringParameter[i]));
     messageClose(stream);
   }
 
@@ -412,7 +413,7 @@ void printZeroCrossings(DATA *data, int stream)
   {
     int *eq_indexes;
     const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-    infoStreamPrintWithEquationIndexes(stream, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo.zeroCrossingsPre[i], exp_str, data->simulationInfo.zeroCrossings[i], exp_str);
+    infoStreamPrintWithEquationIndexes(stream, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo.zeroCrossingsPre[i], data->simulationInfo.zeroCrossings[i], exp_str);
   }
   messageClose(stream);
 
@@ -587,7 +588,7 @@ void setAllStartToVars(DATA *data)
   for(i=0; i<mData->nVariablesString; ++i)
   {
     mData->stringVarsData[i].attribute.start = sData->stringVars[i];
-    debugStreamPrint(LOG_DEBUG, 0, "String var %s(start=%s)", mData->stringVarsData[i].info.name, sData->stringVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "String var %s(start=%s)", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
   }
   if (DEBUG_STREAM(LOG_DEBUG)) {
     messageClose(LOG_DEBUG);
@@ -630,7 +631,7 @@ void setAllParamsToStart(DATA *data)
   for(i=0; i<mData->nParametersString; ++i)
   {
     sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[i].info.name, MMC_STRINGDATA(sInfo->stringParameter[i]));
   }
 
   TRACE_POP
@@ -817,36 +818,36 @@ void initializeDataStruc(DATA *data)
     /* set time value */
     tmpSimData.timeValue = 0;
     /* buffer for all variable values */
-    tmpSimData.realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
+    tmpSimData.realVars = (modelica_real*) calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
     assertStreamPrint(data->threadData, 0 != tmpSimData.realVars, "out of memory");
-    tmpSimData.integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
+    tmpSimData.integerVars = (modelica_integer*) calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
     assertStreamPrint(data->threadData, 0 != tmpSimData.integerVars, "out of memory");
-    tmpSimData.booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
+    tmpSimData.booleanVars = (modelica_boolean*) calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
     assertStreamPrint(data->threadData, 0 != tmpSimData.booleanVars, "out of memory");
-    tmpSimData.stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+    tmpSimData.stringVars = (modelica_string*) GC_malloc_atomic(data->modelData.nVariablesString * sizeof(modelica_string));
     assertStreamPrint(data->threadData, 0 != tmpSimData.stringVars, "out of memory");
     appendRingData(data->simulationData, &tmpSimData);
   }
-  data->localData = (SIMULATION_DATA**) calloc(SIZERINGBUFFER, sizeof(SIMULATION_DATA*));
+  data->localData = (SIMULATION_DATA**) GC_malloc(SIZERINGBUFFER * sizeof(SIMULATION_DATA*));
   rotateRingBuffer(data->simulationData, 0, (void**) data->localData);
 
   /* create modelData var arrays */
-  data->modelData.realVarsData = (STATIC_REAL_DATA*) calloc(data->modelData.nVariablesReal, sizeof(STATIC_REAL_DATA));
-  data->modelData.integerVarsData = (STATIC_INTEGER_DATA*) calloc(data->modelData.nVariablesInteger, sizeof(STATIC_INTEGER_DATA));
-  data->modelData.booleanVarsData = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nVariablesBoolean, sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData.stringVarsData = (STATIC_STRING_DATA*) calloc(data->modelData.nVariablesString, sizeof(STATIC_STRING_DATA));
+  data->modelData.realVarsData = (STATIC_REAL_DATA*) GC_malloc(data->modelData.nVariablesReal * sizeof(STATIC_REAL_DATA));
+  data->modelData.integerVarsData = (STATIC_INTEGER_DATA*) GC_malloc(data->modelData.nVariablesInteger * sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanVarsData = (STATIC_BOOLEAN_DATA*) GC_malloc(data->modelData.nVariablesBoolean * sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.stringVarsData = (STATIC_STRING_DATA*) GC_malloc(data->modelData.nVariablesString * sizeof(STATIC_STRING_DATA));
 
-  data->modelData.realParameterData = (STATIC_REAL_DATA*) calloc(data->modelData.nParametersReal, sizeof(STATIC_REAL_DATA));
-  data->modelData.integerParameterData = (STATIC_INTEGER_DATA*) calloc(data->modelData.nParametersInteger, sizeof(STATIC_INTEGER_DATA));
-  data->modelData.booleanParameterData = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nParametersBoolean, sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData.stringParameterData = (STATIC_STRING_DATA*) calloc(data->modelData.nParametersString, sizeof(STATIC_STRING_DATA));
+  data->modelData.realParameterData = (STATIC_REAL_DATA*) GC_malloc(data->modelData.nParametersReal * sizeof(STATIC_REAL_DATA));
+  data->modelData.integerParameterData = (STATIC_INTEGER_DATA*) GC_malloc(data->modelData.nParametersInteger * sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanParameterData = (STATIC_BOOLEAN_DATA*) GC_malloc(data->modelData.nParametersBoolean * sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.stringParameterData = (STATIC_STRING_DATA*) GC_malloc(data->modelData.nParametersString * sizeof(STATIC_STRING_DATA));
 
-  data->modelData.realAlias = (DATA_REAL_ALIAS*) calloc(data->modelData.nAliasReal, sizeof(DATA_REAL_ALIAS));
-  data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) calloc(data->modelData.nAliasInteger, sizeof(DATA_INTEGER_ALIAS));
-  data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean, sizeof(DATA_BOOLEAN_ALIAS));
-  data->modelData.stringAlias = (DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString, sizeof(DATA_STRING_ALIAS));
+  data->modelData.realAlias = (DATA_REAL_ALIAS*) GC_malloc(data->modelData.nAliasReal * sizeof(DATA_REAL_ALIAS));
+  data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) GC_malloc(data->modelData.nAliasInteger * sizeof(DATA_INTEGER_ALIAS));
+  data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) GC_malloc(data->modelData.nAliasBoolean * sizeof(DATA_BOOLEAN_ALIAS));
+  data->modelData.stringAlias = (DATA_STRING_ALIAS*) GC_malloc(data->modelData.nAliasString * sizeof(DATA_STRING_ALIAS));
 
-  data->modelData.samplesInfo = (SAMPLE_INFO*) calloc(data->modelData.nSamples, sizeof(SAMPLE_INFO));
+  data->modelData.samplesInfo = (SAMPLE_INFO*) GC_malloc(data->modelData.nSamples * sizeof(SAMPLE_INFO));
   data->simulationInfo.nextSampleEvent = data->simulationInfo.startTime;
   data->simulationInfo.nextSampleTimes = (double*) calloc(data->modelData.nSamples, sizeof(double));
   data->simulationInfo.samples = (modelica_boolean*) calloc(data->modelData.nSamples, sizeof(modelica_boolean));
@@ -872,41 +873,41 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.realVarsOld = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
   data->simulationInfo.integerVarsOld = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanVarsOld = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringVarsOld = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+  data->simulationInfo.stringVarsOld = (modelica_string*)GC_malloc_atomic(data->modelData.nVariablesString * sizeof(modelica_string));
 
   /* buffer for all variable pre values */
   data->simulationInfo.realVarsPre = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
   data->simulationInfo.integerVarsPre = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanVarsPre = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringVarsPre = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+  data->simulationInfo.stringVarsPre = (modelica_string*)GC_malloc_atomic(data->modelData.nVariablesString * sizeof(modelica_string));
 
   /* buffer for all parameters values */
   data->simulationInfo.realParameter = (modelica_real*) calloc(data->modelData.nParametersReal, sizeof(modelica_real));
   data->simulationInfo.integerParameter = (modelica_integer*) calloc(data->modelData.nParametersInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanParameter = (modelica_boolean*) calloc(data->modelData.nParametersBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringParameter = (modelica_string*) calloc(data->modelData.nParametersString, sizeof(modelica_string));
+  data->simulationInfo.stringParameter = (modelica_string*) GC_malloc_atomic(data->modelData.nParametersString * sizeof(modelica_string));
   /* buffer for inputs and outputs values */
   data->simulationInfo.inputVars = (modelica_real*) calloc(data->modelData.nInputVars, sizeof(modelica_real));
   data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
 
   /* buffer for mixed systems */
-  data->simulationInfo.mixedSystemData = (MIXED_SYSTEM_DATA*) malloc(data->modelData.nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
+  data->simulationInfo.mixedSystemData = (MIXED_SYSTEM_DATA*) GC_malloc(data->modelData.nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
   data->callback->initialMixedSystem(data->modelData.nMixedSystems, data->simulationInfo.mixedSystemData);
 
   /* buffer for linear systems */
-  data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) malloc(data->modelData.nLinearSystems*sizeof(LINEAR_SYSTEM_DATA));
+  data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) GC_malloc(data->modelData.nLinearSystems*sizeof(LINEAR_SYSTEM_DATA));
   data->callback->initialLinearSystem(data->modelData.nLinearSystems, data->simulationInfo.linearSystemData);
 
   /* buffer for non-linear systems */
-  data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) malloc(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
+  data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) GC_malloc(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
   data->callback->initialNonLinearSystem(data->modelData.nNonLinearSystems, data->simulationInfo.nonlinearSystemData);
 
   /* buffer for state sets */
-  data->simulationInfo.stateSetData = (STATE_SET_DATA*) malloc(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
+  data->simulationInfo.stateSetData = (STATE_SET_DATA*) GC_malloc(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
   data->callback->initializeStateSets(data->modelData.nStateSets, data->simulationInfo.stateSetData, data);
 
   /* buffer for analytical jacobains */
-  data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
+  data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) GC_malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
 
   data->modelData.modelDataXml.functionNames = NULL;
   data->modelData.modelDataXml.equationInfo = NULL;
@@ -978,60 +979,61 @@ void deInitializeDataStruc(DATA *data)
     free(tmpSimData->realVars);
     free(tmpSimData->integerVars);
     free(tmpSimData->booleanVars);
-    free(tmpSimData->stringVars);
+    GC_free(tmpSimData->stringVars);
   }
-  free(data->localData);
+  GC_free(data->localData);
   freeRingBuffer(data->simulationData);
 
   /* free modelData var arrays */
-  for(i=0; i < data->modelData.nVariablesReal;i++)
+  for(i=0; i < data->modelData.nVariablesReal;i++) {
     freeVarInfo(&((data->modelData.realVarsData[i]).info));
-  free(data->modelData.realVarsData);
+  }
+  GC_free(data->modelData.realVarsData);
 
   for(i=0; i < data->modelData.nVariablesInteger;i++)
     freeVarInfo(&((data->modelData.integerVarsData[i]).info));
-  free(data->modelData.integerVarsData);
+  GC_free(data->modelData.integerVarsData);
 
   for(i=0; i < data->modelData.nVariablesBoolean;i++)
     freeVarInfo(&((data->modelData.booleanVarsData[i]).info));
-  free(data->modelData.booleanVarsData);
+  GC_free(data->modelData.booleanVarsData);
 
   for(i=0; i < data->modelData.nVariablesString;i++)
     freeVarInfo(&((data->modelData.stringVarsData[i]).info));
-  free(data->modelData.stringVarsData);
+  GC_free(data->modelData.stringVarsData);
 
   /* free modelica parameter static data */
   for(i=0; i < data->modelData.nParametersReal;i++)
     freeVarInfo(&((data->modelData.realParameterData[i]).info));
-  free(data->modelData.realParameterData);
+  GC_free(data->modelData.realParameterData);
 
   for(i=0; i < data->modelData.nParametersInteger;i++)
     freeVarInfo(&((data->modelData.integerParameterData[i]).info));
-  free(data->modelData.integerParameterData);
+  GC_free(data->modelData.integerParameterData);
 
   for(i=0; i < data->modelData.nParametersBoolean;i++)
     freeVarInfo(&((data->modelData.booleanParameterData[i]).info));
-  free(data->modelData.booleanParameterData);
+  GC_free(data->modelData.booleanParameterData);
 
   for(i=0; i < data->modelData.nParametersString;i++)
     freeVarInfo(&((data->modelData.stringParameterData[i]).info));
-  free(data->modelData.stringParameterData);
+  GC_free(data->modelData.stringParameterData);
 
   /* free alias static data */
   for(i=0; i < data->modelData.nAliasReal;i++)
     freeVarInfo(&((data->modelData.realAlias[i]).info));
-  free(data->modelData.realAlias);
+  GC_free(data->modelData.realAlias);
   for(i=0; i < data->modelData.nAliasInteger;i++)
     freeVarInfo(&((data->modelData.integerAlias[i]).info));
-  free(data->modelData.integerAlias);
+  GC_free(data->modelData.integerAlias);
   for(i=0; i < data->modelData.nAliasBoolean;i++)
     freeVarInfo(&((data->modelData.booleanAlias[i]).info));
-  free(data->modelData.booleanAlias);
+  GC_free(data->modelData.booleanAlias);
   for(i=0; i < data->modelData.nAliasString;i++)
     freeVarInfo(&((data->modelData.stringAlias[i]).info));
-  free(data->modelData.stringAlias);
+  GC_free(data->modelData.stringAlias);
 
-  free(data->modelData.samplesInfo);
+  GC_free(data->modelData.samplesInfo);
   free(data->simulationInfo.nextSampleTimes);
   free(data->simulationInfo.samples);
 
@@ -1047,34 +1049,34 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo.realVarsOld);
   free(data->simulationInfo.integerVarsOld);
   free(data->simulationInfo.booleanVarsOld);
-  free(data->simulationInfo.stringVarsOld);
+  GC_free(data->simulationInfo.stringVarsOld);
 
   /* free buffer for all variable pre values */
   free(data->simulationInfo.realVarsPre);
   free(data->simulationInfo.integerVarsPre);
   free(data->simulationInfo.booleanVarsPre);
-  free(data->simulationInfo.stringVarsPre);
+  GC_free(data->simulationInfo.stringVarsPre);
 
   /* free buffer for all parameters values */
   free(data->simulationInfo.realParameter);
   free(data->simulationInfo.integerParameter);
   free(data->simulationInfo.booleanParameter);
-  free(data->simulationInfo.stringParameter);
+  GC_free(data->simulationInfo.stringParameter);
 
   /* free buffer for state sets */
-  free(data->simulationInfo.stateSetData);
+  GC_free(data->simulationInfo.stateSetData);
 
   /* free buffer of mixed systems */
-  free(data->simulationInfo.mixedSystemData);
+  GC_free(data->simulationInfo.mixedSystemData);
 
   /* free buffer of linear systems */
-  free(data->simulationInfo.linearSystemData);
+  GC_free(data->simulationInfo.linearSystemData);
 
   /* free buffer of non-linear systems */
-  free(data->simulationInfo.nonlinearSystemData);
+  GC_free(data->simulationInfo.nonlinearSystemData);
 
   /* free buffer jacobians */
-  free(data->simulationInfo.analyticJacobians);
+  GC_free(data->simulationInfo.analyticJacobians);
 
   /* free inputs and output */
   free(data->simulationInfo.inputVars);

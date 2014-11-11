@@ -396,8 +396,7 @@ algorithm
 
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
       equation
-        if (System.regularFileExists(filename))
-        then
+        if (System.regularFileExists(filename)) then
           contents = System.readFile(filename);
           namesToFind = System.strtok(contents, "\n");
           namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));

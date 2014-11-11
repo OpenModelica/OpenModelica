@@ -700,9 +700,10 @@ extern const char* System_snprintff(const char *fmt, int len, double d)
 extern const char* System_realpath(const char *path)
 {
   char buf[PATH_MAX];
-  if (realpath(path, buf) == NULL)
+  if (realpath(path, buf) == NULL) {
     MMC_THROW();
-  return init_modelica_string(buf);
+  }
+  return GC_strdup(buf);
 }
 
 extern int System_fileIsNewerThan(const char *file1, const char *file2)

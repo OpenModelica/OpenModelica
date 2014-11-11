@@ -26,6 +26,7 @@
 #include "omi_ServiceInterface.h"
 #include "omi_Control.h"
 #include "omi_Transfer.h"
+#include "meta/meta_modelica.h"
 
 //Global Data Mutex
 static Mutex gdMutex;
@@ -538,11 +539,11 @@ int intializeSolverStartData(double *stepSize, long *outputSteps,
   solverInfo = (SOLVER_INFO*) malloc(sizeof(SOLVER_INFO));
 
 
-  if(simInfo->solverMethod == std::string("rungekutta"))
+  if (MMC_STRINGDATA(simInfo->solverMethod) == std::string("rungekutta"))
   {
     solverInfo->solverMethod = 2;
   }
-  else if(simInfo->solverMethod == std::string("dassl"))
+  else if(MMC_STRINGDATA(simInfo->solverMethod) == std::string("dassl"))
   {
     solverInfo->solverMethod = 3;
   }
@@ -555,7 +556,7 @@ int intializeSolverStartData(double *stepSize, long *outputSteps,
   *stepSize = simInfo->stepSize;
   *outputSteps = simInfo->stepSize;
   *tolerance = simInfo->tolerance;
-  *method = simInfo->solverMethod;
+  *method = MMC_STRINGDATA(simInfo->solverMethod);
 
 
   /* allocate SolverInfo memory */

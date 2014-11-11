@@ -35,140 +35,86 @@
 #include <assert.h>
 #include <string.h>
 #include "gc.h"
-
-int modelica_string_ok(const modelica_string_t* a)
-{
-  /* Since a modelica string is a char* check that it is not null.*/
-    return ((a != NULL) ? 1 : 0);
-}
-
-int modelica_string_length(modelica_string_const a)
-{
-    return strlen(a);
-}
+#include "meta/meta_modelica.h"
 
 /* Convert a modelica_real to a modelica_string, used in String(real, format="xxx") */
-modelica_string_const modelica_real_to_modelica_string_format(modelica_real r,modelica_string_const format)
+modelica_string modelica_real_to_modelica_string_format(modelica_real r,modelica_string format)
 {
-  char formatStr[40];
   char buf[400];
-  formatStr[0]='%';
-  strcpy(&formatStr[1], format);
-  sprintf(buf,formatStr,r);
-  return init_modelica_string(buf);
+  sprintf(buf,MMC_STRINGDATA(stringAppend(mmc_strings_len1['%'],format)),r);
+  return mmc_mk_scon(buf);
 }
 /* Convert a modelica_integer to a modelica_string, used in String(integer, format="xxx") */
-modelica_string_const modelica_integer_to_modelica_string_format(modelica_integer i,modelica_string_const format)
+modelica_string modelica_integer_to_modelica_string_format(modelica_integer i,modelica_string format)
 {
-  char formatStr[40];
   char buf[400];
-  formatStr[0]='%';
-  strcpy(&formatStr[1], format);
-  sprintf(buf,formatStr,i);
-  return init_modelica_string(buf);
+  sprintf(buf,MMC_STRINGDATA(stringAppend(mmc_strings_len1['%'],format)),i);
+  return mmc_mk_scon(buf);
 }
 /* Convert a modelica_integer to a modelica_string, used in String(string, format="xxx") */
-modelica_string_const modelica_string_to_modelica_string_format(modelica_string_const s,modelica_string_const format)
+modelica_string modelica_stringo_modelica_string_format(modelica_string s,modelica_string format)
 {
-  char formatStr[40];
   char buf[4000];
-  formatStr[0]='%';
-  strcpy(&formatStr[1], format);
-  sprintf(buf,formatStr,s);
-  return init_modelica_string(buf);
+  sprintf(buf,MMC_STRINGDATA(stringAppend(mmc_strings_len1['%'],format)),s);
+  return mmc_mk_scon(buf);
 }
 
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
 
-modelica_string_const modelica_integer_to_modelica_string(modelica_integer i, modelica_integer minLen, modelica_boolean leftJustified)
+modelica_string modelica_integer_to_modelica_string(modelica_integer i, modelica_integer minLen, modelica_boolean leftJustified)
 {
-  char formatStr[40];
   char buf[400];
-  formatStr[0]='%';
-  if(leftJustified) {
-    sprintf(&formatStr[1],"-%dd",(int)minLen);
+  size_t sz = snprintf(buf, 400, leftJustified ? "%-*ld" : "%*ld", (int) minLen, i);
+  if (sz > 400) {
+    void *res = alloc_modelica_string(sz-1);
+    sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*ld" : "%*ld", (int) minLen, i);
+    return res;
   } else {
-    sprintf(&formatStr[1],"%dd",(int)minLen);
+    return mmc_mk_scon(buf);
   }
-  sprintf(buf,formatStr,i);
-  return init_modelica_string(buf);
 }
 
 /* Convert a modelica_real to a modelica_string, used in String(r) */
 
-modelica_string_const modelica_real_to_modelica_string(modelica_real r,modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits)
+modelica_string modelica_real_to_modelica_string(modelica_real r,modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits)
 {
-  char formatStr[40];
   char buf[400];
-  formatStr[0]='%';
-  if(leftJustified) {
-    sprintf(&formatStr[1],"-%d.%dg",(int)minLen,(int)signDigits);
+  size_t sz = snprintf(buf, 400, leftJustified ? "%-*.*g" : "%*.*g", (int) minLen, (int) signDigits, r);
+  if (sz > 400) {
+    void *res = alloc_modelica_string(sz-1);
+    sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*.*g" : "%*.*g", (int) minLen, (int) signDigits, r);
+    return res;
   } else {
-    sprintf(&formatStr[1],"%d.%dg",(int)minLen,(int)signDigits);
+    return mmc_mk_scon(buf);
   }
-  sprintf(buf,formatStr,r);
-  return init_modelica_string(buf);
 }
 
 /* Convert a modelica_boolean to a modelica_string, used in String(b) */
 
-modelica_string_const modelica_boolean_to_modelica_string(modelica_boolean b, modelica_integer minLen, modelica_boolean leftJustified)
+modelica_string modelica_boolean_to_modelica_string(modelica_boolean b, modelica_integer minLen, modelica_boolean leftJustified)
 {
-  if(b) {
-    return "true";
+  char buf[400];
+  size_t sz = snprintf(buf, 400, leftJustified ? "%-*s" : "%*s", (int) minLen, b ? "true" : "false");
+  if (sz > 400) {
+    void *res = alloc_modelica_string(sz-1);
+    sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*s" : "%*s", (int) minLen, b ? "true" : "false");
+    return res;
   } else {
-    return "false";
+    return mmc_mk_scon(buf);
   }
 }
 
 /* Convert a modelica_enumeration to a modelica_string, used in String(b) */
 
-modelica_string_const modelica_enumeration_to_modelica_string(modelica_integer nr,const modelica_string_t e[],modelica_integer minLen, modelica_boolean leftJustified)
+modelica_string modelica_enumeration_to_modelica_string(modelica_integer nr,const modelica_string e[],modelica_integer minLen, modelica_boolean leftJustified)
 {
-  return init_modelica_string(e[nr-1]);
+  return mmc_mk_scon(e[nr-1]);
 }
 
-
-modelica_string_const init_modelica_string(modelica_string_const str)
-{
-  int length = strlen(str);
-  modelica_string_t dest = alloc_modelica_string(length);
-  memcpy(dest, str, length);
-  return dest;
-}
-
-modelica_string_t alloc_modelica_string(int length)
+modelica_string alloc_modelica_string(int length)
 {
     /* Reserve place for null terminator too.*/
-    modelica_string_t dest = (modelica_string_t) omc_alloc_interface.malloc_string(length+1);
-    if (dest != 0) {
-      dest[length]=0;
-    }
-    return dest;
-}
-
-void free_modelica_string(modelica_string_t* a)
-{
-    assert(modelica_string_ok(a));
-}
-
-modelica_string_const copy_modelica_string(modelica_string_const source)
-{
-  int len = strlen(source);
-  modelica_string_t dest = alloc_modelica_string(len);
-  memcpy(dest, source, len);
-  return dest;
-}
-
-modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_string_const s2)
-{
-  char *dest;
-  int len1 = modelica_string_length(s1);
-  int len2 = modelica_string_length(s2);
-  dest = alloc_modelica_string(len1+len2);
-  memcpy(dest, s1, len1);
-  memcpy(dest + len1, s2, len2);
-  return dest;
+    return mmc_alloc_scon(length);
 }
 
 extern int omc__escapedStringLength(const char* str, int nl, int *hasEscape)
@@ -206,7 +152,7 @@ extern char* omc__escapedString(const char* str, int nl)
   if (!hasEscape) {
     return NULL;
   }
-  res = (char*) malloc(len+1);
+  res = (char*) GC_malloc(len+1);
   while(*str) {
     switch (*str) {
       case '"': res[i++] = '\\'; res[i++] = '"'; break;

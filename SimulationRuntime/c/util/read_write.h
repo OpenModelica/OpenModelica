@@ -62,7 +62,7 @@ extern int read_boolean_array(type_description ** descptr, boolean_array_t *arr)
 extern void write_modelica_boolean(type_description *desc, const modelica_boolean *data);
 extern void write_boolean_array(type_description *desc, const boolean_array_t *arr);
 
-extern int read_modelica_string(type_description **descptr, modelica_string_t *str);
+extern int read_modelica_string(type_description **descptr, modelica_string *str);
 extern int read_string_array(type_description ** descptr, string_array_t *arr);
 extern void write_modelica_string(type_description *desc, modelica_string *str);
 extern void write_string_array(type_description *desc, const string_array_t *arr);
@@ -86,8 +86,6 @@ extern type_description *add_modelica_record_member(type_description *desc,
                                              const char *name, size_t nlen);
 
 extern type_description *add_tuple_member(type_description *desc);
-
-extern char *my_strdup(const char *s);
 
 extern int getMyBool(const type_description *desc);
 

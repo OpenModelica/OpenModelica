@@ -38,6 +38,7 @@
 #include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "mixedSystem.h"
+#include "meta/meta_modelica.h"
 
 #include "util/omc_error.h"
 #include "simulation/solver/external_input.h"
@@ -169,8 +170,6 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       }
       /***** End calculation next step size *****/
 
-
-
       /* check for next time event */
       checkForSampleEvent(data, solverInfo);
 
@@ -198,7 +197,6 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
       saveZeroCrossings(data);
       messageClose(LOG_SOLVER);
-
 
       /***** Event handling *****/
       if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);

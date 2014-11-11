@@ -33,6 +33,7 @@
 #include "omc_error.h"
 #include "simulation_result_wall.h"
 #include "rtclock.h"
+#include "meta/meta_modelica.h"
 
 #include <fstream>
 #include <string.h>
@@ -348,7 +349,7 @@ void write_parameter_data(std::ofstream &fp, double t,
   for(i=0;i<modelData->nParametersReal;i++) msgpack_double(fp, sInfo->realParameter[i]);
   for(i=0;i<modelData->nParametersInteger;i++) msgpack_int32(fp, sInfo->integerParameter[i]);
   for(i=0;i<modelData->nParametersBoolean;i++) msgpack_boolean(fp, sInfo->booleanParameter[i]);
-  for(i=0;i<modelData->nParametersString;i++) msgpack_str(fp, sInfo->stringParameter[i]);
+  for(i=0;i<modelData->nParametersString;i++) msgpack_str(fp, MMC_STRINGDATA(sInfo->stringParameter[i]));
 
   long end_pos = fp.tellp();
   fp.seekp(length_pos);
@@ -385,14 +386,18 @@ void recon_wall_emit(simulation_result *self,DATA *data)
     modelData->nVariablesBoolean+modelData->nVariablesString);
 
   msgpack_double(fp, data->localData[0]->timeValue);
-  for(i=0;i<modelData->nVariablesReal;i++)
+  for(i=0;i<modelData->nVariablesReal;i++) {
     msgpack_double(fp, data->localData[0]->realVars[i]);
-  for(i=0;i<modelData->nVariablesInteger;i++)
+  }
+  for(i=0;i<modelData->nVariablesInteger;i++) {
     msgpack_int32(fp, data->localData[0]->integerVars[i]);
-  for(i=0;i<modelData->nVariablesBoolean;i++)
+  }
+  for(i=0;i<modelData->nVariablesBoolean;i++) {
     msgpack_boolean(fp, data->localData[0]->booleanVars[i]);
-  for(i=0;i<modelData->nVariablesString;i++)
-    msgpack_str(fp, data->localData[0]->stringVars[i]);
+  }
+  for(i=0;i<modelData->nVariablesString;i++) {
+    msgpack_str(fp, MMC_STRINGDATA(data->localData[0]->stringVars[i]));
+  }
 
   long end_pos = fp.tellp();
   fp.seekp(length_pos);

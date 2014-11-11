@@ -28,8 +28,6 @@
  *
  */
 
-#define __OPENMODELICA__METAMODELICA
-
 #include "meta_modelica_builtin.h"
 #include "meta_modelica.h"
 #include <float.h>
@@ -649,7 +647,7 @@ modelica_integer tick(void)
 
 void boxptr_print(threadData_t *threadData,modelica_metatype str)
 {
-  fprintf(stdout, "%s", MMC_STRINGDATA(str));
+  fputs(MMC_STRINGDATA(str), stdout);
 }
 
 modelica_real mmc_clock(void)

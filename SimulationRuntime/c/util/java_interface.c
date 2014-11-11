@@ -293,7 +293,7 @@ JNIEnv* getJavaEnv()
     fprintf(stderr, "getenv(OPENMODELICAHOME) failed - Java subsystem can't find the Java runtime...\n");
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
-  openmodelicahome = init_modelica_string(openmodelicahome);
+  openmodelicahome = GC_strdup(openmodelicahome);
 
   classpathEnv = getenv("CLASSPATH");
   if(classpathEnv == NULL)
@@ -510,7 +510,7 @@ void GetFlatJavaStringArray(JNIEnv* env, jobject jarr, modelica_string* base, in
 {
   int i;
   for(i=0; i<num; i++) {
-    base[i] = GetJavaString(env, JavaArrayGet(env,jarr,i));
+    base[i] = mmc_mk_scon(GetJavaString(env, JavaArrayGet(env,jarr,i)));
   }
 }
 
@@ -774,7 +774,7 @@ const char* copyJstring(JNIEnv* env, jobject jstr)
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
 
-  str = init_modelica_string(str_tmp);
+  str = GC_strdup(str_tmp);
   (*env)->ReleaseStringUTFChars(env, jstr, str_tmp);
   return str;
 }
@@ -1084,7 +1084,7 @@ modelica_string GetStackTrace(JNIEnv* env, jobject t)
   mid = (*env)->GetStaticMethodID(env, cls, "getStackTrace", "(Ljava/lang/Throwable;)Ljava/lang/String;");
   CHECK_FOR_JAVA_EXCEPTION(env);
   msg = (*env)->CallStaticObjectMethod(env, cls, mid, t);
-  res = copyJstring(env, msg);
+  res = mmc_mk_scon(copyJstring(env, msg));
 
   (*env)->DeleteLocalRef(env, msg);
   (*env)->DeleteLocalRef(env, cls);

@@ -32,20 +32,21 @@
 #include "string_array.h"
 #include "memory_pool.h"
 #include "index_spec.h"
+#include "meta/meta_modelica.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
 
-static inline modelica_string_t *string_ptrget(const string_array_t *a, size_t i)
+static inline modelica_string *string_ptrget(const string_array_t *a, size_t i)
 {
-    return ((modelica_string_t *) a->data) + i;
+    return ((modelica_string *) a->data) + i;
 }
 
-static inline void string_set(string_array_t *a, size_t i, modelica_string_t r)
+static inline void string_set(string_array_t *a, size_t i, modelica_string r)
 {
-    ((modelica_string_t *) a->data)[i] = r;
+    ((modelica_string *) a->data)[i] = r;
 }
 
 /** function: string_array_create
@@ -53,7 +54,7 @@ static inline void string_set(string_array_t *a, size_t i, modelica_string_t r)
  ** sets all fields in a string_array, i.e. data, ndims and dim_size.
  **/
 
-void string_array_create(string_array_t *dest, modelica_string_t *data,
+void string_array_create(string_array_t *dest, modelica_string *data,
                          int ndims, ...)
 {
     va_list ap;
@@ -102,7 +103,7 @@ void copy_string_array_data(const string_array_t source, string_array_t *dest)
     }
 }
 
-void copy_string_array_data_mem(const string_array_t source, modelica_string_t *dest)
+void copy_string_array_data_mem(const string_array_t source, modelica_string *dest)
 {
     size_t i, nr_of_elements;
 
@@ -126,7 +127,7 @@ void copy_string_array(const string_array_t source, string_array_t *dest)
  a[1:3] := b;
 */
 
-static inline modelica_string_t *calc_string_index_spec(int ndims, const _index_t *idx_vec,
+static inline modelica_string *calc_string_index_spec(int ndims, const _index_t *idx_vec,
                                                         const string_array_t *arr,
                                                         const index_spec_t *spec)
 {
@@ -134,14 +135,14 @@ static inline modelica_string_t *calc_string_index_spec(int ndims, const _index_
 }
 
 /* Uses zero based indexing */
-modelica_string_t *calc_string_index(int ndims, const _index_t *idx_vec,
+modelica_string *calc_string_index(int ndims, const _index_t *idx_vec,
                                      const string_array_t *arr)
 {
     return string_ptrget(arr, calc_base_index(ndims, idx_vec, arr));
 }
 
 /* One based index*/
-modelica_string_t *calc_string_index_va(const string_array_t *source, int ndims,
+modelica_string *calc_string_index_va(const string_array_t *source, int ndims,
                                         va_list ap)
 {
     return string_ptrget(source, calc_base_index_va(source, ndims, ap));
@@ -151,7 +152,7 @@ void print_string_matrix(const string_array_t *source)
 {
     if(source->ndims == 2) {
         _index_t i,j;
-        modelica_string_t value;
+        modelica_string value;
 
         printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
         for(i = 0; i < source->dim_size[0]; ++i) {
@@ -169,17 +170,17 @@ void print_string_matrix(const string_array_t *source)
 void print_string_array(const string_array_t *source)
 {
     _index_t i;
-    modelica_string_t *data;
+    modelica_string *data;
     assert(base_array_ok(source));
 
-    data = (modelica_string_t *) source->data;
+    data = (modelica_string *) source->data;
     if(source->ndims == 1) {
         for(i = 1; i < source->dim_size[0]; ++i) {
-            printf("%s, ", (*data));
+            printf("%s, ", MMC_STRINGDATA(*data));
             ++data;
         }
         if(0 < source->dim_size[0]) {
-            printf("%s", (*data));
+            printf("%s", MMC_STRINGDATA(*data));
         }
     } else if(source->ndims > 1) {
         size_t k, n;
@@ -190,11 +191,11 @@ void print_string_array(const string_array_t *source)
         for(k = 0; k < n; ++k) {
             for(i = 0; i < source->dim_size[1]; ++i) {
                 for(j = 0; j < source->dim_size[0]; ++j) {
-                    printf("%s, ", (*data));
+                    printf("%s, ", MMC_STRINGDATA(*data));
                     ++data;
                 }
                 if(0 < source->dim_size[0]) {
-                    printf("%s", (*data));
+                    printf("%s", MMC_STRINGDATA(*data));
                 }
                 printf("\n");
             }
@@ -205,14 +206,14 @@ void print_string_array(const string_array_t *source)
     }
 }
 
-void put_string_element(modelica_string_t value, int i1, string_array_t *dest)
+void put_string_element(modelica_string value, int i1, string_array_t *dest)
 {
     /* Assert that dest has correct dimension */
     /* Assert that i1 is a valid index */
     string_set(dest, i1, value);
 }
 
-void put_string_matrix_element(modelica_string_t value, int r, int c,
+void put_string_matrix_element(modelica_string value, int r, int c,
                                string_array_t* dest)
 {
     /* Assert that dest hast correct dimension */
@@ -521,7 +522,7 @@ void array_alloc_string_array(string_array_t* dest, int n,
 }
 
 void array_scalar_string_array(string_array_t* dest, int n,
-                               modelica_string_t first, ...)
+                               modelica_string first, ...)
 {
     int i;
     va_list ap;
@@ -531,7 +532,7 @@ void array_scalar_string_array(string_array_t* dest, int n,
     put_string_element(first, 0, dest);
     va_start(ap,first);
     for(i = 0; i < n; ++i) {
-        put_string_element(va_arg(ap, modelica_string_t),i,dest);
+        put_string_element(va_arg(ap, modelica_string),i,dest);
     }
     va_end(ap);
 }
@@ -542,7 +543,7 @@ void array_scalar_string_array(string_array_t* dest, int n,
  */
 
 void array_alloc_scalar_string_array(string_array_t* dest, int n,
-                                     modelica_string_t first,...)
+                                     modelica_string first,...)
 {
     int i;
     va_list ap;
@@ -550,28 +551,28 @@ void array_alloc_scalar_string_array(string_array_t* dest, int n,
     va_start(ap,first);
     put_string_element(first,0,dest);
     for(i = 1; i < n; ++i) {
-        put_string_element(va_arg(ap, modelica_string_t),i,dest);
+        put_string_element(va_arg(ap, modelica_string),i,dest);
     }
     va_end(ap);
 }
 
-modelica_string_t* string_array_element_addr1(const string_array_t * source,int ndims,
+modelica_string* string_array_element_addr1(const string_array_t * source,int ndims,
                                               int dim1)
 {
     return string_ptrget(source, dim1 - 1);
 }
 
-modelica_string_t* string_array_element_addr2(const string_array_t * source,int ndims,
+modelica_string* string_array_element_addr2(const string_array_t * source,int ndims,
                                               int dim1,int dim2)
 {
     return string_ptrget(source, ((dim1 - 1) * source->dim_size[1]) + (dim2 - 1));
 }
 
-modelica_string_t* string_array_element_addr(const string_array_t * source,
+modelica_string* string_array_element_addr(const string_array_t * source,
                                              int ndims,...)
 {
     va_list ap;
-    modelica_string_t* tmp;
+    modelica_string* tmp;
 
     va_start(ap,ndims);
     tmp = string_ptrget(source, calc_base_index_va(source, ndims, ap));
@@ -754,7 +755,7 @@ void promote_string_array(const string_array_t * a, int n,string_array_t* dest)
  * promotes a scalar value to an n dimensional array.
  */
 
-void promote_scalar_string_array(modelica_string_t s,int n,
+void promote_scalar_string_array(modelica_string s,int n,
                                  string_array_t* dest)
 {
     int i;
@@ -788,7 +789,7 @@ void size_string_array(const string_array_t * a, integer_array_t* dest)
     }
 }
 
-modelica_string_t scalar_string_array(const string_array_t * a)
+modelica_string scalar_string_array(const string_array_t * a)
 {
     assert(base_array_ok(a));
     assert(base_array_one_element_ok(a));
@@ -808,7 +809,7 @@ void vector_string_array(const string_array_t * a, string_array_t* dest)
     }
 }
 
-void vector_string_scalar(modelica_string_t a,string_array_t* dest)
+void vector_string_scalar(modelica_string a,string_array_t* dest)
 {
     /* Assert that dest is a 1-vector */
     string_set(dest, 0, a);
@@ -828,7 +829,7 @@ void matrix_string_array(const string_array_t * a, string_array_t* dest)
     }
 }
 
-void matrix_string_scalar(modelica_string_t a, string_array_t* dest)
+void matrix_string_scalar(modelica_string a, string_array_t* dest)
 {
     dest->ndims = 2;
     dest->dim_size[0] = 1;
@@ -887,7 +888,7 @@ void transpose_string_array(const string_array_t * a, string_array_t* dest)
     }
 }
 
-void fill_string_array(string_array_t* dest,modelica_string_t s)
+void fill_string_array(string_array_t* dest,modelica_string s)
 {
     size_t nr_of_elements;
     size_t i;
@@ -924,7 +925,7 @@ void convert_alloc_string_array_from_f77(const string_array_t * a,
     transpose_string_array(a, dest);
 }
 
-void fill_alloc_string_array(string_array_t* dest, modelica_string_t value, int ndims, ...)
+void fill_alloc_string_array(string_array_t* dest, modelica_string value, int ndims, ...)
 {
   size_t i;
   size_t elements = 0;
@@ -936,5 +937,26 @@ void fill_alloc_string_array(string_array_t* dest, modelica_string_t value, int 
 
   for(i = 0; i < elements; ++i) {
       string_set(dest, i, value);
+  }
+}
+
+const char** data_of_string_c89_array(const string_array_t *a)
+{
+  long i;
+  size_t sz = base_array_nr_of_elements(*a);
+  const char **res = (const char**) GC_malloc(sz*sizeof(const char*));
+  for (i=0; i<sz; i++) {
+    res[i] = MMC_STRINGDATA(((void**)a->data)[i]);
+  }
+  return res;
+}
+
+void unpack_string_array(const string_array_t *a)
+{
+  size_t sz = base_array_nr_of_elements(*a);
+  long i;
+  void **data = (void**) a->data;
+  for (i=0; i<sz; i++) {
+    data[i] = mmc_mk_scon(data[i]);
   }
 }

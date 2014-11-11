@@ -353,7 +353,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   regex_t myregex;
   int flags = REG_EXTENDED;
   int rc;
-  std::string varfilter(variableFilter);
+  std::string varfilter(MMC_STRINGDATA(variableFilter));
   string tmp = ("^(" + varfilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
   if (modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name, "$dummy")) {
@@ -524,7 +524,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   if(omc_flag[FLAG_S]) {
     const string *method = new string(omc_flagValue[FLAG_S]);
     if(method) {
-      data->simulationInfo.solverMethod = method->c_str();
+      data->simulationInfo.solverMethod = mmc_mk_scon(method->c_str());
       infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
     }
   }
@@ -534,7 +534,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string result_file_cstr;
   if(!result_file)
   {
-    result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + data->simulationInfo.outputFormat;
+    result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + MMC_STRINGDATA(data->simulationInfo.outputFormat);
     if(data->modelData.resultFileName)
       free(data->modelData.resultFileName);
     data->modelData.resultFileName = (char*)malloc((strlen(result_file_cstr.c_str())+1)*sizeof(char));
@@ -605,7 +605,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     rt_accumulate(SIM_TIMER_TOTAL);
     const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
     retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
-        data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, data->modelData.resultFileName) && retVal;
+        MMC_STRINGDATA(data->simulationInfo.solverMethod), MMC_STRINGDATA(data->simulationInfo.outputFormat), data->modelData.resultFileName) && retVal;
     retVal = printModelInfoJSON(data, jsonInfo.c_str(), data->modelData.resultFileName) && retVal;
   }
 
@@ -628,40 +628,39 @@ int initializeResultData(DATA* simData, int cpuTime)
   sim_result.filename = strdup(simData->modelData.resultFileName);
   sim_result.numpoints = maxSteps;
   sim_result.cpuTime = cpuTime;
-  if(isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
+  if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
     /* Default is set to noemit */
-  } else if(0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("csv", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
     sim_result.init = omc_csv_init;
     sim_result.emit = omc_csv_emit;
     /* sim_result.writeParameterData = omc_csv_writeParameterData; */
     sim_result.free = omc_csv_free;
-  } else if(0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("mat", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
     sim_result.init = mat4_init;
     sim_result.emit = mat4_emit;
     sim_result.writeParameterData = mat4_writeParameterData;
     sim_result.free = mat4_free;
     resultFormatHasCheapAliasesAndParameters = 1;
-  } else if(0 == strcmp("wall", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("wall", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
     sim_result.init = recon_wall_init;
     sim_result.emit = recon_wall_emit;
     sim_result.writeParameterData = recon_wall_writeParameterData;
     sim_result.free = recon_wall_free;
     resultFormatHasCheapAliasesAndParameters = 1;
-  } else if(0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("plt", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
     sim_result.init = plt_init;
     sim_result.emit = plt_emit;
     /* sim_result.writeParameterData = plt_writeParameterData; */
     sim_result.free = plt_free;
   }
   //NEW interactive
-  else if(0 == strcmp("ia", simData->simulationInfo.outputFormat))
-  {
+  else if(0 == strcmp("ia", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
     sim_result.init = ia_init;
     sim_result.emit = ia_emit;
     //sim_result.writeParameterData = ia_writeParameterData;
     sim_result.free = ia_free;
   } else {
-    cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
+    cerr << "Unknown output format: " << MMC_STRINGDATA(simData->simulationInfo.outputFormat) << endl;
     return 1;
   }
   initializeOutputFilter(&(simData->modelData), simData->simulationInfo.variableFilter, resultFormatHasCheapAliasesAndParameters);
@@ -698,19 +697,16 @@ int callSolver(DATA* simData, string init_initMethod,
     return -1;
   }
 
-  if(std::string("") == simData->simulationInfo.solverMethod)
+  if(std::string("") == MMC_STRINGDATA(simData->simulationInfo.solverMethod)) {
     solverID = S_DASSL;
-  else
-  {
-    for(i=1; i<S_MAX; ++i)
-    {
-      if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo.solverMethod)
+  } else {
+    for(i=1; i<S_MAX; ++i) {
+      if(std::string(SOLVER_METHOD_NAME[i]) == MMC_STRINGDATA(simData->simulationInfo.solverMethod))
         solverID = i;
     }
   }
 
-  if(S_UNKNOWN == solverID)
-  {
+  if(S_UNKNOWN == solverID) {
     warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", simData->simulationInfo.solverMethod);
     warningStreamPrint(LOG_STDOUT, 0, "current options are:");
     for(i=1; i<S_MAX; ++i) {
@@ -718,19 +714,15 @@ int callSolver(DATA* simData, string init_initMethod,
     }
     throwStreamPrint(simData->threadData,"see last warning");
     retVal = 1;
-  }
-  else
-  {
+  } else {
     infoStreamPrint(LOG_SOLVER, 0, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
     /* special solvers */
 #ifdef _OMC_QSS_LIB
-    if(S_QSS == solverID)
-    {
+    if(S_QSS == solverID) {
       retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
                         simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
                         simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
-    }
-    else /* standard solver interface */
+    } else /* standard solver interface */
 #endif
       retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
   }
@@ -883,8 +875,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     sim_communication_port_open &= sim_communication_port.create();
     sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
 
-    if(0 != strcmp("ia", data->simulationInfo.outputFormat))
-    {
+    if(0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat))) {
       communicateStatus("Starting", 0.0);
     }
   }

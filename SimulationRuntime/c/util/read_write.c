@@ -41,14 +41,6 @@ extern "C"
 #include "meta_modelica.h"
 #include <string.h>
 
-char *my_strdup(const char *s) {
-    char *p = (char*)malloc(strlen(s) + 1);
-    if(p != NULL) {
-        strcpy(p, s);
-    }
-    return p;
-}
-
 int getMyBool(const type_description *desc)
 {
   switch (desc->type) {
@@ -76,7 +68,7 @@ void puttype(const type_description *desc)
     fprintf(stderr, "BOOL: %c\n", desc->data.boolean ? 't' : 'f');
     break;
   case TYPE_DESC_STRING:
-    fprintf(stderr, "STR: '%s'\n", desc->data.string);
+    fprintf(stderr, "STR: '%s'\n", MMC_STRINGDATA(desc->data.string));
     break;
   case TYPE_DESC_TUPLE: {
       size_t e;
@@ -152,7 +144,7 @@ void puttype(const type_description *desc)
         fprintf(stderr, "\t[");
         for(e = 0; e < desc->data.string_array.dim_size[0]; ++e) {
           fprintf(stderr, "%s, ",
-                ((modelica_string_t *) desc->data.string_array.data)[e]);
+                MMC_STRINGDATA(((modelica_string *) desc->data.string_array.data)[e]));
         }
         fprintf(stderr, "]\n");
       }
@@ -213,11 +205,6 @@ void free_type_description(type_description *desc)
   case TYPE_DESC_BOOL:
     break;
   case TYPE_DESC_STRING:
-    if(desc->retval) {
-      free((char*)desc->data.string);
-    } else {
-      free_modelica_string((char**)&(desc->data.string));
-    }
     break;
   case TYPE_DESC_REAL_ARRAY:
     if(desc->retval) {
@@ -241,12 +228,6 @@ void free_type_description(type_description *desc)
     if(desc->retval) {
       size_t i, cnt;
       cnt = base_array_nr_of_elements(desc->data.string_array);
-      for(i = 0; i < cnt; ++i) {
-        modelica_string_t s = ((modelica_string_t*)desc->data.string_array.data)[i];
-        if(s != NULL) {
-          free(s);
-        }
-      }
       free(desc->data.string_array.dim_size);
       free(desc->data.string_array.data);
     }
@@ -545,18 +526,16 @@ void write_string_array(type_description *desc, const string_array_t *arr)
   if(desc->retval) {
     size_t i;
     size_t nr_elements;
-    modelica_string_t *dst = NULL, *src = NULL;
+    modelica_string *dst = NULL, *src = NULL;
     desc->data.string_array.ndims = arr->ndims;
     desc->data.string_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
     memcpy(desc->data.string_array.dim_size, arr->dim_size, sizeof(*(arr->dim_size)) * arr->ndims);
     nr_elements = base_array_nr_of_elements(*arr);
     desc->data.string_array.data = malloc(sizeof(modelica_string)* nr_elements);
-    dst = (modelica_string_t*)desc->data.string_array.data;
-    src = (modelica_string_t*)arr->data;
+    dst = (modelica_string*)desc->data.string_array.data;
+    src = (modelica_string*)arr->data;
     for(i = 0; i < nr_elements; ++i) {
-      size_t len = modelica_string_length(*src);
-      *dst = (modelica_string_t)malloc(len + 1);
-      memcpy(*dst, *src, len + 1);
+      *dst = *src;
       ++src;
       ++dst;
     }
@@ -565,12 +544,12 @@ void write_string_array(type_description *desc, const string_array_t *arr)
   }
 }
 
-int read_modelica_string(type_description **descptr, modelica_string_t *str)
+int read_modelica_string(type_description **descptr, modelica_string *str)
 {
   type_description *desc = (*descptr)++;
   switch (desc->type) {
   case TYPE_DESC_STRING:
-    *str = (char*)desc->data.string;
+    *str = desc->data.string;
     return 0;
   default:
     break;
@@ -588,11 +567,9 @@ void write_modelica_string(type_description *desc, modelica_string *str)
   desc->type = TYPE_DESC_STRING;
   if(desc->retval) {
     /* Can't use memory pool */
-    size_t len = modelica_string_length(*str);
-    desc->data.string = (modelica_string_const)malloc(len + 1);
-    memcpy((char*)desc->data.string, *str, len + 1);
+    desc->data.string = *str;
   } else {
-    *str = copy_modelica_string(desc->data.string);
+    *str = desc->data.string;
   }
 }
 
@@ -657,7 +634,7 @@ int read_modelica_metatype(type_description **descptr, modelica_metatype *ut)
     *ut = mmc_mk_rcon(desc->data.real);
     return 0;
   case TYPE_DESC_STRING:
-    *ut = mmc_mk_scon(desc->data.string);
+    *ut = desc->data.string;
     return 0;
   case TYPE_DESC_BOOL:
     *ut = mmc_mk_icon((desc->data.boolean == 0) ? 0 : 1);
@@ -713,7 +690,7 @@ static int read_modelica_record_helper(type_description **descptr, va_list *arg)
         read_boolean_array(&elem, va_arg(*arg, boolean_array_t *));
         break;
       case TYPE_DESC_STRING:
-        read_modelica_string(&elem, va_arg(*arg, modelica_string_t *));
+        read_modelica_string(&elem, va_arg(*arg, modelica_string *));
         break;
       case TYPE_DESC_STRING_ARRAY:
         read_string_array(&elem, va_arg(*arg, string_array_t *));

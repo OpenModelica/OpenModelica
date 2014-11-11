@@ -761,7 +761,7 @@ static void writeOutputVars(char* names, DATA* data)
 
     for(i = 0; i < data->modelData.nParametersString; i++)
       if(!strcmp(p, data->modelData.stringParameterData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, data->simulationInfo.stringParameter[i]);
+        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA(data->simulationInfo.stringParameter[i]));
 
     /* move to next */
     p = strtok(NULL, ",");

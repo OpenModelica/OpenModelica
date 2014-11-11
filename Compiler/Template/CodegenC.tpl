@@ -2218,7 +2218,7 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
       <<
       <%preExp%>
       FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
-      omc_terminate(info, <%msgVar%>);
+      omc_terminate(info, MMC_STRINGDATA(<%msgVar%>));
       >>
     case ASSERT(source=SOURCE(info=info)) then
       assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, &auxFunction, info)
@@ -3077,6 +3077,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data)
   {
     int equationIndexes[1] = {0};<%/*reinits may use equation indexes, even though it has no equation...*/%>
+    <%addRootsTempArray()%>
     <%varDecls%>
 
     TRACE_PUSH
@@ -4588,9 +4589,7 @@ end simulationInitFile;
 template commonHeader(String filePrefix)
 ::=
   <<
-  <% if acceptMetaModelicaGrammar() then "#define __OPENMODELICA__METAMODELICA"%>
-  <% if acceptMetaModelicaGrammar() then "#include \"meta/meta_modelica.h\"" %>
-
+  #include "meta/meta_modelica.h"
   #include "util/modelica.h"
   #include <stdio.h>
   #include <stdlib.h>
@@ -5624,7 +5623,7 @@ template generateInFunc(Text fname, list<Variable> functionArguments, list<Varia
   DLLExport
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
-    <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init();" %>
+    if (!mmc_GC_state) mmc_GC_init();
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%outVars |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
@@ -6812,16 +6811,16 @@ case SIMEXTARG(outputIndex=oi, isArray=true, cref=c, type_=ty) then
   match expTypeShort(ty)
   case "integer" then
   'unpack_integer_array(&<%contextCref(c,contextFunction,&auxFunction)%>);'
+  case "string" then
+  'unpack_string_array(&<%contextCref(c,contextFunction,&auxFunction)%>);'
   else ""
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     let cr = '<%extVarName(c)%>'
     <<
     <%contextCref(c,contextFunction,&auxFunction)%> = (<%expTypeModelica(ty)%>)<%
-      if acceptMetaModelicaGrammar() then
-        (match ty
+      match ty
           case T_STRING(__) then 'mmc_mk_scon(<%cr%>)'
-          else cr)
-      else cr %>;
+          else cr%>;
     >>
 end extFunCallVarcopy;
 
@@ -6850,13 +6849,10 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunctio
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
     let name = contextCref(c,contextFunction,&auxFunction)
     let shortTypeStr = expTypeShort(t)
-    '(<%extType(t,isInput,true)%>) data_of_<%shortTypeStr%>_array(&(<%name%>))'
+    '(<%extType(t,isInput,true)%>) data_of_<%shortTypeStr%>_c89_array(&(<%name%>))'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = match t case T_STRING(__) then contextCref(c,contextFunction,&auxFunction) else extVarName(c)
-    if acceptMetaModelicaGrammar() then
-      (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else cr)
-    else
-      cr
+    (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else cr)
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
     '&<%extVarName(c)%>'
   case SIMEXTARGEXP(__) then
@@ -6880,7 +6876,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunc
     '(int*) &<%contextCref(c,contextFunction,&auxFunction)%><%suffix%>'
   case SIMEXTARG(cref=c, outputIndex=oi, type_ = T_STRING(__)) then
     // modelica_string SHOULD NOT BE PREFIXED by &!
-    '(char*)<%contextCref(c,contextFunction,&auxFunction)%>'
+    '(char*)MMC_STRINGDATA(<%contextCref(c,contextFunction,&auxFunction)%>)'
   case SIMEXTARG(cref=c, outputIndex=oi, type_=t) then
     // Always prefix fortran arguments with &.
     let suffix = if oi then "_ext"
@@ -6890,7 +6886,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunc
     let texp = daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
     let tvar = tempDecl(expTypeFromExpFlag(exp,8),&varDecls)
     let &preExp += '<%tvar%> = <%texp%>;<%\n%>'
-    '(char*)<%tvar%>'
+    '(char*)MMC_STRINGDATA(<%tvar%>)'
   case SIMEXTARGEXP(__) then
     daeExternalF77Exp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
   case SIMEXTARGSIZE(cref=c) then
@@ -7580,7 +7576,9 @@ template algStmtForGeneric(DAE.Statement stmt, Context context, Text &varDecls, 
 ::=
 match stmt
 case STMT_FOR(__) then
-  let iterType = expType(type_, iterIsArray)
+  let iterType = match expType(type_, iterIsArray)
+    case "modelica_string" then "modelica_metatype"
+    case s then s
   let arrayType = expTypeArray(type_)
   let tvar = match iterType
     case "modelica_metatype"
@@ -7678,7 +7676,7 @@ case STMT_TERMINATE(__) then
   <<
   <%preExp%>
   FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
-  omc_terminate(info, <%msgVar%>);
+  omc_terminate(info, MMC_STRINGDATA(<%msgVar%>));
   >>
 end algStmtTerminate;
 
@@ -7949,7 +7947,7 @@ end daeExternalF77Exp;
 template daeExpSconst(String string)
  "Generates code for a string constant."
 ::=
-  '"<%Util.escapeModelicaStringToCString(string)%>"'
+  'mmc_mk_scon("<%Util.escapeModelicaStringToCString(string)%>")'
 end daeExpSconst;
 
 
@@ -8348,13 +8346,8 @@ case BINARY(__) then
   let e2 = daeExp(exp2, context, &preExp, &varDecls, &auxFunction)
   match operator
   case ADD(ty = T_STRING(__)) then
-    let tmpStr = if acceptMetaModelicaGrammar()
-                 then tempDecl("modelica_metatype", &varDecls)
-                 else tempDecl("modelica_string", &varDecls)
-    let &preExp += if acceptMetaModelicaGrammar() then
-        '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
-      else
-        '<%tmpStr%> = cat_modelica_string(<%e1%>,<%e2%>);<%\n%>'
+    let tmpStr = tempDecl("modelica_metatype", &varDecls)
+    let &preExp += '<%tmpStr%> = stringAppend(<%e1%>,<%e2%>);<%\n%>'
     tmpStr
   case ADD(__) then '(<%e1%> + <%e2%>)'
   case SUB(__) then '(<%e1%> - <%e2%>)'
@@ -8901,7 +8894,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
 
   case CALL(path=IDENT(name="print"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
-    if acceptMetaModelicaGrammar() then 'print(<%var1%>)' else 'fputs(<%var1%>,stdout)'
+    'fputs(MMC_STRINGDATA(<%var1%>),stdout)'
 
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
@@ -10321,7 +10314,7 @@ template expTypeShort(DAE.Type type)
   match type
   case T_INTEGER(__)       then "integer"
   case T_REAL(__)          then "real"
-  case T_STRING(__)        then if acceptMetaModelicaGrammar() then "metatype" else "string"
+  case T_STRING(__)        then "string"
   case T_BOOL(__)          then "boolean"
   case T_ENUMERATION(__)   then "integer"
   case T_SUBTYPE_BASIC(__) then expTypeShort(complexType)
@@ -10475,10 +10468,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   match exp
   case ICONST(__)        then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
   case RCONST(__)        then match flag case 1 then "real" else "modelica_real"
-  case SCONST(__)        then if acceptMetaModelicaGrammar() then
-                                (match flag case 1 then "metatype" else "modelica_metatype")
-                              else
-                                (match flag case 1 then "string" case 2 then "modelica_string_t" else "modelica_string")
+  case SCONST(__)        then match flag case 1 then "string" else "modelica_string"
   case BCONST(__)        then match flag case 1 then "boolean" else "modelica_boolean"
   case ENUM_LITERAL(__)  then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
   case e as BINARY(__)
@@ -10776,9 +10766,7 @@ end assertCommon;
 
 template expToFormatString(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
-  let pre = (match typeof(exp) case T_STRING(__) then (if acceptMetaModelicaGrammar() then "MMC_STRINGDATA("))
-  let post = (if pre then ")")
-  pre + daeExp(exp, context, &preExp, &varDecls, &auxFunction) + post
+  'MMC_STRINGDATA(<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
 end expToFormatString;
 
 template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preExpMsg, Text &varDecls, builtin.SourceInfo info)
@@ -10812,7 +10800,6 @@ template literalExpConst(Exp lit, Integer litindex, Text &preLit) "These should 
   match lit
   case SCONST(__) then
     let escstr = Util.escapeModelicaStringToCString(string)
-    if acceptMetaModelicaGrammar() then
       /* TODO: Change this when OMC takes constant input arguments (so we cannot write to them)
                The cost of not doing this properly is small (<257 bytes of constants)
       match unescapedStringLength(escstr)
@@ -10823,11 +10810,6 @@ template literalExpConst(Exp lit, Integer litindex, Text &preLit) "These should 
       #define <%name%>_data "<%escstr%>"
       static const MMC_DEFSTRINGLIT(<%tmp%>,<%unescapedStringLength(escstr)%>,<%name%>_data);
       #define <%name%> MMC_REFSTRINGLIT(<%tmp%>)
-      >>
-    else
-      <<
-      #define <%name%>_data "<%escstr%>"
-      static const char <%name%>[<%intAdd(1,unescapedStringLength(escstr))%>] = <%name%>_data;
       >>
   case lit as MATRIX(ty=ty as T_ARRAY(__))
   case lit as ARRAY(ty=ty as T_ARRAY(__)) then

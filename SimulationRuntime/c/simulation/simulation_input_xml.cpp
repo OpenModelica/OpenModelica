@@ -44,6 +44,7 @@
 #include "simulation_runtime.h"
 #include "options.h"
 #include "omc_error.h"
+#include "meta/meta_modelica.h"
 
 #include <fstream>
 #include <iomanip>
@@ -114,7 +115,8 @@ void read_value(std::string s, int* res);
 /* reads std::string value from a string */
 void read_value(std::string s, std::string* str);
 /* reads modelica_string value from a string */
-void read_value(std::string s, modelica_string* str);
+void read_value(std::string s, const char** str);
+void read_value_mm(std::string s, modelica_metatype *str);
 /* reads boolean value from a string */
 void read_value(std::string s, modelica_boolean* str);
 
@@ -213,7 +215,7 @@ void read_var_info(omc_ScalarVariable &v, VAR_INFO &info)
   debugStreamPrint(LOG_DEBUG, 0, "read for %s id %d from setup file", info.name, info.id);
   read_value(v["description"], &info.comment);
   debugStreamPrint(LOG_DEBUG, 0, "read for %s description \"%s\" from setup file", info.name, info.comment);
-  read_value(v["fileName"], (modelica_string*) &info.info.filename);
+  read_value(v["fileName"], &info.info.filename);
   debugStreamPrint(LOG_DEBUG, 0, "read for %s filename %s from setup file", info.name, info.info.filename);
   read_value(v["startLine"], (modelica_integer*)&(info.info.lineStart));
   debugStreamPrint(LOG_DEBUG, 0, "read for %s lineStart %d from setup file", info.name, info.info.lineStart);
@@ -264,9 +266,9 @@ void read_var_attribute(omc_ScalarVariable &v, BOOLEAN_ATTRIBUTE &attribute)
 void read_var_attribute(omc_ScalarVariable &v, STRING_ATTRIBUTE &attribute)
 {
   read_value(v["useStart"], &attribute.useStart);
-  read_value(v["start"], &attribute.start);
+  read_value_mm(v["start"], &attribute.start);
 
-  infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", v["name"].c_str(), attribute.useStart?"":"{", attribute.start, attribute.useStart?"":"}");
+  infoStreamPrint(LOG_DEBUG, 0, "String %s(%sstart=%s%s)", v["name"].c_str(), attribute.useStart?"":"{", MMC_STRINGDATA(attribute.start), attribute.useStart?"":"}");
 }
 
 /* \brief
@@ -386,13 +388,13 @@ void read_input_xml(MODEL_DATA* modelData,
   read_value(mi.de["tolerance"], &(simulationInfo->tolerance), 1e-5);
   infoStreamPrint(LOG_SIMULATION, 0, "tolerance = %g", simulationInfo->tolerance);
 
-  read_value(mi.de["solver"], &simulationInfo->solverMethod);
+  read_value_mm(mi.de["solver"], &simulationInfo->solverMethod);
   infoStreamPrint(LOG_SIMULATION, 0, "solver method: %s", simulationInfo->solverMethod);
 
-  read_value(mi.de["outputFormat"], &(simulationInfo->outputFormat));
+  read_value_mm(mi.de["outputFormat"], &(simulationInfo->outputFormat));
   infoStreamPrint(LOG_SIMULATION, 0, "output format: %s", simulationInfo->outputFormat);
 
-  read_value(mi.de["variableFilter"], &(simulationInfo->variableFilter));
+  read_value_mm(mi.de["variableFilter"], &(simulationInfo->variableFilter));
   infoStreamPrint(LOG_SIMULATION, 0, "variable filter: %s", simulationInfo->variableFilter);
 
   read_value(mi.md["OPENMODELICAHOME"], &simulationInfo->OPENMODELICAHOME);
@@ -685,7 +687,7 @@ inline void read_value(std::string s, std::string* str)
 }
 
 /* reads modelica_string value from a string */
-inline void read_value(std::string s, modelica_string* str)
+inline void read_value(std::string s, const char **str)
 {
   if(str == NULL)
   {
@@ -693,6 +695,15 @@ inline void read_value(std::string s, modelica_string* str)
     return;
   }
   *str = strdup(s.c_str());
+}
+
+inline void read_value_mm(std::string s, modelica_string *str)
+{
+  if(str == NULL) {
+    warningStreamPrint(LOG_SIMULATION, 0, "error read_value, no data allocated for storing string");
+    return;
+  }
+  *str = mmc_mk_scon(s.c_str());
 }
 
 /* reads double value from a string */

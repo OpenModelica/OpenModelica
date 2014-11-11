@@ -36,13 +36,13 @@
 #include "base_array.h"
 
 /* Indexing */
-static OMC_INLINE modelica_string_t string_get(const string_array_t a, size_t i)
+static OMC_INLINE modelica_string string_get(const string_array_t a, size_t i)
 {
-    return ((modelica_string_t *) a.data)[i];
+    return ((modelica_string *) a.data)[i];
 }
 
 /* Setting the fields of a string_array */
-extern void string_array_create(string_array_t *dest, modelica_string_t *data, int ndims, ...);
+extern void string_array_create(string_array_t *dest, modelica_string *data, int ndims, ...);
 
 /* Allocation of a vector */
 extern void simple_alloc_1d_string_array(string_array_t* dest, int n);
@@ -51,7 +51,7 @@ extern void simple_alloc_1d_string_array(string_array_t* dest, int n);
 extern void simple_alloc_2d_string_array(string_array_t *dest, int r, int c);
 
 extern void alloc_string_array(string_array_t *dest, int ndims, ...);
-extern void fill_alloc_string_array(string_array_t* dest, modelica_string_t value, int ndims, ...);
+extern void fill_alloc_string_array(string_array_t* dest, modelica_string value, int ndims, ...);
 
 /* Allocation of string data */
 extern void alloc_string_array_data(string_array_t* a);
@@ -68,17 +68,17 @@ static inline void clone_string_array_spec(const string_array_t * src,
 extern void copy_string_array_data(const string_array_t source, string_array_t* dest);
 
 /* Copy string data given memory ptr*/
-extern void copy_string_array_data_mem(const string_array_t source,modelica_string_t* dest);
+extern void copy_string_array_data_mem(const string_array_t source,modelica_string* dest);
 
 /* Copy string array*/
 extern void copy_string_array(const string_array_t source, string_array_t* dest);
 
-extern modelica_string_t* calc_string_index(int ndims, const _index_t* idx_vec, const string_array_t * arr);
-extern modelica_string_t* calc_string_index_va(const string_array_t * source,int ndims,
+extern modelica_string* calc_string_index(int ndims, const _index_t* idx_vec, const string_array_t * arr);
+extern modelica_string* calc_string_index_va(const string_array_t * source,int ndims,
                                                va_list ap);
 
-extern void put_string_element(modelica_string_t value,int i1,string_array_t* dest);
-extern void put_string_matrix_element(modelica_string_t value, int r, int c,
+extern void put_string_element(modelica_string value,int i1,string_array_t* dest);
+extern void put_string_matrix_element(modelica_string value, int r, int c,
                                       string_array_t* dest);
 
 extern void print_string_matrix(const string_array_t * source);
@@ -128,15 +128,15 @@ extern void array_alloc_string_array(string_array_t* dest,int n,
 
 /* array(s1,s2,s3)  for scalars s1,s2,s3 */
 extern void array_scalar_string_array(string_array_t* dest,int n,
-                                      modelica_string_t first,...);
+                                      modelica_string first,...);
 extern void array_alloc_scalar_string_array(string_array_t* dest,int n,
-                                            modelica_string_t first,...);
+                                            modelica_string first,...);
 
-extern modelica_string_t* string_array_element_addr(const string_array_t * source,int ndims,
+extern modelica_string* string_array_element_addr(const string_array_t * source,int ndims,
                                                     ...);
-extern modelica_string_t* string_array_element_addr1(const string_array_t * source,int ndims,
+extern modelica_string* string_array_element_addr1(const string_array_t * source,int ndims,
                                                      int dim1);
-extern modelica_string_t* string_array_element_addr2(const string_array_t * source,int ndims,
+extern modelica_string* string_array_element_addr2(const string_array_t * source,int ndims,
                                                      int dim1,int dim2);
 
 extern void cat_string_array(int k,string_array_t* dest, int n,
@@ -145,26 +145,27 @@ extern void cat_alloc_string_array(int k,string_array_t* dest, int n,
                                    string_array_t* first,...);
 
 extern void promote_string_array(const string_array_t * a, int n,string_array_t* dest);
-extern void promote_scalar_string_array(modelica_string_t s,int n,
+extern void promote_scalar_string_array(modelica_string s,int n,
                                         string_array_t* dest);
 extern void promote_alloc_string_array(const string_array_t * a, int n,
                                        string_array_t* dest);
 
 static inline int ndims_string_array(const string_array_t * a)
 { return ndims_base_array(a); }
-static inline modelica_string_t *data_of_string_array(const string_array_t *a)
-{ return (modelica_string_t *) a->data; }
+static inline modelica_string *data_of_string_array(const string_array_t *a)
+{ return (modelica_string *) a->data; }
+extern const char** data_of_string_c89_array(const string_array_t *a);
 
 extern void size_string_array(const string_array_t * a, integer_array_t* dest);
-extern modelica_string_t scalar_string_array(const string_array_t * a);
+extern modelica_string scalar_string_array(const string_array_t * a);
 extern void vector_string_array(const string_array_t * a, string_array_t* dest);
-extern void vector_string_scalar(modelica_string_t a,string_array_t* dest);
+extern void vector_string_scalar(modelica_string a,string_array_t* dest);
 extern void matrix_string_array(const string_array_t * a, string_array_t* dest);
-extern void matrix_string_scalar(modelica_string_t a,string_array_t* dest);
+extern void matrix_string_scalar(modelica_string a,string_array_t* dest);
 extern void transpose_alloc_string_array(const string_array_t * a, string_array_t* dest);
 extern void transpose_string_array(const string_array_t * a, string_array_t* dest);
 
-extern void fill_string_array(string_array_t* dest,modelica_string_t s);
+extern void fill_string_array(string_array_t* dest,modelica_string s);
 
 static inline void clone_reverse_string_array_spec(const string_array_t *source,
                                                    string_array_t *dest)
@@ -175,5 +176,7 @@ extern void convert_alloc_string_array_from_f77(const string_array_t * a,
                                                 string_array_t* dest);
 
 extern void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, ...);
+
+extern void unpack_string_array(const string_array_t *a);
 
 #endif
