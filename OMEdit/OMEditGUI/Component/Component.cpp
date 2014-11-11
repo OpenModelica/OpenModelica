@@ -70,8 +70,8 @@ Component::Component(QString annotation, QString name, QString className, Compon
     // snap to grid while creating component
     qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
     qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-    position.setX(stepX*floor((position.x())/stepX+0.5));
-    position.setY(stepY*floor((position.y())/stepY+0.5));
+    position.setX(stepX * floor((position.x() / stepX) + 0.5));
+    position.setY(stepY * floor((position.y() / stepY) + 0.5));
     mpTransformation->setOrigin(position);
     qreal initialScale = mpCoOrdinateSystem->getInitialScale();
     mpTransformation->setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));
@@ -241,7 +241,7 @@ void Component::getClassInheritedComponents(bool isRootComponent, bool isPortCom
     /* if component is the port component and it has inherited components then stack its inherited components behind it. */
     if (isPortComponent)
       pInheritedComponent->setFlag(QGraphicsItem::ItemStacksBehindParent);
-    mpInheritanceList.append(pInheritedComponent);
+    mInheritanceList.append(pInheritedComponent);
   }
 }
 
@@ -285,28 +285,28 @@ void Component::parseAnnotationString(QString annotation)
       shape = shape.mid(QString("Line").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       LineAnnotation *pLineAnnotation = new LineAnnotation(shape, this);
-      mpShapesList.append(pLineAnnotation);
+      mShapesList.append(pLineAnnotation);
     }
     else if (shape.startsWith("Polygon"))
     {
       shape = shape.mid(QString("Polygon").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, this);
-      mpShapesList.append(pPolygonAnnotation);
+      mShapesList.append(pPolygonAnnotation);
     }
     else if (shape.startsWith("Rectangle"))
     {
       shape = shape.mid(QString("Rectangle").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(shape, this);
-      mpShapesList.append(pRectangleAnnotation);
+      mShapesList.append(pRectangleAnnotation);
     }
     else if (shape.startsWith("Ellipse"))
     {
       shape = shape.mid(QString("Ellipse").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(shape, this);
-      mpShapesList.append(pEllipseAnnotation);
+      mShapesList.append(pEllipseAnnotation);
     }
     else if (shape.startsWith("Text"))
     {
@@ -324,7 +324,7 @@ void Component::parseAnnotationString(QString annotation)
           continue;
       }
       TextAnnotation *pTextAnnotation = new TextAnnotation(shape, this);
-      mpShapesList.append(pTextAnnotation);
+      mShapesList.append(pTextAnnotation);
     }
     else if (shape.startsWith("Bitmap"))
     {
@@ -337,14 +337,14 @@ void Component::parseAnnotationString(QString annotation)
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(classFileName, shape, this);
-      mpShapesList.append(pBitmapAnnotation);
+      mShapesList.append(pBitmapAnnotation);
     }
   }
 }
 
 void Component::getClassComponents()
 {
-  foreach (Component *pInheritedComponent, mpInheritanceList)
+  foreach (Component *pInheritedComponent, mInheritanceList)
   {
     pInheritedComponent->getClassComponents();
   }
@@ -371,7 +371,7 @@ void Component::getClassComponents()
       QString result = mpOMCProxy->getIconAnnotation(pComponentInfo->getClassName());
       Component *pComponent = new Component(result, transformation, pComponentInfo, StringHandler::Connector,
                                             getRootParentComponent());
-      mpComponentsList.append(pComponent);
+      mComponentsList.append(pComponent);
     }
     i++;
   }
@@ -380,7 +380,7 @@ void Component::getClassComponents()
 bool Component::canUseDefaultAnnotation(Component *pComponent)
 {
   bool draw = false;
-  if (pComponent->mpShapesList.isEmpty())
+  if (pComponent->mShapesList.isEmpty())
     draw = true;
   else
     return false;
@@ -388,7 +388,7 @@ bool Component::canUseDefaultAnnotation(Component *pComponent)
      Remove the components list check in r22603.
     */
   // check inherited components list
-  foreach (Component *pInheritedComponent, pComponent->mpInheritanceList)
+  foreach (Component *pInheritedComponent, pComponent->mInheritanceList)
   {
     draw = canUseDefaultAnnotation(pInheritedComponent);
     if (!draw)
@@ -601,17 +601,17 @@ ComponentInfo* Component::getComponentInfo()
 
 QList<Component*> Component::getInheritanceList()
 {
-  return mpInheritanceList;
+  return mInheritanceList;
 }
 
 QList<ShapeAnnotation*> Component::getShapesList()
 {
-  return mpShapesList;
+  return mShapesList;
 }
 
 QList<Component*> Component::getComponentsList()
 {
-  return mpComponentsList;
+  return mComponentsList;
 }
 
 void Component::setOldPosition(QPointF oldPosition)
@@ -801,7 +801,7 @@ QString Component::getParameterDisplayString(QString parameterName)
   }
   /* case 3 */
   if (displayString.isEmpty()) {
-    foreach (Component *pInheritedComponent, mpInheritanceList) {
+    foreach (Component *pInheritedComponent, mInheritanceList) {
       QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(pInheritedComponent->getClassName());
       foreach (ComponentInfo *pComponentInfo, componentInfoList) {
         if (pComponentInfo->getName().compare(parameterName) == 0) {
@@ -1647,15 +1647,15 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
     qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
     // refine snapping if Shift key is pressed
     if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-      stepX = stepX/10;
-      stepY = stepY/10;
+      stepX = stepX / 10;
+      stepY = stepY / 10;
     }
     qreal originX = mpTransformation->getOrigin().x();
     qreal originY = mpTransformation->getOrigin().y();
-    qreal oldXn = (newPos.x()+originX)/stepX;
-    qreal oldYn = (newPos.y()+originY)/stepY;
-    newPos.setX(stepX*floor(oldXn+0.5) - originX);
-    newPos.setY(stepY*floor(oldYn+0.5) - originY);
+    qreal oldXn = (newPos.x() + originX) / stepX;
+    qreal oldYn = (newPos.y() + originY) / stepY;
+    newPos.setX(stepX * floor(oldXn + 0.5) - originX);
+    newPos.setY(stepY * floor(oldYn + 0.5) - originY);
     return newPos;
   }
   return value;

@@ -55,7 +55,7 @@ private:
   QPointF mClickPos;
   int mConnectedPointIndex;
 public:
-  CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent = 0);
+  CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent);
   QRectF boundingRect() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 signals:

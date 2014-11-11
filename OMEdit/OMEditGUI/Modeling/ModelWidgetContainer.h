@@ -195,6 +195,7 @@ public:
   void createTextShape(QPointF point);
   void createBitmapShape(QPointF point);
   QRectF itemsBoundingRect();
+  QPointF snapPointToGrid(QPointF point);
 private:
   void createActions();
 signals:

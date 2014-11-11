@@ -156,9 +156,9 @@ private:
   QPointF mPivotPoint;
   qreal mXFactor;
   qreal mYFactor;
-  QList<Component*> mpInheritanceList;
-  QList<ShapeAnnotation*> mpShapesList;
-  QList<Component*> mpComponentsList;
+  QList<Component*> mInheritanceList;
+  QList<ShapeAnnotation*> mShapesList;
+  QList<Component*> mComponentsList;
   QPointF mOldPosition;
   void duplicateHelper(GraphicsView *pGraphicsView);
 signals:

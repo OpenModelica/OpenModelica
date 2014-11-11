@@ -456,10 +456,15 @@ void GraphicsView::addComponentToView(QString name, QString className, QString t
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QString annotation;
   // if the component is a connector then we nned to get the diagram annotation of it.
-  if (type == StringHandler::Connector && mViewType == StringHandler::Diagram)
+  if (type == StringHandler::Connector && mViewType == StringHandler::Diagram) {
     annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
-  else
+    // if diagram annotation is empty then use the icon annotation of the connector.
+    if (StringHandler::removeFirstLastCurlBrackets(annotation).isEmpty()) {
+      annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
+    }
+  } else {
     annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
+  }
   Component *pComponent = new Component(annotation, name, className, pComponentInfo, type, transformationString, point, inheritedClass,
                                         inheritedClassName, pMainWindow->getOMCProxy(), this);
   if (!openingClass)
@@ -830,6 +835,15 @@ QRectF GraphicsView::itemsBoundingRect()
     rect |= item->sceneBoundingRect();
   }
   return mapFromScene(rect).boundingRect();
+}
+
+QPointF GraphicsView::snapPointToGrid(QPointF point)
+{
+  qreal stepX = mpCoOrdinateSystem->getHorizontalGridStep();
+  qreal stepY = mpCoOrdinateSystem->getVerticalGridStep();
+  point.setX(stepX * floor((point.x() / stepX) + 0.5));
+  point.setY(stepY * floor((point.y() / stepY) + 0.5));
+  return point;
 }
 
 void GraphicsView::createActions()
@@ -1235,10 +1249,11 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   if (event->button() == Qt::RightButton)
     return;
   bool creatingShape = false;
+  QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if left button presses and we are creating a connector
   if (isCreatingConnection())
   {
-    mpConnectionLineAnnotation->addPoint(mapToScene(event->pos()));
+    mpConnectionLineAnnotation->addPoint(snappedPoint);
   }
   /*
     The creatingShape flag is used to stop the propagation of mousePressEvent.
@@ -1249,42 +1264,42 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   else if (pMainWindow->getLineShapeAction()->isChecked())
   {
     creatingShape = isCreatingLineShape();
-    createLineShape(mapToScene(event->pos()));
+    createLineShape(snappedPoint);
     if (creatingShape) return;
   }
   /* if polygon shape tool button is checked then create a polygon */
   else if (pMainWindow->getPolygonShapeAction()->isChecked())
   {
     creatingShape = isCreatingPolygonShape();
-    createPolygonShape(mapToScene(event->pos()));
+    createPolygonShape(snappedPoint);
     if (creatingShape) return;
   }
   /* if rectangle shape tool button is checked then create a rectangle */
   else if (pMainWindow->getRectangleShapeAction()->isChecked())
   {
     creatingShape = isCreatingRectangleShape();
-    createRectangleShape(mapToScene(event->pos()));
+    createRectangleShape(snappedPoint);
     if (creatingShape) return;
   }
   /* if ellipse shape tool button is checked then create an ellipse */
   else if (pMainWindow->getEllipseShapeAction()->isChecked())
   {
     creatingShape = isCreatingEllipseShape();
-    createEllipseShape(mapToScene(event->pos()));
+    createEllipseShape(snappedPoint);
     if (creatingShape) return;
   }
   /* if text shape tool button is checked then create a text */
   else if (pMainWindow->getTextShapeAction()->isChecked())
   {
     creatingShape = isCreatingTextShape();
-    createTextShape(mapToScene(event->pos()));
+    createTextShape(snappedPoint);
     if (creatingShape) return;
   }
   /* if bitmap shape tool button is checked then create a bitmap */
   else if (pMainWindow->getBitmapShapeAction()->isChecked())
   {
     creatingShape = isCreatingBitmapShape();
-    createBitmapShape(mapToScene(event->pos()));
+    createBitmapShape(snappedPoint);
     if (creatingShape) return;
   }
   // if we are not creating a connector
@@ -1320,40 +1335,42 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
   pPointerXPositionLabel->setText(QString("X: %1").arg(QString::number(mapToScene(event->pos()).x(), 'f', 2)));
   Label *pPointerYPositionLabel = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getPointerYPositionLabel();
   pPointerYPositionLabel->setText(QString("Y: %1").arg(QString::number(mapToScene(event->pos()).y(), 'f', 2)));
+
+  QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   //If creating connector, the end port shall be updated to the mouse position.
   if (isCreatingConnection())
   {
-    mpConnectionLineAnnotation->updateEndPoint(mapToScene(event->pos()));
+    mpConnectionLineAnnotation->updateEndPoint(snappedPoint);
     mpConnectionLineAnnotation->update();
   }
   else if (isCreatingLineShape())
   {
-    mpLineShapeAnnotation->updateEndPoint(mapToScene(event->pos()));
+    mpLineShapeAnnotation->updateEndPoint(snappedPoint);
     mpLineShapeAnnotation->update();
   }
   else if (isCreatingPolygonShape())
   {
-    mpPolygonShapeAnnotation->updateEndPoint(mapToScene(event->pos()));
+    mpPolygonShapeAnnotation->updateEndPoint(snappedPoint);
     mpPolygonShapeAnnotation->update();
   }
   else if (isCreatingRectangleShape())
   {
-    mpRectangleShapeAnnotation->updateEndExtent(mapToScene(event->pos()));
+    mpRectangleShapeAnnotation->updateEndExtent(snappedPoint);
     mpRectangleShapeAnnotation->update();
   }
   else if (isCreatingEllipseShape())
   {
-    mpEllipseShapeAnnotation->updateEndExtent(mapToScene(event->pos()));
+    mpEllipseShapeAnnotation->updateEndExtent(snappedPoint);
     mpEllipseShapeAnnotation->update();
   }
   else if (isCreatingTextShape())
   {
-    mpTextShapeAnnotation->updateEndExtent(mapToScene(event->pos()));
+    mpTextShapeAnnotation->updateEndExtent(snappedPoint);
     mpTextShapeAnnotation->update();
   }
   else if (isCreatingBitmapShape())
   {
-    mpBitmapShapeAnnotation->updateEndExtent(mapToScene(event->pos()));
+    mpBitmapShapeAnnotation->updateEndExtent(snappedPoint);
     mpBitmapShapeAnnotation->update();
   }
   QGraphicsView::mouseMoveEvent(event);
@@ -2814,12 +2831,13 @@ void ModelWidget::closeEvent(QCloseEvent *event)
 }
 
 ModelWidgetContainer::ModelWidgetContainer(MainWindow *pParent)
-  : MdiArea(pParent), mPreviousViewType(StringHandler::NoView), mShowGridLines(false)
+  : MdiArea(pParent), mPreviousViewType(StringHandler::NoView), mShowGridLines(true)
 {
-  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getModelingViewMode().compare(Helper::subWindow) == 0)
+  if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getModelingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
-  else
+  } else {
     setViewMode(QMdiArea::TabbedView);
+  }
   // dont show this widget at startup
   setVisible(false);
   // create a Model Swicther Dialog

@@ -50,7 +50,7 @@
   \param pParent - pointer to ShapeAnnotation
   */
 CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent)
-  : QGraphicsItem(pParent), mConnectedPointIndex(connectedPointIndex)
+  : QGraphicsItem(pParent), mpShapeAnnotation(pParent), mConnectedPointIndex(connectedPointIndex)
 {
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable
            | QGraphicsItem::ItemSendsGeometryChanges);
@@ -58,7 +58,6 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   setToolTip(Helper::clickAndDragToResize);
   setPos(x, y);
   mRectangle = QRectF (-3, -3, 6, 6);
-  mpShapeAnnotation = pParent;
   if (mpShapeAnnotation->isInheritedShape())
     setFlag(QGraphicsItem::ItemIsMovable, false);
   /* Only shapes manipulation via CornerItem's if the class is not a system library class OR not an inherited shape. */
@@ -153,9 +152,25 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
   QGraphicsItem::itemChange(change, value);
-  if (change == QGraphicsItem::ItemPositionHasChanged)
-  {
+  if (change == QGraphicsItem::ItemPositionHasChanged) {
     emit cornerItemMoved(mConnectedPointIndex, value.toPointF());
+  } else if (change == QGraphicsItem::ItemPositionChange && scene()) {
+    // snap to grid while dragging shapes
+    QPointF newPos = value.toPointF();
+    qreal stepX = mpShapeAnnotation->getGraphicsView()->getCoOrdinateSystem()->getHorizontalGridStep();
+    qreal stepY = mpShapeAnnotation->getGraphicsView()->getCoOrdinateSystem()->getVerticalGridStep();
+    // refine snapping if Shift key is pressed
+    if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+      stepX = stepX / 10;
+      stepY = stepY / 10;
+    }
+    qreal originX = mpShapeAnnotation->getTransformation()->getOrigin().x();
+    qreal originY = mpShapeAnnotation->getTransformation()->getOrigin().y();
+    qreal oldXn = (newPos.x() + originX) / stepX;
+    qreal oldYn = (newPos.y() + originY) / stepY;
+    newPos.setX(stepX * floor(oldXn + 0.5) - originX);
+    newPos.setY(stepY * floor(oldYn + 0.5) - originY);
+    return newPos;
   }
   return value;
 }

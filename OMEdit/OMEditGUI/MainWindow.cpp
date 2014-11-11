@@ -1977,6 +1977,7 @@ void MainWindow::createActions()
   mpShowGridLinesAction = new QAction(QIcon(":/Resources/icons/grid.svg"), tr("Grid Lines"), this);
   mpShowGridLinesAction->setStatusTip(tr("Show/Hide the grid lines"));
   mpShowGridLinesAction->setCheckable(true);
+  mpShowGridLinesAction->setChecked(true);
   mpShowGridLinesAction->setEnabled(false);
   connect(mpShowGridLinesAction, SIGNAL(toggled(bool)), SLOT(setShowGridLines(bool)));
   // reset zoom action
