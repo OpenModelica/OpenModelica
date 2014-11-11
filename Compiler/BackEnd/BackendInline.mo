@@ -179,8 +179,8 @@ protected
   Boolean inlined;
 algorithm
   for i in 1:arraysize loop
-    (eqn, inlined) := inlineEqOpt(inEqnArray[i], fns); 
-    
+    (eqn, inlined) := inlineEqOpt(inEqnArray[i], fns);
+
     if inlined then
       arrayUpdate(inEqnArray, i, eqn);
       oInlined := true;

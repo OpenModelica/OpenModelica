@@ -4853,8 +4853,8 @@ template contextArrayReferenceCrefAndCopy(ComponentRef cr, Exp e, Type ty, Conte
       let &varCopy += if lhs then '<%lhs%><%\n%>' else error(sourceInfo(), 'Got empty statement from writeLhsCref(<%printExpStr(e)%>)')
       let &varCopy += varCopyAfter
       var
-    else 
-      let &preExp = buffer "" 
+    else
+      let &preExp = buffer ""
       scalarLhsCref(e, context, &preExp, &varDecls, &auxFunction)
 end contextArrayReferenceCrefAndCopy;
 
