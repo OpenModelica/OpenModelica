@@ -1005,6 +1005,10 @@ void LibraryTreeWidget::unloadClassHelper(LibraryTreeNode *pLibraryTreeNode)
     mpMainWindow->getOMCProxy()->removeCachedOMCCommand(pChildLibraryTreeNode->getNameStructure());
     mLibraryTreeNodesList.removeOne(pChildLibraryTreeNode);
     mExpandedLibraryTreeNodesList.removeOne(pChildLibraryTreeNode);
+    LibraryComponent *pLibraryComponent = getLibraryComponentObject(pChildLibraryTreeNode->getNameStructure());
+    if (pLibraryComponent) {
+      mLibraryComponentsList.removeOne(pLibraryComponent);
+    }
     unloadClassHelper(pChildLibraryTreeNode);
   }
 }
@@ -1462,6 +1466,10 @@ void LibraryTreeWidget::unloadLibraryTreeNodeAndModelWidget(LibraryTreeNode *pLi
   qDeleteAll(pLibraryTreeNode->takeChildren());
   mLibraryTreeNodesList.removeOne(pLibraryTreeNode);
   mExpandedLibraryTreeNodesList.removeOne(pLibraryTreeNode);
+  LibraryComponent *pLibraryComponent = getLibraryComponentObject(pLibraryTreeNode->getNameStructure());
+  if (pLibraryComponent) {
+    mLibraryComponentsList.removeOne(pLibraryComponent);
+  }
   /* Update the model switcher toolbar button. */
   mpMainWindow->updateModelSwitcherMenu(0);
   delete pLibraryTreeNode;
