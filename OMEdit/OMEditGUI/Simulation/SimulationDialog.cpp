@@ -163,15 +163,15 @@ void SimulationDialog::setUpForm()
   // dassl jacobian
   mpDasslJacobianLabel = new Label(tr("Jacobian:"));
   mpDasslJacobianComboBox = new QComboBox;
-  mpDasslJacobianComboBox->addItem("coloredNumerical");
+  mpDasslJacobianComboBox->addItem(tr("Colored Numerical"), "coloredNumerical");
   mpDasslJacobianComboBox->setItemData(0, "colored numerical jacobian", Qt::ToolTipRole);
-  mpDasslJacobianComboBox->addItem("coloredSymbolical");
+  mpDasslJacobianComboBox->addItem(tr("Colored Symbolical"), "coloredSymbolical");
   mpDasslJacobianComboBox->setItemData(1, "colored symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization", Qt::ToolTipRole);
-  mpDasslJacobianComboBox->addItem("internalNumerical");
+  mpDasslJacobianComboBox->addItem(tr("Internal Numerical"), "internalNumerical");
   mpDasslJacobianComboBox->setItemData(2, "internal numerical jacobian", Qt::ToolTipRole);
-  mpDasslJacobianComboBox->addItem("symbolical");
+  mpDasslJacobianComboBox->addItem(tr("Symbolical"), "symbolical");
   mpDasslJacobianComboBox->setItemData(3, "symbolic jacobian - needs omc compiler flags +generateSymbolicJacobian or +generateSymbolicLinearization", Qt::ToolTipRole);
-  mpDasslJacobianComboBox->addItem("numerical");
+  mpDasslJacobianComboBox->addItem(tr("Numerical"), "numerical");
   mpDasslJacobianComboBox->setItemData(4, "numerical jacobian", Qt::ToolTipRole);
   // no root finding
   mpDasslRootFindingCheckBox = new QCheckBox(tr("Root Finding"));
@@ -190,7 +190,7 @@ void SimulationDialog::setUpForm()
   // max integration order
   mpDasslMaxIntegrationOrderLabel = new Label(tr("Maximum Integration Order:"));
   mpDasslMaxIntegrationOrderSpinBox = new QSpinBox;
-  mpDasslMaxIntegrationOrderSpinBox->setRange(0, std::numeric_limits<int>::max());
+  mpDasslMaxIntegrationOrderSpinBox->setValue(5);
   // set the layout for DASSL options groupbox
   QGridLayout *pDasslOptionsGridLayout = new QGridLayout;
   pDasslOptionsGridLayout->setColumnStretch(1, 1);
@@ -1114,7 +1114,7 @@ void SimulationDialog::simulate()
     // dassl options
     if (mpDasslOptionsGroupBox->isEnabled()) {
       // dassl jacobian
-      mSimulationFlags.append(QString("-dasslJacobian=").append(mpDasslJacobianComboBox->currentText()));
+      mSimulationFlags.append(QString("-dasslJacobian=").append(mpDasslJacobianComboBox->itemData(mpDasslJacobianComboBox->currentIndex()).toString()));
       // dassl root finding
       if (!mpDasslRootFindingCheckBox->isChecked()) {
         mSimulationFlags.append("-dasslnoRootFinding");
@@ -1132,8 +1132,8 @@ void SimulationDialog::simulate()
         mSimulationFlags.append(QString("-maxStepSize=").append(mpDasslMaxStepSizeTextBox->text()));
       }
       // dassl max step size
-      if (mpDasslMaxIntegrationOrderSpinBox->value() > 0) {
-        mSimulationFlags.append(QString("-maxIntegrationOrder=").append(mpDasslMaxIntegrationOrderSpinBox->value()));
+      if (mpDasslMaxIntegrationOrderSpinBox->value() != 5) {
+        mSimulationFlags.append(QString("-maxIntegrationOrder=").append(QString::number(mpDasslMaxIntegrationOrderSpinBox->value())));
       }
     }
     // emit protected variables
