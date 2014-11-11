@@ -294,6 +294,46 @@ void OMCProxy::removeCachedOMCCommand(QString className)
   mCachedOMCCommandsMap.remove(className);
 }
 
+#if defined(linux)
+/* Helper function to strip /bin/... from the executable path of omc */
+static const char* stripbinpath(char *omhome)
+{
+  char *tmp;
+  if (!(tmp = strrchr(omhome,'/'))) {
+    return CONFIG_DEFAULT_OPENMODELICAHOME;
+  }
+  *tmp = '\0';
+  if (!(tmp = strrchr(omhome,'/'))) {
+    return CONFIG_DEFAULT_OPENMODELICAHOME;
+  }
+  *tmp = '\0';
+  return omhome;
+}
+
+#include <sys/stat.h>
+#include <linux/limits.h>
+#include <unistd.h>
+QString linuxOMHome(void) {
+  struct stat sb;
+  char omhome[PATH_MAX];
+  ssize_t r;
+  /* This is bad code using hard-coded limits; but we cannot query the size of symlinks on /proc
+   * because that FS is not POSIX-compliant.
+   */
+  r = readlink("/proc/self/exe", omhome, sizeof(omhome)-1);
+  if (r < 0) {
+    perror("readlink");
+    exit(EXIT_FAILURE);
+  }
+  if (r < sizeof(omhome)-1) {
+    return CONFIG_DEFAULT_OPENMODELICAHOME;
+  }
+  omhome[r] = '\0';
+  stripbinpath(omhome);
+  return omhome;
+}
+#endif
+
 /*!
   Starts the OpenModelica Compiler.\n
   On Windows look for OPENMODELICAHOME environment variable. On Linux read the installation directory from config.h file.\n
@@ -329,6 +369,8 @@ bool OMCProxy::startServer()
     if (!omhome)
       throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPENMODELICAHOME_NOT_FOUND).toStdString());
     omcPath = QString( omhome ) + "/bin/omc.exe";
+#elif defined(linux)
+    omcPath = (omhome ? QString(omhome)+"/bin/omc" : linuxOMHome() + "/bin/omc");
 #else /* unix */
     omcPath = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
 #endif
