@@ -525,7 +525,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const string *method = new string(omc_flagValue[FLAG_S]);
     if(method) {
       data->simulationInfo.solverMethod = mmc_mk_scon(method->c_str());
-      infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
+      infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", (char*) data->simulationInfo.solverMethod);
     }
   }
 
@@ -665,7 +665,7 @@ int initializeResultData(DATA* simData, int cpuTime)
   }
   initializeOutputFilter(&(simData->modelData), simData->simulationInfo.variableFilter, resultFormatHasCheapAliasesAndParameters);
   sim_result.init(&sim_result, simData);
-  infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", simData->simulationInfo.outputFormat, sim_result.filename);
+  infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", (char*) simData->simulationInfo.outputFormat, sim_result.filename);
   return 0;
 }
 
@@ -707,7 +707,7 @@ int callSolver(DATA* simData, string init_initMethod,
   }
 
   if(S_UNKNOWN == solverID) {
-    warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", simData->simulationInfo.solverMethod);
+    warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", (char*) simData->simulationInfo.solverMethod);
     warningStreamPrint(LOG_STDOUT, 0, "current options are:");
     for(i=1; i<S_MAX; ++i) {
       warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
