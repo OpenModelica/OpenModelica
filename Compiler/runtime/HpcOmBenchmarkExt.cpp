@@ -393,9 +393,9 @@ std::list<std::list<double> > ReadJsonBenchFileEquations(std::string filePath)
       std::list<double> tmpLst = std::list<double>();
 
       if(idItem->type == cJSON_String)
-    	  tmpLst.push_back(atof(idItem->valuestring));
+        tmpLst.push_back(atof(idItem->valuestring));
       else
-    	  tmpLst.push_back(idItem->valuedouble);
+        tmpLst.push_back(idItem->valuedouble);
 
       tmpLst.push_back(timeItem->valuedouble);
       tmpLst.push_back(ncallItem->valuedouble);

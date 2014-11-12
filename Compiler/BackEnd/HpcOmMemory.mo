@@ -402,7 +402,7 @@ encapsulated package HpcOmMemory
         then fail();
     end match;
   end createCacheMapLevelOptimizedForTask;
-  
+
   protected function createCacheMapLevelFixedOptimized "author: marcusw
     Create the optimized cache map for the levelfixed-scheduler."
     input HpcOmTaskGraph.TaskGraph iTaskGraph;
@@ -444,14 +444,14 @@ encapsulated package HpcOmMemory
     printCacheMap(oCacheMap);
     oNumCL := numCL;
   end createCacheMapLevelFixedOptimized;
-  
+
   protected function createCacheMapLevelFixedOptimized0 "author: marcusw
     Appends the variables which are written by the task list (iLevelTasks) to the info-structure."
     input HpcOmSimCode.TaskList iLevelTasks;
     input HpcOmTaskGraph.TaskGraph iTaskGraph;
     input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
     input Integer iNumberOfThreads;
-    input array<tuple<Integer,Integer,Real>> iSchedulerInfo; 
+    input array<tuple<Integer,Integer,Real>> iSchedulerInfo;
     input array<list<Integer>> iNodeSimCodeVarMapping;
     input tuple<array<list<CacheLineMap>>,list<PartlyFilledCacheLine>,CacheMap,CacheMapMeta,Integer,Integer> iInfo; //<threadCacheLines,partlyFilledCacheLines,CacheMap,CacheMapMeta,numCL,level>
     output tuple<array<list<CacheLineMap>>,list<PartlyFilledCacheLine>,CacheMap,CacheMapMeta,Integer,Integer> oInfo;
@@ -492,7 +492,7 @@ encapsulated package HpcOmMemory
     //print("======================================\n"); */
     oInfo := (threadCacheLines,partlyFilledCacheLines,cacheMap,cacheMapMeta,createdCL,level+1);
   end createCacheMapLevelFixedOptimized0;
-  
+
   protected function createCacheMapLevelFixedOptimizedForTask "author: marcusw
     Append the variables that are solved by the given task to the cachelines."
     input HpcOmSimCode.Task iTask;
@@ -535,14 +535,14 @@ encapsulated package HpcOmMemory
       case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc,threadIdx=NONE()),_,_,_,_,_,_)
         equation
           print("createCacheMapLevelOptimized1: Calctask without threadIdx given\n");
-        then fail();          
+        then fail();
       else
         equation
           print("createCacheMapLevelOptimized1: Unsupported task type\n");
         then fail();
     end match;
   end createCacheMapLevelFixedOptimizedForTask;
-  
+
   protected function getCacheLineVarTypeBySuccessorList "author: marcusw
     Get the type of the variable by analyzing the successor tasks
     Type 1: Variable(s) are only used by tasks of Thread <%iThreadIdx%>.
@@ -558,9 +558,9 @@ encapsulated package HpcOmMemory
     usedThreads := arrayCreate(iNumberOfThreads, false);
     usedThreads := List.fold(iSuccessorTasks,function getCacheLineVarTypeBySuccessorTask(iSchedulerInfo=iSchedulerInfo), usedThreads);
     usedThreads := arrayUpdate(usedThreads, iThreadIdx, false);
-    if(Array.reduce(usedThreads, boolOr)) then 
-      oVarType := 2; 
-    else 
+    if(Array.reduce(usedThreads, boolOr)) then
+      oVarType := 2;
+    else
       oVarType := 1;
     end if;
   end getCacheLineVarTypeBySuccessorList;
@@ -577,7 +577,7 @@ encapsulated package HpcOmMemory
     successorThreadIdx := Util.tuple31(arrayGet(iSchedulerInfo, iSuccessorTask));
     oUsedThreads := arrayUpdate(iUsedThreads, successorThreadIdx, true);
   end getCacheLineVarTypeBySuccessorTask;
-  
+
   protected function addFixedLevelVarToThreadCL "author: marcusw
     Add the given variables as thread-only variable to the cache lines."
     input list<Integer> iNodeVars;
@@ -595,27 +595,27 @@ encapsulated package HpcOmMemory
     list<CacheLineMap> fullCLs, threadCacheLines;
     list<SimCodeVar.SimVar> cacheVariables;
     list<CacheLineMap> cacheLinesFloat;
-    
+
     Integer lastCLidx;
     Integer lastCLnumBytesFree;
     list<CacheLineEntry> lastCLentries;
     CacheLineEntry varEntry;
   algorithm
     (CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping=allSCVarsMapping,simCodeVarTypes=simCodeVarTypes,scVarCLMapping=scVarCLMapping),numNewCL) := iInfo;
-    //only the first CL has enough space to store another variable    
+    //only the first CL has enough space to store another variable
     for varIdx in iNodeVars loop
-	    threadCacheLines := arrayGet(iThreadCacheLines, iThreadIdx);
-	    if(intGt(listLength(threadCacheLines), 0)) then
-	      lastCL::fullCLs := threadCacheLines;
-	    else
-	      lastCLidx := listLength(cacheLinesFloat) + numNewCL + 1;
-	      lastCLnumBytesFree := cacheLineSize;
-	      lastCLentries := {};
-	      lastCL := CACHELINEMAP(idx=lastCLidx, numBytesFree=lastCLnumBytesFree, entries=lastCLentries);
-	      numNewCL := numNewCL + 1;
-	      fullCLs := {};
-	    end if;
-    
+      threadCacheLines := arrayGet(iThreadCacheLines, iThreadIdx);
+      if(intGt(listLength(threadCacheLines), 0)) then
+        lastCL::fullCLs := threadCacheLines;
+      else
+        lastCLidx := listLength(cacheLinesFloat) + numNewCL + 1;
+        lastCLnumBytesFree := cacheLineSize;
+        lastCLentries := {};
+        lastCL := CACHELINEMAP(idx=lastCLidx, numBytesFree=lastCLnumBytesFree, entries=lastCLentries);
+        numNewCL := numNewCL + 1;
+        fullCLs := {};
+      end if;
+
       ((varDataType,varNumBytesRequired)) := arrayGet(simCodeVarTypes, varIdx);
       CACHELINEMAP(idx=lastCLidx,numBytesFree=lastCLnumBytesFree,entries=lastCLentries) := lastCL;
       if(intLt(lastCLnumBytesFree,varNumBytesRequired)) then //variable does not fit into CL --> create a new CL
@@ -635,16 +635,16 @@ encapsulated package HpcOmMemory
       //print("\t\t\tCache variables: " + intString(listLength(cacheVariables)) + " to thread " + intString(iThreadIdx) + "\n");
       varEntry := CACHELINEENTRY(start=cacheLineSize-lastCLnumBytesFree,dataType=varDataType,size=varNumBytesRequired,scVarIdx=listLength(cacheVariables));
       lastCL := CACHELINEMAP(idx=lastCLidx,numBytesFree=lastCLnumBytesFree-varNumBytesRequired,entries=varEntry::lastCLentries);
-      
+
       _ := arrayUpdate(iThreadCacheLines, iThreadIdx, lastCL::fullCLs);
     end for;
-    
+
     oInfo := (CACHEMAP(cacheLineSize,cacheVariables,cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping,simCodeVarTypes,scVarCLMapping),numNewCL);
   end addFixedLevelVarToThreadCL;
-  
+
   protected function addFixedLevelVarToSharedCL "author: marcusw
-    Append the given variables to shared cache lines. If a matching partly filled cache line is found, 
-    the partly filled cache line object is updates. Otherwise a new cache line object is created. If a cacheline 
+    Append the given variables to shared cache lines. If a matching partly filled cache line is found,
+    the partly filled cache line object is updates. Otherwise a new cache line object is created. If a cacheline
     is filled completely, it is appended to the CacheMap and CacheMapMeta."
     input list<Integer> iNodeVars;
     input Integer iThreadIdx;
@@ -662,13 +662,13 @@ encapsulated package HpcOmMemory
     list<SimCodeVar.SimVar> cacheVariables;
     list<CacheLineMap> cacheLinesFloat;
     list<PartlyFilledCacheLine> partlyFilledCacheLines;
-    
+
     PartlyFilledCacheLine matchedCacheLine;
     Integer matchedCacheLineIdx;
-    
+
     CacheMap cacheMap;
     CacheMapMeta cacheMapMeta;
-    
+
     Integer varSize;
   algorithm
     (cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),cacheMapMeta as CACHEMAPMETA(allSCVarsMapping=allSCVarsMapping,simCodeVarTypes=simCodeVarTypes,scVarCLMapping=scVarCLMapping),numNewCL,partlyFilledCacheLines) := iInfo;
@@ -678,9 +678,9 @@ encapsulated package HpcOmMemory
     end for;
     oInfo := (cacheMap,cacheMapMeta,numNewCL,partlyFilledCacheLines);
   end addFixedLevelVarToSharedCL;
-  
+
   protected function addFixedLevelVarToSharedCL0 "author: marcusw
-    Add the given variable to the iMatchedCacheLine if the object is not NONE() and if there is enough space. 
+    Add the given variable to the iMatchedCacheLine if the object is not NONE() and if there is enough space.
     Otherwise add a new CL."
     input Option<tuple<PartlyFilledCacheLine,Integer>> iMatchedCacheLine; //<CL, listIndex>
     input Integer iThreadIdx;
@@ -690,25 +690,25 @@ encapsulated package HpcOmMemory
     output tuple<CacheMap,CacheMapMeta,Integer,list<PartlyFilledCacheLine>> oInfo;
   protected
     PartlyFilledCacheLine partlyFilledCacheLine;
-  
+
     CacheLineMap cacheLineMap;
     list<Integer> prefetchLevel;
     list<tuple<Integer, Integer>> writeLevel;
     CacheLineEntry entry;
-    
+
     Integer idx, listIndex;
     Integer numBytesFree;
     list<CacheLineEntry> entries;
-    
+
     Integer cacheLineSize;
     list<SimCodeVar.SimVar> cacheVariables;
     list<CacheLineMap> cacheLinesFloat;
-    
+
     SimCodeVar.SimVar cacheVariable;
     array<Option<SimCodeVar.SimVar>> allSCVarsMapping;
     array<tuple<Integer,Integer>> simCodeVarTypes; //<type, numberOfBytesRequired>
     array<tuple<Integer, Integer>> scVarCLMapping; //mapping for each scVar -> <CLIdx,varType>
-    
+
     Integer varSize, varType, numNewCL;
     list<PartlyFilledCacheLine> partlyFilledCLs;
   algorithm
@@ -723,16 +723,16 @@ encapsulated package HpcOmMemory
           cacheVariables = cacheVariable::cacheVariables;
           entry = CACHELINEENTRY(cacheLineSize - numBytesFree - varSize, varType, varSize, listLength(cacheVariables));
           cacheLineMap = CACHELINEMAP(idx,numBytesFree,entry::entries);
-          
+
           if(intGt(iLevelIdx - 1, 0)) then
             prefetchLevel = (iLevelIdx-1)::prefetchLevel;
           end if;
-          
+
           writeLevel = (iLevelIdx, iThreadIdx)::writeLevel;
           partlyFilledCacheLine = PARTLYFILLEDCACHELINE(cacheLineMap, prefetchLevel, writeLevel);
-          
+
           scVarCLMapping = arrayUpdate(scVarCLMapping, iVarIdx, (idx,varType));
-          
+
           if(intEq(numBytesFree - varSize, 0)) then //CL is now full - remove it from partly filled CL list and at it to cachemap
             partlyFilledCLs = listDelete(partlyFilledCLs, listIndex);
             cacheLinesFloat = cacheLineMap::cacheLinesFloat;
@@ -741,28 +741,28 @@ encapsulated package HpcOmMemory
       case(NONE(),_,_,_,(CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping=allSCVarsMapping,simCodeVarTypes=simCodeVarTypes,scVarCLMapping=scVarCLMapping),numNewCL,partlyFilledCLs))
         equation
           ((varType,varSize)) = arrayGet(simCodeVarTypes, iVarIdx);
-          
+
           numNewCL = numNewCL + 1;
           idx = listLength(cacheLinesFloat) + numNewCL;
           numBytesFree = cacheLineSize;
           entries = {};
           prefetchLevel = {};
           writeLevel = {};
-          
+
           SOME(cacheVariable) = arrayGet(allSCVarsMapping, iVarIdx);
           cacheVariables = cacheVariable::cacheVariables;
           entry = CACHELINEENTRY(cacheLineSize - numBytesFree, varType, varSize, listLength(cacheVariables));
           cacheLineMap = CACHELINEMAP(idx,numBytesFree,entry::entries);
-          
+
           if(intGt(iLevelIdx - 1, 0)) then
             prefetchLevel = (iLevelIdx-1)::prefetchLevel;
           end if;
-          
+
           writeLevel = (iLevelIdx, iThreadIdx)::writeLevel;
           partlyFilledCacheLine = PARTLYFILLEDCACHELINE(cacheLineMap, prefetchLevel, writeLevel);
-          
+
           scVarCLMapping = arrayUpdate(scVarCLMapping, iVarIdx, (idx,varType));
-          
+
           if(intEq(numBytesFree - varSize, 0)) then //CL is now full - at CL to cachemap
             cacheLinesFloat = cacheLineMap::cacheLinesFloat;
           else //Add new CL as partly filled CL
@@ -770,9 +770,9 @@ encapsulated package HpcOmMemory
           end if;
           print("addFixedLevelVarToSharedCL0: New CL added\n");
         then ((CACHEMAP(cacheLineSize,cacheVariables,cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping,simCodeVarTypes,scVarCLMapping),numNewCL,partlyFilledCLs));
-    end match;  
+    end match;
   end addFixedLevelVarToSharedCL0;
-  
+
   protected function findMatchingSharedCL "author: marcusw
     Iterate over the given shared cache line list and return the first entry that can be used to store the shared variable iNodeVar."
     input Integer iNodeVar;
@@ -781,12 +781,12 @@ encapsulated package HpcOmMemory
     input Integer iThreadIdx;
     input Integer iCurrentListIdx;
     input list<PartlyFilledCacheLine> iSharedCacheLines;
-    output Option<tuple<PartlyFilledCacheLine,Integer>> oMatchedCacheLine; //<CL, listIndex> 
+    output Option<tuple<PartlyFilledCacheLine,Integer>> oMatchedCacheLine; //<CL, listIndex>
   protected
     PartlyFilledCacheLine head;
     list<PartlyFilledCacheLine> rest;
     Option<tuple<PartlyFilledCacheLine,Integer>> tmpMatchedCacheLine;
-    
+
     CacheLineMap cacheLineMap;
     Integer numBytesFree;
     list<Integer> prefetchLevel;
@@ -813,7 +813,7 @@ encapsulated package HpcOmMemory
         then NONE();
     end match;
   end findMatchingSharedCL;
-  
+
   protected function isCLWrittenByOtherThread "author: marcusw
     Return 'true' if the given entry has levelidx == iLevelIdx and is handled by a thread != iThreadIdx."
     input tuple<Integer,Integer> iLevelInfo; //(LevelIdx, ThreadIdx)
@@ -2113,7 +2113,7 @@ encapsulated package HpcOmMemory
       then {};
     end match;
   end getTaskListTasks;
-  
+
   protected function getCacheLineMapOfPartlyFilledCacheLine
     input PartlyFilledCacheLine iPartlyFilledCacheLine;
     output CacheLineMap oCacheLineMap;
