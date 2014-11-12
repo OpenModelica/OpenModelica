@@ -452,6 +452,8 @@ bool OMCProxy::startServer()
     mHasInitialized = false;
     return false;
   }
+  // get OpenModelica version
+  Helper::OpenModelicaVersion = getVersion();
   // set OpenModelicaHome variable
   sendCommand("getInstallationDirectoryPath()");
   Helper::OpenModelicaHome = StringHandler::removeFirstLastQuotes(getResult());
