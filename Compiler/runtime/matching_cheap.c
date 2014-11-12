@@ -237,7 +237,7 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
   int* randarr = (int*)malloc(n * sizeof(int));
   for(i = 0; i < n; i++){randarr[i] = i;}
   for(i = n-1; i >= 0; i--) {
-    int z = omc_tinymt64_generate_fast_int_range(&random_seed,i+1);
+    int z = tinymt64_generate_double(&random_seed)*(i+1);
     int temp = randarr[i]; randarr[i] = randarr[z]; randarr[z] = temp;
   }
 
@@ -312,7 +312,7 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
       c_degree = col_degrees[c_id];
 
       if(match[c_id] == -1 && c_degree != 0) {
-        e_id = omc_tinymt64_generate_fast_int_range(&random_seed,c_degree);
+        e_id = tinymt64_generate_double(&random_seed)*c_degree;
 
         sptr = col_ptrs[c_id];
         eptr = col_ptrs[c_id + 1];
