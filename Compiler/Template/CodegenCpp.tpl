@@ -1891,7 +1891,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             for(int i = 0; i < <%numOfEqs%>; i++)
             {
                 ostringstream ss;
-                ss << i;
+                ss << (i+1);
                 measureTimeProfileBlocksArray[i] = MeasureTimeData(ss.str());
             }
             #endif //MEASURETIME_PROFILEBLOCKS

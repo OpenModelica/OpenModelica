@@ -49,6 +49,7 @@ encapsulated package HpcOmMemory
   protected import Expression;
   protected import Flags;
   protected import GraphML;
+  protected import HpcOmScheduler;
   protected import List;
   protected import SimCodeUtil;
   protected import Util;
@@ -66,7 +67,7 @@ encapsulated package HpcOmMemory
       //list<CacheLineMap> cacheLinesBool;
       //list<CacheLineMap> cacheLinesInt;
     end CACHEMAP;
-    //CacheMap that stores variables of different types in the same array
+    //CacheMap that stores variables of different types in the same array -- not used
     record UNIFORM_CACHEMAP
       Integer cacheLineSize; //cache line size in bytes
       list<SimCodeVar.SimVar> cacheVariables; //all variables that are stored in the cache
@@ -77,6 +78,7 @@ encapsulated package HpcOmMemory
   protected uniontype CacheLineMap
     record CACHELINEMAP
       Integer idx;
+      Integer numBytesFree;
       list<CacheLineEntry> entries;
     end CACHELINEMAP;
   end CacheLineMap;
@@ -98,6 +100,14 @@ encapsulated package HpcOmMemory
     end CACHEMAPMETA;
   end CacheMapMeta;
 
+ protected uniontype PartlyFilledCacheLine
+    record PARTLYFILLEDCACHELINE
+      CacheLineMap cacheLineMap;
+      list<Integer> prefetchLevel;
+      list<tuple<Integer,Integer>> writeLevel; //(LevelIdx, ThreadIdx)
+    end PARTLYFILLEDCACHELINE;
+ end PartlyFilledCacheLine;
+
   // -------------------------------------------
   // FUNCTIONS
   // -------------------------------------------
@@ -116,6 +126,7 @@ encapsulated package HpcOmMemory
     input list<list<Integer>> iCriticalPaths;
     input list<list<Integer>> iCriticalPathsWoC;
     input String iCriticalPathInfo;
+    input Integer iNumberOfThreads;
     input BackendDAE.StrongComponents iAllComponents;
     output Option<HpcOmSimCode.MemoryMap> oMemoryMap;
   protected
@@ -139,8 +150,8 @@ encapsulated package HpcOmMemory
     array<list<Integer>> nodeSimCodeVarMapping;
     HpcOmSimCode.MemoryMap tmpMemoryMap;
   algorithm
-    oMemoryMap := matchcontinue(iModelInfo, iTaskGraph, iTaskGraphMeta, iEqSystems, iFileNamePrefix, iSchedulerInfo, iSchedule, iSccSimEqMapping, iCriticalPaths, iCriticalPathsWoC, iCriticalPathInfo, iAllComponents)
-      case(_,_,_,_,_,_,_,_,_,_,_,_)
+    oMemoryMap := matchcontinue(iModelInfo, iTaskGraph, iTaskGraphMeta, iEqSystems, iFileNamePrefix, iSchedulerInfo, iSchedule, iSccSimEqMapping, iCriticalPaths, iCriticalPathsWoC, iCriticalPathInfo, iNumberOfThreads, iAllComponents)
+      case(_,_,_,_,_,_,_,_,_,_,_,_,_)
         equation
           true = Flags.isSet(Flags.HPCOM_MEMORY_OPT);
           //HpcOmTaskGraph.printTaskGraphMeta(iTaskGraphMeta);
@@ -166,7 +177,7 @@ encapsulated package HpcOmMemory
           nodeSimCodeVarMapping = getNodeSimCodeVarMapping(iTaskGraphMeta, iEqSystems, hashTable);
           //printNodeSimCodeVarMapping(nodeSimCodeVarMapping);
           //print("-------------------------------------\n");
-          (cacheMap,scVarCLMapping,numCL) = createCacheMapOptimized(allVarsMapping,stateVars,derivativeVars,algVars,paramVars,scVarTaskMapping,64,iAllComponents,iSchedule, nodeSimCodeVarMapping);
+          (cacheMap,scVarCLMapping,numCL) = createCacheMapOptimized(iTaskGraph, iTaskGraphMeta,allVarsMapping,stateVars,derivativeVars,algVars,paramVars,scVarTaskMapping,64,iAllComponents,iSchedule,iNumberOfThreads,nodeSimCodeVarMapping);
           eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
           (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(iTaskGraphMeta,iEqSystems,hashTable,numCL,scVarCLMapping);
 
@@ -198,18 +209,24 @@ encapsulated package HpcOmMemory
             printCacheMap(cacheMap);
           end if;
         then SOME(tmpMemoryMap);
-      case(_,_,_,_,_,_,_,_,_,_,_,_)
+      case(_,_,_,_,_,_,_,_,_,_,_,_,_)
         equation
           true = Flags.isSet(Flags.HPCOM_MEMORY_OPT);
           print("CreateMemoryMap failed!\n");
         then NONE();
       else
+        equation
+          if Flags.isSet(Flags.HPCOM_DUMP) then
+            print("CreateMemoryMap disabled!\n");
+          end if;
         then NONE();
     end matchcontinue;
   end createMemoryMap;
 
   protected function createCacheMapOptimized "author: marcusw
      Creates a CacheMap optimized for the selected scheduler. All variables that are part of the created cache map are marked with 1 in the iVarMark-array."
+    input HpcOmTaskGraph.TaskGraph iTaskGraph;
+    input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
     input array<Option<SimCodeVar.SimVar>> iAllSCVarsMapping;
     input list<SimCodeVar.SimVar> iStateVars; //float
     input list<SimCodeVar.SimVar> iDerivativeVars; //float
@@ -219,6 +236,7 @@ encapsulated package HpcOmMemory
     input Integer iCacheLineSize;
     input BackendDAE.StrongComponents iAllComponents;
     input HpcOmSimCode.Schedule iSchedule;
+    input Integer iNumberOfThreads;
     input array<list<Integer>> iNodeSimCodeVarMapping;
     output CacheMap oCacheMap;
     output array<tuple<Integer,Integer>> oScVarCLMapping; //mapping for each scVar -> CLIdx
@@ -229,12 +247,20 @@ encapsulated package HpcOmMemory
     Integer numCL;
     list<HpcOmSimCode.TaskList> tasksOfLevels;
     array<tuple<Integer,Integer>> simCodeVarTypes;
+    array<tuple<Integer,Integer,Real>> scheduleInfo;
   algorithm
-    (oCacheMap,oScVarCLMapping,oNumCL) := match(iAllSCVarsMapping,iStateVars,iDerivativeVars,iAlgVars,iParamVars,iScVarTaskMapping,iCacheLineSize,iAllComponents,iSchedule, iNodeSimCodeVarMapping)
-      case(_,_,_,_,_,_,_,_,HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels),_)
+    (oCacheMap,oScVarCLMapping,oNumCL) := match(iTaskGraph,iTaskGraphMeta,iAllSCVarsMapping,iStateVars,iDerivativeVars,iAlgVars,iParamVars,iScVarTaskMapping,iCacheLineSize,iAllComponents,iSchedule, iNumberOfThreads, iNodeSimCodeVarMapping)
+      case(_,_,_,_,_,_,_,_,_,_,HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=false),_,_)
         equation
           simCodeVarTypes = arrayCreate(listLength(iStateVars) + listLength(iDerivativeVars) + listLength(iAlgVars) + listLength(iParamVars), (1,8));
           (cacheMap,scVarCLMapping,numCL) = createCacheMapLevelOptimized(iAllSCVarsMapping,simCodeVarTypes,iScVarTaskMapping,iCacheLineSize,iAllComponents,tasksOfLevels,iNodeSimCodeVarMapping);
+        then (cacheMap,scVarCLMapping,numCL);
+      case(_,_,_,_,_,_,_,_,_,_,HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=true),_,_)
+        equation
+          print("Creating optimized cache map for fixed level scheduler\n");
+          scheduleInfo = HpcOmScheduler.convertScheduleStrucToInfo(iSchedule, arrayLength(iTaskGraph));
+          simCodeVarTypes = arrayCreate(listLength(iStateVars) + listLength(iDerivativeVars) + listLength(iAlgVars) + listLength(iParamVars), (1,8));
+          (cacheMap,scVarCLMapping,numCL) = createCacheMapLevelFixedOptimized(iTaskGraph,iTaskGraphMeta,iAllSCVarsMapping,simCodeVarTypes,iScVarTaskMapping,iCacheLineSize,iAllComponents,tasksOfLevels,iNumberOfThreads,scheduleInfo,iNodeSimCodeVarMapping);
         then (cacheMap,scVarCLMapping,numCL);
       else
         equation
@@ -376,6 +402,432 @@ encapsulated package HpcOmMemory
         then fail();
     end match;
   end createCacheMapLevelOptimizedForTask;
+  
+  protected function createCacheMapLevelFixedOptimized "author: marcusw
+    Create the optimized cache map for the levelfixed-scheduler."
+    input HpcOmTaskGraph.TaskGraph iTaskGraph;
+    input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+    input array<Option<SimCodeVar.SimVar>> iAllSCVarsMapping;
+    input array<tuple<Integer,Integer>> iSimCodeVarTypes; //<type, numberOfBytesRequired>
+    input array<Integer> iScVarTaskMapping;
+    input Integer iCacheLineSize;
+    input BackendDAE.StrongComponents iAllComponents;
+    input list<HpcOmSimCode.TaskList> iTasksOfLevels; //Schedule
+    input Integer iNumberOfThreads;
+    input array<tuple<Integer,Integer,Real>> iSchedulerInfo;
+    input array<list<Integer>> iNodeSimCodeVarMapping;
+    output CacheMap oCacheMap;
+    output array<tuple<Integer,Integer>> oScVarCLMapping; //mapping for each scVar -> <CLIdx,varType>
+    output Integer oNumCL;
+  protected
+    CacheMap cacheMap;
+    CacheMapMeta cacheMapMeta;
+    Integer numCL;
+    array<tuple<Integer,Integer>> scVarCLMapping;
+    list<CacheLineMap> cacheLinesFloat;
+    list<SimCodeVar.SimVar> cacheVariables;
+    array<list<CacheLineMap>> threadCacheLines; //cache lines of the threads (arrayIdx) -- CALC_ONLY and THREAD_ONLY variables
+    list<PartlyFilledCacheLine> partlyFilledCacheLines; //cache lines that are shared between all threads -- SHARED variables -- but not fully filled
+  algorithm
+    print("createCacheMapLevelFixedOptimized: started \n");
+    cacheMap := CACHEMAP(iCacheLineSize,{},{});
+    scVarCLMapping := arrayCreate(arrayLength(iAllSCVarsMapping),(-1,-1));
+    numCL := 0;
+    threadCacheLines := arrayCreate(iNumberOfThreads, {});
+    partlyFilledCacheLines := {};
+    cacheMapMeta := CACHEMAPMETA(iAllSCVarsMapping, iSimCodeVarTypes, scVarCLMapping);
+    //Iterate over levels
+    ((threadCacheLines,partlyFilledCacheLines,cacheMap as CACHEMAP(cacheVariables=cacheVariables, cacheLinesFloat=cacheLinesFloat),cacheMapMeta,numCL,_)) := List.fold(iTasksOfLevels, function createCacheMapLevelFixedOptimized0(iTaskGraph=iTaskGraph, iTaskGraphMeta=iTaskGraphMeta, iNumberOfThreads=iNumberOfThreads, iSchedulerInfo=iSchedulerInfo, iNodeSimCodeVarMapping=iNodeSimCodeVarMapping), (threadCacheLines, partlyFilledCacheLines,cacheMap,cacheMapMeta,numCL,1));
+    cacheLinesFloat := List.map(partlyFilledCacheLines, getCacheLineMapOfPartlyFilledCacheLine);
+    oCacheMap := CACHEMAP(iCacheLineSize, cacheVariables, Array.fold(threadCacheLines, listAppend, cacheLinesFloat));
+    CACHEMAPMETA(scVarCLMapping=oScVarCLMapping) := cacheMapMeta;
+    printCacheMap(oCacheMap);
+    oNumCL := numCL;
+  end createCacheMapLevelFixedOptimized;
+  
+  protected function createCacheMapLevelFixedOptimized0 "author: marcusw
+    Appends the variables which are written by the task list (iLevelTasks) to the info-structure."
+    input HpcOmSimCode.TaskList iLevelTasks;
+    input HpcOmTaskGraph.TaskGraph iTaskGraph;
+    input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+    input Integer iNumberOfThreads;
+    input array<tuple<Integer,Integer,Real>> iSchedulerInfo; 
+    input array<list<Integer>> iNodeSimCodeVarMapping;
+    input tuple<array<list<CacheLineMap>>,list<PartlyFilledCacheLine>,CacheMap,CacheMapMeta,Integer,Integer> iInfo; //<threadCacheLines,partlyFilledCacheLines,CacheMap,CacheMapMeta,numCL,level>
+    output tuple<array<list<CacheLineMap>>,list<PartlyFilledCacheLine>,CacheMap,CacheMapMeta,Integer,Integer> oInfo;
+  protected
+    Integer createdCL, numCL, cacheLineSize, level; //number of CL created for this level
+    list<Integer> allCL;
+    list<Integer> availableCL, availableCLold, writtenCL; //all cacheLines that can be used for writing
+    list<Integer> cacheLinesPrevLevel; //all cache lines written in previous level
+    CacheMap cacheMap;
+    CacheMapMeta cacheMapMeta;
+    list<CacheLineMap> cacheLinesFloat;
+    array<list<CacheLineMap>> threadCacheLines;
+    list<CacheLineMap> sharedCacheLines;
+    array<list<Integer>> cacheLinesAvailableForLevel;
+    list<PartlyFilledCacheLine> partlyFilledCacheLines;
+  algorithm
+    (threadCacheLines, partlyFilledCacheLines, cacheMap, cacheMapMeta, numCL, level) := iInfo;
+    print("\tcreateCacheMapLevelFixedOptimized0: handling level " + intString(level) + "\n");
+    allCL := List.intRange(numCL);
+    CACHEMAP(cacheLinesFloat=cacheLinesFloat,cacheLineSize=cacheLineSize) := cacheMap;
+    //print("createCacheMapLevelFixedOptimized0: Handling new level. Shared CL: " + stringDelimitList(List.map(sharedCacheLines,intString), ",") + " Number of CL: " + intString(numCL) + "\n");
+    ((cacheMap,cacheMapMeta,createdCL,partlyFilledCacheLines)) := List.fold(getTaskListTasks(iLevelTasks), function createCacheMapLevelFixedOptimizedForTask(iTaskGraph=iTaskGraph, iTaskGraphMeta=iTaskGraphMeta, iSchedulerInfo=iSchedulerInfo, iNumberOfThreads=iNumberOfThreads, iLevel=level, iNodeSimCodeVarMapping = iNodeSimCodeVarMapping, iThreadCacheLines = threadCacheLines), (cacheMap,cacheMapMeta,numCL,partlyFilledCacheLines));
+    /*
+    availableCLold := List.setDifferenceIntN(allCL,cacheLinesPrevLevel,numCL);
+    //append free space to available cache lines and remove full cache lines
+    detailedCacheLineInfo := createDetailedCacheMapInformations(availableCLold, cacheLinesFloat, cacheLineSize);
+    detailedCacheLineInfo := listReverse(detailedCacheLineInfo);
+    //print("createCacheMapLevelOptimized0: clCandidates: " + stringDelimitList(List.map(List.map(detailedCacheLineInfo,Util.tuple21),intString), ",") + "\n");
+    availableCL := List.map(detailedCacheLineInfo, Util.tuple21);
+    //append the used cachelines to the writtenCL-list
+    //print("createCacheMapLevelOptimized0: New cacheLines created: " + intString(createdCL) + "\n");
+    writtenCL := List.setDifferenceIntN(availableCLold,availableCL,numCL);
+    //print("createCacheMapLevelOptimized0: Written CL_0: " + stringDelimitList(List.map(writtenCL,intString), ",") + " -- numCL: " + intString(numCL) + "\n");
+    writtenCL := listAppend(writtenCL, if intLe(numCL+1, numCL+createdCL) then List.intRange2(numCL+1, numCL+createdCL) else {});
+    //print("createCacheMapLevelOptimized0: Written CL_1: " + stringDelimitList(List.map(writtenCL,intString), ",") + "\n");
+    //print("======================================\n");
+    //printCacheMap(cacheMap);
+    //print("======================================\n"); */
+    oInfo := (threadCacheLines,partlyFilledCacheLines,cacheMap,cacheMapMeta,createdCL,level+1);
+  end createCacheMapLevelFixedOptimized0;
+  
+  protected function createCacheMapLevelFixedOptimizedForTask "author: marcusw
+    Append the variables that are solved by the given task to the cachelines."
+    input HpcOmSimCode.Task iTask;
+    input HpcOmTaskGraph.TaskGraph iTaskGraph;
+    input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+    input array<tuple<Integer,Integer,Real>> iSchedulerInfo;
+    input Integer iNumberOfThreads;
+    input Integer iLevel;
+    input array<list<Integer>> iNodeSimCodeVarMapping;
+    input array<list<CacheLineMap>> iThreadCacheLines;
+    input tuple<CacheMap,CacheMapMeta,Integer,list<PartlyFilledCacheLine>> iInfo; //<CacheMap,CacheMapMeta,numNewCL,partlyFilledCacheLines (shared-CLs)>
+    output tuple<CacheMap,CacheMapMeta,Integer,list<PartlyFilledCacheLine>> oInfo;
+  protected
+    list<Integer> nodeIdc, successorTasks, nodeVars;
+    CacheMap cacheMap;
+    CacheMapMeta cacheMapMeta;
+    tuple<CacheMap,CacheMapMeta,Integer,list<PartlyFilledCacheLine>> tmpInfo;
+    Integer threadIdx, varType, numNewCL;
+    list<PartlyFilledCacheLine> partlyFilledCacheLines; //map each non full Cachline to: PrefetchLevel, WriteLevel (LevelIdx, ThreadIdx)
+  algorithm
+    oInfo := match(iTask, iTaskGraph, iTaskGraphMeta, iSchedulerInfo, iNumberOfThreads, iNodeSimCodeVarMapping, iInfo)
+      case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc,threadIdx=SOME(threadIdx)),_,_,_,_,_,(cacheMap,cacheMapMeta,numNewCL,partlyFilledCacheLines))
+        equation
+          //print("\t\tcreateCacheMapLevelFixedOptimizedForTask: handling task with node-indices: " + stringDelimitList(List.map(nodeIdc, intString), ",") + "\n");
+          //Get successor tasks
+          successorTasks = List.flatten(List.map(nodeIdc, function arrayGet(arr=iTaskGraph)));
+          nodeVars = List.flatten(List.map(nodeIdc, function arrayGet(arr=iNodeSimCodeVarMapping)));
+          nodeVars = List.sortedUnique(nodeVars,intEq);
+          varType = getCacheLineVarTypeBySuccessorList(successorTasks, iSchedulerInfo, iNumberOfThreads, threadIdx);
+          if(intEq(varType,1)) then
+            print("\t\t\tcreateCacheMapLevelFixedOptimizedForTask: Handling variables " + stringDelimitList(List.map(nodeVars, intString), ",") + " as THREAD_ONLY\n");
+            ((cacheMap,cacheMapMeta,numNewCL)) = addFixedLevelVarToThreadCL(nodeVars,threadIdx,iThreadCacheLines,(cacheMap,cacheMapMeta,numNewCL));
+          else
+            print("\t\t\tcreateCacheMapLevelFixedOptimizedForTask: Handling variables " + stringDelimitList(List.map(nodeVars, intString), ",") + " as SHARED\n");
+            ((cacheMap,cacheMapMeta,numNewCL,partlyFilledCacheLines)) = addFixedLevelVarToSharedCL(nodeVars,threadIdx,iLevel,(cacheMap,cacheMapMeta,numNewCL,partlyFilledCacheLines));
+            print("\t\t\tcreateCacheMapLevelFixedOptimizedForTask: Number of partly filled CLs: " + intString(listLength(partlyFilledCacheLines)) + "\n");
+          end if;
+          tmpInfo = (cacheMap, cacheMapMeta, numNewCL, partlyFilledCacheLines);
+        then tmpInfo;
+      case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc,threadIdx=NONE()),_,_,_,_,_,_)
+        equation
+          print("createCacheMapLevelOptimized1: Calctask without threadIdx given\n");
+        then fail();          
+      else
+        equation
+          print("createCacheMapLevelOptimized1: Unsupported task type\n");
+        then fail();
+    end match;
+  end createCacheMapLevelFixedOptimizedForTask;
+  
+  protected function getCacheLineVarTypeBySuccessorList "author: marcusw
+    Get the type of the variable by analyzing the successor tasks
+    Type 1: Variable(s) are only used by tasks of Thread <%iThreadIdx%>.
+    Type 2: Variable(s) are used by different Threads."
+    input list<Integer> iSuccessorTasks;
+    input array<tuple<Integer,Integer,Real>> iSchedulerInfo;
+    input Integer iNumberOfThreads;
+    input Integer iThreadIdx;
+    output Integer oVarType;
+  protected
+    array<Boolean> usedThreads;
+  algorithm
+    usedThreads := arrayCreate(iNumberOfThreads, false);
+    usedThreads := List.fold(iSuccessorTasks,function getCacheLineVarTypeBySuccessorTask(iSchedulerInfo=iSchedulerInfo), usedThreads);
+    usedThreads := arrayUpdate(usedThreads, iThreadIdx, false);
+    if(Array.reduce(usedThreads, boolOr)) then 
+      oVarType := 2; 
+    else 
+      oVarType := 1;
+    end if;
+  end getCacheLineVarTypeBySuccessorList;
+
+  protected function getCacheLineVarTypeBySuccessorTask "author: marcusw
+    Set usedThreads[threadIdx] to true, for schedule(iSuccessorTask) = threadIdx."
+    input Integer iSuccessorTask;
+    input array<tuple<Integer,Integer,Real>> iSchedulerInfo;
+    input array<Boolean> iUsedThreads;
+    output array<Boolean> oUsedThreads;
+  protected
+    Integer successorThreadIdx;
+  algorithm
+    successorThreadIdx := Util.tuple31(arrayGet(iSchedulerInfo, iSuccessorTask));
+    oUsedThreads := arrayUpdate(iUsedThreads, successorThreadIdx, true);
+  end getCacheLineVarTypeBySuccessorTask;
+  
+  protected function addFixedLevelVarToThreadCL "author: marcusw
+    Add the given variables as thread-only variable to the cache lines."
+    input list<Integer> iNodeVars;
+    input Integer iThreadIdx;
+    input array<list<CacheLineMap>> iThreadCacheLines;
+    input tuple<CacheMap,CacheMapMeta,Integer> iInfo; //<CacheMap,CacheMapMeta,numNewCL
+    output tuple<CacheMap,CacheMapMeta,Integer> oInfo;
+  protected
+    CacheLineMap lastCL;
+    SimCodeVar.SimVar cacheVariable;
+    array<Option<SimCodeVar.SimVar>> allSCVarsMapping;
+    Integer varIdx, varDataType, varNumBytesRequired, numNewCL, cacheLineSize;
+    array<tuple<Integer,Integer>> simCodeVarTypes; //<type, numberOfBytesRequired>
+    array<tuple<Integer, Integer>> scVarCLMapping;
+    list<CacheLineMap> fullCLs, threadCacheLines;
+    list<SimCodeVar.SimVar> cacheVariables;
+    list<CacheLineMap> cacheLinesFloat;
+    
+    Integer lastCLidx;
+    Integer lastCLnumBytesFree;
+    list<CacheLineEntry> lastCLentries;
+    CacheLineEntry varEntry;
+  algorithm
+    (CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping=allSCVarsMapping,simCodeVarTypes=simCodeVarTypes,scVarCLMapping=scVarCLMapping),numNewCL) := iInfo;
+    //only the first CL has enough space to store another variable    
+    for varIdx in iNodeVars loop
+	    threadCacheLines := arrayGet(iThreadCacheLines, iThreadIdx);
+	    if(intGt(listLength(threadCacheLines), 0)) then
+	      lastCL::fullCLs := threadCacheLines;
+	    else
+	      lastCLidx := listLength(cacheLinesFloat) + numNewCL + 1;
+	      lastCLnumBytesFree := cacheLineSize;
+	      lastCLentries := {};
+	      lastCL := CACHELINEMAP(idx=lastCLidx, numBytesFree=lastCLnumBytesFree, entries=lastCLentries);
+	      numNewCL := numNewCL + 1;
+	      fullCLs := {};
+	    end if;
+    
+      ((varDataType,varNumBytesRequired)) := arrayGet(simCodeVarTypes, varIdx);
+      CACHELINEMAP(idx=lastCLidx,numBytesFree=lastCLnumBytesFree,entries=lastCLentries) := lastCL;
+      if(intLt(lastCLnumBytesFree,varNumBytesRequired)) then //variable does not fit into CL --> create a new CL
+        //print("\t\t\t\taddFixedLevelVarToThreadCL: variable " + intString(varIdx) + " does not fit into lastCL.\n");
+        fullCLs := lastCL::fullCLs;
+        lastCLidx := listLength(cacheLinesFloat) + numNewCL + 1;
+        //print("\t\t\t\taddFixedLevelVarToThreadCL: lastCLidx " + intString(listLength(cacheLinesFloat)) + " + " + intString(numNewCL) + " + 1\n");
+        lastCLnumBytesFree := cacheLineSize;
+        lastCLentries := {};
+        lastCL := CACHELINEMAP(idx=lastCLidx, numBytesFree=lastCLnumBytesFree, entries=lastCLentries);
+        numNewCL := numNewCL + 1;
+      end if;
+      SOME(cacheVariable) := arrayGet(allSCVarsMapping, varIdx);
+      //print("\t\t\t\taddFixedLevelVarToThreadCL: cacheVariable found.\n");
+      cacheVariables := cacheVariable::cacheVariables;
+      scVarCLMapping := arrayUpdate(scVarCLMapping, varIdx, (lastCLidx,varDataType));
+      //print("\t\t\tCache variables: " + intString(listLength(cacheVariables)) + " to thread " + intString(iThreadIdx) + "\n");
+      varEntry := CACHELINEENTRY(start=cacheLineSize-lastCLnumBytesFree,dataType=varDataType,size=varNumBytesRequired,scVarIdx=listLength(cacheVariables));
+      lastCL := CACHELINEMAP(idx=lastCLidx,numBytesFree=lastCLnumBytesFree-varNumBytesRequired,entries=varEntry::lastCLentries);
+      
+      _ := arrayUpdate(iThreadCacheLines, iThreadIdx, lastCL::fullCLs);
+    end for;
+    
+    oInfo := (CACHEMAP(cacheLineSize,cacheVariables,cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping,simCodeVarTypes,scVarCLMapping),numNewCL);
+  end addFixedLevelVarToThreadCL;
+  
+  protected function addFixedLevelVarToSharedCL "author: marcusw
+    Append the given variables to shared cache lines. If a matching partly filled cache line is found, 
+    the partly filled cache line object is updates. Otherwise a new cache line object is created. If a cacheline 
+    is filled completely, it is appended to the CacheMap and CacheMapMeta."
+    input list<Integer> iNodeVars;
+    input Integer iThreadIdx;
+    input Integer iLevelIdx;
+    input tuple<CacheMap,CacheMapMeta,Integer,list<PartlyFilledCacheLine>> iInfo; //<CacheMap,CacheMapMeta,numNewCL,partlyFilledCL>
+    output tuple<CacheMap,CacheMapMeta,Integer,list<PartlyFilledCacheLine>> oInfo;
+  protected
+    CacheLineMap lastCL;
+    SimCodeVar.SimVar cacheVariable;
+    array<Option<SimCodeVar.SimVar>> allSCVarsMapping;
+    Integer varIdx, varDataType, varNumBytesRequired, numNewCL, cacheLineSize;
+    array<tuple<Integer,Integer>> simCodeVarTypes; //<type, numberOfBytesRequired>
+    array<tuple<Integer, Integer>> scVarCLMapping;
+    list<CacheLineMap> fullCLs, threadCacheLines;
+    list<SimCodeVar.SimVar> cacheVariables;
+    list<CacheLineMap> cacheLinesFloat;
+    list<PartlyFilledCacheLine> partlyFilledCacheLines;
+    
+    PartlyFilledCacheLine matchedCacheLine;
+    Integer matchedCacheLineIdx;
+    
+    CacheMap cacheMap;
+    CacheMapMeta cacheMapMeta;
+    
+    Integer varSize;
+  algorithm
+    (cacheMap as CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),cacheMapMeta as CACHEMAPMETA(allSCVarsMapping=allSCVarsMapping,simCodeVarTypes=simCodeVarTypes,scVarCLMapping=scVarCLMapping),numNewCL,partlyFilledCacheLines) := iInfo;
+    for varIdx in iNodeVars loop
+      ((_,varSize)) := arrayGet(simCodeVarTypes, varIdx);
+      ((cacheMap,cacheMapMeta,numNewCL,partlyFilledCacheLines)) := addFixedLevelVarToSharedCL0(findMatchingSharedCL(varIdx, varSize, iLevelIdx, iThreadIdx, 1, partlyFilledCacheLines), iThreadIdx, varIdx, iLevelIdx, (cacheMap,cacheMapMeta,numNewCL,partlyFilledCacheLines));
+    end for;
+    oInfo := (cacheMap,cacheMapMeta,numNewCL,partlyFilledCacheLines);
+  end addFixedLevelVarToSharedCL;
+  
+  protected function addFixedLevelVarToSharedCL0 "author: marcusw
+    Add the given variable to the iMatchedCacheLine if the object is not NONE() and if there is enough space. 
+    Otherwise add a new CL."
+    input Option<tuple<PartlyFilledCacheLine,Integer>> iMatchedCacheLine; //<CL, listIndex>
+    input Integer iThreadIdx;
+    input Integer iVarIdx;
+    input Integer iLevelIdx;
+    input tuple<CacheMap,CacheMapMeta,Integer,list<PartlyFilledCacheLine>> iInfo;
+    output tuple<CacheMap,CacheMapMeta,Integer,list<PartlyFilledCacheLine>> oInfo;
+  protected
+    PartlyFilledCacheLine partlyFilledCacheLine;
+  
+    CacheLineMap cacheLineMap;
+    list<Integer> prefetchLevel;
+    list<tuple<Integer, Integer>> writeLevel;
+    CacheLineEntry entry;
+    
+    Integer idx, listIndex;
+    Integer numBytesFree;
+    list<CacheLineEntry> entries;
+    
+    Integer cacheLineSize;
+    list<SimCodeVar.SimVar> cacheVariables;
+    list<CacheLineMap> cacheLinesFloat;
+    
+    SimCodeVar.SimVar cacheVariable;
+    array<Option<SimCodeVar.SimVar>> allSCVarsMapping;
+    array<tuple<Integer,Integer>> simCodeVarTypes; //<type, numberOfBytesRequired>
+    array<tuple<Integer, Integer>> scVarCLMapping; //mapping for each scVar -> <CLIdx,varType>
+    
+    Integer varSize, varType, numNewCL;
+    list<PartlyFilledCacheLine> partlyFilledCLs;
+  algorithm
+    oInfo := match(iMatchedCacheLine, iThreadIdx, iVarIdx, iLevelIdx, iInfo)
+      case(SOME((partlyFilledCacheLine as PARTLYFILLEDCACHELINE(cacheLineMap, prefetchLevel, writeLevel),listIndex)),_,_,_,(CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping=allSCVarsMapping,simCodeVarTypes=simCodeVarTypes,scVarCLMapping=scVarCLMapping),numNewCL,partlyFilledCLs))
+        equation
+          CACHELINEMAP(idx,numBytesFree,entries) = cacheLineMap;
+          ((varType,varSize)) = arrayGet(simCodeVarTypes, iVarIdx);
+          numBytesFree = numBytesFree - varSize;
+          true = intGe(numBytesFree,0);
+          SOME(cacheVariable) = arrayGet(allSCVarsMapping, iVarIdx);
+          cacheVariables = cacheVariable::cacheVariables;
+          entry = CACHELINEENTRY(cacheLineSize - numBytesFree - varSize, varType, varSize, listLength(cacheVariables));
+          cacheLineMap = CACHELINEMAP(idx,numBytesFree,entry::entries);
+          
+          if(intGt(iLevelIdx - 1, 0)) then
+            prefetchLevel = (iLevelIdx-1)::prefetchLevel;
+          end if;
+          
+          writeLevel = (iLevelIdx, iThreadIdx)::writeLevel;
+          partlyFilledCacheLine = PARTLYFILLEDCACHELINE(cacheLineMap, prefetchLevel, writeLevel);
+          
+          scVarCLMapping = arrayUpdate(scVarCLMapping, iVarIdx, (idx,varType));
+          
+          if(intEq(numBytesFree - varSize, 0)) then //CL is now full - remove it from partly filled CL list and at it to cachemap
+            partlyFilledCLs = listDelete(partlyFilledCLs, listIndex);
+            cacheLinesFloat = cacheLineMap::cacheLinesFloat;
+          end if;
+        then ((CACHEMAP(cacheLineSize,cacheVariables,cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping,simCodeVarTypes,scVarCLMapping),numNewCL,partlyFilledCLs));
+      case(NONE(),_,_,_,(CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping=allSCVarsMapping,simCodeVarTypes=simCodeVarTypes,scVarCLMapping=scVarCLMapping),numNewCL,partlyFilledCLs))
+        equation
+          ((varType,varSize)) = arrayGet(simCodeVarTypes, iVarIdx);
+          
+          numNewCL = numNewCL + 1;
+          idx = listLength(cacheLinesFloat) + numNewCL;
+          numBytesFree = cacheLineSize;
+          entries = {};
+          prefetchLevel = {};
+          writeLevel = {};
+          
+          SOME(cacheVariable) = arrayGet(allSCVarsMapping, iVarIdx);
+          cacheVariables = cacheVariable::cacheVariables;
+          entry = CACHELINEENTRY(cacheLineSize - numBytesFree, varType, varSize, listLength(cacheVariables));
+          cacheLineMap = CACHELINEMAP(idx,numBytesFree,entry::entries);
+          
+          if(intGt(iLevelIdx - 1, 0)) then
+            prefetchLevel = (iLevelIdx-1)::prefetchLevel;
+          end if;
+          
+          writeLevel = (iLevelIdx, iThreadIdx)::writeLevel;
+          partlyFilledCacheLine = PARTLYFILLEDCACHELINE(cacheLineMap, prefetchLevel, writeLevel);
+          
+          scVarCLMapping = arrayUpdate(scVarCLMapping, iVarIdx, (idx,varType));
+          
+          if(intEq(numBytesFree - varSize, 0)) then //CL is now full - at CL to cachemap
+            cacheLinesFloat = cacheLineMap::cacheLinesFloat;
+          else //Add new CL as partly filled CL
+            partlyFilledCLs = partlyFilledCacheLine::partlyFilledCLs;
+          end if;
+          print("addFixedLevelVarToSharedCL0: New CL added\n");
+        then ((CACHEMAP(cacheLineSize,cacheVariables,cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping,simCodeVarTypes,scVarCLMapping),numNewCL,partlyFilledCLs));
+    end match;  
+  end addFixedLevelVarToSharedCL0;
+  
+  protected function findMatchingSharedCL "author: marcusw
+    Iterate over the given shared cache line list and return the first entry that can be used to store the shared variable iNodeVar."
+    input Integer iNodeVar;
+    input Integer iVarSize; //number of required bytes
+    input Integer iLevelIdx;
+    input Integer iThreadIdx;
+    input Integer iCurrentListIdx;
+    input list<PartlyFilledCacheLine> iSharedCacheLines;
+    output Option<tuple<PartlyFilledCacheLine,Integer>> oMatchedCacheLine; //<CL, listIndex> 
+  protected
+    PartlyFilledCacheLine head;
+    list<PartlyFilledCacheLine> rest;
+    Option<tuple<PartlyFilledCacheLine,Integer>> tmpMatchedCacheLine;
+    
+    CacheLineMap cacheLineMap;
+    Integer numBytesFree;
+    list<Integer> prefetchLevel;
+    list<tuple<Integer,Integer>> writeLevel; //(LevelIdx, ThreadIdx)
+  algorithm
+    oMatchedCacheLine := match(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx, iSharedCacheLines)
+      case(_,_,_,_,_,(head as PARTLYFILLEDCACHELINE(cacheLineMap=(cacheLineMap as CACHELINEMAP(numBytesFree=numBytesFree)),prefetchLevel=prefetchLevel,writeLevel=writeLevel))::rest)
+        equation
+          if(boolOr(intLt(numBytesFree, iVarSize), List.exist1(prefetchLevel,intEq, iLevelIdx))) then //The CL has not enough space or is used for prefetching -- can not be used for writing
+            tmpMatchedCacheLine = findMatchingSharedCL(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx+1, rest);
+          else
+            if(List.exist(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the same level -- can not be used for writing
+              tmpMatchedCacheLine = findMatchingSharedCL(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx+1, rest);
+            else
+              if(List.exist(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx-1, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the previous level -- can not be used for writing
+                tmpMatchedCacheLine = findMatchingSharedCL(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx+1, rest);
+              else //CL matches
+                tmpMatchedCacheLine = SOME((head, iCurrentListIdx));
+              end if;
+            end if;
+          end if;
+        then tmpMatchedCacheLine;
+      else
+        then NONE();
+    end match;
+  end findMatchingSharedCL;
+  
+  protected function isCLWrittenByOtherThread "author: marcusw
+    Return 'true' if the given entry has levelidx == iLevelIdx and is handled by a thread != iThreadIdx."
+    input tuple<Integer,Integer> iLevelInfo; //(LevelIdx, ThreadIdx)
+    input Integer iLevelIdx;
+    input Integer iThreadIdx;
+    output Boolean oWrittenByOtherThread;
+  protected
+    Integer levelIdx, threadIdx;
+    Boolean ret;
+  algorithm
+    (levelIdx, threadIdx) := iLevelInfo;
+    ret := boolAnd(intEq(levelIdx, iLevelIdx), intNe(threadIdx, iThreadIdx));
+    oWrittenByOtherThread := ret;
+  end isCLWrittenByOtherThread;
 
   protected function createCacheMapDefault "author: marcusw
     Create a default cacheMap without optimization."
@@ -459,7 +911,7 @@ encapsulated package HpcOmMemory
     CacheLineMap cacheLine;
     list<CacheLineEntry> CLentries;
     SimCodeVar.SimVar scVar;
-    Integer numCacheVars, freeSpace;
+    Integer numCacheVars, freeSpace, numBytesFree;
     CacheMap cacheMap;
     CacheMapMeta cacheMapMeta;
     list<Integer> writtenCL;
@@ -478,13 +930,13 @@ encapsulated package HpcOmMemory
           //print("appendSCVarToCacheMap scVarIdx: " + intString(iSCVarIdx) + "\n");
           //print("  -- CachelineCandidates: " + intString(listLength(cacheLineCandidates)) + " currentCLCandidateidx: " + intString(currentCLCandidateIdx) + " with " + intString(currentCLCandidateFreeBytes) + "free bytes\n");
           cacheLine = listGet(cacheLinesFloat, listLength(cacheLinesFloat) - currentCLCandidateCLIdx + 1);
-          CACHELINEMAP(idx=clIdx,entries=CLentries) = cacheLine;
+          CACHELINEMAP(idx=clIdx,numBytesFree=numBytesFree,entries=CLentries) = cacheLine;
           //print("  -- writing to CL " + intString(clIdx) + " (free bytes: " + intString(currentCLCandidateFreeBytes) + ")\n");
           //write new cache lines
           entryStart = cacheLineSize-currentCLCandidateFreeBytes;
           numCacheVars = listLength(cacheVariables)+1;
           CLentries = CACHELINEENTRY(entryStart,varType, numBytesRequired, numCacheVars)::CLentries;
-          cacheLine = CACHELINEMAP(clIdx,CLentries);
+          cacheLine = CACHELINEMAP(clIdx,numBytesFree+numBytesRequired,CLentries);
           cacheLinesFloat = List.set(cacheLinesFloat, listLength(cacheLinesFloat) - currentCLCandidateCLIdx + 1, cacheLine);
           //update scVarCL-Mapping
           iScVarCLMapping = arrayUpdate(iScVarCLMapping,iSCVarIdx,(clIdx,varType));
@@ -519,7 +971,7 @@ encapsulated package HpcOmMemory
           numCacheVars = listLength(cacheVariables)+1;
           CLentries = {CACHELINEENTRY(entryStart,varType, numBytesRequired, numCacheVars)};
           clIdx = listLength(cacheLinesFloat) + 1;
-          cacheLine = CACHELINEMAP(clIdx,CLentries);
+          cacheLine = CACHELINEMAP(clIdx,numBytesRequired,CLentries);
           cacheLinesFloat = cacheLine::cacheLinesFloat;
           //update scVarCL-Mapping
           iScVarCLMapping = arrayUpdate(iScVarCLMapping,iSCVarIdx,(clIdx,varType));
@@ -628,12 +1080,12 @@ encapsulated package HpcOmMemory
     input CacheLineMap iCacheLineMap;
     output CacheLineMap oCacheLineMap;
   protected
-    Integer idx;
+    Integer idx,numBytesFree;
     list<CacheLineEntry> entries;
   algorithm
-    CACHELINEMAP(idx=idx,entries=entries) := iCacheLineMap;
+    CACHELINEMAP(idx=idx,numBytesFree=numBytesFree,entries=entries) := iCacheLineMap;
     entries := listReverse(entries);
-    oCacheLineMap := CACHELINEMAP(idx,entries);
+    oCacheLineMap := CACHELINEMAP(idx,numBytesFree,entries);
   end reverseCacheLineMapEntries;
 
   protected function convertCacheMapToMemoryMap "author: marcusw
@@ -1661,446 +2113,13 @@ encapsulated package HpcOmMemory
       then {};
     end match;
   end getTaskListTasks;
-
-  // -------------------------------------------
-  // UNUSED
-  // -------------------------------------------
-
-  protected function appendFloatVarToCacheMap
-    input SimCodeVar.SimVar iFloatVar;
-    input tuple<CacheMap,Integer,Integer> iCacheInfo;
-    output tuple<CacheMap,Integer,Integer> oCacheInfo; //<cacheMap,numCL,numBytesUsedLastCL>
-  protected
-    Integer cacheLineSize, numCL, numBytesUsedLastCL;
-    list<SimCodeVar.SimVar> cacheVariables;
-    list<CacheLineMap> tail;
-    CacheLineMap head;
-    Integer cacheLineIdx, cacheVarIdx, newCacheLineIdx;
-    list<CacheLineEntry> cacheLineEntries;
-    CacheLineEntry newEntry;
-    CacheMap newCacheMap;
+  
+  protected function getCacheLineMapOfPartlyFilledCacheLine
+    input PartlyFilledCacheLine iPartlyFilledCacheLine;
+    output CacheLineMap oCacheLineMap;
   algorithm
-    oCacheInfo := matchcontinue(iFloatVar,iCacheInfo)
-      case(_,(CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=(head as CACHELINEMAP(idx=cacheLineIdx,entries=cacheLineEntries))::tail),numCL,numBytesUsedLastCL))
-        //case1: CacheMap has at least one entry and there is enough space available to add the variable to the first cacheline
-        equation
-          true = intGt(cacheLineSize,numBytesUsedLastCL+8);
-          cacheVariables = iFloatVar::cacheVariables;
-          cacheVarIdx = listLength(cacheVariables);
-          newEntry = CACHELINEENTRY(numBytesUsedLastCL,1,8,cacheVarIdx);
-          cacheLineEntries = newEntry::cacheLineEntries;
-          head = CACHELINEMAP(cacheLineIdx,cacheLineEntries);
-          newCacheMap = CACHEMAP(cacheLineSize,cacheVariables,head::tail);
-        then ((newCacheMap,numCL,numBytesUsedLastCL+8));
-      case(_,(CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=tail),numCL,numBytesUsedLastCL))
-        equation
-          cacheVariables = iFloatVar::cacheVariables;
-          cacheVarIdx = listLength(cacheVariables);
-          newEntry = CACHELINEENTRY(numBytesUsedLastCL,1,8,cacheVarIdx);
-          newCacheLineIdx = listLength(tail)+1;
-          head = CACHELINEMAP(newCacheLineIdx,{newEntry});
-          newCacheMap = CACHEMAP(cacheLineSize,cacheVariables,head::tail);
-        then ((newCacheMap,numCL,8));
-      else
-        equation
-          print("appendFloatVarToCacheMap failed\n");
-        then fail();
-    end matchcontinue;
-  end appendFloatVarToCacheMap;
-
-  protected function getSCVarCacheLineMapping
-    input list<SimCodeVar.SimVar> iSimVars;
-    input Integer iNumVarsCL; //number of bytes per cache line
-    output array<Integer> oCacheLineMapping;
-  protected
-    array<Integer> tmpCacheLineMapping;
-  algorithm
-    tmpCacheLineMapping := arrayCreate(listLength(iSimVars), -1);
-    ((oCacheLineMapping,_)) := List.fold1(iSimVars, getSCVarCacheLineMapping0, iNumVarsCL, (tmpCacheLineMapping,1));
-  end getSCVarCacheLineMapping;
-
-  protected function getSCVarCacheLineMapping0
-    input SimCodeVar.SimVar iSimVar;
-    input Integer iNumCL;
-    input tuple<array<Integer>,Integer> iCacheLineMappingSimVarIdx;
-    output tuple<array<Integer>,Integer> oCacheLineMappingSimVarIdx;
-  protected
-    Integer iSimVarIdx, clIdx;
-    array<Integer> iCacheLineMapping;
-    DAE.ComponentRef name;
-  algorithm
-    SimCodeVar.SIMVAR(name=name) := iSimVar;
-    (iCacheLineMapping,iSimVarIdx) := iCacheLineMappingSimVarIdx;
-    clIdx := intDiv(iSimVarIdx-1,iNumCL)+1;
-    //print("Sc-Var" + intString(iSimVarIdx) + ":" + ComponentReference.debugPrintComponentRefTypeStr(name) + " is part of cl: " + intString(clIdx) + "\n");
-    iCacheLineMapping := arrayUpdate(iCacheLineMapping,iSimVarIdx,clIdx);
-    oCacheLineMappingSimVarIdx := (iCacheLineMapping,iSimVarIdx+1);
-  end getSCVarCacheLineMapping0;
-
-  protected function getSCVarCacheLineMappingFloat
-    input list<SimCodeVar.SimVar> iFloatVars;
-    input Integer iNumBytes; //number of bytes per cache line
-    input Integer iStartCL; //the cache line index of the first variable
-    input array<tuple<Integer,Integer>> iSVarCLMapping;
-    output list<CacheLineMap> oCacheLines;
-    output array<tuple<Integer,Integer>> oScVarCLMapping;
-  protected
-    list<CacheLineMap> tmpCacheLines;
-  algorithm
-    ((tmpCacheLines,_,_,_,oScVarCLMapping)) := List.fold1(iFloatVars, getSCVarCacheLineMappingFloat0, iNumBytes, ({},iStartCL-1,0,1,iSVarCLMapping));
-    tmpCacheLines := List.map(tmpCacheLines, reverseCacheLineMapEntries);
-    oCacheLines := listReverse(tmpCacheLines);
-  end getSCVarCacheLineMappingFloat;
-
-  protected function getSCVarCacheLineMappingFloat0
-    input SimCodeVar.SimVar iSimVar;
-    input Integer iNumBytes;
-    input tuple<list<CacheLineMap>,Integer,Integer,Integer,array<tuple<Integer,Integer>>> iCacheLineMappingSimVarIdx; //<filledCacheLines,CacheLineIdx,BytesCLAlreadyUsed,SimVarIdx,scVarCLMapping>
-    output tuple<list<CacheLineMap>,Integer,Integer,Integer,array<tuple<Integer,Integer>>> oCacheLineMappingSimVarIdx;
-  protected
-    CacheLineMap iCacheLineHead;
-    list<CacheLineMap> iCacheLines;
-    Integer iCacheLineIdx, iSimVarIdx, iBytesUsed;
-    CacheLineEntry entry;
-    array<tuple<Integer,Integer>> iSVarCLMapping;
-    Integer oldCLIdx;
-    list<CacheLineEntry> oldCLEntries;
-  algorithm
-    oCacheLineMappingSimVarIdx := matchcontinue(iSimVar,iNumBytes,iCacheLineMappingSimVarIdx)
-      case(_,_,(iCacheLines,iCacheLineIdx,0,iSimVarIdx,iSVarCLMapping))
-        equation
-          entry = CACHELINEENTRY(0,1,8,iSimVarIdx);
-          iCacheLineIdx = iCacheLineIdx+1;
-          iCacheLineHead = CACHELINEMAP(iCacheLineIdx, {entry});
-          iCacheLines = iCacheLineHead :: iCacheLines;
-          iSVarCLMapping = arrayUpdate(iSVarCLMapping,iSimVarIdx,(iCacheLineIdx+1,1));
-        then ((iCacheLines, iCacheLineIdx, intMod(8,iNumBytes), iSimVarIdx+1, iSVarCLMapping));
-      case(_,_,(iCacheLineHead::iCacheLines,iCacheLineIdx,iBytesUsed,iSimVarIdx,iSVarCLMapping))
-        equation
-          true = intLe(iBytesUsed+8, iNumBytes);
-          entry = CACHELINEENTRY(iBytesUsed,1,8,iSimVarIdx);
-          CACHELINEMAP(oldCLIdx,oldCLEntries) = iCacheLineHead;
-          oldCLEntries = entry :: oldCLEntries;
-          iCacheLineHead = CACHELINEMAP(oldCLIdx,oldCLEntries);
-          iCacheLines = iCacheLineHead :: iCacheLines;
-          iSVarCLMapping = arrayUpdate(iSVarCLMapping,iSimVarIdx,(iCacheLineIdx+1,1));
-        then ((iCacheLines, iCacheLineIdx, intMod(iBytesUsed+8,iNumBytes), iSimVarIdx+1, iSVarCLMapping));
-      else
-        equation
-          print("getSCVarCacheLineMappingFloat0 failed\n");
-        then iCacheLineMappingSimVarIdx;
-    end matchcontinue;
-  end getSCVarCacheLineMappingFloat0;
-
-  protected function getSimEqVarMapping
-    input list<SimCode.SimEqSystem> iEqSystems;
-    input HashTableCrILst.HashTable iHt; //Mapping varName -> varIdx
-    output list<list<Integer>> oEqVarMapping; //Mapping eq -> list of varIdx
-  algorithm
-    oEqVarMapping := List.map1(iEqSystems, getVarsBySimEqSystem, iHt);
-  end getSimEqVarMapping;
-
-  protected function getVarsBySimEqSystem "function getVarsBySimEqSystem
-    author: marcusw
-    Function extract all variables of the given equation system."
-    input SimCode.SimEqSystem iEqSystem;
-    input HashTableCrILst.HashTable iHt;
-    output list<Integer> oVars;
-  protected
-    list<Integer> varIdcList;
-    DAE.ComponentRef cref;
-    DAE.Exp exp;
-    Integer index, hTableIdx;
-  algorithm
-    oVars := match(iEqSystem, iHt)
-      case(SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,index=index),_)
-        equation
-          //BackendDump.debugExpStr((exp,"\n"));
-          //print("end Expression\n");
-          (_,(_,varIdcList)) = Expression.traverseExp(exp,createMemoryMapTraverse0, (iHt,{}));
-          //print("Var List for simEquation " + intString(index) + ":");
-          //print(stringDelimitList, ","));
-          //print("\n");
-        then varIdcList;
-      else
-        then {};
-    end match;
-  end getVarsBySimEqSystem;
-
-  protected function getVarSCVarMapping
-    input BackendDAE.EqSystem iEqSystem;
-    input HashTableCrILst.HashTable iHt; //Mapping scVarName -> varIdx
-    output array<Integer> oMapping;
-  protected
-    array<Integer> tmpMapping;
-    BackendDAE.Variables orderedVars;
-    BackendDAE.VariableArray varArr;
-    array<Option<BackendDAE.Var>> varOptArr;
-    Integer numberOfVars;
-  algorithm
-    BackendDAE.EQSYSTEM(orderedVars=orderedVars) := iEqSystem;
-    BackendDAE.VARIABLES(varArr=varArr,numberOfVars=numberOfVars) := orderedVars;
-    BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) := varArr;
-    tmpMapping := arrayCreate(numberOfVars,-1);
-    ((oMapping,_)) := Array.fold1(varOptArr,getVarSCVarMapping0,iHt,(tmpMapping,1));
-  end getVarSCVarMapping;
-
-  protected function getVarSCVarMapping0
-    input Option<BackendDAE.Var> iVarOpt;
-    input HashTableCrILst.HashTable iHt;
-    input tuple<array<Integer>,Integer> iMappingIdxTpl;
-    output tuple<array<Integer>,Integer> oMappingIdxTpl;
-  protected
-    BackendDAE.Var iVar;
-    DAE.ComponentRef varName;
-    Integer scVarIdx, scVarOffset, varIdx;
-    array<Integer> tmpMapping;
-    list<Integer> scVarValues;
-  algorithm
-    oMappingIdxTpl := match(iVarOpt,iHt,iMappingIdxTpl)
-      case(SOME(iVar),_,_)
-        equation
-          (tmpMapping,varIdx) = iMappingIdxTpl;
-          BackendDAE.VAR(varName=varName) = iVar;
-          scVarValues = BaseHashTable.get(varName,iHt);
-          scVarIdx = List.first(scVarValues);
-          scVarOffset = List.second(scVarValues);
-          scVarIdx = scVarIdx + scVarOffset + 1;
-          tmpMapping = arrayUpdate(tmpMapping,varIdx,scVarIdx);
-        then ((tmpMapping,varIdx+1));
-      else
-        then iMappingIdxTpl;
-    end match;
-  end getVarSCVarMapping0;
-
-  protected function getSCVarVarMapping
-    input Integer iNumScVars;
-    input array<Integer> iVarSCVarMapping;
-    output array<Integer> oSCVarVarMapping;
-  protected
-    array<Integer> tmpMapping;
-  algorithm
-    tmpMapping := arrayCreate(iNumScVars, -1);
-    ((oSCVarVarMapping,_)) := Array.fold(iVarSCVarMapping, getSCVarVarMapping0, (tmpMapping,1));
-  end getSCVarVarMapping;
-
-  protected function getSCVarVarMapping0
-    input Integer iScVarIdx;
-    input tuple<array<Integer>,Integer> iSCVarVarMappingIdx;
-    output tuple<array<Integer>,Integer> oSCVarVarMappingIdx;
-  protected
-    Integer iVarIdx;
-    array<Integer> iMapping;
-  algorithm
-    (iMapping,iVarIdx) := iSCVarVarMappingIdx;
-    iMapping := arrayUpdate(iMapping, iScVarIdx, iVarIdx);
-    oSCVarVarMappingIdx := (iMapping, iVarIdx+1);
-  end getSCVarVarMapping0;
-
-  protected function transposeCacheLineTaskMapping
-    input array<list<Integer>> iCLTaskMapping;
-    input Integer iNumberOfTasks; //number of tasks
-    output array<list<Integer>> oCLTaskMappingT; //taskCLMapping
-  protected
-    array<list<Integer>> taskCLMapping;
-  algorithm
-    //print("transposeCacheLineTaskMapping with nodeCount: " + intString(iNumberOfTasks) + "\n");
-    taskCLMapping := arrayCreate(iNumberOfTasks,{});
-    ((oCLTaskMappingT,_)) := Array.fold(iCLTaskMapping,transposeCacheLineTaskMapping0,(taskCLMapping,1));
-    //print("transposeCacheLineTaskMapping finished\n");
-  end transposeCacheLineTaskMapping;
-
-  protected function transposeCacheLineTaskMapping0
-    input list<Integer> iMappingEntry; //mapping clIdx -> list<NodeIdx>
-    input tuple<array<list<Integer>>,Integer> iMappingTClIdx; //<oMapping,iClIdx>
-    output tuple<array<list<Integer>>,Integer> oMappingTClIdx; //<oMapping,iClIdx>
-  protected
-    array<list<Integer>> taskCLMapping;
-    Integer iCLIdx;
-  algorithm
-    (taskCLMapping,iCLIdx) := iMappingTClIdx;
-    taskCLMapping := List.fold1(iMappingEntry, transposeCacheLineTaskMapping1, iCLIdx, taskCLMapping);
-    oMappingTClIdx := (taskCLMapping,iCLIdx+1);
-  end transposeCacheLineTaskMapping0;
-
-  protected function transposeCacheLineTaskMapping1
-    input Integer iTaskIdx;
-    input Integer iCLIdx;
-    input array<list<Integer>> iTaskCLMapping;
-    output array<list<Integer>> oTaskCLMapping;
-  protected
-    list<Integer> oldValue;
-    array<list<Integer>> tmpCLTaskMapping;
-  algorithm
-    oTaskCLMapping := matchcontinue(iTaskIdx,iCLIdx,iTaskCLMapping)
-      case(_,_,_)
-        equation
-          //print("transposeCacheLineTaskMapping1 TaskIdx: " + intString(iTaskIdx) + " CacheLineIdx: " + intString(iCLIdx) + "\n");
-          oldValue = arrayGet(iTaskCLMapping,iTaskIdx);
-          oldValue = iCLIdx :: oldValue;
-          tmpCLTaskMapping = arrayUpdate(iTaskCLMapping,iTaskIdx,oldValue);
-        then tmpCLTaskMapping;
-      else iTaskCLMapping;
-    end matchcontinue;
-  end transposeCacheLineTaskMapping1;
-
-  protected function evaluateCacheBehaviour
-    input array<tuple<Integer,Integer,Real>> iSchedulerInfo; //<threadId,taskNumber,finishTime> for node (array-index)
-    input HpcOmTaskGraph.TaskGraphMeta iGraphData;
-    input array<list<Integer>> iCLTaskMapping;
-    input array<list<Integer>> iTaskCLMapping;
-  algorithm
-    //Iterate over all tasks (nodes in graph)
-    _ := Array.fold4(iSchedulerInfo, evaluateCacheBehaviour0, iSchedulerInfo, iGraphData, iCLTaskMapping, iTaskCLMapping, 1);
-  end evaluateCacheBehaviour;
-
-  protected function evaluateCacheBehaviour0
-    input tuple<Integer,Integer,Real> iSchedulerInfo; //<threadId,taskNumber,finishTime>
-    input array<tuple<Integer,Integer,Real>> iSchedulerInfoFull;
-    input HpcOmTaskGraph.TaskGraphMeta iGraphData;
-    input array<list<Integer>> iCLTaskMapping;
-    input array<list<Integer>> iTaskCLMapping;
-    input Integer iNodeIdx;
-    output Integer oNodeIdx;
-  protected
-    list<Integer> taskCacheLines;
-  algorithm
-    oNodeIdx := matchcontinue(iSchedulerInfo,iSchedulerInfoFull,iGraphData,iCLTaskMapping,iTaskCLMapping,iNodeIdx)
-      case(_,_,_,_,_,_)
-        equation
-          print("evaluateCacheBehaviour0 for node " + intString(iNodeIdx) + "\n");
-          taskCacheLines = arrayGet(iTaskCLMapping,iNodeIdx);
-          //print("evaluateCacheBehaviour0 writing to cache lines: " + stringDelimitList(List.map(taskCacheLines, intString), ",") + "\n");
-          List.map4_0(taskCacheLines, evaluateCacheBehaviour1, (iGraphData,iNodeIdx), iSchedulerInfoFull, iSchedulerInfo, iCLTaskMapping);
-        then iNodeIdx + 1;
-      else iNodeIdx + 1;
-    end matchcontinue;
-  end evaluateCacheBehaviour0;
-
-  protected function evaluateCacheBehaviour1
-    input Integer iCacheLineIdx;
-    input tuple<HpcOmTaskGraph.TaskGraphMeta,Integer> iGraphDataNodeIdxTpl; //<graphdata,NodeIdx>
-    input array<tuple<Integer,Integer,Real>> iSchedulerInfoFull;
-    input tuple<Integer,Integer,Real> iSchedulerInfo;
-    input array<list<Integer>> iCLTaskMapping;
-  protected
-    Integer threadIdx, iNodeIdx;
-    HpcOmTaskGraph.TaskGraphMeta iGraphData;
-    list<Integer> otherTasksCL;
-  algorithm
-    _ := matchcontinue(iCacheLineIdx,iGraphDataNodeIdxTpl,iSchedulerInfoFull,iSchedulerInfo,iCLTaskMapping)
-      case(_,(iGraphData, iNodeIdx),_,_,_)
-        equation
-          //get threadIdx of task
-          (threadIdx,_,_) = iSchedulerInfo;
-          //find all tasks that are writing to the same cache line
-          otherTasksCL = arrayGet(iCLTaskMapping,iCacheLineIdx);
-          otherTasksCL = List.removeOnTrue(iNodeIdx, intEq, otherTasksCL);
-          //filter out tasks that belong to the same thread
-          otherTasksCL = List.fold3(otherTasksCL, evaluateCacheBehaviour1Filter, iGraphData, iSchedulerInfoFull, (iNodeIdx,threadIdx),  {});
-          print("Conflicting tasks: " + stringDelimitList(List.map(otherTasksCL, intString), ",") + "\n");
-        then ();
-      else ();
-    end matchcontinue;
-  end evaluateCacheBehaviour1;
-
-  protected function evaluateCacheBehaviour1Filter
-    input Integer iOtherNodeIdx;
-    input HpcOmTaskGraph.TaskGraphMeta iGraphData;
-    input array<tuple<Integer,Integer,Real>> iSchedulerInfoFull;
-    input tuple<Integer,Integer> iNodeIdxThreadIdx;
-    input list<Integer> iTaskList;
-    output list<Integer> oTaskList;
-  protected
-    Integer head, otherThreadIdx, iNodeIdx, iThreadIdx;
-    Real nodeExecTime, otherNodeExecTime, nodeFinishTime, nodeStartTime, otherNodeFinishTime, otherNodeStartTime;
-    list<Integer> tail;
-    list<Integer> tmpTaskList;
-  algorithm
-    oTaskList := matchcontinue(iOtherNodeIdx, iGraphData, iSchedulerInfoFull, iNodeIdxThreadIdx, iTaskList)
-      case(_,_,_,(iNodeIdx,iThreadIdx),_)
-        equation
-          ((otherThreadIdx,_,_)) = arrayGet(iSchedulerInfoFull,iOtherNodeIdx);
-          true = intNe(iThreadIdx,otherThreadIdx); // the nodes are handled by different threads
-          ((_,nodeExecTime)) = HpcOmTaskGraph.getExeCost(iNodeIdx,iGraphData);
-          ((_,otherNodeExecTime)) = HpcOmTaskGraph.getExeCost(iOtherNodeIdx,iGraphData);
-          ((_,_,nodeFinishTime)) = arrayGet(iSchedulerInfoFull, iNodeIdx);
-          ((_,_,otherNodeFinishTime)) = arrayGet(iSchedulerInfoFull, iOtherNodeIdx);
-          nodeStartTime = realSub(nodeFinishTime, nodeExecTime);
-          otherNodeStartTime = realSub(otherNodeFinishTime, otherNodeExecTime);
-          true = realLt(otherNodeFinishTime, nodeFinishTime);
-          true = realGt(otherNodeFinishTime, nodeStartTime);//other thread has written to cache line during calculation
-          tmpTaskList = iOtherNodeIdx :: iTaskList;
-        then tmpTaskList;
-      else
-        then iTaskList;
-    end matchcontinue;
-  end evaluateCacheBehaviour1Filter;
-
-  //protected function appendCacheLineEdgesToGraphTraverse
-  //  input list<Integer> iEqSCVars;
-  //  //input array<Integer> iScvarCompMapping; //maps each scVar (arrayIdx) to the task that solves it
-  //  input array<tuple<Integer,Integer,Integer>> ieqCompMapping; //a mapping from eqIdx (arrayIdx) to the scc idx
-  //  input array<Integer> iCompNodeMapping;
-  //  input array<Integer> iScVarTaskMapping;
-  //  input tuple<Integer,array<list<Integer>>,GraphML.GraphInfo> iGraphInfoIdx;
-  //  output tuple<Integer,array<list<Integer>>,GraphML.GraphInfo> oGraphInfoIdx;
-  //protected
-  //  Integer eqIdx, compIdx, nodeIdx;
-  //  GraphML.GraphInfo graphInfo;
-  //  array<list<Integer>> knownEdges;
-  //algorithm
-  //  (eqIdx,knownEdges,graphInfo) := iGraphInfoIdx;
-  //  //print("appendCacheLineEdgesToGraphTraverse: Equation with Vars: " + stringDelimitList(List.map(iEqVars, intString), ",") + "\n");
-  //  //print("appendCacheLineEdgesToGraphTraverse " + intString(eqIdx) + " arrayLength: " + intString(arrayLength(ieqCompMapping)) + "\n");
-  //  ((compIdx,_,_)) := arrayGet(ieqCompMapping,eqIdx);
-  //  nodeIdx := arrayGet(iCompNodeMapping, compIdx);
-  //  graphInfo := List.fold4(iEqSCVars, appendCacheLineEdgeToGraph, eqIdx, nodeIdx, knownEdges, iScVarTaskMapping, graphInfo);
-  //  oGraphInfoIdx := ((eqIdx+1,knownEdges,graphInfo));
-  //end appendCacheLineEdgesToGraphTraverse;
-
-  //protected function appendCacheLineEdgeToGraph
-  //  input Integer iSCVarIdx;
-  //  input Integer iEqIdx;
-  //  input Integer iNodeIdx;
-  //  input array<list<Integer>> iKnownEdges;
-  //  input array<Integer> iScVarTaskMapping;
-  //  input GraphML.GraphInfo iGraphInfo;
-  //  output GraphML.GraphInfo oGraphInfo;
-  //protected
-  //  String edgeId, sourceId, targetId;
-  //  GraphML.GraphInfo tmpGraphInfo;
-  //algorithm
-  //  oGraphInfo := matchcontinue(iSCVarIdx,iEqIdx,iNodeIdx,iKnownEdges,iScVarTaskMapping,iGraphInfo)
-  //    case(_,_,_,_,_,_)
-  //      equation
-  //        //print("appendCacheLineEdgeToGraph: scVarFound " + intString(iVarIdx) + " [SC-Var " + intString(scVarIdx) + "]\n");
-  //        //knownEdgesOfNode = arrayGet(knownEdges,nodeIdx);
-  //        //false = List.exist1(knownEdgesOfNode, intEq, clIdx);
-  //        true = intGt(iNodeIdx,0);
-  //        // Node solves scvar
-  //        true = intEq(arrayGet(iScVarTaskMapping, iSCVarIdx), iNodeIdx);
-  //        //knownEdges = arrayUpdate(knownEdges, nodeIdx, clIdx::knownEdgesOfNode);
-  //        edgeId = "CL_Edge" + intString(iNodeIdx) + intString(iSCVarIdx);
-  //        sourceId = "Node" + intString(iNodeIdx);
-  //        //targetId = "CL_Meta_" + intString(clIdx);
-  //        //print("appendCacheLineEdgeToGraph: Equation " + intString(iEqIdx) + " reads/writes SC-Var-idx: " + intString(iSCVarIdx) + " solved in node " + intString(iNodeIdx) + "\n");
-  //        targetId = "CL_Var" + intString(iSCVarIdx);
-  //        (tmpGraphInfo,(_,_)) = GraphML.addEdge(edgeId, targetId, sourceId, GraphML.COLOR_GRAY, GraphML.DASHED(), GraphML.LINEWIDTH_STANDARD, true, {}, (GraphML.ARROWNONE(),GraphML.ARROWNONE()), {}, iGraphInfo);
-  //      then tmpGraphInfo;
-  //     case(_,_,_,_,_,_)
-  //      equation
-  //        //((nodeIdx,_,_)) = arrayGet(ieqCompMapping,iEqIdx);
-  //        //print("HpcOmSimCode.appendCacheLineEdgeToGraph: No node for scc " + intString(sccIdx) + " found\n");
-  //      then iGraphInfo;
-  //     else
-  //      equation
-  //        //Valid if there is no state in the model and a dummy state was added
-  //        //print("HpcOmSimCode.appendCacheLineEdgeToGraph: Equation " + intString(iEqIdx) + " is not part of a scc.\n");
-  //        //print("HpcOmSimCode.appendCacheLineEdgeToGraph failed!\n");
-  //      then iGraphInfo;
-  //  end matchcontinue;
-  //end appendCacheLineEdgeToGraph;
+    PARTLYFILLEDCACHELINE(cacheLineMap=oCacheLineMap) := iPartlyFilledCacheLine;
+  end getCacheLineMapOfPartlyFilledCacheLine;
 
 annotation(__OpenModelica_Interface="backend");
 end HpcOmMemory;

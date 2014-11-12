@@ -4098,6 +4098,7 @@ algorithm
         ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
         reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromFile(benchFilePrefix);
         //print("createCosts: read files\n");
+        //print("createCosts: read values: " + stringDelimitList(List.map(List.map(reqTimeOpLstSimCode, Util.tuple33), realString), ",") + "\n");
         reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
         reqTimeOpSimCode = List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
         //print("createCosts: reqTimeOpSimCode created\n");
