@@ -212,13 +212,6 @@ inline static double tinymt64_generate_doubleOO(tinymt64_t * random) {
     return tinymt64_temper_conv_open(random) - 1.0;
 }
 
-/* OpenModelica addition. Not really a good function, but int is 32-bit and the
- * randomness 64-bit so the results are ok.
- */
-inline static int omc_tinymt64_generate_fast_int_range(tinymt64_t *seed, int n) {
-  return tinymt64_generate_uint64(seed) % n;
-}
-
 #if defined(__cplusplus)
 }
 #endif

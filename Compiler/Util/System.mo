@@ -929,8 +929,8 @@ public function intRand
   The number of possible values is n, the maximum value n-1."
   input Integer n;
   output Integer i;
-
-  external "C" i = SystemImpl__intRand(n) annotation(Library = {"omcruntime"});
+algorithm
+  i := integer(realRand()*n);
 end intRand;
 
 public function gettextInit

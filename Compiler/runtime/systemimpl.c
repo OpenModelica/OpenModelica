@@ -2164,11 +2164,12 @@ double SystemImpl__realRand(void)
   return tinymt64_generate_double(&system_random_seed);
 }
 
-/* Returns an integer (0,n] (i.e. the highest value is n-1) */
+/* Returns an integer (0,n] (i.e. the highest value is n-1)
+ * TODO: Remove once we update the bootstrapping tarball
+ */
 int SystemImpl__intRand(int n)
 {
-  seed();
-  return omc_tinymt64_generate_fast_int_range(&system_random_seed, n);
+  return SystemImpl__realRand()*n;
 }
 
 char* alloc_locale_str(const char *locale, int llen, const char *suffix, int slen)
