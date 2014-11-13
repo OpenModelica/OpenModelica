@@ -55,7 +55,7 @@ protected import List;
 protected import ResolveLoops;
 
 
-protected 
+protected
 uniontype CommonSubExp
   record ASSIGNMENT_CSE
     list<Integer> eqIdcs;
@@ -142,7 +142,7 @@ algorithm
     range := List.intRange(arrayLength(mIn));
     arrLst := arrayList(mIn);
     lengthLst := List.map(arrLst,listLength);
-    
+
     // check for CSE of length 1
     //print("CHECK FOR CSE 2\n");
     (_,eqIdcs) := List.filter1OnTrueSync(lengthLst,intEq,2,range);
@@ -160,7 +160,7 @@ algorithm
     partitions := arrayList(ResolveLoops.partitionBipartiteGraph(m,mT));
         //print("the partitions for system  : \n"+stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+"\n");
     cseLst2 := List.fold(partitions,function getCSE2(m=m,mT=mT,vars=vars,eqs=eqs,eqMap=eqIdcs,varMap=varIdcs),{});
-    
+
     // check for CSE of length 2
     //print("CHECK FOR CSE 3\n");
     (_,eqIdcs) := List.filter1OnTrueSync(lengthLst,intEq,3,range);
@@ -219,7 +219,7 @@ algorithm
       sharedVar = BackendVariable.getVarAt(vars,sharedVarIdx);
       var1 = BackendVariable.getVarAt(vars,varIdx1);
       var2 = BackendVariable.getVarAt(vars,varIdx2);
-      
+
       // compare the actual equations
       varExp1 = BackendVariable.varExp(var1);
       varExp2 = BackendVariable.varExp(var2);
@@ -280,7 +280,7 @@ algorithm
       {eq1,eq2} = BackendEquation.getEqns(loop1,eqs);
       var1 = BackendVariable.getVarAt(vars,varIdx1);
       var2 = BackendVariable.getVarAt(vars,varIdx2);
-      
+
       // compare the actual equations
       varExp1 = BackendVariable.varExp(var1);
       varExp2 = BackendVariable.varExp(var2);
@@ -343,14 +343,14 @@ algorithm
     equation
      // update the equations
      repl = BackendVarTransform.emptyReplacements();
-     eqs1 = arrayGet(mT,varIdx1); 
+     eqs1 = arrayGet(mT,varIdx1);
      eqs2 = arrayGet(mT,varIdx2);
            //print("eqs1 "+stringDelimitList(List.map(eqs1,intString),", ")+"\n");
            //print("eqs2 "+stringDelimitList(List.map(eqs2,intString),", ")+"\n");
      true = intEq(listLength(eqs1),1) or intEq(listLength(eqs2),1);  // choose the variable to be removed, that does not influence the causalization
      if intEq(listLength(eqs2),1) then varIdxAlias = varIdx2; varIdxRepl = varIdx1; else varIdxAlias = varIdx1; varIdxRepl = varIdx2; end if;
      if intEq(listLength(eqs2),1) then eqIdxDel = eqIdx2; eqIdxLeft = eqIdx1; else eqIdxDel = eqIdx1; eqIdxLeft = eqIdx2; end if;
-     
+
      var1 = BackendVariable.getVarAt(vars,varIdxAlias);
      var2 = BackendVariable.getVarAt(vars,varIdxRepl);
      cref = BackendVariable.varCref(var2);

@@ -2616,7 +2616,7 @@ algorithm
     DAE.Exp exp;
   case(BackendDAE.VAR(bindExp=SOME(exp)),_)
     equation
-    exp = replaceExp(exp,repl,NONE()); 
+    exp = replaceExp(exp,repl,NONE());
   then BackendVariable.setBindExp(varIn,SOME(exp));
   case(BackendDAE.VAR(bindExp=NONE()),_)
     then varIn;
