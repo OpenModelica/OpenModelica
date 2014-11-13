@@ -1311,7 +1311,7 @@ algorithm
   bOut := intEq(listLength(lst),value);
 end listLengthIs;
 
-protected function partitionBipartiteGraph "author: Waurich TUD 2013-12
+public function partitionBipartiteGraph "author: Waurich TUD 2013-12
   checks if there are independent subgraphs in the BIPARTITE graph. the given
   indeces refer to the equation indeces (rows in the incidenceMatrix)
   The varCrossNodes will divide/cut the partitions."

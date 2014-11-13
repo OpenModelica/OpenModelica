@@ -133,6 +133,7 @@ if true then /* Suppress output */
     "../BackEnd/BinaryTree.mo",
     "../BackEnd/BinaryTreeInt.mo",
     "../BackEnd/Causalize.mo",
+    "../BackEnd/CommonSubExpression.mo",
     "../BackEnd/DAEQuery.mo",
     "../BackEnd/Differentiate.mo",
     "../BackEnd/DumpHTML.mo",

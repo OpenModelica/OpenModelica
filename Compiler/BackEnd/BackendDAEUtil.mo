@@ -69,6 +69,7 @@ protected import Ceval;
 protected import CheckModel;
 protected import ClassInf;
 protected import ClockIndexes;
+protected import CommonSubExpression;
 protected import ComponentReference;
 protected import Config;
 protected import DAEDump;
@@ -5112,6 +5113,31 @@ algorithm
   sharedOut := BackendDAE.SHARED(knVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
 end replaceKnownVarsInShared;
 
+public function replaceAliasVarsInShared"replaces the aliasVars in the BackendDAE.Shared
+author:Waurich TUD 2014-11"
+  input BackendDAE.Shared sharedIn;
+  input BackendDAE.Variables aliasVars;
+  output BackendDAE.Shared sharedOut;
+protected
+    BackendDAE.Variables knownVars,externalObjects;
+    BackendDAE.EquationArray initialEqs,removedEqs;
+    list<DAE.Constraint> constraints;
+    list<DAE.ClassAttributes> classAttrs;
+    FCore.Cache cache;
+    FCore.Graph graph;
+    DAE.FunctionTree functionTree;
+    BackendDAE.EventInfo eventInfo;
+    BackendDAE.ExternalObjectClasses extObjClasses;
+    BackendDAE.BackendDAEType backendDAEType;
+    BackendDAE.SymbolicJacobians symjacs;
+    BackendDAE.ExtraInfo info;
+algorithm
+  BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,initialEqs=initialEqs,removedEqs=removedEqs,
+  constraints=constraints,classAttrs=classAttrs,cache=cache,graph=graph,functionTree=functionTree,eventInfo=eventInfo,extObjClasses=extObjClasses,
+  backendDAEType=backendDAEType,symjacs=symjacs,info=info) := sharedIn;
+  sharedOut := BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,graph,functionTree,eventInfo,extObjClasses,backendDAEType,symjacs,info);
+end replaceAliasVarsInShared;
+
 protected function adjacencyRowExpEnhanced
 "author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced, investigates expressions for
@@ -7505,7 +7531,8 @@ algorithm
                        (BackendDAEOptimize.residualForm, "residualForm", false),
                        (ResolveLoops.resolveLoops, "resolveLoops", false),
                        (EvaluateFunctions.evalFunctions, "evalFunc", false),
-                       (UnitCheck.unitChecking, "unitChecking", true)
+                       (UnitCheck.unitChecking, "unitChecking", true),
+                       (CommonSubExpression.commonSubExpressionReplacement, "comSubExp", false)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);

@@ -612,6 +612,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "replaceEdgeChange",
     "inlineArrayEqn",
     "removeSimpleEquations",
+    "comSubExp",
     // "addInitialStmtsToAlgorithms",
     "resolveLoops",
     "evalFunc"
@@ -641,7 +642,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x.")),
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("resolveLoops", Util.gettext("resolves linear equations in loops")),
-    ("evalFunc", Util.gettext("evaluates functions partially"))
+    ("evalFunc", Util.gettext("evaluates functions partially")),
+    ("comSubExp", Util.gettext("replaces common sub expressions"))
     })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
 

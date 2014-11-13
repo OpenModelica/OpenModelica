@@ -49,6 +49,7 @@ protected import BaseHashTable;
 protected import BaseHashSet;
 protected import BackendDAEUtil;
 protected import BackendEquation;
+protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -2604,6 +2605,23 @@ algorithm
     else (inExp,false);
   end match;
 end controlExp;
+
+public function replaceBindingExp
+  input BackendDAE.Var varIn;
+  input VariableReplacements repl;
+  output BackendDAE.Var varOut;
+algorithm
+  varOut := match(varIn,repl)
+  local
+    DAE.Exp exp;
+  case(BackendDAE.VAR(bindExp=SOME(exp)),_)
+    equation
+    exp = replaceExp(exp,repl,NONE()); 
+  then BackendVariable.setBindExp(varIn,SOME(exp));
+  case(BackendDAE.VAR(bindExp=NONE()),_)
+    then varIn;
+  end match;
+end replaceBindingExp;
 
 /*********************************************************/
 /* dump replacements  */
