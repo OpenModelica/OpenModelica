@@ -447,9 +447,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%getCondition(zeroCrossings,whenClauses,simCode,useFlatArrayNotation)%>
    <%handleSystemEvents(zeroCrossings,whenClauses,simCode)%>
-   <%saveall(modelInfo,simCode,useFlatArrayNotation)%>
+   <%saveAll(modelInfo,simCode,useFlatArrayNotation)%>
    <%initPrevars(modelInfo,simCode,useFlatArrayNotation)%>
-   <%savediscreteVars(modelInfo,simCode,useFlatArrayNotation)%>
+   <%saveDiscreteVars(modelInfo,simCode,useFlatArrayNotation)%>
    <%LabeledDAE(modelInfo.labels,simCode,useFlatArrayNotation)%>
     <%giveVariables(modelInfo,useFlatArrayNotation,simCode)%>
    >>

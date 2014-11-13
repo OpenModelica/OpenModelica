@@ -86,6 +86,12 @@ package builtin
     input Integer i2;
     output Boolean b;
   end intGt;
+  
+  function intLt
+    input Integer i1;
+    input Integer i2;
+    output Boolean b;
+  end intLt;
 
   function realInt
     input Real r;
