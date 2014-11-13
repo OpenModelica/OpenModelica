@@ -164,7 +164,7 @@ protected
   HpcOmSimCode.Schedule tmpSchedule;
   array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
 algorithm
-  (oSchedule,oThreadReadyTimes) := matchcontinue(iNodeList,iThreadReadyTimes, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, 
+  (oSchedule,oThreadReadyTimes) := matchcontinue(iNodeList,iThreadReadyTimes, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping,
                                                  iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, iSchedule)
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))
       ::rest,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
@@ -173,7 +173,7 @@ algorithm
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
         true = List.isNotEmpty(predecessors); //in this case the node has predecessors
-        //print("Handle1 task " + intString(index) + " with " + intString(listLength(predecessors)) + " child nodes and " 
+        //print("Handle1 task " + intString(index) + " with " + intString(listLength(predecessors)) + " child nodes and "
         //      + intString(listLength(successorIdc)) + " parent nodes.\n");
 
         //get last child finished time
@@ -215,7 +215,7 @@ algorithm
           HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
       equation
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        //!print("Handle2 task " + intString(index) + " with 0 child nodes and " + intString(listLength(successorIdc)) 
+        //!print("Handle2 task " + intString(index) + " with 0 child nodes and " + intString(listLength(successorIdc))
         //!      + " parent nodes.\n");
         //print("\tChildren: {" + stringDelimitList(List.map(successorIdc, intString), ",") + "}\n");
 
@@ -303,7 +303,7 @@ end createRandomSchedule;
 
 protected function createRandomSchedule1 "function createRandomSchedule1
   author: mflehmig
-  Create a random schedule starting with the given nodeList. This method will add calcTasks and assignLockTasks, 
+  Create a random schedule starting with the given nodeList. This method will add calcTasks and assignLockTasks,
   but no releaseLockTasks!"
   input list<HpcOmSimCode.Task> iNodeList;              //The sorted nodes -> this method will pick the first task
   input array<Real> iThreadReadyTimes;                  //The time until the thread is ready to handle a new task
@@ -354,7 +354,7 @@ protected
   HpcOmSimCode.Schedule tmpSchedule;
   array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
 algorithm
-  (oSchedule,oThreadReadyTimes) := matchcontinue(iNodeList,iThreadReadyTimes, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, 
+  (oSchedule,oThreadReadyTimes) := matchcontinue(iNodeList,iThreadReadyTimes, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping,
                                                  iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, iNumberOfThreads, iSchedule)
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest
          ,_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
@@ -363,7 +363,7 @@ algorithm
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
         true = List.isNotEmpty(predecessors); //in this case the node has predecessors
-        //!print("Handle1 task " + intString(index) + "\n");// + " with " + intString(listLength(predecessors)) + " child nodes and " 
+        //!print("Handle1 task " + intString(index) + "\n");// + " with " + intString(listLength(predecessors)) + " child nodes and "
               //+ intString(listLength(successorIdc)) + " parent nodes.\n");
         //!print("\tZeile 367\t" + stringDelimitList(List.map(arrayList(iThreadReadyTimes),realString), "\t\t") + "\n");
 
@@ -396,9 +396,9 @@ algorithm
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         (_, newTaskRefCount) = arrayGet(allCalcTasks, index);
         _ = arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
-        (tmpSchedule, tmpThreadReadyTimes) = createRandomSchedule1(tmpNodeList,tmpThreadReadyTimes, iTaskGraph, iTaskGraphT, 
-                                                                   iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, 
-                                                                   iLockWithPredecessorHandler, iNumberOfThreads, 
+        (tmpSchedule, tmpThreadReadyTimes) = createRandomSchedule1(tmpNodeList,tmpThreadReadyTimes, iTaskGraph, iTaskGraphT,
+                                                                   iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping,
+                                                                   iLockWithPredecessorHandler, iNumberOfThreads,
                                                                    HpcOmSimCode.THREADSCHEDULE(allThreadTasks, outgoingDepTasks,
                                                                    {}, allCalcTasks));
       then (tmpSchedule,tmpThreadReadyTimes);
@@ -407,7 +407,7 @@ algorithm
           HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
       equation
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        //print("Handle2 task " + intString(index) + "\n");//+ " with 0 child nodes and " + intString(listLength(successorIdc)) 
+        //print("Handle2 task " + intString(index) + "\n");//+ " with 0 child nodes and " + intString(listLength(successorIdc))
               //+ " parent nodes.\n");
         //print("\tChildren: {" + stringDelimitList(List.map(successorIdc, intString), ",") + "}\n");
 
@@ -434,10 +434,10 @@ algorithm
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         (_, newTaskRefCount) = arrayGet(allCalcTasks, index);
         _ = arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
-        (tmpSchedule,tmpThreadReadyTimes) = createRandomSchedule1(tmpNodeList, tmpThreadReadyTimes, iTaskGraph, iTaskGraphT, 
+        (tmpSchedule,tmpThreadReadyTimes) = createRandomSchedule1(tmpNodeList, tmpThreadReadyTimes, iTaskGraph, iTaskGraphT,
                                                                   iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping,
-                                                                  iLockWithPredecessorHandler, iNumberOfThreads, 
-                                                                  HpcOmSimCode.THREADSCHEDULE(allThreadTasks, outgoingDepTasks, 
+                                                                  iLockWithPredecessorHandler, iNumberOfThreads,
+                                                                  HpcOmSimCode.THREADSCHEDULE(allThreadTasks, outgoingDepTasks,
                                                                   {}, allCalcTasks));
       then (tmpSchedule,tmpThreadReadyTimes);
     case({},_,_,_,_,_,_,_,_,_,_) then (iSchedule, iThreadReadyTimes);
