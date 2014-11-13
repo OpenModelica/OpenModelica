@@ -96,19 +96,19 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
 
   private:
     <%initeqs%>
-    
+
     <%List.partition(vars.algVars, 100) |> ls hasindex idx => 'void initializeAlgVars_<%idx%>();';separator="\n"%>
-    
+
     void initializeAlgVars();
     void initializeDiscreteAlgVars();
-    
+
     <%List.partition(vars.intAlgVars, 100) |> ls hasindex idx => 'void initializeIntAlgVars_<%idx%>();';separator="\n"%>
-    
+
     void initializeIntAlgVars();
     void initializeBoolAlgVars();
-    
+
     <%List.partition(vars.aliasVars, 100) |> ls hasindex idx => 'void initializeAliasVars_<%idx%>();';separator="\n"%>
-    
+
     void initializeAliasVars();
     void initializeIntAliasVars();
     void initializeBoolAliasVars();
@@ -1934,18 +1934,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       deleteObjects();
     }
-    
+
     void <%className%>::deleteObjects()
     {
 
       if(_functions != NULL)
         delete _functions;
-        
+
       deleteAlgloopSolverVariables();
     }
 
     <%generateInitAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode,className)%>
-  
+
     <%generateDeleteAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode,className)%>
 
     <%Update(simCode,useFlatArrayNotation)%>
@@ -3753,7 +3753,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
    let initialequations  = functionInitialEquations(initialEquations,simCode, useFlatArrayNotation)
    let initextvars = functionCallExternalObjectConstructors(extObjInfo,simCode,useFlatArrayNotation)
-   
+
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
@@ -3858,25 +3858,25 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
        <%varDecls2%>
        <%init2%>
    }
-    
+
    <%init3%>
-    
+
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeDiscreteAlgVars()
    {
       <%varDecls4%>
       <%init4%>
    }
-   
+
    <%init5%>
-   
+
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAlgVars()
    {
        <%varDecls6%>
        <%init6%>
    }
-   
+
    <%init7%>
-   
+
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
     {
        <%varDecls8%>
@@ -4711,36 +4711,36 @@ let conditionvariables =  conditionvariable(zeroCrossings,simCode)
 match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
   let allVarCount = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
-  
+
   let getrealvars = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx =>
     <<
     void getReal_<%idx%>(double* z);
     void setReal_<%idx%>(const double* z);
     >>
     ;separator="\n")
-  let getintvars = (List.partition(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars), 100) |> ls hasindex idx => 
+  let getintvars = (List.partition(listAppend(listAppend(vars.intAlgVars, vars.intParamVars), vars.intAliasVars), 100) |> ls hasindex idx =>
     <<
     void getInteger_<%idx%>(int* z);
     >>
     ;separator="\n")
-  let getboolvars = (List.partition(listAppend(listAppend(vars.boolAlgVars, vars.boolParamVars), vars.boolAliasVars), 100) |> ls hasindex idx => 
+  let getboolvars = (List.partition(listAppend(listAppend(vars.boolAlgVars, vars.boolParamVars), vars.boolAliasVars), 100) |> ls hasindex idx =>
     <<
     void getBoolean_<%idx%>(bool* z);
     >>
     ;separator="\n")
-  let getstringvars = (List.partition(listAppend(listAppend(vars.stringAlgVars, vars.stringParamVars), vars.stringAliasVars), 100) |> ls hasindex idx => 
+  let getstringvars = (List.partition(listAppend(listAppend(vars.stringAlgVars, vars.stringParamVars), vars.stringAliasVars), 100) |> ls hasindex idx =>
     <<
     void getString_<%idx%>(string* z);
     >>
     ;separator="\n")
-    
-  let initDeleteAlgloopSolverVars = (List.partition(listAppend(allEquations,initialEquations), 100) |> ls hasindex idx => 
+
+  let initDeleteAlgloopSolverVars = (List.partition(listAppend(allEquations,initialEquations), 100) |> ls hasindex idx =>
     <<
     void initAlgloopSolverVariables_<%idx%>();
     void deleteAlgloopSolverVariables_<%idx%>();
     >>
     ;separator="\n")
-    
+
   <<
   class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
@@ -4753,7 +4753,7 @@ match modelInfo
       <%generateMethodDeclarationCode(simCode)%>
       virtual bool getCondition(unsigned int index);
       virtual void initPreVars(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);
-      
+
       <%
       let initPreVarFuncs = (List.partition(List.intRange(stringInt(allVarCount)), 100) |> ls hasindex idx => 'virtual void initPreVars_<%idx%>(unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&);';separator="\n")
       <<
@@ -4765,9 +4765,9 @@ match modelInfo
       //Methods:
       void initAlgloopSolverVariables();
       void deleteAlgloopSolverVariables();
-      
+
       <%initDeleteAlgloopSolverVars%>
-      
+
       <%getrealvars%>
       <%getintvars%>
       <%getboolvars%>
@@ -4778,14 +4778,14 @@ match modelInfo
       bool handleSystemEvents(bool* events);
       //Saves all variables before an event is handled, is needed for the pre, edge and change operator
       void saveAll();
-      
+
       <%
       let saveAllVarFuncs = (List.partition(List.intRange(stringInt(allVarCount)), 100) |> ls hasindex idx => 'virtual void saveAll_<%idx%>(double *discreteVars);';separator="\n")
       <<
       <%saveAllVarFuncs%>
       >>
       %>
-      
+
       void getJacobian(SparseMatrix& matrix);
       void deleteObjects();
       //Variables:
@@ -5222,7 +5222,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual bool terminal();
 
     virtual void saveDiscreteVars();
-    
+
     <%
     let discVarCount = intAdd(intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , listLength(vars.boolAlgVars )))
     let saveDiscreteVarFuncs = (List.partition(List.intRange(stringInt(discVarCount)), 100) |> ls hasindex idx => 'virtual void saveDiscreteVars_<%idx%>(double *discreteVars);';separator="\n")
@@ -5230,7 +5230,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     <%saveDiscreteVarFuncs%>
     >>
     %>
-    
+
     // M is regular
     virtual bool isODE();
     // M is singular
@@ -6837,7 +6837,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
     let n_vars = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
     let stateVarStartIdx = intSub(stringInt(n_vars), listLength(vars.stateVars))
     let &funcCalls = buffer "" /*BUFD*/
-    let saveAllVarFuncs = (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.intAlgVars, listAppend(vars.boolAlgVars, vars.stateVars)))), 100) |> part hasindex i0 => 
+    let saveAllVarFuncs = (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.intAlgVars, listAppend(vars.boolAlgVars, vars.stateVars)))), 100) |> part hasindex i0 =>
       saveAllVars1(part, i0, 100, &funcCalls ,useFlatArrayNotation, stringInt(stateVarStartIdx), className);separator="\n")
     <<
     <%saveAllVarFuncs%>
@@ -6845,9 +6845,9 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
     void <%className%>::saveAll()
     {
       double allVars[<%n_vars%>];
-      
+
       <%funcCalls%>
-     
+
       _event_handling.savePreVars(allVars,<%n_vars%>);
     }
     >>
@@ -6858,7 +6858,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
 end saveAll;
 
 template saveAllVars1(list<SimCodeVar.SimVar> partVars, Integer partIdx, Integer multiplicator, Text &funcCalls, Boolean useFlatArrayNotation, Integer stateVarStartIdx, Text className)
-::= 
+::=
   let &funcCalls += 'saveAll_<%partIdx%>(allVars);'
   <<
   void <%className%>::saveAll_<%partIdx%>(double* allVars)
@@ -6882,12 +6882,12 @@ case SIMCODE(modelInfo = MODELINFO(varInfo=VARINFO(numAlgVars= numAlgVars, numDi
     let &funcCalls = buffer "" /*BUFD*/
     let className = lastIdentOfPath(modelInfo.name)
     let varCountWithoutStates = intAdd(intAdd(intAdd(numAlgVars, numDiscreteReal),numIntAlgVars), numBoolAlgVars)
-    let initPreVarsFuncs = (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.intAlgVars, listAppend(vars.boolAlgVars, vars.stateVars)))), 100) |> part hasindex i0 => 
+    let initPreVarsFuncs = (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.intAlgVars, listAppend(vars.boolAlgVars, vars.stateVars)))), 100) |> part hasindex i0 =>
        initPreVars1(part, i0, 100, stringInt(varCountWithoutStates), &funcCalls ,useFlatArrayNotation, className);separator="\n")
 
     <<
     <%initPreVarsFuncs%>
-    
+
     void <%className%>::initPreVars(unordered_map<string,unsigned int>& vars1, unordered_map<string,unsigned int>& vars2)
     {
       <%funcCalls%>
@@ -6896,7 +6896,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo=VARINFO(numAlgVars= numAlgVars, numDi
 end initPrevars;
 
 template initPreVars1(list<SimCodeVar.SimVar> partVars, Integer partIdx, Integer multiplicator, Integer stateVarStartIdx, Text &funcCalls, Boolean useFlatArrayNotation, Text className)
-::= 
+::=
   let &funcCalls += 'initPreVars_<%partIdx%>(vars1, vars2);'
   <<
   void <%className%>::initPreVars_<%partIdx%>(unordered_map<string,unsigned int>& vars1, unordered_map<string,unsigned int>& vars2)
@@ -6952,25 +6952,25 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
     >>
   else
     let &funcCalls = buffer "" /*BUFD*/
-    let saveDiscreteVarFuncs = (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.intAlgVars, vars.boolAlgVars))), 100) |> part hasindex i0 => 
+    let saveDiscreteVarFuncs = (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.intAlgVars, vars.boolAlgVars))), 100) |> part hasindex i0 =>
       saveDiscreteVars1(part, i0, 100, &funcCalls ,useFlatArrayNotation, className);separator="\n")
     <<
     <%saveDiscreteVarFuncs%>
-    
+
     void <%className%>::saveDiscreteVars()
     {
        double discreteVars[<%n_vars%>];
-       
+
        <%funcCalls%>
-       
+
       _event_handling.saveDiscretPreVars(discreteVars,<%n_vars%>);
     }
-    
+
     >>
 end saveDiscreteVars;
 
 template saveDiscreteVars1(list<SimCodeVar.SimVar> partVars, Integer partIdx, Integer multiplicator, Text &funcCalls, Boolean useFlatArrayNotation, Text className)
-::= 
+::=
   let &funcCalls += 'saveDiscreteVars_<%partIdx%>(discreteVars);'
   <<
   void <%className%>::saveDiscreteVars_<%partIdx%>(double* discreteVars)
@@ -7083,7 +7083,7 @@ template initValst(Text &varDecls /*BUFP*/,Text type, list<SimVar> varsLst, SimC
    varsLst |> sv as SIMVAR(__) =>
      let &preExp = buffer "" /*BUFD*/
      let &varDeclsCref = buffer "" /*BUFD*/
-    
+
      match initialValue
       case SOME(v) then
         match daeExp(v, contextOther, &preExp, &varDecls,simCode,useFlatArrayNotation)
@@ -7247,7 +7247,7 @@ template eventHandlingInit(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
       <<
-      <% 
+      <%
       match vi.numZeroCrossings
         case 0 then ""
         else
@@ -8117,16 +8117,16 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
 template generateInitAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode, Text className)
 ::=
   let &funcCalls = buffer "" /*BUFD*/
-  let algloopsolverFuncs = (List.partition(allEquationsPlusWhen, 100) |> part hasindex i0 => 
+  let algloopsolverFuncs = (List.partition(allEquationsPlusWhen, 100) |> part hasindex i0 =>
       generateInitAlgloopsolverVariables1(part, i0, &funcCalls ,simCode, className);separator="\n")
   <<
   <%algloopsolverFuncs%>
-  
+
   void <%className%>::initAlgloopSolverVariables()
   {
     <%funcCalls%>
   }
-  
+
   >>
 end generateInitAlgloopsolverVariables;
 
@@ -8140,10 +8140,10 @@ template generateInitAlgloopsolverVariables1(list<SimEqSystem> allEquationsPlusW
   let &funcCalls += 'initAlgloopSolverVariables_<%partIdx%>();'
   <<
   void <%className%>::initAlgloopSolverVariables_<%partIdx%>()
-  {  
+  {
     <%algloopsolver%>
   }
-  
+
   >>
 end generateInitAlgloopsolverVariables1;
 
@@ -8172,16 +8172,16 @@ end generateInitAlgloopsolverVariables2;
 template generateDeleteAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode, Text className)
 ::=
   let &funcCalls = buffer "" /*BUFD*/
-  let algloopsolverFuncs = (List.partition(allEquationsPlusWhen,100) |> part hasindex i0 => 
+  let algloopsolverFuncs = (List.partition(allEquationsPlusWhen,100) |> part hasindex i0 =>
       generateDeleteAlgloopsolverVariables1(part, i0, &funcCalls, simCode, className);separator="\n")
   <<
   <%algloopsolverFuncs%>
-  
+
   void <%className%>::deleteAlgloopSolverVariables()
   {
     <%funcCalls%>
   }
-  
+
   >>
 end generateDeleteAlgloopsolverVariables;
 
@@ -8194,10 +8194,10 @@ template generateDeleteAlgloopsolverVariables1(list<SimEqSystem> allEquationsPlu
   let &funcCalls += 'deleteAlgloopSolverVariables_<%partIdx%>();'
   <<
   void <%className%>::deleteAlgloopSolverVariables_<%partIdx%>()
-  {  
+  {
     <%algloopsolver%>
   }
-  
+
   >>
 end generateDeleteAlgloopsolverVariables1;
 
@@ -13360,9 +13360,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode, contextOther, useFlatArrayNotation)
 
   let getintvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), simCode, contextOther, useFlatArrayNotation)
-  
+
   let getboolvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), simCode, contextOther, useFlatArrayNotation)
-  
+
   let getstringvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars ), simCode, contextOther, useFlatArrayNotation)
   <<
 
@@ -13370,9 +13370,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%setrealvariable%>
 
   <%getintvariable%>
-  
+
   <%getboolvariable%>
-  
+
   <%getstringvariable%>
 
   void <%lastIdentOfPath(name)%>::setInteger(const int* z)
