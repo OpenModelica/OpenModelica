@@ -933,6 +933,21 @@ algorithm
   i := integer(realRand()*n);
 end intRand;
 
+public function intRandom
+  "Returns a value in the interval [0,n)"
+  input Integer n;
+  output Integer ret;
+algorithm
+  ret := intMod(intRandom0(), n);
+end intRandom;
+
+protected function intRandom0
+  "Returns a value in the intervals [0,RAND_MAX) using the C method rand()."
+  output Integer ret;
+
+  external "C"  ret = rand();
+end intRandom0;
+
 public function gettextInit
   "Choose a locale for subsequent gettext calls. Prints warnings on failures."
   input String locale := "" "Empty string choses automatically from the environment";

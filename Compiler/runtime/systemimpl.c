@@ -2172,6 +2172,12 @@ int SystemImpl__intRand(int n)
   return SystemImpl__realRand()*n;
 }
 
+/* Returns an integer [0,n) using the C function rand() */
+int SystemImpl__intRandom(int n)
+{
+  return rand() % n;
+}
+
 char* alloc_locale_str(const char *locale, int llen, const char *suffix, int slen)
 {
   char *loc = (char*)GC_malloc_atomic(sizeof(char) * (llen + slen + 1));
