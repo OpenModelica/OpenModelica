@@ -516,7 +516,7 @@ algorithm
       equation
         true = arrayLength(iTaskGraph) == 0;
         print("There is no ODE system that can be parallelized!\n");
-        schedule =  HpcOmScheduler.createEmptySchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+        schedule = HpcOmScheduler.createEmptySchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
       then
         (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_,_,_,_,_)
@@ -569,6 +569,13 @@ algorithm
         print("Using list reverse Scheduler\n");
         schedule = HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping, iSimVarMapping);
       then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "rand");
+        print("Using Random Scheduler\n");
+        schedule = HpcOmScheduler.createRandomSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping, iSimVarMapping);
+      then (schedule, iSimCode, iTaskGraph, iTaskGraphMeta, iSccSimEqMapping);
     case(_,_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);

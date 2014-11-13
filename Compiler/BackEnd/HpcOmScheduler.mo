@@ -104,7 +104,7 @@ algorithm
   allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
   nodeList_refCount := List.map1(rootNodes, getTaskByIndex, allCalcTasks);
   nodeList := List.map(nodeList_refCount, Util.tuple21);
-  nodeList := List.sort(nodeList, compareTasksByWeighting);
+  nodeList := List.sort(nodeList, compareTasksByWeighting); //MF level
   threadReadyTimes := arrayCreate(iNumberOfThreads,0.0);
   threadTasks := arrayCreate(iNumberOfThreads,{});
   tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
@@ -146,7 +146,7 @@ protected
   list<HpcOmSimCode.Task> rest;
   Real lastChildFinishTime; //The time when the last child has finished calculation
   HpcOmSimCode.Task lastChild;
-  list<tuple<HpcOmSimCode.Task,Integer>> predecessors, successors;
+  list<tuple<HpcOmSimCode.Task, Integer>> predecessors, successors;
   list<Integer> successorIdc;
   list<HpcOmSimCode.Task> outgoingDepTasks, newOutgoingDepTasks;
   array<Real> threadFinishTimes;
@@ -164,14 +164,17 @@ protected
   HpcOmSimCode.Schedule tmpSchedule;
   array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
 algorithm
-  (oSchedule,oThreadReadyTimes) := matchcontinue(iNodeList,iThreadReadyTimes, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, iSchedule)
-    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
+  (oSchedule,oThreadReadyTimes) := matchcontinue(iNodeList,iThreadReadyTimes, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, 
+                                                 iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, iSchedule)
+    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))
+      ::rest,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
       equation
         //get all predecessors (childs)
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
         true = List.isNotEmpty(predecessors); //in this case the node has predecessors
-        //print("Handle task " + intString(index) + " with " + intString(listLength(predecessors)) + " child nodes and " + intString(listLength(successorIdc)) + " parent nodes.\n");
+        //print("Handle1 task " + intString(index) + " with " + intString(listLength(predecessors)) + " child nodes and " 
+        //      + intString(listLength(successorIdc)) + " parent nodes.\n");
 
         //get last child finished time
         lastChild = getTaskWithHighestFinishTime(predecessors, NONE());
@@ -181,8 +184,9 @@ algorithm
         ((threadId, threadFinishTime)) = getThreadFinishTimesMin(1,threadFinishTimes,-1,0.0);
         tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
         threadTasks = arrayGet(allThreadTasks,threadId);
-        //find all predecessors which are scheduled to another thread and thus require a lock
 
+        //find all predecessors which are scheduled to another thread and thus require a lock
+        //print("\tDort: Scheduling task " + intString(index) + " to thread " + intString(threadId) + "\n");
         (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head,predecessors,threadId,iCommCosts,iCompTaskMapping,iSimVarMapping);
         outgoingDepTasks = listAppend(outgoingDepTasks,newOutgoingDepTasks);
         //threadTasks = listAppend(List.map(newLockIdc,convertLockIdToAssignTask), threadTasks);
@@ -206,26 +210,35 @@ algorithm
         arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
         (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
       then (tmpSchedule,tmpThreadReadyTimes);
-    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
+    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest
+          ,_,_,_,_,_,_,_,_,
+          HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
       equation
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        //print("Handle task " + intString(index) + " with 0 child nodes and " + intString(listLength(successorIdc)) + " parent nodes.\n");
-        //print("Children: {" + stringDelimitList(List.map(successorIdc, intString), ",") + "}\n");
+        //!print("Handle2 task " + intString(index) + " with 0 child nodes and " + intString(listLength(successorIdc)) 
+        //!      + " parent nodes.\n");
+        //print("\tChildren: {" + stringDelimitList(List.map(successorIdc, intString), ",") + "}\n");
 
         //find the best thread for scheduling
         threadFinishTimes = calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
         ((threadId, threadFinishTime)) = getThreadFinishTimesMin(1,threadFinishTimes,-1,0.0);
-        //print("Scheduling to thread " + intString(threadId) + "\n");
+
+        //!print("\tZeile 226\t Scheduling task " + intString(index) + " to thread " + intString(threadId) + "\n");
+        //print("\tZeile 230\t" + stringDelimitList(List.map(listGet(arrayList(allThreadTasks), threadId), dumpTask), "\t\t"));
+        //!print("\tZeile 228\t" + stringDelimitList(List.map(arrayList(threadFinishTimes),realString), "\t\t") + "\n");
+
+        //MF: Schreibe in Array iThreadReadyTimes an Index threadID den Wert threadFinishTime
         tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
         threadTasks = arrayGet(allThreadTasks,threadId);
         simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
-        //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
-        //print("Simcodeeq idc: " + stringDelimitList(List.map(simEqIdc, intString), ",") + "\n");
+        //print("\tEq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
+        //print("\tSimcodeeq idc: " + stringDelimitList(List.map(simEqIdc, intString), ",") + "\n");
         //simEqIdc has the wrong order -> reverse list
         simEqIdc = listReverse(simEqIdc);
         //simEqIdc = List.map(simEqIdc,List.sort,intGt);
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
+        //!print("\n\tZeile 243\t" + stringDelimitList(List.map(listGet(arrayList(allThreadTasks), threadId), dumpTask), "\t\t"));
         //print("Successors: " + stringDelimitList(List.map(successorIdc, intString), ",") + "\n");
         //add all successors with refcounter = 1
         (allCalcTasks,tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
@@ -233,7 +246,8 @@ algorithm
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
         arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
-        (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
+        //print("\tHier, task " + intString(index) + "\n");
+        (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList, tmpThreadReadyTimes, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
       then (tmpSchedule,tmpThreadReadyTimes);
     case({},_,_,_,_,_,_,_,_,_) then (iSchedule,iThreadReadyTimes);
     else
@@ -242,6 +256,198 @@ algorithm
       then fail();
   end matchcontinue;
 end createListSchedule1;
+
+
+
+//----------------
+// Random Scheduling
+//----------------
+public function createRandomSchedule "function createListSchedule
+  author: mflehmig
+  Create a schedule out of the given informations by randomly chose a thread for each task.
+  This implementation is very close to list scheduling algorithm but we do not need to calculate a 'best schedule'."
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input Integer iNumberOfThreads;
+  input array<list<Integer>> iSccSimEqMapping;              //Maps each scc to a list of simEqs
+  input array<list<SimCodeVar.SimVar>> iSimVarMapping;      //Maps each backend var to a list of simVars
+  output HpcOmSimCode.Schedule oSchedule;
+protected
+  HpcOmTaskGraph.TaskGraph taskGraphT;
+  array<list<Integer>> inComps;
+  list<tuple<HpcOmSimCode.Task,Integer>> nodeList_refCount; //List of nodes which are ready to schedule
+  list<HpcOmSimCode.Task> nodeList;
+  list<Integer> rootNodes;
+  array<Real> threadReadyTimes;
+  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
+  array<list<HpcOmSimCode.Task>> threadTasks;
+  array<HpcOmTaskGraph.Communications> commCosts;
+  HpcOmSimCode.Schedule tmpSchedule;
+algorithm
+  HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+  rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
+  allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
+  nodeList_refCount := List.map1(rootNodes, getTaskByIndex, allCalcTasks);
+  nodeList := List.map(nodeList_refCount, Util.tuple21);
+  nodeList := List.sort(nodeList, compareTasksByWeighting); //MF level
+  threadReadyTimes := arrayCreate(iNumberOfThreads,0.0);
+  threadTasks := arrayCreate(iNumberOfThreads,{});
+  tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
+  (tmpSchedule,_) := createRandomSchedule1(nodeList,threadReadyTimes, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, iNumberOfThreads, tmpSchedule);
+  tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
+  //printSchedule(tmpSchedule);
+  oSchedule := tmpSchedule;
+end createRandomSchedule;
+
+
+protected function createRandomSchedule1 "function createRandomSchedule1
+  author: mflehmig
+  Create a random schedule starting with the given nodeList. This method will add calcTasks and assignLockTasks, 
+  but no releaseLockTasks!"
+  input list<HpcOmSimCode.Task> iNodeList;              //The sorted nodes -> this method will pick the first task
+  input array<Real> iThreadReadyTimes;                  //The time until the thread is ready to handle a new task
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT;
+  input array<HpcOmTaskGraph.Communications> iCommCosts;
+  input array<list<Integer>> iCompTaskMapping;          //All StrongComponents from the BLT that belong to the Nodes [nodeId = arrayIdx]
+  input array<list<Integer>> iSccSimEqMapping;          //Maps each scc to a list of simEqs
+  input array<list<SimCodeVar.SimVar>> iSimVarMapping;  //Maps each backend var to a list of simVars
+  input FuncType iLockWithPredecessorHandler;           //Function which handles locks to all predecessors
+  input Integer iNumberOfThreads;
+  input HpcOmSimCode.Schedule iSchedule;
+  output HpcOmSimCode.Schedule oSchedule;
+  output array<Real> oThreadReadyTimes;
+
+  partial function FuncType
+    input HpcOmSimCode.Task iTask;
+    input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessors;
+    input Integer iThreadIdx;
+    input array<HpcOmTaskGraph.Communications> iCommCosts;
+    input array<list<Integer>> iCompTaskMapping;         //All StrongComponents from the BLT that belong to the Nodes [nodeId = arrayIdx]
+    input array<list<SimCodeVar.SimVar>> iSimVarMapping; //Maps each backend var to a list of simVars
+    output list<HpcOmSimCode.Task> oTasks;               //Lock tasks
+    output list<HpcOmSimCode.Task> oOutgoingDepTasks;
+  end FuncType;
+protected
+  HpcOmSimCode.Task head, newTask;
+  Integer newTaskRefCount;
+  list<HpcOmSimCode.Task> rest;
+  Real lastChildFinishTime;                       //The time when the last child has finished calculation
+  HpcOmSimCode.Task lastChild;
+  list<tuple<HpcOmSimCode.Task, Integer>> predecessors, successors;
+  list<Integer> successorIdc;
+  list<HpcOmSimCode.Task> outgoingDepTasks, newOutgoingDepTasks;
+  array<Real> threadFinishTimes;
+  Integer firstEq;
+  array<list<HpcOmSimCode.Task>> allThreadTasks;  //All tasks of all threads, i.e., allThreadTasks[i] = {all tasks of thread i}
+  list<HpcOmSimCode.Task> threadTasks;            //All tasks of a particular thread (used as temp. var.), i.e., threadTasks = allThreadTasks[threadId]
+  list<HpcOmSimCode.Task> lockTasks;
+  Integer threadId;
+  Real threadFinishTime;
+  array<Real> tmpThreadReadyTimes;
+  list<HpcOmSimCode.Task> tmpNodeList;
+  Integer weighting;
+  Integer index;
+  Real calcTime;
+  list<Integer> eqIdc, simEqIdc;
+  HpcOmSimCode.Schedule tmpSchedule;
+  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
+algorithm
+  (oSchedule,oThreadReadyTimes) := matchcontinue(iNodeList,iThreadReadyTimes, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, 
+                                                 iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, iNumberOfThreads, iSchedule)
+    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest
+         ,_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
+      equation
+        //Get all predecessors (childs)
+        (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
+        (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
+        true = List.isNotEmpty(predecessors); //in this case the node has predecessors
+        //!print("Handle1 task " + intString(index) + "\n");// + " with " + intString(listLength(predecessors)) + " child nodes and " 
+              //+ intString(listLength(successorIdc)) + " parent nodes.\n");
+        //!print("\tZeile 367\t" + stringDelimitList(List.map(arrayList(iThreadReadyTimes),realString), "\t\t") + "\n");
+
+        //! Randomly chose thread for scheduling.
+        threadId = System.intRandom(iNumberOfThreads) + 1;
+
+        threadFinishTimes = calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
+        threadFinishTime = arrayGet(threadFinishTimes, threadId);
+        tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
+        threadTasks = arrayGet(allThreadTasks,threadId);
+
+        //Find all predecessors which are scheduled to another thread and thus require a lock
+        (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head, predecessors, threadId, iCommCosts, iCompTaskMapping,
+                                                                      iSimVarMapping);
+        outgoingDepTasks = listAppend(outgoingDepTasks, newOutgoingDepTasks);
+        threadTasks = listAppend(lockTasks, threadTasks);
+
+        simEqIdc = List.map(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping), List.last);
+        //simEqIdc has the wrong order -> reverse list
+        simEqIdc = listReverse(simEqIdc);
+
+        //! Add task to thread
+        newTask = HpcOmSimCode.CALCTASK(weighting, index, calcTime, threadFinishTime, threadId, simEqIdc);
+        threadTasks = newTask::threadTasks;
+        allThreadTasks = arrayUpdate(allThreadTasks, threadId, threadTasks);
+
+        //add all successors with refcounter = 1
+        (allCalcTasks, tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks, successorIdc, {});
+        tmpNodeList = listAppend(tmpNodeList, rest);
+        tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
+        (_, newTaskRefCount) = arrayGet(allCalcTasks, index);
+        _ = arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
+        (tmpSchedule, tmpThreadReadyTimes) = createRandomSchedule1(tmpNodeList,tmpThreadReadyTimes, iTaskGraph, iTaskGraphT, 
+                                                                   iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, 
+                                                                   iLockWithPredecessorHandler, iNumberOfThreads, 
+                                                                   HpcOmSimCode.THREADSCHEDULE(allThreadTasks, outgoingDepTasks,
+                                                                   {}, allCalcTasks));
+      then (tmpSchedule,tmpThreadReadyTimes);
+    case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest
+          ,_,_,_,_,_,_,_,_,_,
+          HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
+      equation
+        (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
+        //print("Handle2 task " + intString(index) + "\n");//+ " with 0 child nodes and " + intString(listLength(successorIdc)) 
+              //+ " parent nodes.\n");
+        //print("\tChildren: {" + stringDelimitList(List.map(successorIdc, intString), ",") + "}\n");
+
+        //! Randomly chose thread for scheduling
+        threadId = System.intRandom(iNumberOfThreads)+1;
+        //print("ThreadId= " + intString(threadId) + "\n");
+
+        threadFinishTimes = calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
+        threadFinishTime = arrayGet(threadFinishTimes, threadId);
+
+        //! Update array containg thread finish times.
+        tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
+        threadTasks = arrayGet(allThreadTasks, threadId);
+
+        simEqIdc = List.flatten(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping));
+        //simEqIdc has the wrong order -> reverse list
+        simEqIdc = listReverse(simEqIdc);
+        newTask = HpcOmSimCode.CALCTASK(weighting, index, calcTime, threadFinishTime, threadId, simEqIdc);
+        allThreadTasks = arrayUpdate(allThreadTasks, threadId, newTask::threadTasks);
+
+        //Add all successors with refcounter = 1
+        (allCalcTasks, tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks, successorIdc, {});
+        tmpNodeList = listAppend(tmpNodeList, rest);
+        tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
+        (_, newTaskRefCount) = arrayGet(allCalcTasks, index);
+        _ = arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
+        (tmpSchedule,tmpThreadReadyTimes) = createRandomSchedule1(tmpNodeList, tmpThreadReadyTimes, iTaskGraph, iTaskGraphT, 
+                                                                  iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping,
+                                                                  iLockWithPredecessorHandler, iNumberOfThreads, 
+                                                                  HpcOmSimCode.THREADSCHEDULE(allThreadTasks, outgoingDepTasks, 
+                                                                  {}, allCalcTasks));
+      then (tmpSchedule,tmpThreadReadyTimes);
+    case({},_,_,_,_,_,_,_,_,_,_) then (iSchedule, iThreadReadyTimes);
+    else
+      equation
+        print("HpcOmScheduler.createRandomSchedule1 failed\n");
+      then fail();
+  end matchcontinue;
+end createRandomSchedule1;
+
 
 //------------------------
 // List Scheduling reverse
@@ -295,8 +501,8 @@ protected function addSuccessorLocksToSchedule
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input FuncType iCreateLockFunction;
   input array<HpcOmTaskGraph.Communications> iCommCosts;
-  input array<list<Integer>> iCompTaskMapping; //all StrongComponents from the BLT that belong to the Nodes [nodeId = arrayIdx]
-  input array<list<SimCodeVar.SimVar>> iSimVarMapping; //Maps each backend var to a list of simVars
+  input array<list<Integer>> iCompTaskMapping;            //All StrongComponents from the BLT that belong to the Nodes [nodeId = arrayIdx]
+  input array<list<SimCodeVar.SimVar>> iSimVarMapping;    //Maps each backend var to a list of simVars
   input HpcOmSimCode.Schedule iSchedule;
   output HpcOmSimCode.Schedule oSchedule;
 
@@ -470,9 +676,9 @@ end getSimEqSysIdcsForNodeLst;
 
 protected function getLocksByPredecessorList "author: marcusw
   Creates incoming dependencies between the given task (iTask) and all predecessor tasks."
-  input HpcOmSimCode.Task iTask; //The parent task
+  input HpcOmSimCode.Task iTask;                                 //The parent task
   input list<tuple<HpcOmSimCode.Task,Integer>> iPredecessorList; //All tasks with reference counter
-  input Integer iThreadIdx; //Thread handling task <%iTaskIdx%>
+  input Integer iThreadIdx;                                      //Thread handling task <%iTaskIdx%>
   input array<HpcOmTaskGraph.Communications> iCommCosts;
   input array<list<Integer>> iCompTaskMapping; //all StrongComponents from the BLT that belong to the Nodes [nodeId = arrayIdx]
   input array<list<SimCodeVar.SimVar>> iSimVarMapping; //Maps each backend var to a list of simVars
@@ -712,7 +918,7 @@ end createDepTaskByTaskIdcR;
 protected function updateRefCounterBySuccessorIdc "function updateRefCounterBySuccessorIdc
   author: marcusw
   Decrement the ref-counter off all tasks in the successor-list. If the new ref-counter is 0, the task
-  will be append to the second return argument."
+  will be appended to the second return argument."
   input array<tuple<HpcOmSimCode.Task,Integer>> iAllCalcTasks; //all tasks with ref-counter
   input list<Integer> iSuccessorIdc;
   input list<HpcOmSimCode.Task> iRefZeroTasks;
@@ -5978,6 +6184,7 @@ protected function intListListString
 algorithm
   s := stringDelimitList(List.map(lstIn,intListString)," | ");
 end intListListString;
+
 
 annotation(__OpenModelica_Interface="backend");
 end HpcOmScheduler;
