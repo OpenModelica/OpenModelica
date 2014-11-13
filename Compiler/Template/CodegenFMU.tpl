@@ -2208,7 +2208,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     end for;
 
     triggerDSSEvent = noEvent(if callEventUpdate then flowStatesInputs+1.0 else flowStatesInputs-1.0);
-    nextEventTime = fmi2Functions.fmi2nextEventTime(fmi2me, flowStatesInputs);
+    
   equation
     <%if not boolAnd(stringEq(realOutputVariablesNames, ""), stringEq(realOutputVariablesVRs, "")) then "{"+realOutputVariablesNames+"} = fmi2Functions.fmi2GetReal(fmi2me, {"+realOutputVariablesVRs+"}, flowStatesInputs);"%>
     <%if not boolAnd(stringEq(integerOutputVariablesNames, ""), stringEq(integerOutputVariablesVRs, "")) then "{"+integerOutputVariablesNames+"} = fmi2Functions.fmi2GetInteger(fmi2me, {"+integerOutputVariablesVRs+"}, flowStatesInputs);"%>
@@ -2218,14 +2218,15 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
-    when {(<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial(),triggerDSSEvent > flowStatesInputs, nextEventTime < time} then
+    when {(<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial(),triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time} then
   >>
   else
   <<
-    when {not initial(), triggerDSSEvent > flowStatesInputs, nextEventTime < time} then
+    when {not initial(), triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time} then
   >>
   %>
       (newStatesAvailable) := fmi2Functions.fmi2EventUpdate(fmi2me, flowStatesInputs);
+      nextEventTime := fmi2Functions.fmi2nextEventTime(fmi2me, flowStatesInputs);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
       if newStatesAvailable then
