@@ -872,7 +872,7 @@ algorithm
     end if;
   else // Something went wrong, print an appropriate error.
     // OMC called with no arguments, print usage information and quit.
-    if listEmpty(args) then
+    if listEmpty(args) and Config.classToInstantiate()=="" then
       if not Config.helpRequest() then
         print(Flags.printUsage());
       end if;
