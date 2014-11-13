@@ -340,9 +340,9 @@ static inline void* mmc_alloc_scon(size_t nbytes)
 
 static inline void* mmc_mk_scon(const char *s)
 {
-    unsigned int nbytes = strlen(s);
-    unsigned int header = MMC_STRINGHDR(nbytes);
-    unsigned int nwords = MMC_HDRSLOTS(header) + 1;
+    size_t nbytes = strlen(s);
+    size_t header = MMC_STRINGHDR(nbytes);
+    size_t nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
     if (nbytes == 0) return mmc_emptystring;

@@ -138,7 +138,7 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *
 int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 {
   /* work arrays for DASSL */
-  int i;
+  unsigned int i;
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
   SIMULATION_DATA tmpSimData;
 
@@ -292,7 +292,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
     for(i=1; i< DASSL_JAC_MAX;i++)
     {
       if(!strcmp((const char*)omc_flagValue[FLAG_DASSL_JACOBIAN], dasslJacobianMethodStr[i])){
-        dasslData->dasslJacobian = i;
+        dasslData->dasslJacobian = (int)i;
         break;
       }
     }
@@ -402,7 +402,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 
 int dassl_deinitial(DASSL_DATA *dasslData)
 {
-  int i;
+  unsigned int i;
   TRACE_PUSH
 
   /* free work arrays for DASSL */
@@ -812,7 +812,7 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
 int functionJacAColored(DATA* data, double* jac)
 {
   const int index = data->callback->INDEX_JAC_A;
-  int i,j,l,k,ii;
+  unsigned int i,j,l,k,ii;
 
   TRACE_PUSH
 
@@ -1107,7 +1107,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   double* delta_hh = dasslData->delta_hh;
   double* ysave = dasslData->ysave;
 
-  int i,j,l,k,ii;
+  unsigned int i,j,l,k,ii;
 
   TRACE_PUSH
 
