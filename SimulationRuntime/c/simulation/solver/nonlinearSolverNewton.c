@@ -273,6 +273,9 @@ int solveNewton(DATA *data, int sysNumber)
   int retries = 0;
   int retries2 = 0;
   int iflag = 1;
+  int nonContinuousCase = 0;
+
+  modelica_boolean *relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
 
   solverData->nfev = 0;
 
@@ -300,14 +303,6 @@ int solveNewton(DATA *data, int sysNumber)
   else
     memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
 
-  /* evaluate with discontinuities */
-  if(data->simulationInfo.discreteCall){
-    ((DATA*)data)->simulationInfo.solveContinuous = 0;
-    /* evaluate with discontinuities */
-    wrapper_fvec_newton(&solverData->n, solverData->x, solverData->fvec, &iflag, data, sysNumber);
-    ((DATA*)data)->simulationInfo.solveContinuous = 1;
-  }
-
   /* start solving loop */
   while(!giveUp && !success)
   {
@@ -322,18 +317,13 @@ int solveNewton(DATA *data, int sysNumber)
     if(solverData->info == 0)
       printErrorEqSyst(IMPROPER_INPUT, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
 
-    if(solverData->info > 0)
+    /* reset non-contunuousCase */
+    if(nonContinuousCase && xerror > local_tol && xerror_scaled > local_tol)
     {
-      /* evaluate with discontinuities */
-      if(data->simulationInfo.discreteCall)
-      {
-        ((DATA*)data)->simulationInfo.solveContinuous = 0;
-        wrapper_fvec_newton(&solverData->n, solverData->x, solverData->fvec, &iflag, data, sysNumber);
-
-        ((DATA*)data)->simulationInfo.solveContinuous = 1;
-        updateRelationsPre(data);
-      }
+      memcpy(data->simulationInfo.relationsPre, relationsPreBackup, sizeof(modelica_boolean)*data->modelData.nRelations);
+      nonContinuousCase = 0;
     }
+
     /* check for error  */
     xerror_scaled = enorm_(&solverData->n, solverData->fvecScaled);
     xerror = enorm_(&solverData->n, solverData->fvec);
@@ -353,7 +343,6 @@ int solveNewton(DATA *data, int sysNumber)
 
       /* take the solution */
       memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
-      wrapper_fvec_newton(&solverData->n, solverData->x, solverData->fvec, &iflag, data, sysNumber);
 
     /* Then try with old values (instead of extrapolating )*/
     }
@@ -386,7 +375,27 @@ int solveNewton(DATA *data, int sysNumber)
       nfunc_evals += solverData->nfev;
       infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t try nominal values as initial solution.");
     }
-    else if(retries2 < 3)
+    else if(retries < 4  && data->simulationInfo.discreteCall)
+    {
+      /* try to solve non-continuous
+       * work-a-round: since other wise some model does
+       * stuck in event iteration. e.g.: Modelica.Mechanics.Rotational.Examples.HeatLosses
+       */
+
+      memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
+      retries++;
+
+      /* try to solve a discontinuous system */
+      continuous = 0;
+
+      nonContinuousCase = 1;
+      memcpy(relationsPreBackup, data->simulationInfo.relationsPre, sizeof(modelica_boolean)*data->modelData.nRelations);
+
+      giveUp = 0;
+      nfunc_evals += solverData->nfev;
+      infoStreamPrint(LOG_NLS, 0, " - iteration making no progress:\t try to solve a discontinuous system.");
+    }
+    else if(retries2 < 4)
     {
       memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
       /* reduce tolarance */

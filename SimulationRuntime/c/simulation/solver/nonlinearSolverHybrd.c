@@ -492,31 +492,6 @@ int solveHybrd(DATA *data, int sysNumber)
   for(i=0; i<solverData->n; i++){
     solverData->xScalefactors[i] = fmax(fabs(solverData->x[i]), systemData->nominal[i]);
   }
-  /* evaluate with discontinuities */
-  {
-    int scaling = solverData->useXScaling;
-    if (scaling) {
-      solverData->useXScaling = 0;
-    }
-    {
-      int success = 0;
-#ifndef OMC_EMCC
-      /* try */
-      MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-      wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, (void*) &dataAndSysNumber);
-      success = 1;
-#ifndef OMC_EMCC
-      MMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
-      if (!success) {
-        warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
-      }
-      if(scaling) {
-        solverData->useXScaling = 1;
-      }
-    }
-  }
 
   /* start solving loop */
   while(!giveUp && !success)

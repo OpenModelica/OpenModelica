@@ -270,69 +270,98 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
   threadData_t *threadData = data->threadData;
   struct dataNewtonAndHybrid *mixedSolverData;
 
-
   data->simulationInfo.currentNonlinearSystemIndex = sysNumber;
 
   /* enable to avoid division by zero */
   data->simulationInfo.noThrowDivZero = 1;
+  ((DATA*)data)->simulationInfo.solveContinuous = 1;
+
+  if(data->simulationInfo.discreteCall){
+    double *fvec = malloc(sizeof(double)*nonlinsys->size);
+    int success = 0;
+
+#ifndef OMC_EMCC
+    /* try */
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
+    ((DATA*)data)->simulationInfo.solveContinuous = 0;
+    nonlinsys->residualFunc((void*) data, nonlinsys->nlsx, fvec, &nonlinsys->size);
+    ((DATA*)data)->simulationInfo.solveContinuous = 1;
+
+    success = 1;
+#ifndef OMC_EMCC
+    /*catch */
+    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+    if (!success) {
+      warningStreamPrint(LOG_STDOUT, 0, "Non-Linear Solver try to handle a problem with a called assert.");
+    }
+
+    free(fvec);
+  }
+
+
 
   /* strategy for solving nonlinear system
    *
    *
    *
    */
+#ifndef OMC_EMCC
+    /* try */
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
 
-  /* for now just use hybrd solver as before */
-  if(nonlinsys->method == 1)
+  switch(data->simulationInfo.nlsMethod)
   {
+  case NLS_HYBRID:
+    saveJumpState = data->threadData->currentErrorStage;
+    data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
+    success = solveHybrd(data, sysNumber);
+    data->threadData->currentErrorStage = saveJumpState;
+    break;
+  case NLS_KINSOL:
+    success = nonlinearSolve_kinsol(data, sysNumber);
+    break;
+  case NLS_NEWTON:
     success = solveNewton(data, sysNumber);
-  }
-  else
-  {
-    switch(data->simulationInfo.nlsMethod)
-    {
-    case NLS_HYBRID:
-      saveJumpState = data->threadData->currentErrorStage;
-      data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
-      success = solveHybrd(data, sysNumber);
-      data->threadData->currentErrorStage = saveJumpState;
-      break;
-    case NLS_KINSOL:
-      success = nonlinearSolve_kinsol(data, sysNumber);
-      break;
-    case NLS_NEWTON:
-      success = solveNewton(data, sysNumber);
-      break;
-    case NLS_MIXED:
-      mixedSolverData = nonlinsys->solverData;
-      nonlinsys->solverData = mixedSolverData->newtonData;
+    break;
+  case NLS_MIXED:
+    mixedSolverData = nonlinsys->solverData;
+    nonlinsys->solverData = mixedSolverData->newtonData;
 
-      saveJumpState = data->threadData->currentErrorStage;
-      data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
+    saveJumpState = data->threadData->currentErrorStage;
+    data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
 #ifndef OMC_EMCC
-      /* try */
-      MMC_TRY_INTERNAL(simulationJumpBuffer)
+    /* try */
+    MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-      success = solveNewton(data, sysNumber);
-      /* catch */
+    success = solveNewton(data, sysNumber);
+    /* catch */
 #ifndef OMC_EMCC
-      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
-      if (!success) {
-        nonlinsys->solverData = mixedSolverData->hybridData;
-        success = solveHybrd(data, sysNumber);
-      }
-      data->threadData->currentErrorStage = saveJumpState;
-      nonlinsys->solverData = mixedSolverData;
-      break;
-    default:
-      throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
+    if (!success) {
+      nonlinsys->solverData = mixedSolverData->hybridData;
+      success = solveHybrd(data, sysNumber);
     }
+    data->threadData->currentErrorStage = saveJumpState;
+    nonlinsys->solverData = mixedSolverData;
+    break;
+  default:
+    throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
   }
   nonlinsys->solved = success;
 
+#ifndef OMC_EMCC
+    /*catch */
+    MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
   /* enable to avoid division by zero */
   data->simulationInfo.noThrowDivZero = 0;
+  ((DATA*)data)->simulationInfo.solveContinuous = 0;
 
   return check_nonlinear_solution(data, 1, sysNumber);
 }
