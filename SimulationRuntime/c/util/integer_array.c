@@ -1091,8 +1091,6 @@ void pow_alloc_integer_array_scalar(const integer_array* a, modelica_integer b, 
 
 void exp_integer_array(const integer_array_t * a, modelica_integer n, integer_array_t* dest)
 {
-    modelica_integer i;
-
     /* Assert n>=0 */
     assert(n >= 0);
     /* Assert that a is a two dimensional square array */
@@ -1106,14 +1104,39 @@ void exp_integer_array(const integer_array_t * a, modelica_integer n, integer_ar
         if(n==1) {
             clone_integer_array_spec(a,dest);
             copy_integer_array_data(*a,dest);
+        } else if (n==2) {
+            clone_integer_array_spec(a,dest);
+            mul_integer_matrix_product(a,a,dest);
         } else {
+            modelica_integer i;
+
             integer_array_t tmp;
+            integer_array_t * b;
+            integer_array_t * c;
+
+            /* prepare temporary array */
             clone_integer_array_spec(a,&tmp);
-            copy_integer_array_data(*a,&tmp);
-            for( i = 1; i < n; ++i) {
-                mul_integer_matrix_product(a,&tmp,dest);
-                copy_integer_array_data(*dest,&tmp);
+            clone_integer_array_spec(a,dest);
+
+            if ((n&1) != 0) {
+              b = &tmp;
+              c = dest;
+            } else {
+              b = dest;
+              c = &tmp;
             }
+            mul_integer_matrix_product(a,a,b);
+            for( i = 2; i < n; ++i) {
+                integer_array_t * x;
+
+                mul_integer_matrix_product(a,b,c);
+
+                /* exchange b and c */
+                x = b;
+                b = c;
+                c = x;
+            }
+            /* result is already in dest */
         }
     }
 }

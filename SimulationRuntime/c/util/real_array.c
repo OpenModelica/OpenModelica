@@ -1176,11 +1176,12 @@ real_array_t pow_alloc_real_array_scalar(const real_array_t a, modelica_real b)
 
 void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* dest)
 {
-    modelica_integer i;
-
     /* Assert n>=0 */
-    /* Assert a matrix */
-    /* Assert square matrix */
+    assert(n >= 0);
+    /* Assert that a is a two dimensional square array */
+    assert((a->ndims == 2) && (a->dim_size[0] == a->dim_size[1]));
+    /* Assert that dest is a two dimensional square array with the same size as a */
+    assert((dest->ndims == 2) && (dest->dim_size[0] == dest->dim_size[1]) && (a->dim_size[0] == dest->dim_size[0]));
 
     if(n==0) {
         identity_real_array(a->dim_size[0],dest);
@@ -1188,14 +1189,39 @@ void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* de
         if(n==1) {
             clone_real_array_spec(a,dest);
             copy_real_array_data(*a,dest);
+        } else if (n==2) {
+            clone_real_array_spec(a,dest);
+            mul_real_matrix_product(a,a,dest);
         } else {
+            modelica_integer i;
+
             real_array_t tmp;
+            real_array_t * b;
+            real_array_t * c;
+
+            /* prepare temporary array */
             clone_real_array_spec(a,&tmp);
-            copy_real_array_data(*a,&tmp);
-            for(i = 1; i < n; ++i) {
-                mul_real_matrix_product(a,&tmp,dest);
-                copy_real_array_data(*dest,&tmp);
+            clone_real_array_spec(a,dest);
+
+            if ((n&1) != 0) {
+              b = &tmp;
+              c = dest;
+            } else {
+              b = dest;
+              c = &tmp;
             }
+            mul_real_matrix_product(a,a,b);
+            for( i = 2; i < n; ++i) {
+                real_array_t * x;
+
+                mul_real_matrix_product(a,b,c);
+
+                /* exchange b and c */
+                x = b;
+                b = c;
+                c = x;
+            }
+            /* result is already in dest */
         }
     }
 }
