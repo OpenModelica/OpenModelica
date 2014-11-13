@@ -532,20 +532,11 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   // Create a result file
   const char *result_file = omc_flagValue[FLAG_R];
   string result_file_cstr;
-  if(!result_file)
-  {
+  if(!result_file) {
     result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + MMC_STRINGDATA(data->simulationInfo.outputFormat);
-    if(data->modelData.resultFileName)
-      free(data->modelData.resultFileName);
-    data->modelData.resultFileName = (char*)malloc((strlen(result_file_cstr.c_str())+1)*sizeof(char));
-    strcpy(data->modelData.resultFileName, result_file_cstr.c_str());
-  }
-  else
-  {
-    if(data->modelData.resultFileName)
-      free(data->modelData.resultFileName);
-    data->modelData.resultFileName = (char*)malloc((strlen(result_file)+1)*sizeof(char));
-    strcpy(data->modelData.resultFileName, result_file);
+    data->modelData.resultFileName = GC_strdup(result_file_cstr.c_str());
+  } else {
+    data->modelData.resultFileName = GC_strdup(result_file);
   }
 
   string init_initMethod = "";
