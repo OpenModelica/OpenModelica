@@ -1571,23 +1571,24 @@ protected function getDepsFromExps
   input list<Absyn.Exp> inExps;
   input list<tuple<SCode.Element, DAE.Mod>> inAllElements;
   input list<tuple<SCode.Element, DAE.Mod>> inDependencies;
+  input Boolean isFunction;
   output list<tuple<SCode.Element, DAE.Mod>> outDependencies;
 algorithm
-  outDependencies := match(inExps, inAllElements, inDependencies)
+  outDependencies := match(inExps, inDependencies)
     local
       list<Absyn.Exp> rest;
       Absyn.Exp e;
       list<tuple<SCode.Element, DAE.Mod>> deps;
 
     // handle the empty case
-    case ({}, _, _) then inDependencies;
+    case ({}, _) then inDependencies;
     // handle the normal case
-    case (e::rest, _, deps)
+    case (e::rest, deps)
       equation
         //(_, (_, _, (els, deps))) = Absyn.traverseExpBidir(e, (getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps)));
         //deps = getDepsFromExps(rest, els, deps);
-        (_, (_, _, deps)) = Absyn.traverseExpBidir(e, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, {}, deps));
-        deps = getDepsFromExps(rest, inAllElements, deps);
+        (_, (_, _, deps, _)) = Absyn.traverseExpBidir(e, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, {}, deps, isFunction));
+        deps = getDepsFromExps(rest, inAllElements, deps, isFunction);
       then
         deps;
   end match;
@@ -1835,12 +1836,13 @@ algorithm
       SCode.Replaceable rp;
       list<SCode.Element> els;
       Option<SCode.ExternalDecl> externalDecl;
+      Boolean isFunction;
 
     // For constants and parameters we check the component conditional, array dimensions, modifiers and binding
     case ((SCode.COMPONENT(name = name, condition = cExpOpt,
                            prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                            attributes = SCode.ATTR(arrayDims = ad, variability = var),
-                           modifications = mod), daeMod), (inAllElements, _))
+                           modifications = mod), daeMod), (inAllElements, isFunction))
       equation
         true = SCode.isParameterOrConst(var);
         (_, exps) = Absyn.getExpsFromArrayDim(ad);
@@ -1850,10 +1852,10 @@ algorithm
         exps = listAppend(bexps, listAppend(sexps, exps));
         (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
         exps = listAppend(bexps, listAppend(sexps, exps));
-        deps = getDepsFromExps(exps, inAllElements, {});
+        deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
         // remove the current element from the deps as it is usally Real A[size(A,1)]; or self reference FlowModel fm(... blah = fcall(fm.x));
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
-        deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps);
+        deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps, isFunction);
         deps = List.union(deps,{});
         // print(name + " deps " + stringDelimitList(list(SCode.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
       then
@@ -1870,7 +1872,7 @@ algorithm
     case ((SCode.COMPONENT(name = name, condition = cExpOpt,
                            prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                            attributes = SCode.ATTR(arrayDims = ad),
-                           modifications = mod), daeMod), (inAllElements, _))
+                           modifications = mod), daeMod), (inAllElements, isFunction))
       equation
         (_, exps) = Absyn.getExpsFromArrayDim(ad);
         (bexps, sexps) = getExpsFromMod(mod);
@@ -1885,10 +1887,10 @@ algorithm
         // DO *NOT* ignore the bindings in function scope so we keep the order!
         exps = listAppend(bexps, exps);
         // exps = if_(hasUnknownDims, listAppend(bexps, exps), exps);
-        deps = getDepsFromExps(exps, inAllElements, {});
+        deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
         // remove the current element from the deps as it is usally Real A[size(A,1)];
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
-        deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps);
+        deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps, isFunction);
         deps = List.union(deps,{});
         // print(name + " deps " + stringDelimitList(list(SCode.elementName(Util.tuple21(e)) for e in deps),",") + "\n");
       then
@@ -1898,7 +1900,7 @@ algorithm
     case ((SCode.CLASS(name = name,
                        prefixes = SCode.PREFIXES(replaceablePrefix = rp),
                        classDef = SCode.DERIVED(modifications = mod, attributes = SCode.ATTR(arrayDims = ad))),
-                       daeMod), (inAllElements, _))
+                       daeMod), (inAllElements, isFunction))
       equation
         (_, exps) = Absyn.getExpsFromArrayDim(ad);
         (_, sexps) = getExpsFromMod(mod);
@@ -1907,7 +1909,7 @@ algorithm
         exps = listAppend(bexps, listAppend(sexps, exps));
         (_, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
         exps = listAppend(sexps, exps);
-        deps = getDepsFromExps(exps, inAllElements, {});
+        deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
         deps = List.union(deps,{});
       then
@@ -1920,7 +1922,7 @@ algorithm
     case ((SCode.CLASS(name = name,
                        prefixes = SCode.PREFIXES(),
                        classDef = SCode.PARTS(externalDecl = externalDecl)),
-           _), (inAllElements, _))
+           _), (inAllElements, isFunction))
       equation
         exps = getExpsFromExternalDecl(externalDecl);
         /*
@@ -1930,7 +1932,7 @@ algorithm
         (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
         exps = listAppend(bexps, listAppend(sexps, exps));
         */
-        deps = getDepsFromExps(exps, inAllElements, {});
+        deps = getDepsFromExps(exps, inAllElements, {}, isFunction);
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
         deps = List.union(deps,{});
       then
@@ -1994,9 +1996,9 @@ protected function getElementDependenciesTraverserEnter
   for an element. The first ElementList in the input argument is a list of all
   elements, and the second is a list of accumulated dependencies."
   input Absyn.Exp inExp;
-  input tuple<ElementList, list<ElementList>, ElementList> inTuple;
+  input tuple<ElementList, list<ElementList>, ElementList, Boolean> inTuple;
   output Absyn.Exp outExp;
-  output tuple<ElementList, list<ElementList>, ElementList> outTuple;
+  output tuple<ElementList, list<ElementList>, ElementList, Boolean> outTuple;
   type ElementList = list<tuple<SCode.Element, DAE.Mod>>;
 algorithm
   (outExp,outTuple) := matchcontinue (inExp,inTuple)
@@ -2007,24 +2009,25 @@ algorithm
       list<ElementList> stack;
       tuple<SCode.Element, DAE.Mod> e;
       Absyn.ComponentRef cref;
+      Boolean b;
 
-    case (exp as Absyn.CREF(componentRef = cref), (all_el, stack, accum_el))
+    case (exp as Absyn.CREF(componentRef = cref), (all_el, stack, accum_el, b))
       equation
         id = Absyn.crefFirstIdent(cref);
         e = List.selectFirst1(all_el, isElementNamed, id);
       then
-        (exp, (all_el, stack, e :: accum_el));
+        (exp, (all_el, stack, e :: accum_el, b));
 
-    case (exp as Absyn.CALL(function_ = cref), (all_el, stack, accum_el))
+    case (exp as Absyn.CALL(function_ = cref), (all_el, stack, accum_el, b))
       equation
         id = Absyn.crefFirstIdent(cref);
         e = List.selectFirst1(all_el, isElementNamed, id);
       then
-        (exp, (all_el, stack, e :: accum_el));
+        (exp, (all_el, stack, e :: accum_el, b));
 
     // The condition expression is always used
-    case (exp as Absyn.IFEXP(), (all_el, stack, accum_el))
-      then (exp,(all_el,accum_el::stack,{}));
+    case (exp as Absyn.IFEXP(), (all_el, stack, accum_el, false))
+      then (exp,(all_el,accum_el::stack,{},false));
 
     else (inExp,inTuple);
   end matchcontinue;
@@ -2033,9 +2036,9 @@ end getElementDependenciesTraverserEnter;
 protected function getElementDependenciesTraverserExit
   "Dummy traversal function used by getElementDependencies."
   input Absyn.Exp inExp;
-  input tuple<ElementList, list<ElementList>, ElementList> inTuple;
+  input tuple<ElementList, list<ElementList>, ElementList, Boolean> inTuple;
   output Absyn.Exp outExp;
-  output tuple<ElementList, list<ElementList>, ElementList> outTuple;
+  output tuple<ElementList, list<ElementList>, ElementList, Boolean> outTuple;
   type ElementList = list<tuple<SCode.Element, DAE.Mod>>;
 algorithm
   (outExp,outTuple) := matchcontinue (inExp,inTuple)
@@ -2043,17 +2046,18 @@ algorithm
       ElementList all_el, accum_el, stack_el, deps;
       list<ElementList> rest_stack;
       Absyn.Exp exp,ifExp;
+      Boolean b;
 
     // If a binding contains an if-equation we don't really have any idea which
     // branch will be used, which causes some problems with Fluid. So we just
     // reset everything up to this point and pray that we didn't miss anything
     // important.
-    case (exp as Absyn.IFEXP(ifExp = ifExp), (all_el, stack_el::rest_stack, _))
+    case (exp as Absyn.IFEXP(ifExp = ifExp), (all_el, stack_el::rest_stack, _, false))
       equation
-        (_, (_, _, deps)) = Absyn.traverseExpBidir(ifExp, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (all_el, {}, {}));
+        (_, (_, _, deps, _)) = Absyn.traverseExpBidir(ifExp, getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (all_el, {}, {}, false));
         deps = listAppend(deps, stack_el);
       then
-        (exp, (all_el, rest_stack, deps));
+        (exp, (all_el, rest_stack, deps, false));
 
     else (inExp,inTuple);
   end matchcontinue;
