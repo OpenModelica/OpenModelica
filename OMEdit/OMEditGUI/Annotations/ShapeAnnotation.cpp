@@ -1180,7 +1180,7 @@ void ShapeAnnotation::adjustCornerItemsConnectedIndexes()
   }
 }
 
-void ShapeAnnotation::removeReduntantPointsGeometriesAndCornerItems()
+void ShapeAnnotation::removeRedundantPointsGeometriesAndCornerItems()
 {
   for (int i = 0 ; i < mPoints.size() ; i++) {
     if ((i+1 < mPoints.size() && mPoints[i].y() == mPoints[i + 1].y() && i+2 < mPoints.size() && mPoints[i + 1].y() == mPoints[i + 2].y()) ||

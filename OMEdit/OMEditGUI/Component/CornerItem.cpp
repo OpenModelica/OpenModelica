@@ -138,7 +138,7 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     if (mClickPos != mapToScene(event->pos())) {
       LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
       if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-        mpShapeAnnotation->removeReduntantPointsGeometriesAndCornerItems();
+        mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
       }
       if (!signalsBlocked()) {
         emit cornerItemPositionChanged();
