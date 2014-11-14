@@ -779,9 +779,11 @@ bool ShapePropertiesDialog::applyShapeProperties()
   }
   /* save points */
   mpShapeAnnotation->clearPoints();
+  QList<QPointF> points;
   for (int i = 0 ; i < mpPointsTableWidget->rowCount() ; i++) {
-    mpShapeAnnotation->addPoint(QPointF(mpPointsTableWidget->item(i, 0)->text().toFloat(), mpPointsTableWidget->item(i, 1)->text().toFloat()));
+    points.append(QPointF(mpPointsTableWidget->item(i, 0)->text().toFloat(), mpPointsTableWidget->item(i, 1)->text().toFloat()));
   }
+  mpShapeAnnotation->setPoints(points);
   /* save bitmap file name and image source */
   if (mpBitmapAnnotation)
   {
@@ -833,6 +835,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
   {
     mpShapeAnnotation->removeCornerItems();
     mpShapeAnnotation->drawCornerItems();
+    mpShapeAnnotation->adjustGeometries();
     mpLineAnnotation->updateConnectionAnnotation();
     mpLineAnnotation->update();
   }

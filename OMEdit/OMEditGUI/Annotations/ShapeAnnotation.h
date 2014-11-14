@@ -134,9 +134,10 @@ public:
   virtual void clearPoints();
   virtual void replaceExtent(int index, QPointF point);
   virtual void updateEndExtent(QPointF point);
-  GraphicsView* getGraphicsView();
-  Transformation* getTransformation();
-  QList<QPointF> getPoints();
+  GraphicsView* getGraphicsView() {return mpGraphicsView;}
+  Transformation* getTransformation() {return mpTransformation;}
+  void setPoints(QList<QPointF> points) {mPoints = points;}
+  QList<QPointF> getPoints() {return mPoints;}
   void setStartArrow(StringHandler::Arrow startArrow);
   StringHandler::Arrow getStartArrow();
   void setEndArrow(StringHandler::Arrow endArrow);
@@ -180,6 +181,8 @@ public:
   void updateCornerItem(int index);
   void insertPointsGeometriesAndCornerItems(int index);
   void adjustCornerItemsConnectedIndexes();
+  void removeRedundantPointsGeometriesAndCornerItems();
+  void adjustGeometries();
 signals:
   void updateClassAnnotation();
 public slots:

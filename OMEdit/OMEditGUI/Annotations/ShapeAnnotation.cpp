@@ -692,33 +692,6 @@ void ShapeAnnotation::updateEndExtent(QPointF point)
 }
 
 /*!
-  Returns the GraphicsView object.
-  \return the pointer to GraphicsView.
-  */
-GraphicsView* ShapeAnnotation::getGraphicsView()
-{
-  return mpGraphicsView;
-}
-
-/*!
-  Returns the transformation matrix used by the shape.
-  \return the pointer to Transformation.
-  */
-Transformation* ShapeAnnotation::getTransformation()
-{
-  return mpTransformation;
-}
-
-/*!
-  Returns the points list.
-  \return the points list.
-  */
-QList<QPointF> ShapeAnnotation::getPoints()
-{
-  return mPoints;
-}
-
-/*!
   Sets the start arrow value.
   \return startArrow - the start arrow value.
   */
@@ -1203,6 +1176,45 @@ void ShapeAnnotation::adjustCornerItemsConnectedIndexes()
   for (int i = 0 ; i < mPoints.size() ; i++) {
     if (i < mCornerItemsList.size()) {
       mCornerItemsList[i]->setConnectedPointIndex(i);
+    }
+  }
+}
+
+void ShapeAnnotation::removeReduntantPointsGeometriesAndCornerItems()
+{
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    if ((i+1 < mPoints.size() && mPoints[i].y() == mPoints[i + 1].y() && i+2 < mPoints.size() && mPoints[i + 1].y() == mPoints[i + 2].y()) ||
+        (i+1 < mPoints.size() && mPoints[i].x() == mPoints[i + 1].x() && i+2 < mPoints.size() && mPoints[i + 1].x() == mPoints[i + 2].x())) {
+      mPoints.removeAt(i + 1);
+      mGeometries.removeAt(i);
+      CornerItem *pCornerItem = getCornerItem(i + 1);
+      if (pCornerItem) {
+        pCornerItem->deleteLater();
+        mCornerItemsList.removeOne(pCornerItem);
+      }
+      // adjust CornerItem's and Geometries
+      adjustCornerItemsConnectedIndexes();
+      adjustGeometries();
+      // if we removed the point then start from this point again
+      i--;
+    }
+  }
+}
+
+void ShapeAnnotation::adjustGeometries()
+{
+  mGeometries.clear();
+  for (int i = 1 ; i < mPoints.size() ; i++) {
+    if (mGeometries.size() == 0) {
+      QPointF currentPoint = mPoints[i];
+      QPointF previousPoint = mPoints[i - 1];
+      mGeometries.append(findLineGeometryType(previousPoint, currentPoint));
+    } else {
+      if (mGeometries.back() == ShapeAnnotation::HorizontalLine) {
+        mGeometries.push_back(ShapeAnnotation::VerticalLine);
+      } else if (mGeometries.back() == ShapeAnnotation::VerticalLine) {
+        mGeometries.push_back(ShapeAnnotation::HorizontalLine);
+      }
     }
   }
 }

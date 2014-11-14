@@ -455,6 +455,7 @@ void LineAnnotation::updateStartPoint(QPointF point)
     }
     updateCornerItem(1);
   }
+  removeReduntantPointsGeometriesAndCornerItems();
 }
 
 /*!
@@ -496,6 +497,7 @@ void LineAnnotation::updateEndPoint(QPointF point)
       }
       updateCornerItem(secondLastIndex);
     }
+    removeReduntantPointsGeometriesAndCornerItems();
   } else {
     mPoints.back() = point;
   }

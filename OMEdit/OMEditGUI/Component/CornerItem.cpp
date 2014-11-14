@@ -58,11 +58,11 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   setToolTip(Helper::clickAndDragToResize);
   setPos(x, y);
   mRectangle = QRectF (-3, -3, 6, 6);
-  if (mpShapeAnnotation->isInheritedShape())
+  if (mpShapeAnnotation->isInheritedShape()) {
     setFlag(QGraphicsItem::ItemIsMovable, false);
+  }
   /* Only shapes manipulation via CornerItem's if the class is not a system library class OR not an inherited shape. */
-  if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !mpShapeAnnotation->isInheritedShape())
-  {
+  if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !mpShapeAnnotation->isInheritedShape()) {
     connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
     connect(this, SIGNAL(cornerItemPress()), mpShapeAnnotation, SLOT(cornerItemPressed()));
     connect(this, SIGNAL(cornerItemRelease()), mpShapeAnnotation, SLOT(cornerItemReleased()));
@@ -71,13 +71,11 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
       instead connect the updateConnectionAnnotation SLOT of LineAnnotation.
       */
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
-    LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
-    if (pLineAnnotation)
-      lineType = pLineAnnotation->getLineType();
-    if (lineType == LineAnnotation::ConnectionType)
+    if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
       connect(this, SIGNAL(cornerItemPositionChanged()), pLineAnnotation, SLOT(updateConnectionAnnotation()));
-    else
+    } else {
       connect(this, SIGNAL(cornerItemPositionChanged()), mpShapeAnnotation->getGraphicsView(), SLOT(addClassAnnotation()));
+    }
   }
 }
 
@@ -138,6 +136,10 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
       emit cornerItemRelease();
     }
     if (mClickPos != mapToScene(event->pos())) {
+      LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
+      if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+        mpShapeAnnotation->removeReduntantPointsGeometriesAndCornerItems();
+      }
       if (!signalsBlocked()) {
         emit cornerItemPositionChanged();
       }
@@ -280,8 +282,7 @@ bool ResizerItem::isPressed()
   */
 void ResizerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (event->button() == Qt::LeftButton)
-  {
+  if (event->button() == Qt::LeftButton) {
     emit resizerItemPressed(this);
     mIsPressed = true;
     mResizerItemOldPosition = event->scenePos();
@@ -296,8 +297,10 @@ void ResizerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
   */
 void ResizerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (mIsPressed)     // indicates that user is dragging the corner item
+  // indicates that user is dragging the corner item
+  if (mIsPressed) {
     emit resizerItemMoved(mIndex, event->scenePos());
+  }
   QGraphicsItem::mouseMoveEvent(event);
 }
 
@@ -309,11 +312,11 @@ void ResizerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
   QGraphicsItem::mouseReleaseEvent(event);
-  if (event->button() == Qt::LeftButton)
-  {
+  if (event->button() == Qt::LeftButton) {
     mIsPressed = false;
     emit resizerItemReleased();
-    if (mResizerItemOldPosition != event->scenePos())
+    if (mResizerItemOldPosition != event->scenePos()) {
       emit resizerItemPositionChanged();
+    }
   }
 }

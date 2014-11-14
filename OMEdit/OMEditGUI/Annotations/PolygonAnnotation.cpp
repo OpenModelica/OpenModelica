@@ -249,7 +249,7 @@ void PolygonAnnotation::duplicate()
   pPolygonAnnotation->setFillPattern(getFillPattern());
   pPolygonAnnotation->setLineThickness(getLineThickness());
   pPolygonAnnotation->setSmooth(getSmooth());
-  pPolygonAnnotation->mPoints = getPoints();
+  pPolygonAnnotation->setPoints(getPoints());
   pPolygonAnnotation->drawCornerItems();
   pPolygonAnnotation->setCornerItemsPassive();
   pPolygonAnnotation->update();
