@@ -190,7 +190,6 @@ public:
   bool setComponentComment(QString className, QString componentName, QString comment);
   bool addConnection(QString from, QString to, QString className, QString annotation);
   bool deleteConnection(QString from, QString to, QString className);
-  bool instantiateModelSucceeds(QString className);
   bool simulate(QString className, QString simualtionParameters);
   bool buildModel(QString className, QString simualtionParameters);
   bool translateModel(QString className, QString simualtionParameters);

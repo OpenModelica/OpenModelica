@@ -2046,23 +2046,6 @@ bool OMCProxy::deleteConnection(QString from, QString to, QString className)
 }
 
 /*!
-  Check if Instantiating the model is successful or not.
-  \param className - the name of the class.
-  \return true on success.
-  */
-bool OMCProxy::instantiateModelSucceeds(QString className)
-{
-  sendCommand("instantiateModel(" + className + ")", false, className, true);
-  if (getResult().size() < 3)
-  {
-    printMessagesStringInternal();
-    return false;
-  }
-  else
-    return true;
-}
-
-/*!
   Simulate the model. Creates an execuatble and runs it.
   \param className - the name of the class.
   \param simualtionParameters - the simulation parameters.
@@ -2145,7 +2128,7 @@ bool OMCProxy::closeSimulationResultFile()
   */
 QString OMCProxy::checkModel(QString className)
 {
-  sendCommand("checkModel(" + className + ")", true, className);
+  sendCommand("checkModel(" + className + ")");
   return getResult();
 }
 
@@ -2169,7 +2152,7 @@ bool OMCProxy::ngspicetoModelica(QString fileName)
   */
 QString OMCProxy::checkAllModelsRecursive(QString className)
 {
-  sendCommand("checkAllModelsRecursive(" + className + ")", true, className);
+  sendCommand("checkAllModelsRecursive(" + className + ")");
   return getResult();
 }
 
@@ -2180,7 +2163,7 @@ QString OMCProxy::checkAllModelsRecursive(QString className)
   */
 QString OMCProxy::instantiateModel(QString className, bool *instantiateModelSuccess)
 {
-  sendCommand("instantiateModel(" + className + ")", true, className);
+  sendCommand("instantiateModel(" + className + ")");
   QString result = StringHandler::unparse(getResult());
   if (result.isEmpty()) {
     *instantiateModelSuccess = false;
