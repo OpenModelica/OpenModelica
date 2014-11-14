@@ -1582,7 +1582,6 @@ algorithm
       BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs,
                                                         constraints=constraints,
                                                         classAttrs=classAttributes,
-
                                                         symjacs=symJacs,
                                                         eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents))) = dlow;
 
@@ -1591,7 +1590,7 @@ algorithm
       whenClauses = createSimWhenClauses(dlow);
       zeroCrossings = if ifcpp then FindZeroCrossings.getRelations(dlow) else FindZeroCrossings.getZeroCrossings(dlow);
       relations = FindZeroCrossings.getRelations(dlow);
-      sampleZC = getSamples(dlow);
+      sampleZC = FindZeroCrossings.getSamples(dlow);
       zeroCrossings = if ifcpp then listAppend(zeroCrossings, sampleZC) else zeroCrossings;
 
       // equation generation for euler, dassl2, rungekutta
@@ -3267,13 +3266,6 @@ end whenClauseToSimWhenClause;
 // section for ???
 //
 // =============================================================================
-
-protected function getSamples
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
-algorithm
-  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(sampleLst=outZeroCrossingList))) := inBackendDAE;
-end getSamples;
 
 protected function createNonlinearResidualEquationsComplex
   input DAE.Exp inExp;

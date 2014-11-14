@@ -77,6 +77,13 @@ algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(relationsLst=outZeroCrossingList))) := inBackendDAE;
 end getRelations;
 
+public function getSamples "deprecated - use EVENT_INFO.timeEvents instead"
+  input BackendDAE.BackendDAE inBackendDAE;
+  output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
+algorithm
+  BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(sampleLst=outZeroCrossingList))) := inBackendDAE;
+end getSamples;
+
 // =============================================================================
 // section for zero crossings
 //
@@ -94,8 +101,8 @@ algorithm
   //BackendDump.dumpBackendDAE(outDAE, "findZeroCrossings: outDAE");
 end findZeroCrossings;
 
-protected function findZeroCrossings1 "This function finds all zerocrossings in the list of equations and
-  the list of when clauses."
+protected function findZeroCrossings1 "
+  This function finds all zero-crossings in the list of equations and the list of when clauses."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
   output BackendDAE.EqSystem outSyst;
@@ -468,7 +475,7 @@ algorithm
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
-        BackendDump.zeroCrossingListString(zeroCrossings);
+        BackendDump.dumpZeroCrossingList(zeroCrossings, "");
       end if;
     then (e_1, false, ((zeroCrossings, relations, samples, numRelations1, numMathFunctions), (eq_count, wc_count, vars, knvars)));
 
@@ -706,8 +713,7 @@ algorithm
       itmp = (listLength(zc_lst)-listLength(zeroCrossings));
       zeroCrossings = if itmp>0 then zc_lst else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZCAlgsFor LBINARY1 result zc: ");
-        print(BackendDump.zeroCrossingListString(zeroCrossings));
+        BackendDump.dumpZeroCrossingList(zeroCrossings, "collectZCAlgsFor LBINARY1 result zc");
       end if;
     then (e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars)));
 
@@ -724,8 +730,7 @@ algorithm
       zc_lst = List.select1(zeroCrossings, zcEqual, zc);
       zeroCrossings = if List.isEmpty(zc_lst) then listAppend(zeroCrossings, {zc}) else zeroCrossings;
       if Flags.isSet(Flags.RELIDX) then
-        print("collectZCAlgsFor LBINARY2 result zc: ");
-        print(BackendDump.zeroCrossingListString(zeroCrossings));
+        BackendDump.dumpZeroCrossingList(zeroCrossings, "collectZCAlgsFor LBINARY2 result zc");
       end if;
     then (e_1, false, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numRelations1, numMathFunctions), (alg_indx, vars, knvars)));
 

@@ -263,6 +263,7 @@ protected
   list<DAE.Constraint> constraints;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst, relationsLst;
   list<BackendDAE.WhenClause> whenClauseLst;
+  list<BackendDAE.TimeEvent> timeEvents;
   BackendDAE.ExternalObjectClasses extObjClasses;
   BackendDAE.BackendDAEType backendDAEType;
   BackendDAE.SymbolicJacobians symjacs;
@@ -273,7 +274,7 @@ algorithm
                     initialEqs=initialEqs,
                     removedEqs=removedEqs,
                     constraints=constraints,
-                    eventInfo=BackendDAE.EVENT_INFO(relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst, sampleLst=sampleLst, whenClauseLst=whenClauseLst),
+                    eventInfo=BackendDAE.EVENT_INFO(timeEvents=timeEvents, relationsLst=relationsLst, zeroCrossingLst=zeroCrossingLst, sampleLst=sampleLst, whenClauseLst=whenClauseLst),
                     extObjClasses=extObjClasses,
                     backendDAEType=backendDAEType,
                     symjacs=symjacs) := inShared;
@@ -289,7 +290,11 @@ algorithm
   dumpEquationArray(initialEqs, "Initial Equations");
   dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings");
   dumpZeroCrossingList(relationsLst, "Relations");
-  dumpZeroCrossingList(sampleLst, "Samples");
+  if stringEqual(Config.simCodeTarget(), "Cpp") then
+    dumpZeroCrossingList(sampleLst, "Samples");
+  else
+    dumpTimeEvents(timeEvents, "Time Events");
+  end if;
   dumpWhenClauseList(whenClauseLst, "When Clauses");
   dumpConstraintList(constraints, "Constraints");
 end printShared;
@@ -620,11 +625,28 @@ end dumpStateSets;
 public function dumpZeroCrossingList
   input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
   input String heading;
+protected
+  BackendDAE.ZeroCrossing zeroCrossing;
 algorithm
   print("\n" + heading + " (" + intString(listLength(inZeroCrossingList)) + ")\n" + UNDERLINE + "\n");
-  print(zeroCrossingListString(inZeroCrossingList));
+  for zeroCrossing in inZeroCrossingList loop
+    print(zeroCrossingString(zeroCrossing) + "\n");
+  end for;
   print("\n");
 end dumpZeroCrossingList;
+
+public function dumpTimeEvents
+  input list<BackendDAE.TimeEvent> inTimeEvents;
+  input String heading;
+protected
+  BackendDAE.TimeEvent timeEvent;
+algorithm
+  print("\n" + heading + " (" + intString(listLength(inTimeEvents)) + ")\n" + UNDERLINE + "\n");
+  for timeEvent in inTimeEvents loop
+    print(timeEventString(timeEvent) + "\n");
+  end for;
+  print("\n");
+end dumpTimeEvents;
 
 protected function dumpWhenClauseList
   input list<BackendDAE.WhenClause> inWhenClauseList;
@@ -1207,7 +1229,6 @@ end printComponent;
 //   - equationString
 //   - strongComponentString
 //   - whenClauseString
-//   - zeroCrossingListString
 // =============================================================================
 
 public function strongComponentString
@@ -1409,20 +1430,6 @@ algorithm
   end matchcontinue;
 end equationString;
 
-public function zeroCrossingListString "function zeroCrossingListString"
-  input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
-  output String outString;
-algorithm
- outString := match(inZeroCrossingList)
-  local
-    BackendDAE.ZeroCrossing curr;
-    list<BackendDAE.ZeroCrossing> rest;
-  case ({}) then "";
-  case (curr::rest) equation
-  then zeroCrossingString(curr) + "\n" + zeroCrossingListString(rest);
-end match;
-end zeroCrossingListString;
-
 protected function zeroCrossingString "Dumps a zerocrossing into a string, for debugging purposes."
   input BackendDAE.ZeroCrossing inZeroCrossing;
   output String outString;
@@ -1475,6 +1482,21 @@ algorithm
     else "";
   end match;
 end zeroCrossingString;
+
+protected function timeEventString
+  input BackendDAE.TimeEvent inTimeEvent;
+  output String outString;
+algorithm
+  outString := match(inTimeEvent)
+    case BackendDAE.SIMPLE_TIME_EVENT()
+    then "SIMPLE_TIME_EVENT";
+    
+    case BackendDAE.SAMPLE_TIME_EVENT()
+    then intString(inTimeEvent.index) + ": sample(" + ExpressionDump.printExpStr(inTimeEvent.startExp) + ", " + ExpressionDump.printExpStr(inTimeEvent.intervalExp) + ")";
+    
+    else "unknown time event";
+  end match;
+end timeEventString;
 
 protected function whenClauseListString "function whenClauseListString"
   input list<BackendDAE.WhenClause> inWhenClauseList;

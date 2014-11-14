@@ -106,8 +106,8 @@ uniontype SimCode
     list<DAE.Constraint> constraints;
     list<DAE.ClassAttributes> classAttributes;
     list<BackendDAE.ZeroCrossing> zeroCrossings;
-    list<BackendDAE.ZeroCrossing> relations;
-    list<BackendDAE.TimeEvent> timeEvents;
+    list<BackendDAE.ZeroCrossing> relations "only used by c runtime";
+    list<BackendDAE.TimeEvent> timeEvents "only used by c runtime yet";
     list<SimWhenClause> whenClauses;
     list<DAE.ComponentRef> discreteModelVars;
     ExtObjInfo extObjInfo;

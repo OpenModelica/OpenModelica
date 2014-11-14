@@ -453,10 +453,10 @@ end StateSet;
 public
 uniontype EventInfo
   record EVENT_INFO
-    list<TimeEvent> timeEvents         "stores all information regarding time events";
+    list<TimeEvent> timeEvents         "stores all information related to time events";
     list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation data type refer to this list by position";
     list<ZeroCrossing> zeroCrossingLst "list of zero crossing conditions";
-    list<ZeroCrossing> sampleLst       "list of sample as before, only used by cpp runtime";
+    list<ZeroCrossing> sampleLst       "list of sample as before, only used by cpp runtime (TODO: REMOVE ME)";
     list<ZeroCrossing> relationsLst    "list of zero crossing function as before";
     Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
   end EVENT_INFO;
@@ -517,9 +517,6 @@ public
 uniontype TimeEvent
   record SIMPLE_TIME_EVENT "e.g. time > 0.5"
   end SIMPLE_TIME_EVENT;
-
-  record COMPLEX_TIME_EVENT "e.g. sin(time) > 0.1"
-  end COMPLEX_TIME_EVENT;
 
   record SAMPLE_TIME_EVENT "e.g. sample(1, 1)"
     Integer index "unique sample index";

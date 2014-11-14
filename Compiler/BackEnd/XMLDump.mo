@@ -3980,13 +3980,6 @@ algorithm
         dumpSampleLst(lst,addMMLCode);
       then ();
 
-    case (BackendDAE.COMPLEX_TIME_EVENT()::lst, addMMLCode)
-      equation
-        /* TODO */
-
-        dumpSampleLst(lst, addMMLCode);
-      then ();
-
     case (BackendDAE.SAMPLE_TIME_EVENT(i, e1, e2)::lst, addMMLCode)
       equation
         dumpStrOpenTag(stringAppend(SAMPLES, ELEMENT_));
