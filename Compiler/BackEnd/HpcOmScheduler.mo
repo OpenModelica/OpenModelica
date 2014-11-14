@@ -195,7 +195,7 @@ algorithm
         //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
         simEqIdc = List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
         simEqIdc = List.sort(simEqIdc,intGt);
-        
+
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         threadTasks = newTask::threadTasks;
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,threadTasks);
@@ -790,7 +790,7 @@ algorithm
    case(HpcOmTaskGraph.COMMUNICATION(nV1,ints1,fl1,b1,s1,childNode,reqT1),_,HpcOmTaskGraph.COMMUNICATION(nV2,ints2,fl2,b2,s2,childNode,reqT2))
      equation
        true = listMember(childNode,tasks);
-     then HpcOmTaskGraph.COMMUNICATION(nV1+nV2,listAppend(ints1,ints2),listAppend(fl1,fl2),listAppend(b1,b2),listAppend(s1,s2),childNode,reqT1+reqT2);  
+     then HpcOmTaskGraph.COMMUNICATION(nV1+nV2,listAppend(ints1,ints2),listAppend(fl1,fl2),listAppend(b1,b2),listAppend(s1,s2),childNode,reqT1+reqT2);
    else
      then iCommunication;
  end matchcontinue;

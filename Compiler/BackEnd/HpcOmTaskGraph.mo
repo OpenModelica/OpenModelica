@@ -3627,7 +3627,7 @@ algorithm
   case(contrNodes::rest,_,_,TASKGRAPHMETA(inComps = inComps),_)
     equation
       //add new edges to the contrNode
-      contrNode::removeNodes = contrNodes;    
+      contrNode::removeNodes = contrNodes;
       List.map_0(removeNodes,function Array.updateIndexFirst(inValue = -1, inArray=contractedTasksIn));  // mark in contrTask array
       children = List.flatten(List.map(contrNodes,function Array.getIndexFirst(inArray = graphIn)));
       children = filterContractedNodes(children,contractedTasksIn);
@@ -3641,12 +3641,12 @@ algorithm
       _ = List.map(children,function addEdgeToGraph(parent=contrNode, graphIn=graphIn));
       _ = List.map(children, function addEdgeToGraph(child=contrNode, graphIn=graphTIn));
       _ = List.map(parents,function addEdgeToGraph(parent=contrNode, graphIn=graphTIn));
-      
+
       // remove the contracted nodes (except the contrNode)  IS NOT NECESSARY BUT MAYBE FASTER??!?!?
       List.map_0(removeNodes,function Array.updateIndexFirst(inValue = -1, inArray=contractedTasksIn));  // mark in contrTask array
       List.map_0(removeNodes,function Array.updateIndexFirst(inValue = {}, inArray=graphIn)); // remove from graph
       List.map_0(removeNodes,function Array.updateIndexFirst(inValue = {}, inArray=graphTIn)); // remove from transposed graph
-      
+
       updateInCompsInfo(contrNode,removeNodes,inComps);
       dataTmp = setInCompsInMeta(inComps,graphDataIn);
     then contractNodesInGraph(rest,graphIn,graphTIn,dataTmp,contractedTasksIn);

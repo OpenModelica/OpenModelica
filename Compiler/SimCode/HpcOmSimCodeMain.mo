@@ -296,8 +296,8 @@ algorithm
       // Analyse Systems of Equations
       //-----------------------------
       (scheduledTasks,scheduledDAENodes) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,simVarMapping,inBackendDAE);
-      
-      
+
+
       //Apply filters
       //-------------
       taskGraphDataSimplified = taskGraphDataOde;
@@ -474,7 +474,7 @@ algorithm
       equation
         //Merge nodes
         (_,_,_,_,changed) = HpcOmTaskGraph.mergeSimpleNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
-        
+
         //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
         //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
         //(taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1, doNotMerge);
@@ -482,7 +482,7 @@ algorithm
         //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
         //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
         //(taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
-                
+
       then applyGRS1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,changed);
     else (iTaskGraph, iTaskGraphMeta);
   end matchcontinue;
