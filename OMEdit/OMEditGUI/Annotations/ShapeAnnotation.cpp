@@ -580,32 +580,23 @@ void ShapeAnnotation::initializeTransformation()
   */
 void ShapeAnnotation::drawCornerItems()
 {
-  if (dynamic_cast<LineAnnotation*>(this) || dynamic_cast<PolygonAnnotation*>(this))
-  {
+  if (dynamic_cast<LineAnnotation*>(this) || dynamic_cast<PolygonAnnotation*>(this)) {
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
-    if (pLineAnnotation)
-    {
+    if (pLineAnnotation) {
       lineType = pLineAnnotation->getLineType();
     }
-    // remove the last point since mouse double click event has added an extra point to it.....
-    mPoints.removeLast();
-    for (int i = 0 ; i < mPoints.size() ; i++)
-    {
+    for (int i = 0 ; i < mPoints.size() ; i++) {
       QPointF point = mPoints.at(i);
       CornerItem *pCornerItem = new CornerItem(point.x(), point.y(), i, this);
       /* if line is a connection then make the first and last point non moveable. */
-      if ((lineType == LineAnnotation::ConnectionType) && (i == 0 || i == mPoints.size() - 1))
-      {
+      if ((lineType == LineAnnotation::ConnectionType) && (i == 0 || i == mPoints.size() - 1)) {
         pCornerItem->setFlag(QGraphicsItem::ItemIsMovable, false);
       }
       mCornerItemsList.append(pCornerItem);
     }
-  }
-  else
-  {
-    for (int i = 0 ; i < mExtents.size() ; i++)
-    {
+  } else {
+    for (int i = 0 ; i < mExtents.size() ; i++) {
       QPointF extent = mExtents.at(i);
       CornerItem *pCornerItem = new CornerItem(extent.x(), extent.y(), i, this);
       mCornerItemsList.append(pCornerItem);
@@ -665,6 +656,16 @@ QPointF ShapeAnnotation::getOldPosition()
   return mOldPosition;
 }
 
+void ShapeAnnotation::addPoint(QPointF point)
+{
+  Q_UNUSED(point);
+}
+
+void ShapeAnnotation::clearPoints()
+{
+
+}
+
 /*!
   Adds the extent point value.
   \param index - the index of extent point.
@@ -706,15 +707,6 @@ GraphicsView* ShapeAnnotation::getGraphicsView()
 Transformation* ShapeAnnotation::getTransformation()
 {
   return mpTransformation;
-}
-
-/*!
-  Sets the points list.
-  \param points - the points list.
-  */
-void ShapeAnnotation::setPoints(QList<QPointF> points)
-{
-  mPoints = points;
 }
 
 /*!
@@ -1145,11 +1137,9 @@ void ShapeAnnotation::applyRotation(qreal angle)
 void ShapeAnnotation::adjustPointsWithOrigin()
 {
   QList<QPointF> points;
-  foreach (QPointF point, mPoints)
-  {
-    point.setX(point.x() - mOrigin.x());
-    point.setY(point.y() - mOrigin.y());
-    points.append(point);
+  foreach (QPointF point, mPoints) {
+    QPointF adjustedPoint = mpGraphicsView->snapPointToGrid(point - mOrigin);
+    points.append(adjustedPoint);
   }
   mPoints = points;
 }
@@ -1167,6 +1157,54 @@ void ShapeAnnotation::adjustExtentsWithOrigin()
     extents.append(extent);
   }
   mExtents = extents;
+}
+
+CornerItem* ShapeAnnotation::getCornerItem(int index)
+{
+  for (int i = 0 ; i < mCornerItemsList.size() ; i++) {
+    if (mCornerItemsList[i]->getConnectetPointIndex() == index) {
+      return mCornerItemsList[i];
+    }
+  }
+  return 0;
+}
+
+void ShapeAnnotation::updateCornerItem(int index)
+{
+  CornerItem *pCornerItem = getCornerItem(index);
+  if (pCornerItem) {
+    bool state = pCornerItem->blockSignals(true);
+    pCornerItem->setPos(mPoints.at(index));
+    pCornerItem->blockSignals(state);
+  }
+}
+
+void ShapeAnnotation::insertPointsGeometriesAndCornerItems(int index)
+{
+  QPointF point = (mPoints[index - 1] + mPoints[index]) / 2;
+  point = mpGraphicsView->snapPointToGrid(point);
+  mPoints.insert(index, point);
+  mPoints.insert(index, point);
+  if (mGeometries[index - 1] == ShapeAnnotation::HorizontalLine) {
+    mGeometries.insert(index, ShapeAnnotation::HorizontalLine);
+    mGeometries.insert(index, ShapeAnnotation::VerticalLine);
+  } else if (mGeometries[index - 1] == ShapeAnnotation::VerticalLine) {
+    mGeometries.insert(index, ShapeAnnotation::VerticalLine);
+    mGeometries.insert(index, ShapeAnnotation::HorizontalLine);
+  }
+  // if we add new points then we need to add new CornerItems and also need to adjust CornerItems connected indexes.
+  mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
+  mCornerItemsList.insert(index, new CornerItem(point.x(), point.y(), index, this));
+  adjustCornerItemsConnectedIndexes();
+}
+
+void ShapeAnnotation::adjustCornerItemsConnectedIndexes()
+{
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    if (i < mCornerItemsList.size()) {
+      mCornerItemsList[i]->setConnectedPointIndex(i);
+    }
+  }
 }
 
 /*!
@@ -1551,32 +1589,78 @@ void ShapeAnnotation::cornerItemReleased()
 
 /*!
   Slot activated when CornerItem around the shape is moved. Sends the new position values for the associated shape point.
+  \param index - the index of the CornerItem
+  \param point - the new CornerItem position
   */
 void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
 {
-  if (dynamic_cast<LineAnnotation*>(this) || dynamic_cast<PolygonAnnotation*>(this))
-  {
-    mPoints.replace(index, point);
-    /* if shape is the PolygonAnnotation then update the start and end point together */
-    if (dynamic_cast<PolygonAnnotation*>(this))
-    {
-      /* if first point */
-      if (index == 0)
-      {
-        mPoints.back() = point;
-        mCornerItemsList[mPoints.size() - 1]->setPos(point);
+  if (dynamic_cast<LineAnnotation*>(this)) {
+    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
+    if (pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+      // if moving the 2nd last point then we need to add more points after it to keep the last point manhattanized with connector
+      int secondLastIndex = mPoints.size() - 2;
+      if (index == secondLastIndex) {
+        // just check if additional points are really needed or not.
+        if ((mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine && mPoints[index].y() != point.y()) ||
+            (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine && mPoints[index].x() != point.x())) {
+          insertPointsGeometriesAndCornerItems(mPoints.size() - 1);
+        }
       }
-      /* if last point */
-      else if (index == mPoints.size() - 1)
-      {
-        mPoints.first() = point;
-        mCornerItemsList[0]->setPos(point);
+      // if moving the 2nd point then we need to add more points behind it to keep the first point manhattanized with connector
+      if (index == 1) {
+        // just check if additional points are really needed or not.
+        if ((mGeometries[0] == ShapeAnnotation::HorizontalLine && mPoints[index].y() != point.y()) ||
+            (mGeometries[0] == ShapeAnnotation::VerticalLine && mPoints[index].x() != point.x())) {
+          insertPointsGeometriesAndCornerItems(1);
+          index = index + 2;
+        }
       }
+      qreal dx = point.x() - mPoints[index].x();
+      qreal dy = point.y() - mPoints[index].y();
+      mPoints.replace(index, point);
+      // update previous point
+      if (mGeometries[index - 1] == ShapeAnnotation::HorizontalLine) {
+        mPoints[index - 1] = QPointF(mPoints[index - 1].x(), mPoints[index - 1].y() +  dy);
+        updateCornerItem(index - 1);
+      } else if (mGeometries[index - 1] == ShapeAnnotation::VerticalLine) {
+        mPoints[index - 1] = QPointF(mPoints[index - 1].x() + dx, mPoints[index - 1].y());
+        updateCornerItem(index - 1);
+      }
+      // update next point
+      if (mGeometries[index] == ShapeAnnotation::HorizontalLine) {
+        mPoints[index + 1] = QPointF(mPoints[index + 1].x(), mPoints[index + 1].y() +  dy);
+        updateCornerItem(index + 1);
+      } else if (mGeometries[index] == ShapeAnnotation::VerticalLine) {
+        mPoints[index + 1] = QPointF(mPoints[index + 1].x() + dx, mPoints[index + 1].y());
+        updateCornerItem(index + 1);
+      }
+    } else {
+      mPoints.replace(index, point);
     }
-  }
-  else
-  {
+  } else if (dynamic_cast<PolygonAnnotation*>(this)) { /* if shape is the PolygonAnnotation then update the start and end point together */
+    mPoints.replace(index, point);
+    /* if first point */
+    if (index == 0) {
+      mPoints.back() = point;
+      updateCornerItem(mPoints.size() - 1);
+    } else if (index == mPoints.size() - 1) { /* if last point */
+      mPoints.first() = point;
+      updateCornerItem(0);
+    }
+  } else {
     mExtents.replace(index, point);
+  }
+}
+
+ShapeAnnotation::LineGeometryType ShapeAnnotation::findLineGeometryType(QPointF point1, QPointF point2)
+{
+  QLineF line(point1, point2);
+  qreal angle = StringHandler::getNormalizedAngle(line.angle());
+
+  if ((angle > 45 && angle < 135) || (angle > 225 && angle < 315)) {
+    return ShapeAnnotation::VerticalLine;
+  } else {
+    return ShapeAnnotation::HorizontalLine;
   }
 }
 
@@ -1588,7 +1672,7 @@ void ShapeAnnotation::showShapeProperties()
   if (!mpGraphicsView) return;
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   ShapePropertiesDialog *pShapePropertiesDialog = new ShapePropertiesDialog(this, pMainWindow);
-  pShapePropertiesDialog->show();
+  pShapePropertiesDialog->exec();
 }
 
 /*!

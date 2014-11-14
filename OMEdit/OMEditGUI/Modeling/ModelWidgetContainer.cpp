@@ -952,7 +952,6 @@ void GraphicsView::addConnection(Component *pComponent)
         else
           endComponentName = pComponent->getName();
         createConnection(startComponentName, endComponentName);
-        mpConnectionLineAnnotation->addPoint(QPointF(0, 0));
         mpConnectionLineAnnotation->drawCornerItems();
         mpConnectionLineAnnotation->setCornerItemsPassive();
       }
@@ -1425,16 +1424,17 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
 
 void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
 {
-  if (event->button() == Qt::RightButton)
+  if (event->button() == Qt::RightButton) {
     return;
+  }
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  if (isCreatingLineShape())
-  {
+  if (isCreatingLineShape()) {
     // set the transformation matrix
-    mpLineShapeAnnotation->setOrigin(mpLineShapeAnnotation->sceneBoundingRect().center());
+    mpLineShapeAnnotation->setOrigin(snapPointToGrid(mpLineShapeAnnotation->sceneBoundingRect().center()));
     mpLineShapeAnnotation->adjustPointsWithOrigin();
     mpLineShapeAnnotation->initializeTransformation();
     // draw corner items for the Line shape
+    mpLineShapeAnnotation->removePoint(mpLineShapeAnnotation->getPoints().size() - 1);
     mpLineShapeAnnotation->drawCornerItems();
     mpLineShapeAnnotation->setSelected(true);
     // finish creating the line
@@ -1445,14 +1445,13 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     addClassAnnotation();
     setCanAddClassAnnotation(true);
     return;
-  }
-  else if (isCreatingPolygonShape())
-  {
+  } else if (isCreatingPolygonShape()) {
     // set the transformation matrix
-    mpPolygonShapeAnnotation->setOrigin(mpPolygonShapeAnnotation->sceneBoundingRect().center());
+    mpPolygonShapeAnnotation->setOrigin(snapPointToGrid(mpPolygonShapeAnnotation->sceneBoundingRect().center()));
     mpPolygonShapeAnnotation->adjustPointsWithOrigin();
     mpPolygonShapeAnnotation->initializeTransformation();
     // draw corner items for the polygon shape
+    mpPolygonShapeAnnotation->removePoint(mpPolygonShapeAnnotation->getPoints().size() - 1);
     mpPolygonShapeAnnotation->drawCornerItems();
     mpPolygonShapeAnnotation->setSelected(true);
     // finish creating the polygon
@@ -1465,14 +1464,12 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     return;
   }
   ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));
-  if (pShapeAnnotation)
-  {
+  if (pShapeAnnotation) {
     /*
-        Double click on Component also end up here.
-        But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
-        */
-    if (pShapeAnnotation->getGraphicsView())
-    {
+      Double click on Component also end up here.
+      But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
+      */
+    if (pShapeAnnotation->getGraphicsView()) {
       pShapeAnnotation->showShapeProperties();
       return;
     }
@@ -2361,13 +2358,7 @@ void ModelWidget::getModelIconDiagramShapes(QString className, QString annotatio
       shape = shape.mid(QString("Line").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       LineAnnotation *pLineAnnotation = new LineAnnotation(shape, inheritedCycle, pGraphicsView);
-      /*
-        before drawing the corner items add one point to line since drawcorneritems
-        deletes one point. Why? because we end the line shape with double click which adds an extra
-        point to it. so we need to delete this point.
-        */
       pLineAnnotation->initializeTransformation();
-      pLineAnnotation->addPoint(QPoint(0, 0));
       pLineAnnotation->drawCornerItems();
       pLineAnnotation->setCornerItemsPassive();
     }
@@ -2376,13 +2367,7 @@ void ModelWidget::getModelIconDiagramShapes(QString className, QString annotatio
       shape = shape.mid(QString("Polygon").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, inheritedCycle, pGraphicsView);
-      /*
-        before drawing the corner items add one point to polygon since drawcorneritems
-        deletes one point. Why? because we end the polygon shape with double click which adds an extra
-        point to it. so we need to delete this point.
-        */
       pPolygonAnnotation->initializeTransformation();
-      pPolygonAnnotation->addPoint(QPoint(0, 0));
       pPolygonAnnotation->drawCornerItems();
       pPolygonAnnotation->setCornerItemsPassive();
     }
@@ -2535,13 +2520,14 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
         shape = StringHandler::removeFirstLastBrackets(shape);
         LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, inheritedCycle, pStartConnectorComponent,
                                                                        pEndConnectorComponent, mpDiagramGraphicsView);
-        if (pStartConnectorComponent)
+        if (pStartConnectorComponent) {
           pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+        }
         pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
-        if (pEndConnectorComponent)
+        if (pEndConnectorComponent) {
           pEndConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
+        }
         pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
-        pConnectionLineAnnotation->addPoint(QPointF(0, 0));
         pConnectionLineAnnotation->drawCornerItems();
         pConnectionLineAnnotation->setCornerItemsPassive();
         mpDiagramGraphicsView->addConnectionObject(pConnectionLineAnnotation);

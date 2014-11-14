@@ -1064,23 +1064,16 @@ void Component::duplicate()
 {
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  if (mpGraphicsView->addComponent(mClassName, scenePos() + gridStep))
-  {
-    if (mType == StringHandler::Connector)
-    {
-      if (mpGraphicsView->getViewType() == StringHandler::Diagram)
-      {
+  if (mpGraphicsView->addComponent(mClassName, scenePos() + gridStep)) {
+    if (mType == StringHandler::Connector) {
+      if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
         duplicateHelper(mpGraphicsView);
         duplicateHelper(mpGraphicsView->getModelWidget()->getIconGraphicsView());
-      }
-      else
-      {
+      } else {
         duplicateHelper(mpGraphicsView);
         duplicateHelper(mpGraphicsView->getModelWidget()->getDiagramGraphicsView());
       }
-    }
-    else
-    {
+    } else {
       duplicateHelper(mpGraphicsView);
     }
   }

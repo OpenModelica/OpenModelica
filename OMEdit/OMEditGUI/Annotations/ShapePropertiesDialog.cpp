@@ -53,7 +53,6 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   QString title = getTitle();
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(title).append(" ").append(Helper::properties));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
   // heading label
   mpShapePropertiesHeading = new Label(QString(title).append(" ").append(Helper::properties));
   mpShapePropertiesHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
@@ -779,10 +778,10 @@ bool ShapePropertiesDialog::applyShapeProperties()
     mpShapeAnnotation->setFillPattern(StringHandler::getFillPatternType(mpFillPatternComboBox->currentText()));
   }
   /* save points */
-  QList<QPointF> points;
-  for (int i = 0 ; i < mpPointsTableWidget->rowCount() ; i++)
-    points.append(QPointF(mpPointsTableWidget->item(i, 0)->text().toFloat(), mpPointsTableWidget->item(i, 1)->text().toFloat()));
-  mpShapeAnnotation->setPoints(points);
+  mpShapeAnnotation->clearPoints();
+  for (int i = 0 ; i < mpPointsTableWidget->rowCount() ; i++) {
+    mpShapeAnnotation->addPoint(QPointF(mpPointsTableWidget->item(i, 0)->text().toFloat(), mpPointsTableWidget->item(i, 1)->text().toFloat()));
+  }
   /* save bitmap file name and image source */
   if (mpBitmapAnnotation)
   {
@@ -833,7 +832,6 @@ bool ShapePropertiesDialog::applyShapeProperties()
   if (mpLineAnnotation && lineType == LineAnnotation::ConnectionType)
   {
     mpShapeAnnotation->removeCornerItems();
-    mpLineAnnotation->addPoint(QPointF(0, 0));
     mpShapeAnnotation->drawCornerItems();
     mpLineAnnotation->updateConnectionAnnotation();
     mpLineAnnotation->update();
@@ -842,10 +840,6 @@ bool ShapePropertiesDialog::applyShapeProperties()
   {
     mpShapeAnnotation->initializeTransformation();
     mpShapeAnnotation->removeCornerItems();
-    if (mpLineAnnotation)
-      mpLineAnnotation->addPoint(QPointF(0, 0));
-    else if (mpPolygonAnnotation)
-      mpPolygonAnnotation->addPoint(QPointF(0, 0));
     mpShapeAnnotation->drawCornerItems();
     mpShapeAnnotation->update();
     mpShapeAnnotation->getGraphicsView()->addClassAnnotation();

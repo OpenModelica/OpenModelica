@@ -56,6 +56,8 @@ private:
   int mConnectedPointIndex;
 public:
   CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent);
+  void setConnectedPointIndex(int connectedPointIndex) {mConnectedPointIndex = connectedPointIndex;}
+  int getConnectetPointIndex() {return mConnectedPointIndex;}
   QRectF boundingRect() const;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
 signals:

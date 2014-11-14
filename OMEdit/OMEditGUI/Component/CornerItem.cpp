@@ -114,9 +114,10 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
   */
 void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (event->button() == Qt::LeftButton)
-  {
-    emit cornerItemPress();
+  if (event->button() == Qt::LeftButton) {
+    if (!signalsBlocked()) {
+      emit cornerItemPress();
+    }
     mClickPos = mapToScene(event->pos());
   }
   QGraphicsItem::mousePressEvent(event);
@@ -132,12 +133,14 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
   QGraphicsItem::mouseReleaseEvent(event);
-  if (event->button() == Qt::LeftButton)
-  {
-    emit cornerItemRelease();
-    if (mClickPos != mapToScene(event->pos()))
-    {
-      emit cornerItemPositionChanged();
+  if (event->button() == Qt::LeftButton) {
+    if (!signalsBlocked()) {
+      emit cornerItemRelease();
+    }
+    if (mClickPos != mapToScene(event->pos())) {
+      if (!signalsBlocked()) {
+        emit cornerItemPositionChanged();
+      }
       mpShapeAnnotation->getGraphicsView()->setCanAddClassAnnotation(true);
     }
   }
@@ -153,7 +156,9 @@ QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value
 {
   QGraphicsItem::itemChange(change, value);
   if (change == QGraphicsItem::ItemPositionHasChanged) {
-    emit cornerItemMoved(mConnectedPointIndex, value.toPointF());
+    if (!signalsBlocked()) {
+      emit cornerItemMoved(mConnectedPointIndex, value.toPointF());
+    }
   } else if (change == QGraphicsItem::ItemPositionChange && scene()) {
     // snap to grid while dragging shapes
     QPointF newPos = value.toPointF();

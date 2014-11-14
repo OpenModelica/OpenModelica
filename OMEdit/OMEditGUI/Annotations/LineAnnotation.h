@@ -48,7 +48,6 @@ class LineAnnotation : public ShapeAnnotation
 {
   Q_OBJECT
 public:
-  enum GeometryType {Vertical, Horizontal, Diagonal};
   enum LineType {
     ComponentType,  /* Line is within Component. */
     ConnectionType,  /* Line is a connection. */
@@ -71,6 +70,8 @@ public:
   void setEndComponent(Component *pEndComponent);
   Component* getEndComponent();
   void addPoint(QPointF point);
+  void removePoint(int index);
+  void clearPoints();
   void updateStartPoint(QPointF point);
   void updateEndPoint(QPointF point);
   void moveAllPoints(qreal offsetX, qreal offsetY);
@@ -85,7 +86,6 @@ private:
   QString mStartComponentName;
   Component *mpEndComponent;
   QString mEndComponentName;
-  QList<GeometryType> mGeometries;
 public slots:
   void handleComponentMoved();
   void handleComponentRotation();

@@ -217,6 +217,18 @@ void PolygonAnnotation::addPoint(QPointF point)
   mPoints.back() = mPoints.first();
 }
 
+void PolygonAnnotation::removePoint(int index)
+{
+  if (mPoints.size() > index) {
+    mPoints.removeAt(index);
+  }
+}
+
+void PolygonAnnotation::clearPoints()
+{
+  mPoints.clear();
+}
+
 void PolygonAnnotation::updateEndPoint(QPointF point)
 {
   // we update the second last point for polygon since the last point is connected to first one
@@ -237,8 +249,7 @@ void PolygonAnnotation::duplicate()
   pPolygonAnnotation->setFillPattern(getFillPattern());
   pPolygonAnnotation->setLineThickness(getLineThickness());
   pPolygonAnnotation->setSmooth(getSmooth());
-  pPolygonAnnotation->setPoints(getPoints());
-  pPolygonAnnotation->addPoint(QPoint(0, 0));
+  pPolygonAnnotation->mPoints = getPoints();
   pPolygonAnnotation->drawCornerItems();
   pPolygonAnnotation->setCornerItemsPassive();
   pPolygonAnnotation->update();

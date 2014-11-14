@@ -58,6 +58,8 @@ public:
   void drawPolygonAnnotaion(QPainter *painter);
   QString getShapeAnnotation();
   void addPoint(QPointF point);
+  void removePoint(int index);
+  void clearPoints();
   void updateEndPoint(QPointF point);
 public slots:
   void duplicate();

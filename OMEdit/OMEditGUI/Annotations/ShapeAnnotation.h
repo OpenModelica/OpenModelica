@@ -110,6 +110,7 @@ private:
   bool mIsCornerItemClicked;
   QAction *mpShapePropertiesAction;
 public:
+  enum LineGeometryType {VerticalLine, HorizontalLine};
   ShapeAnnotation(QGraphicsItem *pParent);
   ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent = 0);
   ~ShapeAnnotation();
@@ -129,11 +130,12 @@ public:
   void removeCornerItems();
   void setOldPosition(QPointF oldPosition);
   QPointF getOldPosition();
+  virtual void addPoint(QPointF point);
+  virtual void clearPoints();
   virtual void replaceExtent(int index, QPointF point);
   virtual void updateEndExtent(QPointF point);
   GraphicsView* getGraphicsView();
   Transformation* getTransformation();
-  void setPoints(QList<QPointF> points);
   QList<QPointF> getPoints();
   void setStartArrow(StringHandler::Arrow startArrow);
   StringHandler::Arrow getStartArrow();
@@ -174,6 +176,10 @@ public:
   void applyRotation(qreal angle);
   void adjustPointsWithOrigin();
   void adjustExtentsWithOrigin();
+  CornerItem* getCornerItem(int index);
+  void updateCornerItem(int index);
+  void insertPointsGeometriesAndCornerItems(int index);
+  void adjustCornerItemsConnectedIndexes();
 signals:
   void updateClassAnnotation();
 public slots:
@@ -199,11 +205,13 @@ public slots:
   void cornerItemPressed();
   void cornerItemReleased();
   void updateCornerItemPoint(int index, QPointF point);
+  LineGeometryType findLineGeometryType(QPointF point1, QPointF point2);
   void showShapeProperties();
 protected:
   GraphicsView *mpGraphicsView;
   Transformation *mpTransformation;
   QList<QPointF> mPoints;
+  QList<LineGeometryType> mGeometries;
   QList<StringHandler::Arrow> mArrow;
   qreal mArrowSize;
   StringHandler::Smooth mSmooth;
