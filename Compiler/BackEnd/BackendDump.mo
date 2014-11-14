@@ -1490,10 +1490,10 @@ algorithm
   outString := match(inTimeEvent)
     case BackendDAE.SIMPLE_TIME_EVENT()
     then "SIMPLE_TIME_EVENT";
-    
+
     case BackendDAE.SAMPLE_TIME_EVENT()
     then intString(inTimeEvent.index) + ": sample(" + ExpressionDump.printExpStr(inTimeEvent.startExp) + ", " + ExpressionDump.printExpStr(inTimeEvent.intervalExp) + ")";
-    
+
     else "unknown time event";
   end match;
 end timeEventString;
