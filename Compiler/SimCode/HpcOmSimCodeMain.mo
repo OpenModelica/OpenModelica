@@ -48,6 +48,7 @@ public import SimCode;
 
 // protected imports
 protected import Array;
+protected import BackendDAEUtil;
 protected import ClockIndexes;
 protected import Debug;
 protected import Error;
@@ -289,33 +290,27 @@ algorithm
       SimCodeUtil.execStat("hpcom dump ODE TaskGraph");
 
       if Flags.isSet(Flags.HPCOM_DUMP) then
-        print("Critical Path successful calculated\n");
+        print("Critical Path successfully calculated\n");
       end if;
 
       // Analyse Systems of Equations
       //-----------------------------
       (scheduledTasks,scheduledDAENodes) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,simVarMapping,inBackendDAE);
-      //HpcOmScheduler.printTaskList(scheduledTasks);
-
-      if Flags.isSet(Flags.HPCOM_DUMP) then
-        print("Torn System parallelized\n");
-      end if;
-
+      
+      
       //Apply filters
       //-------------
       taskGraphDataSimplified = taskGraphDataOde;
       taskGraphSimplified = taskGraphOde;
-      (taskGraphSimplified,taskGraphDataSimplified) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,true,scheduledDAENodes,1); //TODO: Rename this to applyGRS or someting like that
+      (taskGraphSimplified,taskGraphDataSimplified) = applyGRS(taskGraphOde,taskGraphDataOde); //TODO: Rename this to applyGRS or someting like that
       SimCodeUtil.execStat("hpcom GRS");
-      //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraphSimplified);
-      //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphDataSimplified);
 
       fileName = ("taskGraph"+filenamePrefix+"ODE_merged.graphml");
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphSimplified, taskGraphDataSimplified, inBackendDAE, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(true,false,true,true));
       SimCodeUtil.execStat("hpcom dump simplified TaskGraph");
 
       if Flags.isSet(Flags.HPCOM_DUMP) then
-        print("Filter successful applied\n");
+        print("Filter successfully applied\n");
       end if;
 
       //Create schedule
@@ -439,54 +434,116 @@ algorithm
   end match;
 end setNumProc;
 
-public function applyFiltersToGraph
+
+public function applyGRS"applies several task graph rewriting rules to merge tasks. builds a new incidence matrix for the task graph after finishing ther merging
+author:Waurich 2014-11"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  input Boolean iApplyFilters;
-  input list<Integer> doNotMergeIn; // dont merge these nodes
-  input Integer iIterationIdx;
   output HpcOmTaskGraph.TaskGraph oTaskGraph;
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 protected
-  String flagValue;
-  Boolean changed1,changed2,changed3;
-  list<Integer> doNotMerge;
-  HpcOmTaskGraph.TaskGraph taskGraph1;
-  HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
-  array<Integer> nodeMark;
-  array<list<Integer>> sccSimEqMapping, inComps;
-  BackendDAE.StrongComponents allComps;
-  array<tuple<Integer,Integer>> schedulerInfo;
+    HpcOmTaskGraph.TaskGraph taskGraph1,taskGraphT;
+    HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
+    array<Integer> contractedTasks;
+ algorithm
+   taskGraph1 := arrayCopy(iTaskGraph);
+   taskGraphT := BackendDAEUtil.transposeMatrix(taskGraph1,arrayLength(taskGraph1));
+   taskGraphMeta1 := HpcOmTaskGraph.copyTaskGraphMeta(iTaskGraphMeta);
+   contractedTasks := arrayCreate(arrayLength(taskGraph1),0);
+   // contract nodes in the graph
+   (taskGraph1,taskGraphMeta1) := applyGRS1(taskGraph1,taskGraphT,taskGraphMeta1,contractedTasks,true);
+   // build new taskGraph
+   (oTaskGraph,oTaskGraphMeta) := GRS_newGraph(taskGraph1,taskGraphMeta1,contractedTasks);
+end applyGRS;
+
+
+public function applyGRS1"applies several task graph rewriting rules to merge tasks.
+author:Waurich 2014-11"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Integer> contractedTasksIn;
+  input Boolean again;
+  output HpcOmTaskGraph.TaskGraph oTaskGraph;
+  output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 algorithm
-  (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,iApplyFilters,doNotMergeIn,iIterationIdx)
-    case(_,_,true,_,_)
+  (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,again)
+    local
+      Boolean changed;
+    case(_,_,_,_,true)
       equation
         //Merge nodes
-        taskGraph1 = arrayCopy(iTaskGraph);
-        taskGraphMeta1 = HpcOmTaskGraph.copyTaskGraphMeta(iTaskGraphMeta);
-
-        //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
-        //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
-        //(taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
-        changed1 = false;
-
+        (_,_,_,_,changed) = HpcOmTaskGraph.mergeSimpleNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
+        
         //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
         //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
         //(taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1, doNotMerge);
-        changed2 = false;
 
-        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
-        doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
-        (taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
-
-        if Flags.isSet(Flags.HPCOM_DUMP) then
-          print("Handling filter iteration " + intString(iIterationIdx) + "\n");
-        end if;
-        (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,changed1 or changed2 or changed3,doNotMergeIn,iIterationIdx+1);
-      then (taskGraph1,taskGraphMeta1);
+        //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
+        //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
+        //(taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
+                
+      then applyGRS1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,changed);
     else (iTaskGraph, iTaskGraphMeta);
   end matchcontinue;
-end applyFiltersToGraph;
+end applyGRS1;
+
+protected function GRS_newGraph"build a new task graph and update the inComps for the merged nodes.
+author:Waurich TUD 2014-11"
+  input HpcOmTaskGraph.TaskGraph graphIn;
+  input HpcOmTaskGraph.TaskGraphMeta metaIn;
+  input array<Integer> contrTasks;
+  output HpcOmTaskGraph.TaskGraph graphOut;
+  output HpcOmTaskGraph.TaskGraphMeta metaOut;
+protected
+  Integer newSize;
+  list<Integer> notRemovedNodes,removedNodes;
+  array<list<Integer>> inComps,inCompsNew;
+algorithm
+  HpcOmTaskGraph.TASKGRAPHMETA(inComps = inComps) := metaIn;
+  notRemovedNodes := HpcOmTaskGraph.filterContractedNodes(List.intRange(arrayLength(graphIn)),contrTasks);
+  removedNodes := HpcOmTaskGraph.filterNonContractedNodes(List.intRange(arrayLength(graphIn)),contrTasks);
+  newSize := listLength(notRemovedNodes);
+  graphOut := arrayCreate(newSize,{});
+  inCompsNew := arrayCreate(newSize,{});
+  (graphOut,inCompsNew) := GRS_newGraph2(notRemovedNodes,removedNodes,contrTasks,graphIn,inComps,graphOut,inCompsNew,1);
+  metaOut := HpcOmTaskGraph.setInCompsInMeta(inCompsNew,metaIn);
+end GRS_newGraph;
+
+protected function GRS_newGraph2"build a new task graph and update the inComps for the merged nodes.
+author: Waurich TUD 2014-11"
+  input list<Integer> origNodes;
+  input list<Integer> removedNodes;
+  input array<Integer> contrTasks;
+  input HpcOmTaskGraph.TaskGraph origGraph;
+  input array<list<Integer>> origInComps;
+  input HpcOmTaskGraph.TaskGraph newGraph;
+  input array<list<Integer>> newInComps;
+  input Integer newNode;
+  output HpcOmTaskGraph.TaskGraph graphOut;
+  output array<list<Integer>> inCompsOut;
+algorithm
+  (graphOut,inCompsOut) := matchcontinue(origNodes,removedNodes,contrTasks,origGraph,origInComps,newGraph,newInComps,newNode)
+    local
+      Integer node;
+      list<Integer> rest,row,comps;
+    case({},_,_,_,_,_,_,_)
+      equation
+      then (newGraph,newInComps);
+    case(node::rest,_,_,_,_,_,_,_)
+      equation
+      //print("node "+intString(node)+"\n");
+      row = arrayGet(origGraph,node);
+      row = HpcOmTaskGraph.filterContractedNodes(row,contrTasks);
+      row = HpcOmTaskGraph.updateContinuousEntriesInList(row,removedNodes);
+      comps = arrayGet(origInComps,node);
+      //print("comps1 "+stringDelimitList(List.map(comps,intString),", ")+"\n");
+      arrayUpdate(newGraph,newNode,row);
+      arrayUpdate(newInComps,newNode,comps);
+    then GRS_newGraph2(rest,removedNodes,contrTasks,origGraph,origInComps,newGraph,newInComps,newNode+1);
+  end matchcontinue;
+end GRS_newGraph2;
+
 
 protected function createSchedule
   input HpcOmTaskGraph.TaskGraph iTaskGraph;

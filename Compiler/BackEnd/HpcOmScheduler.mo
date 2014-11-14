@@ -194,10 +194,8 @@ algorithm
 
         //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
         simEqIdc = List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
-        //print("Simcodeeq idc: " + stringDelimitList(List.map(simEqIdc, intString), ",") + "\n");
-        //simEqIdc has the wrong order -> reverse list
-        simEqIdc = listReverse(simEqIdc);
-        //simEqIdc = List.map(simEqIdc,List.sort,intGt);
+        simEqIdc = List.sort(simEqIdc,intGt);
+        
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         threadTasks = newTask::threadTasks;
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,threadTasks);
@@ -233,9 +231,7 @@ algorithm
         simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
         //print("\tEq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
         //print("\tSimcodeeq idc: " + stringDelimitList(List.map(simEqIdc, intString), ",") + "\n");
-        //simEqIdc has the wrong order -> reverse list
-        simEqIdc = listReverse(simEqIdc);
-        //simEqIdc = List.map(simEqIdc,List.sort,intGt);
+        simEqIdc = List.sort(simEqIdc,intGt);
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
         //!print("\n\tZeile 243\t" + stringDelimitList(List.map(listGet(arrayList(allThreadTasks), threadId), dumpTask), "\t\t"));
@@ -382,8 +378,8 @@ algorithm
         threadTasks = listAppend(lockTasks, threadTasks);
 
         simEqIdc = List.map(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping), List.last);
-        //simEqIdc has the wrong order -> reverse list
-        simEqIdc = listReverse(simEqIdc);
+        simEqIdc = List.sort(simEqIdc,intGt);
+
 
         //! Add task to thread
         newTask = HpcOmSimCode.CALCTASK(weighting, index, calcTime, threadFinishTime, threadId, simEqIdc);
@@ -423,8 +419,8 @@ algorithm
         threadTasks = arrayGet(allThreadTasks, threadId);
 
         simEqIdc = List.flatten(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping));
-        //simEqIdc has the wrong order -> reverse list
-        simEqIdc = listReverse(simEqIdc);
+        simEqIdc = List.sort(simEqIdc,intGt);
+
         newTask = HpcOmSimCode.CALCTASK(weighting, index, calcTime, threadFinishTime, threadId, simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks, threadId, newTask::threadTasks);
 
@@ -760,31 +756,45 @@ algorithm
   end matchcontinue;
 end getLockTasksByPredecessorListReverse0;
 
-protected function getCommunicationObjBetweenTasks "author: marcusw
-  Get the communication object, descriping the edge to taskIdx out of the list of communication objects."
-  input Integer iChildSccIdx;
-  input HpcOmTaskGraph.Communications iCommunications;
+protected function getCommunicationObjBetweenMergedTasks"gets the communicationCosts between 2 merged tasks. This is the sum of all edges between the 2 nodes.
+author:Waurich TUD 2014-11"
+  input Integer parentNode;
+  input Integer node;
+  input array<list<Integer>> inComps;
+  input array<HpcOmTaskGraph.Communications> inCommCosts;
   output HpcOmTaskGraph.Communication oCommunication;
 protected
-  HpcOmTaskGraph.Communications rest;
-  HpcOmTaskGraph.Communication result;
-  Integer childNode;
+  list<Integer> nodeTasks, parentTasks;
+  HpcOmTaskGraph.Communication commFold;
+  HpcOmTaskGraph.Communications edgesFromParents;
 algorithm
-  oCommunication := matchcontinue(iChildSccIdx, iCommunications)
-    case(_,(result as HpcOmTaskGraph.COMMUNICATION(childNode=childNode))::rest)
-      equation
-        true = intEq(iChildSccIdx, childNode);
-      then result;
-    case(_,HpcOmTaskGraph.COMMUNICATION(childNode=childNode)::rest)
-      equation
-        result = getCommunicationObjBetweenTasks(iChildSccIdx, rest);
-      then result;
-    case(_,{})
-      equation
-        print("getCommunicationObjBetweenTasks failed! Looking for taskIdx: " + intString(iChildSccIdx) + "\n");
-      then fail();
-  end matchcontinue;
-end getCommunicationObjBetweenTasks;
+  nodeTasks := arrayGet(inComps,node);
+  parentTasks := arrayGet(inComps,parentNode);
+  commFold := HpcOmTaskGraph.COMMUNICATION(0,{},{},{},{},node,-1.0);
+  edgesFromParents := List.flatten(List.map1(parentTasks,Array.getIndexFirst,inCommCosts));
+  oCommunication := List.fold(edgesFromParents,function getCommunicationObjBetweenMergedTasks1(tasks=nodeTasks),commFold);
+end getCommunicationObjBetweenMergedTasks;
+
+protected function getCommunicationObjBetweenMergedTasks1"sums up the commCosts, for the edges between parent node and the tasks.
+author:Waurich TUD 2014-11"
+  input HpcOmTaskGraph.Communication  parentCommCost;
+  input list<Integer> tasks;
+  input HpcOmTaskGraph.Communication iCommunication;
+  output HpcOmTaskGraph.Communication oCommunication;
+algorithm
+ oCommunication := matchcontinue(parentCommCost,tasks,iCommunication)
+   local
+    Integer nV1,nV2,childNode; //sum of {numOfIntegers,numOfFloats,numOfBoolean, numOfStrings}
+    list<Integer> ints1,ints2,fl1,fl2,b1,b2,s1,s2;
+    Real reqT1,reqT2;
+   case(HpcOmTaskGraph.COMMUNICATION(nV1,ints1,fl1,b1,s1,childNode,reqT1),_,HpcOmTaskGraph.COMMUNICATION(nV2,ints2,fl2,b2,s2,childNode,reqT2))
+     equation
+       true = listMember(childNode,tasks);
+     then HpcOmTaskGraph.COMMUNICATION(nV1+nV2,listAppend(ints1,ints2),listAppend(fl1,fl2),listAppend(b1,b2),listAppend(s1,s2),childNode,reqT1+reqT2);  
+   else
+     then iCommunication;
+ end matchcontinue;
+end getCommunicationObjBetweenMergedTasks1;
 
 protected function convertCommunicationToCommInfo "author: marcusw
   Convert the given communication object of hpcomTaskGraph into a simcode-communicationinfo."
@@ -842,33 +852,24 @@ protected function createDepTaskAndCommunicationInfo "author: marcusw
   output HpcOmSimCode.Task oAssignTask;
 protected
   Integer predIndex, taskIndex;
-  Integer eqIdx, predEqIdx;
-  Integer preTaskPrimalComp, taskPrimalComp;
   HpcOmSimCode.Task tmpTask;
-  HpcOmTaskGraph.Communications communications;
   HpcOmTaskGraph.Communication commBetweenTasks;
   HpcOmSimCode.CommunicationInfo commInfo;
 algorithm
   oAssignTask := matchcontinue(iSourceTask,iTargetTask,iOutgoing,iCommCosts,iCompTaskMapping,iSimVarMapping)
     case(HpcOmSimCode.CALCTASK(index=predIndex),HpcOmSimCode.CALCTASK(index=taskIndex),true,_,_,_)
       equation
-        preTaskPrimalComp = List.last(arrayGet(iCompTaskMapping, predIndex));
-        taskPrimalComp = List.last(arrayGet(iCompTaskMapping, taskIndex));
-        communications = arrayGet(iCommCosts, preTaskPrimalComp);
-        //print("createDepTaskAndCommunicationInfo: Try to get outgoing communication from task " + intString(predIndex) + " to task " + intString(taskIndex) + ". Number of communications: " + intString(listLength(communications)) + "\n");
-        //print("\t" + stringDelimitList(List.map(communications,HpcOmTaskGraph.printCommCost),"\n\t") + "\n");
-        commBetweenTasks = getCommunicationObjBetweenTasks(taskPrimalComp,communications);
+        //print("predIndex"+intString(predIndex)+"\n");
+        //print("taskIndex"+intString(taskIndex)+"\n");
+        commBetweenTasks = getCommunicationObjBetweenMergedTasks(predIndex,taskIndex,iCompTaskMapping,iCommCosts);
         commInfo = convertCommunicationToCommInfo(commBetweenTasks, iSimVarMapping);
         tmpTask = createDepTask(iSourceTask, iTargetTask, true, commInfo);
       then tmpTask;
     case(HpcOmSimCode.CALCTASK(index=predIndex),HpcOmSimCode.CALCTASK(index=taskIndex),false,_,_,_)
       equation
-        preTaskPrimalComp = List.last(arrayGet(iCompTaskMapping, predIndex));
-        taskPrimalComp = List.last(arrayGet(iCompTaskMapping, taskIndex));
-        communications = arrayGet(iCommCosts, preTaskPrimalComp);
-        //print("createDepTaskAndCommunicationInfo: Try to get outgoing communication from task " + intString(predIndex) + " to task " + intString(taskIndex) + ". Number of communications: " + intString(listLength(communications)) + "\n");
-        //print("\t" + stringDelimitList(List.map(communications,HpcOmTaskGraph.printCommCost),"\n\t") + "\n");
-        commBetweenTasks = getCommunicationObjBetweenTasks(taskPrimalComp,communications);
+        //print("predIndex"+intString(predIndex)+"\n");
+        //print("taskIndex"+intString(taskIndex)+"\n");
+        commBetweenTasks = getCommunicationObjBetweenMergedTasks(predIndex,taskIndex,iCompTaskMapping,iCommCosts);
         commInfo = convertCommunicationToCommInfo(commBetweenTasks, iSimVarMapping);
         tmpTask = createDepTask(iSourceTask, iTargetTask, false, commInfo);
       then tmpTask;
@@ -2847,8 +2848,8 @@ algorithm
         //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
         simEqIdc = List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
         //print("Simcodeeq idc: " + stringDelimitList(List.map(simEqIdc, intString), ",") + "\n");
-        //simEqIdc has the wrong order -> reverse list
-        simEqIdc = listReverse(simEqIdc);
+        simEqIdc = List.sort(simEqIdc,intGt);
+
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         threadTasks = newTask::threadTasks;
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,threadTasks);
@@ -2873,8 +2874,8 @@ algorithm
         threadTasks = arrayGet(allThreadTasks,threadId);
 
         simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
-        //simEqIdc has the wrong order -> reverse list
-        simEqIdc = listReverse(simEqIdc);
+        simEqIdc = List.sort(simEqIdc,intGt);
+
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
         //print("Successors: " + stringDelimitList(List.map(successorIdc, intString), ",") + "\n");
@@ -4692,7 +4693,7 @@ algorithm
         mark = arrayGet(nodeMark,node);
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
         simEqIdc = List.map(List.map1(components,getSimEqSysIdxForComp,SccSimEqMappingIn), List.last);
-        simEqIdc = listReverse(simEqIdc);
+        simEqIdc = List.sort(simEqIdc,intGt);
         task = HpcOmSimCode.CALCTASK(mark,node,exeCost,-1.0,proc,simEqIdc);
         taskLst1 = task::taskLstRel;
         taskLst1 = listAppend(taskLstAss,taskLst1);

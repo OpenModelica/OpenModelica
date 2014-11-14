@@ -1858,7 +1858,7 @@ algorithm
   end matchcontinue;
 end getChildNodes;
 
-protected function updateContinuousEntriesInList" updates the entries in a list
+public function updateContinuousEntriesInList" updates the entries in a list
 the entries in the list belong to a continuous series.
 the deleteEntries have been previously removed from the array and the indices are adapted so that the new array consists again of continuous series of numbers.therefore the indices have to be smallen
 e.g. updateContinuousEntriesInList({4,2,1,7,9},{3,6}) = {3,2,1,5,7};
@@ -2922,6 +2922,7 @@ algorithm
   print("--------------------------------\n");
   print(intString(arrayLength(inComps))+" nodes include components:\n");
   printInComps(inComps,1);
+  /*
   print(intString(arrayLength(varCompMapping))+" vars are solved in the nodes \n");
   printVarCompMapping(varCompMapping,1);
   print(intString(arrayLength(eqCompMapping))+" equations are computed in the nodes \n");
@@ -2939,6 +2940,7 @@ algorithm
   print("the nodeMark of the nodes\n");
   printNodeMark(nodeMark,1);
   print("\n");
+  */
 end printTaskGraphMeta;
 
 public function printInComps " prints the information about the assigned components to a taskgraph node.
@@ -3279,9 +3281,9 @@ algorithm
         //print("cluster "+stringDelimitList(List.map(arrayList(cluster),intLstString),"\n")+"\n");
         //update taskgraph and taskgraphMeta
         clusterLst = arrayList(cluster);
-        (oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
+        //(oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
         changed = intGt(listLength(singleNodes),numProc);
-  then (oTaskGraph,oTaskGraphMeta,changed);
+  then (iTaskGraph,iTaskGraphMeta,changed);
   else
     then (iTaskGraph,iTaskGraphMeta,false);
   end matchcontinue;
@@ -3419,36 +3421,26 @@ end nextGreaterPowerOf2_impl;
 public function mergeSimpleNodes " merges all nodes in the graph that have only one predecessor and one successor.
 author: Waurich TUD 2013-07"
   input TaskGraph graphIn;
+  input TaskGraph graphTIn;
   input TaskGraphMeta graphDataIn;
-  input list<Integer> doNotMerge;
+  input array<Integer> contractedTasksIn;
   output TaskGraph graphOut;
+  output TaskGraph graphTOut;
   output TaskGraphMeta graphDataOut;
-  output Boolean oChanged;
+  output array<Integer> contractedTasksOut;
+  output Boolean changed;
 protected
-  array<list<Integer>> inComps;
-  array<tuple<Integer, Integer, Integer>> varCompMapping;
-  array<tuple<Integer,Integer,Integer>> eqCompMapping;
-  list<Integer> rootNodes;
-  array<String> nodeNames;
-  array<String> nodeDescs;
-  array<tuple<Integer,Real>> exeCosts;
-  array<Communications> commCosts;
-  array<Integer> nodeMark;
-  TaskGraph graphTmp;
-  TaskGraphMeta graphDataTmp;
-  list<Integer> noMerging;
+  list<Integer> allNodes;
   list<list<Integer>> oneChildren;
-  list<Integer> allTheNodes;
-  String fileName;
 algorithm
-  TASKGRAPHMETA(inComps = inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, rootNodes = rootNodes, nodeNames =nodeNames,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
-  allTheNodes := List.intRange(arrayLength(graphIn));  // to traverse the node indeces
-  oneChildren := findOneChildParents(allTheNodes,graphIn,doNotMerge,{{}},0);  // paths of nodes with just one successor per node (extended: and endnodes with just one parent node)
+  allNodes := List.intRange(arrayLength(graphIn));  // to traverse the node indeces
+  oneChildren := findOneChildParents(allNodes,graphIn,{},{{}},0,contractedTasksIn);  // paths of nodes with just one successor per node (extended: and endnodes with just one parent node)
   oneChildren := listDelete(oneChildren,listLength(oneChildren)); // remove the empty startValue {}
   oneChildren := List.removeOnTrue(1,compareListLengthOnTrue,oneChildren);  // remove paths of length 1
   //print("oneChildren "+stringDelimitList(List.map(oneChildren,intLstString),"\n")+"\n");
-  (graphOut,graphDataOut) := contractNodesInGraph(oneChildren,graphIn,graphDataIn);
-  oChanged := List.isNotEmpty(oneChildren);
+  (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(oneChildren,graphIn,graphTIn,graphDataIn,contractedTasksIn);
+  changed := List.isNotEmpty(oneChildren);
+  //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
 end mergeSimpleNodes;
 
 public function mergeParentNodes "author: marcusw
@@ -3465,7 +3457,9 @@ protected
 algorithm
   iGraphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
   mergedNodes := mergeParentNodes0(iGraph, iGraphT, iGraphData, doNotMerge, 1, {});
-  (oGraph,oGraphData) := contractNodesInGraph(mergedNodes, iGraph, iGraphData);
+  //(oGraph,oGraphData,_,_) := contractNodesInGraph(mergedNodes, iGraph, iGraph, iGraphData);
+  oGraph := iGraph;
+  oGraphData := iGraphData;
   oChanged := List.isNotEmpty(mergedNodes);
 end mergeParentNodes;
 
@@ -3610,39 +3604,133 @@ algorithm
 end getHighestExecCost;
 
 protected function contractNodesInGraph " function to contract the nodes given in the list to one node.
-author: Waurich TUD 2013-07"
+author: Waurich TUD 2014-11"
   input list<list<Integer>> contractNodes; //a list containing a list with nodes you want to merge
   input TaskGraph graphIn;
+  input TaskGraph graphTIn;
   input TaskGraphMeta graphDataIn;
+  input array<Integer> contractedTasksIn;
   output TaskGraph graphOut;
+  output TaskGraph graphTOut;
   output TaskGraphMeta graphDataOut;
+  output array<Integer> contractedTasksOut;
 algorithm
-(graphOut,graphDataOut) := matchcontinue(contractNodes,graphIn,graphDataIn)
+(graphOut,graphTOut,graphDataOut,contractedTasksOut) := matchcontinue(contractNodes,graphIn,graphTIn,graphDataIn,contractedTasksIn)
   local
-    TaskGraph graphTmp;
-    TaskGraphMeta graphDataTmp;
-    list<Integer> deleteNodes,contrNodes;
-    list<list<Integer>> graphTmpLst,rest;
-  case({},_,_)
-    then (graphIn,graphDataIn);
-  case(contrNodes::rest,_,_)
+    Integer contrNode;
+    list<Integer> removeNodes,contrNodes,children,parents;
+    list<list<Integer>> rest;
+    array<list<Integer>> inComps;
+    TaskGraphMeta dataTmp;
+  case({},_,_,_,_)
+    then (graphIn,graphTIn,graphDataIn,contractedTasksIn);
+  case(contrNodes::rest,_,_,TASKGRAPHMETA(inComps = inComps),_)
     equation
-      deleteNodes = List.firstN(contrNodes,listLength(contrNodes)-1);//removes the last node in the path for every list of contracted paths
-      graphTmp = contractNodesInGraph1(contrNodes,graphIn);
-      graphTmpLst = arrayList(graphIn);
-      graphTmpLst = List.map1(graphTmpLst,updateContinuousEntriesInList,List.unique(deleteNodes));
-      graphTmp = listArray(graphTmpLst);
-      (graphTmp,_) = deleteRowInAdjLst(graphTmp,deleteNodes);
-      graphDataTmp = getMergedSystemData(graphDataIn,{contrNodes});
-      rest = List.map1(rest,updateContinuousEntriesInList,List.unique(deleteNodes));
-      (graphTmp,graphDataTmp) =  contractNodesInGraph(rest,graphTmp,graphDataTmp);
-    then (graphTmp,graphDataTmp);
+      //add new edges to the contrNode
+      contrNode::removeNodes = contrNodes;    
+      List.map_0(removeNodes,function Array.updateIndexFirst(inValue = -1, inArray=contractedTasksIn));  // mark in contrTask array
+      children = List.flatten(List.map(contrNodes,function Array.getIndexFirst(inArray = graphIn)));
+      children = filterContractedNodes(children,contractedTasksIn);
+      children = List.deleteMember(children,contrNode);
+      parents = List.flatten(List.map(contrNodes,function Array.getIndexFirst(inArray = graphTIn)));
+      parents = filterContractedNodes(parents,contractedTasksIn);
+      parents = List.deleteMember(parents,contrNode);
+          //print("parents : " + stringDelimitList(List.map(parents,intString),",") + "\n");
+          //print("children : " + stringDelimitList(List.map(children,intString),",") + "\n");
+      _ = List.map(parents, function addEdgeToGraph(child=contrNode, graphIn=graphIn));
+      _ = List.map(children,function addEdgeToGraph(parent=contrNode, graphIn=graphIn));
+      _ = List.map(children, function addEdgeToGraph(child=contrNode, graphIn=graphTIn));
+      _ = List.map(parents,function addEdgeToGraph(parent=contrNode, graphIn=graphTIn));
+      
+      // remove the contracted nodes (except the contrNode)  IS NOT NECESSARY BUT MAYBE FASTER??!?!?
+      List.map_0(removeNodes,function Array.updateIndexFirst(inValue = -1, inArray=contractedTasksIn));  // mark in contrTask array
+      List.map_0(removeNodes,function Array.updateIndexFirst(inValue = {}, inArray=graphIn)); // remove from graph
+      List.map_0(removeNodes,function Array.updateIndexFirst(inValue = {}, inArray=graphTIn)); // remove from transposed graph
+      
+      updateInCompsInfo(contrNode,removeNodes,inComps);
+      dataTmp = setInCompsInMeta(inComps,graphDataIn);
+    then contractNodesInGraph(rest,graphIn,graphTIn,dataTmp,contractedTasksIn);
   else
     equation
       print("contractNodesInGraph failed!\n");
     then fail();
   end matchcontinue;
 end contractNodesInGraph;
+
+public function setInCompsInMeta"replaces the inComps in the taskGraphMeta.
+author:Waurich TUD 2014-11"
+  input array<list<Integer>> inComps;
+  input TaskGraphMeta metaIn;
+  output TaskGraphMeta metaOut;
+protected
+  array<tuple<Integer, Integer, Integer>> varCompMapping;
+  array<tuple<Integer,Integer,Integer>> eqCompMapping;
+  list<Integer> rootNodes;
+  array<String> nodeNames;
+  array<String> nodeDescs;
+  array<tuple<Integer,Real>> exeCosts;
+  array<Communications> commCosts;
+  array<Integer>nodeMark;
+algorithm
+  TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := metaIn;
+  metaOut := TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+end setInCompsInMeta;
+
+protected function updateInCompsInfo"updates the inComps for the contracted nodes.
+author:Waurich TUD 2014-11"
+  input Integer contrNode;
+  input list<Integer> removedNodes;
+  input array<list<Integer>> inComps;
+protected
+  list<Integer> comps, contrComps;
+algorithm
+  //print("contrNode "+intString(contrNode)+"\n");
+  comps := arrayGet(inComps,contrNode);
+  contrComps := List.flatten(List.map(removedNodes,function Array.getIndexFirst(inArray=inComps)));
+  comps := List.unique(listAppend(contrComps,comps));
+    //print("comps "+stringDelimitList(List.map(comps,intString),", ")+"\n");
+  arrayUpdate(inComps,contrNode,comps);
+end updateInCompsInfo;
+
+public function filterContractedNodes"selects only Nodes that are not already contracted.
+author:Waurich TUD 2014-11"
+  input list<Integer> nodesIn;
+  input array<Integer> contrNodes;
+  output list<Integer> nodesOut;
+algorithm
+  nodesOut := List.filter1OnTrue(nodesIn,isNotRemoved,contrNodes);
+end filterContractedNodes;
+
+protected function isNotRemoved"ouputs true if the given node is not already contracted"
+  input Integer node;
+  input array<Integer> contrNodes;
+  output Boolean isNot;
+algorithm
+  if intLe(node,arrayLength(contrNodes)) then
+      isNot := intNe(arrayGet(contrNodes,node),-1);
+  else isNot := false;
+  end if;
+end isNotRemoved;
+
+public function filterNonContractedNodes"selects only Nodes that are already contracted.
+author:Waurich TUD 2014-11"
+  input list<Integer> nodesIn;
+  input array<Integer> contrNodes;
+  output list<Integer> nodesOut;
+algorithm
+  nodesOut := List.filter1OnTrue(nodesIn,isRemoved,contrNodes);
+end filterNonContractedNodes;
+
+protected function isRemoved"ouputs true if the given node is already contracted"
+  input Integer node;
+  input array<Integer> contrNodes;
+  output Boolean isNot;
+algorithm
+  if intLe(node,arrayLength(contrNodes)) then
+      isNot := intEq(arrayGet(contrNodes,node),-1);
+  else isNot := false;
+  end if;
+end isRemoved;
 
 protected function contractNodesInGraph1 " function to contract the nodes given in the list to one node, without deleting the rows in the adjacencyLst.
 author: Waurich TUD 2013-07"
@@ -3905,9 +3993,10 @@ author: Waurich TUD 2013-07"
   input list<Integer> doNotMerge;  // these nodes cannot be chosen
   input list<list<Integer>> lstIn;
   input Integer inPath;  // the current nodeIndex in a path of only cildren. if no path then 0.
+  input array<Integer> contrNodes;
   output list<list<Integer>> lstOut;
 algorithm
-  lstOut := matchcontinue(allNodes,graphIn,doNotMerge,lstIn,inPath)
+  lstOut := matchcontinue(allNodes,graphIn,doNotMerge,lstIn,inPath,contrNodes)
     local
       Integer child;
       Integer head;
@@ -3916,94 +4005,99 @@ algorithm
       list<Integer> pathLst;
       list<Integer> rest;
       list<list<Integer>> lstTmp;
-    case({},_,_,_,_)
+    case({},_,_,_,_,_)
       //checked all nodes
       equation
         then
           lstIn;
-    case((head::rest),_,_,_,_)
+    case((head::rest),_,_,_,_,_)
       //check new node that has several children
       equation
         true = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,head);
+        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
         false = listLength(nodeChildren) == 1;
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,0);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp;
-    case((head::rest),_,_,_,_)
+    case((head::rest),_,_,_,_,_)
       //check new node that is excluded
       equation
         true = intEq(inPath,0);
         true = listMember(head,doNotMerge);
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,0);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp;
-    case((head::rest),_,_,_,_)
+    case((head::rest),_,_,_,_,_)
       // check new node that has only one child but this is excluded
       equation
         true = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,head);
+        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
         true = listLength(nodeChildren) == 1;
         child = listGet(nodeChildren,1);
         true = listMember(child,doNotMerge);
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,child);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstIn,child,contrNodes);
       then
         lstTmp;
-    case((head::rest),_,_,_,_)
+    case((head::rest),_,_,_,_,_)
       // check new node that has only one child , follow the path
       equation
         true = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,head);
+        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
         true = listLength(nodeChildren) == 1;
         child = listGet(nodeChildren,1);
         lstTmp = {head}::lstIn;
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child,contrNodes);
       then
         lstTmp;
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_)
       // dont follow because the path contains excluded nodes
       equation
         false = intEq(inPath,0);
         true = listMember(inPath,doNotMerge);
-        lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0);
+        lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp;
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_)
       // follow path and check that there is still only one child with just one parent
       equation
         false = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,inPath);
+        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
         parents = getParentNodes(inPath,graphIn);
+        parents = filterContractedNodes(parents,contrNodes);
         true = listLength(nodeChildren) == 1 and List.isNotEmpty(nodeChildren) and listLength(parents) == 1;
         child = listGet(nodeChildren,1);
         pathLst = List.first(lstIn);
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst, 1, lstIn);
         rest = List.deleteMember(allNodes,inPath);
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child,contrNodes);
       then
         lstTmp;
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_)
       // follow path and check that there is an endnode without successor that will be added to the path
       equation
         false = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,inPath);
+        nodeChildren = filterContractedNodes(nodeChildren,contrNodes);
         parents = getParentNodes(inPath,graphIn);
+        parents = filterContractedNodes(parents,contrNodes);
         true = List.isEmpty(nodeChildren) and listLength(parents) == 1;
         pathLst = List.first(lstIn);
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst, 1, lstIn);
         rest = List.deleteMember(allNodes,inPath);
-        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,0);
+        lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,0,contrNodes);
       then
         lstTmp;
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_)
       // follow path and check that there are more children or a child with more parents. end path before this node
       equation
         false = intEq(inPath,0);
-        _ = arrayGet(graphIn,inPath);
-        _ = getParentNodes(inPath,graphIn);
-        lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0);
+        lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp;
     else
@@ -5625,7 +5719,8 @@ protected
   list<Integer> row;
 algorithm
   row := arrayGet(graphIn,parent);
-  graphOut := arrayUpdate(graphIn,parent,child::row);
+  row := List.unique(child::row);
+  graphOut := arrayUpdate(graphIn,parent,row);
 end addEdgeToGraph;
 
 protected function getNodeForCrefLst"gets the node in which the var for the given cref is solved.
