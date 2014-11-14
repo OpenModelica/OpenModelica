@@ -368,7 +368,7 @@ algorithm
      print(" BUILT SINGLE EQUATONS\n");
    BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) := matchingNew;
    compsNew := List.map2(compsNew,updateIndicesInComp,listLength(varLst),listLength(eqLst));
-     
+
    //// get the strongComponent for the residual equations and add it at the end of the new StrongComponents
    (rComps,resEqsOut,tVarsOut) := buildEqSystemComponent(residualEqs,tearingVars,resEqsOut,tVarsOut,a_iArr,ishared);
      print(" BUILT SYSTEM COMPONENTS\n");
@@ -514,7 +514,7 @@ algorithm
       list<BackendDAE.Equation> restEqs;
       list<BackendDAE.Var> restVars;
   case({},_,_,_)
-  then gaussEqsIn;   
+  then gaussEqsIn;
   case(var::restVars,BackendDAE.EQUATION(exp=lhs,scalar=rhs,source=source,attr=attr)::restEqs,_,_)
     equation
       cref = BackendVariable.varCref(var);
@@ -526,7 +526,7 @@ algorithm
     then symbolicGauss2(restVars,restEqs,replIn,BackendDAE.EQUATION(varExp,solvedExp,source,attr)::gaussEqsIn);
   end matchcontinue;
 end symbolicGauss2;
-  
+
 
 protected function buildEqSystemComponent "builds a strongComponent for the reduced System. if the system size is 1, a SingleEquation is built, otherwise a EqSystem with jacobian.
 author:Waurich TUD 2013-12"
@@ -568,12 +568,12 @@ algorithm
         // these are the single equations
         (comps,sccEqs,sccVars) = buildEqSystemComponent2(List.intRange(listLength(resEqsIn)),eqIdcsIn,varIdcsIn,m,mT,false,{});
           print("CHECKED SYSTEM FOR ASSIGNABLES\n");
-          
+
         // build an equation system from the rest
         _::jacValues = arrayList(jacValuesIn);
         jac = buildLinearJacobian(jacValues,sccEqs,sccVars);
         comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_LINEAR());
-        
+
           //BackendDump.dumpVarList(tVarsIn,"tVarsIn");
           //BackendDump.dumpEquationList(resEqsIn,"resEqsIn");
           resEqs = resEqsIn;
@@ -583,7 +583,7 @@ algorithm
                 //if List.isNotEmpty(sccEqs) then comps = listAppend(comps,{comp}); end if;
         resEqs = resEqsIn;
         comps = listAppend(comps,comps);
-        
+
       then (comps,resEqs,tVarsIn);
 
   end matchcontinue;
