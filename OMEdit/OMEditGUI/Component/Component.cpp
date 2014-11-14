@@ -81,7 +81,7 @@ Component::Component(QString annotation, QString name, QString className, Compon
   setTransform(mpTransformation->getTransformationMatrix());
   createActions();
   createResizerItems();
-  setToolTip(QString("<b>").append(mClassName).append("</b> <i>").append(mName).append("</i>"));
+  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
   // if everything is fine with icon then add it to scene
   mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
@@ -131,7 +131,7 @@ Component::Component(QString annotation, QString transformationString, Component
   mpTransformation = new Transformation(StringHandler::Icon);
   mpTransformation->parseTransformationString(transformationString, boundingRect().width(), boundingRect().height());
   setTransform(mpTransformation->getTransformationMatrix());
-  setToolTip(QString("<b>").append(mClassName).append("</b> <i>").append(mName).append("</i>"));
+  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
   // if type is connector and component is not a library component and not a system library class.
   bool isSystemLibrary = mpGraphicsView ? mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() : false;
   if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
@@ -762,7 +762,7 @@ void Component::updateConnection()
 void Component::componentNameHasChanged(QString newName)
 {
   mName = newName;
-  setToolTip(QString("<b>").append(mClassName).append("</b> <i>").append(mName).append("</i>"));
+  setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
   emit componentDisplayTextChanged();
 }
 

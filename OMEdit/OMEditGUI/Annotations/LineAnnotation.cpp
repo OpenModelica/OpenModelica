@@ -656,7 +656,6 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::connectArray));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
   // heading
   mpHeading = new Label(Helper::connectArray);
   mpHeading->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
@@ -789,6 +788,9 @@ void ConnectionArray::saveArrayIndex()
     }
   }
   mpGraphicsView->createConnection(startComponentName, endComponentName);
+  mpConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(startComponentName, endComponentName));
+  mpConnectionLineAnnotation->drawCornerItems();
+  mpConnectionLineAnnotation->setCornerItemsPassive();
   accept();
 }
 
