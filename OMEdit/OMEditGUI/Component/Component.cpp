@@ -1633,7 +1633,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
   {
     emit componentTransformChange();
   }
-  else if (change == QGraphicsItem::ItemPositionChange && scene()) {
+  else if (change == QGraphicsItem::ItemPositionChange) {
     // snap to grid while dragging component
     QPointF newPos = value.toPointF();
     qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();

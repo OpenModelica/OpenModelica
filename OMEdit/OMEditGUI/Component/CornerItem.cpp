@@ -116,6 +116,10 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
     if (!signalsBlocked()) {
       emit cornerItemPress();
     }
+    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
+    if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+      mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
+    }
     mClickPos = mapToScene(event->pos());
   }
   QGraphicsItem::mousePressEvent(event);
@@ -161,7 +165,7 @@ QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value
     if (!signalsBlocked()) {
       emit cornerItemMoved(mConnectedPointIndex, value.toPointF());
     }
-  } else if (change == QGraphicsItem::ItemPositionChange && scene()) {
+  } else if (change == QGraphicsItem::ItemPositionChange) {
     // snap to grid while dragging shapes
     QPointF newPos = value.toPointF();
     qreal stepX = mpShapeAnnotation->getGraphicsView()->getCoOrdinateSystem()->getHorizontalGridStep();
