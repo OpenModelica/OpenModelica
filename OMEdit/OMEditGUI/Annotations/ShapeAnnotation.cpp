@@ -436,9 +436,14 @@ bool ShapeAnnotation::isInheritedShape()
   */
 void ShapeAnnotation::createActions()
 {
+  // shape properties
   mpShapePropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
   connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(showShapeProperties()));
+  // manhattanize properties
+  mpManhattanizeShapeAction = new QAction(tr("Manhattanize"), mpGraphicsView);
+  mpManhattanizeShapeAction->setStatusTip(tr("Manhattanize the lines"));
+  connect(mpManhattanizeShapeAction, SIGNAL(triggered()), SLOT(manhattanizeShape()));
 }
 
 /*!
@@ -1132,6 +1137,11 @@ void ShapeAnnotation::adjustExtentsWithOrigin()
   mExtents = extents;
 }
 
+/*!
+  Returns the CornerItem located at index.
+  \param index
+  \return CornerItem
+  */
 CornerItem* ShapeAnnotation::getCornerItem(int index)
 {
   for (int i = 0 ; i < mCornerItemsList.size() ; i++) {
@@ -1142,6 +1152,10 @@ CornerItem* ShapeAnnotation::getCornerItem(int index)
   return 0;
 }
 
+/*!
+  Updates the position of the CornerItem located at index.
+  \param index
+  */
 void ShapeAnnotation::updateCornerItem(int index)
 {
   CornerItem *pCornerItem = getCornerItem(index);
@@ -1152,6 +1166,11 @@ void ShapeAnnotation::updateCornerItem(int index)
   }
 }
 
+/*!
+  Adds new points, geometries & CornerItems at index. \n
+  This function is called when resizing the connection lines and new points are needed to keep the lines manhattanized.
+  \param index
+  */
 void ShapeAnnotation::insertPointsGeometriesAndCornerItems(int index)
 {
   QPointF point = (mPoints[index - 1] + mPoints[index]) / 2;
@@ -1171,6 +1190,9 @@ void ShapeAnnotation::insertPointsGeometriesAndCornerItems(int index)
   adjustCornerItemsConnectedIndexes();
 }
 
+/*!
+  Makes the CornerItems & points indexes same.
+  */
 void ShapeAnnotation::adjustCornerItemsConnectedIndexes()
 {
   for (int i = 0 ; i < mPoints.size() ; i++) {
@@ -1180,6 +1202,10 @@ void ShapeAnnotation::adjustCornerItemsConnectedIndexes()
   }
 }
 
+/*!
+  Finds and removes the unncessary points in a connection.\n
+  For example if there are three points on same horizontal line then the center point will be removed.
+  */
 void ShapeAnnotation::removeRedundantPointsGeometriesAndCornerItems()
 {
   for (int i = 0 ; i < mPoints.size() ; i++) {
@@ -1201,6 +1227,9 @@ void ShapeAnnotation::removeRedundantPointsGeometriesAndCornerItems()
   }
 }
 
+/*!
+  Adjusts the Geometries list according to points list.
+  */
 void ShapeAnnotation::adjustGeometries()
 {
   mGeometries.clear();
@@ -1216,6 +1245,63 @@ void ShapeAnnotation::adjustGeometries()
         mGeometries.push_back(ShapeAnnotation::HorizontalLine);
       }
     }
+  }
+}
+
+/*!
+  Slot activated when mpManhattanizeShapeAction triggered signal is raised.\n
+  Finds the curved lines in the Line shape and makes in manhattanize/right-angle line.
+  */
+void ShapeAnnotation::manhattanizeShape()
+{
+  int startIndex = -1;
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    if (i + 1 < mPoints.size()) {
+      if (!isLineStraight(mPoints[i], mPoints[i + 1])) {
+        startIndex = i;
+        break;
+      }
+    }
+  }
+  if (startIndex > -1) {
+    int lastIndex = mPoints.size() - 1;
+    for (int i = mPoints.size() - 1 ; i >= 0 ; i--) {
+      if (i - 1 > -1) {
+        if (!isLineStraight(mPoints[i], mPoints[i - 1])) {
+          lastIndex = i;
+          break;
+        }
+      }
+    }
+
+    QPointF startPoint = mPoints[startIndex];
+    QPointF lastPoint = mPoints[lastIndex];
+    qreal dx = lastPoint.x() - startPoint.x();
+    qreal dy = lastPoint.y() - startPoint.y();
+    QList<QPointF> points;
+    if (dx == 0) {
+      points.append(QPointF(startPoint.x(), startPoint.y() + dy));
+    } else if (dy == 0) {
+      points.append(QPointF(startPoint.x() + dx, startPoint.y()));
+    } else {
+      points.append(QPointF(startPoint.x(), startPoint.y() + dy));
+      points.append(QPointF(points[0].x() + dx, points[0].y()));
+    }
+    points.removeLast();
+    QList<QPointF> oldPoints = mPoints;
+    clearPoints();
+    for (int i = 0 ; i <= startIndex ; i++) {
+      addPoint(oldPoints[i]);
+    }
+    if (points.size() > 0) {
+      addPoint(points[0]);
+    }
+    for (int i = lastIndex ; i < oldPoints.size() ; i++) {
+      addPoint(oldPoints[i]);
+    }
+    removeCornerItems();
+    drawCornerItems();
+    cornerItemReleased();
   }
 }
 
@@ -1589,12 +1675,9 @@ void ShapeAnnotation::cornerItemPressed()
 void ShapeAnnotation::cornerItemReleased()
 {
   mIsCornerItemClicked = false;
-  if (isSelected())
-  {
+  if (isSelected()) {
     setCornerItemsActive();
-  }
-  else
-  {
+  } else {
     setSelected(true);
   }
 }
@@ -1676,6 +1759,18 @@ ShapeAnnotation::LineGeometryType ShapeAnnotation::findLineGeometryType(QPointF 
   }
 }
 
+bool ShapeAnnotation::isLineStraight(QPointF point1, QPointF point2)
+{
+  QLineF line(point1, point2);
+  qreal angle = StringHandler::getNormalizedAngle(line.angle());
+
+  if (angle == 0 || angle == 90 || angle == 180 || angle == 270 || angle == 360) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 /*!
   Slot activated when Properties option is choosen from context menu of the shape.
   */
@@ -1695,37 +1790,32 @@ void ShapeAnnotation::showShapeProperties()
   */
 void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
 {
-  if (!mIsCustomShape)
-  {
+  if (!mIsCustomShape) {
     QGraphicsItem::contextMenuEvent(pEvent);
     return;
   }
-  if (!isSelected())
-  {
+  if (!isSelected()) {
     setSelected(true);
   }
-  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
-  if (pLineAnnotation)
-  {
-    lineType = pLineAnnotation->getLineType();
-  }
+
   QMenu menu(mpGraphicsView);
   menu.addAction(mpShapePropertiesAction);
   menu.addSeparator();
-  if (isInheritedShape())
-  {
+  if (isInheritedShape()) {
     mpGraphicsView->getDeleteAction()->setDisabled(true);
     mpGraphicsView->getDuplicateAction()->setDisabled(true);
     mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);
     mpGraphicsView->getRotateAntiClockwiseAction()->setDisabled(true);
   }
-  if (lineType == LineAnnotation::ConnectionType)
-  {
-    menu.addAction(mpGraphicsView->getDeleteConnectionAction());
+  LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
+  LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
+  if (pLineAnnotation) {
+    lineType = pLineAnnotation->getLineType();
+    menu.addAction(mpManhattanizeShapeAction);
   }
-  else
-  {
+  if (lineType == LineAnnotation::ConnectionType) {
+    menu.addAction(mpGraphicsView->getDeleteConnectionAction());
+  } else {
     menu.addAction(mpGraphicsView->getDeleteAction());
     menu.addAction(mpGraphicsView->getDuplicateAction());
     menu.addSeparator();
@@ -1749,24 +1839,18 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
   {
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
-    if (pLineAnnotation)
-    {
+    if (pLineAnnotation) {
       lineType = pLineAnnotation->getLineType();
     }
-    if (isSelected())
-    {
+    if (isSelected()) {
       setCornerItemsActive();
       setCursor(Qt::SizeAllCursor);
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
-      {
-        if (lineType == LineAnnotation::ConnectionType)
-        {
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
+        if (lineType == LineAnnotation::ConnectionType) {
           connect(mpGraphicsView->getDeleteConnectionAction(), SIGNAL(triggered()), SLOT(deleteConnection()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteConnection()), Qt::UniqueConnection);
-        }
-        else
-        {
+        } else {
           connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()), Qt::UniqueConnection);
           connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
           connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwiseMouseRightClick()), Qt::UniqueConnection);
@@ -1790,21 +1874,15 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
           connect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
         }
       }
-    }
-    else if (!mIsCornerItemClicked)
-    {
+    } else if (!mIsCornerItemClicked) {
       setCornerItemsPassive();
       unsetCursor();
       /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
-      {
-        if (lineType == LineAnnotation::ConnectionType)
-        {
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
+        if (lineType == LineAnnotation::ConnectionType) {
           disconnect(mpGraphicsView->getDeleteConnectionAction(), SIGNAL(triggered()), this, SLOT(deleteConnection()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteConnection()));
-        }
-        else
-        {
+        } else {
           disconnect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()));
           disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwiseMouseRightClick()));

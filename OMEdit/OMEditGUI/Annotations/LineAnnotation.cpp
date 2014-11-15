@@ -430,6 +430,8 @@ void LineAnnotation::clearPoints()
   */
 void LineAnnotation::updateStartPoint(QPointF point)
 {
+  manhattanizeShape();
+  removeRedundantPointsGeometriesAndCornerItems();
   qreal dx = point.x() - mPoints[0].x();
   qreal dy = point.y() - mPoints[0].y();
   // if connection points are just two we need to add extra points
@@ -466,6 +468,10 @@ void LineAnnotation::updateStartPoint(QPointF point)
 void LineAnnotation::updateEndPoint(QPointF point)
 {
   if (mLineType == LineAnnotation::ConnectionType) {
+    if (!mpGraphicsView->isCreatingConnection()) {
+      manhattanizeShape();
+      removeRedundantPointsGeometriesAndCornerItems();
+    }
     int lastIndex = mPoints.size() - 1;
     int secondLastIndex = mPoints.size() - 2;
     qreal dx = point.x() - mPoints[lastIndex].x();
@@ -497,7 +503,9 @@ void LineAnnotation::updateEndPoint(QPointF point)
       }
       updateCornerItem(secondLastIndex);
     }
-    removeRedundantPointsGeometriesAndCornerItems();
+    if (!mpGraphicsView->isCreatingConnection()) {
+      removeRedundantPointsGeometriesAndCornerItems();
+    }
   } else {
     mPoints.back() = point;
   }

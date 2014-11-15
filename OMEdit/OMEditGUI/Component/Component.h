@@ -116,7 +116,6 @@ public:
   void setOldPosition(QPointF oldPosition);
   QPointF getOldPosition();
   void setComponentFlags();
-  void unsetComponentFlags();
   void getExtents(QPointF *pExtent1, QPointF *pExtent2);
   QString getTransformationAnnotation();
   QString getPlacementAnnotation();

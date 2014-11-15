@@ -628,26 +628,11 @@ void Component::setComponentFlags()
 {
   // set the item flags
   /* Set the ItemIsMovable flag on component if the class is not a system library class OR component is not an inherited component. */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent())
-  {
-    if(!flags().testFlag((QGraphicsItem::ItemIsMovable)))
-      setFlag(QGraphicsItem::ItemIsMovable);
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent()) {
+    setFlag(QGraphicsItem::ItemIsMovable);
   }
-  if(!flags().testFlag((QGraphicsItem::ItemIsSelectable)))
-    setFlag(QGraphicsItem::ItemIsSelectable);
-  if(!flags().testFlag((QGraphicsItem::ItemSendsGeometryChanges)))
-    setFlag(QGraphicsItem::ItemSendsGeometryChanges);
-}
-
-void Component::unsetComponentFlags()
-{
-  // unset the item flags
-  if(flags().testFlag((QGraphicsItem::ItemIsMovable)))
-    setFlag(QGraphicsItem::ItemIsMovable, false);
-  if(flags().testFlag((QGraphicsItem::ItemIsSelectable)))
-    setFlag(QGraphicsItem::ItemIsSelectable, false);
-  if(flags().testFlag((QGraphicsItem::ItemSendsGeometryChanges)))
-    setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+  setFlag(QGraphicsItem::ItemIsSelectable);
+  setFlag(QGraphicsItem::ItemSendsGeometryChanges);
 }
 
 void Component::getExtents(QPointF *pExtent1, QPointF *pExtent2)
@@ -1459,24 +1444,17 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
   /* Do not consume the event for inherited/extends component as they don't have connection to componentClicked SIGNAL. */
   bool eventConsumed = false;
   if (event->button() == Qt::LeftButton && pMainWindow->getConnectModeAction()->isChecked() && mType == StringHandler::Connector &&
-      mComponentType != Component::Extend)
-  {
+      mComponentType != Component::Extend) {
     emit componentClicked(this);
     eventConsumed = true;
   }
   // if we are creating the connector then make sure user can not select and move components
-  if ((mpGraphicsView->isCreatingConnection()) && !mpParentComponent)
-  {
-    unsetComponentFlags();
-    return;
+  if ((mpGraphicsView->isCreatingConnection())) {
+    eventConsumed = true;
   }
-  // if user not creating connector then check if the item flags are active or not
-  else if (!mpParentComponent)
-  {
-    setComponentFlags();
-  }
-  if (!eventConsumed)
+  if (!eventConsumed) {
     QGraphicsItem::mousePressEvent(event);
+  }
 }
 
 /*! Event when mouse is double clicked on a component.
@@ -1485,8 +1463,9 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
 void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
   Q_UNUSED(event);
-  if(!mpParentComponent) //if component (not a connector) is double clicked
+  if (!mpParentComponent) { //if component (not a connector) is double clicked
     emit showParameters();
+  }
 }
 
 //! Event when mouse cursor enters component icon.

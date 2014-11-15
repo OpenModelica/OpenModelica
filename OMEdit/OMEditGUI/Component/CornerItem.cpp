@@ -118,11 +118,11 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
     }
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
     if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+      mpShapeAnnotation->manhattanizeShape();
       mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
     }
     mClickPos = mapToScene(event->pos());
   }
-  QGraphicsItem::mousePressEvent(event);
 }
 
 /*!
@@ -142,6 +142,7 @@ void CornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     if (mClickPos != mapToScene(event->pos())) {
       LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(mpShapeAnnotation);
       if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+        mpShapeAnnotation->manhattanizeShape();
         mpShapeAnnotation->removeRedundantPointsGeometriesAndCornerItems();
       }
       if (!signalsBlocked()) {

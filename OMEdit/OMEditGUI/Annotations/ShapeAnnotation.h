@@ -109,6 +109,7 @@ private:
   QPointF mOldPosition;
   bool mIsCornerItemClicked;
   QAction *mpShapePropertiesAction;
+  QAction *mpManhattanizeShapeAction;
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
   ShapeAnnotation(QGraphicsItem *pParent);
@@ -209,7 +210,9 @@ public slots:
   void cornerItemReleased();
   void updateCornerItemPoint(int index, QPointF point);
   LineGeometryType findLineGeometryType(QPointF point1, QPointF point2);
+  bool isLineStraight(QPointF point1, QPointF point2);
   void showShapeProperties();
+  void manhattanizeShape();
 protected:
   GraphicsView *mpGraphicsView;
   Transformation *mpTransformation;

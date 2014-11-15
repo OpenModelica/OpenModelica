@@ -1243,13 +1243,13 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     Component multi selection context menu has problems if the following condition is removed.
     Unexpected Component::itemChange events are raised.
     */
-  if (event->button() == Qt::RightButton)
+  if (event->button() == Qt::RightButton) {
     return;
+  }
   bool creatingShape = false;
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if left button presses and we are creating a connector
-  if (isCreatingConnection())
-  {
+  if (isCreatingConnection()) {
     mpConnectionLineAnnotation->addPoint(snappedPoint);
   }
   /*
@@ -1258,66 +1258,49 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     When we finish creating a shape, creatingShape will get true value and we do not propogate the mousePressEvent.
     */
   /* if line shape tool button is checked then create a line */
-  else if (pMainWindow->getLineShapeAction()->isChecked())
-  {
+  else if (pMainWindow->getLineShapeAction()->isChecked()) {
     creatingShape = isCreatingLineShape();
     createLineShape(snappedPoint);
     if (creatingShape) return;
-  }
-  /* if polygon shape tool button is checked then create a polygon */
-  else if (pMainWindow->getPolygonShapeAction()->isChecked())
-  {
+  } else if (pMainWindow->getPolygonShapeAction()->isChecked()) {
+    /* if polygon shape tool button is checked then create a polygon */
     creatingShape = isCreatingPolygonShape();
     createPolygonShape(snappedPoint);
     if (creatingShape) return;
-  }
-  /* if rectangle shape tool button is checked then create a rectangle */
-  else if (pMainWindow->getRectangleShapeAction()->isChecked())
-  {
+  } else if (pMainWindow->getRectangleShapeAction()->isChecked()) {
+    /* if rectangle shape tool button is checked then create a rectangle */
     creatingShape = isCreatingRectangleShape();
     createRectangleShape(snappedPoint);
     if (creatingShape) return;
-  }
-  /* if ellipse shape tool button is checked then create an ellipse */
-  else if (pMainWindow->getEllipseShapeAction()->isChecked())
-  {
+  } else if (pMainWindow->getEllipseShapeAction()->isChecked()) {
+    /* if ellipse shape tool button is checked then create an ellipse */
     creatingShape = isCreatingEllipseShape();
     createEllipseShape(snappedPoint);
     if (creatingShape) return;
-  }
-  /* if text shape tool button is checked then create a text */
-  else if (pMainWindow->getTextShapeAction()->isChecked())
-  {
+  } else if (pMainWindow->getTextShapeAction()->isChecked()) {
+    /* if text shape tool button is checked then create a text */
     creatingShape = isCreatingTextShape();
     createTextShape(snappedPoint);
     if (creatingShape) return;
-  }
-  /* if bitmap shape tool button is checked then create a bitmap */
-  else if (pMainWindow->getBitmapShapeAction()->isChecked())
-  {
+  } else if (pMainWindow->getBitmapShapeAction()->isChecked()) {
+    /* if bitmap shape tool button is checked then create a bitmap */
     creatingShape = isCreatingBitmapShape();
     createBitmapShape(snappedPoint);
     if (creatingShape) return;
-  }
-  // if we are not creating a connector
-  else
-  {
+  } else {
     // this flag is just used to have seperate identify for if statement in mouse release event of graphicsview
     setIsMovingComponentsAndShapes(true);
     // save the position of all components
-    foreach (Component *pComponent, mComponentsList)
-    {
+    foreach (Component *pComponent, mComponentsList) {
       pComponent->setOldPosition(pComponent->pos());
     }
-    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList)
-    {
+    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
       pShapeAnnotation->setOldPosition(pShapeAnnotation->pos());
     }
   }
   QGraphicsView::mousePressEvent(event);
   /* Ticket #2162 : Delete the same component connect connection here. */
-  if (isCreatingConnection() && canDeleteCreatingConnection())
-  {
+  if (isCreatingConnection() && canDeleteCreatingConnection()) {
     setDeleteCreatingConnection(false);
     removeConnection();
   }
@@ -1335,38 +1318,25 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   //If creating connector, the end port shall be updated to the mouse position.
-  if (isCreatingConnection())
-  {
+  if (isCreatingConnection()) {
     mpConnectionLineAnnotation->updateEndPoint(snappedPoint);
     mpConnectionLineAnnotation->update();
-  }
-  else if (isCreatingLineShape())
-  {
+  } else if (isCreatingLineShape()) {
     mpLineShapeAnnotation->updateEndPoint(snappedPoint);
     mpLineShapeAnnotation->update();
-  }
-  else if (isCreatingPolygonShape())
-  {
+  } else if (isCreatingPolygonShape()) {
     mpPolygonShapeAnnotation->updateEndPoint(snappedPoint);
     mpPolygonShapeAnnotation->update();
-  }
-  else if (isCreatingRectangleShape())
-  {
+  } else if (isCreatingRectangleShape()) {
     mpRectangleShapeAnnotation->updateEndExtent(snappedPoint);
     mpRectangleShapeAnnotation->update();
-  }
-  else if (isCreatingEllipseShape())
-  {
+  } else if (isCreatingEllipseShape()) {
     mpEllipseShapeAnnotation->updateEndExtent(snappedPoint);
     mpEllipseShapeAnnotation->update();
-  }
-  else if (isCreatingTextShape())
-  {
+  } else if (isCreatingTextShape()) {
     mpTextShapeAnnotation->updateEndExtent(snappedPoint);
     mpTextShapeAnnotation->update();
-  }
-  else if (isCreatingBitmapShape())
-  {
+  } else if (isCreatingBitmapShape()) {
     mpBitmapShapeAnnotation->updateEndExtent(snappedPoint);
     mpBitmapShapeAnnotation->update();
   }
@@ -1379,17 +1349,15 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     Component multi selection context menu has problems if the following condition is removed.
     Unexpected Component::itemChange events are raised.
     */
-  if (event->button() == Qt::RightButton)
+  if (event->button() == Qt::RightButton) {
     return;
-  if (isMovingComponentsAndShapes())
-  {
+  }
+  if (isMovingComponentsAndShapes()) {
     setIsMovingComponentsAndShapes(false);
     bool hasMoved = false;
     // if component position is changed then update component annotation
-    foreach (Component *pComponent, mComponentsList)
-    {
-      if (pComponent->getOldPosition() != pComponent->pos())
-      {
+    foreach (Component *pComponent, mComponentsList) {
+      if (pComponent->getOldPosition() != pComponent->pos()) {
         pComponent->updatePlacementAnnotation();
         // if there are any connectors associated to component update their annotations as well.
         pComponent->updateConnection();
@@ -1399,10 +1367,8 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     if (hasMoved) mpModelWidget->setModelModified();
     hasMoved = false;
     // if shape position is changed then update class annotation
-    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList)
-    {
-      if (pShapeAnnotation->getOldPosition() != pShapeAnnotation->pos())
-      {
+    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+      if (pShapeAnnotation->getOldPosition() != pShapeAnnotation->pos()) {
         pShapeAnnotation->getTransformation()->setOrigin(pShapeAnnotation->scenePos());
         pShapeAnnotation->setPos(0, 0);
         pShapeAnnotation->setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
@@ -1410,14 +1376,15 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         hasMoved = true;
       }
     }
-    if (hasMoved)
-    {
+    if (hasMoved) {
       addClassAnnotation();
       setCanAddClassAnnotation(true);
       mpModelWidget->setModelModified();
     }
   }
-  QGraphicsView::mouseReleaseEvent(event);
+  if (!isCreatingConnection()) {
+    QGraphicsView::mouseReleaseEvent(event);
+  }
 }
 
 void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
