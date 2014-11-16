@@ -95,17 +95,15 @@ $(GEN_DIR)%.stamp:
 $(GEN_DIR)_main.c:
 	$(OMC) GenerateEntryPoint.mos
 
-$(GEN_DIR)libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMHOME)/lib/omc/libomcruntime.a $(OMHOME)/lib/omc/libomparse.a
+$(OMHOME)/lib/omc/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMHOME)/lib/omc/libomcruntime.a $(OMHOME)/lib/omc/libomparse.a
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) -shared $(RPATH) $(INSTALL_NAME)  -o $@ $^ $(LDFLAGS)
-
 ifeq ($(STATIC),)
 
-$(GEN_DIR)omc$(EXE_EXT): $(GEN_DIR)libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main.o
+$(GEN_DIR)omc$(EXE_EXT): $(OMHOME)/lib/omc/libOpenModelicaCompiler$(SHREXT) $(GEN_DIR)_main.o
 	$(CC) $(GEN_DIR)_main.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(LDFLAGS) -lOpenModelicaCompiler
-install: $(GEN_DIR)omc$(EXE_EXT) $(GEN_DIR)libOpenModelicaCompiler$(SHREXT)
+install: $(GEN_DIR)omc$(EXE_EXT)
 	cp -a $< $(OMHOME)/bin/
-	cp -a $(GEN_DIR)libOpenModelicaCompiler$(SHREXT) $(OMHOME)/lib/omc/
 
 else
 
