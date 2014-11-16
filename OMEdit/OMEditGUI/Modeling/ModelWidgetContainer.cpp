@@ -3227,41 +3227,49 @@ void ModelWidgetContainer::saveTotalModelWidget()
   mpMainWindow->hideProgressBar();
 }
 
+/*!
+  Slot activated when MainWindow::mpPrintModelAction triggered SIGNAL is raised.
+  Prints the model Icon/Diagram/Text depending on which one is visible.
+  */
 void ModelWidgetContainer::printModel()
 {
 #ifndef QT_NO_PRINTER
-  if (ModelWidget *pModelWidget = getCurrentModelWidget())
-  {
+  if (ModelWidget *pModelWidget = getCurrentModelWidget()) {
     QPrinter printer(QPrinter::ScreenResolution);
+    QPrintDialog *pPrintDialog = new QPrintDialog(&printer);
 
-    if (pModelWidget->getModelicaTextEditor()->isVisible())
-    {
-      ModelicaTextEditor  *pModelicaTextEdit = pModelWidget->getModelicaTextEditor();
-      QPrintDialog *pPrintDialog = new QPrintDialog(&printer, this);
-      pPrintDialog->setWindowTitle(tr("Print Document"));
-      if (pModelicaTextEdit->textCursor().hasSelection())
+    // print the text of the model if it is visible
+    if (pModelWidget->getModelicaTextEditor()->isVisible()) {
+      ModelicaTextEditor *pModelicaTextEdit = pModelWidget->getModelicaTextEditor();
+      // set print options if text is selected
+      if (pModelicaTextEdit->textCursor().hasSelection()) {
         pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
-      if (pPrintDialog->exec() == QDialog::Accepted)
+      }
+      // open print dialog
+      if (pPrintDialog->exec() == QDialog::Accepted) {
         pModelicaTextEdit->print(&printer);
-      delete pPrintDialog;
-    }
-    else
-    {
-      GraphicsView *pGraphicsView;
-      if (pModelWidget->getIconGraphicsView()->isVisible())
+      }
+    } else {
+      // print the model Diagram/Icon
+      GraphicsView *pGraphicsView = 0;
+      if (pModelWidget->getIconGraphicsView()->isVisible()) {
         pGraphicsView = pModelWidget->getIconGraphicsView();
-      else
+      } else {
         pGraphicsView = pModelWidget->getDiagramGraphicsView();
-
-      printer.setPageSize(QPrinter::A4);
-      if (QPrintDialog(&printer).exec() == QDialog::Accepted)
-      {
+      }
+      // hide the background of the view for printing
+      bool oldSkipDrawBackground = pGraphicsView->mSkipBackground;
+      pGraphicsView->mSkipBackground = true;
+      // open print dialog
+      if (pPrintDialog->exec() == QDialog::Accepted) {
         QPainter painter(&printer);
-        painter.setRenderHint(QPainter::HighQualityAntialiasing);
+        painter.setRenderHints(QPainter::Antialiasing);
         pGraphicsView->render(&painter);
         painter.end();
       }
+      pGraphicsView->mSkipBackground = oldSkipDrawBackground;
     }
+    delete pPrintDialog;
   }
 #endif
 }
