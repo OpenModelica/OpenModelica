@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
@@ -173,8 +173,8 @@ QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value
     qreal stepY = mpShapeAnnotation->getGraphicsView()->getCoOrdinateSystem()->getVerticalGridStep();
     // refine snapping if Shift key is pressed
     if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-      stepX = stepX / 10;
-      stepY = stepY / 10;
+      stepX = stepX / 4;
+      stepY = stepY / 4;
     }
     qreal originX = mpShapeAnnotation->getTransformation()->getOrigin().x();
     qreal originY = mpShapeAnnotation->getTransformation()->getOrigin().y();

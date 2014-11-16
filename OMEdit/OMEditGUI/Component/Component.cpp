@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
@@ -914,8 +914,8 @@ void Component::resizeComponent(int index, QPointF newPosition)
   qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
   // refine snapping if Shift key is pressed
   if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)){
-    stepX = stepX/10;
-    stepY = stepY/10;
+    stepX = stepX / 4;
+    stepY = stepY / 4;
   }
   newPosition.setX(stepX*floor((newPosition.x())/stepX+0.5));
   newPosition.setY(stepY*floor((newPosition.y())/stepY+0.5));
@@ -1618,8 +1618,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
     qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
     // refine snapping if Shift key is pressed
     if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-      stepX = stepX / 10;
-      stepY = stepY / 10;
+      stepX = stepX / 4;
+      stepY = stepY / 4;
     }
     qreal originX = mpTransformation->getOrigin().x();
     qreal originY = mpTransformation->getOrigin().y();
