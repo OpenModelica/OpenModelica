@@ -119,7 +119,7 @@ public:
   static QStringList getOpenFileNames(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
                                  QString * selectedFilter = 0);
   static QString getExistingDirectory(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0);
-  static QString createTooltip(QStringList info, QString name, QString path);
+  static QString createTooltip(QVariantMap info, QString name, QString path);
   static QString createTooltip(QString name, QString location);
   static void setLastOpenDirectory(QString lastOpenDirectory);
   static QString getLastOpenDirectory();

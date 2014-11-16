@@ -255,9 +255,9 @@ void SearchClassWidget::searchClasses()
   {
     mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(searchedClasses[j]));
     LibraryTreeNode *pNewLibraryTreeNode;
-    QStringList info = mpMainWindow->getOMCProxy()->getClassInformation(searchedClasses[j]);
-    QString fileName = info.size() < 3 ? mpMainWindow->getOMCProxy()->getSourceFile(searchedClasses[j]) : info.at(2);
-    StringHandler::ModelicaClasses type = info.size() < 3 ? mpMainWindow->getOMCProxy()->getClassRestriction(searchedClasses[j]) : StringHandler::getModelicaClassType(info.at(0));
+    QVariantMap info = mpMainWindow->getOMCProxy()->getClassInformation(searchedClasses[j]);
+    QString fileName = info.find("fileName") == info.end() ? mpMainWindow->getOMCProxy()->getSourceFile(searchedClasses[j]) : info["fileName"].toString();
+    StringHandler::ModelicaClasses type = info.find("restriction") == info.end() ? mpMainWindow->getOMCProxy()->getClassRestriction(searchedClasses[j]) : StringHandler::getModelicaClassType(info["restriction"].toString());
     pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Modelica, searchedClasses[j], "", searchedClasses[j],
                                               StringHandler::createTooltip(info, StringHandler::getLastWordAfterDot(searchedClasses[j]), searchedClasses[j]),
                                               type, fileName, !mpLibraryTreeWidget->isFileWritAble(fileName), true, false, mpLibraryTreeWidget);
@@ -613,9 +613,9 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
   systemLibs.sort();
   foreach (QString lib, systemLibs)
   {
-    QStringList info = mpMainWindow->getOMCProxy()->getClassInformation(lib);
-    StringHandler::ModelicaClasses type = info.size() < 3 ? mpMainWindow->getOMCProxy()->getClassRestriction(lib) : StringHandler::getModelicaClassType(info.at(0));
-    QString fileName = info.size() < 3 ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info.at(2);
+    QVariantMap info = mpMainWindow->getOMCProxy()->getClassInformation(lib);
+    StringHandler::ModelicaClasses type = info.find("restriction") == info.end() ? mpMainWindow->getOMCProxy()->getClassRestriction(lib) : StringHandler::getModelicaClassType(info["restriction"].toString());
+    QString fileName = info.find("restriction") == info.end() ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info["fileName"].toString();
     LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Modelica, lib, QString(""), lib, StringHandler::createTooltip(info, lib, lib), type,
                                                                fileName, true, true, false, this);
     pNewLibraryTreeNode->setSystemLibrary(true);
@@ -634,9 +634,9 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
   {
     if (systemLibs.contains(lib))
       continue;
-    QStringList info = mpMainWindow->getOMCProxy()->getClassInformation(lib);
-    StringHandler::ModelicaClasses type = info.size() < 3 ? mpMainWindow->getOMCProxy()->getClassRestriction(lib) : StringHandler::getModelicaClassType(info.at(0));
-    QString fileName = info.size() < 3 ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info.at(2);
+    QVariantMap info = mpMainWindow->getOMCProxy()->getClassInformation(lib);
+    StringHandler::ModelicaClasses type = info.find("restriction") == info.end() ? mpMainWindow->getOMCProxy()->getClassRestriction(lib) : StringHandler::getModelicaClassType(info["restriction"].toString());
+    QString fileName = info.find("fileName") == info.end() ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info["fileName"].toString();
     LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Modelica, lib, QString(""), lib, StringHandler::createTooltip(info, lib, lib), type,
                                                                fileName, !isFileWritAble(fileName), true, false, this);
     bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(lib);
@@ -662,9 +662,9 @@ void LibraryTreeWidget::createLibraryTreeNodes(LibraryTreeNode *pLibraryTreeNode
       continue;
     QString name = StringHandler::getLastWordAfterDot(lib);
     QString parentName = StringHandler::removeLastWordAfterDot(lib);
-    QStringList info = mpMainWindow->getOMCProxy()->getClassInformation(lib);
-    StringHandler::ModelicaClasses type = info.size() < 3 ? mpMainWindow->getOMCProxy()->getClassRestriction(lib) : StringHandler::getModelicaClassType(info.at(0));
-    QString fileName = info.size() < 3 ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info.at(2);
+    QVariantMap info = mpMainWindow->getOMCProxy()->getClassInformation(lib);
+    StringHandler::ModelicaClasses type = info.find("restriction") == info.end() ? mpMainWindow->getOMCProxy()->getClassRestriction(lib) : StringHandler::getModelicaClassType(info["restriction"].toString());
+    QString fileName = info.find("fileName") == info.end() ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info["fileName"].toString();
     LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Modelica, name, parentName, lib, StringHandler::createTooltip(info, lib, lib), type,
                                                                fileName, !isFileWritAble(fileName), pLibraryTreeNode->isSaved(), false, this);
     pNewLibraryTreeNode->setSystemLibrary(pLibraryTreeNode->isSystemLibrary());
@@ -704,9 +704,9 @@ void LibraryTreeWidget::loadLibraryTreeNode(LibraryTreeNode *pParentLibraryTreeN
   QString parentName = pParentLibraryTreeNode->getNameStructure();
   QString name = pLibraryTreeNode->getName();
   mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(className));
-  QStringList info = mpMainWindow->getOMCProxy()->getClassInformation(className);
-  StringHandler::ModelicaClasses type = info.size() < 3 ? mpMainWindow->getOMCProxy()->getClassRestriction(className) : StringHandler::getModelicaClassType(info.at(0));
-  QString fileName = info.size() < 3 ? mpMainWindow->getOMCProxy()->getSourceFile(className) : info.at(2);
+  QVariantMap info = mpMainWindow->getOMCProxy()->getClassInformation(className);
+  StringHandler::ModelicaClasses type = info.find("restriction") == info.end() ? mpMainWindow->getOMCProxy()->getClassRestriction(className) : StringHandler::getModelicaClassType(info["restriction"].toString());
+  QString fileName = info.find("fileName") == info.end() ? mpMainWindow->getOMCProxy()->getSourceFile(className) : info["fileName"].toString();
   bool isProtected = mpMainWindow->getOMCProxy()->isProtectedClass(parentName, name);
   // update LibraryTreeNode attributes
   pLibraryTreeNode->setModelicaType(type);
@@ -767,8 +767,8 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, StringHandl
   LibraryTreeNode *pNewLibraryTreeNode;
   QString className = parentName.isEmpty() ? name : QString(parentName).append(".").append(name);
   mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(className));
-  QStringList info = mpMainWindow->getOMCProxy()->getClassInformation(className);
-  QString fileName = info.size() < 3 ? mpMainWindow->getOMCProxy()->getSourceFile(className) : info.at(2);
+  QVariantMap info = mpMainWindow->getOMCProxy()->getClassInformation(className);
+  QString fileName = info.find("fileName") == info.end() ? mpMainWindow->getOMCProxy()->getSourceFile(className) : info["fileName"].toString();
   pNewLibraryTreeNode = new LibraryTreeNode(LibraryTreeNode::Modelica, name, parentName, className,
                                             StringHandler::createTooltip(info, name, className), type, fileName, !isFileWritAble(fileName),
                                             isSaved, false, this);

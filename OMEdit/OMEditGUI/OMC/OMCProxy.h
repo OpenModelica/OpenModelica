@@ -80,6 +80,10 @@ private:
   MainWindow *mpMainWindow;
   int mAnnotationVersion;
   QMap<QString, QList<cachedOMCCommand> > mCachedOMCCommandsMap;
+#ifdef USE_OMC_SHARED_OBJECT
+  void *omc_SymbolTable;
+  void *mpThreadData;
+#endif
 public:
   OMCProxy(MainWindow *pMainWindow);
   ~OMCProxy();
@@ -128,7 +132,7 @@ public:
   QStringList getClassNames(QString className = QString(), QString recursive = QString("false"), QString qualified = QString("false"),
                             QString showProtected = QString("true"));
   QStringList searchClassNames(QString searchText, QString findInText = QString("false"));
-  QStringList getClassInformation(QString className);
+  QVariantMap getClassInformation(QString className);
   bool isPackage(QString className);
   bool isBuiltinType(QString typeName);
   QString getBuiltinType(QString typeName);
@@ -227,7 +231,9 @@ public:
 signals:
   void commandFinished();
 public slots:
+#if !USE_OMC_SHARED_OBJECT
   void sendCommand();
+#endif
   void openOMCLoggerWidget();
   void sendCustomExpression();
 };

@@ -63,6 +63,10 @@
   - Sonia Tariq
   */
 
+#if USE_OMC_SHARED_OBJECT
+#include "meta/meta_modelica.h"
+#endif
+
 #include "MainWindow.h"
 #include "Helper.h"
 #include "../../Compiler/runtime/config.h"
@@ -194,6 +198,10 @@ void printOMEditUsage()
 int main(int argc, char *argv[])
 {
   /* Do not use the signal handler OR exception filter if user is building a debug version. Perhaps the user wants to use gdb. */
+#if USE_OMC_SHARED_OBJECT
+  MMC_INIT();
+#endif
+
 #ifdef QT_NO_DEBUG
 #ifdef WIN32
   SetUnhandledExceptionFilter(exceptionFilter);
@@ -250,6 +258,7 @@ int main(int argc, char *argv[])
   QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();
   /* set the default locale of the application so that QSpinBox etc show values according to the locale. */
   QLocale::setDefault(settingsLocale);
+
   QString translationDirectory = omhome + QString("/share/omedit/nls");
   // install Qt's default translations
   QTranslator qtTranslator;
@@ -269,6 +278,8 @@ int main(int argc, char *argv[])
   //splashScreen.setMessage();
   splashScreen.show();
   Helper::initHelperVariables();
+  /* Force C-style doubles */
+  setlocale(LC_NUMERIC, "C");
   // MainWindow Initialization
   MainWindow mainwindow(&splashScreen);
   if (mainwindow.getExitApplicationStatus()) {        // if there is some issue in running the application.

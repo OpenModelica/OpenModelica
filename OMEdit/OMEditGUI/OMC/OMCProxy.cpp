@@ -36,12 +36,57 @@
  *
  */
 
+#if USE_OMC_SHARED_OBJECT
+#include "meta/meta_modelica.h"
+
+extern "C" {
+void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__ ((noreturn)) = omc_assert_function;
+void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
+void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
+void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
+int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
+void* omc_Main_init(void *threadData, void *args);
+void* omc_Main_readSettings(void *threadData, void *args);
+}
+#endif
+
+#include <OMC/Parser/OMCOutputLexer.h>
+#include <OMC/Parser/OMCOutputParser.h>
+
+#if USE_OMC_SHARED_OBJECT
+#include "OMC_API.h"
+#endif
+
 #include <stdexcept>
 #include <stdlib.h>
 #include <iostream>
 
 #include "OMCProxy.h"
 #include "../../../Compiler/runtime/config.h"
+
+
+static QVariant parseExpression(QString result)
+{
+  QVariant res;
+  pANTLR3_INPUT_STREAM input;
+  pOMCOutputLexer lex;
+  pANTLR3_COMMON_TOKEN_STREAM tokens;
+  pOMCOutputParser parser;
+  QByteArray ba = result.toUtf8();
+
+  input  = antlr3NewAsciiStringInPlaceStream((pANTLR3_UINT8)ba.data(), ba.size(), (pANTLR3_UINT8)"");
+  lex    = OMCOutputLexerNew(input);
+  tokens = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(lex));
+  parser = OMCOutputParserNew(tokens);
+
+  parser->exp(parser, res);
+  // Clean up? Check error? For chickens
+  parser->free(parser);
+  tokens->free(tokens);
+  lex->free(lex);
+  input->close(input);
+  return res;
+}
 
 /*!
   \class OMCProxy
@@ -360,6 +405,16 @@ bool OMCProxy::startServer()
     mCommandsLogFileTextStream.setCodec(Helper::utf8.toStdString().data());
     mCommandsLogFileTextStream.setGenerateByteOrderMark(false);
   }
+#if USE_OMC_SHARED_OBJECT
+  mpThreadData = calloc(1, sizeof(threadData_t));
+  threadData_t *threadData = (threadData_t*) mpThreadData;
+  MMC_TRY_TOP_INTERNAL()
+  omc_Main_init(threadData, mmc_mk_nil());
+  omc_SymbolTable = omc_Main_readSettings(threadData, mmc_mk_nil());
+  MMC_CATCH_TOP(return false;)
+
+  mHasInitialized = true;
+#else
   try
   {
     QString msg;
@@ -452,6 +507,7 @@ bool OMCProxy::startServer()
     mHasInitialized = false;
     return false;
   }
+#endif /* USE_OMC_SHARED_OBJECT */
   // get OpenModelica version
   Helper::OpenModelicaVersion = getVersion();
   // set OpenModelicaHome variable
@@ -485,12 +541,13 @@ void OMCProxy::stopServer()
   */
 void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString className, bool dontUseCachedCommand)
 {
-  if (!mHasInitialized)
+  if (!mHasInitialized) {
     if(!startServer())      // if we are unable to start OMC. Exit the application.
     {
       mpMainWindow->setExitApplicationStatus(true);
       return;
     }
+  }
   /* if OMC command is find in the cached OMC commands then use it and return. */
   if (!dontUseCachedCommand)
   {
@@ -513,6 +570,37 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
   commandTime.start();
   writeCommunicationCommandLog(expression, &commandTime);
   writeCommandsMosFile(expression);
+#if USE_OMC_SHARED_OBJECT
+  // TODO: Call this in a thread that loops over received messages? Avoid MMC_TRY_TOP all the time, etc
+  void *reply_str = NULL;
+  threadData_t *threadData = (threadData_t*) mpThreadData;
+
+  MMC_TRY_TOP_INTERNAL()
+
+  MMC_TRY_STACK()
+
+  if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toStdString().c_str()), omc_SymbolTable, &reply_str, &omc_SymbolTable)) {
+    if (expression == "quit()") {
+      return;
+    }
+    exitApplication();
+  }
+  mResult = MMC_STRINGDATA(reply_str);
+  // cache the OMC command
+  if (cacheCommand) {
+    cacheOMCCommand(className, expression, getResult());
+  }
+
+  MMC_ELSE()
+    mResult = "";
+    fprintf(stderr, "Stack overflow detected and was not caught.\nSend us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\n    Include the following trace:\n");
+    printStacktraceMessages();
+    fflush(NULL);
+  MMC_CATCH_STACK()
+
+  MMC_CATCH_TOP(mResult = "");
+
+#else
   // Send command to server
   try
   {
@@ -535,9 +623,10 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
     future.waitForFinished();
     writeCommunicationResponseLog(&commandTime);
     logOMCMessages(expression);
-    // cahce the OMC command
-    if (cacheCommand)
+    // cache the OMC command
+    if (cacheCommand) {
       cacheOMCCommand(className, expression, getResult());
+    }
   }
   catch (QtConcurrent::Exception&)
   {
@@ -553,8 +642,10 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
       return;
     exitApplication();
   }
+#endif /* USE_OMC_SHARED_OBJECT */
 }
 
+#if !USE_OMC_SHARED_OBJECT
 /*!
   Sends the user commands to OMC by using the Qt::concurrent feature.
   \see sendCommand(const QString expression)
@@ -564,6 +655,7 @@ void OMCProxy::sendCommand()
   mResult = QString::fromUtf8(mOMC->sendExpression(getExpression().toUtf8()));
   emit commandFinished();
 }
+#endif
 
 /*!
   Sets the command result.
@@ -1020,12 +1112,48 @@ QStringList OMCProxy::searchClassNames(QString searchText, QString findInText)
   \param className - is the name of the class whose information is retrieved.
   \return the class information list.
   */
-QStringList OMCProxy::getClassInformation(QString className)
+QVariantMap OMCProxy::getClassInformation(QString className)
 {
+#if !USE_OMC_SHARED_OBJECT
   sendCommand("getClassInformation(" + className + ")", true, className);
-  QString result = getResult();
-  QStringList list = StringHandler::unparseStrings(result);
-  return list;
+  QString str = getResult();
+  if (str == "") {
+    return QVariantMap();
+  }
+  QVariantList lst = parseExpression(str).toList();
+  QVariantMap res;
+  res["restriction"] = lst[0];
+  res["comment"] = lst[1];
+  res["partialPrefix"] = lst[2];
+  res["finalPrefix"] = lst[3];
+  res["encapsulatedPrefix"] = lst[4];
+  res["fileName"] = lst[5];
+  res["fileReadOnly"] = lst[6];
+  res["lineNumberStart"] = lst[7];
+  res["columnNumberStart"] = lst[8];
+  res["lineNumberEnd"] = lst[9];
+  res["columnNumberEnd"] = lst[10];
+  res["dimensions"] = lst[11];
+  return res;
+#else
+  /* TODO: Let this function return the struct directly; once we skip CORBA */
+  threadData_t *threadData = (threadData_t*) mpThreadData;
+  OMC::API::getClassInformation_result r = OMC::API::getClassInformation(threadData, omc_SymbolTable, className);
+  QVariantMap res;
+  res["restriction"] = r.restriction;
+  res["comment"] = r.comment;
+  res["partialPrefix"] = r.partialPrefix;
+  res["finalPrefix"] = r.finalPrefix;
+  res["encapsulatedPrefix"] = r.encapsulatedPrefix;
+  res["fileName"] = r.fileName;
+  res["fileReadOnly"] = r.fileReadOnly;
+  res["lineNumberStart"] = (long long) r.lineNumberStart;
+  res["columnNumberStart"] = (long long) r.columnNumberStart;
+  res["lineNumberEnd"] = (long long) r.lineNumberEnd;
+  res["columnNumberEnd"] = (long long) r.columnNumberEnd;
+  res["dimensions"] = r.dimensions;
+  return res;
+#endif
 }
 
 /*!

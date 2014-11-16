@@ -2367,9 +2367,8 @@ void ModelWidget::getModelIconDiagramShapes(QString className, QString annotatio
     {
       /* get the class file path */
       QString classFileName;
-      QStringList classInformation = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getClassInformation(className);
-      if (classInformation.size() > 2)
-        classFileName = classInformation.at(2);
+      QVariantMap classInformation = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getClassInformation(className);
+      classFileName = classInformation["fileName"].toString();
       /* create the bitmap shape */
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -2520,8 +2519,8 @@ void ModelWidget::refresh()
   pOMCProxy->removeCachedOMCCommand(mpLibraryTreeNode->getNameStructure());
   /* set the LibraryTreeNode filename, type & tooltip */
   pOMCProxy->setSourceFile(mpLibraryTreeNode->getNameStructure(), mpLibraryTreeNode->getFileName());
-  QStringList info = pOMCProxy->getClassInformation(mpLibraryTreeNode->getNameStructure());
-  StringHandler::ModelicaClasses type = info.size() < 3 ? pOMCProxy->getClassRestriction(mpLibraryTreeNode->getNameStructure()) : StringHandler::getModelicaClassType(info.at(0));
+  QVariantMap info = pOMCProxy->getClassInformation(mpLibraryTreeNode->getNameStructure());
+  StringHandler::ModelicaClasses type = info.find("restriction") == info.end() ? pOMCProxy->getClassRestriction(mpLibraryTreeNode->getNameStructure()) : StringHandler::getModelicaClassType(info["restriction"].toString());
   mpLibraryTreeNode->setModelicaType(type);
   mpLibraryTreeNode->setToolTip(0, StringHandler::createTooltip(info, mpLibraryTreeNode->getName(), mpLibraryTreeNode->getNameStructure()));
   /* set the LibraryTreeNode icon */

@@ -1099,18 +1099,18 @@ QString StringHandler::getExistingDirectory(QWidget *parent, const QString &capt
   return QString();
 }
 
-QString StringHandler::createTooltip(QStringList info, QString name, QString path)
+QString StringHandler::createTooltip(QVariantMap info, QString name, QString path)
 {
-  if (info.size() < 3) {
+  if (info.keys().size() < 12) {
     return path;
   } else {
-    QString tooltip = QString(Helper::type).append(": ").append(info[0]).append("<br />")
+    QString tooltip = QString(Helper::type).append(": ").append(info["restriction"].toString()).append("<br />")
         .append(Helper::name).append(" ").append(name).append("<br />")
-        .append(Helper::description).append(": ").append(info[1]).append("<br />");
-    if (QString(info[2]).compare("<interactive>") == 0) {
+        .append(Helper::description).append(": ").append(info["comment"].toString()).append("<br />");
+    if (QString(info["fileName"].toString()).compare("<interactive>") == 0) {
       tooltip.append(Helper::errorLocation).append(": ").append("<br />");
     } else {
-      tooltip.append(Helper::errorLocation).append(": ").append(QString(info[2]).replace("\\", "/")).append("<br />");
+      tooltip.append(Helper::errorLocation).append(": ").append(QString(info["fileName"].toString()).replace("\\", "/")).append("<br />");
     }
     tooltip.append(tr("Path")).append(": ").append(path);
     return tooltip;

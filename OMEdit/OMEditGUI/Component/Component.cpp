@@ -330,9 +330,8 @@ void Component::parseAnnotationString(QString annotation)
     {
       /* get the class file path */
       QString classFileName;
-      QStringList classInformation = mpOMCProxy->getClassInformation(mClassName);
-      if (classInformation.size() > 2)
-        classFileName = classInformation.at(2);
+      QVariantMap classInformation = mpOMCProxy->getClassInformation(mClassName);
+      classFileName = classInformation["fileName"].toString();
       /* create the bitmap shape */
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
