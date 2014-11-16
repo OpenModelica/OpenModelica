@@ -29,7 +29,7 @@
  */
 /*
  *
- * @author Martin Sjölund <martin.sjolund@liu.se>
+ * @author sjoelund.se <martin.sjolund@liu.se>
  *
  * Based on OMC Values.Value output syntax
  */
