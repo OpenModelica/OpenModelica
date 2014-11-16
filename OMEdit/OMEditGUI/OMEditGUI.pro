@@ -199,7 +199,7 @@ win32 {
   INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
     ../../3rdParty/qwt/build/include \
     ../../OMPlot/OMPlotGUI \
-    ../../
+    ../../  ../../3rdParty/antlr/3.2/libantlr3c-3.2/ ../../3rdParty/antlr/3.2/libantlr3c-3.2/include
 } else { # Unix libraries and includes
   include(OMEdit.config)
   # On unix we use backtrace of execinfo.h which requires -rdynamic
