@@ -243,7 +243,7 @@ void ResizerItem::setPassive()
 {
   mPen = mPassivePen;
   setParentItem(0);
-  mpComponent->getGraphicsView()->scene()->removeItem(this);
+  //mpComponent->getGraphicsView()->scene()->removeItem(this);
 }
 
 /*!
