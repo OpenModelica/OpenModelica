@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
