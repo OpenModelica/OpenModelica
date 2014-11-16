@@ -753,6 +753,7 @@ if test "Darwin" = `uname`; then
   OS_TARGET="osx"
   LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
   AR_SH="sh -x ar.sh"
+  OMC_LIBS="$(OMC_LIBS) -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
 elif test "$host" = "i586-pc-mingw32msvc"; then
   APP=".exe"
