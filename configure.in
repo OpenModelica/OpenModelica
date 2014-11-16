@@ -87,6 +87,7 @@ AC_SUBST(APP)
 AC_SUBST(OMC)
 AC_SUBST(OMCTARGET)
 AC_SUBST(BOOTSTRAP_STATIC)
+AC_SUBST(LIBDL)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 

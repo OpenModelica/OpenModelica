@@ -36,7 +36,7 @@
 
 const int firstOMCErrorStream = 3;
 
-const char *LOG_STREAM_NAME[LOG_MAX] = {
+const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_UNKNOWN",
   "stdout",
   "assert",
@@ -70,7 +70,7 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_ZEROCROSSINGS",
 };
 
-const char *LOG_STREAM_DESC[LOG_MAX] = {
+const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "unknown",
   "this stream is always active",                       /* LOG_STDOUT */
   "this stream is always active",                       /* LOG_ASSERT */
@@ -113,9 +113,9 @@ static const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
   "debug"
 };
 
-int useStream[LOG_MAX];
-int level[LOG_MAX];
-int lastType[LOG_MAX];
+int useStream[SIM_LOG_MAX];
+int level[SIM_LOG_MAX];
+int lastType[SIM_LOG_MAX];
 int lastStream = LOG_UNKNOWN;
 int showAllWarnings = 0;
 
@@ -123,7 +123,7 @@ void initDumpSystem()
 {
   int i;
 
-  for(i=0; i<LOG_MAX; ++i)
+  for(i=0; i<SIM_LOG_MAX; ++i)
   {
     useStream[i] = 0;
     level[i] = 0;

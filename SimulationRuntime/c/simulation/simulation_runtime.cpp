@@ -160,7 +160,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
 
   if(flags->find("LOG_ALL", 0) != string::npos)
   {
-    for(i=1; i<LOG_MAX; ++i)
+    for(i=1; i<SIM_LOG_MAX; ++i)
       useStream[i] = 1;
   }
   else
@@ -183,7 +183,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
         flag = flagList;
       }
 
-      for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
+      for(i=firstOMCErrorStream; i<SIM_LOG_MAX; ++i)
       {
         if(flag == string(LOG_STREAM_NAME[i]))
         {
@@ -195,7 +195,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
       if(error)
       {
         warningStreamPrint(LOG_STDOUT, 1, "current options are:");
-        for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
+        for(i=firstOMCErrorStream; i<SIM_LOG_MAX; ++i)
           warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
         messageClose(LOG_STDOUT);
         throwStreamPrint(NULL,"unrecognized option -lv %s", flags->c_str());
@@ -785,7 +785,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
         switch(i)
         {
         case FLAG_LV:
-          for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
+          for(j=firstOMCErrorStream; j<SIM_LOG_MAX; ++j)
             infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
           break;
 

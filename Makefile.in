@@ -1,5 +1,5 @@
-all :
-	$(MAKE) release qtclients @OMSHELL_TERMINAL@
+all:
+	$(MAKE) qtclients @OMSHELL_TERMINAL@
 
 autoconfGeneratedFiles = @GENERATED_AUTOCONF_FILES@
 
@@ -104,7 +104,7 @@ omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
 omplot: mkbuilddirs qwt
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
-omedit: mkbuilddirs qwt omplot qjson
+omedit: omc qwt omplot qjson
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 ifeq (@with_paradiseo@,)
 omoptim:

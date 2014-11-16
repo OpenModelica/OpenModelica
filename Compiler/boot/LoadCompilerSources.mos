@@ -188,6 +188,7 @@ if true then /* Suppress output */
     "../Script/RewriteRules.mo",
     "../Script/Figaro.mo",
     "../Script/BlockCallRewrite.mo",
+    "../Script/OpenModelicaScriptingAPI.mo",
 
   // "Template";
     "../Template/AbsynDumpTpl.mo",

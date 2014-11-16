@@ -103,13 +103,13 @@ enum LOG_STREAM
   LOG_UTIL,
   LOG_ZEROCROSSINGS,
 
-  LOG_MAX
+  SIM_LOG_MAX
 };
 
 extern const int firstOMCErrorStream;
-extern const char *LOG_STREAM_NAME[LOG_MAX];
-extern const char *LOG_STREAM_DESC[LOG_MAX];
-extern const char *LOG_STREAM_DETAILED_DESC[LOG_MAX];
+extern const char *LOG_STREAM_NAME[SIM_LOG_MAX];
+extern const char *LOG_STREAM_DESC[SIM_LOG_MAX];
+extern const char *LOG_STREAM_DETAILED_DESC[SIM_LOG_MAX];
 
 enum LOG_TYPE
 {
@@ -122,9 +122,9 @@ enum LOG_TYPE
   LOG_TYPE_MAX
 };
 
-extern int useStream[LOG_MAX];
-extern int level[LOG_MAX];
-extern int lastType[LOG_MAX];
+extern int useStream[SIM_LOG_MAX];
+extern int level[SIM_LOG_MAX];
+extern int lastType[SIM_LOG_MAX];
 extern int lastStream;
 extern int showAllWarnings;
 extern char logBuffer[2048];

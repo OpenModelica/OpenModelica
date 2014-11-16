@@ -866,7 +866,7 @@ algorithm
   end matchcontinue;
 end cevalInteractiveFunctions;
 
-protected function cevalInteractiveFunctions2
+public function cevalInteractiveFunctions2
 "defined in the interactive environment."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -1078,7 +1078,7 @@ algorithm
     case (cache,_,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         Absyn.CLASS(_,_,_,_,_,cdef,_) = Interactive.getPathedClassInProgram(path, p);
-        str = Interactive.getClassComment(cdef);
+        str = getClassComment(cdef);
       then
         (cache,Values.STRING(str),st);
 
@@ -1184,6 +1184,15 @@ algorithm
         offset = realSub(offset2,offset1);
       then
         (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)}),st);
+
+    case (cache,_,"getClassInformation",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(),_)
+      equation
+        v = getClassInformation(className, st.ast);
+      then (cache,v,st);
+
+    case (cache,_,"getClassInformation",_,st,_)
+      then (cache,Values.TUPLE({Values.STRING(""),Values.STRING(""),Values.BOOL(false),Values.BOOL(false),Values.BOOL(false),Values.STRING(""),
+                                Values.BOOL(false),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.INTEGER(0),Values.ARRAY({},{0})}),st);
 
     case (cache,_,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
@@ -7881,6 +7890,85 @@ algorithm
       then ((str,str::strs));
   end match;
 end getInterfaceTypeAssocElt;
+
+protected function getClassInformation
+"author: PA
+  Returns all the possible class information.
+  changed by adrpo 2006-02-24 (latest 2006-03-14) to return more info and in a different format:
+  {\"restriction\",\"comment\",\"filename.mo\",{bool,bool,bool},{\"readonly|writable\",int,int,int,int}}
+  if you like more named attributes, use getClassAttributes API which uses get_class_attributes function
+  change by sjoelund.se 2014-11-14 to actually be sane. Using the typed API.
+  "
+  input Absyn.Path path;
+  input Absyn.Program p;
+  output Values.Value res_1;
+protected
+  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol;
+  String dim_str;
+  Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly;
+  Absyn.Restriction restr;
+  Absyn.ClassDef cdef;
+  Absyn.Class c;
+  Integer sl,sc,el,ec;
+algorithm
+  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := Interactive.getPathedClassInProgram(path, p);
+  res := Dump.unparseRestrictionStr(restr);
+  cmt := getClassComment(cdef);
+  file := Util.testsuiteFriendly(file);
+  res_1 := Values.TUPLE({
+    Values.STRING(res),
+    Values.STRING(cmt),
+    Values.BOOL(partialPrefix),
+    Values.BOOL(finalPrefix),
+    Values.BOOL(encapsulatedPrefix),
+    Values.STRING(file),
+    Values.BOOL(isReadOnly),
+    Values.INTEGER(sl),
+    Values.INTEGER(sc),
+    Values.INTEGER(el),
+    Values.INTEGER(ec),
+    getClassDimensions(cdef)
+  });
+end getClassInformation;
+
+function getClassDimensions
+"return the dimensions of a class
+ as vector of dimension sizes in a string.
+ Note: A class can only have dimensions if it is a short class definition."
+  input Absyn.ClassDef cdef;
+  output Values.Value v;
+algorithm
+  v := match cdef
+    local
+      Absyn.ArrayDim ad;
+    case(Absyn.DERIVED(typeSpec=Absyn.TPATH(arrayDim=SOME(ad))))
+      then ValuesUtil.makeArray(list(Values.STRING(Dump.printSubscriptStr(d)) for d in ad));
+    else ValuesUtil.makeArray({});
+  end match;
+end getClassDimensions;
+
+function getClassComment "Returns the class comment of a Absyn.ClassDef"
+  input Absyn.ClassDef inClassDef;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inClassDef)
+    local
+      String str,res;
+      Option<Absyn.Comment> cmt;
+    case (Absyn.PARTS(comment = SOME(str))) then str;
+    case (Absyn.DERIVED(comment = cmt))
+      then Interactive.getStringComment2(cmt);
+    case (Absyn.ENUMERATION(comment = cmt))
+      then Interactive.getStringComment2(cmt);
+    case (Absyn.ENUMERATION(comment = cmt))
+      then Interactive.getStringComment2(cmt);
+    case (Absyn.OVERLOAD(comment = cmt))
+      then Interactive.getStringComment2(cmt);
+    case (Absyn.CLASS_EXTENDS(comment = SOME(str))) then str;
+    else "";
+  end matchcontinue;
+end getClassComment;
 
 annotation(__OpenModelica_Interface="backend");
 end CevalScript;

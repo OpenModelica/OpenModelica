@@ -676,7 +676,7 @@ algorithm
   end if;
 end serverLoopCorba;
 
-protected function readSettings
+public function readSettings
   " author: x02lucpo
    Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
    Checks if '-s <file>.mos' has been
@@ -788,6 +788,32 @@ algorithm
   end try;
 end setDefaultCC;
 
+public function init
+  input list<String> args;
+  output list<String> args_1;
+algorithm
+  // set glib G_SLICE to always-malloc as is rummored to be better for Boehm GC
+  System.setEnv("G_SLICE", "always-malloc", true);
+  // call GC_init() the first thing we do!
+  System.initGarbageCollector();
+  // Experimentally found to make the testsuite pass on asap.openmodelica.org.
+  // 150M for Windows, 300M for others makes the GC try to unmap less and so it crashes less.
+  // Disabling unmap is another alternative that seems to work well (but could cause the memory consumption to not be released, and requires manually calling collect and unmap
+  if true then
+    GC.setForceUnmapOnGcollect(false);
+  else
+    GC.expandHeap(if System.os() == "Windows_NT"
+                      then 1024*1024*150
+                      else 1024*1024*300);
+  end if;
+  Global.initialize();
+  ErrorExt.registerModelicaFormatError();
+  System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+  args_1 := Flags.new(args);
+  System.gettextInit(if Config.getRunningTestsuite() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
+  setDefaultCC();
+end init;
+
 public function main
   "This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
    start the translation."
@@ -797,26 +823,7 @@ protected
   GC.ProfStats stats;
 algorithm
   try
-    // set glib G_SLICE to always-malloc as is rummored to be better for Boehm GC
-    System.setEnv("G_SLICE", "always-malloc", true);
-    // call GC_init() the first thing we do!
-    System.initGarbageCollector();
-    // Experimentally found to make the testsuite pass on asap.openmodelica.org.
-    // 150M for Windows, 300M for others makes the GC try to unmap less and so it crashes less.
-    // Disabling unmap is another alternative that seems to work well (but could cause the memory consumption to not be released, and requires manually calling collect and unmap
-    if true then
-      GC.setForceUnmapOnGcollect(false);
-    else
-      GC.expandHeap(if System.os() == "Windows_NT"
-                        then 1024*1024*150
-                        else 1024*1024*300);
-    end if;
-    Global.initialize();
-    ErrorExt.registerModelicaFormatError();
-    System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-    args_1 := Flags.new(args);
-    System.gettextInit(if Config.getRunningTestsuite() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
-    setDefaultCC();
+    args_1 := init(args);
     if Flags.isSet(Flags.GC_PROF) then
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after initialization:") + "\n");
     end if;

@@ -1499,14 +1499,6 @@ algorithm
 
     case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "getClassInformation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getClassInformation(cr, p);
-      then
-        (resstr,st);
-
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "getShortDefinitionBaseClassInformation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getShortDefinitionBaseClassInformation(cr, p);
@@ -1520,14 +1512,6 @@ algorithm
         resstr = getExternalFunctionSpecification(cr, p);
       then
         (resstr,st);
-
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getClassInformation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        failure(_ = getClassInformation(cr, p));
-      then
-        ("error",st);
 
     case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
@@ -1737,14 +1721,6 @@ algorithm
         matchApiFunction(istmts, "getCrefInfo");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getCrefInfo(cr, p);
-      then
-        (resstr,st);
-
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p)) // added by adrpo, 2006-02-24
-      equation
-        matchApiFunction(istmts, "getClassAttributes");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getClassAttributes(cr, p);
       then
         (resstr,st);
 
@@ -7518,47 +7494,6 @@ algorithm
   end matchcontinue;
 end setClassCommentInCommentOpt;
 
-protected function getClassInformation
-"author: PA
-  Returns all the possible class information.
-  changed by adrpo 2006-02-24 (latest 2006-03-14) to return more info and in a different format:
-  {\"restriction\",\"comment\",\"filename.mo\",{bool,bool,bool},{\"readonly|writable\",int,int,int,int}}
-  if you like more named attributes, use getClassAttributes API which uses get_class_attributes function"
-  input Absyn.ComponentRef cr;
-  input Absyn.Program p;
-  output String res_1;
-protected
-  Absyn.Path path;
-  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol;
-  String dim_str;
-  Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly;
-  Absyn.Restriction restr;
-  Absyn.ClassDef cdef;
-  Absyn.Class c;
-  Integer sl,sc,el,ec;
-algorithm
-  path := Absyn.crefToPath(cr);
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := getPathedClassInProgram(path, p);
-  strPartial := boolString(partialPrefix) "handling boolean attributes of the class" ;
-  strFinal := boolString(finalPrefix);
-  strEncapsulated := boolString(encapsulatedPrefix);
-  res := Dump.unparseRestrictionStr(restr) "handling restriction" ;
-  cmt := getClassComment(cdef) "handling class comment from the definition" ;
-  str_readonly := selectString(isReadOnly, "readonly", "writable") "handling positional information" ;
-  str_sline := intString(sl);
-  str_scol := intString(sc);
-  str_eline := intString(el);
-  str_ecol := intString(ec);
-  dim_str := getClassDimensions(cdef);
-  //file := System.stringReplace(file, "\\", "/");
-  file := Util.testsuiteFriendly(file);
-  file := System.escapedString(file,false);
-  res_1 := stringAppendList(
-          {"{\"",res,"\",\"",cmt,"\",\"",file,"\",{",strPartial,",",
-          strFinal,",",strEncapsulated,"},{\"",str_readonly,"\",",str_sline,",",
-          str_scol,",",str_eline,",",str_ecol,"},",dim_str,"}"}) "composing the final returned string" ;
-end getClassInformation;
-
 protected function getShortDefinitionBaseClassInformation
 "author: adrpo
   Returns all the prefixes of the base class and the base class array dimensions.
@@ -7659,94 +7594,6 @@ algorithm
     case(_) then "{}";
   end matchcontinue;
 end getClassDimensions;
-
-protected function getClassAttributes
-"author: Adrian Pop, 2006-02-24
-  Returns all the possible class information in this format:
-  { name=\"Ident\", partial=(true|false), final=(true|false),
-    encapsulated=(true|false), restriction=\"PACKAGE|CLASS|..\",
-    comment=\"comment\", file=\"filename.mo\",  readonly=\"(readonly|writable)\",
-    startLine=number,  startColumn=number,
-    endLine=number, endColumn=number }"
-  input Absyn.ComponentRef cr;
-  input Absyn.Program p;
-  output String res_1;
-protected
-  Absyn.Path path;
-  String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol;
-  Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly;
-  Absyn.Restriction restr;
-  Absyn.ClassDef cdef;
-  Integer sl,sc,el,ec;
-algorithm
-  path := Absyn.crefToPath(cr);
-  Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restr,cdef,SOURCEINFO(file,isReadOnly,sl,sc,el,ec,_)) := getPathedClassInProgram(path, p);
-  strPartial := boolString(partialPrefix) "handling boolean attributes of the class" ;
-  strFinal := boolString(finalPrefix);
-  strEncapsulated := boolString(encapsulatedPrefix);
-  res := Absyn.restrString(restr) "handling restriction" ;
-  cmt := getClassComment(cdef) "handling class comment from the definition" ;
-  str_readonly := selectString(isReadOnly, "readonly", "writable") "handling positional information" ;
-  str_sline := intString(sl);
-  str_scol := intString(sc);
-  str_eline := intString(el);
-  str_ecol := intString(ec);
-  file := Util.testsuiteFriendly(file);
-  res_1 := stringAppendList(
-          {"{ rec(name=\"",name,"\", partial=",strPartial,", final=",
-          strFinal,", encapsulated=",strEncapsulated,", restriction=",res,", comment=\"",
-          cmt,"\", file=\"",file,"\", readonly=\"",str_readonly,"\", startLine=",
-          str_sline,", startColumn=",str_scol,", endLine=",str_eline,", endColumn=",
-          str_ecol,") }"}) "composing the final returned string" ;
-end getClassAttributes;
-
-public function getClassComment
-"author: PA
-  Returns the class comment of a Absyn.ClassDef"
-  input Absyn.ClassDef cdef;
-  output String res;
-protected
-  String s;
-algorithm
-  s := getClassComment2(cdef);
-  res := System.unescapedString(s);
-end getClassComment;
-
-protected function getClassComment2
-"Helper function to getClassComment."
-  input Absyn.ClassDef inClassDef;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inClassDef)
-    local
-      String str,res;
-      Option<Absyn.Comment> cmt;
-    case (Absyn.PARTS(comment = SOME(str))) then str;
-    case (Absyn.DERIVED(comment = cmt))
-      equation
-        res = getStringComment2(cmt);
-      then
-        res;
-    case (Absyn.ENUMERATION(comment = cmt))
-      equation
-        res = getStringComment2(cmt);
-      then
-        res;
-    case (Absyn.ENUMERATION(comment = cmt))
-      equation
-        res = getStringComment2(cmt);
-      then
-        res;
-    case (Absyn.OVERLOAD(comment = cmt))
-      equation
-        res = getStringComment2(cmt);
-      then
-        res;
-    case (Absyn.CLASS_EXTENDS(comment = SOME(str))) then str;
-    case (_) then "";
-  end matchcontinue;
-end getClassComment2;
 
 public function getClassRestriction
 "author: PA
@@ -10478,7 +10325,7 @@ algorithm
   res := stringAppendList({"\"",s,"\""});
 end getStringComment;
 
-protected function getStringComment2
+public function getStringComment2
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
 algorithm

@@ -3338,7 +3338,22 @@ annotation(
 </html>"));
 end sortStrings;
 
-annotation(preferredView="text");
+function getClassInformation
+  input TypeName cl;
+  output String restriction, comment;
+  output Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
+  output String fileName;
+  output Boolean fileReadOnly;
+  output Integer lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd;
+  output String dimensions[:];
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns class information for the given class.</p>
+<p>The dimensions are returned as an array of strings. The string is the textual representation of the dimension (they are not evaluated to Integers).</p>
+</html>"), preferredView="text");
+end getClassInformation;
+
 end Scripting;
 
 package UsersGuide
