@@ -475,14 +475,14 @@ algorithm
         //Merge nodes
         (_,_,_,_,changed) = HpcOmTaskGraph.mergeSimpleNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
         //changed = false;
-       
+
         (_,_,_,_,changed2) = HpcOmTaskGraph.mergeParentNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
         changed = changed or changed2;
-        
+
         //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
         //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
         //(taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
-                
+
       then applyGRS1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,changed);
     else (iTaskGraph, iTaskGraphMeta);
   end matchcontinue;
@@ -536,7 +536,7 @@ algorithm
       row = arrayGet(origGraph,node);
       row = HpcOmTaskGraph.filterContractedNodes(row,contrTasks);
       row = HpcOmTaskGraph.updateContinuousEntriesInList(row,removedNodes);
-      
+
       comps = arrayGet(origInComps,node);
       //print("comps1 "+stringDelimitList(List.map(comps,intString),", ")+"\n");
       arrayUpdate(newGraph,newNode,row);
