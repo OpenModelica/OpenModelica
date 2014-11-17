@@ -96,7 +96,13 @@ static QVariant parseExpression(QString result)
   \param pMainWindow - pointer to MainWindow
   */
 OMCProxy::OMCProxy(MainWindow *pMainWindow)
-  : QObject(pMainWindow), mOMC(0), mHasInitialized(false), mCanUseEventLoop(true) ,mResult("")
+  : QObject(pMainWindow),
+#if !USE_OMC_SHARED_OBJECT
+    mOMC(0),
+#endif
+    mHasInitialized(false),
+    mCanUseEventLoop(true),
+    mResult("")
 {
   mpMainWindow = pMainWindow;
   mCurrentCommandIndex = -1;

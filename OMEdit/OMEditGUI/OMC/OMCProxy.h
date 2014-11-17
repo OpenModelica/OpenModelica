@@ -40,10 +40,13 @@
 #define OMCPROXY_H
 
 #include "MainWindow.h"
-#include "omc_communication.h"
 #include "Component.h"
 #include "StringHandler.h"
 #include "Utilities.h"
+
+#if !USE_OMC_SHARED_OBJECT
+#include "omc_communication.h"
+#endif
 
 class MainWindow;
 class CustomExpressionBox;
@@ -60,7 +63,9 @@ class OMCProxy : public QObject
 {
   Q_OBJECT
 private:
+#if !USE_OMC_SHARED_OBJECT
   OmcCommunication_var mOMC;
+#endif
   bool mHasInitialized;
   qint64 mOMCProcessId;
   bool mCanUseEventLoop;

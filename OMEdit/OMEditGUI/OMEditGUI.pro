@@ -59,7 +59,6 @@ SOURCES += main.cpp \
   Util/backtrace.c \
   Util/Helper.cpp \
   MainWindow.cpp \
-  omc_communication.cc \
   OMC/OMCProxy.cpp \
   Util/StringHandler.cpp \
   Modeling/MessagesWidget.cpp \
@@ -116,7 +115,6 @@ SOURCES += main.cpp \
 HEADERS  += Util/backtrace.h \
   Util/Helper.h \
   MainWindow.h \
-  omc_communication.h \
   OMC/OMCProxy.h \
   Util/StringHandler.h \
   Modeling/MessagesWidget.h \
@@ -200,6 +198,8 @@ win32 {
     ../../3rdParty/qwt/build/include \
     ../../OMPlot/OMPlotGUI \
     ../../  ../../3rdParty/antlr/3.2/libantlr3c-3.2/ ../../3rdParty/antlr/3.2/libantlr3c-3.2/include
+  SOURCES += omc_communication.cc
+  HEADERS += omc_communication.h
 } else { # Unix libraries and includes
   include(OMEdit.config)
   # On unix we use backtrace of execinfo.h which requires -rdynamic
