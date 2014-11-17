@@ -8788,9 +8788,9 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Variables vars;
       SimCodeVar.Causality caus;
-      BackendDAE.Var v;
       Boolean isProtected;
-    case ((v as BackendDAE.VAR(varName = cr,
+
+    case ((BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.PARAM(),
       arryDim = inst_dims,
       values = dae_var_attr,
@@ -8814,13 +8814,15 @@ algorithm
         numArrayElement = List.map(inst_dims, ExpressionDump.dimensionIntString);
         // print("name: " + ComponentReference.printComponentRefStr(cr) + "indx: " + intString(indx) + "\n");
         // check if the variable has changeable value
-        // parameter which are final = true or Evaluate Annotation are not
-        isValueChangeable = (not BackendVariable.hasVarEvaluateAnnotationOrFinal(v)
-                            and BackendVariable.varHasConstantBindExp(v))
-                            or not BackendVariable.varHasBindExp(v);
+        // parameter which has final = true or evaluate annotation are not changeable 
+        isValueChangeable = ((not BackendVariable.hasVarEvaluateAnnotationOrFinal(dlowVar)
+                            and BackendVariable.varHasConstantBindExp(dlowVar))
+                            or not BackendVariable.varHasBindExp(dlowVar))
+                            and isFixed;
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, isValueChangeable, isProtected);
+
     // Start value of states may be changeable
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.STATE(),
@@ -8848,6 +8850,7 @@ algorithm
       then
         SimCodeVar.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, true, isProtected);
+
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
       arryDim = inst_dims,
