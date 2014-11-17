@@ -310,7 +310,7 @@ algorithm
       SimCodeUtil.execStat("hpcom dump simplified TaskGraph");
 
       if Flags.isSet(Flags.HPCOM_DUMP) then
-        print("Filter successfully applied\n");
+        print("Filter successfully applied. Merged "+intString(intSub(arrayLength(taskGraphOde),arrayLength(taskGraphSimplified)))+" tasks.\n");
       end if;
 
       //Create schedule
