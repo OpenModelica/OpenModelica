@@ -366,6 +366,8 @@ static inline unsigned long long RDTSC(void)
   return ( (unsigned long long)lo)|( ((unsigned long long)hi)<<32 );
 }
 #else
+#include <stdio.h>
+
 static inline unsigned long long RDTSC(void)
 {
   fprintf(stderr, "No CPU clock implemented on this processor architecture\n");
