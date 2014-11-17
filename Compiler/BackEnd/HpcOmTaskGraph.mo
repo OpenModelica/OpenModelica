@@ -3443,31 +3443,35 @@ algorithm
   //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
 end mergeSimpleNodes;
 
-public function mergeParentNodes "author: marcusw
-  Merges parent nodes into child if this produces a shorter execution time. Only one merge set is determined. you have to repeat this function"
-  input TaskGraph iGraph;
-  input TaskGraphMeta iGraphData;
-  input list<Integer> doNotMerge;
-  output TaskGraph oGraph;
-  output TaskGraphMeta oGraphData;
-  output Boolean oChanged; //true if the structure has changed
+public function mergeParentNodes "author: marcusw,waurich
+  Merges parent nodes into child if this produces a shorter execution time."
+  input TaskGraph graphIn;
+  input TaskGraph graphTIn;
+  input TaskGraphMeta graphDataIn;
+  input array<Integer> contractedTasksIn;
+  output TaskGraph graphOut;
+  output TaskGraph graphTOut;
+  output TaskGraphMeta graphDataOut;
+  output array<Integer> contractedTasksOut;
+  output Boolean changed;
 protected
-  TaskGraph iGraphT;
+  array<Integer> alreadyMerged;
   list<list<Integer>> mergedNodes;
 algorithm
-  iGraphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
-  mergedNodes := mergeParentNodes0(iGraph, iGraphT, iGraphData, doNotMerge, 1, {});
-  //(oGraph,oGraphData,_,_) := contractNodesInGraph(mergedNodes, iGraph, iGraph, iGraphData);
-  oGraph := iGraph;
-  oGraphData := iGraphData;
-  oChanged := List.isNotEmpty(mergedNodes);
+  alreadyMerged := arrayCreate(arrayLength(graphIn),0);
+  mergedNodes := mergeParentNodes0(graphIn, graphTIn, graphDataIn, contractedTasksIn, alreadyMerged, 1, {});
+  //print("mergedNodes "+stringDelimitList(List.map(mergedNodes,intLstString),"\n")+"\n");
+  (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(mergedNodes,graphIn,graphTIn,graphDataIn,contractedTasksIn);
+  changed := List.isNotEmpty(mergedNodes);
+  //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
 end mergeParentNodes;
 
 protected function mergeParentNodes0
   input TaskGraph iGraph;
   input TaskGraph iGraphT;
   input TaskGraphMeta iGraphData;
-  input list<Integer> doNotMerge;
+  input array<Integer> contractedTasksIn;
+  input array<Integer> alreadyMerged;
   input Integer iNodeIdx;
   input list<list<Integer>> iMergedNodes;
   output list<list<Integer>> oMergedNodes;
@@ -3475,7 +3479,7 @@ protected
   TaskGraph tmpGraph;
   TaskGraphMeta tmpGraphData;
   Boolean tmpChanged;
-  Real exeCost, highestParentExeCost, sumParentExeCosts;
+  Real highestParentExeCost, sumParentExeCosts;
   list<Integer> parentNodes, mergeNodeList;
   Real highestCommCost;
   array<tuple<Integer, Real>> exeCosts;
@@ -3485,14 +3489,17 @@ protected
   list<list<Integer>> parentChilds;
   list<list<Integer>> tmpMergedNodes;
 algorithm
-  oMergedNodes := matchcontinue(iGraph, iGraphT, iGraphData, doNotMerge,  iNodeIdx, iMergedNodes)
-    case(_,_,TASKGRAPHMETA(exeCosts=exeCosts, commCosts=commCosts),_,_,_)
+  oMergedNodes := matchcontinue(iGraph, iGraphT, iGraphData, contractedTasksIn, alreadyMerged,  iNodeIdx, iMergedNodes)
+    case(_,_,TASKGRAPHMETA(exeCosts=exeCosts, commCosts=commCosts),_,_,_,_)
       equation
         true = intLe(iNodeIdx, arrayLength(iGraphT)); //Current index is in range
-        true = List.notMember(iNodeIdx,doNotMerge);
-        parentNodes = arrayGet(iGraphT, iNodeIdx);
-        false = List.exist1(parentNodes,listMember,doNotMerge);
+        true = intNe(arrayGet(contractedTasksIn,iNodeIdx),-1);
+        true = intNe(arrayGet(alreadyMerged,iNodeIdx),-1);  // is not already in a merged task group
         //print("HpcOmTaskGraph.mergeParentNodes0: looking at node " + intString(iNodeIdx) + "\n");
+        parentNodes = arrayGet(iGraphT, iNodeIdx);
+        parentNodes = filterContractedNodes(parentNodes,contractedTasksIn);
+        false = List.exist1(parentNodes,isRemoved,alreadyMerged);// dont consider nodes that are already merged in thsi iteration
+        //print("with the parents "+stringDelimitList(List.map(parentNodes,intString),", ")+"\n");
         parentCommCosts = List.map2(parentNodes, getCommCostBetweenNodes, iNodeIdx, iGraphData);
         COMMUNICATION(requiredTime=highestCommCost) = getHighestCommCost(parentCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
         parentExeCosts = List.map1(parentNodes, getExeCost, iGraphData);
@@ -3506,12 +3513,13 @@ algorithm
         //print("HpcOmTaskGraph.mergeParentNodes0: mergeNodeList " + stringDelimitList(List.map(mergeNodeList,intString), ", ") + "\n");
         //print("HpcOmTaskGraph.mergeParentNodes0: Merging " + intString(iNodeIdx) + " with " + stringDelimitList(List.map(parentNodes,intString), ", ") + "\n");
         tmpMergedNodes = mergeNodeList :: iMergedNodes;
-        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,listAppend(mergeNodeList,doNotMerge),iNodeIdx+1,tmpMergedNodes);
+        List.map_0(mergeNodeList,function Array.updateIndexFirst(inValue=-1,inArray=alreadyMerged));
+        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,contractedTasksIn,alreadyMerged,iNodeIdx+1,tmpMergedNodes);
       then tmpMergedNodes;
-    case(_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_)
       equation
         true = intLe(iNodeIdx, arrayLength(iGraphT)); //Current index is in range
-        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,doNotMerge,iNodeIdx+1,iMergedNodes);
+        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,contractedTasksIn,alreadyMerged,iNodeIdx+1,iMergedNodes);
       then tmpMergedNodes;
     else iMergedNodes;
   end matchcontinue;
@@ -3631,6 +3639,7 @@ algorithm
       List.map_0(removeNodes,function Array.updateIndexFirst(inValue = -1, inArray=contractedTasksIn));  // mark in contrTask array
       children = List.flatten(List.map(contrNodes,function Array.getIndexFirst(inArray = graphIn)));
       children = filterContractedNodes(children,contractedTasksIn);
+      children = List.unique(children);
       children = List.deleteMember(children,contrNode);
       parents = List.flatten(List.map(contrNodes,function Array.getIndexFirst(inArray = graphTIn)));
       parents = filterContractedNodes(parents,contractedTasksIn);

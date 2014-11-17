@@ -469,20 +469,20 @@ author:Waurich 2014-11"
 algorithm
   (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,again)
     local
-      Boolean changed;
+      Boolean changed,changed2;
     case(_,_,_,_,true)
       equation
         //Merge nodes
         (_,_,_,_,changed) = HpcOmTaskGraph.mergeSimpleNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
-
-        //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
-        //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
-        //(taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1, doNotMerge);
-
+        //changed = false;
+       
+        (_,_,_,_,changed2) = HpcOmTaskGraph.mergeParentNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
+        changed = changed or changed2;
+        
         //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
         //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
         //(taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
-
+                
       then applyGRS1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,changed);
     else (iTaskGraph, iTaskGraphMeta);
   end matchcontinue;
@@ -532,10 +532,11 @@ algorithm
       then (newGraph,newInComps);
     case(node::rest,_,_,_,_,_,_,_)
       equation
-      //print("node "+intString(node)+"\n");
+      //print("origNode "+intString(node)+" and newNode "+intString(newNode)+"\n");
       row = arrayGet(origGraph,node);
       row = HpcOmTaskGraph.filterContractedNodes(row,contrTasks);
       row = HpcOmTaskGraph.updateContinuousEntriesInList(row,removedNodes);
+      
       comps = arrayGet(origInComps,node);
       //print("comps1 "+stringDelimitList(List.map(comps,intString),", ")+"\n");
       arrayUpdate(newGraph,newNode,row);
