@@ -281,7 +281,6 @@ package SimCode
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<BackendDAE.ZeroCrossing> relations;
-      list<list<SimCodeVar.SimVar>> zeroCrossingsNeedSave;
       list<BackendDAE.TimeEvent> timeEvents;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
