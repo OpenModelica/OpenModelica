@@ -80,8 +80,8 @@ protected
 algorithm
     //print("SYSTEM IN\n");
     //BackendDump.printBackendDAE(daeIn);
-    //daeOut := BackendDAEUtil.mapEqSystem(daeIn,commonSubExpression);
-  daeOut := daeIn;
+    daeOut := BackendDAEUtil.mapEqSystem(daeIn,commonSubExpression);
+    //daeOut := daeIn;
     //print("SYSTEM OUT\n");
     //BackendDump.printBackendDAE(daeOut);
 end commonSubExpressionReplacement;
