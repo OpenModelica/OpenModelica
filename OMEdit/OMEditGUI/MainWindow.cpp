@@ -151,6 +151,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpSimulationDialog = new SimulationDialog(this);
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
+  mpPlotWindowContainer->addPlotWindow(true);
   // create an object of VariablesWidget
   mpVariablesWidget = new VariablesWidget(this);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
@@ -1300,6 +1301,40 @@ void MainWindow::showAlgorithmicDebugger()
   mpDebuggerMainWindow->restoreWindows();
 }
 
+/*!
+  Slot activated when mpCascadeWindowsAction triggered signal is raised.\n
+  Arranges all child windows in a cascade pattern.
+  */
+void MainWindow::cascadeWindows()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      mpModelWidgetContainer->cascadeSubWindows();
+      break;
+    case 2:
+      mpPlotWindowContainer->cascadeSubWindows();
+    default:
+      break;
+  }
+}
+
+/*!
+  Slot activated when mpCascadeWindowsAction triggered signal is raised.\n
+  Arranges all child windows in a tile pattern.
+  */
+void MainWindow::tileWindows()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      mpModelWidgetContainer->tileSubWindows();
+      break;
+    case 2:
+      mpPlotWindowContainer->tileSubWindows();
+    default:
+      break;
+  }
+}
+
 void MainWindow::instantiatesModel()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -1732,7 +1767,7 @@ void MainWindow::openRecentModelWidget()
 }
 
 /*!
-  Slot activated when Re-simulateAction triggered signal is raised..\n
+  Slot activated when Re-simulateAction triggered signal is raised.\n
   Re-simulates the model.
   */
 void MainWindow::reSimulateModel()
@@ -2003,6 +2038,14 @@ void MainWindow::createActions()
   mpShowAlgorithmicDebuggerAction->setShortcut(QKeySequence("ctrl+t"));
   mpShowAlgorithmicDebuggerAction->setStatusTip(Helper::algorithmicDebugger);
   connect(mpShowAlgorithmicDebuggerAction, SIGNAL(triggered()), SLOT(showAlgorithmicDebugger()));
+  // Cascade windows action
+  mpCascadeWindowsAction = new QAction(tr("Cascade Windows"), this);
+  mpCascadeWindowsAction->setStatusTip(tr("Arranges all the child windows in a cascade pattern"));
+  connect(mpCascadeWindowsAction, SIGNAL(triggered()), SLOT(cascadeWindows()));
+  // Tile windows action
+  mpTileWindowsAction = new QAction(tr("Tile Windows"), this);
+  mpTileWindowsAction->setStatusTip(tr("Arranges all child windows in a tile pattern"));
+  connect(mpTileWindowsAction, SIGNAL(triggered()), SLOT(tileWindows()));
   // Simulation Menu
   // instantiate model action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), tr("Instantiate Model"), this);
@@ -2271,7 +2314,6 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpSimulationToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpModelSwitcherToolBar->toggleViewAction());
-  pViewMenu->addAction(pViewToolbarsMenu->menuAction());
   // Add Actions to Windows View Sub Menu
   pViewWindowsMenu->addAction(pSearchClassAction);
   pViewWindowsMenu->addAction(mpLibraryTreeDockWidget->toggleViewAction());
@@ -2280,6 +2322,10 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpShowAlgorithmicDebuggerAction);
+  pViewWindowsMenu->addSeparator();
+  pViewWindowsMenu->addAction(mpCascadeWindowsAction);
+  pViewWindowsMenu->addAction(mpTileWindowsAction);
+  pViewMenu->addAction(pViewToolbarsMenu->menuAction());
   pViewMenu->addAction(pViewWindowsMenu->menuAction());
   pViewMenu->addSeparator();
   pViewMenu->addAction(mpShowGridLinesAction);
@@ -2350,7 +2396,6 @@ void MainWindow::createMenus()
 
 void MainWindow::switchToWelcomePerspective()
 {
-  mpPlotWindowContainer->tileSubWindows();
   mpCentralStackedWidget->setCurrentWidget(mpWelcomePageWidget);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpModelSwitcherToolButton->setEnabled(false);
@@ -2360,7 +2405,6 @@ void MainWindow::switchToWelcomePerspective()
 
 void MainWindow::switchToModelingPerspective()
 {
-  mpPlotWindowContainer->tileSubWindows();
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpModelSwitcherToolButton->setEnabled(true);
@@ -2376,8 +2420,6 @@ void MainWindow::switchToPlottingPerspective()
   // if not plotwindow is opened then open one for user
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
     mpPlotWindowContainer->addPlotWindow();
-  } else {
-    mpPlotWindowContainer->getCurrentWindow()->setWindowState(Qt::WindowMaximized);
   }
   mpVariablesDockWidget->show();
   mpPlotToolBar->setEnabled(true);

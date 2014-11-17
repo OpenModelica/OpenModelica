@@ -230,6 +230,8 @@ private:
   QAction *mpZoomInAction;
   QAction *mpZoomOutAction;
   QAction *mpShowAlgorithmicDebuggerAction;
+  QAction *mpCascadeWindowsAction;
+  QAction *mpTileWindowsAction;
   // Simulation Menu
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
@@ -308,6 +310,8 @@ public slots:
   void zoomIn();
   void zoomOut();
   void showAlgorithmicDebugger();
+  void cascadeWindows();
+  void tileWindows();
   void instantiatesModel();
   void checkModel();
   void checkAllModels();

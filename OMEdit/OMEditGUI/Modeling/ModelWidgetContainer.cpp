@@ -2823,85 +2823,57 @@ ModelWidgetContainer::ModelWidgetContainer(MainWindow *pParent)
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView)
 {
-  if (pModelWidget->isVisible() || pModelWidget->isMinimized())
-  {
+  if (pModelWidget->isVisible() || pModelWidget->isMinimized()) {
     QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
-    for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--)
-    {
+    for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
       ModelWidget *pSubModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
-      if (pSubModelWidget == pModelWidget)
-      {
+      if (pSubModelWidget == pModelWidget) {
         pModelWidget->show();
-        pModelWidget->setWindowState(Qt::WindowMaximized);
         setActiveSubWindow(subWindowsList.at(i));
       }
     }
-  }
-  else
-  {
+  } else {
+    static int firstSubWindow = 0;
     QMdiSubWindow *pSubWindow = addSubWindow(pModelWidget);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
-    //! @note remove the Stay on &Top Menu item from subwindows. They raise strange exceptions.
-    if (pSubWindow->systemMenu()->actions().size() > 6)
-    {
-      if (pSubWindow->systemMenu()->actions().at(5)->text().compare("Stay on &Top") == 0)
-      {
-        pSubWindow->systemMenu()->removeAction(pSubWindow->systemMenu()->actions().at(5));
-      }
-    }
     pModelWidget->show();
-    pModelWidget->setWindowState(Qt::WindowMaximized);
+    if (!firstSubWindow) {
+      firstSubWindow = 1;
+      pModelWidget->setWindowState(Qt::WindowMaximized);
+    }
     setActiveSubWindow(pSubWindow);
   }
-  if (!checkPreferedView || pModelWidget->getLibraryTreeNode()->getLibraryType() != LibraryTreeNode::Modelica)
+  if (!checkPreferedView || pModelWidget->getLibraryTreeNode()->getLibraryType() != LibraryTreeNode::Modelica) {
     return;
+  }
   // get the preferred view to display
   mpMainWindow->getOMCProxy()->sendCommand(QString("getNamedAnnotation(").append(pModelWidget->getLibraryTreeNode()->getNameStructure()).append(", preferredView)"));
   QStringList preferredViewList = StringHandler::unparseStrings(mpMainWindow->getOMCProxy()->getResult());
-  if (!preferredViewList.isEmpty())
-  {
+  if (!preferredViewList.isEmpty()) {
     QString preferredView = preferredViewList.at(0);
-    if (preferredView.compare("info") == 0)
-    {
+    if (preferredView.compare("info") == 0) {
       pModelWidget->showDocumentationView();
       loadPreviousViewType(pModelWidget);
-    }
-    else if (preferredView.compare("text") == 0)
-    {
+    } else if (preferredView.compare("text") == 0) {
       pModelWidget->getTextViewToolButton()->setChecked(true);
-    }
-    else
-    {
+    } else {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
-  }
-  else if (pModelWidget->getLibraryTreeNode()->isDocumentationClass())
-  {
+  } else if (pModelWidget->getLibraryTreeNode()->isDocumentationClass()) {
     pModelWidget->showDocumentationView();
     loadPreviousViewType(pModelWidget);
-  }
-  else if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView)
-  {
+  } else if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
     loadPreviousViewType(pModelWidget);
-  }
-  else
-  {
+  } else {
     QString defaultView = mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getDefaultView();
-    if (defaultView.compare(Helper::iconView) == 0)
-    {
+    if (defaultView.compare(Helper::iconView) == 0) {
       pModelWidget->getIconViewToolButton()->setChecked(true);
-    }
-    else if (defaultView.compare(Helper::textView) == 0)
-    {
+    } else if (defaultView.compare(Helper::textView) == 0) {
       pModelWidget->getTextViewToolButton()->setChecked(true);
-    }
-    else if (defaultView.compare(Helper::documentationView) == 0)
-    {
+    } else if (defaultView.compare(Helper::documentationView) == 0) {
       pModelWidget->showDocumentationView();
       loadPreviousViewType(pModelWidget);
-    }
-    else
-    {
+    } else {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
   }

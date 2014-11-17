@@ -92,7 +92,11 @@ bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
   return QMdiArea::eventFilter(pObject, pEvent);
 }
 
-void PlotWindowContainer::addPlotWindow()
+/*!
+  Adds a new Plot Window.
+  \param maximized - sets the window state maximized
+  */
+void PlotWindowContainer::addPlotWindow(bool maximized)
 {
   try
   {
@@ -105,8 +109,9 @@ void PlotWindowContainer::addPlotWindow()
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/plot-window.svg"));
     pPlotWindow->show();
-    pPlotWindow->setWindowState(Qt::WindowMaximized);
-    setActiveSubWindow(pSubWindow);
+    if (maximized) {
+      pPlotWindow->setWindowState(Qt::WindowMaximized);
+    }
   }
   catch (PlotException &e)
   {
@@ -115,6 +120,10 @@ void PlotWindowContainer::addPlotWindow()
   }
 }
 
+/*!
+  Adds a new Plot Parametric Window.
+  \param maximized - sets the window state maximized
+  */
 void PlotWindowContainer::addParametricPlotWindow()
 {
   try
@@ -128,8 +137,6 @@ void PlotWindowContainer::addParametricPlotWindow()
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/parametric-plot-window.svg"));
     pPlotWindow->show();
-    pPlotWindow->setWindowState(Qt::WindowMaximized);
-    setActiveSubWindow(pSubWindow);
   }
   catch (PlotException &e)
   {

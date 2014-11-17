@@ -397,10 +397,11 @@ void OptionsDialog::saveGeneralSettings()
 {
   // save Language option
   QString language;
-  if (mpGeneralSettingsPage->getLanguageComboBox()->currentIndex() == 0)
+  if (mpGeneralSettingsPage->getLanguageComboBox()->currentIndex() == 0) {
     language = QLocale::system().name();
-  else
+  } else {
     language = mpGeneralSettingsPage->getLanguageComboBox()->itemData(mpGeneralSettingsPage->getLanguageComboBox()->currentIndex()).toLocale().name();
+  }
   mpSettings->setValue("language", language);
   // save working directory
   mpMainWindow->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
@@ -421,34 +422,26 @@ void OptionsDialog::saveGeneralSettings()
   getMainWindow()->getLibraryTreeWidget()->showProtectedClasses(mpGeneralSettingsPage->getShowProtectedClasses());
   // save modeling view mode
   mpSettings->setValue("modeling/viewmode", mpGeneralSettingsPage->getModelingViewMode());
-  if (mpGeneralSettingsPage->getModelingViewMode().compare(Helper::subWindow) == 0)
-  {
+  if (mpGeneralSettingsPage->getModelingViewMode().compare(Helper::subWindow) == 0) {
     mpMainWindow->getModelWidgetContainer()->setViewMode(QMdiArea::SubWindowView);
     ModelWidget *pModelWidget = mpMainWindow->getModelWidgetContainer()->getCurrentModelWidget();
-    if (pModelWidget)
-    {
+    if (pModelWidget) {
       pModelWidget->show();
       pModelWidget->setWindowState(Qt::WindowMaximized);
     }
-  }
-  else
-  {
+  } else {
     mpMainWindow->getModelWidgetContainer()->setViewMode(QMdiArea::TabbedView);
   }
   // save plotting view mode
   mpSettings->setValue("plotting/viewmode", mpGeneralSettingsPage->getPlottingViewMode());
-  if (mpGeneralSettingsPage->getPlottingViewMode().compare(Helper::subWindow) == 0)
-  {
+  if (mpGeneralSettingsPage->getPlottingViewMode().compare(Helper::subWindow) == 0) {
     mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
     OMPlot::PlotWindow *pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
-    if (pPlotWindow)
-    {
+    if (pPlotWindow) {
       pPlotWindow->show();
       pPlotWindow->setWindowState(Qt::WindowMaximized);
     }
-  }
-  else
-  {
+  } else {
     mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
   }
   // save default view
@@ -460,8 +453,7 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("autoSave/enableOneFilePackages", mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->isChecked());
   mpMainWindow->toggleAutoSave();
   // save welcome page
-  switch (mpGeneralSettingsPage->getWelcomePageView())
-  {
+  switch (mpGeneralSettingsPage->getWelcomePageView()) {
     case 2:
       mpMainWindow->getWelcomePageWidget()->getSplitter()->setOrientation(Qt::Vertical);
       break;
@@ -471,16 +463,14 @@ void OptionsDialog::saveGeneralSettings()
       break;
   }
   mpSettings->setValue("welcomePage/view", mpGeneralSettingsPage->getWelcomePageView());
-  if (mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked())
-  {
+  bool showLatestNews = mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked();
+  if (mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) {
     mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->show();
     mpMainWindow->getWelcomePageWidget()->addLatestNewsListItems();
-  }
-  else
-  {
+  } else if (!showLatestNews) {
     mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->hide();
   }
-  mpSettings->setValue("welcomePage/showLatestNews", mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked());
+  mpSettings->setValue("welcomePage/showLatestNews", showLatestNews);
 }
 
 //! Saves the Libraries section settings to omedit.ini

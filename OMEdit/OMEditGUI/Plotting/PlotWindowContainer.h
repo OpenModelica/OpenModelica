@@ -53,7 +53,7 @@ public:
   OMPlot::PlotWindow* getCurrentWindow();
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 public slots:
-  void addPlotWindow();
+  void addPlotWindow(bool maximized = false);
   void addParametricPlotWindow();
   void clearPlotWindow();
   void updatePlotWindows(QString variable);
