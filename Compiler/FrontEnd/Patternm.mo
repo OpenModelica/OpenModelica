@@ -655,11 +655,12 @@ public function elabMatchExpression
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
-  input Integer numError;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outSt;
+protected
+  Integer numError := Error.getNumErrorMessages();
 algorithm
   (outCache,outExp,outProperties,outSt) := matchcontinue (inCache,inEnv,matchExp,impl,inSt,performVectorization,inPrefix,info,numError)
     local

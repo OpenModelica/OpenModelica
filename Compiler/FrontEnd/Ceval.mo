@@ -104,9 +104,9 @@ public function ceval "
   input FCore.Graph inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
-  input Option<GlobalScript.SymbolTable> inST;
-  input Absyn.Msg inMsg;
-  input Integer numIter "Maximum recursion depth";
+  input Option<GlobalScript.SymbolTable> inST := NONE();
+  input Absyn.Msg inMsg := Absyn.NO_MSG();
+  input Integer numIter := 0 "Maximum recursion depth";
   output FCore.Cache outCache;
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;

@@ -3398,41 +3398,31 @@ algorithm
   end match;
 end isVar;
 
-public function containReal "Returns true if a builtin type, or array-type is Real."
-  input list<DAE.Type> inTypeLst;
-  output Boolean outBoolean;
+public function propsContainReal
+  "Returns true if any of the given properties contains a Real type."
+  input list<DAE.Properties> inProperties;
+  output Boolean outHasReal := false;
 algorithm
-  outBoolean := matchcontinue (inTypeLst)
-    local
-      Boolean r1,r2,res;
-      Type tp;
-      list<DAE.Type> xs;
+  for prop in inProperties loop
+    if isReal(getPropType(prop)) then
+      outHasReal := true;
+      break;
+    end if;
+  end for;
+end propsContainReal;
 
-    case (DAE.T_ARRAY(ty = tp) :: xs)
-      equation
-        r1 = containReal({tp});
-        r2 = containReal(xs);
-        res = boolOr(r1, r2);
-      then
-        res;
-
-    case (DAE.T_SUBTYPE_BASIC(complexType = tp)::xs)
-      equation
-        r1 = containReal({tp});
-        r2 = containReal(xs);
-        res = boolOr(r1,r2);
-      then res;
-
-    case (DAE.T_REAL() :: _) then true;
-
-    case (_ :: xs)
-      equation
-        res = containReal(xs);
-      then
-        res;
-
-    else false;
-  end matchcontinue;
+public function containReal
+  "Returns true if a builtin type, or array-type is Real."
+  input list<DAE.Type> inTypes;
+  output Boolean outHasReal;
+algorithm
+  for ty in inTypes loop
+    if isReal(ty) then
+      outHasReal := true;
+      return;
+    end if;
+  end for;
+  outHasReal := false;
 end containReal;
 
 public function flattenArrayType " Returns the element type of a Type and the list of dimensions of the type.
@@ -5163,7 +5153,7 @@ public function constAnd "Returns the *and* operator of two Consts.
   input DAE.Const inConst2;
   output DAE.Const outConst;
 algorithm
-  outConst := matchcontinue (inConst1,inConst2)
+  outConst := match(inConst1,inConst2)
     case (DAE.C_CONST(),DAE.C_CONST()) then DAE.C_CONST();
     case (DAE.C_CONST(),DAE.C_PARAM()) then DAE.C_PARAM();
     case (DAE.C_PARAM(),DAE.C_CONST()) then DAE.C_PARAM();
@@ -5171,7 +5161,7 @@ algorithm
     case (DAE.C_UNKNOWN(), _) then DAE.C_UNKNOWN();
     case (_, DAE.C_UNKNOWN()) then DAE.C_UNKNOWN();
     else DAE.C_VAR();
-  end matchcontinue;
+  end match;
 end constAnd;
 
 protected function constTupleAnd "Returns the *and* operator of two TupleConsts
@@ -8309,6 +8299,17 @@ algorithm
     else false;
   end match;
 end isFunctionReferenceVar;
+
+public function isFunctionPointer
+  input DAE.Type inType;
+  output Boolean outIsFunPtr;
+algorithm
+  outIsFunPtr := match inType
+    case DAE.T_FUNCTION(functionAttributes =
+      DAE.FUNCTION_ATTRIBUTES(isFunctionPointer = true)) then true;
+    else false;
+  end match;
+end isFunctionPointer;
 
 public function filterRecordComponents
   input list<DAE.Var> inRecordVars;

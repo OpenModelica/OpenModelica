@@ -790,6 +790,7 @@ algorithm
       equation
         (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
         (cache,sexp,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
+
         (_,value,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Absyn.MSG(info),0);
       then
         (value,st_2);

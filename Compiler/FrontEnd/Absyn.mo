@@ -5342,6 +5342,16 @@ algorithm
   end match;
 end isCref;
 
+public function isTuple
+  input Exp inExp;
+  output Boolean outIsTuple;
+algorithm
+  outIsTuple := match inExp
+    case TUPLE() then true;
+    else false;
+  end match;
+end isTuple;
+
 public function isDerCref
   input Exp exp;
   output Boolean b;
