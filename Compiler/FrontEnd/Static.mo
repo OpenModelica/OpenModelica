@@ -1326,7 +1326,7 @@ algorithm
       DAE.Dimensions dims;
       FCore.Cache cache;
       FCore.Graph env;
-      DAE.Const iterconst,guardconst;
+      DAE.Const iterconst,guardconst, c;
       DAE.Type fulliterty,iterty;
       Option<GlobalScript.SymbolTable> st;
       Absyn.ForIterators iterators;
@@ -1336,7 +1336,8 @@ algorithm
       equation
         (cache,iterExp,DAE.PROP(fulliterty,iterconst),st) = elabExpInExpression(cache, env, aiterExp, impl, st, doVect,pre,info);
         // We need to evaluate the iterator because the rest of the compiler is stupid
-        (cache,iterExp,_) = Ceval.cevalIfConstant(cache,env,iterExp,DAE.PROP(fulliterty,DAE.C_CONST()),impl, info);
+        c = if FGraph.inFunctionScope(inEnv) then iterconst else DAE.C_CONST();
+        (cache,iterExp,_) = Ceval.cevalIfConstant(cache,env,iterExp,DAE.PROP(fulliterty,c),impl, info);
         (iterty,dim) = Types.unliftArrayOrList(fulliterty);
 
         // print("iterator type: " + Types.unparseType(iterty) + "\n");

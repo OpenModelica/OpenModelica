@@ -3493,9 +3493,9 @@ protected function cevalBuiltinMod "author: LP
   input Integer numIter;
   output FCore.Cache outCache;
   output Values.Value outValue;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outST;
 algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  (outCache,outValue,outST):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Real rv1,rv2,rva,rvb,rvc,rvd;
@@ -3598,9 +3598,9 @@ protected function cevalBuiltinMax "author: LP
   input Integer numIter;
   output FCore.Cache outCache;
   output Values.Value outValue;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outST;
 algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  (outCache,outValue,outST):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
@@ -3633,61 +3633,33 @@ protected function cevalBuiltinMax2
 algorithm
   outValue := match (v1,v2)
     local
-      Integer i1,i2,i;
-      Real r1,r2,r;
-      Boolean b1,b2,b;
-    case (Values.INTEGER(i1),Values.INTEGER(i2))
-      equation
-        i = intMax(i1, i2);
-      then Values.INTEGER(i);
-    case (Values.REAL(r1),Values.REAL(r2))
-      equation
-        r = realMax(r1, r2);
-      then Values.REAL(r);
-    case (Values.BOOL(b1),Values.BOOL(b2))
-      equation
-        b = boolOr(b1, b2);
-      then Values.BOOL(b);
+      Integer i1, i2;
+      Real r1, r2;
+      Boolean b1, b2;
+      String s1, s2;
+
+    case (Values.INTEGER(i1), Values.INTEGER(i2)) then Values.INTEGER(max(i1, i2));
+    case (Values.REAL(r1), Values.REAL(r2)) then Values.REAL(max(r1, r2));
+    case (Values.BOOL(b1), Values.BOOL(b2)) then Values.BOOL(b1 or b2);
+    else
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        s1 := ValuesUtil.valString(v1);
+        s2 := ValuesUtil.valString(v2);
+        Debug.traceln("- Ceval.cevalBuiltinMin2 failed: min(" + s1 + ", " + s2 + ")");
+      then
+        fail();
   end match;
 end cevalBuiltinMax2;
 
 protected function cevalBuiltinMaxArr "Helper function to cevalBuiltinMax."
   input Values.Value inValue;
   output Values.Value outValue;
+protected
+  list<Values.Value> vals;
 algorithm
-  outValue := match (inValue)
-    local
-      Integer i1,i2,resI,i;
-      Real r,r1,r2,resR;
-      Values.Value v1,v2,v,vl;
-      list<Values.Value> vls;
-
-    case (Values.INTEGER(integer = i)) then Values.INTEGER(i);
-    case (Values.REAL(real = r)) then Values.REAL(r);
-
-    case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
-      equation
-        v1 = cevalBuiltinMaxArr(v1);
-        v2 = cevalBuiltinMaxArr(ValuesUtil.makeArray(vls));
-        v = match(v1, v2)
-              case (Values.INTEGER(i1), Values.INTEGER(i2)) then Values.INTEGER(intMax(i1, i2));
-              case (Values.REAL(r1), Values.INTEGER(r2)) then Values.REAL(realMax(r1, r2));
-            end match;
-      then
-        v;
-
-    case (Values.ARRAY(valueLst = {vl}))
-      equation
-        v = cevalBuiltinMaxArr(vl);
-      then
-        v;
-
-    else
-      equation
-        //print("- Ceval.cevalBuiltinMax2 failed\n");
-      then
-        fail();
-  end match;
+  Values.ARRAY(valueLst = vals) := inValue;
+  outValue := cevalBuiltinMax2(v for v in vals);
 end cevalBuiltinMaxArr;
 
 protected function cevalBuiltinMin "author: PA
@@ -3701,9 +3673,9 @@ protected function cevalBuiltinMin "author: PA
   input Integer numIter;
   output FCore.Cache outCache;
   output Values.Value outValue;
-  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outST;
 algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  (outCache,outValue,outST):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
       Values.Value v,v1,v2,v_1;
@@ -3723,7 +3695,7 @@ algorithm
       equation
         (cache,v1,_) = ceval(cache,env, s1, impl, st,msg,numIter+1);
         (cache,v2,_) = ceval(cache,env, s2, impl, st,msg,numIter+1);
-        v = cevalBuiltinMin2(v1, v2, msg);
+        v = cevalBuiltinMin2(v1, v2);
       then
         (cache,v,st);
   end match;
@@ -3732,71 +3704,39 @@ end cevalBuiltinMin;
 protected function cevalBuiltinMin2
   input Values.Value v1;
   input Values.Value v2;
-  input Absyn.Msg inMsg;
   output Values.Value outValue;
 algorithm
-  outValue := match (v1, v2, inMsg)
+  outValue := match (v1, v2)
     local
-      Integer i1,i2,i;
-      Real r1,r2,r;
-      Boolean b1,b2,b;
-      String s1,s2,s;
+      Integer i1, i2;
+      Real r1, r2;
+      Boolean b1, b2;
+      String s1, s2;
       SourceInfo info;
 
-    case (Values.INTEGER(i1), Values.INTEGER(i2), _)
-      equation
-        i = intMin(i1, i2);
-      then Values.INTEGER(i);
-    case (Values.REAL(r1), Values.REAL(r2), _)
-      equation
-        r = realMin(r1, r2);
-      then Values.REAL(r);
-    case (Values.BOOL(b1), Values.BOOL(b2), _)
-      equation
-        b = boolAnd(b1, b2);
-      then Values.BOOL(b);
-    case (_, _, Absyn.MSG(info = info))
-      equation
-        s1 = ValuesUtil.valString(v1);
-        s2 = ValuesUtil.valString(v2);
-        s = stringAppendList({"cevalBuiltinMin2 failed: min(", s1, ", ", s2, ")"});
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, info);
-      then fail();
+    case (Values.INTEGER(i1), Values.INTEGER(i2)) then Values.INTEGER(min(i1, i2));
+    case (Values.REAL(r1), Values.REAL(r2)) then Values.REAL(min(r1, r2));
+    case (Values.BOOL(b1), Values.BOOL(b2)) then Values.BOOL(b1 and b2); 
+    else
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        s1 := ValuesUtil.valString(v1);
+        s2 := ValuesUtil.valString(v2);
+        Debug.traceln("- Ceval.cevalBuiltinMin2 failed: min(" + s1 + ", " + s2 + ")");
+      then
+        fail();
+
   end match;
 end cevalBuiltinMin2;
 
 protected function cevalBuiltinMinArr "Helper function to cevalBuiltinMin."
   input Values.Value inValue;
   output Values.Value outValue;
+protected
+  list<Values.Value> vals;
 algorithm
-  outValue := match (inValue)
-    local
-      Integer i1,i2,resI,i;
-      Values.Value v1,v2,v,vl;
-      list<Values.Value> vls;
-      Real r,r1,r2,resR;
-
-    case (Values.INTEGER(integer = i)) then Values.INTEGER(i);
-    case (Values.REAL(real = r)) then Values.REAL(r);
-
-    case (Values.ARRAY(valueLst = (v1 :: (vls as (_ :: _)))))
-      equation
-        v1 = cevalBuiltinMinArr(v1);
-        v2 = cevalBuiltinMinArr(ValuesUtil.makeArray(vls));
-        v = match(v1, v2)
-              case (Values.INTEGER(i1), Values.INTEGER(i2)) then Values.INTEGER(intMin(i1, i2));
-              case (Values.REAL(r1), Values.REAL(r2)) then Values.REAL(realMin(r1, r2));
-            end match;
-      then
-        v;
-
-    case (Values.ARRAY(valueLst = {vl}))
-      equation
-        (v) = cevalBuiltinMinArr(vl);
-      then
-        v;
-
-  end match;
+  Values.ARRAY(valueLst = vals) := inValue;
+  outValue := cevalBuiltinMin2(v for v in vals);
 end cevalBuiltinMinArr;
 
 protected function cevalBuiltinSimplify "author: LP
