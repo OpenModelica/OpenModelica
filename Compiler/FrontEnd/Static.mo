@@ -150,7 +150,7 @@ algorithm
         Integer idx;
 
       // Hack to make enumeration arrays elaborate a _lot_ faster
-      case (Absyn.CREF(cr as Absyn.CREF_FULLYQUALIFIED()), 
+      case (Absyn.CREF(cr as Absyn.CREF_FULLYQUALIFIED()),
             DAE.T_ENUMERATION(path = path2, names = names))
         algorithm
           path := Absyn.crefToPath(cr);
@@ -169,7 +169,7 @@ algorithm
           last_ty := Types.getPropType(prop);
         then
           ();
-          
+
     end matchcontinue;
 
     outExpl := exp :: outExpl;
@@ -439,7 +439,7 @@ algorithm
 
   (outCache, outExp, outProperties as DAE.PROP(ty, c), outST) :=
   elabExpInExpression(inCache, inEnv, e, inImplicit, inST, inDoVect, inPrefix, inInfo);
-   
+
   if not (valueEq(op, Absyn.UPLUS()) and
           Types.isIntegerOrRealOrSubTypeOfEither(Types.arrayElementType(ty)))
   then
@@ -546,7 +546,7 @@ algorithm
         ();
   end match;
 end elabExp_Call;
-        
+
 protected function elabExp_PartEvalFunction
   "turns an Absyn.PARTEVALFUNCTION into an DAE.PARTEVALFUNCTION"
   extends PartialElabExpFunc;
@@ -614,19 +614,19 @@ protected
   Option<Absyn.Exp> ostep;
   DAE.Exp start_exp, step_exp, stop_exp;
   Option<DAE.Exp> ostep_exp := NONE();
-  DAE.Type start_ty, step_ty, stop_ty, ety, ty; 
+  DAE.Type start_ty, step_ty, stop_ty, ety, ty;
   Option<DAE.Type> ostep_ty := NONE();
   DAE.Const start_c, step_c, stop_c, c;
 algorithm
   Absyn.RANGE(start = start, step = ostep, stop = stop) := inExp;
-  
+
   // Elaborate start and stop of the range.
   (outCache, start_exp, DAE.PROP(start_ty, start_c), outST) :=
     elabExpInExpression(inCache, inEnv, start, inImplicit, inST, inDoVect, inPrefix, inInfo);
   (outCache, stop_exp, DAE.PROP(stop_ty, stop_c), outST) :=
     elabExpInExpression(outCache, inEnv, stop, inImplicit, outST, inDoVect, inPrefix, inInfo);
   c := Types.constAnd(start_c, stop_c);
-      
+
   // If step was given, elaborate it too.
   if isSome(ostep) then
     SOME(step) := ostep;
@@ -711,7 +711,7 @@ algorithm
 
   (outCache, outExp, DAE.PROP(ty, c), dim1, dim2) := elabMatrixSemi(outCache,
     inEnv, dess, props, inImplicit, inST, have_real, nmax, inDoVect, inPrefix, inInfo);
-  
+
   if have_real then
     outExp := DAE.CAST(DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {dim1, dim2}, DAE.emptyTypeSource), outExp);
   end if;
@@ -759,7 +759,7 @@ algorithm
 
   try
     // Replace all metarecords with uniontypes with.
-    ty1 := Types.getUniontypeIfMetarecordReplaceAllSubtypes(Types.getPropType(prop1)); 
+    ty1 := Types.getUniontypeIfMetarecordReplaceAllSubtypes(Types.getPropType(prop1));
     ty2 := Types.getUniontypeIfMetarecordReplaceAllSubtypes(ty2);
     c1 := Types.propAllConst(prop1);
     ty := Types.getUniontypeIfMetarecordReplaceAllSubtypes(
@@ -793,7 +793,7 @@ protected
   DAE.Type ty;
 algorithm
   Absyn.LIST(exps = es) := inExp;
-  
+
   // The Absyn.LIST() node is used for list expressions that are transformed
   // from Absyn.ARRAY()
   if listEmpty(es) then
@@ -971,7 +971,7 @@ This is used by Inst.mo when handling a var := {...} statement"
 algorithm
   (outCache, outExp, outProperties, outST) := matchcontinue(inExpList)
     local
-      list<DAE.Exp> expl; 
+      list<DAE.Exp> expl;
       list<DAE.Properties> props;
       list<DAE.Type> types;
       DAE.Const c;
@@ -1026,7 +1026,7 @@ algorithm
       algorithm
         str := Dump.unparseClassPart(cp);
         Error.addInternalError("Static.fromEquationsToAlgAssignments: Unknown classPart in match expression:\n" + str, sourceInfo());
-      then 
+      then
         fail();
   end match;
 end fromEquationsToAlgAssignments;
@@ -1035,7 +1035,7 @@ protected function fromEquationsToAlgAssignmentsWork
   "Converts equations to algorithm assignments.
    Matchcontinue expressions may contain statements that you won't find
    in a normal equation section. For instance:
- 
+
      case(...)
        equation
          (var1, _, MYREC(...)) = func(...);
@@ -1288,7 +1288,7 @@ protected function fixDimsIterType
 algorithm
   outDims := match(iterType)
     case Absyn.COMBINE() then dims;
-    
+
     // TODO: Get the best dimension (if several, choose the one that is integer
     // constant; we do run-time checks to assert they are all equal)
     else {listHead(dims)};
@@ -1383,7 +1383,7 @@ algorithm
         cr1 = Absyn.CREF_IDENT(foldId, {});
         cr2 = Absyn.CREF_IDENT(resultId, {});
         exp = Absyn.BINARY(Absyn.CREF(cr2), Absyn.ADD(), Absyn.CREF(cr1));
-      then 
+      then
         (env, SOME(exp));
 
     case Absyn.IDENT("product")
@@ -1393,7 +1393,7 @@ algorithm
         cr1 = Absyn.CREF_IDENT(foldId, {});
         cr2 = Absyn.CREF_IDENT(resultId, {});
         exp = Absyn.BINARY(Absyn.CREF(cr2), Absyn.MUL(), Absyn.CREF(cr1));
-      then 
+      then
         (env, SOME(exp));
 
     else
@@ -1443,21 +1443,21 @@ algorithm
     case (Absyn.IDENT(name = "array"), _)
       algorithm
         ty := List.foldr(dims, Types.liftArray, inType);
-      then 
+      then
         (inExp, ty, ty, SOME(Values.ARRAY({},{0})), fn);
 
     case (Absyn.IDENT(name = "list"), _)
       algorithm
         (exp, ty) := Types.matchType(inExp, inType, DAE.T_METABOXED_DEFAULT, true);
         ty := List.foldr(dims, Types.liftList, ty);
-      then 
+      then
         (exp, ty, ty, SOME(Values.LIST({})), fn);
 
     case (Absyn.IDENT(name = "listReverse"), _)
       algorithm
         (exp, ty) := Types.matchType(inExp, inType, DAE.T_METABOXED_DEFAULT, true);
         ty := List.foldr(dims, Types.liftList, ty);
-      then 
+      then
         (exp, ty, ty, SOME(Values.LIST({})), fn);
 
     case (Absyn.IDENT("min"), DAE.T_REAL())
@@ -1480,7 +1480,7 @@ algorithm
       algorithm
         v := Values.BOOL(true);
         (exp, ty) := Types.matchType(inExp, inType, DAE.T_BOOL_DEFAULT, true);
-      then 
+      then
         (exp, ty, ty, SOME(v), fn);
 
     case (Absyn.IDENT("min"), DAE.T_STRING())
@@ -1516,7 +1516,7 @@ algorithm
       algorithm
         v := Values.STRING("");
         (exp, ty) := Types.matchType(inExp, inType, DAE.T_STRING_DEFAULT, true);
-      then 
+      then
         (exp, ty, ty, SOME(v), fn);
 
     case (Absyn.IDENT("sum"), DAE.T_REAL())
@@ -1700,7 +1700,7 @@ protected function constToVariability "translates an DAE.Const to a SCode.Variab
   input DAE.Const const;
   output SCode.Variability variability;
 algorithm
-  variability := match const 
+  variability := match const
     case DAE.C_VAR()  then SCode.VAR();
     case DAE.C_PARAM() then SCode.PARAM();
     case DAE.C_CONST() then SCode.CONST();
@@ -1742,7 +1742,7 @@ algorithm
   end match;
 end constructArrayType;
 
-protected function elabCodeType 
+protected function elabCodeType
   "This function will construct the correct type for the given Code expression.
    The types are built-in classes of different types. E.g. the class TypeName is
    the type of Code expressions corresponding to a type name Code expression."
@@ -2347,7 +2347,7 @@ algorithm
 
     outExpl := exp :: outExpl;
   end for;
-  
+
   outExpl := listReverse(outExpl);
 end elabArrayReal2;
 
@@ -2737,7 +2737,7 @@ protected
   Absyn.Exp e;
 algorithm
   if listLength(inPosArgs) <> 1 or not listEmpty(inNamedArgs) then
-    printBuiltinFnArgError("cardinality", "", inPosArgs, inNamedArgs, inPrefix, inInfo); 
+    printBuiltinFnArgError("cardinality", "", inPosArgs, inNamedArgs, inPrefix, inInfo);
   end if;
 
   {e} := inPosArgs;
@@ -2791,14 +2791,14 @@ algorithm
 
   (outCache, dexpr, outProperties as DAE.PROP(ty, c), _) :=
     elabExpInExpression(outCache, inEnv, expr, inImplicit, NONE(), true, inPrefix, inInfo);
-  
+
   if not (Types.isReal(ty) or Types.isRecordWithOnlyReals(ty)) then
     msg_str := ", second argument must be a Real, array of Reals or record only containing Reals";
     printBuiltinFnArgError("smooth", msg_str, inPosArgs, inNamedArgs, inPrefix, inInfo);
   end if;
 
   ty := Types.simplifyType(ty);
-  outExp := Expression.makePureBuiltinCall("smooth", {dp, dexpr}, ty);  
+  outExp := Expression.makePureBuiltinCall("smooth", {dp, dexpr}, ty);
 end elabBuiltinSmooth;
 
 protected function printBuiltinFnArgError
@@ -3413,7 +3413,7 @@ protected
   Absyn.Exp e, e1, e2;
 algorithm
   replaceWith := Flags.getConfigString(Flags.REPLACE_HOMOTOPY);
-  
+
   // Replace homotopy if Flags.REPLACE_HOMOTOPY is "actual" or "simplified"
   if replaceWith == "actual" or replaceWith == "simplified" then
     {e1, e2} := getHomotopyArguments(inPosArgs, inNamedArgs);
@@ -3606,7 +3606,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinProduct;
 
-protected function elabBuiltinProduct2 
+protected function elabBuiltinProduct2
   "Replaces product({a1,a2,...an}) with a1*a2*...*an} and
    product([a11,a12,...,a1n;...,am1,am2,..amn]) with a11*a12*...*amn"
   input DAE.Exp inExp;
@@ -3680,7 +3680,7 @@ algorithm
   outProperties := DAE.PROP(ty, c);
 end elabBuiltinPre;
 
-protected function elabBuiltinPre2 
+protected function elabBuiltinPre2
   "Help function for elabBuiltinPre, when type is array, send it here."
   input DAE.Exp inExp;
   input DAE.Type inType;
@@ -4198,7 +4198,7 @@ algorithm
       DAE.Exp e1,e2;
       DAE.CallAttributes attr;
 
-    case DAE.CALL(path as Absyn.IDENT("delay"), {e1,e2}, attr) 
+    case DAE.CALL(path as Absyn.IDENT("delay"), {e1,e2}, attr)
       then DAE.CALL(path, {e1,e2,e2}, attr);
 
     else exp;
@@ -5403,11 +5403,11 @@ algorithm
   zero_exp := Expression.makeConstZero(inType);
 
   for e in inExpl loop
-    mat := listAppend(list(zero_exp for i in 1:row_idx), 
+    mat := listAppend(list(zero_exp for i in 1:row_idx),
                  e :: list(zero_exp for i in (row_idx + 2):dim)) :: mat;
     row_idx := row_idx + 1;
   end for;
-  
+
   outRes := DAE.MATRIX(inType, dim, listReverse(mat));
 end elabBuiltinDiagonal2;
 
@@ -6273,7 +6273,7 @@ algorithm
       (outCache, args, _, consts) := elabInputArgs(outCache, inEnv, inPosArgs, inNamedArgs,
           slots, false, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {},
           NONE(), inPrefix, inInfo, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
-    else 
+    else
       // Try the String(val, format = s) format.
       if Types.isRealOrSubTypeReal(ty) then
         format_arg := SOME(DAE.SCONST("f"));
