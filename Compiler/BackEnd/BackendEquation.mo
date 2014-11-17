@@ -373,6 +373,45 @@ algorithm
   end matchcontinue;
 end traversingStateRefFinder;
 
+public function iterationVarsinRelations
+ "From a list of equations return all variables, which used inside 
+  a relation, then this equation system is marked as mixed and also 
+  the indexes of the relations may be used in future."
+  input list<BackendDAE.Equation> inEquationLst;
+  input BackendDAE.Variables inVars;
+  output Boolean mixedSystem;
+  output list<Integer> indexes;
+algorithm
+  (_, (_,(indexes, _))) := traverseBackendDAEExpsEqnList(inEquationLst, Expression.traverseSubexpressionsHelper, (traversingRelationsforIterationVars, ({}, inVars)));
+  mixedSystem := if listLength(indexes)>0 then true else false;
+end iterationVarsinRelations;
+
+protected function traversingRelationsforIterationVars
+  input DAE.Exp inExp;
+  input tuple<list<Integer>, BackendDAE.Variables> inTpl;
+  output DAE.Exp outExp;
+  output tuple<list<Integer>, BackendDAE.Variables> outTpl;
+algorithm
+  (outExp,outTpl) := matchcontinue (inExp,inTpl)
+    local
+      BackendDAE.Variables vars;
+      list<Integer> indexes;
+      DAE.Exp e, e1, e2;
+      Integer index;
+      list<BackendDAE.Var> vlst1,vlst2;
+
+    case (e as DAE.RELATION(exp1=e1, exp2=e2, index=index), (indexes, vars)) 
+      equation
+        vlst1 = expressionVars(e1, vars);
+        vlst2 = expressionVars(e2, vars);
+        //if lists are not empty continue 
+        _::_ = listAppend(vlst1, vlst2);
+    then (e, (index::indexes, vars));
+
+    else (inExp,inTpl);
+  end matchcontinue;
+end traversingRelationsforIterationVars;
+
 public function equationsCrefs "author: PA
   From a list of equations return all occurring variables/component references."
   input list<BackendDAE.Equation> inEquationLst;

@@ -390,7 +390,7 @@ algorithm
       String msg;
       list<DAE.ComponentRef> crlst;
       list<String> slst;
-      Boolean jacConstant;
+      Boolean jacConstant, mixedSystem;
 
     case (compelem::{},BackendDAE.ALGORITHM()::{},var_varindx_lst,_,_,_,_,false)
       equation
@@ -436,6 +436,7 @@ algorithm
         var_lst_1 = List.map(var_lst, transformXToXd);
         vars_1 = BackendVariable.listVar1(var_lst_1);
         eqns_1 = BackendEquation.listEquation(eqn_lst1);
+        (mixedSystem,_) = BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE(),NONE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
@@ -445,7 +446,7 @@ algorithm
         // if constant check for singular jacobian
         true = analyzeConstantJacobian(jacConstant,jac,arrayLength(mt),var_lst,eqn_lst,shared);
       then
-        BackendDAE.EQUATIONSYSTEM(comp,varindxs,BackendDAE.FULL_JACOBIAN(jac),jac_tp);
+        BackendDAE.EQUATIONSYSTEM(comp,varindxs,BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem);
 
     case (_,eqn_lst,var_varindx_lst,BackendDAE.EQSYSTEM(),_,_,_,_)
       equation

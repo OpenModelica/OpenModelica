@@ -390,6 +390,7 @@ uniontype StrongComponent
     list<Integer> vars "be careful with states, this are solved for der(x)";
     Jacobian jac;
     JacobianType jacType;
+    Boolean mixedSystem "true for system that discrete dependecies to the iteration variables";  
   end EQUATIONSYSTEM;
 
   record SINGLEARRAY
@@ -423,6 +424,7 @@ uniontype StrongComponent
     list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
     Boolean linear;
     Jacobian jac;
+    Boolean mixedSystem "true for system that discrete dependecies to the iteration variables";
   end TORNSYSTEM;
 end StrongComponent;
 

@@ -553,6 +553,7 @@ algorithm
       list<BackendDAE.Equation> resEqs;
       list<BackendDAE.StrongComponent> comps, comps2;
       list<list<BackendDAE.Var>> jacValues;
+      Boolean mixedSystem;
     case({eqIdx},{varIdx},_,_,_,_)
       equation
         true = intEq(listLength(eqIdcsIn),1);
@@ -572,7 +573,8 @@ algorithm
         // build an equation system from the rest
         _::jacValues = arrayList(jacValuesIn);
         jac = buildLinearJacobian(jacValues,sccEqs,sccVars);
-        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_LINEAR());
+        mixedSystem = BackendVariable.hasDiscreteVar(tVarsIn);
+        comp = BackendDAE.EQUATIONSYSTEM(eqIdcsIn,varIdcsIn,BackendDAE.FULL_JACOBIAN(jac),BackendDAE.JAC_LINEAR(), mixedSystem);
 
           //BackendDump.dumpVarList(tVarsIn,"tVarsIn");
           //BackendDump.dumpEquationList(resEqsIn,"resEqsIn");

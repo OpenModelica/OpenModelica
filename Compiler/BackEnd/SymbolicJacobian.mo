@@ -1969,8 +1969,9 @@ algorithm
       BackendDAE.Jacobian jacobian;
 
       String name;
+      Boolean mixedSystem;
 
-      case (BackendDAE.TORNSYSTEM(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl, linear=b), _, _, _)
+      case (BackendDAE.TORNSYSTEM(tearingvars=iterationvarsInts, residualequations=residualequations, otherEqnVarTpl=otherEqnVarTpl, linear=b, mixedSystem=mixedSystem), _, _, _)
         equation
           true = (Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN) and not b) or b;
           // get iteration vars
@@ -2008,13 +2009,13 @@ algorithm
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
 
-      then (BackendDAE.TORNSYSTEM(iterationvarsInts, residualequations, otherEqnVarTpl, b, jacobian), shared);
+      then (BackendDAE.TORNSYSTEM(iterationvarsInts, residualequations, otherEqnVarTpl, b, jacobian, mixedSystem), shared);
 
       // do not touch linear and constand systems for now
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_CONSTANT()), _, _, _) then (comp, inShared);
       case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_LINEAR()), _, _, _) then (comp, inShared);
 
-      case (BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts), _, _, _)
+      case (BackendDAE.EQUATIONSYSTEM(eqns=residualequations, vars=iterationvarsInts, mixedSystem=mixedSystem), _, _, _)
         equation
           true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
           // get iteration vars
@@ -2044,7 +2045,7 @@ algorithm
           // generate generic jacobian backend dae
           (jacobian, shared) = getSymbolicJacobian(diffVars, eqns, resVars, oeqns, ovars, inShared, inVars, name);
 
-      then (BackendDAE.EQUATIONSYSTEM(residualequations, iterationvarsInts, jacobian, BackendDAE.JAC_GENERIC()), shared);
+      then (BackendDAE.EQUATIONSYSTEM(residualequations, iterationvarsInts, jacobian, BackendDAE.JAC_GENERIC(), mixedSystem), shared);
 
       case (comp, _, _, _) then (comp, inShared);
   end matchcontinue;

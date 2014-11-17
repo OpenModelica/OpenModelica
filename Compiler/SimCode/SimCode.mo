@@ -410,6 +410,7 @@ uniontype SimEqSystem
     Option<JacobianMatrix> jacobianMatrix;
     Boolean linearTearing;
     Boolean homotopySupport;
+    Boolean mixedSystem;
   end SES_NONLINEAR;
 
   record SES_MIXED

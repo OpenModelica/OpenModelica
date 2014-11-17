@@ -153,18 +153,19 @@ protected function callTearingMethod
   input list<Integer> vindx;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
   input BackendDAE.JacobianType jacType;
+  input Boolean mixedSystem;
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 algorithm
-  (ocomp, outRunMatching) := match(inTearingMethod, isyst, ishared, eindex, vindx, ojac, jacType)
-    case(OMC_TEARING(), _, _, _, _, _, _)
+  (ocomp, outRunMatching) := match(inTearingMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem)
+    case(OMC_TEARING(), _, _, _, _, _, _, _)
    equation
-         (ocomp,outRunMatching)=omcTearing(isyst, ishared, eindex, vindx, ojac, jacType);
+         (ocomp,outRunMatching)=omcTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
       then (ocomp,outRunMatching);
 
-    case(CELLIER_TEARING(), _, _, _, _, _, _)
+    case(CELLIER_TEARING(), _, _, _, _, _, _, _)
    equation
-      (ocomp,outRunMatching)=CellierTearing(isyst, ishared, eindex, vindx, ojac, jacType);
+      (ocomp,outRunMatching)=CellierTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
       then (ocomp,outRunMatching);
 
   end match;
@@ -241,8 +242,9 @@ algorithm
       BackendDAE.StrongComponent comp, comp1;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
       BackendDAE.JacobianType jacType;
+      Boolean mixedSystem;
 
-    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType)), _, _, _) equation
+    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
       equality(jacType = BackendDAE.JAC_LINEAR());
       if Flags.isSet(Flags.TEARING_DUMP) then
         print("\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
@@ -256,11 +258,11 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
       end if;
-      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
+      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
     then (comp1, true);
 
     // tearing of non-linear systems
-    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType)), _, _, _) equation
+    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
       failure(equality(jacType = BackendDAE.JAC_LINEAR()));
       if Flags.isSet(Flags.TEARING_DUMP) then
         print("\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
@@ -268,7 +270,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
       end if;
-      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType);
+      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
     then (comp1, true);
 
     // no component for tearing
@@ -295,6 +297,7 @@ protected function omcTearing "  author: Frenkel TUD 2012-05"
   input list<Integer> vindx;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
   input BackendDAE.JacobianType jacType;
+  input Boolean mixedSystem;
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 protected
@@ -411,7 +414,7 @@ algorithm
   mark := getDependenciesOfVars(othercomps, ass1, ass2, m, mt1, columark, mark);
 
   (residual, mark) := sortResidualDepentOnTVars(residual, tvars, ass1, m, mt1, columark, mark);
-  (ocomp,outRunMatching) := omcTearing4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark);
+  (ocomp,outRunMatching) := omcTearing4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark,mixedSystem);
 
   if Flags.isSet(Flags.TEARING_DUMP) then
      print(if outRunMatching then "\nStatus:\nOk system torn\n\n" else "\nStatus:\nSystem not torn\n\n");
@@ -1601,17 +1604,18 @@ protected function omcTearing4
   input array<Integer> mapIncRowEqn;
   input array<Integer> columark;
   input Integer mark;
+  input Boolean mixedSystem;
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 algorithm
   (ocomp,outRunMatching):=
-    matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark)
+    matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark,mixedSystem)
     local
       list<Integer> ores,residual1,ovars;
       list<tuple<Integer,list<Integer>>> eqnvartpllst;
       array<Integer> eindxarr,varindxarr;
       Boolean linear;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("handle torn System\n");
@@ -1626,10 +1630,10 @@ algorithm
         eqnvartpllst = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,{});
         linear = getLinearfromJacType(jacType);
       then
-        (BackendDAE.TORNSYSTEM(ovars, ores, eqnvartpllst, linear,BackendDAE.EMPTY_JACOBIAN()),true);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+        (BackendDAE.TORNSYSTEM(ovars, ores, eqnvartpllst, linear,BackendDAE.EMPTY_JACOBIAN(),mixedSystem),true);
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
-        (BackendDAE.TORNSYSTEM({}, {}, {}, false, BackendDAE.EMPTY_JACOBIAN()),false);
+        (BackendDAE.TORNSYSTEM({}, {}, {}, false, BackendDAE.EMPTY_JACOBIAN(),mixedSystem),false);
   end matchcontinue;
 end omcTearing4;
 
@@ -1708,6 +1712,7 @@ author: Waurich TUD 2012-10, enhanced: ptaeuber FHB 2013/2014"
   input list<Integer> vindx;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
   input BackendDAE.JacobianType jacType;
+  input Boolean mixedSystem;
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 protected
@@ -1814,7 +1819,7 @@ algorithm
   // assign otherEqnVarTpl:
   otherEqnVarTpl := assignOtherEqnVarTpl(List.flatten(order),eindex,vindx,ass2,mapEqnIncRow,{});
   linear := getLinearfromJacType(jacType);
-  ocomp := BackendDAE.TORNSYSTEM(OutTVars,residual,otherEqnVarTpl,linear,BackendDAE.EMPTY_JACOBIAN());
+  ocomp := BackendDAE.TORNSYSTEM(OutTVars,residual,otherEqnVarTpl,linear,BackendDAE.EMPTY_JACOBIAN(),mixedSystem);
   outRunMatching := true;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of CellierTearing\n" + BORDER + "\n\n");

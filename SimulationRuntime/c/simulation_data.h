@@ -285,6 +285,7 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_integer equationIndex;      /* index for EQUATION_INFO */
 
   modelica_boolean homotopySupport;    /* 1 if homotopy is available, 0 otherwise */
+  modelica_boolean mixedSystem;        /* 1 if the system contains discrete variables, 0 otherwise */
   /* attributes of iteration variables */
   modelica_real *min;
   modelica_real *max;

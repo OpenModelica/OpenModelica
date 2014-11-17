@@ -1718,6 +1718,8 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, Str
        nonLinearSystemData[<%eq.indexNonLinearSystem%>].equationIndex = <%eq.index%>;
        nonLinearSystemData[<%eq.indexNonLinearSystem%>].size = <%size%>;
        nonLinearSystemData[<%eq.indexNonLinearSystem%>].method = 0;
+       nonLinearSystemData[<%eq.indexNonLinearSystem%>].homotopySupport = <%if homotopySupport then '1' else '0'%>;
+       nonLinearSystemData[<%eq.indexNonLinearSystem%>].mixedSystem = <%if mixedSystem then '1' else '0'%>;
        nonLinearSystemData[<%eq.indexNonLinearSystem%>].residualFunc = residualFunc<%eq.index%>;
        nonLinearSystemData[<%eq.indexNonLinearSystem%>].analyticalJacobianColumn = <%generatedJac%>;
        nonLinearSystemData[<%eq.indexNonLinearSystem%>].initialAnalyticalJacobian = <%initialJac%>;
@@ -1787,7 +1789,6 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations, String model
        DATA* data = (DATA*) inData;
        NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
        int i=0;
-       nlsData->homotopySupport = <%if homotopySupport then '1' else '0'%>;
        <%body_initializeStaticNLSData%>
      }
 
