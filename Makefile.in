@@ -83,7 +83,7 @@ qtclients:
 	@echo "*** OpenModelica configured without support for Qt"
 qtclean: qtclean-common
 else ifeq (@IDLCMD@,)
-qtclients:
+qtclients: omedit
 	@echo "*** OpenModelica configured without support for CORBA"
 qtclean: qtclean-common
 else
