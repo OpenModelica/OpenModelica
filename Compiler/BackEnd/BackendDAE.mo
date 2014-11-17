@@ -390,7 +390,7 @@ uniontype StrongComponent
     list<Integer> vars "be careful with states, this are solved for der(x)";
     Jacobian jac;
     JacobianType jacType;
-    Boolean mixedSystem "true for system that discrete dependecies to the iteration variables";  
+    Boolean mixedSystem "true for system that discrete dependecies to the iteration variables";
   end EQUATIONSYSTEM;
 
   record SINGLEARRAY
