@@ -63,8 +63,10 @@ TextAnnotation::TextAnnotation(QString annotation, bool inheritedShape, Graphics
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
   /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
     setFlag(QGraphicsItem::ItemIsMovable);
+    setFlag(QGraphicsItem::ItemSendsGeometryChanges);
+  }
   mpGraphicsView->addShapeObject(this);
   mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));

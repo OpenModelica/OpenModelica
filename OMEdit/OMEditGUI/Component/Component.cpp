@@ -910,15 +910,7 @@ void Component::prepareResizeComponent(ResizerItem *pResizerItem)
 void Component::resizeComponent(int index, QPointF newPosition)
 {
   Q_UNUSED(index);
-  qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-  qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-  // refine snapping if Shift key is pressed
-  if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)){
-    stepX = stepX / 4;
-    stepY = stepY / 4;
-  }
-  newPosition.setX(stepX*floor((newPosition.x())/stepX+0.5));
-  newPosition.setY(stepY*floor((newPosition.y())/stepY+0.5));
+  newPosition = mpGraphicsView->snapPointToGrid(newPosition, mpTransformation);
   float xDistance; //X distance between the current position of the mouse and the starting position mouse
   float yDistance; //Y distance between the current position of the mouse and the starting position mouse
   //Calculates the X distance
@@ -1529,15 +1521,12 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
 {
   QGraphicsItem::itemChange(change, value);
-  if (change == QGraphicsItem::ItemSelectedHasChanged)
-  {
-    if (isSelected())
-    {
+  if (change == QGraphicsItem::ItemSelectedHasChanged) {
+    if (isSelected()) {
       showResizerItems();
       setCursor(Qt::SizeAllCursor);
       // Only allow manipulations on component if the class is not a system library class OR component is not an inherited component.
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent())
-      {
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent()) {
         connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()), Qt::UniqueConnection);
         connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()), Qt::UniqueConnection);
         connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()), Qt::UniqueConnection);
@@ -1564,21 +1553,18 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         connect(mpGraphicsView, SIGNAL(keyPressCtrlRight()), this, SLOT(moveCtrlRight()), Qt::UniqueConnection);
         connect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(componentTransformHasChanged()), Qt::UniqueConnection);
       }
-    }
-    else
-    {
-      if (!mpBottomLeftResizerItem->isPressed())
-        if (!mpTopLeftResizerItem->isPressed())
-          if (!mpTopRightResizerItem->isPressed())
-            if (!mpBottomRightResizerItem->isPressed())
-              hideResizerItems();
-      /* Always hide ResizerItem's for system library class and inherited components. */
-      if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || isInheritedComponent())
+    } else {
+      if (!mpBottomLeftResizerItem->isPressed() && !mpTopLeftResizerItem->isPressed() &&
+          !mpTopRightResizerItem->isPressed() && !mpBottomRightResizerItem->isPressed()) {
         hideResizerItems();
+      }
+      /* Always hide ResizerItem's for system library class and inherited components. */
+      if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || isInheritedComponent()) {
+        hideResizerItems();
+      }
       unsetCursor();
       /* Only allow manipulations on component if the class is not a system library class OR component is not an inherited component. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent())
-      {
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent()) {
         disconnect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
         disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwise()));
@@ -1606,28 +1592,12 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         disconnect(mpGraphicsView, SIGNAL(keyRelease()), this, SIGNAL(componentTransformHasChanged()));
       }
     }
-  }
-  else if (change == QGraphicsItem::ItemPositionHasChanged)
-  {
+  } else if (change == QGraphicsItem::ItemPositionHasChanged) {
     emit componentTransformChange();
   }
   else if (change == QGraphicsItem::ItemPositionChange) {
     // snap to grid while dragging component
-    QPointF newPos = value.toPointF();
-    qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-    qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-    // refine snapping if Shift key is pressed
-    if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-      stepX = stepX / 4;
-      stepY = stepY / 4;
-    }
-    qreal originX = mpTransformation->getOrigin().x();
-    qreal originY = mpTransformation->getOrigin().y();
-    qreal oldXn = (newPos.x() + originX) / stepX;
-    qreal oldYn = (newPos.y() + originY) / stepY;
-    newPos.setX(stepX * floor(oldXn + 0.5) - originX);
-    newPos.setY(stepY * floor(oldYn + 0.5) - originY);
-    return newPos;
+    return mpGraphicsView->snapPointToGrid(value.toPointF(), mpTransformation);
   }
   return value;
 }

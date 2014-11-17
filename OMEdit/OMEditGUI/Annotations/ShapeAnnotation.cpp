@@ -1907,6 +1907,9 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         }
       }
     }
+  } else if (change == QGraphicsItem::ItemPositionChange) {
+    // snap to grid while dragging shapes
+    return mpGraphicsView->snapPointToGrid(value.toPointF(), mpTransformation);
   }
   return value;
 }
@@ -1920,19 +1923,16 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
   */
 void ShapeAnnotation::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (mpGraphicsView)
-  {
-    if (mpGraphicsView->isCreatingConnection())
-    {
+  if (mpGraphicsView) {
+    if (mpGraphicsView->isCreatingConnection()) {
       setFlag(QGraphicsItem::ItemIsSelectable, false);
       setFlag(QGraphicsItem::ItemIsMovable, false);
-    }
-    else
-    {
+    } else {
       setFlag(QGraphicsItem::ItemIsSelectable, true);
       /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
         setFlag(QGraphicsItem::ItemIsMovable, true);
+      }
     }
   }
   QGraphicsItem::mousePressEvent(event);

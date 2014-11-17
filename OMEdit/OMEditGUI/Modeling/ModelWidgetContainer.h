@@ -196,6 +196,7 @@ public:
   void createBitmapShape(QPointF point);
   QRectF itemsBoundingRect();
   QPointF snapPointToGrid(QPointF point);
+  QPointF snapPointToGrid(QPointF point, Transformation *pTransformation);
 private:
   void createActions();
 signals:

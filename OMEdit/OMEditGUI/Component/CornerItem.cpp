@@ -123,6 +123,7 @@ void CornerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
     }
     mClickPos = mapToScene(event->pos());
   }
+  QGraphicsItem::mousePressEvent(event);
 }
 
 /*!
@@ -167,22 +168,8 @@ QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value
       emit cornerItemMoved(mConnectedPointIndex, value.toPointF());
     }
   } else if (change == QGraphicsItem::ItemPositionChange) {
-    // snap to grid while dragging shapes
-    QPointF newPos = value.toPointF();
-    qreal stepX = mpShapeAnnotation->getGraphicsView()->getCoOrdinateSystem()->getHorizontalGridStep();
-    qreal stepY = mpShapeAnnotation->getGraphicsView()->getCoOrdinateSystem()->getVerticalGridStep();
-    // refine snapping if Shift key is pressed
-    if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-      stepX = stepX / 4;
-      stepY = stepY / 4;
-    }
-    qreal originX = mpShapeAnnotation->getTransformation()->getOrigin().x();
-    qreal originY = mpShapeAnnotation->getTransformation()->getOrigin().y();
-    qreal oldXn = (newPos.x() + originX) / stepX;
-    qreal oldYn = (newPos.y() + originY) / stepY;
-    newPos.setX(stepX * floor(oldXn + 0.5) - originX);
-    newPos.setY(stepY * floor(oldYn + 0.5) - originY);
-    return newPos;
+    // snap to grid while resizing shapes
+    return mpShapeAnnotation->getGraphicsView()->snapPointToGrid(value.toPointF(), mpShapeAnnotation->getTransformation());
   }
   return value;
 }
@@ -243,7 +230,6 @@ void ResizerItem::setPassive()
 {
   mPen = mPassivePen;
   setParentItem(0);
-  //mpComponent->getGraphicsView()->scene()->removeItem(this);
 }
 
 /*!

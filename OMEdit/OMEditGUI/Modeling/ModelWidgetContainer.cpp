@@ -846,6 +846,24 @@ QPointF GraphicsView::snapPointToGrid(QPointF point)
   return point;
 }
 
+QPointF GraphicsView::snapPointToGrid(QPointF point, Transformation *pTransformation)
+{
+  qreal stepX = mpCoOrdinateSystem->getHorizontalGridStep();
+  qreal stepY = mpCoOrdinateSystem->getVerticalGridStep();
+  // refine snapping if Shift key is pressed
+  if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+    stepX = stepX / 4;
+    stepY = stepY / 4;
+  }
+  qreal originX = pTransformation->getOrigin().x();
+  qreal originY = pTransformation->getOrigin().y();
+  qreal oldXn = (point.x() + originX) / stepX;
+  qreal oldYn = (point.y() + originY) / stepY;
+  point.setX(stepX * floor(oldXn + 0.5) - originX);
+  point.setY(stepY * floor(oldYn + 0.5) - originY);
+  return point;
+}
+
 void GraphicsView::createActions()
 {
   bool isSystemLibrary = mpModelWidget->getLibraryTreeNode()->isSystemLibrary();
