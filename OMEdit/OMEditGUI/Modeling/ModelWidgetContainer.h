@@ -239,6 +239,7 @@ protected:
   virtual void keyReleaseEvent(QKeyEvent *event);
   virtual void contextMenuEvent(QContextMenuEvent *event);
   virtual void resizeEvent(QResizeEvent *event);
+  virtual void wheelEvent(QWheelEvent *event);
 };
 
 class WelcomePageWidget : public QWidget

@@ -1026,8 +1026,11 @@ void GraphicsView::resetZoom()
 //! @see zoomOut()
 void GraphicsView::zoomIn()
 {
-  scale(1.12, 1.12);
-  setIsCustomScale(true);
+  // zoom in limitation max: 1000%
+  if (matrix().m11() < 34 && matrix().m22() > -34) {
+    scale(1.12, 1.12);
+    setIsCustomScale(true);
+  }
 }
 
 //! Decreases zoom factor by 12%.
@@ -1035,8 +1038,11 @@ void GraphicsView::zoomIn()
 //! @see zoomIn()
 void GraphicsView::zoomOut()
 {
-  scale(1/1.12, 1/1.12);
-  setIsCustomScale(true);
+  // zoom out limitation min: 10%
+  if (matrix().m11() > 0.2 && matrix().m22() < -0.2) {
+    scale(1/1.12, 1/1.12);
+    setIsCustomScale(true);
+  }
 }
 
 //! Selects all objects and connectors.
@@ -1604,6 +1610,33 @@ void GraphicsView::resizeEvent(QResizeEvent *event)
   if (!isCustomScale())
     fitInView(getExtentRectangle(), Qt::KeepAspectRatio);
   QGraphicsView::resizeEvent(event);
+}
+
+/*!
+  Reimplementation of QGraphicsView::wheelEvent.
+  */
+void GraphicsView::wheelEvent(QWheelEvent *event)
+{
+  int numDegrees = event->delta() / 8;
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
+  // If Ctrl key is pressed and user has scrolled vertically then Zoom In/Out based on the scroll distance.
+  if (event->orientation() == Qt::Vertical && controlModifier) {
+    if (event->delta() > 0) {
+      zoomIn();
+    } else {
+      zoomOut();
+    }
+  } else if ((event->orientation() == Qt::Horizontal) || (event->orientation() == Qt::Vertical && shiftModifier)) {
+    // If Shift key is pressed and user has scrolled vertically then scroll the horizontal scrollbars.
+    // If user has scrolled horizontally then scroll the horizontal scrollbars.
+    horizontalScrollBar()->setValue(horizontalScrollBar()->value() - numDegrees);
+  } else if (event->orientation() == Qt::Vertical) {
+    // If user has scrolled vertically then scroll the vertical scrollbars.
+    verticalScrollBar()->setValue(verticalScrollBar()->value() - numDegrees);
+  } else {
+    QGraphicsView::wheelEvent(event);
+  }
 }
 
 WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
