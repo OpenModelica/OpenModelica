@@ -703,7 +703,7 @@ algorithm
         prop = DAE.PROP(resType,DAE.C_VAR());
         et = Types.simplifyType(resType);
         (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
-        elabCases = caseDeadCodeEliminiation(matchTy, elabCases, {}, {}, false);
+        elabCases = caseDeadCodeElimination(matchTy, elabCases, {}, {}, false);
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
         elabCases = optimizeContinueJumps(matchTy, elabCases);
@@ -1540,7 +1540,7 @@ algorithm
   end matchcontinue;
 end filterUnusedDecls;
 
-protected function caseDeadCodeEliminiation
+protected function caseDeadCodeElimination
   "matchcontinue: Removes empty, failing cases
   match: Removes empty cases that can't be matched by subsequent cases
   match: Removes cases that can't be reached because a previous case has a dominating pattern
@@ -1561,28 +1561,28 @@ algorithm
       list<DAE.MatchCase> acc;
 
     case (_,{},_,acc,false) then listReverse(acc);
-    case (_,{},_,acc,true) then caseDeadCodeEliminiation(matchType,listReverse(acc),{},{},false);
+    case (_,{},_,acc,true) then caseDeadCodeElimination(matchType,listReverse(acc),{},{},false);
     case (_,DAE.CASE(body={},result=NONE(),info=info)::{},_,acc,_)
       equation
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Last pattern is empty"}, info);
-      then caseDeadCodeEliminiation(matchType,listReverse(acc),{},{},false);
+      then caseDeadCodeElimination(matchType,listReverse(acc),{},{},false);
         /* Tricky to get right; I'll try again later as it probably only gives marginal results anyway
     case (Absyn.MATCH(),DAE.CASE(patterns=pats,info=info)::rest,prevPatterns as _::_,acc,iter)
       equation
         oinfo = findOverlappingPattern(pats,acc);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Unreachable pattern"}, info);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Shadowing case"}, oinfo);
-      then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
+      then caseDeadCodeElimination(matchType,rest,pats::prevPatterns,acc,true);
       */
     case (Absyn.MATCHCONTINUE(),DAE.CASE(patterns=pats,body={},result=NONE(),info=info)::rest,_,acc,_)
       equation
         true = Flags.isSet(Flags.PATTERNM_DCE);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
-        acc = caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
+        acc = caseDeadCodeElimination(matchType,rest,pats::prevPatterns,acc,true);
       then acc;
-    case (_,(case_ as DAE.CASE(patterns=pats))::rest,_,acc,_) then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,case_::acc,iter);
+    case (_,(case_ as DAE.CASE(patterns=pats))::rest,_,acc,_) then caseDeadCodeElimination(matchType,rest,pats::prevPatterns,case_::acc,iter);
   end matchcontinue;
-end caseDeadCodeEliminiation;
+end caseDeadCodeElimination;
 
 /*
 protected function findOverlappingPattern
