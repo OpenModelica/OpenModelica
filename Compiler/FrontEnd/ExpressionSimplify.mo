@@ -4502,27 +4502,25 @@ algorithm
       then
         DAE.BINARY(DAE.BINARY(e,op1,e4),DAE.MUL(ty),e1);
 
-    // [(e1*e2) op2 e] op1 [(e4*e5) op2 e] => (e1*e2 op1 e4*e5) op2 e
+    // [x op2 e] op1 [y op2 e] => (x op1 y) op2 e
     // op2 \in {*, /}; op1 \in {+, -}
-    case (DAE.BINARY(e_1,DAE.MUL(ty),e_2),op2,e_3,
+    case (e1_1, op2, e_3,
           op1,
-          DAE.BINARY(e_4,DAE.MUL(_),e_5),_,_,
-          _,_,_,true /*e2==e4==e_3==e_6*/,_,false /*isConst(e2==e_3)*/,_,true /*op2==op3*/)
+          e,_,_,
+          _,_,_,true /*e2==e4==e_3==e_5*/,_,false /*isConst(e2==e_3)*/,_,true /*op2==op3*/)
       equation
-
+        ty = Expression.typeof(e1_1);
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
                Expression.operatorEqual(op1,DAE.ADD(ty));
 
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
                Expression.operatorEqual(op2,DAE.MUL(ty));
-        e1_1 = DAE.BINARY(e_1, DAE.MUL(ty),e_2);
-        e = DAE.BINARY(e_4, DAE.MUL(ty),e_5);
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_3);
 
     // [(e1 op2 e) * e3] op1 [(e4*e5) op2 e] => (e1*e3 op1 e4*e5) op2 e
     // op2 \in {*, /}; op1 \in {+, -}
-    case (DAE.BINARY(_,op2,e_2),DAE.MUL(ty),e_3,
+    case (DAE.BINARY(e_1,op2,e_2),DAE.MUL(ty),e_3,
           op1,
           DAE.BINARY(e_4,DAE.MUL(_),e_5),op3,e_6,
           _,_,_,_,_,_,_,_)
@@ -4536,7 +4534,7 @@ algorithm
 
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
                Expression.operatorEqual(op2,DAE.MUL(ty));
-        e1_1 = DAE.BINARY(e1, DAE.MUL(ty),e_3);
+        e1_1 = DAE.BINARY(e_1, DAE.MUL(ty),e_3);
         e = DAE.BINARY(e_4, DAE.MUL(ty),e_5);
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_2);
