@@ -139,6 +139,7 @@ public:
   QAction* getTextShapeAction();
   QAction* getBitmapShapeAction();
   QAction* getExportAsImageAction();
+  QAction* getExportToClipboardAction() {return mpExportToClipboardAction;}
   QAction* getExportToOMNotebookAction();
   QAction* getImportFromOMNotebookAction();
   QAction* getImportNgspiceNetlistAction();
@@ -188,6 +189,8 @@ private:
   FindReplaceDialog *mpFindReplaceDialog;
   SimulationDialog *mpSimulationDialog;
   PlotWindowContainer *mpPlotWindowContainer;
+  QList<Qt::WindowStates> mPlotWindowsStatesList;
+  QList<QByteArray> mPlotWindowsGeometriesList;
   //InteractiveSimulationTabWidget *mpInteractiveSimualtionTabWidget;
   ModelWidgetContainer *mpModelWidgetContainer;
   DebuggerMainWindow *mpDebuggerMainWindow;
@@ -279,6 +282,7 @@ private:
   QAction *mpClearPlotWindowAction;
   // Other Actions
   QAction *mpExportAsImageAction;
+  QAction *mpExportToClipboardAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -329,7 +333,8 @@ public slots:
   void exportModelToOMNotebook();
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
-  void exportModelAsImage();
+  void exportModelAsImage(bool copyToClipboard = false);
+  void exportToClipboard();
   void openConfigurationOptions();
   void openUsersGuide();
   void openSystemDocumentation();
@@ -355,6 +360,7 @@ private:
   void createActions();
   void createToolbars();
   void createMenus();
+  void storePlotWindowsStateAndGeometry();
   void switchToWelcomePerspective();
   void switchToModelingPerspective();
   void switchToPlottingPerspective();

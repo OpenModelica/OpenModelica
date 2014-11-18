@@ -1899,7 +1899,7 @@ void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool 
     pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure() + (pLibraryTreeNode->isSaved() ? "" : "*"));
     mpMainWindow->getModelWidgetContainer()->addModelWidget(pLibraryTreeNode->getModelWidget());
   } else {
-    ModelWidget *pModelWidget = NULL;
+    ModelWidget *pModelWidget = 0;
     if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Modelica) {
       pModelWidget = new ModelWidget(newClass, extendsClass, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
     } else if (pLibraryTreeNode->getLibraryType() == LibraryTreeNode::Text) {

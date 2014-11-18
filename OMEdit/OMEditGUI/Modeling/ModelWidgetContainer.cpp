@@ -1585,6 +1585,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   {
     QMenu menu(mpModelWidget->getModelWidgetContainer()->getMainWindow());
     menu.addAction(mpModelWidget->getModelWidgetContainer()->getMainWindow()->getExportAsImageAction());
+    menu.addAction(mpModelWidget->getModelWidgetContainer()->getMainWindow()->getExportToClipboardAction());
     menu.addSeparator();
     menu.addAction(mpModelWidget->getModelWidgetContainer()->getMainWindow()->getExportToOMNotebookAction());
     menu.addSeparator();
@@ -2581,20 +2582,20 @@ void ModelWidget::makeFileWritAble()
 void ModelWidget::showIconView(bool checked)
 {
   // validate the modelica text before switching to icon view
-  if (checked)
-  {
-    if (!mpModelicaTextEditor->validateModelicaText())
-    {
+  if (checked) {
+    if (!mpModelicaTextEditor->validateModelicaText()) {
       mpTextViewToolButton->setChecked(true);
       return;
     }
   }
   QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
-  if (pSubWindow)
+  if (pSubWindow) {
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/model.svg"));
+  }
   mpIconGraphicsView->setFocus();
-  if (!checked or (checked and mpIconGraphicsView->isVisible()))
+  if (!checked or (checked and mpIconGraphicsView->isVisible())) {
     return;
+  }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Icon));
   mpDiagramGraphicsView->hide();
   mpModelicaTextEditor->hide();
@@ -2607,20 +2608,20 @@ void ModelWidget::showIconView(bool checked)
 void ModelWidget::showDiagramView(bool checked)
 {
   // validate the modelica text before switching to diagram view
-  if (checked)
-  {
-    if (!mpModelicaTextEditor->validateModelicaText())
-    {
+  if (checked) {
+    if (!mpModelicaTextEditor->validateModelicaText()) {
       mpTextViewToolButton->setChecked(true);
       return;
     }
   }
   QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
-  if (pSubWindow)
+  if (pSubWindow) {
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
+  }
   mpDiagramGraphicsView->setFocus();
-  if (!checked or (checked and mpDiagramGraphicsView->isVisible()))
+  if (!checked or (checked and mpDiagramGraphicsView->isVisible())) {
     return;
+  }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
   mpIconGraphicsView->hide();
   mpModelicaTextEditor->hide();
@@ -2633,10 +2634,12 @@ void ModelWidget::showDiagramView(bool checked)
 void ModelWidget::showModelicaTextView(bool checked)
 {
   QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
-  if (pSubWindow)
+  if (pSubWindow) {
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeltext.svg"));
-  if (!checked or (checked and mpModelicaTextEditor->isVisible()))
+  }
+  if (!checked or (checked and mpModelicaTextEditor->isVisible())) {
     return;
+  }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
   // get the modelica text of the model
   mpModelicaTextEditor->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(getLibraryTreeNode()->getNameStructure()));
@@ -2653,8 +2656,7 @@ void ModelWidget::showModelicaTextView(bool checked)
 void ModelWidget::showDocumentationView()
 {
   // validate the modelica text before switching to documentation view
-  if (!mpModelicaTextEditor->validateModelicaText())
-  {
+  if (!mpModelicaTextEditor->validateModelicaText()) {
     mpTextViewToolButton->setChecked(true);
     return;
   }
@@ -2833,12 +2835,11 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       }
     }
   } else {
-    static int firstSubWindow = 0;
+    int subWindowsSize = subWindowList(QMdiArea::ActivationHistoryOrder).size();
     QMdiSubWindow *pSubWindow = addSubWindow(pModelWidget);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
     pModelWidget->show();
-    if (!firstSubWindow) {
-      firstSubWindow = 1;
+    if (subWindowsSize == 0) {
       pModelWidget->setWindowState(Qt::WindowMaximized);
     }
     setActiveSubWindow(pSubWindow);
@@ -3115,6 +3116,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getExportFigaroAction()->setEnabled(enabled && modelica);
   getMainWindow()->getExportToOMNotebookAction()->setEnabled(enabled && modelica);
   getMainWindow()->getExportAsImageAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getExportToClipboardAction()->setEnabled(enabled && modelica);
   getMainWindow()->getPrintModelAction()->setEnabled(enabled);
   /* disable the save actions if class is a system library class. */
   if (pModelWidget) {
