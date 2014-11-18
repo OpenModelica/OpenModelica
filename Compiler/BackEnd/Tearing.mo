@@ -1842,7 +1842,7 @@ protected
 algorithm
   for var in var_lstIn loop
       // Get the value of the variable's tearingSelect attribute.
-	  BackendDAE.VAR(tearingSelectOption = ts) := var;
+    BackendDAE.VAR(tearingSelectOption = ts) := var;
 
       // Add the variable's index to the appropriate list.
       _ := match(ts)
@@ -2090,7 +2090,7 @@ algorithm
     else
       equation
         print("\nThe selection of a new tearing variable failed.");
-		Error.addCompilerWarning("Function Tearing.selectTearingVar failed at least once. Use +d=tearingdump or +d=tearingdumpV for more information.");
+    Error.addCompilerWarning("Function Tearing.selectTearingVar failed at least once. Use +d=tearingdump or +d=tearingdumpV for more information.");
       then fail();
  end matchcontinue;
 end selectTearingVar;

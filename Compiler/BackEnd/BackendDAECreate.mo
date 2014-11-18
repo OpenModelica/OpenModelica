@@ -582,7 +582,7 @@ algorithm
       DAE.ConnectorType ct;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.Type t;
       DAE.VarVisibility protection;
@@ -608,7 +608,7 @@ algorithm
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr, name, source, kind_1, tp, {});
         _ = BackendVariable.getNominalAssert(dae_var_attr, name, source, kind_1, tp, {});
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, (SOME(functionTree), {DAE.NORM_INLINE()}));
-		ts = BackendDAEUtil.setTearingSelectAttribute(comment);
+    ts = BackendDAEUtil.setTearingSelectAttribute(comment);
       then
         (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, comment, ct));
   end match;
@@ -637,7 +637,7 @@ algorithm
       DAE.ConnectorType ct;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.Type t;
       DAE.VarVisibility protection;
@@ -674,7 +674,7 @@ algorithm
         eqLst = buildAssertAlgorithms(assrtLst,source,assrtEqIn);
         // building an algorithm of the assert
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, fnstpl);
-		ts = NONE();
+    ts = NONE();
       then
         (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind1, NONE(), dims, source, dae_var_attr, ts, comment, ct), inlineHT,eqLst);
 
@@ -972,7 +972,7 @@ algorithm
       DAE.ConnectorType ct;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.Type t;
 
@@ -991,7 +991,7 @@ algorithm
         tp = lowerType(t);
         (bind, source, _) = Inline.inlineExpOpt(bind, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, (SOME(functionTree), {DAE.NORM_INLINE()}));
-		ts = NONE();
+    ts = NONE();
       then
         BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, comment, ct);
   end match;

@@ -540,7 +540,7 @@ algorithm
       Option<Values.Value> v;
       list<DAE.Dimension> dim;
       Option<DAE.VariableAttributes> attr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       DAE.ElementSource source;
@@ -555,7 +555,7 @@ algorithm
       arryDim = dim,
       source = source,
       values = attr,
-	  tearingSelectOption = ts,
+    tearingSelectOption = ts,
       comment = comment,
       connectorType = ct))
       equation

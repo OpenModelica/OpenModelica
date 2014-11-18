@@ -3821,7 +3821,7 @@ algorithm
       DAE.InstDims dim;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> odattr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       DAE.VariableAttributes dattr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -3968,7 +3968,7 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> odattr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       DAE.VariableAttributes dattr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -4051,7 +4051,7 @@ algorithm
       DAE.InstDims dim;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       BackendDAE.Var var;
@@ -4124,7 +4124,7 @@ algorithm
       DAE.InstDims dim;
       .DAE.ElementSource source;
       Option<DAE.VariableAttributes> odattr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       DAE.VariableAttributes dattr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -4222,7 +4222,7 @@ algorithm
       DAE.InstDims dim;
       .DAE.ElementSource source,source1;
       Option<DAE.VariableAttributes> odattr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       DAE.VariableAttributes dattr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -4832,7 +4832,7 @@ algorithm
       list<DAE.Dimension> dim;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       BackendDAE.Var var;
@@ -4853,7 +4853,7 @@ algorithm
               arryDim = dim,
               source = source,
               values = attr,
-			  tearingSelectOption = ts,
+        tearingSelectOption = ts,
               comment = comment,
               connectorType = ct)::vlst,i::ilst,_,_,_)
     equation

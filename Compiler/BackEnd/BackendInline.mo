@@ -503,7 +503,7 @@ algorithm
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
       Option<DAE.VariableAttributes> values,values1;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       BackendDAE.Var var;

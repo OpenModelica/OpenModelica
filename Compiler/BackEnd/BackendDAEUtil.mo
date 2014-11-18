@@ -924,7 +924,7 @@ algorithm
       DAE.InstDims dims;
       DAE.ElementSource src;
       Option<DAE.VariableAttributes> va;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> c;
       DAE.ConnectorType ct;
       Values.Value v;
@@ -1647,11 +1647,11 @@ algorithm
      val := SCode.getNamedAnnotation(ann, "tearingSelect");
      ts_str := Absyn.crefIdent(Absyn.expCref(val));
      ts := match(ts_str)
-	    case "always" then SOME(BackendDAE.ALWAYS());
+      case "always" then SOME(BackendDAE.ALWAYS());
         case "prefer" then SOME(BackendDAE.PREFER());
         case "avoid"  then SOME(BackendDAE.AVOID());
         case "never"  then SOME(BackendDAE.NEVER());
-		case "default" then SOME(BackendDAE.DEFAULT());
+    case "default" then SOME(BackendDAE.DEFAULT());
         else NONE();
      end match;
   else
@@ -6398,7 +6398,7 @@ algorithm
       DAE.ComponentRef cref;
       list<DAE.Dimension> instdims;
       Option<DAE.VariableAttributes> attr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Type_a ext_arg_1,ext_arg_2;
       VarKind varKind;
       DAE.VarDirection varDirection;

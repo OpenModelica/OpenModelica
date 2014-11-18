@@ -242,7 +242,7 @@ protected
     list<DAE.Dimension> g;
     DAE.ElementSource source;
     Option<SCode.Comment> s;
-	Option<BackendDAE.TearingSelect> ts;
+  Option<BackendDAE.TearingSelect> ts;
     DAE.ConnectorType ct;
 algorithm
   BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,ts,s,ct) := v;
@@ -527,7 +527,7 @@ algorithm
               arryDim=g,
               source=source,
               values=oattr,
-			  tearingSelectOption = ts,
+        tearingSelectOption = ts,
               comment=s,
               connectorType=ct) := inVar;
   outVar := BackendDAE.VAR(a,BackendDAE.STATE(indx,dcr),c,prl,d,e,f,g,source,oattr,ts,s,ct);
@@ -1595,7 +1595,7 @@ algorithm
                  arryDim = dim,
                  source = source,
                  values = attr,
-				 tearingSelectOption = ts,
+         tearingSelectOption = ts,
                  comment = comment,
                  connectorType = ct) := inVar;
   outVar := BackendDAE.VAR(cr, kind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct);
@@ -1639,7 +1639,7 @@ algorithm
                  arryDim = dim,
                  source = source,
                  values = attr,
-				 tearingSelectOption = ts,
+         tearingSelectOption = ts,
                  comment = comment,
                  connectorType = ct) := inVar;
   outVar := BackendDAE.VAR(cr, inVarKind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct);
@@ -1674,7 +1674,7 @@ algorithm
                  arryDim = dim,
                  source = source,
                  values = attr,
-				 tearingSelectOption = ts,
+         tearingSelectOption = ts,
                  comment = comment,
                  connectorType = ct) := inVar;
   outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, inBindExp, v, dim, source, attr, ts, comment, ct);
@@ -1707,7 +1707,7 @@ algorithm
                  arryDim = dim,
                  source = source,
                  values = attr,
-				 tearingSelectOption = ts,
+         tearingSelectOption = ts,
                  comment = comment,
                  connectorType = ct) := inVar;
   outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, inBindValue, dim, source, attr, ts, comment, ct);
@@ -1740,7 +1740,7 @@ algorithm
       list<DAE.Dimension> dim;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       BackendDAE.Var oVar;
@@ -1754,7 +1754,7 @@ algorithm
               arryDim = dim,
               source = source,
               values = attr,
-			  tearingSelectOption = ts,
+        tearingSelectOption = ts,
               comment = comment,
               connectorType = ct),_)
     equation
@@ -3578,7 +3578,7 @@ algorithm
       list<DAE.Dimension> g;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> oattr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
       list<DAE.SymbolicOperation> ops;
@@ -3593,7 +3593,7 @@ algorithm
               arryDim = g,
               source = source,
               values = oattr,
-			  tearingSelectOption = ts,
+        tearingSelectOption = ts,
               comment = s,
               connectorType = ct),_)
       equation
@@ -4188,7 +4188,7 @@ algorithm
       Option<Values.Value> v;
       list<DAE.Dimension> dim;
       Option<DAE.VariableAttributes> attr;
-	  Option<BackendDAE.TearingSelect> ts;
+    Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       DAE.ElementSource source;
@@ -4204,7 +4204,7 @@ algorithm
       arryDim = dim,
       source = source,
       values = attr,
-	  tearingSelectOption = ts,
+    tearingSelectOption = ts,
       comment = comment,
       connectorType = ct))
       equation
