@@ -4190,19 +4190,15 @@ algorithm
       then DAE.IFEXP(e1,e,res);
 
     // (-x) * y - x * z = (-x)*(y+z)
-    case (_,DAE.SUB(ty), DAE.BINARY(e as DAE.UNARY(operator = DAE.UMINUS(),exp = e1), op2, e2), DAE.BINARY(e3,op3,e4) ,false,false)
+    case (_,DAE.SUB(ty), DAE.BINARY(e as DAE.UNARY(operator = DAE.UMINUS(),exp = e1), op2 as DAE.MUL(), e2), DAE.BINARY(e3,DAE.MUL(),e4) ,false,false)
       equation
-       true = Expression.operatorEqual(op2, DAE.MUL(ty));
-       true = Expression.operatorEqual(op3, op2);
        true = Expression.expEqual(e1,e3);
        res = DAE.BINARY(e, op2, DAE.BINARY(e2, DAE.ADD(ty),e4));
       then res;
 
-    // (-x) / y - x / z = -x(1/y+1/y)
-    case (_,DAE.SUB(ty), DAE.BINARY(e as DAE.UNARY(operator = DAE.UMINUS(),exp = e1), op2, e2), DAE.BINARY(e3,op3,e4) ,false,false)
+    // (-x) / y - x / z = -x(1/y+1/z)
+    case (_,DAE.SUB(ty), DAE.BINARY(e as DAE.UNARY(operator = DAE.UMINUS(),exp = e1), DAE.DIV(), e2), DAE.BINARY(e3, DAE.DIV(),e4) ,false,false)
       equation
-       true = Expression.operatorEqual(op2, DAE.DIV(ty));
-       true = Expression.operatorEqual(op3, op2);
        true = Expression.expEqual(e1,e3);
        res = DAE.BINARY(e, DAE.MUL(ty), DAE.BINARY(Expression.inverseFactors(e2), DAE.ADD(ty), Expression.inverseFactors(e4)));
       then res;
@@ -4232,10 +4228,10 @@ algorithm
        true = Expression.expEqual(e2,e5);
      then DAE.BINARY(e5, oper, DAE.BINARY(e1,op1,DAE.BINARY(e4,op3,e6)));
 
-    // a*x op2 b op1 c*x
+    // a*(x op2 b) op1 c*x
     // x *(a op2 b op1 c)
     // or
-    // a*x op2 b op1 x*c
+    // a*(x op2 b) op1 x*c
     // x *(a op2 b op1 c)
     case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(_),e5),false,false)
      equation
@@ -4487,7 +4483,6 @@ algorithm
       then
         DAE.BINARY(DAE.BINARY(e2,op1,e),DAE.MUL(ty),e1);
 
-    // TODO! FIXME! is this correct? seems to be the same as the above case
     // (e1 / e2) op1 (e3 * e4) => (e1 * (1/e2)) op1 (e1 * e4 ) => e1*(1/e2 op1 e4)
     // e1 = e3; op1 \in {+, -}
     case (_,DAE.DIV(ty),_,
@@ -4518,11 +4513,11 @@ algorithm
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_3);
 
-    // [(e1 op2 e) * e3] op1 [(e4*e5) op2 e] => (e1*e3 op1 e4*e5) op2 e
+    // [(e1 op2 e) * e3] op1 [e4 op2 e] => (e1*e3 op1 e4) op2 e
     // op2 \in {*, /}; op1 \in {+, -}
     case (DAE.BINARY(e_1,op2,e_2),DAE.MUL(ty),e_3,
           op1,
-          DAE.BINARY(e_4,DAE.MUL(_),e_5),op3,e_6,
+          e,op3,e_6,
           _,_,_,_,_,_,_,_)
       equation
         false = Expression.isConstValue(e_2);
@@ -4535,7 +4530,6 @@ algorithm
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
                Expression.operatorEqual(op2,DAE.MUL(ty));
         e1_1 = DAE.BINARY(e_1, DAE.MUL(ty),e_3);
-        e = DAE.BINARY(e_4, DAE.MUL(ty),e_5);
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_2);
 
@@ -4560,11 +4554,11 @@ algorithm
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_2);
 
-    // [(e1 * e2) op2 e] op1 [(e4 op2 e) * e6] => (e1*e2 op1 e4*e6) op2 e
+    // [e1 op2 e] op1 [(e4 op2 e) * e6] => (e1 op1 e4*e6) op2 e
     // op2 \in {*, /}; op1 \in {+, -}
-    case (DAE.BINARY(e_1,op2,e_2),DAE.MUL(ty),e_3,
+    case (e_1, op2,e_3,
           op1,
-          DAE.BINARY(e_4,op3,e_5),DAE.MUL(_),e_6,
+          DAE.BINARY(e_4,op3,e_5),DAE.MUL(ty),e_6,
           _,_,_,_,_,false /*isConst(e2==e_3)*/,_,_)
       equation
         true = Expression.expEqual(e_3,e_5);
@@ -4575,10 +4569,9 @@ algorithm
 
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
                Expression.operatorEqual(op2,DAE.MUL(ty));
-        e1_1 = DAE.BINARY(e_1,DAE.MUL(ty),e_2);
         e = DAE.BINARY(e_4,DAE.MUL(ty),e_6);
-        res = DAE.BINARY(e1_1,op1,e);
-      then DAE.BINARY(res,op2,e_2);
+        res = DAE.BINARY(e_1,op1,e);
+      then DAE.BINARY(res,op2,e_3);
 
     // (e*e1) - (e*e2) => e*(e1-e2)
     case (_,DAE.MUL(),_,
