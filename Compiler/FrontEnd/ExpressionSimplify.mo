@@ -4190,15 +4190,23 @@ algorithm
       then DAE.IFEXP(e1,e,res);
 
     // (-x) * y - x * z = (-x)*(y+z)
-    // (-x) / y - x / z = (-x)/(y+z)
     case (_,DAE.SUB(ty), DAE.BINARY(e as DAE.UNARY(operator = DAE.UMINUS(),exp = e1), op2, e2), DAE.BINARY(e3,op3,e4) ,false,false)
       equation
-       true = Expression.operatorEqual(op2, DAE.MUL(ty)) or
-              Expression.operatorEqual(op2, DAE.DIV(ty));
+       true = Expression.operatorEqual(op2, DAE.MUL(ty));
        true = Expression.operatorEqual(op3, op2);
        true = Expression.expEqual(e1,e3);
        res = DAE.BINARY(e, op2, DAE.BINARY(e2, DAE.ADD(ty),e4));
       then res;
+
+    // (-x) / y - x / z = -x(1/y+1/y)
+    case (_,DAE.SUB(ty), DAE.BINARY(e as DAE.UNARY(operator = DAE.UMINUS(),exp = e1), op2, e2), DAE.BINARY(e3,op3,e4) ,false,false)
+      equation
+       true = Expression.operatorEqual(op2, DAE.DIV(ty));
+       true = Expression.operatorEqual(op3, op2);
+       true = Expression.expEqual(e1,e3);
+       res = DAE.BINARY(e, DAE.MUL(ty), DAE.BINARY(Expression.inverseFactors(e2), DAE.ADD(ty), Expression.inverseFactors(e4)));
+      then res;
+
 
     // a*x op2 b op1 c*x op3 d
     // x *(a op2 b op1 c op3 d)
