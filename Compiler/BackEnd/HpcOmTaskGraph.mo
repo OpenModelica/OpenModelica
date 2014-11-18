@@ -2472,11 +2472,12 @@ algorithm
   varLst := List.flatten(List.map(List.map(eqSysts,BackendVariable.daeVars),BackendVariable.varList));
   vars := BackendVariable.listVar1(varLst);
   eqs := BackendEquation.listEquation(eqLst);
-   // build the incidence matrix for the whole System
-   (m,mT) := BackendDAEUtil.incidenceMatrixDispatch(vars,eqs, BackendDAE.ABSOLUTE());
-   varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
-   eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
-   HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph"+fileName);
+  // build the incidence matrix for the whole System
+  (m,mT) := BackendDAEUtil.incidenceMatrixDispatch(vars,eqs, BackendDAE.NORMAL());
+  m := Array.map(m,function List.filter1OnTrue(inFilterFunc=intGt,inArg1=0)); 
+  varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
+  eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
+  HpcOmEqSystems.dumpEquationSystemBipartiteGraph2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph_"+fileName);
 end dumpBipartiteGraph;
 
 public function dumpAsGraphMLSccLevel "author: marcusw, waurich
