@@ -144,14 +144,11 @@ void EllipseAnnotation::drawEllipseAnnotaion(QPainter *painter)
   applyFillPattern(painter);
   qreal startAngle = StringHandler::getNormalizedAngle(mStartAngle);
   qreal endAngle = StringHandler::getNormalizedAngle(mEndAngle);
-  if ((startAngle - endAngle) == 0)
-  {
-    path.addEllipse(boundingRect());
+  if ((startAngle - endAngle) == 0) {
+    path.addEllipse(getBoundingRect());
     painter->drawPath(path);
-  }
-  else
-  {
-    painter->drawPie(boundingRect(), mStartAngle*16, mEndAngle*16 - mStartAngle*16);
+  } else {
+    painter->drawPie(getBoundingRect(), mStartAngle*16, mEndAngle*16 - mStartAngle*16);
   }
 }
 
