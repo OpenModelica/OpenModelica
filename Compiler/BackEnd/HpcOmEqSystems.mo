@@ -369,13 +369,13 @@ algorithm
        //BackendDump.dumpEquationList(resEqsOut,"resEqsOut");
        //BackendDump.dumpVarList(addVarLst,"addVarLst");
        //BackendDump.dumpEquationList(addEqLst,"addEqLst");
-       
+
    eqsNewOut := listAppend(eqsNewOut,addEqLst);
    varsNewOut := listAppend(varsNewOut,addVarLst);
        //BackendDump.dumpVarList(varsNewOut,"varsNew");
        //BackendDump.dumpEquationList(eqsNewOut,"eqsNew");
-   
-   
+
+
    // gather all additional equations and match them (not including the new residual equation)
    matchingNew := buildSingleEquationSystem(compSize,eqsNewOut,varsNewOut,ishared,{});
    BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) := matchingNew;
@@ -383,7 +383,7 @@ algorithm
    oComps := listAppend(compsNew,compsEqSys);
    matchingOut := BackendDAE.MATCHING(ass1New,ass2New,oComps);
        //BackendDump.dumpComponents(oComps);
-     
+
    //printPartLinTornInfo(tcrs,reqns,otherEqnsLst,ovcrs,xa_i_lst,g_i_lst,r_i_lst,h_i_lst,a_i_lst,hs_i_lst,hs,compsNew);
 end reduceLinearTornSystem2;
 
@@ -1360,7 +1360,7 @@ algorithm
           //dumpMatrix(matrixAT);
       detA = determinant(matrixA);
           //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
-      detLst = List.map2(List.intRange(dim),CramerRule1,system,matrixAT);    
+      detLst = List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
           //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
       varExp = List.map(arrayList(vectorX),BackendVariable.varExp);
       detLst = List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
@@ -1501,7 +1501,7 @@ protected function EqSysRowString
 protected
   String s1,s2,s3;
 algorithm
-  s1 := "{ "+stringDelimitList(List.map(Arow,ExpressionDump.printExpStr),"  \t  ") + "} "; 
+  s1 := "{ "+stringDelimitList(List.map(Arow,ExpressionDump.printExpStr),"  \t  ") + "} ";
   s2 := "{ " +ComponentReference.printComponentRefStr(BackendVariable.varCref(x))+" } ";
   s3 := " = { "+ExpressionDump.printExpStr(b)+" }";
   s:=s1+s2+s3;
@@ -1514,7 +1514,7 @@ protected
   String s;
 algorithm
   sLst := List.map(arrayList(matrix),ExpressionDump.printExpListStr);
-  s := "{ "+stringDelimitList(sLst,"  \n  ") + "} \n"; 
+  s := "{ "+stringDelimitList(sLst,"  \n  ") + "} \n";
   print(s);
 end dumpMatrix;
 
