@@ -11203,6 +11203,24 @@ let name = ("omc_" + underscorePath(entryPoint))
 <<
 /* This is an automatically generated entry point to a MetaModelica function */
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+#if defined(OMC_ENTRYPOINT_STATIC)
+
+#include <stdio.h>
+#include <openmodelica.h>
+
+DLLImport int __omc_main(int argc, char **argv);
+
+int main(int argc, char **argv)
+{
+  return __omc_main(argc, argv);
+}
+
+#else
+
 #include <meta/meta_modelica.h>
 #include <stdio.h>
 extern void <%name%>(threadData_t*,modelica_metatype);
@@ -11226,7 +11244,7 @@ static int rml_execution_failed()
   return 1;
 }
 
-int main(int argc, char **argv)
+DLLExport int __omc_main(int argc, char **argv)
 {
   MMC_INIT();
   {
@@ -11245,6 +11263,13 @@ int main(int argc, char **argv)
   EXIT(0);
   return 0;
 }
+
+#endif
+
+#if defined(__cplusplus)
+} /* end extern "C" */
+#endif
+
 >>
 end generateEntryPoint;
 
