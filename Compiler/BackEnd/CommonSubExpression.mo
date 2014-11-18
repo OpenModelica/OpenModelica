@@ -357,7 +357,7 @@ algorithm
      varExp = BackendVariable.varExp(var1);
      repl = BackendVarTransform.addReplacement(repl,cref,varExp,NONE());
          //BackendVarTransform.dumpReplacements(repl);
-     eqIdcs = arrayGet(mT,varIdx2);
+     eqIdcs = arrayGet(mT,varIdxRepl);
      eqLst = BackendEquation.getEqns(eqIdcs,eqs);
      (eqLst,_) = BackendVarTransform.replaceEquations(eqLst,repl,NONE());
      eqs = List.threadFold(eqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
@@ -368,7 +368,7 @@ algorithm
      shared = updateAllAliasVars(sharedIn,repl);
      shared = BackendVariable.addAliasVarDAE(var2,shared);
      eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
-    then commonSubExpressionUpdate(rest,m,mT,eqSys,shared,eqIdx2::deleteEqLstIn);
+    then commonSubExpressionUpdate(rest,m,mT,eqSys,shared,eqIdxDel::deleteEqLstIn);
  case(_::rest,_,_,_,_,_)
     equation
   then commonSubExpressionUpdate(rest,m,mT,sysIn,sharedIn,deleteEqLstIn);
