@@ -1782,7 +1782,7 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
   end if;
-  // If '+showAnnotations=true': Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
+  // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
   ass1 := List.fill(-1,size);
   ass2 := List.fill(-1,size);
@@ -1826,6 +1826,7 @@ algorithm
   end if;
 end CellierTearing;
 
+
 protected function tearingSelect
  "collects variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   author: ptaeuber FHB 2014-05"
@@ -1837,37 +1838,33 @@ protected function tearingSelect
 protected
   BackendDAE.Var var;
   Integer index := 1;
-  String ts;
-  SCode.Annotation ann;
-  Absyn.Exp val;
+  Option<BackendDAE.TearingSelect> ts;
 algorithm
   for var in var_lstIn loop
-    try // Try to get the value of the variable's tearingSelect annotation.
-      val := BackendVariable.getNamedAnnotation(var, "tearingSelect");
-      ts := Absyn.crefIdent(Absyn.expCref(val));
+      // Get the value of the variable's tearingSelect attribute.
+	  BackendDAE.VAR(tearingSelectOption = ts) := var;
 
       // Add the variable's index to the appropriate list.
       _ := match(ts)
-        case "always" algorithm always := index :: always; then ();
-        case "prefer" algorithm prefer := index :: prefer; then ();
-        case "avoid"  algorithm avoid  := index :: avoid;  then ();
-        case "never"  algorithm never  := index :: never;  then ();
+        case SOME(BackendDAE.ALWAYS()) algorithm always := index :: always; then ();
+        case SOME(BackendDAE.PREFER()) algorithm prefer := index :: prefer; then ();
+        case SOME(BackendDAE.AVOID()) algorithm avoid  := index :: avoid;  then ();
+        case SOME(BackendDAE.NEVER()) algorithm never  := index :: never;  then ();
         else ();
       end match;
-    else // Skip the variable if it doesn't have the annotation.
-    end try;
 
-    index := index + 1;
+      index := index + 1;
   end for;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-    Debug.traceln("\nManual selection of iteration variables by variable annotations:");
-    Debug.traceln("Always: " + stringDelimitList(List.map(always, intString), ","));
-    Debug.traceln("Prefer: " + stringDelimitList(List.map(prefer, intString), ","));
-    Debug.traceln("Avoid: " + stringDelimitList(List.map(avoid, intString), ","));
-    Debug.traceln("Never: " + stringDelimitList(List.map(never, intString), ",") + "\n");
+    print("\nManual selection of iteration variables by variable annotations:\n");
+    print("Always: " + stringDelimitList(List.map(always, intString), ",") + "\n");
+    print("Prefer: " + stringDelimitList(List.map(prefer, intString), ",")+ "\n");
+    print("Avoid: " + stringDelimitList(List.map(avoid, intString), ",")+ "\n");
+    print("Never: " + stringDelimitList(List.map(never, intString), ",") + "\n\n");
   end if;
 end tearingSelect;
+
 
 protected function deleteNegativeEntries
  "deletes all negative entries from incidence matrix, works with Array.map1, needed for proper Cellier-Tearing
@@ -2092,7 +2089,8 @@ algorithm
     then listGet(potentials,1);
     else
       equation
-        print("selecting tearing variable failed");
+        print("\nThe selection of a new tearing variable failed.");
+		Error.addCompilerWarning("Function Tearing.selectTearingVar failed at least once. Use +d=tearingdump or +d=tearingdumpV for more information.");
       then fail();
  end matchcontinue;
 end selectTearingVar;

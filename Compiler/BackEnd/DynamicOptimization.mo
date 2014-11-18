@@ -88,7 +88,7 @@ algorithm
         varlst = BackendVariable.varList(inVarsAndknvars);
 
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectMayerTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
         mayer1 = findMayerTerm(varlst);
         mayer1 = mergeObjectVars(mayer1,mayer);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
@@ -98,7 +98,7 @@ algorithm
         e = if b then listAppend(e, objectEqn) else e;
 
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectLagrangeTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
         lagrange1 = findLagrangeTerm(varlst);
         lagrange1 = mergeObjectVars(lagrange1,lagrange);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
@@ -121,7 +121,7 @@ algorithm
         varlst = BackendVariable.varList(inVarsAndknvars);
 
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectMayerTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
         mayer1 = findMayerTerm(varlst);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);
@@ -130,7 +130,7 @@ algorithm
         e = if b then listAppend(e, objectEqn) else e;
 
         leftcref = ComponentReference.makeCrefIdent("$OMC$objectLagrangeTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
         lagrange1 = findLagrangeTerm(varlst);
         objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
         b = not List.isEmpty(objectEqn);

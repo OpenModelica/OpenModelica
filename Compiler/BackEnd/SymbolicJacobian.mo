@@ -1641,7 +1641,7 @@ algorithm
     case (_, _)
       equation
         derivedCref = Differentiate.differentiateVarWithRespectToX(indiffVar, indiffVar, inMatrixName);
-        jacvar = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+        jacvar = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(),DAE.NON_CONNECTOR());
       then jacvar;
   end match;
 end createSeedVars;
@@ -1701,7 +1701,7 @@ algorithm
     case(var as BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE()), currVar::restVar, _) equation
       cref = ComponentReference.crefPrefixDer(cref);
       derivedCref = Differentiate.differentiateVarWithRespectToX(cref, currVar, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
       (r2,res1) = generateJacobianVars2(var, restVar, inMatrixName);
       res = listAppend({derivedCref}, res1);
       r = listAppend({r1}, r2);
@@ -1709,7 +1709,7 @@ algorithm
 
     case(var as BackendDAE.VAR(varName=cref), currVar::restVar, _) equation
       derivedCref = Differentiate.differentiateVarWithRespectToX(cref, currVar, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
       (r2,res1) = generateJacobianVars2(var, restVar, inMatrixName);
       res = listAppend({derivedCref}, res1);
       r = listAppend({r1}, r2);
@@ -1748,27 +1748,27 @@ algorithm
       ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
     then
       createAllDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
 
     case(BackendDAE.VAR(varName=currVar)::restVar,cref,_,_, _, _) equation
       ({_}, _) = BackendVariable.getVar(currVar, inAllVars);
       derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
     then
       createAllDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
 
      case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
     then
       createAllDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName,r1::iVars);
 
     case(BackendDAE.VAR(varName=currVar)::restVar,cref,_,_, _, _) equation
       derivedCref = Differentiate.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
     then
       createAllDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName,r1::iVars);
 
@@ -1879,7 +1879,7 @@ algorithm
     BackendVariable.getVar(leftcref, inVars);
     outVars := {BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(),
                    DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {},
-                   DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR())};
+                   DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR())};
   else
     outVars := {};
   end try;

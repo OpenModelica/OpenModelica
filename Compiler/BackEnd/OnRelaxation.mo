@@ -1981,7 +1981,7 @@ algorithm
       cr = ComponentReference.makeCrefIdent(stringAppendList({"$tmp",sa,"_",sb}),DAE.T_REAL_DEFAULT,{});
       cexp = Expression.crefExp(cr);
       eqns = BackendEquation.addEquation(BackendDAE.EQUATION(cexp,e,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN),inEqns);
-      v = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
+      v = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
       vars = BackendVariable.addVar(v,inVars);
     then
       (vars,eqns,cexp,(a,b+1));

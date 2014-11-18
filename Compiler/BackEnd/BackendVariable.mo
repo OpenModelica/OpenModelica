@@ -110,13 +110,14 @@ protected
   DAE.ElementSource source;
   DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setFixedAttr(oattr, SOME(DAE.BCONST(inBoolean)));
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct);
 end setVarFixed;
 
 public function varFixed "author: PA
@@ -161,13 +162,14 @@ protected
   DAE.ElementSource source;
   DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setStartAttr(oattr, inExp);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct);
 end setVarStartValue;
 
 public function setVarStartValueOption "author: Frenkel TUD
@@ -187,13 +189,14 @@ protected
   DAE.ElementSource source;
   DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setStartAttrOption(oattr, inExp);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct);
 end setVarStartValueOption;
 
 public function setVarStartOrigin "author: Frenkel TUD
@@ -213,13 +216,14 @@ protected
   DAE.ElementSource source;
   DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setStartOrigin(oattr, startOrigin);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct);
 end setVarStartOrigin;
 
 public function setVarAttributes "sets the variable attributes of a variable.
@@ -238,10 +242,11 @@ protected
     list<DAE.Dimension> g;
     DAE.ElementSource source;
     Option<SCode.Comment> s;
+	Option<BackendDAE.TearingSelect> ts;
     DAE.ConnectorType ct;
 algorithm
-  BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,s,ct) := v;
-  outV := BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,s,ct);
+  BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,ts,s,ct) := v;
+  outV := BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,ts,s,ct);
 end setVarAttributes;
 
 public function varStartValue "author: PA
@@ -463,13 +468,14 @@ protected
   DAE.ElementSource source;
   DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setStateSelect(oattr, stateSelect);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct);
 end setVarStateSelect;
 
 public function varStateDerivative "author: Frenkel TUD 2013-01
@@ -507,6 +513,7 @@ protected
   list<DAE.Dimension> g;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
@@ -520,9 +527,10 @@ algorithm
               arryDim=g,
               source=source,
               values=oattr,
+			  tearingSelectOption = ts,
               comment=s,
               connectorType=ct) := inVar;
-  outVar := BackendDAE.VAR(a,BackendDAE.STATE(indx,dcr),c,prl,d,e,f,g,source,oattr,s,ct);
+  outVar := BackendDAE.VAR(a,BackendDAE.STATE(indx,dcr),c,prl,d,e,f,g,source,oattr,ts,s,ct);
 end setStateDerivative;
 
 public function getVariableAttributefromType
@@ -562,13 +570,14 @@ protected
   DAE.ElementSource source;
   DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setFinalAttr(oattr, finalPrefix);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct);
 end setVarFinal;
 
 public function setVarMinMax "author: Frenkel TUD
@@ -589,14 +598,15 @@ protected
   DAE.ElementSource source;
   DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
   if isSome(inMin) or isSome(inMax) then
-    BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+    BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct) := inVar;
     oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
     oattr := DAEUtil.setMinMax(oattr, inMin, inMax);
-    outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+    outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct);
   else
     outVar := inVar;
   end if;
@@ -619,13 +629,14 @@ protected
   DAE.ElementSource source;
   DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setUnitAttr(oattr, inUnit);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct);
 end setUnit;
 
 public function varNominalValue "author: Frenkel TUD"
@@ -652,13 +663,14 @@ protected
   DAE.ElementSource source;
   DAE.VariableAttributes attr;
   Option<DAE.VariableAttributes> oattr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> s;
   DAE.ConnectorType ct;
 algorithm
-  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct) := inVar;
+  BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct) := inVar;
   oattr := if isSome(oattr) then oattr else SOME(getVariableAttributefromType(d));
   oattr := DAEUtil.setNominalAttr(oattr, inExp);
-  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, s, ct);
+  outVar := BackendDAE.VAR(a, b, c, prl, d, e, f, g, source, oattr, ts, s, ct);
 end setVarNominalValue;
 
 public function varType "author: PA
@@ -1552,7 +1564,7 @@ algorithm
   outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(1,NONE()),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
-                            NONE(),DAE.NON_CONNECTOR());
+                            NONE(),NONE(),DAE.NON_CONNECTOR());
 end createDummyVar;
 
 public function copyVarNewName "author: Frenkel TUD 2012-5
@@ -1570,6 +1582,7 @@ protected
   list<DAE.Dimension> dim;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> comment;
   DAE.ConnectorType ct;
 algorithm
@@ -1582,9 +1595,10 @@ algorithm
                  arryDim = dim,
                  source = source,
                  values = attr,
+				 tearingSelectOption = ts,
                  comment = comment,
                  connectorType = ct) := inVar;
-  outVar := BackendDAE.VAR(cr, kind, dir, prl, tp, bind, v, dim, source, attr, comment, ct);
+  outVar := BackendDAE.VAR(cr, kind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct);
 end copyVarNewName;
 
 public function setVarsKind "author: lochel
@@ -1611,6 +1625,7 @@ protected
   list<DAE.Dimension> dim;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> comment;
   DAE.ConnectorType ct;
   BackendDAE.Var oVar;
@@ -1624,9 +1639,10 @@ algorithm
                  arryDim = dim,
                  source = source,
                  values = attr,
+				 tearingSelectOption = ts,
                  comment = comment,
                  connectorType = ct) := inVar;
-  outVar := BackendDAE.VAR(cr, inVarKind, dir, prl, tp, bind, v, dim, source, attr, comment, ct);
+  outVar := BackendDAE.VAR(cr, inVarKind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct);
   // referenceUpdate(inVar, 2, new_kind);
 end setVarKind;
 
@@ -1644,6 +1660,7 @@ protected
   list<DAE.Dimension> dim;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> comment;
   DAE.ConnectorType ct;
   BackendDAE.Var oVar;
@@ -1657,9 +1674,10 @@ algorithm
                  arryDim = dim,
                  source = source,
                  values = attr,
+				 tearingSelectOption = ts,
                  comment = comment,
                  connectorType = ct) := inVar;
-  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, inBindExp, v, dim, source, attr, comment, ct);
+  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, inBindExp, v, dim, source, attr, ts, comment, ct);
 end setBindExp;
 
 public function setBindValue "author: lochel"
@@ -1676,6 +1694,7 @@ protected
   list<DAE.Dimension> dim;
   DAE.ElementSource source;
   Option<DAE.VariableAttributes> attr;
+  Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> comment;
   DAE.ConnectorType ct;
 algorithm
@@ -1688,9 +1707,10 @@ algorithm
                  arryDim = dim,
                  source = source,
                  values = attr,
+				 tearingSelectOption = ts,
                  comment = comment,
                  connectorType = ct) := inVar;
-  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, inBindValue, dim, source, attr, comment, ct);
+  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, inBindValue, dim, source, attr, ts, comment, ct);
 end setBindValue;
 
 public function setVarDirectionTpl
@@ -1720,6 +1740,7 @@ algorithm
       list<DAE.Dimension> dim;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
+	  Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       BackendDAE.Var oVar;
@@ -1733,10 +1754,11 @@ algorithm
               arryDim = dim,
               source = source,
               values = attr,
+			  tearingSelectOption = ts,
               comment = comment,
               connectorType = ct),_)
     equation
-      oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 3, varDirection);
+      oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,source,attr,ts,comment,ct); // referenceUpdate(inVar, 3, varDirection);
     then
       oVar;
   end match;
@@ -3556,6 +3578,7 @@ algorithm
       list<DAE.Dimension> g;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> oattr;
+	  Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
       list<DAE.SymbolicOperation> ops;
@@ -3570,12 +3593,13 @@ algorithm
               arryDim = g,
               source = source,
               values = oattr,
+			  tearingSelectOption = ts,
               comment = s,
               connectorType = ct),_)
       equation
         ops = listReverse(iops);
         source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);
-      then BackendDAE.VAR(a,b,c,p,d,e,f,g,source,oattr,s,ct);
+      then BackendDAE.VAR(a,b,c,p,d,e,f,g,source,oattr,ts,s,ct);
   end match;
 end mergeVariableOperations;
 
@@ -4164,6 +4188,7 @@ algorithm
       Option<Values.Value> v;
       list<DAE.Dimension> dim;
       Option<DAE.VariableAttributes> attr;
+	  Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       DAE.ElementSource source;
@@ -4179,12 +4204,13 @@ algorithm
       arryDim = dim,
       source = source,
       values = attr,
+	  tearingSelectOption = ts,
       comment = comment,
       connectorType = ct))
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
-        BackendDAE.VAR(cr, BackendDAE.STATE_DER(), dir, prl, tp, exp, v, dim, source, attr, comment, ct);
+        BackendDAE.VAR(cr, BackendDAE.STATE_DER(), dir, prl, tp, exp, v, dim, source, attr, ts, comment, ct);
 
     case (backendVar)
     then

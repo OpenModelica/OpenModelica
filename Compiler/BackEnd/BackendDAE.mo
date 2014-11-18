@@ -199,6 +199,7 @@ uniontype Var "variables"
     .DAE.InstDims arryDim "array dimensions of non-expanded var";
     .DAE.ElementSource source "origin of variable";
     Option< .DAE.VariableAttributes> values "values on built-in attributes";
+	Option<TearingSelect> tearingSelectOption "value for TearingSelect";
     Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   end VAR;
@@ -223,6 +224,14 @@ uniontype VarKind "variable kind"
   record OPT_CONSTR end OPT_CONSTR;
   record OPT_FCONSTR end OPT_FCONSTR;
 end VarKind;
+
+public uniontype TearingSelect
+  record NEVER end NEVER;
+  record AVOID end AVOID;
+  record DEFAULT end DEFAULT;
+  record PREFER end PREFER;
+  record ALWAYS end ALWAYS;
+end TearingSelect;
 
 public uniontype EquationKind "equation kind"
   record BINDING_EQUATION end BINDING_EQUATION;

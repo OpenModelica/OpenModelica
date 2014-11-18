@@ -377,7 +377,7 @@ algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
   backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_INTEGER_DEFAULT,NONE(),NONE(),{},
-                     DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
+                     DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
 end makeIterVariable;
 
 protected function checkEquationSize"author: Frenkel TUD 2010-12
@@ -924,6 +924,7 @@ algorithm
       DAE.InstDims dims;
       DAE.ElementSource src;
       Option<DAE.VariableAttributes> va;
+	  Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> c;
       DAE.ConnectorType ct;
       Values.Value v;
@@ -936,7 +937,7 @@ algorithm
         inVar;
     case BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
           varType = ty, bindExp = SOME(e), arryDim = dims, source = src,
-          values = va, comment = c, connectorType = ct)
+          values = va, tearingSelectOption = ts, comment = c, connectorType = ct)
       equation
         // wbraun: Evaluate parameter expressions only if they are
         //         constant at compile time otherwise we solve them
@@ -945,7 +946,7 @@ algorithm
         true = Expression.isConst(e);
         (_, v, _) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
       then
-        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, src, va, c, ct);
+        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, src, va, ts, c, ct);
     else inVar;
   end matchcontinue;
 end calculateValue;
@@ -1631,6 +1632,32 @@ algorithm
 
   end matchcontinue;
 end simplifySubscript;
+
+
+public function setTearingSelectAttribute
+  input Option<SCode.Comment> comment;
+  output Option<BackendDAE.TearingSelect> ts;
+protected
+  SCode.Annotation ann;
+  Absyn.Exp val;
+  String ts_str;
+algorithm
+  try
+     SOME(SCode.COMMENT(annotation_ = SOME(ann))) := comment;
+     val := SCode.getNamedAnnotation(ann, "tearingSelect");
+     ts_str := Absyn.crefIdent(Absyn.expCref(val));
+     ts := match(ts_str)
+	    case "always" then SOME(BackendDAE.ALWAYS());
+        case "prefer" then SOME(BackendDAE.PREFER());
+        case "avoid"  then SOME(BackendDAE.AVOID());
+        case "never"  then SOME(BackendDAE.NEVER());
+		case "default" then SOME(BackendDAE.DEFAULT());
+        else NONE();
+     end match;
+  else
+    ts := NONE();
+  end try;
+end setTearingSelectAttribute;
 
 
 /*******************************************
@@ -6371,6 +6398,7 @@ algorithm
       DAE.ComponentRef cref;
       list<DAE.Dimension> instdims;
       Option<DAE.VariableAttributes> attr;
+	  Option<BackendDAE.TearingSelect> ts;
       Type_a ext_arg_1,ext_arg_2;
       VarKind varKind;
       DAE.VarDirection varDirection;
@@ -6383,18 +6411,18 @@ algorithm
 
     case (NONE(),_,_) then (NONE(),inTypeA);
 
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,comment,ct)),_,_)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,ts,comment,ct)),_,_)
       equation
         (e1,ext_arg_1) = func(e1,inTypeA);
         (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,ext_arg_1);
       then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,comment,ct)),ext_arg_2);
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,ts,comment,ct)),ext_arg_2);
 
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,comment,ct)),_,_)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,ts,comment,ct)),_,_)
       equation
         (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,inTypeA);
       then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,comment,ct)),ext_arg_2);
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,ts,comment,ct)),ext_arg_2);
 
     else
       equation

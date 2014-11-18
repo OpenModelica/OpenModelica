@@ -503,18 +503,19 @@ algorithm
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
       Option<DAE.VariableAttributes> values,values1;
+	  Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       BackendDAE.Var var;
       DAE.ElementSource source;
       Option<DAE.Exp> bind;
       Boolean b1,b2;
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,comment,ct),fns)
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,ts,comment,ct),fns)
       equation
         (bind,source,b1) = Inline.inlineExpOpt(bind,fns,source);
         (values1,source,b2) = Inline.inlineStartAttribute(values,source,fns);
       then
-        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,comment,ct),b1 or b2);
+        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,ts,comment,ct),b1 or b2);
     case(var,_) then (var,false);
   end match;
 end inlineVar;

@@ -540,6 +540,7 @@ algorithm
       Option<Values.Value> v;
       list<DAE.Dimension> dim;
       Option<DAE.VariableAttributes> attr;
+	  Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       DAE.ElementSource source;
@@ -554,12 +555,13 @@ algorithm
       arryDim = dim,
       source = source,
       values = attr,
+	  tearingSelectOption = ts,
       comment = comment,
       connectorType = ct))
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
-        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,source,attr,comment,ct);
+        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,source,attr,ts,comment,ct);
 
     else inVar;
   end match;
