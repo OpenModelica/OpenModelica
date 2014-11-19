@@ -89,9 +89,9 @@ qtclean: qtclean-common
 else
 qwt-build:
 	$(MAKE) -C 3rdParty/qwt -f Makefile.unix
-build/lib/omc/libomqwt.so: qwt-build
+build/lib/omc/libomqwt.so: mkbuilddirs qwt-build
 	cp -a 3rdParty/qwt/lib/libomqwt.so* build/lib/omc/
-build/lib/omc/libomqwt.dylib: qwt-build
+build/lib/omc/libomqwt.dylib: mkbuilddirs qwt-build
 	cp -a 3rdParty/qwt/lib/libomqwt*dylib build/lib/omc/
 	install_name_tool -id @rpath/libomqwt.6.2.0.dylib build/lib/omc/libomqwt.6.2.0.dylib
 
