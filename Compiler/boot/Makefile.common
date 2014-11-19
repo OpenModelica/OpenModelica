@@ -107,7 +107,7 @@ $(GEN_DIR)_main_omc.o: $(GEN_DIR)_main_omc.c
 $(OMHOME)/lib/omc/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMHOME)/lib/omc/libomcruntime.a $(OMHOME)/lib/omc/libomparse.a $(GEN_DIR)_main_omc.o
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) -shared $(RPATH) $(INSTALL_NAME) -o $@ $^ $(LDFLAGS)
-	test ! "$SHREXT" = ".dylib" || install_name_tool -id @rpath/libOpenModelicaCompiler.dylib $@
+	test ! "$(SHREXT)" = ".dylib" || install_name_tool -id @rpath/libOpenModelicaCompiler.dylib $@
 
 ifeq ($(STATIC),)
 #shared
