@@ -1305,7 +1305,7 @@ void MainWindow::showAlgorithmicDebugger()
   Slot activated when mpCascadeWindowsAction triggered signal is raised.\n
   Arranges all child windows in a cascade pattern.
   */
-void MainWindow::cascadeWindows()
+void MainWindow::cascadeSubWindows()
 {
   switch (mpCentralStackedWidget->currentIndex()) {
     case 1:
@@ -1319,17 +1319,34 @@ void MainWindow::cascadeWindows()
 }
 
 /*!
-  Slot activated when mpCascadeWindowsAction triggered signal is raised.\n
-  Arranges all child windows in a tile pattern.
+  Slot activated when mpTileWindowsHorizontallyAction triggered signal is raised.\n
+  Arranges all child windows in a horizontally tiled pattern.
   */
-void MainWindow::tileWindows()
+void MainWindow::tileSubWindowsHorizontally()
 {
   switch (mpCentralStackedWidget->currentIndex()) {
     case 1:
-      mpModelWidgetContainer->tileSubWindows();
+      tileSubWindows(mpModelWidgetContainer, true);
       break;
     case 2:
-      mpPlotWindowContainer->tileSubWindows();
+      tileSubWindows(mpPlotWindowContainer, true);
+    default:
+      break;
+  }
+}
+
+/*!
+  Slot activated when mpTileWindowsVerticallyAction triggered signal is raised.\n
+  Arranges all child windows in a vertically tiled pattern.
+  */
+void MainWindow::tileSubWindowsVertically()
+{
+  switch (mpCentralStackedWidget->currentIndex()) {
+    case 1:
+      tileSubWindows(mpModelWidgetContainer, false);
+      break;
+    case 2:
+      tileSubWindows(mpPlotWindowContainer, false);
     default:
       break;
   }
@@ -2045,11 +2062,15 @@ void MainWindow::createActions()
   // Cascade windows action
   mpCascadeWindowsAction = new QAction(tr("Cascade Windows"), this);
   mpCascadeWindowsAction->setStatusTip(tr("Arranges all the child windows in a cascade pattern"));
-  connect(mpCascadeWindowsAction, SIGNAL(triggered()), SLOT(cascadeWindows()));
-  // Tile windows action
-  mpTileWindowsAction = new QAction(tr("Tile Windows"), this);
-  mpTileWindowsAction->setStatusTip(tr("Arranges all child windows in a tile pattern"));
-  connect(mpTileWindowsAction, SIGNAL(triggered()), SLOT(tileWindows()));
+  connect(mpCascadeWindowsAction, SIGNAL(triggered()), SLOT(cascadeSubWindows()));
+  // Tile windows Horizontally action
+  mpTileWindowsHorizontallyAction = new QAction(tr("Tile Windows Horizontally"), this);
+  mpTileWindowsHorizontallyAction->setStatusTip(tr("Arranges all child windows in a horizontally tiled pattern"));
+  connect(mpTileWindowsHorizontallyAction, SIGNAL(triggered()), SLOT(tileSubWindowsHorizontally()));
+  // Tile windows Vertically action
+  mpTileWindowsVerticallyAction = new QAction(tr("Tile Windows Vertically"), this);
+  mpTileWindowsVerticallyAction->setStatusTip(tr("Arranges all child windows in a vertically tiled pattern"));
+  connect(mpTileWindowsVerticallyAction, SIGNAL(triggered()), SLOT(tileSubWindowsVertically()));
   // Simulation Menu
   // instantiate model action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.svg"), tr("Instantiate Model"), this);
@@ -2332,7 +2353,8 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpShowAlgorithmicDebuggerAction);
   pViewWindowsMenu->addSeparator();
   pViewWindowsMenu->addAction(mpCascadeWindowsAction);
-  pViewWindowsMenu->addAction(mpTileWindowsAction);
+  pViewWindowsMenu->addAction(mpTileWindowsHorizontallyAction);
+  pViewWindowsMenu->addAction(mpTileWindowsVerticallyAction);
   pViewMenu->addAction(pViewToolbarsMenu->menuAction());
   pViewMenu->addAction(pViewWindowsMenu->menuAction());
   pViewMenu->addSeparator();
@@ -2464,6 +2486,42 @@ void MainWindow::switchToPlottingPerspective()
   }
   mpVariablesDockWidget->show();
   mpPlotToolBar->setEnabled(true);
+}
+
+/*!
+  Arranges all child windows in a horizontally tiled pattern.
+  \param pMdiArea - the subwindows parent mdi area.
+  */
+void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
+{
+  QList<QMdiSubWindow*> subWindowsList = pMdiArea->subWindowList(QMdiArea::ActivationHistoryOrder);
+  if (subWindowsList.count() < 2) {
+    pMdiArea->tileSubWindows();
+    return;
+  }
+  QPoint position(0, 0);
+  for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
+    QMdiSubWindow *pSubWindow = subWindowsList[i];
+    if (!pSubWindow->isVisible() || (pSubWindow->isMinimized() && !pSubWindow->isShaded())) {
+      continue;
+    }
+    if (pSubWindow->isMaximized() || pSubWindow->isShaded()) {
+      pSubWindow->showNormal();
+    }
+    QRect rect;
+    if (horizontally) {
+      rect = QRect(0, 0, pMdiArea->width(), qMax(pSubWindow->minimumSizeHint().height(), pMdiArea->height() / subWindowsList.count()));
+    } else {
+      rect = QRect(0, 0, qMax(pSubWindow->minimumSizeHint().width(), pMdiArea->width() / subWindowsList.count()), pMdiArea->height());
+    }
+    pSubWindow->setGeometry(rect);
+    pSubWindow->move(position);
+    if (horizontally) {
+      position.setY(position.y() + pSubWindow->height());
+    } else {
+      position.setX(position.x() + pSubWindow->width());
+    }
+  }
 }
 
 //! Creates the toolbars

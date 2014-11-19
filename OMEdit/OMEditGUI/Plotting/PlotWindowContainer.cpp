@@ -44,7 +44,6 @@ using namespace OMPlot;
 PlotWindowContainer::PlotWindowContainer(MainWindow *pParent)
   : MdiArea(pParent)
 {
-  setActivationOrder(QMdiArea::CreationOrder);
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getPlottingViewMode().compare(Helper::subWindow) == 0)
     setViewMode(QMdiArea::SubWindowView);
   else
