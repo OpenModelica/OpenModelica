@@ -11304,6 +11304,7 @@ algorithm
 
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
       then getUsesAnnotationString2(arglst);
+
   end match;
 end getUsesAnnotationString;
 
@@ -11311,11 +11312,12 @@ protected function getUsesAnnotationString2
   input list<Absyn.ElementArg> eltArgs;
   output list<tuple<Absyn.Path,list<String>>> strs;
 algorithm
-  strs := matchcontinue (eltArgs)
+  strs := match eltArgs
     local
       list<Absyn.ElementArg> xs;
       String name,  version;
       list<tuple<Absyn.Path,list<String>>> ss;
+      Absyn.Info info;
 
     case ({}) then {};
 
@@ -11327,12 +11329,18 @@ algorithm
         ss = getUsesAnnotationString2(xs);
       then (Absyn.IDENT(name),{version})::ss;
 
+    case (Absyn.MODIFICATION(info = info, path = Absyn.IDENT(name = name))::xs)
+      equation
+        Error.addSourceMessage(Error.USES_MISSING_VERSION, {name}, info);
+        ss = getUsesAnnotationString2(xs);
+      then (Absyn.IDENT(name),{"default"})::ss;
+
     case (_::xs)
       equation
         ss = getUsesAnnotationString2(xs);
       then ss;
 
-    end matchcontinue;
+    end match;
 end getUsesAnnotationString2;
 
 protected function getIconAnnotation

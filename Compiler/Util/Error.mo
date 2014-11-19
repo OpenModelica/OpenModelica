@@ -674,6 +674,7 @@ public constant Message ENUM_DUPLICATES = MESSAGE(253, TRANSLATION(), ERROR(),
 public constant Message RESERVED_IDENTIFIER = MESSAGE(254, TRANSLATION(), ERROR(),
   Util.gettext("Identifier %s is reserved for the built-in type with the same name."));
 
+
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
@@ -780,6 +781,8 @@ public constant Message NOTIFY_LOAD_MODEL_FAILED = MESSAGE(556, SCRIPTING(), NOT
   Util.gettext("Skipped loading package %s (%s) using MODELICAPATH %s (uses-annotation may be wrong)."));
 public constant Message ROOT_USER_INTERACTIVE = MESSAGE(557, SCRIPTING(), ERROR(),
   Util.gettext("You are trying to run OpenModelica as a server using the root user.\nThis is a very bad idea:\n* The socket interface does not authenticate the user.\n* OpenModelica allows execution of arbitrary commands."));
+public constant Message USES_MISSING_VERSION = MESSAGE(558, SCRIPTING(), WARNING(),
+  Util.gettext("Uses-annotation is missing version for library %s. Assuming the tool-specific version=\"default\"."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
