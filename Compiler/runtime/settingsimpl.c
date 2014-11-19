@@ -60,14 +60,14 @@ extern char* _replace(char* source_str,char* search_str,char* replace_str); //De
 static char* winPath = NULL;
 
 #if defined(linux) || defined(__APPLE_CC__)
-/* Helper function to strip /bin/... from the executable path of omc */
+/* Helper function to strip /bin/... or /lib/... from the executable path of omc */
 static void stripbinpath(char *omhome)
 {
   char *tmp;
-  assert(tmp = strrchr(omhome,'/'));
-  *tmp = '\0';
-  assert(tmp = strrchr(omhome,'/'));
-  *tmp = '\0';
+  do {
+    assert(tmp = strrchr(omhome,'/'));
+    *tmp = '\0';
+  } while (strcmp(tmp+1,"bin") && strcmp(tmp+1,"lib"));
   return;
 }
 #endif
@@ -100,6 +100,33 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   return omhome;
 }
 #elif defined(__APPLE_CC__)
+
+#if 1
+#include <dlfcn.h>
+
+const char* SettingsImpl__getInstallationDirectoryPath(void) {
+  int ret;
+  pid_t pid;
+  static char *omhome;
+  static int init = 0;
+  if (init) {
+    return omhome;
+  } 
+
+  Dl_info info;
+  if (!dladdr((void*) SettingsImpl__getInstallationDirectoryPath, &info)) {
+    fprintf(stderr, "proc_pidpath() failed: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  } else {
+    omhome = GC_strdup(info.dli_fname);
+    stripbinpath(omhome);
+  }
+  init = 1;
+  return omhome;
+}
+
+#else
+/* If we do not use dylib in the future */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -114,6 +141,7 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   if (init) {
     return omhome;
   }
+
   pid = getpid();
   ret = proc_pidpath(pid, omhome, sizeof(omhome));
   if (ret <= 0) {
@@ -125,6 +153,7 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   init = 1;
   return omhome;
 }
+#endif /* dylib */
 
 #else
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
