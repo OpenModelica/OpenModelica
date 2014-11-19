@@ -4204,7 +4204,7 @@ algorithm
       then res;
 
 
-    // a*x op2 b op1 c*x op3 d
+    // a*(x op2 b) op1 c*(x op3 d)
     // x *(a op2 b op1 c op3 d)
     case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(_),DAE.BINARY(e5,op3,e6)),false,false)
      equation
@@ -4229,11 +4229,35 @@ algorithm
      then DAE.BINARY(e5, oper, DAE.BINARY(e1,op1,DAE.BINARY(e4,op3,e6)));
 
     // a*(x op2 b) op1 c*x
-    // x *(a op2 b op1 c)
+    // x*(a op2 b op1 c)
     // or
     // a*(x op2 b) op1 x*c
-    // x *(a op2 b op1 c)
-    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(_),e5),false,false)
+    // x*(a op2 b op1 c)
+    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(),e5),false,false)
+     equation
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
+              Expression.operatorEqual(op1,DAE.ADD(ty));
+       true = Expression.operatorEqual(op2,DAE.MUL(ty)) or
+              Expression.operatorEqual(op2,DAE.DIV(ty));
+       if Expression.expEqual(e2,e5)
+       then
+         outExp = DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e4));
+       else if Expression.expEqual(e2,e4)
+            then
+              outExp = DAE.BINARY(e4, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e5));
+            else
+              fail();
+            end if;
+       end if;
+     then
+       outExp;
+
+    // a*(x op2 b) op1 c*x
+    // x*(a op2 b op1 c)
+    // or
+    // a*(x op2 b) op1 x*c
+    // x*(a op2 b op1 c)
+    case (_,op1, DAE.BINARY(DAE.BINARY(e1,oper as DAE.MUL(ty),e2),op2,e3), DAE.BINARY(e4,DAE.MUL(),e5),false,false)
      equation
        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
               Expression.operatorEqual(op1,DAE.ADD(ty));
