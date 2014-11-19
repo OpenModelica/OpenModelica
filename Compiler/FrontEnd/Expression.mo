@@ -3208,7 +3208,7 @@ algorithm
       Operator op;
       Real r1,r2;
       Integer i1,i2;
-      DAE.Exp e;
+      DAE.Exp e, x, y, z;
     case(_,_)
       equation
         true = isZero(e1);
@@ -3234,6 +3234,20 @@ algorithm
     case (_,DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=e))
       then
         expSub(e1,e);
+    // x +(-y)*z
+    case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS(),x),op as DAE.MUL(),y))
+      then
+        expSub(e1,DAE.BINARY(x,op,y));
+    case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(),x), op as DAE.MUL_ARR(),y))
+      then
+        expSub(e1,DAE.BINARY(x,op,y));
+    // x +(-y)/z
+    case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS(),x),op as DAE.DIV(),y))
+      then
+        expSub(e1,DAE.BINARY(x,op,y));
+    case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(),x), op as DAE.DIV_ARR(),y))
+      then
+        expSub(e1,DAE.BINARY(x,op,y));
     /* -b + a = a - b */
     case (DAE.UNARY(operator=DAE.UMINUS(),exp=e),_)
       then
@@ -3241,6 +3255,21 @@ algorithm
     case (DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=e),_)
       then
         expSub(e2,e);
+    // (-y)*z+x
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(),x),op as DAE.MUL(),y),_)
+      then
+        expSub(e2,DAE.BINARY(x,op,y));
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(),x), op as DAE.MUL_ARR(),y),_)
+      then
+        expSub(e2,DAE.BINARY(x,op,y));
+    // (-y)/z + x
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(),x),op as DAE.DIV(),y),_)
+      then
+        expSub(e2,DAE.BINARY(x,op,y));
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(),x), op as DAE.DIV_ARR(),y),_)
+      then
+        expSub(e2,DAE.BINARY(x,op,y));
+
     case (_,_)
       equation
         tp = typeof(e1);
@@ -3272,7 +3301,7 @@ algorithm
       Operator op;
       Real r1,r2;
       Integer i1,i2;
-      DAE.Exp e;
+      DAE.Exp e, x,y;
     case(_,_)
       equation
         true = isZero(e1);
@@ -3300,6 +3329,20 @@ algorithm
     case (_,DAE.UNARY(operator=DAE.UMINUS_ARR(),exp=e))
       then
         expAdd(e1,e);
+    // x -(-y)*z
+    case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS(),x),op as DAE.MUL(),y))
+      then
+        expAdd(e1,DAE.BINARY(x,op,y));
+    case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(),x), op as DAE.MUL_ARR(),y))
+      then
+        expAdd(e1,DAE.BINARY(x,op,y));
+    // x -(-y)/z
+    case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS(),x),op as DAE.DIV(),y))
+      then
+        expAdd(e1,DAE.BINARY(x,op,y));
+    case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(),x), op as DAE.DIV_ARR(),y))
+      then
+        expAdd(e1,DAE.BINARY(x,op,y));
     /* - a - b = -(a + b) */
     case (DAE.UNARY(operator=DAE.UMINUS(),exp=e),_)
       equation
@@ -3517,8 +3560,10 @@ algorithm
   outExp := matchcontinue(e1,e2)
     local
       Type tp;
-      DAE.Exp e,e3,e4;
+      DAE.Exp e,e3,e4,e5;
       Real r1,r2;
+      Boolean b;
+      Operator op;
 
     // e1^1 = e1
     case(_,_) equation
@@ -3542,58 +3587,31 @@ algorithm
       false = isZero(e2);
     then makeConstZero(typeof(e1));
 
-    // (r1*e1)^r2 = c*e1^r2
-    case (DAE.BINARY(DAE.RCONST(real = r1),DAE.MUL(_),exp2 = e3) , DAE.RCONST(real = r2)) equation
-      e = expPow(DAE.RCONST(r1), DAE.RCONST(r2));
-      e = expMul(e,expPow(e3,e2));
-      then e;
-
-   // (e1*r1)^r2 = c*e1^r2
-    case (DAE.BINARY(e3, DAE.MUL(_), DAE.RCONST(real = r1)) , DAE.RCONST(real = r2)) equation
-      e = expPow(DAE.RCONST(r1), DAE.RCONST(r2));
-      e = expMul(e,expPow(e3,e2));
-      then e;
-
-    // (r1/e1)^r2 = c/e1^r2
-    case (DAE.BINARY(DAE.RCONST(real = r1),DAE.DIV(_),exp2 = e3) , DAE.RCONST(real = r2)) equation
-      e = expPow(DAE.RCONST(r1), DAE.RCONST(r2));
-      e = makeDiv(e, expPow(e3,e2));
-      then e;
-
-    // (e1/r1)^r2 = c*e1^r2 TODO! FIXME! SAME AS 2 cases ABOVE??!!
-    case (DAE.BINARY(e3, DAE.DIV(_), DAE.RCONST(real = r1)) , DAE.RCONST(real = r2)) equation
-      e = expPow(DAE.RCONST(r1), DAE.RCONST(r2));
-      e = makeDiv(DAE.RCONST(1.0), e);
-      e = expMul(e, expPow(e3,e2));
-      then e;
-
    // (-e)^r = e^r if r is even
-   case (DAE.UNARY(exp=e,operator=DAE.UMINUS()), DAE.RCONST(real = r1)) equation
-    r2 = realMod(r1,2.0);
-    true = realEq(r2,0.0);
+   case (DAE.UNARY(DAE.UMINUS(),e), DAE.RCONST(r1)) equation
+    0.0 = realMod(r1,2.0);
     e = expPow(e,DAE.RCONST(r1));
    then e;
 
+  // (x/y)^(-z) = (y/x)^z
+  case (DAE.BINARY(e3, DAE.DIV(), e4), DAE.UNARY(DAE.UMINUS(),e5)) equation
+    e = makeDiv(e4,e3);
+    e = expPow(e,e5);
+  then e;
+
   // (e1/e2)^(-r) = (e2/e1)^r
-  case (DAE.BINARY(e3, DAE.DIV(_), e4) , DAE.RCONST(r2)) equation
+  case (DAE.BINARY(e3, DAE.DIV(), e4) , DAE.RCONST(r2)) equation
     true = realLt(r2, 0.0);
     r2 = realNeg(r2);
     e = makeDiv(e4,e3);
     e = expPow(e,DAE.RCONST(r2));
   then e;
 
-  // e ^ -r1 = 1/(e^r1)
-  case (_, DAE.RCONST(real = r1)) equation
-    true = realLt(r1, 0.0);
-    r1 = realNeg(r1);
-    e = DAE.RCONST(1.0);
-    e3 = expPow(e1, DAE.RCONST(r1));
-    e = makeDiv(e,e3);
-  then e;
-
   else equation
      tp = typeof(e1);
-  then DAE.BINARY(e1,DAE.POW(tp),e2);
+     b = DAEUtil.expTypeArray(tp);
+     op = if b then DAE.POW_ARR(tp) else DAE.POW(tp);
+  then DAE.BINARY(e1,op,e2);
 
   end matchcontinue;
 end expPow;
