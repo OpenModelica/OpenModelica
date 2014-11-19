@@ -422,7 +422,7 @@ void Component::createResizerItems()
   mpBottomLeftResizerItem->setPos(mapFromScene(x1, y1));
   mpBottomLeftResizerItem->setResizePosition(ResizerItem::BottomLeft);
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
-  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(int,QPointF)), SLOT(resizeComponent(int,QPointF)));
+  connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
   mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
@@ -431,7 +431,7 @@ void Component::createResizerItems()
   mpTopLeftResizerItem->setPos(mapFromScene(x1, y2));
   mpTopLeftResizerItem->setResizePosition(ResizerItem::TopLeft);
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
-  connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(int,QPointF)), SLOT(resizeComponent(int,QPointF)));
+  connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
   mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
@@ -440,7 +440,7 @@ void Component::createResizerItems()
   mpTopRightResizerItem->setPos(mapFromScene(x2, y2));
   mpTopRightResizerItem->setResizePosition(ResizerItem::TopRight);
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
-  connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(int,QPointF)), SLOT(resizeComponent(int,QPointF)));
+  connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
   mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
@@ -449,7 +449,7 @@ void Component::createResizerItems()
   mpBottomRightResizerItem->setPos(mapFromScene(x2, y1));
   mpBottomRightResizerItem->setResizePosition(ResizerItem::BottomRight);
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPressed(ResizerItem*)), SLOT(prepareResizeComponent(ResizerItem*)));
-  connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(int,QPointF)), SLOT(resizeComponent(int,QPointF)));
+  connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
   mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
@@ -632,47 +632,29 @@ void Component::setComponentFlags()
 
 void Component::getExtents(QPointF *pExtent1, QPointF *pExtent2)
 {
-  qreal x1, y1, x2, y2;
-  boundingRect().getCoords(&x1, &y1, &x2, &y2);
-  pExtent1->setX(mapToScene(x1, y1).x() - scenePos().x());
-  pExtent1->setY(mapToScene(x1, y1).y() - scenePos().y());
-  pExtent2->setX(mapToScene(x2, y2).x() - scenePos().x());
-  pExtent2->setY(mapToScene(x2, y2).y() - scenePos().y());
-  if (mpTransformation->getFlipHorizontal())
-  {
-    pExtent1->setX(fabs(pExtent1->x()));
-    pExtent2->setX(-(fabs(pExtent2->x())));
-  }
-  else
-  {
-    pExtent1->setX(-(fabs(pExtent1->x())));
-    pExtent2->setX(fabs(pExtent2->x()));
-  }
-  if (mpTransformation->getFlipVertical())
-  {
-    pExtent1->setY(fabs(pExtent1->y()));
-    pExtent2->setY(-(fabs(pExtent2->y())));
-  }
-  else
-  {
-    pExtent1->setY(-(fabs(pExtent1->y())));
-    pExtent2->setY(fabs(pExtent2->y()));
-  }
+  qreal angle = mpTransformation->getRotateAngle();
+  qreal sx = transform().m11() / (cos(angle * (M_PI / 180)));
+  qreal sy = transform().m22() / (cos(angle * (M_PI / 180)));
+  pExtent1->setX(sx * boundingRect().left());
+  pExtent1->setY(sy * boundingRect().top());
+  pExtent2->setX(sx * boundingRect().right());
+  pExtent2->setY(sy * boundingRect().bottom());
 }
 
 QString Component::getTransformationAnnotation()
 {
   QString annotationString;
-  if (mpGraphicsView->getViewType() == StringHandler::Icon)
+  if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     annotationString.append("iconTransformation=transformation(origin=");
-  else if (mpGraphicsView->getViewType() == StringHandler::Diagram)
+  } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
     annotationString.append("transformation=transformation(origin=");
+  }
   // add the icon origin
   annotationString.append("{").append(QString::number(scenePos().x())).append(",");
   annotationString.append(QString::number(scenePos().y())).append("}, ");
   // add extent points
-  QPointF extent1, extent2;
-  getExtents(&extent1, &extent2);
+  QPointF extent1 = mpTransformation->getExtent1();
+  QPointF extent2 = mpTransformation->getExtent2();
   annotationString.append("extent={").append("{").append(QString::number(extent1.x()));
   annotationString.append(",").append(QString::number(extent1.y())).append("},");
   annotationString.append("{").append(QString::number(extent2.x())).append(",");
@@ -686,33 +668,30 @@ QString Component::getPlacementAnnotation()
 {
   // create the placement annotation string
   QString placementAnnotationString = "annotate=Placement(";
-  if (mpTransformation)
+  if (mpTransformation) {
     placementAnnotationString.append("visible=").append(mpTransformation->getVisible() ? "true" : "false");
-  if (mType == StringHandler::Connector)
-  {
-    if (mpGraphicsView->getViewType() == StringHandler::Icon)
-    {
+  }
+  if (mType == StringHandler::Connector) {
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
       // first get the component from diagram view and get the transformations
       Component *pComponent;
       pComponent = mpGraphicsView->getModelWidget()->getDiagramGraphicsView()->getComponentObject(getName());
-      if (pComponent)
+      if (pComponent) {
         placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotation());
+      }
       // then get the icon transformations
       placementAnnotationString.append(", ").append(getTransformationAnnotation());
-    }
-    else if (mpGraphicsView->getViewType() == StringHandler::Diagram)
-    {
+    } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
       // first get the component from diagram view and get the transformations
       placementAnnotationString.append(", ").append(getTransformationAnnotation());
       // then get the icon transformations
       Component *pComponent;
       pComponent = mpGraphicsView->getModelWidget()->getIconGraphicsView()->getComponentObject(getName());
-      if (pComponent)
+      if (pComponent) {
         placementAnnotationString.append(", ").append(pComponent->getTransformationAnnotation());
+      }
     }
-  }
-  else
-  {
+  } else {
     placementAnnotationString.append(", ").append(getTransformationAnnotation());
   }
   placementAnnotationString.append(")");
@@ -876,49 +855,45 @@ void Component::prepareResizeComponent(ResizerItem *pResizerItem)
   mpSelectedResizerItem = pResizerItem;
   mTransform = transform();
   mSceneBoundingRect = sceneBoundingRect();
-  mTransformationStartPosition = scenePos();
-  mPivotPoint = sceneBoundingRect().center();
-  if (mpSelectedResizerItem->getResizePosition() == ResizerItem::BottomLeft)
-  {
-    mTransformationStartPosition = sceneBoundingRect().topLeft();
-    mPivotPoint = sceneBoundingRect().bottomRight();
-  }
-  else if (mpSelectedResizerItem->getResizePosition() == ResizerItem::TopLeft)
-  {
-    mTransformationStartPosition = sceneBoundingRect().bottomLeft();
-    mPivotPoint = sceneBoundingRect().topRight();
-  }
-  else if (mpSelectedResizerItem->getResizePosition() == ResizerItem::TopRight)
-  {
-    mTransformationStartPosition = sceneBoundingRect().bottomRight();
-    mPivotPoint = sceneBoundingRect().topLeft();
-  }
-  else if (mpSelectedResizerItem->getResizePosition() == ResizerItem::BottomRight)
-  {
-    mTransformationStartPosition = sceneBoundingRect().topRight();
-    mPivotPoint = sceneBoundingRect().bottomLeft();
+  QPointF topLeft = mpGraphicsView->snapPointToGrid(sceneBoundingRect().topLeft());
+  QPointF topRight = mpGraphicsView->snapPointToGrid(sceneBoundingRect().topRight());
+  QPointF bottomLeft = mpGraphicsView->snapPointToGrid(sceneBoundingRect().bottomLeft());
+  QPointF bottomRight = mpGraphicsView->snapPointToGrid(sceneBoundingRect().bottomRight());
+  mTransformationStartPosition = mpGraphicsView->snapPointToGrid(scenePos());
+  mPivotPoint = mpGraphicsView->snapPointToGrid(sceneBoundingRect().center());
+
+  if (mpSelectedResizerItem->getResizePosition() == ResizerItem::BottomLeft) {
+    mTransformationStartPosition = topLeft;
+    mPivotPoint = bottomRight;
+  } else if (mpSelectedResizerItem->getResizePosition() == ResizerItem::TopLeft) {
+    mTransformationStartPosition = bottomLeft;
+    mPivotPoint = topRight;
+  } else if (mpSelectedResizerItem->getResizePosition() == ResizerItem::TopRight) {
+    mTransformationStartPosition = bottomRight;
+    mPivotPoint = topLeft;
+  } else if (mpSelectedResizerItem->getResizePosition() == ResizerItem::BottomRight) {
+    mTransformationStartPosition = topRight;
+    mPivotPoint = bottomLeft;
   }
   mpResizerRectangle->setRect(boundingRect()); //Sets the current item to the temporary rect
   mpResizerRectangle->setTransform(transform()); //Set the same matrix of this item to the temporary item
   mpResizerRectangle->setPos(pos());
 }
 
-void Component::resizeComponent(int index, QPointF newPosition)
+void Component::resizeComponent(QPointF newPosition)
 {
-  Q_UNUSED(index);
-  newPosition = mpGraphicsView->snapPointToGrid(newPosition, mpTransformation);
   float xDistance; //X distance between the current position of the mouse and the starting position mouse
   float yDistance; //Y distance between the current position of the mouse and the starting position mouse
   //Calculates the X distance
   xDistance = newPosition.x() - mTransformationStartPosition.x();
-  if (mTransformationStartPosition.x() < mPivotPoint.x()) //If the starting point is on the negative side of the X plane we do an inverse of the value
-  {
+  //If the starting point is on the negative side of the X plane we do an inverse of the value
+  if (mTransformationStartPosition.x() < mPivotPoint.x()) {
     xDistance = xDistance * -1;
   }
   //Calculates the Y distance
   yDistance = newPosition.y() - mTransformationStartPosition.y();
-  if (mTransformationStartPosition.y() < mPivotPoint.y()) //If the starting point is on the negative side of the Y plane we do an inverse of the value
-  {
+  //If the starting point is on the negative side of the Y plane we do an inverse of the value
+  if (mTransformationStartPosition.y() < mPivotPoint.y()) {
     yDistance = yDistance * -1;
   }
   //Calculate the factors by dividing the distances againts the original size of this container
@@ -943,78 +918,30 @@ void Component::resizeComponent(int index, QPointF newPosition)
       .translate(-pivot.x(), -pivot.y());
   mpResizerRectangle->setTransform(mTransform * tmpTransform); //Multiplies the previous matrix * the temporary
   setTransform(mTransform * tmpTransform);
+  // set the final resize on component.
+  QPointF extent1, extent2;
+  qreal angle = mpTransformation->getRotateAngle();
+  qreal sx = transform().m11() / (cos(angle * (M_PI / 180)));
+  qreal sy = transform().m22() / (cos(angle * (M_PI / 180)));
+  extent1.setX(sx * boundingRect().left());
+  extent1.setY(sy * boundingRect().top());
+  extent2.setX(sx * boundingRect().right());
+  extent2.setY(sy * boundingRect().bottom());
+  mpTransformation->setOrigin(mpGraphicsView->roundPoint(QPointF(transform().m31(), transform().m32())));
+  mpTransformation->setExtent1(mpGraphicsView->roundPoint(extent1));
+  mpTransformation->setExtent2(mpGraphicsView->roundPoint(extent2));
+  setTransform(mpTransformation->getTransformationMatrix());
+  // let connections know that component has changed.
   emit componentTransformChange();
 }
 
 void Component::finishResizeComponent()
 {
-  qreal x1, y1, x2, y2;
-  boundingRect().getCoords(&x1, &y1, &x2, &y2);
-  QPointF extent1, extent2;
-  extent1.setX(mapToScene(x1, y1).x() - scenePos().x());
-  extent1.setY(mapToScene(x1, y1).y() - scenePos().y());
-  extent2.setX(mapToScene(x2, y2).x() - scenePos().x());
-  extent2.setY(mapToScene(x2, y2).y() - scenePos().y());
-  if (mXFactor < 0)
-  {
-    if (!mpTransformation->getFlipHorizontal())
-    {
-      extent1.setX(fabs(extent1.x()));
-      extent2.setX(-(fabs(extent2.x())));
-    }
-    else
-    {
-      extent1.setX(-(fabs(extent1.x())));
-      extent2.setX(fabs(extent2.x()));
-    }
-  }
-  else
-  {
-    if (!mpTransformation->getFlipHorizontal())
-    {
-      extent1.setX(-(fabs(extent1.x())));
-      extent2.setX(fabs(extent2.x()));
-    }
-    else
-    {
-      extent1.setX(fabs(extent1.x()));
-      extent2.setX(-(fabs(extent2.x())));
-    }
-  }
-  if (mYFactor < 0)
-  {
-    if (!mpTransformation->getFlipVertical())
-    {
-      extent1.setY(fabs(extent1.y()));
-      extent2.setY(-(fabs(extent2.y())));
-    }
-    else
-    {
-      extent1.setY(-(fabs(extent1.y())));
-      extent2.setY(fabs(extent2.y()));
-    }
-  }
-  else
-  {
-    if (!mpTransformation->getFlipVertical())
-    {
-      extent1.setY(-(fabs(extent1.y())));
-      extent2.setY(fabs(extent2.y()));
-    }
-    else
-    {
-      extent1.setY(fabs(extent1.y()));
-      extent2.setY(-(fabs(extent2.y())));
-    }
-  }
-  mpTransformation->setOrigin(QPointF(transform().m31(), transform().m32())); //Sets this item position as the temporary polygon
-  mpTransformation->setExtent1(extent1);
-  mpTransformation->setExtent2(extent2);
-  setTransform(mpTransformation->getTransformationMatrix());
-  if (isSelected())
+  if (isSelected()) {
     showResizerItems();
-  else
+  } else {
     setSelected(true);
+  }
 }
 
 void Component::deleteMe()

@@ -88,7 +88,6 @@ public:
 private:
   Component *mpComponent;
   QRectF mRectangle;
-  int mIndex;
   QPen mPen;
   QPen mActivePen;
   QPen mPassivePen;
@@ -97,7 +96,7 @@ private:
   ResizePositions mResizeposition;
 signals:
   void resizerItemPressed(ResizerItem *pResizerItem);
-  void resizerItemMoved(int index, QPointF newPosition);
+  void resizerItemMoved(QPointF newPosition);
   void resizerItemReleased();
   void resizerItemPositionChanged();
 protected:

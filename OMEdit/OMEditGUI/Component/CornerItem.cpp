@@ -276,7 +276,7 @@ void ResizerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
   if (event->button() == Qt::LeftButton) {
     emit resizerItemPressed(this);
     mIsPressed = true;
-    mResizerItemOldPosition = event->scenePos();
+    mResizerItemOldPosition = mpComponent->getGraphicsView()->snapPointToGrid(event->scenePos());
   }
   QGraphicsItem::mousePressEvent(event);
 }
@@ -288,9 +288,9 @@ void ResizerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
   */
 void ResizerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-  // indicates that user is dragging the corner item
+  // indicates that user is dragging the resizer item
   if (mIsPressed) {
-    emit resizerItemMoved(mIndex, event->scenePos());
+    emit resizerItemMoved(mpComponent->getGraphicsView()->snapPointToGrid(event->scenePos()));
   }
   QGraphicsItem::mouseMoveEvent(event);
 }
@@ -306,7 +306,7 @@ void ResizerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
   if (event->button() == Qt::LeftButton) {
     mIsPressed = false;
     emit resizerItemReleased();
-    if (mResizerItemOldPosition != event->scenePos()) {
+    if (mResizerItemOldPosition != mpComponent->getGraphicsView()->snapPointToGrid(event->scenePos())) {
       emit resizerItemPositionChanged();
     }
   }

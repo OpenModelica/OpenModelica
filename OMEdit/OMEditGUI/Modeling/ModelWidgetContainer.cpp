@@ -850,8 +850,8 @@ QPointF GraphicsView::snapPointToGrid(QPointF point, Transformation *pTransforma
 {
   qreal stepX = mpCoOrdinateSystem->getHorizontalGridStep();
   qreal stepY = mpCoOrdinateSystem->getVerticalGridStep();
-  // refine snapping if Shift key is pressed
-  if (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+  // refine snapping if Ctrl key is pressed
+  if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
     stepX = stepX / 4;
     stepY = stepY / 4;
   }
@@ -866,7 +866,10 @@ QPointF GraphicsView::snapPointToGrid(QPointF point, Transformation *pTransforma
 
 QPointF GraphicsView::roundPoint(QPointF point)
 {
-  return QPointF(point.toPoint());
+  qreal divisor = 0.5;
+  qreal x = (fmod(point.x(), divisor) == 0) ? point.x() : qRound(point.x());
+  qreal y = (fmod(point.y(), divisor) == 0) ? point.y() : qRound(point.y());
+  return QPointF(x, y);
 }
 
 void GraphicsView::createActions()
@@ -1398,7 +1401,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     // if shape position is changed then update class annotation
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
       if (pShapeAnnotation->getOldPosition() != pShapeAnnotation->pos()) {
-        pShapeAnnotation->getTransformation()->setOrigin(pShapeAnnotation->scenePos());
+        pShapeAnnotation->getTransformation()->setOrigin(snapPointToGrid(pShapeAnnotation->scenePos()));
         pShapeAnnotation->setPos(0, 0);
         pShapeAnnotation->setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
         pShapeAnnotation->setOrigin(pShapeAnnotation->getTransformation()->getOrigin());
@@ -1623,6 +1626,7 @@ void GraphicsView::resizeEvent(QResizeEvent *event)
 void GraphicsView::wheelEvent(QWheelEvent *event)
 {
   int numDegrees = event->delta() / 8;
+  int numSteps = numDegrees * 3;
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   // If Ctrl key is pressed and user has scrolled vertically then Zoom In/Out based on the scroll distance.
@@ -1635,10 +1639,10 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
   } else if ((event->orientation() == Qt::Horizontal) || (event->orientation() == Qt::Vertical && shiftModifier)) {
     // If Shift key is pressed and user has scrolled vertically then scroll the horizontal scrollbars.
     // If user has scrolled horizontally then scroll the horizontal scrollbars.
-    horizontalScrollBar()->setValue(horizontalScrollBar()->value() - 3* numDegrees);
+    horizontalScrollBar()->setValue(horizontalScrollBar()->value() - numSteps);
   } else if (event->orientation() == Qt::Vertical) {
     // If user has scrolled vertically then scroll the vertical scrollbars.
-    verticalScrollBar()->setValue(verticalScrollBar()->value() - 3* numDegrees);
+    verticalScrollBar()->setValue(verticalScrollBar()->value() - numSteps);
   } else {
     QGraphicsView::wheelEvent(event);
   }

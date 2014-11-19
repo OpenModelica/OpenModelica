@@ -169,7 +169,7 @@ signals:
 public slots:
   void updatePlacementAnnotation();
   void prepareResizeComponent(ResizerItem *pResizerItem);
-  void resizeComponent(int index, QPointF newPosition);
+  void resizeComponent(QPointF newPosition);
   void finishResizeComponent();
   void deleteMe();
   void duplicate();
