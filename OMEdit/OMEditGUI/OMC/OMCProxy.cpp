@@ -1128,12 +1128,12 @@ QVariantMap OMCProxy::getClassInformation(QString className)
   }
   QVariantList lst = parseExpression(str).toList();
   QVariantMap res;
-  res["restriction"] = lst[0];
-  res["comment"] = lst[1];
+  res["restriction"] = StringHandler::unparse(lst[0].toString());
+  res["comment"] = StringHandler::unparse(lst[1].toString());
   res["partialPrefix"] = lst[2];
   res["finalPrefix"] = lst[3];
   res["encapsulatedPrefix"] = lst[4];
-  res["fileName"] = lst[5];
+  res["fileName"] = StringHandler::unparse(lst[5].toString());
   res["fileReadOnly"] = lst[6];
   res["lineNumberStart"] = lst[7];
   res["columnNumberStart"] = lst[8];
