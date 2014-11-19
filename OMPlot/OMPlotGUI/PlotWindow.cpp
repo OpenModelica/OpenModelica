@@ -79,8 +79,6 @@ void PlotWindow::setUpWidget()
   setTitle(tr("Plot by OpenModelica"));
   // set the plot grid
   setDetailedGrid(true);
-  setMinimumHeight(250);
-  setMinimumWidth(250);
 }
 
 void PlotWindow::initializePlot(QStringList arguments)
