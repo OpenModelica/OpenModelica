@@ -111,7 +111,7 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   static int init = 0;
   if (init) {
     return omhome;
-  } 
+  }
 
   Dl_info info;
   if (!dladdr((void*) SettingsImpl__getInstallationDirectoryPath, &info)) {
