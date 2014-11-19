@@ -585,7 +585,7 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
     else
       pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
     // update the last point to the center of component
-    QPointF newPos = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
+    QPointF newPos = roundPoint(pEndComponent->mapToScene(pEndComponent->boundingRect().center()));
     mpConnectionLineAnnotation->updateEndPoint(newPos);
     mpConnectionLineAnnotation->update();
     mConnectionsList.append(mpConnectionLineAnnotation);
@@ -841,8 +841,8 @@ QPointF GraphicsView::snapPointToGrid(QPointF point)
 {
   qreal stepX = mpCoOrdinateSystem->getHorizontalGridStep();
   qreal stepY = mpCoOrdinateSystem->getVerticalGridStep();
-  point.setX(stepX * floor((point.x() / stepX) + 0.5));
-  point.setY(stepY * floor((point.y() / stepY) + 0.5));
+  point.setX(stepX * qFloor((point.x() / stepX) + 0.5));
+  point.setY(stepY * qFloor((point.y() / stepY) + 0.5));
   return point;
 }
 
@@ -859,9 +859,14 @@ QPointF GraphicsView::snapPointToGrid(QPointF point, Transformation *pTransforma
   qreal originY = pTransformation->getOrigin().y();
   qreal oldXn = (point.x() + originX) / stepX;
   qreal oldYn = (point.y() + originY) / stepY;
-  point.setX(stepX * floor(oldXn + 0.5) - originX);
-  point.setY(stepY * floor(oldYn + 0.5) - originY);
+  point.setX(stepX * qFloor(oldXn + 0.5) - originX);
+  point.setY(stepY * qFloor(oldYn + 0.5) - originY);
   return point;
+}
+
+QPointF GraphicsView::roundPoint(QPointF point)
+{
+  return QPointF(point.toPoint());
 }
 
 void GraphicsView::createActions()
@@ -914,7 +919,7 @@ void GraphicsView::addConnection(Component *pComponent)
 {
   // When clicking the start component
   if (!isCreatingConnection()) {
-    QPointF startPos = pComponent->mapToScene(pComponent->boundingRect().center());
+    QPointF startPos = roundPoint(pComponent->mapToScene(pComponent->boundingRect().center()));
     mpConnectionLineAnnotation = new LineAnnotation(pComponent, this);
     setIsCreatingConnection(true);
     // if component is a connector

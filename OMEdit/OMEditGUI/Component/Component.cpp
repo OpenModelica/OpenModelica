@@ -65,13 +65,9 @@ Component::Component(QString annotation, QString name, QString className, Compon
   // transformation
   mpTransformation = new Transformation(mpGraphicsView->getViewType());
   mpTransformation->parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
-  if (transformation.isEmpty())
-  {
+  if (transformation.isEmpty()) {
     // snap to grid while creating component
-    qreal stepX = mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep();
-    qreal stepY = mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep();
-    position.setX(stepX * floor((position.x() / stepX) + 0.5));
-    position.setY(stepY * floor((position.y() / stepY) + 0.5));
+    position = mpGraphicsView->snapPointToGrid(position);
     mpTransformation->setOrigin(position);
     qreal initialScale = mpCoOrdinateSystem->getInitialScale();
     mpTransformation->setExtent1(QPointF(initialScale * boundingRect().left(), initialScale * boundingRect().top()));

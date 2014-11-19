@@ -197,6 +197,7 @@ public:
   QRectF itemsBoundingRect();
   QPointF snapPointToGrid(QPointF point);
   QPointF snapPointToGrid(QPointF point, Transformation *pTransformation);
+  QPointF roundPoint(QPointF point);
 private:
   void createActions();
 signals:

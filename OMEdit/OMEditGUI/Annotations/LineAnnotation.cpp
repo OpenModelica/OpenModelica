@@ -559,20 +559,20 @@ void LineAnnotation::handleComponentMoved()
     } else {
       Component *pComponent = qobject_cast<Component*>(sender());
       if (pComponent == mpStartComponent->getRootParentComponent()) {
-        updateStartPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
+        updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
       } else if (pComponent == mpEndComponent->getRootParentComponent()) {
-        updateEndPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center()));
+        updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
       }
     }
   } else if (mpStartComponent) {
     Component *pComponent = qobject_cast<Component*>(sender());
     if (pComponent == mpStartComponent->getRootParentComponent()) {
-      updateStartPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
+      updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
     }
   } else if (mpEndComponent) {
     Component *pComponent = qobject_cast<Component*>(sender());
     if (pComponent == mpEndComponent->getRootParentComponent()) {
-      updateEndPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center()));
+      updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
     }
   }
   update();
@@ -586,13 +586,13 @@ void LineAnnotation::handleComponentRotation()
   if (mpStartComponent) {
     Component *pComponent = qobject_cast<Component*>(sender());
     if (pComponent == mpStartComponent->getRootParentComponent()) {
-      updateStartPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
+      updateStartPoint(mpGraphicsView->roundPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center())));
     }
   }
   if (mpEndComponent) {
     Component *pComponent = qobject_cast<Component*>(sender());
     if (pComponent == mpEndComponent->getRootParentComponent()) {
-      updateEndPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center()));
+      updateEndPoint(mpGraphicsView->roundPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center())));
     }
   }
   update();
