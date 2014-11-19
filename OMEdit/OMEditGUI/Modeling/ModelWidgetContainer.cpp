@@ -1635,10 +1635,10 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
   } else if ((event->orientation() == Qt::Horizontal) || (event->orientation() == Qt::Vertical && shiftModifier)) {
     // If Shift key is pressed and user has scrolled vertically then scroll the horizontal scrollbars.
     // If user has scrolled horizontally then scroll the horizontal scrollbars.
-    horizontalScrollBar()->setValue(horizontalScrollBar()->value() - numDegrees);
+    horizontalScrollBar()->setValue(horizontalScrollBar()->value() - 3* numDegrees);
   } else if (event->orientation() == Qt::Vertical) {
     // If user has scrolled vertically then scroll the vertical scrollbars.
-    verticalScrollBar()->setValue(verticalScrollBar()->value() - numDegrees);
+    verticalScrollBar()->setValue(verticalScrollBar()->value() - 3* numDegrees);
   } else {
     QGraphicsView::wheelEvent(event);
   }
