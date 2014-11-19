@@ -3576,7 +3576,7 @@ algorithm
       then DAE.RCONST(1.0);
 
     // tan(e)*cos(e) = sin(e)
-    case(DAE.DIV(tp),DAE.CALL(path=Absyn.IDENT("tan"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("cos"),expLst={e2}))
+    case(DAE.MUL(tp),DAE.CALL(path=Absyn.IDENT("tan"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("cos"),expLst={e2}))
       equation
         true = Expression.expEqual(e1,e2);
       then Expression.makePureBuiltinCall("sin",{e1},tp);
@@ -3589,7 +3589,7 @@ algorithm
       then DAE.RCONST(1.0);
 
     // tanh(e)*cosh(e) = sinh(e)
-    case(DAE.DIV(tp),DAE.CALL(path=Absyn.IDENT("tanh"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("cosh"),expLst={e2}))
+    case(DAE.MUL(tp),DAE.CALL(path=Absyn.IDENT("tanh"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("cosh"),expLst={e2}))
       equation
         true = Expression.expEqual(e1,e2);
       then Expression.makePureBuiltinCall("sinh",{e1},tp);
@@ -3870,14 +3870,12 @@ algorithm
         res = DAE.BINARY(e,op1,e1);
       then res;
 
-    // (e1 op2 e2*e3 op1 e4)/e3 => e1 op2 e2 op1 e4/e3
-    case (_,DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, op2, DAE.BINARY(e2, DAE.MUL(_), e3)), op1,e4),e5,_,_)
+    // (e1 * e2*e3 op1 e4)/e3 => e1 * e2 op1 e4/e3
+    case (_,DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, op2 as DAE.MUL(), DAE.BINARY(e2, DAE.MUL(_), e3)), op1,e4),e5,_,_)
       equation
         true = Expression.expEqual(e3,e5);
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
               Expression.operatorEqual(op1,DAE.ADD(ty));
-        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-        Expression.operatorEqual(op2,DAE.MUL(ty));
         e = Expression.expDiv(e4,e3);
         e1_1 = DAE.BINARY(e1,op2,e2);
         res = DAE.BINARY(e1_1,op1,e);
@@ -4019,6 +4017,10 @@ algorithm
     case (_,DAE.SUB(ty = ty),e1,DAE.BINARY(DAE.UNARY(operator = DAE.UMINUS(),exp = e2),op1 as DAE.MUL(_),e3),_,_)
       then DAE.BINARY(e1,DAE.ADD(ty),DAE.BINARY(e2,op1,e3));
 
+    // a-(-b)/c = a+b/c
+    case (_,DAE.SUB(ty = ty),e1,DAE.BINARY(DAE.UNARY(operator = DAE.UMINUS(),exp = e2),op1 as DAE.DIV(_),e3),_,_)
+      then DAE.BINARY(e1,DAE.ADD(ty),DAE.BINARY(e2,op1,e3));
+
     // 0 / x = 0
     case (_,DAE.DIV(),e1,e2,true,false)
       equation
@@ -4131,9 +4133,7 @@ algorithm
       then Expression.makeConstOne(tp);
 
     // sqrt(e) ^ 2.0 => e
-    case (_,DAE.POW(),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e}),DAE.RCONST(r),_,_)
-      equation
-        true = realEq(r,2.0);
+    case (_,DAE.POW(),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e}),DAE.RCONST(2.0),_,_)
       then e;
 
     // sqrt(e) ^ r => e ^ 0.5*r
