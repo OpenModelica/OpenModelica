@@ -1556,15 +1556,15 @@ template crefRepresentationArrayAndIndex(ComponentRef cr, Text &indexTxt, SimCod
 //      representationArrayName(varKind, type_))
 
       match cref2simvar(cr, simCode)
-      case SIMVAR(varKind = DISCRETE()) then
-        let offset = match simCode
-          case SIMCODE(__) then
-            match modelInfo
-            case MODELINFO(__) then
-              match varInfo
-              case VARINFO(__) then numAlgVars
-        let &indexTxt += index + ' + ' + offset
-        representationArrayName(varKind, type_)
+//      case SIMVAR(varKind = DISCRETE()) then
+//        let offset = match simCode
+//          case SIMCODE(__) then
+//            match modelInfo
+//            case MODELINFO(__) then
+//              match varInfo
+//              case VARINFO(__) then numAlgVars
+//        let &indexTxt += index + ' + ' + offset
+//        representationArrayName(varKind, type_)
       case SIMVAR(__) then
         let &indexTxt += index
         representationArrayName(varKind, type_)
