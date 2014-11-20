@@ -3840,7 +3840,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let init4   = initValst(varDecls4,"Real",vars.discreteAlgVars, simCode,contextOther,useFlatArrayNotation)
    let init5   = initValstWithSplit(varDecls5,"Int",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAlgVars',vars.intAlgVars, simCode,contextOther,useFlatArrayNotation)
    let init6   = initValst(varDecls6,"Bool",vars.boolAlgVars, simCode,contextOther,useFlatArrayNotation)
-   let init7   = initValstWithSplit(varDecls7,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars',vars.aliasVars, simCode,contextOther,useFlatArrayNotation)
+   let init7   = initAliasValstWithSplit(varDecls7,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars',vars.aliasVars, simCode,contextOther,useFlatArrayNotation)
    let init8   = initAliasValst(varDecls8,"Int",vars.intAliasVars, simCode,contextOther,useFlatArrayNotation)
    let init9   = initValst(varDecls9,"Bool",vars.boolAliasVars, simCode,contextOther,useFlatArrayNotation)
    let init10  = initValstWithSplit(varDecls10,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars',vars.paramVars, simCode,contextOther,useFlatArrayNotation)
@@ -7052,6 +7052,30 @@ match c
 end isOutput;
 
 
+template initAliasValstWithSplit(Text &varDecls /*BUFP*/, Text type ,Text funcNamePrefix, list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
+  let &funcCalls = buffer "" /*BUFD*/
+  let extraFuncs = List.partition(varsLst, 100) |> ls hasindex idx =>
+    let &varDecls = buffer "" /*BUFD*/
+    let &funcCalls += '<%funcNamePrefix%>_<%idx%>();'
+    let init = initAliasValst(varDecls, type, ls, simCode, context, useFlatArrayNotation)
+    <<
+    void <%funcNamePrefix%>_<%idx%>()
+    {
+       <%varDecls%>
+       <%init%>
+    }
+    >>
+    ;separator="\n"
+
+  <<
+  <%extraFuncs%>
+
+  void <%funcNamePrefix%>()
+  {
+    <%funcCalls%>
+  }
+  >>
+end initAliasValstWithSplit;
 
 template initValstWithSplit(Text &varDecls /*BUFP*/, Text type ,Text funcNamePrefix, list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
   let &funcCalls = buffer "" /*BUFD*/
