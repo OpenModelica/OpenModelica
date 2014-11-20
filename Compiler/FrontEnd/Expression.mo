@@ -3446,7 +3446,7 @@ algorithm
             case({}) then DAE.RCONST(0.0);
             case({e1}) then e1;
             case({e1,e2}) then expAdd(e1,e2);
-            case(_) 
+            case(_)
               equation
                (e1,e2) = makeSimplifySumWork(inExpLst);
               then expSub(e1,e2);
@@ -3477,11 +3477,11 @@ algorithm
   for elem in inExpLst loop
     (outExp, neg_e) := match(elem, outExp, neg_e)
                        local DAE.Exp e1, e2, e3, e_1, e_2;
-                       
-                       // a - b 
+
+                       // a - b
                        case(DAE.BINARY(e1,DAE.SUB(),e2),_,_)
                          equation
-                           e_1 = expAdd(outExp, e1);  
+                           e_1 = expAdd(outExp, e1);
                            e_2 = expAdd(neg_e, e2);
                          then (e_1, e_2);
 
