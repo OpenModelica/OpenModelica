@@ -414,6 +414,8 @@ constant DebugFlag MODEL_INFO_JSON = DEBUG_FLAG(124, "modelInfoJson", true,
   Util.gettext("Experimental: Generates a file with suffix _info.json instead of _info.xml."));
 constant DebugFlag GRAPHML = DEBUG_FLAG(125, "graphml", false,
   Util.gettext("Dumps .graphml files for the bipartite graph after Index Reduction and a task graph for the SCCs. Can be displayed with yEd. "));
+constant DebugFlag USEMPI = DEBUG_FLAG(126, "useMPI", false,
+  Util.gettext("Add MPI init and finalize to main method (CPPruntime). "));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -545,7 +547,8 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_EXPANDABLE_INFO,
   DUMP_HOMOTOPY,
   MODEL_INFO_JSON,
-  GRAPHML
+  GRAPHML,
+  USEMPI
 };
 
 public

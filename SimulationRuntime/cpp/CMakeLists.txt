@@ -165,9 +165,6 @@ IF(PAPI_FOUND)
   ADD_DEFINITIONS(-DUSE_PAPI)
 ENDIF(PAPI_FOUND)
 
-#Find MPI
-FIND_PACKAGE(MPI)
-SET(MPI_LIBS MPI_CXX_LIBRARIES)
 
 # Find Boost
 #  - The optional boost libraries must be searched separately, otherwise no library is found if just one is missing.

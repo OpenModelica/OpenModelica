@@ -84,53 +84,60 @@ case SIMCODE(__) then
    >>
 end generateAdditionalIncludes;
 
+
 template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-    let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcOmSchedule)
-    let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
-    let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
-    let type = getConfigString(HPCOM_CODE)
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then
+      let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcOmSchedule)
+      let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
+      let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
+      let type = getConfigString(HPCOM_CODE)
 
-    <<
-    // HPCOM
-    #ifdef __GNUC__
+      <<
+      // HPCOM
+      #ifdef __GNUC__
         #define VARARRAY_ALIGN_PRE
         #define VARARRAY_ALIGN_POST __attribute__((aligned(0x40)))
-    #else
+      #else
         #define VARARRAY_ALIGN_PRE __declspec(align(64))
         #define VARARRAY_ALIGN_POST
-    #endif
+      #endif
 
-    static long unsigned int getThreadNumber()
-    {
-      <% match type
-            case ("openmp") then
-                <<
-                return (long unsigned int)omp_get_thread_num();
-                >>
-            else
-                <<
-                boost::hash<std::string> string_hash;
-                return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
-                >>
-      %>
-    }
+      static long unsigned int getThreadNumber()
+      {
+        <% match type
+          case ("openmp") then
+            <<
+            return (long unsigned int)omp_get_thread_num();
+            >>
+          case ("mpi") then
+            <<
+            //MF Todo: Delete for mpi.
+            >>
+          else
+            <<
+            boost::hash<std::string> string_hash;
+            return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
+            >>
+        end match %>
+      }
 
-    <%addHpcomFunctionHeaders%>
-    <%addHpcomArrayHeaders%>
-    <%addHpcomVarHeaders%>
-    <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
+      <%addHpcomFunctionHeaders%>
+      <%addHpcomArrayHeaders%>
+      <%addHpcomVarHeaders%>
+      <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
 
-    <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-    <<
-    std::vector<MeasureTimeData> measureTimeArrayHpcom;
-    //MeasureTimeValues *measuredStartValuesODE, *measuredEndValuesODE;
-    >>%>
-    >>
+      <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+      <<
+      std::vector<MeasureTimeData> measureTimeArrayHpcom;
+      //MeasureTimeValues *measuredStartValuesODE, *measuredEndValuesODE;
+      >>%>
+      >>
+  end match
 end generateAdditionalProtectedMemberDeclaration;
+
 
 template getAddHpcomStructHeaders(Option<Schedule> hpcOmScheduleOpt)
 ::=
@@ -217,109 +224,115 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
   let type = getConfigString(HPCOM_CODE)
   match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
-        match type
-            case ("pthreads")
-            case ("pthreads_spin") then
-                <<
-                <%List.intRange(getConfigInt(NUM_PROC)) |> thIdx hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type)%>
-                <%createBarrierByName("levelBarrier","", getConfigInt(NUM_PROC), type)%>
-                <%createLockByLockName("measureTimeArrayLock", "", type)%>
-                bool _simulationFinished;
-                UPDATETYPE _command;
-                >>
-            else ""
+      match type
+        case ("pthreads")
+        case ("pthreads_spin") then
+          <<
+          <%List.intRange(getConfigInt(NUM_PROC)) |> thIdx hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type)%>
+          <%createBarrierByName("levelBarrier","", getConfigInt(NUM_PROC), type)%>
+          <%createLockByLockName("measureTimeArrayLock", "", type)%>
+          bool _simulationFinished;
+          UPDATETYPE _command;
+          >>
+        else ""
+      end match
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
-        let locks = hpcOmSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "lock", type); separator="\n"
-        let threadDecl = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
-        match type
-            case ("openmp") then
-                <<
-                <%locks%>
-                <%threadDecl%>
-                >>
-            case "mpi" then
-                <<
-                //BLABLUB
-                >>
-            else
-                let thLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => createLockByLockName(i0, "th_lock", type); separator="\n"
-                let thLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => createLockByLockName(i0, "th_lock1", type); separator="\n"
-                <<
-                bool terminateThreads;
-                UPDATETYPE command;
-                <%locks%>
-                <%thLocks%>
-                <%thLocks1%>
-                <%threadDecl%>
-                >>
-     case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
-        match type
-            case ("openmp") then
-                <<
-                >>
-            case ("tbb") then
-                <<
-                    tbb::flow::graph tbb_graph;
-                >>
-            else ""
-     else ""
+      let locks = hpcOmSchedule.outgoingDepTasks |> task => createLockByDepTask(task, "lock", type); separator="\n"
+      let threadDecl = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadHeaderDecl(i0, type); separator="\n"
+      match type
+        case ("openmp") then
+          <<
+          <%locks%>
+          <%threadDecl%>
+          >>
+        case "mpi" then
+          <<
+          //MF Todo BLABLUB
+          >>
+        else
+          let thLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => createLockByLockName(i0, "th_lock", type); separator="\n"
+          let thLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => createLockByLockName(i0, "th_lock1", type); separator="\n"
+          <<
+          bool terminateThreads;
+          UPDATETYPE command;
+          <%locks%>
+          <%thLocks%>
+          <%thLocks1%>
+          <%threadDecl%>
+          >>
+      end match
+    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+      match type
+        case ("openmp") then
+          << >>
+        case ("tbb") then
+          <<
+          tbb::flow::graph tbb_graph;
+          >>
+        else ""
+      end match
+    else ""
+    end match
 end getAddHpcomVarHeaders;
+
 
 template getAddHpcomFuncHeadersTaskDep(tuple<Task,list<Integer>> taskIn)
 ::=
   match taskIn
     case ((task as CALCTASK(__),parents)) then
-        <<
-        void task_func_<%task.index%>();
-        >>
+      <<
+      void task_func_<%task.index%>();
+      >>
+  end match
 end getAddHpcomFuncHeadersTaskDep;
 
 template generateHpcomSpecificIncludes(SimCode simCode)
 ::=
-    let type = getConfigString(HPCOM_CODE)
-
-    match type
-        case ("openmp") then
-        <<
-        #include <omp.h>
-        >>
-        case ("pthreads")
-        case ("pthreads_spin") then
-        <<
-        #include <boost/smart_ptr/detail/spinlock.hpp>
-        #include <boost/thread/mutex.hpp>
-        #include <boost/thread.hpp>
-        #include <boost/thread/barrier.hpp>
-        #include <Core/Utils/extension/busywaiting_barrier.hpp>
-        >>
-        case ("tbb") then
-        <<
-        #include <tbb/tbb.h>
-        #include <tbb/flow_graph.h>
-        #include <boost/function.hpp>
-        #include <boost/bind.hpp>
-        >>
-        case ("mpi") then // MF: mpi.h
-        <<
-        #include <mpi.h>
-        >>
-        else
-        <<
-        #include <boost/thread/mutex.hpp>
-        #include <boost/thread.hpp>
-        >>
+  let type = getConfigString(HPCOM_CODE)
+  match type
+    case ("openmp") then
+      <<
+      #include <omp.h>
+      >>
+    case ("pthreads")
+    case ("pthreads_spin") then
+      <<
+      #include <boost/smart_ptr/detail/spinlock.hpp>
+      #include <boost/thread/mutex.hpp>
+      #include <boost/thread.hpp>
+      #include <boost/thread/barrier.hpp>
+      #include <Core/Utils/extension/busywaiting_barrier.hpp>
+      >>
+    case ("tbb") then
+      <<
+      #include <tbb/tbb.h>
+      #include <tbb/flow_graph.h>
+      #include <boost/function.hpp>
+      #include <boost/bind.hpp>
+      >>
+    case ("mpi") then // MF: mpi.h
+      <<
+      #include <mpi.h>
+      >>
+    else
+      <<
+      #include <boost/thread/mutex.hpp>
+      #include <boost/thread.hpp>
+      >>
+  end match
 end generateHpcomSpecificIncludes;
 
 template generateThreadHeaderDecl(Integer threadIdx, String iType)
 ::=
-    match iType
-        case ("openmp") then
-        <<
-        >>
-        else
-        <<
-        boost::thread* evaluateThread<%threadIdx%>;
-        >>
+  match iType
+    case ("openmp") then
+      <<
+      >>
+    else
+      <<
+      boost::thread* evaluateThread<%threadIdx%>;
+      >>
+  end match
 end generateThreadHeaderDecl;
 
 template generateThreadFunctionHeaderDecl(Integer threadIdx)
@@ -479,49 +492,51 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
   let type = getConfigString(HPCOM_CODE)
   match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=true)) then
-        match type
-            case ("pthreads")
-            case ("pthreads_spin") then
-                let threadFuncs = List.intRange(intSub(getConfigInt(NUM_PROC),1)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
-                <<
-
-                <%threadFuncs%>
-                >>
-            else ""
+      match type
+        case ("pthreads")
+        case ("pthreads_spin") then
+          let threadFuncs = List.intRange(intSub(getConfigInt(NUM_PROC),1)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
+          <<
+          <%threadFuncs%>
+          >>
+        else ""
+      end match
     case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
-        let initlocks = hpcOmSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "lock", type); separator="\n"
-        let assignLocks = hpcOmSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "lock", type); separator="\n"
-        let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
-        match type
-            case ("openmp") then
-                <<
-                <%threadFuncs%>
-                <%initlocks%>
-                >>
-            case ("mpi") then
-                <<
-                //MFlehmig: Initialize MPI related stuff
-                >>
-            else
-                let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => initializeLockByLockName(i0, "th_lock", type); separator="\n"
-                let threadLocksInit1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => initializeLockByLockName(i0, "th_lock1", type); separator="\n"
-                let threadAssignLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => assignLockByLockName(i0, "th_lock", type); separator="\n"
-                let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
-                <<
-                    terminateThreads = false;
-                    command = IContinuous::UNDEF_UPDATE;
+      let initlocks = hpcOmSchedule.outgoingDepTasks |> task => initializeLockByDepTask(task, "lock", type); separator="\n"
+      let assignLocks = hpcOmSchedule.outgoingDepTasks |> task => assignLockByDepTask(task, "lock", type); separator="\n"
+      let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
+      match type
+        case ("openmp") then
+          <<
+          <%threadFuncs%>
+          <%initlocks%>
+          >>
+        case ("mpi") then
+          <<
+          //MF: Initialize MPI related stuff - nothing todo?
+          >>
+        else
+          let threadLocksInit = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => initializeLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadLocksInit1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => initializeLockByLockName(i0, "th_lock1", type); separator="\n"
+          let threadAssignLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => assignLockByLockName(i0, "th_lock", type); separator="\n"
+          let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
+          <<
+          terminateThreads = false;
+          command = IContinuous::UNDEF_UPDATE;
 
-                    <%initlocks%>
-                    <%threadLocksInit%>
-                    <%threadLocksInit1%>
+          <%initlocks%>
+          <%threadLocksInit%>
+          <%threadLocksInit1%>
 
-                    <%assignLocks%>
-                    <%threadAssignLocks%>
-                    <%threadAssignLocks1%>
+          <%assignLocks%>
+          <%threadAssignLocks%>
+          <%threadAssignLocks1%>
 
-                    <%threadFuncs%>
-                >>
-     else ""
+          <%threadFuncs%>
+          >>
+      end match
+    else ""
+  end match
 end getHpcomConstructorExtension;
 
 
@@ -670,7 +685,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           // MFlehmig: MPI with level scheduling
           void <%lastIdentOfPath(name)%>::evaluateODE(const UPDATETYPE command)
           {
-            //ToDo
+            //MF Todo
           }
           >>
         else
@@ -1330,6 +1345,7 @@ template printCommunicationInfoVariables(CommunicationInfo commInfo)
   end match
 end printCommunicationInfoVariables;
 
+
 template assignLockByLockName(String lockName, String lockPrefix, String iType)
 ::=
   match iType
@@ -1345,7 +1361,9 @@ template assignLockByLockName(String lockName, String lockPrefix, String iType)
       <<
       <%lockPrefix%>_<%lockName%>.lock();
       >>
+  end match
 end assignLockByLockName;
+
 
 template releaseLockByDepTask(Task depTask, String lockPrefix, String iType)
 ::=
@@ -1354,6 +1372,7 @@ template releaseLockByDepTask(Task depTask, String lockPrefix, String iType)
   <%releaseLockByLockName(lockName, lockPrefix, iType)%>
   >>
 end releaseLockByDepTask;
+
 
 template releaseLockByLockName(String lockName, String lockPrefix, String iType)
 ::=
@@ -1370,6 +1389,7 @@ template releaseLockByLockName(String lockName, String lockPrefix, String iType)
       <<
       <%lockPrefix%>_<%lockName%>.unlock();
       >>
+  end match
 end releaseLockByLockName;
 
 
@@ -1510,7 +1530,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 >>
 end simulationMainFileAnalyzation;
 
-template MPIInMainFile(String type)
+
+template MPIInit(String type)
+ "Initialize the MPI environment in main function."
 ::=
   match type
     case "mpi" then
@@ -1520,38 +1542,38 @@ template MPIInMainFile(String type)
       int world_rank, world_size;
       MPI_Comm_size(MPI_COMM_WORLD, &world_size);
       MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-      std::cout << "Hello World! This is MPI process " << world_rank
+      std::cout << "Hello world! This is MPI process " << world_rank
                 << " of " << world_size << " processes."  << endl;
       >>
-    else
-      " "
   end match
-end MPIInMainFile;
+end MPIInit;
 
 
-// MF: MPI header file must be included when compiling MPI parallel code.
-template IncludeMPIHeader()
- "Includes mpi header file."
-::=
-  <<
-  #include <mpi.h>
-  >>
-end IncludeMPIHeader;
-
-
-// MF: Added MPI header and MPI code ("Hello World!") to main file.
 template simulationMainFile(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
-  let type = getConfigString(HPCOM_CODE)
-  let MPICode = MPIInMainFile(type)
+  //let type = getConfigString(HPCOM_CODE)
+  let type = if Flags.isSet(USEMPI) then "mpi" else ''
+  let MPIInit = ''//MPIInit(type)
   let MPIFinalize = (match type case "mpi" then 'MPI_Finalize();' else '')
-  let MPIHeaderInclude = (match type case "mpi" then IncludeMPIHeader() else '')
+  let MPIHeader = (match type case "mpi" then '#include <mpi.h>' else '')
+
+  let test1 = if Flags.isSet(Flags.USEMPI) then "//BAM" else "//BUM"
+  let test2 = if Flags.isSet(HPCOM) then "//BAM2" else "//BUM2"
+  let test3 = if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then "//BAM3" else "//BUM3"
+// <%test1%>
+//       <%test2%>
+//       #test end
 
   match simCode
     case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
       <<
+      <%test1%>
+      <%test2%>
+      <%test3%>
+      //<%type%>
+      // test end
+
       #ifndef BOOST_ALL_DYN_LINK
         #define BOOST_ALL_DYN_LINK
       #endif
@@ -1565,30 +1587,30 @@ template simulationMainFile(SimCode simCode)
         case("none") then ''
         case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
         else
-         <<
-         #ifdef USE_SCOREP
-           #include "Core/Utils/extension/measure_time_scorep.hpp"
-         #else
-           #include "Core/Utils/extension/measure_time_rdtsc.hpp"
-         #endif
-         >>
+          <<
+          #ifdef USE_SCOREP
+            #include "Core/Utils/extension/measure_time_scorep.hpp"
+          #else
+            #include "Core/Utils/extension/measure_time_rdtsc.hpp"
+          #endif
+          >>
       end match
       %>
       #ifdef USE_BOOST_THREAD
-       #include <boost/thread.hpp>
-       static long unsigned int getThreadNumber()
-       {
+        #include <boost/thread.hpp>
+        static long unsigned int getThreadNumber()
+        {
           boost::hash<std::string> string_hash;
           return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
-       }
+        }
       #else
-       static long unsigned int getThreadNumber()
-       {
+        static long unsigned int getThreadNumber()
+        {
           return 0;
-       }
+        }
       #endif
 
-      <%MPIHeaderInclude%>
+      <%MPIHeader%>
 
       #if defined(_MSC_VER) || defined(__MINGW32__)
         #include <tchar.h>
@@ -1597,30 +1619,30 @@ template simulationMainFile(SimCode simCode)
         int main(int argc, const char* argv[])
       #endif
       {
-       <%
-      match(getConfigString(PROFILING_LEVEL))
+        <%
+        match(getConfigString(PROFILING_LEVEL))
           case("none") then '//no profiling used'
           case("all_perf") then
-           <<
-           #ifdef USE_SCOREP
-             MeasureTimeScoreP::initialize();
-           #else
-             MeasureTimePAPI::initialize(getThreadNumber);
-           #endif
-           >>
+            <<
+            #ifdef USE_SCOREP
+              MeasureTimeScoreP::initialize();
+            #else
+              MeasureTimePAPI::initialize(getThreadNumber);
+            #endif
+            >>
           else
-           <<
-           #ifdef USE_SCOREP
-             MeasureTimeScoreP::initialize();
-           #else
-             MeasureTimeRDTSC::initialize();
-           #endif
-           >>
-      end match
-      %>
+            <<
+            #ifdef USE_SCOREP
+              MeasureTimeScoreP::initialize();
+            #else
+              MeasureTimeRDTSC::initialize();
+            #endif
+            >>
+        end match
+        %>
         try
         {
-          <%MPICode%>
+          <%MPIInit(type)%>
 
           boost::shared_ptr<OMCFactory> _factory = boost::shared_ptr<OMCFactory>(new OMCFactory());
           //SimController to start simulation
@@ -1631,14 +1653,15 @@ template simulationMainFile(SimCode simCode)
 
           simulation.first->Start(system.first, simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
 
+          <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+            <<
+            MeasureTime::getInstance()->writeToJson();
+            >>
+          %>
+
           <%MPIFinalize%>
 
-            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-                <<
-                MeasureTime::getInstance()->writeToJson();
-                >>
-            %>
-            return 0;
+          return 0;
         }
         catch(std::exception& ex)
         {
@@ -1647,9 +1670,10 @@ template simulationMainFile(SimCode simCode)
           return 1;
         }
       }
-    >>
+      >>
   end match
 end simulationMainFile;
+
 
 // MF
 template MPIRunCommandInRunScript(String type, Text &getNumOfProcs, Text &executionCommand)
@@ -1674,8 +1698,9 @@ end MPIRunCommandInRunScript;
 template simulationMainRunScript(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
-  let type = getConfigString(HPCOM_CODE)
-  //let executionCommand = match type case "mpi" then 'mpirun -np ${NPROCESSORS}' else 'exec'
+  //let type = getConfigString(HPCOM_CODE)
+  let type = if Flags.isSet(Flags.USEMPI) then "mpi" else ''
+  let executionCommand = match type case "mpi" then 'mpirun -np ${NPROCESSORS}' else 'exec'
   let &getNumOfProcs = buffer "" /*BUFD*/
   let &executionCommand = buffer "" /*BUFD*/
   let _ = MPIRunCommandInRunScript(type, &getNumOfProcs, &executionCommand)
@@ -1742,12 +1767,13 @@ template simulationMakefile(String target,SimCode simCode)
     let &additionalLinkerFlags_MSVC = buffer ""
 
     // MF: Are we using MPI parallel code?
-    let &compileForMPI = buffer ""
-    let &compileForMPI += if stringEq(type, "mpi") then "true" else "false"
+    //let &compileForMPI = buffer ""
+    //let &compileForMPI += if stringEq(type, "mpi") then "true" else "false"
 
     CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC,
-                                additionalCFlags_MSVC, additionalCFlags_GCC,
-                                additionalLinkerFlags_MSVC, Util.stringBool(compileForMPI), Flags.isSet(Flags.HPCOM_ANALYZATION_MODE))
+                                  additionalCFlags_MSVC, additionalCFlags_GCC,
+                                  additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI),
+                                  Flags.isSet(Flags.HPCOM_ANALYZATION_MODE))
 end simulationMakefile;
 
 
