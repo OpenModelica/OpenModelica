@@ -228,8 +228,8 @@ modelica_metatype mmc_mk_modelica_array(base_array_t);
 
 void mmc_catch_dummy_fn();
 
-extern pthread_key_t mmc_thread_data_key;
-extern pthread_once_t mmc_init_once;
+DLLExport extern pthread_key_t mmc_thread_data_key;
+DLLExport extern pthread_once_t mmc_init_once;
 extern void mmc_init();
 extern void mmc_init_nogc();
 #define MMC_INIT(X) pthread_once(&mmc_init_once,mmc_init)
