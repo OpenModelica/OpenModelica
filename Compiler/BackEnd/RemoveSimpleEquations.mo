@@ -334,11 +334,11 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind) := isyst;
   ((repl, unReplaceable, b1)) := inTpl;
-  
+
   // transform to list, this is later not neccesary because the acausal system should save the equations as list
   eqnslst := BackendEquation.equationList(eqns);
   mT := arrayCreate(BackendVariable.varsSize(vars), {});
-  
+
   // check equations
   ((vars, outShared, repl, unReplaceable, _, eqnslst, b)) := allCausalFinder(eqnslst, (vars, inShared, repl, unReplaceable, mT, {}, false));
   osyst := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, isyst);

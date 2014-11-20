@@ -308,7 +308,7 @@ algorithm
       s = stringDelimitList(List.map(explst, ExpressionDump.printExpStr), "\n");
       Error.addMessage(Error.DERIVATIVE_INPUT, {s});
     then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), true);
-        
+
     else (isyst, inChanged);
   end matchcontinue;
 end inputDerivativesUsedWork;

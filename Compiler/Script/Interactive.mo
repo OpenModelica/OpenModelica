@@ -5821,7 +5821,7 @@ protected function setComponentSubmodifierInClass
   input Absyn.Modification inMod;
   output Absyn.Class outClass := inClass;
 algorithm
-  (outClass, true) := Absyn.traverseClassComponents(inClass, 
+  (outClass, true) := Absyn.traverseClassComponents(inClass,
     function setComponentSubmodifierInCompitems(inComponentName =
       inComponentName, inMod = inMod), false);
 end setComponentSubmodifierInClass;
@@ -5933,7 +5933,7 @@ algorithm
       end if;
     end for;
   end if;
-end mergeElementArgs; 
+end mergeElementArgs;
 
 protected function propagateMod2
   input Absyn.Path inComponentName;
@@ -6017,7 +6017,7 @@ algorithm
                    Absyn.dummyInfo);
   end if;
 end createNestedSubMod;
-    
+
 protected function setSubmodifierInElementargs
 " Helper function to setComponentSubmodifierInCompitems
    inputs:  (Absyn.ElementArg list,

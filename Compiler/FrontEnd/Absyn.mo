@@ -6342,7 +6342,7 @@ algorithm
     else ();
   end match;
 end traverseClassPartComponents;
-        
+
 protected function traverseElementItemComponents<ArgT>
   input ElementItem inItem;
   input FuncType inFunc;
@@ -6405,7 +6405,7 @@ algorithm
         end if;
       then
         (outElement, outArg, outContinue);
-  
+
     else (inElement, inArg, true);
   end match;
 end traverseElementComponents;
@@ -6467,7 +6467,7 @@ algorithm
     case PARTS()
       algorithm
         (parts, outArg, outContinue) :=
-          traverseListGeneric(outClassDef.classParts, inFunc, inArg); 
+          traverseListGeneric(outClassDef.classParts, inFunc, inArg);
         outClassDef.classParts := parts;
       then
         ();
@@ -6475,7 +6475,7 @@ algorithm
     case CLASS_EXTENDS()
       algorithm
         (parts, outArg, outContinue) :=
-          traverseListGeneric(outClassDef.parts, inFunc, inArg); 
+          traverseListGeneric(outClassDef.parts, inFunc, inArg);
         outClassDef.parts := parts;
       then
         ();
