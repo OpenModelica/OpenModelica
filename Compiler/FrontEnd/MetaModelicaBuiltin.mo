@@ -662,15 +662,6 @@ function arrayGet<A> "O(1)"
 external "builtin";
 end arrayGet;
 
-function arrayNth<A> "index from 0 is depreceated; use arrayGet"
-  input array<A> arr;
-  input Integer index;
-  output A value;
-algorithm
-  value := arrayGet(arr,index+1);
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
-end arrayNth;
-
 function arrayCreate<A>
   "O(size)"
   input Integer size;
