@@ -3427,6 +3427,91 @@ algorithm
   end match;
 end makeLBinary;
 
+public function makeSimplifySum
+"Takes a list of expressions an makes a sum
+  expression sorting adding all elements in the list.
+
+  e.g.
+  In: {a, -b, c, -d}
+  return (a+c)-(b+d)
+"
+
+
+  input list<DAE.Exp> inExpLst;
+  output DAE.Exp outExp;
+protected
+  DAE.Exp e1,e2;
+algorithm
+  outExp := matchcontinue(inExpLst)
+            case({}) then DAE.RCONST(0.0);
+            case({e1}) then e1;
+            case({e1,e2}) then expAdd(e1,e2);
+            case(_) 
+              equation
+               (e1,e2) = makeSimplifySumWork(inExpLst);
+              then expSub(e1,e2);
+            else
+              equation
+               if Flags.isSet(Flags.FAILTRACE) then
+                 Debug.trace("-Expression.makeSum failed, DAE.Exp lst:");
+                 Debug.trace(ExpressionDump.printExpListStr(inExpLst));
+               end if;
+              then fail();
+            end matchcontinue;
+
+end makeSimplifySum;
+
+protected function makeSimplifySumWork
+"Takes a list of expressions an makes a sum
+  expression adding all elements in the list."
+  input list<DAE.Exp> inExpLst;
+  output DAE.Exp outExp := listGet(inExpLst,1);
+  output DAE.Exp neg_e;
+
+protected
+  Type tp;
+algorithm
+  tp := typeof(outExp);
+  outExp := makeConstZero(tp);
+  neg_e := makeConstZero(tp);
+  for elem in inExpLst loop
+    (outExp, neg_e) := match(elem, outExp, neg_e)
+                       local DAE.Exp e1, e2, e3, e_1, e_2;
+                       
+                       // a - b 
+                       case(DAE.BINARY(e1,DAE.SUB(),e2),_,_)
+                         equation
+                           e_1 = expAdd(outExp, e1);  
+                           e_2 = expAdd(neg_e, e2);
+                         then (e_1, e_2);
+
+                      // a + (-b)*c
+                       case(DAE.BINARY(e1,DAE.ADD(), DAE.BINARY(DAE.UNARY(DAE.UMINUS(), e2), DAE.MUL(), e3)),_,_)
+                         equation
+                           e_1 = expAdd(outExp, e1);
+                           e_2 = expMul(e2, e3);
+                           e_2 = expAdd(neg_e, e_2);
+                         then (e_1, e_2);
+
+                      // a + (-b)/c
+                       case(DAE.BINARY(e1,DAE.ADD(), DAE.BINARY(DAE.UNARY(DAE.UMINUS(), e2), DAE.DIV(), e3)),_,_)
+                         equation
+                           e_1 = expAdd(outExp, e1);
+                           e_2 = makeDiv(e2, e3);
+                           e_2 = expAdd(neg_e, e_2);
+                         then (e_1, e_2);
+
+                     // -a
+                      case(DAE.UNARY(DAE.UMINUS(), e1),_,_)
+                        then (outExp, expAdd(neg_e,e1));
+
+                      else then (expAdd(outExp, elem), neg_e);
+                   end match;
+ end for;
+
+
+end makeSimplifySumWork;
+
 public function makeSum
 "Takes a list of expressions an makes a sum
   expression adding all elements in the list."
@@ -11161,7 +11246,7 @@ public function createResidualExp
 algorithm
   resExp := matchcontinue(iExp1, iExp2)
     local
-      DAE.Exp e,   res;
+      DAE.Exp e, e1, res, res1, res2;
       list<DAE.Exp> explst, explst1, mexplst;
       DAE.Type ty;
 
@@ -11180,16 +11265,21 @@ algorithm
         // get all divisors and multiply them to the other terms
         (explst, mexplst) = moveDivToMul(explst, {}, {});
         e = makeProductLst(mexplst);
-        (e, _) = ExpressionSimplify.simplify(e);
-        explst1 = List.map1(explst1, expMul, e);
+        (e1, _) = ExpressionSimplify.simplify(e);
+        //explst1 = List.map1(explst1, expMul, e);
         explst1 = ExpressionSimplify.simplifyList(explst1, {});
         (explst1, mexplst) = moveDivToMul(explst1, {}, {});
         e = makeProductLst(mexplst);
+        e = expMul(e,e1);
         (e, _) = ExpressionSimplify.simplify(e);
-        explst = List.map1(explst, expMul, e);
-        explst1 = List.map(explst1, negate);
-        explst = listAppend(explst, explst1);
-        res = makeSum(explst);
+        //explst = List.map1(explst, expMul, e);
+        res1 = makeSimplifySum(explst);
+        res1 = expMul(res1,e);
+        //explst1 = List.map(explst1, negate);
+        //explst = listAppend(explst, explst1);
+        res2 = makeSimplifySum(explst1);
+        res2 = expMul(res2,e1);
+        res = expSub(res1, res2);
         (res, _) = ExpressionSimplify.simplify(res);
       then
         res;
