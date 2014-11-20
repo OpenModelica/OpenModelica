@@ -914,7 +914,7 @@ algorithm
       array<Option<BackendDAE.Equation>> equOptArr;
 
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)), _, _)
-    then BackendDAEUtil.traverseBackendDAEArrayNoCopy(equOptArr, func, traverseBackendDAEOptEqn, inTypeA);
+    then BackendDAEUtil.traverseArrayNoCopy(equOptArr, func, traverseBackendDAEOptEqn, inTypeA);
 
     else
       equation
@@ -979,7 +979,7 @@ algorithm
       array<Option<BackendDAE.Equation>> equOptArr;
 
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)), _, _)
-    then BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(equOptArr, func, traverseBackendDAEOptEqnWithStop, inTypeA);
+    then BackendDAEUtil.traverseArrayNoCopyWithStop(equOptArr, func, traverseBackendDAEOptEqnWithStop, inTypeA);
 
     else
       equation
@@ -1049,7 +1049,7 @@ algorithm
 
     case ((BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr = equOptArr)), _, _)
       equation
-        (equOptArr, ext_arg) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(equOptArr, func, traverseBackendDAEOptEqnWithUpdate, inTypeA);
+        (equOptArr, ext_arg) = BackendDAEUtil.traverseArrayNoCopyWithUpdate(equOptArr, func, traverseBackendDAEOptEqnWithUpdate, inTypeA);
       then (BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr), ext_arg);
 
     else

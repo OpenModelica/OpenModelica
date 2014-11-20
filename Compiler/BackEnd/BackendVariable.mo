@@ -3299,7 +3299,7 @@ protected
 algorithm
   BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(
     numberOfElements = num_vars, varOptArr = vars)) := inVariables;
-  outArg := BackendDAEUtil.traverseBackendDAEArrayNoCopy(vars, inFunc,
+  outArg := BackendDAEUtil.traverseArrayNoCopy(vars, inFunc,
     traverseBackendDAEVars2, inArg, num_vars);
 end traverseBackendDAEVars;
 
@@ -3350,7 +3350,7 @@ protected
 algorithm
   BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(
     numberOfElements = num_vars, varOptArr = vars)) := inVariables;
-  outArg := BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(vars, inFunc,
+  outArg := BackendDAEUtil.traverseArrayNoCopyWithStop(vars, inFunc,
     traverseBackendDAEVarsWithStop2, inArg, num_vars);
 end traverseBackendDAEVarsWithStop;
 
@@ -3405,7 +3405,7 @@ protected
 algorithm
   BackendDAE.VARIABLES(indices, BackendDAE.VARIABLE_ARRAY(
     num_vars, arr_size, vars), buckets, num_vars) := inVariables;
-  (vars, outArg) := BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(vars, inFunc,
+  (vars, outArg) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(vars, inFunc,
     traverseBackendDAEVarsWithUpdate2, inArg, num_vars);
   outVariables := BackendDAE.VARIABLES(indices,
     BackendDAE.VARIABLE_ARRAY(num_vars, arr_size, vars), buckets, num_vars);

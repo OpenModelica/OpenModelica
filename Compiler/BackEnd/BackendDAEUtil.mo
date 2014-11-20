@@ -6209,7 +6209,7 @@ algorithm
       Type_a ext_arg_1;
     case BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr))
       equation
-        ext_arg_1 = traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,inTypeA);
+        ext_arg_1 = traverseArrayNoCopy(varOptArr,func,traverseBackendDAEExpsVar,inTypeA);
       then
         ext_arg_1;
     else
@@ -6241,7 +6241,7 @@ algorithm
       Type_a ext_arg_1;
     case BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr))
       equation
-        (_,ext_arg_1) = traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEExpsVarWithUpdate,inTypeA);
+        (_,ext_arg_1) = traverseArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEExpsVarWithUpdate,inTypeA);
       then
         ext_arg_1;
     else
@@ -6252,7 +6252,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsVarsWithUpdate;
 
-public function traverseBackendDAEArrayNoCopy<ArrT, ElemT, ArgT>
+public function traverseArrayNoCopy<ArrT, ElemT, ArgT>
   "Help function to traverseBackendDAEExps."
   input array<ArrT> inArray;
   input ElemFuncType inElemFunc;
@@ -6280,10 +6280,10 @@ algorithm
   for i in 1:inLength loop
     outArg := inArrayFunc(inArray[i], inElemFunc, outArg);
   end for;
-end traverseBackendDAEArrayNoCopy;
+end traverseArrayNoCopy;
 
-public function traverseBackendDAEArrayNoCopyWithStop<ArrT, ElemT, ArgT>
-  "Same as traverseBackendDAEArrayNoCopy, but with an additional parameter to
+public function traverseArrayNoCopyWithStop<ArrT, ElemT, ArgT>
+  "Same as traverseArrayNoCopy, but with an additional parameter to
    stop the traversal."
   input array<ArrT> inArray;
   input ElemFuncType inElemFunc;
@@ -6316,9 +6316,9 @@ algorithm
     (cont, outArg) := inArrayFunc(inArray[i], inElemFunc, outArg);
     if not cont then break; end if;
   end for;
-end traverseBackendDAEArrayNoCopyWithStop;
+end traverseArrayNoCopyWithStop;
 
-public function traverseBackendDAEArrayNoCopyWithUpdate<ArrT, ElemT, ArgT>
+public function traverseArrayNoCopyWithUpdate<ArrT, ElemT, ArgT>
   input array<ArrT> inArray;
   input ElemFuncType inElemFunc;
   input ArrayFuncType inArrayFunc;
@@ -6353,7 +6353,7 @@ algorithm
       arrayUpdate(outArray, i, new_e);
     end if;
   end for;
-end traverseBackendDAEArrayNoCopyWithUpdate;
+end traverseArrayNoCopyWithUpdate;
 
 protected function traverseBackendDAEExpsVar "author: Frenkel TUD
   Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
@@ -6558,7 +6558,7 @@ algorithm
     local
       array<Option<BackendDAE.Equation>> equOptArr;
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
-      then traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,inTypeA);
+      then traverseArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,inTypeA);
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6588,7 +6588,7 @@ algorithm
     local
       array<Option<BackendDAE.Equation>> equOptArr;
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
-      then traverseBackendDAEArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEExpsOptEqnWithStop,inTypeA);
+      then traverseArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEExpsOptEqnWithStop,inTypeA);
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6620,7 +6620,7 @@ algorithm
       array<Option<BackendDAE.Equation>> equOptArr;
     case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
       equation
-        (_,outTypeA) = traverseBackendDAEArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,inTypeA);
+        (_,outTypeA) = traverseArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,inTypeA);
       then outTypeA;
     else
       equation
