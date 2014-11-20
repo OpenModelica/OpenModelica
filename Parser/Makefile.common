@@ -2,7 +2,7 @@ ANTLR=../3rdParty/antlr/3.2/libantlr3c-3.2
 #ANTLR=../3rdParty/antlr/3.4/libantlr3c-3.4
 ANTLRJAR = $(ANTLR)/../tool/antlr-3.2.jar
 #ANTLRJAR = $(ANTLR)/../tool/antlr-3.4-complete.jar
-ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -report
+ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
 
 COMPILERHOME=../Compiler/
 BUILDINC = -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util -I../SimulationRuntime/c/simulation/libf2c
