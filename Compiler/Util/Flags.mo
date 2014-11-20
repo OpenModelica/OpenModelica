@@ -280,7 +280,7 @@ constant DebugFlag EXEC_HASH = DEBUG_FLAG(57, "execHash", false,
   Util.gettext("Measures the time it takes to hash all simcode variables before code generation."));
 constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(58, "paramdlowdump", false,
   Util.gettext("Enables dumping of the parameters in the order they are calculated."));
-constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(59, "dumpEncapsulateWhenConditions", false,
+constant DebugFlag DUMP_ENCAPSULATECONDITIONS = DEBUG_FLAG(59, "dumpEncapsulateConditions", false,
   Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions."));
 constant DebugFlag ON_RELAXATION = DEBUG_FLAG(60, "onRelaxation", false,
   Util.gettext("Perform O(n) relaxation."));
@@ -479,7 +479,7 @@ constant list<DebugFlag> allDebugFlags = {
   OPT_DAE_DUMP,
   EXEC_HASH,
   PARAM_DLOW_DUMP,
-  DUMP_ENCAPSULATEWHENCONDITIONS,
+  DUMP_ENCAPSULATECONDITIONS,
   ON_RELAXATION,
   SHORT_OUTPUT,
   COUNT_OPERATIONS,
@@ -709,7 +709,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     // "addInitialStmtsToAlgorithms"
     }),
   SOME(STRING_DESC_OPTION({
-    ("encapsulateWhenConditions", Util.gettext("Replace each when-condition with an discrete variable.")),
+    ("encapsulateWhenConditions", Util.gettext("Replace each condition/relation with a boolean variable.")),
     ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),

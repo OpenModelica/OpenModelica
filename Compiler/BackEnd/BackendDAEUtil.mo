@@ -7581,7 +7581,7 @@ protected
   list<tuple<BackendDAEFunc.postOptimizationDAEModule,String,Boolean>> allpostOptModules;
   list<String> strpostOptModules;
 algorithm
-  allpostOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", true),
+  allpostOptModules := {(FindZeroCrossings.encapsulateWhenConditions, "encapsulateWhenConditions", true),
                         (BackendInline.lateInlineFunction, "lateInlineFunction", false),
                         (RemoveSimpleEquations.causal, "removeSimpleEquations", false),
                         (RemoveSimpleEquations.fastAcausal, "removeSimpleEquationsFast", false),

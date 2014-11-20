@@ -3355,6 +3355,36 @@ algorithm
   outList := listReverseInPlace(outList);
 end mapFold;
 
+public function mapFold2<TI, TO, FT1, FT2>
+  "Takes a list, a function, and two extra arguments. The function will be applied
+  to each element in the list, and the extra arguments will be passed to the
+  function and updated."
+  input list<TI> inList;
+  input FuncType inFunc;
+  input FT1 inArg1;
+  input FT2 inArg2;
+  output list<TO> outList := {};
+  output FT1 outArg1 := inArg1;
+  output FT2 outArg2 := inArg2;
+
+  partial function FuncType
+    input TI inElem;
+    input FT1 inArg1;
+    input FT2 inArg2;
+    output TO outResult;
+    output FT1 outArg1;
+    output FT2 outArg2;
+  end FuncType;
+protected
+  TO res;
+algorithm
+  for e in inList loop
+    (res, outArg1, outArg2) := inFunc(e, outArg1, outArg2);
+    outList := res::outList;
+  end for;
+  outList := listReverseInPlace(outList);
+end mapFold2;
+
 public function map1Fold<TI, TO, FT, ArgT1>
   "Takes a list, an extra argument, an extra constant argument, and a function.
   The function will be applied to each element in the list, and the extra

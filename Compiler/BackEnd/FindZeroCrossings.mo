@@ -48,6 +48,7 @@ protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import CheckModel;
 protected import ComponentReference;
 protected import DAEDump;
 protected import Debug;
@@ -55,6 +56,7 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
+protected import HashTableExpToIndex;
 protected import List;
 protected import Util;
 
@@ -83,6 +85,592 @@ public function getSamples "deprecated - use EVENT_INFO.timeEvents instead"
 algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(sampleLst=outZeroCrossingList))) := inBackendDAE;
 end getSamples;
+
+
+// =============================================================================
+// section for preOptModule >>encapsulateWhenConditions<<
+//
+// This module encapsulates each when-condition in a boolean-variable
+// $whenConditionsN and generates to each of these variables an equation
+// $whenConditions = whenConditions
+// =============================================================================
+
+public function encapsulateWhenConditions "author: lochel"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
+  BackendDAE.Variables knownVars;
+  BackendDAE.Variables externalObjects;
+  BackendDAE.Variables aliasVars;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EquationArray removedEqs;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree functionTree;
+  BackendDAE.EventInfo eventInfo;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+
+  list<BackendDAE.TimeEvent> timeEvents;
+  list<BackendDAE.WhenClause> whenClauseLst;
+  list<BackendDAE.ZeroCrossing> zeroCrossingLst;
+  list<BackendDAE.ZeroCrossing> sampleLst;
+  list<BackendDAE.ZeroCrossing> relationsLst;
+  Integer numberMathEvents;
+
+  Integer index;
+  HashTableExpToIndex.HashTable ht "is used to avoid redundant condition-variables";
+  list<BackendDAE.Var> vars;
+  list<BackendDAE.Equation> eqns;
+  BackendDAE.Variables vars_;
+  BackendDAE.EquationArray eqns_;
+  BackendDAE.ExtraInfo info;
+algorithm
+  BackendDAE.DAE(systs, shared) := inDAE;
+  BackendDAE.SHARED(knownVars=knownVars,
+                    externalObjects=externalObjects,
+                    aliasVars=aliasVars,
+                    initialEqs=initialEqs,
+                    removedEqs=removedEqs,
+                    constraints=constraints,
+                    classAttrs=classAttrs,
+                    cache=cache,
+                    graph=graph,
+                    functionTree=functionTree,
+                    eventInfo=eventInfo,
+                    extObjClasses=extObjClasses,
+                    backendDAEType=backendDAEType,
+                    symjacs=symjacs,
+                    info=info) := shared;
+  BackendDAE.EVENT_INFO(timeEvents=timeEvents,
+                        whenClauseLst=whenClauseLst,
+                        zeroCrossingLst=zeroCrossingLst,
+                        sampleLst=sampleLst,
+                        relationsLst=relationsLst,
+                        numberMathEvents=numberMathEvents) := eventInfo;
+
+  ht := HashTableExpToIndex.emptyHashTable();
+
+  // equation system
+  (systs, index, ht) := List.mapFold2(systs, encapsulateWhenConditions_EqSystem, 1, ht);
+
+  // when clauses
+  (whenClauseLst, vars, eqns, ht, index) := encapsulateWhenConditions_WhenClause(whenClauseLst, {}, {}, {}, ht, index);
+
+  // removed equations
+  ((removedEqs, vars, eqns, index, ht)) := BackendEquation.traverseBackendDAEEqns(removedEqs, encapsulateWhenConditions_EquationArray, (BackendEquation.emptyEqns(), vars, eqns, index, ht));
+  vars_ := BackendVariable.listVar(vars);
+  eqns_ := BackendEquation.listEquation(eqns);
+  systs := listAppend(systs, {BackendDAE.EQSYSTEM(vars_, eqns_, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())});
+
+  eventInfo := BackendDAE.EVENT_INFO(timeEvents,
+                                     whenClauseLst,
+                                     zeroCrossingLst,
+                                     sampleLst,
+                                     relationsLst,
+                                     numberMathEvents);
+  shared := BackendDAE.SHARED(knownVars,
+                              externalObjects,
+                              aliasVars,
+                              initialEqs,
+                              removedEqs,
+                              constraints,
+                              classAttrs,
+                              cache,
+                              graph,
+                              functionTree,
+                              eventInfo,
+                              extObjClasses,
+                              backendDAEType,
+                              symjacs,
+                              info);
+  outDAE := if intGt(index, 1) then BackendDAE.DAE(systs, shared) else inDAE;
+  if Flags.isSet(Flags.DUMP_ENCAPSULATECONDITIONS) then
+    BackendDump.dumpBackendDAE(outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
+  end if;
+end encapsulateWhenConditions;
+
+protected function encapsulateWhenConditions_WhenClause "author: lochel"
+  input list<BackendDAE.WhenClause> inWhenClause;
+  input list<BackendDAE.WhenClause> inWhenClause_done;
+  input list<BackendDAE.Var> inVars;
+  input list<BackendDAE.Equation> inEqns;
+  input HashTableExpToIndex.HashTable inHT;
+  input Integer inIndex;
+  output list<BackendDAE.WhenClause> outWhenClause;
+  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outEqns;
+  output HashTableExpToIndex.HashTable outHT;
+  output Integer outIndex;
+algorithm
+  (outWhenClause, outVars, outEqns, outHT, outIndex) := match(inWhenClause)
+    local
+      HashTableExpToIndex.HashTable ht;
+      Integer index;
+      DAE.Exp condition;
+      list<BackendDAE.WhenOperator> reinitStmtLst;
+      Option<Integer> elseClause;
+
+      list<BackendDAE.Var> vars;
+      list<BackendDAE.Equation> eqns;
+      list<BackendDAE.WhenClause> rest, whenClause_done;
+
+    case {}
+    then (inWhenClause_done, inVars, inEqns, inHT, inIndex);
+
+    case BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)::rest equation
+      (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, DAE.emptyElementSource, inIndex, inHT);
+      vars = listAppend(vars, inVars);
+      eqns = listAppend(eqns, inEqns);
+      whenClause_done = listAppend({BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)}, inWhenClause_done);
+
+      (whenClause_done, vars, eqns, ht, index) = encapsulateWhenConditions_WhenClause(rest, whenClause_done, vars, eqns, ht, index);
+    then (whenClause_done, vars, eqns, ht, index);
+  end match;
+end encapsulateWhenConditions_WhenClause;
+
+protected function encapsulateWhenConditions_EqSystem "author: lochel
+  This is a helper function for encapsulateWhenConditions."
+  input BackendDAE.EqSystem inEqSystem;
+  input Integer inIndex;
+  input HashTableExpToIndex.HashTable inHT;
+  output BackendDAE.EqSystem outEqSystem;
+  output Integer outIndex;
+  output HashTableExpToIndex.HashTable outHT;
+protected
+  BackendDAE.Variables orderedVars;
+  BackendDAE.EquationArray orderedEqs;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  list<BackendDAE.Var> varLst;
+  list<BackendDAE.Equation> eqnLst;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
+
+  ((orderedEqs, varLst, eqnLst, outIndex, outHT)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, encapsulateWhenConditions_EquationArray, (BackendEquation.emptyEqns(), {}, {}, inIndex, inHT));
+
+  orderedVars := BackendVariable.addVars(varLst, orderedVars);
+  orderedEqs := BackendEquation.addEquations(eqnLst, orderedEqs);
+
+  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
+end encapsulateWhenConditions_EqSystem;
+
+protected function encapsulateWhenConditions_EquationArray "author: lochel
+  This is a helper function for encapsulateWhenConditions_EqSystem."
+  input BackendDAE.Equation inEq;
+  input tuple<BackendDAE.EquationArray, list<BackendDAE.Var>, list<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> inTpl;
+  output BackendDAE.Equation outEq;
+  output tuple<BackendDAE.EquationArray, list<BackendDAE.Var>, list<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> outTpl;
+algorithm
+  (outEq,outTpl) := match (inEq,inTpl)
+    local
+      BackendDAE.Equation eqn, eqn2;
+      list<BackendDAE.Var> vars, vars1;
+      list<BackendDAE.Equation> eqns, eqns1;
+      BackendDAE.WhenEquation whenEquation;
+      DAE.ElementSource source;
+      Integer index, size, sizePre;
+      BackendDAE.EquationArray equationArray;
+      DAE.Algorithm alg_;
+      list<DAE.Statement> stmts, preStmts;
+      HashTableExpToIndex.HashTable ht;
+      DAE.Expand crefExpand;
+      BackendDAE.EquationAttributes attr;
+
+    // when equation
+    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source, attr=attr), (equationArray, vars, eqns, index, ht))
+      equation
+        (whenEquation, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations(whenEquation, source, index, ht);
+        vars = listAppend(vars, vars1);
+        eqns = listAppend(eqns, eqns1);
+        eqn = BackendDAE.WHEN_EQUATION(size, whenEquation, source, attr);
+        equationArray = BackendEquation.addEquations({eqn}, equationArray);
+      then (eqn, (equationArray, vars, eqns, index, ht));
+
+    // removed algorithm
+    case (BackendDAE.ALGORITHM(size=0, alg=alg_, source=source, expand=crefExpand, attr=attr), (equationArray, vars, eqns, index, ht))
+      equation
+        DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
+        size = -index;
+        (stmts, preStmts, vars1, index) = encapsulateWhenConditions_Algorithms(stmts, vars, index);
+        sizePre = listLength(preStmts);
+        size = size+index-sizePre;
+
+        alg_ = DAE.ALGORITHM_STMTS(stmts);
+        eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
+        equationArray = BackendEquation.addEquations({eqn}, equationArray);
+
+        alg_ = DAE.ALGORITHM_STMTS(preStmts);
+        eqn2 = BackendDAE.ALGORITHM(sizePre, alg_, source, crefExpand, attr);
+        eqns = if intGt(sizePre, 0) then eqn2::eqns else eqns;
+      then (eqn, (equationArray, vars1, eqns, index, ht));
+
+    // algorithm
+    case (BackendDAE.ALGORITHM(size=size, alg=alg_, source=source, expand=crefExpand, attr=attr), (equationArray, vars, eqns, index, ht))
+      equation
+      DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
+      size = size-index;
+      (stmts, preStmts, vars1, index) = encapsulateWhenConditions_Algorithms(stmts, vars, index);
+      size = size+index;
+
+      stmts = listAppend(preStmts, stmts);
+
+      alg_ = DAE.ALGORITHM_STMTS(stmts);
+      eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
+      equationArray = BackendEquation.addEquations({eqn}, equationArray);
+      then (eqn, (equationArray, vars1, eqns, index, ht));
+
+    case (eqn, (equationArray, vars, eqns, index, ht))
+      equation
+      equationArray = BackendEquation.addEquations({eqn}, equationArray);
+      then (eqn, (equationArray, vars, eqns, index, ht));
+  end match;
+end encapsulateWhenConditions_EquationArray;
+
+protected function encapsulateWhenConditions_Equations "author: lochel
+  This is a helper function for encapsulateWhenConditions_EquationArray."
+  input BackendDAE.WhenEquation inWhenEquation;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  input HashTableExpToIndex.HashTable inHT;
+  output BackendDAE.WhenEquation outWhenEquation;
+  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outEqns;
+  output Integer outIndex;
+  output HashTableExpToIndex.HashTable outHT;
+algorithm
+  (outWhenEquation, outVars, outEqns, outIndex, outHT) := matchcontinue(inWhenEquation)
+    local
+      Integer index;
+      BackendDAE.WhenEquation elsewhenPart, whenEquation;
+      list<BackendDAE.Var> vars, vars1;
+      list<BackendDAE.Equation> eqns, eqns1;
+
+      DAE.Exp condition;
+      DAE.ComponentRef left;
+      DAE.Exp right;
+
+      HashTableExpToIndex.HashTable ht;
+
+    // when
+    case BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=NONE()) equation
+      (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, inIndex, inHT);
+      whenEquation = BackendDAE.WHEN_EQ(condition, left, right, NONE());
+    then (whenEquation, vars, eqns, index, ht);
+
+    // when - elsewhen
+    case BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=SOME(elsewhenPart)) equation
+      (elsewhenPart, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations(elsewhenPart, inSource, inIndex, inHT);
+      (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, index, ht);
+      whenEquation = BackendDAE.WHEN_EQ(condition, left, right, SOME(elsewhenPart));
+      vars = listAppend(vars, vars1);
+      eqns = listAppend(eqns, eqns1);
+    then (whenEquation, vars, eqns, index, ht);
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Equations failed"});
+    then fail();
+  end matchcontinue;
+end encapsulateWhenConditions_Equations;
+
+protected function encapsulateWhenConditions_Equations1 "author: lochel
+  This is a helper function for encapsulateWhenConditions_Equations."
+  input DAE.Exp inCondition;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  input HashTableExpToIndex.HashTable inHT;
+  output DAE.Exp outCondition;
+  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outEqns;
+  output Integer outIndex;
+  output HashTableExpToIndex.HashTable outHT;
+algorithm
+  (outCondition, outVars, outEqns, outIndex, outHT) := matchcontinue(inCondition)
+    local
+      Integer index, localIndex;
+      BackendDAE.Var var;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Var> vars;
+      list<BackendDAE.Equation> eqns;
+      String crStr;
+      DAE.Exp crefPreExp;
+
+      DAE.Exp condition;
+      list<DAE.Exp> array;
+
+      DAE.Type ty;
+      Boolean scalar "scalar for codegen" ;
+
+      HashTableExpToIndex.HashTable ht;
+
+    // we do not replace initial()
+    case DAE.CALL(path=Absyn.IDENT(name="initial"))
+    then (inCondition, {}, {}, inIndex, inHT);
+
+    // array-condition
+    case DAE.ARRAY(ty=ty, scalar=scalar, array=array) equation
+      (array, vars, eqns, index, ht) = encapsulateWhenConditions_EquationsWithArrayConditions(array, inSource, inIndex, inHT);
+    then (DAE.ARRAY(ty, scalar, array), vars, eqns, index, ht);
+
+    // simple condition [already in ht]
+    case _ equation
+      localIndex = BaseHashTable.get(inCondition, inHT);
+      crStr = "$whenCondition" + intString(localIndex);
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+    then (condition, {}, {}, inIndex, inHT);
+
+    // simple condition [not yet in ht]
+    case _ equation
+      ht = BaseHashTable.add((inCondition, inIndex), inHT);
+      crStr = "$whenCondition" + intString(inIndex);
+
+      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
+      var = BackendVariable.setVarFixed(var, true);
+      eqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), inCondition, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+    then (condition, {var}, {eqn}, inIndex+1, ht);
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Equations1 failed"});
+    then fail();
+  end matchcontinue;
+end encapsulateWhenConditions_Equations1;
+
+protected function encapsulateWhenConditions_EquationsWithArrayConditions "author: lochel
+  This is a helper function for encapsulateWhenConditions_Equations1."
+  input list<DAE.Exp> inConditionList;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  input HashTableExpToIndex.HashTable inHT;
+  output list<DAE.Exp> outConditionList;
+  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outEqns;
+  output Integer outIndex;
+  output HashTableExpToIndex.HashTable outHT;
+algorithm
+  (outConditionList, outVars, outEqns, outIndex, outHT) := matchcontinue(inConditionList)
+    local
+      Integer index;
+      list<BackendDAE.Var> vars1, vars2;
+      list<BackendDAE.Equation> eqns1, eqns2;
+
+      DAE.Exp condition;
+      list<DAE.Exp> conditionList;
+
+      HashTableExpToIndex.HashTable ht;
+
+    case {} equation
+    then ({}, {}, {}, inIndex, inHT);
+
+    case condition::conditionList equation
+      (condition, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, inIndex, inHT);
+      (conditionList, vars2, eqns2, index, ht) = encapsulateWhenConditions_EquationsWithArrayConditions(conditionList, inSource, index, ht);
+      vars1 = listAppend(vars1, vars2);
+      eqns1 = listAppend(eqns1, eqns2);
+    then (condition::conditionList, vars1, eqns1, index, ht);
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_EquationsWithArrayConditions failed"});
+    then fail();
+  end matchcontinue;
+end encapsulateWhenConditions_EquationsWithArrayConditions;
+
+protected function encapsulateWhenConditions_Algorithms "author: lochel
+  This is a helper function for encapsulateWhenConditions_EquationArray."
+  input list<DAE.Statement> inStmts;
+  input list<BackendDAE.Var> inVars;
+  input Integer inIndex;
+  output list<DAE.Statement> outStmts;
+  output list<DAE.Statement> outPreStmts; // these are additional statements that should be inserted directly before a STMT_WHEN
+  output list<BackendDAE.Var> outVars;
+  output Integer outIndex;
+algorithm
+  (outStmts, outPreStmts, outVars, outIndex) := matchcontinue(inStmts)
+    local
+      DAE.Exp condition;
+      DAE.Statement stmt, elseWhen;
+      list<DAE.Statement> stmts, rest, stmts1, stmts_, preStmts, preStmts2, elseWhenList;
+      Integer index;
+      DAE.ElementSource source;
+      list<BackendDAE.Var> vars;
+      list<DAE.ComponentRef> conditions;
+      Boolean initialCall;
+
+    case {}
+    then ({}, {}, inVars, inIndex);
+
+    // when statement (without outputs)
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source)::rest equation
+      (condition, vars, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
+      vars = listAppend(vars, inVars);
+
+      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, DAE.EXPAND());
+
+      (stmts, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
+      preStmts = listAppend(preStmts, preStmts2);
+      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, stmts);
+    then (stmts_, preStmts, vars, index);
+
+    // when statement
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source)::rest equation
+      (condition, vars, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
+      vars = listAppend(vars, inVars);
+
+      (stmts, stmts_, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
+      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, stmts_);
+      stmts_ = listAppend(stmts_, stmts);
+    then (stmts_, preStmts, vars, index);
+
+    // when - elsewhen statement (without outputs)
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source)::rest equation
+      (condition, vars, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
+      vars = listAppend(vars, inVars);
+
+      (elseWhenList, _, vars, index) = encapsulateWhenConditions_Algorithms({elseWhen}, vars, index);
+      elseWhen = List.last(elseWhenList);
+      preStmts2 = List.stripLast(elseWhenList);
+      preStmts = listAppend(preStmts, preStmts2);
+
+      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)}, DAE.EXPAND());
+
+      (stmts, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
+      preStmts = listAppend(preStmts, preStmts2);
+      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)}, stmts);
+    then (stmts_, preStmts, vars, index);
+
+    // when - elsewhen statement
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source)::rest equation
+      (condition, vars, preStmts, index) = encapsulateWhenConditions_Algorithms1(condition, source, inIndex);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
+      vars = listAppend(vars, inVars);
+
+      ({elseWhen}, preStmts2, vars, index) = encapsulateWhenConditions_Algorithms({elseWhen}, vars, index);
+      preStmts = listAppend(preStmts, preStmts2);
+
+      (stmts, stmts_, vars, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
+      stmts_ = listAppend({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)}, stmts_);
+      stmts_ = listAppend(stmts_, stmts);
+    then (stmts_, preStmts, vars, index);
+
+    // no when statement
+    case stmt::rest equation
+      (stmts, preStmts, vars, index) = encapsulateWhenConditions_Algorithms(rest, inVars, inIndex);
+      stmts = listAppend(preStmts, stmts);
+    then (stmt::stmts, {}, vars, index);
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Algorithms failed"});
+    then fail();
+  end matchcontinue;
+end encapsulateWhenConditions_Algorithms;
+
+protected function encapsulateWhenConditions_Algorithms1 "author: lochel
+  This is a helper function for encapsulateWhenConditions_Equations."
+  input DAE.Exp inCondition;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  output DAE.Exp outCondition;
+  output list<BackendDAE.Var> outVars;
+  output list<DAE.Statement> outStmts;
+  output Integer outIndex;
+algorithm
+  (outCondition, outVars, outStmts, outIndex) := matchcontinue(inCondition)
+    local
+      Integer index;
+      BackendDAE.Var var;
+      DAE.Statement stmt;
+      list<BackendDAE.Var> vars;
+      list<DAE.Statement> stmts;
+      String crStr;
+      DAE.Exp crefPreExp;
+
+      DAE.Exp condition;
+      list<DAE.Exp> array;
+
+      DAE.Type ty;
+      Boolean scalar "scalar for codegen" ;
+
+    // we do not replace initial()
+    case (DAE.CALL(path=Absyn.IDENT(name="initial")))
+    then (inCondition, {}, {}, inIndex);
+
+    // array-condition
+    case (DAE.ARRAY(array={condition})) equation
+      crStr = "$whenCondition" + intString(inIndex);
+
+      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
+      var = BackendVariable.setVarFixed(var, true);
+      stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
+
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+    then (condition, {var}, {stmt}, inIndex+1);
+
+    // array-condition
+    case (DAE.ARRAY(ty=ty, scalar=scalar, array=array)) equation
+      (array, vars, stmts, index) = encapsulateWhenConditions_AlgorithmsWithArrayConditions(array, inSource, inIndex);
+    then (DAE.ARRAY(ty, scalar, array), vars, stmts, index);
+
+    // simple condition
+    case _ equation
+      crStr = "$whenCondition" + intString(inIndex);
+
+      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
+      var = BackendVariable.setVarFixed(var, true);
+      stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), inCondition, inSource);
+
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+    then (condition, {var}, {stmt}, inIndex+1);
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Algorithms1 failed"});
+    then fail();
+  end matchcontinue;
+end encapsulateWhenConditions_Algorithms1;
+
+protected function encapsulateWhenConditions_AlgorithmsWithArrayConditions "author: lochel
+  This is a helper function for encapsulateWhenConditions_Algorithms1."
+  input list<DAE.Exp> inConditionList;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  output list<DAE.Exp> outConditionList;
+  output list<BackendDAE.Var> outVars;
+  output list<DAE.Statement> outStmts;
+  output Integer outIndex;
+algorithm
+  (outConditionList, outVars, outStmts, outIndex) := matchcontinue(inConditionList)
+    local
+      Integer index;
+      list<BackendDAE.Var> vars1, vars2;
+      list<DAE.Statement> stmt1, stmt2;
+
+      DAE.Exp condition;
+      list<DAE.Exp> conditionList;
+
+    case {} equation
+    then ({}, {}, {}, inIndex);
+
+    case condition::conditionList equation
+      (condition, vars1, stmt1, index) = encapsulateWhenConditions_Algorithms1(condition, inSource, inIndex);
+      (conditionList, vars2, stmt2, index) = encapsulateWhenConditions_AlgorithmsWithArrayConditions(conditionList, inSource, index);
+      vars1 = listAppend(vars1, vars2);
+      stmt1 = listAppend(stmt1, stmt2);
+    then (condition::conditionList, vars1, stmt1, index);
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_AlgorithmsWithArrayConditions failed"});
+    then fail();
+  end matchcontinue;
+end encapsulateWhenConditions_AlgorithmsWithArrayConditions;
+
 
 // =============================================================================
 // section for zero crossings
