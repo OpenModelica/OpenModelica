@@ -293,7 +293,7 @@ algorithm
   (tmpSchedule,_) := createRandomSchedule1(nodeList, threadReadyTimes, iTaskGraph, taskGraphT, commCosts, inComps,
                                            iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, iNumberOfThreads,
                                            tmpSchedule);
-  tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph, addReleaseLocksToSchedule, commCosts, inComps, iSimVarMapping, 
+  tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph, addReleaseLocksToSchedule, commCosts, inComps, iSimVarMapping,
                                              tmpSchedule);
   //printSchedule(tmpSchedule);
   oSchedule := tmpSchedule;
