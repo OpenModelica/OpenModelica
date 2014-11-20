@@ -5371,14 +5371,14 @@ algorithm
 
     if inFunc(e) then
       outReplaced := true;
-      break;
+      outList := listAppend(listReverseInPlace(outList), inReplacement :: rest);
+      return;
     end if;
 
     outList := e :: outList;
   end while;
 
-  outList := if outReplaced then
-    listAppend(listReverseInPlace(outList), inReplacement :: rest) else inList;
+  outList := inList;
 end replaceOnTrue;
 
 public function replaceAtIndexFirst<T>

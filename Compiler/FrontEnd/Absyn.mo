@@ -2849,6 +2849,20 @@ algorithm
   end match;
 end pathFirstIdent;
 
+public function pathFirstPath
+  input Path inPath;
+  output Path outPath;
+algorithm
+  outPath := match inPath
+    local
+      Ident n;
+
+    case IDENT() then inPath;
+    case QUALIFIED(name = n) then IDENT(n);
+    case FULLYQUALIFIED(path = outPath) then pathFirstPath(outPath);
+  end match;
+end pathFirstPath;
+
 public function pathSecondIdent
   input Path inPath;
   output Ident outIdent;
@@ -2864,6 +2878,16 @@ algorithm
 
   end match;
 end pathSecondIdent;
+
+public function pathRest
+  input Path inPath;
+  output Path outPath;
+algorithm
+  outPath := match inPath
+    case QUALIFIED(path = outPath) then outPath;
+    case FULLYQUALIFIED(path = outPath) then pathRest(outPath);
+  end match;
+end pathRest;
 
 public function pathPrefix
   "Returns the prefix of a path, i.e. this.is.a.path => this.is.a"
@@ -5219,6 +5243,26 @@ algorithm
   end match;
 end pathIsFullyQualified;
 
+public function pathIsIdent
+  input Path inPath;
+  output Boolean outIsIdent;
+algorithm
+  outIsIdent := match(inPath)
+    case IDENT() then true;
+    else false;
+  end match;
+end pathIsIdent;
+
+public function pathIsQual
+  input Path inPath;
+  output Boolean outIsQual;
+algorithm
+  outIsQual := match(inPath)
+    case QUALIFIED() then true;
+    else false;
+  end match;
+end pathIsQual;
+
 public function withinEqual
   input Within within1;
   input Within within2;
@@ -6187,6 +6231,306 @@ algorithm
     else {};
   end match;
 end getElementItemsInClassPart;
+
+public function traverseClassComponents<ArgT>
+  input Class inClass;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output Class outClass := inClass;
+  output ArgT outArg;
+
+  partial function FuncType
+    input list<ComponentItem> inComponents;
+    input ArgT inArg;
+    output list<ComponentItem> outComponents;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+algorithm
+  outClass := match(outClass)
+    local
+      ClassDef body;
+
+    case CLASS()
+      algorithm
+        (body, outArg) := traverseClassDef(outClass.body,
+          function traverseClassPartComponents(inFunc = inFunc), inArg);
+        if not referenceEq(body, outClass.body) then outClass.body := body; end if;
+      then
+        outClass;
+
+  end match;
+end traverseClassComponents;
+
+protected function traverseListGeneric<T, ArgT>
+  input list<T> inList;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output list<T> outList := {};
+  output ArgT outArg := inArg;
+  output Boolean outContinue := true;
+
+  partial function FuncType
+    input T inElement;
+    input ArgT inArg;
+    output T outElement;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+protected
+  Boolean eq, changed := false;
+  T e, new_e;
+  list<T> rest_e := inList;
+algorithm
+  while not listEmpty(rest_e) loop
+    e :: rest_e := rest_e;
+    (new_e, outArg, outContinue) := inFunc(e, outArg);
+    eq := referenceEq(new_e, e);
+    outList := (if eq then e else new_e) :: outList;
+    changed := changed or not eq;
+    if not outContinue then break; end if;
+  end while;
+
+  if changed then
+    outList := listReverse(outList);
+    if not outContinue then
+      outList := listAppend(outList, rest_e);
+    end if;
+  else
+    outList := inList;
+  end if;
+end traverseListGeneric;
+
+protected function traverseClassPartComponents<ArgT>
+  input ClassPart inClassPart;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output ClassPart outClassPart := inClassPart;
+  output ArgT outArg := inArg;
+  output Boolean outContinue := true;
+
+  partial function FuncType
+    input list<ComponentItem> inComponents;
+    input ArgT inArg;
+    output list<ComponentItem> outComponents;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+algorithm
+  _ := match(outClassPart)
+    local
+      list<ElementItem> items;
+
+    case PUBLIC()
+      algorithm
+        (items, outArg, outContinue) :=
+          traverseListGeneric(outClassPart.contents,
+            function traverseElementItemComponents(inFunc = inFunc), inArg);
+        outClassPart.contents := items;
+      then
+        ();
+
+    case PROTECTED()
+      algorithm
+        (items, outArg, outContinue) :=
+          traverseListGeneric(outClassPart.contents,
+             function traverseElementItemComponents(inFunc = inFunc), inArg);
+        outClassPart.contents := items;
+      then
+        ();
+
+    else ();
+  end match;
+end traverseClassPartComponents;
+        
+protected function traverseElementItemComponents<ArgT>
+  input ElementItem inItem;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output ElementItem outItem;
+  output ArgT outArg;
+  output Boolean outContinue;
+
+  partial function FuncType
+    input list<ComponentItem> inComponents;
+    input ArgT inArg;
+    output list<ComponentItem> outComponents;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+algorithm
+  (outItem, outArg, outContinue) := match(inItem)
+    local
+      Element elem;
+
+    case ELEMENTITEM()
+      algorithm
+        (elem, outArg, outContinue) := traverseElementComponents(inItem.element,
+          inFunc, inArg);
+        outItem := if referenceEq(elem, inItem.element) then inItem else ELEMENTITEM(elem);
+      then
+        (outItem, outArg, outContinue);
+
+    else (inItem, inArg, true);
+  end match;
+end traverseElementItemComponents;
+
+protected function traverseElementComponents<ArgT>
+  input Element inElement;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output Element outElement := inElement;
+  output ArgT outArg;
+  output Boolean outContinue;
+
+  partial function FuncType
+    input list<ComponentItem> inComponents;
+    input ArgT inArg;
+    output list<ComponentItem> outComponents;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+algorithm
+  (outElement, outArg, outContinue) := match(outElement)
+    local
+      ElementSpec spec;
+
+    case ELEMENT()
+      algorithm
+        (spec, outArg, outContinue) := traverseElementSpecComponents(
+          outElement.specification, inFunc, inArg);
+
+        if not referenceEq(spec, outElement.specification) then
+          outElement.specification := spec;
+        end if;
+      then
+        (outElement, outArg, outContinue);
+  
+    else (inElement, inArg, true);
+  end match;
+end traverseElementComponents;
+
+protected function traverseElementSpecComponents<ArgT>
+  input ElementSpec inSpec;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output ElementSpec outSpec := inSpec;
+  output ArgT outArg;
+  output Boolean outContinue;
+
+  partial function FuncType
+    input list<ComponentItem> inComponents;
+    input ArgT inArg;
+    output list<ComponentItem> outComponents;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+algorithm
+  (outSpec, outArg, outContinue) := match(outSpec)
+    local
+      Class cls;
+      list<ComponentItem> comps;
+
+    case COMPONENTS()
+      algorithm
+        (comps, outArg, outContinue) := inFunc(outSpec.components, inArg);
+        if not referenceEq(comps, outSpec.components) then
+          outSpec.components := comps;
+        end if;
+      then
+        (outSpec, outArg, outContinue);
+
+    else (inSpec, inArg, true);
+  end match;
+end traverseElementSpecComponents;
+
+protected function traverseClassDef<ArgT>
+  input ClassDef inClassDef;
+  input FuncType inFunc;
+  input ArgT inArg;
+  output ClassDef outClassDef := inClassDef;
+  output ArgT outArg := inArg;
+  output Boolean outContinue := true;
+
+  partial function FuncType
+    input ClassPart inPart;
+    input ArgT inArg;
+    output ClassPart outPart;
+    output ArgT outArg;
+    output Boolean outContinue;
+  end FuncType;
+algorithm
+  _ := match(outClassDef)
+    local
+      list<ClassPart> parts;
+
+    case PARTS()
+      algorithm
+        (parts, outArg, outContinue) :=
+          traverseListGeneric(outClassDef.classParts, inFunc, inArg); 
+        outClassDef.classParts := parts;
+      then
+        ();
+
+    case CLASS_EXTENDS()
+      algorithm
+        (parts, outArg, outContinue) :=
+          traverseListGeneric(outClassDef.parts, inFunc, inArg); 
+        outClassDef.parts := parts;
+      then
+        ();
+
+    else ();
+  end match;
+end traverseClassDef;
+
+public function isEmptyMod
+  input Modification inMod;
+  output Boolean outIsEmpty;
+algorithm
+  outIsEmpty := match inMod
+    case CLASSMOD({}, NOMOD()) then true;
+    case CLASSMOD({}, EQMOD(exp = TUPLE(expressions = {}))) then true;
+    else false;
+  end match;
+end isEmptyMod;
+
+public function isEmptySubMod
+  input ElementArg inSubMod;
+  output Boolean outIsEmpty;
+algorithm
+  outIsEmpty := match inSubMod
+    local
+      Modification mod;
+
+    case MODIFICATION(modification = NONE()) then true;
+    case MODIFICATION(modification = SOME(mod)) then isEmptyMod(mod);
+  end match;
+end isEmptySubMod;
+
+public function elementArgName
+  input ElementArg inArg;
+  output Absyn.Path outName;
+algorithm
+  outName := match(inArg)
+    case MODIFICATION(path = outName) then outName;
+  end match;
+end elementArgName;
+
+public function elementArgEqualName
+  input ElementArg inArg1;
+  input ElementArg inArg2;
+  output Boolean outEqual;
+protected
+  Absyn.Path name1, name2;
+algorithm
+  outEqual := match(inArg1, inArg2)
+    case (MODIFICATION(path = name1), MODIFICATION(path = name2))
+      then Absyn.pathEqual(name1, name2);
+
+    else false;
+  end match;
+end elementArgEqualName;
 
 annotation(__OpenModelica_Interface="frontend");
 end Absyn;
