@@ -270,9 +270,9 @@ algorithm
         ((_,expcrefs3)) = traverseBackendDAEExpsEqns(reqns,checkBackendDAEExp,(allvars,expcrefs2));
         ((_,expcrefs4)) = traverseBackendDAEExpsEqns(ieqns,checkBackendDAEExp,(allvars,expcrefs3));
         (_,(_,expcrefs5)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkBackendDAEExp,(allvars,expcrefs4));
-        wrongEqns = BackendEquation.traverseBackendDAEEqns(eqns,checkEquationSize,{});
-        wrongEqns1 = BackendEquation.traverseBackendDAEEqns(reqns,checkEquationSize,wrongEqns);
-        wrongEqns2 = BackendEquation.traverseBackendDAEEqns(ieqns,checkEquationSize,wrongEqns1);
+        wrongEqns = BackendEquation.traverseEquationArray(eqns,checkEquationSize,{});
+        wrongEqns1 = BackendEquation.traverseEquationArray(reqns,checkEquationSize,wrongEqns);
+        wrongEqns2 = BackendEquation.traverseEquationArray(ieqns,checkEquationSize,wrongEqns1);
       then
         (expcrefs5,wrongEqns2);
 
@@ -5667,7 +5667,7 @@ protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
   repl := makeZeroReplacements(inVariables);
-  ((_, outRhsExps, outSources, _, _)) := BackendEquation.traverseBackendDAEEqns(inEqns, equationToExp, (inVariables, {}, {}, funcs, repl));
+  ((_, outRhsExps, outSources, _, _)) := BackendEquation.traverseEquationArray(inEqns, equationToExp, (inVariables, {}, {}, funcs, repl));
 end getEqnSysRhs;
 
 protected function equationToExp
@@ -7977,7 +7977,7 @@ protected
   BackendDAE.EquationArray eqns;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=eqns) := syst;
-  oalglst := BackendEquation.traverseBackendDAEEqns(eqns,collectAlgorithms,alglst);
+  oalglst := BackendEquation.traverseEquationArray(eqns,collectAlgorithms,alglst);
 end collectAlgorithmsFromEqSystem;
 
 protected function collectAlgorithms

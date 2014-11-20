@@ -1548,7 +1548,7 @@ algorithm
       equation
         // Do not do empty replacements; it just takes time ;)
         false = replacementEmpty(repl);
-        ((_,_,eqns,replacementPerformed)) = BackendEquation.traverseBackendDAEEqns(inEqns,replaceEquationTraverser,(repl,inFuncTypeExpExpToBooleanOption,{},false));
+        ((_,_,eqns,replacementPerformed)) = BackendEquation.traverseEquationArray(inEqns,replaceEquationTraverser,(repl,inFuncTypeExpExpToBooleanOption,{},false));
         outEqns = if replacementPerformed then BackendEquation.listEquation(eqns) else inEqns;
       then
         (outEqns,replacementPerformed);

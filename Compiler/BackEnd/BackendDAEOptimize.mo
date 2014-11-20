@@ -1987,7 +1987,7 @@ protected
   BackendDAE.EquationArray eqs;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=eqs) := syst;
-  (_,_) := BackendEquation.traverseBackendDAEEqnsWithUpdate(eqs, residualForm2, 1);
+  (_,_) := BackendEquation.traverseEquationArrayWithUpdate(eqs, residualForm2, 1);
   osyst := syst;
   oshared := shared;
 end residualForm1;
@@ -3088,7 +3088,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared)
       equation
         // traverse the equations and collect all semiLinear calls  y=semiLinear(x,sa,sb)
-        (eqns,(eqnslst,_,true)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,simplifysemiLinearFinder,({},0,false));
+        (eqns,(eqnslst,_,true)) = BackendEquation.traverseEquationArrayWithUpdate(eqns,simplifysemiLinearFinder,({},0,false));
         // sort for (y,x) pairs
         eqnsarray = arrayCreate(5,{});
         ht = HashTableExpToIndex.emptyHashTable();
@@ -3759,7 +3759,7 @@ algorithm
   BackendDAE.EqSystem eqs;
    case(eqs as BackendDAE.EQSYSTEM(orderedVars=ordvars, orderedEqs=ordeqns), _)
    equation
-     (ordeqns, _) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ordeqns, eaddInitialStmtsToAlgorithms1Helper, ordvars);
+     (ordeqns, _) = BackendEquation.traverseEquationArrayWithUpdate(ordeqns, eaddInitialStmtsToAlgorithms1Helper, ordvars);
    then(eqs, shared);
    end match;
 end addInitialStmtsToAlgorithms1;
@@ -3872,8 +3872,8 @@ algorithm
 
     case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs,ei))
       equation
-        (eqns1, (vars1, _)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns, traverserexpandDerEquation, (vars, shared));
-        (inieqns1, (vars2, _)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns, traverserexpandDerEquation, (vars1, shared));
+        (eqns1, (vars1, _)) = BackendEquation.traverseEquationArrayWithUpdate(eqns, traverserexpandDerEquation, (vars, shared));
+        (inieqns1, (vars2, _)) = BackendEquation.traverseEquationArrayWithUpdate(inieqns, traverserexpandDerEquation, (vars1, shared));
       then
         (BackendDAE.EQSYSTEM(vars2, eqns1, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns1, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs,ei));
   end match;

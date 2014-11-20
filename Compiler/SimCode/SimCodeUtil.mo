@@ -1597,7 +1597,7 @@ algorithm
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars, equationSccMapping, eqBackendSimCodeMapping,backendMapping) = createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, {}, zeroCrossings, tempvars, 1, {}, {},backendMapping);
       highestSimEqIndex = uniqueEqIndex;
 
-      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
 
       // Assertions and crap
       // create parameter equations
@@ -3197,7 +3197,7 @@ protected
   BackendDAE.EquationArray eqs;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=eqs) := inEqSystem;
-  outSimWhenClause := BackendEquation.traverseBackendDAEEqns(eqs, findWhenEquation, inSimWhenClause);
+  outSimWhenClause := BackendEquation.traverseEquationArray(eqs, findWhenEquation, inSimWhenClause);
 end createSimWhenClausesEqs;
 
 protected function findWhenEquation
@@ -3942,7 +3942,7 @@ algorithm
       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
       // create symbolic jacobian for simulation
       (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-      (_, homotopySupport) = BackendDAETransform.traverseBackendDAEExpsEqnList(eqn_lst, containsHomotopyCall, false);
+      (_, homotopySupport) = BackendDAETransform.traverseExpsOfEquationList(eqn_lst, containsHomotopyCall, false);
     then ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, jacobianMatrix, false, homotopySupport, mixedSystem)}, uniqueEqIndex+1, tempvars);
 
     // No analytic jacobian available. Generate non-linear system.
@@ -3953,7 +3953,7 @@ algorithm
       eqn_lst = BackendEquation.equationList(inEquationArray);
       crefs = BackendVariable.getAllCrefFromVariables(inVars);
       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
-      (_, homotopySupport) = BackendDAETransform.traverseBackendDAEExpsEqnList(eqn_lst, containsHomotopyCall, false);
+      (_, homotopySupport) = BackendDAETransform.traverseExpsOfEquationList(eqn_lst, containsHomotopyCall, false);
     then ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs, 0, NONE(), false, homotopySupport, mixedSystem)}, uniqueEqIndex+1, tempvars);
 
     // failure
@@ -4109,7 +4109,7 @@ algorithm
          // generate linear System
          (beqs, sources) = BackendDAEUtil.getEqnSysRhs(eqns1, v, SOME(functree));
          //repl = BackendVarTransform.emptyReplacements();
-         //((_, beqs, _, _, _)) = BackendEquation.traverseBackendDAEEqns(eqns1, BackendDAEUtil.equationToExp, (v, {}, {}, SOME(functree), repl));
+         //((_, beqs, _, _, _)) = BackendEquation.traverseEquationArray(eqns1, BackendDAEUtil.equationToExp, (v, {}, {}, SOME(functree), repl));
          beqs = listReverse(beqs);
          simJac = List.map1(jac, jacToSimjac, v);
          // generate other equations
@@ -4153,7 +4153,7 @@ algorithm
        simequations = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-       (_, homotopySupport) = BackendDAETransform.traverseBackendDAEExpsEqnList(reqns, containsHomotopyCall, false);
+       (_, homotopySupport) = BackendDAETransform.traverseExpsOfEquationList(reqns, containsHomotopyCall, false);
      then ({SimCode.SES_NONLINEAR(uniqueEqIndex, simequations, tcrs, 0, jacobianMatrix, linear, homotopySupport, mixedSystem)}, uniqueEqIndex+1, tempvars);
    end match;
 end createTornSystem;
@@ -6317,7 +6317,7 @@ algorithm
       // generate equations from the solved systems
       (uniqueEqIndex, _, _, allEquations, _, tempvars, _, _, _) = createEquationsForSystems(systs, shared, iuniqueEqIndex, {}, {}, {}, {}, {}, itempvars, 0, {}, {}, SimCode.NO_MAPPING());
       // generate equations from the removed equations
-      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
       allEquations = listAppend(allEquations, removedEquations);
       // generate equations from the known unfixed variables
       ((uniqueEqIndex, knvarseqns)) = BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (uniqueEqIndex, {}));
@@ -6643,7 +6643,7 @@ algorithm
         end if;
         (parameterEquations, _, uniqueEqIndex, _) = createEquations(false, false, true, false, syst, shared, comps, iuniqueEqIndex, {});
 
-        ialgs = BackendEquation.traverseBackendDAEEqns(ie, traverseAlgorithmFinder, {});
+        ialgs = BackendEquation.traverseEquationArray(ie, traverseAlgorithmFinder, {});
         ialgs = listReverse(ialgs);
         (inalgs, uniqueEqIndex) = List.mapFold(if initialSystemSolved then {} else ialgs, dlowAlgToSimEqSystem, uniqueEqIndex);
         // get minmax and nominal asserts

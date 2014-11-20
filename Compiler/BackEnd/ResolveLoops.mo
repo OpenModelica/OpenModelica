@@ -126,7 +126,7 @@ algorithm
           //BackendDump.dumpEquationArray(eqs,"the complete DAE");
 
         // get the linear equations and their vars
-        simpEqLst = BackendEquation.traverseBackendDAEEqns(eqs, getSimpleEquations, {});
+        simpEqLst = BackendEquation.traverseEquationArray(eqs, getSimpleEquations, {});
         eqMapping = List.map1(simpEqLst,List.position,eqLst);
         simpEqs = BackendEquation.listEquation(simpEqLst);
         crefs = BackendEquation.getAllCrefFromEquations(simpEqs);

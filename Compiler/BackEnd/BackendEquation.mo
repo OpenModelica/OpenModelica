@@ -205,7 +205,7 @@ protected
   list<Integer> keys;
 algorithm
   bt := BinaryTreeInt.emptyBinTree;
-  (_, (_, bt)) := traverseBackendDAEExpsEqnList(inEquationLst, checkEquationsVarsWithoutRelations, (inVars, bt));
+  (_, (_, bt)) := traverseExpsOfEquationList(inEquationLst, checkEquationsVarsWithoutRelations, (inVars, bt));
   (keys, _) := BinaryTreeInt.bintreeToList(bt);
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationsLstVarsWithoutRelations;
@@ -254,7 +254,7 @@ protected
   list<Integer> keys;
 algorithm
   bt := BinaryTreeInt.emptyBinTree;
-  (_, (_, (_, bt))) := traverseBackendDAEExpsEqnList(inEquationLst, Expression.traverseSubexpressionsHelper, (checkEquationsVarsExp, (inVars, bt)));
+  (_, (_, (_, bt))) := traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (checkEquationsVarsExp, (inVars, bt)));
   (keys, _) := BinaryTreeInt.bintreeToList(bt);
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationsLstVars;
@@ -348,7 +348,7 @@ public function equationsStates "author: Frenkel TUD
   input BackendDAE.Variables inVars;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
-  (_, (_,(outExpComponentRefLst, _))) := traverseBackendDAEExpsEqnList(inEquationLst, Expression.traverseSubexpressionsHelper, (traversingStateRefFinder, ({}, inVars)));
+  (_, (_,(outExpComponentRefLst, _))) := traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (traversingStateRefFinder, ({}, inVars)));
 end equationsStates;
 
 protected function traversingStateRefFinder "author: Frenkel TUD 2011-05"
@@ -382,7 +382,7 @@ public function iterationVarsinRelations
   output Boolean mixedSystem;
   output list<Integer> indexes;
 algorithm
-  (_, (_,(indexes, _))) := traverseBackendDAEExpsEqnList(inEquationLst, Expression.traverseSubexpressionsHelper, (traversingRelationsforIterationVars, ({}, inVars)));
+  (_, (_,(indexes, _))) := traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (traversingRelationsforIterationVars, ({}, inVars)));
   mixedSystem := if listLength(indexes)>0 then true else false;
 end iterationVarsinRelations;
 
@@ -417,7 +417,7 @@ public function equationsCrefs "author: PA
   input list<BackendDAE.Equation> inEquationLst;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
-  (_, (_,outExpComponentRefLst)) := traverseBackendDAEExpsEqnList(inEquationLst, Expression.traverseSubexpressionsHelper, (Expression.traversingComponentRefFinder, {}));
+  (_, (_,outExpComponentRefLst)) := traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (Expression.traversingComponentRefFinder, {}));
 end equationsCrefs;
 
 public function equationCrefs "author: PA
@@ -432,7 +432,7 @@ public function getAllCrefFromEquations
   input BackendDAE.EquationArray inEqns;
   output list<DAE.ComponentRef> cr_lst;
 algorithm
-  cr_lst := traverseBackendDAEEqns(inEqns, traversingEquationCrefFinder, {});
+  cr_lst := traverseEquationArray(inEqns, traversingEquationCrefFinder, {});
 end getAllCrefFromEquations;
 
 protected function traversingEquationCrefFinder "author: Frenkel TUD 2010-11"
@@ -457,7 +457,7 @@ protected
   HashTable.HashTable ht;
 algorithm
   ht := HashTable.emptyHashTable();
-  (_, (_, (_, _, ht))) := traverseBackendDAEExpsEqnList(inEquationLst, Expression.traverseSubexpressionsHelper, (checkEquationsUnknownCrefsExp, (inVars, inKnVars, ht)));
+  (_, (_, (_, _, ht))) := traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (checkEquationsUnknownCrefsExp, (inVars, inKnVars, ht)));
   cr_lst := BaseHashTable.hashTableKeyList(ht);
 end equationUnknownCrefs;
 
@@ -525,24 +525,29 @@ algorithm
   end matchcontinue;
 end checkEquationsUnknownCrefsExp;
 
-public function traverseBackendDAEExpsEqnList "author: Frenkel TUD 2010-11
-  Traverses all expressions of a list of equations.
-  It is possible to change the equations."
-  replaceable type Type_a subtypeof Any;
+public function traverseExpsOfEquationList<ArgT> "author: Frenkel TUD 2010-11
+  Traverse all expressions of a list of Equations. It is possible to change the
+  equations and the multidim equations and the algorithms."
   input list<BackendDAE.Equation> inEquations;
-  input FuncExpType inFunc;
-  input Type_a inTypeA;
-  output list<BackendDAE.Equation> outEquations;
-  output Type_a outTypeA;
+  input FuncExpType func;
+  input ArgT inArg;
+  output list<BackendDAE.Equation> outEquations := {};
+  output ArgT outArg := inArg;
+
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input ArgT inArg;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output ArgT outArg;
   end FuncExpType;
 algorithm
-  (outEquations, outTypeA) := List.map1Fold(inEquations, traverseBackendDAEExpsEqn, inFunc, inTypeA);
-end traverseBackendDAEExpsEqnList;
+  for eq in inEquations loop
+    (eq, outArg) := traverseBackendDAEExpsEqn(eq, func, outArg);
+    outEquations := eq::outEquations;
+  end for;
+
+  outEquations := listReverse(outEquations);
+end traverseExpsOfEquationList;
 
 protected function traverseBackendDAEExpsEqnListWithStop "author: Frenkel TUD 2012-09
   Traverses all expressions of a list of equations.
@@ -700,7 +705,7 @@ algorithm
 
     case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=attr), _, _) equation
       (expl, ext_arg_1) = traverseBackendDAEExpList(expl, inFunc, inTypeA);
-      (eqnslst, ext_arg_2) = List.map1Fold(eqnslst, traverseBackendDAEExpsEqnList, inFunc, ext_arg_1);
+      (eqnslst, ext_arg_2) = List.map1Fold(eqnslst, traverseExpsOfEquationList, inFunc, ext_arg_1);
       (eqns, ext_arg_2) = List.map1Fold(eqns, traverseBackendDAEExpsEqn, inFunc, ext_arg_2);
     then (BackendDAE.IF_EQUATION(expl, eqnslst, eqns, source, attr), ext_arg_2);
   end match;
@@ -895,207 +900,172 @@ protected function traverseBackendDAEExpListWithStop "author Frenkel TUD
   end match;
 end traverseBackendDAEExpListWithStop;
 
-public function traverseBackendDAEEqns "author: Frenkel TUD
+public function traverseEquationArray<T> "author: Frenkel TUD
+  Traverses all equations of a BackendDAE.EquationArray."
+  input BackendDAE.EquationArray inEquationArray;
+  input FuncExpType func;
+  input T inTypeA;
+  output T outTypeA;
+
+  partial function FuncExpType
+    input BackendDAE.Equation inEq;
+    input T inA;
+    output BackendDAE.Equation outEq;
+    output T outA;
+  end FuncExpType;
+protected
+  array<Option<BackendDAE.Equation>> equOptArr;
+algorithm
+  //try
+    BackendDAE.EQUATION_ARRAY(equOptArr=equOptArr) := inEquationArray;
+    outTypeA := BackendDAEUtil.traverseArrayNoCopy(equOptArr, func, traverseOptEquation, inTypeA);
+  //else
+  //  if Flags.isSet(Flags.FAILTRACE) then
+  //    Debug.trace("- BackendEquation.traverseEquationArray failed\n");
+  //  end if;
+  //  fail();
+  //end try;
+end traverseEquationArray;
+
+public function traverseEquationArrayWithStop "author: Frenkel TUD
   Traverses all equations of a BackendDAE.EquationArray."
   replaceable type Type_a subtypeof Any;
   input BackendDAE.EquationArray inEquationArray;
-  input FuncExpType func;
+  input FuncWithStop inFuncWithStop;
   input Type_a inTypeA;
   output Type_a outTypeA;
-  partial function FuncExpType
+
+  partial function FuncWithStop
     input BackendDAE.Equation inEq;
     input Type_a inA;
     output BackendDAE.Equation outEq;
+    output Boolean cont;
     output Type_a outA;
-  end FuncExpType;
+  end FuncWithStop;
+protected
+  array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
-  outTypeA := matchcontinue (inEquationArray, func, inTypeA)
-    local
-      array<Option<BackendDAE.Equation>> equOptArr;
+  //try
+    BackendDAE.EQUATION_ARRAY(equOptArr=equOptArr) := inEquationArray;
+    outTypeA := BackendDAEUtil.traverseArrayNoCopyWithStop(equOptArr, inFuncWithStop, traverseOptEquationWithStop, inTypeA);
+  //else
+  //  if Flags.isSet(Flags.FAILTRACE) then
+  //    Debug.trace("- BackendEquation.traverseEquationArrayWithStop failed\n");
+  //  end if;
+  //  fail();
+  //end try;
+end traverseEquationArrayWithStop;
 
-    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)), _, _)
-    then BackendDAEUtil.traverseArrayNoCopy(equOptArr, func, traverseBackendDAEOptEqn, inTypeA);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendEquation.traverseBackendDAEEqns failed\n");
-      then fail();
-  end matchcontinue;
-end traverseBackendDAEEqns;
-
-protected function traverseBackendDAEOptEqn "author: Frenkel TUD 2010-11
-  Helper for traverseBackendDAEExpsEqns."
-  replaceable type Type_a subtypeof Any;
+protected function traverseOptEquation<T>
   input Option<BackendDAE.Equation> inEquation;
   input FuncExpType func;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
+  input T inTypeA;
+  output T outTypeA;
+
   partial function FuncExpType
     input BackendDAE.Equation inEq;
-    input Type_a inA;
+    input T inA;
     output BackendDAE.Equation outEq;
-    output Type_a outA;
+    output T outA;
   end FuncExpType;
 algorithm
-  outTypeA :=  matchcontinue (inEquation, func, inTypeA)
+  outTypeA := match(inEquation)
     local
       BackendDAE.Equation eqn;
-      Type_a ext_arg;
+      T ext_arg;
 
-    case (NONE(), _, _)
+    case NONE()
     then inTypeA;
 
-    case (SOME(eqn), _, _)
-      equation
-        (_, ext_arg) = func(eqn, inTypeA);
-      then ext_arg;
+    case SOME(eqn) equation
+      (_, ext_arg) = func(eqn, inTypeA);
+    then ext_arg;
+  end match;
+end traverseOptEquation;
 
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendEquation.traverseBackendDAEOptEqn failed\n");
-      then fail();
-  end matchcontinue;
-end traverseBackendDAEOptEqn;
-
-public function traverseBackendDAEEqnsWithStop "author: Frenkel TUD
-  Traverses all equations of a BackendDAE.EquationArray."
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.EquationArray inEquationArray;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input BackendDAE.Equation inEq;
-    input Type_a inA;
-    output BackendDAE.Equation outEq;
-    output Boolean cont;
-    output Type_a outA;
-  end FuncExpType;
-algorithm
-  outTypeA := matchcontinue (inEquationArray, func, inTypeA)
-    local
-      array<Option<BackendDAE.Equation>> equOptArr;
-
-    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)), _, _)
-    then BackendDAEUtil.traverseArrayNoCopyWithStop(equOptArr, func, traverseBackendDAEOptEqnWithStop, inTypeA);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendEquation.traverseBackendDAEEqnsWithStop failed");
-      then fail();
-  end matchcontinue;
-end traverseBackendDAEEqnsWithStop;
-
-protected function traverseBackendDAEOptEqnWithStop "author: Frenkel TUD 2010-11"
-  replaceable type Type_a subtypeof Any;
+protected function traverseOptEquationWithStop<T>
   input Option<BackendDAE.Equation> inEquation;
-  input FuncExpType func;
-  input Type_a inTypeA;
+  input FuncWithStop inFuncWithStop;
+  input T inTypeA;
   output Boolean outBoolean;
-  output Type_a outTypeA;
-  partial function FuncExpType
+  output T outTypeA;
+
+  partial function FuncWithStop
     input BackendDAE.Equation inEq;
-    input Type_a inA;
+    input T inA;
     output BackendDAE.Equation outEq;
     output Boolean cont;
-    output Type_a outA;
-  end FuncExpType;
+    output T outA;
+  end FuncWithStop;
 algorithm
-  (outBoolean, outTypeA) :=  matchcontinue (inEquation, func, inTypeA)
+  (outBoolean, outTypeA) :=  match(inEquation)
     local
       BackendDAE.Equation eqn;
-      Type_a ext_arg;
+      T ext_arg;
       Boolean b;
 
-    case (NONE(), _, _)
+    case NONE()
     then (true, inTypeA);
 
-    case (SOME(eqn), _, _)
-      equation
-        (_, b, ext_arg) = func(eqn, inTypeA);
-      then (b, ext_arg);
+    case SOME(eqn) equation
+      (_, b, ext_arg) = inFuncWithStop(eqn, inTypeA);
+    then (b, ext_arg);
+  end match;
+end traverseOptEquationWithStop;
 
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendEquation.traverseBackendDAEOptEqnWithStop failed\n");
-      then fail();
-  end matchcontinue;
-end traverseBackendDAEOptEqnWithStop;
-
-public function traverseBackendDAEEqnsWithUpdate "author: Frenkel TUD
+public function traverseEquationArrayWithUpdate<T> "author: Frenkel TUD
   Traverses all equations of a BackendDAE.EquationArray."
-  replaceable type Type_a subtypeof Any;
   input BackendDAE.EquationArray inEquationArray;
-  input FuncExpType func;
-  input Type_a inTypeA;
+  input FuncWithUpdate inFuncWithUpdate;
+  input T inTypeA;
   output BackendDAE.EquationArray outEquationArray;
-  output Type_a outTypeA;
-  partial function FuncExpType
+  output T outTypeA;
+
+  partial function FuncWithUpdate
     input BackendDAE.Equation inEq;
-    input Type_a inA;
+    input T inA;
     output BackendDAE.Equation outEq;
-    output Type_a outA;
-  end FuncExpType;
+    output T outA;
+  end FuncWithUpdate;
+protected
+  Integer numberOfElement, arrSize, size;
+  array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
-  (outEquationArray, outTypeA) := matchcontinue (inEquationArray, func, inTypeA)
-    local
-      Integer numberOfElement, arrSize, size;
-      array<Option<BackendDAE.Equation>> equOptArr;
-      Type_a ext_arg;
+  BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) := inEquationArray;
+  (equOptArr, outTypeA) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(equOptArr, inFuncWithUpdate, traverseOptEquationWithUpdate, inTypeA);
+  outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr);
+end traverseEquationArrayWithUpdate;
 
-    case ((BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr = equOptArr)), _, _)
-      equation
-        (equOptArr, ext_arg) = BackendDAEUtil.traverseArrayNoCopyWithUpdate(equOptArr, func, traverseBackendDAEOptEqnWithUpdate, inTypeA);
-      then (BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr), ext_arg);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendEquation.traverseBackendDAEEqnsWithStop failed\n");
-      then fail();
-  end matchcontinue;
-end traverseBackendDAEEqnsWithUpdate;
-
-protected function traverseBackendDAEOptEqnWithUpdate "author: Frenkel TUD 2010-11
+protected function traverseOptEquationWithUpdate<T> "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqnsWithUpdate."
-  replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
-  input FuncExpType func;
-  input Type_a inTypeA;
+  input FuncWithUpdate inFuncWithUpdate;
+  input T inTypeA;
   output Option<BackendDAE.Equation> outEquation;
-  output Type_a outTypeA;
-  partial function FuncExpType
+  output T outTypeA;
+
+  partial function FuncWithUpdate
     input BackendDAE.Equation inEq;
-    input Type_a inA;
+    input T inA;
     output BackendDAE.Equation outEq;
-    output Type_a outA;
-  end FuncExpType;
+    output T outA;
+  end FuncWithUpdate;
 algorithm
-  (outEquation, outTypeA) :=  matchcontinue (inEquation, func, inTypeA)
+  (outEquation, outTypeA) :=  match(inEquation)
     local
       Option<BackendDAE.Equation> oeqn;
       BackendDAE.Equation eqn, eqn1;
-      Type_a ext_arg;
+      T ext_arg;
 
-    case (oeqn as NONE(), _, _)
-    then (oeqn, inTypeA);
+    case NONE()
+    then (NONE(), inTypeA);
 
-    case (oeqn as SOME(eqn), _, _) equation
-      (eqn1, ext_arg) = func(eqn, inTypeA);
-      oeqn = if referenceEq(eqn, eqn1) then oeqn else SOME(eqn1);
+    case SOME(eqn) equation
+      (eqn1, ext_arg) = inFuncWithUpdate(eqn, inTypeA);
+      oeqn = if referenceEq(eqn, eqn1) then inEquation else SOME(eqn1);
     then (oeqn, ext_arg);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendEquation.traverseBackendDAEOptEqnWithUpdate failed\n");
-      then fail();
-  end matchcontinue;
-end traverseBackendDAEOptEqnWithUpdate;
+  end match;
+end traverseOptEquationWithUpdate;
 
 public function equationEqual "
   Returns true if two equations are equal"

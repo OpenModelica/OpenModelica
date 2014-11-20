@@ -163,7 +163,7 @@ algorithm
   (whenClauseLst, vars, eqns, ht, index) := encapsulateWhenConditions_WhenClause(whenClauseLst, {}, {}, {}, ht, index);
 
   // removed equations
-  ((removedEqs, vars, eqns, index, ht)) := BackendEquation.traverseBackendDAEEqns(removedEqs, encapsulateWhenConditions_EquationArray, (BackendEquation.emptyEqns(), vars, eqns, index, ht));
+  ((removedEqs, vars, eqns, index, ht)) := BackendEquation.traverseEquationArray(removedEqs, encapsulateWhenConditions_EquationArray, (BackendEquation.emptyEqns(), vars, eqns, index, ht));
   vars_ := BackendVariable.listVar(vars);
   eqns_ := BackendEquation.listEquation(eqns);
   systs := listAppend(systs, {BackendDAE.EQSYSTEM(vars_, eqns_, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())});
@@ -252,7 +252,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
 
-  ((orderedEqs, varLst, eqnLst, outIndex, outHT)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, encapsulateWhenConditions_EquationArray, (BackendEquation.emptyEqns(), {}, {}, inIndex, inHT));
+  ((orderedEqs, varLst, eqnLst, outIndex, outHT)) := BackendEquation.traverseEquationArray(orderedEqs, encapsulateWhenConditions_EquationArray, (BackendEquation.emptyEqns(), {}, {}, inIndex, inHT));
 
   orderedVars := BackendVariable.addVars(varLst, orderedVars);
   orderedEqs := BackendEquation.addEquations(eqnLst, orderedEqs);

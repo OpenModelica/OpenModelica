@@ -762,7 +762,7 @@ protected
   BackendDAE.EquationArray removedEqs;
 algorithm
   BackendDAE.SHARED(removedEqs=removedEqs) := inShared;
-  modes := BackendEquation.traverseBackendDAEEqns(removedEqs, extractStates, HashTableSM.emptyHashTable());
+  modes := BackendEquation.traverseEquationArray(removedEqs, extractStates, HashTableSM.emptyHashTable());
 end identifyModes;
 
 

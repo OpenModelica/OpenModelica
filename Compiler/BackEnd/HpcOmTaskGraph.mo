@@ -2233,7 +2233,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := iSystem;
   (offset, resultList) := iOffsetResList;
-  ((offset, resultList, _, _)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, getComponentsIncludingTime0, (offset, resultList, iEqCompMapping, 1));
+  ((offset, resultList, _, _)) := BackendEquation.traverseEquationArray(orderedEqs, getComponentsIncludingTime0, (offset, resultList, iEqCompMapping, 1));
   oOffsetResList := (offset, resultList);
 end getComponentsIncludingTime;
 

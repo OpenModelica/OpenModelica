@@ -3409,9 +3409,9 @@ algorithm
         (aliasVars, (_, varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars, replaceAliasVarTraverser, (repl, {}));
         aliasVars = List.fold(varlst, fixAliasConstBindings, aliasVars);
         (knvars1, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceVarTraverser, repl);
-        ((_, eqnslst, b1)) = BackendEquation.traverseBackendDAEEqns(inieqns, replaceEquationTraverser, (repl, {}, false));
+        ((_, eqnslst, b1)) = BackendEquation.traverseEquationArray(inieqns, replaceEquationTraverser, (repl, {}, false));
         inieqns = if b1 then BackendEquation.listEquation(eqnslst) else inieqns;
-        ((_, eqnslst, b1)) = BackendEquation.traverseBackendDAEEqns(remeqns, replaceEquationTraverser, (repl, {}, false));
+        ((_, eqnslst, b1)) = BackendEquation.traverseEquationArray(remeqns, replaceEquationTraverser, (repl, {}, false));
         remeqns1 = if b1 then BackendEquation.listEquation(eqnslst) else remeqns;
         (whenClauseLst1, _) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         // remove optimica contraints and classAttributes
@@ -3539,7 +3539,7 @@ algorithm
     case ({}, _, _, _, _) then inSysts1;
     case ((syst as BackendDAE.EQSYSTEM(orderedVars=v, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind))::rest, _, _, _, _)
       equation
-        ((_, eqnslst, b)) = BackendEquation.traverseBackendDAEEqns(eqns, replaceEquationTraverser, (repl, {}, false));
+        ((_, eqnslst, b)) = BackendEquation.traverseEquationArray(eqns, replaceEquationTraverser, (repl, {}, false));
         eqnslst = if b then listReverse(eqnslst) else eqnslst;
         eqns = if b then BackendEquation.listEquation(eqnslst) else eqns;
         (stateSets, b1, statesetrepl1) = removeAliasVarsStateSets(stateSets, statesetrepl, v, aliasVars, {}, false);
@@ -3910,7 +3910,7 @@ protected
   BackendDAE.EquationArray eqns;
 algorithm
   eqns := BackendEquation.getEqnsFromEqSystem(isyst);
-  outUnreplaceable := BackendEquation.traverseBackendDAEEqns(eqns, addUnreplaceableFromWhenEqn, inUnreplaceable);
+  outUnreplaceable := BackendEquation.traverseEquationArray(eqns, addUnreplaceableFromWhenEqn, inUnreplaceable);
 end addUnreplaceableFromWhensSystem;
 
 protected function addUnreplaceableFromWhenEqn

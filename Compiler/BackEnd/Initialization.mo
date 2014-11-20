@@ -136,7 +136,7 @@ algorithm
 
       ((vars, fixvars, eqns, _)) = BackendVariable.traverseBackendDAEVars(avars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));
       ((vars, fixvars, eqns, _)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars, eqns, hs));
-      ((eqns, reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (eqns, reeqns));
+      ((eqns, reeqns)) = BackendEquation.traverseEquationArray(inieqns, collectInitialEqns, (eqns, reeqns));
 
       // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpEquationArray, eqns, "initial equations");
 
@@ -339,7 +339,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
 
-  ((orderedVars, eqnlst)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, inlineWhenForInitializationEquation, (orderedVars, {}));
+  ((orderedVars, eqnlst)) := BackendEquation.traverseEquationArray(orderedEqs, inlineWhenForInitializationEquation, (orderedVars, {}));
   eqns := BackendEquation.listEquation(eqnlst);
 
   outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
@@ -2023,7 +2023,7 @@ algorithm
   (vars, fixvars, eqns, reqns, hs) := iTpl;
 
   ((vars, fixvars, eqns, hs)) := BackendVariable.traverseBackendDAEVars(orderedVars, collectInitialVars, (vars, fixvars, eqns, hs));
-  ((eqns, reqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, collectInitialEqns, (eqns, reqns));
+  ((eqns, reqns)) := BackendEquation.traverseEquationArray(orderedEqs, collectInitialEqns, (eqns, reqns));
   //((fixvars, eqns)) := List.fold(stateSets, collectInitialStateSetVars, (fixvars, eqns));
 
   oTpl := (vars, fixvars, eqns, reqns, hs);

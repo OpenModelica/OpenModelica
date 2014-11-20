@@ -1984,7 +1984,7 @@ algorithm
           reqns = BackendEquation.replaceDerOpInEquationList(reqns);
           eqns = BackendEquation.listEquation(reqns);
           // create  residual equations
-          reqns = BackendEquation.traverseBackendDAEEqns(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
           (reqns, resVarsLst) = BackendDAEOptimize.convertResidualsIntoSolvedEquations(reqns);
           resVars = BackendVariable.listVar1(resVarsLst);
@@ -2029,7 +2029,7 @@ algorithm
           reqns = BackendEquation.replaceDerOpInEquationList(reqns);
           eqns = BackendEquation.listEquation(reqns);
           // create  residual equations
-          reqns = BackendEquation.traverseBackendDAEEqns(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
           (reqns, resVarsLst) = BackendDAEOptimize.convertResidualsIntoSolvedEquations(reqns);
           resVars = BackendVariable.listVar1(resVarsLst);
@@ -3032,7 +3032,7 @@ algorithm
     case (_,_)
       equation
         repl = BackendDAEUtil.makeZeroReplacements(vars);
-        ((_,res,_)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(vars,true,repl));
+        ((_,res,_)) = BackendEquation.traverseEquationArrayWithStop(eqns,rhsConstant2,(vars,true,repl));
       then
         res;
   end matchcontinue;

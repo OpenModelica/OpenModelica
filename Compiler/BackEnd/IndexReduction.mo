@@ -2016,18 +2016,18 @@ algorithm
         // get orgequations of that level
         (eqnslst1,_,orgEqnsLst) = getFirstOrgEqns(iOrgEqnsLst,{},{},{});
         // replace final parameter
-        (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst1, replaceFinalVarsEqn,(BackendVariable.daeKnVars(ishared),false,BackendVarTransform.emptyReplacements()));
+        (eqnslst,_) = BackendEquation.traverseExpsOfEquationList(eqnslst1, replaceFinalVarsEqn,(BackendVariable.daeKnVars(ishared),false,BackendVarTransform.emptyReplacements()));
         // replace all der(x) with dx
-        (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, Expression.traverseSubexpressionsHelper, (replaceDerStatesStatesExp,so));
+        (eqnslst,_) = BackendEquation.traverseExpsOfEquationList(eqnslst, Expression.traverseSubexpressionsHelper, (replaceDerStatesStatesExp,so));
         // force inline
         funcs = BackendDAEUtil.getFunctions(ishared);
-        (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, forceInlinEqn,funcs);
+        (eqnslst,_) = BackendEquation.traverseExpsOfEquationList(eqnslst, forceInlinEqn,funcs);
         // try to make scalar
         (eqnslst,_) = InlineArrayEquations.getScalarArrayEqns(eqnslst);
         // convert x:STATE(n) if n>1 to DER.DER....x
         (hov,ht) = List.map1Fold(iHov,getLevelStates,level,HashTableCrIntToExp.emptyHashTable());
-        (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
-        (eqnslst1,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst1, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
+        (eqnslst,_) = BackendEquation.traverseExpsOfEquationList(eqnslst, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
+        (eqnslst1,_) = BackendEquation.traverseExpsOfEquationList(eqnslst1, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
         // remove stateSelect=StateSelect.always vars
         varlst = List.filter1(hov, notVarStateSelectAlways, level);
         neqns = BackendEquation.equationLstSize(eqnslst);
@@ -5967,7 +5967,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets,partitionKind) := isyst;
   // find der(s) = v
-  vars := BackendEquation.traverseBackendDAEEqns(eqns,traverseFindStateOrder,vars);
+  vars := BackendEquation.traverseEquationArray(eqns,traverseFindStateOrder,vars);
   osyst := BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets,partitionKind);
 end findStateOrderWork;
 

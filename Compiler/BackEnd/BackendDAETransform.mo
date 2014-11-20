@@ -1454,7 +1454,7 @@ algorithm
   outWhenClauseLst := listReverse(outWhenClauseLst);
 end traverseBackendDAEExpsWhenClauseLst;
 
-public function traverseBackendDAEExpsEqnList<ArgT> "author: Frenkel TUD 2010-11
+public function traverseExpsOfEquationList<ArgT> "author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
   input list<BackendDAE.Equation> inEquations;
@@ -1476,7 +1476,7 @@ algorithm
   end for;
 
   outEquations := listReverse(outEquations);
-end traverseBackendDAEExpsEqnList;
+end traverseExpsOfEquationList;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAETransform;

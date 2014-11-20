@@ -1838,7 +1838,7 @@ protected function findArraysPartiallyIndexedRecords "finds vector variables ins
   input HashTable.HashTable ht;
   output HashTable.HashTable outHt;
 algorithm
- (_,outHt) := BackendEquation.traverseBackendDAEExpsEqnList(inEqs,findArraysPartiallyIndexedRecordsExpVisitor,ht);
+ (_,outHt) := BackendEquation.traverseExpsOfEquationList(inEqs,findArraysPartiallyIndexedRecordsExpVisitor,ht);
  //print("partially indexed crs from reccrs:"+Util.stringDelimitList(Util.listMap(outRef,Exp.printComponentRefStr),",\n")+"\n");
 end findArraysPartiallyIndexedRecords;
 
