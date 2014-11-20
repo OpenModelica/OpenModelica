@@ -12937,8 +12937,8 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     <<
 
     <%preExp%>
-    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
-      let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls,simCode,useFlatArrayNotation)
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 2 =>
+      let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls,simCode,useFlatArrayNotation)
       '<%re%> = <%rec%>.<%var.name%>;'
     ; separator="\n"
     %>

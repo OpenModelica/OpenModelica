@@ -4942,7 +4942,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
         '<%res%>_targ<%i1%> = <%retStruct%>.targ<%i1%>;<%\n%>')
     case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
   let _ = (elementVars(c.localDecls) |> var => varInit(var, "", 0, &varDeclsCaseInner, &preExpCaseInner))
-  <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listNth(c.patterns,n),ea) else 'case <%i0%>'%>: {
+  <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listGet(c.patterns,n),ea) else 'case <%i0%>'%>: {
 
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>

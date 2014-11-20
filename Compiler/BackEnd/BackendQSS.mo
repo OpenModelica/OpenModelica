@@ -417,13 +417,13 @@ end replaceVars;
 //       /*
 //       print(ComponentReference.crefStr(cref));
 //       print("\n");
-//       print(ComponentReference.crefStr(listNth(stateVarsList,0)));
+//       print(ComponentReference.crefStr(listGet(stateVarsList,1)));
 //       print("\n");
-//       print(ComponentReference.crefStr(listNth(stateVarsList,1)));
+//       print(ComponentReference.crefStr(listGet(stateVarsList,2)));
 //       print("\n");
-//       print(ComponentReference.crefStr(listNth(stateVarsList,2)));
+//       print(ComponentReference.crefStr(listGet(stateVarsList,3)));
 //       print("\n");
-//       print(ComponentReference.crefStr(listNth(stateVarsList,3)));
+//       print(ComponentReference.crefStr(listGet(stateVarsList,4)));
 //       print("\n");
 //       */
 //       p = List.position(cref,stateVarsList);
@@ -747,7 +747,7 @@ algorithm
       s=stringAppend("","d[");
       s=stringAppend(s,intString(acc+1));
       s=stringAppend(s,"]:=");
-      //s=stringAppend(s,getStartTime(listNth({},total-acc-2)));
+      //s=stringAppend(s,getStartTime(listGet({},total-acc-1)));
       s=stringAppend(s,";\n");
     then stringAppend(s,generateDInit(tail,vars,acc+1,total,nWhenClause));
 

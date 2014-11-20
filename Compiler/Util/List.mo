@@ -6129,7 +6129,7 @@ public function toListWithPositions<T>
   input list<T> inList;
   output list<tuple<T, Integer>> outList := {};
 protected
-  Integer pos := 0;
+  Integer pos := 1;
 algorithm
   for e in inList loop
     outList := (e, pos) :: outList;

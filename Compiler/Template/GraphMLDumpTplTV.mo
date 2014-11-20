@@ -26,13 +26,6 @@ interface package GraphMLDumpTplTV
       output Integer result;
     end listLength;
 
-    function listNth
-      replaceable type TypeVar subtypeof Any;
-      input list<TypeVar> lst;
-      input Integer ix;
-      output TypeVar result;
-    end listNth;
-
     function intAdd
       input Integer a;
       input Integer b;

@@ -752,7 +752,7 @@ algorithm
         true = listLength(cases) > 2;
         patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
         (optPatternMatrix,numNonEmptyColumns) = removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
-        tpl = findPatternToConvertToSwitch(optPatternMatrix,0,numNonEmptyColumns,info);
+        tpl = findPatternToConvertToSwitch(optPatternMatrix,1,numNonEmptyColumns,info);
         (_,ty,_) = tpl;
         str = Types.unparseType(ty);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);

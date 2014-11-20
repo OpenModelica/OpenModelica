@@ -1585,7 +1585,7 @@ algorithm
         (cache,val,st_1) = ceval(cache,env,exp,impl,st,msg,numIter+1);
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg,numIter+1);
         v2 = match(val)
-               case Values.ARRAY({},adims) then Values.INTEGER(listNth(adims,dimv-1));
+               case Values.ARRAY({},adims) then Values.INTEGER(listGet(adims,dimv));
                case _ then cevalBuiltinSize2(val, dimv);
              end match;
       then
@@ -1641,22 +1641,14 @@ end cevalBuiltinSize2;
 protected function cevalBuiltinSize3 "author: PA
   Helper function to cevalBuiltinSize.
   Used when recursive definition (attribute modifiers using size) is used."
-  input DAE.Dimensions inInstDimExpLst;
-  input Integer inInteger;
+  input DAE.Dimensions inDims;
+  input Integer inIndex;
   output Values.Value outValue;
+protected
+  Integer v;
 algorithm
-  outValue:=
-  match (inInstDimExpLst,inInteger)
-    local
-      Integer n_1,v,n;
-      DAE.Dimensions dims;
-    case (dims,n)
-      equation
-        n_1 = n - 1;
-        DAE.DIM_INTEGER(v) = listNth(dims, n_1);
-      then
-        Values.INTEGER(v);
-  end match;
+  DAE.DIM_INTEGER(v) := listGet(inDims, inIndex);
+  outValue := Values.INTEGER(v);
 end cevalBuiltinSize3;
 
 protected function cevalBuiltinAbs "author: LP
@@ -4919,7 +4911,7 @@ public function cevalSubscriptValue "Helper function to cevalCrefBinding. It app
 algorithm
   (outCache,outValue) := match (inCache,inEnv,inExpSubscriptLst,inValue,inBoolean,inMsg,numIter)
     local
-      Integer n,n_1;
+      Integer n;
       Values.Value subval,res,v;
       FCore.Graph env;
       DAE.Exp exp;
@@ -4938,8 +4930,7 @@ algorithm
              case Values.INTEGER(n) then n;
              case Values.ENUM_LITERAL(index = n) then n;
             end match;
-        n_1 = n - 1;
-        subval = listNth(lst, n_1);
+        subval = listGet(lst, n);
         (cache,res) = cevalSubscriptValue(cache, env, subs, subval, impl,msg,numIter+1);
       then
         (cache,res);
@@ -4948,8 +4939,8 @@ algorithm
     case (cache,env,(DAE.SLICE(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg,_)
       equation
         (cache,Values.ARRAY(valueLst = sliceLst),_) = ceval(cache, env, exp, impl,NONE(),msg,numIter+1);
-        slice = List.map(sliceLst, ValuesUtil.valueIntegerMinusOne);
-        subvals = List.map1r(slice, listNth, lst);
+        slice = List.map(sliceLst, ValuesUtil.valueInteger);
+        subvals = List.map1r(slice, listGet, lst);
         (cache,lst) = cevalSubscriptValueList(cache,env, subs, subvals, impl,msg,numIter);
         res = ValuesUtil.makeArray(lst);
       then

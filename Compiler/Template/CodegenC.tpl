@@ -7047,8 +7047,8 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
     let rec = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
-    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-      let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls, &auxFunction)
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
+      let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction)
       '<%re%> = <%rec%>._<%var.name%>;'
     ; separator="\n"
     %>
@@ -7245,7 +7245,7 @@ case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
   // get the current index of tmpMeta and reserve N=listLength(inputs) values in it!
   let startIndexOutputs = '<%System.tmpTickIndexReserve(1, listLength(expExpLst))%>'
   let _ = daeExpMatch2(exp, expExpLst, prefix, startIndexOutputs, context, &preExp, &varDecls, &auxFunction)
-  let lhsCrefs = (expExpLst |> cr hasindex i0 =>
+  let lhsCrefs = (expExpLst |> cr hasindex i0 fromindex 1 =>
                     let rhsStr = getTempDeclMatchOutputName(expExpLst, prefix, startIndexOutputs, i0)
                     writeLhsCref(cr, rhsStr, context, &afterExp, &varDecls, &auxFunction)
                   ;separator="\n"; empty)
@@ -7326,8 +7326,8 @@ case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty=ty as T_COMPLEX(varLst = var
   <<
   <%preExp%>
   <%tmp%> = <%rhsStr%>;
-  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-    let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls, &auxFunction)
+  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
+    let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction)
     '<%re%> = <%tmp%>._<%var.name%>;'
   ; separator="\n"
   %>
@@ -9932,20 +9932,20 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
   let caseRes = (match c.result
     case SOME(TUPLE(PR=exps)) then
       (exps |> e hasindex i1 fromindex 1 =>
-      '<%getTempDeclMatchOutputName(exps, res, startIndexOutputs, intSub(i1,1))%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner, &auxFunction)%>;<%\n%>')
+      '<%getTempDeclMatchOutputName(exps, res, startIndexOutputs, i1)%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner, &auxFunction)%>;<%\n%>')
     case SOME(exp as CALL(attr=CALL_ATTR(tailCall=TAIL(__)))) then
       daeExp(exp, context, &preRes, &varDeclsCaseInner, &auxFunction)
     case SOME(exp as CALL(attr=CALL_ATTR(tuple_=true))) then
-      let additionalOutputs = List.restOrEmpty(tupleAssignExps) |> cr hasindex i0 fromindex 1 /* starting with second element, 0-based indexing... */ =>
+      let additionalOutputs = List.restOrEmpty(tupleAssignExps) |> cr hasindex i0 fromindex 2 /* starting with second element */ =>
         ', &<%getTempDeclMatchOutputName(tupleAssignExps, res, startIndexOutputs, i0)%>'
       let retStruct = daeExpCallTuple(exp, additionalOutputs, context, &preRes, &varDeclsCaseInner, &auxFunction)
       let callRet = match tupleAssignExps
         case {} then '<%retStruct%>;<%\n%>'
-        case e::_ then '<%getTempDeclMatchOutputName(tupleAssignExps, res, startIndexOutputs, 0)%> = <%retStruct%>;<%\n%>'
+        case e::_ then '<%getTempDeclMatchOutputName(tupleAssignExps, res, startIndexOutputs, 1)%> = <%retStruct%>;<%\n%>'
       callRet
     case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner, &auxFunction)%>;<%\n%>')
   let _ = (elementVars(c.localDecls) |> var => varInit(var, "", &varDeclsCaseInner, &preExpCaseInner, &varFrees, &auxFunction))
-  <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listNth(c.patterns,n),ea) else 'case <%i0%>'%>: {
+  <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listGet(c.patterns,n),ea) else 'case <%i0%>'%>: {
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>
     <%patternMatching%>
@@ -10210,15 +10210,15 @@ end tempDeclMatchInput;
 template getTempDeclMatchInputName(list<Exp> inputs, String prefix, String startIndex, Integer index)
  "Returns the name of the temporary variable from the match input list."
 ::=
-  let typ = '<%expTypeFromExpModelica(listNth(inputs, index))%>'
+  let typ = '<%expTypeFromExpModelica(listGet(inputs, index))%>'
   let newVar =
       match typ /* TODO! FIXME! UGLY! UGLY! hack! */
       case "modelica_metatype"
       case "metamodelica_string"
       case "metamodelica_string_const"
-        then 'tmpMeta[<%startIndex%>+<%index%>]'
+        then 'tmpMeta[<%startIndex%>+<%intSub(index, 1)%>]'
       else
-        let newVarIx = '<%prefix%>_in<%index%>'
+        let newVarIx = '<%prefix%>_in<%intSub(index, 1)%>'
         newVarIx
   newVar
 end getTempDeclMatchInputName;
@@ -10243,15 +10243,15 @@ end tempDeclMatchOutput;
 template getTempDeclMatchOutputName(list<Exp> outputs, String prefix, String startIndex, Integer index)
  "Returns the name of the temporary variable from the match input list."
 ::=
-  let typ = '<%expTypeFromExpModelica(listNth(outputs, index))%>'
+  let typ = '<%expTypeFromExpModelica(listGet(outputs, index))%>'
   let newVar =
       match typ /* TODO! FIXME! UGLY! UGLY! hack! */
       case "modelica_metatype"
       case "metamodelica_string"
       case "metamodelica_string_const"
-        then 'tmpMeta[<%startIndex%>+<%index%>]'
+        then 'tmpMeta[<%startIndex%>+<%intSub(index, 1)%>]'
       else
-        let newVarIx = '<%prefix%>_c<%index%>'
+        let newVarIx = '<%prefix%>_c<%intSub(index, 1)%>'
         newVarIx
   newVar
 end getTempDeclMatchOutputName;

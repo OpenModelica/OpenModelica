@@ -42,7 +42,6 @@ functions = [
 'listHead',
 'listLength',
 'listMember',
-'listNth',
 'listRest',
 'listReverse',
 'listReverseInPlace',

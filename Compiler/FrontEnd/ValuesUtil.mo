@@ -1034,18 +1034,6 @@ algorithm
   end match;
 end valueReal;
 
-public function valueIntegerMinusOne "To be able to use listNth"
-  input Values.Value inValue;
-  output Integer outInt;
-algorithm
-  outInt := match (inValue)
-    local
-      Integer i;
-    case (Values.INTEGER(integer = i)) then i-1;
-    case (Values.ENUM_LITERAL(index = i)) then i-1;
-  end match;
-end valueIntegerMinusOne;
-
 public function valueBool "Author: BZ, 2008-09
   Return the bool value of a Value.
 "

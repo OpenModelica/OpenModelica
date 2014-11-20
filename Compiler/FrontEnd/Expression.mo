@@ -1880,7 +1880,7 @@ algorithm
     then DAE.BINARY(e_1, op, e_2);
 
     case DAE.ARRAY(array=expl) equation
-      e1 = listNth(expl, inInteger-1);
+      e1 = listGet(expl, inInteger);
     then e1;
 
     else inExp;

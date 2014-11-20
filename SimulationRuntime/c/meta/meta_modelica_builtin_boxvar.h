@@ -81,8 +81,6 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_listLength,2,0) {(modelica_metatype)box
 #define boxvar_listLength MMC_REFSTRUCTLIT(boxvar_lit_listLength)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_listMember,2,0) {(modelica_metatype)boxptr_listMember,0}};
 #define boxvar_listMember MMC_REFSTRUCTLIT(boxvar_lit_listMember)
-static const MMC_DEFSTRUCTLIT(boxvar_lit_listNth,2,0) {(modelica_metatype)boxptr_listNth,0}};
-#define boxvar_listNth MMC_REFSTRUCTLIT(boxvar_lit_listNth)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_listRest,2,0) {(modelica_metatype)boxptr_listRest,0}};
 #define boxvar_listRest MMC_REFSTRUCTLIT(boxvar_lit_listRest)
 static const MMC_DEFSTRUCTLIT(boxvar_lit_listReverse,2,0) {(modelica_metatype)boxptr_listReverse,0}};

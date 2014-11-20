@@ -612,15 +612,6 @@ function listGet<A> "O(index)"
 external "builtin";
 end listGet;
 
-function listNth<A> "index from 0; this function is deprecated"
-  input List<A> lst;
-  input Integer index;
-  output A element;
-algorithm
-  element := listGet(lst,index+1);
-  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
-end listNth;
-
 function listRest<A> "O(1)"
   input List<A> lst;
   output List<A> rest;
