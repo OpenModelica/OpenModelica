@@ -776,8 +776,8 @@ algorithm
     exp_str := Dump.printExpStr(inExp);
     ty1_str := Types.unparseType(Types.getPropType(prop1));
     ty2_str := Types.unparseType(ty2);
-    Error.addSourceMessage(Error.META_CONS_TYPE_MATCH,
-      {exp_str, ty1_str, ty2_str}, inInfo);
+    Error.addSourceMessage(Error.META_CONS_TYPE_MATCH, {exp_str, ty1_str, ty2_str}, inInfo);
+    fail();
   end try;
 end elabExp_Cons;
 
