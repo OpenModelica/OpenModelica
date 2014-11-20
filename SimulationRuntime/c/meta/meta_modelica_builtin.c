@@ -512,6 +512,11 @@ modelica_metatype boxptr_listGet(threadData_t *threadData,modelica_metatype lst,
   MMC_THROW_INTERNAL(); /* List was not long enough */
 }
 
+modelica_metatype boxptr_listNth(threadData_t *threadData,modelica_metatype lst, modelica_metatype i)
+{
+  return boxptr_listGet(threadData,lst,mmc_mk_icon(mmc_unbox_integer(i)+1));
+}
+
 modelica_metatype boxptr_listDelete(threadData_t *threadData, modelica_metatype lst, modelica_metatype iix)
 {
   /* TODO: If we assume the index exists we can do this in a much better way */
