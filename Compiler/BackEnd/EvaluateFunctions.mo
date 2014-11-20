@@ -2437,22 +2437,20 @@ end getScalarVarSize;
 protected function evaluateFunctions_updateStatementEmptyRepl"replace and update the statements but start with an empty replacement.
 author:Waurich TUD 2014-03"
   input list<DAE.Statement> algsIn;
-  input tuple<DAE.FunctionTree,Integer> foldTplIn;
+  input DAE.FunctionTree inFuncTree;
+  input Integer inIndex;
   output tuple<list<DAE.Statement>,BackendVarTransform.VariableReplacements> mapTplOut;
-  output tuple<DAE.FunctionTree,Integer> foldTplOut;
+  output DAE.FunctionTree outFuncTree;
+  output Integer outIndex;
 protected
-  Integer idx;
   BackendVarTransform.VariableReplacements repl;
-  DAE.FunctionTree funcTree;
   list<DAE.Statement> algsOut;
 algorithm
-  (funcTree,idx) := foldTplIn;
   repl := BackendVarTransform.emptyReplacements();
   //print("start new evaluation with empty replacement\n"+stringDelimitList(List.map(algsIn,DAEDump.ppStatementStr),"\n")+"\n");
-  (algsOut,(funcTree,repl,idx)) := evaluateFunctions_updateStatement(algsIn,(funcTree,repl,idx),{});
+  (algsOut, (outFuncTree, repl, outIndex)) := evaluateFunctions_updateStatement(algsIn, (inFuncTree, repl, inIndex), {});
   //print("the new evaluated stmts wit empty repl \n"+stringDelimitList(List.map(algsOut,DAEDump.ppStatementStr),"\n")+"\n");
-  foldTplOut := (funcTree,idx);
-  mapTplOut := (algsOut,repl);
+  mapTplOut := (algsOut, repl);
 end evaluateFunctions_updateStatementEmptyRepl;
 
 protected function predictIfOutput"evaluate outputs for all if/elseif/else and check if its constant at any time
@@ -2493,7 +2491,7 @@ algorithm
          repl = getOnlyConstantReplacements(replIn);
          (stmtsLst,_) = List.map4_2(stmtsLst,BackendVarTransform.replaceStatementLstRHS,repl,NONE(),{},false);
          //print("al stmts replaced: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"\n")+"\n");
-         (tplLst,(funcTree,idx)) = List.mapFold(stmtsLst,evaluateFunctions_updateStatementEmptyRepl,(funcTree,idx));
+         (tplLst, funcTree, idx) = List.mapFold2(stmtsLst, evaluateFunctions_updateStatementEmptyRepl, funcTree, idx);
          stmtsLst = List.map(tplLst,Util.tuple21);
          //print("all evaled stmts1: \n"+stringDelimitList(List.map(List.flatten(stmtsLst),DAEDump.ppStatementStr),"---------\n")+"\n");
          replLst = List.map(stmtsLst,collectReplacements);
