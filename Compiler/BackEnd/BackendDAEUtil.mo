@@ -7773,12 +7773,13 @@ end profilertock1;
  * traverse BackendDAE equation systems
  ************************************************/
 
-public function mapEqSystem1
+public function mapEqSystem1<A>
   "Helper to map a preopt module over each equation system"
   input BackendDAE.BackendDAE dae;
   input Function func;
   input A a;
   output BackendDAE.BackendDAE odae;
+
   partial function Function
     input BackendDAE.EqSystem syst;
     input A a;
@@ -7786,7 +7787,6 @@ public function mapEqSystem1
     output BackendDAE.EqSystem osyst;
     output BackendDAE.Shared oshared;
   end Function;
-  replaceable type A subtypeof Any;
 protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
@@ -7797,34 +7797,6 @@ algorithm
   systs := filterEmptySystems(systs);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystem1;
-
-public function mapEqSystemAndFold1
-  "Helper to map a preopt module over each equation system"
-  input BackendDAE.BackendDAE dae;
-  input Function func;
-  input A a;
-  input B initialExtra;
-  output BackendDAE.BackendDAE odae;
-  output B extra;
-  partial function Function
-    input BackendDAE.EqSystem syst;
-    input A a;
-    input tuple<BackendDAE.Shared,B> sharedChanged;
-    output BackendDAE.EqSystem osyst;
-    output tuple<BackendDAE.Shared,B> osharedChanged;
-  end Function;
-  replaceable type A subtypeof Any;
-  replaceable type B subtypeof Any;
-protected
-  list<BackendDAE.EqSystem> systs;
-  BackendDAE.Shared shared;
-algorithm
-  BackendDAE.DAE(systs,shared) := dae;
-  (systs,(shared,extra)) := List.map1Fold(systs,func,a,(shared,initialExtra));
-  // Filter out empty systems
-  systs := filterEmptySystems(systs);
-  odae := BackendDAE.DAE(systs,shared);
-end mapEqSystemAndFold1;
 
 public function mapEqSystemAndFold<B>
   "Helper to map a preopt module over each equation system"
