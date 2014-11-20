@@ -78,14 +78,17 @@ qtclean-common:
 	         OMShell/OMShellGUI \
 	         OMPlot/OMPlotGUI \
 	         ; do test ! -f $$f/Makefile || (make -C $$f clean && rm -f $$f/Makefile); done
+qtclean: qtclean-common
+	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix clean
+	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix clean
+	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
+	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix clean
+	$(MAKE) -C OMOptim/build -f Makefile.unix clean
+	$(MAKE) -C OMOptimBasis/build -f Makefile.unix clean
+
 ifeq ($(QMAKE),)
 qtclients:
 	@echo "*** OpenModelica configured without support for Qt"
-qtclean: qtclean-common
-else ifeq (@IDLCMD@,)
-qtclients: omedit
-	@echo "*** OpenModelica configured without support for CORBA"
-qtclean: qtclean-common
 else
 qwt-build:
 	$(MAKE) -C 3rdParty/qwt -f Makefile.unix
@@ -96,16 +99,22 @@ build/lib/omc/libomqwt.dylib: mkbuilddirs qwt-build
 	install_name_tool -id @rpath/libomqwt.6.2.0.dylib build/lib/omc/libomqwt.6.2.0.dylib
 
 qwt: build/lib/omc/libomqwt@SHREXT@
+omplot: mkbuilddirs qwt
+	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
+omedit: omc qwt omplot qjson
+	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
+endif
 
+ifeq ($(QMAKE),)
+else ifeq (@IDLCMD@,)
+qtclients: omedit
+	@echo "*** OpenModelica configured without support for CORBA"
+else
 omnotebook: mkbuilddirs qwt omplot
 	mkdir -p $(builddir_share)/omnotebook
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix
 omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
-omplot: mkbuilddirs qwt
-	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
-omedit: omc qwt omplot qjson
-	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 ifeq (@with_paradiseo@,)
 omoptim:
 	@echo "*** OpenModelica configured without support for OMOptim (--without-paradisEO)"
@@ -119,14 +128,6 @@ omoptimbasis: mkbuilddirs qwt
 endif
 
 qtclients: qwt @OMNOTEBOOK@ omshell omedit omplot omoptim omoptimbasis
-
-qtclean: qtclean-common
-	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix clean
-	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix clean
-	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix clean
-	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix clean
-	$(MAKE) -C OMOptim/build -f Makefile.unix clean
-	$(MAKE) -C OMOptimBasis/build -f Makefile.unix clean
 endif
 
 omc-bootstrapped:
