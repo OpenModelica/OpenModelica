@@ -4354,17 +4354,17 @@ algorithm
   // BackendDump.printBackendDAE(outDAE);
 end createStateSets;
 
-protected function createStateSetsSystem
-"author: Frenkel TUD 2012-12
+protected function createStateSetsSystem "author: Frenkel TUD 2012-12
   traverse an Equationsystem to handle states sets"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, tuple<list<SimCode.StateSet>, Integer, list<SimCodeVar.SimVar>, Integer>> sharedChanged;
+  input BackendDAE.Shared inShared;
+  input tuple<list<SimCode.StateSet>, Integer, list<SimCodeVar.SimVar>, Integer> inTpl;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, tuple<list<SimCode.StateSet>, Integer, list<SimCodeVar.SimVar>, Integer>> osharedChanged;
+  output BackendDAE.Shared outShared := inShared;
+  output tuple<list<SimCode.StateSet>, Integer, list<SimCodeVar.SimVar>, Integer> outTpl;
 algorithm
-  (osyst, osharedChanged):= match (isyst, sharedChanged)
+  (osyst, outTpl):= match (isyst, inTpl)
     local
-      BackendDAE.Shared shared;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m;
@@ -4377,14 +4377,14 @@ algorithm
       list<SimCodeVar.SimVar> tempvars;
       BackendDAE.StrongComponents comps;
     // no stateSet
-    case (BackendDAE.EQSYSTEM(stateSets={}), _) then (isyst, sharedChanged);
+    case (BackendDAE.EQSYSTEM(stateSets={}), _) then (isyst, inTpl);
     // sets
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, m=m, mT=mT, matching=matching as BackendDAE.MATCHING(comps=comps), stateSets=stateSets, partitionKind=partitionKind),
-         (shared, (equations, uniqueEqIndex, tempvars, numStateSets)))
+         (equations, uniqueEqIndex, tempvars, numStateSets))
       equation
-        (vars, equations, uniqueEqIndex, tempvars, numStateSets) = createStateSetsSets(stateSets, vars, eqns, shared, comps, equations, uniqueEqIndex, tempvars, numStateSets);
+        (vars, equations, uniqueEqIndex, tempvars, numStateSets) = createStateSetsSets(stateSets, vars, eqns, inShared, comps, equations, uniqueEqIndex, tempvars, numStateSets);
       then
-        (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), (shared, (equations, uniqueEqIndex, tempvars, numStateSets)));
+        (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), (equations, uniqueEqIndex, tempvars, numStateSets));
   end match;
 end createStateSetsSystem;
 

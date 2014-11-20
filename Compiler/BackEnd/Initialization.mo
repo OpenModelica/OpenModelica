@@ -266,16 +266,18 @@ end solveInitialSystem;
 protected function solveInitialSystemEqSystem "author: lochel
   This is a helper function of solveInitialSystem and solves the generated system."
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, BackendDAE.BackendDAE> sharedOptimized;
+  input BackendDAE.Shared inShared;
+  input BackendDAE.BackendDAE inDAE;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, BackendDAE.BackendDAE> osharedOptimized;
+  output BackendDAE.Shared outShared := inShared "unused";
+  output BackendDAE.BackendDAE outDAE := inDAE "unused";
 algorithm
-  (osyst, osharedOptimized) := matchcontinue(isyst, sharedOptimized)
+  osyst := matchcontinue(isyst)
     local
       Integer nVars, nEqns;
 
     // over-determined system: nEqns > nVars
-    case (_, _) equation
+    case (_) equation
       nVars = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
       nEqns = BackendDAEUtil.systemSize(isyst);
       true = intGt(nEqns, nVars);
@@ -286,14 +288,14 @@ algorithm
     then fail();
 
     // determined system: nEqns = nVars
-    case ( _, _) equation
+    case (_) equation
       nVars = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
       nEqns = BackendDAEUtil.systemSize(isyst);
       true = intEq(nEqns, nVars);
-    then (isyst, sharedOptimized);
+    then (isyst);
 
     // under-determined system: nEqns < nVars
-    case ( _, _) equation
+    case (_) equation
       nVars = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
       nEqns = BackendDAEUtil.systemSize(isyst);
       true = intLt(nEqns, nVars);
@@ -1105,11 +1107,13 @@ end getInitEqIndex;
 
 protected function analyzeInitialSystem2 "author: lochel"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>>> sharedOptimized;
+  input BackendDAE.Shared inShared;
+  input tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> inTpl;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>>> osharedOptimized;
+  output BackendDAE.Shared outShared := inShared;
+  output tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> outTpl;
 algorithm
-  (osyst, osharedOptimized) := matchcontinue(isyst, sharedOptimized)
+  (osyst, outTpl) := matchcontinue(isyst, inTpl)
     local
       BackendDAE.BackendDAE inDAE;
       BackendDAE.EqSystem system, sys;
@@ -1131,53 +1135,52 @@ algorithm
       array<Integer> vec1, vec2;
 
     // (regular) determined system
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars, dumpVars, removedEqns))) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (inDAE, initVars, dumpVars, removedEqns)) equation
 // print("index-0 start\n");
-      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, shared, 0);
+      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, inShared, 0);
 // print("index-0 ende\n");
 
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
       system = BackendDAE.EQSYSTEM(vars, eqns2, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-
-    then (system, (shared, (inDAE, initVars, dumpVars, removedEqns)));
+    then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     // (index-1) mixed-determined system
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars, dumpVars, removedEqns))) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (inDAE, initVars, dumpVars, removedEqns)) equation
 // print("index-1 start\n");
-      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, shared, 1);
+      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, inShared, 1);
 // print("index-1 ende\n");
 
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
       system = BackendDAE.EQSYSTEM(vars, eqns2, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-    then (system, (shared, (inDAE, initVars, dumpVars, removedEqns)));
+    then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     // (index-2) mixed-determined system
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars, dumpVars, removedEqns))) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (inDAE, initVars, dumpVars, removedEqns)) equation
 // print("index-2 start\n");
-      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, shared, 2);
+      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, inShared, 2);
 // print("index-2 ende\n");
 
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
       system = BackendDAE.EQSYSTEM(vars, eqns2, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-    then (system, (shared, (inDAE, initVars, dumpVars, removedEqns)));
+    then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     // (index-3) mixed-determined system
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars, dumpVars, removedEqns))) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (inDAE, initVars, dumpVars, removedEqns)) equation
 // print("index-3 start\n");
-      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, shared, 3);
+      (eqns2, dumpVars2, removedEqns2) = fixInitialSystem(vars, eqns, initVars, inShared, 3);
 // print("index-3 ende\n");
 
       // add dummy var + dummy eqn
       dumpVars = listAppend(dumpVars, dumpVars2);
       removedEqns = listAppend(removedEqns, removedEqns2);
       system = BackendDAE.EQSYSTEM(vars, eqns2, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-    then (system, (shared, (inDAE, initVars, dumpVars, removedEqns)));
+    then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     else //equation
       //Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function analyzeInitialSystem2 failed");

@@ -170,13 +170,14 @@ end fastAcausal;
 protected function fastAcausal1 "author: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer>> sharedOptimized;
+  input BackendDAE.Shared inShared;
+  input tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer> inTpl;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer>> osharedOptimized;
+  output BackendDAE.Shared outShared;
+  output tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer> outTpl;
 protected
   BackendVarTransform.VariableReplacements repl;
   HashSet.HashSet unReplaceable;
-  BackendDAE.Shared shared;
   list<BackendDAE.Equation> eqnslst;
   list<SimpleContainer> simpleeqnslst;
   BackendDAE.Variables vars;
@@ -188,16 +189,16 @@ protected
   BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets,partitionKind=partitionKind) := isyst;
-  (shared, (repl, globalFindSimple, unReplaceable, traversals)) := sharedOptimized;
+  ((repl, globalFindSimple, unReplaceable, traversals)) := inTpl;
   // transform to list, this is later not neccesary because the acausal system should save the equations as list
   eqnslst := BackendEquation.equationList(eqns);
   mT := arrayCreate(BackendVariable.varsSize(vars), {});
   // check equations
-  ((_, _, eqnslst, simpleeqnslst, _, _, foundSimple)) := List.fold(eqnslst, simpleEquationsFinder, (vars, shared, {}, {}, 1, mT, false));
-  ((_, vars, shared, repl, unReplaceable, _, eqnslst, b)) :=
-     causalFinder(foundSimple, simpleeqnslst, eqnslst, 1, traversals, vars, shared, repl, unReplaceable, mT, {}, globalFindSimple);
+  ((_, _, eqnslst, simpleeqnslst, _, _, foundSimple)) := List.fold(eqnslst, simpleEquationsFinder, (vars, inShared, {}, {}, 1, mT, false));
+  ((_, vars, outShared, repl, unReplaceable, _, eqnslst, b)) :=
+     causalFinder(foundSimple, simpleeqnslst, eqnslst, 1, traversals, vars, inShared, repl, unReplaceable, mT, {}, globalFindSimple);
   osyst := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, isyst);
-  osharedOptimized := (shared, (repl, b, unReplaceable, traversals));
+  outTpl := ((repl, b, unReplaceable, traversals));
 end fastAcausal1;
 
 protected function causalFinder "author: Frenkel TUD 2012-12"
@@ -314,35 +315,34 @@ protected function allAcausal1 "author: Frenkel TUD 2012-12
   This function moves simple equations on the form a=b and a=const and
   a=f(not time) in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean>> sharedOptimized;
+  input BackendDAE.Shared inShared;
+  input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> inTpl;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean>> osharedOptimized;
+  output BackendDAE.Shared outShared;
+  output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> outTpl;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendVarTransform.VariableReplacements repl;
+  HashSet.HashSet unReplaceable;
+  Boolean b, b1;
+  array<list<Integer>> mT;
+  list<BackendDAE.Equation> eqnslst;
+  BackendDAE.EqSystem syst;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  (osyst, osharedOptimized):=
-  match (isyst, sharedOptimized)
-    local
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      BackendDAE.Shared shared;
-      BackendVarTransform.VariableReplacements repl;
-      HashSet.HashSet unReplaceable;
-      Boolean b, b1;
-      array<list<Integer>> mT;
-      list<BackendDAE.Equation> eqnslst;
-      BackendDAE.EqSystem syst;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
-
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind), (shared, (repl, unReplaceable, b1)))
-      equation
-        // transform to list, this is later not neccesary because the acausal system should save the equations as list
-        eqnslst = BackendEquation.equationList(eqns);
-        mT = arrayCreate(BackendVariable.varsSize(vars), {});
-        // check equations
-        ((vars, shared, repl, unReplaceable, _, eqnslst, b)) = allCausalFinder(eqnslst, (vars, shared, repl, unReplaceable, mT, {}, false));
-        syst = updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, isyst);
-      then (syst, (shared, (repl, unReplaceable, b or b1)));
-  end match;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets, partitionKind=partitionKind) := isyst;
+  ((repl, unReplaceable, b1)) := inTpl;
+  
+  // transform to list, this is later not neccesary because the acausal system should save the equations as list
+  eqnslst := BackendEquation.equationList(eqns);
+  mT := arrayCreate(BackendVariable.varsSize(vars), {});
+  
+  // check equations
+  ((vars, outShared, repl, unReplaceable, _, eqnslst, b)) := allCausalFinder(eqnslst, (vars, inShared, repl, unReplaceable, mT, {}, false));
+  osyst := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, isyst);
+  outTpl := ((repl, unReplaceable, b or b1));
 end allAcausal1;
 
 
@@ -381,36 +381,33 @@ protected function causal1 "author: Frenkel TUD 2012-12
   This function moves simple equations on the form a=b and a=const and
   a=f(not time) in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean>> sharedOptimized;
+  input BackendDAE.Shared inShared;
+  input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> inTpl;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean>> osharedOptimized;
+  output BackendDAE.Shared outShared;
+  output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> outTpl;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.StrongComponents comps;
+  BackendVarTransform.VariableReplacements repl;
+  HashSet.HashSet unReplaceable;
+  Boolean b, b1;
+  array<list<Integer>> mT;
+  list<BackendDAE.Equation> eqnslst;
+  BackendDAE.EqSystem syst;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
 algorithm
-  (osyst, osharedOptimized):=
-  match (isyst, sharedOptimized)
-    local
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      BackendDAE.StrongComponents comps;
-      BackendDAE.Shared shared;
-      BackendVarTransform.VariableReplacements repl;
-      HashSet.HashSet unReplaceable;
-      Boolean b, b1;
-      array<list<Integer>> mT;
-      list<BackendDAE.Equation> eqnslst;
-      BackendDAE.EqSystem syst;
-      BackendDAE.StateSets stateSets;
-      BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps), stateSets=stateSets, partitionKind=partitionKind) := isyst;
+  ((repl, unReplaceable, b1)) := inTpl;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps), stateSets=stateSets, partitionKind=partitionKind), (shared, (repl, unReplaceable, b1)))
-      equation
-        mT = arrayCreate(BackendVariable.varsSize(vars), {});
-        // check equations
-        ((vars, shared, repl, unReplaceable, _, eqnslst, b)) =
-          traverseComponents(comps, eqns, allCausalFinder,
-            (vars, shared, repl, unReplaceable, mT, {}, false));
-        syst = updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, isyst);
-      then (syst, (shared, (repl, unReplaceable, b or b1)));
-  end match;
+  mT := arrayCreate(BackendVariable.varsSize(vars), {});
+
+  // check equations
+  ((vars, outShared, repl, unReplaceable, _, eqnslst, b)) := traverseComponents(comps, eqns, allCausalFinder, (vars, inShared, repl, unReplaceable, mT, {}, false));
+  osyst := updateSystem(b, eqnslst, vars, stateSets, partitionKind, repl, isyst);
+  outTpl := ((repl, unReplaceable, b or b1));
 end causal1;
 
 protected function traverseComponents "author: Frenkel TUD 2010-12"

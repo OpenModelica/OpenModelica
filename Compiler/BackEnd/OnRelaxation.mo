@@ -71,37 +71,29 @@ public function relaxSystem "author: Frenkel TUD 2011-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := matchcontinue(inDAE)
-    case (_) equation
-      true = Flags.isSet(Flags.ON_RELAXATION);
-      (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE, relaxSystem0, false);
-    then outDAE;
-
-    else inDAE;
-  end matchcontinue;
+  if Flags.isSet(Flags.ON_RELAXATION) then
+    (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, relaxSystem0, false);
+  else
+    outDAE := inDAE;
+  end if;
 end relaxSystem;
 
 protected function relaxSystem0 "author: Frenkel TUD 2011-05"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+  output BackendDAE.Shared outShared;
+  output Boolean outChanged;
+protected
+  BackendDAE.StrongComponents comps;
+  Boolean b,b1,b2;
+  BackendDAE.Shared shared;
+  BackendDAE.EqSystem syst;
 algorithm
-  (osyst,osharedChanged) :=
-    match(isyst,sharedChanged)
-    local
-      BackendDAE.StrongComponents comps;
-      Boolean b,b1,b2;
-      BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst;
-
-    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b1))
-      equation
-        (syst,shared,b2) = relaxSystem1(syst,shared,comps);
-        b = b1 or b2;
-      then
-        (syst,(shared,b));
-  end match;
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := isyst;
+  (osyst, outShared, b2) := relaxSystem1(isyst, inShared, comps);
+  outChanged := inChanged or b2;
 end relaxSystem0;
 
 protected function relaxSystem1 "author: Frenkel TUD 2011-05"

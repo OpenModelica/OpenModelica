@@ -173,27 +173,25 @@ end callTearingMethod;
 
 protected function tearingSystemWork "author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, TearingMethod> sharedChanged;
+  input BackendDAE.Shared inShared;
+  input TearingMethod inTearingMethod;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, TearingMethod> osharedChanged;
+  output BackendDAE.Shared outShared := inShared "unused";
+  output TearingMethod outTearingMethod := inTearingMethod "unused";
 protected
   BackendDAE.StrongComponents comps;
-  TearingMethod method;
   Boolean b;
-  BackendDAE.Shared shared;
   array<Integer> ass1, ass2;
 algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)):=isyst;
-  (shared, method) := sharedChanged;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of traverseComponents\n\n");
   end if;
-  (comps, b) := traverseComponents(comps, isyst, shared, method, {}, false);
+  (comps, b) := traverseComponents(comps, isyst, inShared, inTearingMethod, {}, false);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of traverseComponents\n" + BORDER + "\n\n");
   end if;
   osyst := if b then BackendDAEUtil.setEqSystemMatching(isyst, BackendDAE.MATCHING(ass1, ass2, comps)) else isyst;
-  osharedChanged := sharedChanged;
 end tearingSystemWork;
 
 protected function traverseComponents "author: Frenkel TUD 2012-05"

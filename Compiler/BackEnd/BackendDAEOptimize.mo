@@ -101,11 +101,13 @@ end simplifyTimeIndepFuncCalls;
 
 protected function simplifyTimeIndepFuncCalls0 "author: Frenkel TUD 2012-06"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, Boolean> sharedChanged;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, Boolean> osharedChanged;
+  output BackendDAE.Shared outShared;
+  output Boolean outChanged;
 algorithm
-  (osyst, osharedChanged) := matchcontinue(isyst, sharedChanged)
+  (osyst, outShared, outChanged) := matchcontinue(isyst, inShared)
     local
       BackendDAE.Variables orderedVars, knvars, aliasvars;
       BackendDAE.EquationArray orderedEqs;
@@ -116,11 +118,11 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared as BackendDAE.SHARED(knownVars = knvars, aliasVars = aliasvars), _)) equation
+    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knownVars=knvars, aliasVars=aliasvars)) equation
       ((_, (_, _, true))) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (knvars, aliasvars, false)));
-    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, true));
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), inShared, true);
 
-    else (isyst, sharedChanged);
+    else (isyst, inShared, inChanged);
   end matchcontinue;
 end simplifyTimeIndepFuncCalls0;
 
@@ -2028,41 +2030,30 @@ public function countOperations "author: Frenkel TUD 2011-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := matchcontinue(inDAE)
-    case (_)
-      equation
-        true = Flags.isSet(Flags.COUNT_OPERATIONS);
-        (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE,countOperations0,false);
-      then
-        outDAE;
-    else inDAE;
-  end matchcontinue;
+  if Flags.isSet(Flags.COUNT_OPERATIONS) then
+    (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, countOperations0, false);
+  else
+    outDAE := inDAE;
+  end if;
 end countOperations;
 
 protected function countOperations0 "author: Frenkel TUD 2011-05"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
-  output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
+  output BackendDAE.EqSystem osyst := isyst;
+  output BackendDAE.Shared outShared := inShared;
+  output Boolean outChanged := inChanged;
+protected
+  Integer i1, i2, i3, i4;
+  BackendDAE.StrongComponents comps;
 algorithm
-  (osyst,osharedChanged) :=
-    match(isyst,sharedChanged)
-    local
-      BackendDAE.Shared shared;
-      Boolean b;
-      Integer i1,i2,i3,i4;
-      BackendDAE.StrongComponents comps;
-
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b))
-      equation
-        ((i1,i2,i3,i4)) = countOperationstraverseComps(comps,isyst,shared,(0,0,0,0));
-        print("Add Operations: " + intString(i1) + "\n");
-        print("Mul Operations: " + intString(i2) + "\n");
-        print("Oth Operations: " + intString(i3) + "\n");
-        print("Trig Operations: " + intString(i4) + "\n");
-      then
-        (isyst,(shared,b));
-  end match;
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := isyst;
+  ((i1, i2, i3, i4)) := countOperationstraverseComps(comps, isyst, inShared, (0, 0, 0, 0));
+  print("Add Operations: " + intString(i1) + "\n");
+  print("Mul Operations: " + intString(i2) + "\n");
+  print("Oth Operations: " + intString(i3) + "\n");
+  print("Trig Operations: " + intString(i4) + "\n");
 end countOperations0;
 
 public function countOperationstraverseComps "author: Frenkel TUD 2012-05"
@@ -3642,11 +3633,13 @@ end replaceEdgeChange;
 
 protected function replaceEdgeChange0 "author: Frenkel TUD 2012-11"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, Boolean> sharedChanged;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, Boolean> osharedChanged;
+  output BackendDAE.Shared outShared := inShared;
+  output Boolean outChanged;
 algorithm
-  (osyst, osharedChanged) := matchcontinue (isyst, sharedChanged)
+  (osyst, outChanged) := matchcontinue (isyst)
     local
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
@@ -3657,11 +3650,11 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, _)) equation
+    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) equation
       _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserreplaceEdgeChange, false);
-    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, true));
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), true);
 
-    else (isyst, sharedChanged);
+    else (isyst, inChanged);
   end matchcontinue;
 end replaceEdgeChange0;
 
@@ -4095,11 +4088,13 @@ end applyRewriteRulesBackend;
 protected function applyRewriteRulesBackend0
 "@author: adrpo"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared, Boolean> sharedChanged;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, Boolean> osharedChanged;
+  output BackendDAE.Shared outShared := inShared;
+  output Boolean outChanged;
 algorithm
-  (osyst, osharedChanged) := matchcontinue (isyst, sharedChanged)
+  (osyst, outChanged) := matchcontinue (isyst)
     local
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
@@ -4112,14 +4107,12 @@ algorithm
       FCore.Graph graph;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, _))
-      equation
-        _ = BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(orderedVars, traverserapplyRewriteRulesBackend, false);
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserapplyRewriteRulesBackend, false);
-    then
-      (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), (shared, true));
+    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) equation
+      _ = BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(orderedVars, traverserapplyRewriteRulesBackend, false);
+      _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserapplyRewriteRulesBackend, false);
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), true);
 
-    else (isyst, sharedChanged);
+    else (isyst, inChanged);
   end matchcontinue;
 end applyRewriteRulesBackend0;
 

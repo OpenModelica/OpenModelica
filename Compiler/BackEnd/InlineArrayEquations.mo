@@ -69,11 +69,13 @@ end inlineArrayEqn;
 
 protected function inlineArrayEqn1
   input BackendDAE.EqSystem inEqSystem;
-  input tuple<BackendDAE.Shared, Boolean /*modified?*/> inSharedOptimized;
+  input BackendDAE.Shared inShared;
+  input Boolean inOptimized;
   output BackendDAE.EqSystem outEqSystem;
-  output tuple<BackendDAE.Shared, Boolean /*modified?*/> outSharedOptimized;
+  output BackendDAE.Shared outShared := inShared "unused";
+  output Boolean outOptimized;
 algorithm
-  (outEqSystem, outSharedOptimized) := matchcontinue(inEqSystem, inSharedOptimized)
+  (outEqSystem, outOptimized) := matchcontinue(inEqSystem)
     local
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
@@ -82,14 +84,13 @@ algorithm
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind), (shared, _)) equation
+    case BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) equation
       eqnLst = BackendEquation.equationList(orderedEqs);
       (eqnLst, true) = getScalarArrayEqns(eqnLst);
       orderedEqs = BackendEquation.listEquation(eqnLst);
-    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), (shared, true));
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind), true);
 
-    else
-    then (inEqSystem, inSharedOptimized);
+    else (inEqSystem, inOptimized);
   end matchcontinue;
 end inlineArrayEqn1;
 

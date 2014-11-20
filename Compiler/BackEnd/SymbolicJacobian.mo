@@ -123,7 +123,7 @@ public function constantLinearSystem
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,constantLinearSystem0,false);
+  (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, constantLinearSystem0, false);
 end constantLinearSystem;
 
 // =============================================================================
@@ -280,38 +280,36 @@ public function inputDerivativesUsed "author: Frenkel TUD 2012-10
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,inputDerivativesUsedWork,false);
+  (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, inputDerivativesUsedWork, false);
 end inputDerivativesUsed;
 
 protected function inputDerivativesUsedWork "author: Frenkel TUD 2012-10"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+  output BackendDAE.Shared outShared := inShared "unused";
+  output Boolean outChanged;
 algorithm
-  (osyst,osharedChanged) :=
-    matchcontinue(isyst,sharedChanged)
+  (osyst, outChanged) := matchcontinue(isyst)
     local
       BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
       BackendDAE.EquationArray orderedEqs "ordered Equations";
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.Matching matching;
-      BackendDAE.Shared shared;
       list<DAE.Exp> explst;
       String s;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
 
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared, _))
-      equation
-        ((_,explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traverserinputDerivativesUsed,(BackendVariable.daeKnVars(shared),{}));
-        s = stringDelimitList(List.map(explst,ExpressionDump.printExpStr),"\n");
-        Error.addMessage(Error.DERIVATIVE_INPUT,{s});
-      then
-        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind),(shared,true));
-    else
-      (isyst,sharedChanged);
+    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) equation
+      ((_, explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeKnVars(inShared), {}));
+      s = stringDelimitList(List.map(explst, ExpressionDump.printExpStr), "\n");
+      Error.addMessage(Error.DERIVATIVE_INPUT, {s});
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind), true);
+        
+    else (isyst, inChanged);
   end matchcontinue;
 end inputDerivativesUsedWork;
 
@@ -360,24 +358,17 @@ end traverserExpinputDerivativesUsed;
 
 protected function constantLinearSystem0
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+  output BackendDAE.Shared outShared;
+  output Boolean outChanged;
+protected
+  BackendDAE.StrongComponents comps;
 algorithm
-  (osyst,osharedChanged) :=
-    match(isyst,sharedChanged)
-    local
-      BackendDAE.StrongComponents comps;
-      Boolean b;
-      BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst;
-    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b))
-      equation
-        (syst,shared,b) = constantLinearSystem1(syst,shared,comps,b);
-        syst = constantLinearSystem2(b,syst);
-      then
-        (syst,(shared,b));
-  end match;
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := isyst;
+  (osyst, outShared, outChanged) := constantLinearSystem1(isyst, inShared, comps, inChanged);
+  osyst := constantLinearSystem2(outChanged, osyst);
 end constantLinearSystem0;
 
 protected function constantLinearSystem2
