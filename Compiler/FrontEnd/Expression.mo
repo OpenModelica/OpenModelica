@@ -11279,7 +11279,7 @@ algorithm
         //explst = listAppend(explst, explst1);
         res2 = makeSimplifySum(explst1);
         res2 = expMul(res2,e1);
-        res = expSub(res1, res2);
+        res = if isConst(res1) or (listLength(explst1) + 1) > listLength(explst) then expSub(res2, res1) else expSub(res1, res2); //heuristic
         (res, _) = ExpressionSimplify.simplify(res);
       then
         res;
