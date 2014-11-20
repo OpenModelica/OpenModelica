@@ -9617,6 +9617,11 @@ template daeExpSize(Exp exp, Context context, Text &preExp,
     let resVar = tempDecl("integer_array", &varDecls)
     let &preExp += 'sizes_of_dimensions_base_array(&<%expPart%>, &<%resVar%>);<%\n%>'
     resVar
+  /* array of zero? */
+  case SIZE(exp=ARRAY(array = {})) then
+    let resVar = tempDecl("modelica_integer", &varDecls)
+    let &preExp += '<%resVar%> = 0;<%\n%>'
+    resVar
   else error(sourceInfo(), printExpStr(exp) + " not implemented")
 end daeExpSize;
 
