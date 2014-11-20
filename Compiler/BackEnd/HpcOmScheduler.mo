@@ -271,27 +271,30 @@ public function createRandomSchedule "function createListSchedule
 protected
   HpcOmTaskGraph.TaskGraph taskGraphT;
   array<list<Integer>> inComps;
-  list<tuple<HpcOmSimCode.Task,Integer>> nodeList_refCount; //List of nodes which are ready to schedule
+  list<tuple<HpcOmSimCode.Task, Integer>> nodeList_refCount; //List of nodes which are ready to schedule
   list<HpcOmSimCode.Task> nodeList;
   list<Integer> rootNodes;
   array<Real> threadReadyTimes;
-  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
+  array<tuple<HpcOmSimCode.Task, Integer>> allCalcTasks;
   array<list<HpcOmSimCode.Task>> threadTasks;
   array<HpcOmTaskGraph.Communications> commCosts;
   HpcOmSimCode.Schedule tmpSchedule;
 algorithm
-  HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+  HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts, inComps=inComps) := iTaskGraphMeta;
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph, arrayLength(iTaskGraph));
   rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
-  allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
+  allCalcTasks := convertTaskGraphToTasks(taskGraphT, iTaskGraphMeta, convertNodeToTask);
   nodeList_refCount := List.map1(rootNodes, getTaskByIndex, allCalcTasks);
   nodeList := List.map(nodeList_refCount, Util.tuple21);
   nodeList := List.sort(nodeList, compareTasksByWeighting); //MF level
-  threadReadyTimes := arrayCreate(iNumberOfThreads,0.0);
-  threadTasks := arrayCreate(iNumberOfThreads,{});
-  tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
-  (tmpSchedule,_) := createRandomSchedule1(nodeList,threadReadyTimes, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, iNumberOfThreads, tmpSchedule);
-  tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
+  threadReadyTimes := arrayCreate(iNumberOfThreads ,0.0);
+  threadTasks := arrayCreate(iNumberOfThreads, {});
+  tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks, {}, {}, allCalcTasks);
+  (tmpSchedule,_) := createRandomSchedule1(nodeList, threadReadyTimes, iTaskGraph, taskGraphT, commCosts, inComps,
+                                           iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, iNumberOfThreads,
+                                           tmpSchedule);
+  tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph, addReleaseLocksToSchedule, commCosts, inComps, iSimVarMapping, 
+                                             tmpSchedule);
   //printSchedule(tmpSchedule);
   oSchedule := tmpSchedule;
 end createRandomSchedule;
@@ -353,7 +356,7 @@ algorithm
   (oSchedule,oThreadReadyTimes) := matchcontinue(iNodeList,iThreadReadyTimes, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping,
                                                  iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, iNumberOfThreads, iSchedule)
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest
-         ,_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
+         ,_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
       equation
         //Get all predecessors (childs)
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
