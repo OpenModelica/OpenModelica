@@ -168,21 +168,22 @@ algorithm
       Integer numNewSingleEqs, tornSysIdx;
       Boolean linear;
       array<Integer> ass1New, ass2New, ass1All, ass2All, ass1Other, ass2Other;
-      list<Integer> tvarIdcs;
-      list<Integer> resEqIdcs;
+      list<Integer> tvarIdcs, resEqIdcs, eqIdcs, varIdcs;
       list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+      BackendDAE.BaseClockPartitionKind partitionKind;
       BackendDAE.EqSystem systTmp;
       BackendDAE.EquationArray eqs;
       BackendDAE.Jacobian jac;
+      BackendDAE.JacobianType jacType;
       BackendDAE.Matching matching, matchingNew, matchingOther;
       BackendDAE.Shared sharedTmp;
       BackendDAE.StateSets stateSets;
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents compsNew, compsTmp, otherComps;
       BackendDAE.Variables vars;
-      list<BackendDAE.Equation> eqLst, eqsNew, eqsOld, resEqs;
-      list<BackendDAE.Var> varLst, varsNew, varsOld, tvars;
-      BackendDAE.BaseClockPartitionKind partitionKind;
+      list<BackendDAE.Equation> eqLst, eqsNew, eqsOld, resEqs, addEqs;
+      list<BackendDAE.Var> varLst, varsNew, varsOld, tvars, addVars;
+      EqSys syst;
     case(_,_,_,_,_,_,_)
       equation
         // completed
@@ -197,11 +198,8 @@ algorithm
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
         true = intLe(listLength(tvarIdcs),2);
-        //true = intLe(listLength(tvarIdcs),2);
         print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
-        if Flags.isSet(Flags.HPCOM_DUMP) then
-          print("handle linear torn systems of size: "+intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+"\n");
-        end if;
+
         // build the new components, the new variables and the new equations
         (varsNew,eqsNew,_,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
 
@@ -242,6 +240,55 @@ algorithm
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1+numNewSingleEqs,compsTmp,ass1All,ass2All,systTmp,sharedIn,tornSysIdxIn+1);
       then
         (systTmp,tornSysIdx);
+    case(_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqs),_,_)
+      equation
+        // strongComponent is a system of equations
+        true = listLength(compsIn) >= compIdx;
+        comp = listGet(compsIn,compIdx);
+        BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs, jac=jac, jacType=jacType) = comp;
+        true = intLe(listLength(varIdcs),2);
+        print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
+          //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
+
+         // get equations and variables
+         eqLst = BackendEquation.getEqns(eqIdcs, eqs);
+         eqLst = BackendEquation.replaceDerOpInEquationList(eqLst);
+         varLst = List.map1r(varIdcs, BackendVariable.getVarAt, vars);
+         varLst = List.map(varLst, BackendVariable.transformXToXd);
+             //BackendDump.dumpVarList(varLst,"varLst");
+             //BackendDump.dumpEquationList(eqLst,"eqLst");
+
+         // build linear system
+         syst = getEqSystem(eqLst,varLst);
+           //dumpEqSys(syst);
+         (eqsNew,addEqs,addVars) = CramerRule(syst);
+           //BackendDump.dumpEquationList(eqsNew,"eqsNew");
+           //BackendDump.dumpVarList(addVars,"addVars");
+           //BackendDump.dumpEquationList(addEqs,"addEqs");
+       
+        // make new components
+        compsNew = List.threadMap(eqIdcs,varIdcs,makeSingleEquationComp);
+
+        // insert the new components into the BLT, update matching for the new equations
+        compsTmp = List.replaceAtWithList(compsNew,compIdx-1,compsIn);
+        List.threadMap1_0(eqIdcs,varIdcs,Array.updateIndexFirst,ass1);
+        List.threadMap1_0(varIdcs,eqIdcs,Array.updateIndexFirst,ass2);
+        matching = BackendDAE.MATCHING(ass1, ass2, compsTmp);
+
+        // add the new vars and equations to the original EqSystem
+        BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, stateSets = stateSets, partitionKind=partitionKind) = systIn;
+        varsOld = BackendVariable.varList(vars);
+        eqsOld = BackendEquation.equationList(eqs);
+        eqLst = List.fold2(List.intRange(listLength(eqsNew)),replaceAtPositionFromList,eqsNew,eqIdcs,eqsOld);  // replaces the old residualEquations with the new ones
+        eqs = BackendEquation.listEquation(eqLst);  
+
+        //build new DAE-EqSystem
+        systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets,partitionKind);
+        (systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
+
+        (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsTmp,ass1,ass2,systTmp,sharedIn,tornSysIdxIn+1);
+      then
+        (systTmp,tornSysIdx);
     else
       // go to next StrongComponent
       equation
@@ -250,6 +297,102 @@ algorithm
         (systTmp,tornSysIdx);
   end matchcontinue;
 end reduceLinearTornSystem1;
+
+protected function createEqSystem
+  input list<BackendDAE.Var> varLst;
+  output EqSys sys;
+protected
+  Integer dim;
+  array<list<DAE.Exp>> matrixA;
+  array<DAE.Exp> vectorB;
+  array<BackendDAE.Var> vectorX;
+algorithm
+  dim := listLength(varLst);
+  matrixA := arrayCreate(dim,{});
+  vectorB := arrayCreate(dim,DAE.RCONST(0.0));
+  sys := LINSYS(dim,matrixA,vectorB,listArray(varLst));
+end createEqSystem;
+
+protected function getEqSystem"gets a eqSys object for the given set of variables and equations.
+author:Waurich TUD 2014-11"
+  input list<BackendDAE.Equation> eqLst;
+  input list<BackendDAE.Var> varLst;
+  output EqSys syst;
+protected
+  list<DAE.ComponentRef> crefs;
+algorithm
+  syst := createEqSystem(varLst);
+  crefs := List.map(varLst,BackendVariable.varCref);
+  (syst,_) := List.fold1(eqLst,getEqSystem2,crefs,(syst,1));
+end getEqSystem;
+
+protected function getEqSystem2"gets the coefficents and offsets from the equations"
+  input BackendDAE.Equation eq;
+  input list<DAE.ComponentRef> crefs;
+  input tuple<EqSys,Integer> foldIn;
+  output tuple<EqSys,Integer> foldOut;
+protected
+  Integer idx, dim;
+  list<DAE.Exp> summands;
+  list<DAE.Exp> coeffs,offsetLst;
+  DAE.Exp offset;
+  EqSys sys;
+  array<list<DAE.Exp>> matrixA;
+  array<DAE.Exp> vectorB;
+  array<BackendDAE.Var> vectorX;
+algorithm
+  (sys,idx) := foldIn;
+  summands := getSummands(eq);
+  ((offsetLst,coeffs)) := List.fold(crefs,getEqSystem3,(summands,{}));
+  offset::offsetLst := offsetLst;
+  offset := List.fold(offsetLst,Expression.expAdd,offset);
+  offset := Expression.negate(offset);
+  LINSYS(dim=dim,matrixA=matrixA, vectorB = vectorB, vectorX=vectorX) := sys;
+  matrixA := arrayUpdate(matrixA,idx,listReverse(coeffs));
+  vectorB := arrayUpdate(vectorB,idx,offset);
+  sys := LINSYS(dim, matrixA, vectorB, vectorX);
+  foldOut := (sys,idx+1);
+end getEqSystem2;
+
+protected function getEqSystem3"divides the given expressions into coefficient-terms and the rest"
+  input DAE.ComponentRef  cref;
+  input tuple<list<DAE.Exp>,list<DAE.Exp>> foldIn;
+  output tuple<list<DAE.Exp>,list<DAE.Exp>> foldOut;
+protected
+  DAE.Exp coeff;
+  list<DAE.Exp> allTerms,coeffs,coeffsIn;
+algorithm
+  (allTerms,coeffsIn) := foldIn;
+  (coeffs,allTerms) := List.extract1OnTrue(allTerms,Expression.expHasCref,cref);
+  coeff := List.fold(coeffs,Expression.expAdd,DAE.RCONST(0));
+  (coeff,_) := Expression.replaceExp(coeff,Expression.crefExp(cref),DAE.RCONST(1.0));
+  (coeff,_) := ExpressionSimplify.simplify(coeff);
+  foldOut := (allTerms,coeff::coeffsIn);
+end getEqSystem3;
+
+
+protected function getSummands"gets all sum-terms in the equation"
+  input BackendDAE.Equation eq;
+  output list<DAE.Exp> exps;
+algorithm
+  exps := matchcontinue(eq)
+    local
+      DAE.Exp lhs;
+      DAE.Exp rhs;
+      list<DAE.Exp> expLst1, expLst2;
+  case(BackendDAE.EQUATION(exp=lhs,scalar=rhs))
+    equation
+      expLst1 = Expression.allTerms(lhs);
+      expLst2 = Expression.allTerms(rhs);
+      expLst1 = listAppend(expLst1,expLst2);
+        //print("the expLst: "+ExpressionDump.printExpListStr(expLst1)+"\n");
+    then expLst1;
+  else
+    equation
+      print("getSummands failed!\n");
+    then {};
+  end matchcontinue;
+end getSummands;
 
 
 protected function reduceLinearTornSystem2  " builds from a torn system various linear equation systems that can be computed in parallel.
@@ -315,10 +458,10 @@ algorithm
    ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);  //try this
    ovars := BackendVariable.listVar1(ovarsLst);
    ovcrs := List.map(ovarsLst, BackendVariable.varCref);
-       //BackendDump.dumpVarList(tvarsReplaced,"tvars");
-       //BackendDump.dumpVarList(ovarsLst,"ovars");
-       //BackendDump.dumpEquationList(reqns,"residualEquations");
-       //BackendDump.dumpEquationList(otherEqnsLstReplaced,"otherEqnsLstReplaced");
+       BackendDump.dumpVarList(tvarsReplaced,"tvars");
+       BackendDump.dumpVarList(ovarsLst,"ovars");
+       BackendDump.dumpEquationList(reqns,"residualEquations");
+       BackendDump.dumpEquationList(otherEqnsLstReplaced,"otherEqnsLstReplaced");
 
    //build the components and systems to get the system for computing the tearingVars
    size := listLength(tvars);
@@ -688,7 +831,7 @@ algorithm
 end getOtherComps1;
 
 
-protected function replaceAtPositionFromList  "replaces the entry from inLst indexed by positionLst[n] with with the nth entry in replacingLst. n is first input so it can be used in a folding functions.
+protected function replaceAtPositionFromList  "replaces the entry from inLst indexed by positionLst[n] with the nth entry in replacingLst. n is first input so it can be used in a folding functions.
 author: Waurich TUD 2013-09"
   replaceable type ElementType subtypeof Any;
   input Integer n;
@@ -1504,7 +1647,7 @@ algorithm
   s1 := "{ "+stringDelimitList(List.map(Arow,ExpressionDump.printExpStr),"  \t  ") + "} ";
   s2 := "{ " +ComponentReference.printComponentRefStr(BackendVariable.varCref(x))+" } ";
   s3 := " = { "+ExpressionDump.printExpStr(b)+" }";
-  s:=s1+s2+s3;
+  s:=s1+" * "+s2+s3;
 end EqSysRowString;
 
 protected function dumpMatrix
