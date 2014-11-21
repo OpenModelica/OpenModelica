@@ -1377,7 +1377,7 @@ protected function evaluateForLoopArray
   output LoopControl outLoopControl;
   output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outLoopControl, outST) := matchcontinue(inCache, inEnv, inIter,
+  (outCache, outEnv, outLoopControl, outST) := match(inCache, inEnv, inIter,
       inIterType, inValues, inStatements, inLoopControl, inST)
     local
       Values.Value value;
@@ -1399,7 +1399,7 @@ algorithm
           inIterType, rest_vals, inStatements, loop_ctrl, st);
       then
         (cache, env, loop_ctrl, st);
-  end matchcontinue;
+  end match;
 end evaluateForLoopArray;
 
 protected function evaluateWhileStatement
@@ -1416,7 +1416,7 @@ protected function evaluateWhileStatement
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outLoopControl, outST) :=
-  matchcontinue(inCondition, inStatements, inCache, inEnv, inLoopControl, inST)
+  match(inCondition, inStatements, inCache, inEnv, inLoopControl, inST)
     local
       FCore.Cache cache;
       FCore.Graph env;
@@ -1439,7 +1439,7 @@ algorithm
       then
         (cache, env, loop_ctrl, st);
 
-  end matchcontinue;
+  end match;
 end evaluateWhileStatement;
 
 protected function extractLhsComponentRef
