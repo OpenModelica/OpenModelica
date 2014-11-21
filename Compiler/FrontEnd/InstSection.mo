@@ -4931,6 +4931,8 @@ algorithm
       Absyn.Path name;
       list<String> ls;
 
+    case (_, DAE.ARRAY(array = outExpl)) then outExpl;
+
     // Empty integer list. List.intRange is not defined for size < 1,
     // so we need to handle empty lists here.
     case (DAE.DIM_INTEGER(integer = 0), _) then {};
@@ -4942,7 +4944,8 @@ algorithm
         expl;
     case (DAE.DIM_BOOLEAN(), _)
       equation
-        expl = DAE.BCONST(false)::DAE.BCONST(true)::{};
+        expl = {ExpressionSimplify.simplify1(Expression.makeASUB(inArray, {DAE.BCONST(false)})),
+                ExpressionSimplify.simplify1(Expression.makeASUB(inArray, {DAE.BCONST(true)}))};
       then
         expl;
     case (DAE.DIM_ENUM(enumTypeName = name, literals = ls), _)
