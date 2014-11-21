@@ -112,11 +112,12 @@ algorithm
     case DAE.INDEX(exp = DAE.ICONST(integer = x)) then x;
     case DAE.INDEX(exp = DAE.ENUM_LITERAL(index = x)) then x;
     case DAE.INDEX(exp = DAE.BCONST(bool = b)) then if b then 1 else 0;
+/*
     else
       equation
         Error.addInternalError("subscriptInt failed: " + ExpressionDump.printSubscriptStr(inSubscript), sourceInfo());
       then fail();
-
+ */
   end match;
 end subscriptInt;
 
