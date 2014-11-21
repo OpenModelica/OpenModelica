@@ -265,7 +265,7 @@ algorithm
            //BackendDump.dumpEquationList(eqsNew,"eqsNew");
            //BackendDump.dumpVarList(addVars,"addVars");
            //BackendDump.dumpEquationList(addEqs,"addEqs");
-       
+
         // make new components
         compsNew = List.threadMap(eqIdcs,varIdcs,makeSingleEquationComp);
 
@@ -280,7 +280,7 @@ algorithm
         varsOld = BackendVariable.varList(vars);
         eqsOld = BackendEquation.equationList(eqs);
         eqLst = List.fold2(List.intRange(listLength(eqsNew)),replaceAtPositionFromList,eqsNew,eqIdcs,eqsOld);  // replaces the old residualEquations with the new ones
-        eqs = BackendEquation.listEquation(eqLst);  
+        eqs = BackendEquation.listEquation(eqLst);
 
         //build new DAE-EqSystem
         systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets,partitionKind);
