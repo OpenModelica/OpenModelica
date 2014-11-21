@@ -6043,7 +6043,7 @@ algorithm
   end matchcontinue;
 end traverseStrongComponentsJacobiansExp;
 
-protected function traverseBackendDAEExpsJacobianEqn "Helper for traverseBackendDAEExpsEqn."
+protected function traverseBackendDAEExpsJacobianEqn "Helper for traverseExpsOfEquation."
   replaceable type Type_a subtypeof Any;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> inJacEntry;
   input FuncExpType func;
@@ -6631,7 +6631,7 @@ algorithm
 end traverseBackendDAEExpsEqnsWithUpdate;
 
 public function traverseBackendDAEExpsOptEqn "author: Frenkel TUD 2010-11
-  Helper for traverseBackendDAEExpsEqn."
+  Helper for traverseExpsOfEquation."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
   input FuncExpType func;
@@ -6671,14 +6671,14 @@ algorithm
     case (NONE(),_,_) then (true,inTypeA);
     case (SOME(eqn),_,_)
       equation
-        (b,ext_arg_1) = BackendEquation.traverseBackendDAEExpsEqnWithStop(eqn,func,inTypeA);
+        (b,ext_arg_1) = BackendEquation.traverseExpsOfEquation_WithStop(eqn,func,inTypeA);
       then
         (b,ext_arg_1);
   end match;
 end traverseBackendDAEExpsOptEqnWithStop;
 
 protected function traverseBackendDAEExpsOptEqnWithUpdate "author: Frenkel TUD 2010-11
-  Helper for traverseBackendDAEExpsEqn."
+  Helper for traverseExpsOfEquation."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
   input FuncExpType func;
@@ -6699,7 +6699,7 @@ algorithm
     case (NONE(),_,_) then (NONE(),inTypeA);
     case (SOME(eqn),_,_)
       equation
-        (eqn,ext_arg_1) = BackendEquation.traverseBackendDAEExpsEqn(eqn,func,inTypeA);
+        (eqn,ext_arg_1) = BackendEquation.traverseExpsOfEquation(eqn,func,inTypeA);
       then
         (SOME(eqn),ext_arg_1);
   end match;

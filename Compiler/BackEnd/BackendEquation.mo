@@ -288,7 +288,7 @@ protected
   list<Integer> keys;
 algorithm
   bt := BinaryTreeInt.emptyBinTree;
-  (_, (_, (_, bt))) := traverseBackendDAEExpsEqn(inEquation, Expression.traverseSubexpressionsHelper, (checkEquationsVarsExp, (inVars, bt)));
+  (_, (_, (_, bt))) := traverseExpsOfEquation(inEquation, Expression.traverseSubexpressionsHelper, (checkEquationsVarsExp, (inVars, bt)));
   (keys, _) := BinaryTreeInt.bintreeToList(bt);
   outVars := List.map1r(keys, BackendVariable.getVarAt, inVars);
 end equationVars;
@@ -443,7 +443,7 @@ protected function traversingEquationCrefFinder "author: Frenkel TUD 2010-11"
 algorithm
   e := inEq;
   cr_lst := inCrefs;
-  (_, (_,cr_lst)) := traverseBackendDAEExpsEqn(e, Expression.traverseSubexpressionsHelper, (Expression.traversingComponentRefFinder, cr_lst));
+  (_, (_,cr_lst)) := traverseExpsOfEquation(e, Expression.traverseSubexpressionsHelper, (Expression.traversingComponentRefFinder, cr_lst));
 end traversingEquationCrefFinder;
 
 public function equationUnknownCrefs "author: Frenkel TUD 2012-05
@@ -542,14 +542,14 @@ public function traverseExpsOfEquationList<ArgT> "author: Frenkel TUD 2010-11
   end FuncExpType;
 algorithm
   for eq in inEquations loop
-    (eq, outArg) := traverseBackendDAEExpsEqn(eq, func, outArg);
+    (eq, outArg) := traverseExpsOfEquation(eq, func, outArg);
     outEquations := eq::outEquations;
   end for;
 
   outEquations := listReverse(outEquations);
 end traverseExpsOfEquationList;
 
-protected function traverseBackendDAEExpsEqnListWithStop "author: Frenkel TUD 2012-09
+protected function traverseExpsOfEquationList_WithStop "author: Frenkel TUD 2012-09
   Traverses all expressions of a list of equations.
   It is possible to change the equations."
   replaceable type Type_a subtypeof Any;
@@ -577,34 +577,34 @@ algorithm
     then (true, inTypeA);
 
     case (eqn::eqns, _, _) equation
-      (b, arg) = traverseBackendDAEExpsEqnWithStop(eqn, inFunc, inTypeA);
+      (b, arg) = traverseExpsOfEquation_WithStop(eqn, inFunc, inTypeA);
       if b then
-        (b, arg) = traverseBackendDAEExpsEqnListWithStop(eqns, inFunc, arg);
+        (b, arg) = traverseExpsOfEquationList_WithStop(eqns, inFunc, arg);
       end if;
     then (b, arg);
   end match;
-end traverseBackendDAEExpsEqnListWithStop;
+end traverseExpsOfEquationList_WithStop;
 
-protected function traverseBackendDAEExpsEqnListListWithStop "author: Frenkel TUD 2012-09
+protected function traverseExpsOfEquationListList_WithStop<T> "author: Frenkel TUD 2012-09
   Traverses all expressions of a list of equations.
   It is possible to change the equations."
-  replaceable type Type_a subtypeof Any;
   input list<list<BackendDAE.Equation>> inEquations;
   input FuncExpType func;
-  input Type_a inTypeA;
+  input T inTypeA;
   output Boolean outBoolean;
-  output Type_a outTypeA;
+  output T outTypeA;
+
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input T inTypeA;
     output DAE.Exp outExp;
     output Boolean cont;
-    output Type_a outA;
+    output T outA;
   end FuncExpType;
 algorithm
   (outBoolean, outTypeA) := match (inEquations, func, inTypeA)
     local
-      Type_a arg;
+      T arg;
       list<BackendDAE.Equation> eqn;
       list<list<BackendDAE.Equation>> eqns;
       Boolean b;
@@ -613,31 +613,31 @@ algorithm
     then (true, inTypeA);
 
     case (eqn::eqns, _, _) equation
-      (b, arg) = traverseBackendDAEExpsEqnListWithStop(eqn, func, inTypeA);
+      (b, arg) = traverseExpsOfEquationList_WithStop(eqn, func, inTypeA);
       if b then
-        (b, arg) = traverseBackendDAEExpsEqnListListWithStop(eqns, func, arg);
+        (b, arg) = traverseExpsOfEquationListList_WithStop(eqns, func, arg);
       end if;
     then (b, arg);
   end match;
-end traverseBackendDAEExpsEqnListListWithStop;
+end traverseExpsOfEquationListList_WithStop;
 
-public function traverseBackendDAEExpsEqn "author: Frenkel TUD 2010-11
+public function traverseExpsOfEquation<T> "author: Frenkel TUD 2010-11
   Traverses all expressions of a equation.
   It is possible to change the equation."
-  replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inEquation;
   input FuncExpType inFunc;
-  input Type_a inTypeA;
+  input T inTypeA;
   output BackendDAE.Equation outEquation;
-  output Type_a outTypeA;
+  output T outTypeA;
+
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input T inTypeA;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output T outTypeA;
   end FuncExpType;
 algorithm
-  (outEquation, outTypeA) := match (inEquation, inFunc, inTypeA)
+  (outEquation, outTypeA) := match(inEquation)
     local
       DAE.Exp e1, e2, e_1, e_2, cond;
       list<DAE.Exp> expl;
@@ -646,7 +646,7 @@ algorithm
       BackendDAE.WhenEquation elsePart, elsePart1;
       DAE.ElementSource source;
       Integer size;
-      Type_a ext_arg_1, ext_arg_2, ext_arg_3;
+      T extArg;
       list<Integer> dimSize;
       DAE.Algorithm alg;
       list<DAE.Statement> stmts, stmts1;
@@ -655,77 +655,77 @@ algorithm
       DAE.Expand crefExpand;
       BackendDAE.EquationAttributes attr;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr), _, _) equation
-      (e_1, ext_arg_1) = inFunc(e1, inTypeA);
-      (e_2, ext_arg_2) = inFunc(e2, ext_arg_1);
-    then (BackendDAE.EQUATION(e_1, e_2, source, attr), ext_arg_2);
+    case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr) equation
+      (e_1, extArg) = inFunc(e1, inTypeA);
+      (e_2, extArg) = inFunc(e2, extArg);
+    then (BackendDAE.EQUATION(e_1, e_2, source, attr), extArg);
 
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=attr), _, _) equation
-      (e_1, ext_arg_1) = inFunc(e1, inTypeA);
-      (e_2, ext_arg_2) = inFunc(e2, ext_arg_1);
-    then (BackendDAE.ARRAY_EQUATION(dimSize, e_1, e_2, source, attr), ext_arg_2);
+    case BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=source, attr=attr) equation
+      (e_1, extArg) = inFunc(e1, inTypeA);
+      (e_2, extArg) = inFunc(e2, extArg);
+    then (BackendDAE.ARRAY_EQUATION(dimSize, e_1, e_2, source, attr), extArg);
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=attr), _, _) equation
+    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=attr) equation
       tp = Expression.typeof(e2);
       e1 = Expression.makeCrefExp(cr, tp);
-      (DAE.CREF(cr1, _), ext_arg_1) = inFunc(e1, inTypeA);
-      (e_2, ext_arg_2) = inFunc(e2, ext_arg_1);
-    then (BackendDAE.SOLVED_EQUATION(cr1, e_2, source, attr), ext_arg_2);
+      (DAE.CREF(cr1, _), extArg) = inFunc(e1, inTypeA);
+      (e_2, extArg) = inFunc(e2, extArg);
+    then (BackendDAE.SOLVED_EQUATION(cr1, e_2, source, attr), extArg);
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=attr), _, _) equation
-      (e_1, ext_arg_1) = inFunc(e1, inTypeA);
-    then (BackendDAE.RESIDUAL_EQUATION(e_1, source, attr), ext_arg_1);
+    case BackendDAE.RESIDUAL_EQUATION(exp=e1, source=source, attr=attr) equation
+      (e_1, extArg) = inFunc(e1, inTypeA);
+    then (BackendDAE.RESIDUAL_EQUATION(e_1, source, attr), extArg);
 
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=NONE()), source=source, attr=attr), _, _) equation
+    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=NONE()), source=source, attr=attr) equation
       tp = Expression.typeof(e2);
       e1 = Expression.makeCrefExp(cr, tp);
-      (DAE.CREF(cr1, _), ext_arg_1) = inFunc(e1, inTypeA);
-      (e_2, ext_arg_2) = inFunc(e2, ext_arg_1);
-      (cond, ext_arg_2) = inFunc(cond, ext_arg_2);
-    then (BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr1, e_2, NONE()), source, attr), ext_arg_2);
+      (DAE.CREF(cr1, _), extArg) = inFunc(e1, inTypeA);
+      (e_2, extArg) = inFunc(e2, extArg);
+      (cond, extArg) = inFunc(cond, extArg);
+    then (BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr1, e_2, NONE()), source, attr), extArg);
 
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=SOME(elsePart)), source=source, attr=attr), _, _) equation
+    case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=SOME(elsePart)), source=source, attr=attr) equation
       tp = Expression.typeof(e2);
       e1 = Expression.makeCrefExp(cr, tp);
-      (DAE.CREF(cr1, _), ext_arg_1) = inFunc(e1, inTypeA);
-      (e_2, ext_arg_2) = inFunc(e2, ext_arg_1);
-      (cond, ext_arg_2) = inFunc(cond, ext_arg_2);
-      (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1), ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(size, elsePart, source, attr), inFunc, ext_arg_2);
-    then (BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr1, e_2, SOME(elsePart1)), source, attr), ext_arg_3);
+      (DAE.CREF(cr1, _), extArg) = inFunc(e1, inTypeA);
+      (e_2, extArg) = inFunc(e2, extArg);
+      (cond, extArg) = inFunc(cond, extArg);
+      (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1), extArg) = traverseExpsOfEquation(BackendDAE.WHEN_EQUATION(size, elsePart, source, attr), inFunc, extArg);
+    then (BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr1, e_2, SOME(elsePart1)), source, attr), extArg);
 
-    case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts), source=source, expand=crefExpand, attr=attr), _, _) equation
-      (stmts1, ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts, inFunc, inTypeA);
+    case BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts), source=source, expand=crefExpand, attr=attr) equation
+      (stmts1, extArg) = DAEUtil.traverseDAEEquationsStmts(stmts, inFunc, inTypeA);
       alg = if referenceEq(stmts, stmts1) then alg else DAE.ALGORITHM_STMTS(stmts1);
-    then (BackendDAE.ALGORITHM(size, alg, source, crefExpand, attr), ext_arg_1);
+    then (BackendDAE.ALGORITHM(size, alg, source, crefExpand, attr), extArg);
 
-    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=attr), _, _) equation
-      (e_1, ext_arg_1) = inFunc(e1, inTypeA);
-      (e_2, ext_arg_2) = inFunc(e2, ext_arg_1);
-    then (BackendDAE.COMPLEX_EQUATION(size, e_1, e_2, source, attr), ext_arg_2);
+    case BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=source, attr=attr) equation
+      (e_1, extArg) = inFunc(e1, inTypeA);
+      (e_2, extArg) = inFunc(e2, extArg);
+    then (BackendDAE.COMPLEX_EQUATION(size, e_1, e_2, source, attr), extArg);
 
-    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=attr), _, _) equation
-      (expl, ext_arg_1) = traverseBackendDAEExpList(expl, inFunc, inTypeA);
-      (eqnslst, ext_arg_2) = List.map1Fold(eqnslst, traverseExpsOfEquationList, inFunc, ext_arg_1);
-      (eqns, ext_arg_2) = List.map1Fold(eqns, traverseBackendDAEExpsEqn, inFunc, ext_arg_2);
-    then (BackendDAE.IF_EQUATION(expl, eqnslst, eqns, source, attr), ext_arg_2);
+    case BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source=source, attr=attr) equation
+      (expl, extArg) = traverseExpsOfExpList(expl, inFunc, inTypeA);
+      (eqnslst, extArg) = List.map1Fold(eqnslst, traverseExpsOfEquationList, inFunc, extArg);
+      (eqns, extArg) = List.map1Fold(eqns, traverseExpsOfEquation, inFunc, extArg);
+    then (BackendDAE.IF_EQUATION(expl, eqnslst, eqns, source, attr), extArg);
   end match;
-end traverseBackendDAEExpsEqn;
+end traverseExpsOfEquation;
 
-public function traverseBackendDAEExpsEqnWithStop "author: Frenkel TUD 2010-11
+public function traverseExpsOfEquation_WithStop<T> "author: Frenkel TUD 2010-11
   Traverses all expressions of a equation.
   It is possible to change the equation."
-  replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inEquation;
   input FuncExpType func;
-  input Type_a inTypeA;
+  input T inTypeA;
   output Boolean outBoolean;
-  output Type_a outTypeA;
+  output T outTypeA;
+
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input T inTypeA;
     output DAE.Exp outExp;
     output Boolean cont;
-    output Type_a outA;
+    output T outA;
   end FuncExpType;
 algorithm
   (outBoolean, outTypeA) := match (inEquation, func, inTypeA)
@@ -737,7 +737,7 @@ algorithm
       BackendDAE.WhenEquation elsePart;
       DAE.ElementSource source;
       Integer size;
-      Type_a ext_arg, ext_arg_1, ext_arg_2, ext_arg_3;
+      T ext_arg, ext_arg_1, ext_arg_2, ext_arg_3;
       list<Integer> dimSize;
       DAE.Algorithm alg;
       list<DAE.Statement> stmts;
@@ -802,13 +802,13 @@ algorithm
           (_, b, ext_arg) = func(cond, ext_arg);
         end if;
         if b then
-          (b, ext_arg) = traverseBackendDAEExpsEqnWithStop(BackendDAE.WHEN_EQUATION(size, elsePart, source, eqAttr), func, ext_arg);
+          (b, ext_arg) = traverseExpsOfEquation_WithStop(BackendDAE.WHEN_EQUATION(size, elsePart, source, eqAttr), func, ext_arg);
         end if;
       then (b, ext_arg);
 
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS()), _, _)
       equation
-        print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseBackendDAEExpsEqnWithStop\n");
+        print("not implemented error - BackendDAE.ALGORITHM - BackendEquation.traverseExpsOfEquation_WithStop\n");
        // (stmts1, ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts, func, inTypeA);
       then fail();
 
@@ -823,82 +823,80 @@ algorithm
 
     case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns), _, _)
       equation
-        (b, ext_arg) = traverseBackendDAEExpListWithStop(expl, func, inTypeA);
+        (b, ext_arg) = traverseExpsOfExpList_WithStop(expl, func, inTypeA);
         if b then
-          (b, ext_arg) = traverseBackendDAEExpsEqnListListWithStop(eqnslst, func, ext_arg);
+          (b, ext_arg) = traverseExpsOfEquationListList_WithStop(eqnslst, func, ext_arg);
         end if;
         if b then
-          (b, ext_arg) = traverseBackendDAEExpsEqnListWithStop(eqns, func, ext_arg);
+          (b, ext_arg) = traverseExpsOfEquationList_WithStop(eqns, func, ext_arg);
         end if;
       then (b, ext_arg);
   end match;
-end traverseBackendDAEExpsEqnWithStop;
+end traverseExpsOfEquation_WithStop;
 
-protected function traverseBackendDAEExpList "author Frenkel TUD:
+protected function traverseExpsOfExpList<T> "author Frenkel TUD:
   Calls user function for each element of list."
-  replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
-  input Type_a ext_arg;
+  input T inExtArg;
   output list<DAE.Exp> outExpl;
-  output Type_a outTypeA;
+  output T outTypeA;
+
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input T inTypeA;
     output DAE.Exp outExp;
-    output Type_a outA;
+    output T outA;
   end FuncExpType;
 algorithm
-  (outExpl, outTypeA) := match (inExpl, rel, ext_arg)
+  (outExpl, outTypeA) := match (inExpl)
     local
       DAE.Exp e, e1;
       list<DAE.Exp> expl1, res;
-      Type_a ext_arg_1, ext_arg_2, ext_arg_3;
+      T extArg;
 
-    case ({}, _, ext_arg_1)
-    then ({}, ext_arg_1);
+    case {}
+    then ({}, inExtArg);
 
-    case (e::res, _, ext_arg_1) equation
-      (e1, ext_arg_2) = rel(e, ext_arg_1);
-      (expl1, ext_arg_3) = traverseBackendDAEExpList(res, rel, ext_arg_2);
-    then (e1::expl1, ext_arg_3);
+    case e::res equation
+      (e1, extArg) = rel(e, inExtArg);
+      (expl1, extArg) = traverseExpsOfExpList(res, rel, extArg);
+    then (e1::expl1, extArg);
   end match;
-end traverseBackendDAEExpList;
+end traverseExpsOfExpList;
 
-protected function traverseBackendDAEExpListWithStop "author Frenkel TUD
+protected function traverseExpsOfExpList_WithStop<T> "author Frenkel TUD
   Calls user function for each element of list."
-  replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
-  input Type_a ext_arg;
+  input T inExtArg;
   output Boolean outBoolean;
-  output Type_a outTypeA;
+  output T outTypeA;
   partial function FuncExpType
     input DAE.Exp inExp;
-    input Type_a inTypeA;
+    input T inTypeA;
     output DAE.Exp outExp;
     output Boolean cont;
-    output Type_a outA;
+    output T outA;
   end FuncExpType;algorithm
-  (outBoolean, outTypeA) := match (inExpl, rel, ext_arg)
+  (outBoolean, outTypeA) := match(inExpl)
     local
       DAE.Exp e;
       list<DAE.Exp> res;
-      Type_a ext_arg_1, ext_arg_2, ext_arg_3;
+      T extArg;
       Boolean b;
 
-    case ({}, _, ext_arg_1)
-    then (true, ext_arg_1);
+    case {}
+    then (true, inExtArg);
 
-    case (e::res, _, ext_arg_1)
-      equation
-        (_, b, ext_arg_2) = rel(e, ext_arg_1);
-        if b then
-          (b, ext_arg_2) = traverseBackendDAEExpListWithStop(res, rel, ext_arg_2);
-        end if;
-      then (b, ext_arg_2);
+    case e::res equation
+      (_, b, extArg) = rel(e, inExtArg);
+      if b then
+        (b, extArg) = traverseExpsOfExpList_WithStop(res, rel, extArg);
+      end if;
+    then (b, extArg);
   end match;
-end traverseBackendDAEExpListWithStop;
+end traverseExpsOfExpList_WithStop;
 
 public function traverseEquationArray<T> "author: Frenkel TUD
   Traverses all equations of a BackendDAE.EquationArray."
@@ -927,7 +925,7 @@ algorithm
   //end try;
 end traverseEquationArray;
 
-public function traverseEquationArrayWithStop "author: Frenkel TUD
+public function traverseEquationArray_WithStop "author: Frenkel TUD
   Traverses all equations of a BackendDAE.EquationArray."
   replaceable type Type_a subtypeof Any;
   input BackendDAE.EquationArray inEquationArray;
@@ -947,14 +945,14 @@ protected
 algorithm
   //try
     BackendDAE.EQUATION_ARRAY(equOptArr=equOptArr) := inEquationArray;
-    outTypeA := BackendDAEUtil.traverseArrayNoCopyWithStop(equOptArr, inFuncWithStop, traverseOptEquationWithStop, inTypeA);
+    outTypeA := BackendDAEUtil.traverseArrayNoCopyWithStop(equOptArr, inFuncWithStop, traverseOptEquation_WithStop, inTypeA);
   //else
   //  if Flags.isSet(Flags.FAILTRACE) then
-  //    Debug.trace("- BackendEquation.traverseEquationArrayWithStop failed\n");
+  //    Debug.trace("- BackendEquation.traverseEquationArray_WithStop failed\n");
   //  end if;
   //  fail();
   //end try;
-end traverseEquationArrayWithStop;
+end traverseEquationArray_WithStop;
 
 protected function traverseOptEquation<T>
   input Option<BackendDAE.Equation> inEquation;
@@ -983,7 +981,7 @@ algorithm
   end match;
 end traverseOptEquation;
 
-protected function traverseOptEquationWithStop<T>
+protected function traverseOptEquation_WithStop<T>
   input Option<BackendDAE.Equation> inEquation;
   input FuncWithStop inFuncWithStop;
   input T inTypeA;
@@ -1011,9 +1009,9 @@ algorithm
       (_, b, ext_arg) = inFuncWithStop(eqn, inTypeA);
     then (b, ext_arg);
   end match;
-end traverseOptEquationWithStop;
+end traverseOptEquation_WithStop;
 
-public function traverseEquationArrayWithUpdate<T> "author: Frenkel TUD
+public function traverseEquationArray_WithUpdate<T> "author: Frenkel TUD
   Traverses all equations of a BackendDAE.EquationArray."
   input BackendDAE.EquationArray inEquationArray;
   input FuncWithUpdate inFuncWithUpdate;
@@ -1032,11 +1030,11 @@ protected
   array<Option<BackendDAE.Equation>> equOptArr;
 algorithm
   BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr) := inEquationArray;
-  (equOptArr, outTypeA) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(equOptArr, inFuncWithUpdate, traverseOptEquationWithUpdate, inTypeA);
+  (equOptArr, outTypeA) := BackendDAEUtil.traverseArrayNoCopyWithUpdate(equOptArr, inFuncWithUpdate, traverseOptEquation_WithUpdate, inTypeA);
   outEquationArray := BackendDAE.EQUATION_ARRAY(size, numberOfElement, arrSize, equOptArr);
-end traverseEquationArrayWithUpdate;
+end traverseEquationArray_WithUpdate;
 
-protected function traverseOptEquationWithUpdate<T> "author: Frenkel TUD 2010-11
+protected function traverseOptEquation_WithUpdate<T> "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqnsWithUpdate."
   input Option<BackendDAE.Equation> inEquation;
   input FuncWithUpdate inFuncWithUpdate;
@@ -1065,7 +1063,7 @@ algorithm
       oeqn = if referenceEq(eqn, eqn1) then inEquation else SOME(eqn1);
     then (oeqn, ext_arg);
   end match;
-end traverseOptEquationWithUpdate;
+end traverseOptEquation_WithUpdate;
 
 public function equationEqual "
   Returns true if two equations are equal"
@@ -1688,24 +1686,6 @@ algorithm
       then fail();
   end matchcontinue;
 end equationToResidualForm;
-
-public function traverseequationToResidualForm
-"author: Frenkel TUD 2010-11"
-  input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
-  output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
-algorithm
-  outTpl := matchcontinue (inTpl)
-    local
-      list<BackendDAE.Equation> eqns;
-      BackendDAE.Equation eqn,reqn;
-    case ((eqn,eqns))
-      equation
-        reqn = equationToResidualForm(eqn);
-      then
-        ((eqn,reqn::eqns));
-    else inTpl;
-  end matchcontinue;
-end traverseequationToResidualForm;
 
 public function traverseEquationToScalarResidualForm
 "author: Frenkel TUD 2010-11"

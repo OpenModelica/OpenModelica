@@ -3023,7 +3023,7 @@ algorithm
     case (_,_)
       equation
         repl = BackendDAEUtil.makeZeroReplacements(vars);
-        ((_,res,_)) = BackendEquation.traverseEquationArrayWithStop(eqns,rhsConstant2,(vars,true,repl));
+        ((_,res,_)) = BackendEquation.traverseEquationArray_WithStop(eqns,rhsConstant2,(vars,true,repl));
       then
         res;
   end matchcontinue;

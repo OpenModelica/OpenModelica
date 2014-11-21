@@ -1965,7 +1965,7 @@ protected
   BackendDAE.EquationArray eqs;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=eqs) := syst;
-  (_,_) := BackendEquation.traverseEquationArrayWithUpdate(eqs, residualForm2, 1);
+  (_,_) := BackendEquation.traverseEquationArray_WithUpdate(eqs, residualForm2, 1);
   osyst := syst;
   oshared := shared;
 end residualForm1;
@@ -2060,7 +2060,7 @@ algorithm
       equation
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         eqn = BackendEquation.equationNth1(eqns, e);
-        (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
+        (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=BackendDAE.JAC_LINEAR()))::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
@@ -2081,31 +2081,31 @@ algorithm
     case (BackendDAE.SINGLEARRAY(eqn=e)::rest,_,_,_)
       equation
          eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), e);
-         (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
+         (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLEIFEQUATION(eqn=e)::rest,_,_,_)
       equation
          eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), e);
-         (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
+         (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLEALGORITHM(eqn=e)::rest,_,_,_)
       equation
          eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), e);
-         (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
+         (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest,_,_,_)
       equation
          eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), e);
-         (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
+         (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLEWHENEQUATION(eqn=e)::rest,_,_,_)
       equation
          eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), e);
-         (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
+         (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=true))::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
@@ -2161,7 +2161,7 @@ protected function countOperationsJac1
   input tuple<Integer,Integer,Integer,Integer> inTpl;
   output tuple<Integer,Integer,Integer,Integer> outTpl;
 algorithm
-  (_,outTpl) := BackendEquation.traverseBackendDAEExpsEqn(Util.tuple33(inJac),countOperationsExp,inTpl);
+  (_,outTpl) := BackendEquation.traverseExpsOfEquation(Util.tuple33(inJac),countOperationsExp,inTpl);
 end countOperationsJac1;
 
 protected function addJacSpecificOperations
@@ -2392,7 +2392,7 @@ algorithm
 
     case (eqn,knvars,(acc,asserts,b))
       equation
-        (eqn,(_,b)) = BackendEquation.traverseBackendDAEExpsEqn(eqn, simplifyIfExpevaluatedParamter, (knvars,b));
+        (eqn,(_,b)) = BackendEquation.traverseExpsOfEquation(eqn, simplifyIfExpevaluatedParamter, (knvars,b));
       then
         ((eqn::acc,asserts,b));
   end matchcontinue;
@@ -3055,7 +3055,7 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind),shared)
       equation
         // traverse the equations and collect all semiLinear calls  y=semiLinear(x,sa,sb)
-        (eqns,(eqnslst,_,true)) = BackendEquation.traverseEquationArrayWithUpdate(eqns,simplifysemiLinearFinder,({},0,false));
+        (eqns,(eqnslst,_,true)) = BackendEquation.traverseEquationArray_WithUpdate(eqns,simplifysemiLinearFinder,({},0,false));
         // sort for (y,x) pairs
         eqnsarray = arrayCreate(5,{});
         ht = HashTableExpToIndex.emptyHashTable();
@@ -3728,7 +3728,7 @@ algorithm
   BackendDAE.EqSystem eqs;
    case(eqs as BackendDAE.EQSYSTEM(orderedVars=ordvars, orderedEqs=ordeqns), _)
    equation
-     (ordeqns, _) = BackendEquation.traverseEquationArrayWithUpdate(ordeqns, eaddInitialStmtsToAlgorithms1Helper, ordvars);
+     (ordeqns, _) = BackendEquation.traverseEquationArray_WithUpdate(ordeqns, eaddInitialStmtsToAlgorithms1Helper, ordvars);
    then(eqs, shared);
    end match;
 end addInitialStmtsToAlgorithms1;
@@ -3841,8 +3841,8 @@ algorithm
 
     case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs,ei))
       equation
-        (eqns1, (vars1, _)) = BackendEquation.traverseEquationArrayWithUpdate(eqns, traverserexpandDerEquation, (vars, shared));
-        (inieqns1, (vars2, _)) = BackendEquation.traverseEquationArrayWithUpdate(inieqns, traverserexpandDerEquation, (vars1, shared));
+        (eqns1, (vars1, _)) = BackendEquation.traverseEquationArray_WithUpdate(eqns, traverserexpandDerEquation, (vars, shared));
+        (inieqns1, (vars2, _)) = BackendEquation.traverseEquationArray_WithUpdate(inieqns, traverserexpandDerEquation, (vars1, shared));
       then
         (BackendDAE.EQSYSTEM(vars2, eqns1, m, mT, matching, stateSets, partitionKind), BackendDAE.SHARED(knvars, exobj, av, inieqns1, remeqns, constrs, clsAttrs, cache, graph, funcs, einfo, eoc, btp, symjacs,ei));
   end match;
@@ -3865,7 +3865,7 @@ protected
 algorithm
   e := inEq;
   (vars, shared) := tpl;
-  (e1, (vars, shared, ops)) := BackendEquation.traverseBackendDAEExpsEqn(e, traverserexpandDerExp, (vars, shared, {}));
+  (e1, (vars, shared, ops)) := BackendEquation.traverseExpsOfEquation(e, traverserexpandDerExp, (vars, shared, {}));
   e1 := List.foldr(ops, BackendEquation.addOperation, e1);
   outEq := e1;
   outTpl := (vars, shared);

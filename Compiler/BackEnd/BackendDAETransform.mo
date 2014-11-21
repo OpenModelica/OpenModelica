@@ -1106,7 +1106,7 @@ end checkStack;
  traverseBackendDAEExps stuff
  *****************************************/
 
-public function traverseBackendDAEExpsEqn
+public function traverseExpsOfEquation
 "author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
@@ -1124,7 +1124,7 @@ public function traverseBackendDAEExpsEqn
   end FuncExpType;
 algorithm
   (outEquation,(_,outTypeA)) := traverseBackendDAEExpsEqnWithSymbolicOperation(inEquation,traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper,(func,inTypeA));
-end traverseBackendDAEExpsEqn;
+end traverseExpsOfEquation;
 
 protected function traverseBackendDAEExpsEqnWithoutSymbolicOperationHelper
   replaceable type Type_a subtypeof Any;
@@ -1471,7 +1471,7 @@ public function traverseExpsOfEquationList<ArgT> "author: Frenkel TUD 2010-11
   end FuncExpType;
 algorithm
   for eq in inEquations loop
-    (eq, outArg) := traverseBackendDAEExpsEqn(eq, func, outArg);
+    (eq, outArg) := traverseExpsOfEquation(eq, func, outArg);
     outEquations := eq :: outEquations;
   end for;
 

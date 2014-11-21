@@ -2298,7 +2298,7 @@ algorithm
   (eqns, reeqns) := inTpl;
 
   // replace der(x) with $DER.x and replace pre(x) with $PRE.x
-  (eqn1, _) := BackendEquation.traverseBackendDAEExpsEqn(eqn, Expression.traverseSubexpressionsDummyHelper, replaceDerPreCref);
+  (eqn1, _) := BackendEquation.traverseExpsOfEquation(eqn, Expression.traverseSubexpressionsDummyHelper, replaceDerPreCref);
 
   // add it, if size is zero (terminate, assert, noretcall) move to removed equations
   size := BackendEquation.equationSize(eqn1);

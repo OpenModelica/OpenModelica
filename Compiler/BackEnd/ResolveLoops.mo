@@ -307,7 +307,7 @@ protected
 algorithm
   outEq := inEq;
   eqLst := inEqs;
-  (eq,isSimple) := BackendEquation.traverseBackendDAEExpsEqn(inEq,isAddOrSubExp,true);
+  (eq,isSimple) := BackendEquation.traverseExpsOfEquation(inEq,isAddOrSubExp,true);
   eqLst := if isSimple then eq::eqLst else eqLst;
 end getSimpleEquations;
 

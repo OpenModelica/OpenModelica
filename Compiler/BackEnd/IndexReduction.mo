@@ -767,7 +767,7 @@ algorithm
         //fcall(Flags.BLT_DUMP, print, "differentiated equation " + intString(e) + " " + BackendDump.equationString(eqn_1) + "\n");
         eqn = BackendEquation.markDifferentiated(eqn);
         // get needed der(variables) from equation
-       (_,(_,(_,_,elst))) = BackendEquation.traverseBackendDAEExpsEqn(eqn_1, Expression.traverseSubexpressionsHelper, (getDerVarsExp, (vars,ass1,{})));
+       (_,(_,(_,_,elst))) = BackendEquation.traverseExpsOfEquation(eqn_1, Expression.traverseSubexpressionsHelper, (getDerVarsExp, (vars,ass1,{})));
        elst = List.map1r(elst,arrayGet,mapIncRowEqn);
        elst = List.fold2(elst, addUnMarked, mark, markarr, inNextEqns);
        (eqntpl, shared) = differentiateSetEqns(es,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,shared,(e,SOME(eqn_1),eqn)::inEqnTpl);
@@ -905,8 +905,8 @@ algorithm
     case ({},_,_,_,_,_,_,_) then (vars,eqns,inStateOrd,inChangedVars,inOrgEqnsLst);
     case ((e,SOME(eqn_1),eqn)::rest,_,_,_,_,_,_,_)
       equation
-        (eqn_1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1, replaceStateOrderExp, vars);
-        (eqn_1,(_,(vars1,eqns1,_,changedVars,_,_,_))) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1,Expression.traverseSubexpressionsHelper,(changeDerVariablestoStatesFinderNew,(vars,eqns,inStateOrd,inChangedVars,e,imapIncRowEqn,mt)));
+        (eqn_1,_) = BackendDAETransform.traverseExpsOfEquation(eqn_1, replaceStateOrderExp, vars);
+        (eqn_1,(_,(vars1,eqns1,_,changedVars,_,_,_))) = BackendDAETransform.traverseExpsOfEquation(eqn_1,Expression.traverseSubexpressionsHelper,(changeDerVariablestoStatesFinderNew,(vars,eqns,inStateOrd,inChangedVars,e,imapIncRowEqn,mt)));
         if Flags.isSet(Flags.BLT_DUMP) then
           debugdifferentiateEqns((eqn,eqn_1));
         end if;
@@ -1253,7 +1253,7 @@ algorithm
   // get the equation
   eqn := BackendEquation.equationNth1(eqns, e);
   // reaplace final vars
-  (eqn, (_, b, repl)) := BackendEquation.traverseBackendDAEExpsEqn(eqn, replaceFinalVarsEqn, (vars, false, repl));
+  (eqn, (_, b, repl)) := BackendEquation.traverseExpsOfEquation(eqn, replaceFinalVarsEqn, (vars, false, repl));
   // if replaced set eqn
   eqns := if b then BackendEquation.setAtIndex(eqns, e, eqn) else eqns;
   changedEqns := List.consOnTrue(b, e, changedEqns);
@@ -1359,7 +1359,7 @@ algorithm
     case (pos::rest, _, _, _, _) equation
       // replace in eqn
       eqn = BackendEquation.equationNth1(inEqns, pos);
-      (eqn1, _) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceAliasStateExp, (inACr, inCrExp, indCrExp));
+      (eqn1, _) = BackendDAETransform.traverseExpsOfEquation(eqn, replaceAliasStateExp, (inACr, inCrExp, indCrExp));
       eqns =  BackendEquation.setAtIndex(inEqns, pos, eqn1);
       // print("Replace in Eqn:\n" + BackendDump.equationString(eqn) + "\nto\n" + BackendDump.equationString(eqn1) + "\n");
     then replaceAliasState(rest, inCrExp, indCrExp, inACr, eqns);

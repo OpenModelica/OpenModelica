@@ -1365,7 +1365,7 @@ encapsulated package HpcOmMemory
     list<Integer> varIdcList;
   algorithm
     //print("getEqSCVarMapping0: Handling equation:\n" + BackendDump.equationString(iEquation) + "\n");
-    (_,(_,(_,oMapping))) := BackendEquation.traverseBackendDAEExpsEqn(iEquation,Expression.traverseSubexpressionsHelper, (createMemoryMapTraverse0, (iHt,{})));
+    (_,(_,(_,oMapping))) := BackendEquation.traverseExpsOfEquation(iEquation,Expression.traverseSubexpressionsHelper, (createMemoryMapTraverse0, (iHt,{})));
     //((_,(_,oMapping))) := Expression.traverseExp(exp,createMemoryMapTraverse, (iHt,{}));
   end getEqSCVarMapping0;
 

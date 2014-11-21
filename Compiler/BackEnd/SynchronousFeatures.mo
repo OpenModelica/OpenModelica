@@ -470,7 +470,7 @@ algorithm
       else
         algorithm
           (_, (outContinuousTimeVars, outClockedVars)) :=
-            BackendEquation.traverseBackendDAEExpsEqn(eq, getVariableLists,
+            BackendEquation.traverseExpsOfEquation(eq, getVariableLists,
               (outContinuousTimeVars, outClockedVars));
         then
           ();
