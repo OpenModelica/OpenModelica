@@ -1116,7 +1116,7 @@ algorithm
 
     case "getComponentCount"
       algorithm
-        {Absyn.CREF(componentRef = cr)} := args; 
+        {Absyn.CREF(componentRef = cr)} := args;
       then
         intString(getComponentCount(cr, p));
 
@@ -1165,7 +1165,7 @@ algorithm
 
     case "getNthComponentCondition"
       algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args; 
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
       then
         getNthComponentCondition(cr, p, n);
 
@@ -1315,7 +1315,7 @@ algorithm
 
     case "getNamedAnnotation"
       algorithm
-        {Absyn.CREF(componentRef = cr), 
+        {Absyn.CREF(componentRef = cr),
          Absyn.CREF(componentRef = Absyn.CREF_IDENT(name, {}))} := args;
         ErrorExt.setCheckpoint("getNamedAnnotation");
         Config.setEvaluateParametersInAnnotations(true);
@@ -1337,7 +1337,7 @@ algorithm
           outResult := Dump.unparseStr(Absyn.PROGRAM({cls}, Absyn.TOP()), false);
         else
           outResult := "Failed in translating " + Dump.printComponentRefStr(cr)
-                     + " to Modelica v2.0 graphical annotations";  
+                     + " to Modelica v2.0 graphical annotations";
         end try;
       then
         outResult;
@@ -1633,7 +1633,7 @@ algorithm
            Absyn.BOOL(value = repl)} := expl;
           streamPrefix := false;
         end if;
-          
+
         (outResult, p) := setComponentProperties(Absyn.crefToPath(class_), cr,
             finalPrefix, flowPrefix, streamPrefix, protected_, repl,
             /*parallelism,*/ variability, {dref1,dref2}, causality, p);
@@ -7000,7 +7000,7 @@ algorithm
     Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), Absyn.dummyParts,
         Absyn.dummyInfo)}, w), inProgram);
 end createModel;
-    
+
 protected function deleteClass
 " This function takes a component reference and a program.
    It deletes the class specified by the component reference from the
