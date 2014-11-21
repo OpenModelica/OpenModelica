@@ -1026,7 +1026,7 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
       <<
       <%odeEqs%>
       >>
-
+  end match
 end function_HPCOM_Thread;
 
 template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, array<list<Task>> threadTasks, String iType, Integer idx, String modelNamePrefixStr, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
@@ -1110,6 +1110,7 @@ template function_HPCOM_Thread0(list<SimEqSystem> allEquationsPlusWhen, list<Tas
         <%threadTasks%>
       }
       >>
+  end match
 end function_HPCOM_Thread0;
 
 template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
@@ -1141,14 +1142,15 @@ template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask,
       <<
       <%relLck%>
       >>
+  end match
 end function_HPCOM_Task;
 
 template equationNamesHPCOM_(Integer idx, list<SimEqSystem> allEquationsPlusWhen, Context context, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
 ::=
-    let eq = equationHPCOM_(getSimCodeEqByIndex(allEquationsPlusWhen, idx), idx, context, &varDecls, simCode, useFlatArrayNotation)
-    <<
-    <%eq%>
-    >>
+  let eq = equationHPCOM_(getSimCodeEqByIndex(allEquationsPlusWhen, idx), idx, context, &varDecls, simCode, useFlatArrayNotation)
+  <<
+  <%eq%>
+  >>
 end equationNamesHPCOM_;
 
 template equationHPCOM_(SimEqSystem eq, Integer idx, Context context, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
@@ -1215,6 +1217,7 @@ template generateThread(Integer threadIdx, String iType, String modelNamePrefixS
       <<
       evaluateThread<%threadIdx%> = new boost::thread(boost::bind(&<%modelNamePrefixStr%>::<%funcName%><%threadIdx%>, this));
       >>
+  end match
 end generateThread;
 
 template getLockNameByDepTask(Task depTask)
@@ -1249,6 +1252,7 @@ template initializeLockByLockName(String lockName, String lockPrefix, String iTy
       <<
       <%lockPrefix%>_<%lockName%> = BOOST_DETAIL_SPINLOCK_INIT;
       >>
+  end match
 end initializeLockByLockName;
 
 template initializeBarrierByName(String lockName, String lockPrefix, Integer numberOfThreads, String iType)
@@ -1259,6 +1263,7 @@ template initializeBarrierByName(String lockName, String lockPrefix, Integer num
       <<
       <%lockPrefix%>_<%lockName%>(<%numberOfThreads%>)
       >>
+  end match
 end initializeBarrierByName;
 
 template createLockByDepTask(Task depTask, String lockPrefix, String iType)
@@ -1284,6 +1289,7 @@ template createLockByLockName(String lockName, String lockPrefix, String iType)
       <<
       boost::detail::spinlock <%lockPrefix%>_<%lockName%>;
       >>
+  end match
 end createLockByLockName;
 
 template createBarrierByName(String lockName, String lockPrefix, Integer numOfThreads, String iType)
@@ -1294,6 +1300,7 @@ template createBarrierByName(String lockName, String lockPrefix, Integer numOfTh
       <<
       busywaiting_barrier <%lockPrefix%>_<%lockName%>;
       >>
+  end match
 end createBarrierByName;
 
 template destroyLockByDepTask(Task depTask, String lockPrefix, String iType)
@@ -1531,6 +1538,19 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 end simulationMainFileAnalyzation;
 
 
+template MPIFinalize(String type)
+ "Finalize the MPI environment in main function."
+::=
+  match type
+    case "mpi" then
+      <<
+      } // End sequential
+      MPI_Finalize();
+      >>
+  end match
+end MPIFinalize;
+
+
 template MPIInit(String type)
  "Initialize the MPI environment in main function."
 ::=
@@ -1544,6 +1564,10 @@ template MPIInit(String type)
       MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
       std::cout << "Hello world! This is MPI process " << world_rank
                 << " of " << world_size << " processes."  << endl;
+
+      // Run simulation in sequential
+      if (0 == world_rank) {
+        std::cout << "Remark: Simulation is not (yet) MPI parallel!\n";
       >>
   end match
 end MPIInit;
@@ -1554,26 +1578,11 @@ template simulationMainFile(SimCode simCode)
 ::=
   //let type = getConfigString(HPCOM_CODE)
   let type = if Flags.isSet(USEMPI) then "mpi" else ''
-  let MPIInit = ''//MPIInit(type)
-  let MPIFinalize = (match type case "mpi" then 'MPI_Finalize();' else '')
   let MPIHeader = (match type case "mpi" then '#include <mpi.h>' else '')
-
-  let test1 = if Flags.isSet(Flags.USEMPI) then "//BAM" else "//BUM"
-  let test2 = if Flags.isSet(HPCOM) then "//BAM2" else "//BUM2"
-  let test3 = if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then "//BAM3" else "//BUM3"
-// <%test1%>
-//       <%test2%>
-//       #test end
 
   match simCode
     case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
       <<
-      <%test1%>
-      <%test2%>
-      <%test3%>
-      //<%type%>
-      // test end
-
       #ifndef BOOST_ALL_DYN_LINK
         #define BOOST_ALL_DYN_LINK
       #endif
@@ -1659,7 +1668,7 @@ template simulationMainFile(SimCode simCode)
             >>
           %>
 
-          <%MPIFinalize%>
+          <%MPIFinalize(type)%>
 
           return 0;
         }
@@ -1675,7 +1684,6 @@ template simulationMainFile(SimCode simCode)
 end simulationMainFile;
 
 
-// MF
 template MPIRunCommandInRunScript(String type, Text &getNumOfProcs, Text &executionCommand)
  "If MPI is used:
     - Add the run execution command 'mpirun -np $NPROCESSORS',
@@ -1694,7 +1702,6 @@ template MPIRunCommandInRunScript(String type, Text &getNumOfProcs, Text &execut
 end MPIRunCommandInRunScript;
 
 
-// MF: Added the 'getNumOfProcs' and branching of execution command in case of MPI usage.
 template simulationMainRunScript(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
@@ -1747,33 +1754,29 @@ template simulationMainRunScript(SimCode simCode)
 end simulationMainRunScript;
 
 
-template simulationMakefile(String target,SimCode simCode)
+template simulationMakefile(String target, SimCode simCode)
  "Adds specific compiler flags for HPCOM mode to simulation makefile."
 ::=
-    let type = getConfigString(HPCOM_CODE)
+  let type = getConfigString(HPCOM_CODE)
 
-    let &additionalCFlags_GCC = buffer ""
-    let &additionalCFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
-    let &additionalCFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then ' -D ANALYZATION_MODE -I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"' else ""
+  let &additionalCFlags_GCC = buffer ""
+  let &additionalCFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
+  let &additionalCFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then ' -D ANALYZATION_MODE -I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"' else ""
 
-    let &additionalCFlags_MSVC = buffer ""
-    let &additionalCFlags_MSVC += if stringEq(type,"openmp") then "/openmp" else ""
-    let &additionalCFlags_MSVC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '/DANALYZATION_MODE /I"$(SUNDIALS_INCLUDE)" /I"$(SUNDIALS_INCLUDE)/kinsol" /I"$(SUNDIALS_INCLUDE)/nvector"' else ""
+  let &additionalCFlags_MSVC = buffer ""
+  let &additionalCFlags_MSVC += if stringEq(type,"openmp") then "/openmp" else ""
+  let &additionalCFlags_MSVC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '/DANALYZATION_MODE /I"$(SUNDIALS_INCLUDE)" /I"$(SUNDIALS_INCLUDE)/kinsol" /I"$(SUNDIALS_INCLUDE)/nvector"' else ""
 
-    let &additionalLinkerFlags_GCC = buffer ""
-    let &additionalLinkerFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPUMFPACK) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) $(SUNDIALS_LIBS) $(LAPACK_LIBS) $(BASE_LIB)' else '-lOMCppOMCFactory $(BASE_LIB)'
-    let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then "-ltbb" else ""
+  let &additionalLinkerFlags_GCC = buffer ""
+  let &additionalLinkerFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPUMFPACK) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) $(SUNDIALS_LIBS) $(LAPACK_LIBS) $(BASE_LIB)' else '-lOMCppOMCFactory $(BASE_LIB)'
+  let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then "-ltbb" else ""
 
-    let &additionalLinkerFlags_MSVC = buffer ""
+  let &additionalLinkerFlags_MSVC = buffer ""
 
-    // MF: Are we using MPI parallel code?
-    //let &compileForMPI = buffer ""
-    //let &compileForMPI += if stringEq(type, "mpi") then "true" else "false"
-
-    CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC,
-                                  additionalCFlags_MSVC, additionalCFlags_GCC,
-                                  additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI),
-                                  Flags.isSet(Flags.HPCOM_ANALYZATION_MODE))
+  CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC,
+                                additionalCFlags_MSVC, additionalCFlags_GCC,
+                                additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI),
+                                Flags.isSet(Flags.HPCOM_ANALYZATION_MODE))
 end simulationMakefile;
 
 
