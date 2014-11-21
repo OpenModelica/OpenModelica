@@ -208,6 +208,7 @@ if true then /* Suppress output */
     "../Template/CodegenXML.mo",
     "../Template/DAEDumpTpl.mo",
     "../Template/ExpressionDumpTpl.mo",
+    "../Template/GenerateAPIFunctionsTpl.mo",
     "../Template/GraphvizDump.mo",
     "../Template/GraphMLDumpTpl.mo",
     "../Template/NFInstDumpTpl.mo",

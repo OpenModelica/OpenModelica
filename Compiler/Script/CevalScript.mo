@@ -95,6 +95,7 @@ import FInst;
 import FGraph;
 import FGraphDump;
 import GC;
+import GenerateAPIFunctionsTpl;
 import Global;
 import GlobalScriptUtil;
 import Graph;
@@ -902,7 +903,8 @@ algorithm
       GlobalScript.SimulationOptions simOpt;
       Real startTime,stopTime,tolerance,reltol,reltolDiffMinMax,rangeDelta;
       DAE.Exp startTimeExp,stopTimeExp,toleranceExp,intervalExp;
-      DAE.Type tp;
+      DAE.Type tp, ty;
+      list<DAE.Type> tys;
       Absyn.Class absynClass;
       Absyn.ClassDef cdef;
       Absyn.Exp aexp;
@@ -947,7 +949,7 @@ algorithm
       list<tuple<Absyn.Path,list<String>>> uses;
       Config.LanguageStandard oldLanguageStd;
       SCode.Element cl;
-      list<SCode.Element> cls;
+      list<SCode.Element> cls, elts;
       list<String> names, namesPublic, namesProtected, namesChanged, fileNames;
       HashSetString.HashSet hashSetString;
       list<Boolean> blst;
@@ -2164,6 +2166,34 @@ algorithm
     case (cache,_,"generateCode",_,st,_)
       then
         (cache,Values.BOOL(false),st);
+
+    case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+      algorithm
+        (scodeP,st) := GlobalScriptUtil.symbolTableToSCode(st);
+        elts := match SCodeUtil.getElementWithPathCheckBuiltin(scodeP, className)
+          case SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) then elts;
+          case cl equation Error.addSourceMessage(Error.INTERNAL_ERROR, {Absyn.pathString(className) + " does not contain SCode.PARTS"}, SCode.elementInfo(cl)); then fail();
+        end match;
+        tys := {};
+        for elt in elts loop
+          _ := matchcontinue elt
+            case SCode.CLASS(partialPrefix=SCode.NOT_PARTIAL(), restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()))
+              algorithm
+                (cache, ty, _) := Lookup.lookupType(cache, env, Absyn.suffixPath(className, elt.name), NONE() /*SOME(elt.info)*/);
+                if isSimpleAPIFunction(ty) then
+                  tys := ty::tys;
+                  print("Found type: " + Types.unparseType(ty) + "\n");
+                end if;
+              then ();
+            else ();
+          end matchcontinue;
+        end for;
+        print("Found a total of " + String(listLength(tys)) + " functions to generate API for\n");
+        s1 := Tpl.tplString(GenerateAPIFunctionsTpl.getCevalScriptInterface, tys);
+      then (cache,Values.TUPLE({Values.BOOL(true),Values.STRING(s1),Values.STRING("")}),st);
+
+    case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+      then (cache,Values.TUPLE({Values.BOOL(false),Values.STRING(""),Values.STRING("")}),st);
 
     case (cache,_,"generateEntryPoint",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as GlobalScript.SYMBOLTABLE(),_)
       equation
@@ -7969,6 +7999,35 @@ algorithm
     else "";
   end matchcontinue;
 end getClassComment;
+
+function isSimpleAPIFunction
+  input DAE.Type ty;
+  output Boolean b;
+algorithm
+  b := match ty
+    case DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN())) then
+      isSimpleAPIFunctionArg(ty.funcResultType) and
+      min(match fa case DAE.FUNCARG() then isSimpleAPIFunctionArg(fa.ty); end match for fa in ty.funcArg);
+    else false;
+  end match;
+end isSimpleAPIFunction;
+
+function isSimpleAPIFunctionArg
+  input DAE.Type ty;
+  output Boolean b;
+algorithm
+  b := match ty
+    case DAE.T_INTEGER() then true;
+    case DAE.T_REAL() then true;
+    case DAE.T_BOOL() then true;
+    case DAE.T_STRING() then true;
+    case DAE.T_NORETCALL() then true;
+    case DAE.T_ARRAY() then isSimpleAPIFunctionArg(ty.ty);
+    case DAE.T_CODE(ty=DAE.C_TYPENAME()) then true;
+    case DAE.T_TUPLE() then min(isSimpleAPIFunctionArg(t) for t in ty.types);
+    else false;
+  end match;
+end isSimpleAPIFunctionArg;
 
 annotation(__OpenModelica_Interface="backend");
 end CevalScript;

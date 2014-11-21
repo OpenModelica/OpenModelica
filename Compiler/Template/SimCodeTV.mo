@@ -1132,6 +1132,11 @@ package Absyn
     output String outString;
   end pathString2NoLeadingDot;
 
+  function pathLastIdent
+    input Path inPath;
+    output String str;
+  end pathLastIdent;
+
   constant builtin.SourceInfo dummyInfo;
 end Absyn;
 

@@ -3354,6 +3354,20 @@ annotation(
 </html>"), preferredView="text");
 end getClassInformation;
 
+function generateScriptingAPI
+  input TypeName cl;
+  output Boolean success;
+  output String moFile;
+  output String qtFile;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p><b>Work in progress</b></p>
+<p>Returns OpenModelica.Scripting API entry points for the classes that we can automatically generate entry points for.</p>
+<p>The entry points are MetaModelica code calling CevalScript directly, and Qt/C++ code that calls the MetaModelica code.</p>
+</html>"), preferredView="text");
+end generateScriptingAPI;
+
 end Scripting;
 
 package UsersGuide

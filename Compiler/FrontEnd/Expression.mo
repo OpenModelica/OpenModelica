@@ -100,7 +100,7 @@ algorithm
   outSubscripts := List.map(inIntegers, intSubscript);
 end intSubscripts;
 
-public function subscriptInt
+protected function subscriptInt
   "Tries to convert a subscript to an integer index."
   input DAE.Subscript inSubscript;
   output Integer outInteger;
@@ -108,9 +108,14 @@ algorithm
   outInteger := match(inSubscript)
     local
       Integer x;
-
+      Boolean b;
     case DAE.INDEX(exp = DAE.ICONST(integer = x)) then x;
     case DAE.INDEX(exp = DAE.ENUM_LITERAL(index = x)) then x;
+    case DAE.INDEX(exp = DAE.BCONST(bool = b)) then if b then 1 else 0;
+    else
+      equation
+        Error.addInternalError("subscriptInt failed: " + ExpressionDump.printSubscriptStr(inSubscript), sourceInfo());
+      then fail();
 
   end match;
 end subscriptInt;

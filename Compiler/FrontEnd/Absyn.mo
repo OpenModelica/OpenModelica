@@ -2821,7 +2821,7 @@ end pathTwoLastIdents;
 public function pathLastIdent
   "Returns the last ident (after last dot) in a path"
   input Path inPath;
-  output Ident outIdent;
+  output String outIdent;
 algorithm
   outIdent := match(inPath)
     local

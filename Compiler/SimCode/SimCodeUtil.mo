@@ -890,8 +890,7 @@ algorithm
         // failure
     case (_, fn, _, _, _, _, _,_)
       equation
-        str = "./Compiler/BackEnd/SimCodeUtil.mo: function elaborateFunction failed for function: \n" + DAEDump.dumpFunctionStr(fn);
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        Error.addInternalError("function elaborateFunction failed for function: \n" + DAEDump.dumpFunctionStr(fn), sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -980,7 +979,7 @@ algorithm
     case (_)
       equation
         // TODO: ArrayEqn fails here
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function daeInOutSimVar failed\n"});
+        Error.addInternalError("function daeInOutSimVar failed\n", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -1332,8 +1331,8 @@ algorithm
       then (exp, t);
     case (exp, _)
       equation
-        msg = "./Compiler/BackEnd/SimCodeUtil.mo: function replaceLiteralExp failed. Falling back to not replacing "+ExpressionDump.printExpStr(exp)+".";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+        msg = "function replaceLiteralExp failed. Falling back to not replacing "+ExpressionDump.printExpStr(exp)+".";
+        Error.addInternalError(msg, sourceInfo());
       then (inExp,inTpl);
   end matchcontinue;
 end replaceLiteralExp;
@@ -1750,7 +1749,7 @@ algorithm
     then (simCode, (highestSimEqIndex, equationSccMapping));
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]"});
+      Error.addInternalError("function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]", sourceInfo());
     then fail();
   end matchcontinue;
 end createSimCode;
@@ -6984,7 +6983,6 @@ algorithm
         next = listLength(extObjVars);
         numOptimizeConstraints =  listLength(realOptimizeConstraintsVars);
         numOptimizeFinalConstraints = listLength(realOptimizeFinalConstraintsVars);
-
         varInfo = createVarInfo(dlow, nx, ny, ndy, np, na, next, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string, numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints);
       then
@@ -6992,7 +6990,7 @@ algorithm
 
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createModelInfo failed"});
+        Error.addInternalError("createModelInfo failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -7715,63 +7713,6 @@ algorithm
       list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
       list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
       HashSet.HashSet set;
-    // runtime CPP, there it is not necesarry to sort the arrays because different memory management
-    /*case (true, SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
-      outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars))
-      equation
-        // but for runtime CPP also the incomplete arrays need one special element to generate the array
-        // search all arrays with array information
-        set = HashSet.emptyHashSet();
-        set = List.fold(stateVars, collectArrayFirstVars, set);
-        set = List.fold(derivativeVars, collectArrayFirstVars, set);
-        set = List.fold(algVars, collectArrayFirstVars, set);
-        set = List.fold(intAlgVars, collectArrayFirstVars, set);
-        set = List.fold(boolAlgVars, collectArrayFirstVars, set);
-        set = List.fold(inputVars, collectArrayFirstVars, set);
-        set = List.fold(outputVars, collectArrayFirstVars, set);
-        set = List.fold(aliasVars, collectArrayFirstVars, set);
-        set = List.fold(intAliasVars, collectArrayFirstVars, set);
-        set = List.fold(boolAliasVars, collectArrayFirstVars, set);
-        set = List.fold(paramVars, collectArrayFirstVars, set);
-        set = List.fold(intParamVars, collectArrayFirstVars, set);
-        set = List.fold(boolParamVars, collectArrayFirstVars, set);
-        set = List.fold(stringAlgVars, collectArrayFirstVars, set);
-        set = List.fold(stringParamVars, collectArrayFirstVars, set);
-        set = List.fold(stringAliasVars, collectArrayFirstVars, set);
-        set = List.fold(extObjVars, collectArrayFirstVars, set);
-        set = List.fold(constVars, collectArrayFirstVars, set);
-        set = List.fold(intConstVars, collectArrayFirstVars, set);
-        set = List.fold(boolConstVars, collectArrayFirstVars, set);
-        set = List.fold(stringConstVars, collectArrayFirstVars, set);
-        set = List.fold(jacobianVars, collectArrayFirstVars, set);
-        // add array information to incomplete arrays
-        (stateVars, set) = List.mapFold(stateVars, setArrayElementnoFirst, set);
-        (derivativeVars, set) = List.mapFold(derivativeVars, setArrayElementnoFirst, set);
-        (algVars, set) = List.mapFold(algVars, setArrayElementnoFirst, set);
-        (intAlgVars, set) = List.mapFold(intAlgVars, setArrayElementnoFirst, set);
-        (boolAlgVars, set) = List.mapFold(boolAlgVars, setArrayElementnoFirst, set);
-        (inputVars, set) = List.mapFold(inputVars, setArrayElementnoFirst, set);
-        (outputVars, set) = List.mapFold(outputVars, setArrayElementnoFirst, set);
-        (aliasVars, set) = List.mapFold(aliasVars, setArrayElementnoFirst, set);
-        (intAliasVars, set) = List.mapFold(intAliasVars, setArrayElementnoFirst, set);
-        (boolAliasVars, set) = List.mapFold(boolAliasVars, setArrayElementnoFirst, set);
-        (paramVars, set) = List.mapFold(paramVars, setArrayElementnoFirst, set);
-        (intParamVars, set) = List.mapFold(intParamVars, setArrayElementnoFirst, set);
-        (boolParamVars, set) = List.mapFold(boolParamVars, setArrayElementnoFirst, set);
-        (stringAlgVars, set) = List.mapFold(stringAlgVars, setArrayElementnoFirst, set);
-        (stringParamVars, set) = List.mapFold(stringParamVars, setArrayElementnoFirst, set);
-        (stringAliasVars, set) = List.mapFold(stringAliasVars, setArrayElementnoFirst, set);
-        (extObjVars, set) = List.mapFold(extObjVars, setArrayElementnoFirst, set);
-        (constVars, set) = List.mapFold(constVars, setArrayElementnoFirst, set);
-        (intConstVars, set) = List.mapFold(intConstVars, setArrayElementnoFirst, set);
-        (boolConstVars, set) = List.mapFold(boolConstVars, setArrayElementnoFirst, set);
-        (stringConstVars, set) = List.mapFold(stringConstVars, setArrayElementnoFirst, set);
-        (jacobianVars, set) = List.mapFold(jacobianVars, setArrayElementnoFirst, set);
-      then SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
-        outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-        stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars);
-    */// other runtimes
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars,realOptimizeFinalConstraintsVars))
@@ -8695,7 +8636,7 @@ algorithm
 
     else
       equation
-        print("./Compiler/BackEnd/SimCodeUtil.mo: function getCrefFromExp failed: input was not of type DAE.CREF");
+        Error.addInternalError("function getCrefFromExp failed: input was not of type DAE.CREF", sourceInfo());
       then
         fail();
   end match;
