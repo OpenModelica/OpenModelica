@@ -271,8 +271,8 @@ algorithm
 
         // insert the new components into the BLT, update matching for the new equations
         compsTmp = List.replaceAtWithList(compsNew,compIdx-1,compsIn);
-        List.threadMap1_0(eqIdcs,varIdcs,Array.updateIndexFirst,ass1);
-        List.threadMap1_0(varIdcs,eqIdcs,Array.updateIndexFirst,ass2);
+        List.threadMap1_0(varIdcs,eqIdcs,Array.updateIndexFirst,ass1);
+        List.threadMap1_0(eqIdcs,varIdcs,Array.updateIndexFirst,ass2);
         matching = BackendDAE.MATCHING(ass1, ass2, compsTmp);
 
         // add the new vars and equations to the original EqSystem
@@ -284,7 +284,7 @@ algorithm
 
         //build new DAE-EqSystem
         systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets,partitionKind);
-        (systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
+        //(systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
 
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsTmp,ass1,ass2,systTmp,sharedIn,tornSysIdxIn+1);
       then
@@ -383,6 +383,7 @@ algorithm
   case(BackendDAE.EQUATION(exp=lhs,scalar=rhs))
     equation
       expLst1 = Expression.allTerms(lhs);
+      expLst1 = List.map(expLst1,Expression.negate);
       expLst2 = Expression.allTerms(rhs);
       expLst1 = listAppend(expLst1,expLst2);
         //print("the expLst: "+ExpressionDump.printExpListStr(expLst1)+"\n");
@@ -458,10 +459,10 @@ algorithm
    ovarsLst := List.map(ovarsLst, BackendVariable.transformXToXd);  //try this
    ovars := BackendVariable.listVar1(ovarsLst);
    ovcrs := List.map(ovarsLst, BackendVariable.varCref);
-       BackendDump.dumpVarList(tvarsReplaced,"tvars");
-       BackendDump.dumpVarList(ovarsLst,"ovars");
-       BackendDump.dumpEquationList(reqns,"residualEquations");
-       BackendDump.dumpEquationList(otherEqnsLstReplaced,"otherEqnsLstReplaced");
+       //BackendDump.dumpVarList(tvarsReplaced,"tvars");
+       //BackendDump.dumpVarList(ovarsLst,"ovars");
+       //BackendDump.dumpEquationList(reqns,"residualEquations");
+       //BackendDump.dumpEquationList(otherEqnsLstReplaced,"otherEqnsLstReplaced");
 
    //build the components and systems to get the system for computing the tearingVars
    size := listLength(tvars);
@@ -1507,6 +1508,7 @@ algorithm
           //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
       varExp = List.map(arrayList(vectorX),BackendVariable.varExp);
       detLst = List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
+      (detLst,_) = List.map_2(detLst,ExpressionSimplify.simplify);
       eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEQUATION, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
           //BackendDump.dumpEquationList(eqLst,"new residual eqs");
     then (eqLst,{},{});
@@ -1553,6 +1555,7 @@ algorithm
       a22 = listGet(arrayGet(matrix,2),2);
       ty = Expression.typeof(a11);
       det = DAE.BINARY(DAE.BINARY(a11,DAE.MUL(ty = ty),a22),DAE.SUB(ty=ty),DAE.BINARY(a12,DAE.MUL(ty = ty),a21));
+      (det,_) = ExpressionSimplify.simplify(det);
   then det;
   else
     equation
