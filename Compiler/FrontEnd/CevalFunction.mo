@@ -1036,7 +1036,7 @@ protected function evaluateStatement
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outLoopControl, outST) :=
-  matchcontinue(inStatement, inCache, inEnv, inST)
+  match(inStatement, inCache, inEnv, inST)
     local
       FCore.Cache cache;
       FCore.Graph env;
@@ -1137,7 +1137,7 @@ algorithm
         Debug.traceln(DAEDump.ppStatementStr(inStatement));
       then
         fail();
-  end matchcontinue;
+  end match;
 end evaluateStatement;
 
 protected function evaluateStatements
@@ -1170,7 +1170,7 @@ protected function evaluateStatements2
   output SymbolTable outST;
 algorithm
   (outCache, outEnv, outLoopControl, outST) :=
-  matchcontinue(inStatement, inCache, inEnv, inLoopControl, inST)
+  match(inStatement, inCache, inEnv, inLoopControl, inST)
     local
       DAE.Statement stmt;
       list<DAE.Statement> rest_stmts;
@@ -1188,7 +1188,7 @@ algorithm
           evaluateStatements2(rest_stmts, cache, env, loop_ctrl, st);
       then
         (cache, env, loop_ctrl, st);
-  end matchcontinue;
+  end match;
 end evaluateStatements2;
 
 protected function evaluateTupleAssignStatement
