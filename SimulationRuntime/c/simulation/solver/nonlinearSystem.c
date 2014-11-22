@@ -462,11 +462,10 @@ double extraPolate(DATA *data, const double old1, const double old2, const doubl
   else
   {
     retValue = old2 + ((data->localData[0]->timeValue - data->localData[2]->timeValue)/(data->localData[1]->timeValue - data->localData[2]->timeValue)) * (old1-old2);
-   //if(retValue < minValue)  retValue = minValue; //./simulation/libraries/msl31/Modelica.Electrical.Analog.Examples.HeatingRectifier.mos fail
-    if(retValue < minValue){
-       if(fabs(retValue-minValue)/(fabs(retValue) + fabs(minValue))  < 0.85) retValue = minValue;
-    }
-    if(retValue > maxValue) retValue = maxValue;
+
+    if(retValue < minValue && old1 > minValue)  retValue = minValue;
+    else if(retValue > maxValue && old1 < maxValue ) retValue = maxValue;
+
   }
 
   return retValue;
