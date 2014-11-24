@@ -2518,13 +2518,20 @@ algorithm
       then
         f1;
 
+    case (DAE.LUNARY(operator = DAE.NOT(), exp = e1))
+      equation
+        f1 = allTerms(e1);
+        f1 = List.map(f1,negate);
+      then
+        f1;
+
     case (DAE.ASUB(exp = e1,sub=f2))
       equation
         f1 = allTerms(e1);
         f1 = List.map1(f1,makeASUB,f2);
       then
         f1;
-
+/*
     case (e as DAE.BINARY(operator = DAE.MUL())) then {e};
     case (e as DAE.BINARY(operator = DAE.MUL_ARR())) then {e};
     case (e as DAE.BINARY(operator = DAE.MUL_ARRAY_SCALAR())) then {e};
@@ -2554,7 +2561,8 @@ algorithm
     case (e as DAE.ASUB()) then {e};
     case (e as DAE.SIZE()) then {e};
     case (e as DAE.REDUCTION()) then {e};
-    else {};
+*/
+    else {inExp};
   end matchcontinue;
 end allTerms;
 
@@ -2687,10 +2695,12 @@ algorithm
       equation
         e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
-    case (DAE.UNARY(),acc,_,_)
+    case (DAE.UNARY(),acc,_,_) // factor(-(x*y)) is -(x*y) ??
       equation
         e = if doInverseFactors then inverseFactors(inExp) else inExp;
       then e::acc;
+    case (DAE.LUNARY(),acc,_,_)
+      then inExp::acc;
     case (DAE.IFEXP(),acc,_,_)
       equation
         e = if doInverseFactors then inverseFactors(inExp) else inExp;
@@ -2790,6 +2800,122 @@ algorithm
         e;
   end matchcontinue;
 end inverseFactors;
+
+public function expandFactors
+"
+ Returns the factors of the expression if any as a list of expressions.
+ e.g.
+ -(x*(x*y)^n) -> {-1,x,x^n,x^n}
+"
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExpLst;
+algorithm
+  // TODO: Remove this listReverse as it is pointless.
+  // It transforms a*b to b*a, but the testsuite expects this :(
+  // issue with expEqual(a*b,b*a) return false
+  outExpLst := listReverse(expandFactorsWork(inExp,{},false,false));
+end expandFactors;
+
+protected function expandFactorsWork
+"Returns the factors of the expression if any as a list of expressions"
+  input DAE.Exp inExp;
+  input list<DAE.Exp> inAcc;
+  input Boolean noFactors "Decides if the default is the empty list or not";
+  input Boolean doInverseFactors "Decides if a factor e should be 1/e instead";
+  output list<DAE.Exp> outExpLst;
+algorithm
+
+  outExpLst := match (inExp,inAcc,noFactors,doInverseFactors)
+    local
+      DAE.Exp e1,e2,e3,e;
+      Type tp;
+      list<DAE.Exp> acc, pow_acc, pow_acc2;
+
+    // (x*y)^n = x^n*y^n
+    case (DAE.BINARY(DAE.BINARY(e1,DAE.MUL(),e2), DAE.POW(), e3),acc,_,_)
+      equation
+        pow_acc = expandFactorsWork(e1,{},noFactors,doInverseFactors);
+        pow_acc = expPowLst(pow_acc, e3);
+
+        pow_acc2 = expandFactorsWork(e2,{},noFactors,doInverseFactors);
+        pow_acc2 = expPowLst(pow_acc2, e3);
+
+        acc = List.appendNoCopy(pow_acc, acc);
+        acc = List.appendNoCopy(pow_acc2, acc);
+      then acc;
+    // (x/y)^n = x^n*y^(-n)
+    case (DAE.BINARY(DAE.BINARY(e1,DAE.DIV(),e2), DAE.POW(), e3),acc,_,_)
+      equation
+        pow_acc = expandFactorsWork(e1,{},noFactors,doInverseFactors);
+        pow_acc = expPowLst(pow_acc, e3);
+
+        pow_acc2 = expandFactorsWork(e2,{},noFactors,doInverseFactors);
+        pow_acc2 = expPowLst(pow_acc2, negate(e3));
+
+        acc = List.appendNoCopy(pow_acc, acc);
+        acc = List.appendNoCopy(pow_acc2, acc);
+      then acc;
+    // (x^n)^m = x^(n*m)
+    case (DAE.BINARY(DAE.BINARY(e1,DAE.POW(),e2), DAE.POW(), e3),acc,_,_)
+      equation
+        e = expMul(e2,e3);
+        pow_acc = expandFactorsWork(e1,{},noFactors,doInverseFactors);
+        pow_acc = expPowLst(pow_acc, e);
+
+        acc = List.appendNoCopy(pow_acc, acc);
+      then acc;
+    // ToDo
+    // exp(x + y) = exp(x)*exp(y)
+    // exp(x - y) = exp(x)/exp(y)
+    // abs(x*y) = abs(x)*abs(y)
+    // abs(x/y) = abs(x)/abs(y);
+
+    // -(x) = -1*x
+    case(DAE.UNARY(DAE.UMINUS(tp),e1),acc,_,_)
+      equation
+        e = makeConstOne(tp);
+        acc = expandFactorsWork(e1,acc,true,doInverseFactors);
+        e = negate(e);
+      then e::acc;
+    case(DAE.UNARY(DAE.UMINUS_ARR(tp),e1),acc,_,_)
+      equation
+        e = makeConstOne(tp);
+        acc = expandFactorsWork(e1,acc,true,doInverseFactors);
+        e = negate(e);
+      then e::acc;
+   
+   else
+     equation
+       acc = factorsWork(inExp,inAcc,noFactors,doInverseFactors);
+     then expandFactorsWork2(acc, noFactors, doInverseFactors);
+
+   end match;
+
+end expandFactorsWork;
+
+protected function expandFactorsWork2
+  input list<DAE.Exp> inAcc;
+  input Boolean noFactors "Decides if the default is the empty list or not";
+  input Boolean doInverseFactors "Decides if a factor e should be 1/e instead";
+  output list<DAE.Exp> outExpLst := {};
+protected
+  list<DAE.Exp> tmpExpLst;
+algorithm
+
+for elem in inAcc loop
+  tmpExpLst := match(elem)
+                 case(DAE.BINARY(DAE.BINARY(_,DAE.DIV(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},noFactors,doInverseFactors);
+                 case(DAE.BINARY(DAE.BINARY(_,DAE.MUL(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},noFactors,doInverseFactors);
+                 case(DAE.BINARY(DAE.BINARY(_,DAE.POW(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},noFactors,doInverseFactors);
+                 case(DAE.UNARY(DAE.UMINUS(),_))  then expandFactorsWork(elem,{},noFactors,doInverseFactors);
+                 case(DAE.UNARY(DAE.UMINUS_ARR(),_))  then expandFactorsWork(elem,{},noFactors,doInverseFactors);
+                 else {elem};
+               end match;
+  outExpLst := List.appendNoCopy(tmpExpLst, outExpLst);
+end for;
+
+end expandFactorsWork2;
+
 
 public function getTermsContainingX
 "Retrieves all terms of an expression containng a variable,
@@ -3707,6 +3833,14 @@ algorithm
   end matchcontinue;
 end expPow;
 
+public function expPowLst
+"
+{a,b}^n -> {a^n, b^n}
+author: vitalij"
+  input list<DAE.Exp> expLst;
+  input DAE.Exp n;
+  output list<DAE.Exp> outExp := List.map1(expLst, expPow, n);
+end expPowLst;
 
 public function expMaxScalar "author: Frenkel TUD 2011-04
   returns max(e1,e2)."
@@ -5796,6 +5930,51 @@ algorithm
 
   end match;
 end traversingexpHasCrefNoPreorDer;
+
+public function expHasCrefNoPreOrStart "
+ returns true if the expression contains the cref, but not in pre(),change(),edge(),start(), delay()"
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inCr;
+  output Boolean hasCref;
+algorithm
+  (_,(_,hasCref)) := traverseExpTopDown(inExp, traversingexpHasCrefNoPreOrStart, (inCr,false));
+end expHasCrefNoPreOrStart;
+
+protected function traversingexpHasCrefNoPreOrStart "
+return true if the exp the componentRef"
+  input DAE.Exp inExp;
+  input tuple<DAE.ComponentRef,Boolean> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<DAE.ComponentRef,Boolean> outTpl;
+
+algorithm
+  (outExp,cont,outTpl) := match (inExp,inTpl)
+    local
+      Boolean b;
+      DAE.ComponentRef cr,cr1;
+
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre")), _)
+      then (inExp,false,inTpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "change")), _)
+      then (inExp,false,inTpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "delay")), _)
+      then (inExp,false,inTpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "edge")), _)
+      then (inExp,false,inTpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "$_start")), _)
+      then (inExp,false,inTpl);
+
+    case (DAE.CREF(componentRef = cr1), (cr,false))
+      equation
+        b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
+      then (inExp,not b,(cr,b));
+
+    case (_,(_,b)) then (inExp,not b,inTpl);
+
+  end match;
+end traversingexpHasCrefNoPreOrStart;
+
 
 public function traverseCrefsFromExp "
 Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."
