@@ -8829,21 +8829,16 @@ returns true if all subscripts are known (i.e no cref) constant values (no slice
   input list<DAE.Subscript> inSubs;
   output Boolean areConstant;
 algorithm
-  areConstant := matchcontinue(inSubs)
-    local list<DAE.Subscript> subs;
-    case({}) then true;
-    case(DAE.INDEX(exp = DAE.ICONST()):: subs)
-      equation
-        areConstant = subscriptConstants(subs);
-      then
-        areConstant;
-    case(DAE.INDEX(exp = DAE.ENUM_LITERAL()) :: subs)
-      equation
-        areConstant = subscriptConstants(subs);
-      then
-        areConstant;
-    else false;
-  end matchcontinue;
+  for sub in inSubs loop
+    areConstant := match(sub)
+      case DAE.INDEX(exp = DAE.ICONST()) then true;
+      case DAE.INDEX(exp = DAE.ENUM_LITERAL()) then true;
+      case DAE.INDEX(exp = DAE.BCONST()) then true;
+      else false;
+    end match;
+
+    if not areConstant then return; end if;
+  end for;
 end subscriptConstants;
 
 public function isValidSubscript
@@ -8852,11 +8847,12 @@ public function isValidSubscript
   input DAE.Exp inSub;
   output Boolean isValid;
 algorithm
-  isValid := matchcontinue(inSub)
+  isValid := match(inSub)
     case DAE.ICONST() then true;
     case DAE.ENUM_LITERAL() then true;
-    case _ then false;
-  end matchcontinue;
+    case DAE.BCONST() then true;
+    else false;
+  end match;
 end isValidSubscript;
 
 public function subscriptContain "This function checks whether sub2 contains sub1 or not(DAE.WHOLEDIM())"
