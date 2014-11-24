@@ -250,7 +250,7 @@ int getNonlinearSolverMethod(int argc, char**argv)
   const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
-    return NLS_HYBRID; /* default method */
+    return NLS_HOMOTOPY; /* default method */
 
   for(i=1; i<NLS_MAX; ++i)
     if(*method == NLS_NAME[i])

@@ -39,6 +39,7 @@
 #include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
+#include "nonlinearSolverHomotopy.h"
 #include "simulation_info_xml.h"
 #include "simulation_runtime.h"
 
@@ -53,6 +54,7 @@ const char *NLS_NAME[NLS_MAX+1] = {
   /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
   /* NLS_NEWTON */       "newton",
+  /* NLS_HOMOTOPY */     "homotopy",
   /* NLS_MIXED */        "mixed",
 
   "NLS_MAX"
@@ -64,6 +66,7 @@ const char *NLS_DESC[NLS_MAX+1] = {
   /* NLS_HYBRID */       "default method",
   /* NLS_KINSOL */       "sundials/kinsol",
   /* NLS_NEWTON */       "Newton Raphson",
+  /* NLS_HOMOTOPY */     "Homotopy Solver",
   /* NLS_MIXED */        "Mixed strategy start with Newton and fallback to hybrid",
 
   "NLS_MAX"
@@ -156,6 +159,9 @@ int initializeNonlinearSystems(DATA *data)
       case NLS_NEWTON:
         allocateNewtonData(size, &nonlinsys[i].solverData);
         break;
+      case NLS_HOMOTOPY:
+        allocateHomotopyData(size, &nonlinsys[i].solverData);
+        break;
       case NLS_MIXED:
         mixedSolverData = (struct dataNewtonAndHybrid*) malloc(sizeof(struct dataNewtonAndHybrid));
         allocateNewtonData(size, &(mixedSolverData->newtonData));
@@ -239,6 +245,9 @@ int freeNonlinearSystems(DATA *data)
         break;
       case NLS_NEWTON:
         freeNewtonData(&nonlinsys[i].solverData);
+        break;
+      case NLS_HOMOTOPY:
+        freeHomotopyData(&nonlinsys[i].solverData);
         break;
       case NLS_MIXED:
         freeNewtonData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->newtonData);
@@ -326,6 +335,12 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     break;
   case NLS_NEWTON:
     success = solveNewton(data, sysNumber);
+    break;
+  case NLS_HOMOTOPY:
+    saveJumpState = data->threadData->currentErrorStage;
+    data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
+    success = solveHomotopy(data, sysNumber);
+    data->threadData->currentErrorStage = saveJumpState;
     break;
   case NLS_MIXED:
     mixedSolverData = nonlinsys->solverData;

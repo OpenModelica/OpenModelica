@@ -58,7 +58,9 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_LS_V",
   "LOG_NLS",
   "LOG_NLS_V",
+  "LOG_NLS_HOMOTOPY",
   "LOG_NLS_JAC",
+  "LOG_NLS_JAC_TEST",
   "LOG_NLS_RES",
   "LOG_RES_INIT",
   "LOG_SIMULATION",
@@ -92,7 +94,9 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "verbose logging of linear systems",                  /* LOG_LS_V */
   "logging for nonlinear systems",                      /* LOG_NLS */
   "verbose logging of nonlinear systems",               /* LOG_NLS_V */
+  "logging of homotopy solver for nonlinear systems",   /* LOG_NLS_HOMOTOPY */
   "outputs the jacobian of nonlinear systems",          /* LOG_NLS_JAC */
+  "tests the analytical jacobian of nonlinear systems", /* LOG_NLS_JAC_TEST */
   "outputs every evaluation of the residual function",  /* LOG_NLS_RES */
   "outputs residuals of the initialization",            /* LOG_RES_INIT */
   "additional information about simulation process",    /* LOG_SIMULATION */
