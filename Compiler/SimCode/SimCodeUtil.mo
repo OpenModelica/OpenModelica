@@ -2557,7 +2557,7 @@ algorithm
     // detailed error message
     else
       equation
-        message = "./Compiler/BackEnd/SimCodeUtil.mo: function createEquationsForSystem1 failed for component " + BackendDump.strongComponentString(comp);
+        message = "function createEquationsForSystem1 failed for component " + BackendDump.strongComponentString(comp);
         Error.addMessage(Error.INTERNAL_ERROR, {message});
       then fail();
 
@@ -3183,7 +3183,7 @@ algorithm
     then listReverse(simWhenClauses);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSimWhenClauses failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"function createSimWhenClauses failed"});
     then fail();
   end matchcontinue;
 end createSimWhenClauses;
@@ -3429,7 +3429,7 @@ algorithm
     else equation
       s1 = ExpressionDump.printExpStr(inExp);
       s2 = ExpressionDump.printExpStr(inExp1);
-      s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createNonlinearResidualEquationsComplex failed for: ", s1, " = " , s2 });
+      s = stringAppendList({"function createNonlinearResidualEquationsComplex failed for: ", s1, " = " , s2 });
       Error.addMessage(Error.INTERNAL_ERROR, {s});
     then fail();
   end matchcontinue;
@@ -3639,7 +3639,7 @@ algorithm
     then (eqSystemsRest, uniqueEqIndex, tempvars);
 
     case (eq::_) equation
-      errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createNonlinearResidualEquations failed for equation: " + BackendDump.equationString(eq);
+      errorMessage = "function createNonlinearResidualEquations failed for equation: " + BackendDump.equationString(eq);
       Error.addSourceMessage(Error.INTERNAL_ERROR, {errorMessage}, BackendEquation.equationInfo(eq));
     then fail();
   end matchcontinue;
@@ -3826,7 +3826,7 @@ algorithm
           comp as BackendDAE.EQUATIONSYSTEM(eqns=eqIdcs,jac=jacobian,jacType=jac_tp, mixedSystem=mixedSystem))
       equation
         if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create continuous system.\n");
+          Debug.trace("function createOdeSystem create continuous system.\n");
         end if;
         // print("\ncreateOdeSystem -> Cont sys: ...\n");
         // extract the variables and equations of the block.
@@ -3855,7 +3855,7 @@ algorithm
 
     else
       equation
-        msg = "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem failed for component " + BackendDump.strongComponentString(inComp);
+        msg = "function createOdeSystem failed for component " + BackendDump.strongComponentString(inComp);
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then fail();
   end matchcontinue;
@@ -3903,7 +3903,7 @@ algorithm
     // here. Currently uses dgesv as for next case
     case (BackendDAE.FULL_JACOBIAN(SOME(jac)), BackendDAE.JAC_CONSTANT()) equation
       if Flags.isSet(Flags.FAILTRACE) then
-        Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system(const jacobian).\n");
+        Debug.trace("function createOdeSystem2 create linear system(const jacobian).\n");
       end if;
       ((simVars, _)) = BackendVariable.traverseBackendDAEVars(inVars, traversingdlowvarToSimvar, ({}, inKnVars));
       simVars = listReverse(simVars);
@@ -3922,7 +3922,7 @@ algorithm
     // Time varying linear jacobian. Linear system of equations that needs to be solved during runtime.
     case (BackendDAE.FULL_JACOBIAN(SOME(jac)), BackendDAE.JAC_LINEAR()) equation
       if Flags.isSet(Flags.FAILTRACE) then
-        Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system with jacobian.\n");
+        Debug.trace("function createOdeSystem2 create linear system with jacobian.\n");
       end if;
       ((simVars, _)) = BackendVariable.traverseBackendDAEVars(inVars, traversingdlowvarToSimvar, ({}, inKnVars));
       simVars = listReverse(simVars);
@@ -3934,7 +3934,7 @@ algorithm
     // Time varying nonlinear jacobian. Non-linear system of equations.
     case (_, BackendDAE.JAC_GENERIC()) equation
       if Flags.isSet(Flags.FAILTRACE) then
-        Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create non-linear system with jacobian.");
+        Debug.trace("function createOdeSystem2 create non-linear system with jacobian.");
       end if;
       eqn_lst = BackendEquation.equationList(inEquationArray);
       crefs = BackendVariable.getAllCrefFromVariables(inVars);
@@ -3947,7 +3947,7 @@ algorithm
     // No analytic jacobian available. Generate non-linear system.
     case (_, _) equation
       if Flags.isSet(Flags.FAILTRACE) then
-        Debug.trace("./Compiler/BackEnd/SimCodeUtil.mo: functioncreateOdeSystem2 create non-linear system without jacobian.");
+        Debug.trace("function createOdeSystem2 create non-linear system without jacobian.");
       end if;
       eqn_lst = BackendEquation.equationList(inEquationArray);
       crefs = BackendVariable.getAllCrefFromVariables(inVars);
@@ -4452,7 +4452,7 @@ algorithm
         (vars, simequations, uniqueEqIndex, tempvars, numStateSets);
     else
       equation
-        errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createStateSetsSets failed.";
+        errorMessage = "function createStateSetsSets failed.";
         Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
       then
         fail();
@@ -4602,7 +4602,7 @@ algorithm
     case(_, _, _)
       equation
         true = Flags.isSet(Flags.JAC_DUMP);
-        errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createSymbolicSimulationJacobian failed.";
+        errorMessage = "function createSymbolicSimulationJacobian failed.";
         Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
       then (NONE(), iuniqueEqIndex, itempvars);
 
@@ -4900,7 +4900,7 @@ algorithm
 
     else
      equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createAllDiffedSimVars failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"function createAllDiffedSimVars failed"});
     then fail();
   end matchcontinue;
 end createAllDiffedSimVars;
@@ -5066,7 +5066,7 @@ algorithm
         (delayedExps, maxDelayedExpIndex+1);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function extractDelayedExpressions failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"function extractDelayedExpressions failed"});
       then
         fail();
   end matchcontinue;
@@ -5388,7 +5388,7 @@ algorithm
       then ((uniqueEqIndex, result));
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createAlgorithmAndEquationAsserts failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"function createAlgorithmAndEquationAsserts failed"});
       then fail();
   end matchcontinue;
 end createAlgorithmAndEquationAsserts;
@@ -5415,7 +5415,7 @@ algorithm
       then removedEquations;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createRemovedEquations failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"function createRemovedEquations failed"});
       then fail();
   end matchcontinue;
 end createRemovedEquations;
@@ -5463,7 +5463,7 @@ algorithm
       then vLst2;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function extractDiscreteModelVars failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"function extractDiscreteModelVars failed"});
       then fail();
   end matchcontinue;
 end extractDiscreteModelVars;
@@ -5552,7 +5552,7 @@ algorithm
     // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleWhenEqnCode failed. When equations currently only supported on form v = ..."});
+        Error.addMessage(Error.INTERNAL_ERROR, {"function createSingleWhenEqnCode failed. When equations currently only supported on form v = ..."});
       then fail();
   end matchcontinue;
 end createSingleWhenEqnCode;
@@ -5971,7 +5971,7 @@ algorithm
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         s3 = ComponentReference.printComponentRefListStr(crefs);
-        s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
+        s = stringAppendList({"function createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
         Debug.traceln(s);
     then
       fail();
@@ -6187,7 +6187,7 @@ algorithm
     // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleAlgorithmCode failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"function createSingleAlgorithmCode failed!"});
       then
         fail();
   end matchcontinue;
@@ -6269,7 +6269,7 @@ algorithm
        s1 = ExpressionDump.printExpStr(e1);
        s2 = ExpressionDump.printExpStr(e2);
        s3 = ComponentReference.crefStr(cr);
-       s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleArrayEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
+       s = stringAppendList({"function createSingleArrayEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
        Error.addMessage(Error.INTERNAL_ERROR, {s});
     then
       fail();
@@ -6340,7 +6340,7 @@ algorithm
     then (residual_equations, {}, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, false);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: createInitialResiduals failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"function createInitialResiduals failed"});
     then fail();
   end matchcontinue;
 end createInitialResiduals;
@@ -8505,7 +8505,7 @@ algorithm
     case (path, _, _, _)
       equation
         failure(_ = DAEUtil.getNamedFunction(path, funcs));
-        str = "./Compiler/BackEnd/SimCodeUtil.mo: function getCalledFunctionsInFunction2: Class " + pathstr + " not found in global scope.";
+        str = "function getCalledFunctionsInFunction2: Class " + pathstr + " not found in global scope.";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -11416,7 +11416,7 @@ algorithm
 
     case _
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function collectAllFiles failed to collect files from SimCode!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"function collectAllFiles failed to collect files from SimCode!"});
       then
         inSimCode;
   end matchcontinue;

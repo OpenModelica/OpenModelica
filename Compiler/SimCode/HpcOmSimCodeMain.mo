@@ -361,7 +361,7 @@ algorithm
       print("HpcOm is still under construction.\n");
       then simCode;
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/HpcOmSimCode.mo: function createSimCode failed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {"function createSimCode failed."});
     then fail();
   end matchcontinue;
 end createSimCode;

@@ -994,7 +994,7 @@ public function subscriptExp
 
   Takes an expression and a list of subscripts and subscripts
   the given expression.
-  If a component refernce is given the subs are appled to it.
+  If a component reference is given the subs are applied to it.
   If an array(DAE.ARRAY) is given the element at the specified
   subscripts is returned.
   e.g. subscriptExp on ({{1,2},{3,4}}) with sub [2,1] gives 3
