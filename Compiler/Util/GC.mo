@@ -109,6 +109,7 @@ protected
     annotation(Include="
 static inline modelica_metatype GC_get_prof_stats_modelica()
 {
+#if (GC_VERSION_MAJOR == 7) && (GC_VERSION_MINOR >= 5)
   struct GC_prof_stats_s info;
   GC_get_prof_stats(&info,sizeof(struct GC_prof_stats_s));
   return mmc_mk_box10(
@@ -123,7 +124,23 @@ static inline modelica_metatype GC_get_prof_stats_modelica()
     mmc_mk_icon(info.markers_m1),
     mmc_mk_icon(info.bytes_reclaimed_since_gc),
     mmc_mk_icon(info.reclaimed_bytes_before_gc));
-}",Library = {"gc"});
+#else /* GC_prof_stats_s NOT available */
+  return mmc_mk_box10(
+    0,
+    mmc_mk_icon(0),
+    mmc_mk_icon(0),
+    mmc_mk_icon(0),
+    mmc_mk_icon(0),
+    mmc_mk_icon(0),
+    mmc_mk_icon(0),
+    mmc_mk_icon(0),
+    mmc_mk_icon(0),
+    mmc_mk_icon(0),
+    mmc_mk_icon(0));
+#endif
+}
+
+",Library = {"gc"});
   end GC_get_prof_stats_modelica;
 algorithm
   (heapsize_full, free_bytes_full, unmapped_bytes, bytes_allocd_since_gc, allocd_bytes_before_gc, non_gc_bytes, gc_no, markers_m1, bytes_reclaimed_since_gc, reclaimed_bytes_before_gc) := GC_get_prof_stats_modelica();
