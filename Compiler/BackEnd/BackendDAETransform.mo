@@ -453,7 +453,7 @@ algorithm
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         true = BackendVariable.hasDiscreteVar(var_lst);
         false = BackendVariable.hasContinousVar(var_lst);
-        msg = "function analyseStrongComponentBlock failed
+        msg = getInstanceName() + " failed
 Sorry - Support for Discrete Equation Systems is not yet implemented\n";
         crlst = List.map(var_lst,BackendVariable.varCref);
         slst = List.map(crlst,ComponentReference.printComponentRefStr);

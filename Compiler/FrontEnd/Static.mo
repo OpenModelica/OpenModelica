@@ -6322,7 +6322,7 @@ algorithm
   FCore.CACHE(modelName = name) := inCache;
 
   if PrefixUtil.isNoPrefix(inPrefix) then
-    envName := FGraph.getGraphName(inEnv);
+    envName := FGraph.getGraphNameNoImplicitScopes(inEnv);
     str := if Absyn.pathEqual(envName, name) then
       Absyn.pathLastIdent(name) else Absyn.pathString(envName);
   else

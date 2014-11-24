@@ -805,6 +805,18 @@ algorithm
   outPath := Absyn.stringListPath(List.map(s, FNode.refName));
 end getGraphName;
 
+public function getGraphNameNoImplicitScopes
+"Returns the FQ name of the environment, see also getEnvPath"
+  input Graph inGraph;
+  output Absyn.Path outPath;
+protected
+  Absyn.Path p;
+  Scope s;
+algorithm
+  _::s := listReverse(currentScope(inGraph));
+  outPath := Absyn.stringListPath(list(str for str guard stringGet(str,1)<>36 /* "$" */ in list(FNode.refName(n) for n in s)));
+end getGraphNameNoImplicitScopes;
+
 public function pushScopeRef
 "@author:adrpo
  push the given ref as first element in the graph scope list"
