@@ -27,6 +27,10 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* co
   , _config            (config)
   , _timeeventcounter  (NULL)
   , _events            (NULL)
+  , _sampleCycles	   (NULL)
+  ,_cycleCounter	   (0)
+  ,_resetCycle         (0)
+  ,_lastCycleTime	   (0)
 {
   _solver = _config->createSelectedSolver(system.get());
   _initialization = boost::shared_ptr<Initialization>(new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
@@ -38,14 +42,39 @@ SimManager::~SimManager()
     delete [] _timeeventcounter;
   if(_events)
     delete [] _events;
-}
+  if(_sampleCycles)
+	delete [] _sampleCycles;
+ }
 
 void SimManager::initialize()
 {
-  boost::shared_ptr<ISystemInitialization> system_obj = boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system);
-  boost::shared_ptr<IContinuous> cont_system = boost::dynamic_pointer_cast<IContinuous>(_mixed_system);
-  boost::shared_ptr<ITime> timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
-  boost::shared_ptr<IEvent> event_system = boost::dynamic_pointer_cast<IEvent>(_mixed_system);
+  _cont_system = boost::dynamic_pointer_cast<IContinuous>(_mixed_system);
+  _timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
+  _event_system = boost::dynamic_pointer_cast<IEvent>(_mixed_system);
+  _step_event_system = boost::dynamic_pointer_cast<IStepEvent>(_mixed_system);
+   
+  //Check dynamic casts
+  if(!_event_system)
+  {
+    std::cerr << "Could not get event system" << std::endl;
+    return;
+  }
+  if(!_cont_system)
+  {
+    std::cerr << "Could not get continuous-event system" << std::endl;
+    return;
+  }
+  if(!_timeevent_system)
+  {
+    std::cerr << "Could not get time-event system" << std::endl;
+    return;
+  }
+  if(!_step_event_system)
+  {
+    std::cerr << "Could not get step-event system" << std::endl;
+    return;
+  }
+  
   /* Logs temporarily disabled
   BOOST_LOG_SEV(simmgr_lg::get(), simmgr_info) << "start init";*/
 
@@ -58,8 +87,6 @@ void SimManager::initialize()
   try
   {
     // System zusammenbauen und einmal updaten
-    //system_obj->initialize(_config->getGlobalSettings()->getStartTime(),_config->getGlobalSettings()->getEndTime());
-    //cont_system->update(IContinuous::UPDATE(IContinuous::ACROSS|IContinuous::THROUGH));
     _initialization->initializeSystem();
   }
   catch(std::exception& ex)
@@ -72,21 +99,29 @@ void SimManager::initialize()
   _accStps = 0;
   _rejStps =0;
 
-  if(timeevent_system)
+  if(_timeevent_system)
   {
-    _dimtimeevent = timeevent_system->getDimTimeEvent();
+    _dimtimeevent = _timeevent_system->getDimTimeEvent();
     if(_timeeventcounter)
-      delete _timeeventcounter;
+      delete [] _timeeventcounter;
     _timeeventcounter = new int[_dimtimeevent];
+	// compute sampleCycles for RT simulation
+	if(_config->getGlobalSettings()->useEndlessSim())
+	{
+		if(_sampleCycles)
+			delete [] _sampleCycles;
+		_sampleCycles = new int[_dimtimeevent];
+		computeSampleCycles();
+	}
   }
   else
     _dimtimeevent =0;
   _tStart = _config->getGlobalSettings()->getStartTime();
   _tEnd =_config->getGlobalSettings()->getEndTime();
   // _solver->setTimeOut(_config->getGlobalSettings()->getAlarmTime());
-  _dimZeroFunc = event_system->getDimZeroFunc();
+  _dimZeroFunc = _event_system->getDimZeroFunc();
   _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
-  if (_dimZeroFunc == event_system->getDimZeroFunc() )
+  if (_dimZeroFunc == _event_system->getDimZeroFunc() )
   {
     if(_events)
       delete [] _events;
@@ -103,17 +138,85 @@ void SimManager::initialize()
   /* Logs vorübergehend deaktiviert
   BOOST_LOG_SEV(simmgr_lg::get(), simmgr_info) << "Assemble completed";*/
 
-#if defined(__TRICORE__) || defined(__vxworks)
+//#if defined(__TRICORE__) || defined(__vxworks)
   // Initialization for RT simulation
   if(_config->getGlobalSettings()->useEndlessSim())
-    _solver->initialize();
-#endif
+  { 
+	  _cycleCounter = 0;
+	  _resetCycle = _sampleCycles[0];
+	  for (int i=1;i<_dimtimeevent;i++)
+		  _resetCycle*=_sampleCycles[i];
+	  _solver->initialize();
+  }
+//#endif
 }
 
 void SimManager::runSingleStep(double cycletime)
 {
+  // Increase time event counter
+  if(_dimtimeevent)
+  {
+	if(_lastCycleTime && cycletime != _lastCycleTime)
+		throw std::runtime_error("Cycle time can not be changed, if time events (samples) are present!");
+	else
+		_lastCycleTime = cycletime;
+	
+	for(int i=0;i<_dimtimeevent;i++)
+	{	
+		if(_cycleCounter % _sampleCycles[i] == 0)
+			_timeeventcounter[i]++;
+	}
+		
+	//Handle time event
+	_timeevent_system->handleTimeEvent(_timeeventcounter);
+	_cont_system->evaluateAll(IContinuous::CONTINUOUS);
+	_mixed_system->saveAll();
+	_timeevent_system->handleTimeEvent(_timeeventcounter);
+  }
+  
+  // Solve
   _solver->setcycletime(cycletime);
   _solver->solve(_solverTask);
+  
+  _cycleCounter++;
+  // Reset everything to prevent overflows
+  if( _cycleCounter == _resetCycle + 1)
+  {
+	  _cycleCounter = 1;
+	  for(int i=0;i<_dimtimeevent;i++)
+			_timeeventcounter[i] = 0;
+  }
+}
+
+void SimManager::computeSampleCycles()
+{
+  int
+    counter = 0;
+	time_event_type timeEventPairs;                        ///< - Contains start times and time spans
+  
+   _timeevent_system->getTimeEvent(timeEventPairs);
+    std::vector<std::pair<double,double> >::iterator iter;
+    iter = timeEventPairs.begin();
+    for(; iter != timeEventPairs.end(); ++iter)
+    {
+		if(iter->first != 0.0 || iter->second == 0.0)
+		{
+			throw std::runtime_error("Time event not starting at t=0.0 or not cyclic!");
+		}else
+		{
+			// Check if sample time is a multiple of the cycle time (with a tolerance)
+			if ((iter->second/_config->getGlobalSettings()->getEndTime()) -  int((iter->second/_config->getGlobalSettings()->getEndTime())+0.5) <= 1e6*UROUND)
+			{
+				_sampleCycles[counter] = int((iter->second/_config->getGlobalSettings()->getEndTime())+0.5);
+			}
+			else
+			{
+				throw std::runtime_error("Sample time is not a multiple of the cycle time!");
+			}
+			
+		}
+		counter++;
+	}
 }
 
 void SimManager::runSimulation()
@@ -292,7 +395,6 @@ void SimManager::writeProperties()
 
 void SimManager::computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub)
 {
-  boost::shared_ptr<ITime> timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
   int
     counterTimes = 0,
     counterEvents = 0;
@@ -301,7 +403,7 @@ void SimManager::computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub)
 
   if(tStopsSub.size()==0)
   {
-    timeevent_system->getTimeEvent(timeEventPairs);
+    _timeevent_system->getTimeEvent(timeEventPairs);
     std::vector<std::pair<double,double> >::iterator iter;
     iter = timeEventPairs.begin();
     for(; iter != timeEventPairs.end(); ++iter)
@@ -391,10 +493,6 @@ void SimManager::computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub)
 void SimManager::runSingleProcess()
 {
 
-  boost::shared_ptr<IEvent> event_system = boost::dynamic_pointer_cast<IEvent>(_mixed_system);
-  boost::shared_ptr<IContinuous> cont_system = boost::dynamic_pointer_cast<IContinuous>(_mixed_system);
-  boost::shared_ptr<ITime> timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
-  boost::shared_ptr<IStepEvent> step_event_system = boost::dynamic_pointer_cast<IStepEvent>(_mixed_system);
   double
     startTime,
     endTime,
@@ -403,27 +501,6 @@ void SimManager::runSingleProcess()
   int dimZeroF;
 
   std::vector<std::pair<double,int> > tStopsSub;
-
-  if(!event_system)
-  {
-    std::cerr << "Could not get event system" << std::endl;
-    return;
-  }
-  if(!cont_system)
-  {
-    std::cerr << "Could not get continuous-event system" << std::endl;
-    return;
-  }
-  if(!timeevent_system)
-  {
-    std::cerr << "Could not get time-event system" << std::endl;
-    return;
-  }
-  if(!step_event_system)
-  {
-    std::cerr << "Could not get step-event system" << std::endl;
-    return;
-  }
 
   _H =_tEnd;
   _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
@@ -442,24 +519,24 @@ void SimManager::runSingleProcess()
   memset(_timeeventcounter,0,_dimtimeevent*sizeof(int));
   computeEndTimes(tStopsSub);
   _tStops.push_back(tStopsSub);
-  dimZeroF = event_system->getDimZeroFunc();
+  dimZeroF = _event_system->getDimZeroFunc();
   zeroVal_new = new double[dimZeroF];
-  timeevent_system->setTime(_tStart);
+  _timeevent_system->setTime(_tStart);
   if (_dimtimeevent)
   {
-    timeevent_system->handleTimeEvent(_timeeventcounter);
+    _timeevent_system->handleTimeEvent(_timeeventcounter);
   }
-  cont_system->evaluateODE(IContinuous::CONTINUOUS);      // vxworksupdate
-  event_system->getZeroFunc(zeroVal_new);
+  _cont_system->evaluateODE(IContinuous::CONTINUOUS);      // vxworksupdate
+  _event_system->getZeroFunc(zeroVal_new);
 
   for(int i=0;i<_dimZeroFunc;i++)
     _events[i] = bool(zeroVal_new[i]);
   _mixed_system->handleSystemEvents(_events);
-  //cont_system->evaluateODE(IContinuous::CONTINUOUS);
+  //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
   // Reset the time-events
   if (_dimtimeevent)
   {
-    timeevent_system->handleTimeEvent(_timeeventcounter);
+    _timeevent_system->handleTimeEvent(_timeeventcounter);
   }
 
 
@@ -481,15 +558,15 @@ void SimManager::runSingleProcess()
       {
         startTime = endTime;
         _timeeventcounter[iter->second]++;
-        timeevent_system->handleTimeEvent(_timeeventcounter);
-        cont_system->evaluateODE(IContinuous::CONTINUOUS);   // vxworksupdate
-        event_system->getZeroFunc(zeroVal_new);
+        _timeevent_system->handleTimeEvent(_timeeventcounter);
+        _cont_system->evaluateODE(IContinuous::CONTINUOUS);   // vxworksupdate
+        _event_system->getZeroFunc(zeroVal_new);
         for(int i=0;i<_dimZeroFunc;i++)
           _events[i] = bool(zeroVal_new[i]);
         _mixed_system->handleSystemEvents(_events);
-        //cont_system->evaluateODE(IContinuous::CONTINUOUS);
+        //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
         //reset time-events
-        timeevent_system->handleTimeEvent(_timeeventcounter);
+        _timeevent_system->handleTimeEvent(_timeeventcounter);
       }
       else
       {
@@ -508,15 +585,15 @@ void SimManager::runSingleProcess()
         if (_dimtimeevent)
         {
           _timeeventcounter[iter->second]++;
-          timeevent_system->handleTimeEvent(_timeeventcounter);
-          cont_system->evaluateODE(IContinuous::CONTINUOUS);   // vxworksupdate
-          event_system->getZeroFunc(zeroVal_new);
+          _timeevent_system->handleTimeEvent(_timeeventcounter);
+          _cont_system->evaluateODE(IContinuous::CONTINUOUS);   // vxworksupdate
+          _event_system->getZeroFunc(zeroVal_new);
           for(int i=0;i<_dimZeroFunc;i++)
             _events[i] = bool(zeroVal_new[i]);
           _mixed_system->handleSystemEvents(_events);
-          //cont_system->evaluateODE(IContinuous::CONTINUOUS);
+          //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
           //reset time-events
-          timeevent_system->handleTimeEvent(_timeeventcounter);
+          _timeevent_system->handleTimeEvent(_timeeventcounter);
         }
       }
 
@@ -571,15 +648,15 @@ void SimManager::runSingleProcess()
       {
         if(zeroVal_new)
         {
-          timeevent_system->handleTimeEvent(_timeeventcounter);
-          cont_system->evaluateODE(IContinuous::CONTINUOUS);   // vxworksupdate
-          event_system->getZeroFunc(zeroVal_new);
+          _timeevent_system->handleTimeEvent(_timeeventcounter);
+          _cont_system->evaluateODE(IContinuous::CONTINUOUS);   // vxworksupdate
+          _event_system->getZeroFunc(zeroVal_new);
           for(int i=0;i<_dimZeroFunc;i++)
             _events[i] = bool(zeroVal_new[i]);
           _mixed_system->handleSystemEvents(_events);
-          //cont_system->evaluateODE(IContinuous::CONTINUOUS);
+          //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
           //reset time-events
-          timeevent_system->handleTimeEvent(_timeeventcounter);
+          _timeevent_system->handleTimeEvent(_timeeventcounter);
         }
       }
 
@@ -587,8 +664,8 @@ void SimManager::runSingleProcess()
     }
 
   } // end while continue
-  step_event_system->setTerminal(true);
-  cont_system->evaluateAll(IContinuous::CONTINUOUS);
+  _step_event_system->setTerminal(true);
+  _cont_system->evaluateAll(IContinuous::CONTINUOUS);
 
   if(zeroVal_new)
     delete [] zeroVal_new;

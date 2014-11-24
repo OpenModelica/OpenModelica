@@ -70,6 +70,17 @@ public:
                throw std::runtime_error("Failed loading Peer solver library!");
            }
         }
+		 else if(solvername.compare("rtrk")==0)
+        {
+           PATH rtrk_path = ObjectFactory<CreationPolicy>::_library_path;
+           PATH rtrk_name(RTRK_LIB);
+           rtrk_path/=rtrk_name;
+           LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(rtrk_path.string(),*_solver_type_map);
+           if (result != LOADER_SUCCESS)
+           {
+               throw std::runtime_error("Failed loading RTRK solver library!");
+           }
+        }
         else if(solvername.compare("idas")==0)
         {
            

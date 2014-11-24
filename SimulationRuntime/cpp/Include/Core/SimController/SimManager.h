@@ -39,7 +39,9 @@ public:
 
 private:
     void computeEndTimes(std::vector<std::pair<double,int> > &tStopsSub);
-    void runSingleProcess();
+	void computeSampleCycles();
+	
+	void runSingleProcess();
     void writeProperties();
 
     boost::shared_ptr<IMixedSystem> _mixed_system;
@@ -52,7 +54,9 @@ private:
     int*                              _timeeventcounter;  ///< Temp - Timeevent-Counter-Array
     int                               _totStps,           ///< Output - Anzahl Steps der Prozesse
                                       _accStps,           ///< Output - Anzahl akzeptierte Steps der Prozesse
-                                      _rejStps;           ///< Output - Anzahl verworfene steps der Prozesse
+                                      _rejStps,           ///< Output - Anzahl verworfene steps der Prozesse
+									  _cycleCounter,
+									  _resetCycle;
     ISolver::SOLVERCALL               _solverTask;        ///< Temporary - Beschreibt die Aufgabe mit der der Solver aufgerufen wird
     int                               _idid;              ///< Output - DebugID
     bool                              _continueSimulation,///< - Flag für Endlossimulation (wird gesetzt, wenn Solver zurückkehrt)
@@ -60,6 +64,16 @@ private:
     bool*                             _events;            ///< - Vector (of dimension _dimZeroF) indicating which zero function caused an event
     double                            _H,                 ///< Input, Output - Koppelschrittweite
                                       _tStart,
-                                      _tEnd;
+                                      _tEnd,
+									  _lastCycleTime;
     boost::shared_ptr<Initialization> _initialization;
+	
+	
+	boost::shared_ptr<ITime> _timeevent_system;
+	boost::shared_ptr<IEvent> _event_system;
+	boost::shared_ptr<IContinuous> _cont_system;
+	boost::shared_ptr<IStepEvent> _step_event_system;
+
+	int* _sampleCycles;
+	
 };
