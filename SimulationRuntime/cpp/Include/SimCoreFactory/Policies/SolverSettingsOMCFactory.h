@@ -58,7 +58,7 @@ public:
             }
             solver_settings_key.assign("createPeerSettings");
         }
-		else if(solvername.compare("rtrk")==0)
+    else if(solvername.compare("rtrk")==0)
         {
             PATH rtrk_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH rtrk_name(RTRK_LIB);

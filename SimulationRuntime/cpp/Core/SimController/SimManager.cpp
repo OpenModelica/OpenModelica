@@ -27,10 +27,10 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* co
   , _config            (config)
   , _timeeventcounter  (NULL)
   , _events            (NULL)
-  , _sampleCycles	   (NULL)
-  ,_cycleCounter	   (0)
+  , _sampleCycles     (NULL)
+  ,_cycleCounter     (0)
   ,_resetCycle         (0)
-  ,_lastCycleTime	   (0)
+  ,_lastCycleTime     (0)
 {
   _solver = _config->createSelectedSolver(system.get());
   _initialization = boost::shared_ptr<Initialization>(new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
@@ -43,7 +43,7 @@ SimManager::~SimManager()
   if(_events)
     delete [] _events;
   if(_sampleCycles)
-	delete [] _sampleCycles;
+  delete [] _sampleCycles;
  }
 
 void SimManager::initialize()
@@ -52,7 +52,7 @@ void SimManager::initialize()
   _timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
   _event_system = boost::dynamic_pointer_cast<IEvent>(_mixed_system);
   _step_event_system = boost::dynamic_pointer_cast<IStepEvent>(_mixed_system);
-   
+
   //Check dynamic casts
   if(!_event_system)
   {
@@ -74,7 +74,7 @@ void SimManager::initialize()
     std::cerr << "Could not get step-event system" << std::endl;
     return;
   }
-  
+
   /* Logs temporarily disabled
   BOOST_LOG_SEV(simmgr_lg::get(), simmgr_info) << "start init";*/
 
@@ -105,14 +105,14 @@ void SimManager::initialize()
     if(_timeeventcounter)
       delete [] _timeeventcounter;
     _timeeventcounter = new int[_dimtimeevent];
-	// compute sampleCycles for RT simulation
-	if(_config->getGlobalSettings()->useEndlessSim())
-	{
-		if(_sampleCycles)
-			delete [] _sampleCycles;
-		_sampleCycles = new int[_dimtimeevent];
-		computeSampleCycles();
-	}
+  // compute sampleCycles for RT simulation
+  if(_config->getGlobalSettings()->useEndlessSim())
+  {
+    if(_sampleCycles)
+      delete [] _sampleCycles;
+    _sampleCycles = new int[_dimtimeevent];
+    computeSampleCycles();
+  }
   }
   else
     _dimtimeevent =0;
@@ -141,12 +141,12 @@ void SimManager::initialize()
 //#if defined(__TRICORE__) || defined(__vxworks)
   // Initialization for RT simulation
   if(_config->getGlobalSettings()->useEndlessSim())
-  { 
-	  _cycleCounter = 0;
-	  _resetCycle = _sampleCycles[0];
-	  for (int i=1;i<_dimtimeevent;i++)
-		  _resetCycle*=_sampleCycles[i];
-	  _solver->initialize();
+  {
+    _cycleCounter = 0;
+    _resetCycle = _sampleCycles[0];
+    for (int i=1;i<_dimtimeevent;i++)
+      _resetCycle*=_sampleCycles[i];
+    _solver->initialize();
   }
 //#endif
 }
@@ -156,35 +156,35 @@ void SimManager::runSingleStep(double cycletime)
   // Increase time event counter
   if(_dimtimeevent)
   {
-	if(_lastCycleTime && cycletime != _lastCycleTime)
-		throw std::runtime_error("Cycle time can not be changed, if time events (samples) are present!");
-	else
-		_lastCycleTime = cycletime;
-	
-	for(int i=0;i<_dimtimeevent;i++)
-	{	
-		if(_cycleCounter % _sampleCycles[i] == 0)
-			_timeeventcounter[i]++;
-	}
-		
-	//Handle time event
-	_timeevent_system->handleTimeEvent(_timeeventcounter);
-	_cont_system->evaluateAll(IContinuous::CONTINUOUS);
-	_mixed_system->saveAll();
-	_timeevent_system->handleTimeEvent(_timeeventcounter);
+  if(_lastCycleTime && cycletime != _lastCycleTime)
+    throw std::runtime_error("Cycle time can not be changed, if time events (samples) are present!");
+  else
+    _lastCycleTime = cycletime;
+
+  for(int i=0;i<_dimtimeevent;i++)
+  {
+    if(_cycleCounter % _sampleCycles[i] == 0)
+      _timeeventcounter[i]++;
   }
-  
+
+  //Handle time event
+  _timeevent_system->handleTimeEvent(_timeeventcounter);
+  _cont_system->evaluateAll(IContinuous::CONTINUOUS);
+  _mixed_system->saveAll();
+  _timeevent_system->handleTimeEvent(_timeeventcounter);
+  }
+
   // Solve
   _solver->setcycletime(cycletime);
   _solver->solve(_solverTask);
-  
+
   _cycleCounter++;
   // Reset everything to prevent overflows
   if( _cycleCounter == _resetCycle + 1)
   {
-	  _cycleCounter = 1;
-	  for(int i=0;i<_dimtimeevent;i++)
-			_timeeventcounter[i] = 0;
+    _cycleCounter = 1;
+    for(int i=0;i<_dimtimeevent;i++)
+      _timeeventcounter[i] = 0;
   }
 }
 
@@ -192,31 +192,31 @@ void SimManager::computeSampleCycles()
 {
   int
     counter = 0;
-	time_event_type timeEventPairs;                        ///< - Contains start times and time spans
-  
+  time_event_type timeEventPairs;                        ///< - Contains start times and time spans
+
    _timeevent_system->getTimeEvent(timeEventPairs);
     std::vector<std::pair<double,double> >::iterator iter;
     iter = timeEventPairs.begin();
     for(; iter != timeEventPairs.end(); ++iter)
     {
-		if(iter->first != 0.0 || iter->second == 0.0)
-		{
-			throw std::runtime_error("Time event not starting at t=0.0 or not cyclic!");
-		}else
-		{
-			// Check if sample time is a multiple of the cycle time (with a tolerance)
-			if ((iter->second/_config->getGlobalSettings()->getEndTime()) -  int((iter->second/_config->getGlobalSettings()->getEndTime())+0.5) <= 1e6*UROUND)
-			{
-				_sampleCycles[counter] = int((iter->second/_config->getGlobalSettings()->getEndTime())+0.5);
-			}
-			else
-			{
-				throw std::runtime_error("Sample time is not a multiple of the cycle time!");
-			}
-			
-		}
-		counter++;
-	}
+    if(iter->first != 0.0 || iter->second == 0.0)
+    {
+      throw std::runtime_error("Time event not starting at t=0.0 or not cyclic!");
+    }else
+    {
+      // Check if sample time is a multiple of the cycle time (with a tolerance)
+      if ((iter->second/_config->getGlobalSettings()->getEndTime()) -  int((iter->second/_config->getGlobalSettings()->getEndTime())+0.5) <= 1e6*UROUND)
+      {
+        _sampleCycles[counter] = int((iter->second/_config->getGlobalSettings()->getEndTime())+0.5);
+      }
+      else
+      {
+        throw std::runtime_error("Sample time is not a multiple of the cycle time!");
+      }
+
+    }
+    counter++;
+  }
 }
 
 void SimManager::runSimulation()
