@@ -553,6 +553,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpToleranceTextBox->setText(QString::number(result.at(2).toFloat()));
       mpNumberofIntervalsSpinBox->setValue(result.at(3).toLong());
     }
+    mpCflagsTextBox->setEnabled(true);
     mpNumberofIntervalsSpinBox->setEnabled(true);
     mpOutputFormatComboBox->setEnabled(true);
     mpFileNameTextBox->setEnabled(true);
@@ -589,7 +590,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     // max integration order
     mpDasslMaxIntegrationOrderSpinBox->setValue(simulationOptions.getDasslMaxIntegration());
     // Compiler Flags
-    mpCflagsTextBox->setText(simulationOptions.getCflags());
+    mpCflagsTextBox->setDisabled(true);
     // Number of Processors
     mpNumberOfProcessorsSpinBox->setValue(simulationOptions.getNumberOfProcessors());
     // Launch Transformational Debugger checkbox
