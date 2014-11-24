@@ -41,84 +41,285 @@
 
 #include "MainWindow.h"
 
-struct SimulationMessage
-{
-  QString mStream;
-  QString mType;
-  QString mText;
-  int mLevel;
-  QString mIndex;
-  QList<SimulationMessage> mChildren;
-
-  SimulationMessage() {mStream = ""; mType = ""; mText = ""; mIndex = "";}
-};
+class SimulationOutputWidget;
 
 class SimulationOptions
 {
 public:
   SimulationOptions()
   {
-    mClassName = "";
-    mFileNamePrefix = "";
-    mOutputFormat = "";
-    mSimulationFlags = QStringList();
-    mShowGeneratedFiles = false;
-    mValid = false;
-    mReSimulate = false;
-    mProfiling = false;
+    setClassName("");
+    setStartTime("");
+    setStopTime("");
+    setMethod("");
+    setTolerance("");
+    setDasslJacobian("");
+    setDasslRootFinding(true);
+    setDasslRestart(true);
+    setDasslInitialStepSize("");
+    setDasslMaxStepSize("");
+    setDasslMaxIntegration(5);
+    setCflags("");
+    setNumberOfProcessors(1);
+    setBuildOnly(false);
+    setLaunchTransformationalDebugger(false);
+    setLaunchAlgorithmicDebugger(false);
+    setNumberofIntervals(500);
+    setOutputFormat("mat");
+    setFileNamePrefix("");
+    setVariableFilter("");
+    setProtectedVariables(false);
+    setEquidistantTimeGrid(true);
+    setStoreVariablesAtEvents(true);
+    setShowGeneratedFiles(false);
+    setModelSetupFile("");
+    setInitializationMethod("");
+    setOptimizationMethod("");
+    setEquationSystemInitializationFile("");
+    setEquationSystemInitializationTime("");
+    setClock("");
+    setLinearSolver("");
+    setNonLinearSolver("");
+    setLinearizationTime("");
+    setOutputVariables("");
+    setProfiling("none");
+    setCPUTime(false);
+    setEnableAllWarnings(true);
+    setLogDasslSolver(false);
+    setLogDebug(false);
+    setLogDynamicStateSelection(false);
+    setLogJacobianDynamicStateSelection(false);
+    setLogEvents(false);
+    setLogVerboseEvents(false);
+    setLogInitialization(false);
+    setLogJacobian(false);
+    setLogNonLinearSystems(false);
+    setLogVerboseNonLinearSystems(false);
+    setLogJacobianNonLinearSystems(false);
+    setLogResidualsInitialization(false);
+    setLogSimulation(false);
+    setLogSolver(false);
+    setLogFinalSolutionOfInitialization(false);
+    setLogStats(true);
+    setLogUtil(false);
+    setLogZeroCrossings(false);
+    setAdditionalSimulationFlags("");
+    setIsValid(false);
+    setReSimulate(false);
     mWorkingDirectory = "";
   }
-  SimulationOptions(QString className, QString fileNamePrefix, QString outputFormat, QStringList simulationFlags, bool showGeneratedFiles, bool profiling,
-                    QString workingDirectory)
-  {
-    mClassName = className;
-    mFileNamePrefix = fileNamePrefix;
-    mOutputFormat = outputFormat;
-    mSimulationFlags = simulationFlags;
-    mShowGeneratedFiles = showGeneratedFiles;
-    mValid = true;
-    mReSimulate = false;
-    mProfiling = profiling;
-    mWorkingDirectory = workingDirectory;
-  }
+
   operator QVariant() const
   {
     return QVariant::fromValue(*this);
   }
+
+  void setClassName(QString className) {mClassName = className;}
   QString getClassName() {return mClassName;}
+  void setStartTime(QString startTime) {mStartTime = startTime;}
+  QString getStartTime() {return mStartTime;}
+  void setStopTime(QString stopTime) {mStopTime = stopTime;}
+  QString getStopTime() {return mStopTime;}
+  void setMethod(QString method) {mMethod = method;}
+  QString getMethod() {return mMethod;}
+  void setTolerance(QString tolerance) {mTolerance = tolerance;}
+  QString getTolerance() {return mTolerance;}
+  void setDasslJacobian(QString dasslJacobian) {mDasslJacobian = dasslJacobian;}
+  QString getDasslJacobian() {return mDasslJacobian;}
+  void setDasslRootFinding(bool dasslRootFinding) {mDasslRootFinding = dasslRootFinding;}
+  bool getDasslRootFinding() {return mDasslRootFinding;}
+  void setDasslRestart(bool dasslRestart) {mDasslRestart = dasslRestart;}
+  bool getDasslRestart() {return mDasslRestart;}
+  void setDasslInitialStepSize(QString dasslInitialStepSize) {mDasslInitialStepSize = dasslInitialStepSize;}
+  QString getDasslInitialStepSize() {return mDasslInitialStepSize;}
+  void setDasslMaxStepSize(QString dasslMaxStepSize) {mDasslMaxStepSize = dasslMaxStepSize;}
+  QString getDasslMaxStepSize() {return mDasslMaxStepSize;}
+  void setDasslMaxIntegration(int dasslMaxIntegration) {mDasslMaxIntegration = dasslMaxIntegration;}
+  int getDasslMaxIntegration() {return mDasslMaxIntegration;}
+  void setCflags(QString cflags) {mCflags = cflags;}
+  QString getCflags() {return mCflags;}
+  void setNumberOfProcessors(int numberOfProcessors) {mNumberOfProcessors = numberOfProcessors;}
+  int getNumberOfProcessors() {return mNumberOfProcessors;}
+  void setBuildOnly(bool buildOnly) {mBuildOnly = buildOnly;}
+  bool getBuildOnly() {return mBuildOnly;}
+  void setLaunchTransformationalDebugger(bool launchTransformationalDebugger) {mLaunchTransformationalDebugger = launchTransformationalDebugger;}
+  bool getLaunchTransformationalDebugger() {return mLaunchTransformationalDebugger;}
+  void setLaunchAlgorithmicDebugger(bool launchAlgorithmicDebugger) {mLaunchAlgorithmicDebugger = launchAlgorithmicDebugger;}
+  bool getLaunchAlgorithmicDebugger() {return mLaunchAlgorithmicDebugger;}
+  void setNumberofIntervals(int numberofIntervals) {mNumberofIntervals = numberofIntervals;}
+  void setOutputFormat(QString outputFormat) {mOutputFormat = outputFormat;}
+  QString getOutputFormat() {return mOutputFormat;}
+  void setFileNamePrefix(QString fileNamePrefix) {mFileNamePrefix = fileNamePrefix;}
   QString getFileNamePrefix() {return mFileNamePrefix;}
-  QString getOutputFileName() {return mFileNamePrefix + "_res." + mOutputFormat;}
-  QStringList getSimulationFlags() {return mSimulationFlags;}
+  QString getOutputFileName() {return mFileNamePrefix.isEmpty() ? mClassName : mFileNamePrefix;}
+  QString getResultFileName() {return getOutputFileName() + "_res." + mOutputFormat;}
+  void setVariableFilter(QString variableFilter) {mVariableFilter = variableFilter;}
+  QString getVariableFilter() {return mVariableFilter.isEmpty() ? ".*" : mVariableFilter;}
+  void setProtectedVariables(bool protectedVariables) {mProtectedVariables = protectedVariables;}
+  bool getProtectedVariables() {return mProtectedVariables;}
+  void setEquidistantTimeGrid(bool equidistantTimeGrid) {mEquidistantTimeGrid = equidistantTimeGrid;}
+  bool getEquidistantTimeGrid() {return mEquidistantTimeGrid;}
+  void setStoreVariablesAtEvents(bool storeVariablesAtEvents) {mStoreVariablesAtEvents = storeVariablesAtEvents;}
+  bool getStoreVariablesAtEvents() {return mStoreVariablesAtEvents;}
+  void setShowGeneratedFiles(bool showGeneratedFiles) {mShowGeneratedFiles = showGeneratedFiles;}
   bool getShowGeneratedFiles() {return mShowGeneratedFiles;}
+  void setModelSetupFile(QString modelSetupFile) {mModelSetupFile = modelSetupFile;}
+  QString getModelSetupFile() {return mModelSetupFile;}
+  void setInitializationMethod(QString initializationMethod) {mInitializationMethod = initializationMethod;}
+  QString getInitializationMethod() {return mInitializationMethod;}
+  void setOptimizationMethod(QString optimizationMethod) {mOptimizationMethod = optimizationMethod;}
+  QString getOptimizationMethod() {return mOptimizationMethod;}
+  void setEquationSystemInitializationFile(QString equationSystemInitializationFile) {mEquationSystemInitializationFile = equationSystemInitializationFile;}
+  QString getEquationSystemInitializationFile() {return mEquationSystemInitializationFile;}
+  void setEquationSystemInitializationTime(QString equationSystemInitializationTime) {mEquationSystemInitializationTime = equationSystemInitializationTime;}
+  QString getEquationSystemInitializationTime() {return mEquationSystemInitializationTime;}
+  void setClock(QString clock) {mClock = clock;}
+  QString getClock() {return mClock;}
+  void setLinearSolver(QString linearSolver) {mLinearSolver = linearSolver;}
+  QString getLinearSolver() {return mLinearSolver;}
+  void setNonLinearSolver(QString nonLinearSolver) {mNonLinearSolver = nonLinearSolver;}
+  QString getNonLinearSolver() {return mNonLinearSolver;}
+  void setLinearizationTime(QString linearizationTime) {mLinearizationTime = linearizationTime;}
+  QString getLinearizationTime() {return mLinearizationTime;}
+  void setOutputVariables(QString outputVariables) {mOutputVariables = outputVariables;}
+  QString getOutputVariables() {return mOutputVariables;}
+  void setProfiling(QString profiling) {mProfiling = profiling;}
+  QString getProfiling() {return mProfiling;}
+  void setCPUTime(bool cpuTime) {mCPUTime = cpuTime;}
+  bool getCPUTime() {return mCPUTime;}
+  void setEnableAllWarnings(bool enableAllWarnings) {mEnableAllWarnings = enableAllWarnings;}
+  bool getEnableAllWarnings() {return mEnableAllWarnings;}
+  void setLogDasslSolver(bool logDasslSolver) {mLogDasslSolver = logDasslSolver;}
+  bool getLogDasslSolver() {return mLogDasslSolver;}
+  void setLogDebug(bool logDebug) {mLogDebug = logDebug;}
+  bool getLogDebug() {return mLogDebug;}
+  void setLogDynamicStateSelection(bool logDynamicStateSelection) {mLogDynamicStateSelection = logDynamicStateSelection;}
+  bool getLogDynamicStateSelection() {return mLogDynamicStateSelection;}
+  void setLogJacobianDynamicStateSelection(bool logJacobianDynamicStateSelection) {mLogJacobianDynamicStateSelection = logJacobianDynamicStateSelection;}
+  bool getLogJacobianDynamicStateSelection() {return mLogJacobianDynamicStateSelection;}
+  void setLogEvents(bool logEvents) {mLogEvents = logEvents;}
+  bool getLogEvents() {return mLogEvents;}
+  void setLogVerboseEvents(bool logVerboseEvents) {mLogVerboseEvents = logVerboseEvents;}
+  bool getLogVerboseEvents() {return mLogVerboseEvents;}
+  void setLogInitialization(bool logInitialization) {mLogInitialization = logInitialization;}
+  bool getLogInitialization() {return mLogInitialization;}
+  void setLogJacobian(bool logJacobian) {mLogJacobian = logJacobian;}
+  bool getLogJacobian() {return mLogJacobian;}
+  void setLogNonLinearSystems(bool logNonLinearSystems) {mLogNonLinearSystems = logNonLinearSystems;}
+  bool getLogNonLinearSystems() {return mLogNonLinearSystems;}
+  void setLogVerboseNonLinearSystems(bool logVerboseNonLinearSystems) {mLogVerboseNonLinearSystems = logVerboseNonLinearSystems;}
+  bool getLogVerboseNonLinearSystems() {return mLogVerboseNonLinearSystems;}
+  void setLogJacobianNonLinearSystems(bool logJacobianNonLinearSystems) {mLogJacobianNonLinearSystems = logJacobianNonLinearSystems;}
+  bool getLogJacobianNonLinearSystems() {return mLogJacobianNonLinearSystems;}
+  void setLogResidualsInitialization(bool logResidualsInitialization) {mLogResidualsInitialization = logResidualsInitialization;}
+  bool getLogResidualsInitialization() {return mLogResidualsInitialization;}
+  void setLogSimulation(bool logSimulation) {mLogSimulation = logSimulation;}
+  bool getLogSimulation() {return mLogSimulation;}
+  void setLogSolver(bool logSolver) {mLogSolver = logSolver;}
+  bool getLogSolver() {return mLogSolver;}
+  void setLogFinalSolutionOfInitialization(bool logFinalSolutionOfInitialization) {mLogFinalSolutionOfInitialization = logFinalSolutionOfInitialization;}
+  bool getLogFinalSolutionOfInitialization() {return mLogFinalSolutionOfInitialization;}
+  void setLogStats(bool logStats) {mLogStats = logStats;}
+  bool getLogStats() {return mLogStats;}
+  void setLogUtil(bool logUtil) {mLogUtil = logUtil;}
+  bool getLogUtil() {return mLogUtil;}
+  void setLogZeroCrossings(bool logZeroCrossings) {mLogZeroCrossings = logZeroCrossings;}
+  bool getLogZeroCrossings() {return mLogZeroCrossings;}
+  void setAdditionalSimulationFlags(QString additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
+  QString getAdditionalSimulationFlags() {return mAdditionalSimulationFlags;}
+
+  void setSimulationFlags(QStringList simulationFlags) {mSimulationFlags = simulationFlags;}
+  QStringList getSimulationFlags() {return mSimulationFlags;}
+  void setIsValid(bool isValid) {mValid = isValid;}
   bool isValid() {return mValid;}
-  void setReSimulate(bool set) {mReSimulate = set;}
+  void setReSimulate(bool reSimulate) {mReSimulate = reSimulate;}
   bool isReSimulate() {return mReSimulate;}
-  bool isProfiling() {return mProfiling;}
+  void setWorkingDirectory(QString workingDirectory) {mWorkingDirectory = workingDirectory;}
   QString getWorkingDirectory() {return mWorkingDirectory;}
 private:
   QString mClassName;
-  QString mFileNamePrefix;
+  QString mStartTime;
+  QString mStopTime;
+  QString mMethod;
+  QString mTolerance;
+  QString mDasslJacobian;
+  bool mDasslRootFinding;
+  bool mDasslRestart;
+  QString mDasslInitialStepSize;
+  QString mDasslMaxStepSize;
+  int mDasslMaxIntegration;
+  QString mCflags;
+  int mNumberOfProcessors;
+  bool mBuildOnly;
+  bool mLaunchTransformationalDebugger;
+  bool mLaunchAlgorithmicDebugger;
+  int mNumberofIntervals;
   QString mOutputFormat;
-  QStringList mSimulationFlags;
+  QString mFileNamePrefix;
+  QString mVariableFilter;
+  bool mProtectedVariables;
+  bool mEquidistantTimeGrid;
+  bool mStoreVariablesAtEvents;
   bool mShowGeneratedFiles;
+  QString mModelSetupFile;
+  QString mInitializationMethod;
+  QString mOptimizationMethod;
+  QString mEquationSystemInitializationFile;
+  QString mEquationSystemInitializationTime;
+  QString mClock;
+  QString mLinearSolver;
+  QString mNonLinearSolver;
+  QString mLinearizationTime;
+  QString mOutputVariables;
+  QString mProfiling;
+  bool mCPUTime;
+  bool mEnableAllWarnings;
+  bool mLogDasslSolver;
+  bool mLogDebug;
+  bool mLogDynamicStateSelection;
+  bool mLogJacobianDynamicStateSelection;
+  bool mLogEvents;
+  bool mLogVerboseEvents;
+  bool mLogInitialization;
+  bool mLogJacobian;
+  bool mLogNonLinearSystems;
+  bool mLogVerboseNonLinearSystems;
+  bool mLogJacobianNonLinearSystems;
+  bool mLogResidualsInitialization;
+  bool mLogSimulation;
+  bool mLogSolver;
+  bool mLogFinalSolutionOfInitialization;
+  bool mLogStats;
+  bool mLogUtil;
+  bool mLogZeroCrossings;
+  QString mAdditionalSimulationFlags;
+
+  QStringList mSimulationFlags;
   bool mValid;
   bool mReSimulate;
-  bool mProfiling;
   QString mWorkingDirectory;
 };
 Q_DECLARE_METATYPE(SimulationOptions)
 
+class ArchivedSimulationItem : public QListWidgetItem
+{
+public:
+  ArchivedSimulationItem(QString text, SimulationOutputWidget *pSimulationOutputWidget)
+    : mpSimulationOutputWidget(pSimulationOutputWidget) {setText(text);}
+  SimulationOutputWidget* getSimulationOutputWidget() {return mpSimulationOutputWidget;}
+private:
+  SimulationOutputWidget *mpSimulationOutputWidget;
+};
+
 class MainWindow;
-class ProgressDialog;
 class SimulationDialog : public QDialog
 {
   Q_OBJECT
 public:
   SimulationDialog(MainWindow *pParent = 0);
   ~SimulationDialog();
-  void show(LibraryTreeNode *pLibraryTreeNode, bool isInteractive);
-  void directSimulate(LibraryTreeNode *pLibraryTreeNode, bool isInteractive, bool launchTransformationalDebugger,
-                      bool launchAlgorithmicDebugger);
+  void show(LibraryTreeNode *pLibraryTreeNode, bool isReSimulate, SimulationOptions simulationOptions);
+  void directSimulate(LibraryTreeNode *pLibraryTreeNode, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger);
 private:
   MainWindow *mpMainWindow;
   Label *mpSimulationHeading;
@@ -221,86 +422,36 @@ private:
   QCheckBox *mpLogZeroCrossingsCheckBox;
   Label *mpAdditionalSimulationFlagsLabel;
   QLineEdit *mpAdditionalSimulationFlagsTextBox;
+  // Archived Simulation Flags Tab
+  QWidget *mpArchivedSimulationsTab;
+  QListWidget *mpArchivedSimulationsListWidget;
   // buttons
   QPushButton *mpCancelButton;
   QPushButton *mpSimulateButton;
   QDialogButtonBox *mpButtonBox;
-  SimulationOptions mSimulationOptions;
-  QString mSimulationParameters;
-  QStringList mSimulationFlags;
-  bool mIsCancelled;
-  ProgressDialog *mpProgressDialog;
-  QProcess *mpCompilationProcess;
-  bool mIsCompilationProcessRunning;
-  QProcess *mpSimulationProcess;
-  QList<QWidget*> mSimulationOutputWidgetsList;
-  QDateTime mLastModifiedDateTime;
-  bool mIsSimulationProcessRunning;
-  bool mIsInteractive;
+  QList<SimulationOutputWidget*> mSimulationOutputWidgetsList;
   LibraryTreeNode *mpLibraryTreeNode;
+  QString mClassName;
+  bool mIsReSimulate;
 
   void setUpForm();
   bool validate();
-  void initializeFields();
-  void translateModel();
-  void compileModel();
+  void initializeFields(bool isReSimulate, SimulationOptions simulationOptions);
+  bool translateModel(QString simulationParameters);
+  SimulationOptions createSimulationOptions();
+  void createAndShowSimulationOutputWidget(SimulationOptions simulationOptions);
+  void showSimulationOutputWidget(SimulationOutputWidget *pSimulationOutputWidget);
   void saveSimulationOptions();
-  void writeCompilationOutput(QString output, QColor color);
-  void writeSimulationOutput(QString output, QColor color, bool textFormat = false);
-  QList<SimulationMessage> parseXMLLogOutput(QString output);
-  SimulationMessage parseXMLLogMessageTag(QDomNode messageNode, int level);
-  void writeSimulationMessage(SimulationMessage &simulationMessage);
-  void processFinished(int exitCode, QProcess::ExitStatus exitStatus);
 public:
-  void runSimulationExecutable(SimulationOptions simulationOptions);
+  void reSimulate(SimulationOptions simulationOptions);
 public slots:
   void enableDasslOptions(QString method);
   void showIntegrationHelp();
   void buildOnly(bool checked);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
+  void showArchivedSimulation(QListWidgetItem *pListWidgetItem);
   void simulate();
-  void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void writeCompilationStandardOutput();
-  void writeCompilationStandardError();
-  void showSimulationOutputWidget();
-  void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void GDBProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void writeSimulationStandardOutput();
-  void writeSimulationStandardError();
-  void cancelSimulation();
-};
-
-class ProgressDialog : public QDialog
-{
-  Q_OBJECT
-public:
-  ProgressDialog(SimulationDialog *pParent = 0);
-  QProgressBar* getProgressBar();
-  QPushButton* getCancelSimulationButton();
-  void setText(QString text);
-private:
-  QProgressBar *mpProgressBar;
-  Label *mpProgressLabel;
-  QPushButton *mpCancelSimulationButton;
-};
-
-class SimulationOutputWidget : public QWidget
-{
-  Q_OBJECT
-public:
-  SimulationOutputWidget(QString className, QString outputFile, bool showGeneratedFiles, MainWindow *pParent);
-  QTabWidget* getGeneratedFilesTabWidget();
-  QTextBrowser* getSimulationOutputTextBrowser();
-  QPlainTextEdit* getCompilationOutputTextBox();
-  void addGeneratedFileTab(QString fileName);
-private:
-  MainWindow *mpMainWindow;
-  QTabWidget *mpGeneratedFilesTabWidget;
-  QTextBrowser *mpSimulationOutputTextBrowser;
-  QPlainTextEdit *mpCompilationOutputTextBox;
-public slots:
-  void openTransformationBrowser(QUrl url);
 };
 
 #endif // SIMULATIONDIALOG_H

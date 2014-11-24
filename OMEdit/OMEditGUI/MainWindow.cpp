@@ -151,7 +151,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpSimulationDialog = new SimulationDialog(this);
   // Create an object of PlotWindowContainer
   mpPlotWindowContainer = new PlotWindowContainer(this);
-  mpPlotWindowContainer->addPlotWindow(true);
   // create an object of VariablesWidget
   mpVariablesWidget = new VariablesWidget(this);
   mpVariablesDockWidget->setWidget(mpVariablesWidget);
@@ -710,7 +709,7 @@ void MainWindow::simulate(LibraryTreeNode *pLibraryTreeNode)
     if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeNode, false, false, false);
+  mpSimulationDialog->directSimulate(pLibraryTreeNode, false, false);
 }
 
 void MainWindow::simulateWithTransformationalDebugger(LibraryTreeNode *pLibraryTreeNode)
@@ -721,7 +720,7 @@ void MainWindow::simulateWithTransformationalDebugger(LibraryTreeNode *pLibraryT
     if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeNode, false, true, false);
+  mpSimulationDialog->directSimulate(pLibraryTreeNode, true, false);
 }
 
 void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeNode *pLibraryTreeNode)
@@ -732,7 +731,7 @@ void MainWindow::simulateWithAlgorithmicDebugger(LibraryTreeNode *pLibraryTreeNo
     if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
-  mpSimulationDialog->directSimulate(pLibraryTreeNode, false, false, true);
+  mpSimulationDialog->directSimulate(pLibraryTreeNode, false, true);
 }
 
 void MainWindow::simulationSetup(LibraryTreeNode *pLibraryTreeNode)
@@ -743,7 +742,7 @@ void MainWindow::simulationSetup(LibraryTreeNode *pLibraryTreeNode)
     if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
       return;
   }
-  mpSimulationDialog->show(pLibraryTreeNode, false);
+  mpSimulationDialog->show(pLibraryTreeNode, false, SimulationOptions());
 }
 
 void MainWindow::instantiatesModel(LibraryTreeNode *pLibraryTreeNode)
@@ -1452,11 +1451,11 @@ void MainWindow::simulateModelWithAlgorithmicDebugger()
 void MainWindow::openSimulationDialog()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget)
-  {
+  if (pModelWidget) {
     LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
-    if (pLibraryTreeNode)
+    if (pLibraryTreeNode) {
       simulationSetup(pLibraryTreeNode);
+    }
   }
 }
 
@@ -1793,7 +1792,16 @@ void MainWindow::openRecentModelWidget()
   */
 void MainWindow::reSimulateModel()
 {
-  mpVariablesWidget->reSimulate();
+  mpVariablesWidget->directReSimulate();
+}
+
+/*!
+  Slot activated when Re-simulateSetupAction triggered signal is raised.\n
+  Shows the simulation setup for re-simulation.
+  */
+void MainWindow::showReSimulateSetup()
+{
+  mpVariablesWidget->showReSimulateSetup();
 }
 
 void MainWindow::addNewPlotWindow()
@@ -2233,6 +2241,10 @@ void MainWindow::createActions()
   mpReSimulateModelAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
   mpReSimulateModelAction->setStatusTip(Helper::reSimulateTip);
   connect(mpReSimulateModelAction, SIGNAL(triggered()), SLOT(reSimulateModel()));
+  // resimulate setup action
+  mpReSimulateSetupAction = new QAction(QIcon(":/Resources/icons/re-simulation-center.svg"), Helper::reSimulateSetup, this);
+  mpReSimulateSetupAction->setStatusTip(Helper::reSimulateSetupTip);
+  connect(mpReSimulateSetupAction, SIGNAL(triggered()), SLOT(showReSimulateSetup()));
   // new plot window action
   mpNewPlotWindowAction = new QAction(QIcon(":/Resources/icons/plot-window.svg"), tr("New Plot Window"), this);
   mpNewPlotWindowAction->setStatusTip(tr("Inserts new plot window"));
@@ -2482,7 +2494,7 @@ void MainWindow::switchToPlottingPerspective()
   mpModelSwitcherToolButton->setEnabled(false);
   // if not plotwindow is opened then open one for user
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
-    mpPlotWindowContainer->addPlotWindow();
+    mpPlotWindowContainer->addPlotWindow(true);
   }
   mpVariablesDockWidget->show();
   mpPlotToolBar->setEnabled(true);
@@ -2605,6 +2617,7 @@ void MainWindow::createToolbars()
   mpPlotToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to Plot Toolbar
   mpPlotToolBar->addAction(mpReSimulateModelAction);
+  mpPlotToolBar->addAction(mpReSimulateSetupAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpNewPlotWindowAction);
   mpPlotToolBar->addAction(mpNewParametricPlotWindowAction);

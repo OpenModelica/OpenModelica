@@ -968,6 +968,74 @@ void VariablesWidget::findVariableAndUpdateValue(QDomDocument xmlDocument, QHash
   }
 }
 
+void VariablesWidget::reSimulate(bool showSetup)
+{
+  QModelIndexList indexes = mpVariablesTreeView->selectionModel()->selectedIndexes();
+  if (indexes.isEmpty()) {
+    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             tr("You must select a class to re-simulate."), Helper::ok);
+    return;
+  }
+  QModelIndex index = indexes.at(0);
+  index = mpVariableTreeProxyModel->mapToSource(index);
+  VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
+  pVariablesTreeItem = pVariablesTreeItem->rootParent();
+  SimulationOptions simulationOptions = pVariablesTreeItem->getSimulationOptions();
+  if (simulationOptions.isValid()) {
+    simulationOptions.setReSimulate(true);
+    updateInitXmlFile(simulationOptions);
+    if (showSetup) {
+      mpMainWindow->getSimulationDialog()->show(0, true, simulationOptions);
+    } else {
+      mpMainWindow->getSimulationDialog()->reSimulate(simulationOptions);
+    }
+  } else {
+    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             tr("You cannot re-simulate this class.<br />This is just a result file loaded via menu <b>File->Open Result File(s)</b>."), Helper::ok);
+  }
+}
+
+void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
+{
+  /* Update the _init.xml file with new values. */
+  QRegExp resultTypeRegExp("(_res.mat|_res.plt|_res.csv)");
+  /* open the model_init.xml file for writing */
+  QString initFileName = QString(simulationOptions.getResultFileName()).replace(resultTypeRegExp, "_init.xml");
+  QFile initFile(QString(simulationOptions.getWorkingDirectory()).append(QDir::separator()).append(initFileName));
+  QDomDocument initXmlDocument;
+  if (initFile.open(QIODevice::ReadOnly)) {
+    if (initXmlDocument.setContent(&initFile)) {
+      VariablesTreeItem *pTopVariableTreeItem;
+      pTopVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(simulationOptions.getResultFileName(),
+                                                                         mpVariablesTreeModel->getRootVariablesTreeItem());
+      if (pTopVariableTreeItem) {
+        QHash<QString, QHash<QString, QString> > variables;
+        readVariablesAndUpdateXML(pTopVariableTreeItem, simulationOptions.getResultFileName(), &variables);
+        findVariableAndUpdateValue(initXmlDocument, variables);
+      }
+    } else {
+      MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
+      pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
+                                                          tr("Unable to set the content of QDomDocument from file %1")
+                                                          .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel, 0,
+                                                          pMessagesWidget->getMessagesTreeWidget()));
+    }
+    initFile.close();
+    initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
+    QTextStream textStream(&initFile);
+    textStream.setCodec(Helper::utf8.toStdString().data());
+    textStream.setGenerateByteOrderMark(false);
+    textStream << initXmlDocument.toString();
+    initFile.close();
+  } else {
+    MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
+    pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
+                                                        GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                        .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel, 0,
+                                                        pMessagesWidget->getMessagesTreeWidget()));
+  }
+}
+
 void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, PlotCurve *pPlotCurve,
                                     PlotWindow *pPlotWindow)
 {
@@ -1211,10 +1279,16 @@ void VariablesWidget::showContextMenu(QPoint point)
     /* re-simulate action */
     QAction *pReSimulateAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
     pReSimulateAction->setStatusTip(Helper::reSimulateTip);
-    connect(pReSimulateAction, SIGNAL(triggered()), this, SLOT(reSimulate()));
+    connect(pReSimulateAction, SIGNAL(triggered()), this, SLOT(directReSimulate()));
+    /* re-simulate action */
+    QAction *pReSimulateSetupAction = new QAction(QIcon(":/Resources/icons/re-simulation-center.svg"), Helper::reSimulateSetup, this);
+    pReSimulateSetupAction->setStatusTip(Helper::reSimulateSetupTip);
+    connect(pReSimulateSetupAction, SIGNAL(triggered()), this, SLOT(showReSimulateSetup()));
+
     QMenu menu(this);
     menu.addAction(pDeleteResultAction);
     menu.addAction(pReSimulateAction);
+    menu.addAction(pReSimulateSetupAction);
     point.setY(point.y() + adjust);
     menu.exec(mpVariablesTreeView->mapToGlobal(point));
   }
@@ -1236,61 +1310,12 @@ void VariablesWidget::findVariables()
     mpVariablesTreeView->expandAll();
 }
 
-void VariablesWidget::reSimulate()
+void VariablesWidget::directReSimulate()
 {
-  QModelIndexList indexes = mpVariablesTreeView->selectionModel()->selectedIndexes();
-  if (indexes.isEmpty()) {
-    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             tr("You must select a class to re-simulate."), Helper::ok);
-    return;
-  }
-  QModelIndex index = indexes.at(0);
-  index = mpVariableTreeProxyModel->mapToSource(index);
-  VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
-  pVariablesTreeItem = pVariablesTreeItem->rootParent();
-  SimulationOptions simulationOptions = pVariablesTreeItem->getSimulationOptions();
-  if (simulationOptions.isValid()) {
-    simulationOptions.setReSimulate(true);
-    /* Update the _init.xml file with new values. */
-    QRegExp resultTypeRegExp("(_res.mat|_res.plt|_res.csv)");
-    /* open the model_init.xml file for writing */
-    QString initFileName = QString(simulationOptions.getOutputFileName()).replace(resultTypeRegExp, "_init.xml");
-    QFile initFile(QString(simulationOptions.getWorkingDirectory()).append(QDir::separator()).append(initFileName));
-    QDomDocument initXmlDocument;
-    if (initFile.open(QIODevice::ReadOnly)) {
-      if (initXmlDocument.setContent(&initFile)) {
-        VariablesTreeItem *pTopVariableTreeItem;
-        pTopVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(simulationOptions.getOutputFileName(),
-                                                                           mpVariablesTreeModel->getRootVariablesTreeItem());
-        if (pTopVariableTreeItem) {
-          QHash<QString, QHash<QString, QString> > variables;
-          readVariablesAndUpdateXML(pTopVariableTreeItem, simulationOptions.getOutputFileName(), &variables);
-          findVariableAndUpdateValue(initXmlDocument, variables);
-        }
-      } else {
-        MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
-        pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                            tr("Unable to set the content of QDomDocument from file %1")
-                                                            .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel, 0,
-                                                            pMessagesWidget->getMessagesTreeWidget()));
-      }
-      initFile.close();
-      initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
-      QTextStream textStream(&initFile);
-      textStream.setCodec(Helper::utf8.toStdString().data());
-      textStream.setGenerateByteOrderMark(false);
-      textStream << initXmlDocument.toString();
-      initFile.close();
-    } else {
-      MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                          .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel, 0,
-                                                          pMessagesWidget->getMessagesTreeWidget()));
-    }
-    mpMainWindow->getSimulationDialog()->runSimulationExecutable(simulationOptions);
-  } else {
-    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             tr("You cannot re-simulate this class.<br />This is just a result file loaded via menu <b>File->Open Result File(s)</b>."), Helper::ok);
-  }
+  reSimulate(false);
+}
+
+void VariablesWidget::showReSimulateSetup()
+{
+  reSimulate(true);
 }

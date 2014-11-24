@@ -1330,3 +1330,40 @@ bool StringHandler::naturalSort(const QString &s1, const QString &s2) {
     }
   }
 }
+
+QProcessEnvironment StringHandler::compilationProcessEnvironment(QString *pCompilationProcessPath)
+{
+  QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+  const char *OMDEV = getenv("OMDEV");
+  if (QString(OMDEV).isEmpty()) {
+    QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
+    QString MinGWBin = OMHOME + "\\MinGW\\bin";
+    QString MinGWLibExec = OMHOME + "\\MinGW\\libexec\\gcc\\mingw32\\4.4.0";
+    environment.insert("PATH", MinGWBin + ";" + MinGWLibExec);
+    *pCompilationProcessPath = "\"" + OMHOME + "\\MinGW\\bin\\mingw32-make.exe" + "\"";
+  } else {
+    QString qOMDEV = QString(OMDEV).replace("/", "\\");
+    QString MinGWBin = qOMDEV + "\\tools\\mingw\\bin";
+    QString MinGWLibExec = qOMDEV + "\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0";
+    environment.insert("PATH", MinGWBin + ";" + MinGWLibExec);
+    *pCompilationProcessPath = "\"" + qOMDEV + "\\tools\\mingw\\bin\\mingw32-make.exe" + "\"";
+  }
+  return environment;
+}
+
+
+QProcessEnvironment StringHandler::simulationProcessEnvironment()
+{
+  QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+  const char *OMDEV = getenv("OMDEV");
+  if (QString(OMDEV).isEmpty()) {
+    QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
+    QString MinGWBin = OMHOME + "\\MinGW\\bin";
+    environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
+  } else {
+    QString qOMDEV = QString(OMDEV).replace("/", "\\");
+    QString MinGWBin = qOMDEV + "\\tools\\mingw\\bin";
+    environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
+  }
+  return environment;
+}

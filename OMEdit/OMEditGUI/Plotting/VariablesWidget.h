@@ -169,6 +169,8 @@ public:
   void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
                                  QHash<QString, QHash<QString, QString> > *variables);
   void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables);
+  void reSimulate(bool showSetup);
+  void updateInitXmlFile(SimulationOptions simulationOptions);
 private:
   MainWindow *mpMainWindow;
   QLineEdit *mpFindVariablesTextBox;
@@ -188,7 +190,8 @@ public slots:
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
   void showContextMenu(QPoint point);
   void findVariables();
-  void reSimulate();
+  void directReSimulate();
+  void showReSimulateSetup();
 };
 
 #endif // VARIABLESWIDGET_H

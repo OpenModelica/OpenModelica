@@ -87,6 +87,8 @@ SOURCES += main.cpp \
   Component/Transformation.cpp \
   Modeling/DocumentationWidget.cpp \
   Simulation/SimulationDialog.cpp \
+  Simulation/SimulationOutputWidget.cpp \
+  Simulation/SimulationProcessThread.cpp \
   FMI/ImportFMUDialog.cpp \
   Plotting/VariablesWidget.cpp \
   Options/NotificationsDialog.cpp \
@@ -143,6 +145,8 @@ HEADERS  += Util/backtrace.h \
   Component/Transformation.h \
   Modeling/DocumentationWidget.h \
   Simulation/SimulationDialog.h \
+  Simulation/SimulationOutputWidget.h \
+  Simulation/SimulationProcessThread.h \
   FMI/ImportFMUDialog.h \
   Plotting/VariablesWidget.h \
   Options/NotificationsDialog.h \
