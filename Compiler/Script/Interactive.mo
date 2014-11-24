@@ -17048,7 +17048,7 @@ algorithm
       Absyn.Path path;
       String indexArg, pathArg;
       Absyn.ClassDef body;
-     
+
     case (Absyn.CLASS(name = ident, body = body as Absyn.PARTS(), restriction = Absyn.R_PACKAGE()),_)
       equation
         ident = "(package " + ident;
