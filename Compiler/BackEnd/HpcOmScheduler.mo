@@ -2140,9 +2140,9 @@ algorithm
       simEqs := simEqs;
       newTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs, {taskIdx}, SOME(threadIdx));
       taskList := newTask :: taskList;
-    end if;  
+    end if;
   end for;
-  
+
   //This code merges all tasks handled by the same thread -- makes efficient memory management more complicated
   //components := List.flatten(List.map1(iTaskList, Array.getIndexFirst, iComps)); //Components of each task
   //simEqs := List.flatten(List.map(List.map1(components,Array.getIndexFirst,iSccSimEqMapping), listReverse));

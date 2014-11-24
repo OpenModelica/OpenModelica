@@ -509,7 +509,7 @@ encapsulated package HpcOmMemory
           nodeVars = List.sortedUnique(nodeVars,intEq);
           varType = getCacheLineVarTypeBySuccessorList(successorTasks, iSchedulerInfo, iNumberOfThreads, threadIdx);
           if(intEq(varType,1)) then
-            print("\t\t\tcreateCacheMapLevelFixedOptimizedForTask: Handling variables " + stringDelimitList(List.map(nodeVars, intString), ",") + " as THREAD_ONLY by Thread " + intString(threadIdx) + "\n");            
+            print("\t\t\tcreateCacheMapLevelFixedOptimizedForTask: Handling variables " + stringDelimitList(List.map(nodeVars, intString), ",") + " as THREAD_ONLY by Thread " + intString(threadIdx) + "\n");
             print("\t\t\t " + stringDelimitList(List.map(nodeVars, function dumpScVarsByIdx(iAllSCVarsMapping=allSCVarsMapping)), "\n\t\t\t ") + "\n");
             ((cacheMap,cacheMapMeta,numNewCL)) = addFixedLevelVarToThreadCL(nodeVars,threadIdx,iThreadCacheLines,(cacheMap,cacheMapMeta,numNewCL));
           else
@@ -702,7 +702,7 @@ encapsulated package HpcOmMemory
   algorithm
     oInfo := match(iMatchedCacheLine, iThreadIdx, iVarIdx, iLevelIdx, iInfo)
       case(SOME((partlyFilledCacheLine as PARTLYFILLEDCACHELINE(cacheLineMap, prefetchLevel, writeLevel),listIndex)),_,_,_,(CACHEMAP(cacheLineSize=cacheLineSize,cacheVariables=cacheVariables,cacheLinesFloat=cacheLinesFloat),CACHEMAPMETA(allSCVarsMapping=allSCVarsMapping,simCodeVarTypes=simCodeVarTypes,scVarCLMapping=scVarCLMapping),numNewCL,partlyFilledCLs))
-        equation //this case is used if the partly filled cache line has enough space to store the variable 
+        equation //this case is used if the partly filled cache line has enough space to store the variable
           CACHELINEMAP(idx,numBytesFree,entries) = cacheLineMap;
           ((varType,varSize)) = arrayGet(simCodeVarTypes, iVarIdx);
           numBytesFree = numBytesFree - varSize;
@@ -1876,7 +1876,7 @@ encapsulated package HpcOmMemory
     print("Scc " + intString(iIdx) + " is solved by node " + intString(iMappingEntry) + "\n");
     oIdx := iIdx + 1;
   end printSccNodeMapping0;
-  
+
   protected function dumpScVarsByIdx
     input Integer iSimCodeVarIdx;
     input array<Option<SimCodeVar.SimVar>> iAllSCVarsMapping;
