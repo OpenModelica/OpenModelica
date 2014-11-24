@@ -197,7 +197,7 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
-        true = intLe(listLength(tvarIdcs),2);
+        true = intLe(listLength(tvarIdcs),3);
         print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
 
         // build the new components, the new variables and the new equations
@@ -246,7 +246,7 @@ algorithm
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
         BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs, jac=jac, jacType=jacType) = comp;
-        true = intLe(listLength(varIdcs),2);
+        true = intLe(listLength(varIdcs),3);
         print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
           //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
 
@@ -297,103 +297,6 @@ algorithm
         (systTmp,tornSysIdx);
   end matchcontinue;
 end reduceLinearTornSystem1;
-
-protected function createEqSystem
-  input list<BackendDAE.Var> varLst;
-  output EqSys sys;
-protected
-  Integer dim;
-  array<list<DAE.Exp>> matrixA;
-  array<DAE.Exp> vectorB;
-  array<BackendDAE.Var> vectorX;
-algorithm
-  dim := listLength(varLst);
-  matrixA := arrayCreate(dim,{});
-  vectorB := arrayCreate(dim,DAE.RCONST(0.0));
-  sys := LINSYS(dim,matrixA,vectorB,listArray(varLst));
-end createEqSystem;
-
-protected function getEqSystem"gets a eqSys object for the given set of variables and equations.
-author:Waurich TUD 2014-11"
-  input list<BackendDAE.Equation> eqLst;
-  input list<BackendDAE.Var> varLst;
-  output EqSys syst;
-protected
-  list<DAE.ComponentRef> crefs;
-algorithm
-  syst := createEqSystem(varLst);
-  crefs := List.map(varLst,BackendVariable.varCref);
-  (syst,_) := List.fold1(eqLst,getEqSystem2,crefs,(syst,1));
-end getEqSystem;
-
-protected function getEqSystem2"gets the coefficents and offsets from the equations"
-  input BackendDAE.Equation eq;
-  input list<DAE.ComponentRef> crefs;
-  input tuple<EqSys,Integer> foldIn;
-  output tuple<EqSys,Integer> foldOut;
-protected
-  Integer idx, dim;
-  list<DAE.Exp> summands;
-  list<DAE.Exp> coeffs,offsetLst;
-  DAE.Exp offset;
-  EqSys sys;
-  array<list<DAE.Exp>> matrixA;
-  array<DAE.Exp> vectorB;
-  array<BackendDAE.Var> vectorX;
-algorithm
-  (sys,idx) := foldIn;
-  summands := getSummands(eq);
-  ((offsetLst,coeffs)) := List.fold(crefs,getEqSystem3,(summands,{}));
-  offset::offsetLst := offsetLst;
-  offset := List.fold(offsetLst,Expression.expAdd,offset);
-  offset := Expression.negate(offset);
-  LINSYS(dim=dim,matrixA=matrixA, vectorB = vectorB, vectorX=vectorX) := sys;
-  matrixA := arrayUpdate(matrixA,idx,listReverse(coeffs));
-  vectorB := arrayUpdate(vectorB,idx,offset);
-  sys := LINSYS(dim, matrixA, vectorB, vectorX);
-  foldOut := (sys,idx+1);
-end getEqSystem2;
-
-protected function getEqSystem3"divides the given expressions into coefficient-terms and the rest"
-  input DAE.ComponentRef  cref;
-  input tuple<list<DAE.Exp>,list<DAE.Exp>> foldIn;
-  output tuple<list<DAE.Exp>,list<DAE.Exp>> foldOut;
-protected
-  DAE.Exp coeff;
-  list<DAE.Exp> allTerms,coeffs,coeffsIn;
-algorithm
-  (allTerms,coeffsIn) := foldIn;
-  (coeffs,allTerms) := List.extract1OnTrue(allTerms,Expression.expHasCref,cref);
-  coeff := List.fold(coeffs,Expression.expAdd,DAE.RCONST(0));
-  (coeff,_) := Expression.replaceExp(coeff,Expression.crefExp(cref),DAE.RCONST(1.0));
-  (coeff,_) := ExpressionSimplify.simplify(coeff);
-  foldOut := (allTerms,coeff::coeffsIn);
-end getEqSystem3;
-
-
-protected function getSummands"gets all sum-terms in the equation"
-  input BackendDAE.Equation eq;
-  output list<DAE.Exp> exps;
-algorithm
-  exps := matchcontinue(eq)
-    local
-      DAE.Exp lhs;
-      DAE.Exp rhs;
-      list<DAE.Exp> expLst1, expLst2;
-  case(BackendDAE.EQUATION(exp=lhs,scalar=rhs))
-    equation
-      expLst1 = Expression.allTerms(lhs);
-      expLst1 = List.map(expLst1,Expression.negate);
-      expLst2 = Expression.allTerms(rhs);
-      expLst1 = listAppend(expLst1,expLst2);
-        //print("the expLst: "+ExpressionDump.printExpListStr(expLst1)+"\n");
-    then expLst1;
-  else
-    equation
-      print("getSummands failed!\n");
-    then {};
-  end matchcontinue;
-end getSummands;
 
 
 protected function reduceLinearTornSystem2  " builds from a torn system various linear equation systems that can be computed in parallel.
@@ -660,7 +563,7 @@ algorithm
       then ({comp},resEqsIn,tVarsIn,{},{});
     case(_,_,_,_,_,_)
       equation
-        true = intEq(listLength(tVarsIn),2);
+        true = intLe(listLength(tVarsIn),3);
         // apply Cramers Rule to this equation system
         (resEqs,_,addEqs,addVars) = applyCramerRule(jacValuesIn,tVarsIn);
         comps = List.threadMap(eqIdcsIn,varIdcsIn,makeSingleEquationComp);
@@ -1452,7 +1355,106 @@ algorithm
   tplOut := (replVarLstOut,replacementOut);
 end replaceOtherVarsWithPrefixCref;
 
+//--------------------------------------------------//
+// get EqSystem object
+//-------------------------------------------------//
 
+protected function createEqSystem
+  input list<BackendDAE.Var> varLst;
+  output EqSys sys;
+protected
+  Integer dim;
+  array<list<DAE.Exp>> matrixA;
+  array<DAE.Exp> vectorB;
+  array<BackendDAE.Var> vectorX;
+algorithm
+  dim := listLength(varLst);
+  matrixA := arrayCreate(dim,{});
+  vectorB := arrayCreate(dim,DAE.RCONST(0.0));
+  sys := LINSYS(dim,matrixA,vectorB,listArray(varLst));
+end createEqSystem;
+
+protected function getEqSystem"gets a eqSys object for the given set of variables and equations.
+author:Waurich TUD 2014-11"
+  input list<BackendDAE.Equation> eqLst;
+  input list<BackendDAE.Var> varLst;
+  output EqSys syst;
+protected
+  list<DAE.ComponentRef> crefs;
+algorithm
+  syst := createEqSystem(varLst);
+  crefs := List.map(varLst,BackendVariable.varCref);
+  (syst,_) := List.fold1(eqLst,getEqSystem2,crefs,(syst,1));
+end getEqSystem;
+
+protected function getEqSystem2"gets the coefficents and offsets from the equations"
+  input BackendDAE.Equation eq;
+  input list<DAE.ComponentRef> crefs;
+  input tuple<EqSys,Integer> foldIn;
+  output tuple<EqSys,Integer> foldOut;
+protected
+  Integer idx, dim;
+  list<DAE.Exp> summands;
+  list<DAE.Exp> coeffs,offsetLst;
+  DAE.Exp offset;
+  EqSys sys;
+  array<list<DAE.Exp>> matrixA;
+  array<DAE.Exp> vectorB;
+  array<BackendDAE.Var> vectorX;
+algorithm
+  (sys,idx) := foldIn;
+  summands := getSummands(eq);
+  ((offsetLst,coeffs)) := List.fold(crefs,getEqSystem3,(summands,{}));
+  if List.isEmpty(offsetLst) then offset := DAE.RCONST(0.0); else   offset::offsetLst := offsetLst; end if;
+  offset := List.fold(offsetLst,Expression.expAdd,offset);
+  offset := Expression.negate(offset);
+  LINSYS(dim=dim,matrixA=matrixA, vectorB = vectorB, vectorX=vectorX) := sys;
+  matrixA := arrayUpdate(matrixA,idx,listReverse(coeffs));
+  vectorB := arrayUpdate(vectorB,idx,offset);
+  sys := LINSYS(dim, matrixA, vectorB, vectorX);
+  foldOut := (sys,idx+1);
+end getEqSystem2;
+
+protected function getEqSystem3"divides the given expressions into coefficient-terms and the rest"
+  input DAE.ComponentRef  cref;
+  input tuple<list<DAE.Exp>,list<DAE.Exp>> foldIn;
+  output tuple<list<DAE.Exp>,list<DAE.Exp>> foldOut;
+protected
+  DAE.Exp coeff;
+  list<DAE.Exp> allTerms,coeffs,coeffsIn;
+algorithm
+  (allTerms,coeffsIn) := foldIn;
+  (coeffs,allTerms) := List.extract1OnTrue(allTerms,Expression.expHasCref,cref);
+  coeff := List.fold(coeffs,Expression.expAdd,DAE.RCONST(0));
+  (coeff,_) := Expression.replaceExp(coeff,Expression.crefExp(cref),DAE.RCONST(1.0));
+  (coeff,_) := ExpressionSimplify.simplify(coeff);
+  foldOut := (allTerms,coeff::coeffsIn);
+end getEqSystem3;
+
+
+protected function getSummands"gets all sum-terms in the equation"
+  input BackendDAE.Equation eq;
+  output list<DAE.Exp> exps;
+algorithm
+  exps := matchcontinue(eq)
+    local
+      DAE.Exp lhs;
+      DAE.Exp rhs;
+      list<DAE.Exp> expLst1, expLst2;
+  case(BackendDAE.EQUATION(exp=lhs,scalar=rhs))
+    equation
+      expLst1 = Expression.allTerms(lhs);
+      expLst1 = List.map(expLst1,Expression.negate);
+      expLst2 = Expression.allTerms(rhs);
+      expLst1 = listAppend(expLst1,expLst2);
+        //print("the expLst: "+ExpressionDump.printExpListStr(expLst1)+"\n");
+    then expLst1;
+  else
+    equation
+      print("getSummands failed!\n");
+    then {};
+  end matchcontinue;
+end getSummands;
 
 //--------------------------------------------------//
 // Cramers Rule
@@ -1512,6 +1514,23 @@ algorithm
       eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEQUATION, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
           //BackendDump.dumpEquationList(eqLst,"new residual eqs");
     then (eqLst,{},{});
+  case(LINSYS(dim=dim,matrixA=matrixA, vectorB=vectorB,vectorX=vectorX))
+    equation
+      // 3x3 matrix
+      true = intEq(dim,3);
+      matrixAT = transposeMatrix(matrixA);
+          //dumpMatrix(matrixAT);
+      detA = determinant(matrixA);
+          //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
+      detLst = List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
+          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
+      varExp = List.map(arrayList(vectorX),BackendVariable.varExp);
+      detLst = List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
+      (detLst,_) = List.map_2(detLst,ExpressionSimplify.simplify);
+      eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEQUATION, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
+          //BackendDump.dumpEquationList(eqLst,"new residual eqs");
+          //BackendDump.dumpEquationList(eqLst,"new residual eqs");
+    then (eqLst,{},{});
   else
     then ({},{},{});
   end matchcontinue;
@@ -1544,7 +1563,7 @@ protected function determinant"calculates the determinant of a matrix"
 algorithm
   detOut := matchcontinue(matrix)
     local
-      DAE.Exp a11,a12,a21,a22,det;
+      DAE.Exp a11,a12,a21,a22,a13,a23,a33,a31,a32,s1,s2,s3,s4,s5,s6,det;
       DAE.Type ty;
   case(_)
     equation
@@ -1555,6 +1574,29 @@ algorithm
       a22 = listGet(arrayGet(matrix,2),2);
       ty = Expression.typeof(a11);
       det = DAE.BINARY(DAE.BINARY(a11,DAE.MUL(ty = ty),a22),DAE.SUB(ty=ty),DAE.BINARY(a12,DAE.MUL(ty = ty),a21));
+      (det,_) = ExpressionSimplify.simplify(det);
+  then det;
+  case(_)
+    equation
+      //Sarrus Rule
+      true = arrayLength(matrix)==3;
+      a11 = listGet(arrayGet(matrix,1),1);
+      a12 = listGet(arrayGet(matrix,1),2);
+      a13 = listGet(arrayGet(matrix,1),3);
+      a21 = listGet(arrayGet(matrix,2),1);
+      a22 = listGet(arrayGet(matrix,2),2);
+      a23 = listGet(arrayGet(matrix,2),3);
+      a31 = listGet(arrayGet(matrix,3),1);
+      a32 = listGet(arrayGet(matrix,3),2);
+      a33 = listGet(arrayGet(matrix,3),3);
+      ty = Expression.typeof(a11);
+      s1 = DAE.BINARY(DAE.BINARY(a11,DAE.MUL(ty = ty),a22),DAE.MUL(ty = ty),a33);
+      s2 = DAE.BINARY(DAE.BINARY(a12,DAE.MUL(ty = ty),a23),DAE.MUL(ty = ty),a31);
+      s3 = DAE.BINARY(DAE.BINARY(a13,DAE.MUL(ty = ty),a21),DAE.MUL(ty = ty),a32);
+      s4 = DAE.BINARY(DAE.BINARY(a13,DAE.MUL(ty = ty),a22),DAE.MUL(ty = ty),a31);
+      s5 = DAE.BINARY(DAE.BINARY(a23,DAE.MUL(ty = ty),a32),DAE.MUL(ty = ty),a11);
+      s6 = DAE.BINARY(DAE.BINARY(a33,DAE.MUL(ty = ty),a12),DAE.MUL(ty = ty),a21);
+      det = DAE.BINARY(DAE.BINARY(DAE.BINARY(s1,DAE.ADD(ty = ty),s2),DAE.ADD(ty=ty),s3),DAE.SUB(ty = ty),DAE.BINARY(DAE.BINARY(s4,DAE.ADD(ty = ty),s5),DAE.ADD(ty=ty),s6));
       (det,_) = ExpressionSimplify.simplify(det);
   then det;
   else
