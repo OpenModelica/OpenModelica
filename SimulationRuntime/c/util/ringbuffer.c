@@ -30,7 +30,7 @@
 
 /*
  * this does not work
- * we need to seperate RingBuffer and expandable queue
+ * we need to separate RingBuffer and expandable queue
  */
 
 #include "ringbuffer.h"
