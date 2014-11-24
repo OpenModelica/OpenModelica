@@ -35,6 +35,8 @@
  *
  */
 
+#include <QTcpSocket>
+#include <QTcpServer>
 #include "SimulationProcessThread.h"
 
 SimulationProcessThread::SimulationProcessThread(SimulationOutputWidget *pSimulationOutputWidget)
