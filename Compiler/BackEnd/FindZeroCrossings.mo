@@ -163,7 +163,7 @@ algorithm
   (whenClauseLst, vars, eqns, ht, index) := encapsulateWhenConditions_WhenClause(whenClauseLst, {}, {}, {}, ht, index);
 
   // removed equations
-  ((removedEqs, vars, eqns, index, ht)) := BackendEquation.traverseEquationArray(removedEqs, encapsulateWhenConditions_EquationArray, (BackendEquation.emptyEqns(), vars, eqns, index, ht));
+  ((removedEqs, vars, eqns, index, ht)) := BackendEquation.traverseEquationArray(removedEqs, encapsulateWhenConditions_Equation, (BackendEquation.emptyEqns(), vars, eqns, index, ht));
   vars_ := BackendVariable.listVar(vars);
   eqns_ := BackendEquation.listEquation(eqns);
   systs := listAppend(systs, {BackendDAE.EQSYSTEM(vars_, eqns_, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION())});
@@ -252,7 +252,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets, partitionKind=partitionKind) := inEqSystem;
 
-  ((orderedEqs, varLst, eqnLst, outIndex, outHT)) := BackendEquation.traverseEquationArray(orderedEqs, encapsulateWhenConditions_EquationArray, (BackendEquation.emptyEqns(), {}, {}, inIndex, inHT));
+  ((orderedEqs, varLst, eqnLst, outIndex, outHT)) := BackendEquation.traverseEquationArray(orderedEqs, encapsulateWhenConditions_Equation, (BackendEquation.emptyEqns(), {}, {}, inIndex, inHT));
 
   orderedVars := BackendVariable.addVars(varLst, orderedVars);
   orderedEqs := BackendEquation.addEquations(eqnLst, orderedEqs);
@@ -260,7 +260,7 @@ algorithm
   outEqSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 end encapsulateWhenConditions_EqSystem;
 
-protected function encapsulateWhenConditions_EquationArray "author: lochel
+protected function encapsulateWhenConditions_Equation "author: lochel
   This is a helper function for encapsulateWhenConditions_EqSystem."
   input BackendDAE.Equation inEq;
   input tuple<BackendDAE.EquationArray, list<BackendDAE.Var>, list<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> inTpl;
@@ -283,36 +283,35 @@ algorithm
       BackendDAE.EquationAttributes attr;
 
     // when equation
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source, attr=attr), (equationArray, vars, eqns, index, ht))
-      equation
-        (whenEquation, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations(whenEquation, source, index, ht);
-        vars = listAppend(vars, vars1);
-        eqns = listAppend(eqns, eqns1);
-        eqn = BackendDAE.WHEN_EQUATION(size, whenEquation, source, attr);
-        equationArray = BackendEquation.addEquations({eqn}, equationArray);
-      then (eqn, (equationArray, vars, eqns, index, ht));
+    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source, attr=attr), (equationArray, vars, eqns, index, ht)) equation
+      (whenEquation, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations(whenEquation, source, index, ht);
+      vars = listAppend(vars, vars1);
+      eqns = listAppend(eqns, eqns1);
+      eqn = BackendDAE.WHEN_EQUATION(size, whenEquation, source, attr);
+      equationArray = BackendEquation.addEquation(eqn, equationArray);
+    then (eqn, (equationArray, vars, eqns, index, ht));
 
     // removed algorithm
-    case (BackendDAE.ALGORITHM(size=0, alg=alg_, source=source, expand=crefExpand, attr=attr), (equationArray, vars, eqns, index, ht))
-      equation
-        DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
-        size = -index;
-        (stmts, preStmts, vars1, index) = encapsulateWhenConditions_Algorithms(stmts, vars, index);
-        sizePre = listLength(preStmts);
-        size = size+index-sizePre;
+    case (BackendDAE.ALGORITHM(size=0, alg=alg_, source=source, expand=crefExpand, attr=attr), (equationArray, vars, eqns, index, ht)) equation
+      DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
+      size = -index;
+      (stmts, preStmts, vars1, index) = encapsulateWhenConditions_Algorithms(stmts, vars, index);
+      sizePre = listLength(preStmts);
+      size = size+index-sizePre;
 
-        alg_ = DAE.ALGORITHM_STMTS(stmts);
-        eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
-        equationArray = BackendEquation.addEquations({eqn}, equationArray);
+      alg_ = DAE.ALGORITHM_STMTS(stmts);
+      eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
+      equationArray = BackendEquation.addEquation(eqn, equationArray);
 
+      if sizePre > 0 then
         alg_ = DAE.ALGORITHM_STMTS(preStmts);
         eqn2 = BackendDAE.ALGORITHM(sizePre, alg_, source, crefExpand, attr);
-        eqns = if intGt(sizePre, 0) then eqn2::eqns else eqns;
-      then (eqn, (equationArray, vars1, eqns, index, ht));
+        eqns = eqn2::eqns;
+      end if;
+    then (eqn, (equationArray, vars1, eqns, index, ht));
 
     // algorithm
-    case (BackendDAE.ALGORITHM(size=size, alg=alg_, source=source, expand=crefExpand, attr=attr), (equationArray, vars, eqns, index, ht))
-      equation
+    case (BackendDAE.ALGORITHM(size=size, alg=alg_, source=source, expand=crefExpand, attr=attr), (equationArray, vars, eqns, index, ht)) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
       size = size-index;
       (stmts, preStmts, vars1, index) = encapsulateWhenConditions_Algorithms(stmts, vars, index);
@@ -322,18 +321,17 @@ algorithm
 
       alg_ = DAE.ALGORITHM_STMTS(stmts);
       eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand, attr);
-      equationArray = BackendEquation.addEquations({eqn}, equationArray);
-      then (eqn, (equationArray, vars1, eqns, index, ht));
+      equationArray = BackendEquation.addEquation(eqn, equationArray);
+    then (eqn, (equationArray, vars1, eqns, index, ht));
 
-    case (eqn, (equationArray, vars, eqns, index, ht))
-      equation
-      equationArray = BackendEquation.addEquations({eqn}, equationArray);
-      then (eqn, (equationArray, vars, eqns, index, ht));
+    case (_, (equationArray, vars, eqns, index, ht)) equation
+      equationArray = BackendEquation.addEquation(inEq, equationArray);
+    then (inEq, (equationArray, vars, eqns, index, ht));
   end match;
-end encapsulateWhenConditions_EquationArray;
+end encapsulateWhenConditions_Equation;
 
 protected function encapsulateWhenConditions_Equations "author: lochel
-  This is a helper function for encapsulateWhenConditions_EquationArray."
+  This is a helper function for encapsulateWhenConditions_Equation."
   input BackendDAE.WhenEquation inWhenEquation;
   input DAE.ElementSource inSource;
   input Integer inIndex;
@@ -482,7 +480,7 @@ algorithm
 end encapsulateWhenConditions_EquationsWithArrayConditions;
 
 protected function encapsulateWhenConditions_Algorithms "author: lochel
-  This is a helper function for encapsulateWhenConditions_EquationArray."
+  This is a helper function for encapsulateWhenConditions_Equation."
   input list<DAE.Statement> inStmts;
   input list<BackendDAE.Var> inVars;
   input Integer inIndex;
