@@ -446,11 +446,11 @@ QSize ParametersScrollArea::minimumSizeHint() const
 {
   QSize size = QWidget::sizeHint();
   // find optimal width
-  int screenWidth = QApplication::desktop()->screenGeometry().width() - 100;
+  int screenWidth = QApplication::desktop()->availableGeometry().width() - 100;
   int widgetWidth = mpWidget->minimumSizeHint().width() + (verticalScrollBar()->isVisible() ? verticalScrollBar()->width() : 0);
   size.rwidth() = qMin(screenWidth, widgetWidth);
   // find optimal height
-  int screenHeight = QApplication::desktop()->screenGeometry().height() - 300;
+  int screenHeight = QApplication::desktop()->availableGeometry().height() - 300;
   int widgetHeight = mpWidget->minimumSizeHint().height() + (horizontalScrollBar()->isVisible() ? horizontalScrollBar()->height() : 0);
   size.rheight() = qMin(screenHeight, widgetHeight);
   return size;
