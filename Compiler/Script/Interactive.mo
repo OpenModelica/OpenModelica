@@ -923,21 +923,17 @@ algorithm
   end matchcontinue;
 end getTypeOfVariable;
 
-protected function matchApiFunction
-  "Checks if the interactive statement list contains a function with the given name."
+protected function getApiFunctionNameInfo
+  "Returns the name of the called API function."
   input GlobalScript.Statements inStmts;
-  input String inFunctionName;
+  output String outName;
+  output SourceInfo outInfo;
 algorithm
-  _ := match(inStmts, inFunctionName)
-    local String fn;
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(function_ =
-        Absyn.CREF_IDENT(name = fn)))}), _)
-      equation
-        true = stringEq(inFunctionName, fn);
-      then
-        ();
-  end match;
-end matchApiFunction;
+  GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(
+      exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = outName)),
+      info = outInfo
+    )}) := inStmts;
+end getApiFunctionNameInfo;
 
 protected function getApiFunctionArgs
   "Returns a list of arguments to the function in the interactive statement list."
@@ -945,9 +941,12 @@ protected function getApiFunctionArgs
   output list<Absyn.Exp> outArgs;
 algorithm
   outArgs := match(inStmts)
-    local list<Absyn.Exp> args;
+    local 
+      list<Absyn.Exp> args;
+
     case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(functionArgs =
       Absyn.FUNCTIONARGS(args = args)))})) then args;
+    else {};
   end match;
 end getApiFunctionArgs;
 
@@ -972,932 +971,715 @@ protected function evaluateGraphicalApi
   input Boolean flagGen;
   input Boolean flagEvalFunc;
   input Boolean flagKeepArrays;
-  output String outString;
+  output String outResult;
   output GlobalScript.SymbolTable outSymbolTable;
+protected
+  String fn_name;
+  SourceInfo info;
+  Boolean failed := false;
 algorithm
-  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,isPartialInst,flagGen,flagEvalFunc,flagKeepArrays)
+  try
+    (outResult, outSymbolTable) :=
+      evaluateGraphicalApi_dispatch(inStatements, inSymbolTable);
+  else
+    failed := true;
+  end try;
 
-    case (_, _, _, _, _, _)
-      equation
-        (outString,outSymbolTable) = evaluateGraphicalApi_dispatch(inStatements,inSymbolTable);
-        // reset the flags!
-        System.setPartialInstantiation(isPartialInst);
-        Flags.set(Flags.GEN, flagGen);
-        Flags.set(Flags.EVAL_FUNC, flagEvalFunc);
-        Flags.setConfigBool(Flags.KEEP_ARRAYS, flagKeepArrays);
-      then
-        (outString,outSymbolTable);
+  // Reset the flags!
+  System.setPartialInstantiation(isPartialInst);
+  Flags.set(Flags.GEN, flagGen);
+  Flags.set(Flags.EVAL_FUNC, flagEvalFunc);
+  Flags.setConfigBool(Flags.KEEP_ARRAYS, flagKeepArrays);
 
-    case (_, _, _, _, _, _)
-      equation
-        // reset the flags!
-        System.setPartialInstantiation(isPartialInst);
-        Flags.set(Flags.GEN, flagGen);
-        Flags.set(Flags.EVAL_FUNC, flagEvalFunc);
-        Flags.setConfigBool(Flags.KEEP_ARRAYS, flagKeepArrays);
-      then
-        fail();
-
-  end matchcontinue;
+  if failed then fail(); end if;
 end evaluateGraphicalApi;
 
 protected function evaluateGraphicalApi_dispatch
 "This function evaluates all primitives in the graphical api."
   input GlobalScript.Statements inStatements;
   input GlobalScript.SymbolTable inSymbolTable;
-  output String outString;
-  output GlobalScript.SymbolTable outSymbolTable;
+  output String outResult;
+  output GlobalScript.SymbolTable outSymbolTable := inSymbolTable;
+protected
+  String fn_name, name;
+  Absyn.Program old_p, p, p_1;
+  SCode.Program s;
+  list<Absyn.Exp> args, expl;
+  Absyn.ComponentRef cr, cr1, cr2, tp, model_, class_, old_cname, new_cname;
+  Absyn.ComponentRef crident, subident;
+  Absyn.Path path;
+  list<Absyn.NamedArg> nargs;
+  Integer n;
+  String cmt, variability, causality;
+  Absyn.Class cls;
+  list<GlobalScript.LoadedFile> lf;
+  Absyn.Modification mod;
+  Boolean finalPrefix, flowPrefix, streamPrefix, protected_, repl, dref1, dref2;
+  Boolean addFunctions;
+  FCore.Graph env;
+  Absyn.Exp exp;
 algorithm
-  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable)
-    local
-      Absyn.Program p_1,p,newp;
-      String resstr,name,top_names_str,str,cmt,s1,res_str,res,causality,variability,filenameprefix,file_dir,method,reductionMethod;
-      Absyn.ComponentRef class_,ident,subident,cr,tp,model_,cr1,cr2,c1,c2,old_cname,new_cname,cname,from_ident,to_ident,crident;
-      Absyn.Exp exp;
-      GlobalScript.SymbolTable st,newst;
-      list<SCode.Element> s_1;
-      Absyn.Modification mod;
-      Absyn.Path path_1,path,wpath;
-      Integer count,n;
-      list<Absyn.NamedArg> nargs;
-      Boolean b1,b2,b,dref1,dref2,finalPrefix,flowPrefix,streamPrefix,repl,protected_,addFunctions;
-      list<GlobalScript.LoadedFile> lf;
-      GlobalScript.Statements istmts;
-      Absyn.Path modelpath;
-      list<String> libs;
-      Absyn.Class cls,refactoredClass;
-      list<DAE.Exp> simOptions;
-      FCore.Graph env;
-      list<Absyn.Exp> exp_list,exp_list2;
-      FCore.Cache cache;
+  fn_name := getApiFunctionNameInfo(inStatements);
+  GlobalScript.SYMBOLTABLE(ast = old_p) := inSymbolTable;
+  p := old_p;
+  args := getApiFunctionArgs(inStatements);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
+  outResult := match(fn_name)
+    case "setComponentModifierValue"
       algorithm
-        matchApiFunction(istmts, "setComponentModifierValue");
         {Absyn.CREF(componentRef = class_),
          Absyn.CREF(componentRef = cr),
-         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} := getApiFunctionArgs(istmts);
-        (p, resstr) := setComponentModifier(class_, cr, mod, p);
-        st := GlobalScriptUtil.setSymbolTableAST(st, p);
+         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} := args;
+        (p, outResult) := setComponentModifier(class_, cr, mod, p);
       then
-        (resstr, st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getParameterValue");
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = ident)} = getApiFunctionArgs(istmts);
-        resstr = getComponentBinding(class_, ident, p);
+    case "getParameterValue"
+      algorithm
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = crident)} := args;
       then
-        (resstr, st);
+        getComponentBinding(class_, crident, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setParameterValue");
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = ident),exp} = getApiFunctionArgs(istmts);
-        (p_1,resstr) = setParameterValue(class_, ident, exp, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, p_1);
+    case "setParameterValue"
+      algorithm
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = crident), exp} := args;
+        (p, outResult) := setParameterValue(class_, crident, exp, p);
       then
-        (resstr, st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getParameterNames");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getParameterNames(cr, p);
+    case "getParameterNames"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        getParameterNames(cr, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "createModel");
-        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name))} =
-          getApiFunctionArgs(istmts);
-        newp = updateProgram(
-          Absyn.PROGRAM({Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-                         Absyn.dummyParts,Absyn.dummyInfo)},
-                         Absyn.TOP()), p);
-        newst = GlobalScriptUtil.setSymbolTableAST(st, newp);
+    case "createModel"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        p := createModel(cr, p);
       then
-        ("true",newst);
+        "true";
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "createModel");
-        {Absyn.CREF(componentRef = (cr as Absyn.CREF_QUAL()))} =
-          getApiFunctionArgs(istmts);
-        path_1 = Absyn.crefToPath(cr);
-        name = Absyn.pathLastIdent(path_1);
-        wpath = Absyn.stripLast(path_1);
-        newp = updateProgram(
-          Absyn.PROGRAM({
-          Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
-                      Absyn.dummyParts,Absyn.dummyInfo)},
-                      Absyn.WITHIN(wpath)), p);
-        newst = GlobalScriptUtil.setSymbolTableAST(st, newp);
-      then
-        ("true",newst);
-
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "newModel");
+    case "newModel"
+      algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-         Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path_1 = Absyn.crefToPath(cr);
-        newp = updateProgram(
+         Absyn.CREF(componentRef = cr)} := args;
+        path := Absyn.crefToPath(cr);
+        p := updateProgram(
           Absyn.PROGRAM({
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),Absyn.dummyParts,Absyn.dummyInfo)
-          }, Absyn.WITHIN(path_1)), p);
-        newst = GlobalScriptUtil.setSymbolTableAST(st, newp);
+          }, Absyn.WITHIN(path)), p);
       then
-        ("true",newst);
+        "true";
 
     // Not moving this yet as it could break things...
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "deleteClass");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        (resstr,newp) = deleteClass(cr, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
+    case "deleteClass"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        (outResult, p) := deleteClass(cr, p);
       then
-        (resstr, st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "addComponent");
+    case "addComponent"
+      algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
          Absyn.CREF(componentRef = tp),
-         Absyn.CREF(componentRef = model_)} = getApiFunctionArgs(istmts);
-        nargs = getApiFunctionNamedArgs(istmts);
-        (newp,_) = addComponent(name, tp, model_, nargs, p);
+         Absyn.CREF(componentRef = model_)} := args;
+        nargs := getApiFunctionNamedArgs(inStatements);
+        p := addComponent(name, tp, model_, nargs, p);
         Print.clearBuf();
-        //resstr_1 = stringAppend(resstr, str);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
-        ("true", st);
+        "true";
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "updateComponent");
+    case "updateComponent"
+      algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
          Absyn.CREF(componentRef = tp),
-         Absyn.CREF(componentRef = model_)} = getApiFunctionArgs(istmts);
-        nargs = getApiFunctionNamedArgs(istmts);
-        (newp,res) = updateComponent(name, tp, model_, nargs, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
+         Absyn.CREF(componentRef = model_)} := args;
+        nargs := getApiFunctionNamedArgs(inStatements);
+        (p, outResult) := updateComponent(name, tp, model_, nargs, p);
       then
-        (res, st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "deleteComponent");
+    case "deleteComponent"
+      algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-         Absyn.CREF(componentRef = model_)} = getApiFunctionArgs(istmts);
-        {} = getApiFunctionNamedArgs(istmts);
-        (newp,_) = deleteComponent(name, model_, p);
+         Absyn.CREF(componentRef = model_)} := args;
+        {} := getApiFunctionNamedArgs(inStatements);
+        p := deleteComponent(name, model_, p);
         Print.clearBuf();
-        //resstr_1 = stringAppend(resstr, str);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
       then
-        ("true", st);
+        "true";
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getComponentCount");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        count = getComponentCount(cr, p);
-        resstr = intString(count);
+    case "getComponentCount"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        intString(getComponentCount(cr, p));
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNthComponent");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} =
-          getApiFunctionArgs(istmts);
-        resstr = getNthComponent(cr, p, n);
+    case "getNthComponent"
+      algorithm
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} := args;
       then
-        (resstr,st);
+        getNthComponent(cr, p, n);
 
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "getComponents");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        nargs = getApiFunctionNamedArgs(istmts);
-        b1 = useQuotes(nargs);
-        (resstr,st) = getComponents(cr, b1, st);
+    case "getComponents"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        nargs := getApiFunctionNamedArgs(inStatements);
+        (outResult, outSymbolTable) :=
+          getComponents(cr, useQuotes(nargs), inSymbolTable);
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getComponentAnnotations");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+    case "getComponentAnnotations"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
         ErrorExt.setCheckpoint("getComponentAnnotations");
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getComponentAnnotations(cr, p);
+        outResult := getComponentAnnotations(cr, p);
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getComponentAnnotations");
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNthComponentAnnotation");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
+    case "getNthComponentAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthComponentAnnotation");
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getNthComponentAnnotation(cr, p, n);
+        outResult := getNthComponentAnnotation(cr, p, n);
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthComponentAnnotation");
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNthComponentModification");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
-        resstr = getNthComponentModification(cr, p, n);
+    case "getNthComponentModification"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
       then
-        (resstr,st);
+        getNthComponentModification(cr, p, n);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNthComponentCondition");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
-        resstr = getNthComponentCondition(cr, p, n);
+    case "getNthComponentCondition"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
       then
-        (resstr,st);
+        getNthComponentCondition(cr, p, n);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getInheritanceCount");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        count = getInheritanceCount(cr, p);
-        resstr = intString(count);
+    case "getInheritanceCount"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        intString(getInheritanceCount(cr, p));
 
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "getNthInheritedClass");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} =
-          getApiFunctionArgs(istmts);
-        (resstr,st) = getNthInheritedClass(cr, n, st);
+    case "getNthInheritedClass"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
+        (outResult, outSymbolTable) := getNthInheritedClass(cr, n, inSymbolTable);
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getConnectionCount");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getConnectionCount(cr, p);
+    case "getConnectionCount"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        getConnectionCount(cr, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNthConnection");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} =
-          getApiFunctionArgs(istmts);
-        resstr = getNthConnection(cr, p, n);
+    case "getNthConnection"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
       then
-        (resstr,st);
+        getNthConnection(cr, p, n);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setConnectionComment");
+    case "setConnectionComment"
+      algorithm
         {Absyn.CREF(componentRef = cr),
          Absyn.CREF(componentRef = cr1),
          Absyn.CREF(componentRef = cr2),
-         Absyn.STRING(value = cmt)} = getApiFunctionArgs(istmts);
-        (newp,resstr) = setConnectionComment(cr, cr1, cr2, cmt, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
+         Absyn.STRING(value = cmt)} := args;
+        (p, outResult) := setConnectionComment(cr, cr1, cr2, cmt, p);
       then
-        (resstr, st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "addConnection");
-        {Absyn.CREF(componentRef = c1),
-         Absyn.CREF(componentRef = c2),
-         Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        nargs = getApiFunctionNamedArgs(istmts);
-        (resstr,newp) = addConnection(cr, c1, c2, nargs, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
+    case "addConnection"
+      algorithm
+        {Absyn.CREF(componentRef = cr1),
+         Absyn.CREF(componentRef = cr2),
+         Absyn.CREF(componentRef = cr)} := args;
+        nargs := getApiFunctionNamedArgs(inStatements);
+        (outResult, p) := addConnection(cr, cr1, cr2, nargs, p);
       then
-        (resstr, st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "deleteConnection");
-        {Absyn.CREF(componentRef = c1),
-         Absyn.CREF(componentRef = c2),
-         Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        (resstr,newp) = deleteConnection(cr, c1, c2, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
+    case "deleteConnection"
+      algorithm
+        {Absyn.CREF(componentRef = cr1),
+         Absyn.CREF(componentRef = cr2),
+         Absyn.CREF(componentRef = cr)} := args;
+        (outResult, p) := deleteConnection(cr, cr1, cr2, p);
       then
-        (resstr, st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "updateConnection");
-        {Absyn.CREF(componentRef = c1),
-         Absyn.CREF(componentRef = c2),
-         Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        nargs = getApiFunctionNamedArgs(istmts);
-        (_,newp) = deleteConnection(cr, c1, c2, p);
-        (resstr,newp) = addConnection(cr, c1, c2, nargs, newp);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
+    case "updateConnection"
+      algorithm
+        {Absyn.CREF(componentRef = cr1),
+         Absyn.CREF(componentRef = cr2),
+         Absyn.CREF(componentRef = cr)} := args;
+        nargs := getApiFunctionNamedArgs(inStatements);
+        (_, p) := deleteConnection(cr, cr1, cr2, p);
+        (outResult, p) := addConnection(cr, cr1, cr2, nargs, p);
       then
-        (resstr, st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNthConnectionAnnotation");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
+    case "getNthConnectionAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthConnectionAnnotation");
-        modelpath = Absyn.crefToPath(cr);
+        path := Absyn.crefToPath(cr);
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getNthConnectionAnnotation(modelpath, p, n);
+        outResult := getNthConnectionAnnotation(path, p, n);
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthConnectionAnnotation");
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getConnectorCount");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getConnectorCount(cr, p);
+    case "getConnectorCount"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        getConnectorCount(cr, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNthConnector");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
-        modelpath = Absyn.crefToPath(cr);
-        resstr = getNthConnector(modelpath, p, n);
+    case "getNthConnector"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
       then
-        (resstr,st);
+        getNthConnector(Absyn.crefToPath(cr), p, n);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-
-      equation
-        matchApiFunction(istmts, "getNthConnectorIconAnnotation");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
+    case "getNthConnectorIconAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthConnectorIconAnnotation");
-        modelpath = Absyn.crefToPath(cr);
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getNthConnectorIconAnnotation(modelpath, p, n);
+        outResult := getNthConnectorIconAnnotation(Absyn.crefToPath(cr), p, n);
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthConnectorIconAnnotation");
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getIconAnnotation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        modelpath = Absyn.crefToPath(cr);
+    case "getIconAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
         ErrorExt.setCheckpoint("getIconAnnotation");
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getIconAnnotation(modelpath, p);
+        outResult := getIconAnnotation(Absyn.crefToPath(cr), p);
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getIconAnnotation");
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getDiagramAnnotation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        modelpath = Absyn.crefToPath(cr);
+    case "getDiagramAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
         ErrorExt.setCheckpoint("getDiagramAnnotation");
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getDiagramAnnotation(modelpath, p);
+        outResult := getDiagramAnnotation(Absyn.crefToPath(cr), p);
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getDiagramAnnotation");
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNthInheritedClassIconMapAnnotation");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
+    case "getNthInheritedClassIconMapAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthInheritedClassIconMapAnnotation");
-        modelpath = Absyn.crefToPath(cr);
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getNthInheritedClassMapAnnotation(modelpath, n, p, "IconMap");
+        outResult := getNthInheritedClassMapAnnotation(Absyn.crefToPath(cr), n, p, "IconMap");
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthInheritedClassIconMapAnnotation");
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNthInheritedClassDiagramMapAnnotation");
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
+    case "getNthInheritedClassDiagramMapAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
         ErrorExt.setCheckpoint("getNthInheritedClassDiagramMapAnnotation");
-        modelpath = Absyn.crefToPath(cr);
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getNthInheritedClassMapAnnotation(modelpath, n, p, "DiagramMap");
+        outResult := getNthInheritedClassMapAnnotation(Absyn.crefToPath(cr), n, p, "DiagramMap");
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthInheritedClassDiagramMapAnnotation");
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getNamedAnnotation");
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, {}))} =
-        getApiFunctionArgs(istmts);
-        modelpath = Absyn.crefToPath(cr);
+    case "getNamedAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr),
+         Absyn.CREF(componentRef = Absyn.CREF_IDENT(name, {}))} := args;
         ErrorExt.setCheckpoint("getNamedAnnotation");
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getNamedAnnotation(modelpath, p, Absyn.IDENT(str), SOME("{}"), getAnnotationValue);
+        outResult := getNamedAnnotation(Absyn.crefToPath(cr), p,
+            Absyn.IDENT(name), SOME("{}"), getAnnotationValue);
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNamedAnnotation");
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "refactorClass");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        cls = getPathedClassInProgram(path, p);
-        refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
-        p = updateProgram(Absyn.PROGRAM({refactoredClass}, Absyn.TOP()), p);
-         resstr = Dump.unparseStr(Absyn.PROGRAM({refactoredClass},Absyn.TOP()),false);
-        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+    case "refactorClass"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+
+        try
+          cls := getPathedClassInProgram(Absyn.crefToPath(cr), p);
+          cls := Refactor.refactorGraphicalAnnotation(p, cls);
+          p := updateProgram(Absyn.PROGRAM({cls}, Absyn.TOP()), p);
+          outResult := Dump.unparseStr(Absyn.PROGRAM({cls}, Absyn.TOP()), false);
+        else
+          outResult := "Failed in translating " + Dump.printComponentRefStr(cr)
+                     + " to Modelica v2.0 graphical annotations";
+        end try;
       then
-        (resstr, st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "refactorClass");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        s1 = Dump.printComponentRefStr(cr);
-        resstr = stringAppendList({"Failed in translating", s1, " to Modelica v2.0 graphicall annotations"});
-        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+    case "refactorIconAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        path := Absyn.crefToPath(cr);
+        cls := getPathedClassInProgram(path, p);
+        cls := Refactor.refactorGraphicalAnnotation(p, cls);
       then
-        (resstr, st);
+        getAnnotationInClass(cls, ICON_ANNOTATION(), p, path);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "refactorIconAnnotation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        cls = getPathedClassInProgram(path, p);
-
-        refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
-
-        resstr = getAnnotationInClass(refactoredClass, ICON_ANNOTATION(), p, path);
-        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+    case "refactorDiagramAnnotation"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        path := Absyn.crefToPath(cr);
+        cls := getPathedClassInProgram(path, p);
+        cls := Refactor.refactorGraphicalAnnotation(p, cls);
       then
-        (resstr, st);
+        getAnnotationInClass(cls, DIAGRAM_ANNOTATION(), p, path);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "refactorDiagramAnnotation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        cls = getPathedClassInProgram(path, p);
-
-        refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
-
-        resstr = getAnnotationInClass(refactoredClass, DIAGRAM_ANNOTATION(), p, path);
-        st = GlobalScriptUtil.setSymbolTableAST(st, p);
+    case "getShortDefinitionBaseClassInformation"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr, st);
+        getShortDefinitionBaseClassInformation(cr, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getShortDefinitionBaseClassInformation");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getShortDefinitionBaseClassInformation(cr, p);
+    case "getExternalFunctionSpecification"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        getExternalFunctionSpecification(cr, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getExternalFunctionSpecification");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getExternalFunctionSpecification(cr, p);
+    case "getClassRestriction"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        getClassRestriction(cr, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getClassRestriction");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getClassRestriction(cr, p);
+    case "isPrimitive"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        boolString(isPrimitive(cr, p));
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isPrimitive");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isPrimitive(cr, p);
-        resstr = boolString(b1);
+    case "isType"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        boolString(isType(cr, p));
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isType");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isType(cr, p);
-        resstr = boolString(b1);
+    case "isConnector"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        boolString(isConnector(cr, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isConnector");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isConnector(cr, p);
-        resstr = boolString(b1);
+    case "isRecord"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        boolString(isRecord(cr, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isRecord");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isRecord(cr, p);
-        resstr = boolString(b1);
+    case "isBlock"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        boolString(isBlock(cr, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isBlock");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isBlock(cr, p);
-        resstr = boolString(b1);
+    case "isOptimization"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isOptimization");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isOptimization(cr, p);
-        resstr = boolString(b1);
-      then
-        (resstr,st);
+        boolString(isOptimization(cr, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isFunction");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isFunction(cr, p);
-        resstr = boolString(b1);
+    case "isFunction"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        boolString(isFunction(cr, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isClass");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = isClass(cr, p);
-        resstr = boolString(b1);
+    case "isClass"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        boolString(isClass(cr, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isParameter");
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} =
-          getApiFunctionArgs(istmts);
-        b1 = isParameter(cr, class_, p);
-        resstr = boolString(b1);
+    case "isParameter"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
       then
-        (resstr,st);
+        boolString(isParameter(cr, class_, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isProtected");
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} =
-          getApiFunctionArgs(istmts);
-        b1 = isProtected(cr, class_, p);
-        resstr = boolString(b1);
+    case "isProtected"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
       then
-        (resstr,st);
+        boolString(isProtected(cr, class_, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isConstant");
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} =
-          getApiFunctionArgs(istmts);
-        b1 = isConstant(cr, class_, p);
-        resstr = boolString(b1);
+    case "isConstant"
+      algorithm
+        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
       then
-        (resstr,st);
+        boolString(isConstant(cr, class_, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isEnumeration");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        cls = getPathedClassInProgram(path, p);
-        b1 = isEnumeration(cls);
-        resstr = boolString(b1);
+    case "isEnumeration"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        path := Absyn.crefToPath(cr);
+        cls := getPathedClassInProgram(path, p);
       then
-        (resstr,st);
+        boolString(isEnumeration(cls));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isReplaceable");
-        {Absyn.CREF(componentRef = class_), Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
-        b1 = isReplaceable(class_, name, p);
-        resstr = boolString(b1);
+    case "isReplaceable"
+      algorithm
+        {Absyn.CREF(componentRef = class_), Absyn.STRING(value = name)} := args;
       then
-        (resstr,st);
+        boolString(isReplaceable(class_, name, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getEnumerationLiterals");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        cls = getPathedClassInProgram(path, p);
-        resstr = getEnumLiterals(cls);
+    case "getEnumerationLiterals"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        path := Absyn.crefToPath(cr);
+        cls := getPathedClassInProgram(path, p);
       then
-        (resstr,st);
+        getEnumLiterals(cls);
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "existClass");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = existClass(cr, p);
-        resstr = boolString(b1);
+    case "existClass"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        boolString(existClass(cr, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "existModel");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        b1 = existClass(cr, p);
-        b2 = isModel(path, p);
-        b = boolAnd(b1, b2);
-        resstr = boolString(b);
+    case "existModel"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        path := Absyn.crefToPath(cr);
       then
-        (resstr,st);
+        boolString(existClass(cr, p) and isModel(path, p));
 
-   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "existPackage");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        b1 = existClass(cr, p);
-        b2 = isPackage(Absyn.crefToPath(cr), p);
-        b = boolAnd(b1, b2);
-        resstr = boolString(b);
+    case "existPackage"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        boolString(existClass(cr, p) and isPackage(Absyn.crefToPath(cr), p));
 
-    case (istmts, GlobalScript.SYMBOLTABLE(ast = p, loadedFiles = lf))
-      equation
-        matchApiFunction(istmts, "renameClass");
-        {Absyn.CREF(componentRef = old_cname), Absyn.CREF(componentRef = new_cname)} =
-          getApiFunctionArgs(istmts);
+    case "renameClass"
+      algorithm
+        {Absyn.CREF(componentRef = old_cname), Absyn.CREF(componentRef = new_cname)} := args;
         // For now, renaming a class clears all caches...
         // Substantial analysis required to find out what to keep in cache and what must be thrown out
-        (res,p_1) = renameClass(p, old_cname, new_cname);
-        s_1 = SCodeUtil.translateAbsyn2SCode(p_1);
+        (outResult, p_1) := renameClass(p, old_cname, new_cname);
+        GlobalScript.SYMBOLTABLE(loadedFiles = lf) := inSymbolTable;
+        s := SCodeUtil.translateAbsyn2SCode(p_1);
+        outSymbolTable := GlobalScript.SYMBOLTABLE(p, SOME(s), {}, {}, {}, lf);
       then
-        (res,GlobalScript.SYMBOLTABLE(p_1,SOME(s_1),{},{},{},lf));
+        outResult;
 
-    case (istmts, GlobalScript.SYMBOLTABLE(ast = p, loadedFiles = lf))
-      equation
-        matchApiFunction(istmts, "renameComponent");
-        {Absyn.CREF(componentRef = cname),
-         Absyn.CREF(componentRef = from_ident),
-         Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
-        (res_str,p_1) = renameComponent(p, cname, from_ident, to_ident);
+    case "renameComponent"
+      algorithm
+        {Absyn.CREF(componentRef = cr),
+         Absyn.CREF(componentRef = old_cname),
+         Absyn.CREF(componentRef = new_cname)} := args;
+        (outResult, p_1) := renameComponent(p, cr, old_cname, new_cname);
+        GlobalScript.SYMBOLTABLE(loadedFiles = lf) := inSymbolTable;
+        outSymbolTable := GlobalScript.SYMBOLTABLE(p_1, NONE(), {}, {}, {}, lf);
       then
-        (res_str,GlobalScript.SYMBOLTABLE(p_1,NONE(),{},{},{},lf));
+        outResult;
 
-    case (istmts, GlobalScript.SYMBOLTABLE(ast = p, loadedFiles = lf))
-      equation
-        matchApiFunction(istmts, "renameComponentInClass");
-        {Absyn.CREF(componentRef = cname),
-         Absyn.CREF(componentRef = from_ident),
-         Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
-        (res_str,p_1) = renameComponentOnlyInClass(p, cname, from_ident, to_ident);
+    case "renameComponentInClass"
+      algorithm
+        {Absyn.CREF(componentRef = cr),
+         Absyn.CREF(componentRef = old_cname),
+         Absyn.CREF(componentRef = new_cname)} := args;
+        (outResult, p_1) := renameComponentOnlyInClass(p, cr, old_cname, new_cname);
+        GlobalScript.SYMBOLTABLE(loadedFiles = lf) := inSymbolTable;
+        outSymbolTable := GlobalScript.SYMBOLTABLE(p_1, NONE(), {}, {}, {}, lf);
       then
-        (res_str,GlobalScript.SYMBOLTABLE(p_1,NONE(),{},{},{},lf));
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p)) // adrpo added 2005-11-03
-      equation
-        matchApiFunction(istmts, "getCrefInfo");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getCrefInfo(cr, p);
+    case "getCrefInfo"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr,st);
+        getCrefInfo(cr, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setExtendsModifierValue");
+    case "setExtendsModifierValue"
+      algorithm
         {Absyn.CREF(componentRef = class_),
          Absyn.CREF(componentRef = crident),
          Absyn.CREF(componentRef = subident),
-         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} =
-           getApiFunctionArgs(istmts);
-        (newp,resstr) = setExtendsModifierValue(class_, crident, subident, mod, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
+         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} := args;
+        (p, outResult) := setExtendsModifierValue(class_, crident, subident, mod, p);
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getExtendsModifierNames");
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        nargs = getApiFunctionNamedArgs(istmts);
-        b1 = useQuotes(nargs);
-        resstr = getExtendsModifierNames(class_, cr, b1, p);
+    case "getExtendsModifierNames"
+      algorithm
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} := args;
+        nargs := getApiFunctionNamedArgs(inStatements);
       then
-        (resstr, st);
+        getExtendsModifierNames(class_, cr, useQuotes(nargs), p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getExtendsModifierValue");
+    case "getExtendsModifierValue"
+      algorithm
         {Absyn.CREF(componentRef = class_),
          Absyn.CREF(componentRef = crident),
-         Absyn.CREF(componentRef = subident)} = getApiFunctionArgs(istmts);
-        resstr = getExtendsModifierValue(class_, crident, subident, p);
+         Absyn.CREF(componentRef = subident)} := args;
       then
-        (resstr, st);
+        getExtendsModifierValue(class_, crident, subident, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "isExtendsModifierFinal");
+    case "isExtendsModifierFinal"
+      algorithm
         {Absyn.CREF(componentRef = class_),
          Absyn.CREF(componentRef = crident),
-         Absyn.CREF(componentRef = subident)} = getApiFunctionArgs(istmts);
-        resstr = isExtendsModifierFinal(class_, crident, subident, p);
+         Absyn.CREF(componentRef = subident)} := args;
       then
-        (resstr, st);
+        isExtendsModifierFinal(class_, crident, subident, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getComponentModifierNames");
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} =
-          getApiFunctionArgs(istmts);
-        resstr = getComponentModifierNames(class_, cr, p);
+    case "getComponentModifierNames"
+      algorithm
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} := args;
       then
-        (resstr, st);
+        getComponentModifierNames(class_, cr, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getDefaultComponentName");
-        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
-        resstr = getDefaultComponentName(Absyn.crefToPath(class_), p);
+    case "getDefaultComponentName"
+      algorithm
+        {Absyn.CREF(componentRef = class_)} := args;
       then
-        (resstr,st);
+        getDefaultComponentName(Absyn.crefToPath(class_), p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getDefaultComponentPrefixes");
-        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
-        resstr = getDefaultComponentPrefixes(Absyn.crefToPath(class_), p);
+    case "getDefaultComponentPrefixes"
+      algorithm
+        {Absyn.CREF(componentRef = class_)} := args;
       then
-        (resstr,st);
+        getDefaultComponentPrefixes(Absyn.crefToPath(class_), p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getComponentModifierValue");
+    case "getComponentModifierValue"
+      algorithm
         {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = name, componentRef = subident))} =
-          getApiFunctionArgs(istmts);
-        resstr = getComponentModifierValue(class_, Absyn.CREF_IDENT(name,{}), subident, p);
-      then
-        (resstr,st);
+         Absyn.CREF(componentRef = cr)} := args;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getComponentModifierValue");
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name))} =
-          getApiFunctionArgs(istmts);
-        resstr = getComponentBinding(class_, Absyn.CREF_IDENT(name,{}), p);
+        if Absyn.crefIsIdent(cr) then
+          Absyn.CREF_IDENT(name = name) := cr;
+          outResult := getComponentBinding(class_, Absyn.CREF_IDENT(name, {}), p);
+        else
+          name := Absyn.crefFirstIdent(cr);
+          subident := Absyn.crefStripFirst(cr);
+          outResult := getComponentModifierValue(class_,
+            Absyn.CREF_IDENT(name, {}), subident, p);
+        end if;
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getComponentComment");
-        {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getComponentComment(class_, cr, p);
-        resstr = stringAppendList({"\"", resstr, "\""});
+    case "getComponentComment"
+      algorithm
+        {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = cr)} := args;
+        outResult := getComponentComment(class_, cr, p);
+        outResult := stringAppendList({"\"", outResult, "\""});
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setComponentComment");
+    case "setComponentComment"
+      algorithm
         {Absyn.CREF(componentRef = class_),
          Absyn.CREF(componentRef = cr),
-         Absyn.STRING(value = cmt)} =
-          getApiFunctionArgs(istmts);
-        (resstr,newp) = setComponentComment(class_, cr, cmt, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, newp);
+         Absyn.STRING(value = cmt)} := args;
+        (outResult, p) := setComponentComment(class_, cr, cmt, p);
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setComponentProperties");
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = cr),Absyn.ARRAY(arrayExp =
-         {Absyn.BOOL(value = finalPrefix),
-          Absyn.BOOL(value = flowPrefix),
-          Absyn.BOOL(value = streamPrefix),
-          Absyn.BOOL(value = protected_),
-          Absyn.BOOL(value = repl)}),
-          // Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
-          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
-          Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
-          getApiFunctionArgs(istmts);
-        (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, streamPrefix, protected_, repl, /*parallelism,*/ variability, {dref1,dref2}, causality, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, p_1);
-      then
-        (resstr,st);
-
-    /* old version of setComponentProperties, without stream */
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setComponentProperties");
+    case "setComponentProperties"
+      algorithm
         {Absyn.CREF(componentRef = class_),
          Absyn.CREF(componentRef = cr),
-         Absyn.ARRAY(arrayExp = {
-           Absyn.BOOL(value = finalPrefix),
-           Absyn.BOOL(value = flowPrefix),
-           Absyn.BOOL(value = protected_),
-           Absyn.BOOL(value = repl)}),
+         Absyn.ARRAY(arrayExp = expl),
          // Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
          Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
-          getApiFunctionArgs(istmts);
-        (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, false, protected_, repl, /*parallelism,*/ variability, {dref1,dref2}, causality, p);
-        st = GlobalScriptUtil.setSymbolTableAST(st, p_1);
-      then
-        (resstr,st);
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} := args;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getElementsInfo");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getElementsInfo(cr, p);
-      then
-        (resstr,st);
+        if listLength(expl) == 5 then
+          {Absyn.BOOL(value = finalPrefix),
+           Absyn.BOOL(value = flowPrefix),
+           Absyn.BOOL(value = streamPrefix),
+           Absyn.BOOL(value = protected_),
+           Absyn.BOOL(value = repl)} := expl;
+        else // Old version of setComponentProperties, without stream.
+          {Absyn.BOOL(value = finalPrefix),
+           Absyn.BOOL(value = flowPrefix),
+           Absyn.BOOL(value = protected_),
+           Absyn.BOOL(value = repl)} := expl;
+          streamPrefix := false;
+        end if;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getElementsOfVisType");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        (_, resstr) = getElementsOfVisType(Absyn.crefToPath(cr), p);
+        (outResult, p) := setComponentProperties(Absyn.crefToPath(class_), cr,
+            finalPrefix, flowPrefix, streamPrefix, protected_, repl,
+            /*parallelism,*/ variability, {dref1,dref2}, causality, p);
       then
-        (resstr,st);
+        outResult;
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getDefinitions");
-        {Absyn.BOOL(addFunctions)} = getApiFunctionArgs(istmts);
-        (top_names_str) = getDefinitions(p, addFunctions);
+    case "getElementsInfo"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
       then
-        (top_names_str, st);
+        getElementsInfo(cr, p);
 
-    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getLocalVariables");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        nargs = getApiFunctionNamedArgs(istmts);
-        b1 = useQuotes(nargs);
-        path = Absyn.crefToPath(cr);
-        cls = getPathedClassInProgram(path, p);
-        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
-        resstr = getLocalVariables(cls, b1, env);
+    case "getElementsOfVisType"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        (_, outResult) := getElementsOfVisType(Absyn.crefToPath(cr), p);
       then
-        (resstr,st);
+        outResult;
+
+    case "getDefinitions"
+      algorithm
+        {Absyn.BOOL(addFunctions)} := args;
+      then
+        getDefinitions(p, addFunctions);
+
+    case "getLocalVariables"
+      algorithm
+        {Absyn.CREF(componentRef = cr)} := args;
+        nargs := getApiFunctionNamedArgs(inStatements);
+        path := Absyn.crefToPath(cr);
+        cls := getPathedClassInProgram(path, p);
+        (env, outSymbolTable) := GlobalScriptUtil.buildEnvFromSymboltable(inSymbolTable);
+      then
+        getLocalVariables(cls, useQuotes(nargs), env);
 
     // adrpo added 2006-10-16
     // - i think this function is needed here!
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "getErrorString");
-        {} = getApiFunctionArgs(istmts);
-        resstr = Error.printMessagesStr(false);
-        resstr = stringAppendList({"\"", resstr, "\""});
+    case "getErrorString"
+      algorithm
+        {} := args;
+        outResult := Error.printMessagesStr(false);
       then
-        (resstr,st);
+        stringAppendList({"\"", outResult, "\""});
 
-  end matchcontinue;
+  end match;
+
+  if not referenceEq(old_p, p) then
+    outSymbolTable := GlobalScriptUtil.setSymbolTableAST(outSymbolTable, p);
+  end if;
 end evaluateGraphicalApi_dispatch;
 
 protected function listClass
@@ -7187,6 +6969,29 @@ algorithm
     case (_,_) then false;
   end matchcontinue;
 end isPrimitive;
+
+protected function createModel
+  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Program inProgram;
+  output Absyn.Program outProgram;
+protected
+  Absyn.Ident name;
+  Absyn.Within w;
+  Absyn.Path wp;
+algorithm
+  if Absyn.crefIsIdent(inComponentRef) then
+    name := Absyn.crefFirstIdent(inComponentRef);
+    w := Absyn.TOP();
+  else
+    wp := Absyn.crefToPath(inComponentRef);
+    (wp, Absyn.IDENT(name)) := Absyn.splitQualAndIdentPath(wp);
+    w := Absyn.WITHIN(wp);
+  end if;
+
+  outProgram := updateProgram(Absyn.PROGRAM({
+    Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), Absyn.dummyParts,
+        Absyn.dummyInfo)}, w), inProgram);
+end createModel;
 
 protected function deleteClass
 " This function takes a component reference and a program.
