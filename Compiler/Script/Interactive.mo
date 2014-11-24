@@ -941,7 +941,7 @@ protected function getApiFunctionArgs
   output list<Absyn.Exp> outArgs;
 algorithm
   outArgs := match(inStmts)
-    local 
+    local
       list<Absyn.Exp> args;
 
     case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(functionArgs =
