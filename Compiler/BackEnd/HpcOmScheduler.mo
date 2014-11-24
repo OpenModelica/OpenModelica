@@ -194,7 +194,7 @@ algorithm
 
         //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
         simEqIdc = List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
-        simEqIdc = List.sort(simEqIdc,intGt);
+        //simEqIdc = List.sort(simEqIdc,intGt);
 
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         threadTasks = newTask::threadTasks;
@@ -231,7 +231,7 @@ algorithm
         simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
         //print("\tEq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
         //print("\tSimcodeeq idc: " + stringDelimitList(List.map(simEqIdc, intString), ",") + "\n");
-        simEqIdc = List.sort(simEqIdc,intGt);
+        //simEqIdc = List.sort(simEqIdc,intGt);
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
         //!print("\n\tZeile 243\t" + stringDelimitList(List.map(listGet(arrayList(allThreadTasks), threadId), dumpTask), "\t\t"));
@@ -381,7 +381,7 @@ algorithm
         threadTasks = listAppend(lockTasks, threadTasks);
 
         simEqIdc = List.map(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping), List.last);
-        simEqIdc = List.sort(simEqIdc,intGt);
+        //simEqIdc = List.sort(simEqIdc,intGt);
 
 
         //! Add task to thread
@@ -422,7 +422,7 @@ algorithm
         threadTasks = arrayGet(allThreadTasks, threadId);
 
         simEqIdc = List.flatten(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping));
-        simEqIdc = List.sort(simEqIdc,intGt);
+        //simEqIdc = List.sort(simEqIdc,intGt);
 
         newTask = HpcOmSimCode.CALCTASK(weighting, index, calcTime, threadFinishTime, threadId, simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks, threadId, newTask::threadTasks);
@@ -1367,12 +1367,15 @@ protected
   String lockId, s;
   HpcOmSimCode.Schedule taskSchedule;
   Boolean outgoing;
+  Integer threadIdx;
 algorithm
   oString := match(iTask)
     case(HpcOmSimCode.CALCTASK(weighting=weighting,timeFinished=timeFinished, index=index, eqIdc=eqIdc))
       then ("Calculation task with index " + intString(index) + " including the equations: "+stringDelimitList(List.map(eqIdc,intString),", ")+ " is finished at  " + realString(timeFinished) + "\n");
-    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc, nodeIdc=nodeIdc))
+    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc, nodeIdc=nodeIdc, threadIdx=NONE()))
       then ("Calculation task ("+stringDelimitList(List.map(nodeIdc,intString),", ")+") including the equations: "+stringDelimitList(List.map(eqIdc,intString),", ")+"\n");
+    case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc, nodeIdc=nodeIdc, threadIdx=SOME(threadIdx)))
+      then ("Calculation task ("+stringDelimitList(List.map(nodeIdc,intString),", ")+") including the equations: "+stringDelimitList(List.map(eqIdc,intString),", ")+" by thread " + intString(threadIdx) + "\n");
     case(HpcOmSimCode.DEPTASK(sourceTask=HpcOmSimCode.CALCTASK(index=sourceIndex), targetTask=HpcOmSimCode.CALCTASK(index=targetIndex),outgoing=outgoing))
       equation
         s = "Dependency task ";
@@ -1636,7 +1639,7 @@ algorithm
         // generate a serial section
         compLst = List.flatten(List.map1(section,Array.getIndexFirst,inComps));
         simEqSysIdcs = getSimEqSysIdcsForCompLst(compLst,iSccSimEqMapping);
-        simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
+        //simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
         task = makeCalcLevelTask(simEqSysIdcs,section);
         taskLst = HpcOmSimCode.SERIALTASKLIST({task}, true);
     then taskLst;
@@ -1647,7 +1650,7 @@ algorithm
         sectionComps = List.mapList1_1(sectionComps,List.sort,intGt);
         sectionSimEqSys = List.map1(sectionComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
         sectionSimEqSysIdcs = List.map(sectionSimEqSys,List.flatten);
-        sectionSimEqSysIdcs = List.map1(sectionSimEqSysIdcs,List.sort,intGt);
+        //sectionSimEqSysIdcs = List.map1(sectionSimEqSysIdcs,List.sort,intGt);
         taskLst = makeCalcLevelParTaskLst(sectionSimEqSysIdcs,level);
     then taskLst;
   end matchcontinue;
@@ -1954,7 +1957,7 @@ algorithm
     print("number of level: "+intString(listLength(level))+"\nnumber of processors :"+intString(Flags.getConfigInt(Flags.NUM_PROC))+"\n");
   end if;
   levelComps := List.mapList1_1(level,Array.getIndexFirst,inComps);
-  levelComps := List.mapList1_1(levelComps,List.sort,intGt);
+  //levelComps := List.mapList1_1(levelComps,List.sort,intGt);
   SCCs := List.map1(levelComps,getSimEqSysIdcsForNodeLst,iSccSimEqMapping);
   levelTasks := List.threadMap(SCCs,List.mapList(level,List.create),makeCalcLevelParTaskLst);
   oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks, false);
@@ -2126,15 +2129,28 @@ protected
   list<HpcOmSimCode.Task> taskList;
   HpcOmSimCode.Task newTask;
   list<Integer> components, simEqs;
+  Integer taskIdx;
 algorithm
   (threadIdx, taskList) := iIdxTaskList;
-  components := List.flatten(List.map1(iTaskList, Array.getIndexFirst, iComps)); //Components of each task
-  simEqs := List.flatten(List.map(List.map1(components,Array.getIndexFirst,iSccSimEqMapping), listReverse));
-  print("createFixedLevelScheduleForLevel0: eqs=" + stringDelimitList(List.map(simEqs, intString), ",") + "\n");
-  simEqs := listReverse(simEqs);
-  print("createFixedLevelScheduleForLevel0: eqs=" + stringDelimitList(List.map(simEqs, intString), ",") + "\n");
-  newTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs, iTaskList, SOME(threadIdx));
-  taskList := newTask :: taskList;
+  for taskIdx in iTaskList loop
+    components := arrayGet(iComps, taskIdx); //Components of the task
+    print("createFixedLevelScheduleForLevel0: Handling task with idx: " + intString(taskIdx) + "\n");
+    simEqs := List.flatten(List.map(List.map1(components,Array.getIndexFirst,iSccSimEqMapping), listReverse));
+    if(intGt(listLength(simEqs), 0)) then
+      simEqs := simEqs;
+      newTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs, {taskIdx}, SOME(threadIdx));
+      taskList := newTask :: taskList;
+    end if;  
+  end for;
+  
+  //This code merges all tasks handled by the same thread -- makes efficient memory management more complicated
+  //components := List.flatten(List.map1(iTaskList, Array.getIndexFirst, iComps)); //Components of each task
+  //simEqs := List.flatten(List.map(List.map1(components,Array.getIndexFirst,iSccSimEqMapping), listReverse));
+  //if(intGt(listLength(simEqs), 0)) then
+  //  simEqs := listReverse(simEqs);
+  //  newTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs, iTaskList, SOME(threadIdx));
+  //  taskList := newTask :: taskList;
+  //end if;
   oIdxTaskList := (threadIdx+1,taskList);
 end createFixedLevelScheduleForLevel0;
 
@@ -2851,7 +2867,7 @@ algorithm
         //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
         simEqIdc = List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
         //print("Simcodeeq idc: " + stringDelimitList(List.map(simEqIdc, intString), ",") + "\n");
-        simEqIdc = List.sort(simEqIdc,intGt);
+        //simEqIdc = List.sort(simEqIdc,intGt);
 
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         threadTasks = newTask::threadTasks;
@@ -2877,7 +2893,7 @@ algorithm
         threadTasks = arrayGet(allThreadTasks,threadId);
 
         simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
-        simEqIdc = List.sort(simEqIdc,intGt);
+        //simEqIdc = List.sort(simEqIdc,intGt);
 
         newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
         allThreadTasks = arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
@@ -4700,7 +4716,7 @@ algorithm
         mark = arrayGet(nodeMark,node);
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
         simEqIdc = List.map(List.map1(components,getSimEqSysIdxForComp,SccSimEqMappingIn), List.last);
-        simEqIdc = List.sort(simEqIdc,intGt);
+        //simEqIdc = List.sort(simEqIdc,intGt);
         task = HpcOmSimCode.CALCTASK(mark,node,exeCost,-1.0,proc,simEqIdc);
         taskLst1 = task::taskLstRel;
         taskLst1 = listAppend(taskLstAss,taskLst1);

@@ -302,7 +302,7 @@ algorithm
       //-------------
       taskGraphDataSimplified = taskGraphDataOde;
       taskGraphSimplified = taskGraphOde;
-      (taskGraphSimplified,taskGraphDataSimplified) = applyGRS(taskGraphOde,taskGraphDataOde); //TODO: Rename this to applyGRS or someting like that
+      (taskGraphSimplified,taskGraphDataSimplified) = applyGRS(taskGraphOde,taskGraphDataOde);
       SimCodeUtil.execStat("hpcom GRS");
 
       fileName = ("taskGraph"+filenamePrefix+"ODE_merged.graphml");
@@ -540,6 +540,7 @@ algorithm
       comps = arrayGet(origInComps,node);
       //print("comps1 "+stringDelimitList(List.map(comps,intString),", ")+"\n");
       arrayUpdate(newGraph,newNode,row);
+      comps = List.sort(comps,intGt);
       arrayUpdate(newInComps,newNode,comps);
     then GRS_newGraph2(rest,removedNodes,contrTasks,origGraph,origInComps,newGraph,newInComps,newNode+1);
   end matchcontinue;
