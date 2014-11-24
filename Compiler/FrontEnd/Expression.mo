@@ -2883,7 +2883,7 @@ algorithm
         acc = expandFactorsWork(e1,acc,true,doInverseFactors);
         e = negate(e);
       then e::acc;
-   
+
    else
      equation
        acc = factorsWork(inExp,inAcc,noFactors,doInverseFactors);

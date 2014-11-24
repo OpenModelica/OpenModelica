@@ -73,7 +73,7 @@ algorithm
                         case(_,_,_) then  solveSimple(inExp1, inExp2, inExp3);
                         case(_,_,_) then  solveSimple(inExp2, inExp1, inExp3);
                         case(_,_,_) then  solveWork(inExp1, inExp2, inExp3);
-                        else 
+                        else
                           equation
                            if Flags.isSet(Flags.FAILTRACE) then
                             print("\n-ExpressionSolve.solve failed:\n");
@@ -101,7 +101,7 @@ protected
 algorithm
  (e1, e2) := matchcontinue(inExp1, inExp2, inExp3)
                case(_,_,_) then preprocessingSolve(inExp1, inExp2, inExp3);
-               else 
+               else
                 equation
                   if Flags.isSet(Flags.FAILTRACE) then
                     Debug.trace("\n-ExpressionSolve.preprocessingSolve failed:\n");
@@ -110,12 +110,12 @@ algorithm
                   end if;
                 then (inExp1,inExp2);
               end matchcontinue;
- 
+
  (outExp, outAsserts) := matchcontinue(e1, e2, inExp3)
-                          case(DAE.IFEXP(),_,_) then  solveIfExp(e1, e2, inExp3); 
+                          case(DAE.IFEXP(),_,_) then  solveIfExp(e1, e2, inExp3);
                           case(_,_,_) then  solveSimple(e1, e2, inExp3);
                           case(_,_,_) then  solveLinearSystem(e1, e2, inExp3);
-                          else fail(); 
+                          else fail();
                          end matchcontinue;
 
 end solveWork;
@@ -157,7 +157,7 @@ protected function solveSimple
   output list<DAE.Statement> outAsserts;
 algorithm
 
- /*                     
+ /*
   print("Try to solve: rhs: " +
   ExpressionDump.dumpExpStr(inExp1,0) + " lhs: " +
   ExpressionDump.dumpExpStr(inExp2,0) + " with respect to: " +
@@ -197,7 +197,7 @@ algorithm
         false = Expression.expHasDerCref(inExp2, cr);
       then
         (inExp2,{});
-  
+
     // -cr = exp
     case (DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
@@ -357,7 +357,7 @@ preprocessing for solve1,
    (rhsX, rhsY) := preprocessingSolve5(inExp2, inExp3,true);
    x := Expression.expSub(lhsX, rhsX);
    y := Expression.expSub(rhsY, lhsY);
-   
+
    con := true;
    iter := 0;
 
@@ -423,7 +423,7 @@ protected function preprocessingSolve2
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  
+
   output DAE.Exp olhs;
   output DAE.Exp orhs;
   output Boolean con "continue";
@@ -536,7 +536,7 @@ protected function preprocessingSolve3
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  
+
   output DAE.Exp olhs;
   output DAE.Exp orhs;
   output Boolean con "continue";
@@ -587,12 +587,12 @@ algorithm
       case (DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}), DAE.RCONST(0.0),_)
         then (e1,inExp2,true);
 
-      
+
       else (inExp1, inExp2, false);
 
   end matchcontinue;
 
- 
+
 end preprocessingSolve3;
 
 
@@ -602,10 +602,10 @@ protected function preprocessingSolve4
  helprer function for preprocessingSolve
 
  1/x + c/(x+y) = rhs -> x+y +c*x  = N*rhs
- 
+
  author: Vitalij Ruge
 "
- 
+
   input DAE.Exp inExp1 "lhs";
   output DAE.Exp ores;
   output DAE.Exp N "factor for rhs";
@@ -642,11 +642,11 @@ algorithm
                       then (res, e, N);
                     end match;
    end for;
- 
+
    (N,_) := ExpressionSimplify.simplify1(N);
    res1 := Expression.expMul(N,res1);
    ores := Expression.expAdd(res,res1);
-   
+
 end preprocessingSolve4;
 
 protected function expAddX
@@ -654,7 +654,7 @@ protected function expAddX
  helprer function for preprocessingSolve
 
  if(y,g(x),h(x)) + x => if(y, g(x) + x, h(x) + x)
- a*f(x) + b*f(x) = (a+b)*f(x) 
+ a*f(x) + b*f(x) = (a+b)*f(x)
  author: Vitalij Ruge
 "
   input DAE.Exp inExp1 "lhs";
@@ -693,7 +693,7 @@ algorithm
       equation
        res = expAddX2(inExp1, inExp2, inExp3);
       then res;
-  
+
  end matchcontinue;
 
 end expAddX;
@@ -744,7 +744,7 @@ algorithm
     // e0 + a*x + b*x -> e0 + (a+b)*x
     if not neg then
       ores := Expression.expAdd(pWithoutX1, pWithoutX2);
-    else 
+    else
     // e0 - a*x + b*x -> e0 + (b-a)*x
       ores := Expression.expSub(pWithoutX2, pWithoutX1);
     end if;
@@ -758,24 +758,24 @@ algorithm
       ores := Expression.expAdd(pWithoutX1, pWithoutX2);
     end if;
     ores := Expression.expMul(ores, pWithX2);
-  else 
+  else
     e1 := Expression.expMul(pWithoutX1, pWithX1);
     e2 := Expression.expMul(pWithoutX2, pWithX2);
-    ores := Expression.expAdd(e1,e2); 
+    ores := Expression.expAdd(e1,e2);
   end if;
 
-  ores := Expression.expAdd(e0,ores); 
-  
+  ores := Expression.expAdd(e0,ores);
+
 end expAddX2;
 
 protected function preprocessingSolve5
 "
  helprer function for preprocessingSolve
  split and sort with respect to x
- where x = cref 
- 
+ where x = cref
+
  f(x,y) = {h(y)*g(x,y), k(y)}
- 
+
  author: Vitalij Ruge
 "
   input DAE.Exp inExp1 "lhs";
@@ -793,7 +793,7 @@ algorithm
    //can be improve with Expression.getTermsContainingX ???
 
    if expHasCref(inExp1, inExp3) then
-     resTerms := if expand then Expression.allTerms(inExp1) else Expression.terms(inExp1); 
+     resTerms := if expand then Expression.allTerms(inExp1) else Expression.terms(inExp1);
      // split
      (lhs, rhs) := List.split1OnTrue(resTerms, expHasCref, inExp3);
      //print("\nlhs =");print(ExpressionDump.printExpListStr(lhs));
@@ -808,7 +808,7 @@ algorithm
      //rhs
      outRhs := Expression.makeSum(rhs);
      (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
-    
+
    else
     outRhs := inExp1;
    end if;
@@ -818,7 +818,7 @@ end preprocessingSolve5;
 protected function removeSimpleCalls
 "
  helprer function for preprocessingSolve
- 
+
  solve e.g.
    exp(x) = y
    log(x) = y
@@ -841,7 +841,7 @@ end removeSimpleCalls;
 protected function removeSimpleCalls2
 "
  helprer function for preprocessingSolve
- 
+
  solve e.g.
    exp(x) = y
    log(x) = y
@@ -856,7 +856,7 @@ protected function removeSimpleCalls2
 algorithm
   (outLhs, outRhs, con) := matchcontinue (inExp1,inExp2,inExp3)
     local
-      DAE.Exp e1, e2, e3;      
+      DAE.Exp e1, e2, e3;
 
     //tanh(x) =y -> x = 1/2 * ln((1+y)/(1-y))
     case (DAE.CALL(path = Absyn.IDENT(name = "tanh"),expLst = {e1}),_,_)
@@ -948,7 +948,7 @@ protected function solveIfExp
 
 algorithm
    (outExp,outAsserts) := match(inExp1,inExp2,inExp3)
-   local 
+   local
       DAE.Exp e1,e2,e3,res,lhs,rhs, tmp1, tmp2;
       list<DAE.Statement> asserts,asserts1,asserts2;
 
@@ -996,7 +996,7 @@ algorithm
       DAE.Exp rhs;
       DAE.Type tp;
 
-    // cr = (e1-e2)/(der(e1-e2,cr)) 
+    // cr = (e1-e2)/(der(e1-e2,cr))
     case (_,_,DAE.CREF(componentRef = cr))
       equation
         false = hasOnlyFactors(inExp1,inExp2);
@@ -1061,7 +1061,7 @@ case distinction for
 DAE.CREF or 'der(DAE.CREF())'
 Expression.expHasCrefNoPreOrStart
 or
-Expression.expHasDerCref 
+Expression.expHasDerCref
 "
   input DAE.Exp inExp1;
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
@@ -1070,10 +1070,10 @@ Expression.expHasDerCref
 algorithm
   res := match(inExp1, inExp3)
          local DAE.ComponentRef cr;
-     
+
           case(_, DAE.CREF(componentRef = cr)) then Expression.expHasCrefNoPreOrStart(inExp1, cr);
           case(_, DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})) then Expression.expHasDerCref(inExp1, cr);
-          else 
+          else
            equation
             if Flags.isSet(Flags.FAILTRACE) then
               print("\n-ExpressionSolve.solve failed:");
@@ -1083,10 +1083,10 @@ algorithm
             end if;
           then fail();
          end match;
-          
+
 end expHasCref;
 
-protected function isCrefInIFEXP 
+protected function isCrefInIFEXP
 " Returns true if expression is DAE.IFEXP(f(cr)) or e.g. sign(f(cr)) for cr = incr
 ToDo: fix me for all cases!!
 "
