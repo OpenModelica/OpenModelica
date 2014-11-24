@@ -17047,10 +17047,12 @@ algorithm
       Integer index;
       Absyn.Path path;
       String indexArg, pathArg;
-    case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_PACKAGE()),_)
+      Absyn.ClassDef body;
+     
+    case (Absyn.CLASS(name = ident, body = body as Absyn.PARTS(), restriction = Absyn.R_PACKAGE()),_)
       equation
         ident = "(package " + ident;
-        strs = getDefinitionParts(parts, addFunctions);
+        strs = getDefinitionParts(body.classParts, body.typeVars, addFunctions);
         strs = ident :: strs;
       then stringDelimitList(strs, "\n");
     case (Absyn.CLASS(partialPrefix = true, name = ident, body = Absyn.PARTS(), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE()))),_)
@@ -17061,35 +17063,35 @@ algorithm
       equation
         strs = {"(partial function", ident, ")"};
       then stringDelimitList(strs, " ");
-    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE()))),true)
+    case (Absyn.CLASS(partialPrefix = false, name = ident, body = body as Absyn.PARTS(), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.IMPURE()))),true)
       equation
-        strs = getDefinitionParts(parts, true);
+        strs = getDefinitionParts(body.classParts, body.typeVars, true);
         strs = "(impure function" :: ident :: strs;
       then stringDelimitList(strs, " ");
-    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(_))),true)
+    case (Absyn.CLASS(partialPrefix = false, name = ident, body = body as Absyn.PARTS(), restriction = Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION())),true)
       equation
-        strs = getDefinitionParts(parts, true);
+        strs = getDefinitionParts(body.classParts, body.typeVars, true);
         strs = "(function" :: ident :: strs;
       then stringDelimitList(strs, " ");
-    case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())),true)
+    case (Absyn.CLASS(partialPrefix = false, name = ident, body = body as Absyn.PARTS(), restriction = Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION())),true)
       equation
-        strs = getDefinitionParts(parts, true);
+        strs = getDefinitionParts(body.classParts, body.typeVars, true);
         strs = "(operator function" :: ident :: strs;
       then stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(), restriction = Absyn.R_UNIONTYPE()),_)
       equation
         strs = {"(uniontype", ident, ")"};
       then stringDelimitList(strs, " ");
-    case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_RECORD()),_)
+    case (Absyn.CLASS(name = ident, body = body as Absyn.PARTS(), restriction = Absyn.R_RECORD()),_)
       equation
-        strs = getDefinitionParts(parts, false);
+        strs = getDefinitionParts(body.classParts, body.typeVars, false);
         strs = "(record" :: ident :: strs;
       then stringDelimitList(strs, " ");
-    case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_METARECORD(name = path, index = index)),_)
+    case (Absyn.CLASS(name = ident, body = body as Absyn.PARTS(), restriction = Absyn.R_METARECORD(name = path, index = index)),_)
       equation
         indexArg = intString(index);
         pathArg = Absyn.pathLastIdent(path);
-        strs = getDefinitionParts(parts, false);
+        strs = getDefinitionParts(body.classParts, body.typeVars, false);
         strs = "(metarecord" :: ident :: indexArg :: pathArg :: strs;
       then stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.DERIVED(typeSpec = ts, attributes = attr)),_)
@@ -17177,6 +17179,7 @@ end getDefinitionDimensions;
 
 protected function getDefinitionParts
   input  list<Absyn.ClassPart> parts;
+  input list<String> inTypeVars;
   input  Boolean isFunction;
   output list<String> res;
 algorithm
@@ -17184,12 +17187,12 @@ algorithm
   local
     list<Absyn.ClassPart> rest;
     list<Absyn.ElementItem> contents;
-    case ({},_) then {")"};
+    case ({},_) then getDefinitionTypeVars(inTypeVars, {")"});
     case (Absyn.PUBLIC(contents)::rest,_)
-    then listAppend(getDefinitionContent(contents,isFunction,true), getDefinitionParts(rest,isFunction));
+    then listAppend(getDefinitionContent(contents,isFunction,true), getDefinitionParts(rest,inTypeVars,isFunction));
     case (Absyn.PROTECTED(contents)::rest,_)
-    then listAppend(getDefinitionContent(contents,isFunction,false), getDefinitionParts(rest,isFunction));
-    case (_::rest,_) then getDefinitionParts(rest,isFunction);
+    then listAppend(getDefinitionContent(contents,isFunction,false), getDefinitionParts(rest,inTypeVars, isFunction));
+    case (_::rest,_) then getDefinitionParts(rest,inTypeVars,isFunction);
   end matchcontinue;
 end getDefinitionParts;
 
@@ -17280,6 +17283,16 @@ algorithm
     case (_,_,_,_::rest) then getDefinitionComponents(typeStr,dirStr,numDim,rest);
   end matchcontinue;
 end getDefinitionComponents;
+
+protected function getDefinitionTypeVars
+  input list<String> inTypeVars;
+  input list<String> inDefinitions;
+  output list<String> outDefinitions := inDefinitions;
+algorithm
+  for ty_var in listReverse(inTypeVars) loop
+    outDefinitions := ("(replaceable type " + ty_var + ")") :: outDefinitions;
+  end for;
+end getDefinitionTypeVars;
 
 /* End getDefinitions */
 
