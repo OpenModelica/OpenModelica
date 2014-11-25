@@ -28,7 +28,12 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
       _mixed_system(NULL),
       _time_system(NULL),
     _delta(NULL),
-    _ysave(NULL)
+    _ysave(NULL),
+	_sparsePattern_leadindex (NULL),
+	_sparsePattern_colorCols (NULL),
+	_sparsePattern_index (NULL)
+
+
 {
   _data = ((void*) this);
 
@@ -65,7 +70,7 @@ Cvode::~Cvode()
   }
 
 
-  if (_sparsePattern_index)
+  if (_sparsePattern_leadindex)
     delete [] _sparsePattern_leadindex;
   if (_sparsePattern_colorCols)
     delete [] _sparsePattern_colorCols;
