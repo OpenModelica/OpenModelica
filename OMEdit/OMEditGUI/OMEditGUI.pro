@@ -97,7 +97,6 @@ SOURCES += main.cpp \
   Util/Utilities.cpp \
   Util/diff_match_patch.cpp \
   TransformationalDebugger/TransformationsWidget.cpp \
-#  Simulation/SimulationBrowserWidget.cpp
   Debugger/GDB/CommandFactory.cpp \
   Debugger/GDB/GDBAdapter.cpp \
   Debugger/StackFrames/StackFramesWidget.cpp \
@@ -155,7 +154,6 @@ HEADERS  += Util/backtrace.h \
   Util/Utilities.h \
   Util/diff_match_patch.h \
   TransformationalDebugger/TransformationsWidget.h \
-#  Simulation/SimulationBrowserWidget.h
   Debugger/GDB/CommandFactory.h \
   Debugger/GDB/GDBAdapter.h \
   Debugger/StackFrames/StackFramesWidget.h \

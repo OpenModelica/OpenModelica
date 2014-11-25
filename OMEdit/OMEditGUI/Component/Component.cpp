@@ -1363,7 +1363,7 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
     eventConsumed = true;
   }
   // if we are creating the connector then make sure user can not select and move components
-  if ((mpGraphicsView->isCreatingConnection())) {
+  if (mpGraphicsView->isCreatingConnection()) {
     eventConsumed = true;
   }
   if (!eventConsumed) {

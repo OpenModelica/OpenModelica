@@ -879,10 +879,6 @@ void GraphicsView::createActions()
   mpPropertiesAction = new QAction(Helper::properties, this);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
   // Connection Delete Action
-  mpCancelConnectionAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Cancel Connection"), this);
-  mpCancelConnectionAction->setStatusTip(tr("Cancels the current connection"));
-  connect(mpCancelConnectionAction, SIGNAL(triggered()), SLOT(removeConnection()));
-  // Connection Delete Action
   mpDeleteConnectionAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Delete Connection"), this);
   mpDeleteConnectionAction->setStatusTip(tr("Deletes the connection"));
   mpDeleteConnectionAction->setShortcut(QKeySequence::Delete);
@@ -1587,11 +1583,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       isCreatingTextShape())
     return;
   /* If we are creating the connection then show the connection context menu */
-  if (isCreatingConnection())
-  {
-    QMenu menu(mpModelWidget->getModelWidgetContainer()->getMainWindow());
-    menu.addAction(mpCancelConnectionAction);
-    menu.exec(event->globalPos());
+  if (isCreatingConnection()) {
     return;         // return from it because at a time we only want one context menu.
   }
   // if some item is right clicked then don't show graphics view context menu

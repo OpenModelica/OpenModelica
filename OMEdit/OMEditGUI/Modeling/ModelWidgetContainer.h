@@ -124,7 +124,6 @@ private:
   TextAnnotation *mpTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
   QAction *mpPropertiesAction;
-  QAction *mpCancelConnectionAction;
   QAction *mpDeleteConnectionAction;
   QAction *mpDeleteAction;
   QAction *mpDuplicateAction;

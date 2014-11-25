@@ -121,17 +121,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   addDockWidget(Qt::RightDockWidgetArea, mpDocumentationDockWidget);
   setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   mpDocumentationDockWidget->hide();
-  /*// create an object of SimulationBrowserWidget
-  mpSimulationBrowserWidget = new SimulationBrowserWidget(this);
-  // Create SimulationDockWidget dock
-  mpSimulationDockWidget = new QDockWidget(tr("Simulation Browser"), this);
-  mpSimulationDockWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-  mpSimulationDockWidget->setObjectName("SimulationBrowser");
-  mpSimulationDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-  mpSimulationDockWidget->setWidget(mpSimulationBrowserWidget);
-  addDockWidget(Qt::RightDockWidgetArea, mpSimulationDockWidget);
-  setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
-  mpSimulationDockWidget->hide();*/
   // Create VariablesWidget dock
   mpVariablesDockWidget = new QDockWidget(Helper::variablesBrowser, this);
   mpVariablesDockWidget->setObjectName("Variables");
