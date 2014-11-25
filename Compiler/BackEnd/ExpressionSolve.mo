@@ -604,8 +604,8 @@ protected function preprocessingSolve4
  helprer function for preprocessingSolve
 
  e.g.
-  sqrt(f(x)) + sqrt(g(x))) = 0 = f(x) + g(x) 
-  exp(f(x)) + exp(g(x))) = 0 = f(x) + g(x) 
+  sqrt(f(x)) + sqrt(g(x))) = 0 = f(x) + g(x)
+  exp(f(x)) + exp(g(x))) = 0 = f(x) + g(x)
 
  author: Vitalij Ruge
 "
