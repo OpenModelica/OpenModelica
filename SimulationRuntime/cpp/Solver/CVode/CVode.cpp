@@ -29,9 +29,9 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
       _time_system(NULL),
     _delta(NULL),
     _ysave(NULL),
-	_sparsePattern_leadindex (NULL),
-	_sparsePattern_colorCols (NULL),
-	_sparsePattern_index (NULL)
+  _sparsePattern_leadindex (NULL),
+  _sparsePattern_colorCols (NULL),
+  _sparsePattern_index (NULL)
 
 
 {
