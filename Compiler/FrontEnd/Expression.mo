@@ -11430,17 +11430,20 @@ public function createResidualExp
 "author: Frenkel TUD 2012-10
   do some numerical helpfull thinks like
   a = b/c - > a*c-b"
-  input DAE.Exp iExp1;
-  input DAE.Exp iExp2;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
   output DAE.Exp resExp;
+protected
+  DAE.Exp iExp1, iExp2;
 algorithm
+  (iExp1,iExp2) := createResidualExp2(inExp1,inExp2);
+
   resExp := matchcontinue(iExp1, iExp2)
     local
       DAE.Exp e, e1, res, res1, res2;
       list<DAE.Exp> explst, explst1, mexplst;
       DAE.Type ty;
 
-    case(_,_) then createResidualExp2(iExp1, iExp2);
     case(_, DAE.RCONST(real = 0.0)) then iExp1;
     case(_, DAE.ICONST(0)) then iExp1;
     case(DAE.RCONST(real = 0.0), _) then iExp2;
@@ -11590,25 +11593,79 @@ protected function createResidualExp2
   sqrt(f()) - sqrt(g(.)) = 0 -> f(.) - g(.)"
   input DAE.Exp iExp1;
   input DAE.Exp iExp2;
-  output DAE.Exp resExp;
+  output DAE.Exp oExp1 := iExp1;
+  output DAE.Exp oExp2 := iExp2;
+protected
+  Boolean con := true, con1;
+  Integer ii := 1;
 algorithm
 
-  resExp := matchcontinue(iExp1, iExp2)
-    local DAE.Exp e;
-    case(_,_)
-     equation
-      e = createResidualExp3(iExp1, iExp2);
-      (e,_) = ExpressionSimplify.simplify1(e);
-    then e;
+while con and ii < 15 loop 
+  (oExp1, oExp2, con) := matchcontinue(oExp1, oExp2)
+    local DAE.Exp e, e1, e2;
 
     case(_,_)
      equation
-      e = createResidualExp3(iExp2, iExp1);
-      (e,_) = ExpressionSimplify.simplify1(e);
-     then e;
-    else fail();
+      (e1,e2,true) = createResidualExp3(oExp1, oExp2);
+      (e1,_) = ExpressionSimplify.simplify1(e1);
+      (e2,_) = ExpressionSimplify.simplify1(e2);
+    then (e1 ,e2, true);
 
+    case(_,_)
+     equation
+      (e2,e1,true) = createResidualExp3(oExp2, oExp1);
+      (e1,_) = ExpressionSimplify.simplify1(e1);
+      (e2,_) = ExpressionSimplify.simplify1(e2);
+    then (e1 ,e2, true);
+
+    case(_,_)
+    equation
+      true = isZero(oExp1);
+      (e1,e2) = makeFraction(oExp2);
+      false = isOne(e2);
+    then (e1 ,oExp1, true);
+
+    case(_,_)
+    equation
+      true = isZero(oExp2);
+      (e1,e2) = makeFraction(oExp1);
+      false = isOne(e2);
+    then (e1 ,oExp2, true);
+
+    case(_,_)
+    equation
+      true = isOne(oExp1);
+      (e1,e2) = makeFraction(oExp2);
+      false = isOne(e2);
+    then (e1, e2, true);
+
+    case(_,_)
+    equation
+      true = isOne(oExp2);
+      (e1,e2) = makeFraction(oExp1);
+      false = isOne(e2);
+    then (e1, e2, true);
+
+    else (oExp1, oExp2, false);
     end matchcontinue;
+
+   ii := ii + 1;
+   if not con then
+     (oExp1,con) := ExpressionSimplify.simplify1(oExp1);
+     (oExp2,con1) := ExpressionSimplify.simplify1(oExp2);
+     con := con or con1;
+     ii := ii + 3;
+  // else
+  //   print("\niExp1");print(ExpressionDump.printExpStr(iExp1));
+  //    print("\te1");print(ExpressionDump.printExpStr(oExp2));
+  //   print("\niExp2");print(ExpressionDump.printExpStr(iExp2));
+  //    print("\te2");print(ExpressionDump.printExpStr(oExp2));
+   end if;
+
+end while;
+
+ (oExp1,_) := ExpressionSimplify.simplify1(oExp1);
+ (oExp2,_) := ExpressionSimplify.simplify1(oExp2);
 
 end createResidualExp2;
 
@@ -11618,85 +11675,63 @@ protected function createResidualExp3
   swaps args"
   input DAE.Exp iExp1;
   input DAE.Exp iExp2;
-  output DAE.Exp resExp;
+  output DAE.Exp oExp1;
+  output DAE.Exp oExp2;
+  output Boolean con;
 algorithm
-  resExp := matchcontinue(iExp1, iExp2)
+  (oExp1, oExp2, con) := matchcontinue(iExp1, iExp2)
       local
         DAE.Exp e,e1,e2,e3,e4,e5,res;
         String s1, s2;
         DAE.Type tp;
         Real r;
 
-    // f(x) = f(y) -> x - y = 0
+    // f(x) = f(y) -> x = y
     case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2}))
      equation
        true = s1 == s2;
        true = createResidualExp4(s1);
-       res = Expression.expSub(e1,e2);
-     then res;
-    // f(x) = -f(y) -> x + y = 0
-    case(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}), DAE.UNARY(operator = DAE.UMINUS(),exp = DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})))
-     equation
-       true = s1 == s2;
-       true = createResidualExp4(s1);
-       res = Expression.expAdd(e1,e2);
-     then res;
+     then (e1,e2, true);
     // sqrt(f(x)) = 0.0 -> f(x) = 0
     case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(0.0))
-      then e1;
+      then (e1,iExp2,true);
     // sqrt(f(x)) = c -> f(x) = c^2
-    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST(_))
+    case(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.RCONST())
       equation
        e = Expression.expPow(iExp2, DAE.RCONST(2.0));
-       res = Expression.expSub(e1,e);
-      then res;
+      then (e1,e,true);
     // log(f(x)) = c -> f(x) = exp(c)
-    case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.RCONST(r))
+    case(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.RCONST())
       equation
-       true = r <= 10.0;
        tp = Expression.typeof(iExp2);
        e = Expression.makePureBuiltinCall("exp", {iExp2}, tp);
-       res = Expression.expSub(e1,e);
-      then res;
+      then (e1,e,true);
     // log10(f(x)) = c -> f(x) = 10^(c)
-    case(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), DAE.RCONST(r))
+    case(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), DAE.RCONST())
       equation
-       true = r <= 10.0;
        e = Expression.expPow(DAE.RCONST(10.0),iExp2);
-       res = Expression.expSub(e1,e);
-      then res;
+      then (e1,e,true);
+/*
     // f(x)^y = 0 -> x = 0
-    //case(DAE.BINARY(e1,DAE.POW(_),e2),DAE.RCONST(0.0))
-    //  then e1;
+    case(DAE.BINARY(e1,DAE.POW(_),e2),DAE.RCONST(0.0))
+      then (e1, iExp2, true);
     // abs(f(x)) = 0.0 -> f(x) = 0
     case(DAE.CALL(path = Absyn.IDENT("abs"), expLst={e1}), DAE.RCONST(0.0))
-      then e1;
+      then (e1,iExp2,true);
+*/
    // semiLinear(0,e1,e2) = 0 -> e1 - e2 = 0
    case(DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst={DAE.RCONST(0.0), e1, e2}), DAE.RCONST(0.0))
-     equation
-       res = Expression.expSub(e1,e2);
-      then res;
+      then (e1,e2,true);
    // -f(.) = 0 -> f(.) = 0
    case(DAE.UNARY(operator = DAE.UMINUS(),exp = e1), e2 as DAE.RCONST(0.0))
-    equation
-     res = createResidualExp3(e1,e2);
-    then res;
-  // f(x) + f(y) = 0 -> x + y = 0
-    case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.ADD(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
+    then (e1,e2,true);
+  // f(x) - f(y) = 0 -> x = y
+    case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.SUB(),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
      equation
        true = s1 == s2;
        true = createResidualExp4(s1);
-       res = Expression.expAdd(e1,e2);
-     then res;
-  // f(x) - f(y) = 0 -> x - y = 0
-    case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT(s1), expLst={e1}),DAE.SUB(_),DAE.CALL(path = Absyn.IDENT(s2) ,expLst={e2})), DAE.RCONST(0.0))
-     equation
-       true = s1 == s2;
-       true = createResidualExp4(s1);
-       res = Expression.expSub(e1,e2);
-     then res;
-
-   else fail();
+     then (e1,e2,true);
+   else (iExp1, iExp2, false);
   end matchcontinue;
 end createResidualExp3;
 
@@ -11717,11 +11752,7 @@ algorithm
     case("log10") then true;
     case("tanh") then true;
     case("sinh") then true;
-    case("cosh") then true;
     else then false;
-    //case("abs") then true;
-    //case("atan") then true;
-    //case("atan2") then true;
   end match;
 end createResidualExp4;
 

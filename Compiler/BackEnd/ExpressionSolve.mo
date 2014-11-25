@@ -899,17 +899,6 @@ algorithm
          e3 = Expression.expAdd(inExp2, e2);
          e2 = Expression.makePureBuiltinCall("log",{e3},DAE.T_REAL_DEFAULT);
       then (e1,e2,true);
-    // cosh(x) -> ln(y+(sqrt(y^2-1))
-    case (DAE.CALL(path = Absyn.IDENT(name = "cosh"),expLst = {e1}),_,_)
-      equation
-         true = expHasCref(e1, inExp3);
-         false = expHasCref(inExp2, inExp3);
-         e2 = Expression.expPow(inExp2, DAE.RCONST(2.0));
-         e3 = Expression.expSub(e2,DAE.RCONST(1.0));
-         e2 = Expression.makePureBuiltinCall("sqrt",{e3},DAE.T_REAL_DEFAULT);
-         e3 = Expression.expAdd(inExp2, e2);
-         e2 = Expression.makePureBuiltinCall("log",{e3},DAE.T_REAL_DEFAULT);
-      then (e1,e2,true);
 
     // log10(f(a)) = g(b) => f(a) = 10^(g(b))
     case (DAE.CALL(path = Absyn.IDENT(name = "log10"),expLst = {e1}),_,_)
