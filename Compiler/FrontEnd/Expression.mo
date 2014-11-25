@@ -3608,7 +3608,16 @@ algorithm
   neg_e := makeConstZero(tp);
   for elem in inExpLst loop
     (outExp, neg_e) := match(elem, outExp, neg_e)
-                       local DAE.Exp e1, e2, e3, e_1, e_2;
+                       local DAE.Exp e1, e2, e3, e_1, e_2, e_3, e_4, e_5, e_6;
+
+                       // if(a,b,c)  = if(a,b-d,c-d)
+                       case(DAE.IFEXP(e1,e2,e3),_,_)
+                         equation
+                           (e_1, e_2) = makeSimplifySumWork(terms(e2));
+                           (e_3, e_4) = makeSimplifySumWork(terms(e3));
+                            e_5 = expAdd(e_1,e_3);
+                            e_6 = expAdd(e_2,e_4);
+                         then (expAdd(outExp, e_5), expAdd(neg_e, e_6));
 
                        // a - b
                        case(DAE.BINARY(e1,DAE.SUB(),e2),_,_)
@@ -11494,6 +11503,33 @@ algorithm
   end matchcontinue;
 end createResidualExp;
 
+public function makeFraction
+"
+In: f(x) {+,-} g(x)
+Out: {N,D}
+
+where f(x) {+,-} g(x) = N/D
+
+author: Vitalij Ruge
+
+"
+  input DAE.Exp iExp;
+  output DAE.Exp n "numerator";
+  output DAE.Exp d "denominator";
+protected
+  list<DAE.Exp> N, D, T;
+  DAE.Type tp := typeof(iExp);
+algorithm
+  T := terms(iExp);
+  (N,D) := moveDivToMul(T, {}, {});
+  N := ExpressionSimplify.simplifyList(N, {});
+  D := ExpressionSimplify.simplifyList(D, {});
+  n := makeSimplifySum(N);
+  d := makeProductLst(D);
+  (n,_) := ExpressionSimplify.simplify1(n);
+  (d,_) := ExpressionSimplify.simplify1(d);
+end makeFraction;
+
 protected function moveDivToMul
   input list<DAE.Exp> iExpLst;
   input list<DAE.Exp> iExpLstAcc;
@@ -11506,12 +11542,29 @@ algorithm
       DAE.Exp e, e1, e2;
       list<DAE.Exp> rest, acc, elst, elst1;
     case ({}, _, _) then (iExpLstAcc, iExpMuls);
+    //-(a/b)
+    case (DAE.UNARY(_,DAE.BINARY(exp1=e1, operator=DAE.DIV(), exp2=e2))::rest, _, _)
+      equation
+         acc = List.map1(iExpLstAcc, Expression.expMul, e2);
+         rest = List.map1(rest, Expression.expMul, e2);
+         //rest = ExpressionSimplify.simplifyList(rest, {});
+        (elst, elst1) = moveDivToMul(rest, negate(e1)::acc, e2::iExpMuls);
+      then
+        (elst, elst1);
+    case (DAE.UNARY(_,DAE.BINARY(exp1=e1, operator=DAE.DIV_ARRAY_SCALAR(), exp2=e2))::rest, _, _)
+      equation
+         acc = List.map1(iExpLstAcc, Expression.expMul, e2);
+         rest = List.map1(rest, Expression.expMul, e2);
+         //rest = ExpressionSimplify.simplifyList(rest, {});
+        (elst, elst1) = moveDivToMul(rest, negate(e1)::acc, e2::iExpMuls);
+      then
+        (elst, elst1);
     // a/b
     case (DAE.BINARY(exp1=e1, operator=DAE.DIV(), exp2=e2)::rest, _, _)
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         rest = ExpressionSimplify.simplifyList(rest, {});
+         //rest = ExpressionSimplify.simplifyList(rest, {});
         (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
       then
         (elst, elst1);
@@ -11519,7 +11572,7 @@ algorithm
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         rest = ExpressionSimplify.simplifyList(rest, {});
+         //rest = ExpressionSimplify.simplifyList(rest, {});
         (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
       then
         (elst, elst1);
@@ -11612,11 +11665,9 @@ algorithm
        e = Expression.expPow(DAE.RCONST(10.0),iExp2);
        res = Expression.expSub(e1,e);
       then res;
-    /*
     // f(x)^y = 0 -> x = 0
-    case(DAE.BINARY(e1,DAE.POW(_),e2),DAE.RCONST(0.0))
-      then e1;
-    */
+    //case(DAE.BINARY(e1,DAE.POW(_),e2),DAE.RCONST(0.0))
+    //  then e1;
     // abs(f(x)) = 0.0 -> f(x) = 0
     case(DAE.CALL(path = Absyn.IDENT("abs"), expLst={e1}), DAE.RCONST(0.0))
       then e1;
@@ -11664,7 +11715,9 @@ algorithm
     case("exp") then true;
     case("log") then true;
     case("log10") then true;
-    case("der") then true;
+    case("tanh") then true;
+    case("sinh") then true;
+    case("cosh") then true;
     else then false;
     //case("abs") then true;
     //case("atan") then true;

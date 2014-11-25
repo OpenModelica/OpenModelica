@@ -349,7 +349,9 @@ preprocessing for solve1,
   Integer iter;
 
  algorithm
-   res := Expression.expSub(inExp1, inExp2);
+   (x, _) := ExpressionSimplify.simplify(inExp1);
+   (y, _) := ExpressionSimplify.simplify(inExp2);
+   res := Expression.expSub(x, y);
    resTerms :=  Expression.terms(res);
 
    // split and sort
@@ -368,15 +370,15 @@ preprocessing for solve1,
      con := con or new_x;
      (x, y, new_x) := removeSimpleCalls(x,y, inExp3);
      con := con or new_x;
-
+     (x, y, new_x) := preprocessingSolve4(x,y, inExp3);
      con := new_x or con;
 
      if not con then
        (x, con) := ExpressionSimplify.simplify(x);
        // Z/N = rhs -> Z = rhs*N
-       (x,N) := preprocessingSolve4(x);
-       //print("\nx ");print(ExpressionDump.printExpStr(x));print("\nN ");print(ExpressionDump.printExpStr(N));
+       (x,N) := Expression.makeFraction(x);
        if not Expression.isOne(N) then
+         //print("\nx ");print(ExpressionDump.printExpStr(x));print("\nN ");print(ExpressionDump.printExpStr(N));
          new_x := true;
          y := Expression.expMul(y,N);
        end if;
@@ -601,51 +603,68 @@ protected function preprocessingSolve4
 "
  helprer function for preprocessingSolve
 
- 1/x + c/(x+y) = rhs -> x+y +c*x  = N*rhs
+ e.g.
+  sqrt(f(x)) + sqrt(g(x))) = 0 = f(x) + g(x) 
+  exp(f(x)) + exp(g(x))) = 0 = f(x) + g(x) 
 
  author: Vitalij Ruge
 "
 
-  input DAE.Exp inExp1 "lhs";
-  output DAE.Exp ores;
-  output DAE.Exp N "factor for rhs";
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  output DAE.Exp oExp1;
+  output DAE.Exp oExp2;
+  output Boolean newX;
 
-protected
-   list<DAE.Exp> expTerms;
-   DAE.Exp res, res1;
-   DAE.Type tp := Expression.typeof(inExp1);
 algorithm
-   expTerms := Expression.terms(inExp1);
-   res := Expression.makeConstZero(tp);
-   res1 := Expression.makeConstZero(tp);
-   N := Expression.makeConstOne(tp);
 
-   for elem in expTerms loop
-     (res, res1, N) := match(elem, res, res1, N)
-                    local
-                     DAE.Exp e1, e2, e, NN;
-                    case(DAE.BINARY(e1, DAE.DIV(),e2),_,_,_)
-                     equation
-                       e = Expression.expMul(e2,res);
-                       NN = Expression.expMul(N,e2);
-                       e = Expression.expAdd(e, e1);
-                     then(e, res1, NN);
-                    case(DAE.UNARY(operator = DAE.UMINUS(), exp = DAE.BINARY(e1, DAE.DIV(),e2)),_,_,_)
-                     equation
-                       e = Expression.expMul(e2,res);
-                       NN = Expression.expMul(N,e2);
-                       e = Expression.expSub(e, e1);
-                     then(e, res1, NN);
-                    else
-                      equation
-                       e = Expression.expAdd(res1,elem);
-                      then (res, e, N);
-                    end match;
-   end for;
+  (oExp1, oExp2, newX) := matchcontinue(inExp1, inExp2, inExp3)
+          local
+          String s1,s2;
+          DAE.Operator op;
+          DAE.Exp e1,e2;
+          DAE.Type tp;
 
-   (N,_) := ExpressionSimplify.simplify1(N);
-   res1 := Expression.expMul(N,res1);
-   ores := Expression.expAdd(res,res1);
+          // exp(f(x)) - exp(g(x)) = 0
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("exp"), expLst={e1}), op as DAE.SUB(tp),
+                          DAE.CALL(path = Absyn.IDENT("exp"), expLst={e2})),DAE.RCONST(0.0),_)
+          equation
+            true = expHasCref(e1,inExp3);
+            true = expHasCref(e2,inExp3);
+          then (e1, e2, true);
+          // log(f(x)) - log(g(x)) = 0
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), op as DAE.SUB(tp),
+                          DAE.CALL(path = Absyn.IDENT("log"), expLst={e2})),DAE.RCONST(0.0),_)
+          equation
+            true = expHasCref(e1,inExp3);
+            true = expHasCref(e2,inExp3);
+          then (e1, e2, true);
+          // sqrt(f(x)) - sqrt(g(x)) = 0
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), op as DAE.SUB(tp),
+                          DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e2})),DAE.RCONST(0.0),_)
+          equation
+            true = expHasCref(e1,inExp3);
+            true = expHasCref(e2,inExp3);
+          then (e1, e2, true);
+
+
+          // sqrt(x) - x = 0 -> x = x^2
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), op as DAE.SUB(tp),e2), DAE.RCONST(0.0),_)
+          equation
+            true = expHasCref(e1,inExp3);
+            true = expHasCref(e2,inExp3);
+          then (e1, Expression.expPow(e2, DAE.RCONST(2.0)), true);
+          case(DAE.BINARY(e2, op as DAE.SUB(tp),DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1})), DAE.RCONST(0.0),_)
+          equation
+            true = expHasCref(e1,inExp3);
+            true = expHasCref(e2,inExp3);
+          then (e1, Expression.expPow(e2, DAE.RCONST(2.0)), true);
+
+          else (inExp1, inExp2, false);
+
+    end matchcontinue;
+
 
 end preprocessingSolve4;
 
