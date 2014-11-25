@@ -11600,7 +11600,7 @@ protected
   Integer ii := 1;
 algorithm
 
-while con and ii < 15 loop 
+while con and ii < 15 loop
   (oExp1, oExp2, con) := matchcontinue(oExp1, oExp2)
     local DAE.Exp e, e1, e2;
 
