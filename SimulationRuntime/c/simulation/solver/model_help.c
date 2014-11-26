@@ -824,7 +824,7 @@ void initializeDataStruc(DATA *data)
     assertStreamPrint(data->threadData, 0 != tmpSimData.integerVars, "out of memory");
     tmpSimData.booleanVars = (modelica_boolean*) calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
     assertStreamPrint(data->threadData, 0 != tmpSimData.booleanVars, "out of memory");
-    tmpSimData.stringVars = (modelica_string*) GC_malloc(data->modelData.nVariablesString * sizeof(modelica_string));
+    tmpSimData.stringVars = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
     assertStreamPrint(data->threadData, 0 != tmpSimData.stringVars, "out of memory");
     appendRingData(data->simulationData, &tmpSimData);
   }
@@ -835,17 +835,17 @@ void initializeDataStruc(DATA *data)
   data->modelData.realVarsData = (STATIC_REAL_DATA*) GC_malloc(data->modelData.nVariablesReal * sizeof(STATIC_REAL_DATA));
   data->modelData.integerVarsData = (STATIC_INTEGER_DATA*) GC_malloc(data->modelData.nVariablesInteger * sizeof(STATIC_INTEGER_DATA));
   data->modelData.booleanVarsData = (STATIC_BOOLEAN_DATA*) GC_malloc(data->modelData.nVariablesBoolean * sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData.stringVarsData = (STATIC_STRING_DATA*) GC_malloc(data->modelData.nVariablesString * sizeof(STATIC_STRING_DATA));
+  data->modelData.stringVarsData = (STATIC_STRING_DATA*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(STATIC_STRING_DATA));
 
   data->modelData.realParameterData = (STATIC_REAL_DATA*) GC_malloc(data->modelData.nParametersReal * sizeof(STATIC_REAL_DATA));
   data->modelData.integerParameterData = (STATIC_INTEGER_DATA*) GC_malloc(data->modelData.nParametersInteger * sizeof(STATIC_INTEGER_DATA));
   data->modelData.booleanParameterData = (STATIC_BOOLEAN_DATA*) GC_malloc(data->modelData.nParametersBoolean * sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData.stringParameterData = (STATIC_STRING_DATA*) GC_malloc(data->modelData.nParametersString * sizeof(STATIC_STRING_DATA));
+  data->modelData.stringParameterData = (STATIC_STRING_DATA*) GC_malloc_uncollectable(data->modelData.nParametersString * sizeof(STATIC_STRING_DATA));
 
   data->modelData.realAlias = (DATA_REAL_ALIAS*) GC_malloc(data->modelData.nAliasReal * sizeof(DATA_REAL_ALIAS));
   data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) GC_malloc(data->modelData.nAliasInteger * sizeof(DATA_INTEGER_ALIAS));
   data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) GC_malloc(data->modelData.nAliasBoolean * sizeof(DATA_BOOLEAN_ALIAS));
-  data->modelData.stringAlias = (DATA_STRING_ALIAS*) GC_malloc(data->modelData.nAliasString * sizeof(DATA_STRING_ALIAS));
+  data->modelData.stringAlias = (DATA_STRING_ALIAS*) GC_malloc_uncollectable(data->modelData.nAliasString * sizeof(DATA_STRING_ALIAS));
 
   data->modelData.samplesInfo = (SAMPLE_INFO*) GC_malloc(data->modelData.nSamples * sizeof(SAMPLE_INFO));
   data->simulationInfo.nextSampleEvent = data->simulationInfo.startTime;
@@ -873,19 +873,19 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.realVarsOld = (modelica_real*) calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
   data->simulationInfo.integerVarsOld = (modelica_integer*) calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanVarsOld = (modelica_boolean*) calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringVarsOld = (modelica_string*) GC_malloc(data->modelData.nVariablesString * sizeof(modelica_string));
+  data->simulationInfo.stringVarsOld = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
 
   /* buffer for all variable pre values */
   data->simulationInfo.realVarsPre = (modelica_real*) calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
   data->simulationInfo.integerVarsPre = (modelica_integer*) calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanVarsPre = (modelica_boolean*) calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringVarsPre = (modelica_string*) GC_malloc(data->modelData.nVariablesString * sizeof(modelica_string));
+  data->simulationInfo.stringVarsPre = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
 
   /* buffer for all parameters values */
   data->simulationInfo.realParameter = (modelica_real*) calloc(data->modelData.nParametersReal, sizeof(modelica_real));
   data->simulationInfo.integerParameter = (modelica_integer*) calloc(data->modelData.nParametersInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanParameter = (modelica_boolean*) calloc(data->modelData.nParametersBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringParameter = (modelica_string*) GC_malloc(data->modelData.nParametersString * sizeof(modelica_string));
+  data->simulationInfo.stringParameter = (modelica_string*) GC_malloc_uncollectable(data->modelData.nParametersString * sizeof(modelica_string));
   /* buffer for inputs and outputs values */
   data->simulationInfo.inputVars = (modelica_real*) calloc(data->modelData.nInputVars, sizeof(modelica_real));
   data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
