@@ -137,9 +137,9 @@ algorithm
     case(_,_,_)
       equation
         BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps= allComps)) = systIn;
-          BackendDump.dumpEqSystem(systIn,"original system");
+          //BackendDump.dumpEqSystem(systIn,"original system");
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(1, allComps, ass1, ass2, systIn, sharedIn, tornSysIdxIn);
-          BackendDump.dumpEqSystem(systTmp,"new system");
+          //BackendDump.dumpEqSystem(systTmp,"new system");
       then
         (systTmp, tornSysIdx);
     else
@@ -246,7 +246,7 @@ algorithm
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
         BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs, jac=jac, jacType=jacType) = comp;
-        true = intLe(listLength(varIdcs),5);
+        true = intLe(listLength(varIdcs),3);
         print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
           //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
 
@@ -255,16 +255,16 @@ algorithm
          eqLst = BackendEquation.replaceDerOpInEquationList(eqLst);
          varLst = List.map1r(varIdcs, BackendVariable.getVarAt, vars);
          varLst = List.map(varLst, BackendVariable.transformXToXd);
-             BackendDump.dumpVarList(varLst,"varLst");
-             BackendDump.dumpEquationList(eqLst,"eqLst");
+             //BackendDump.dumpVarList(varLst,"varLst");
+             //BackendDump.dumpEquationList(eqLst,"eqLst");
 
          // build linear system
          syst = getEqSystem(eqLst,varLst);
-           dumpEqSys(syst);
+           //dumpEqSys(syst);
          (eqsNew,addEqs,addVars) = CramerRule(syst);
-           BackendDump.dumpEquationList(eqsNew,"eqsNew");
-           BackendDump.dumpVarList(addVars,"addVars");
-           BackendDump.dumpEquationList(addEqs,"addEqs");
+           //BackendDump.dumpEquationList(eqsNew,"eqsNew");
+           //BackendDump.dumpVarList(addVars,"addVars");
+           //BackendDump.dumpEquationList(addEqs,"addEqs");
 
         // make new components for the system equations and add the comps for the additional equations in front of them
         varsOld = BackendVariable.varList(vars);
@@ -275,8 +275,8 @@ algorithm
 
         // insert the new components into the BLT, update matching for the new equations
         compsTmp = List.replaceAtWithList(compsNew,compIdx-1,compsIn);
-          print("compsTmp\n");
-          BackendDump.dumpComponents(compsTmp);
+          //print("compsTmp\n");
+          //BackendDump.dumpComponents(compsTmp);
 
         // add the new vars and equations to the original EqSystem
         eqLst = listAppend(eqsOld,addEqs);
@@ -292,7 +292,7 @@ algorithm
         ass2All = Array.copy(ass2,ass2All);
         List.map2_0(compsNew,updateAssignmentsByComp,ass1All,ass2All);
         matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
-           BackendDump.dumpFullMatching(matching);
+           //BackendDump.dumpFullMatching(matching);
 
         //build new DAE-EqSystem
         systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets,partitionKind);
@@ -461,10 +461,10 @@ algorithm
 
    // compute the tearing vars in the new residual equations hs
    a_0::a_i_lst1 := a_i_lst;
-   hs := buildNewResidualEquation(1,a_i_lst1,a_0,tvars,{});
+   hs := buildNewResidualEquation(1,a_i_lst1,a_0,tvarsReplaced,{});
         //BackendDump.dumpEquationList(hs,"new residuals");
 
-   tVarsOut := tvars;
+   tVarsOut := tvarsReplaced;
    resEqsOut := hs;
 
    // some optimization
@@ -492,7 +492,6 @@ algorithm
    matchingOut := BackendDAE.MATCHING(ass1New,ass2New,oComps);
        //BackendDump.dumpComponents(oComps);
 
-   //printPartLinTornInfo(tcrs,reqns,otherEqnsLst,ovcrs,xa_i_lst,g_i_lst,r_i_lst,h_i_lst,a_i_lst,hs_i_lst,hs,compsNew);
 end reduceLinearTornSystem2;
 
 protected function simplifyNewEquations
@@ -1756,6 +1755,7 @@ algorithm
 
   foldOut := (matrixB,vecAi,addEqs,addVars);
 end getNewChioEntry;
+
 //--------------------------------------------------//
 // Cramers Rule
 //-------------------------------------------------//
@@ -1821,14 +1821,14 @@ algorithm
       matrixAT = transposeMatrix(matrixA);
           //dumpMatrix(matrixAT);
       detA = determinant(matrixA);
-          print("detA "+ExpressionDump.printExpStr(detA)+"\n");
+          //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
       detLst = List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
-          print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
+          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
       varExp = List.map(arrayList(vectorX),BackendVariable.varExp);
       detLst = List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) = List.map_2(detLst,ExpressionSimplify.simplify);
       eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEQUATION, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-          BackendDump.dumpEquationList(eqLst,"new residual eqs");
+          //BackendDump.dumpEquationList(eqLst,"new residual eqs");
     then (eqLst,{},{});
   case(LINSYS(dim=dim,matrixA=matrixA, vectorB=vectorB,vectorX=vectorX))
     equation
@@ -1872,6 +1872,7 @@ algorithm
       DAE.Type ty;
   case(_)
     equation
+      //2x2 matrix
       true = arrayLength(matrix)==2;
       a11 = listGet(arrayGet(matrix,1),1);
       a12 = listGet(arrayGet(matrix,1),2);
@@ -2072,45 +2073,6 @@ algorithm
   BackendDump.dumpEquationList(inLst,str1);
   headingOut := heading;
 end dumpEqArrLst1;
-
-
-protected function printPartLinTornInfo "prints information about the partitioning of a linear torn system
-author: Waurich TUD 2013-10"
-  input list<DAE.ComponentRef> tcrs;
-  input list<BackendDAE.Equation> reqns;
-  input list<BackendDAE.Equation> otherEqnsLst;
-  input list<DAE.ComponentRef> ovcrs;
-  input array<list<BackendDAE.Var>> xa_i_lst;
-  input array<list<BackendDAE.Equation>> g_i_lst;
-  input array<list<BackendDAE.Var>> r_i_lst;
-  input array<list<BackendDAE.Equation>> h_i_lst;
-  input array<list<BackendDAE.Var>> a_i_lst;
-  input array<list<BackendDAE.Equation>> hs_i_lst;
-  input list<DAE.Exp> hs;
-  input BackendDAE.StrongComponents compsNew;
-algorithm
-   print("disassemble a linear torn system\n");
-   print("tvars:\n");
-   print(ComponentReference.printComponentRefListStr(tcrs)+"\n");
-   print("resEqs:\n");
-   BackendDump.printEquationList(reqns);
-   print("otherEqs:\n");
-   BackendDump.printEquationList(otherEqnsLst);
-   print("other vars:\n");
-   print(ComponentReference.printComponentRefListStr(ovcrs)+"\n");
-   dumpVarArrLst(xa_i_lst,"xa");
-   dumpEqArrLst(g_i_lst,"g");
-   dumpVarArrLst(r_i_lst,"r");
-   dumpEqArrLst(h_i_lst,"h");
-   dumpVarArrLst(a_i_lst,"a");
-   dumpEqArrLst(hs_i_lst,"hs_i");
-   //BackendDump.dumpEquationList(hs,"hs");
-   print("components to get the A-matrix\n");
-   BackendDump.dumpComponents(compsNew);
-   print("\n");
-end printPartLinTornInfo;
-
-
 
 
 //--------------------------------------------------//
