@@ -50,11 +50,11 @@ typedef void* modelica_fnptr;
 /* When MetaModelica grammar is enabled, all strings are boxed */
 typedef modelica_metatype modelica_string;
 
-typedef double      m_real;
-typedef long        m_integer;
-typedef const char* m_string;
-typedef signed char m_boolean;
-typedef m_integer   _index_t;
+typedef double            m_real;
+typedef long              m_integer;
+typedef modelica_metatype m_string;
+typedef signed char       m_boolean;
+typedef m_integer         _index_t;
 
 /* This structure holds indexes when subscripting an array.
  * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3

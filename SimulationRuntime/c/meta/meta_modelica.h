@@ -329,7 +329,7 @@ static inline void* mmc_alloc_scon(size_t nbytes)
     struct mmc_string *p;
     void *res;
     if (nbytes == 0) return mmc_emptystring;
-    p = (struct mmc_string *) omc_alloc_interface.malloc_string(nwords*sizeof(void*));
+    p = (struct mmc_string *) omc_alloc_interface.malloc_atomic(nwords*sizeof(void*));
     p->header = header;
     p->data[0] = 0;
     res = MMC_TAGPTR(p);

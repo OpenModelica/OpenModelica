@@ -154,7 +154,7 @@ m_integer* integer_alloc(int n)
 /* allocates n strings in the string_buffer */
 m_string* string_alloc(int n)
 {
-  return (m_string*) omc_alloc_interface.malloc_atomic(n*sizeof(m_string));
+  return (m_string*) omc_alloc_interface.malloc(n*sizeof(m_string));
 }
 
 /* allocates n booleans in the boolean_buffer */
@@ -165,7 +165,7 @@ m_boolean* boolean_alloc(int n)
 
 _index_t* size_alloc(int n)
 {
-  return (_index_t*) omc_alloc_interface.malloc_atomic(n*sizeof(_index_t));
+  return (_index_t*) omc_alloc_interface.malloc(n*sizeof(_index_t));
 }
 
 _index_t** index_alloc(int n)
