@@ -1455,6 +1455,11 @@ case SES_LINEAR(__) then
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
      '<%preExp%><%bname%>[<%i0%>] = <%expPart%>;'
   ;separator="\n"%>
+  <%residual |> exp hasindex i0 =>
+     let &preExp = buffer "" /*BUFD*/
+     let expPart = equation_(exp, context, &varDecls /*BUFD*/)
+     '<%preExp%><%bname%>[<%i0%>] = <%expPart%>;'
+  ;separator="\n"%>
   GETRF<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>);
   GETRS<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>,<%bname%>);
   <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = <%bname%>[<%i0%>];' ;separator="\n"%>

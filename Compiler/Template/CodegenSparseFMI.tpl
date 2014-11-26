@@ -91,6 +91,10 @@ case SIMCODE(__) then
 
   <%ModelDefineData(modelInfo)%>
 
+  // Removed equations
+
+  <%generateEquations(removedEquations)%>
+
   // dynamic equation functions
 
   <%generateEquations(allEquations)%>
@@ -102,19 +106,27 @@ case SIMCODE(__) then
   // Dependency graph for sparse updates
   static void setupEquationGraph(model_data *data)
   {
-      <%generateEquationGraph(allEquations)%>
+      <%generateEquationGraph(allEquations,zeroCrossings)%>
   }
 
   // initial condition equations
 
   <%generateEquations(initialEquations)%>
+  <%generateEquations(parameterEquations)%>
 
   <%setDefaultStartValues(modelInfo)%>
 
   // Solve for unknowns in the model's initial equations
   static void initialEquations(model_data* data)
   {
+      <%AllEquations(parameterEquations)%>
       <%AllEquations(initialEquations)%>
+  }
+
+  // Solve all dynamic equations
+  static void allEquations(model_data* data)
+  {
+      <%AllEquations(allEquations)%>
   }
 
   // model exchange functions
@@ -132,8 +144,11 @@ case SIMCODE(__) then
       return fmi2SetTime(c,startTime);
   }
 
-  fmi2Status fmi2EnterInitializationMode(fmi2Component)
+  fmi2Status fmi2EnterInitializationMode(fmi2Component c)
   {
+      model_data* data = static_cast<model_data*>(c);
+      if (data == NULL) return fmi2Error;
+      data->set_mode(FMI_INIT_MODE);
       return fmi2OK;
   }
 
@@ -142,6 +157,8 @@ case SIMCODE(__) then
       model_data* data = static_cast<model_data*>(c);
       if (data == NULL) return fmi2Error;
       initialEquations(data);
+      allEquations(data);
+      data->push_pre();
       return fmi2OK;
   }
 
@@ -156,6 +173,9 @@ case SIMCODE(__) then
       if (data == NULL) return fmi2Error;
       setDefaultStartValues(data);
       initialEquations(data);
+      allEquations(data);
+      data->push_pre();
+      data->set_mode(FMI_INIT_MODE);
       return fmi2OK;
   }
 
@@ -177,10 +197,12 @@ case SIMCODE(__) then
       return fmi2OK;
   }
 
-  fmi2Status fmi2GetEventIndicators(fmi2Component, fmi2Real[], size_t)
+  fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real* z, size_t nvr)
   {
-      if (NUMBER_OF_EVENT_INDICATORS == 0) return fmi2OK;
-      return fmi2Error;
+      model_data* data = static_cast<model_data*>(c);
+      if (data == NULL || nvr > NUMBER_OF_EVENT_INDICATORS) return fmi2Error;
+      for (size_t i = 0; i < nvr; i++) z[i] = data->z[i];
+      return fmi2OK;
   }
 
   fmi2Status fmi2GetContinuousStates(fmi2Component c, fmi2Real* states, size_t nvr)
@@ -211,25 +233,44 @@ case SIMCODE(__) then
       return fmi2OK;
   }
 
-   fmi2Status fmi2EnterEventMode(fmi2Component)
+   fmi2Status fmi2EnterEventMode(fmi2Component c)
    {
-      if (NUMBER_OF_EVENT_INDICATORS == 0) return fmi2OK;
-      return fmi2Error;
+      model_data* data = static_cast<model_data*>(c);
+      if (data == NULL) return fmi2Error;
+      data->set_mode(FMI_EVENT_MODE);
+      return fmi2OK;
    }
 
-   fmi2Status fmi2NewDiscreteStates(fmi2Component, fmi2EventInfo* event_info)
+   fmi2Status fmi2NewDiscreteStates(fmi2Component c, fmi2EventInfo* event_info)
    {
-      event_info->newDiscreteStatesNeeded = fmi2False;
+      model_data* data = static_cast<model_data*>(c);
+      if (data == NULL) return fmi2Error;
+      data->push_pre();
+      data->update();
+      if (data->test_pre())
+      {
+         event_info->newDiscreteStatesNeeded = fmi2False;
+         event_info->valuesOfContinuousStatesChanged = fmi2False;
+      }
+      else
+      {
+         event_info->newDiscreteStatesNeeded = fmi2True;
+         event_info->valuesOfContinuousStatesChanged = fmi2True;
+      }
       event_info->terminateSimulation = fmi2False;
       event_info->nominalsOfContinuousStatesChanged = fmi2False;
-      event_info->valuesOfContinuousStatesChanged = fmi2False;
       event_info->nextEventTimeDefined = fmi2False;
       event_info->nextEventTime = 0.0;
-      if (NUMBER_OF_EVENT_INDICATORS == 0) return fmi2OK;
-      return fmi2Error;
+      return fmi2OK;
    }
 
-   fmi2Status fmi2EnterContinuousTimeMode(fmi2Component) { return fmi2OK; }
+   fmi2Status fmi2EnterContinuousTimeMode(fmi2Component c)
+   {
+      model_data* data = static_cast<model_data*>(c);
+      if (data == NULL) return fmi2Error;
+      data->set_mode(FMI_CONT_TIME_MODE);
+      return fmi2OK;
+   }
 
    fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean,
        fmi2Boolean* enterEventMode, fmi2Boolean* terminateSimulation)
@@ -301,6 +342,7 @@ template InstantiateFunction2()
       setupEquationGraph(data);
       setDefaultStartValues(data);
       initialEquations(data);
+      allEquations(data);
       return static_cast<fmi2Component>(data);
   }
 
@@ -393,13 +435,6 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
   >>
 end ModelDefineData;
 
-template dervativeNameCStyle(ComponentRef cr)
- "Generates the name of a derivative in c style, replaces ( with _"
-::=
-  match cr
-  case CREF_QUAL(ident = "$DER") then 'der_<%crefStr(componentRef)%>_'
-end dervativeNameCStyle;
-
 template DefineDummyVariables(SimVar simVar, String arrayName)
  "Generates code for defining variables in c file for FMU target. "
 ::=
@@ -435,8 +470,8 @@ match simVar
   else
   let idx = System.tmpTick()
   <<
-  #define PRE<%cref(name)%>_ <%idx%> <%description%>
-  #define PRE<%cref(name)%> (data->pre_<%arrayName%>_vars[<%idx%>]) <%description%>
+  #define _PRE<%cref(name)%>_ <%idx%> <%description%>
+  #define _PRE<%cref(name)%> (data->pre_<%arrayName%>_vars[<%idx%>]) <%description%>
   >>
 end DefinePreVariables;
 
@@ -469,7 +504,6 @@ template defineExternalFunction(Function fn)
       >>
 end defineExternalFunction;
 
-
 template setDefaultStartValues(ModelInfo modelInfo)
  "Generates code in c file for function setDefaultStartValues() which will set start values for all variables."
 ::=
@@ -496,52 +530,6 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars
   >>
 end setDefaultStartValues;
 
-template setStartValues(ModelInfo modelInfo)
- "Generates code in c file for function setStartValues() which will set start values for all variables."
-::=
-match modelInfo
-case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars),vars=SIMVARS(__)) then
-  <<
-  // Set values for all variables that define a start value
-  void setStartValues(ModelInstance *comp) {
-
-  <%vars.stateVars |> var => initVals(var,"realVars",0) ;separator="\n"%>
-  <%vars.derivativeVars |> var => initVals(var,"realVars",numStateVars) ;separator="\n"%>
-  <%vars.algVars |> var => initVals(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
-  <%vars.discreteAlgVars |> var => initVals(var, "realVars", intAdd(intMul(2,numStateVars), numAlgVars)) ;separator="\n"%>
-  <%vars.intAlgVars |> var => initVals(var,"integerVars",0) ;separator="\n"%>
-  <%vars.boolAlgVars |> var => initVals(var,"booleanVars",0) ;separator="\n"%>
-  <%vars.stringAlgVars |> var => initVals(var,"stringVars",0) ;separator="\n"%>
-  <%vars.paramVars |> var => initParams(var,"realParameter") ;separator="\n"%>
-  <%vars.intParamVars |> var => initParams(var,"integerParameter") ;separator="\n"%>
-  <%vars.boolParamVars |> var => initParams(var,"booleanParameter") ;separator="\n"%>
-  <%vars.stringParamVars |> var => initParams(var,"stringParameter") ;separator="\n"%>
-  }
-  >>
-end setStartValues;
-
-
-template initVals(SimVar var, String arrayName, Integer offset) ::=
-  match var
-    case SIMVAR(__) then
-    if stringEq(crefStr(name),"$dummy") then
-    <<>>
-    else if stringEq(crefStr(name),"der($dummy)") then
-    <<>>
-    else
-    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
-    <<
-      <%str%> =  comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>];
-    >>
-end initVals;
-
-template initParams(SimVar var, String arrayName) ::=
-  match var
-    case SIMVAR(__) then
-    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%index%>].attribute.start'
-      '<%str%> = comp->fmuData->simulationInfo.<%arrayName%>[<%index%>];'
-end initParams;
-
 template initValsDefault(SimVar var, String arrayName) ::=
   match var
     case SIMVAR(index=index, type_=type_) then
@@ -563,15 +551,6 @@ template initValsDefault(SimVar var, String arrayName) ::=
           else 'UNKOWN_TYPE'
 end initValsDefault;
 
-template initParamsDefault(SimVar var, String arrayName) ::=
-  match var
-    case SIMVAR(__) then
-    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%index%>].attribute.start'
-    match initialValue
-      case SOME(v) then
-      '<%str%> = <%initVal(v)%>;'
-end initParamsDefault;
-
 template initVal(Exp initialValue)
 ::=
   match initialValue
@@ -582,51 +561,6 @@ template initVal(Exp initialValue)
   case ENUM_LITERAL(__) then '<%index%>'
   else "*ERROR* initial value of unknown type"
 end initVal;
-
-template eventUpdateFunction(SimCode simCode)
- "Generates event update function for c file."
-::=
-match simCode
-case SIMCODE(__) then
-  <<
-  // Used to set the next time event, if any.
-  void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo) {
-  }
-
-  >>
-end eventUpdateFunction;
-
-template setExternalFunction(ModelInfo modelInfo)
- "Generates setString function for c file."
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
-  let externalFuncs = setExternalFunctionsSwitch(functions)
-  <<
-  fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value){
-    switch (vr) {
-        <%externalFuncs%>
-        default:
-            return fmiError;
-    }
-    return fmiOK;
-  }
-
-  >>
-end setExternalFunction;
-
-template eventUpdateFunction2(SimCode simCode)
- "Generates event update function for c file."
-::=
-match simCode
-case SIMCODE(__) then
-  <<
-  // Used to set the next time event, if any.
-  void eventUpdate(ModelInstance* comp, fmi2EventInfo* eventInfo) {
-  }
-
-  >>
-end eventUpdateFunction2;
 
 template setTime2()
 ::=
@@ -808,155 +742,6 @@ template setStringFunction2()
   >>
 end setStringFunction2;
 
-template setExternalFunction2(ModelInfo modelInfo)
- "Generates setString function for c file."
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
-  let externalFuncs = setExternalFunctionsSwitch(functions)
-  <<
-  fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value){
-    switch (vr) {
-        <%externalFuncs%>
-        default:
-            return fmi2Error;
-    }
-    return fmi2OK;
-  }
-
-  >>
-end setExternalFunction2;
-
-template setExternalFunctionsSwitch(list<Function> functions)
- "Generates external function definitions."
-::=
-  (functions |> fn => setExternalFunctionSwitch(fn) ; separator="\n")
-end setExternalFunctionsSwitch;
-
-template setExternalFunctionSwitch(Function fn)
- "Generates external function definitions."
-::=
-  match fn
-    case EXTERNAL_FUNCTION(dynamicLoad=true) then
-      let fname = extFunctionName(extName, language)
-      <<
-      case $P<%fname%> : ptr_<%fname%>=(ptrT_<%fname%>)value; break;
-      >>
-end setExternalFunctionSwitch;
-
-template SwitchVars(SimVar simVar, String arrayName, Integer offset)
- "Generates code for defining variables in c file for FMU target. "
-::=
-match simVar
-  case SIMVAR(__) then
-  let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then
-  <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
-  <<>>
-  else
-  <<
-  case <%cref(name)%>_ : return comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>]; break;
-  >>
-end SwitchVars;
-
-template SwitchParameters(SimVar simVar, String arrayName)
- "Generates code for defining variables in c file for FMU target. "
-::=
-match simVar
-  case SIMVAR(__) then
-  let description = if comment then '// "<%comment%>"'
-  <<
-  case <%cref(name)%>_ : return comp->fmuData->simulationInfo.<%arrayName%>[<%index%>]; break;
-  >>
-end SwitchParameters;
-
-
-template SwitchAliasVars(SimVar simVar, String arrayName, String negate)
- "Generates code for defining variables in c file for FMU target. "
-::=
-match simVar
-  case SIMVAR(__) then
-    let description = if comment then '// "<%comment%>"'
-    let crefName = '<%cref(name)%>_'
-      match aliasvar
-        case ALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
-        <<
-        case <%crefName%> : return comp->fmuData->localData[0]->timeValue; break;
-        >>
-        else
-        <<
-        case <%crefName%> : return get<%arrayName%>(comp, <%cref(varName)%>_); break;
-        >>
-        case NEGATEDALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
-        <<
-        case <%crefName%> : return comp->fmuData->localData[0]->timeValue; break;
-        >>
-        else
-        <<
-        case <%crefName%> : return (<%negate%> get<%arrayName%>(comp, <%cref(varName)%>_)); break;
-        >>
-     end match
-end SwitchAliasVars;
-
-
-template SwitchVarsSet(SimVar simVar, String arrayName, Integer offset)
- "Generates code for defining variables in c file for FMU target. "
-::=
-match simVar
-  case SIMVAR(__) then
-  let description = if comment then '// "<%comment%>"'
-  if stringEq(crefStr(name),"$dummy") then
-  <<>>
-  else if stringEq(crefStr(name),"der($dummy)") then
-  <<>>
-  else
-  <<
-  case <%cref(name)%>_ : comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>]=value; break;
-  >>
-end SwitchVarsSet;
-
-template SwitchParametersSet(SimVar simVar, String arrayName)
- "Generates code for defining variables in c file for FMU target. "
-::=
-match simVar
-  case SIMVAR(__) then
-  let description = if comment then '// "<%comment%>"'
-  <<
-  case <%cref(name)%>_ : comp->fmuData->simulationInfo.<%arrayName%>[<%index%>]=value; break;
-  >>
-end SwitchParametersSet;
-
-
-template SwitchAliasVarsSet(SimVar simVar, String arrayName, String negate)
- "Generates code for defining variables in c file for FMU target. "
-::=
-match simVar
-  case SIMVAR(__) then
-    let description = if comment then '// "<%comment%>"'
-    let crefName = '<%cref(name)%>_'
-      match aliasvar
-        case ALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
-        <<
-        >>
-        else
-        <<
-        case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, value); break;
-        >>
-        case NEGATEDALIAS(__) then
-        if stringEq(crefStr(varName),"time") then
-        <<
-        >>
-        else
-        <<
-        case <%crefName%> : return set<%arrayName%>(comp, <%cref(varName)%>_, (<%negate%> value)); break;
-        >>
-     end match
-end SwitchAliasVarsSet;
-
 template equation_function(SimEqSystem eq, Context context, Text &varDecls, Text &eqs, String modelNamePrefix)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
@@ -982,7 +767,7 @@ template equation_function(SimEqSystem eq, Context context, Text &varDecls, Text
   >>
 end equation_function;
 
-template EquationGraphHelper(DAE.Exp exp,String ix)
+template EquationGraphHelper(DAE.Exp exp,String funcType, String ix)
 ::=
   match exp
   case ICONST(__) then ""
@@ -992,25 +777,34 @@ template EquationGraphHelper(DAE.Exp exp,String ix)
   case ENUM_LITERAL(__) then ""
   case CREF(__) then
     <<
-    data->link(&<%cref(componentRef)%>,eqFunction_<%ix%>);
+    data->link(&<%cref(componentRef)%>,eq<%funcType%>_<%ix%>);
     >>
   case BINARY(__) then
     <<
-    <%EquationGraphHelper(exp1,ix)%>
-    <%EquationGraphHelper(exp2,ix)%>
+    <%EquationGraphHelper(exp1,funcType,ix)%>
+    <%EquationGraphHelper(exp2,funcType,ix)%>
     >>
   case UNARY(__) then
     <<
-    <%EquationGraphHelper(exp,ix)%>
+    <%EquationGraphHelper(exp,funcType,ix)%>
     >>
   case LUNARY(__) then
     <<
-    <%EquationGraphHelper(exp,ix)%>
+    <%EquationGraphHelper(exp,funcType,ix)%>
     >>
-  case RELATION(__) then "RELATIONS NOT SUPPORTED"
-  case IFEXP(__) then "IF NOT SUPPORTED"
+  case RELATION(__) then
+    <<
+    <%EquationGraphHelper(exp1,funcType,ix)%>
+    <%EquationGraphHelper(exp2,funcType,ix)%>
+    >>
+  case IFEXP(__) then 
+    <<
+    <%EquationGraphHelper(expCond,funcType,ix)%>
+    <%EquationGraphHelper(expThen,funcType,ix)%>
+    <%EquationGraphHelper(expElse,funcType,ix)%>
+    >>
   case CALL(__) then
-    let call_exp = (expLst |> eq => EquationGraphHelper(eq,ix)
+    let call_exp = (expLst |> eq => EquationGraphHelper(eq,funcType,ix)
       ;separator="\n")
     <<
     <%call_exp%>
@@ -1048,7 +842,7 @@ template EquationGraph(SimEqSystem eq)
     then
     <<
     data->link(eqFunction_<%ix%>,&<%cref(cref)%>);
-    <%EquationGraphHelper(exp,ix)%>
+    <%EquationGraphHelper(exp,"Function",ix)%>
     >>
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then "ARRAY_CALL"
@@ -1066,7 +860,7 @@ template EquationGraph(SimEqSystem eq)
                    data->link(eqFunction_<%ix%>,&<%cref(name)%>);
                    >>
              ) ;separator="\n")
-    let input_vars = (beqs |> eq => EquationGraphHelper(eq,ix)
+    let input_vars = (beqs |> eq => EquationGraphHelper(eq,"Function",ix)
              ;separator="\n")
     <<
     <%output_vars%>
@@ -1084,118 +878,22 @@ template EquationGraph(SimEqSystem eq)
     "NOT IMPLEMENTED EQUATION equation_"
 end EquationGraph;
 
-template generateEquationGraph(list<SimEqSystem> allEquations)
+template generateEquationGraph(list<SimEqSystem> allEquations, list<ZeroCrossing> zeroCrossings)
  "Generate dependency graphs for all equations and variables in the model."
 ::=
   let xx = (allEquations |> eq => EquationGraph(eq)
       ;separator="\n")
+  let zz = (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => EquationGraphHelper(relation_,"ZeroCrossing",i0)
+      ;separator="\n")
   <<
+  // Dynamic equations
   <%xx%>
+  // Zero crossings
+  <%zz%>
   >>
 end generateEquationGraph;
 
 // All of this is imported from CodegenAdevs
-
-template declareExtraResiduals(list<SimEqSystem> allEquations)
-::=
-  (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then declareExtraResiduals(fill(eq.cont,1))
-     case eq as SES_NONLINEAR(__) then
-     <<
-     void residualFunc<%index%>_cpp(double* y, double* res);
-     void solve_residualFunc<%index%>_cpp();
-     >>
-   )
-   ;separator="\n")
-end declareExtraResiduals;
-
-template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
- "Generates functions in simulation file."
-::=
-  (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then makeExtraResiduals(fill(eq.cont,1),name)
-     case eq as SES_NONLINEAR(__) then
-     let size = listLength(crefs)
-     let &varDecls = buffer "" /*BUFD*/
-     let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
-         equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/)
-       ;separator="\n")
-     let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
-         equation_(eq2, contextOther, &varDecls /*BUFD*/)
-       ;separator="\n")
-     let arrayprebody = (eq.eqs |> eq2 as SES_ARRAY_CALL_ASSIGN(__) =>
-         equation_(eq2, contextOther, &varDecls /*BUFD*/)
-       ;separator="\n")
-     let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-         let &preExp = buffer "" /*BUFD*/
-         let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
-                            &preExp /*BUFC*/, &varDecls /*BUFD*/)
-         '<%preExp%>res[<%i0%>] = <%expPart%>;'
-       ;separator="\n")
-     <<
-     static int residualFunc<%index%>(N_Vector y, N_Vector f, void*)
-     {
-       double* yd = NV_DATA_S(y);
-       double* fd = NV_DATA_S(f);
-       active_model->residualFunc<%index%>_cpp(yd,fd);
-       return 0;
-     }
-
-     void <%name%>::residualFunc<%index%>_cpp(double* y, double* res)
-     {
-       <%crefs |> name hasindex i0 =>
-       <<
-       <%cref(name)%> = y[<%i0%>];
-       >>
-       ;separator="\n"%>
-       <%varDecls%>
-       <%algs%>
-       <%prebody%>
-       <%arrayprebody%>
-       <%body%>
-     }
-
-     void <%name%>::solve_residualFunc<%index%>_cpp()
-     {
-         int flag;
-         int NEQ = <%size%>;
-         N_Vector y = N_VNew_Serial(NEQ);
-         N_Vector scale = N_VNew_Serial(NEQ);
-         void* kmem = KINCreate();
-         active_model = this;
-         assert(kmem != NULL);
-         flag = KINInit(kmem, residualFunc<%index%>, y);
-         assert(flag == KIN_SUCCESS);
-         flag = KINDense(kmem, NEQ);
-         assert(flag == KIN_SUCCESS);
-         N_VConst_Serial(1.0,scale);
-         <%crefs |> name hasindex i0 =>
-         <<
-         NV_Ith_S(y,<%i0%>) = <%cref(name)%>;
-         >>
-         ;separator="\n"%>
-         flag = KINSol(kmem,y,KIN_LINESEARCH,scale,scale);
-         // Save the outcome and calculate any dependent variables
-         residualFunc<%index%>(y,scale,NULL);
-         N_VDestroy_Serial(y);
-         N_VDestroy_Serial(scale);
-         KINFree(&kmem);
-     }
-     >>
-   )
-   ;separator="\n\n")
-end makeExtraResiduals;
-
-template makeExtraFunctionsAndRecords(SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
-  <<
-  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
-  <%functionHeaders(modelInfo.functions)%>
-  <%functionBodies(modelInfo.functions)%>
-  >>
-end makeExtraFunctionsAndRecords;
 
 template zeroCrossingEqns(list<ZeroCrossing> zeroCrossings)
   "Generates function in simulation file."
@@ -1218,155 +916,6 @@ template zeroCrossingEqns(list<ZeroCrossing> zeroCrossings)
   <%EventFuncCode%>
   >>
 end zeroCrossingEqns;
-
-template initialResidualFixedVars(list<SimVar> varsLst) ::=
-  let res = (varsLst |> SIMVAR(__) =>
-    if isFixed then
-       'r=<%cref(name)%>-_PRE<%cref(name)%>; *f+=r*r;'
-    ;separator="\n")
-  <<
-  <%res%>
-  >>
-end initialResidualFixedVars;
-
-template selectInitialFreeVars(list<SimVar> varsLst) ::=
-  let res = (varsLst |> SIMVAR(__) =>
-    if not isFixed then
-       'init_unknown_vars.push_back(&<%cref(name)%>);'
-    ;separator="\n")
-  <<
-  <%res%>
-  >>
-end selectInitialFreeVars;
-
-template makeReinitDynamicState(DAE.ComponentRef stateVar, list<DAE.ComponentRef> statescandidates, ComponentRef crA, Integer nStates, Integer rowIndex)
-::=
-  let eq = (statescandidates |> var hasindex i0 => '<%cref(var)%>*<%accessCrA(crA,nStates,rowIndex,i0)%>';separator="+")
-  <<
-  <%cref(stateVar)%> = <%eq%>;
-  >>
-end makeReinitDynamicState;
-
-template accessCrA(DAE.ComponentRef crA, Integer numRows, String rowIndex, String colIndex)
-::=
-  match numRows
-    case 1 then '<%crefarray(crA)%>.get(<%colIndex%>)'
-    else '<%crefarray(crA)%>.get(<%rowIndex%>,<%colIndex%>)'
-end accessCrA;
-
-template selectState(list<DAE.ComponentRef> states, list<DAE.ComponentRef> statescandidates, DAE.ComponentRef crA, Integer nCandidates, Integer nStates, JacobianMatrix jacobianMatrix)
-::=
-    let newStateAssign = (states |> stateVar hasindex i0 => '<%makeReinitDynamicState(stateVar,statescandidates,crA,nStates,i0)%>';separator="\n")
-    <<
-    calc_Jacobian_<%(jacobianMatrix |> (_,_,name,_,_,_,_) => '<%name%>')%>();
-    if (selectDynamicStates(_Jacobian_<%(jacobianMatrix |> (_,_,name,_,_,_,_) => '<%name%>')%>,<%nStates%>,<%nCandidates%>,rowSelect<%crefarray(crA)%>,colSelect<%crefarray(crA)%>))
-    {
-        for (int row = 0; row < <%nStates%>; row++)
-            for (int col = 0; col < <%nCandidates%>; col++)
-                <%accessCrA(crA,nStates,"row","col")%> = 0;
-        for (int row = 0; row < <%nStates%>; row++)
-        {
-            int rowIndex = rowSelect<%crefarray(crA)%>[(<%nStates%>-1)-row];
-            int colIndex = colSelect<%crefarray(crA)%>[(<%nCandidates%>-1)-row];
-            <%accessCrA(crA,nStates,"rowIndex","colIndex")%> = 1;
-        }
-        doReinit = true;
-    }
-    <%newStateAssign%>
-    >>
-end selectState;
-
-template makeStateSelection(list<StateSet> stateSets, list<SimVar> stateVars)
-::=
-  let selectCode =
-    (stateSets |> stateSet as SES_STATESET(__) =>
-      selectState(states,statescandidates,crA,nCandidates,nStates,jacobianMatrix) ; separator="\n")
-    <<
-    bool doReinit = false;
-    <%selectCode%>
-    return doReinit;
-    >>
-end makeStateSelection;
-
-template makeSelectStateMethod(SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
-  let stateSelect = makeStateSelection(stateSets,vars.stateVars)
-  <<
-  bool <%lastIdentOfPath(modelInfo.name)%>::selectStateVars()
-  {
-      <%stateSelect%>
-  }
-  >>
-end makeSelectStateMethod;
-
-template makePostStep(SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
-  let reassignCode = (vars.stateVars |> SIMVAR(__) =>
-      'q[<%index%>] = <%cref(name)%>;';separator="\n")
-  <<
-  void <%lastIdentOfPath(modelInfo.name)%>::postStep(double* q)
-  {
-      calc_vars(q);
-      if (selectStateVars())
-      {
-          <%reassignCode%>
-          calc_vars(q,true);
-      }
-      save_vars();
-  }
-  >>
-end makePostStep;
-
-template makeDerFuncCalculator(SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
-  let aliasAssign = (vars.aliasVars |> v as SIMVAR(__) =>
-   match aliasvar
-     case ALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
-     case NEGATEDALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
-   ;separator="\n")
-  let intAliasAssign = (vars.intAliasVars |> v as SIMVAR(__) =>
-   match aliasvar
-     case ALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
-     case NEGATEDALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
-   ;separator="\n")
-  let boolAliasAssign = (vars.boolAliasVars |> v as SIMVAR(__) =>
-   match aliasvar
-     case ALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
-     case NEGATEDALIAS(__) then '<%cref(v.name)%> = <%cref(varName)%>;'
-   ;separator="\n")
-  <<
-  void <%lastIdentOfPath(modelInfo.name)%>::calc_vars(const double* q, bool doReinit)
-  {
-      bool reInit = false;
-      active_model = this;
-      if (atEvent || doReinit) clear_event_flags();
-      // Copy state variable arrays to values used in the odes
-      if (q != NULL)
-      {
-          timeValue = q[numVars()-1];
-          <%(vars.stateVars |> SIMVAR(__) => '<%cref(name)%>=q[<%index%>];') ;separator="\n"%>
-      }
-      bound_params();
-      <%allEqns(allEquations,whenClauses,removedEquations)%>
-      // Alias assignments
-      <%aliasAssign%>
-      <%intAliasAssign%>
-      <%boolAliasAssign%>
-      if (atEvent && !reInit) reInit = check_for_new_events();
-      if (reInit)
-      {
-          save_vars();
-          calc_vars(NULL,reInit);
-      }
-  }
-  >>
-end makeDerFuncCalculator;
 
 template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, list<SimEqSystem> removedEqns)
 ::=
@@ -1391,86 +940,6 @@ template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whe
   >>
 end allEqns;
 
-template makeInitialResidueMethod(SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
-  <<
-  static void static_initial_objective_func(long*, double* w, double* f)
-  {
-      active_model->initial_objective_func(w,f,1.0);
-  }
-
-  void <%lastIdentOfPath(modelInfo.name)%>::initial_objective_func(double* w, double *f, double $P$_lambda)
-  {
-      // Get new values for the unknown variables
-      for (unsigned i = 0; i < init_unknown_vars.size(); i++)
-      {
-          if (w[i] != w[i]) MODELICA_TERMINATE("could not initialize unknown reals");
-          *(init_unknown_vars[i]) = w[i];
-      }
-      // Calculate new state variable derivatives and algebraic variables
-      bound_params();
-      selectStateVars();
-      calc_vars(NULL,true);
-      // Calculate the new value of the objective function
-      <%initialResidualEqns(residualEquations)%>
-      <%initialResidualFixedVars(vars.stateVars)%>
-      <%initialResidualFixedVars(vars.derivativeVars)%>
-      <%initialResidualFixedVars(vars.algVars)%>
-      <%initialResidualFixedVars(vars.discreteAlgVars)%>
-      <%initialResidualFixedVars(vars.paramVars)%>
-  }
-
-  void <%lastIdentOfPath(modelInfo.name)%>::solve_for_initial_unknowns()
-  {
-    <%selectInitialFreeVars(vars.stateVars)%>
-    <%selectInitialFreeVars(vars.derivativeVars)%>
-    <%selectInitialFreeVars(vars.algVars)%>
-    <%selectInitialFreeVars(vars.discreteAlgVars)%>
-    <%selectInitialFreeVars(vars.paramVars)%>
-    if (!init_unknown_vars.empty())
-    {
-        long N = init_unknown_vars.size();
-        long NPT = 2*N+2;
-        double* w = new double[N];
-        for (unsigned i = 0; i < init_unknown_vars.size(); i++)
-            w[i] = *(init_unknown_vars[i]);
-        double RHOBEG = 10.0;
-        double RHOEND = 1.0E-7;
-        long IPRINT = 0;
-        long MAXFUN = 50000;
-        double* scratch = new double[(NPT+13)*(NPT+N)+3*N*(N+3)/2];
-        active_model = this;
-        newuoa_(&N,&NPT,w,&RHOBEG,&RHOEND,&IPRINT,&MAXFUN,scratch,
-                static_initial_objective_func);
-        delete [] w;
-        delete [] scratch;
-    }
-  }
-  >>
-end makeInitialResidueMethod;
-
-template initialResidualEqns(list<SimEqSystem> residualEquations)
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let body = (residualEquations |> SES_RESIDUAL(__) =>
-      match exp
-      case DAE.SCONST(__) then ''
-      else
-        let &preExp = buffer "" /*BUFD*/
-        let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/,
-                           &varDecls /*BUFD*/)
-        '<%preExp%> r = <%expPart%>; *f += r*r;'
-    ;separator="\n")
-  <<
-  double r = 0.0;
-  *f = 0.0;
-  <%varDecls%>
-  <%body%>
-  >>
-end initialResidualEqns;
-
 // Below here is from the Cpp template
 
 template lastIdentOfPath(Path modelName) ::=
@@ -1481,23 +950,6 @@ template lastIdentOfPath(Path modelName) ::=
 end lastIdentOfPath;
 
 // Below here is from the C template but modified in many instances
-
-template functionBoundParameters(list<SimEqSystem> parameterEquations)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let body = (parameterEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/)
-    ;separator="\n")
-  let divbody = (parameterEquations |> eq as SES_ALGORITHM(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/)
-    ;separator="\n")
-  <<
-  <%varDecls%>
-  <%body%>
-  <%divbody%>
-  >>
-end functionBoundParameters;
 
 template functionWhenReinitStatement(WhenOperator reinit, Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."
@@ -1569,36 +1021,6 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
   >>
 end functionWhenReinitStatementThen;
 
-template makeEventFuncCallForDiv(Exp exp1, Exp exp2, Exp idx, Text& varDecls)
- "Generate code for a call to an event generating function"
-::=
-  let &preExp = buffer "" /*BUFD*/
-  let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  let indx = daeExp(idx, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  <<
-  <%preExp%>
-  z[numRelations()+2*<%indx%>] = eventFuncs[<%indx%>]->getZUp((<%e1%>)/(<%e2%>));
-  z[numRelations()+2*<%indx%>+1] = eventFuncs[<%indx%>]->getZDown((<%e1%>)/(<%e2%>));
-  // Div generates extra two extra state event functions
-  z[numRelations()+2*(<%indx%>+1)] = 1.0;
-  z[numRelations()+2*(<%indx%>+1)+1] = 1.0;
-  >>
-end makeEventFuncCallForDiv;
-
-template makeEventFuncCall(Exp exp1, Exp idx, Text& varDecls)
- "Generate code for a call to an event generating function"
-::=
-  let &preExp = buffer "" /*BUFD*/
-  let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  let indx = daeExp(idx, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  <<
-  <%preExp%>
-  z[numRelations()+2*<%indx%>] = eventFuncs[<%indx%>]->getZUp(<%e1%>);
-  z[numRelations()+2*<%indx%>+1] = eventFuncs[<%indx%>]->getZDown(<%e1%>);
-  >>
-end makeEventFuncCall;
-
 template zeroCrossingEquation(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
  "Generates code for a zero crossing relations."
 ::=
@@ -1641,7 +1063,6 @@ template zeroCrossingOpFunc(Operator op)
   case GREATEREQ(__) then "Adevs_GreaterEq"
 end zeroCrossingOpFunc;
 
-
 template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
@@ -1662,6 +1083,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
     then equationNonlinear(e, context, &varDecls /*BUFD*/)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varDecls /*BUFD*/)
+  case e as SES_RESIDUAL(__)
+    then "NOT IMPLEMENTED SES_RESIDUAL"
   else
     "NOT IMPLEMENTED EQUATION"
 end equation_;
@@ -1744,6 +1167,16 @@ case SES_LINEAR(__) then
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
      '<%preExp%><%bname%>[<%i0%>] = <%expPart%>;'
+  ;separator="\n"%>
+  <%residual |> exp =>
+     let &preExp = buffer "" /*BUFD*/
+     match exp
+     case SES_RESIDUAL(__) then
+         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+         '<%preExp%><%expPart%>;'
+    else
+         let expPart = equation_(exp, context, &varDecls /*BUFD*/)
+         '<%preExp%><%expPart%>;'
   ;separator="\n"%>
   GETRF<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>);
   GETRS<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>,<%bname%>);
@@ -1853,49 +1286,6 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
   >>
 end equationElseWhen;
 
-template allocArray(SimVar var, Text& prefix) ::=
-  match var
-    case SIMVAR(__) then
-      let argIndices = (numArrayElement |> i => '<%i%>';separator=",")
-      'alloc_array(<%prefix%><%crefarray(name)%>,<%listLength(numArrayElement)%>,<%argIndices%>);'
-end allocArray;
-
-template allocArrays(list<SimVar> varsLst) ::=
-  varsLst |> sv as SIMVAR(__) =>
-      let &arrayIndices = buffer ""
-      let tmp = crefToCStr(name,&arrayIndices)
-      if arrayIndices then
-        let arrayIndicesTest = testForFirstIndex(arrayIndices)
-        if not arrayIndicesTest then
-          '<%allocArray(sv,"")%><%allocArray(sv,"_PRE")%>
-          '
-  ;separator=""
-end allocArrays;
-
-template initValst(Text &varDecls /*BUFP*/,list<SimVar> varsLst) ::=
-  varsLst |> sv as SIMVAR(__) =>
-    let &preExp = buffer "" /*BUFD*/
-    match initialValue
-      case SOME(v) then
-      match daeExp(v, contextOther, &preExp, &varDecls)
-      case vStr as "0"
-      case vStr as "0.0"
-      case vStr as "(0)" then
-       '<%preExp%>
-        <%cref(sv.name)%>=<%vStr%>;//<%cref(sv.name)%>'
-      case vStr as "" then
-       '<%preExp%>
-       <%cref(sv.name)%>=0;//<%cref(sv.name)%>'
-      case vStr then
-       '<%preExp%>
-       <%cref(sv.name)%>=<%vStr%>;//<%cref(sv.name)%>'
-        end match
-      else
-        '<%preExp%>
-        <%cref(sv.name)%>=<%startValue(sv.type_)%>;'
-  ;separator="\n"
-end initValst;
-
 template startValue(DAE.Type ty)
 ::=
   match ty
@@ -1906,102 +1296,6 @@ template startValue(DAE.Type ty)
   case ty as T_ENUMERATION(__) then '0'
   else ""
 end startValue;
-
-template jacobianColumnEqn(list<SimEqSystem> eqnSys, list<SimVar> eqnVars, String matrixName, Integer numRows, Integer numCols) "Note: Jacobian in the parser is transposed"
-::=
-  let &varDecls = buffer ""
-  let colVars = (eqnVars |> var => '<%declareCref(var,"")%>';separator="\n")
-  let eqs = (eqnSys |> eqn =>
-    '<%equation_(eqn,contextSimulationDiscrete,&varDecls)%>'
-    ;separator="\n")
-  let colAssigns = (eqnVars |> var as SIMVAR(__) hasindex i0 =>
-    '_Jacobian_<%matrixName%>[<%i0%>+<%numRows%>*col] = <%cref(name)%>;';separator="\n")
-  <<
-  <%colVars%>
-  <%varDecls%>
-  for (int col = 0; col < <%numCols%>; col++)
-  {
-      _S_[col] = 1.0;
-      <%eqs%>
-      _S_[col] = 0.0;
-      <%colAssigns%>
-  }
-  >>
-end jacobianColumnEqn;
-
-template makeJacobianFunc(String matrixName, list<JacobianColumn> cols, list<SimVar> seedVars, list<SimVar> diffVars, list<SimVar> diffedVars, String modelName)
-::=
-  if diffVars then
-    let varDecls = (seedVars |> var as SIMVAR(__) hasindex i0 =>
-      'double &_<%jacobianVarsSeedDefine(name)%>$pDER<%matrixName%>$P<%jacobianVarsSeedDefine(name)%> = _S_[<%i0%>];';separator="\n")
-    let eqs = (cols |> (eqnSys,colVars,_) => '<%jacobianColumnEqn(eqnSys,colVars,matrixName,listLength(diffedVars),listLength(diffVars))%>';separator="\n")
-    <<
-    void <%modelName%>::calc_Jacobian_<%matrixName%>()
-    {
-        double _S_[<%listLength(seedVars)%>];
-        <%varDecls%>
-        for (int ii = 0; ii < <%listLength(seedVars)%>; ii++)
-            _S_[ii] = 0.0;
-        <%eqs%>
-    }
-
-    >>
-end makeJacobianFunc;
-
-template jacobianVarsSeedDefine(ComponentRef cr)
-::=
-  match cr
-  case CREF_IDENT(__) then '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>$P<%crefToCStr1(componentRef)%>'
-  case WILD(__) then ' '
-  else "CREF_NOT_IDENT_OR_QUAL"
-end jacobianVarsSeedDefine;
-
-template makeJacobianFuncs(list<JacobianMatrix> jacobians, String modelName)
-::=
-  let jacDecls = (jacobians |> (jacColumn,seedVars,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
-    '<%makeJacobianFunc(name,jacColumn,seedVars,diffVars,diffedVars,modelName)%>'
-   ;separator="\n")
-  <<
-  <%jacDecls%>
-  >>
-end makeJacobianFuncs;
-
-template makeJacobianStateSetFuncs(list<StateSet> stateSets, String modelName)
-::=
-  (stateSets |> SES_STATESET(__) =>
-    let jacDecls = (jacobianMatrix |> (jacColumn,seedVars,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
-    '<%makeJacobianFunc(name,jacColumn,seedVars,diffVars,diffedVars,modelName)%>')
-    <<
-    <%jacDecls%>
-    >>
-    ; separator="\n")
-end makeJacobianStateSetFuncs;
-
-template declareJacobians2(String name, list<SimVar> diffVars, list<SimVar> diffedVars)
-::=
-  if diffVars then
-    let diffNames = (diffVars |> v as SIMVAR(__) =>
-      '<%cref(name)%>';separator=",")
-    let diffedNames = (diffedVars |> v as SIMVAR(__) =>
-      '<%cref(name)%>';separator=",")
-    <<
-    // Diff vars: <%diffNames%>
-    // Diffed vars: <%diffedNames%>
-    double _Jacobian_<%name%>[<%listLength(diffedVars)%>*<%listLength(diffVars)%>];
-    void calc_Jacobian_<%name%>();
-    >>
-end declareJacobians2;
-
-template declareJacobians(list<JacobianMatrix> jacobians)
-::=
-  let jacDecls = (jacobians |> (_,_,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
-    '<%declareJacobians2(name,diffVars,diffedVars)%>'
-   ;separator="\n")
-  <<
-  <%jacDecls%>
-  >>
-end declareJacobians;
 
 template contextCref(ComponentRef cr, Context context)
   "Generates code for a component reference depending on which context we're in."
@@ -2019,70 +1313,6 @@ template contextIteratorName(Ident name, Context context)
   else "$P" + name
 end contextIteratorName;
 
-template declareSetMethod(SimVar var)
- "Declares a C++ method for setting a component reference."
-::=
-  match var
-    case SIMVAR(__) then
-      let &arrayIndices = buffer ""
-      let tmp = crefToCStr(name,&arrayIndices)
-      let arrayIndicesTest = testForFirstIndex(arrayIndices)
-      if not arrayIndices then
-        'void set<%cref(name)%>(<%variableType(type_)%> val) { <%cref(name)%> = val; }'
-      else if not arrayIndicesTest then
-        let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
-        let accIndices = (numArrayElement |> i hasindex i0 => 'i<%i0%>';separator=",")
-        'void set<%crefarray(name)%>(<%variableType(type_)%> val, <%argIndices%>) const { <%crefarray(name)%>.get(<%accIndices%>) = val; }'
-end declareSetMethod;
-
-template declareGetMethod(SimVar var)
- "Declares a C++ method for getting a component reference."
-::=
-  match var
-    case SIMVAR(__) then
-      let &arrayIndices = buffer ""
-      let tmp = crefToCStr(name,&arrayIndices)
-      let arrayIndicesTest = testForFirstIndex(arrayIndices)
-      if not arrayIndices then
-        '<%variableType(type_)%> get<%cref(name)%>() const { return <%cref(name)%>; }'
-      else if not arrayIndicesTest then
-        let argIndices = (numArrayElement |> i hasindex i0 => 'int i<%i0%>';separator=",")
-        let accIndices = (numArrayElement |> i hasindex i0 => 'i<%i0%>';separator=",")
-        '<%variableType(type_)%> get<%crefarray(name)%>(<%argIndices%>) const { return <%crefarray(name)%>.get(<%accIndices%>); }'
-end declareGetMethod;
-
-template declareCref(SimVar var, String prepend)
- "Declares a C++ name to be used as a component reference."
-::=
-  match var
-    case SIMVAR(__) then
-      let &arrayIndices = buffer ""
-      let tmp = crefToCStr(name,&arrayIndices)
-      let arrayIndicesTest = testForFirstIndex(arrayIndices)
-      if not arrayIndices then
-        '<%variableType(type_)%> <%prepend%><%cref(name)%>;'
-      else if not arrayIndicesTest then
-        'modelica_array<<%variableType(type_)%>> <%prepend%><%crefarray(name)%>;'
-end declareCref;
-
-template testForFirstIndex(String str) ::=
-  let str_nums = System.stringReplace(str,",","")
-  let str_zeros = System.stringReplace(str_nums,"0","")
-  '<%str_zeros%>'
-end testForFirstIndex;
-
-template variableType(DAE.Type type)
-::=
-  match type
-  case T_REAL(__)        then "double"
-  case T_STRING(__)      then "string"
-  case T_INTEGER(__)     then "int"
-  case T_BOOL(__)        then "bool"
-  case T_ARRAY(__)       then
-    let arrayType = variableType(ty)
-    'modelica_array<<%arrayType%>>'
-end variableType;
-
 template crefarray(ComponentRef cr)
  "Generates C++ name for component reference."
 ::=
@@ -2097,7 +1327,7 @@ template crefarray2(ComponentRef cr)
     case CREF_IDENT(__) then
       '<%unquoteIdentifier(ident)%>'
     case CREF_QUAL(ident="$PRE") then
-      'PRE_<%crefarray2(componentRef)%>'
+      '_PRE_<%crefarray2(componentRef)%>'
     case CREF_QUAL(ident="$DER") then
       'DER_<%crefarray2(componentRef)%>'
     case CREF_QUAL(__) then
@@ -2131,7 +1361,7 @@ template crefToCStr(ComponentRef cr, Text &arrayIndices)
       '<%unquoteIdentifier(ident)%>'
     case CREF_QUAL(ident="$PRE") then
       let &arrayIndices += subscriptsToCStr(subscriptLst,tmp)
-      'PRE_<%crefToCStr(componentRef,&arrayIndices)%>'
+      '_PRE_<%crefToCStr(componentRef,&arrayIndices)%>'
     case CREF_QUAL(ident="$DER") then
       let &arrayIndices += subscriptsToCStr(subscriptLst,tmp)
       'DER_<%crefToCStr(componentRef,&arrayIndices)%>'
@@ -2153,7 +1383,7 @@ template subscriptsToCStr(list<Subscript> subscripts, String arrayIndices)
   if not arrayIndices then
     (subscripts |> i => '<%subscriptToCStr(i)%>';separator="_")
   else if subscripts then
-    ',<%(subscripts |> i => '<%subscriptToCStr(i)%>';separator="_")%>'
+    '_<%(subscripts |> i => '<%subscriptToCStr(i)%>';separator="_")%>'
 end subscriptsToCStr;
 
 template subscriptsToCStr2(list<Subscript> subscripts)
@@ -2179,6 +1409,13 @@ template subscriptToCStr(Subscript subscript)
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToCStr;
+
+template subscriptsStr(list<Subscript> subscripts)
+ "Generares subscript part of the name."
+::=
+  if subscripts then
+    '[<%subscripts |> s => subscriptStr(s) ;separator="_"%>]'
+end subscriptsStr;
 
 template crefStr(ComponentRef cr)
  "Generates the name of a variable for variable name array."
@@ -2307,14 +1544,14 @@ template recordDeclaration(RecordDeclaration recDecl)
     <<
     <%recordDefinition(dotPath(defPath),
                       underscorePath(defPath),
-                      (variables |> VARIABLE(__) => '"<%crefStr(name)%>"' ;separator=","),
+                      (variables |> VARIABLE(__) => '"<%crefStr(name)%>"' ;separator="_"),
                       listLength(variables))%>
     >>
   case RECORD_DECL_DEF(__) then
     <<
     <%recordDefinition(dotPath(path),
                       underscorePath(path),
-                      (fieldNames |> name => '"<%name%>"' ;separator=","),
+                      (fieldNames |> name => '"<%name%>"' ;separator="_"),
                       listLength(fieldNames))%>
     >>
 end recordDeclaration;
@@ -4761,7 +3998,7 @@ case ARRAY(__) then
   let params = (array |> e =>
       let prefix = if scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
       '<%prefix%><%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>'
-    ;separator=",")
+    ;separator="_")
   '<%params%>'
 end daeExpArray;
 
@@ -5892,7 +5129,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
   case META_TUPLE(__) then
     /* We need to use #define's to be C-compliant. Yea, total crap :) */
     <<
-    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0) {<%listExp |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(listExp)%>,0) {<%listExp |> exp => literalExpConstBoxedVal(exp); separator="_"%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   case META_OPTION(exp=SOME(exp)) then
@@ -5905,7 +5142,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     /* We need to use #define's to be C-compliant. Yea, total crap :) */
     let newIndex = getValueCtor(index)
     <<
-    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp => literalExpConstBoxedVal(exp); separator=","%>}};
+    static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp => literalExpConstBoxedVal(exp); separator="_"%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
