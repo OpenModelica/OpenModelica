@@ -587,7 +587,7 @@ public:
   {
     return _real_array[size2 * (i - 1) + size3 * (j - 1) + (k - 1)];
   }
- 
+
   virtual unsigned int getNumElems()
   {
     return size1 * size2 * size3;
@@ -1231,7 +1231,7 @@ public:
    }
    return *this;
   }
-  
+
 
   void setDims(unsigned int size1, unsigned int size2, unsigned int size3)
   {

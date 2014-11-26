@@ -129,7 +129,7 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettin
 {
   try
   {
-   
+
 
     IGlobalSettings* global_settings = _config->getGlobalSettings();
 
