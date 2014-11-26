@@ -828,26 +828,26 @@ void initializeDataStruc(DATA *data)
     assertStreamPrint(data->threadData, 0 != tmpSimData.stringVars, "out of memory");
     appendRingData(data->simulationData, &tmpSimData);
   }
-  data->localData = (SIMULATION_DATA**) GC_malloc(SIZERINGBUFFER * sizeof(SIMULATION_DATA*));
+  data->localData = (SIMULATION_DATA**) GC_malloc_uncollectable(SIZERINGBUFFER * sizeof(SIMULATION_DATA*));
   rotateRingBuffer(data->simulationData, 0, (void**) data->localData);
 
   /* create modelData var arrays */
-  data->modelData.realVarsData = (STATIC_REAL_DATA*) GC_malloc(data->modelData.nVariablesReal * sizeof(STATIC_REAL_DATA));
-  data->modelData.integerVarsData = (STATIC_INTEGER_DATA*) GC_malloc(data->modelData.nVariablesInteger * sizeof(STATIC_INTEGER_DATA));
-  data->modelData.booleanVarsData = (STATIC_BOOLEAN_DATA*) GC_malloc(data->modelData.nVariablesBoolean * sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.realVarsData = (STATIC_REAL_DATA*) GC_malloc_uncollectable(data->modelData.nVariablesReal * sizeof(STATIC_REAL_DATA));
+  data->modelData.integerVarsData = (STATIC_INTEGER_DATA*) GC_malloc_uncollectable(data->modelData.nVariablesInteger * sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanVarsData = (STATIC_BOOLEAN_DATA*) GC_malloc_uncollectable(data->modelData.nVariablesBoolean * sizeof(STATIC_BOOLEAN_DATA));
   data->modelData.stringVarsData = (STATIC_STRING_DATA*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(STATIC_STRING_DATA));
 
-  data->modelData.realParameterData = (STATIC_REAL_DATA*) GC_malloc(data->modelData.nParametersReal * sizeof(STATIC_REAL_DATA));
-  data->modelData.integerParameterData = (STATIC_INTEGER_DATA*) GC_malloc(data->modelData.nParametersInteger * sizeof(STATIC_INTEGER_DATA));
-  data->modelData.booleanParameterData = (STATIC_BOOLEAN_DATA*) GC_malloc(data->modelData.nParametersBoolean * sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.realParameterData = (STATIC_REAL_DATA*) GC_malloc_uncollectable(data->modelData.nParametersReal * sizeof(STATIC_REAL_DATA));
+  data->modelData.integerParameterData = (STATIC_INTEGER_DATA*) GC_malloc_uncollectable(data->modelData.nParametersInteger * sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanParameterData = (STATIC_BOOLEAN_DATA*) GC_malloc_uncollectable(data->modelData.nParametersBoolean * sizeof(STATIC_BOOLEAN_DATA));
   data->modelData.stringParameterData = (STATIC_STRING_DATA*) GC_malloc_uncollectable(data->modelData.nParametersString * sizeof(STATIC_STRING_DATA));
 
-  data->modelData.realAlias = (DATA_REAL_ALIAS*) GC_malloc(data->modelData.nAliasReal * sizeof(DATA_REAL_ALIAS));
-  data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) GC_malloc(data->modelData.nAliasInteger * sizeof(DATA_INTEGER_ALIAS));
-  data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) GC_malloc(data->modelData.nAliasBoolean * sizeof(DATA_BOOLEAN_ALIAS));
+  data->modelData.realAlias = (DATA_REAL_ALIAS*) GC_malloc_uncollectable(data->modelData.nAliasReal * sizeof(DATA_REAL_ALIAS));
+  data->modelData.integerAlias = (DATA_INTEGER_ALIAS*) GC_malloc_uncollectable(data->modelData.nAliasInteger * sizeof(DATA_INTEGER_ALIAS));
+  data->modelData.booleanAlias = (DATA_BOOLEAN_ALIAS*) GC_malloc_uncollectable(data->modelData.nAliasBoolean * sizeof(DATA_BOOLEAN_ALIAS));
   data->modelData.stringAlias = (DATA_STRING_ALIAS*) GC_malloc_uncollectable(data->modelData.nAliasString * sizeof(DATA_STRING_ALIAS));
 
-  data->modelData.samplesInfo = (SAMPLE_INFO*) GC_malloc(data->modelData.nSamples * sizeof(SAMPLE_INFO));
+  data->modelData.samplesInfo = (SAMPLE_INFO*) GC_malloc_uncollectable(data->modelData.nSamples * sizeof(SAMPLE_INFO));
   data->simulationInfo.nextSampleEvent = data->simulationInfo.startTime;
   data->simulationInfo.nextSampleTimes = (double*) calloc(data->modelData.nSamples, sizeof(double));
   data->simulationInfo.samples = (modelica_boolean*) calloc(data->modelData.nSamples, sizeof(modelica_boolean));
@@ -891,23 +891,23 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
 
   /* buffer for mixed systems */
-  data->simulationInfo.mixedSystemData = (MIXED_SYSTEM_DATA*) GC_malloc(data->modelData.nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
+  data->simulationInfo.mixedSystemData = (MIXED_SYSTEM_DATA*) GC_malloc_uncollectable(data->modelData.nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
   data->callback->initialMixedSystem(data->modelData.nMixedSystems, data->simulationInfo.mixedSystemData);
 
   /* buffer for linear systems */
-  data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) GC_malloc(data->modelData.nLinearSystems*sizeof(LINEAR_SYSTEM_DATA));
+  data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) GC_malloc_uncollectable(data->modelData.nLinearSystems*sizeof(LINEAR_SYSTEM_DATA));
   data->callback->initialLinearSystem(data->modelData.nLinearSystems, data->simulationInfo.linearSystemData);
 
   /* buffer for non-linear systems */
-  data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) GC_malloc(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
+  data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) GC_malloc_uncollectable(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
   data->callback->initialNonLinearSystem(data->modelData.nNonLinearSystems, data->simulationInfo.nonlinearSystemData);
 
   /* buffer for state sets */
-  data->simulationInfo.stateSetData = (STATE_SET_DATA*) GC_malloc(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
+  data->simulationInfo.stateSetData = (STATE_SET_DATA*) GC_malloc_uncollectable(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
   data->callback->initializeStateSets(data->modelData.nStateSets, data->simulationInfo.stateSetData, data);
 
   /* buffer for analytical jacobains */
-  data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) GC_malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
+  data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) GC_malloc_uncollectable(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
 
   data->modelData.modelDataXml.functionNames = NULL;
   data->modelData.modelDataXml.equationInfo = NULL;
