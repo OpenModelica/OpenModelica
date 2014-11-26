@@ -11,6 +11,7 @@ public:
   ~SimulationMonitor();
   void initialize();
   void setTimeOut(unsigned int time_out);
+  void stop();
   void checkTimeout();
 
 protected:

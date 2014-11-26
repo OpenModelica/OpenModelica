@@ -32,6 +32,7 @@ public:
     SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* _config);
     ~SimManager();
     void runSimulation();
+    void stopSimulation();
     void initialize();
 
   // for real-time usage (VxWorks and BODAS)

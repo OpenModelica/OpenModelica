@@ -803,7 +803,14 @@ void Peer::writeSimulationInfo()
   //  << "Solver-Status:                            " << _idid << "\n\n";
   */
 }
-
+void Peer::setTimeOut(unsigned int time_out)
+  {
+       SimulationMonitor::setTimeOut(time_out);
+  }
+ void Peer::stop()
+  {
+       SimulationMonitor::stop();
+  }
 int Peer::check_flag(void *flagvalue, const char *funcname, int opt)
 {
   /*

@@ -129,7 +129,7 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettin
 {
   try
   {
-    boost::shared_ptr<SimManager> simMgr;
+   
 
     IGlobalSettings* global_settings = _config->getGlobalSettings();
 
@@ -145,7 +145,7 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettin
     global_settings->setAlarmTime(simsettings.timeOut);
     global_settings->setOutputPointType(simsettings.outputPointType);
 
-    simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
+    _simMgr = boost::shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 
     ISolverSettings* solver_settings = _config->getSolverSettings();
     solver_settings->setLowerLimit(simsettings.lower_limit);
@@ -153,9 +153,9 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettin
     solver_settings->setUpperLimit(simsettings.upper_limit);
     solver_settings->setRTol(simsettings.tolerance);
     solver_settings->setATol(simsettings.tolerance);
-    simMgr->initialize();
+    _simMgr->initialize();
 
-    simMgr->runSimulation();
+    _simMgr->runSimulation();
 
     /* if(boost::shared_ptr<IMixedSystem> history_system = mixedsystem.lock())
     {
@@ -190,4 +190,6 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettin
 
 void SimController::Stop()
 {
+  if(_simMgr)
+  _simMgr->stopSimulation();
 }

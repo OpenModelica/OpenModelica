@@ -131,7 +131,10 @@ void Euler::initialize()
   {
        SimulationMonitor::setTimeOut(time_out);
   }
-
+void Euler::stop()
+  {
+       SimulationMonitor::stop();
+  }
 
 /// Set start t for numerical solution
 void Euler::setStartTime(const double& t)

@@ -2924,7 +2924,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
 
    else
     //(List.restOrEmpty(outVars) |> var hasindex i1 fromindex 1 =>  varOutputTuple(fn, var,i1, &varDecls1, &outVarInits1, &outVarCopy1, &outVarAssign1, simCode, useFlatArrayNotation)
-  (outVars |> var hasindex i1 fromindex 0 =>  varOutputTuple(fn, var,i1, &varDecls1, &outVarInits1, &outVarCopy1, &outVarAssign1, simCode, useFlatArrayNotation)
+  (outVars |> var hasindex i1 fromindex 0 =>  varOutputTuple(fn, var,i1, &varDecls, &outVarInits, &outVarCopy1, &outVarAssign1, simCode, useFlatArrayNotation)
     ;separator="\n"; empty /* increase the counter! */
     )
   end match
@@ -3367,18 +3367,20 @@ match var
 /* The storage size of arrays is known at call time, so they can be allocated
  * before set_memory_state. Strings are not known, so we copy them, etc...
  */
-case var as VARIABLE(ty = T_STRING(__)) then
+/*
+ case var as VARIABLE(ty = T_STRING(__)) then
     if not acceptMetaModelicaGrammar() then
       // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
       let strVar = tempDecl("string", &varDecls)
       let &varAssign +=
         <<
-        /*_<%fname%>*/ output = <%strVar%>;
+       output = <%strVar%>;
        >>
       ""
     else
-      let &varAssign += '/*_<%fname%>*/ output= <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
+      let &varAssign += output= <%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>;<%\n%>'
       ""
+      */
 case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode,useFlatArrayNotation)%>'
   let &varInits += '/* varOutputTuple varInits(<%marker%>) */ <%\n%>'
@@ -9805,7 +9807,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
 
-     case CALL(path=IDENT(name="sinh"),
+   case CALL(path=IDENT(name="sinh"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
@@ -9813,7 +9815,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-
+   case CALL(path=IDENT(name="asin"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = 'double'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
    case CALL(path=IDENT(name="cos"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode,useFlatArrayNotation)%>' ;separator=", ")
@@ -11304,7 +11313,7 @@ case ecr as CREF(componentRef=cr as CREF_QUAL(__)) then
     else
       let arrName = contextCref(crefStripSubs(cr), context, simCode,useFlatArrayNotation)
       <<
-      <%arrName%>(<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,simCode, useFlatArrayNotation)%>)
+      <%arrName%>(<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,simCode, useFlatArrayNotation)%>)/*testindex2*/
       >>
 
 case ecr as CREF(componentRef=CREF_QUAL(__)) then
@@ -11341,7 +11350,7 @@ template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context co
           case DIM_BOOLEAN(__) then '*2'
           case DIM_ENUM(__) then '*<%size%>'
           else error(sourceInfo(),"Non-constant dimension in simulation context")
-        %>)<%match subrest case {} then "" else '+<%threadDimSubList(dimrest, subrest, context, &preExp, &varDecls, simCode, useFlatArrayNotation)%>'%>'
+        %>)<%match subrest case {} then "" else ',<%threadDimSubList(dimrest, subrest, context, &preExp, &varDecls, simCode, useFlatArrayNotation)%>'%>'
       else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
   else error(sourceInfo(),"Non-index subscript in indexing cref? That's odd!")
 end threadDimSubList;

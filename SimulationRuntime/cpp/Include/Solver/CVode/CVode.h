@@ -121,7 +121,8 @@ public:
 
   //// Ausgabe von statistischen Informationen (wird vom SimManager nach Abschluß der Simulation aufgerufen)
   virtual void writeSimulationInfo();
-
+   virtual void setTimeOut(unsigned int time_out);
+    virtual void stop();
 
   virtual const int reportErrorMessage(std::ostream& messageStream);
   virtual bool stateSelection();
@@ -142,7 +143,7 @@ private:
   // Nulltellenfunktion
   void giveZeroVal(const double &t,const double *y,double *zeroValue);
   void writeCVodeOutput(const double &time,const double &h,const int &stp);
-
+  bool isInterrupted();
   // Callback der Nullstellenfunktion
   static int CV_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_data);
 

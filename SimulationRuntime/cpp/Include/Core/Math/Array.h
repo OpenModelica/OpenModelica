@@ -581,21 +581,21 @@ public:
  }
   virtual T& operator()(vector<size_t> idx)
   {
-     return _real_array[size3 * size2 * (idx[0] - 1) + size2 * (idx[1] - 1) + (idx[2] - 1)];
+     return _real_array[ size2 * (idx[0] - 1) +size3 * (idx[1] - 1) + (idx[2] - 1)];
   };
  inline virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
-    return _real_array[size3 * size2 * (i - 1) + size2 * (j - 1) + (k - 1)];
+    return _real_array[size2 * (i - 1) + size3 * (j - 1) + (k - 1)];
   }
-
+ 
   virtual unsigned int getNumElems()
   {
-    return size1 + size2 + size3;
+    return size1 * size2 * size3;
   }
 
    virtual unsigned int getNumDims()
   {
-     return 2;
+     return 3;
   }
 
   virtual void setDims(std::vector<size_t> v) { }
@@ -1197,7 +1197,7 @@ public:
     _multi_array.assign(data_otherarray,data_otherarray+v[0]*v[1]*v[3]);
    }
   ~DynArrayDim3(){}
-
+/*
   void assign(DynArrayDim3<T> otherArray)
   {
      std::vector<size_t> v = otherArray.getDims();
@@ -1206,25 +1206,18 @@ public:
     T* data = otherArray._multi_array.data();
     _multi_array.assign(data, data + v[0]*v[1]*v[2]);
   }
-
+  */
+  virtual void assign(const T* data)
+  {
+    _multi_array.assign(data, data + _multi_array.num_elements() );
+  }
   virtual  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
     _multi_array.resize(v);
     _multi_array.reindex(1);
-    const T* data = otherArray._multi_array.data();
-    _multi_array.assign(data, data + otherArray._multi_array.num_elements());
-    /*for (int i = 1; i <= v[0]; i++)
-    {
-      for (int j = 1; j <= v[1]; i++)
-      {
-        for (int k = 1; k <= v[1]; i++)
-        {
-          _multi_array[i][j][k] = otherArray(i,j,k);
-        }
-      }
-    }
-    */
+     const T* data = otherArray.getData();
+    _multi_array.assign(data, data + v[0]*v[1]*v[2]);
   }
   DynArrayDim3<T>& operator=(const DynArrayDim3<T>& rhs)
   {
@@ -1238,10 +1231,7 @@ public:
    }
    return *this;
   }
-  virtual void assign(const T& data)
-  {
-    _multi_array.assign(data, data + _multi_array.num_elements() );
-  }
+  
 
   void setDims(unsigned int size1, unsigned int size2, unsigned int size3)
   {

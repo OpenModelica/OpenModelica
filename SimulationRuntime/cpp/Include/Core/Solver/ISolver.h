@@ -62,8 +62,9 @@ public:
 
   /// Provides the status of the solver after returning
   virtual const SOLVERSTATUS getSolverStatus() = 0;
-  //virtual void setTimeOut(unsigned int time_out) = 0;
-
+  virtual void setTimeOut(unsigned int time_out) = 0;
+  virtual void stop() = 0;
+  
   /// Write out statistical information (statistical information of last simulation, e.g. time, number of steps, etc.)
   virtual void writeSimulationInfo() = 0;
 

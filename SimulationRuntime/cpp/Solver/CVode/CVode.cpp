@@ -300,7 +300,7 @@ void Cvode::solve(const SOLVERCALL action)
     // Solver soll fortfahren
     _solverStatus = ISolver::CONTINUE;
 
-    while (_solverStatus & ISolver::CONTINUE)
+    while (_solverStatus & ISolver::CONTINUE && !_interrupt )
     {
       // Zuvor wurde initialize aufgerufen und hat funktioniert => RESET IDID
       if (_idid == 5000)
@@ -340,7 +340,18 @@ void Cvode::solve(const SOLVERCALL action)
     throw std::invalid_argument("CVode::solve()");
   }
 }
-
+bool Cvode::isInterrupted()
+{
+    if(_interrupt)
+    {
+       _solverStatus = DONE;
+       return true;
+    }
+    else
+    {
+      return false;
+    }
+}
 void Cvode::CVodeCore()
 {
   _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
@@ -352,7 +363,7 @@ void Cvode::CVodeCore()
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
   bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
 
-  while (_solverStatus & ISolver::CONTINUE)
+  while (_solverStatus & ISolver::CONTINUE && !_interrupt )
   {
     _cv_rt = CVode(_cvodeMem, _tEnd, _CV_y, &_tCurrent, CV_ONE_STEP);
 
@@ -388,7 +399,7 @@ void Cvode::CVodeCore()
     }
 
     // A root was found
-    if ((_cv_rt == CV_ROOT_RETURN))
+    if ((_cv_rt == CV_ROOT_RETURN) && !isInterrupted())
     {
       // CVode is setting _tCurrent to the time where the first event occurred
       double _abs = fabs(_tLastEvent - _tCurrent);
@@ -445,7 +456,7 @@ void Cvode::CVodeCore()
       }
     }
 
-    if (_zeroFound || state_selection)
+    if ((_zeroFound || state_selection)&& !isInterrupted())
     {
       // Write the values of (P2)
       if (writeEventOutput)
@@ -480,7 +491,14 @@ void Cvode::CVodeCore()
     }
   }
 }
-
+void Cvode::setTimeOut(unsigned int time_out)
+  {
+       SimulationMonitor::setTimeOut(time_out);
+  }
+ void Cvode::stop()
+  {
+       SimulationMonitor::stop();
+  }
 void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp)
 {
   if (stp > 0)

@@ -22,7 +22,10 @@ void SimulationMonitor::setTimeOut(unsigned int time_out)
 {
   /*_time_out = nanosecond_type(time_out* 1000000000LL);*/
 }
-
+void SimulationMonitor::stop()
+{
+  _interrupt =true;
+}
 void SimulationMonitor::checkTimeout()
 {
   /* cpu_times  elapsed_times(_timer.elapsed());

@@ -253,6 +253,12 @@ void SimManager::runSimulation()
     throw;
   }
 }
+
+ void SimManager::stopSimulation()
+ {
+   if(_solver)
+   _solver->stop();
+ }
 void SimManager::writeProperties()
 {
   if(_config->getGlobalSettings()->getLogType() != STATS)
