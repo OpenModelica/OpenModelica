@@ -797,7 +797,7 @@ template EquationGraphHelper(DAE.Exp exp,String funcType, String ix)
     <%EquationGraphHelper(exp1,funcType,ix)%>
     <%EquationGraphHelper(exp2,funcType,ix)%>
     >>
-  case IFEXP(__) then 
+  case IFEXP(__) then
     <<
     <%EquationGraphHelper(expCond,funcType,ix)%>
     <%EquationGraphHelper(expThen,funcType,ix)%>
