@@ -137,9 +137,9 @@ algorithm
     case(_,_,_)
       equation
         BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps= allComps)) = systIn;
-          //BackendDump.dumpEqSystem(systIn,"original system");
+          BackendDump.dumpEqSystem(systIn,"original system");
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(1, allComps, ass1, ass2, systIn, sharedIn, tornSysIdxIn);
-          //BackendDump.dumpEqSystem(systTmp,"new system");
+          BackendDump.dumpEqSystem(systTmp,"new system");
       then
         (systTmp, tornSysIdx);
     else
@@ -240,13 +240,13 @@ algorithm
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1+numNewSingleEqs,compsTmp,ass1All,ass2All,systTmp,sharedIn,tornSysIdxIn+1);
       then
         (systTmp,tornSysIdx);
-    case(_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqs),_,_)
+    case(_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqs, stateSets=stateSets, partitionKind=partitionKind),_,_)
       equation
         // strongComponent is a system of equations
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
         BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs, jac=jac, jacType=jacType) = comp;
-        true = intLe(listLength(varIdcs),3);
+        true = intLe(listLength(varIdcs),5);
         print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
           //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
 
@@ -255,38 +255,50 @@ algorithm
          eqLst = BackendEquation.replaceDerOpInEquationList(eqLst);
          varLst = List.map1r(varIdcs, BackendVariable.getVarAt, vars);
          varLst = List.map(varLst, BackendVariable.transformXToXd);
-             //BackendDump.dumpVarList(varLst,"varLst");
-             //BackendDump.dumpEquationList(eqLst,"eqLst");
+             BackendDump.dumpVarList(varLst,"varLst");
+             BackendDump.dumpEquationList(eqLst,"eqLst");
 
          // build linear system
          syst = getEqSystem(eqLst,varLst);
-           //dumpEqSys(syst);
+           dumpEqSys(syst);
          (eqsNew,addEqs,addVars) = CramerRule(syst);
-           //BackendDump.dumpEquationList(eqsNew,"eqsNew");
-           //BackendDump.dumpVarList(addVars,"addVars");
-           //BackendDump.dumpEquationList(addEqs,"addEqs");
+           BackendDump.dumpEquationList(eqsNew,"eqsNew");
+           BackendDump.dumpVarList(addVars,"addVars");
+           BackendDump.dumpEquationList(addEqs,"addEqs");
 
-        // make new components
-        compsNew = List.threadMap(eqIdcs,varIdcs,makeSingleEquationComp);
+        // make new components for the system equations and add the comps for the additional equations in front of them
+        varsOld = BackendVariable.varList(vars);
+        eqsOld = BackendEquation.equationList(eqs);
+        compsNew = matchComponent(eqsNew,varLst,eqIdcs,varIdcs,sharedIn);
+        otherComps = matchComponent(addEqs,addVars,List.intRange2(listLength(eqsOld)+1,listLength(eqsOld)+1+listLength(addEqs)),List.intRange2(listLength(varsOld)+1,listLength(varsOld)+1+listLength(addVars)),sharedIn);
+        compsNew = listAppend(otherComps,compsNew);
 
         // insert the new components into the BLT, update matching for the new equations
         compsTmp = List.replaceAtWithList(compsNew,compIdx-1,compsIn);
-        List.threadMap1_0(varIdcs,eqIdcs,Array.updateIndexFirst,ass1);
-        List.threadMap1_0(eqIdcs,varIdcs,Array.updateIndexFirst,ass2);
-        matching = BackendDAE.MATCHING(ass1, ass2, compsTmp);
+          print("compsTmp\n");
+          BackendDump.dumpComponents(compsTmp);
 
         // add the new vars and equations to the original EqSystem
-        BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqs, stateSets = stateSets, partitionKind=partitionKind) = systIn;
-        varsOld = BackendVariable.varList(vars);
-        eqsOld = BackendEquation.equationList(eqs);
-        eqLst = List.fold2(List.intRange(listLength(eqsNew)),replaceAtPositionFromList,eqsNew,eqIdcs,eqsOld);  // replaces the old residualEquations with the new ones
+        eqLst = listAppend(eqsOld,addEqs);
+        varLst = listAppend(varsOld,addVars);
+        eqLst = List.fold2(List.intRange(listLength(eqsNew)),replaceAtPositionFromList,eqsNew,eqIdcs,eqLst);  // replaces the old residualEquations with the new ones
         eqs = BackendEquation.listEquation(eqLst);
+        vars = BackendVariable.listVar1(varLst);
+
+        // update assignments
+        ass1All = arrayCreate(listLength(varLst),-1);
+        ass2All = arrayCreate(listLength(varLst),-1);  // actually has to be listLength(eqLst), but there is still the problem that ass1 and ass2 have the same size
+        ass1All = Array.copy(ass1,ass1All);  // the comps before and after the tornsystem
+        ass2All = Array.copy(ass2,ass2All);
+        List.map2_0(compsNew,updateAssignmentsByComp,ass1All,ass2All);
+        matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
+           BackendDump.dumpFullMatching(matching);
 
         //build new DAE-EqSystem
         systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets,partitionKind);
         //(systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
 
-        (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsTmp,ass1,ass2,systTmp,sharedIn,tornSysIdxIn+1);
+        (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsTmp,ass1All,ass2All,systTmp,sharedIn,tornSysIdxIn+1);
       then
         (systTmp,tornSysIdx);
     else
@@ -297,6 +309,55 @@ algorithm
         (systTmp,tornSysIdx);
   end matchcontinue;
 end reduceLinearTornSystem1;
+
+protected function updateAssignmentsByComp"updates the assignments by the information given in the component.
+author:Waurich TUD 2014-11"
+  input BackendDAE.StrongComponent comp;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+protected
+  Integer eqn,var;
+algorithm
+  BackendDAE.SINGLEEQUATION(eqn=eqn,var=var) := comp;
+  arrayUpdate(ass2,eqn,var);
+  arrayUpdate(ass1,var,eqn);
+end updateAssignmentsByComp;
+
+protected function matchComponent""
+  input list<BackendDAE.Equation> eqLstIn;
+  input list<BackendDAE.Var> varLstIn;
+  input list<Integer> eqIdcs;
+  input list<Integer> varIdcs;
+  input BackendDAE.Shared sharedIn;
+  output list<BackendDAE.StrongComponent> compsOut;
+protected
+  BackendDAE.Matching matching;
+  list<BackendDAE.StrongComponent> comps;
+algorithm
+  matching := buildSingleEquationSystem(listLength(eqLstIn),eqLstIn,varLstIn,sharedIn,{});
+  BackendDAE.MATCHING(comps=comps) := matching;
+  compsOut := List.map2(comps,replaceIndecesInComp,listArray(eqIdcs),listArray(varIdcs));
+end matchComponent;
+
+protected function replaceIndecesInComp
+  input BackendDAE.StrongComponent comp;
+  input array<Integer> eqMap;
+  input array<Integer> varMap;
+  output BackendDAE.StrongComponent compOut;
+algorithm
+  compOut := match(comp,eqMap,varMap)
+    local
+      Integer eqn,var;
+    case(BackendDAE.SINGLEEQUATION(eqn=eqn,var=var),_,_)
+      equation
+        eqn = arrayGet(eqMap,eqn);
+        var = arrayGet(varMap,var);
+      then
+        BackendDAE.SINGLEEQUATION(eqn,var);
+    else
+      then fail();
+  end match;
+end replaceIndecesInComp;
 
 
 protected function reduceLinearTornSystem2  " builds from a torn system various linear equation systems that can be computed in parallel.
@@ -898,7 +959,7 @@ algorithm
 end addProductToExp;
 
 
-protected function buildSingleEquationSystem "function to build a system of singleEquations which can be solved partially parallel, from an EquationArray and Variables.
+protected function buildSingleEquationSystem "function to build a system of singleEquations which can be solved partially parallel.
 author: Waurich TUD 2013-07"
   input Integer eqSizeOrig;
   input list<BackendDAE.Equation> inEqs;
@@ -1457,6 +1518,245 @@ algorithm
 end getSummands;
 
 //--------------------------------------------------//
+// Chios Condensation
+//-------------------------------------------------//
+
+protected function chiosCondensation
+  input EqSys systemIn;
+  output list<BackendDAE.Equation> newResEqs;
+  output list<BackendDAE.Equation> addEqsOut;
+  output list<BackendDAE.Var> addVarsOut;
+protected
+  Integer dim;
+  array<DAE.Exp> vectorB;
+  array<BackendDAE.Var> vectorX;
+  array<list<DAE.Exp>> matrixA;
+  list<BackendDAE.Equation> eqLst;
+algorithm
+  LINSYS(dim=dim, matrixA=matrixA, vectorB=vectorB, vectorX=vectorX) := systemIn;
+  (addEqsOut,addVarsOut) := ChiosCondensation2(systemIn,1,{},{});
+  addEqsOut := listReverse(addEqsOut);
+  addVarsOut := listReverse(addVarsOut);
+  newResEqs := generateCramerEqs(listReverse(List.intRange(dim)),dim,vectorX,vectorB,matrixA,{});
+  newResEqs := listReverse(newResEqs);
+end chiosCondensation;
+
+protected function ChiosCondensation2
+  input EqSys systemIn;
+  input Integer iterIdx;
+  input list<BackendDAE.Equation> addEqsIn;
+  input list<BackendDAE.Var> addVarsIn;
+  output list<BackendDAE.Equation> addEqsOut;
+  output list<BackendDAE.Var> addVarsOut;
+algorithm
+  (addEqsOut,addVarsOut) := matchcontinue(systemIn,iterIdx,addEqsIn,addVarsIn)
+    local
+      EqSys syst;
+      Integer dim;
+      array<list<DAE.Exp>> matrixB, matrixA;
+      array<DAE.Exp> vecAi;
+      array<BackendDAE.Var> vectorX;
+      list<BackendDAE.Equation> addEqs;
+      list<BackendDAE.Var> addVars;
+  case(LINSYS(dim=dim, matrixA=matrixA, vectorX=vectorX),_,_,_)
+    equation
+      true = intGt(dim,1);
+      //condense the matrix
+      matrixB = arrayCreate(dim-1,{});
+      vecAi = arrayCreate(dim-1,DAE.RCONST(real=0.0));
+      (matrixB,vecAi,addEqs,addVars) = List.fold(List.intRange2(2,dim),function getNewChioRow(systemIn=systemIn,iterIdx=iterIdx),(matrixB,vecAi,addEqsIn,addVarsIn));
+
+          print("matrixB"+intString(dim)+"\n");
+          dumpMatrix(matrixB);
+          print("vecAi\n");
+          print(stringDelimitList(List.map1(arrayList(vecAi),ExpressionDump.dumpExpStr,0),"\n")+"\n");
+          BackendDump.dumpEquationList(addEqs,"new det eqs");
+
+      syst = LINSYS(dim=dim-1, matrixA=matrixB, vectorB= vecAi,vectorX=vectorX);
+    then ChiosCondensation2(syst,iterIdx+1,addEqs,addVars);
+  case(LINSYS(dim=dim, matrixA=matrixA, vectorB=vecAi, vectorX=vectorX),_,_,_)
+    equation
+
+          print("end matrixB"+intString(dim)+"\n");
+          dumpMatrix(matrixA);
+          print("end vecAi\n");
+          print(stringDelimitList(List.map1(arrayList(vecAi),ExpressionDump.dumpExpStr,0),"\n")+"\n");
+          BackendDump.dumpEquationList(addEqsIn,"new det eqs");
+
+    then (addEqsIn,addVarsIn);
+  end matchcontinue;
+end ChiosCondensation2;
+
+protected function generateCramerEqs"generate all equations to compute the xVector.
+author:Waurich TUD 2014-11"
+  input list<Integer> varIdcs;
+  input Integer dim;
+  input array<BackendDAE.Var> vectorX;
+  input array<DAE.Exp> vectorB;
+  input array<list<DAE.Exp>> matrixA;
+  input list<BackendDAE.Equation> eqsIn;
+  output list<BackendDAE.Equation> eqsOut;
+algorithm
+  eqsOut := matchcontinue(varIdcs,dim,vectorX,vectorB,matrixA,eqsIn)
+    local
+      Integer varIdx;
+      list<Integer> rest, rangeAi,rangeX;
+      DAE.Exp detAexp, detAiexp, xExp, rhs;
+      list<DAE.Exp> detAiExpLst, xLst;
+      DAE.Type ty;
+      BackendDAE.Equation xEq;
+      BackendDAE.Var xVar;
+  case({},_,_,_,_,_)
+    then eqsIn;
+  case(varIdx::rest,_,_,_,_,_)
+    equation
+      true = intNe(varIdx,1);
+      xVar = arrayGet(vectorX,varIdx);
+      xExp = BackendVariable.varExp(xVar);
+      ty = Expression.typeof(xExp);
+      detAexp = makeDetExp(varIdx-1,"a",1,1,ty);
+      if intNe(varIdx,dim) then
+        rangeAi = List.intRange2(2,1+dim-varIdx);
+        rangeX = List.intRange2(varIdx+1,dim);
+        else
+          rangeAi = {};
+          rangeX = {};
+      end if;
+      detAiexp = makeDetExp(varIdx-1,"b",1,dim-varIdx+1,ty);
+      detAiExpLst = List.map(rangeAi,function makeDetExp(iterIdx=varIdx-1,ident="a", row=1, ty=ty));//set the column idx with rangeAi
+      xLst = List.map(List.map1(rangeX,Array.getIndexFirst,vectorX),BackendVariable.varExp);
+      detAiExpLst = List.threadMap(xLst,detAiExpLst,function Expression.makeBinaryExp(inOp=DAE.MUL(ty)));
+      detAiexp = List.foldr(detAiExpLst,function Expression.makeBinaryExp(inOp=DAE.SUB(ty)),detAiexp);
+      (detAiexp,_) = ExpressionSimplify.simplify(detAiexp);
+      rhs = DAE.BINARY(detAiexp,DAE.DIV(ty=ty),detAexp);
+      xEq = BackendDAE.EQUATION(xExp,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+         BackendDump.dumpEquationList({xEq},"the new equation to solve x");
+  then generateCramerEqs(rest,dim,vectorX,vectorB,matrixA,xEq::eqsIn);
+  case(1::rest,_,_,_,_,_)
+    equation
+      varIdx = 1;
+      xVar = arrayGet(vectorX,varIdx);
+      xExp = BackendVariable.varExp(xVar);
+      ty = Expression.typeof(xExp);
+      detAexp = listGet(arrayGet(matrixA,1),1);
+      rangeX = List.intRange2(2,dim);
+      detAiexp = arrayGet(vectorB,1);
+      detAiExpLst = List.map1(rangeX,List.getIndexFirst,arrayGet(matrixA,1));//set the column idx with rangeAi
+      xLst = List.map(List.map1(rangeX,Array.getIndexFirst,vectorX),BackendVariable.varExp);
+      detAiExpLst = List.threadMap(xLst,detAiExpLst,function Expression.makeBinaryExp(inOp=DAE.MUL(ty)));
+      detAiexp = List.foldr(detAiExpLst,function Expression.makeBinaryExp(inOp=DAE.SUB(ty)),detAiexp);
+      (detAiexp,_) = ExpressionSimplify.simplify(detAiexp);
+      rhs = DAE.BINARY(detAiexp,DAE.DIV(ty=ty),detAexp);
+      xEq = BackendDAE.EQUATION(xExp,rhs,DAE.emptyElementSource,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+         BackendDump.dumpEquationList({xEq},"the new equation to solve x");
+  then generateCramerEqs(rest,dim,vectorX,vectorB,matrixA,xEq::eqsIn);
+  end matchcontinue;
+end generateCramerEqs;
+
+protected function makeDetExp
+  input Integer iterIdx;
+  input String ident;
+  input Integer row;
+  input Integer col;
+  input DAE.Type ty;
+  output DAE.Exp detExp;
+protected
+  DAE.ComponentRef cr;
+  String name;
+algorithm
+  name := "$det_"+ident+intString(iterIdx)+"__"+intString(row)+"_"+intString(col);
+  cr := ComponentReference.makeCrefIdent(name,ty,{});
+  detExp := Expression.makeCrefExp(cr,ty);
+end makeDetExp;
+
+protected function makeVarOfIdent
+  input String ident;
+  input DAE.Type ty;
+  output BackendDAE.Var var;
+protected
+  DAE.ComponentRef cr;
+algorithm
+  cr := ComponentReference.makeCrefIdent(ident,ty,{});
+  var := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
+end makeVarOfIdent;
+
+protected function getNewChioRow
+  input Integer row;
+  input EqSys systemIn;
+  input Integer iterIdx;
+  input tuple<array<list<DAE.Exp>>,array<DAE.Exp>,list<BackendDAE.Equation>,list<BackendDAE.Var>> foldIn;
+  output tuple<array<list<DAE.Exp>>,array<DAE.Exp>,list<BackendDAE.Equation>,list<BackendDAE.Var>> foldOut;
+protected
+  Integer dim;
+  list<Integer> columns;
+  list<BackendDAE.Equation> addEqsIn,addEqs;
+  list<BackendDAE.Var> addVarsIn, addVars;
+algorithm
+  LINSYS(dim=dim) := systemIn;
+  columns := listReverse(List.intRange2(2,dim));
+  foldOut := List.fold(columns,function getNewChioEntry(row = row,syst=systemIn,iter=iterIdx),foldIn);
+end getNewChioRow;
+
+protected function getNewChioEntry
+  input Integer col;
+  input Integer row;
+  input EqSys syst;
+  input Integer iter;
+  input tuple<array<list<DAE.Exp>>,array<DAE.Exp>,list<BackendDAE.Equation>,list<BackendDAE.Var>> foldIn;
+  output tuple<array<list<DAE.Exp>>,array<DAE.Exp>,list<BackendDAE.Equation>,list<BackendDAE.Var>> foldOut;
+protected
+  Integer dim;
+  DAE.Exp a11,ar1,a1c,arc,br,b1,detExp, detVarExp;
+  DAE.Type ty;
+  DAE.ComponentRef detCR;
+  BackendDAE.Equation detAeq,detAieq;
+  BackendDAE.Var detAVar,detAiVar;
+  String detVarName;
+  array<list<DAE.Exp>> matrixA,matrixB,matrixAi;
+  array<DAE.Exp> vectorB,vecAi;
+  array<BackendDAE.Var> vectorX;
+  list<BackendDAE.Equation> addEqs;
+  list<BackendDAE.Var> addVars;
+algorithm
+    //print("chio entry "+intString(row)+" "+intString(col)+"\n");
+  LINSYS(dim=dim, matrixA=matrixA, vectorB=vectorB,vectorX=vectorX) := syst;
+  (matrixB,vecAi,addEqs,addVars) := foldIn;
+  // the A determinant
+  a11 := listGet(arrayGet(matrixA,1),1);
+  ar1 := listGet(arrayGet(matrixA,row),1);
+  a1c := listGet(arrayGet(matrixA,1),col);
+  arc := listGet(arrayGet(matrixA,row),col);
+  ty := Expression.typeof(a11);
+  detExp := DAE.BINARY(DAE.BINARY(a11,DAE.MUL(ty = ty),arc),DAE.SUB(ty=ty),DAE.BINARY(ar1,DAE.MUL(ty = ty),a1c));
+  (detExp,_) := ExpressionSimplify.simplify(detExp);
+  detVarName := "$det_a"+intString(iter)+"__"+intString(row-1)+"_"+intString(col-1);
+  detCR := ComponentReference.makeCrefIdent(detVarName,ty,{});
+  detAVar := BackendDAE.VAR(detCR,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
+  detVarExp := Expression.crefExp(detCR);
+  detAeq :=  BackendDAE.EQUATION(exp=detVarExp,scalar=detExp,source=DAE.emptyElementSource,attr=BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+  matrixB := Array.consToElement(row-1,detVarExp,matrixB);
+  addEqs := detAeq::addEqs;
+  addVars := detAVar::addVars;
+
+  // the Ai* determinants
+  if col == dim then
+  b1 := arrayGet(vectorB,1);
+  br := arrayGet(vectorB,row);
+  detExp := DAE.BINARY(DAE.BINARY(a11,DAE.MUL(ty = ty),br),DAE.SUB(ty=ty),DAE.BINARY(ar1,DAE.MUL(ty = ty),b1));
+  (detExp,_) := ExpressionSimplify.simplify(detExp);
+  detVarName := "$det_b"+intString(iter)+"__"+intString(row-1)+"_"+intString(col-1);
+  detCR := ComponentReference.makeCrefIdent(detVarName,ty,{});
+  detAiVar := BackendDAE.VAR(detCR,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
+  detVarExp := Expression.crefExp(detCR);
+  detAieq :=  BackendDAE.EQUATION(exp=detVarExp,scalar=detExp,source=DAE.emptyElementSource,attr=BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+  arrayUpdate(vecAi,row-1,detVarExp);
+  addEqs := detAieq::addEqs;
+  addVars := detAiVar::addVars;
+  end if;
+
+  foldOut := (matrixB,vecAi,addEqs,addVars);
+end getNewChioEntry;
+//--------------------------------------------------//
 // Cramers Rule
 //-------------------------------------------------//
 
@@ -1475,7 +1775,6 @@ algorithm
     list<BackendDAE.Var> addVars;
   case(_,_)
     equation
-      true = intLe(arrayLength(jacValuesIn),3);
       syst = getMatrixFromJac(jacValuesIn,varsIn);
           //dumpEqSys(syst);
       (resEqs,addEqs,addVars) = CramerRule(syst);
@@ -1497,7 +1796,8 @@ algorithm
       array<BackendDAE.Var> vectorX;
       DAE.Exp detA;
       list<DAE.Exp> detLst, varExp;
-      list<BackendDAE.Equation> eqLst;
+      list<BackendDAE.Equation> eqLst,addEqLst;
+      list<BackendDAE.Var> addVarLst;
   case(LINSYS(dim=dim,matrixA=matrixA, vectorB=vectorB,vectorX=vectorX))
     equation
       // 2x2 matrix
@@ -1521,16 +1821,21 @@ algorithm
       matrixAT = transposeMatrix(matrixA);
           //dumpMatrix(matrixAT);
       detA = determinant(matrixA);
-          //print("detA "+ExpressionDump.printExpStr(detA)+"\n");
+          print("detA "+ExpressionDump.printExpStr(detA)+"\n");
       detLst = List.map2(List.intRange(dim),CramerRule1,system,matrixAT);
-          //print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
+          print("detLst \n"+stringDelimitList(List.map(detLst,ExpressionDump.printExpStr),"\n")+"\n");
       varExp = List.map(arrayList(vectorX),BackendVariable.varExp);
       detLst = List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) = List.map_2(detLst,ExpressionSimplify.simplify);
       eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEQUATION, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-          //BackendDump.dumpEquationList(eqLst,"new residual eqs");
-          //BackendDump.dumpEquationList(eqLst,"new residual eqs");
+          BackendDump.dumpEquationList(eqLst,"new residual eqs");
     then (eqLst,{},{});
+  case(LINSYS(dim=dim,matrixA=matrixA, vectorB=vectorB,vectorX=vectorX))
+    equation
+      // higher index, apply Chios condensation
+      true = intGt(dim,3);
+        (eqLst,addEqLst,addVarLst) = chiosCondensation(system);
+    then (eqLst,addEqLst,addVarLst);
   else
     then ({},{},{});
   end matchcontinue;
