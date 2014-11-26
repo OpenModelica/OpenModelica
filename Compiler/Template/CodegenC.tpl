@@ -7885,7 +7885,7 @@ template daeExp(Exp exp, Context context, Text &preExp, Text &varDecls, Text &au
   match exp
   case e as ICONST(__)          then '(modelica_integer) <%integer%>' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
-  case e as SCONST(__)          then daeExpSconst(string)
+  case e as SCONST(__)          then daeExpSconst(string, &preExp, &varDecls)
   case e as BCONST(__)          then if bool then "1" else "0"
   case e as ENUM_LITERAL(__)    then index
   case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp, &varDecls, &auxFunction)
@@ -7945,10 +7945,17 @@ template daeExternalF77Exp(Exp exp, Context context, Text &preExp, Text &varDecl
       '&<%tvar%>'
 end daeExternalF77Exp;
 
-template daeExpSconst(String string)
+template daeExpSconst(String string, Text &preExp, Text &varDecls)
  "Generates code for a string constant."
 ::=
-  'mmc_mk_scon("<%Util.escapeModelicaStringToCString(string)%>")'
+  let escstr = Util.escapeModelicaStringToCString(string)
+  match stringLength(string)
+    case 0 then "(modelica_string) mmc_emptystring"
+    case 1 then '(modelica_string) mmc_strings_len1[<%stringGet(string, 1)%>]'
+    else
+      let tmp = 'tmp<%System.tmpTick()%>'
+      let &varDecls += 'static const MMC_DEFSTRINGLIT(<%tmp%>,<%unescapedStringLength(escstr)%>,"<%escstr%>");<%\n%>'
+      'MMC_REFSTRINGLIT(<%tmp%>)'
 end daeExpSconst;
 
 

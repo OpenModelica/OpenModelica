@@ -141,6 +141,17 @@ package builtin
     output TypeVar result;
   end listGet;
 
+  function stringLength
+    input String str;
+    output Integer length;
+  end stringLength;
+
+  function stringGet
+    input String str;
+    input Integer index;
+    output Integer ch;
+  end stringGet;
+
   uniontype SourceInfo "The Info attribute provides location information for elements and classes."
     record SOURCEINFO
       String fileName;
