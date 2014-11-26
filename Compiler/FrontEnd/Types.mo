@@ -4757,6 +4757,14 @@ algorithm
         e = Expression.boxExp(e);
       then (e,t2);
 
+    case (e, t1 as DAE.T_ENUMERATION(), DAE.T_METABOXED(ty = t2), _)
+      equation
+        (e, t1) = matchType(e, t1, unboxedType(t2), printFailtrace);
+        t2 = DAE.T_METABOXED(t1, DAE.emptyTypeSource);
+        e = Expression.boxExp(e);
+      then
+        (e, t2);
+
     case (e, t1 as DAE.T_ARRAY(), DAE.T_METABOXED(ty = t2), _)
       equation
         // true = Config.acceptMetaModelicaGrammar();
@@ -4849,6 +4857,14 @@ algorithm
         (_,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
+
+    case (e, DAE.T_METABOXED(ty = t1), t2 as DAE.T_ENUMERATION(), _)
+      equation
+        true = subtype(t1, t2);
+        matchType(e, t1, t2, printFailtrace);
+        t = simplifyType(t2);
+      then
+        (DAE.UNBOX(e, t), t2);
 
     case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)
       equation
