@@ -164,7 +164,7 @@ int initializeNonlinearSystems(DATA *data)
         break;
       case NLS_MIXED:
         mixedSolverData = (struct dataNewtonAndHybrid*) malloc(sizeof(struct dataNewtonAndHybrid));
-        allocateNewtonData(size, &(mixedSolverData->newtonData));
+        allocateHomotopyData(size, &(mixedSolverData->newtonData));
 
         allocateHybrdData(size, &(mixedSolverData->hybridData));
 
@@ -250,7 +250,7 @@ int freeNonlinearSystems(DATA *data)
         freeHomotopyData(&nonlinsys[i].solverData);
         break;
       case NLS_MIXED:
-        freeNewtonData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->newtonData);
+        freeHomotopyData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->newtonData);
         freeHybrdData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->hybridData);
         break;
       default:
@@ -348,15 +348,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 
     saveJumpState = data->threadData->currentErrorStage;
     data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
-#ifndef OMC_EMCC
-    /* try */
-    MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-    success = solveNewton(data, sysNumber);
-    /* catch */
-#ifndef OMC_EMCC
-    MMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
+    success = solveHomotopy(data, sysNumber);
     if (!success) {
       nonlinsys->solverData = mixedSolverData->hybridData;
       success = solveHybrd(data, sysNumber);
