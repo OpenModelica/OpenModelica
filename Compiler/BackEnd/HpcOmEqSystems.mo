@@ -255,16 +255,16 @@ algorithm
          eqLst = BackendEquation.replaceDerOpInEquationList(eqLst);
          varLst = List.map1r(varIdcs, BackendVariable.getVarAt, vars);
          varLst = List.map(varLst, BackendVariable.transformXToXd);
-             //BackendDump.dumpVarList(varLst,"varLst");
-             //BackendDump.dumpEquationList(eqLst,"eqLst");
+              BackendDump.dumpVarList(varLst,"varLst");
+              BackendDump.dumpEquationList(eqLst,"eqLst");
 
          // build linear system
          syst = getEqSystem(eqLst,varLst);
-           //dumpEqSys(syst);
+           dumpEqSys(syst);
          (eqsNew,addEqs,addVars) = CramerRule(syst);
-           //BackendDump.dumpEquationList(eqsNew,"eqsNew");
-           //BackendDump.dumpVarList(addVars,"addVars");
-           //BackendDump.dumpEquationList(addEqs,"addEqs");
+           BackendDump.dumpEquationList(eqsNew,"eqsNew");
+           BackendDump.dumpVarList(addVars,"addVars");
+           BackendDump.dumpEquationList(addEqs,"addEqs");
 
         // make new components for the system equations and add the comps for the additional equations in front of them
         varsOld = BackendVariable.varList(vars);
@@ -1487,6 +1487,7 @@ algorithm
   (allTerms,coeffsIn) := foldIn;
   (coeffs,allTerms) := List.extract1OnTrue(allTerms,Expression.expHasCref,cref);
   coeff := List.fold(coeffs,Expression.expAdd,DAE.RCONST(0));
+  if Expression.containFunctioncall(coeff) then print("This system of equations cannot be decomposed because its actually not linear (the coeffs are function calls of x).\n");fail(); end if;
   (coeff,_) := Expression.replaceExp(coeff,Expression.crefExp(cref),DAE.RCONST(1.0));
   (coeff,_) := ExpressionSimplify.simplify(coeff);
   foldOut := (allTerms,coeff::coeffsIn);
