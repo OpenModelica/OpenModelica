@@ -327,10 +327,12 @@ bootstrap-clean:
 openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
+
 clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean

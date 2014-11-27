@@ -10,7 +10,7 @@ RMLINC	= -I$(RMLHOME)/include/plain
 
 
 .PHONY: all
-.SUFFIXES: .c .o
+.SUFFIXES: .h .c .o
 all: install
 
 install: libantlr3.a libomparse.a
@@ -40,7 +40,12 @@ HFILES = \
 OBJS = \
 ParModelica_Lexer_BaseModelica_Lexer.o ParModelica_Lexer.o \
 MetaModelica_Lexer_BaseModelica_Lexer.o MetaModelica_Lexer.o \
-Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o
+Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o \
+MetaModelica_Lexer.o MetaModelica_Lexer_BaseModelica_Lexer.o \
+Modelica_3_Lexer.o Modelica_3_Lexer_BaseModelica_Lexer.o \
+ModelicaParser_omc.o ParModelica_Lexer.o \
+ParModelica_Lexer_BaseModelica_Lexer.o \
+Parser_omc.o \
 
 ParModelica_Lexer.o: ParModelica_Lexer.h ParModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
 MetaModelica_Lexer.o: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
@@ -52,11 +57,11 @@ ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h .
 
 Parser_omc.o: $(HFILES) parse.c lookupTokenName.c
 
-$(OBJS) ModelicaParser_omc.o: $(HFILES)
+$(OBJS) : $(HFILES)
 
-libomparse.a: Parser_omc.o $(OBJS) ModelicaParser_omc.o
+libomparse.a: $(OBJS)
 	rm -f $@
-	ar -ru $@ Parser_omc.o $(OBJS) ModelicaParser_omc.o
+	ar -ru $@ $(OBJS)
 	ranlib $@
 
 parsergen = ModelicaParser.c ModelicaParser.h
@@ -117,10 +122,6 @@ $(parmodelicagen) : ParModelica_Lexer.stamp
 	$(MAKE) $<; \
 	fi
 
-
 clean:
-	rm -f *.o *.obj *.lib *.a \
-ModelicaParser.c ModelicaParser.h \
-*Modelica*_Lexer.c *Modelica*_Lexer.h \
-*.tokens *.stamp *.stamp.tmp
+	rm -f *.o *.obj *.lib *.a *.so ModelicaParser.c ModelicaParser.h *Modelica*_Lexer.c *Modelica*_Lexer.h *.tokens *.stamp *.stamp.tmp
 	rm -f $(ANTLR)/antlr3config.h
