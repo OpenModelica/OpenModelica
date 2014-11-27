@@ -11578,37 +11578,38 @@ while con and ii < 15 loop
       (e1,_) = ExpressionSimplify.simplify1(e1);
       (e2,_) = ExpressionSimplify.simplify1(e2);
     then (e1 ,e2, true);
+    else (oExp1, oExp2, false);
+    end matchcontinue;
 
+  (oExp1, oExp2, con1) := matchcontinue(oExp1, oExp2)
+    local DAE.Exp e, e1, e2;
     case(_,_)
     equation
       true = isZero(oExp1);
       (e1,e2) = makeFraction(oExp2);
-      false = isOne(e2);
-    then (e1 ,oExp1, true);
+    then (e1 ,oExp1, not isOne(e2));
 
     case(_,_)
     equation
       true = isZero(oExp2);
       (e1,e2) = makeFraction(oExp1);
-      false = isOne(e2);
-    then (e1 ,oExp2, true);
+    then (e1 ,oExp2, not isOne(e2));
 
     case(_,_)
     equation
       true = isOne(oExp1);
       (e1,e2) = makeFraction(oExp2);
-      false = isOne(e2);
-    then (e1, e2, true);
+    then (e1 ,e2, not isOne(e2));
 
     case(_,_)
     equation
       true = isOne(oExp2);
       (e1,e2) = makeFraction(oExp1);
-      false = isOne(e2);
-    then (e1, e2, true);
+    then (e1 ,e2, not isOne(e2));
 
     else (oExp1, oExp2, false);
     end matchcontinue;
+   con := con or con1;
 
    ii := ii + 1;
    if not con then
