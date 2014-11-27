@@ -137,9 +137,9 @@ algorithm
     case(_,_,_)
       equation
         BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps= allComps)) = systIn;
-          //BackendDump.dumpEqSystem(systIn,"original system");
+          BackendDump.dumpEqSystem(systIn,"original system");
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(1, allComps, ass1, ass2, systIn, sharedIn, tornSysIdxIn);
-          //BackendDump.dumpEqSystem(systTmp,"new system");
+          BackendDump.dumpEqSystem(systTmp,"new system");
       then
         (systTmp, tornSysIdx);
     else
@@ -1419,6 +1419,19 @@ end replaceOtherVarsWithPrefixCref;
 // get EqSystem object
 //-------------------------------------------------//
 
+protected function getEqSystem"gets a eqSys object for the given set of variables and equations.
+author:Waurich TUD 2014-11"
+  input list<BackendDAE.Equation> eqLst;
+  input list<BackendDAE.Var> varLst;
+  output EqSys syst;
+protected
+  list<DAE.ComponentRef> crefs;
+algorithm
+  syst := createEqSystem(varLst);
+  crefs := List.map(varLst,BackendVariable.varCref);
+  (syst,_) := List.fold1(eqLst,getEqSystem2,crefs,(syst,1));
+end getEqSystem;
+
 protected function createEqSystem
   input list<BackendDAE.Var> varLst;
   output EqSys sys;
@@ -1433,19 +1446,6 @@ algorithm
   vectorB := arrayCreate(dim,DAE.RCONST(0.0));
   sys := LINSYS(dim,matrixA,vectorB,listArray(varLst));
 end createEqSystem;
-
-protected function getEqSystem"gets a eqSys object for the given set of variables and equations.
-author:Waurich TUD 2014-11"
-  input list<BackendDAE.Equation> eqLst;
-  input list<BackendDAE.Var> varLst;
-  output EqSys syst;
-protected
-  list<DAE.ComponentRef> crefs;
-algorithm
-  syst := createEqSystem(varLst);
-  crefs := List.map(varLst,BackendVariable.varCref);
-  (syst,_) := List.fold1(eqLst,getEqSystem2,crefs,(syst,1));
-end getEqSystem;
 
 protected function getEqSystem2"gets the coefficents and offsets from the equations"
   input BackendDAE.Equation eq;
@@ -1464,6 +1464,7 @@ protected
 algorithm
   (sys,idx) := foldIn;
   summands := getSummands(eq);
+  (summands,_) := List.map_2(summands,ExpressionSimplify.simplify);
   ((offsetLst,coeffs)) := List.fold(crefs,getEqSystem3,(summands,{}));
   if List.isEmpty(offsetLst) then offset := DAE.RCONST(0.0); else   offset::offsetLst := offsetLst; end if;
   offset := List.fold(offsetLst,Expression.expAdd,offset);
