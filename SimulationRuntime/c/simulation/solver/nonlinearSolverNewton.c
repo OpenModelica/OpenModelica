@@ -138,7 +138,7 @@ int allocateNewtonData(int size, void** voiddata)
   data->fvec_minimum = (double*) calloc(size,sizeof(double));
   data->delta_f = (double*) calloc(size,sizeof(double));
   data->delta_x_vec = (double*) calloc(size,sizeof(double));
-  
+
   data->numberOfIterations = 0;
   data->numberOfFunctionEvaluations = 0;
 
