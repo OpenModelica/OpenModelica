@@ -3559,13 +3559,13 @@ algorithm
   end match;
 end makeLBinary;
 
-public function makeSimplifySum
+public function makeSum1
 "Takes a list of expressions an makes a sum
   expression sorting adding all elements in the list.
 
-  e.g.
-  In: {a, -b, c, -d}
-  return (a+c)-(b+d)
+Note:
+makeSum1 => (a + b) + c
+makeSum => a + (b + c)
 "
 
 
@@ -3578,80 +3578,41 @@ algorithm
             case({}) then DAE.RCONST(0.0);
             case({e1}) then e1;
             case({e1,e2}) then expAdd(e1,e2);
-            case(_)
-              equation
-               (e1,e2) = makeSimplifySumWork(inExpLst);
-              then expSub(e1,e2);
+            case(_)then makeSumWork(inExpLst);
             else
               equation
                if Flags.isSet(Flags.FAILTRACE) then
-                 Debug.trace("-Expression.makeSum failed, DAE.Exp lst:");
+                 Debug.trace("-Expression.makeSum1 failed, DAE.Exp lst:");
                  Debug.trace(ExpressionDump.printExpListStr(inExpLst));
                end if;
               then fail();
             end matchcontinue;
 
-end makeSimplifySum;
+end makeSum1;
 
-protected function makeSimplifySumWork
+protected function makeSumWork
 "Takes a list of expressions an makes a sum
   expression adding all elements in the list."
   input list<DAE.Exp> inExpLst;
-  output DAE.Exp outExp := listGet(inExpLst,1);
-  output DAE.Exp neg_e;
+  output DAE.Exp outExp;
 
 protected
   Type tp;
+  list<DAE.Exp> rest;
+  DAE.Exp eLst;
+  Operator op;
+
 algorithm
-  tp := typeof(outExp);
-  outExp := makeConstZero(tp);
-  neg_e := makeConstZero(tp);
-  for elem in inExpLst loop
-    (outExp, neg_e) := match(elem, outExp, neg_e)
-                       local DAE.Exp e1, e2, e3, e_1, e_2, e_3, e_4, e_5, e_6;
+  eLst :: rest := inExpLst;
+  tp := typeof(eLst);
+  op := if DAEUtil.expTypeArray(tp) then DAE.ADD_ARR(tp) else DAE.ADD(tp);
 
-                       // if(a,b,c)  = if(a,b-d,c-d)
-                       case(DAE.IFEXP(e1,e2,e3),_,_)
-                         equation
-                           (e_1, e_2) = makeSimplifySumWork(terms(e2));
-                           (e_3, e_4) = makeSimplifySumWork(terms(e3));
-                            e_5 = expAdd(e_1,e_3);
-                            e_6 = expAdd(e_2,e_4);
-                         then (expAdd(outExp, e_5), expAdd(neg_e, e_6));
+  outExp := eLst;
+  for elem in rest loop
+    outExp := if isZero(elem) then outExp elseif isZero(outExp) then elem else DAE.BINARY(outExp, op, elem);
+  end for;
 
-                       // a - b
-                       case(DAE.BINARY(e1,DAE.SUB(),e2),_,_)
-                         equation
-                           e_1 = expAdd(outExp, e1);
-                           e_2 = expAdd(neg_e, e2);
-                         then (e_1, e_2);
-
-                      // a + (-b)*c
-                       case(DAE.BINARY(e1,DAE.ADD(), DAE.BINARY(DAE.UNARY(DAE.UMINUS(), e2), DAE.MUL(), e3)),_,_)
-                         equation
-                           e_1 = expAdd(outExp, e1);
-                           e_2 = expMul(e2, e3);
-                           e_2 = expAdd(neg_e, e_2);
-                         then (e_1, e_2);
-
-                      // a + (-b)/c
-                       case(DAE.BINARY(e1,DAE.ADD(), DAE.BINARY(DAE.UNARY(DAE.UMINUS(), e2), DAE.DIV(), e3)),_,_)
-                         equation
-                           e_1 = expAdd(outExp, e1);
-                           e_2 = makeDiv(e2, e3);
-                           e_2 = expAdd(neg_e, e_2);
-                         then (e_1, e_2);
-
-                     // -a
-                      case(DAE.UNARY(DAE.UMINUS(), e1),_,_)
-                        then (outExp, expAdd(neg_e,e1));
-
-                      else then (expAdd(outExp, elem), neg_e);
-                   end match;
- end for;
-
-
-end makeSimplifySumWork;
+end makeSumWork;
 
 public function makeSum
 "Takes a list of expressions an makes a sum
@@ -11466,11 +11427,11 @@ algorithm
         e = expMul(e,e1);
         (e, _) = ExpressionSimplify.simplify(e);
         //explst = List.map1(explst, expMul, e);
-        res1 = makeSimplifySum(explst);
+        res1 = makeSum1(explst);
         res1 = expMul(res1,e);
         //explst1 = List.map(explst1, negate);
         //explst = listAppend(explst, explst1);
-        res2 = makeSimplifySum(explst1);
+        res2 = makeSum1(explst1);
         res2 = expMul(res2,e1);
         res = if isConst(res1) or (listLength(explst1) + 1) > listLength(explst) then expSub(res2, res1) else expSub(res1, res2); //heuristic
         (res, _) = ExpressionSimplify.simplify(res);
@@ -11527,7 +11488,7 @@ algorithm
   (N,D) := moveDivToMul(T, {}, {});
   N := ExpressionSimplify.simplifyList(N, {});
   D := ExpressionSimplify.simplifyList(D, {});
-  n := makeSimplifySum(N);
+  n := makeSum1(N);
   d := makeProductLst(D);
   (n,_) := ExpressionSimplify.simplify1(n);
   (d,_) := ExpressionSimplify.simplify1(d);
@@ -11550,7 +11511,7 @@ algorithm
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         //rest = ExpressionSimplify.simplifyList(rest, {});
+         rest = ExpressionSimplify.simplifyList(rest, {});
         (elst, elst1) = moveDivToMul(rest, negate(e1)::acc, e2::iExpMuls);
       then
         (elst, elst1);
@@ -11558,7 +11519,7 @@ algorithm
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         //rest = ExpressionSimplify.simplifyList(rest, {});
+         rest = ExpressionSimplify.simplifyList(rest, {});
         (elst, elst1) = moveDivToMul(rest, negate(e1)::acc, e2::iExpMuls);
       then
         (elst, elst1);
@@ -11567,7 +11528,7 @@ algorithm
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         //rest = ExpressionSimplify.simplifyList(rest, {});
+         rest = ExpressionSimplify.simplifyList(rest, {});
         (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
       then
         (elst, elst1);
@@ -11575,7 +11536,7 @@ algorithm
       equation
          acc = List.map1(iExpLstAcc, Expression.expMul, e2);
          rest = List.map1(rest, Expression.expMul, e2);
-         //rest = ExpressionSimplify.simplifyList(rest, {});
+         rest = ExpressionSimplify.simplifyList(rest, {});
         (elst, elst1) = moveDivToMul(rest, e1::acc, e2::iExpMuls);
       then
         (elst, elst1);
