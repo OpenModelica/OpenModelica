@@ -8,7 +8,7 @@ ifeq (x86_64,@target_cpu@)
 ANTLR64=--enable-64bit
 endif
 ifeq (arm,@target_cpu@)
-ANTLRDEBUG="--disable-antlrdebug --disable-abiflags"
+ANTLRDEBUG=--disable-antlrdebug --disable-abiflags
 endif
 
 include Makefile.common
