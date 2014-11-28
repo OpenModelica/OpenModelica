@@ -3853,7 +3853,7 @@ algorithm
     case (_,DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, DAE.MUL(_), e2), op1,e3),e4,_,_)
       equation
         true = Expression.expEqual(e2,e4);
-        true = Expression.isAddOrSub(op1); 
+        true = Expression.isAddOrSub(op1);
         e = Expression.makeDiv(e3,e4);
         res = DAE.BINARY(e1,op1,e);
       then res;
