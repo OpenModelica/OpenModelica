@@ -1793,6 +1793,7 @@ int solveHomotopy(DATA *data, int sysNumber)
           alreadyTested = 1;
           vecCopy(solverData->n, solverData->x0, solverData->x);
           debugDouble(LOG_NLS,"solve mixed system at time : ", solverData->timeValue);
+          continue;
         }
       }
       if (success)
