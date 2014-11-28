@@ -1068,21 +1068,23 @@ algorithm
         e3 =  Expression.makePureBuiltinCall("sqrt",{e2},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(e,DAE.MUL(tp),e3);
 
-   // exp(-log(x)) = 1/x
-   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.UNARY(DAE.UMINUS(), exp = DAE.CALL(path=Absyn.IDENT("log"),expLst={e1}))}))
-      then Expression.makeDiv(DAE.RCONST(1.0), e1);
+   // exp(-(...*log(x)*...))
+   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.UNARY(DAE.UMINUS(),e1)}))
+   equation
+     expl = Expression.expandFactors(e1);
+     ({e2},es) = List.split1OnTrue(expl, Expression.isFunCall, "log");
+     DAE.CALL(expLst={e})= e2;
+     e3 = Expression.makeProductLst(es);
+   then Expression.expPow(e, Expression.negate(e3));
 
-   // exp(log(x)) = x
-   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.CALL(path=Absyn.IDENT("log"),expLst={e1})}))
-      then e1;
-
-   // exp(e*log(x)) = x^e
-   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.T_REAL()),DAE.CALL(path=Absyn.IDENT("log"),expLst={e2}))}))
-      then Expression.expPow(e1,e2);
-
-   // exp(log(x)*e) = x^e
-   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={DAE.BINARY(DAE.CALL(path=Absyn.IDENT("log"),expLst={e1}),DAE.POW(ty = DAE.T_REAL()),e2)}))
-      then Expression.expPow(e1,e2);
+   // exp(...*log(x)*...)
+   case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1}))
+   equation 
+     expl = Expression.expandFactors(e1);
+     ({e2},es) = List.split1OnTrue(expl, Expression.isFunCall, "log");
+     DAE.CALL(expLst={e})= e2;
+     e3 = Expression.makeProductLst(es);
+   then Expression.expPow(e,e3);
 
    // exp(e)^r = exp(e*r)
    case (DAE.BINARY(DAE.CALL(path=Absyn.IDENT("exp"),expLst={e}),DAE.POW(ty = DAE.T_REAL()),e2))
@@ -1096,6 +1098,16 @@ algorithm
        1.0 = realMod(r1,2.0);
        e3 = Expression.makePureBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
      then  Expression.expMul(DAE.RCONST(r1), e3);
+   // log(1/x) = -log(x)
+   case (DAE.CALL(path=Absyn.IDENT("log"),expLst={DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(ty = DAE.T_REAL()), e2)}))
+     equation
+       e3 = Expression.makePureBuiltinCall("log",{e2},DAE.T_REAL_DEFAULT);
+     then DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),e3);
+   // log(sqrt(x)) = 0.5*log(x)
+   case (DAE.CALL(path=Absyn.IDENT("log"),expLst={DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1})}))
+     equation
+       e3 = Expression.makePureBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
+     then DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.T_REAL_DEFAULT),e3);
 
    // smooth of constant expression
    case DAE.CALL(path=Absyn.IDENT("smooth"),expLst={_,e1})

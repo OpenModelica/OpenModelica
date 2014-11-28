@@ -7160,6 +7160,17 @@ algorithm
   end match;
 end isDiv;
 
+public function isFunCall "return true if expression is DAE.CALL(path=Absyn.IDENT(name))"
+  input DAE.Exp iExp;
+  input String name;
+  output Boolean res;
+algorithm
+  res := match(iExp, name)
+         local String name_;
+          case(DAE.CALL(path=Absyn.IDENT(name_)),_) then name_ == name;
+          else false;
+         end match;
+end isFunCall;
 
 public function equalTypes ""
 input DAE.Type t1,t2;
