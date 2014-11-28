@@ -1079,7 +1079,7 @@ algorithm
 
    // exp(...*log(x)*...)
    case (DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1}))
-   equation 
+   equation
      expl = Expression.expandFactors(e1);
      ({e2},es) = List.split1OnTrue(expl, Expression.isFunCall, "log");
      DAE.CALL(expLst={e})= e2;
