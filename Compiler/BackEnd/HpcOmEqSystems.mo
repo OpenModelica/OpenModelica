@@ -567,7 +567,7 @@ algorithm
        lhs := BackendEquation.getEquationLHS(eq);
        (rhs,_) := ExpressionSolve.solve(lhs,rhs,varExp);
        if Expression.isAsubExp(rhs) then
-       rhs := List.fold1(Expression.allTerms(rhs),Expression.makeBinaryExp,DAE.ADD(Expression.typeof(varExp)),DAE.RCONST(0.0));  //in case ({a,0,b}+funcCall(1,2,3,4,5))[2] I need to get 0+funcCAll(1,2,3,4,5)[2] 
+       rhs := List.fold1(Expression.allTerms(rhs),Expression.makeBinaryExp,DAE.ADD(Expression.typeof(varExp)),DAE.RCONST(0.0));  //in case ({a,0,b}+funcCall(1,2,3,4,5))[2] I need to get 0+funcCAll(1,2,3,4,5)[2]
        end if;
        (rhs,_) := ExpressionSimplify.simplify(rhs);
        // replace
