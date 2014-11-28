@@ -3603,9 +3603,8 @@ algorithm
     // a + ((-b) op2 c) = a - (b op2 c)
     case (DAE.ADD(ty = tp),e1,DAE.BINARY(DAE.UNARY(operator = DAE.UMINUS(),exp = e2), op2, e3))
       equation
-        true = Expression.operatorEqual(op2,DAE.DIV(tp))
-               or  Expression.operatorEqual(op2, DAE.MUL(tp));
-         e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(e2,op2,e3));
+        true = Expression.isMulOrDiv(op2);
+        e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(e2,op2,e3));
       then e;
 
     // Commutative
@@ -3854,19 +3853,17 @@ algorithm
     case (_,DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, DAE.MUL(_), e2), op1,e3),e4,_,_)
       equation
         true = Expression.expEqual(e2,e4);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
-    e = Expression.expDiv(e3,e4);
-    res = DAE.BINARY(e1,op1,e);
+        true = Expression.isAddOrSub(op1); 
+        e = Expression.makeDiv(e3,e4);
+        res = DAE.BINARY(e1,op1,e);
       then res;
 
     // (c op1 a*b)/b =>  c/b  op1 a
     case (_,DAE.DIV(ty),DAE.BINARY(e3, op1,DAE.BINARY(e1, DAE.MUL(_), e2)),e4,_,_)
       equation
         true = Expression.expEqual(e2,e4);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
-        e = Expression.expDiv(e3,e4);
+        true = Expression.isAddOrSub(op1);
+        e = Expression.makeDiv(e3,e4);
         res = DAE.BINARY(e,op1,e1);
       then res;
 
@@ -3874,9 +3871,8 @@ algorithm
     case (_,DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, op2 as DAE.MUL(), DAE.BINARY(e2, DAE.MUL(_), e3)), op1,e4),e5,_,_)
       equation
         true = Expression.expEqual(e3,e5);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
-        e = Expression.expDiv(e4,e3);
+        true = Expression.isAddOrSub(op1);
+        e = Expression.makeDiv(e4,e3);
         e1_1 = DAE.BINARY(e1,op2,e2);
         res = DAE.BINARY(e1_1,op1,e);
       then res;
@@ -3885,8 +3881,7 @@ algorithm
     case(_,op2,DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e2}),_,_)
       equation
         ty = Expression.typeof(e1);
-        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-        Expression.operatorEqual(op2,DAE.MUL(ty));
+        true = Expression.isMulOrDiv(op2);
         res = DAE.BINARY(e1, op2, e2);
       then Expression.makePureBuiltinCall("abs",{res},ty);
     // e1 / exp(e2) => e1*exp(-e2)
@@ -4208,12 +4203,9 @@ algorithm
     // x *(a op2 b op1 c op3 d)
     case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(_),DAE.BINARY(e5,op3,e6)),false,false)
      equation
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
-       true = Expression.operatorEqual(op2,DAE.MUL(ty)) or
-              Expression.operatorEqual(op2,DAE.DIV(ty));
-       true = Expression.operatorEqual(op3,DAE.MUL(ty)) or
-              Expression.operatorEqual(op3,DAE.DIV(ty));
+       true = Expression.isAddOrSub(op1);
+       true = Expression.isMulOrDiv(op2);
+       true = Expression.isMulOrDiv(op3);
        true = Expression.expEqual(e2,e5);
      then DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,DAE.BINARY(e4,op3,e6)));
 
@@ -4221,10 +4213,8 @@ algorithm
     // x *(a op1 c op3 d)
     case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),e2), DAE.BINARY(e4,DAE.MUL(_),DAE.BINARY(e5,op3,e6)),false,false)
      equation
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
-       true = Expression.operatorEqual(op3,DAE.MUL(ty)) or
-              Expression.operatorEqual(op3,DAE.DIV(ty));
+       true = Expression.isAddOrSub(op1);
+       true = Expression.isMulOrDiv(op3);
        true = Expression.expEqual(e2,e5);
      then DAE.BINARY(e5, oper, DAE.BINARY(e1,op1,DAE.BINARY(e4,op3,e6)));
 
@@ -4235,10 +4225,8 @@ algorithm
     // x*(a op2 b op1 c)
     case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(),e5),false,false)
      equation
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
-       true = Expression.operatorEqual(op2,DAE.MUL(ty)) or
-              Expression.operatorEqual(op2,DAE.DIV(ty));
+       true = Expression.isAddOrSub(op1);
+       true = Expression.isMulOrDiv(op2);
        if Expression.expEqual(e2,e5)
        then
          outExp = DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e4));
@@ -4259,10 +4247,8 @@ algorithm
     // x*(a op2 b op1 c)
     case (_,op1, DAE.BINARY(DAE.BINARY(e1,oper as DAE.MUL(ty),e2),op2,e3), DAE.BINARY(e4,DAE.MUL(),e5),false,false)
      equation
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
-       true = Expression.operatorEqual(op2,DAE.MUL(ty)) or
-              Expression.operatorEqual(op2,DAE.DIV(ty));
+       true = Expression.isAddOrSub(op1);
+       true = Expression.isMulOrDiv(op2);
        if Expression.expEqual(e2,e5)
        then
          outExp = DAE.BINARY(e5, oper, DAE.BINARY(DAE.BINARY(e1,op2,e3),op1,e4));
@@ -4483,13 +4469,8 @@ algorithm
           _,_,_,
           _,_,_,true /*e2==e4*/,_,false /*isConst(e2)*/,_,true /*op2==op3*/)
       equation
-       ty = Expression.typeof(e1);
-
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
-
-       true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-              Expression.operatorEqual(op2,DAE.MUL(ty));
+       true = Expression.isAddOrSub(op1);
+       true = Expression.isMulOrDiv(op2);
       then
         DAE.BINARY(DAE.BINARY(e1,op1,e3),op2,e4);
 
@@ -4500,10 +4481,9 @@ algorithm
           _,DAE.DIV(_),_,
           true /*e1==e3*/,_,_,_,false /*isConst(e1)*/,_,_,_)
       equation
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
+       true = Expression.isAddOrSub(op1);
        one = Expression.makeConstOne(ty);
-       e = Expression.expDiv(one,e4);
+       e = Expression.makeDiv(one,e4);
       then
         DAE.BINARY(DAE.BINARY(e2,op1,e),DAE.MUL(ty),e1);
 
@@ -4514,10 +4494,9 @@ algorithm
           _,DAE.MUL(_),_,
           true /*e1==e3*/,_,_,_,false /*isConst(e1)*/,_,_,_)
       equation
-       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-              Expression.operatorEqual(op1,DAE.ADD(ty));
+       true = Expression.isAddOrSub(op1);
        one = Expression.makeConstOne(ty);
-       e = Expression.expDiv(one,e2);
+       e = Expression.makeDiv(one,e2);
       then
         DAE.BINARY(DAE.BINARY(e,op1,e4),DAE.MUL(ty),e1);
 
@@ -4528,13 +4507,9 @@ algorithm
           e,_,_,
           _,_,_,true /*e2==e4==e_3==e_5*/,_,false /*isConst(e2==e_3)*/,_,true /*op2==op3*/)
       equation
-        ty = Expression.typeof(e1_1);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-               Expression.operatorEqual(op1,DAE.ADD(ty));
-
-        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-               Expression.operatorEqual(op2,DAE.MUL(ty));
-        res = DAE.BINARY(e1_1,op1,e);
+       true = Expression.isAddOrSub(op1);
+       true = Expression.isMulOrDiv(op2);
+       res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_3);
 
     // [(e1 op2 e) * e3] op1 [e4 op2 e] => (e1*e3 op1 e4) op2 e
@@ -4547,12 +4522,8 @@ algorithm
         false = Expression.isConstValue(e_2);
         true = Expression.expEqual(e_2,e_6);
         true = Expression.operatorEqual(op2,op3);
-
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-               Expression.operatorEqual(op1,DAE.ADD(ty));
-
-        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-               Expression.operatorEqual(op2,DAE.MUL(ty));
+        true = Expression.isAddOrSub(op1);
+        true = Expression.isMulOrDiv(op2);
         e1_1 = DAE.BINARY(e_1, DAE.MUL(ty),e_3);
         res = DAE.BINARY(e1_1,op1,e);
       then DAE.BINARY(res,op2,e_2);
@@ -4567,12 +4538,9 @@ algorithm
         false = Expression.isConstValue(e_2);
         true = Expression.expEqual(e_2,e_5);
         true = Expression.operatorEqual(op2,op3);
+        true = Expression.isAddOrSub(op1);
+        true = Expression.isMulOrDiv(op2);
 
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-               Expression.operatorEqual(op1,DAE.ADD(ty));
-
-        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-               Expression.operatorEqual(op2,DAE.MUL(ty));
         e1_1 = DAE.BINARY(e_1, DAE.MUL(ty),e_3);
         e = DAE.BINARY(e_4, DAE.MUL(ty),e_6);
         res = DAE.BINARY(e1_1,op1,e);
@@ -4587,12 +4555,8 @@ algorithm
       equation
         true = Expression.expEqual(e_3,e_5);
         true = Expression.operatorEqual(op2,op3);
-
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or
-               Expression.operatorEqual(op1,DAE.ADD(ty));
-
-        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-               Expression.operatorEqual(op2,DAE.MUL(ty));
+        true = Expression.isAddOrSub(op1);
+        true = Expression.isMulOrDiv(op2);
         e = DAE.BINARY(e_4,DAE.MUL(ty),e_6);
         res = DAE.BINARY(e_1,op1,e);
       then DAE.BINARY(res,op2,e_3);

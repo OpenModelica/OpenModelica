@@ -7115,21 +7115,51 @@ public function isAdd "returns true if operator is ADD"
   input DAE.Operator op;
   output Boolean res;
 algorithm
-  res := matchcontinue(op)
-    case(DAE.ADD(_)) then true;
+  res := match(op)
+    case(DAE.ADD()) then true;
+    case(DAE.ADD_ARR()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isAdd;
 
 public function isSub "returns true if operator is SUB"
   input DAE.Operator op;
   output Boolean res;
 algorithm
-  res := matchcontinue(op)
-    case(DAE.SUB(_)) then true;
+  res := match(op)
+    case(DAE.SUB()) then true;
+    case(DAE.SUB_ARR()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isSub;
+
+public function isMulOrDiv "returns true if operator is MUL or DIV"
+  input DAE.Operator op;
+  output Boolean res := isMul(op) or isDiv(op);
+end isMulOrDiv;
+
+public function isMul "returns true if operator is MUL"
+  input DAE.Operator op;
+  output Boolean res;
+algorithm
+  res := match(op)
+    case(DAE.MUL()) then true;
+    case(DAE.MUL_ARR()) then true;
+    else false;
+  end match;
+end isMul;
+
+public function isDiv "returns true if operator is DIV"
+  input DAE.Operator op;
+  output Boolean res;
+algorithm
+  res := match(op)
+    case(DAE.DIV()) then true;
+    case(DAE.DIV_ARR()) then true;
+    else false;
+  end match;
+end isDiv;
+
 
 public function equalTypes ""
 input DAE.Type t1,t2;
