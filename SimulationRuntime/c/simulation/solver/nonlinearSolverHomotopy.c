@@ -123,6 +123,7 @@ typedef struct DATA_HOMOTOPY
   int sysNumber;
   int eqSystemNumber;
   double timeValue;
+  int mixedSystem;
 
 } DATA_HOMOTOPY;
 
@@ -200,6 +201,8 @@ int freeHomotopyData(void **voiddata)
 {
   DATA_HOMOTOPY* data = (DATA_HOMOTOPY*) *voiddata;
 
+  infoStreamPrint(LOG_STATS_V, 0, "+number of NLS: %d", (data->eqSystemNumber));
+  infoStreamPrint(LOG_STATS_V, 0, ":mixed : %d", (data->mixedSystem));
   infoStreamPrint(LOG_STATS_V, 0, ":number of function evaluations: %d", (data->numberOfFunctionEvaluations));
   infoStreamPrint(LOG_STATS_V, 0, ":number of iterations: %d", data->numberOfIterations);
 
@@ -1676,6 +1679,7 @@ int solveHomotopy(DATA *data, int sysNumber)
   solverData->data = data;
   solverData->sysNumber = sysNumber;
   solverData->eqSystemNumber = systemData->equationIndex;
+  solverData->mixedSystem = mixedSystem;
   solverData->timeValue = data->localData[0]->timeValue;
   solverData->minValue = systemData->min;
   solverData->maxValue = systemData->max;
@@ -1773,7 +1777,7 @@ int solveHomotopy(DATA *data, int sysNumber)
     {
       success = 1;
       /* This case may be switched off, because of event chattering!!!*/
-      if(1 && mixedSystem && data->simulationInfo.discreteCall && (alreadyTested<1))
+      if(mixedSystem && data->simulationInfo.discreteCall && (alreadyTested<1))
       {
         debugVectorInt(LOG_NLS_V,"Relations Pre vector ", ((DATA*)data)->simulationInfo.relationsPre, ((DATA*)data)->modelData.nRelations);
         debugVectorInt(LOG_NLS_V,"Relations Backup vector ", relationsPreBackup, ((DATA*)data)->modelData.nRelations);
