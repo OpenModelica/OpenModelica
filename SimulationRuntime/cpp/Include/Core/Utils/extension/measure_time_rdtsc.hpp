@@ -3,7 +3,7 @@
 
 #include <Core/Utils/extension/measure_time.hpp>
 
-class MeasureTimeValuesRDTSC : public MeasureTimeValues
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesRDTSC : public MeasureTimeValues
 {
 public:
   unsigned long long time;
@@ -20,7 +20,7 @@ public:
   virtual void div(int counter);
 };
 
-class MeasureTimeRDTSC : public MeasureTime
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeRDTSC : public MeasureTime
 {
  protected:
   MeasureTimeRDTSC();

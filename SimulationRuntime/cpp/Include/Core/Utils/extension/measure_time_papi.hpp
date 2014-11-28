@@ -16,7 +16,7 @@
 #include <papi.h>
 #endif
 
-class MeasureTimeValuesPAPI : public MeasureTimeValues
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesPAPI : public MeasureTimeValues
 {
 public:
   unsigned long long time;
@@ -35,7 +35,7 @@ public:
   virtual void div(int counter);
 };
 
-class MeasureTimePAPI : public MeasureTime
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimePAPI : public MeasureTime
 {
  protected:
   MeasureTimePAPI(unsigned long int (*threadHandle)());
