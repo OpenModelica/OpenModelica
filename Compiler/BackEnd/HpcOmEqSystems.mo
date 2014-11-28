@@ -48,7 +48,6 @@ protected import Array;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendDAEEXT;
-protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendDAETransform;
 protected import BackendVariable;
@@ -63,7 +62,6 @@ protected import Flags;
 protected import GraphML;
 protected import HpcOmSimCodeMain;
 protected import HpcOmScheduler;
-protected import SimCodeUtil;
 protected import List;
 protected import Matching;
 protected import Tearing;
@@ -137,9 +135,9 @@ algorithm
     case(_,_,_)
       equation
         BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps= allComps)) = systIn;
-          BackendDump.dumpEqSystem(systIn,"original system");
+          //BackendDump.dumpEqSystem(systIn,"original system");
         (systTmp,tornSysIdx) = reduceLinearTornSystem1(1, allComps, ass1, ass2, systIn, sharedIn, tornSysIdxIn);
-          BackendDump.dumpEqSystem(systTmp,"new system");
+          //BackendDump.dumpEqSystem(systTmp,"new system");
       then
         (systTmp, tornSysIdx);
     else
@@ -255,16 +253,16 @@ algorithm
          eqLst = BackendEquation.replaceDerOpInEquationList(eqLst);
          varLst = List.map1r(varIdcs, BackendVariable.getVarAt, vars);
          varLst = List.map(varLst, BackendVariable.transformXToXd);
-              BackendDump.dumpVarList(varLst,"varLst");
-              BackendDump.dumpEquationList(eqLst,"eqLst");
+              //BackendDump.dumpVarList(varLst,"varLst");
+              //BackendDump.dumpEquationList(eqLst,"eqLst");
 
          // build linear system
          syst = getEqSystem(eqLst,varLst);
-           dumpEqSys(syst);
+           //dumpEqSys(syst);
          (eqsNew,addEqs,addVars) = CramerRule(syst);
-           BackendDump.dumpEquationList(eqsNew,"eqsNew");
-           BackendDump.dumpVarList(addVars,"addVars");
-           BackendDump.dumpEquationList(addEqs,"addEqs");
+           //BackendDump.dumpEquationList(eqsNew,"eqsNew");
+           //BackendDump.dumpVarList(addVars,"addVars");
+           //BackendDump.dumpEquationList(addEqs,"addEqs");
 
         // make new components for the system equations and add the comps for the additional equations in front of them
         varsOld = BackendVariable.varList(vars);
@@ -476,13 +474,12 @@ algorithm
        //BackendDump.dumpVarList(tVarsOut,"tVarsOut");
        //BackendDump.dumpEquationList(resEqsOut,"resEqsOut");
        //BackendDump.dumpVarList(addVarLst,"addVarLst");
-       //BackendDump.dumpEquationList(addEqLst,"addEqLst");
+      //BackendDump.dumpEquationList(addEqLst,"addEqLst");
 
    eqsNewOut := listAppend(eqsNewOut,addEqLst);
    varsNewOut := listAppend(varsNewOut,addVarLst);
        //BackendDump.dumpVarList(varsNewOut,"varsNew");
        //BackendDump.dumpEquationList(eqsNewOut,"eqsNew");
-
 
    // gather all additional equations and match them (not including the new residual equation)
    matchingNew := buildSingleEquationSystem(compSize,eqsNewOut,varsNewOut,ishared,{});
@@ -491,7 +488,6 @@ algorithm
    oComps := listAppend(compsNew,compsEqSys);
    matchingOut := BackendDAE.MATCHING(ass1New,ass2New,oComps);
        //BackendDump.dumpComponents(oComps);
-
 end reduceLinearTornSystem2;
 
 protected function simplifyNewEquations
@@ -570,6 +566,9 @@ algorithm
        rhs := BackendEquation.getEquationRHS(eq);
        lhs := BackendEquation.getEquationLHS(eq);
        (rhs,_) := ExpressionSolve.solve(lhs,rhs,varExp);
+       if Expression.isAsubExp(rhs) then
+       rhs := List.fold1(Expression.allTerms(rhs),Expression.makeBinaryExp,DAE.ADD(Expression.typeof(varExp)),DAE.RCONST(0.0));  //in case ({a,0,b}+funcCall(1,2,3,4,5))[2] I need to get 0+funcCAll(1,2,3,4,5)[2] 
+       end if;
        (rhs,_) := ExpressionSimplify.simplify(rhs);
        // replace
        repl := BackendVarTransform.emptyReplacements();

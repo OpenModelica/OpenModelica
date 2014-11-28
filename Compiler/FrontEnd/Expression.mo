@@ -11718,5 +11718,16 @@ algorithm
   end match;
 end createResidualExp4;
 
+public function isAsubExp
+  input DAE.Exp expIn;
+  output Boolean isAsub;
+algorithm
+  isAsub := match(expIn)
+    case(DAE.ASUB(_,_)) equation
+      then true;
+    else then false;
+  end match;
+end isAsubExp;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;
