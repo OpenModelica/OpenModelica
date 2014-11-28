@@ -784,18 +784,9 @@ bool OMCProxy::printMessagesStringInternal()
   for (int i = 1; i <= errorsSize ; i++)
   {
     setCurrentError(i);
-    MessagesTreeItem *pMessageItem = new MessagesTreeItem(mpMainWindow->getMessagesWidget()->getMessagesTreeWidget());
-    pMessageItem->setFileName(getErrorFileName());
-    pMessageItem->setReadOnly(getErrorReadOnly());
-    pMessageItem->setLineStart(getErrorLineStart());
-    pMessageItem->setColumnStart(getErrorColumnStart());
-    pMessageItem->setLineEnd(getErrorLineEnd());
-    pMessageItem->setColumnEnd(getErrorColumnEnd());
-    pMessageItem->setMessage(getErrorMessage());
-    pMessageItem->setKind(getErrorKind());
-    pMessageItem->setLevel(getErrorLevel());
-    pMessageItem->setId(getErrorId());
-    pMessageItem->setColumnsText();
+    MessageItem *pMessageItem = new MessageItem(getErrorFileName(), getErrorReadOnly(), getErrorLineStart(), getErrorColumnStart(),
+                                                getErrorLineEnd(), getErrorColumnEnd(), getErrorMessage(), getErrorKind(), getErrorLevel(),
+                                                getErrorId());
     mpMainWindow->getMessagesWidget()->addGUIMessage(pMessageItem);
   }
   return returnValue;
@@ -2567,9 +2558,8 @@ QString OMCProxy::uriToFilename(QString uri)
   if (results.size() > 1 && !results.at(1).isEmpty())
   {
     QString errorString = results.at(1);
-    mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
-                                                                          Helper::errorLevel, 0,
-                                                                          mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+    mpMainWindow->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, errorString, Helper::scriptingKind,
+                                                                     Helper::errorLevel, 0));
   }
   if (results.size() > 0)
     return results.first();

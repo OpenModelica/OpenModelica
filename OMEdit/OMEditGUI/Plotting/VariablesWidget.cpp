@@ -446,10 +446,9 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   else
   {
     MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
-    pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                        GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                        .arg(initFile.errorString()),Helper::scriptingKind, Helper::errorLevel, 0,
-                                                        pMessagesWidget->getMessagesTreeWidget()));
+    pMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
+                                                   GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                   .arg(initFile.errorString()),Helper::scriptingKind, Helper::errorLevel, 0));
   }
   /* open the .mat file */
   ModelicaMatReader matReader;
@@ -462,10 +461,9 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     if (0 != (msg[0] = omc_new_matlab4_reader(QString(filePath + "/" + fileName).toStdString().c_str(), &matReader)))
     {
       MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
-                                                          .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel, 0,
-                                                          pMessagesWidget->getMessagesTreeWidget()));
+      pMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
+                                                     GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
+                                                     .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel, 0));
     }
   }
   QStringList variables;
@@ -761,9 +759,9 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   mpFindSyntaxComboBox->setItemData(2, tr("Fixed string matching."), Qt::ToolTipRole);
   connect(mpFindSyntaxComboBox, SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
   // expand all button
-  mpExpandAllButton = new QPushButton(tr("Expand All"));
+  mpExpandAllButton = new QPushButton(Helper::expandAll);
   // collapse all button
-  mpCollapseAllButton = new QPushButton(tr("Collapse All"));
+  mpCollapseAllButton = new QPushButton(Helper::collapseAll);
   // create variables tree widget
   mpVariablesTreeView = new VariablesTreeView(this);
   mpVariablesTreeModel = new VariablesTreeModel(mpVariablesTreeView);
@@ -1015,10 +1013,9 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
       }
     } else {
       MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
-      pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                          tr("Unable to set the content of QDomDocument from file %1")
-                                                          .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel, 0,
-                                                          pMessagesWidget->getMessagesTreeWidget()));
+      pMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
+                                                     tr("Unable to set the content of QDomDocument from file %1")
+                                                     .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel, 0));
     }
     initFile.close();
     initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
@@ -1029,10 +1026,9 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
     initFile.close();
   } else {
     MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
-    pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                        GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                        .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel, 0,
-                                                        pMessagesWidget->getMessagesTreeWidget()));
+    pMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
+                                                   GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                   .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel, 0));
   }
 }
 

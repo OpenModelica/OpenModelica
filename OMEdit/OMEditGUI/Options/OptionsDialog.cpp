@@ -259,22 +259,27 @@ void OptionsDialog::readGraphicalViewsSettings()
 //! Reads the Simulation section settings from omedit.ini
 void OptionsDialog::readSimulationSettings()
 {
-  if (mpSettings->contains("simulation/matchingAlgorithm"))
-  {
+  if (mpSettings->contains("simulation/matchingAlgorithm")) {
     int currentIndex = mpSimulationPage->getMatchingAlgorithmComboBox()->findText(mpSettings->value("simulation/matchingAlgorithm").toString(), Qt::MatchExactly);
-    if (currentIndex > -1)
+    if (currentIndex > -1) {
       mpSimulationPage->getMatchingAlgorithmComboBox()->setCurrentIndex(currentIndex);
+    }
   }
-  if (mpSettings->contains("simulation/indexReductionMethod"))
-  {
+  if (mpSettings->contains("simulation/indexReductionMethod")) {
     int currentIndex = mpSimulationPage->getIndexReductionMethodComboBox()->findText(mpSettings->value("simulation/indexReductionMethod").toString(), Qt::MatchExactly);
-    if (currentIndex > -1)
+    if (currentIndex > -1) {
       mpSimulationPage->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
+    }
   }
-  if (mpSettings->contains("simulation/OMCFlags"))
+  if (mpSettings->contains("simulation/OMCFlags")) {
     mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
-  if (mpSettings->contains("simulation/saveClassBeforeSimulation"))
+  }
+  if (mpSettings->contains("simulation/saveClassBeforeSimulation")) {
     mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->setChecked(mpSettings->value("simulation/saveClassBeforeSimulation").toBool());
+  }
+  if (mpSettings->contains("simulation/outputMode")) {
+    mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
+  }
 }
 
 //! Reads the Notifications section settings from omedit.ini
@@ -557,6 +562,7 @@ void OptionsDialog::saveSimulationSettings()
   else
     mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   mpSettings->setValue("simulation/saveClassBeforeSimulation", mpSimulationPage->getSaveClassBeforeSimulationCheckBox()->isChecked());
+  mpSettings->setValue("simulation/outputMode", mpSimulationPage->getOutputMode());
 }
 
 //! Saves the Notifications section settings to omedit.ini
@@ -2442,6 +2448,25 @@ SimulationPage::SimulationPage(OptionsDialog *pParent)
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
   mpSaveClassBeforeSimulationCheckBox->setChecked(true);
+  // simulation output format
+  mpOutputGroupBox = new QGroupBox(Helper::output);
+  mpStructuredRadioButton = new QRadioButton(tr("Structured"));
+  mpStructuredRadioButton->setToolTip(tr("Shows the simulation output in the form of tree structure."));
+  mpStructuredRadioButton->setChecked(true);
+  mpFormattedTextRadioButton = new QRadioButton(tr("Formatted Text"));
+  mpFormattedTextRadioButton->setToolTip(tr("Shows the simulation output in the form of formatted text."));
+  QButtonGroup *pOutputButtonGroup = new QButtonGroup;
+  pOutputButtonGroup->addButton(mpStructuredRadioButton);
+  pOutputButtonGroup->addButton(mpFormattedTextRadioButton);
+  // output view buttons layout
+  QHBoxLayout *pOutputRadioButtonsLayout = new QHBoxLayout;
+  pOutputRadioButtonsLayout->addWidget(mpStructuredRadioButton);
+  pOutputRadioButtonsLayout->addWidget(mpFormattedTextRadioButton);
+  // set the layout of output view mode group
+  QGridLayout *pOutputGroupGridLayout = new QGridLayout;
+  pOutputGroupGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pOutputGroupGridLayout->addLayout(pOutputRadioButtonsLayout, 0, 0);
+  mpOutputGroupBox->setLayout(pOutputGroupGridLayout);
   // set the layout of simulation group
   QGridLayout *pSimulationLayout = new QGridLayout;
   pSimulationLayout->setAlignment(Qt::AlignTop);
@@ -2452,6 +2477,7 @@ SimulationPage::SimulationPage(OptionsDialog *pParent)
   pSimulationLayout->addWidget(mpOMCFlagsLabel, 2, 0);
   pSimulationLayout->addWidget(mpOMCFlagsTextBox, 2, 1);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 3, 0, 1, 2);
+  pSimulationLayout->addWidget(mpOutputGroupBox, 4, 0, 1, 2);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
@@ -2474,6 +2500,24 @@ QComboBox* SimulationPage::getIndexReductionMethodComboBox()
 QLineEdit* SimulationPage::getOMCFlagsTextBox()
 {
   return mpOMCFlagsTextBox;
+}
+
+void SimulationPage::setOutputMode(QString value)
+{
+  if (value.compare(Helper::structuredOutput) == 0) {
+    mpStructuredRadioButton->setChecked(true);
+  } else {
+    mpFormattedTextRadioButton->setChecked(true);
+  }
+}
+
+QString SimulationPage::getOutputMode()
+{
+  if (mpStructuredRadioButton->isChecked()) {
+    return Helper::structuredOutput;
+  } else {
+    return Helper::textOutput;
+  }
 }
 
 //! @class NotificationsPage

@@ -52,7 +52,6 @@ public:
   enum ModelicaClasses {Model, Class, Connector, ExpandableConnector, Record, Block, Function, Package, Primitive, Type, Operator,
                         OperatorRecord, OperatorFunction, Optimization, Parameter, Constant, Protected, Enumeration};
   enum OpenModelicaErrors {Notification, Warning, OMError, NoOMError};
-  static const QString errorLevelToString[NoOMError+1];
   enum OpenModelicaErrorKinds {Syntax, Grammar, Translation, Symbolic, Simulation, Scripting, NoOMErrorKind};
   enum LinePattern {LineNone, LineSolid, LineDash, LineDot, LineDashDot, LineDashDotDot};
   enum FillPattern {FillNone, FillSolid, FillHorizontal, FillVertical, FillCross, FillForward, FillBackward, FillCrossDiag,
@@ -62,10 +61,23 @@ public:
   enum Arrow {ArrowNone, ArrowOpen, ArrowFilled, ArrowHalf};
   enum TextStyle {TextStyleBold, TextStyleItalic, TextStyleUnderLine};
   enum TextAlignment {TextAlignmentLeft, TextAlignmentCenter, TextAlignmentRight};
+  enum SimulationMessageType {
+    Unknown,
+    Info,
+    SMWarning,
+    Error,
+    Assert,
+    Debug,
+    OMEditInfo  /* used internally by OMEdit to mark message blue. */
+  };
   static QString getModelicaClassType(int type);
   static StringHandler::ModelicaClasses getModelicaClassType(QString type);
   static QString getViewType(int type);
-  static QString getErrorKind(int kind);
+  static StringHandler::OpenModelicaErrorKinds getErrorKind(QString errorKind);
+  static QString getErrorKindString(StringHandler::OpenModelicaErrorKinds errorKind);
+  static StringHandler::OpenModelicaErrors getErrorType(QString errorType);
+  static QString getErrorTypeDisplayString(StringHandler::OpenModelicaErrors errorType);
+  static QString getErrorTypeString(StringHandler::OpenModelicaErrors errorType);
   static Qt::PenStyle getLinePatternType(StringHandler::LinePattern type);
   static StringHandler::LinePattern getLinePatternType(QString type);
   static QString getLinePatternString(StringHandler::LinePattern type);
@@ -132,8 +144,13 @@ public:
   static bool isCFile(QString extension);
   static bool isModelicaFile(QString extension);
   static bool naturalSort(const QString &s1, const QString &s2);
+#ifdef WIN32
   static QProcessEnvironment compilationProcessEnvironment(QString *pCompilationProcessPath);
   static QProcessEnvironment simulationProcessEnvironment();
+#endif
+  static StringHandler::SimulationMessageType getSimulationMessageType(QString type);
+  static QString getSimulationMessageTypeString(StringHandler::SimulationMessageType type);
+  static QColor getSimulationMessageTypeColor(StringHandler::SimulationMessageType type);
 protected:
   static QString mLastOpenDir;
 };

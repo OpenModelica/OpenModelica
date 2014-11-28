@@ -41,6 +41,7 @@
 #include "MainWindow.h"
 #include "VariablesWidget.h"
 #include "Helper.h"
+#include "SimulationOutputWidget.h"
 
 MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   : QMainWindow(parent), mExitApplicationStatus(false), mDebugApplication(false)
@@ -217,7 +218,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = false;
-    if (mpMessagesWidget->getMessagesTreeWidget()->topLevelItemCount() > 0) restoreMessagesWidget = true;
+    if (mpMessagesWidget->getMessagesModel()->getRootMessageItem()->children().size() > 0) restoreMessagesWidget = true;
     restoreState(pSettings->value("application/windowState").toByteArray());
     if (restoreMessagesWidget) mpMessagesDockWidget->show();
   }
@@ -803,10 +804,8 @@ void MainWindow::checkAllModels(LibraryTreeNode *pLibraryTreeNode)
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                         "Check of " + pLibraryTreeNode->getName() + " failed.",
-                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                         mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, "Check of " + pLibraryTreeNode->getName() + " failed.",
+                                                    Helper::scriptingKind, Helper::notificationLevel, 0));
   }
   // hide progress bar
   hideProgressBar();
@@ -829,10 +828,9 @@ void MainWindow::exportModelFMU(LibraryTreeNode *pLibraryTreeNode)
   showProgressBar();
   if (mpOMCProxy->translateModelFMU(pLibraryTreeNode->getNameStructure()))
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
-                                                         .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
-                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                         mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
+                                                    .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
+                                                    Helper::scriptingKind, Helper::notificationLevel, 0));
   }
   // hide progress bar
   hideProgressBar();
@@ -855,10 +853,9 @@ void MainWindow::exportModelXML(LibraryTreeNode *pLibraryTreeNode)
   showProgressBar();
   if (mpOMCProxy->translateModelXML(pLibraryTreeNode->getNameStructure()))
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
-                                                         .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
-                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                         mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
+                                                    .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
+                                                    Helper::scriptingKind, Helper::notificationLevel, 0));
   }
   // hide progress bar
   hideProgressBar();
@@ -886,9 +883,8 @@ void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
   QString processor = pFigaroPage->getFigaroProcessTextBox()->text();
   if (mpOMCProxy->exportToFigaro(pLibraryTreeNode->getNameStructure(), library, mode, options, processor))
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
-                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                         mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
+                                                    Helper::scriptingKind, Helper::notificationLevel, 0));
   }
   // hide progress bar
   hideProgressBar();
@@ -1351,9 +1347,8 @@ void MainWindow::instantiatesModel()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                         .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel,
-                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                    .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel, 0));
   }
 }
 
@@ -1368,9 +1363,8 @@ void MainWindow::checkModel()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                         .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
-                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                    .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel, 0));
   }
 }
 
@@ -1385,9 +1379,8 @@ void MainWindow::checkAllModels()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                         .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
-                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                    .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel, 0));
   }
 }
 
@@ -1466,9 +1459,8 @@ void MainWindow::exportModelFMU()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                         .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel,
-                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                    .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel, 0));
   }
 }
 
@@ -1484,9 +1476,8 @@ void MainWindow::exportModelXML()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                         .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel,
-                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                    .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel, 0));
   }
 }
 
@@ -1502,9 +1493,8 @@ void MainWindow::exportModelFigaro()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                         .arg(tr("exporting to Figaro")), Helper::scriptingKind, Helper::notificationLevel,
-                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                    .arg(tr("exporting to Figaro")), Helper::scriptingKind, Helper::notificationLevel, 0));
   }
 }
 
@@ -1529,9 +1519,8 @@ void MainWindow::exportModelToOMNotebook()
   }
   else
   {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                         .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel,
-                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                    .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel, 0));
   }
 }
 
@@ -1680,9 +1669,8 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
       hideProgressBar();
     }
   } else {
-    mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                         .arg(tr("exporting to Image")), Helper::scriptingKind, Helper::notificationLevel,
-                                                         0, mpMessagesWidget->getMessagesTreeWidget()));
+    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                    .arg(tr("exporting to Image")), Helper::scriptingKind, Helper::notificationLevel, 0));
   }
 }
 
@@ -2005,7 +1993,7 @@ void MainWindow::createActions()
   // copy action
   mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.svg"), Helper::copy, this);
   //! @todo opening this will stop copying data from messages window.
-  //copyAction->setShortcut(QKeySequence("Ctrl+c"));
+  //mpCopyAction->setShortcut(QKeySequence("Ctrl+c"));
   // paste action
   mpPasteAction = new QAction(QIcon(":/Resources/icons/paste.svg"), tr("Paste"), this);
   mpPasteAction->setShortcut(QKeySequence("Ctrl+v"));

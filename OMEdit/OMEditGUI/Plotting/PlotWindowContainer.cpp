@@ -114,8 +114,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
   }
   catch (PlotException &e)
   {
-    getMainWindow()->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind,
-                                                                    Helper::errorLevel, 0, getMainWindow()->getMessagesWidget()->getMessagesTreeWidget()));
+    getMainWindow()->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel, 0));
   }
 }
 
@@ -139,8 +138,7 @@ void PlotWindowContainer::addParametricPlotWindow()
   }
   catch (PlotException &e)
   {
-    getMainWindow()->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind,
-                                                                    Helper::errorLevel, 0, getMainWindow()->getMessagesWidget()->getMessagesTreeWidget()));
+    getMainWindow()->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel, 0));
   }
 }
 

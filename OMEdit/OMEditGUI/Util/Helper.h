@@ -97,6 +97,8 @@ public:
   static QString scriptingKind;
   static QString tabbed;
   static QString subWindow;
+  static QString structuredOutput;
+  static QString textOutput;
   static QString utf8;
   static QFontInfo systemFontInfo;
   static QFontInfo monospacedFontInfo;
@@ -284,6 +286,8 @@ public:
   static QString attachToRunningProcess;
   static QString crashReport;
   static QString parsingFailedJson;
+  static QString expandAll;
+  static QString collapseAll;
 };
 
 class GUIMessages : public QObject

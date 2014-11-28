@@ -835,10 +835,9 @@ void ComponentParameters::updateComponentParameters()
         mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue);
         valueChanged = true;
       } else {
-        mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                              GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
-                                                                              Helper::scriptingKind, Helper::errorLevel, 0,
-                                                                              mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+        mpMainWindow->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
+                                                                         GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
+                                                                         Helper::scriptingKind, Helper::errorLevel, 0));
       }
     }
   }

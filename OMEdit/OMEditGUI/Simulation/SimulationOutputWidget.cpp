@@ -39,6 +39,136 @@
 #include "VariablesWidget.h"
 
 /*!
+  \class SimulationOutputTree
+  \brief A tree based structure for simulation output messages.
+  */
+/*!
+  \param pSimulationOutputWidget - a pointer to SimulationOutputWidget.
+  */
+SimulationOutputTree::SimulationOutputTree(SimulationOutputWidget *pSimulationOutputWidget)
+  : mpSimulationOutputWidget(pSimulationOutputWidget)
+{
+  setObjectName("TreeWithBranches");
+  setItemDelegate(new ItemDelegate(this, true));
+  setTextElideMode(Qt::ElideNone);
+  setIndentation(Helper::treeIndentation);
+  setExpandsOnDoubleClick(false);
+  setHeaderHidden(true);
+  setMouseTracking(true); /* important for Debug more links. */
+  setSelectionMode(QAbstractItemView::ExtendedSelection);
+  setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+  connect(header(), SIGNAL(sectionResized(int,int,int)), SLOT(callLayoutChanged(int,int,int)));
+  // create actions
+  mpSelectAllAction = new QAction(tr("Select All"), this);
+  mpSelectAllAction->setShortcut(QKeySequence("Ctrl+a"));
+  mpSelectAllAction->setStatusTip(tr("Selects all the Messages"));
+  connect(mpSelectAllAction, SIGNAL(triggered()), SLOT(selectAllMessages()));
+  mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.svg"), Helper::copy, this);
+  mpCopyAction->setShortcut(QKeySequence("Ctrl+c"));
+  mpCopyAction->setStatusTip(tr("Copy the Message"));
+  connect(mpCopyAction, SIGNAL(triggered()), SLOT(copyMessages()));
+  mpExpandAllAction = new QAction(Helper::expandAll, this);
+  mpExpandAllAction->setStatusTip(tr("Copy the Message"));
+  connect(mpExpandAllAction, SIGNAL(triggered()), SLOT(expandAll()));
+  mpCollapseAllAction = new QAction(Helper::collapseAll, this);
+  mpCollapseAllAction->setStatusTip(tr("Copy the Message"));
+  connect(mpCollapseAllAction, SIGNAL(triggered()), SLOT(collapseAll()));
+}
+
+/*!
+  Asks the model about the depth/level of QModelIndex.
+  */
+int SimulationOutputTree::getDepth(const QModelIndex &index) const
+{
+  SimulationMessageModel *pSimulationMessageModel = qobject_cast<SimulationMessageModel*>(model());
+  if (pSimulationMessageModel) {
+    return pSimulationMessageModel->getDepth(index);
+  } else {
+    return 1;
+  }
+}
+
+/*!
+  Shows a context menu when user right click on the Messages tree.
+  Slot activated when SimulationOutputTree::customContextMenuRequested() signal is raised.
+  */
+void SimulationOutputTree::showContextMenu(QPoint point)
+{
+  QMenu menu(this);
+  menu.addAction(mpSelectAllAction);
+  menu.addAction(mpCopyAction);
+  menu.addSeparator();
+  menu.addAction(mpExpandAllAction);
+  menu.addAction(mpCollapseAllAction);
+  menu.exec(viewport()->mapToGlobal(point));
+}
+
+/*!
+  Slot activated when QHeaderView sectionResized signal is raised.\n
+  Tells the model to emit layoutChanged signal.\n
+  \sa SimulationMessageModel::callLayoutChanged()
+  */
+void SimulationOutputTree::callLayoutChanged(int logicalIndex, int oldSize, int newSize)
+{
+  Q_UNUSED(logicalIndex);
+  Q_UNUSED(oldSize);
+  Q_UNUSED(newSize);
+  SimulationMessageModel *pSimulationMessageModel = qobject_cast<SimulationMessageModel*>(model());
+  if (pSimulationMessageModel) {
+    pSimulationMessageModel->callLayoutChanged();
+  }
+}
+
+/*!
+  Selects all the Messages.
+  Slot activated when mpSelectAllAction triggered signal is raised.
+  */
+void SimulationOutputTree::selectAllMessages()
+{
+  selectAll();
+}
+
+/*!
+  Copy the selected Messages to the clipboard.
+  Slot activated when mpCopyAction triggered signal is raised.
+  */
+void SimulationOutputTree::copyMessages()
+{
+  SimulationMessageModel *pSimulationMessageModel = qobject_cast<SimulationMessageModel*>(model());
+  if (pSimulationMessageModel) {
+    QStringList textToCopy;
+    const QModelIndexList modelIndexes = pSimulationMessageModel->selectedRows();
+    foreach (QModelIndex modelIndex, modelIndexes) {
+      SimulationMessage *pSimulationMessage = static_cast<SimulationMessage*>(modelIndex.internalPointer());
+      if (pSimulationMessage) {
+        textToCopy.append(QString("%1 | %2 | %3")
+                          .arg(pSimulationMessage->mStream)
+                          .arg(StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType))
+                          .arg(pSimulationMessage->mText));
+      }
+    }
+    QApplication::clipboard()->setText(textToCopy.join("\n"));
+  }
+}
+
+/*!
+  Reimplementation of keypressevent.
+  Defines what to do for Ctrl+A, Ctrl+C and Del buttons.
+  */
+void SimulationOutputTree::keyPressEvent(QKeyEvent *event)
+{
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  if (controlModifier && event->key() == Qt::Key_A) {
+    selectAllMessages();
+  } else if (controlModifier && event->key() == Qt::Key_C) {
+    copyMessages();
+  } else {
+    QTreeView::keyPressEvent(event);
+  }
+}
+
+/*!
   \class SimulationOutputDialog
   \brief Creates a dialog that shows the current simulation output.
   */
@@ -63,13 +193,27 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   // Generated Files tab widget
   mpGeneratedFilesTabWidget = new QTabWidget;
   mpGeneratedFilesTabWidget->setMovable(true);
+  mpSimulationOutputHandler = 0;
   // Simulation Output TextBox
-  mpSimulationOutputTextBrowser = new QTextBrowser;
-  mpSimulationOutputTextBrowser->setFont(QFont(Helper::monospacedFontInfo.family()));
-  mpSimulationOutputTextBrowser->setOpenLinks(false);
-  mpSimulationOutputTextBrowser->setOpenExternalLinks(false);
-  connect(mpSimulationOutputTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openTransformationBrowser(QUrl)));
-  mpGeneratedFilesTabWidget->addTab(mpSimulationOutputTextBrowser, Helper::output);
+  if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getOutputMode().compare(Helper::structuredOutput) == 0) {
+    mIsOutputStructured = true;
+    // simulation output browser
+    mpSimulationOutputTextBrowser = 0;
+    // simulation output tree
+    mpSimulationOutputTree = new SimulationOutputTree(this);
+    mpGeneratedFilesTabWidget->addTab(mpSimulationOutputTree, Helper::output);
+  } else {
+    mIsOutputStructured = false;
+    // simulation output browser
+    mpSimulationOutputTextBrowser = new QTextBrowser;
+    mpSimulationOutputTextBrowser->setFont(QFont(Helper::monospacedFontInfo.family()));
+    mpSimulationOutputTextBrowser->setOpenLinks(false);
+    mpSimulationOutputTextBrowser->setOpenExternalLinks(false);
+    connect(mpSimulationOutputTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openTransformationBrowser(QUrl)));
+    // simulation output tree
+    mpSimulationOutputTree = 0;
+    mpGeneratedFilesTabWidget->addTab(mpSimulationOutputTextBrowser, Helper::output);
+  }
   mpGeneratedFilesTabWidget->setTabEnabled(0, false);
   // Compilation Output TextBox
   mpCompilationOutputTextBox = new QPlainTextEdit;
@@ -131,8 +275,8 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
     addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_literals.h"));
     /* className_model.h tab */
     addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_model.h"));
-    /* className_info.xml tab */
-    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_info.xml"));
+    /* className_info.json tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_info.json"));
     /* className_init.xml tab */
     addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_init.xml"));
   }
@@ -144,17 +288,26 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   pMainLayout->addWidget(mpCancelButton, 1, 1);
   pMainLayout->addWidget(mpGeneratedFilesTabWidget, 2, 0, 1, 2);
   setLayout(pMainLayout);
-  mIsCancelled = false;
   // create the thread
   mpSimulationProcessThread = new SimulationProcessThread(this);
   connect(mpSimulationProcessThread, SIGNAL(sendCompilationStarted()), SLOT(compilationProcessStarted()));
   connect(mpSimulationProcessThread, SIGNAL(sendCompilationOutput(QString,QColor)), SLOT(writeCompilationOutput(QString,QColor)));
-  connect(mpSimulationProcessThread, SIGNAL(sendCompilationFinished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpSimulationProcessThread, SIGNAL(sendCompilationFinished(int,QProcess::ExitStatus)),
+          SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationStarted()), SLOT(simulationProcessStarted()));
-  connect(mpSimulationProcessThread, SIGNAL(sendSimulationOutput(QString,QColor,bool)), SLOT(writeSimulationOutput(QString,QColor,bool)));
-  connect(mpSimulationProcessThread, SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpSimulationProcessThread, SIGNAL(sendSimulationOutput(QString,StringHandler::SimulationMessageType,bool)),
+          SLOT(writeSimulationOutput(QString,StringHandler::SimulationMessageType,bool)));
+  connect(mpSimulationProcessThread, SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)),
+          SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationProgress(int)), mpProgressBar, SLOT(setValue(int)));
   mpSimulationProcessThread->start();
+}
+
+SimulationOutputWidget::~SimulationOutputWidget()
+{
+  if (mpSimulationOutputHandler) {
+    delete mpSimulationOutputHandler;
+  }
 }
 
 void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
@@ -171,102 +324,34 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
 }
 
 /*!
-  Parses the xml output of simulation executable.
-  \param output - output string
-  \return list of messages
+  Writes the simulation output in a formatted text form.\n
+  \param - pSimulationMessage - the simulation output message.
   */
-/*
-  <message stream="LOG_STATS" type="info" text="events">
-    <message stream="LOG_STATS" type="info" text="    0 state events" />
-    <message stream="LOG_STATS" type="info" text="    0 time events" />
-  </message>
-  <message stream="stdout" type="info" text="output text">
-    <used index="2" />
-  </message>
-  */
-QList<SimulationMessage> SimulationOutputWidget::parseXMLLogOutput(QString output)
-{
-//  output = "<root><message stream=\"LOG_STATS\" type=\"info\" text=\"### STATISTICS ###\" />";
-//  output += "<message stream=\"LOG_STATS\" type=\"info\" text=\"events\">";
-//  output += "<message stream=\"LOG_STATS\" type=\"info\" text=\"    0 state events\" />";
-//  output += "<message stream=\"LOG_STATS\" type=\"info\" text=\"    0 time events\" />";
-//  output += "</message></root>";
-
-  QList<SimulationMessage> simulationMessages;
-  QDomDocument xmlDocument;
-  QString errorMsg;
-  int errorLine, errorColumn;
-  /*
-    We should enclose the output in root tag because there can be only one top level element.
-    */
-  QString output1 = output;
-  output1.prepend("<root>").append("</root>");
-  if (!xmlDocument.setContent(output1, &errorMsg, &errorLine, &errorColumn)) {
-    /* make the text color red */
-    QTextCharFormat charFormat = mpSimulationOutputTextBrowser->currentCharFormat();
-    charFormat.setForeground(Qt::red);
-    mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
-    /* print the parser error alongwith the actual output. */
-    mpSimulationOutputTextBrowser->insertPlainText(tr("Error while parsing message xml %1 %2:%3\n").arg(errorMsg).arg(errorLine).arg(errorColumn));
-    mpSimulationOutputTextBrowser->insertPlainText(output);
-    return simulationMessages;
-  }
-  //Get the root element
-  QDomElement documentElement = xmlDocument.documentElement();
-  QDomNodeList messageNodes = documentElement.childNodes();
-  for (int i = 0; i < messageNodes.size(); i++)
-  {
-    if (messageNodes.at(i).nodeName() == "message")
-    {
-      simulationMessages.append(parseXMLLogMessageTag(messageNodes.at(i), 0));
-    }
-  }
-  return simulationMessages;
-}
-
-SimulationMessage SimulationOutputWidget::parseXMLLogMessageTag(QDomNode messageNode, int level)
-{
-  SimulationMessage simulationMessage;
-  QDomElement messageElement = messageNode.toElement();
-  simulationMessage.mStream = messageElement.attribute("stream");
-  simulationMessage.mType = messageElement.attribute("type");
-  simulationMessage.mText = messageElement.attribute("text");
-  simulationMessage.mLevel = level;
-  QDomNodeList childNodes = messageNode.childNodes();
-  for (int i = 0; i < childNodes.size(); i++) {
-    if (childNodes.at(i).nodeName() == "used") {
-      simulationMessage.mIndex = childNodes.at(i).toElement().attribute("index");
-    } else if (childNodes.at(i).nodeName() == "message") {
-      simulationMessage.mChildren.append(parseXMLLogMessageTag(childNodes.at(i), simulationMessage.mLevel + 1));
-    }
-  }
-  return simulationMessage;
-}
-
-void SimulationOutputWidget::writeSimulationMessage(SimulationMessage &simulationMessage)
+void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulationMessage)
 {
   static QString lastSream;
   static QString lastType;
   /* format the error message */
-  QString error = ((lastSream == simulationMessage.mStream && simulationMessage.mLevel > 0) ? "|" : simulationMessage.mStream) + "\t\t| ";
-  error += ((lastSream == simulationMessage.mStream && lastType == simulationMessage.mType && simulationMessage.mLevel > 0) ? "|" : simulationMessage.mType) + "\t | ";
-  for (int i = 0 ; i < simulationMessage.mLevel ; ++i)
+  QString type = StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType);
+  QString error = ((lastSream == pSimulationMessage->mStream && pSimulationMessage->mLevel > 0) ? "|" : pSimulationMessage->mStream) + "\t\t| ";
+  error += ((lastSream == pSimulationMessage->mStream && lastType == type && pSimulationMessage->mLevel > 0) ? "|" : type) + "\t | ";
+  for (int i = 0 ; i < pSimulationMessage->mLevel ; ++i)
     error += "| ";
-  error += simulationMessage.mText;
+  error += pSimulationMessage->mText;
   /* write the error message */
   mpSimulationOutputTextBrowser->insertPlainText(error);
   /* write the error link */
-  if (!simulationMessage.mIndex.isEmpty()) {
-    mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml").path() + "?index=" + simulationMessage.mIndex + "\">Debug more</a><br />");
+  if (!pSimulationMessage->mIndex.isEmpty()) {
+    mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getFileNamePrefix() + "_info.xml").path() + "?index=" + pSimulationMessage->mIndex + "\">Debug more</a><br />");
   } else {
     mpSimulationOutputTextBrowser->insertPlainText("\n");
   }
   /* save the current stream & type as last */
-  lastSream = simulationMessage.mStream;
-  lastType = simulationMessage.mType;
+  lastSream = pSimulationMessage->mStream;
+  lastType = type;
   /* write the child messages */
-  foreach (SimulationMessage s, simulationMessage.mChildren) {
-    writeSimulationMessage(s);
+  foreach (SimulationMessage* pSimulationMessage, pSimulationMessage->mChildren) {
+    writeSimulationMessage(pSimulationMessage);
   }
 }
 
@@ -282,7 +367,6 @@ void SimulationOutputWidget::compilationProcessStarted()
   mpCancelButton->setText(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(true);
 }
-
 
 /*!
   Slot activated when SimulationProcessThread sendCompilationStandardOutput signal is raised.\n
@@ -322,7 +406,7 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
     /* show the Transformational Debugger */
     if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
         mSimulationOptions.getLaunchTransformationalDebugger()) {
-      mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.xml");
+      mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json");
     }
     // if not build only and launch the algorithmic debugger is true
     if (!mSimulationOptions.getBuildOnly() && mSimulationOptions.getLaunchAlgorithmicDebugger()) {
@@ -366,34 +450,46 @@ void SimulationOutputWidget::simulationProcessStarted()
   }
 }
 
-
 /*!
   Slot activated when SimulationProcessThread sendSimulationOutput signal is raised.\n
   Writes the simulation standard output to the simulation output text box.
   */
-void SimulationOutputWidget::writeSimulationOutput(QString output, QColor color, bool textFormat)
+void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat)
 {
   mpGeneratedFilesTabWidget->setTabEnabled(0, true);
-  /* move the cursor down before adding to the logger. */
-  QTextCursor textCursor = mpSimulationOutputTextBrowser->textCursor();
-  textCursor.movePosition(QTextCursor::End);
-  mpSimulationOutputTextBrowser->setTextCursor(textCursor);
-  /* set the text color */
-  QTextCharFormat charFormat = mpSimulationOutputTextBrowser->currentCharFormat();
-  charFormat.setForeground(color);
-  mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
-  /* append the output */
-  if (textFormat) {
-    mpSimulationOutputTextBrowser->insertPlainText(output);
-  } else {
-    QList<SimulationMessage> simulationMessages = parseXMLLogOutput(output);
-    foreach (SimulationMessage simulationMessage, simulationMessages) {
-      writeSimulationMessage(simulationMessage);
+  if (isOutputStructured()) {
+    if (textFormat) {
+      output = QString("<message stream=\"stdout\" type=\"%1\" text=\"%2\" />")
+          .arg(StringHandler::getSimulationMessageTypeString(type))
+          .arg(output);
     }
+    if (!mpSimulationOutputHandler) {
+      mpSimulationOutputHandler = new SimulationOutputHandler(this, output);
+      mpSimulationOutputTree->setModel(mpSimulationOutputHandler->getSimulationMessageModel());
+    } else {
+      mpSimulationOutputHandler->parseSimulationOutput(output);
+    }
+  } else {
+    /* move the cursor down before adding to the logger. */
+    QTextCursor textCursor = mpSimulationOutputTextBrowser->textCursor();
+    textCursor.movePosition(QTextCursor::End);
+    mpSimulationOutputTextBrowser->setTextCursor(textCursor);
+    /* set the text color */
+    QTextCharFormat charFormat = mpSimulationOutputTextBrowser->currentCharFormat();
+    charFormat.setForeground(StringHandler::getSimulationMessageTypeColor(type));
+    mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
+    /* append the output */
+    if (textFormat) {
+      mpSimulationOutputTextBrowser->insertPlainText(output + "\n");
+    } else if (!mpSimulationOutputHandler) {
+      mpSimulationOutputHandler = new SimulationOutputHandler(this, output);
+    } else {
+      mpSimulationOutputHandler->parseSimulationOutput(output);
+    }
+    /* move the cursor */
+    textCursor.movePosition(QTextCursor::End);
+    mpSimulationOutputTextBrowser->setTextCursor(textCursor);
   }
-  /* move the cursor */
-  textCursor.movePosition(QTextCursor::End);
-  mpSimulationOutputTextBrowser->setTextCursor(textCursor);
   /* make the compilation tab the current one */
   mpGeneratedFilesTabWidget->setCurrentIndex(0);
 }
@@ -408,7 +504,7 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0 && mSimulationOptions.getProfiling() != "none") {
-    mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.xml");
+    mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json");
   }
   QString workingDirectory = mSimulationOptions.getWorkingDirectory();
   // read the result file
@@ -457,7 +553,6 @@ void SimulationOutputWidget::GDBProcessFinished(int exitCode, QProcess::ExitStat
   */
 void SimulationOutputWidget::cancelCompilationOrSimulation()
 {
-  mIsCancelled = true;
   if (mpSimulationProcessThread->isCompilationProcessRunning()) {
     mpSimulationProcessThread->getCompilationProcess()->kill();
     mpProgressLabel->setText(tr("Compilation of <b>%1</b> is cancelled.").arg(mSimulationOptions.getClassName()));
@@ -473,12 +568,12 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
 }
 
 /*!
-  Slot activated when a link is clicked from simulation output and anchorClicked signal of mpSimulationOutputTextBrowser is raised.\n
+  Slot activated when a link is clicked from simulation output.\n
   Parses the url and loads the TransformationsWidget with the used equation.
   \param url - the url that is clicked
   */
 /*
-  <a href="file://model_res.mat?path=working_directory&index=4></a>"
+  <a href="omedittransformationsbrowser://model_info.json?&index=4></a>"
   */
 void SimulationOutputWidget::openTransformationBrowser(QUrl url)
 {
@@ -491,13 +586,12 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
 #ifdef WIN32
   if (fileName.startsWith("/")) fileName.remove(0, 1);
 #endif
-  /* open the model_info.xml file */
+  /* open the model_info.json file */
   if (QFileInfo(fileName).exists()) {
     TransformationsWidget *pTransformationsWidget = mpMainWindow->showTransformationsWidget(fileName);
     int equationIndex = url.queryItemValue("index").toInt();
     QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
-    if (pTreeWidgetItem)
-    {
+    if (pTreeWidgetItem) {
       pTransformationsWidget->getEquationsTreeWidget()->clearSelection();
       pTransformationsWidget->getEquationsTreeWidget()->setCurrentItem(pTreeWidgetItem);
     }

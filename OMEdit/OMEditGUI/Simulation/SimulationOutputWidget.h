@@ -41,20 +41,34 @@
 #include "MainWindow.h"
 #include "SimulationDialog.h"
 #include "SimulationProcessThread.h"
+#include "SimulationOutputHandler.h"
 
 class SimulationOptions;
 class SimulationProcessThread;
+class SimulationOutputHandler;
+class SimulationOutputWidget;
+class SimulationMessage;
 
-struct SimulationMessage
+class SimulationOutputTree : public QTreeView
 {
-  QString mStream;
-  QString mType;
-  QString mText;
-  int mLevel;
-  QString mIndex;
-  QList<SimulationMessage> mChildren;
-
-  SimulationMessage() {mStream = ""; mType = ""; mText = ""; mIndex = "";}
+  Q_OBJECT
+private:
+  SimulationOutputWidget *mpSimulationOutputWidget;
+  QAction *mpSelectAllAction;
+  QAction *mpCopyAction;
+  QAction *mpExpandAllAction;
+  QAction *mpCollapseAllAction;
+public:
+  SimulationOutputTree(SimulationOutputWidget *pSimulationOutputWidget);
+  SimulationOutputWidget* getSimulationOutputWidget() {return mpSimulationOutputWidget;}
+  int getDepth(const QModelIndex &index) const;
+public slots:
+  void showContextMenu(QPoint point);
+  void callLayoutChanged(int logicalIndex, int oldSize, int newSize);
+  void selectAllMessages();
+  void copyMessages();
+protected:
+  virtual void keyPressEvent(QKeyEvent *event);
 };
 
 class SimulationOutputWidget : public QWidget
@@ -62,13 +76,16 @@ class SimulationOutputWidget : public QWidget
   Q_OBJECT
 public:
   SimulationOutputWidget(SimulationOptions simulationOptions, MainWindow *pMainWindow);
+  ~SimulationOutputWidget();
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   MainWindow* getMainWindow() {return mpMainWindow;}
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
-  QTextBrowser* getSimulationOutputTextBrowser() {return mpSimulationOutputTextBrowser;}
+  bool isOutputStructured() {return mIsOutputStructured;}
+  SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}
   QPlainTextEdit* getCompilationOutputTextBox() {return mpCompilationOutputTextBox;}
   SimulationProcessThread* getSimulationProcessThread() {return mpSimulationProcessThread;}
   void addGeneratedFileTab(QString fileName);
+  void writeSimulationMessage(SimulationMessage *pSimulationMessage);
 private:
   SimulationOptions mSimulationOptions;
   MainWindow *mpMainWindow;
@@ -76,21 +93,19 @@ private:
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
   QTabWidget *mpGeneratedFilesTabWidget;
+  SimulationOutputHandler *mpSimulationOutputHandler;
+  bool mIsOutputStructured;
   QTextBrowser *mpSimulationOutputTextBrowser;
+  SimulationOutputTree *mpSimulationOutputTree;
   QPlainTextEdit *mpCompilationOutputTextBox;
-  bool mIsCancelled;
   SimulationProcessThread *mpSimulationProcessThread;
   QDateTime mResultFileLastModifiedDateTime;
-
-  QList<SimulationMessage> parseXMLLogOutput(QString output);
-  SimulationMessage parseXMLLogMessageTag(QDomNode messageNode, int level);
-  void writeSimulationMessage(SimulationMessage &simulationMessage);
 public slots:
   void compilationProcessStarted();
   void writeCompilationOutput(QString output, QColor color);
   void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void simulationProcessStarted();
-  void writeSimulationOutput(QString output, QColor color, bool textFormat = false);
+  void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void GDBProcessStarted();
   void GDBProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);

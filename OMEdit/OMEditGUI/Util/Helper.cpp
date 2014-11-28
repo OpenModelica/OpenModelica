@@ -90,6 +90,8 @@ QString Helper::simulationKind = ".OpenModelica.Scripting.ErrorKind.simulation";
 QString Helper::scriptingKind = ".OpenModelica.Scripting.ErrorKind.scripting";
 QString Helper::tabbed = "Tabbed";
 QString Helper::subWindow = "SubWindow";
+QString Helper::structuredOutput = "Structured";
+QString Helper::textOutput = "Text";
 QString Helper::utf8 = "UTF-8";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
@@ -282,6 +284,8 @@ QString Helper::stepReturn;
 QString Helper::attachToRunningProcess;
 QString Helper::crashReport;
 QString Helper::parsingFailedJson;
+QString Helper::expandAll;
+QString Helper::collapseAll;
 
 void Helper::initHelperVariables()
 {
@@ -451,6 +455,8 @@ void Helper::initHelperVariables()
   Helper::attachToRunningProcess = tr("Attach to Running Process");
   Helper::crashReport = tr("Crash Report");
   Helper::parsingFailedJson = tr("Parsing of JSON file failed");
+  Helper::expandAll = tr("Expand All");
+  Helper::collapseAll = tr("Collapse All");
 }
 
 QString GUIMessages::getMessage(int type)

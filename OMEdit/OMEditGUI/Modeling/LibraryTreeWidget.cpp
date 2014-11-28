@@ -38,13 +38,40 @@
 
 #include "LibraryTreeWidget.h"
 #include "VariablesWidget.h"
+#include "SimulationOutputWidget.h"
 
 ItemDelegate::ItemDelegate(QObject *pParent, bool drawRichText, bool drawGrid)
   : QItemDelegate(pParent)
 {
   mDrawRichText = drawRichText;
+  mLastTextPos = QPoint(0, 0);
   mDrawGrid = drawGrid;
   mpParent = pParent;
+}
+
+QString ItemDelegate::formatDisplayText(QVariant variant) const
+{
+  QString text;
+  if (variant.type() == QVariant::Double) {
+    text = QLocale().toString(variant.toDouble());
+  } else {
+    text = variant.toString();
+    /* if rich text flag is set */
+    if (mDrawRichText) {
+      text.replace("\n", "<br />");
+      text.replace("\t", "&#9;");
+    }
+  }
+  return text;
+}
+
+void ItemDelegate::initTextDocument(QTextDocument *pTextDocument, QFont font, int width) const
+{
+  QTextOption textOption = pTextDocument->defaultTextOption();
+  textOption.setWrapMode(QTextOption::WordWrap);
+  pTextDocument->setDefaultTextOption(textOption);
+  pTextDocument->setDefaultFont(font);
+  pTextDocument->setTextWidth(width);
 }
 
 void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -89,12 +116,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   QRect displayRect;
   value = index.data(Qt::DisplayRole);
   if (value.isValid()) {
-    if (value.type() == QVariant::Double) {
-      text = QLocale().toString(value.toDouble());
-    } else {
-      text = value.toString();
-      text.replace("\n", "<br />");
-    }
+    text = formatDisplayText(value);
     displayRect = textRectangle(painter, option.rect, opt.font, text);
   }
   QRect checkRect;
@@ -109,9 +131,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   // draw the item
   drawBackground(painter, opt, index);
   // hover
-  /*
-    Ticket #2245. Do not draw hover effect for items. Doesn't seem to work on few versions of Linux.
-  */
+  /* Ticket #2245. Do not draw hover effect for items. Doesn't seem to work on few versions of Linux. */
   /*drawHover(painter, opt, index);*/
   drawCheck(painter, opt, checkRect, checkState);
   /* if draw grid flag is set */
@@ -132,18 +152,39 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   }
   /* if rich text flag is set */
   if (mDrawRichText) {
-    QTextDocument doc;
-    doc.setDefaultFont(opt.font);
-    doc.setHtml(text);
+    QAbstractTextDocumentLayout::PaintContext ctx;
+    QTextDocument textDocument;
+    initTextDocument(&textDocument, opt.font, option.rect.width());
+
+    QVariant variant = index.data(Qt::ForegroundRole);
+    if (variant.isValid()) {
+      if (option.state & ~QStyle::State_Selected) {
+        ctx.palette.setColor(QPalette::Text, variant.value<QColor>());
+      }
+    }
+    QPalette::ColorGroup cg = option.state & QStyle::State_Enabled ? QPalette::Normal : QPalette::Disabled;
+    if (cg == QPalette::Normal && !(option.state & QStyle::State_Active)) {
+      cg = QPalette::Inactive;
+    }
+    if (option.state & QStyle::State_Selected) {
+      ctx.palette.setColor(QPalette::Text, option.palette.color(cg, QPalette::HighlightedText));
+    }
+
+    textDocument.setHtml(text);
     painter->save();
     painter->translate(displayRect.left(), displayRect.top());
     QRect clip(0, 0, displayRect.width(), displayRect.height());
-    doc.drawContents(painter, clip);
+    painter->setClipRect(clip);
+    textDocument.documentLayout()->draw(painter, ctx);
     painter->restore();
   } else {
     drawDisplay(painter, opt, displayRect, text);
   }
   if (!icon.isNull()) {
+    // adjust the decorationRect for multiline items. So that icon remains at top.
+    if (mDrawRichText) {
+      decorationRect = QRect(decorationRect.left(), displayRect.top() + 3, decorationRect.width(), decorationRect.height());
+    }
     icon.paint(painter, decorationRect, option.decorationAlignment, QIcon::Normal, QIcon::Off);
   } else {
     drawDecoration(painter, opt, decorationRect, pixmap);
@@ -171,26 +212,72 @@ void ItemDelegate::drawHover(QPainter *painter, const QStyleOptionViewItem &opti
 //! Reimplementation of sizeHint function. Defines the minimum height.
 QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+  // if user has set the SizeHintRole then just use it.
+  QVariant value = index.data(Qt::SizeHintRole);
+  if (value.isValid())
+    return qvariant_cast<QSize>(value);
   QSize size = QItemDelegate::sizeHint(option, index);
-  /* Only calculate the height of the item based on the text for MessagesTreeWidget items. Fix for multi line messages. Ticket #2269. */
-  if (parent() && qobject_cast<MessagesTreeWidget*>(parent())) {
+  /* Only calculate the height of the item based on the text for MessagesTreeView items. Fix for multi line messages. Ticket #2269. */
+  if (mDrawRichText && parent() && (qobject_cast<MessagesTreeView*>(parent()) || qobject_cast<SimulationOutputTree*>(parent()))) {
+    MessagesTreeView *pMessagesTreeView = qobject_cast<MessagesTreeView*>(parent());
+    SimulationOutputTree *pSimulationOutputTree = qobject_cast<SimulationOutputTree*>(parent());
+    int width;
+    if (pMessagesTreeView) {
+      width = pMessagesTreeView->columnWidth(index.column()) - (pMessagesTreeView->indentation() * pMessagesTreeView->getDepth(index));
+    } else if (pSimulationOutputTree) {
+      width = pSimulationOutputTree->columnWidth(index.column()) - (pSimulationOutputTree->indentation() * pSimulationOutputTree->getDepth(index));
+    }
+
     QVariant value = index.data(Qt::DisplayRole);
     QString text;
     if (value.isValid()) {
-      if (value.type() == QVariant::Double) {
-        text = QLocale().toString(value.toDouble());
-      } else {
-        text = value.toString();
-      }
+      text = formatDisplayText(value);
     }
-    int count = text.count("\n") + 1;
-    int height = option.fontMetrics.height() * count + 7; /* 7 is added to add the padding space to the item. */
-    //Set very small height. A minimum apperantly stops at reasonable size.
-    size.rheight() = qMax(height, 22); //pixels
-  } else {
+    QTextDocument textDocument;
+    initTextDocument(&textDocument, option.font, width);  /* we can't use option.rect.width() here since it will be empty. */
+    textDocument.setHtml(text);
+    size.rheight() = qMax(textDocument.size().height(), 24.0);
+  } else if (parent() && qobject_cast<LibraryTreeWidget*>(parent())) {
     size.rheight() = size.height() + 2;
+  } else {
+    size.rheight() = qMax(size.height(), 24);
   }
   return size;
+}
+
+/*!
+  Shows a Qt::PointingHandCursor for simulation output links.\n
+  If the link is clicked then calls the SimulationOutputWidget::openTransformationBrowser(QUrl).
+  */
+bool ItemDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
+{
+  if (mDrawRichText && parent() && qobject_cast<SimulationOutputTree*>(parent()) &&
+      (event->type() == QEvent::MouseMove || event->type() == QEvent::MouseButtonRelease) && (option.state & QStyle::State_Enabled)) {
+    QMouseEvent *pMouseEvent = dynamic_cast<QMouseEvent*>(event);
+    QPointF position = pMouseEvent->pos() - option.rect.topLeft();
+    QVariant variant = index.data(Qt::DisplayRole);
+    QString text;
+    if (variant.isValid()) {
+      text = formatDisplayText(variant);
+    }
+    QTextDocument textDocument;
+    initTextDocument(&textDocument, option.font, option.rect.width());
+    textDocument.setHtml(text);
+    QString anchor = textDocument.documentLayout()->anchorAt(position);
+    SimulationOutputTree *pSimulationOutputTree = qobject_cast<SimulationOutputTree*>(parent());
+    if (anchor.isEmpty()) {
+      pSimulationOutputTree->unsetCursor();
+      return true;
+    } else {
+      pSimulationOutputTree->setCursor(Qt::PointingHandCursor);
+      if (event->type() == QEvent::MouseButtonRelease) {
+        pSimulationOutputTree->getSimulationOutputWidget()->openTransformationBrowser(QUrl(anchor));
+      }
+      return true;
+    }
+  } else {
+    return QItemDelegate::editorEvent(event, model, option, index);
+  }
 }
 
 SearchClassWidget::SearchClassWidget(MainWindow *pMainWindow)

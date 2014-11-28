@@ -42,88 +42,16 @@
 #include "MainWindow.h"
 
 class MainWindow;
-class MessagesTreeWidget;
-class MessagesTreeItem;
 class StringHandler;
 
-class MessagesWidget : public QWidget
+class MessagesWidget;
+
+class MessageItem : public QObject
 {
   Q_OBJECT
-private:
-  MainWindow *mpMainWindow;
-  MessagesTreeWidget *mpMessagesTreeWidget;
-  QToolButton *mpClearMessagesToolButton;
-  QToolButton *mpShowNotificationsToolButton;
-  QToolButton *mpShowWarningsToolButton;
-  QToolButton *mpShowErrorsToolButton;
-  QToolButton *mpShowAllMessagesToolButton;
-  QButtonGroup *mpMessagesButtonGroup;
 public:
-  MessagesWidget(MainWindow *pMainWindow);
-  MessagesTreeWidget* getMessagesTreeWidget();
-  QSize sizeHint() const;
-  void addGUIMessage(MessagesTreeItem *pMessageItem);
-signals:
-  void MessageAdded();
-private slots:
-  void clearMessages();
-  void showNotifications();
-  void showWarnings();
-  void showErrors();
-  void showAllMessages();
-};
-
-class MessagesTreeWidget : public QTreeWidget
-{
-  Q_OBJECT
-private:
-  MessagesWidget *mpMessagesWidget;
-  QAction *mpSelectAllAction;
-  QAction *mpCopyAction;
-  QAction *mpRemoveAction;
-public:
-  MessagesTreeWidget(MessagesWidget *pMessagesWidget);
-private slots:
-  void showContextMenu(QPoint point);
-  void selectAllMessages();
-  void copyMessages();
-  void removeMessages();
-protected:
-  virtual void keyPressEvent(QKeyEvent *event);
-};
-
-class MessagesTreeItem : public QTreeWidgetItem
-{
-public:
-  MessagesTreeItem(MessagesTreeWidget *pParent = 0);
-  MessagesTreeItem(QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message, QString kind,
-              QString level, int id, MessagesTreeWidget *pParent = 0);
-  void initialize();
-  void setFileName(QString fileName);
-  QString getFileName();
-  void setReadOnly(bool readOnly);
-  bool getReadOnly();
-  void setLineStart(int lineStart);
-  int getLineStart();
-  void setColumnStart(int columnStart);
-  int getColumnStart();
-  void setLineEnd(int lineEnd);
-  int getLineEnd();
-  void setColumnEnd(int columnEnd);
-  int getColumnEnd();
-  void setMessage(QString message);
-  QString getMessage();
-  void setKind(QString kind);
-  QString getKind();
-  void setLevel(QString level);
-  QString getLevel();
-  void setId(int id);
-  int getId();
-  int getType();
-  int getErrorKind();
-  void setColumnsText();
-private:
-  MessagesTreeWidget *mpMessagesTreeWidget;
+  MessageItem* mpParentMessageItem;
+  QString mTime;
   QString mFileName;
   bool mReadOnly;
   int mLineStart;
@@ -132,12 +60,109 @@ private:
   int mColumnEnd;
   QString mMessage;
   QString mKind;
-  QString mLevel;
+  StringHandler::OpenModelicaErrorKinds mErrorKind;
+  StringHandler::OpenModelicaErrors mErrorType;
   int mId;
-  QMap<QString, StringHandler::OpenModelicaErrors> mErrorsMap;
-  int mType;
-  QMap<QString, StringHandler::OpenModelicaErrorKinds> mErrorKindsMap;
-  int mErrorKind;
+  QList<MessageItem*> mChildren;
+public:
+  MessageItem(QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message, QString errorKind,
+              QString errorType, int id);
+  void setParent(MessageItem *pParentMessageItem) {mpParentMessageItem = pParentMessageItem;}
+  MessageItem *parent() {return mpParentMessageItem;}
+  MessageItem *child(int row) {return mChildren.value(row);}
+  QList<MessageItem*> children() const {return mChildren;}
+  void insertChild(int position, MessageItem *pMessageItem) {mChildren.insert(position, pMessageItem);}
+  void removeChildren();
+  void removeChild(MessageItem *pMessageItem);
+  int row() const;
+  QString getTime() {return mTime;}
+  QString getFileName() {return mFileName;}
+  QString getLocation();
+  QString getMessage() {return mMessage;}
+  QIcon getIcon() const;
+  StringHandler::OpenModelicaErrorKinds getErrorKind() {return mErrorKind;}
+  StringHandler::OpenModelicaErrors getErrorType() {return mErrorType;}
+};
+
+class MessagesModel : public QAbstractItemModel
+{
+  Q_OBJECT
+public:
+  MessagesModel(QObject *pParent);
+  virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+  virtual QModelIndex index(int row, int column, const QModelIndex &parent) const;
+  virtual QModelIndex parent(const QModelIndex &child) const;
+  virtual int rowCount(const QModelIndex &parent) const;
+  virtual int columnCount(const QModelIndex &parent) const;
+  virtual QVariant data(const QModelIndex &index, int role) const;
+  MessageItem* getRootMessageItem() {return mpRootMessageItem;}
+  int getDepth(const QModelIndex &index) const;
+  void addMessageItem(MessageItem *pMessageItem);
+  void removeMessageItem(QModelIndex &index);
+private:
+  MessageItem* mpRootMessageItem;
+};
+
+class MessagesProxyModel : public QSortFilterProxyModel
+{
+  Q_OBJECT
+public:
+  MessagesProxyModel(QObject *parent = 0);
+  void callLayoutChanged();
+protected:
+  virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+};
+
+class MessagesTreeView : public QTreeView
+{
+  Q_OBJECT
+private:
+  MessagesWidget *mpMessagesWidget;
+  QAction *mpSelectAllAction;
+  QAction *mpCopyAction;
+  QAction *mpRemoveAction;
+public:
+  MessagesTreeView(MessagesWidget *pMessagesWidget);
+  MessagesWidget* getMessagesWidget() {return mpMessagesWidget;}
+  int getDepth(const QModelIndex &index) const;
+public slots:
+  void showContextMenu(QPoint point);
+  void callLayoutChanged(int logicalIndex, int oldSize, int newSize);
+  void selectAllMessages();
+  void copyMessages();
+  void removeMessages();
+protected:
+  virtual void keyPressEvent(QKeyEvent *event);
+};
+
+class MessagesWidget : public QWidget
+{
+  Q_OBJECT
+private:
+  MainWindow *mpMainWindow;
+  MessagesTreeView *mpMessagesTreeView;
+  MessagesModel *mpMessagesModel;
+  MessagesProxyModel *mpMessagesProxyModel;
+  QToolButton *mpClearMessagesToolButton;
+  QToolButton *mpShowNotificationsToolButton;
+  QToolButton *mpShowWarningsToolButton;
+  QToolButton *mpShowErrorsToolButton;
+  QToolButton *mpShowAllMessagesToolButton;
+  QButtonGroup *mpMessagesButtonGroup;
+public:
+  MessagesWidget(MainWindow *pMainWindow);
+  MessagesModel* getMessagesModel() {return mpMessagesModel;}
+  MessagesProxyModel* getMessagesProxyModel() {return mpMessagesProxyModel;}
+  QSize sizeHint() const;
+  void addGUIMessage(MessageItem *pMessageItem);
+signals:
+  void MessageAdded();
+private slots:
+  void clearMessages();
+  void showNotifications();
+  void showWarnings();
+  void showErrors();
+  void showAllMessages();
 };
 
 #endif // MESSAGESWIDGET_H

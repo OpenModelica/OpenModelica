@@ -447,6 +447,8 @@ public:
   QComboBox* getIndexReductionMethodComboBox();
   QLineEdit* getOMCFlagsTextBox();
   QCheckBox *getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
+  void setOutputMode(QString value);
+  QString getOutputMode();
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpSimulationGroupBox;
@@ -457,6 +459,9 @@ private:
   Label *mpOMCFlagsLabel;
   QLineEdit *mpOMCFlagsTextBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
+  QGroupBox *mpOutputGroupBox;
+  QRadioButton *mpStructuredRadioButton;
+  QRadioButton *mpFormattedTextRadioButton;
 };
 
 class NotificationsPage : public QWidget

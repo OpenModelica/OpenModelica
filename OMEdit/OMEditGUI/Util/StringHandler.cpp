@@ -59,8 +59,6 @@ StringHandler::~StringHandler()
 
 }
 
-const QString StringHandler::errorLevelToString[] = {tr("Notification"), tr("Warning"), tr("Error"), tr("Unknown")};
-
 QString StringHandler::getModelicaClassType(int type)
 {
   switch (type)
@@ -159,25 +157,86 @@ QString StringHandler::getViewType(int type)
   }
 }
 
-QString StringHandler::getErrorKind(int kind)
+StringHandler::OpenModelicaErrorKinds StringHandler::getErrorKind(QString errorKind)
 {
-  switch (kind)
+  if (errorKind.compare(Helper::syntaxKind) == 0) {
+    return StringHandler::Syntax;
+  } else if (errorKind.compare(Helper::grammarKind) == 0) {
+    return StringHandler::Grammar;
+  } else if (errorKind.compare(Helper::translationKind) == 0) {
+    return StringHandler::Translation;
+  } else if (errorKind.compare(Helper::symbolicKind) == 0) {
+    return StringHandler::Symbolic;
+  } else if (errorKind.compare(Helper::simulationKind) == 0) {
+    return StringHandler::Simulation;
+  } else if (errorKind.compare(Helper::scriptingKind) == 0) {
+    return StringHandler::Scripting;
+  } else {
+    return StringHandler::NoOMErrorKind;
+  }
+}
+
+QString StringHandler::getErrorKindString(OpenModelicaErrorKinds errorKind)
+{
+  switch (errorKind)
   {
     case StringHandler::Syntax:
-      return "Syntax";
+      return tr("Syntax");
     case StringHandler::Grammar:
-      return "Grammar";
+      return tr("Grammar");
     case StringHandler::Translation:
-      return "Translation";
+      return tr("Translation");
     case StringHandler::Symbolic:
-      return "Symbolic";
+      return tr("Symbolic");
     case StringHandler::Simulation:
-      return "Simulation";
+      return tr("Simulation");
     case StringHandler::Scripting:
-      return "Scripting";
+      return tr("Scripting");
     default:
       // should never be reached
       return "";
+  }
+}
+
+StringHandler::OpenModelicaErrors StringHandler::getErrorType(QString errorType)
+{
+  if (errorType.compare(Helper::notificationLevel) == 0) {
+    return StringHandler::Notification;
+  } else if (errorType.compare(Helper::warningLevel) == 0) {
+    return StringHandler::Warning;
+  } else if (errorType.compare(Helper::errorLevel) == 0) {
+    return StringHandler::OMError;
+  } else {
+    return StringHandler::NoOMError;
+  }
+}
+
+QString StringHandler::getErrorTypeDisplayString(StringHandler::OpenModelicaErrors errorType)
+{
+  switch (errorType) {
+    case StringHandler::Notification:
+      return tr("Notification");
+    case StringHandler::Warning:
+      return tr("Warning");
+    case StringHandler::OMError:
+      return tr("Error");
+    case StringHandler::NoOMError:
+    default:
+      return tr("Unknown");
+  }
+}
+
+QString StringHandler::getErrorTypeString(StringHandler::OpenModelicaErrors errorType)
+{
+  switch (errorType) {
+    case StringHandler::Warning:
+      return Helper::warningLevel;
+    case StringHandler::OMError:
+      return Helper::errorLevel;
+    case StringHandler::Notification:
+    case StringHandler::NoOMError:
+    default:
+      return Helper::notificationLevel;
   }
 }
 
@@ -1331,6 +1390,7 @@ bool StringHandler::naturalSort(const QString &s1, const QString &s2) {
   }
 }
 
+#ifdef WIN32
 QProcessEnvironment StringHandler::compilationProcessEnvironment(QString *pCompilationProcessPath)
 {
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
@@ -1351,7 +1411,6 @@ QProcessEnvironment StringHandler::compilationProcessEnvironment(QString *pCompi
   return environment;
 }
 
-
 QProcessEnvironment StringHandler::simulationProcessEnvironment()
 {
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
@@ -1367,3 +1426,62 @@ QProcessEnvironment StringHandler::simulationProcessEnvironment()
   }
   return environment;
 }
+#endif
+
+StringHandler::SimulationMessageType StringHandler::getSimulationMessageType(QString type)
+{
+  if (type == "info") {
+    return StringHandler::Info;
+  } else if (type == "warning") {
+    return StringHandler::SMWarning;
+  } else if (type == "error") {
+    return StringHandler::Error;
+  } else if (type == "assert") {
+    return StringHandler::Assert;
+  } else if (type == "debug") {
+    return StringHandler::Debug;
+  } else if (type == "OMEditInfo") {
+    return StringHandler::OMEditInfo;
+  } else {
+    return StringHandler::Unknown;
+  }
+}
+
+QString StringHandler::getSimulationMessageTypeString(StringHandler::SimulationMessageType type)
+{
+  switch (type) {
+    case StringHandler::Info:
+      return "info";
+    case StringHandler::SMWarning:
+      return "warning";
+    case StringHandler::Error:
+      return "error";
+    case StringHandler::Assert:
+      return "assert";
+    case StringHandler::Debug:
+      return "debug";
+    case StringHandler::OMEditInfo:
+      return "OMEditInfo";
+    default:
+      return "unknown";
+  }
+}
+
+QColor StringHandler::getSimulationMessageTypeColor(StringHandler::SimulationMessageType type)
+{
+  switch (type) {
+    case StringHandler::OMEditInfo:
+      return Qt::blue;
+    case StringHandler::SMWarning:
+    case StringHandler::Error:
+    case StringHandler::Assert:
+    case StringHandler::Debug:
+      return Qt::red;
+    case StringHandler::Info:
+    case StringHandler::Unknown:
+    default:
+      return Qt::black;
+      break;
+  }
+}
+

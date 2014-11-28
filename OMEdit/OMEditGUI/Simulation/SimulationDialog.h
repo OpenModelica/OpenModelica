@@ -151,7 +151,7 @@ public:
   QString getOutputFormat() {return mOutputFormat;}
   void setFileNamePrefix(QString fileNamePrefix) {mFileNamePrefix = fileNamePrefix;}
   QString getFileNamePrefix() {return mFileNamePrefix;}
-  QString getOutputFileName() {return mFileNamePrefix.isEmpty() ? mClassName : mFileNamePrefix;}
+  QString getOutputFileName() const {return mFileNamePrefix.isEmpty() ? mClassName : mFileNamePrefix;}
   QString getResultFileName() {return getOutputFileName() + "_res." + mOutputFormat;}
   void setVariableFilter(QString variableFilter) {mVariableFilter = variableFilter;}
   QString getVariableFilter() {return mVariableFilter.isEmpty() ? ".*" : mVariableFilter;}
@@ -235,7 +235,7 @@ public:
   void setReSimulate(bool reSimulate) {mReSimulate = reSimulate;}
   bool isReSimulate() {return mReSimulate;}
   void setWorkingDirectory(QString workingDirectory) {mWorkingDirectory = workingDirectory;}
-  QString getWorkingDirectory() {return mWorkingDirectory;}
+  QString getWorkingDirectory() const {return mWorkingDirectory;}
 private:
   QString mClassName;
   QString mStartTime;

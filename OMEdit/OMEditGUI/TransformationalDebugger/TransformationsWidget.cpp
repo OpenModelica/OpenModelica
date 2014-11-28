@@ -482,9 +482,9 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpFindSyntaxComboBox->setItemData(2, tr("Fixed string matching."), Qt::ToolTipRole);
   connect(mpFindSyntaxComboBox, SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
   // expand all button
-  mpExpandAllButton = new QPushButton(tr("Expand All"));
+  mpExpandAllButton = new QPushButton(Helper::expandAll);
   // collapse all button
-  mpCollapseAllButton = new QPushButton(tr("Collapse All"));
+  mpCollapseAllButton = new QPushButton(Helper::collapseAll);
   /* variables tree view */
   mpTVariablesTreeView = new TVariablesTreeView(this);
   mpTVariablesTreeModel = new TVariablesTreeModel(mpTVariablesTreeView);

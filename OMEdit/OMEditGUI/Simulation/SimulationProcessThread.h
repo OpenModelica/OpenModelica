@@ -78,7 +78,7 @@ signals:
   void sendCompilationOutput(QString, QColor);
   void sendCompilationFinished(int, QProcess::ExitStatus);
   void sendSimulationStarted();
-  void sendSimulationOutput(QString, QColor, bool);
+  void sendSimulationOutput(QString, StringHandler::SimulationMessageType type, bool);
   void sendSimulationFinished(int, QProcess::ExitStatus);
   void sendSimulationProgress(int);
 };

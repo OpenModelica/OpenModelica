@@ -115,7 +115,7 @@ void SimulationProcessThread::runSimulationExecutable()
   mpSimulationProcess->setProcessEnvironment(StringHandler::simulationProcessEnvironment());
 #endif
   mpSimulationProcess->start(fileName, args);
-  emit sendSimulationOutput(QString("%1 %2\n").arg(fileName).arg(args.join(" ")), Qt::blue, true);
+  emit sendSimulationOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo, true);
 }
 
 /*!
@@ -186,7 +186,7 @@ void SimulationProcessThread::simulationProcessStarted()
   */
 void SimulationProcessThread::readSimulationStandardOutput()
 {
-  emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), Qt::black, false);
+  emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), StringHandler::Unknown, false);
 }
 
 /*!
@@ -195,7 +195,7 @@ void SimulationProcessThread::readSimulationStandardOutput()
   */
 void SimulationProcessThread::readSimulationStandardError()
 {
-  emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), Qt::red, true);
+  emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), StringHandler::Error, true);
 }
 
 /*!
@@ -207,11 +207,11 @@ void SimulationProcessThread::simulationProcessFinished(int exitCode, QProcess::
   mIsSimulationProcessRunning = false;
   QString exitCodeStr = tr("Simulation process exited with code %1").arg(QString::number(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    emit sendSimulationOutput(exitCodeStr, Qt::blue, true);
+    emit sendSimulationOutput(exitCodeStr, StringHandler::OMEditInfo, true);
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
-    emit sendSimulationOutput(exitCodeStr, Qt::red, true);
+    emit sendSimulationOutput(exitCodeStr, StringHandler::Error, true);
   } else {
-    emit sendSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, Qt::red, true);
+    emit sendSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error, true);
   }
   emit sendSimulationFinished(exitCode, exitStatus);
 }
