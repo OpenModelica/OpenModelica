@@ -43,7 +43,6 @@
 #include "SimulationProcessThread.h"
 #include "SimulationOutputHandler.h"
 
-class SimulationOptions;
 class SimulationProcessThread;
 class SimulationOutputHandler;
 class SimulationOutputWidget;
@@ -107,8 +106,6 @@ public slots:
   void simulationProcessStarted();
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void GDBProcessStarted();
-  void GDBProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelCompilationOrSimulation();
   void openTransformationBrowser(QUrl url);
 };

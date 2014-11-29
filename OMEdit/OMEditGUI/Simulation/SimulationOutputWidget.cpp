@@ -403,32 +403,11 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
   mpProgressBar->setValue(1);
   mpCancelButton->setEnabled(false);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    /* show the Transformational Debugger */
     if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
-        mSimulationOptions.getLaunchTransformationalDebugger()) {
+        mSimulationOptions.getLaunchTransformationalDebugger() || mSimulationOptions.getProfiling() != "none") {
       mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json");
     }
-    // if not build only and launch the algorithmic debugger is true
-    if (!mSimulationOptions.getBuildOnly() && mSimulationOptions.getLaunchAlgorithmicDebugger()) {
-      QString fileName = mSimulationOptions.getOutputFileName();
-      // start the executable
-      fileName = QString(mSimulationOptions.getWorkingDirectory()).append("/").append(fileName);
-      fileName = fileName.replace("//", "/");
-      // run the simulation executable to create the result file
-#ifdef WIN32
-      fileName = fileName.append(".exe");
-#endif
-      // start the debugger
-      if (mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->isGDBRunning()) {
-        QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                                 GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
-      } else {
-        QString GDBPath = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBPath();
-        GDBAdapter *pGDBAdapter = mpMainWindow->getDebuggerMainWindow()->getGDBAdapter();
-        pGDBAdapter->launch(fileName, mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getSimulationFlags(), GDBPath, this);
-        mpMainWindow->showAlgorithmicDebugger();
-      }
-    }
+    mpMainWindow->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
   }
 }
 
@@ -500,51 +479,12 @@ void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler
   */
 void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
+  Q_UNUSED(exitCode);
+  Q_UNUSED(exitStatus);
   mpProgressLabel->setText(tr("Simulation of <b>%1</b> is finished.").arg(mSimulationOptions.getClassName()));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelButton->setEnabled(false);
-  if (exitStatus == QProcess::NormalExit && exitCode == 0 && mSimulationOptions.getProfiling() != "none") {
-    mpMainWindow->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json");
-  }
-  QString workingDirectory = mSimulationOptions.getWorkingDirectory();
-  // read the result file
-  QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(mSimulationOptions.getResultFileName()));
-  QRegExp regExp("\\b(mat|plt|csv)\\b");
-  if (regExp.indexIn(mSimulationOptions.getResultFileName()) != -1 &&
-      resultFileInfo.exists() && mResultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
-    VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
-    OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
-    QStringList list = pOMCProxy->readSimulationResultVars(mSimulationOptions.getResultFileName());
-    // close the simulation result file.
-    pOMCProxy->closeSimulationResultFile();
-    if (list.size() > 0) {
-      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
-      pVariablesWidget->insertVariablesItemsToTree(mSimulationOptions.getResultFileName(), workingDirectory, list, mSimulationOptions);
-      mpMainWindow->getVariablesDockWidget()->show();
-    }
-  }
-}
-
-/*!
-  Slot activated when GDBAdapter::mpGDBProcess started signal is raised.
-  */
-void SimulationOutputWidget::GDBProcessStarted()
-{
-  // save the last modified datetime of result file.
-  QFileInfo resultFileInfo(QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getResultFileName()));
-  if (resultFileInfo.exists()) {
-    mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
-  }
-}
-
-/*!
-  Slot activated when GDBAdapter::mpGDBProcess finished signal is raised.
-  */
-void SimulationOutputWidget::GDBProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
-{
-  if (!mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->isGDBKilled()) {
-    simulationProcessFinished(exitCode, exitStatus);
-  }
+  mpMainWindow->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
 }
 
 /*!

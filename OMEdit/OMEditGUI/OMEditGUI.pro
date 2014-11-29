@@ -144,6 +144,7 @@ HEADERS  += Util/backtrace.h \
   Component/ComponentProperties.h \
   Component/Transformation.h \
   Modeling/DocumentationWidget.h \
+  Simulation/SimulationOptions.h \
   Simulation/SimulationDialog.h \
   Simulation/SimulationOutputWidget.h \
   Simulation/SimulationProcessThread.h \

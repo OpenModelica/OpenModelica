@@ -938,14 +938,33 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   */
 void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions simulationOptions)
 {
-  SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions, mpMainWindow);
-  mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
-  ArchivedSimulationItem *pArchivedSimulationItem = new ArchivedSimulationItem(simulationOptions.getClassName(), pSimulationOutputWidget);
-  mpArchivedSimulationsListWidget->addItem(pArchivedSimulationItem);
-  int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
-  int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
-  pSimulationOutputWidget->setGeometry(xPos, yPos, pSimulationOutputWidget->width(), pSimulationOutputWidget->height());
-  pSimulationOutputWidget->show();
+  /*
+    If resimulation and show algorithmic debugger is checked then show algorithmic debugger.
+    If show transformational debugger is checked then show transformational debugger.
+    Otherwise run the normal resimulation.
+    */
+  if (simulationOptions.isReSimulate() && simulationOptions.getLaunchAlgorithmicDebugger()) {
+    if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+        simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
+      mpMainWindow->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
+    }
+    showAlgorithmicDebugger(simulationOptions);
+  } else {
+    if (simulationOptions.isReSimulate()) {
+      if (mpMainWindow->getOptionsDialog()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
+          simulationOptions.getLaunchTransformationalDebugger() || simulationOptions.getProfiling() != "none") {
+        mpMainWindow->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
+      }
+    }
+    SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions, mpMainWindow);
+    mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
+    ArchivedSimulationItem *pArchivedSimulationItem = new ArchivedSimulationItem(simulationOptions.getClassName(), pSimulationOutputWidget);
+    mpArchivedSimulationsListWidget->addItem(pArchivedSimulationItem);
+    int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
+    int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
+    pSimulationOutputWidget->setGeometry(xPos, yPos, pSimulationOutputWidget->width(), pSimulationOutputWidget->height());
+    pSimulationOutputWidget->show();
+  }
 }
 
 /*!
@@ -984,6 +1003,52 @@ void SimulationDialog::saveSimulationOptions()
 void SimulationDialog::reSimulate(SimulationOptions simulationOptions)
 {
   createAndShowSimulationOutputWidget(simulationOptions);
+}
+
+void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptions)
+{
+  // if not build only and launch the algorithmic debugger is true
+  if (!simulationOptions.getBuildOnly() && simulationOptions.getLaunchAlgorithmicDebugger()) {
+    QString fileName = simulationOptions.getOutputFileName();
+    // start the executable
+    fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(fileName);
+    fileName = fileName.replace("//", "/");
+    // run the simulation executable to create the result file
+#ifdef WIN32
+    fileName = fileName.append(".exe");
+#endif
+    // start the debugger
+    if (mpMainWindow->getDebuggerMainWindow()->getGDBAdapter()->isGDBRunning()) {
+      QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                               GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
+    } else {
+      QString GDBPath = mpMainWindow->getOptionsDialog()->getDebuggerPage()->getGDBPath();
+      GDBAdapter *pGDBAdapter = mpMainWindow->getDebuggerMainWindow()->getGDBAdapter();
+      pGDBAdapter->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(), GDBPath, simulationOptions);
+      mpMainWindow->showAlgorithmicDebugger();
+    }
+  }
+}
+
+void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOptions, QDateTime resultFileLastModifiedDateTime)
+{
+  QString workingDirectory = simulationOptions.getWorkingDirectory();
+  // read the result file
+  QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(simulationOptions.getResultFileName()));
+  QRegExp regExp("\\b(mat|plt|csv)\\b");
+  if (regExp.indexIn(simulationOptions.getResultFileName()) != -1 &&
+      resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
+    VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
+    OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
+    QStringList list = pOMCProxy->readSimulationResultVars(simulationOptions.getResultFileName());
+    // close the simulation result file.
+    pOMCProxy->closeSimulationResultFile();
+    if (list.size() > 0) {
+      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
+      pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getResultFileName(), workingDirectory, list, simulationOptions);
+      mpMainWindow->getVariablesDockWidget()->show();
+    }
+  }
 }
 
 /*!

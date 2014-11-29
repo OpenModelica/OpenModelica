@@ -44,7 +44,6 @@
 #include "PlotWindow.h"
 
 class MainWindow;
-class SimulationOptions;
 class VariablesTreeItem
 {
 public:
