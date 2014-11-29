@@ -138,7 +138,12 @@ omc-bootstrapped:
 fake_modelica3d:
 	# create fake files for debian package
 	mkdir -p $(DESTDIR)/usr/lib/omc $(DESTDIR)/usr/lib/omlibrary-modelica3d
-	touch $(DESTDIR)/usr/lib/libhuhu.so $(DESTDIR)/usr/lib/omc/libmodbus.a $(DESTDIR)/usr/lib/omc/libmodcount.a $(DESTDIR)/usr/lib/omlibrary-modelica3d/.empty-dir
+	echo "void fake(void){}" | $(CC) -c -x c - -fPIC -o fake.o
+	$(CC) -shared fake.o -o $(DESTDIR)/usr/lib/libhuhu.so
+	ar r $(DESTDIR)/usr/lib/omc/libmodbus.a fake.o
+	ar r $(DESTDIR)/usr/lib/omc/libmodcount.a fake.o
+	touch $(DESTDIR)/usr/lib/omlibrary-modelica3d/.empty-dir
+	rm fake.o
 
 modelica3d:
 ifeq (@MODELICA3D@,)
