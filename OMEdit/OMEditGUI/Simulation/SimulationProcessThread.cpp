@@ -96,6 +96,7 @@ void SimulationProcessThread::runSimulationExecutable()
 {
   mpSimulationProcess = new QProcess;
   mpSimulationProcess->setWorkingDirectory(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory());
+  qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()));
   connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
   connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
