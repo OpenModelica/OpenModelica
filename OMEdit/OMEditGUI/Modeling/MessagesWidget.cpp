@@ -402,7 +402,7 @@ bool MessagesProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sour
   \param pMessagesWidget - a pointer to MessagesWidget.
   */
 MessagesTreeView::MessagesTreeView(MessagesWidget *pMessagesWidget)
-  : mpMessagesWidget(pMessagesWidget)
+  : QTreeView(pMessagesWidget), mpMessagesWidget(pMessagesWidget)
 {
   setItemDelegate(new ItemDelegate(this, true));
   setTextElideMode(Qt::ElideMiddle);

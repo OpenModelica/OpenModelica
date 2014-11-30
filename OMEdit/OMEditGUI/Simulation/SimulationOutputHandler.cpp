@@ -303,6 +303,7 @@ SimulationOutputHandler::SimulationOutputHandler(SimulationOutputWidget *pSimula
   mXmlSimpleReader.setErrorHandler(this);
   mpXmlInputSource = new QXmlInputSource;
   mpXmlInputSource->setData(simulationOutput.prepend("<root>"));
+  mOutputBuffer = mpXmlInputSource->data();
   mXmlSimpleReader.parse(mpXmlInputSource, true);
 }
 
@@ -317,6 +318,7 @@ SimulationOutputHandler::~SimulationOutputHandler()
 void SimulationOutputHandler::parseSimulationOutput(QString output)
 {
   mpXmlInputSource->setData(output);
+  mOutputBuffer.append(mpXmlInputSource->data());
   mXmlSimpleReader.parseContinue();
 }
 
@@ -377,8 +379,21 @@ bool SimulationOutputHandler::endElement(const QString &namespaceURI, const QStr
   */
 bool SimulationOutputHandler::fatalError(const QXmlParseException &exception)
 {
-  qWarning() << "Fatal error on line" << exception.lineNumber()
-             << ", column" << exception.columnNumber() << ":"
-              << exception.message();
+  // read the error message
+  QString error = QObject::tr("Fatal error on line %1, column %2: %3\nXML ::\n%4")
+      .arg(exception.lineNumber())
+      .arg(exception.columnNumber())
+      .arg(exception.message())
+      .arg(mOutputBuffer);
+  SimulationMessage *pSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+  pSimulationMessage->mStream = "stderr";
+  pSimulationMessage->mType = StringHandler::getSimulationMessageType("error");
+  pSimulationMessage->mText = error;
+  pSimulationMessage->mLevel = 0;
+  if (mpSimulationOutputWidget->isOutputStructured()) {
+    mpSimulationMessageModel->insertSimulationMessage(pSimulationMessage);
+  } else {
+    mpSimulationOutputWidget->writeSimulationMessage(pSimulationMessage);
+  }
   return false;
 }

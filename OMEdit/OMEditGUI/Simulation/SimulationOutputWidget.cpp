@@ -46,7 +46,7 @@
   \param pSimulationOutputWidget - a pointer to SimulationOutputWidget.
   */
 SimulationOutputTree::SimulationOutputTree(SimulationOutputWidget *pSimulationOutputWidget)
-  : mpSimulationOutputWidget(pSimulationOutputWidget)
+  : QTreeView(pSimulationOutputWidget), mpSimulationOutputWidget(pSimulationOutputWidget)
 {
   setObjectName("TreeWithBranches");
   setItemDelegate(new ItemDelegate(this, true));
