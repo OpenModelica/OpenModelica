@@ -338,6 +338,15 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   for (int i = 0 ; i < pSimulationMessage->mLevel ; ++i)
     error += "| ";
   error += pSimulationMessage->mText;
+  /* move the cursor down before adding to the logger. */
+  QTextCursor textCursor = mpSimulationOutputTextBrowser->textCursor();
+  textCursor.movePosition(QTextCursor::End);
+  mpSimulationOutputTextBrowser->setTextCursor(textCursor);
+  /* set the text color */
+  QTextCharFormat charFormat = mpSimulationOutputTextBrowser->currentCharFormat();
+  charFormat.setForeground(StringHandler::getSimulationMessageTypeColor(pSimulationMessage->mType));
+  mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
+  /* append the output */
   /* write the error message */
   mpSimulationOutputTextBrowser->insertPlainText(error);
   /* write the error link */

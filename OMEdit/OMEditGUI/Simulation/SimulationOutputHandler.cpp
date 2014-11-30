@@ -331,7 +331,11 @@ bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QS
   Q_UNUSED(namespaceURI);
   Q_UNUSED(localName);
   if (qName == "message") {
-    mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+    if (mpSimulationOutputWidget->isOutputStructured()) {
+      mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+    } else {
+      mpSimulationMessage = new SimulationMessage;
+    }
     mpSimulationMessage->mStream = atts.value("stream");
     mpSimulationMessage->mType = StringHandler::getSimulationMessageType(atts.value("type"));
     mpSimulationMessage->mText = atts.value("text");
@@ -385,7 +389,13 @@ bool SimulationOutputHandler::fatalError(const QXmlParseException &exception)
       .arg(exception.columnNumber())
       .arg(exception.message())
       .arg(mOutputBuffer);
-  SimulationMessage *pSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+  // construct the SimulationMessage object with error
+  SimulationMessage *pSimulationMessage;
+  if (mpSimulationOutputWidget->isOutputStructured()) {
+    pSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+  } else {
+    pSimulationMessage = new SimulationMessage;
+  }
   pSimulationMessage->mStream = "stderr";
   pSimulationMessage->mType = StringHandler::getSimulationMessageType("error");
   pSimulationMessage->mText = error;
