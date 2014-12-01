@@ -1852,7 +1852,7 @@ end MemberVariable;
 template MemberVariableDefine(String type,SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
 ::=
 match simVar
-    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) 
+    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_))
       then ''
     case SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
         match(hpcOmMemoryOpt)
