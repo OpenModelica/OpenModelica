@@ -689,8 +689,8 @@ algorithm
             e = Expression.expPow(Expression.makeDiv(e1,e3),e2);
             (e_1, e_2, _) = preprocessingSolve3(e, Expression.makeConstOne(tp), inExp3);
           then (e_1, e_2, true);
- 
-          
+
+
 
           else (inExp1, inExp2, false);
 
@@ -859,7 +859,7 @@ algorithm
      outRhs := Expression.makeSum(rhs);
      (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
 
-     if expand then 
+     if expand then
        resTerms := Expression.terms(Expression.expand(outLhs));
        (lhs, rhs) := List.split1OnTrue(resTerms, expHasCref, inExp3);
        outLhs := DAE.RCONST(0.0);
