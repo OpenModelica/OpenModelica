@@ -345,7 +345,7 @@ preprocessing for solve1,
   list<DAE.Exp> lhsWithX, rhsWithX, lhsWithoutX, rhsWithoutX, eWithX, factorWithX, factorWithoutX;
   DAE.Exp lhsX, rhsX, lhsY, rhsY, x, y, N;
   DAE.ComponentRef cr;
-  DAE.Boolean con, new_x;
+  DAE.Boolean con, new_x, expand := true;
   Integer iter;
 
  algorithm
@@ -389,10 +389,20 @@ preprocessing for solve1,
      end if;
 
      if con then
-       (lhsX, lhsY) := preprocessingSolve5(x, inExp3,false);
-       (rhsX, rhsY) := preprocessingSolve5(y, inExp3,false);
+       (lhsX, lhsY) := preprocessingSolve5(x, inExp3, true);
+       (rhsX, rhsY) := preprocessingSolve5(y, inExp3, true);
        x := Expression.expSub(lhsX, rhsX);
        y := Expression.expSub(rhsY, lhsY);
+       expand := true;
+     elseif expand then
+       (lhsX, lhsY) := preprocessingSolve5(x, inExp3, expand);
+       (rhsX, rhsY) := preprocessingSolve5(y, inExp3, expand);
+       x := Expression.expSub(lhsX, rhsX);
+       y := Expression.expSub(rhsY, lhsY);
+       (x,_) := ExpressionSimplify.simplify1(x);
+       expand := con;
+       con := not con;
+       iter := iter + 50;
      end if;
 
      iter := iter + 1;
@@ -569,7 +579,7 @@ algorithm
        then
          (e1, inExp2, true);
 
-      // f(a)^n = c => f(a) = c^(1/x)
+      // f(a)^n = c => f(a) = c^(1/n)
       // where n is odd
       case (DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(r)), _, _)
         equation
@@ -578,6 +588,15 @@ algorithm
           1.0 = realMod(r,2.0);
           res = Expression.makeDiv(DAE.RCONST(1.0),e2);
           res = Expression.expPow(inExp2,res);
+       then
+         (e1, res, true);
+
+      // sqrt(f(a)) = f(a)^n = c => f(a) = c^(1/n)
+      case (DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(0.5)), _, _)
+        equation
+          false = expHasCref(inExp2, inExp3);
+          true = expHasCref(e1, inExp3);
+          res = Expression.expPow(inExp2,DAE.RCONST(2.0));
        then
          (e1, res, true);
 
@@ -623,7 +642,7 @@ algorithm
           local
           String s1,s2;
           DAE.Operator op;
-          DAE.Exp e1,e2;
+          DAE.Exp e1,e2,e3,e4, e, e_1, e_2;
           DAE.Type tp;
 
           // exp(f(x)) - exp(g(x)) = 0
@@ -660,6 +679,18 @@ algorithm
             true = expHasCref(e1,inExp3);
             true = expHasCref(e2,inExp3);
           then (e1, Expression.expPow(e2, DAE.RCONST(2.0)), true);
+
+          // f(x)^n - g(x)^n = 0 -> (f(x)/g(x))^n = 1
+          case(DAE.BINARY(DAE.BINARY(e1, DAE.POW(), e2), DAE.SUB(tp), DAE.BINARY(e3, DAE.POW(), e4)), DAE.RCONST(0.0),_)
+          equation
+            true = Expression.expEqual(e2,e4);
+            true = expHasCref(e1,inExp3);
+            true = expHasCref(e3,inExp3);
+            e = Expression.expPow(Expression.makeDiv(e1,e3),e2);
+            (e_1, e_2, _) = preprocessingSolve3(e, Expression.makeConstOne(tp), inExp3);
+          then (e_1, e_2, true);
+ 
+          
 
           else (inExp1, inExp2, false);
 
@@ -754,7 +785,7 @@ algorithm
 
   f2 := Expression.expandFactors(inExp2);
   (factorWithX2, factorWithoutX2) := List.split1OnTrue(f2, expHasCref, inExp3);
-  pWithX2 := Expression.makeProductLst(factorWithX2);
+  (pWithX2,_) := ExpressionSimplify.simplify1(Expression.makeProductLst(factorWithX2));
   pWithoutX2 := Expression.makeProductLst(factorWithoutX2);
   //print("\nf1 =");print(ExpressionDump.printExpListStr(f1));
   //print("\nf2 =");print(ExpressionDump.printExpListStr(f2));
@@ -812,7 +843,7 @@ algorithm
    //can be improve with Expression.getTermsContainingX ???
 
    if expHasCref(inExp1, inExp3) then
-     resTerms := if expand then Expression.allTerms(inExp1) else Expression.terms(inExp1);
+     resTerms := Expression.terms(inExp1);
      // split
      (lhs, rhs) := List.split1OnTrue(resTerms, expHasCref, inExp3);
      //print("\nlhs =");print(ExpressionDump.printExpListStr(lhs));
@@ -827,6 +858,33 @@ algorithm
      //rhs
      outRhs := Expression.makeSum(rhs);
      (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
+
+     if expand then 
+       resTerms := Expression.terms(Expression.expand(outLhs));
+       (lhs, rhs) := List.split1OnTrue(resTerms, expHasCref, inExp3);
+       outLhs := DAE.RCONST(0.0);
+       // sort
+       // a*f(x)*b -> c*f(x)
+       for e in lhs loop
+         outLhs := expAddX(e, outLhs, inExp3); // special add
+       end for;
+       //rhs
+       outRhs := Expression.expAdd(outRhs,Expression.makeSum(rhs));
+       (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
+
+       resTerms := Expression.allTerms(outLhs);
+       (lhs, rhs) := List.split1OnTrue(resTerms, expHasCref, inExp3);
+       // sort
+       // a*f(x)*b -> c*f(x)
+       outLhs := DAE.RCONST(0.0);
+       for e in lhs loop
+         outLhs := expAddX(e, outLhs, inExp3); // special add
+       end for;
+       //rhs
+       outRhs := Expression.expAdd(outRhs,Expression.makeSum(rhs));
+       (outRhs,_) := ExpressionSimplify.simplify1(outRhs);
+
+     end if;
 
    else
     outRhs := inExp1;
