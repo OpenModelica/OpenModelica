@@ -38,6 +38,8 @@ encapsulated package HpcOmSimCode
     record MEMORYMAP_ARRAY
       array<tuple<Integer,Integer>> positionMapping; //map each simCodeVar to a memory (array) position and to arrayIdx
       Integer floatArraySize; //arrayIdx: 1
+      Integer intArraySize; //arrayIdx: 2
+      Integer boolArraySize; //arrayIdx: 3
       HashTableCrILst.HashTable scVarNameIdxMapping; //maps each var-name to the scVar-idx
       list<Integer> otherVars; //a list of not optimized variables
     end MEMORYMAP_ARRAY;

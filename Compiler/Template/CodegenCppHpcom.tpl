@@ -212,6 +212,8 @@ template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap)
                 case(MEMORYMAP_ARRAY(__)) then
                     <<
                     <%if intGt(floatArraySize,0) then 'VARARRAY_ALIGN_PRE double varArray1[<%floatArraySize%>] VARARRAY_ALIGN_POST ; //float variables'%>
+                    <%if intGt(intArraySize,0) then 'VARARRAY_ALIGN_PRE int varArray2[<%intArraySize%>] VARARRAY_ALIGN_POST ; //int variables'%>
+                    <%if intGt(boolArraySize,0) then 'VARARRAY_ALIGN_PRE bool varArray3[<%boolArraySize%>] VARARRAY_ALIGN_POST ; //bool variables'%>
                     >>
                 else ''
             end match
@@ -1850,9 +1852,8 @@ end MemberVariable;
 template MemberVariableDefine(String type,SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
 ::=
 match simVar
-
-     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
+    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) 
+      then ''
     case SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
         match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
@@ -1967,8 +1968,8 @@ template MemberVariableDefine3(Option<tuple<Integer,Integer>> optVarArrayAssignm
             match simVar
                 case SIMVAR(__) then
                     <<
-                    <%if createConstructorDeclaration then ',<%cref(name, useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
-                      else '<%variableType(type_)%>& <%cref(name, useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine3' %>
+                    <%if createConstructorDeclaration then '//,<%cref(name, useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
+                      else '#define <%cref(name, useFlatArrayNotation)%> varArray<%arrayIdx%>[<%varIdx%>] //<%variableType(type_)%>& <%cref(name, useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine3' %>
                     >>
             end match
         else
@@ -1986,8 +1987,8 @@ template MemberVariableDefine4(Option<tuple<Integer,Integer>> optVarArrayAssignm
   match optVarArrayAssignment
     case SOME((varIdx, arrayIdx)) then
         <<
-        <%if createConstructorDeclaration then ',<%cref(varName,useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
-        else '<%variableType(type_)%>& <%cref(varName,useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine4' %>
+        <%if createConstructorDeclaration then '//,<%cref(varName,useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
+        else '#define <%cref(varName,useFlatArrayNotation)%> varArray<%arrayIdx%>[<%varIdx%>] //<%variableType(type_)%>& <%cref(varName,useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine4' %>
         >>
     else
         <<

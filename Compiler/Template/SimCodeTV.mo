@@ -3414,6 +3414,8 @@ package HpcOmSimCode
     record MEMORYMAP_ARRAY
       array<tuple<Integer,Integer>> positionMapping;
       Integer floatArraySize;
+      Integer intArraySize;
+      Integer boolArraySize;
       HashTableCrILst.HashTable scVarNameIdxMapping;
     end MEMORYMAP_ARRAY;
   end MemoryMap;
