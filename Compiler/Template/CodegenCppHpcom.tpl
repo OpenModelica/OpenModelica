@@ -440,7 +440,7 @@ template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
           delete _functions;
         <%hpcomDestructorExtension%>
       }
- 
+
       void <%className%>::deleteObjects()
       {
         if(_functions != NULL)
