@@ -890,6 +890,10 @@ package SimCodeUtil
     output list<list<Integer>> outColors;
   end translateColorsSimVarInts;
 
+  function getDaeEqsNotPartOfOdeSystem
+    input SimCode.SimCode iSimCode;
+    output list<SimCode.SimEqSystem> oEqs;
+  end getDaeEqsNotPartOfOdeSystem;
 end SimCodeUtil;
 
 
@@ -2584,6 +2588,13 @@ package List
     input Integer inStop;
     output list<Integer> outRange;
   end intRange;
+  
+  function intRange3
+    input Integer inStart;
+    input Integer inStep;
+    input Integer inStop;
+    output list<Integer> outRange;
+  end intRange3;
 
   function flatten
     input list<list<ElementType>> inList;

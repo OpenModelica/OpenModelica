@@ -8,6 +8,14 @@
   #endif
 #endif
 
+#ifndef PREFETCH
+  #if defined(_MSC_VER)
+    #define PREFETCH(add, rw, locality)
+  #else
+    #define PREFETCH(add, rw, locality) __builtin_prefetch(add, rw, locality)
+  #endif
+#endif
+
 #include <string>
 //#include <vector>
 #include <algorithm>

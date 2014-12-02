@@ -146,7 +146,7 @@ end intRange2;
 
 public function intRange3
   "Returns a list of integers from inStart to inStop with step inStep.
-     Example: listIntRange2(3,9,2) => {3,5,7,9}"
+     Example: listIntRange2(3,2,9) => {3,5,7,9}"
   input Integer inStart;
   input Integer inStep;
   input Integer inStop;

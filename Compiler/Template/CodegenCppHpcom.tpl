@@ -438,6 +438,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             delete _functions;
         <%hpcomDestructorExtension%>
     }
+    
+    void <%className%>::deleteObjects()
+    {
+
+      if(_functions != NULL)
+        delete _functions;
+
+      deleteAlgloopSolverVariables();
+    }
 
    <%Update(simCode,useFlatArrayNotation)%>
 
@@ -716,6 +725,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
             <%mainThreadCode%>
             //_evaluateBarrier.wait(); //calculation finished
             /*<%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>*/
+            <%generateStateVarPrefetchCode(simCode)%>
           }
           >>
         else ""
@@ -799,6 +809,19 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
        end match
     else ""
 end update2;
+
+template generateStateVarPrefetchCode(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
+      <<
+      <%(List.intRange3(0, 8, intSub(listLength(vars.stateVars), 1)) |> index =>
+      'PREFETCH(&__z[<%index%>], 0, 3);'
+       ;separator="\n")%>
+      >>
+    else ''
+  end match
+end generateStateVarPrefetchCode;
 
 template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, TaskList tasksOfLevel, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
 ::=

@@ -13467,6 +13467,95 @@ algorithm
   simEqSysIdcs := List.map(remEqs,eqIndex);
 end getRemovedEquationSimEqSysIdxes;
 
+public function getDaeEqsNotPartOfOdeSystem "Get a list of eqSystem-objects that are solved in DAE, but not in the ODE-system.
+author: marcusw"
+  input SimCode.SimCode iSimCode;
+  output list<SimCode.SimEqSystem> oEqs;
+protected
+  array<Option<SimCode.SimEqSystem>> allEqs;
+  list<tuple<Integer, SimCode.SimEqSystem>> allEqIdxMapping; //mapping SimEqIdx -> SimEqSystem
+  list<SimCode.SimEqSystem> allEquations;
+  list<list<SimCode.SimEqSystem>> odeEquations;
+  Integer highestIdx;
+  list<SimCode.SimEqSystem> tmpEqs;
+algorithm
+  SimCode.SIMCODE(allEquations=allEquations,odeEquations=odeEquations) := iSimCode;
+  ((allEqIdxMapping, highestIdx)) := List.fold(allEquations, getDaeEqsNotPartOfOdeSystem0, ({}, 0));
+  allEqs := arrayCreate(highestIdx, NONE());
+  allEqs := List.fold(allEqIdxMapping, getDaeEqsNotPartOfOdeSystem1, allEqs);
+  allEqs := List.fold(odeEquations, getDaeEqsNotPartOfOdeSystem2, allEqs);
+  tmpEqs := {};
+  tmpEqs := Array.fold(allEqs, getDaeEqsNotPartOfOdeSystem4, tmpEqs);
+  oEqs := listReverse(tmpEqs);
+end getDaeEqsNotPartOfOdeSystem;
+
+protected function getDaeEqsNotPartOfOdeSystem0 "Add the given equation system object to the mapping list (simEqIdx -> SimEqSystem).
+author: marcusw"
+  input SimCode.SimEqSystem iEqSystem;
+  input tuple<list<tuple<Integer, SimCode.SimEqSystem>>, Integer> iMappingWithHighestIdx; //<mapping simEqIdx -> SimEqSystem, highestIdx>
+  output tuple<list<tuple<Integer, SimCode.SimEqSystem>>, Integer> oMappingWithHighestIdx;
+protected
+  Integer index, highestIdx;
+  list<tuple<Integer, SimCode.SimEqSystem>> allEqIdxMapping;
+algorithm
+  index := equationIndex(iEqSystem);
+  (allEqIdxMapping, highestIdx) := iMappingWithHighestIdx;
+  allEqIdxMapping := (index, iEqSystem)::allEqIdxMapping;
+  highestIdx := intMax(highestIdx, index);
+  oMappingWithHighestIdx := (allEqIdxMapping, highestIdx);
+end getDaeEqsNotPartOfOdeSystem0;
+
+protected function getDaeEqsNotPartOfOdeSystem1 "Set the array at position simEqIdx to the simEqSystem-object.
+author: marcusw"
+  input tuple<Integer, SimCode.SimEqSystem> iEqSystem; //<simEqIdx, simEqSystem>
+  input array<Option<SimCode.SimEqSystem>> iEqArray;
+  output array<Option<SimCode.SimEqSystem>> oEqArray;
+protected
+  Integer eqSysIdx;
+  SimCode.SimEqSystem eqSys;
+algorithm
+  (eqSysIdx, eqSys) := iEqSystem;
+  oEqArray := arrayUpdate(iEqArray, eqSysIdx, SOME(eqSys));
+end getDaeEqsNotPartOfOdeSystem1;
+
+protected function getDaeEqsNotPartOfOdeSystem2 "Set the array at position simEqIdx to NONE().
+author: marcusw"
+  input list<SimCode.SimEqSystem> iEqSystem;
+  input array<Option<SimCode.SimEqSystem>> iEqArray;
+  output array<Option<SimCode.SimEqSystem>> oEqArray;
+algorithm
+  oEqArray := List.fold(iEqSystem, getDaeEqsNotPartOfOdeSystem3, iEqArray);
+end getDaeEqsNotPartOfOdeSystem2;
+
+protected function getDaeEqsNotPartOfOdeSystem3 "Set the array at position simEqIdx to NONE().
+author: marcusw"
+  input SimCode.SimEqSystem iEqSystem;
+  input array<Option<SimCode.SimEqSystem>> iEqArray;
+  output array<Option<SimCode.SimEqSystem>> oEqArray;
+protected
+  Integer eqSysIdx;
+  SimCode.SimEqSystem eqSys;
+algorithm
+  eqSysIdx := equationIndex(iEqSystem);
+  oEqArray := arrayUpdate(iEqArray, eqSysIdx, NONE());
+end getDaeEqsNotPartOfOdeSystem3;
+
+protected function getDaeEqsNotPartOfOdeSystem4 "Append the element to the list if it is not NONE().
+author: marcusw"
+  input Option<SimCode.SimEqSystem> iEqSystemOpt;
+  input list<SimCode.SimEqSystem> iResList;
+  output list<SimCode.SimEqSystem> oResList;
+protected
+  SimCode.SimEqSystem eqSys;
+algorithm
+  oResList := match(iEqSystemOpt, iResList)
+    case(SOME(eqSys), _)
+      then eqSys::iResList;
+    else
+      then iResList;
+  end match;
+end getDaeEqsNotPartOfOdeSystem4;
+
 public function dumpIdxScVarMapping
   input array<Option<SimCodeVar.SimVar>> iMapping;
 algorithm

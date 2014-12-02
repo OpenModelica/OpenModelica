@@ -2134,7 +2134,7 @@ algorithm
   (threadIdx, taskList) := iIdxTaskList;
   for taskIdx in iTaskList loop
     components := arrayGet(iComps, taskIdx); //Components of the task
-    print("createFixedLevelScheduleForLevel0: Handling task with idx: " + intString(taskIdx) + "\n");
+    //print("createFixedLevelScheduleForLevel0: Handling task with idx: " + intString(taskIdx) + "\n");
     simEqs := List.flatten(List.map(List.map1(components,Array.getIndexFirst,iSccSimEqMapping), listReverse));
     if(intGt(listLength(simEqs), 0)) then
       simEqs := simEqs;
