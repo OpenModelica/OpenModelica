@@ -144,6 +144,7 @@ int allocateHomotopyData(int size, void** voiddata)
   data->xtol = 1e-24;
   data->ftol = 1e-24;
   data->maxNumberOfIterations = size*100;
+  data->numberOfIterations = 0;
   data->numberOfFunctionEvaluations = 0;
 
   data->resScaling = (double*) calloc(size,sizeof(double));
