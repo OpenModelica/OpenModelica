@@ -546,7 +546,7 @@ QString GUIMessages::getMessage(int type)
     case DELETE_TEXT_FILE_MSG:
       return tr("Are you sure you want to unload <b>%1</b>?");
     case WRONG_MODIFIER:
-      return tr("The Modifier '%1' format is invalid. The correct format is 'phi(start=1)'");
+      return tr("The Modifier <b>%1</b> format is invalid. The correct format is <b>phi(start=1)</b>");
     case SET_INFO_XML_FLAG:
       return tr("The operations were not generated. You must set the +d=infoXmlOperations flag. Enable it via %1 and simulate again.");
     case SET_INFO_XML_FLAG_MSG:

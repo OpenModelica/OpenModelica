@@ -113,7 +113,8 @@ Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString
   }
   createValueWidget(pOMCProxy, pComponentInfo->getClassName());
 
-  QString value, fixed, defaultFixed = "";
+  QString value = "";
+  QString fixed, defaultFixed = "false";
   bool defaultValue = true;
   bool defaultFixedValue = false;
   if (showStartAttribute) {
@@ -651,11 +652,9 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
     QString start, fixed, defaultFixed;
     bool defaultFixedValue;
     bool isParameter = (pComponentInfo->getVariablity().compare("parameter") == 0);
-    if (!isParameter) {
-      getStartAndFixedValues(pOMCProxy, &start, &fixed, &defaultFixed, &defaultFixedValue, className, componentBaseClassName,
-                             componentClassName, componentName, pComponentInfo);
-      showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
-    }
+    getStartAndFixedValues(pOMCProxy, &start, &fixed, &defaultFixed, &defaultFixedValue, className, componentBaseClassName,
+                           componentClassName, componentName, pComponentInfo);
+    showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
     /* get the dialog annotation */
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
     if (isParameter || (dialogAnnotation.size() > 0) || showStartAttribute) {
@@ -740,11 +739,9 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
     QString start, fixed, defaultFixed;
     bool defaultFixedValue;
     bool isParameter = (pComponentInfo->getVariablity().compare("parameter") == 0);
-    if (!isParameter) {
-      getStartAndFixedValues(pOMCProxy, &start, &fixed, &defaultFixed, &defaultFixedValue, className, componentBaseClassName,
-                             componentClassName, componentName, pComponentInfo);
-      showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
-    }
+    getStartAndFixedValues(pOMCProxy, &start, &fixed, &defaultFixed, &defaultFixedValue, className, componentBaseClassName,
+                           componentClassName, componentName, pComponentInfo);
+    showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
     /* get the dialog annotation */
     QString groupImage = "";
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
@@ -868,12 +865,12 @@ void ComponentParameters::updateComponentParameters()
   }
   // add modifiers
   if (!mpModifiersTextBox->text().isEmpty()) {
-    QString regexp ("([A-Za-z0-9]+)\\(([A-Za-z0-9]+)=([A-Za-z0-9]+)\\)$");
+    QString regexp ("\\s*([A-Za-z0-9]+\\s*)\\(\\s*([A-Za-z0-9]+)\\s*=\\s*([A-Za-z0-9]+)\\s*\\)$");
     QRegExp modifierRegExp (regexp);
     QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
     foreach (QString modifier, modifiers) {
       modifier = modifier.trimmed();
-      if (modifierRegExp.exactMatch(modifier.trimmed())) {
+      if (modifierRegExp.exactMatch(modifier)) {
         QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
         QString componentModifier = QString(mpComponent->getName()).append(".").append(modifier.mid(0, modifier.indexOf("(")));
         QString componentModifierValue = modifier.mid(modifier.indexOf("("));
