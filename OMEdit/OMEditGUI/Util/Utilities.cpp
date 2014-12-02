@@ -102,3 +102,71 @@ void Label::resizeEvent(QResizeEvent *event)
   }
   QLabel::resizeEvent(event);
 }
+
+FixedCheckBox::FixedCheckBox(QWidget *parent)
+ : QCheckBox(parent)
+{
+  setCheckable(false);
+  mDefaultValue = false;
+  mDefaultTickState = false;
+  mTickState = false;
+}
+
+void FixedCheckBox::setDefaultTickState(bool defaultValue, bool defaultTickState, bool tickState)
+{
+  mDefaultValue = defaultValue;
+  mDefaultTickState = defaultTickState;
+  mTickState = tickState;
+}
+
+void FixedCheckBox::setTickState(bool defaultValue, bool tickState)
+{
+  mDefaultValue = defaultValue;
+  if (mDefaultValue) {
+    mTickState = mDefaultTickState;
+  } else {
+    mTickState = tickState;
+  }
+}
+
+QString FixedCheckBox::tickState()
+{
+  if (mDefaultValue) {
+    return "";
+  } else if (mTickState) {
+    return "true";
+  } else {
+    return "false";
+  }
+}
+
+/*!
+  Reimplementation of QCheckBox::paintEvent.\n
+  Draws a custom checkbox suitable for fixed modifier.
+  */
+void FixedCheckBox::paintEvent(QPaintEvent *event)
+{
+  Q_UNUSED(event);
+  QStylePainter p(this);
+  QStyleOptionButton opt;
+  opt.initFrom(this);
+  if (mDefaultValue) {
+    p.setBrush(QColor(225, 225, 225));
+  } else {
+    p.setBrush(Qt::white);
+  }
+  p.drawRect(opt.rect.adjusted(0, 0, -1, -1));
+  // if is checked then draw a tick
+  if (mTickState) {
+    p.setRenderHint(QPainter::Antialiasing);
+    QPen pen = p.pen();
+    pen.setWidthF(1.5);
+    p.setPen(pen);
+    QVector<QPoint> lines;
+    lines << QPoint(opt.rect.left() + 3, opt.rect.center().y());
+    lines << QPoint(opt.rect.center().x() - 1, opt.rect.bottom() - 3);
+    lines << QPoint(opt.rect.center().x() - 1, opt.rect.bottom() - 3);
+    lines << QPoint(opt.rect.width() - 3, opt.rect.top() + 3);
+    p.drawLines(lines);
+  }
+}

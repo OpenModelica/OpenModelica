@@ -53,7 +53,7 @@ public:
   Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
             QString componentClassName, QString componentName, bool inheritedComponent, QString inheritedClassName, bool showStartAttribute);
   Label* getNameLabel() {return mpNameLabel;}
-  QCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
+  FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
   bool isShowStartAttribute() {return mshowStartAttribute;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
   ValueType getValueType() {return mValueType;}
@@ -62,13 +62,13 @@ public:
   QString getValue();
   Label* getUnitLabel() {return mpUnitLabel;}
   Label* getCommentLabel() {return mpCommentLabel;}
-  void setFixedState(QString fixed);
+  void setFixedState(bool defaultFixedValue, QString defaultFixed, QString fixed);
   QString getFixedState();
   QString getUnitFromDerivedClass(OMCProxy *pOMCProxy, QString className);
   void setEnabled(bool enable);
 private:
   Label *mpNameLabel;
-  QCheckBox *mpFixedCheckBox;
+  FixedCheckBox *mpFixedCheckBox;
   bool mshowStartAttribute;
   ValueType mValueType;
   QComboBox *mpValueComboBox;
@@ -121,7 +121,8 @@ public:
   ComponentParameters(Component *pComponent, MainWindow *pMainWindow);
   ~ComponentParameters();
   void setUpDialog();
-  void createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString componentClassName, QString componentBaseClassName = QString());
+  void createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName, QString componentClassName,
+                               QString componentName);
   void createParameters(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName, QString componentClassName,
                         QString componentName, bool inheritedComponent, QString inheritedClassName, bool isInheritedCycle = false);
   QList<Parameter*> getParametersList();
