@@ -5554,7 +5554,7 @@ algorithm
   end match;
 end removeMinMaxFoldableValues;
 
-public function simplifySkew 
+public function simplifySkew
   "Simplifies the skew operator."
   input list<DAE.Exp> v1;
   output list<list<DAE.Exp>> res;

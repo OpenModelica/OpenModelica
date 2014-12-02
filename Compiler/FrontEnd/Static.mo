@@ -5446,7 +5446,7 @@ algorithm
   else
     Error.addInternalError("Invalid type " + ty_str + " given to simplify", inInfo);
   end if;
-    
+
   crefs := Absyn.getCrefFromExp(e, true, false);
   symbol_table := absynCrefListToInteractiveVarList(crefs, GlobalScript.emptySymboltable, ty);
   env := GlobalScriptUtil.buildEnvFromSymboltable(symbol_table);
@@ -5500,7 +5500,7 @@ algorithm
   outExp := Expression.makePureBuiltinCall("noEvent", {outExp}, DAE.T_BOOL_DEFAULT);
 end elabBuiltinNoevent;
 
-protected function elabBuiltinEdge 
+protected function elabBuiltinEdge
   "This function handles the built in edge operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -5617,7 +5617,7 @@ algorithm
   if not Absyn.isCref(e) then
     pre_str := PrefixUtil.printPrefixStr3(inPrefix);
     Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_VARIABLE,
-      {"First", "change", pre_str}, inInfo); 
+      {"First", "change", pre_str}, inInfo);
   end if;
 
   (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv, e,
@@ -5660,7 +5660,7 @@ algorithm
   end if;
 end elabBuiltinChange;
 
-protected function elabBuiltinCat 
+protected function elabBuiltinCat
   "This function handles the built in cat operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -5700,7 +5700,7 @@ algorithm
     Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_INTEGER,
       {"First", "cat", pre_str}, inInfo);
   end if;
-    
+
   // Evaluate the first argument.
   (outCache, Values.INTEGER(dim_int), _) :=
     Ceval.ceval(inCache, inEnv, dim_exp, false, NONE(), Absyn.MSG(inInfo));
@@ -5714,7 +5714,7 @@ algorithm
   arr_tys := list(Types.getPropType(p) for p in arr_props);
   ty :: tys := list(Types.makeNthDimUnknown(t, dim_int) for t in arr_tys);
   result_ty := List.fold1(tys, Types.arraySuperType, inInfo, ty);
-  
+
   try
     (arr_expl, arr_tys) := Types.matchTypes(arr_expl, arr_tys, result_ty, false);
   else
@@ -5740,7 +5740,7 @@ algorithm
   outProperties := DAE.PROP(result_ty, c);
 end elabBuiltinCat;
 
-protected function elabBuiltinIdentity 
+protected function elabBuiltinIdentity
   "This function handles the built in identity operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -5977,7 +5977,7 @@ algorithm
     listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
 
   (scalar_ty, dims) := Types.flattenArrayTypeOpt(ty);
-  
+
   // Check that any known dimensions have size 1.
   for dim in dims loop
     if Expression.dimensionKnown(dim) and Expression.dimensionSize(dim) <> 1 then
@@ -6121,7 +6121,7 @@ algorithm
   outProperties := DAE.PROP(DAE.T_STRING_DEFAULT, DAE.C_CONST());
 end elabBuiltinGetInstanceName;
 
-protected function elabBuiltinVector 
+protected function elabBuiltinVector
   "This function handles the built in vector operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -6142,11 +6142,11 @@ algorithm
   checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "vector", inInfo);
 
   e := listHead(inPosArgs);
-  (outCache, outExp, outProperties as DAE.PROP(ty, c), _) := 
+  (outCache, outExp, outProperties as DAE.PROP(ty, c), _) :=
     elabExpInExpression(inCache, inEnv, e, inImplicit, NONE(), true, inPrefix, inInfo);
 
   // Scalar
-  if Types.isSimpleType(ty) then 
+  if Types.isSimpleType(ty) then
     // vector(scalar) = {scalar}
     arr_ty := Types.liftArray(ty, DAE.DIM_INTEGER(1));
     exp_ty := Types.simplifyType(arr_ty);
@@ -6207,7 +6207,7 @@ algorithm
     end if;
   end for;
 end checkBuiltinVectorDims;
-  
+
 protected function flattenArray
   input list<DAE.Exp> arr;
   output list<DAE.Exp> flattenedExpl;
@@ -6603,7 +6603,7 @@ algorithm
   end matchcontinue;
 end isBuiltinFunc;
 
-protected function elabCallBuiltin 
+protected function elabCallBuiltin
   "This function elaborates on builtin operators (such as \"pre\", \"der\" etc.),
    by calling the builtin handler to retrieve the correct function to call."
   input FCore.Cache inCache;
@@ -6641,8 +6641,8 @@ algorithm
         handler := elabBuiltinHandler(inFnName.name);
       then
         handler(inCache, inEnv, inPosArgs, inNamedArgs, inImplicit, inPrefix, inInfo);
-        
-    case Absyn.CREF_QUAL(name = "OpenModelicaInternal", componentRef = cr as Absyn.CREF_IDENT()) 
+
+    case Absyn.CREF_QUAL(name = "OpenModelicaInternal", componentRef = cr as Absyn.CREF_IDENT())
       algorithm
         handler := elabBuiltinHandlerInternal(cr.name);
       then
@@ -6650,7 +6650,7 @@ algorithm
 
     case Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "isRoot"))
       then elabBuiltinIsRoot(inCache, inEnv, inPosArgs, inNamedArgs, inImplicit, inPrefix, inInfo);
-      
+
     case Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "uniqueRootIndices"))
       algorithm
         Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRootIndices"}, inInfo);
@@ -6663,7 +6663,7 @@ algorithm
   end match;
 end elabCallBuiltin;
 
-protected function elabCall 
+protected function elabCall
   "This function elaborates on a function call.  It converts the name to a
    Absyn.Path, and used the Static.elabCallArgs to do the rest of the work."
   input FCore.Cache inCache;
@@ -6856,7 +6856,7 @@ algorithm
   end match;
 end absynExpListToDaeExpList;
 
-public function getOptionalNamedArg 
+public function getOptionalNamedArg
   "This function is used to 'elaborate' interactive functions optional parameters,
    e.g. simulate(A.b, startTime=1), startTime is an optional parameter."
   input FCore.Cache inCache;
@@ -6886,13 +6886,13 @@ algorithm
       outExp := Types.matchType(outExp, ty, inType, true);
       return;
     end if;
-  end for; 
+  end for;
 
   outCache := inCache;
   outExp := inDefaultExp;
 end getOptionalNamedArg;
 
-public function elabUntypedCref 
+public function elabUntypedCref
   "This function elaborates a ComponentRef without adding type information.
    Environment is passed along, such that constant subscripts can be elabed
    using existing functions."
@@ -6913,7 +6913,7 @@ algorithm
     case Absyn.CREF_IDENT()
       algorithm
         (outCache, subs) := elabSubscripts(inCache, inEnv, inCref.subscripts,
-          inImplicit, inPrefix, inInfo);  
+          inImplicit, inPrefix, inInfo);
       then
         ComponentReference.makeCrefIdent(inCref.name, DAE.T_UNKNOWN_DEFAULT, subs);
 
@@ -7035,7 +7035,7 @@ algorithm
   (outCache,outProperties) := elabCallArgsEvaluateArrayLength(outCache,inEnv,outProperties,inPrefix,info);
 end elabCallArgs;
 
-protected function elabCallArgsEvaluateArrayLength 
+protected function elabCallArgsEvaluateArrayLength
   "Evaluate array dimensions in the returned type. For a call f(n) we might get
    Integer[n] back, where n is a parameter expression.  We consider any such
    parameter structural since it decides the dimension of an array.  We fall
@@ -7520,7 +7520,7 @@ protected function inlineBuiltin
   input DAE.InlineType inlineType;
   output DAE.InlineType outInlineType;
 algorithm
-  outInlineType := match isBuiltin 
+  outInlineType := match isBuiltin
     case DAE.FUNCTION_BUILTIN_PTR() then DAE.BUILTIN_EARLY_INLINE();
     else inlineType;
   end match;
@@ -7897,7 +7897,7 @@ algorithm
     clOpt, printErrorMsg, FORCE_FUNCTION_INST());
 end instantiateDaeFunctionForceInst;
 
-protected function instantiateDaeFunction2 
+protected function instantiateDaeFunction2
   "Help function to elabCallArgs. Instantiates the function as a DAE and adds it
    to the functiontree of a newly created DAE."
   input FCore.Cache inCache;
@@ -8259,7 +8259,7 @@ public function isExternalObjectFunction
   output FCore.Cache outCache;
   output Boolean outIsExt;
 protected
-  list<SCode.Element> els; 
+  list<SCode.Element> els;
   String last_id;
 algorithm
   try
@@ -8270,7 +8270,7 @@ algorithm
   else
     last_id := Absyn.pathLastIdent(inPath);
     outCache := inCache;
-    outIsExt := last_id == "constructor" or last_id == "destructor"; 
+    outIsExt := last_id == "constructor" or last_id == "destructor";
   end try;
 end isExternalObjectFunction;
 
@@ -8514,15 +8514,15 @@ protected
   list<DAE.Dimension> dims;
 algorithm
   for e in inExpl loop
-    SLOT(dims = dims) :: rest_slots := rest_slots; 
-     
+    SLOT(dims = dims) :: rest_slots := rest_slots;
+
     if not listEmpty(dims) then
       // Foreach argument.
       e := Expression.makeASUB(e, {DAE.ICONST(inIndex)});
       e := ExpressionSimplify.simplify1(e);
     end if;
 
-    outExpl := e :: outExpl; 
+    outExpl := e :: outExpl;
   end for;
 
   outExpl := listReverse(outExpl);
@@ -8587,7 +8587,7 @@ protected
   list<Slot> slots;
   InstTypes.PolymorphicBindings pb;
   DAE.TypeSource ts;
-  Absyn.Path path; 
+  Absyn.Path path;
   Boolean success := false;
   list<DAE.Type> rest_tys := inTypes;
 algorithm
@@ -8614,7 +8614,7 @@ algorithm
       outFunctionType := DAE.T_FUNCTION(params, outResultType, func_attr, ts);
 
       // Only created when not checking types for error msg.
-      outFunctionType := createActualFunctype(outFunctionType, outSlots, inCheckTypes); 
+      outFunctionType := createActualFunctype(outFunctionType, outSlots, inCheckTypes);
       success := true;
     else
       // The type didn't match, try next function type.
@@ -8912,7 +8912,7 @@ algorithm
   for var in inVars loop
     dummy_var := SCode.setComponentName(inDummyVar, DAEUtil.typeVarIdent(var));
     outEnv := FGraph.mkComponentNode(outEnv, var, dummy_var, DAE.NOMOD(),
-      FCore.VAR_TYPED(), FGraph.empty()); 
+      FCore.VAR_TYPED(), FGraph.empty());
   end for;
 end makeDummyFuncEnv;
 
@@ -9422,7 +9422,7 @@ algorithm
   for slot in inSlots loop
     SLOT(defaultArg = DAE.FUNCARG(name = id, ty = ty)) := slot;
     vars := Expression.makeVar(id, Types.simplifyType(ty)) :: vars;
-  end for; 
+  end for;
 
   vars := listReverse(vars);
   outType := DAE.T_COMPLEX(complexClassType, vars, NONE(), DAE.emptyTypeSource);
@@ -9482,7 +9482,7 @@ algorithm
 
             (outCache, exp, DAE.PROP(ty, c), _) :=
               elabExpInExpression(outCache, inEnv, e, inImplicit, NONE(), true, inPrefix, inInfo);
-              
+
             (exp, _, outPolymorphicBindings) := Types.matchTypePolymorphic(exp,
               ty, defarg.ty, FGraph.getGraphPathNoImplicitScope(inEnv), outPolymorphicBindings, false);
 
@@ -9496,7 +9496,7 @@ algorithm
 
         else slot;
       end matchcontinue;
-    end if; 
+    end if;
 
     outSlots := slot :: outSlots;
   end for;
@@ -9625,10 +9625,10 @@ algorithm
       elabPositionalInputArg(outCache, inEnv, arg, farg, position, outSlots,
           inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
           inPolymorphicBindings, inST, inPrefix, inInfo, inPath);
-    
+
     position := position + 1;
     outConsts := c :: outConsts;
-  end for;  
+  end for;
 
   outConsts := listReverse(outConsts);
 end elabPositionalInputArgs;
