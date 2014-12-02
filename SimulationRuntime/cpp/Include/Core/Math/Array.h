@@ -169,8 +169,8 @@ public:
   }
   inline virtual const T& operator()(unsigned int index) const
   {
-   
-	  return _real_array[index - 1];
+
+    return _real_array[index - 1];
   }
 
   virtual std::vector<size_t> getDims() const

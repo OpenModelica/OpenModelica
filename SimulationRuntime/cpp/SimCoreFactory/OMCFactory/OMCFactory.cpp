@@ -64,9 +64,9 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      string modelica_lib_path;
      double starttime =  vm["start-time"].as<double>();
      double stoptime = vm["stop-time"].as<double>();
-	 double stepsize =vm["step-size"].as<double>();
-	 if (!(stepsize > 0.0))
-	  stepsize =  stoptime/vm["number-of-intervals"].as<int>();
+   double stepsize =vm["step-size"].as<double>();
+   if (!(stepsize > 0.0))
+    stepsize =  stoptime/vm["number-of-intervals"].as<int>();
      double tolerance =vm["tolerance"].as<double>();
      string solver =  vm["solver"].as<string>();
      string nonLinSolver =  vm["non-lin-solver"].as<string>();

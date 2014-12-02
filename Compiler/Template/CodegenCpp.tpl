@@ -96,7 +96,7 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
 
   private:
     <%initeqs%>
-    
+
     <%List.partition(vars.algVars, 100) |> ls hasindex idx => 'void initializeAlgVars_<%idx%>();';separator="\n"%>
     <%initExtVarsDecl(simCode, false)%>
     void initializeAlgVars();
@@ -3786,11 +3786,11 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    {
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode)%>
       _simTime = 0.0;
-      /*variable decls*/  
+      /*variable decls*/
       <%varDecls%>
       /*external vars decls*/
       initializeExternalVar();
-      
+
       /*initialize parameter*/
       initializeParameterVars();
       initializeIntParameterVars();
@@ -3929,8 +3929,8 @@ template functionCallExternalObjectConstructors(Text funcNamePrefix,ExtObjInfo e
 ::=
   match extObjInfo
   case EXTOBJINFO(__) then
-   
-    
+
+
     let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp))  hasindex idx=>
         let &preExp = buffer "" /*BUFD*/
         let &varDecls = buffer "" /*BUFD*/
@@ -11738,7 +11738,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
 
         saveAll();
     }
-    
+
     if(iter>100 && restart ){
      throw std::runtime_error("Number of event iteration steps exceeded at time: " + boost::lexical_cast<string>(_simTime) );}
      _callType = IContinuous::CONTINUOUS;
