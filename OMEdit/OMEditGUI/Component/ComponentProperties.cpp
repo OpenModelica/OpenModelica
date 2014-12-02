@@ -103,7 +103,8 @@ Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString
     mValueType = Parameter::Boolean;
   } else if (pOMCProxy->isBuiltinType(pComponentInfo->getClassName())) {
     mValueType = Parameter::Normal;
-  } else if (pOMCProxy->isWhat(StringHandler::Enumeration, pComponentInfo->getClassName())) {
+  } else if (pOMCProxy->isWhat(StringHandler::Enumeration, pComponentInfo->getClassName()) ||
+             pComponentInfo->getClassName().compare("StateSelect") == 0) {
     mValueType = Parameter::Enumeration;
   } else if (pOMCProxy->getBuiltinType(pComponentInfo->getClassName()).compare("Boolean") == 0) {
     mValueType = Parameter::Boolean;
@@ -290,9 +291,17 @@ void Parameter::createValueWidget(OMCProxy *pOMCProxy, QString className)
       mpValueComboBox = new QComboBox;
       mpValueComboBox->setEditable(true);
       mpValueComboBox->addItem("", "");
-      enumerationLiterals = pOMCProxy->getEnumerationLiterals(className);
-      for (i = 0 ; i < enumerationLiterals.size(); i++) {
-        mpValueComboBox->addItem(enumerationLiterals[i], className + "." + enumerationLiterals[i]);
+      if (className.compare("StateSelect") == 0) {
+        mpValueComboBox->addItem("never", className + ".never");
+        mpValueComboBox->addItem("avoid", className + ".avoid");
+        mpValueComboBox->addItem("default", className + ".default");
+        mpValueComboBox->addItem("prefer", className + ".prefer");
+        mpValueComboBox->addItem("always", className + ".always");
+      } else {
+        enumerationLiterals = pOMCProxy->getEnumerationLiterals(className);
+        for (i = 0 ; i < enumerationLiterals.size(); i++) {
+          mpValueComboBox->addItem(enumerationLiterals[i], className + "." + enumerationLiterals[i]);
+        }
       }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
