@@ -6970,6 +6970,7 @@ algorithm
       GlobalScript.CFunction(funcHandle = outFuncHandle, buildTime =
           outBuildTime, loadedFromFile = outFileName) := fn;
       outBoolean := true;
+      return;
     end if;
   end for;
 
