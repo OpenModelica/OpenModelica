@@ -438,7 +438,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
             delete _functions;
         <%hpcomDestructorExtension%>
     }
-    
+
     void <%className%>::deleteObjects()
     {
 
