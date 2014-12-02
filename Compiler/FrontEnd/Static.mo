@@ -9624,7 +9624,7 @@ algorithm
     (outCache, outSlots, c, outPolymorphicBindings) :=
       elabPositionalInputArg(outCache, inEnv, arg, farg, position, outSlots,
           inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
-          inPolymorphicBindings, inST, inPrefix, inInfo, inPath);
+          outPolymorphicBindings, inST, inPrefix, inInfo, inPath);
 
     position := position + 1;
     outConsts := c :: outConsts;
