@@ -745,7 +745,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
     /* get the dialog annotation */
     QString groupImage = "";
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
-    if ((pComponentInfo->getVariablity().compare("parameter") == 0) || (dialogAnnotation.size() > 0) || showStartAttribute) {
+    if (isParameter || (dialogAnnotation.size() > 0) || showStartAttribute) {
       if (dialogAnnotation.size() > 0) {
         // get the tab value
         tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));

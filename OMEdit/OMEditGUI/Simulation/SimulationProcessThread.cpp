@@ -166,8 +166,10 @@ void SimulationProcessThread::compilationProcessFinished(int exitCode, QProcess:
     }
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
     emit sendCompilationOutput(exitCodeStr, Qt::red);
+    emit sendCompilationFinished(exitCode, exitStatus);
   } else {
     emit sendCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
+    emit sendCompilationFinished(exitCode, exitStatus);
   }
 }
 
