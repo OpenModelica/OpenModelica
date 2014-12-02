@@ -345,7 +345,7 @@ preprocessing for solve1,
   list<DAE.Exp> lhsWithX, rhsWithX, lhsWithoutX, rhsWithoutX, eWithX, factorWithX, factorWithoutX;
   DAE.Exp lhsX, rhsX, lhsY, rhsY, x, y, N;
   DAE.ComponentRef cr;
-  DAE.Boolean con, new_x, expand := true;
+  DAE.Boolean con, new_x, collect := true;
   Integer iter;
 
  algorithm
@@ -388,20 +388,15 @@ preprocessing for solve1,
 
      end if;
 
-     if con then
+     if con and collect then
        (lhsX, lhsY) := preprocessingSolve5(x, inExp3, true);
-       (rhsX, rhsY) := preprocessingSolve5(y, inExp3, true);
+       (rhsX, rhsY) := preprocessingSolve5(y, inExp3, false);
        x := Expression.expSub(lhsX, rhsX);
        y := Expression.expSub(rhsY, lhsY);
-       expand := true;
-     elseif expand then
-       (lhsX, lhsY) := preprocessingSolve5(x, inExp3, expand);
-       (rhsX, rhsY) := preprocessingSolve5(y, inExp3, expand);
-       x := Expression.expSub(lhsX, rhsX);
-       y := Expression.expSub(rhsY, lhsY);
-       (x,_) := ExpressionSimplify.simplify1(x);
-       expand := con;
-       con := not con;
+       collect := true;
+     elseif collect then
+       collect := false;
+       con := true;
        iter := iter + 50;
      end if;
 
@@ -541,7 +536,7 @@ protected function preprocessingSolve3
 
  (r1)^f(a) = r2 => f(a)  = ln(r2)/ln(r1)
  f(a)^b = 0 => f(a) = 0
- f(a)^n = c => f(a) = c^(1/x)
+ f(a)^n = c => f(a) = c^(1/n)
  abs(x) = 0
  author: Vitalij Ruge
 "
@@ -623,8 +618,8 @@ protected function preprocessingSolve4
  helprer function for preprocessingSolve
 
  e.g.
-  sqrt(f(x)) + sqrt(g(x))) = 0 = f(x) + g(x)
-  exp(f(x)) + exp(g(x))) = 0 = f(x) + g(x)
+  sqrt(f(x)) - sqrt(g(x))) = 0 = f(x) - g(x)
+  exp(f(x)) - exp(g(x))) = 0 = f(x) - g(x)
 
  author: Vitalij Ruge
 "
@@ -648,36 +643,63 @@ algorithm
           // exp(f(x)) - exp(g(x)) = 0
           case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("exp"), expLst={e1}), op as DAE.SUB(tp),
                           DAE.CALL(path = Absyn.IDENT("exp"), expLst={e2})),DAE.RCONST(0.0),_)
-          equation
-            true = expHasCref(e1,inExp3);
-            true = expHasCref(e2,inExp3);
           then (e1, e2, true);
           // log(f(x)) - log(g(x)) = 0
           case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), op as DAE.SUB(tp),
                           DAE.CALL(path = Absyn.IDENT("log"), expLst={e2})),DAE.RCONST(0.0),_)
-          equation
-            true = expHasCref(e1,inExp3);
-            true = expHasCref(e2,inExp3);
+          then (e1, e2, true);
+          // log10(f(x)) - log10(g(x)) = 0
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), op as DAE.SUB(tp),
+                          DAE.CALL(path = Absyn.IDENT("log10"), expLst={e2})),DAE.RCONST(0.0),_)
+          then (e1, e2, true);
+          // sinh(f(x)) - sinh(g(x)) = 0
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}), op as DAE.SUB(tp),
+                          DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e2})),DAE.RCONST(0.0),_)
+          then (e1, e2, true);
+          // tanh(f(x)) - tanh(g(x)) = 0
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("tanh"), expLst={e1}), op as DAE.SUB(tp),
+                          DAE.CALL(path = Absyn.IDENT("tanh"), expLst={e2})),DAE.RCONST(0.0),_)
           then (e1, e2, true);
           // sqrt(f(x)) - sqrt(g(x)) = 0
           case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), op as DAE.SUB(tp),
                           DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e2})),DAE.RCONST(0.0),_)
-          equation
-            true = expHasCref(e1,inExp3);
-            true = expHasCref(e2,inExp3);
           then (e1, e2, true);
+
+          // sinh(f(x)) - cosh(g(x)) = 0
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}), op as DAE.SUB(tp),
+                          DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2})),DAE.RCONST(0.0),_)
+          equation
+          true = Expression.expEqual(e1,e2);
+          then (e1, inExp2, true);
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e1}), op as DAE.SUB(tp),
+                          DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e2})),DAE.RCONST(0.0),_)
+          equation
+          true = Expression.expEqual(e1,e2);
+          then (e1, inExp2, true);
+
+
+
+         // y*sinh(x) - z*cosh(x) = 0
+          case(DAE.BINARY(DAE.BINARY(e3,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1})), op as DAE.SUB(tp),
+                          DAE.BINARY(e4,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2}))),DAE.RCONST(0.0),_)
+          equation
+          true = Expression.expEqual(e1,e2);
+          e = Expression.makePureBuiltinCall("tanh",{e1},tp);
+          then (Expression.expMul(e3,e), e4, true);
+          case(DAE.BINARY(DAE.BINARY(e4,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2})), op as DAE.SUB(tp),
+                          DAE.BINARY(e3,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}))),DAE.RCONST(0.0),_)
+          equation
+          true = Expression.expEqual(e1,e2);
+          e = Expression.makePureBuiltinCall("tanh",{e1},tp);
+          then (Expression.expMul(e3,e), e4, true);
+
 
 
           // sqrt(x) - x = 0 -> x = x^2
           case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), op as DAE.SUB(tp),e2), DAE.RCONST(0.0),_)
-          equation
-            true = expHasCref(e1,inExp3);
-            true = expHasCref(e2,inExp3);
           then (e1, Expression.expPow(e2, DAE.RCONST(2.0)), true);
           case(DAE.BINARY(e2, op as DAE.SUB(tp),DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1})), DAE.RCONST(0.0),_)
           equation
-            true = expHasCref(e1,inExp3);
-            true = expHasCref(e2,inExp3);
           then (e1, Expression.expPow(e2, DAE.RCONST(2.0)), true);
 
           // f(x)^n - g(x)^n = 0 -> (f(x)/g(x))^n = 1
@@ -689,7 +711,6 @@ algorithm
             e = Expression.expPow(Expression.makeDiv(e1,e3),e2);
             (e_1, e_2, _) = preprocessingSolve3(e, Expression.makeConstOne(tp), inExp3);
           then (e_1, e_2, true);
-
 
 
           else (inExp1, inExp2, false);
