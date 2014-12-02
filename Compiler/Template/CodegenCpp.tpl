@@ -96,9 +96,9 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
 
   private:
     <%initeqs%>
-
+    
     <%List.partition(vars.algVars, 100) |> ls hasindex idx => 'void initializeAlgVars_<%idx%>();';separator="\n"%>
-
+    <%initExtVarsDecl(simCode, false)%>
     void initializeAlgVars();
     void initializeDiscreteAlgVars();
 
@@ -525,7 +525,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%GetIntialStatus(simCode)%>
    <%SetIntialStatus(simCode)%>
-
+    <%initExtVars(simCode, useFlatArrayNotation)%>
    <%init(simCode, useFlatArrayNotation)%>
    >>
 
@@ -3740,6 +3740,32 @@ template funStatement(Statement stmt, Text &varDecls /*BUFP*/,SimCode simCode,Bo
     "NOT IMPLEMENTED FUN STATEMENT"
 end funStatement;
 
+template initExtVars(SimCode simCode, Boolean useFlatArrayNotation)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__))  then
+    let externalvarfuncs = functionCallExternalObjectConstructors('<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeExternalVar',extObjInfo,simCode,useFlatArrayNotation)
+    let externalvarsfunccalls = functionCallExternalObjectConstructorsCall('<%lastIdentOfPath(modelInfo.name)%>Initialize','initializeExternalVar',extObjInfo,simCode,useFlatArrayNotation)
+    <<
+     <%externalvarfuncs%>
+     <%externalvarsfunccalls%>
+    >>
+ end match
+end initExtVars;
+
+template initExtVarsDecl(SimCode simCode, Boolean useFlatArrayNotation)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__))  then
+  let externalvarsdecl = functionCallExternalObjectConstructorsDecl('initializeExternalVar',extObjInfo,simCode,useFlatArrayNotation)
+   <<
+    <%externalvarsdecl%>
+    void initializeExternalVar();
+   >>
+ end match
+end initExtVarsDecl;
+
+
 template init(SimCode simCode, Boolean useFlatArrayNotation)
 ::=
 match simCode
@@ -3755,18 +3781,17 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initAlgloopvars = initAlgloopVars(listAppend(allEquations,initialEquations),simCode)
 
    let initialequations  = functionInitialEquations(initialEquations,simCode, useFlatArrayNotation)
-   let initextvars = functionCallExternalObjectConstructors(extObjInfo,simCode,useFlatArrayNotation)
-
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode)%>
       _simTime = 0.0;
-
+      /*variable decls*/  
       <%varDecls%>
-
-      <%initextvars%>
-
+      /*external vars decls*/
+      initializeExternalVar();
+      
+      /*initialize parameter*/
       initializeParameterVars();
       initializeIntParameterVars();
       initializeBoolParameterVars();
@@ -3899,37 +3924,71 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
 end init2;
 
 
-template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo,SimCode simCode,Boolean useFlatArrayNotation)
+template functionCallExternalObjectConstructors(Text funcNamePrefix,ExtObjInfo extObjInfo,SimCode simCode,Boolean useFlatArrayNotation)
+  "Generates function in simulation file."
+::=
+  match extObjInfo
+  case EXTOBJINFO(__) then
+   
+    
+    let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp))  hasindex idx=>
+        let &preExp = buffer "" /*BUFD*/
+        let &varDecls = buffer "" /*BUFD*/
+        let arg = daeExp(exp, contextOther, &preExp, &varDecls,simCode,useFlatArrayNotation)
+        /* Restore the memory state after each object has been initialized. Then we can
+         * initalize a really large number of external objects that play with strings :)
+         */
+        <<
+         void <%funcNamePrefix%>_<%idx%>()
+         {
+           <%varDecls%>
+           <%preExp%>
+           <%cref(var.name,useFlatArrayNotation)%> = <%arg%>;
+         }
+        >>
+      ;separator="\n")
+   ctorCalls
+  end match
+end functionCallExternalObjectConstructors;
+
+template functionCallExternalObjectConstructorsCall(Text classname,Text funcNamePrefix,ExtObjInfo extObjInfo,SimCode simCode,Boolean useFlatArrayNotation)
   "Generates function in simulation file."
 ::=
   match extObjInfo
   case EXTOBJINFO(__) then
     let &funDecls = buffer "" /*BUFD*/
     let &varDecls = buffer "" /*BUFD*/
-    let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp)) =>
-        let &preExp = buffer "" /*BUFD*/
-        let arg = daeExp(exp, contextOther, &preExp, &varDecls,simCode,useFlatArrayNotation)
-        /* Restore the memory state after each object has been initialized. Then we can
-         * initalize a really large number of external objects that play with strings :)
-         */
+    let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp))  hasindex idx=>
         <<
-        <%preExp%>
-        <%cref(var.name,useFlatArrayNotation)%> = <%arg%>;
+         <%funcNamePrefix%>_<%idx%>();
         >>
       ;separator="\n")
-
-    <<
-
-      <%varDecls%>
-
-
-      <%ctorCalls%>
-      <%aliases |> (var1, var2) => '<%cref(var1,useFlatArrayNotation)%> = <%cref(var2,useFlatArrayNotation)%>;' ;separator="\n"%>
-
-
-    >>
+   <<
+    void <%classname%>::<%funcNamePrefix%>()
+    {
+       <%ctorCalls%>
+       <%aliases |> (var1, var2) => '<%cref(var1,useFlatArrayNotation)%> = <%cref(var2,useFlatArrayNotation)%>;' ;separator="\n"%>
+    }
+   >>
   end match
-end functionCallExternalObjectConstructors;
+end functionCallExternalObjectConstructorsCall;
+
+
+template functionCallExternalObjectConstructorsDecl(Text funcNamePrefix,ExtObjInfo extObjInfo,SimCode simCode,Boolean useFlatArrayNotation)
+  "Generates function in simulation file."
+::=
+  match extObjInfo
+  case EXTOBJINFO(__) then
+    let &funDecls = buffer "" /*BUFD*/
+    let &varDecls = buffer "" /*BUFD*/
+    let ctorCallsDecl = (vars |> var as SIMVAR(initialValue=SOME(exp))  hasindex idx=>
+        <<
+         void <%funcNamePrefix%>_<%idx%>();
+        >>
+      ;separator="\n")
+   ctorCallsDecl
+  end match
+end functionCallExternalObjectConstructorsDecl;
 
 
 template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode simCode, Boolean useFlatArrayNotation)
@@ -11346,7 +11405,7 @@ template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context co
         '((<%estr%><%
           dimrest |> dim =>
           match dim
-          case DIM_INTEGER(__) then '-1)*<%integer%>'
+          case DIM_INTEGER(__) then ')*<%integer%>'
           case DIM_BOOLEAN(__) then '*2'
           case DIM_ENUM(__) then '*<%size%>'
           else error(sourceInfo(),"Non-constant dimension in simulation context")
@@ -11679,7 +11738,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
 
         saveAll();
     }
-
+    
     if(iter>100 && restart ){
      throw std::runtime_error("Number of event iteration steps exceeded at time: " + boost::lexical_cast<string>(_simTime) );}
      _callType = IContinuous::CONTINUOUS;

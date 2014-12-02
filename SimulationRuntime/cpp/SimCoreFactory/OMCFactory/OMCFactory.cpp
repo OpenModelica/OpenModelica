@@ -44,7 +44,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("config-path,c", po::value< string >(),  "path to xml files")
           ("start-time,s", po::value< double >()->default_value(0.0),  "simulation start time")
           ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
-          ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
+          ("step-size,f", po::value< double >()->default_value(0.0),  "simulation step size")
           ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
           ("lin-solver,L", po::value< string >()->default_value("kinsol"),  "linear solver method")
           ("non-lin-solver,N", po::value< string >()->default_value("kinsol"),  "non linear solver method")
@@ -64,8 +64,9 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      string modelica_lib_path;
      double starttime =  vm["start-time"].as<double>();
      double stoptime = vm["stop-time"].as<double>();
-
-     double stepsize =  stoptime/vm["number-of-intervals"].as<int>();
+	 double stepsize =vm["step-size"].as<double>();
+	 if (!(stepsize > 0.0))
+	  stepsize =  stoptime/vm["number-of-intervals"].as<int>();
      double tolerance =vm["tolerance"].as<double>();
      string solver =  vm["solver"].as<string>();
      string nonLinSolver =  vm["non-lin-solver"].as<string>();
