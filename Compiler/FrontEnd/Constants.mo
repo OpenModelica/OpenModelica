@@ -413,9 +413,9 @@ end OnMouseDownEditString;
 //
 record Dialog
    parameter String tab = \"General\";
-   parameter String group = \"Parameters\";
+   parameter String group = \"\";
    parameter Boolean enable = true;
-   parameter Boolean showStartAttribute = false;
+   parameter Boolean showStartAttribute;
    parameter Boolean colorSelector = false;
    parameter Selector loadSelector;
    parameter Selector saveSelector;
