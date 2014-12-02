@@ -1211,7 +1211,7 @@ public function crefIsIdent
   output Boolean res;
 algorithm
   res := match(cr)
-    case(DAE.CREF_IDENT(_,_,_)) then true;
+    case DAE.CREF_IDENT() then true;
     else false;
   end match;
 end crefIsIdent;
@@ -1223,7 +1223,7 @@ public function crefIsNotIdent
   output Boolean res;
 algorithm
   res := match(cr)
-    case(DAE.CREF_IDENT(_,_,_)) then false;
+    case DAE.CREF_IDENT() then false;
     else true;
   end match;
 end crefIsNotIdent;

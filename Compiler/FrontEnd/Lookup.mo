@@ -1604,10 +1604,9 @@ algorithm
       then
         (cache,res);
 
-    // Check for special builtin operators that can not be represented in environment like for instance cardinality
-    case (cache,env,Absyn.IDENT(name = str),_)
+    // Check for cardinality that can not be represented in the environment.
+    case (cache,env,Absyn.IDENT(name = str as "cardinality"),_)
       equation
-        _ = Static.elabBuiltinHandlerGeneric(str);
         env = FGraph.topScope(env);
         res = createGenericBuiltinFunctions(env, str);
       then

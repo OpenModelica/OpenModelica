@@ -1023,7 +1023,7 @@ algorithm
     case (e as DAE.CALL(path = Absyn.IDENT("cross"), expLst = expl))
       equation
         {DAE.ARRAY(array = v1),DAE.ARRAY(array = v2)} = expl;
-        expl = Static.elabBuiltinCross2(v1, v2);
+        expl = simplifyCross(v1, v2);
         tp = Expression.typeof(e);
         // Since there is a bug somewhere in simplify that gives wrong types for arrays we take the type from cross.
         scalar = not Expression.isArrayType(Expression.unliftArray(tp));
@@ -1032,7 +1032,7 @@ algorithm
 
     case (e as DAE.CALL(path = Absyn.IDENT("skew"), expLst = {DAE.ARRAY(array = v1)}))
       equation
-        mexpl = Static.elabBuiltinSkew2(v1);
+        mexpl = simplifySkew(v1);
         tp = Expression.typeof(e);
       then DAE.MATRIX(tp, 3, mexpl);
 
@@ -5553,6 +5553,38 @@ algorithm
     else true;
   end match;
 end removeMinMaxFoldableValues;
+
+public function simplifySkew 
+  "Simplifies the skew operator."
+  input list<DAE.Exp> v1;
+  output list<list<DAE.Exp>> res;
+protected
+  DAE.Exp x1, x2, x3, zero;
+algorithm
+  {x1, x2, x3} := v1;
+  zero := Expression.makeConstZero(Expression.typeof(x1));
+
+  res := {{zero, Expression.negate(x3), x2},
+          {x3, zero, Expression.negate(x1)},
+          {Expression.negate(x2), x1, zero}};
+end simplifySkew;
+
+public function simplifyCross
+  "Simplifies the cross operator."
+  input list<DAE.Exp> v1;
+  input list<DAE.Exp> v2;
+  output list<DAE.Exp> res;
+protected
+  DAE.Exp x1, x2, x3, y1, y2, y3;
+algorithm
+  {x1, x2, x3} := v1;
+  {y1, y2, y3} := v2;
+
+  // res = {x[2]*y[3] - x[3]*y[2], x[3]*y[1] - x[1]*y[3], x[1]*y[2] - x[2]*y[1]}
+  res := {Expression.makeDiff(Expression.makeProduct(x2, y3), Expression.makeProduct(x3, y2)),
+          Expression.makeDiff(Expression.makeProduct(x3, y1), Expression.makeProduct(x1, y3)),
+          Expression.makeDiff(Expression.makeProduct(x1, y2), Expression.makeProduct(x2, y1))};
+end simplifyCross;
 
 annotation(__OpenModelica_Interface="frontend");
 end ExpressionSimplify;

@@ -692,7 +692,7 @@ public constant Message WARNING_RELATION_ON_REAL = MESSAGE(509, TRANSLATION(), W
 public constant Message OUTER_MODIFICATION = MESSAGE(512, TRANSLATION(), WARNING(),
   Util.gettext("Ignoring the modification on outer element: %s."));
 public constant Message DERIVATIVE_NON_REAL = MESSAGE(514, TRANSLATION(), ERROR(),
-  Util.gettext("Illegal derivative. der(%s) in component %s is of type %s, which is not a subtype of Real."));
+  Util.gettext("Argument '%s' to der has illegal type %s, must be a subtype of Real."));
 public constant Message UNUSED_MODIFIER = MESSAGE(515, TRANSLATION(), ERROR(),
   Util.gettext("In modifier %s."));
 public constant Message MULTIPLE_MODIFIER = MESSAGE(516, TRANSLATION(), ERROR(),

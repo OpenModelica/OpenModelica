@@ -76,6 +76,10 @@ public import Prefix;
 public import Util;
 
 protected
+constant Integer SLOT_NOT_EVALUATED = 0;
+constant Integer SLOT_EVALUATING = 1;
+constant Integer SLOT_EVALUATED = 2;
+
 uniontype Slot
   record SLOT
     DAE.FuncArg defaultArg "The slots default argument.";
@@ -83,6 +87,7 @@ uniontype Slot
     Option<DAE.Exp> arg "The argument for the slot given by the function call.";
     DAE.Dimensions dims "The dimensions of the slot.";
     Integer idx "The index of the slot, 1 = first slot etc.";
+    Integer evalStatus;
   end SLOT;
 end Slot;
 
@@ -2737,9 +2742,7 @@ protected
   DAE.Type ty;
   Absyn.Exp e;
 algorithm
-  if listLength(inPosArgs) <> 1 or not listEmpty(inNamedArgs) then
-    printBuiltinFnArgError("cardinality", "", inPosArgs, inNamedArgs, inPrefix, inInfo);
-  end if;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "cardinality", inInfo);
 
   {e} := inPosArgs;
   (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv, e,
@@ -3645,9 +3648,7 @@ protected
   Boolean sc;
   String exp_str, pre_str;
 algorithm
-  if listLength(inPosArgs) <> 1 or not listEmpty(inNamedArgs) then
-    printBuiltinFnArgError("pre", "", inPosArgs, inNamedArgs, inPrefix, inInfo);
-  end if;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "pre", inInfo);
 
   (outCache, exp, DAE.PROP(ty, c), _) := elabExpInExpression(inCache, inEnv,
     listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
@@ -5418,53 +5419,40 @@ protected function elabBuiltinSimplify "This function elaborates the simplify fu
   This function is only for testing ExpressionSimplify.simplify"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  Absyn.Exp e;
+  String ty_str;
+  list<Absyn.ComponentRef> crefs;
+  GlobalScript.SymbolTable symbol_table;
+  FCore.Graph env;
+  DAE.Type ty;
 algorithm
-  (outCache,outExp,outProperties):=
-  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      list<Absyn.ComponentRef> cref_list;
-      GlobalScript.SymbolTable symbol_table;
-      FCore.Graph gen_env,env;
-      DAE.Exp s1_1;
-      DAE.Properties st;
-      Absyn.Exp s1;
-      Boolean impl;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-    case (cache,_,{s1,Absyn.STRING(value = "Real")},_,impl,pre,_) /* impl */
-      equation
-        cref_list = Absyn.getCrefFromExp(s1,true,false);
-        symbol_table = absynCrefListToInteractiveVarList(cref_list, GlobalScript.emptySymboltable,
-          DAE.T_REAL_DEFAULT);
-        (gen_env,_) = GlobalScriptUtil.buildEnvFromSymboltable(symbol_table);
-        (cache,s1_1,st,_) = elabExpInExpression(cache,gen_env, s1, impl,NONE(),true,pre,info);
-        s1_1 = Expression.makePureBuiltinCall("simplify", {s1_1}, DAE.T_REAL_DEFAULT);
-      then
-        (cache, s1_1, st);
-    case (cache,_,{s1,Absyn.STRING(value = "Integer")},_,impl,pre,_)
-      equation
-        cref_list = Absyn.getCrefFromExp(s1,true,false);
-        symbol_table = absynCrefListToInteractiveVarList(cref_list, GlobalScript.emptySymboltable,
-          DAE.T_INTEGER_DEFAULT);
-        (gen_env,_) = GlobalScriptUtil.buildEnvFromSymboltable(symbol_table);
-        (cache,s1_1,st,_) = elabExpInExpression(cache,gen_env, s1, impl,NONE(),true,pre,info);
-        s1_1 = Expression.makePureBuiltinCall("simplify", {s1_1}, DAE.T_INTEGER_DEFAULT);
-      then
-        (cache, s1_1, st);
-    else
-      equation
-        // print("#-- elab_builtin_simplify: Couldn't elaborate simplify()\n");
-      then
-        fail();
-  end match;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 2, "simplify", inInfo);
+
+  {e, Absyn.STRING(value = ty_str)} := inPosArgs;
+
+  if ty_str == "Real" then
+    ty := DAE.T_REAL_DEFAULT;
+  elseif ty_str == "Integer" then
+    ty := DAE.T_INTEGER_DEFAULT;
+  else
+    Error.addInternalError("Invalid type " + ty_str + " given to simplify", inInfo);
+  end if;
+    
+  crefs := Absyn.getCrefFromExp(e, true, false);
+  symbol_table := absynCrefListToInteractiveVarList(crefs, GlobalScript.emptySymboltable, ty);
+  env := GlobalScriptUtil.buildEnvFromSymboltable(symbol_table);
+  (outCache, outExp, outProperties) := elabExpInExpression(inCache, env, e,
+      inImplicit, NONE(), true, inPrefix, inInfo);
+  outExp := Expression.makePureBuiltinCall("simplify", {outExp}, ty);
 end elabBuiltinSimplify;
 
 protected function absynCrefListToInteractiveVarList "
@@ -5473,499 +5461,342 @@ protected function absynCrefListToInteractiveVarList "
   This is used when calling differentiate, etc., to be able to evaluate
   a variable and still get the variable name.
 "
-  input list<Absyn.ComponentRef> inAbsynComponentRefLst;
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  input list<Absyn.ComponentRef> inCrefs;
+  input GlobalScript.SymbolTable inST;
   input DAE.Type inType;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outST := inST;
+protected
+  String path_str;
 algorithm
-  outInteractiveSymbolTable:=
-  matchcontinue (inAbsynComponentRefLst,inInteractiveSymbolTable,inType)
-    local
-      GlobalScript.SymbolTable symbol_table,symbol_table_1,symbol_table_2;
-      Absyn.Path path;
-      String path_str;
-      Absyn.ComponentRef cr;
-      list<Absyn.ComponentRef> rest;
-      DAE.Type tp;
-    case ({},symbol_table,_) then symbol_table;
-    case ((cr :: rest),symbol_table,tp)
-      equation
-        path = Absyn.crefToPath(cr);
-        path_str = Absyn.pathString(path);
-        symbol_table_1 = GlobalScriptUtil.addVarToSymboltable(
-          DAE.CREF_IDENT(path_str, tp, {}),
-          Values.CODE(Absyn.C_VARIABLENAME(cr)), FGraph.empty(), symbol_table);
-        symbol_table_2 = absynCrefListToInteractiveVarList(rest, symbol_table_1, tp);
-      then
-        symbol_table_2;
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("-absyn_cref_list_to_interactive_var_list failed\n");
-      then
-        fail();
-  end matchcontinue;
+  for cr in inCrefs loop
+    path_str := Absyn.pathString(Absyn.crefToPath(cr));
+    outST := GlobalScriptUtil.addVarToSymboltable(
+      DAE.CREF_IDENT(path_str, inType, {}),
+      Values.CODE(Absyn.C_VARIABLENAME(cr)), FGraph.empty(), outST);
+  end for;
 end absynCrefListToInteractiveVarList;
 
-protected function elabBuiltinNoevent "
-  The builtin operator noevent makes sure that events are not generated
-  for the expression.
-"
+protected function elabBuiltinNoevent
+  "The builtin operator noEvent makes sure that events are not generated for the
+   expression."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  Absyn.Exp e;
 algorithm
-  (outCache,outExp,outProperties):=
-  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp exp_1;
-      DAE.Properties prop;
-      FCore.Graph env;
-      Absyn.Exp exp;
-      Boolean impl;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-    case (cache,env,{exp},_,impl,pre,_)
-      equation
-        (cache,exp_1,prop,_) = elabExpInExpression(cache,env, exp, impl,NONE(),true,pre,info);
-        exp_1 = Expression.makePureBuiltinCall("noEvent", {exp_1}, DAE.T_BOOL_DEFAULT);
-      then
-        (cache, exp_1, prop);
-  end match;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "noEvent", inInfo);
+
+  e := listHead(inPosArgs);
+  (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv, e,
+      inImplicit, NONE(), true, inPrefix, inInfo);
+  outExp := Expression.makePureBuiltinCall("noEvent", {outExp}, DAE.T_BOOL_DEFAULT);
 end elabBuiltinNoevent;
 
-protected function elabBuiltinEdge "
-  This function handles the built in edge operator. If the operand is
-  constant edge is always false.
-"
+protected function elabBuiltinEdge 
+  "This function handles the built in edge operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  DAE.Type ty;
+  DAE.Const c;
+  String msg;
 algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp exp_1,exp_2;
-      FCore.Graph env;
-      Absyn.Exp exp;
-      Boolean impl;
-      DAE.Const c;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      String ps;
-    case (cache,env,{exp},_,impl,pre,_) /* Constness: C_VAR */
-      equation
-        (cache,exp_1,DAE.PROP(DAE.T_BOOL(),DAE.C_VAR()),_) = elabExpInExpression(cache, env, exp, impl,NONE(),true,pre,info);
-        exp_2 = Expression.makePureBuiltinCall("edge", {exp_1}, DAE.T_BOOL_DEFAULT);
-      then
-        (cache, exp_2, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "edge", inInfo);
 
-    case (cache,env,{exp},_,impl,pre,_)
-      equation
-        (cache,_,DAE.PROP(DAE.T_BOOL(),c),_) = elabExpInExpression(cache, env, exp, impl,NONE(),true,pre,info);
-        exp_2 = ValuesUtil.valueExp(Values.BOOL(false));
-      then
-        (cache,exp_2,DAE.PROP(DAE.T_BOOL_DEFAULT,c));
-    case (_,_,_,_,_,pre,_)
-      equation
-        ps = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {"edge",ps}, info);
-      then
-        fail();
-  end matchcontinue;
+  (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv,
+      listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
+  DAE.PROP(ty, c) := outProperties;
+
+  // Print an error if the argument is not a Boolean.
+  if not Types.isScalarBoolean(ty) then
+    msg := "edge(" + ExpressionDump.printExpStr(outExp) + ")";
+    Error.addSourceMessageAndFail(Error.TYPE_ERROR, {msg}, inInfo);
+  end if;
+
+  // If the argument is a variable, make a call to edge. Otherwise the
+  // expression is false.
+  if Types.isVar(c) then
+    outExp := Expression.makePureBuiltinCall("edge", {outExp}, DAE.T_BOOL_DEFAULT);
+  else
+    outExp := DAE.BCONST(false);
+  end if;
 end elabBuiltinEdge;
 
 protected function elabBuiltinDer
-"This function handles the built in der operator."
+  "This function handles the built in der operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  DAE.Type ty;
+  DAE.Const c;
+  list<DAE.Dimension> dims;
+  String exp_str, ty_str;
 algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp e,ee1;
-      DAE.Properties prop;
-      FCore.Graph env;
-      Absyn.Exp exp;
-      Boolean impl;
-      DAE.Const c;
-      list<String> lst;
-      String s,sp,es3;
-      list<Absyn.Exp> expl;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      DAE.Type ety,ty,elem_ty;
-      DAE.Dimensions dims;
-      DAE.Type expty;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "der", inInfo);
 
-    // Replace der of constant Real, Integer or array of Real/Integer by zero(s)
-    case (cache,env,{exp},_,impl,pre,_)
-      equation
-        (_,_,DAE.PROP(ety,c),_) = elabExpInExpression(cache, env, exp, impl,NONE(),false,pre,info);
-        failure(equality(c=DAE.C_VAR()));
-        dims = Types.getRealOrIntegerDimensions(ety);
-        (e,ty) = Expression.makeZeroExpression(dims);
-      then
-        (cache,e,DAE.PROP(ty,DAE.C_CONST()));
+  (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv,
+      listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
+  DAE.PROP(ty, c) := outProperties;
 
-    // use elab_call_args to also try vectorized calls
-    case (cache,env,{exp},_,impl,pre,_)
-      equation
-        (_,_,DAE.PROP(ety,_),_) = elabExpInExpression(cache, env, exp, impl,NONE(),true,pre,info);
-        true = Types.dimensionsKnown(ety);
-        ety = Types.arrayElementType(ety);
-        true = Types.isRealOrSubTypeReal(ety);
-        (cache,e,(prop as DAE.PROP(_,_))) = elabCallArgs(cache, env, Absyn.IDENT("der"), {exp}, {}, impl, NONE(), pre, info);
-      then
-        (cache,e,prop);
+  // Make sure the argument's type is a subtype of Real.
+  if not Types.isRealOrSubTypeReal(Types.arrayElementType(ty)) then
+    exp_str := Dump.printExpStr(listHead(inPosArgs));
+    ty_str := Types.unparseTypeNoAttr(ty);
+    Error.addSourceMessageAndFail(Error.DERIVATIVE_NON_REAL,
+      {exp_str, ty_str}, inInfo);
+  end if;
 
-    case (cache, env, {exp}, _, impl, pre,_)
-      equation
-        (cache, e, DAE.PROP(ety, c), _) = elabExpInExpression(cache, env, exp, impl,NONE(), false, pre, info);
-        elem_ty = Types.arrayElementType(ety);
-        true = Types.isRealOrSubTypeReal(elem_ty);
-        expty = Types.simplifyType(ety);
-        e = Expression.makePureBuiltinCall("der", {e}, expty);
-      then
-        (cache, e, DAE.PROP(ety, c));
-
-    case (cache,env,{exp},_,impl,pre,_)
-      equation
-        (_,_,DAE.PROP(ety,_),_) = elabExpInExpression(cache,env, exp, impl,NONE(),false,pre,info);
-        false = Types.isRealOrSubTypeReal(ety);
-        s = Dump.printExpStr(exp);
-        sp = PrefixUtil.printPrefixStr3(pre);
-        es3 = Types.unparseType(ety);
-        Error.addSourceMessage(Error.DERIVATIVE_NON_REAL, {s,sp,es3}, info);
-      then
-        fail();
-    case (_,_,expl,_,_,pre,_)
-      equation
-        lst = List.map(expl, Dump.printExpStr);
-        s = stringDelimitList(lst, ", ");
-        sp = PrefixUtil.printPrefixStr3(pre);
-        s = stringAppendList({"der(",s,")"});
-        Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,sp}, info);
-      then fail();
-  end matchcontinue;
+  if Types.isVar(c) then
+    if Types.dimensionsKnown(ty) then
+      // Use elabCallArgs to handle vectorization if possible.
+      (outCache, outExp, outProperties) := elabCallArgs(inCache, inEnv,
+          Absyn.IDENT("der"), inPosArgs, {}, inImplicit, NONE(), inPrefix, inInfo);
+    else
+      // Otherwise just create a call to der.
+      outExp := Expression.makePureBuiltinCall("der", {outExp},
+          Types.simplifyType(ty));
+    end if;
+  else
+    // der(constant) = 0.
+    dims := Types.getDimensions(ty);
+    (outExp, ty) := Expression.makeZeroExpression(dims);
+    outProperties := DAE.PROP(ty, DAE.C_CONST());
+  end if;
 end elabBuiltinDer;
 
-protected function elabBuiltinChange "author: PA
-
-  This function handles the built in change operator.
-"
+protected function elabBuiltinChange
+  "This function handles the built in change operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  Absyn.Exp e;
+  String pre_str;
+  DAE.Type ty;
+  DAE.Const c;
+  DAE.Attributes attr;
+  DAE.ComponentRef cref;
+  SCode.Variability var;
 algorithm
-  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp exp;
-      DAE.ComponentRef cr_1;
-      DAE.Const c;
-      DAE.Type tp1;
-      FCore.Graph env;
-      Absyn.ComponentRef cr;
-      Boolean impl;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      String sp;
-      DAE.Properties prop;
-      Absyn.Exp aexp;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "change", inInfo);
 
-    case (cache,env,{aexp as Absyn.CREF(componentRef = cr)},{},impl,pre,_) /* simple type, constant variability */
-      equation
-        (cache,exp,prop,_) = elabExpInExpression(cache,env,aexp,impl,NONE(),true,pre,info);
-        (cache,exp,prop) = elabBuiltinChange2(cache,env,cr,exp,prop,pre,info);
-      then (cache, exp, prop);
+  e := listHead(inPosArgs);
 
+  // Check that the argument is a variable (i.e. a component reference).
+  if not Absyn.isCref(e) then
+    pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+    Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_VARIABLE,
+      {"First", "change", pre_str}, inInfo); 
+  end if;
+
+  (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv, e,
+      inImplicit, NONE(), true, inPrefix, inInfo);
+  DAE.PROP(ty, c) := outProperties;
+
+  if Types.isSimpleType(ty) then
+    if Types.isParameterOrConstant(c) then
+      // change(constant) = false
+      outExp := DAE.BCONST(false);
+      outProperties := DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_CONST());
+    elseif Types.isDiscreteType(ty) then
+      // If the argument is discrete, make a call to change.
+      outExp := Expression.makePureBuiltinCall("change", {outExp}, DAE.T_BOOL_DEFAULT);
+      outProperties := DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR());
     else
-      equation
-        sp = PrefixUtil.printPrefixStr3(inPrefix);
-        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE, {"First","change", sp}, info);
-      then fail();
-  end match;
+      // Workaround for discrete Reals. Does not handle Reals that become
+      // discrete due to when-section.
+      cref := Expression.getCrefFromCrefOrAsub(outExp);
+      // Look up the component's variability.
+      (outCache, attr) := Lookup.lookupVar(outCache, inEnv, cref);
+      DAE.ATTR(variability = var) := attr;
+
+      if valueEq(var, SCode.DISCRETE()) then
+        // If it's discrete, make a call to change.
+        outExp := Expression.makePureBuiltinCall("change", {outExp}, DAE.T_BOOL_DEFAULT);
+        outProperties := DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR());
+      else
+        // Otherwise, print an error and fail.
+        pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+        Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_DISCRETE_VAR,
+          {"First", "change", pre_str}, inInfo);
+      end if;
+    end if;
+  else
+    // If the argument does not have a simple type, print an error and fail.
+    pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+    Error.addSourceMessageAndFail(Error.TYPE_MUST_BE_SIMPLE,
+      {"operand to change", pre_str}, inInfo);
+  end if;
 end elabBuiltinChange;
 
-protected function elabBuiltinChange2 "author: PA
-
-  This function handles the built in change operator.
-"
+protected function elabBuiltinCat 
+  "This function handles the built in cat operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Absyn.ComponentRef cr;
-  input DAE.Exp inExp;
-  input DAE.Properties prop;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  DAE.Exp dim_exp;
+  DAE.Properties dim_props;
+  DAE.Type dim_ty, ty, result_ty;
+  DAE.Const dim_c, arr_c, c;
+  String pre_str, exp_str;
+  Integer dim_int;
+  list<DAE.Exp> arr_expl;
+  list<DAE.Properties> arr_props;
+  list<DAE.Type> arr_tys, tys;
+  list<DAE.Dimension> dims;
+  DAE.Dimension dim;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,cr,inExp,prop,inPrefix,info)
-    local
-      DAE.Exp exp_1;
-      DAE.ComponentRef cr_1;
-      DAE.Const c;
-      DAE.Type tp1,tp2;
-      FCore.Graph env;
-      Absyn.Exp exp;
-      Boolean impl;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      String sp;
-      DAE.Dimensions dims;
+  if listLength(inPosArgs) < 2 or not listEmpty(inNamedArgs) then
+    Error.addSourceMessageAndFail(Error.WRONG_NO_OF_ARGS, {"cat"}, inInfo);
+  end if;
 
-    case (cache,_,_,_,DAE.PROP(tp1,c),_,_)
-      equation
-        Types.simpleType(tp1);
-        true = Types.isParameterOrConstant(c);
-      then (cache, DAE.BCONST(false), DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
+  // Elaborate the first argument, the dimension to concatenate along.
+  (outCache, dim_exp, dim_props) := elabExpInExpression(inCache, inEnv,
+      listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
+  DAE.PROP(dim_ty, dim_c) := dim_props;
 
-    case (cache,_,_,exp_1,DAE.PROP(tp1,_),_,_)
-      equation
-        Types.simpleType(tp1);
-        Types.discreteType(tp1);
-        exp_1 = Expression.makePureBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
-      then
-        (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
+  // The first argument must be an integer.
+  if not Types.isScalarInteger(dim_ty) then
+    pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+    Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_INTEGER,
+      {"First", "cat", pre_str}, inInfo);
+  end if;
+    
+  // Evaluate the first argument.
+  (outCache, Values.INTEGER(dim_int), _) :=
+    Ceval.ceval(inCache, inEnv, dim_exp, false, NONE(), Absyn.MSG(inInfo));
 
-    case (cache,env,_,exp_1,DAE.PROP(tp1,_),_,_) /* workaround for discrete Reals; does not handle Reals that become discrete due to when-section */
-      equation
-        Types.simpleType(tp1);
-        failure(Types.discreteType(tp1));
-        cr_1 = Expression.getCrefFromCrefOrAsub(exp_1);
-        (cache,DAE.ATTR(variability = SCode.DISCRETE()),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
-        exp_1 = Expression.makePureBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
-      then
-        (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
+  // Elaborate the rest of the arguments, the arrays to concatenate.
+  (outCache, arr_expl, arr_props) := elabExpList(outCache, inEnv,
+      listRest(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
 
-    case (cache,env,_,exp_1,DAE.PROP(tp1,_),pre,_)
-      equation
-        cr_1 = Expression.getCrefFromCrefOrAsub(exp_1);
-        Types.simpleType(tp1);
-        (cache,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_DISCRETE_VAR, {"First","change",sp}, info);
-      then fail();
+  // Type check the arguments and check that all dimensions except the one we
+  // will concatenate along is equal.
+  arr_tys := list(Types.getPropType(p) for p in arr_props);
+  ty :: tys := list(Types.makeNthDimUnknown(t, dim_int) for t in arr_tys);
+  result_ty := List.fold1(tys, Types.arraySuperType, inInfo, ty);
+  
+  try
+    (arr_expl, arr_tys) := Types.matchTypes(arr_expl, arr_tys, result_ty, false);
+  else
+    // Mismatched types, print an error and fail.
+    exp_str := stringDelimitList(list(Dump.printExpStr(e) for e in inPosArgs), ", ");
+    exp_str := "cat(" + exp_str + ")";
+    pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+    Error.addSourceMessageAndFail(Error.DIFFERENT_DIM_SIZE_IN_ARGUMENTS,
+      {exp_str, pre_str}, inInfo);
+  end try;
 
-    case (_,_,_,_,DAE.PROP(tp1,_),pre,_)
-      equation
-        failure(Types.simpleType(tp1));
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.TYPE_MUST_BE_SIMPLE, {"operand to change", sp}, info);
-      then fail();
-  end matchcontinue;
-end elabBuiltinChange2;
+  // Calculate the size of the concatenated dimension, and insert it in the
+  // result type.
+  dims := list(Types.getDimensionNth(t, dim_int) for t in arr_tys);
+  dim := Expression.dimensionsAdd(d for d in dims);
+  result_ty := Types.setDimensionNth(result_ty, dim, dim_int);
 
-protected function elabBuiltinCat "author: PA
-  This function handles the built in cat operator."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input SourceInfo info;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp exp,dim_exp;
-      DAE.Const const1,const2,const;
-      Integer dim_int;
-      list<DAE.Exp> matrices_1;
-      list<DAE.Properties> props;
-      DAE.Type result_type,result_type_1,ty;
-      FCore.Graph env;
-      list<Absyn.Exp> matrices;
-      list<DAE.Type> tys,tys2;
-      Boolean impl;
-      DAE.Properties tp;
-      list<String> lst;
-      String s,str;
-      FCore.Cache cache;
-      DAE.Type etp;
-      Prefix.Prefix pre;
-      String sp;
-      Absyn.Exp dim_aexp;
-      DAE.Dimensions dims;
-      DAE.Dimension dim;
-
-    case (cache,env,(dim_aexp :: matrices),_,impl,pre,_) /* impl */
-      equation
-        // Evaluate the dimension expression and elaborate the rest of the arguments.
-        (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(),const1),_) = elabExpInExpression(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Absyn.MSG(info),0);
-        (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
-
-        // Type check the arguments and check that all dimensions except the one
-        // we will concatenate along is equal.
-        tys = List.map(props,Types.getPropType);
-        ty::tys2 = List.map1(tys,Types.makeNthDimUnknown,dim_int);
-        result_type = List.fold1(tys2,Types.arraySuperType,info,ty);
-        (matrices_1,tys) = Types.matchTypes(matrices_1,tys,result_type,false);
-
-        // Calculate the size of the concatenated dimension, and insert it in
-        // the result type.
-        dims = List.map1(tys, Types.getDimensionNth, dim_int);
-        dim = List.reduce(dims, Expression.dimensionsAdd);
-        result_type_1 = Types.setDimensionNth(result_type, dim, dim_int);
-
-        // Construct a call to cat.
-        const2 = elabArrayConst(props);
-        const = Types.constAnd(const1, const2);
-        etp = Types.simplifyType(result_type_1);
-        exp = Expression.makePureBuiltinCall("cat", dim_exp :: matrices_1, etp);
-      then
-        (cache,exp,DAE.PROP(result_type_1,const));
-    case (cache,env,(dim_aexp :: _),_,impl,pre,_)
-      equation
-        (cache,_,tp,_) = elabExpInExpression(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        failure(DAE.PROP(DAE.T_INTEGER(),_) = tp);
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER, {"First","cat",sp}, info);
-      then
-        fail();
-    case (cache,env,(dim_aexp :: matrices),_,impl,pre,_)
-      equation
-        (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(),_),_) = elabExpInExpression(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Absyn.MSG(info),0);
-        (cache,_,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
-        false = sameDimensionsExceptionDimX(props,dim_int);
-        lst = List.map((dim_aexp :: matrices), Dump.printExpStr);
-        s = stringDelimitList(lst, ", ");
-        sp = PrefixUtil.printPrefixStr3(pre);
-        str = stringAppendList({"cat(",s,")"});
-        Error.addSourceMessage(Error.DIFFERENT_DIM_SIZE_IN_ARGUMENTS, {str,sp}, info);
-      then
-        fail();
-  end matchcontinue;
+  // Construct a call to cat.
+  arr_c := elabArrayConst(arr_props);
+  c := Types.constAnd(dim_c, arr_c);
+  ty := Types.simplifyType(result_ty);
+  outExp := Expression.makePureBuiltinCall("cat", dim_exp :: arr_expl, ty);
+  outProperties := DAE.PROP(result_ty, c);
 end elabBuiltinCat;
 
-protected function elabBuiltinCat2 "Helper function to elab_builtin_cat. Updates the result type given
-  the input type, number of matrices given to cat and dimension to concatenate
-  along."
-  input DAE.Type inType1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  output DAE.Type outType;
-algorithm
-  outType := matchcontinue (inType1,inInteger2,inInteger3)
-    local
-      Integer new_d,old_d,n_args,n_1,n;
-      DAE.Type tp,tp_1;
-      DAE.TypeSource ts;
-      DAE.Dimension dim;
-
-    case (DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = old_d)}, ty = tp, source = ts),1,n_args)
-      equation
-        new_d = old_d*n_args;
-      then
-        DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(new_d)},ts);
-
-    case (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}), 1, _)
-      then
-        inType1;
-
-    case (DAE.T_ARRAY(dims = {DAE.DIM_EXP()}, ty = tp, source = ts), 1, _)
-      then
-        DAE.T_ARRAY(tp,{DAE.DIM_UNKNOWN()},ts);
-
-    case (DAE.T_ARRAY(dims = {dim}, ty = tp, source = ts),n,n_args)
-      equation
-        n_1 = n - 1;
-        tp_1 = elabBuiltinCat2(tp, n_1, n_args);
-      then
-        DAE.T_ARRAY(tp_1,{dim},ts);
-  end matchcontinue;
-end elabBuiltinCat2;
-
-protected function elabBuiltinIdentity "author: PA
-  This function handles the built in identity operator."
+protected function elabBuiltinIdentity 
+  "This function handles the built in identity operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  DAE.Type ty, exp_ty;
+  DAE.Const c;
+  String pre_str;
+  Absyn.Msg msg;
+  Integer sz;
+  DAE.Dimension dim_size;
+  DAE.Exp dim_exp;
+  Boolean check_model;
 algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp dim_exp, call;
-      Integer size;
-      DAE.Dimension dim_size;
-      FCore.Graph env;
-      Absyn.Exp dim;
-      Boolean impl;
-      FCore.Cache cache;
-      DAE.Type ty;
-      DAE.Type ety;
-      Prefix.Prefix pre;
-      DAE.Const c;
-      Absyn.Msg msg;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "identity", inInfo);
 
-    case (cache,env,{dim},_,impl,pre,_)
-      equation
-        (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(),c),_) = elabExpInExpression(cache,env, dim, impl,NONE(),true,pre,info);
-        true = Types.isParameterOrConstant(c);
-        msg = if Flags.getConfigBool(Flags.CHECK_MODEL) then Absyn.NO_MSG() else Absyn.MSG(info);
-        (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), msg,0);
-        dim_size = DAE.DIM_INTEGER(size);
-        ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
-        ety = Types.simplifyType(ty);
-        dim_exp = DAE.ICONST(size);
-        call = Expression.makePureBuiltinCall("identity", {dim_exp}, ety);
-      then
-        (cache, call, DAE.PROP(ty,c));
+  (outCache, dim_exp, outProperties) := elabExpInExpression(inCache, inEnv,
+      listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
+  DAE.PROP(ty, c) := outProperties;
 
-    case (cache,env,{dim},_,impl,pre,_)
-      equation
-        (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(),c),_) = elabExpInExpression(cache,env,dim,impl,NONE(),true,pre,info);
-        ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()});
-        ety = Types.simplifyType(ty);
-        call = Expression.makePureBuiltinCall("identity", {dim_exp}, ety);
-      then
-        (cache, call, DAE.PROP(ty,c));
+  // Check that the argument is an Integer.
+  if not Types.isScalarInteger(ty) then
+    pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+    Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_INTEGER,
+      {"First", "identity", pre_str}, inInfo);
+  end if;
 
-  end matchcontinue;
+  if Types.isParameterOrConstant(c) then
+    // If the argument is a parameter or constant, evaluate it.
+    check_model := Flags.getConfigBool(Flags.CHECK_MODEL);
+    msg := if check_model then Absyn.NO_MSG() else Absyn.MSG(inInfo);
+
+    try
+      (outCache, Values.INTEGER(sz), _) :=
+        Ceval.ceval(outCache, inEnv, dim_exp, false, NONE(), msg);
+      dim_size := DAE.DIM_INTEGER(sz);
+      dim_exp := DAE.ICONST(sz);
+    else
+      // Allow evaluation to fail if checkModel is used.
+      if check_model then dim_size := DAE.DIM_UNKNOWN(); else fail(); end if;
+    end try;
+  else
+    dim_size := DAE.DIM_UNKNOWN();
+  end if;
+
+  ty := Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
+  exp_ty := Types.simplifyType(ty);
+  outExp := Expression.makePureBuiltinCall("identity", {dim_exp}, exp_ty);
+  outProperties := DAE.PROP(ty, c);
 end elabBuiltinIdentity;
 
 protected function zeroSizeOverconstrainedOperator
@@ -5973,10 +5804,10 @@ protected function zeroSizeOverconstrainedOperator
   input DAE.Exp inFExp;
   input SourceInfo inInfo;
 algorithm
-  _ := matchcontinue(inExp, inFExp, inInfo)
+  _ := match inExp
     local String s;
 
-    case (DAE.ARRAY(array = {}), _, _)
+    case DAE.ARRAY(array = {})
       equation
         s = ExpressionDump.printExpStr(inFExp);
         Error.addSourceMessage(Error.OVERCONSTRAINED_OPERATOR_SIZE_ZERO_RETURN_FALSE, {s}, inInfo);
@@ -5985,40 +5816,33 @@ algorithm
 
     else ();
 
-  end matchcontinue;
+  end match;
 end zeroSizeOverconstrainedOperator;
 
 protected function elabBuiltinIsRoot
 "This function elaborates on the builtin operator Connections.isRoot."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  DAE.Exp exp;
 algorithm
-  (outCache,outExp,outProperties):=
-  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      FCore.Graph env;
-      FCore.Cache cache;
-      Boolean impl;
-      Absyn.Exp exp0;
-      DAE.Exp exp, fexp;
-      Prefix.Prefix pre;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "Connections.isRoot", inInfo);
 
-    case (cache,env,{exp0},{},_,pre,_)
-      equation
-        (cache,exp,_,_) = elabExpInExpression(cache, env, exp0, false, NONE(), false, pre, info);
-        fexp = DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp}, DAE.callAttrBuiltinBool);
-        zeroSizeOverconstrainedOperator(exp, fexp, info);
-      then
-        (cache, fexp, DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
-  end match;
+  (outCache, exp) := elabExpInExpression(inCache, inEnv, listHead(inPosArgs),
+      false, NONE(), false, inPrefix, inInfo);
+  outExp := DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
+      {exp}, DAE.callAttrBuiltinBool);
+  outProperties := DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR());
+
+  zeroSizeOverconstrainedOperator(exp, outExp, inInfo);
 end elabBuiltinIsRoot;
 
 protected function elabBuiltinRooted
@@ -6027,33 +5851,27 @@ protected function elabBuiltinRooted
   See more here: http://trac.modelica.org/Modelica/ticket/95"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  DAE.Exp exp;
 algorithm
-  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      FCore.Graph env;
-      FCore.Cache cache;
-      Boolean impl;
-      Absyn.Exp exp0;
-      DAE.Exp exp, fexp;
-      Prefix.Prefix pre;
+  // this operator is not even specified in the specification!
+  // see: http://trac.modelica.org/Modelica/ticket/95
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "rooted", inInfo);
 
-    // this operator is not even specified in the specification! see: http://trac.modelica.org/Modelica/ticket/95
-    case (cache,env,{exp0},{},_,pre,_)
-      equation
-        (cache, exp, _, _) = elabExpInExpression(cache, env, exp0, false,NONE(), false,pre,info);
-        fexp = DAE.CALL(Absyn.IDENT("rooted"), {exp}, DAE.callAttrBuiltinBool);
-        zeroSizeOverconstrainedOperator(exp, fexp, info);
-      then
-        (cache, fexp, DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
-  end match;
+  (outCache, exp) := elabExpInExpression(inCache, inEnv, listHead(inPosArgs),
+      false, NONE(), false, inPrefix, inInfo);
+  outExp := DAE.CALL(Absyn.IDENT("rooted"), {exp}, DAE.callAttrBuiltinBool);
+  outProperties := DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR());
+
+  zeroSizeOverconstrainedOperator(exp, outExp, inInfo);
 end elabBuiltinRooted;
 
 protected function elabBuiltinUniqueRootIndices
@@ -6134,96 +5952,62 @@ algorithm
   end match;
 end elabBuiltinUniqueRootIndices;
 
-protected function elabBuiltinScalar "author: PA
-
-  This function handles the built in scalar operator.
-  For example, scalar({1}) => 1 or scalar({a}) => a
-"
+protected function elabBuiltinScalar
+  "This function handles the built in scalar operator.
+   For example, scalar({1}) => 1 or scalar({a}) => a"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inArgs;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inImpl;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  DAE.Type ty, scalar_ty;
+  DAE.Const c;
+  list<DAE.Dimension> dims;
+  String ty_str;
 algorithm
-  (outCache,outExp,outProperties):=
-  match (inCache,inEnv,inArgs,inNamedArg,inImpl,inPrefix,inInfo)
-    local
-      DAE.Exp e;
-      DAE.Type tp,scalar_tp;
-      DAE.Const c;
-      FCore.Graph env;
-      FCore.Cache cache;
-      Absyn.Exp aexp;
-      DAE.Dimensions dims;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "scalar", inInfo);
 
-    case (cache, env, {aexp}, _, _, _, _)
-      equation
-        (cache, e, DAE.PROP(tp, c), _) =
-          elabExpInExpression(cache, env, aexp, inImpl, NONE(), true, inPrefix, inInfo);
-        (scalar_tp,dims) = Types.flattenArrayTypeOpt(tp);
-        List.map2_0(dims,checkTypeScalar,tp,inInfo);
-        e = if List.isEmpty(dims) then e else Expression.makePureBuiltinCall("scalar", {e}, scalar_tp);
-        (e,_) = ExpressionSimplify.simplify1(e);
-      then
-        (cache, e, DAE.PROP(scalar_tp, c));
+  (outCache, outExp, DAE.PROP(ty, c), _) := elabExpInExpression(inCache, inEnv,
+    listHead(inPosArgs), inImplicit, NONE(), true, inPrefix, inInfo);
 
-  end match;
+  (scalar_ty, dims) := Types.flattenArrayTypeOpt(ty);
+  
+  // Check that any known dimensions have size 1.
+  for dim in dims loop
+    if Expression.dimensionKnown(dim) and Expression.dimensionSize(dim) <> 1 then
+      ty_str := Types.unparseTypeNoAttr(ty);
+      Error.addSourceMessageAndFail(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
+        {ty_str}, inInfo);
+    end if;
+  end for;
+
+  // If the argument is an array, make a call to scalar. Otherwise the
+  // expression is already a scalar, so return it as it is.
+  if not listEmpty(dims) then
+    outExp := Expression.makePureBuiltinCall("scalar", {outExp}, scalar_ty);
+  end if;
+
+  outExp := ExpressionSimplify.simplify1(outExp);
+  outProperties := DAE.PROP(scalar_ty, c);
 end elabBuiltinScalar;
 
-public function elabBuiltinSkew2 "help function to ExpressionSimplify"
-  input list<DAE.Exp> v1;
-  output list<list<DAE.Exp>> res;
-algorithm
-  res := match v1
-    local
-      DAE.Exp x1,x2,x3,zero,a11,a12,a13,a21,a22,a23,a31,a32,a33;
+constant Slot STRING_ARG_MINLENGTH = SLOT(DAE.FUNCARG("minimumLength",
+  DAE.T_INTEGER_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()), false,
+  SOME(DAE.ICONST(0)), {}, 2, SLOT_NOT_EVALUATED);
 
-     // skew(x)
-    case {x1,x2,x3}
-      equation
-        zero = Expression.makeConstZero(Expression.typeof(x1));
-        a11 = zero;
-        a12 = Expression.negate(x3);
-        a13 = x2;
-        a21 = x3;
-        a22 = zero;
-        a23 = Expression.negate(x1);
-        a31 = Expression.negate(x2);
-        a32 = x1;
-        a33 = zero;
-      then {{a11,a12,a13},{a21,a22,a23},{a31,a32,a33}};
-  end match;
-end elabBuiltinSkew2;
+constant Slot STRING_ARG_LEFTJUSTIFIED = SLOT(DAE.FUNCARG("leftJustified",
+  DAE.T_BOOL_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()), false,
+  SOME(DAE.BCONST(true)), {}, 3, SLOT_NOT_EVALUATED);
 
-public function elabBuiltinCross2 "help function to elabBuiltinCross. Public since it used by ExpressionSimplify.simplify1"
-  input list<DAE.Exp> v1;
-  input list<DAE.Exp> v2;
-  output list<DAE.Exp> res;
-algorithm
-  res := match (v1,v2)
-  local DAE.Exp x1,x2,x3,y1,y2,y3,r1,r2,r3;
-
-     // {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
-    case({x1,x2,x3},{y1,y2,y3})
-      equation
-        r1 = Expression.makeDiff(Expression.makeProductLst({x2,y3}),Expression.makeProductLst({x3,y2}));
-        r2 = Expression.makeDiff(Expression.makeProductLst({x3,y1}),Expression.makeProductLst({x1,y3}));
-        r3 = Expression.makeDiff(Expression.makeProductLst({x1,y2}),Expression.makeProductLst({x2,y1}));
-      then {r1,r2,r3};
-  end match;
-end elabBuiltinCross2;
-
-constant Slot STRING_ARG_MINLENGTH = SLOT(DAE.FUNCARG("minimumLength", DAE.T_INTEGER_DEFAULT,
-  DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()), false, SOME(DAE.ICONST(0)), {}, 2);
-constant Slot STRING_ARG_LEFTJUSTIFIED = SLOT(DAE.FUNCARG("leftJustified", DAE.T_BOOL_DEFAULT,
-  DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()), false, SOME(DAE.BCONST(true)), {}, 3);
 constant Slot STRING_ARG_SIGNIFICANT_DIGITS = SLOT(DAE.FUNCARG("significantDigits",
-  DAE.T_INTEGER_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()), false, SOME(DAE.ICONST(6)), {}, 4);
+  DAE.T_INTEGER_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()), false,
+  SOME(DAE.ICONST(6)), {}, 4, SLOT_NOT_EVALUATED);
 
 protected function elabBuiltinString "
   author: PA
@@ -6260,7 +6044,8 @@ algorithm
     e := listHead(inPosArgs);
     (outCache, exp, DAE.PROP(ty, c), _) :=
       elabExpInExpression(inCache, inEnv, e, inImplicit, NONE(), true, inPrefix, inInfo);
-    val_slot := SLOT(DAE.FUNCARG("x", ty, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE()), false, NONE(), {}, 1);
+    val_slot := SLOT(DAE.FUNCARG("x", ty, DAE.C_VAR(), DAE.NON_PARALLEL(),
+      NONE()), false, NONE(), {}, 1, SLOT_NOT_EVALUATED);
 
     try
       // Try the String(val, <option>) format.
@@ -6272,7 +6057,7 @@ algorithm
       end if;
 
       (outCache, args, _, consts) := elabInputArgs(outCache, inEnv, inPosArgs, inNamedArgs,
-          slots, false, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {},
+          slots, false, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),
           NONE(), inPrefix, inInfo, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
     else
       // Try the String(val, format = s) format.
@@ -6288,13 +6073,14 @@ algorithm
 
       if isSome(format_arg) then
         slots := {val_slot, SLOT(DAE.FUNCARG("format", DAE.T_STRING_DEFAULT, DAE.C_VAR(),
-              DAE.NON_PARALLEL(), NONE()), false, format_arg, {}, 2)};
+              DAE.NON_PARALLEL(), NONE()), false, format_arg, {}, 2,
+              SLOT_NOT_EVALUATED)};
       else
         slots := {val_slot};
       end if;
 
       (outCache, args, _, consts) := elabInputArgs(outCache, inEnv, inPosArgs, inNamedArgs,
-          slots, false, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {},
+          slots, false, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),
           NONE(), inPrefix, inInfo, DAE.T_UNKNOWN_DEFAULT, Absyn.IDENT("String"));
     end try;
 
@@ -6307,11 +6093,11 @@ end elabBuiltinString;
 protected function elabBuiltinGetInstanceName
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache := inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
@@ -6319,6 +6105,8 @@ protected
   String str;
   Absyn.Path name, envName;
 algorithm
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 0, "getInstanceName", inInfo);
+
   FCore.CACHE(modelName = name) := inCache;
 
   if PrefixUtil.isNoPrefix(inPrefix) then
@@ -6333,144 +6121,98 @@ algorithm
   outProperties := DAE.PROP(DAE.T_STRING_DEFAULT, DAE.C_CONST());
 end elabBuiltinGetInstanceName;
 
-protected function elabBuiltinVector "author: PA
-  This function handles the built in vector operator."
+protected function elabBuiltinVector 
+  "This function handles the built in vector operator."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  Absyn.Exp e;
+  DAE.Type ty, arr_ty, exp_ty, el_ty;
+  DAE.Const c;
+  list<DAE.Exp> expl;
 algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp exp;
-      DAE.Type tp,tp_1,arr_tp;
-      DAE.Const c;
-      DAE.Type etp;
-      FCore.Graph env;
-      Absyn.Exp e;
-      Boolean impl,scalar;
-      list<DAE.Exp> expl,expl_1,expl_2;
-      list<list<DAE.Exp>> explm;
-      list<Integer> dims;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      Integer dim,dimtmp;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "vector", inInfo);
 
-    case (cache,env,{e},_,impl,pre,_) /* vector(scalar) = {scalar} */
-      equation
-        (cache,exp,DAE.PROP(tp,c),_) = elabExpInExpression(cache,env, e, impl,NONE(),true,pre,info);
-        Types.simpleType(tp);
-        arr_tp = Types.liftArray(tp, DAE.DIM_INTEGER(1));
-        etp = Types.simplifyType(arr_tp);
-      then
-        (cache,DAE.ARRAY(etp,true,{exp}),DAE.PROP(arr_tp,c));
+  e := listHead(inPosArgs);
+  (outCache, outExp, outProperties as DAE.PROP(ty, c), _) := 
+    elabExpInExpression(inCache, inEnv, e, inImplicit, NONE(), true, inPrefix, inInfo);
 
-    case (cache,env,{e},_,impl,pre,_) /* vector(array of scalars) = array of scalars */
-      equation
-        (cache,DAE.ARRAY(etp,scalar,expl),DAE.PROP(tp,c),_) = elabExpInExpression(cache,env, e, impl,NONE(),true,pre,info);
-        1 = Types.numberOfDimensions(tp);
-      then
-        (cache,DAE.ARRAY(etp,scalar,expl),DAE.PROP(tp,c));
+  // Scalar
+  if Types.isSimpleType(ty) then 
+    // vector(scalar) = {scalar}
+    arr_ty := Types.liftArray(ty, DAE.DIM_INTEGER(1));
+    exp_ty := Types.simplifyType(arr_ty);
+    outExp := DAE.ARRAY(exp_ty, true, {outExp});
+    outProperties := DAE.PROP(arr_ty, c);
+  // Array or Matrix
+  elseif Expression.isArray(outExp) or Expression.isMatrix(outExp) then
+    // If the array/matrix has more than one dimension, flatten it into a one-
+    // dimensional array. Otherwise, do nothing and return the expression as is.
+    if Types.numberOfDimensions(ty) <> 1 then
+      checkBuiltinVectorDims(e, inEnv, ty, inPrefix, inInfo);
+      expl := Expression.getArrayOrMatrixContents(outExp);
+      expl := flattenArray(expl);
 
-    case (cache,env,{e},_,impl,pre,_) /* vector of multi dimensional array, at most one dim > 1 */
-      equation
-        (cache,DAE.ARRAY(_,_,expl),DAE.PROP(tp,c),_) = elabExpInExpression(cache,env, e, impl,NONE(),true,pre,info);
-        tp_1 = Types.arrayElementType(tp);
-        dims = Types.getDimensionSizes(tp);
-        checkBuiltinVectorDims(e, env, dims, pre, info);
-        expl_1 = flattenArray(expl);
-        dim = listLength(expl_1);
-        tp = DAE.T_ARRAY(tp_1, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
-        etp = Types.simplifyType(tp);
-      then
-        (cache,DAE.ARRAY(etp,true,expl_1),DAE.PROP(tp,c));
+      el_ty := Types.arrayElementType(ty);
+      arr_ty := Types.liftArray(el_ty, DAE.DIM_INTEGER(listLength(expl)));
 
-    case (cache,env,{e},_,impl,pre,_) /* vector of multi dimensional matrix, at most one dim > 1 */
-      equation
-        (cache,DAE.MATRIX(matrix=explm),DAE.PROP(tp,c),_) = elabExpInExpression(cache,env, e, impl,NONE(),true,pre,info);
-        tp_1 = Types.arrayElementType(tp);
-        dims = Types.getDimensionSizes(tp);
-        expl_2 = List.flatten(explm);
-        expl_1 = elabBuiltinVector2(expl_2, dims);
-        dimtmp = listLength(expl_1);
-        tp_1 = Types.liftArray(tp_1, DAE.DIM_INTEGER(dimtmp));
-        etp = Types.simplifyType(tp_1);
-      then
-        (cache,DAE.ARRAY(etp,true,expl_1),DAE.PROP(tp_1,c));
-
-    case (cache, env, {e}, _, impl, pre,_)
-      equation
-        (cache, exp, DAE.PROP(tp, c), _) = elabExpInExpression(cache, env, e, impl,NONE(), true, pre,info);
-        tp = Types.liftArray(Types.arrayElementType(tp), DAE.DIM_UNKNOWN());
-        etp = Types.simplifyType(tp);
-        exp = Expression.makePureBuiltinCall("vector", {exp}, etp);
-      then
-        (cache, exp, DAE.PROP(tp, c));
-  end matchcontinue;
+      outExp := DAE.ARRAY(Types.simplifyType(arr_ty), false, expl);
+      outProperties := DAE.PROP(arr_ty, c);
+    end if;
+  // Anything else
+  else
+    // For any other type of expression, make a call to vector.
+    ty := Types.liftArray(Types.arrayElementType(ty), DAE.DIM_UNKNOWN());
+    exp_ty := Types.simplifyType(ty);
+    outExp := Expression.makePureBuiltinCall("vector", {outExp}, exp_ty);
+    outProperties := DAE.PROP(ty, c);
+  end if;
 end elabBuiltinVector;
 
 protected function checkBuiltinVectorDims
-  input Absyn.Exp expr;
-  input FCore.Graph env;
-  input list<Integer> dimensions;
+  "Checks that the argument to vector has at most one dimension which is larger
+   than one, otherwise prints an error and fails."
+  input Absyn.Exp inExp;
+  input FCore.Graph inEnv;
+  input DAE.Type inType;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
+protected
+  Boolean found_dim_sz_one := false;
+  list<Integer> dims;
+  String arg_str, scope_str, dim_str, pre_str;
 algorithm
-  _ := matchcontinue(expr, env, dimensions,inPrefix, inInfo)
-    local
-      Integer dims_larger_than_one;
-      Prefix.Prefix pre;
-      String arg_str, scope_str, dim_str, pre_str;
-    case (_, _, _,_, _)
-      equation
-        dims_larger_than_one = countDimsLargerThanOne(dimensions);
-        (dims_larger_than_one > 1) = false;
-      then ();
-    case (_, _, _, pre, _)
-      equation
-        scope_str = FGraph.printGraphPathStr(env);
-        arg_str = "vector(" + Dump.printExpStr(expr) + ")";
-        dim_str = "[" + stringDelimitList(List.map(dimensions, intString), ", ") + "]";
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.BUILTIN_VECTOR_INVALID_DIMENSIONS,
+  dims := Types.getDimensionSizes(inType);
+
+  for dim in dims loop
+    if dim > 1 then
+      if found_dim_sz_one then
+        scope_str := FGraph.printGraphPathStr(inEnv);
+        arg_str := "vector(" + Dump.printExpStr(inExp) + ")";
+        dim_str := "[" + stringDelimitList(list(intString(d) for d in dims), ", ") + "]";
+        pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+        Error.addSourceMessageAndFail(Error.BUILTIN_VECTOR_INVALID_DIMENSIONS,
           {scope_str, pre_str, dim_str, arg_str}, inInfo);
-      then fail();
-  end matchcontinue;
+      else
+        found_dim_sz_one := true;
+      end if;
+    end if;
+  end for;
 end checkBuiltinVectorDims;
-
-protected function countDimsLargerThanOne
-  input list<Integer> dimensions;
-  output Integer dimsLargerThanOne;
-algorithm
-  dimsLargerThanOne := matchcontinue(dimensions)
-    local
-      Integer dim, dims_larger_than_one;
-      list<Integer> rest_dims;
-    case ({}) then 0;
-    case ((dim :: rest_dims))
-      equation
-        (dim > 1) = true;
-        dims_larger_than_one = 1 + countDimsLargerThanOne(rest_dims);
-      then
-        dims_larger_than_one;
-    case ((_ :: rest_dims))
-      equation
-        dims_larger_than_one = countDimsLargerThanOne(rest_dims);
-      then dims_larger_than_one;
-  end matchcontinue;
-end countDimsLargerThanOne;
-
+  
 protected function flattenArray
   input list<DAE.Exp> arr;
   output list<DAE.Exp> flattenedExpl;
 algorithm
-  flattenedExpl := matchcontinue(arr)
+  flattenedExpl := match(arr)
     local
       DAE.Exp e;
       list<DAE.Exp> expl, expl2, rest_expl;
@@ -6495,67 +6237,14 @@ algorithm
         expl = flattenArray(expl);
       then
         (e :: expl);
-  end matchcontinue;
+  end match;
 end flattenArray;
-
-protected function dimensionListMaxOne "Helper function to elab_builtin_vector."
-  input list<Integer> inIntegerLst;
-  output Integer dimensions;
-algorithm
-  dimensions := matchcontinue (inIntegerLst)
-    local
-      Integer dim,x;
-      list<Integer> dims;
-
-    case ({}) then 0;
-
-    case ((dim :: _))
-      equation
-        (dim > 1) = true;
-        Error.addMessage(Error.ERROR_FLATTENING, {"Vector may only be 1x2 or 2x1 dimensions"});
-      then
-        10;
-
-    case((_ :: dims))
-      equation
-        x = dimensionListMaxOne(dims);
-      then
-        x;
-  end matchcontinue;
-end dimensionListMaxOne;
-
-protected function elabBuiltinVector2 "Helper function to elabBuiltinVector, for matrix expressions."
-  input list<DAE.Exp> inExpExpLst;
-  input list<Integer> inIntegerLst;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst := matchcontinue (inExpExpLst,inIntegerLst)
-    local
-      list<DAE.Exp> expl_1,expl;
-      Integer dim;
-      list<Integer> dims;
-
-    case (expl,(dim :: dims))
-      equation
-        (dim > 1) = true;
-        (1 > dimensionListMaxOne(dims)) = true;
-        then
-        expl;
-
-    case (expl,(_ :: dims))
-      equation
-        (1 > dimensionListMaxOne(dims) ) = false;
-        expl_1 = elabBuiltinVector2(expl, dims);
-      then
-        expl_1;
-  end matchcontinue;
-end elabBuiltinVector2;
 
 public function elabBuiltinMatrix
   "Elaborates the builtin matrix function."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inArgs;
+  input list<Absyn.Exp> inPosArgs;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
@@ -6563,31 +6252,16 @@ public function elabBuiltinMatrix
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  DAE.Type ty;
 algorithm
-  (outCache, outExp, outProperties) := match(inCache, inEnv, inArgs, inNamedArgs, inImpl, inPrefix, inInfo)
-    local
-      Absyn.Exp arg;
-      FCore.Cache cache;
-      DAE.Exp exp;
-      DAE.Properties props;
-      DAE.Type ty;
+  checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "matrix", inInfo);
 
-    case (_, _, {arg}, _, _, _, _)
-      equation
-        (cache, exp, props, _) =
-          elabExpInExpression(inCache, inEnv, arg, inImpl, NONE(), true, inPrefix, inInfo);
-        ty = Types.getPropType(props);
-        (exp, props) = elabBuiltinMatrix2(inCache, inEnv, exp, props, ty, inInfo);
-      then
-        (cache, exp, props);
-
-    else
-      equation
-        Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {"matrix"}, inInfo);
-      then
-        fail();
-
-  end match;
+  (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv,
+      listHead(inPosArgs), inImpl, NONE(), true, inPrefix, inInfo);
+  ty := Types.getPropType(outProperties);
+  (outExp, outProperties) := elabBuiltinMatrix2(inCache, inEnv, outExp,
+      outProperties, ty, inInfo);
 end elabBuiltinMatrix;
 
 protected function elabBuiltinMatrix2
@@ -6602,8 +6276,7 @@ protected function elabBuiltinMatrix2
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outExp, outProperties) :=
-  matchcontinue(inCache, inEnv, inArg, inProperties, inType, inInfo)
+  (outExp, outProperties) := match inArg
     local
       DAE.Type ty;
       DAE.Exp exp;
@@ -6615,36 +6288,34 @@ algorithm
       DAE.TypeSource ts;
 
     // Scalar
-    case (_, _, _, _, _, _)
-      equation
-        Types.simpleType(inType);
-        (exp, props) = promoteExp(inArg, inProperties, 2);
+    case _ guard(Types.isSimpleType(inType))
+      algorithm
+        (exp, props) := promoteExp(inArg, inProperties, 2);
       then
         (exp, props);
 
     // 1-dimensional array
-    case (_, _, _, _, _, _)
-      equation
-        1 = Types.numberOfDimensions(inType);
-        (exp, props) = promoteExp(inArg, inProperties, 2);
+    case _ guard(Types.numberOfDimensions(inType) == 1)
+      algorithm
+        (exp, props) := promoteExp(inArg, inProperties, 2);
       then
         (exp, props);
 
     // Matrix
-    case (_, _, DAE.MATRIX(), _, _, _)
+    case DAE.MATRIX()
       then (inArg, inProperties);
 
     // n-dimensional array
-    case (_, _, DAE.ARRAY(ty = DAE.T_ARRAY(ety, dim1 :: dim2 :: _, ts), scalar = scalar, array = expl), _, _, _)
-      equation
-        expl = List.map1(expl, elabBuiltinMatrix3, inInfo);
-        ty = Types.arrayElementType(inType);
-        ty = Types.liftArrayListDims(ty, {dim1, dim2});
-        props = Types.setPropType(inProperties, ty);
+    case DAE.ARRAY(ty = DAE.T_ARRAY(ety, dim1 :: dim2 :: _, ts), scalar = scalar, array = expl)
+      algorithm
+        expl := List.map1(expl, elabBuiltinMatrix3, inInfo);
+        ty := Types.arrayElementType(inType);
+        ty := Types.liftArrayListDims(ty, {dim1, dim2});
+        props := Types.setPropType(inProperties, ty);
       then
         (DAE.ARRAY(DAE.T_ARRAY(ety, {dim1, dim2}, ts), scalar, expl), props);
 
-  end matchcontinue;
+  end match;
 end elabBuiltinMatrix2;
 
 protected function elabBuiltinMatrix3
@@ -6653,7 +6324,7 @@ protected function elabBuiltinMatrix3
   input SourceInfo inInfo;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp, inInfo)
+  outExp := match inExp
     local
       DAE.Type ety, ety2;
       Boolean scalar;
@@ -6663,17 +6334,17 @@ algorithm
       list<list<DAE.Exp>> matrix_expl;
       DAE.TypeSource ts;
 
-    case (DAE.ARRAY(ty = DAE.T_ARRAY(ety, dim :: _, ts),scalar = scalar, array = expl), _)
-      equation
-        expl = List.map3(expl, arrayScalar, 3, "matrix", inInfo);
+    case DAE.ARRAY(ty = DAE.T_ARRAY(ety, dim :: _, ts),scalar = scalar, array = expl)
+      algorithm
+        expl := list(arrayScalar(e, 3, "matrix", inInfo) for e in expl);
       then
         DAE.ARRAY(DAE.T_ARRAY(ety, {dim}, ts), scalar, expl);
 
-    case (DAE.MATRIX(ty = DAE.T_ARRAY(ety, dim :: dims, ts), matrix = matrix_expl), _)
-      equation
-        ety2 = DAE.T_ARRAY(ety, dims, ts);
-        expl = List.map2(matrix_expl, Expression.makeArray, ety2, true);
-        expl = List.map3(expl, arrayScalar, 3, "matrix", inInfo);
+    case DAE.MATRIX(ty = DAE.T_ARRAY(ety, dim :: dims, ts), matrix = matrix_expl)
+      algorithm
+        ety2 := DAE.T_ARRAY(ety, dims, ts);
+        expl := list(Expression.makeArray(e, ety2, true) for e in matrix_expl);
+        expl := list(arrayScalar(e, 3, "matrix", inInfo) for e in expl);
       then
         DAE.ARRAY(DAE.T_ARRAY(ety, {dim}, ts), true, expl);
 
@@ -6682,14 +6353,14 @@ end elabBuiltinMatrix3;
 
 protected function arrayScalar
   "Returns the scalar value of an array, or prints an error message and fails if
-  any dimension of the array isn't of size 1."
+   any dimension of the array isn't of size 1."
   input DAE.Exp inExp;
   input Integer inDim "The current dimension, used for error message.";
   input String inOperator "The current operator name, used for error message.";
   input SourceInfo inInfo;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inExp, inDim, inOperator, inInfo)
+  outExp := match inExp
     local
       DAE.Exp exp;
       DAE.Type ty;
@@ -6698,28 +6369,28 @@ algorithm
       String dim_str, size_str;
 
     // An array with one element.
-    case (DAE.ARRAY(array = {exp}), _, _, _)
+    case DAE.ARRAY(array = {exp})
       then arrayScalar(exp, inDim + 1, inOperator, inInfo);
 
     // Any other array.
-    case (DAE.ARRAY(array = expl), _, _, _)
-      equation
-        dim_str = intString(inDim);
-        size_str = intString(listLength(expl));
+    case DAE.ARRAY(array = expl)
+      algorithm
+        dim_str := intString(inDim);
+        size_str := intString(listLength(expl));
         Error.addSourceMessage(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
           {dim_str, inOperator, "1", size_str}, inInfo);
       then
         fail();
 
     // A matrix where the first dimension is 1.
-    case (DAE.MATRIX(ty = ty, matrix = {expl}), _, _, _)
+    case DAE.MATRIX(ty = ty, matrix = {expl})
       then arrayScalar(DAE.ARRAY(ty, true, expl), inDim + 1, inOperator, inInfo);
 
     // Any other matrix.
-    case (DAE.MATRIX(matrix = mexpl), _, _, _)
-      equation
-        dim_str = intString(inDim);
-        size_str = intString(listLength(mexpl));
+    case DAE.MATRIX(matrix = mexpl)
+      algorithm
+        dim_str := intString(inDim);
+        size_str := intString(listLength(mexpl));
         Error.addSourceMessage(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
           {dim_str, inOperator, "1", size_str}, inInfo);
       then
@@ -6730,64 +6401,13 @@ algorithm
   end match;
 end arrayScalar;
 
-protected function checkTypeScalar
-  "Returns the scalar value of an array, or prints an error message and fails if
-  any dimension of the array isn't of size 1."
-  input DAE.Dimension inDim;
-  input DAE.Type ty;
-  input SourceInfo inInfo;
-algorithm
-  _ := match(inDim, ty, inInfo)
-    local
-      String ty_str;
-    // An array with one element.
-    case (DAE.DIM_INTEGER(1),_,_) then ();
-    case (DAE.DIM_EXP(_),_,_) then ();
-    case (DAE.DIM_UNKNOWN(),_,_) then ();
-    // Any other dimension
-    else
-      equation
-        ty_str = Types.unparseType(ty);
-        Error.addSourceMessage(Error.INVALID_ARRAY_DIM_IN_SCALAR_OP, {ty_str}, inInfo);
-      then fail();
-  end match;
-end checkTypeScalar;
-
-public function elabBuiltinHandlerGeneric "
-  This function dispatches the elaboration of special builtin operators by
-  returning the appropriate function, see also elab_builtin_handler.
-  These special builtin operators can not be represented in the
-  environment since they must be generated on the fly, given a generated
-  type.
-"
-  input String inIdent;
-  output FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties;
-  partial function FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties
-    input FCore.Cache inCache;
-    input FCore.Graph inEnv;
-    input list<Absyn.Exp> inAbsynExpLst;
-    input list<Absyn.NamedArg> inNamedArg;
-    input Boolean inBoolean;
-    input Prefix.Prefix inPrefix;
-    input SourceInfo info;
-    output FCore.Cache outCache;
-    output DAE.Exp outExp;
-    output DAE.Properties outProperties;
-  end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
-algorithm
-  outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
-  match (inIdent)
-    case "cardinality" then elabBuiltinCardinality;
-  end match;
-end elabBuiltinHandlerGeneric;
-
-public function elabBuiltinHandler "
-  This function dispatches the elaboration of builtin operators by
-  returning the appropriate function. When a new builtin operator is
-  added, a new rule has to be added to this function.
-"
+public function elabBuiltinHandler
+  "This function dispatches the elaboration of builtin operators by returning
+   the appropriate function. When a new builtin operator is added, a new rule
+   has to be added to this function."
   input String inIdent;
   output HandlerFunc outHandler;
+
   partial function HandlerFunc
     input FCore.Cache inCache;
     input FCore.Graph inEnv;
@@ -6804,7 +6424,7 @@ algorithm
   outHandler := match (inIdent)
     case "delay" then elabBuiltinDelay;
     case "smooth" then elabBuiltinSmooth;
-    case "size" then elabBuiltinSize;  /* impl */
+    case "size" then elabBuiltinSize;
     case "ndims" then elabBuiltinNDims;
     case "zeros" then elabBuiltinZeros;
     case "ones" then elabBuiltinOnes;
@@ -6914,8 +6534,9 @@ public function elabBuiltinHandlerInternal "
   added, a new rule has to be added to this function.
 "
   input String inIdent;
-  output FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties;
-  partial function FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties
+  output FuncType outFunc;
+
+  partial function FuncType
     input FCore.Cache inCache;
     input FCore.Graph inEnv;
     input list<Absyn.Exp> inAbsynExpLst;
@@ -6926,10 +6547,9 @@ public function elabBuiltinHandlerInternal "
     output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
-  end FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties;
+  end FuncType;
 algorithm
-  outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties:=
-  match (inIdent)
+  outFunc := match inIdent
     case "simplify" then elabBuiltinSimplify;
   end match;
 end elabBuiltinHandlerInternal;
@@ -6951,137 +6571,101 @@ algorithm
     case (path,DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=isBuiltin as DAE.FUNCTION_BUILTIN(_))))
       equation
         path = Absyn.makeNotFullyQualified(path);
-      then (isBuiltin,true,path);
+      then (isBuiltin, true, path);
 
     case (path,DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=isBuiltin as DAE.FUNCTION_BUILTIN_PTR())))
       equation
         path = Absyn.makeNotFullyQualified(path);
-      then (isBuiltin,false,path);
+      then (isBuiltin, false, path);
 
     case (Absyn.IDENT(name = id),_)
       equation
         elabBuiltinHandler(id);
       then
-        (DAE.FUNCTION_BUILTIN(SOME(id)),true,inPath);
+        (DAE.FUNCTION_BUILTIN(SOME(id)), true, inPath);
 
-    case (Absyn.QUALIFIED("OpenModelicaInternal",Absyn.IDENT(name = id)),_)
+    case (Absyn.QUALIFIED("OpenModelicaInternal", Absyn.IDENT(name = id)), _)
       equation
         elabBuiltinHandlerInternal(id);
       then
-        (DAE.FUNCTION_BUILTIN(SOME(id)),true,inPath);
+        (DAE.FUNCTION_BUILTIN(SOME(id)), true, inPath);
 
-    case (Absyn.FULLYQUALIFIED(path),_)
+    case (Absyn.FULLYQUALIFIED(path), _)
       equation
         (isBuiltin as DAE.FUNCTION_BUILTIN(_),_,path) = isBuiltinFunc(path,ty);
       then
-        (isBuiltin,true,path);
+        (isBuiltin, true, path);
 
-    case (Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
-      then (DAE.FUNCTION_BUILTIN(NONE()),true,inPath);
+    case (Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), _)
+      then (DAE.FUNCTION_BUILTIN(NONE()), true, inPath);
 
-    case (path,_) then (DAE.FUNCTION_NOT_BUILTIN(),false,path);
+    else (DAE.FUNCTION_NOT_BUILTIN(), false, inPath);
   end matchcontinue;
 end isBuiltinFunc;
 
-protected function elabCallBuiltin "This function elaborates on builtin operators (such as \"pre\", \"der\" etc.),
-  by calling the builtin handler to retrieve the correct function to call."
+protected function elabCallBuiltin 
+  "This function elaborates on builtin operators (such as \"pre\", \"der\" etc.),
+   by calling the builtin handler to retrieve the correct function to call."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Absyn.ComponentRef inComponentRef;
-  input list<Absyn.Exp> inAbsynExpLst;
+  input Absyn.ComponentRef inFnName;
+  input list<Absyn.Exp> inPosArgs;
   input list<Absyn.NamedArg> inNamedArgs;
-  input Boolean inBoolean;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  partial function handlerFunc
+
+  partial function HandlerFunc
     input FCore.Cache inCache;
-    input FCore.Graph inEnvFrameLst;
-    input list<Absyn.Exp> inAbsynExpLst;
+    input FCore.Graph inEnv;
+    input list<Absyn.Exp> inPosArgs;
     input list<Absyn.NamedArg> inNamedArgs;
-    input Boolean inBoolean;
+    input Boolean inImplicit;
     input Prefix.Prefix inPrefix;
-    input SourceInfo info;
+    input SourceInfo inInfo;
     output FCore.Cache outCache;
     output DAE.Exp outExp;
     output DAE.Properties outProperties;
-  end handlerFunc;
+  end HandlerFunc;
 algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inNamedArgs,inBoolean,inPrefix,info)
+  (outCache, outExp, outProperties) := match(inFnName)
     local
-      handlerFunc handler;
-      DAE.Exp exp;
-      DAE.Properties prop;
-      FCore.Graph env;
-      String name;
-      list<Absyn.Exp> args;
-      list<Absyn.NamedArg> nargs;
-      Boolean impl;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
+      HandlerFunc handler;
       Absyn.ComponentRef cr;
 
-    // impl for normal builtin operators and functions
-    case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,nargs,impl,pre,_)
-      equation
-        handler = elabBuiltinHandler(name);
-        (cache,exp,prop) = handler(cache,env, args, nargs, impl,pre,info);
+    case Absyn.CREF_IDENT(subscripts = {})
+      algorithm
+        handler := elabBuiltinHandler(inFnName.name);
       then
-        (cache,exp,prop);
-
-    case (cache,env,Absyn.CREF_QUAL(name = "OpenModelicaInternal", componentRef = Absyn.CREF_IDENT(name = name)),args,nargs,impl,pre,_)
-      equation
-        handler = elabBuiltinHandlerInternal(name);
-        (cache,exp,prop) = handler(cache,env, args, nargs, impl,pre,info);
+        handler(inCache, inEnv, inPosArgs, inNamedArgs, inImplicit, inPrefix, inInfo);
+        
+    case Absyn.CREF_QUAL(name = "OpenModelicaInternal", componentRef = cr as Absyn.CREF_IDENT()) 
+      algorithm
+        handler := elabBuiltinHandlerInternal(cr.name);
       then
-        (cache,exp,prop);
+        handler(inCache, inEnv, inPosArgs, inNamedArgs, inImplicit, inPrefix, inInfo);
 
-    // special handling for MultiBody 3.x rooted() operator
-  //  case (cache,env,Absyn.CREF_IDENT(name = "rooted"),args,nargs,impl,pre,_)
-  //    equation
-  //      (cache,exp,prop) = elabBuiltinRooted(cache,env, args, nargs, impl,pre,info);
-  //    then
-  //      (cache,exp,prop);
-
-    // special handling for Connections.isRoot() operator
-    case (cache,env,Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "isRoot")),args,nargs,impl,pre,_)
-      equation
-        (cache,exp,prop) = elabBuiltinIsRoot(cache, env, args, nargs, impl, pre, info);
+    case Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "isRoot"))
+      then elabBuiltinIsRoot(inCache, inEnv, inPosArgs, inNamedArgs, inImplicit, inPrefix, inInfo);
+      
+    case Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "uniqueRootIndices"))
+      algorithm
+        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRootIndices"}, inInfo);
       then
-        (cache,exp,prop);
+        elabBuiltinUniqueRootIndices(inCache, inEnv, inPosArgs, inNamedArgs, inImplicit, inPrefix, inInfo);
 
-    // special handling for Connections.uniqueRootIndices(roots, nodes, message) operator
-    case (cache,env,Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "uniqueRootIndices")),args,nargs,impl,pre,_)
-      equation
-        (cache,exp,prop) = elabBuiltinUniqueRootIndices(cache, env, args, nargs, impl, pre, info);
-        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR, {"Connections.uniqueRootIndices"}, info);
-      then
-        (cache,exp,prop);
+    case Absyn.CREF_FULLYQUALIFIED(cr)
+      then elabCallBuiltin(inCache, inEnv, cr, inPosArgs, inNamedArgs, inImplicit, inPrefix, inInfo);
 
-  //  // for generic types, like e.g. cardinality
-  //  case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,nargs,impl,pre,_)
-  //    equation
-  //      handler = elabBuiltinHandlerGeneric(name);
-  //      (cache,exp,prop) = handler(cache,env, args, nargs, impl,pre,info);
-  //    then
-  //      (cache,exp,prop);
-
-    case (cache,env,Absyn.CREF_FULLYQUALIFIED(cr),args,nargs,impl,pre,_)
-      equation
-        (cache,exp,prop) = elabCallBuiltin(cache,env,cr,args,nargs,impl,pre,info);
-      then
-        (cache,exp,prop);
-  end matchcontinue;
+  end match;
 end elabCallBuiltin;
 
-protected function elabCall "
-function: elabCall
-  This function elaborates on a function call.  It converts the name
-  to a Absyn.Path, and used the Static.elabCallArgs to do the rest of the
-  work."
+protected function elabCall 
+  "This function elaborates on a function call.  It converts the name to a
+   Absyn.Path, and used the Static.elabCallArgs to do the rest of the work."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -7205,37 +6789,17 @@ public function elabVariablenames "This function elaborates variablenames to DAE
   be used in e.g. plot(model,{v1{3},v2.t}) It should only be used in interactive
   functions that uses variablenames as componentreferences.
 "
-  input list<Absyn.Exp> inAbsynExpLst;
-  output list<DAE.Exp> outExpExpLst;
+  input list<Absyn.Exp> inExpl;
+  output list<DAE.Exp> outExpl := {};
+protected
+  DAE.Exp exp;
+  Absyn.ComponentRef cr;
 algorithm
-  outExpExpLst:=
-  match (inAbsynExpLst)
-    local
-      list<DAE.Exp> xs_1;
-      Absyn.ComponentRef cr;
-      list<Absyn.Exp> xs;
-    case {} then {};
-    case ((Absyn.CREF(componentRef = cr) :: xs))
-      equation
-
-        xs_1 = elabVariablenames(xs);
-      then
-        (DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.T_UNKNOWN_DEFAULT) :: xs_1);
-    case ((Absyn.CALL(Absyn.CREF_IDENT(name="der"), Absyn.FUNCTIONARGS({Absyn.CREF(componentRef = cr)}, {})) :: xs))
-      equation
-        xs_1 = elabVariablenames(xs);
-      then
-        DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF(cr)},{}))),DAE.T_UNKNOWN_DEFAULT)::xs_1;
-
-/*
-    case ((Absyn.STRING(value = str) :: xs))
-      equation
-
-        xs_1 = elabVariablenames(xs);
-      then
-        (DAE.SCONST(str) :: xs_1);
-*/
-  end match;
+  outExpl := list(match e
+    case Absyn.CREF() then DAE.CODE(Absyn.C_VARIABLENAME(e.componentRef), DAE.T_UNKNOWN_DEFAULT);
+    case Absyn.CALL(Absyn.CREF_IDENT(name = "der"), Absyn.FUNCTIONARGS({Absyn.CREF()}, {}))
+      then DAE.CODE(Absyn.C_EXPRESSION(e), DAE.T_UNKNOWN_DEFAULT);
+  end match for e in inExpl);
 end elabVariablenames;
 
 public function getOptionalNamedArgExpList
@@ -7243,21 +6807,23 @@ public function getOptionalNamedArgExpList
   input list<Absyn.NamedArg> nargs;
   output list<DAE.Exp> out;
 algorithm
-  out := matchcontinue (name, nargs)
+  out := matchcontinue nargs
     local
       list<Absyn.Exp> absynExpList;
-      list<DAE.Exp> daeExpList;
       String argName;
       list<Absyn.NamedArg> rest;
-    case (_, {})
-      then {};
-    case (_, (Absyn.NAMEDARG(argName = argName, argValue = Absyn.ARRAY(arrayExp = absynExpList)) :: _))
+
+    case {} then {};
+
+    case Absyn.NAMEDARG(argName = argName, argValue = Absyn.ARRAY(arrayExp = absynExpList)) :: _
       equation
         true = stringEq(name, argName);
-        daeExpList = absynExpListToDaeExpList(absynExpList);
-      then daeExpList;
-    case (_, _::rest)
+      then
+        absynExpListToDaeExpList(absynExpList);
+
+    case _ :: rest
       then getOptionalNamedArgExpList(name, rest);
+
   end matchcontinue;
 end getOptionalNamedArgExpList;
 
@@ -7265,7 +6831,7 @@ protected function absynExpListToDaeExpList
   input list<Absyn.Exp> absynExpList;
   output list<DAE.Exp> out;
 algorithm
-  out := matchcontinue (absynExpList)
+  out := match absynExpList
     local
       list<DAE.Exp> daeExpList;
       list<Absyn.Exp> absynRest;
@@ -7274,105 +6840,92 @@ algorithm
       DAE.ComponentRef daeCr;
       DAE.Exp crefExp;
 
-    case ({})
-      then {};
+    case {} then {};
 
-    case (Absyn.CREF(componentRef = absynCr) :: absynRest)
+    case Absyn.CREF(componentRef = absynCr) :: absynRest
       equation
         absynPath = Absyn.crefToPath(absynCr);
         daeCr = ComponentReference.pathToCref(absynPath);
-        daeExpList = absynExpListToDaeExpList(absynRest);
         crefExp = Expression.crefExp(daeCr);
+        daeExpList = absynExpListToDaeExpList(absynRest);
       then
         crefExp :: daeExpList;
 
-    case (_ :: absynRest)
+    case _ :: absynRest
       then absynExpListToDaeExpList(absynRest);
-  end matchcontinue;
+  end match;
 end absynExpListToDaeExpList;
 
-public function getOptionalNamedArg " This function is used to \"elaborate\" interactive functions optional parameters,
-  e.g. simulate(A.b, startTime=1), startTime is an optional parameter
-"
+public function getOptionalNamedArg 
+  "This function is used to 'elaborate' interactive functions optional parameters,
+   e.g. simulate(A.b, startTime=1), startTime is an optional parameter."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Option<GlobalScript.SymbolTable> inST;
-  input Boolean inBoolean;
-  input String inIdent;
+  input Boolean inImplicit;
+  input String inArgName;
   input DAE.Type inType;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input DAE.Exp inExp;
+  input list<Absyn.NamedArg> inArgs;
+  input DAE.Exp inDefaultExp;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
+protected
+  String name;
+  DAE.Type ty;
+  Absyn.Exp e;
 algorithm
-  (outCache,outExp):=
-  matchcontinue (inCache,inEnv,inST,inBoolean,inIdent,inType,inAbsynNamedArgLst,inExp,inPrefix,info)
-    local
-      DAE.Exp exp,exp_1,exp_2,dexp;
-      DAE.Type t,tp;
-      DAE.Const c1;
-      FCore.Graph env;
-      Option<GlobalScript.SymbolTable> st;
-      Boolean impl;
-      String id,id2;
-      list<Absyn.NamedArg> xs;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      Absyn.Exp aexp;
-    case (cache,_,_,_,_,_,{},exp,_,_) then (cache,exp);  /* The expected type */
-    case (cache,env,st,impl,id,tp,(Absyn.NAMEDARG(argName = id2,argValue = aexp) :: _),_,pre,_)
-      equation
-        true = stringEq(id, id2);
-        (cache,exp_1,DAE.PROP(t,_),_) = elabExpInExpression(cache,env,aexp,impl,st,true,pre,info);
-        (exp_2,_) = Types.matchType(exp_1, t, tp, true);
-      then
-        (cache,exp_2);
-    case (cache,env,st,impl,id,tp,(Absyn.NAMEDARG() :: xs),dexp,pre,_)
-      equation
-        (cache,exp_1) = getOptionalNamedArg(cache,env, st, impl, id, tp, xs, dexp,pre,info);
-      then
-        (cache,exp_1);
-  end matchcontinue;
+  for arg in inArgs loop
+    Absyn.NAMEDARG(argName = name) := arg;
+
+    if name == inArgName then
+      Absyn.NAMEDARG(argValue = e) := arg;
+      (outCache, outExp, DAE.PROP(type_ = ty), _) :=
+        elabExpInExpression(inCache, inEnv, e, inImplicit, inST, true, inPrefix, inInfo);
+      outExp := Types.matchType(outExp, ty, inType, true);
+      return;
+    end if;
+  end for; 
+
+  outCache := inCache;
+  outExp := inDefaultExp;
 end getOptionalNamedArg;
 
-public function elabUntypedCref "This function elaborates a ComponentRef without adding type information.
-   Environment is passed along, such that constant subscripts can be elabed using existing
-  functions
-"
+public function elabUntypedCref 
+  "This function elaborates a ComponentRef without adding type information.
+   Environment is passed along, such that constant subscripts can be elabed
+   using existing functions."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input Absyn.ComponentRef inComponentRef;
-  input Boolean inBoolean;
+  input Absyn.ComponentRef inCref;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
-  output DAE.ComponentRef outComponentRef;
+  output DAE.ComponentRef outCref;
 algorithm
-  (outCache,outComponentRef) :=
-  match (inCache,inEnv,inComponentRef,inBoolean,inPrefix,info)
+  outCref := match inCref
     local
-      list<DAE.Subscript> subs_1;
-      FCore.Graph env;
-      String id;
-      list<Absyn.Subscript> subs;
-      Boolean impl;
-      DAE.ComponentRef cr_1;
-      Absyn.ComponentRef cr;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-    case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = subs),impl,pre,_) /* impl */
-      equation
-        (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl,pre,info);
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+
+    case Absyn.CREF_IDENT()
+      algorithm
+        (outCache, subs) := elabSubscripts(inCache, inEnv, inCref.subscripts,
+          inImplicit, inPrefix, inInfo);  
       then
-        (cache,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,subs_1));
-    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = subs,componentRef = cr),impl,pre,_)
-      equation
-        (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl,pre,info);
-        (cache,cr_1) = elabUntypedCref(cache,env, cr, impl,pre,info);
+        ComponentReference.makeCrefIdent(inCref.name, DAE.T_UNKNOWN_DEFAULT, subs);
+
+    case Absyn.CREF_QUAL()
+      algorithm
+        (outCache, subs) := elabSubscripts(inCache, inEnv, inCref.subscripts,
+          inImplicit, inPrefix, inInfo);
+        (outCache, cr) := elabUntypedCref(outCache, inEnv, inCref.componentRef,
+          inImplicit, inPrefix, inInfo);
       then
-        (cache,ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,subs_1,cr_1));
+        ComponentReference.makeCrefQual(inCref.name, DAE.T_UNKNOWN_DEFAULT, subs, cr);
+
   end match;
 end elabUntypedCref;
 
@@ -7382,15 +6935,15 @@ public function needToRebuild
   input Real   buildTime;
   output Boolean buildNeeded;
 algorithm
-  buildNeeded := matchcontinue(newFile, oldFile, buildTime)
+  buildNeeded := matchcontinue(newFile, oldFile)
     local String newf,oldf; Real bt,nfmt;
-    case ("","",_) then true; // rebuild all the time if the function has no file!
-    case (newf,oldf,bt)
+    case ("", "") then true; // rebuild all the time if the function has no file!
+    case (newf, oldf)
       equation
         true = stringEq(newf, oldf); // the files should be the same!
         // the new file nf should have an older modification time than the last build
         SOME(nfmt) = System.getFileModificationTime(newf);
-        true = realGt(bt, nfmt); // the file was not modified since last build
+        true = realGt(buildTime, nfmt); // the file was not modified since last build
       then false;
     else true;
   end matchcontinue;
@@ -7407,55 +6960,24 @@ public function isFunctionInCflist
   output Integer outFuncHandle;
   output Real outBuildTime;
   output String outFileName;
+protected
+  Absyn.Path path;
 algorithm
-  (outBoolean,outFuncHandle,outBuildTime,outFileName) :=
-  matchcontinue (inFunctions,inPath)
-    local
-      Absyn.Path path1,path2;
-      DAE.Type ty;
-      list<GlobalScript.CompiledCFunction> rest;
-      Boolean res;
-      Integer handle;
-      Real buildTime;
-      String fileName;
+  for fn in inFunctions loop
+    GlobalScript.CFunction(path = path) := fn;
 
-    case ({},_) then (false, -1, -1.0, "");
+    if Absyn.pathEqual(path, inPath) then
+      GlobalScript.CFunction(funcHandle = outFuncHandle, buildTime =
+          outBuildTime, loadedFromFile = outFileName) := fn;
+      outBoolean := true;
+    end if;
+  end for;
 
-    case ((GlobalScript.CFunction(path1,_,handle,buildTime,fileName) :: _),path2)
-      equation
-        true = Absyn.pathEqual(path1, path2);
-      then
-        (true, handle, buildTime, fileName);
-
-    case ((GlobalScript.CFunction(path1,_,_,_,_) :: rest),path2)
-      equation
-        false = Absyn.pathEqual(path1, path2);
-        (res,handle,buildTime,fileName) = isFunctionInCflist(rest, path2);
-      then
-        (res,handle,buildTime,fileName);
-  end matchcontinue;
+  outBoolean := false;
+  outFuncHandle := -1;
+  outBuildTime := -1.0;
+  outFileName := "";
 end isFunctionInCflist;
-
-/*
-public function getComponentsWithUnkownArraySizes
-"This function returns true if a class
- has unknown array sizes for a component"
-  input SCode.Element cl;
-  output list<SCode.Element> compElts;
-algorithm
-  compElts := matchcontinue (cl)
-    local
-      list<SCode.Element> rest;
-      SCode.Element comp;
-    // handle the empty things
-    case ({}) then ({},{},{});
-    // collect components
-    case (( comp as SCode.COMPONENT(component=_) ) :: rest) then comp::splitElts(rest);
-    // ignore others
-    case (_ :: rest) then splitElts(rest);
-  end matchcontinue;
-end getComponentsWithUnkownArraySizes;
-*/
 
 protected function createDummyFarg
   input String name;
@@ -7471,16 +6993,16 @@ protected function propagateDerivedInlineAnnotation
   input SCode.Comment inComment;
   output SCode.Comment outComment;
 algorithm
-  outComment := matchcontinue(inExtendedClass, inComment)
+  outComment := matchcontinue inExtendedClass
     local
       SCode.Comment cmt;
       SCode.Annotation ann;
 
-    case (SCode.CLASS(cmt = cmt), _)
-      equation
-        NONE() = SCode.getInlineTypeAnnotationFromCmt(inComment);
-        SOME(ann) = SCode.getInlineTypeAnnotationFromCmt(cmt);
-        cmt = SCode.appendAnnotationToComment(ann, cmt);
+    case SCode.CLASS(cmt = cmt)
+      algorithm
+        NONE() := SCode.getInlineTypeAnnotationFromCmt(inComment);
+        SOME(ann) := SCode.getInlineTypeAnnotationFromCmt(cmt);
+        cmt := SCode.appendAnnotationToComment(ann, cmt);
       then
         cmt;
 
@@ -7513,9 +7035,12 @@ algorithm
   (outCache,outProperties) := elabCallArgsEvaluateArrayLength(outCache,inEnv,outProperties,inPrefix,info);
 end elabCallArgs;
 
-protected function elabCallArgsEvaluateArrayLength "Evaluate array dimensions in the returned type. For a call f(n) we might get Integer[n] back, where n is a parameter expression.
-We consider any such parameter structural since it decides the dimension of an array.
-We fall back to not evaluating the parameter if we fail since the dimension may not be structural (used in another call or reduction, etc)."
+protected function elabCallArgsEvaluateArrayLength 
+  "Evaluate array dimensions in the returned type. For a call f(n) we might get
+   Integer[n] back, where n is a parameter expression.  We consider any such
+   parameter structural since it decides the dimension of an array.  We fall
+   back to not evaluating the parameter if we fail since the dimension may not
+   be structural (used in another call or reduction, etc)."
   input FCore.Cache inCache;
   input FCore.Graph env;
   input DAE.Properties inProperties;
@@ -7523,21 +7048,20 @@ We fall back to not evaluating the parameter if we fail since the dimension may 
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Properties outProperties;
+protected
+  DAE.Type ty;
 algorithm
-  (outCache,outProperties) := matchcontinue (inCache,env,inProperties,inPrefix,info)
-    local
-      FCore.Cache cache;
-      DAE.Type ty;
-      /* Unsure if we want to evaluate dimensions inside function scope */
-    case (_,_,_,_,_)
-      equation
-        // last scope ref in env is a class scope
-        true = FGraph.checkScopeType(List.create(FGraph.lastScopeRef(env)), SOME(FCore.CLASS_SCOPE()));
-        ty = Types.getPropType(inProperties);
-        (ty,(cache,_)) = Types.traverseType(ty,(inCache,env),elabCallArgsEvaluateArrayLength2);
-      then (cache,Types.setPropType(inProperties,ty));
-    else (inCache,inProperties);
-  end matchcontinue;
+  try
+    // Unsure if we want to evaluate dimensions inside function scope.
+    // Last scope ref in env is a class scope.
+    true := FGraph.checkScopeType({FGraph.lastScopeRef(env)}, SOME(FCore.CLASS_SCOPE()));
+    ty := Types.getPropType(inProperties);
+    (ty, (outCache, _)) := Types.traverseType(ty, (inCache, env), elabCallArgsEvaluateArrayLength2);
+    outProperties := Types.setPropType(inProperties, ty);
+  else
+    outCache := inCache;
+    outProperties := inProperties;
+  end try;
 end elabCallArgsEvaluateArrayLength;
 
 protected function elabCallArgsEvaluateArrayLength2
@@ -7552,9 +7076,9 @@ algorithm
       DAE.Dimensions dims;
       DAE.TypeSource source;
     case (DAE.T_ARRAY(),tpl)
-      equation
-        (dims,tpl) = List.mapFold(oty.dims,elabCallArgsEvaluateArrayLength3,tpl);
-        oty.dims = dims;
+      algorithm
+        (dims,tpl) := List.mapFold(oty.dims,elabCallArgsEvaluateArrayLength3,tpl);
+        oty.dims := dims;
       then (oty,tpl);
     else (oty,inTpl);
   end matchcontinue;
@@ -7573,8 +7097,8 @@ algorithm
       FCore.Cache cache;
       FCore.Graph env;
     case (DAE.DIM_EXP(exp),(cache,env))
-      equation
-        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env,exp,false,NONE(),Absyn.NO_MSG(),0);
+      algorithm
+        (cache,Values.INTEGER(i),_) := Ceval.ceval(cache,env,exp,false,NONE(),Absyn.NO_MSG(),0);
       then (DAE.DIM_INTEGER(i),(cache,env));
     else (inDim,inTpl);
   end matchcontinue;
@@ -7590,30 +7114,25 @@ protected function createInputVariableReplacements
   input VarTransform.VariableReplacements inVarsRepl;
   output VarTransform.VariableReplacements outVarsRepl;
 algorithm
-  outVarsRepl := matchcontinue(inSlotLst, inVarsRepl)
+  outVarsRepl := matchcontinue inSlotLst
     local
-      VarTransform.VariableReplacements i,o;
+      VarTransform.VariableReplacements o;
       String id;
       DAE.Exp e;
       list<Slot> rest;
 
     // handle empty
-    case ({}, i) then i;
+    case {} then inVarsRepl;
 
     // only interested in filled slots that have a optional expression
-    case (SLOT(defaultArg = DAE.FUNCARG(name=id), slotFilled = true, arg = SOME(e))::rest, i)
-      equation
-        o = VarTransform.addReplacement(i, ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {}), e);
-        o = createInputVariableReplacements(rest, o);
+    case SLOT(defaultArg = DAE.FUNCARG(name=id), slotFilled = true, arg = SOME(e)) :: rest
+      algorithm
+        o := VarTransform.addReplacement(inVarsRepl, ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {}), e);
       then
-        o;
+        createInputVariableReplacements(rest, o);
 
     // try the next.
-    case (_::rest, i)
-      equation
-        o = createInputVariableReplacements(rest, i);
-      then
-        o;
+    else createInputVariableReplacements(listRest(inSlotLst), inVarsRepl);
   end matchcontinue;
 end createInputVariableReplacements;
 
@@ -7696,8 +7215,8 @@ algorithm
         */
         fargs = List.map(names, createDummyFarg);
         slots = makeEmptySlots(fargs);
-        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),  {},st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn);
-        (cache,newslots2,constDefaultArgs,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, {}, pre, info);
+        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn);
+        (cache,newslots2,constDefaultArgs,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, pre, info);
         constlist = listAppend(constInputArgs, constDefaultArgs);
         // _ = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         args_2 = slotListArgs(newslots2);
@@ -7707,55 +7226,6 @@ algorithm
         //prop = getProperties(outtype, tyconst);
       then
         (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
-
-    /*/ adrpo: deal with function call via an instance: MultiBody world.gravityAcceleration
-    case (cache, env, fn, args, nargs, impl, _, st,pre,_,_)
-      equation
-        fnPrefix = Absyn.stripLast(fn); // take the prefix: word
-        fnIdent = Absyn.pathLastIdent(fn); // take the suffix: gravityAcceleration
-        Absyn.IDENT(componentName) = fnPrefix; // see that is just a name TODO! this might be a path
-        (_, _, SCode.COMPONENT(
-          prefixes = SCode.PREFIXES(innerOuter=_),
-          typeSpec = Absyn.TPATH(componentType, _)),_, _, _) =
-          Lookup.lookupIdent(cache, env, componentName); // search for the component
-        // join the type with the function name: Modelica.Mechanics.MultiBody.World.gravityAcceleration
-        functionClassPath = Absyn.joinPaths(componentType, Absyn.IDENT(fnIdent));
-
-        fprintln(Flags.STATIC, "Looking for function: " + Absyn.pathString(fn));
-        // lookup the function using the correct typeOf(world).functionName
-        fprintln(Flags.STATIC, "Looking up class: " + Absyn.pathString(functionClassPath));
-        (_, scodeClass, classEnv) = Lookup.lookupClass(cache, env, functionClassPath, true);
-        Util.setStatefulBoolean(stopElab,true);
-        // see if class scodeClass is derived and then
-        // take the applied modifications and transform
-        // them into function arguments by prefixing them
-        // with the component reference (here world)
-        // Example:
-        //   The derived function:
-        //     function gravityAcceleration = gravityAccelerationTypes(
-        //                  gravityType = gravityType,
-        //                  g = g * Modelica.Math.Vectors.normalize(n),
-        //                  mue = mue);
-        //   The actual call (that we are handling here):
-        //     g_0 = world.gravityAcceleration(frame_a.r_0 + Frames.resolve1(frame_a.R, r_CM));
-        //   Will be rewriten to:
-        //     g_0 = world.gravityAcceleration(frame_a.r_0 + Frames.resolve1(frame_a.R, r_CM),
-        //                  gravityType = world.gravityType,
-        //                  g = world.g*Modelica.Math.Vectors.normalize(world.n, 1E-013),
-        //                  mue = world.mue));
-        // if the class is derived translate modifications to named arguments
-        translatedNArgs = transformModificationsToNamedArguments(scodeClass, componentName);
-        (cache, env) = addComponentFunctionsToCurrentEnvironment(cache, env, scodeClass, classEnv, componentName);
-        // transform Absyn.QUALIFIED("world", Absyn.IDENT("gravityAcceleration")) to
-        // Absyn.IDENT("world.gravityAcceleration").
-        stringifiedInstanceFunctionName = componentName + "__" + SCode.className(scodeClass);
-        correctFunctionPath = Absyn.IDENT(stringifiedInstanceFunctionName);
-        // use the extra arguments if any
-        nargs = listAppend(nargs, translatedNArgs);
-        // call the class normally
-        (cache,call_exp,prop_1) = elabCallArgs(cache, env, correctFunctionPath, args, nargs, impl, st,pre,info);
-      then
-        (cache,SOME((call_exp,prop_1)));*/
 
     // Record constructors, user defined or implicit, try the hard stuff first
     case (cache,env,fn,args,nargs,impl,_,st,pre,_,_)
@@ -7770,7 +7240,7 @@ algorithm
 
 
         slots = makeEmptySlots(fargs);
-        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots,true,true,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),  {},st,pre,info,tp1,path);
+        (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots,true,true,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),st,pre,info,tp1,path);
 
         (args_2, newslots2) = addDefaultArgs(newslots, info);
         vect_dims = slotsVectorizable(newslots2, info);
@@ -8050,9 +7520,8 @@ protected function inlineBuiltin
   input DAE.InlineType inlineType;
   output DAE.InlineType outInlineType;
 algorithm
-  outInlineType := match (isBuiltin,inlineType)
-    case (DAE.FUNCTION_BUILTIN_PTR(),_)
-      then DAE.BUILTIN_EARLY_INLINE();
+  outInlineType := match isBuiltin 
+    case DAE.FUNCTION_BUILTIN_PTR() then DAE.BUILTIN_EARLY_INLINE();
     else inlineType;
   end match;
 end inlineBuiltin;
@@ -8276,93 +7745,89 @@ protected function elabCallArgsMetarecord
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.Type inType;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImplicit;
   input Util.StatefulBoolean stopElab;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
 algorithm
-  (outCache,expProps) :=
-  matchcontinue (inCache,inEnv,inType,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inST,inPrefix,info)
+  (outCache, expProps) := matchcontinue inType
     local
-      DAE.Type t;
-      list<DAE.FuncArg> fargs;
-      FCore.Cache cache;
-      FCore.Graph env;
-      list<Slot> slots,newslots;
-      list<DAE.Exp> args_1,args_2;
-      list<DAE.Const> constlist;
-      DAE.Const const;
-      DAE.TupleConst tyconst;
-      DAE.Properties prop;
-      Absyn.Path fqPath,utPath;
-      list<Absyn.Exp> args;
-      list<Absyn.NamedArg> nargs;
-      Boolean impl;
-      Option<GlobalScript.SymbolTable> st;
+      Absyn.Path fq_path, ut_path;
+      String str, fn_str;
+      list<String> field_names;
       list<DAE.Type> tys;
-      DAE.Exp daeExp;
-      String fn_str;
-      String args_str,str;
-      Prefix.Prefix pre;
-      Integer index;
-      list<String> fieldNames;
-      list<DAE.Var> vars;
-      Boolean knownSingleton;
+      list<DAE.FuncArg> fargs;
+      list<Slot> slots;
+      list<DAE.Const> const_lst;
+      DAE.Const const;
+      DAE.TupleConst ty_const;
+      DAE.Properties prop;
+      list<DAE.Exp> args;
 
-    case (cache,_,DAE.T_METARECORD(fields=vars,source={fqPath}),_,_,_,_,_,_,_)
-      equation
-        // _ = List.map(vars, Types.getVarType);
-        DAE.TYPES_VAR(name = str) = List.selectFirst(vars, Types.varHasMetaRecordType);
-        fn_str = Absyn.pathString(fqPath);
-        Error.addSourceMessage(Error.METARECORD_CONTAINS_METARECORD_MEMBER,{fn_str,str},info);
-      then (cache,NONE());
-
-    case (cache,_,t as DAE.T_METARECORD(fields=vars,source={_}),args,nargs,_,_,_,_,_)
-      equation
-        false = listLength(vars) == listLength(args) + listLength(nargs);
-        fn_str = Types.unparseType(t);
-        Error.addSourceMessage(Error.WRONG_NO_OF_ARGS,{fn_str},info);
-      then (cache,NONE());
-
-    case (cache,env,t as DAE.T_METARECORD(index=index,utPath=utPath,fields=vars,source={fqPath}),args,nargs,impl,_,st,pre,_)
-      equation
-        fieldNames = List.map(vars, Types.getVarName);
-        tys = List.map(vars, Types.getVarType);
-        fargs = List.threadMap(fieldNames, tys, Types.makeDefaultFuncArg);
-        slots = makeEmptySlots(fargs);
-        (cache,_,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true, true , impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, st, pre, info, t, utPath);
-        const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
-        tyconst = elabConsts(t, const);
-//      t = DAE.T_METAUNIONTYPE({},knownSingleton,{utPath});
-        prop = getProperties(t, tyconst);
-        true = List.fold(newslots, slotAnd, true);
-        args_2 = slotListArgs(newslots);
+    case DAE.T_METARECORD(source = {fq_path})
+      algorithm
+        DAE.TYPES_VAR(name = str) := List.selectFirst(inType.fields, Types.varHasMetaRecordType);
+        fn_str := Absyn.pathString(fq_path);
+        Error.addSourceMessage(Error.METARECORD_CONTAINS_METARECORD_MEMBER,
+          {fn_str, str}, inInfo);
       then
-        (cache,SOME((DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop)));
+        (inCache, NONE());
 
-    // MetaRecord failure
-    case (cache,env,DAE.T_METARECORD(fields=vars,source={fqPath}),args,_,_,_,st,pre,_)
-      equation
-        (cache,_,prop,_) = elabExpInExpression(cache,env,Absyn.TUPLE(args),false,st,false,pre,info);
-        tys = List.map(vars, Types.getVarType);
-        str = "Failed to match types:\n    actual:   " + Types.unparseType(Types.getPropType(prop)) + "\n    expected: " + Types.unparseType(DAE.T_TUPLE(tys,DAE.emptyTypeSource));
-        fn_str = Absyn.pathString(fqPath);
-        Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,str},info);
-      then (cache,NONE());
+    case DAE.T_METARECORD(source = {_})
+      algorithm
+        false := listLength(inType.fields) == listLength(inPosArgs) + listLength(inNamedArgs);
+        fn_str := Types.unparseType(inType);
+        Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {fn_str}, inInfo);
+      then
+        (inCache, NONE());
+
+    case DAE.T_METARECORD(source = {fq_path})
+      algorithm
+        field_names := list(Types.getVarName(var) for var in inType.fields);
+        tys := list(Types.getVarType(var) for var in inType.fields);
+        fargs := list(Types.makeDefaultFuncArg(n, t) threaded for n in field_names, t in tys);
+        slots := makeEmptySlots(fargs);
+        (outCache, _, slots, const_lst) := elabInputArgs(inCache, inEnv, inPosArgs,
+          inNamedArgs, slots, true, true, inImplicit, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(),
+          inST, inPrefix, inInfo, inType, inType.utPath);
+        const := List.fold(const_lst, Types.constAnd, DAE.C_CONST());
+        ty_const := elabConsts(inType, const);
+        prop := getProperties(inType, ty_const);
+        true := List.fold(slots, slotAnd, true);
+        args := slotListArgs(slots);
+      then
+        (outCache, SOME((DAE.METARECORDCALL(fq_path, args, field_names, inType.index), prop)));
+
+    // MetaRecord failure.
+    case DAE.T_METARECORD(source = {fq_path})
+      algorithm
+        (outCache, _, prop) := elabExpInExpression(inCache, inEnv,
+          Absyn.TUPLE(inPosArgs), false, inST, false, inPrefix, inInfo);
+        tys := list(Types.getVarType(var) for var in inType.fields);
+        str := "Failed to match types:\n    actual:   " +
+          Types.unparseType(Types.getPropType(prop)) +
+          "\n    expected: " +
+          Types.unparseType(DAE.T_TUPLE(tys, DAE.emptyTypeSource));
+        fn_str := Absyn.pathString(fq_path);
+        Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE, {fn_str, str}, inInfo);
+      then
+        (outCache, NONE());
 
     // MetaRecord failure (args).
-    case (cache,_,t,args,_,_,_,_,_,_)
-      equation
-        {fqPath} = Types.getTypeSource(t);
-        args_str = "Failed to elaborate arguments " + Dump.printExpStr(Absyn.TUPLE(args));
-        fn_str = Absyn.pathString(fqPath);
-        Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE,{fn_str,args_str},info);
-      then (cache,NONE());
+    else
+      algorithm
+        {fq_path} := Types.getTypeSource(inType);
+        str := "Failed to elaborate arguments " + Dump.printExpStr(Absyn.TUPLE(inPosArgs));
+        fn_str := Absyn.pathString(fq_path);
+        Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE, {fn_str, str}, inInfo);
+      then
+        (inCache, NONE());
+
   end matchcontinue;
 end elabCallArgsMetarecord;
 
@@ -8371,8 +7836,9 @@ protected uniontype ForceFunctionInst
   record NORMAL_FUNCTION_INST "Used when blocking function instantiation to instantiate the function anyway" end NORMAL_FUNCTION_INST;
 end ForceFunctionInst;
 
-public function instantiateDaeFunction "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
-functiontree of a newly created dae"
+public function instantiateDaeFunction
+  "Help function to elabCallArgs. Instantiates the function as a DAE and adds it
+   to the functiontree of a newly created DAE."
   input FCore.Cache inCache;
   input FCore.Graph env;
   input Absyn.Path name;
@@ -8382,11 +7848,13 @@ functiontree of a newly created dae"
   output FCore.Cache outCache;
   output Util.Status status;
 algorithm
-  (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin, clOpt, Error.getNumErrorMessages(), printErrorMsg, Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions)), NORMAL_FUNCTION_INST());
+  (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin,
+    clOpt, printErrorMsg, NORMAL_FUNCTION_INST());
 end instantiateDaeFunction;
 
-public function instantiateDaeFunctionFromTypes "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
-functiontree of a newly created dae"
+public function instantiateDaeFunctionFromTypes
+  "Help function to elabCallArgs. Instantiates the function as a DAE and adds it
+   to the functiontree of a newly created DAE."
   input FCore.Cache inCache;
   input FCore.Graph env;
   input list<DAE.Type> tys;
@@ -8397,22 +7865,25 @@ functiontree of a newly created dae"
   output FCore.Cache outCache;
   output Util.Status status;
 algorithm
-  (outCache,status) := match (inCache, env, tys, builtin, clOpt, printErrorMsg, acc)
+  (outCache,status) := match (tys, acc)
     local
       Absyn.Path name;
       list<DAE.Type> rest;
       Util.Status status1,status2;
-    case (_, _, DAE.T_FUNCTION(source={name})::rest, _, _, _, Util.SUCCESS())
-      equation
-        (outCache,status) = instantiateDaeFunction(inCache, env, name, builtin, clOpt, printErrorMsg);
-        (outCache,status) = instantiateDaeFunctionFromTypes(inCache, env, rest, builtin, clOpt, printErrorMsg, status);
-      then (outCache, status);
+
+    case (DAE.T_FUNCTION(source = {name}) :: rest, Util.SUCCESS())
+      algorithm
+        (outCache,status) := instantiateDaeFunction(inCache, env, name, builtin, clOpt, printErrorMsg);
+      then
+        instantiateDaeFunctionFromTypes(inCache, env, rest, builtin, clOpt, printErrorMsg, status);
+
     else (inCache, acc);
   end match;
 end instantiateDaeFunctionFromTypes;
 
-public function instantiateDaeFunctionForceInst "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
-functiontree of a newly created dae"
+public function instantiateDaeFunctionForceInst
+  "Help function to elabCallArgs. Instantiates the function as a DAE and adds it
+   to the functiontree of a newly created DAE."
   input FCore.Cache inCache;
   input FCore.Graph env;
   input Absyn.Path name;
@@ -8422,93 +7893,108 @@ functiontree of a newly created dae"
   output FCore.Cache outCache;
   output Util.Status status;
 algorithm
-  (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin, clOpt, Error.getNumErrorMessages(), printErrorMsg, Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions)), FORCE_FUNCTION_INST());
+  (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin,
+    clOpt, printErrorMsg, FORCE_FUNCTION_INST());
 end instantiateDaeFunctionForceInst;
 
-protected function instantiateDaeFunction2 "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
-functiontree of a newly created dae"
+protected function instantiateDaeFunction2 
+  "Help function to elabCallArgs. Instantiates the function as a DAE and adds it
+   to the functiontree of a newly created DAE."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path inName;
   input Boolean builtin "builtin functions create empty dae";
   input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
-  input Integer numError "if errors were added, do not add a generic error message";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
-  input Boolean instOnlyForcedFunctions;
   input ForceFunctionInst forceFunctionInst;
   output FCore.Cache outCache;
   output Util.Status status;
+protected
+  Integer numError := Error.getNumErrorMessages();
+  Boolean instOnlyForcedFunctions := Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions));
 algorithm
-  (outCache,status) := matchcontinue(inCache,inEnv,inName,builtin,clOpt,numError,printErrorMsg,instOnlyForcedFunctions,forceFunctionInst)
+  (outCache,status) := matchcontinue(builtin, clOpt, instOnlyForcedFunctions, forceFunctionInst)
     local
-      FCore.Cache cache;
       FCore.Graph env;
       SCode.Element cl;
       String pathStr,envStr;
       DAE.ComponentRef cref;
       Absyn.Path name;
+      DAE.Type ty;
 
     // Skip function instantiation if we set those flags
-    case(cache,_,name,_,_,_,_,true,NORMAL_FUNCTION_INST())
-      equation
-        failure(Absyn.IDENT(_) = name); // Don't skip builtin functions or functions in the same package; they are useful to inline
+    case (_, _, true, NORMAL_FUNCTION_INST())
+      algorithm
+        // Don't skip builtin functions or functions in the same package; they are useful to inline
+        false := Absyn.pathIsIdent(inName);
         // print("Skipping: " + Absyn.pathString(name) + "\n");
-      then (cache,Util.SUCCESS());
+      then
+        (inCache, Util.SUCCESS());
 
     // Builtin functions skipped
-    case(cache,_,_,true,_,_,_,_,_) then (cache,Util.SUCCESS());
+    case (true, _, _, _) then (inCache, Util.SUCCESS());
 
     // External object functions skipped
-    case(cache,env,name,_,_,_,_,_,NORMAL_FUNCTION_INST())
-      equation
-        (_,true) = isExternalObjectFunction(cache,env,name);
-      then (cache,Util.SUCCESS());
+    case (_, _, _, NORMAL_FUNCTION_INST())
+      algorithm
+        (_, true) := isExternalObjectFunction(inCache, inEnv, inName);
+      then
+        (inCache, Util.SUCCESS());
 
     // Recursive calls (by looking at environment) skipped
-    case(cache,env,name,_,NONE(),_,_,_,_)
-      equation
-        false = FGraph.isTopScope(env);
-        true = Absyn.pathSuffixOf(name,FGraph.getGraphName(env));
-      then (cache,Util.SUCCESS());
+    case (_, NONE(), _, _)
+      algorithm
+        false := FGraph.isTopScope(inEnv);
+        true := Absyn.pathSuffixOf(inName, FGraph.getGraphName(inEnv));
+      then
+        (inCache, Util.SUCCESS());
 
     // Recursive calls (by looking in cache) skipped
-    case(cache,env,name,_,_,_,_,_,_)
-      equation
-        (cache, env,_, name) = lookupAndFullyQualify(cache,env,name);
-        FCore.checkCachedInstFuncGuard(cache,name);
-      then (cache,Util.SUCCESS());
+    case (_, _, _, _)
+      algorithm
+        (outCache, _, _, name) := lookupAndFullyQualify(inCache, inEnv, inName);
+        FCore.checkCachedInstFuncGuard(outCache, name);
+      then
+        (outCache, Util.SUCCESS());
 
     // class must be looked up
-    case(cache,env,name,_,NONE(),_,_,_,_)
-      equation
-        (cache, env, cl, name) = lookupAndFullyQualify(cache,env,name);
-        cache = FCore.addCachedInstFuncGuard(cache,name);
-        (cache,env,_) = InstFunction.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
-      then (cache,Util.SUCCESS());
+    case (_, NONE(), _, _)
+      algorithm
+        (outCache, env, cl, name) := lookupAndFullyQualify(inCache, inEnv, inName);
+        outCache := FCore.addCachedInstFuncGuard(outCache, name);
+        outCache := InstFunction.implicitFunctionInstantiation(outCache, env,
+          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), cl, {});
+      then
+        (outCache, Util.SUCCESS());
 
     // class already available
-    case(cache,env,name,_,SOME(cl),_,_,_,_)
-      equation
-        (cache,name) = Inst.makeFullyQualified(cache,env,name);
-        (cache,env,_) = InstFunction.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
-      then (cache,Util.SUCCESS());
+    case (_, SOME(cl), _, _)
+      algorithm
+        (outCache, name) := Inst.makeFullyQualified(inCache, inEnv, inName);
+        outCache := InstFunction.implicitFunctionInstantiation(outCache, inEnv,
+          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), cl, {});
+      then
+        (outCache, Util.SUCCESS());
 
     // call to function reference variable
-    case (cache,env,name,_,NONE(),_,_,_,_)
-      equation
-        cref = ComponentReference.pathToCref(name);
-        (cache,_,DAE.T_FUNCTION(),_,_,_,env,_,_) = Lookup.lookupVar(cache,env,cref);
-      then (cache,Util.SUCCESS());
+    case (_, NONE(), _, _)
+      algorithm
+        cref := ComponentReference.pathToCref(inName);
+        (outCache, _, ty) := Lookup.lookupVar(inCache, inEnv, cref);
+        DAE.T_FUNCTION() := ty;
+      then
+        (outCache, Util.SUCCESS());
 
-    case(_,env,name,_,_,_,true,_,_)
-      equation
-        true = Error.getNumErrorMessages() == numError;
-        envStr = FGraph.printGraphPathStr(env);
-        pathStr = Absyn.pathString(name);
+    case (_, _, true, _)
+      algorithm
+        true := Error.getNumErrorMessages() == numError;
+        envStr := FGraph.printGraphPathStr(inEnv);
+        pathStr := Absyn.pathString(inName);
         Error.addMessage(Error.GENERIC_INST_FUNCTION, {pathStr, envStr});
-      then fail();
+      then
+        fail();
 
-    else (inCache,Util.FAILURE());
+    else (inCache, Util.FAILURE());
   end matchcontinue;
 end instantiateDaeFunction2;
 
@@ -8521,31 +8007,17 @@ protected function lookupAndFullyQualify
   output SCode.Element outClass;
   output Absyn.Path outFunctionName;
 algorithm
-  (outCache, outEnv, outClass, outFunctionName) := matchcontinue(inCache, inEnv, inFunctionName)
-    local
-      FCore.Cache cache;
-      FCore.Graph env;
-      Absyn.Path name;
-      SCode.Element cl;
-
+  if Lookup.isFunctionCallViaComponent(inCache, inEnv, inFunctionName) then
     // do NOT qualify function calls via component instance!
-    case (_, _, _)
-      equation
-        true = Lookup.isFunctionCallViaComponent(inCache, inEnv, inFunctionName);
-        (_,cl,env) = Lookup.lookupClass(inCache, inEnv, inFunctionName, false);
-        name = FGraph.joinScopePath(env, Absyn.makeIdentPathFromString(SCode.elementName(cl)));
-      then
-        (inCache, env, cl, name);
-
+    (_, outClass, outEnv) := Lookup.lookupClass(inCache, inEnv, inFunctionName, false);
+    outFunctionName := FGraph.joinScopePath(outEnv, Absyn.makeIdentPathFromString(SCode.elementName(outClass)));
+    outCache := inCache;
+  else
     // qualify everything else
-    case (_, _, _)
-      equation
-        (cache,cl,env) = Lookup.lookupClass(inCache, inEnv, inFunctionName, false);
-        name = Absyn.makeFullyQualified(FGraph.joinScopePath(env, Absyn.makeIdentPathFromString(SCode.elementName(cl))));
-      then
-        (cache, env, cl, name);
-
-  end matchcontinue;
+    (outCache, outClass, outEnv) := Lookup.lookupClass(inCache, inEnv, inFunctionName, false);
+    outFunctionName := Absyn.makeFullyQualified(
+      FGraph.joinScopePath(outEnv, Absyn.makeIdentPathFromString(SCode.elementName(outClass))));
+  end if;
 end lookupAndFullyQualify;
 
 protected function instantiateImplicitRecordConstructors
@@ -8560,22 +8032,24 @@ protected function instantiateImplicitRecordConstructors
   input Option<GlobalScript.SymbolTable> st;
   output FCore.Cache outCache;
 algorithm
-  outCache := matchcontinue(inCache, inEnv, args, st)
+  outCache := matchcontinue(args, st)
     local
       list<DAE.Exp> rest_args;
       Absyn.Path record_name;
       FCore.Cache cache;
-    case (_, _, _, SOME(_)) then inCache;
-    case (_, _, {}, _) then inCache;
-    case (_, _, DAE.CREF(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = record_name))) :: rest_args, _)
-      equation
-        (cache,Util.SUCCESS()) = instantiateDaeFunction(inCache, inEnv, record_name, false,NONE(), false);
-        cache = instantiateImplicitRecordConstructors(cache, inEnv, rest_args, NONE());
-      then cache;
-    case (_, _, _ :: rest_args, _)
-      equation
-        cache = instantiateImplicitRecordConstructors(inCache, inEnv, rest_args, NONE());
-      then cache;
+
+    case (_, SOME(_)) then inCache;
+    case ({}, _) then inCache;
+
+    case (DAE.CREF(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = record_name))) :: rest_args, _)
+      algorithm
+        (cache, Util.SUCCESS()) := instantiateDaeFunction(inCache, inEnv, record_name, false, NONE(), false);
+      then
+        instantiateImplicitRecordConstructors(cache, inEnv, rest_args, NONE());
+
+    case (_ :: rest_args, _)
+      then instantiateImplicitRecordConstructors(inCache, inEnv, rest_args, NONE());
+
   end matchcontinue;
 end instantiateImplicitRecordConstructors;
 
@@ -8585,45 +8059,33 @@ protected function addDefaultArgs
   input SourceInfo inInfo;
   output list<DAE.Exp> outArgs;
   output list<Slot> outSlots;
-protected
-  list<tuple<Slot, Integer>> slots;
-  array<tuple<Slot, Integer>> slot_arr;
 algorithm
-  slots := List.map1(inSlots, Util.makeTuple, 0);
-  slot_arr := listArray(slots);
-  (outArgs, outSlots) := List.map2_2(inSlots, fillDefaultSlot, slot_arr, inInfo);
+  (outArgs, outSlots) := List.map2_2(inSlots, fillDefaultSlot, listArray(inSlots), inInfo);
 end addDefaultArgs;
 
 protected function fillDefaultSlot
   "Fills a function slot with it's default value if it hasn't already been filled."
   input Slot inSlot;
-  input array<tuple<Slot, Integer>> inSlotArray;
+  input array<Slot> inSlotArray;
   input SourceInfo inInfo;
   output DAE.Exp outArg;
   output Slot outSlot;
 algorithm
-  (outArg, outSlot) := match(inSlot, inSlotArray, inInfo)
+  (outArg, outSlot) := match inSlot
     local
-      DAE.Dimensions dims;
       DAE.Exp arg;
       String id;
       Integer idx;
-      tuple<Slot, Integer> aslot;
-      Slot slot;
 
     // Slot already filled by function argument.
-    case (SLOT(slotFilled = true, arg = SOME(arg)), _, _) then (arg, inSlot);
+    case SLOT(slotFilled = true, arg = SOME(arg)) then (arg, inSlot);
 
     // Slot not filled by function argument, but has default value.
-    case (SLOT(slotFilled = false, defaultArg = DAE.FUNCARG(defaultBinding=SOME(_)), idx = idx), _, _)
-      equation
-        aslot = arrayGet(inSlotArray, idx);
-        (arg, slot) = fillDefaultSlot2(aslot, inSlotArray, inInfo);
-      then
-        (arg, slot);
+    case SLOT(slotFilled = false, defaultArg = DAE.FUNCARG(defaultBinding=SOME(_)), idx = idx)
+      then fillDefaultSlot2(inSlotArray[idx], inSlotArray, inInfo);
 
     // Slot not filled, and has no default value => error.
-    case (SLOT(defaultArg = DAE.FUNCARG(name=id)), _, _)
+    case SLOT(defaultArg = DAE.FUNCARG(name = id))
       equation
         Error.addSourceMessage(Error.UNFILLED_SLOT, {id}, inInfo);
       then
@@ -8633,13 +8095,13 @@ algorithm
 end fillDefaultSlot;
 
 protected function fillDefaultSlot2
-  input tuple<Slot, Integer> inSlot;
-  input array<tuple<Slot, Integer>> inSlotArray;
+  input Slot inSlot;
+  input array<Slot> inSlotArray;
   input SourceInfo inInfo;
   output DAE.Exp outArg;
-  output Slot outSlot;
+  output Slot outSlot := inSlot;
 algorithm
-  (outArg, outSlot) := match(inSlot, inSlotArray, inInfo)
+  (outArg, outSlot) := match outSlot
     local
       Slot slot;
       DAE.Exp exp;
@@ -8651,25 +8113,33 @@ algorithm
       list<String> cyclic_slots;
 
     // An already evaluated slot, return its binding.
-    case ((slot as SLOT(arg = SOME(exp)), 2), _, _) then (exp, slot);
+    case SLOT(arg = SOME(exp), evalStatus = 2)
+      then (exp, inSlot);
 
     // A slot in the process of being evaluated => cyclic bindings.
-    case ((SLOT(defaultArg = DAE.FUNCARG(name=id)), 1), _, _)
-      equation
+    case SLOT(defaultArg = DAE.FUNCARG(name=id),
+              evalStatus = 1)
+      algorithm
         Error.addSourceMessage(Error.CYCLIC_DEFAULT_VALUE,
           {id}, inInfo);
       then
         fail();
 
     // A slot with an unevaluated binding, evaluate the binding and return it.
-    case ((slot as SLOT(defaultArg = da as DAE.FUNCARG(defaultBinding=SOME(exp)), dims = dims, idx = idx), 0), _, _)
-      equation
-        arrayUpdate(inSlotArray, idx, (slot, 1));
-        exp = evaluateSlotExp(exp, inSlotArray, inInfo);
-        slot = SLOT(da, true, SOME(exp), dims, idx);
-        arrayUpdate(inSlotArray, idx, (slot, 2));
+    case SLOT(defaultArg = DAE.FUNCARG(defaultBinding=SOME(exp)),
+        idx = idx, evalStatus = 0)
+      algorithm
+        outSlot.evalStatus := SLOT_EVALUATING;
+        arrayUpdate(inSlotArray, idx, outSlot);
+
+        exp := evaluateSlotExp(exp, inSlotArray, inInfo);
+        outSlot.arg := SOME(exp);
+        outSlot.slotFilled := true;
+
+        outSlot.evalStatus := SLOT_EVALUATED;
+        arrayUpdate(inSlotArray, idx, outSlot);
       then
-        (exp, slot);
+        (exp, outSlot);
 
   end match;
 end fillDefaultSlot2;
@@ -8678,35 +8148,36 @@ protected function evaluateSlotExp
   "Evaluates a slot's binding by recursively replacing references to other slots
    with their bindings."
   input DAE.Exp inExp;
-  input array<tuple<Slot, Integer>> inSlotArray;
+  input array<Slot> inSlotArray;
   input SourceInfo inInfo;
   output DAE.Exp outExp;
 algorithm
-  (outExp, _) := Expression.traverseExp(inExp, evaluateSlotExp_traverser, (inSlotArray, inInfo));
+  outExp := Expression.traverseExp(inExp, evaluateSlotExp_traverser, (inSlotArray, inInfo));
 end evaluateSlotExp;
 
 protected function evaluateSlotExp_traverser
   input DAE.Exp inExp;
-  input tuple<array<tuple<Slot, Integer>>, SourceInfo> inTuple;
+  input tuple<array<Slot>, SourceInfo> inTuple;
   output DAE.Exp outExp;
-  output tuple<array<tuple<Slot, Integer>>, SourceInfo> outTuple;
+  output tuple<array<Slot>, SourceInfo> outTuple;
 algorithm
-  (outExp,outTuple) := match (inExp,inTuple)
+  (outExp,outTuple) := match (inExp, inTuple)
     local
       String id;
-      array<tuple<Slot, Integer>> slots;
+      array<Slot> slots;
       Option<Slot> slot;
       DAE.Exp exp, orig_exp;
       SourceInfo info;
 
     // Only simple identifiers can be slot names.
     case (orig_exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id)), (slots, info))
-      equation
-        slot = lookupSlotInArray(id, slots);
-        exp = getOptSlotDefaultExp(slot, slots, info, orig_exp);
-      then (exp, (slots, info));
+      algorithm
+        slot := lookupSlotInArray(id, slots);
+        exp := getOptSlotDefaultExp(slot, slots, info, orig_exp);
+      then
+        (exp, (slots, info));
 
-    else (inExp,inTuple);
+    else (inExp, inTuple);
   end match;
 end evaluateSlotExp_traverser;
 
@@ -8714,31 +8185,27 @@ protected function lookupSlotInArray
   "Looks up the given name in an array of slots, and returns either SOME(slot)
    if a slot with that name was found, or NONE() if a slot couldn't be found."
   input String inSlotName;
-  input array<tuple<Slot, Integer>> inSlots;
+  input array<Slot> inSlots;
   output Option<Slot> outSlot;
+protected
+  Slot slot;
 algorithm
-  outSlot := matchcontinue(inSlotName, inSlots)
-    local
-      Slot slot;
-
-    case (_, _)
-      equation
-        ((slot, _), _) = Array.getMemberOnTrue(inSlotName, inSlots, isSlotNamed);
-      then
-        SOME(slot);
-
-    else NONE();
-  end matchcontinue;
+  try
+    slot := Array.getMemberOnTrue(inSlotName, inSlots, isSlotNamed);
+    outSlot := SOME(slot);
+  else
+    outSlot := NONE();
+  end try;
 end lookupSlotInArray;
 
 protected function isSlotNamed
   input String inName;
-  input tuple<Slot, Integer> inSlot;
+  input Slot inSlot;
   output Boolean outIsNamed;
 protected
   String id;
 algorithm
-  (SLOT(defaultArg = DAE.FUNCARG(name=id)), _) := inSlot;
+  SLOT(defaultArg = DAE.FUNCARG(name=id)) := inSlot;
   outIsNamed := stringEq(id, inName);
 end isSlotNamed;
 
@@ -8746,49 +8213,43 @@ protected function getOptSlotDefaultExp
   "Takes an optional slot and tries to evaluate the slot's binding if it's SOME,
    otherwise returns the original expression if it's NONE."
   input Option<Slot> inSlot;
-  input array<tuple<Slot, Integer>> inSlots;
+  input array<Slot> inSlots;
   input SourceInfo inInfo;
   input DAE.Exp inOrigExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inSlot, inSlots, inInfo, inOrigExp)
+  outExp := match inSlot
     local
       Slot slot;
       DAE.Exp exp;
 
     // Got a slot, evaluate its binding and return it.
-    case (SOME(slot), _, _, _)
-      equation
-        (exp, _) = fillDefaultSlot(slot, inSlots, inInfo);
+    case SOME(slot)
+      algorithm
+        exp := fillDefaultSlot(slot, inSlots, inInfo);
       then
         exp;
 
     // No slot, return the original expression.
-    case (NONE(), _, _, _) then inOrigExp;
+    case NONE() then inOrigExp;
   end match;
 end getOptSlotDefaultExp;
 
-protected function determineConstSpecialFunc "For the special functions constructor and destructor,
-in external object,
-the constantness is always variable, even if arguments are constant, because they should be called during
-runtime and not during compiletime."
+protected function determineConstSpecialFunc
+  "For the special functions constructor and destructor, in external object, the
+   constantness is always variable, even if arguments are constant, because they
+   should be called during runtime and not during compiletime."
   input FCore.Cache inCache;
-  input FCore.Graph env;
+  input FCore.Graph inEnv;
   input DAE.Const inConst;
-  input Absyn.Path funcName;
+  input Absyn.Path inFuncName;
   output FCore.Cache outCache;
   output DAE.Const outConst;
+protected
+  Boolean is_ext;
 algorithm
-  (outCache,outConst) := matchcontinue(inCache,env,inConst,funcName)
-  local Absyn.Path path;
-    FCore.Cache cache;
-    // External Object found, constructor call is not constant.
-    case (cache,_,_, path)
-      equation
-        (cache,true) = isExternalObjectFunction(cache,env,path);
-      then (cache,DAE.C_VAR());
-    case (cache,_,_,_) then (cache,inConst);
-  end matchcontinue;
+  (outCache, is_ext) := isExternalObjectFunction(inCache, inEnv, inFuncName);
+  outConst := if is_ext then DAE.C_VAR() else inConst;
 end determineConstSpecialFunc;
 
 public function isExternalObjectFunction
@@ -8796,26 +8257,21 @@ public function isExternalObjectFunction
   input FCore.Graph inEnv;
   input Absyn.Path inPath;
   output FCore.Cache outCache;
-  output Boolean res;
+  output Boolean outIsExt;
+protected
+  list<SCode.Element> els; 
+  String last_id;
 algorithm
-  (outCache,res) := matchcontinue(inCache,inEnv,inPath)
-    local
-      FCore.Cache cache;
-      FCore.Graph env_1,env;
-      Absyn.Path path;
-      list<SCode.Element> els;
-
-    case (cache,env,path) equation
-      (cache,SCode.CLASS(classDef = SCode.PARTS(elementLst = els)),_)
-          = Lookup.lookupClass(cache, env, path, false);
-      true = SCode.isExternalObject(els);
-      then (cache,true);
-    case (cache,_,path) equation
-      "constructor" = Absyn.pathLastIdent(path); then (cache,true);
-    case (cache,_,path) equation
-      "destructor" = Absyn.pathLastIdent(path); then (cache,true);
-    case (cache,_,_)  then (cache,false);
-  end matchcontinue;
+  try
+    (outCache, SCode.CLASS(classDef = SCode.PARTS(elementLst = els)), _) :=
+      Lookup.lookupClass(inCache, inEnv, inPath, false);
+    true := SCode.isExternalObject(els);
+    outIsExt := true;
+  else
+    last_id := Absyn.pathLastIdent(inPath);
+    outCache := inCache;
+    outIsExt := last_id == "constructor" or last_id == "destructor"; 
+  end try;
 end isExternalObjectFunction;
 
 protected constant String vectorizeArg = "$vectorizeArg";
@@ -8829,13 +8285,13 @@ protected function vectorizeCall "author: PA
   {foo(1,{1,2}),foo(2,{3,4})}"
   input DAE.Exp inExp;
   input DAE.Dimensions inDims;
-  input list<Slot> inSlotLst;
+  input list<Slot> inSlots;
   input DAE.Properties inProperties;
   input SourceInfo info;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outExp,outProperties) := matchcontinue (inExp,inDims,inSlotLst,inProperties,info)
+  (outExp, outProperties) := matchcontinue (inExp, inDims, inProperties)
     local
       DAE.Exp e,vect_exp,vect_exp_1,dimexp;
       DAE.Type tp,tp0;
@@ -8857,70 +8313,67 @@ algorithm
       list<DAE.ReductionIterator> riters;
       Absyn.ReductionIterType iterType;
 
-    case (e,{},_,prop,_) then (e,prop);
+    case (e, {}, prop) then (e,prop);
 
     // If the dimension is not defined we can't vectorize the call. If we are running
     // checkModel this should succeed anyway, since we might be checking a function
     // that takes a vector of unknown size. So pretend that the dimension is 1.
-    case (e, (DAE.DIM_UNKNOWN() :: ad), slots, prop, _)
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop, info);
+    case (e, (DAE.DIM_UNKNOWN() :: ad), prop)
+      algorithm
+        true := Flags.getConfigBool(Flags.CHECK_MODEL);
       then
-        (vect_exp_1, prop);
+        vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, inSlots, prop, info);
 
     /* Scalar expression, i.e function call */
-    case (e as DAE.CALL(),(dim :: ad),slots,DAE.PROP(tp,c),_)
-      equation
-        int_dim = Expression.dimensionSize(dim);
-        exp_type = Types.simplifyType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
-        vect_exp = vectorizeCallScalar(e, exp_type, int_dim, slots);
-        tp = Types.liftArray(tp, dim);
-        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c),info);
+    case (e as DAE.CALL(),(dim :: ad),DAE.PROP(tp,c))
+      algorithm
+        int_dim := Expression.dimensionSize(dim);
+        exp_type := Types.simplifyType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
+        vect_exp := vectorizeCallScalar(e, exp_type, int_dim, inSlots);
+        tp := Types.liftArray(tp, dim);
       then
-        (vect_exp_1,prop);
+        vectorizeCall(vect_exp, ad, inSlots, DAE.PROP(tp,c),info);
 
     /* array expression of function calls */
-    case (DAE.ARRAY(),(dim :: ad),slots,DAE.PROP(tp,c),_)
-      equation
-        int_dim = Expression.dimensionSize(dim);
+    case (DAE.ARRAY(),(dim :: ad),DAE.PROP(tp,c))
+      algorithm
+        int_dim := Expression.dimensionSize(dim);
         // _ = Types.simplifyType(Types.liftArray(tp, dim));
-        vect_exp = vectorizeCallArray(inExp, int_dim, slots);
-        tp = Types.liftArrayRight(tp, dim);
-        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c),info);
+        vect_exp := vectorizeCallArray(inExp, int_dim, inSlots);
+        tp := Types.liftArrayRight(tp, dim);
       then
-        (vect_exp_1,prop);
+        vectorizeCall(vect_exp, ad, inSlots, DAE.PROP(tp,c),info);
 
     /* Multiple dimensions are possible to change to a reduction, like:
      * f(arr1,arr2) => array(f(x,y) thread for x in arr1, y in arr2)
      * f(mat1,mat2) => array(array(f(x,y) thread for x in arr1, y in arr2) thread for arr1 in mat1, arr2 in mat2
      */
-    case (DAE.CALL(fn,es,attr),dim::ad,slots,prop as DAE.PROP(tp,c),_)
-      equation
-        (es,riters) = vectorizeCallUnknownDimension(es,slots,{},{},info);
-        tp = Types.liftArrayRight(tp, dim);
-        prop = DAE.PROP(tp,c);
-        e = DAE.CALL(fn,es,attr);
-        (e,prop) = vectorizeCall(e,ad,slots,prop,info); // Recurse...
-        foldName = Util.getTempVariableIndex();
-        resultName = Util.getTempVariableIndex();
-        iterType = if listLength(riters)>1 then Absyn.THREAD() else Absyn.COMBINE();
-        rinfo = DAE.REDUCTIONINFO(Absyn.IDENT("array"),iterType,tp,SOME(Values.ARRAY({},{0})),foldName,resultName,NONE());
-        e = DAE.REDUCTION(rinfo,e,riters);
-      then (e,prop);
+    case (DAE.CALL(fn,es,attr),dim::ad,prop as DAE.PROP(tp,c))
+      algorithm
+        (es, riters) := vectorizeCallUnknownDimension(es,inSlots,info);
+        tp := Types.liftArrayRight(tp, dim);
+        prop := DAE.PROP(tp,c);
+        e := DAE.CALL(fn,es,attr);
+        (e, prop) := vectorizeCall(e,ad,inSlots,prop,info); // Recurse...
+        foldName := Util.getTempVariableIndex();
+        resultName := Util.getTempVariableIndex();
+        iterType := if listLength(riters)>1 then Absyn.THREAD() else Absyn.COMBINE();
+        rinfo := DAE.REDUCTIONINFO(Absyn.IDENT("array"),iterType,tp,SOME(Values.ARRAY({},{0})),foldName,resultName,NONE());
+      then
+        (DAE.REDUCTION(rinfo, e, riters), prop);
 
     /* Scalar expression, non-constant but known dimensions */
-    case (DAE.CALL(),(DAE.DIM_EXP() :: _),_,DAE.PROP(_,_),_)
-      equation
-        str = "Cannot vectorize call with dimensions [" + ExpressionDump.dimensionsString(inDims) + "]";
+    case (DAE.CALL(),(DAE.DIM_EXP() :: _),DAE.PROP())
+      algorithm
+        str := "Cannot vectorize call with dimensions [" + ExpressionDump.dimensionsString(inDims) + "]";
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
       then
         fail();
 
-    case (_,dim::_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        str = ExpressionDump.dimensionString(dim);
+    else
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        str := ExpressionDump.dimensionString(listHead(inDims));
         Debug.traceln("- Static.vectorizeCall failed: " + str);
       then
         fail();
@@ -8931,125 +8384,70 @@ protected function vectorizeCallUnknownDimension
   "Returns the new call arguments and a reduction iterator argument"
   input list<DAE.Exp> inEs;
   input list<Slot> inSlots;
-  input list<DAE.Exp> inAcc;
-  input list<DAE.ReductionIterator> found;
   input SourceInfo info;
-  output list<DAE.Exp> oes;
-  output list<DAE.ReductionIterator> ofound;
+  output list<DAE.Exp> oes := {};
+  output list<DAE.ReductionIterator> ofound := {};
+protected
+  list<Slot> rest_slots := inSlots;
+  list<DAE.Dimension> dims;
+  DAE.Type ty, tp;
+  String name;
 algorithm
-  (oes,ofound) := match (inEs,inSlots,inAcc,found,info)
-    local
-      DAE.Exp e,e1,e2;
-      String s1,s2;
-      list<DAE.Exp> es;
-      list<Slot> slots;
-      list<DAE.Exp> acc;
-      String name;
-      DAE.Type ty,tp;
-      DAE.ReductionIterator riter;
-    case ({},{},_,{},_)
-      equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{"Static.vectorizeCallUnknownDimension could not find any slot to vectorize"},info);
-      then fail();
-    case ({},{},acc,_,_) then (listReverse(acc),listReverse(found));
-    case (e::es,SLOT(dims={})::slots,acc,_,_)
-      equation
-        (oes,ofound) = vectorizeCallUnknownDimension(es,slots,e::acc,found,info);
-      then (oes,ofound);
-    case (e::es,SLOT(defaultArg=DAE.FUNCARG(ty=ty))::slots,acc,_,_)
-      equation
-        name = Util.getTempVariableIndex();
-        tp = Types.expTypetoTypesType(Expression.typeof(e)); // Maybe raise the type from the SLOT instead?
-        riter = DAE.REDUCTIONITER(name,e,NONE(),tp);
-        (oes,ofound) = vectorizeCallUnknownDimension(es,slots,DAE.CREF(DAE.CREF_IDENT(name,ty,{}),ty)::acc,riter::found,info);
-      then (oes,ofound);
-  end match;
+  for e in inEs loop
+    SLOT(dims = dims, defaultArg = DAE.FUNCARG(ty = ty)) :: rest_slots := rest_slots;
+
+    if listEmpty(dims) then
+      oes := e :: oes;
+    else
+      name := Util.getTempVariableIndex();
+      tp := Types.expTypetoTypesType(Expression.typeof(e)); // Maybe raise the type from the SLOT instead?
+      ofound := DAE.REDUCTIONITER(name, e, NONE(), tp) :: ofound;
+      oes := DAE.CREF(DAE.CREF_IDENT(name, ty, {}), ty) :: oes;
+    end if;
+  end for;
+
+  if listEmpty(ofound) then
+    Error.addSourceMessageAndFail(Error.INTERNAL_ERROR,
+      {"Static.vectorizeCallUnknownDimension could not find any slot to vectorize"}, info);
+  end if;
+
+  oes := listReverse(oes);
+  ofound := listReverse(ofound);
 end vectorizeCallUnknownDimension;
 
 protected function vectorizeCallArray
-"function : vectorizeCallArray
-  author: PA
-  Helper function to vectorize_call, vectoriezes ARRAY expression to
-  an array of array expressions."
+  "Helper function to vectorizeCall, vectorizes an ARRAY expression to an array
+   of array expressions."
   input DAE.Exp inExp;
-  input Integer inInteger;
-  input list<Slot> inSlotLst;
+  input Integer inDim;
+  input list<Slot> inSlots;
   output DAE.Exp outExp;
+protected
+  DAE.Type ty;
+  list<DAE.Exp> expl;
+  Boolean sc;
 algorithm
-  outExp:=
-  match (inExp,inInteger,inSlotLst)
-    local
-      list<DAE.Exp> arr_expl,expl;
-      Boolean scalar_1,scalar;
-      DAE.Exp res_exp;
-      DAE.Type tp;
-      Integer cur_dim;
-      list<Slot> slots;
-    case (DAE.ARRAY(ty = tp,array = expl),cur_dim,slots) /* cur_dim */
-      equation
-        arr_expl = vectorizeCallArray2(expl, tp, cur_dim, slots);
-        scalar_1 = Expression.typeBuiltin(tp);
-        tp = Expression.liftArrayRight(tp, DAE.DIM_INTEGER(cur_dim));
-        res_exp = DAE.ARRAY(tp,scalar_1,arr_expl);
-      then
-        res_exp;
-  end match;
+  DAE.ARRAY(ty = ty, array = expl) := inExp;
+  expl := vectorizeCallArray2(expl, ty, inDim, inSlots);
+  sc := Expression.typeBuiltin(ty);
+  ty := Expression.liftArrayRight(ty, DAE.DIM_INTEGER(inDim));
+  outExp := DAE.ARRAY(ty, sc, expl);
 end vectorizeCallArray;
 
 protected function vectorizeCallArray2
-"author: PA
-  Helper function to vectorizeCallArray"
-  input list<DAE.Exp> inExpExpLst;
+  "Helper function to vectorizeCallArray"
+  input list<DAE.Exp> inExpl;
   input DAE.Type inType;
-  input Integer inInteger;
-  input list<Slot> inSlotLst;
-  output list<DAE.Exp> outExpExpLst;
+  input Integer inDim;
+  input list<Slot> inSlots;
+  output list<DAE.Exp> outExpl;
 algorithm
-  outExpExpLst:=
-  match (inExpExpLst,inType,inInteger,inSlotLst)
-    local
-      DAE.Type tp,e_tp;
-      Integer cur_dim;
-      list<Slot> slots;
-      DAE.Exp e_1,e;
-      list<DAE.Exp> es_1,es;
-    case ({},_,_,_) then {};
-    case ((e :: es),e_tp,cur_dim,slots)
-      equation
-        e_1 = vectorizeCallArray3(e, e_tp, cur_dim, slots);
-        es_1 = vectorizeCallArray2(es, e_tp, cur_dim, slots);
-      then
-        (e_1 :: es_1);
-  end match;
+  outExpl := list(
+    match e
+      case DAE.CALL() then vectorizeCallScalar(e, inType, inDim, inSlots);
+      case DAE.ARRAY() then vectorizeCallArray(e, inDim, inSlots);
+    end match for e in inExpl);
 end vectorizeCallArray2;
-
-protected function vectorizeCallArray3 "author: PA
-  Helper function to vectorizeCallArray2"
-  input DAE.Exp inExp;
-  input DAE.Type inType;
-  input Integer inInteger;
-  input list<Slot> inSlotLst;
-  output DAE.Exp outExp;
-algorithm
-  outExp:=
-  match (inExp,inType,inInteger,inSlotLst)
-    local
-      DAE.Exp e_1,e;
-      DAE.Type e_tp;
-      Integer cur_dim;
-      list<Slot> slots;
-    case ((e as DAE.CALL()),e_tp,cur_dim,slots) /* cur_dim */
-      equation
-        e_1 = vectorizeCallScalar(e, e_tp, cur_dim, slots);
-      then
-        e_1;
-    case ((e as DAE.ARRAY()),_,cur_dim,slots)
-      equation
-        e_1 = vectorizeCallArray(e, cur_dim, slots);
-      then
-        e_1;
-  end match;
-end vectorizeCallArray3;
 
 protected function vectorizeCallScalar
 "author: PA
@@ -9069,17 +8467,18 @@ algorithm
       DAE.Type e_type,arr_type;
 
     case DAE.CALL()
-      equation
-        expl = vectorizeCallScalar2(exp.path, exp.expLst, exp.attr, slots, dim);
-        e_type = Expression.unliftArray(ty);
-        scalar = Expression.typeBuiltin(e_type) " unlift vectorized dimension to find element type";
-        arr_type = DAE.T_ARRAY(e_type, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
-        new_exp = DAE.ARRAY(arr_type,scalar,expl);
-      then new_exp;
+      algorithm
+        expl := vectorizeCallScalar2(exp.path, exp.expLst, exp.attr, slots, dim);
+        e_type := Expression.unliftArray(ty);
+        scalar := Expression.typeBuiltin(e_type) " unlift vectorized dimension to find element type";
+        arr_type := DAE.T_ARRAY(e_type, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource);
+        new_exp := DAE.ARRAY(arr_type,scalar,expl);
+      then
+        new_exp;
 
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-Static.vectorizeCallScalar failed\n");
       then
         fail();
@@ -9106,38 +8505,27 @@ end vectorizeCallScalar2;
 protected function vectorizeCallScalar3
 "author: PA
   Helper function to vectorizeCallScalar2"
-  input list<DAE.Exp> inExpExpLst;
-  input list<Slot> inSlotLst;
-  input Integer inInteger;
-  output list<DAE.Exp> outExpExpLst;
+  input list<DAE.Exp> inExpl;
+  input list<Slot> inSlots;
+  input Integer inIndex;
+  output list<DAE.Exp> outExpl := {};
+protected
+  list<Slot> rest_slots := inSlots;
+  list<DAE.Dimension> dims;
 algorithm
-  outExpExpLst:=
-  match (inExpExpLst,inSlotLst,inInteger)
-    local
-      list<DAE.Exp> res,es;
-      DAE.Exp e,asub_exp;
-      list<Slot> ss;
-      Integer dim_indx;
+  for e in inExpl loop
+    SLOT(dims = dims) :: rest_slots := rest_slots; 
+     
+    if not listEmpty(dims) then
+      // Foreach argument.
+      e := Expression.makeASUB(e, {DAE.ICONST(inIndex)});
+      e := ExpressionSimplify.simplify1(e);
+    end if;
 
-    // dim_indx
-    case ({},{},_) then {};
+    outExpl := e :: outExpl; 
+  end for;
 
-    // scalar argument
-    case ((e :: es),(SLOT(dims = {}) :: ss),dim_indx)
-      equation
-        res = vectorizeCallScalar3(es, ss, dim_indx);
-      then
-        (e :: res);
-
-    // foreach argument
-    case ((e :: es),(SLOT(dims = (_ :: _)) :: ss),dim_indx)
-      equation
-        res = vectorizeCallScalar3(es, ss, dim_indx);
-        asub_exp = DAE.ICONST(dim_indx);
-        (asub_exp,_) = ExpressionSimplify.simplify1(Expression.makeASUB(e,{asub_exp}));
-      then
-        (asub_exp :: res);
-  end match;
+  outExpl := listReverse(outExpl);
 end vectorizeCallScalar3;
 
 protected function deoverloadFuncname
@@ -9150,99 +8538,88 @@ protected function deoverloadFuncname
   output Absyn.Path outPath;
   output DAE.Type outType;
 algorithm
-  (outPath,outType) := matchcontinue (inPath,inType,inEnv)
+  (outPath,outType) := match inType
     local
       Absyn.Path fn;
       String name;
       DAE.Type tty;
 
-    case (_,DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))), _)
-      equation
-        fn = Absyn.IDENT(name);
-        tty = Types.setTypeSource(inType,Types.mkTypeSource(SOME(fn)));
-      then (fn,tty);
+    case DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(
+        isBuiltin = DAE.FUNCTION_BUILTIN(SOME(name))))
+      algorithm
+        fn := Absyn.IDENT(name);
+        tty := Types.setTypeSource(inType, Types.mkTypeSource(SOME(fn)));
+      then
+        (fn, tty);
 
-    case (_,DAE.T_FUNCTION(source = {fn}), _)
-      then (fn,inType);
+    case DAE.T_FUNCTION(source = {fn}) then (fn,inType);
+    else (inPath, inType);
 
-    else (inPath,inType);
-  end matchcontinue;
+  end match;
 end deoverloadFuncname;
 
-protected function elabTypes "
-function: elabTypes
-   Elaborate input parameters to a function and
-   select matching function type from a list of types."
+protected function elabTypes
+  "Elaborate input parameters to a function and select matching function type
+   from a list of types."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input list<DAE.Type> inTypesTypeLst;
-  input Boolean onlyOneFunction "if true, we can report errors as soon as possible";
-  input Boolean checkTypes "if True, checks types";
-  input Boolean impl;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input list<DAE.Type> inTypes;
+  input Boolean inOnlyOneFunction "if true, we can report errors as soon as possible";
+  input Boolean inCheckTypes "if true, checks types";
+  input Boolean inImplicit;
   input IsExternalObject isExternalObject;
-  input Option<GlobalScript.SymbolTable> st;
+  input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
+  input SourceInfo inInfo;
   output FCore.Cache outCache;
-  output list<DAE.Exp> outExpExpLst1;
-  output list<DAE.Const> outTypesConstLst2;
-  output DAE.Type outType3;
-  output DAE.Type outType4;
-  output DAE.Dimensions outTypesArrayDimLst5;
-  output list<Slot> outSlotLst6;
+  output list<DAE.Exp> outArgs;
+  output list<DAE.Const> outConsts;
+  output DAE.Type outResultType;
+  output DAE.Type outFunctionType;
+  output DAE.Dimensions outDimensions;
+  output list<Slot> outSlots;
+protected
+  list<DAE.FuncArg> params;
+  DAE.Type res_ty, func_ty;
+  DAE.FunctionAttributes func_attr;
+  list<Slot> slots;
+  InstTypes.PolymorphicBindings pb;
+  DAE.TypeSource ts;
+  Absyn.Path path; 
+  Boolean success := false;
+  list<DAE.Type> rest_tys := inTypes;
 algorithm
-  (outCache,outExpExpLst1,outTypesConstLst2,outType3,outType4,outTypesArrayDimLst5,outSlotLst6):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inTypesTypeLst,onlyOneFunction,checkTypes,impl,isExternalObject,st,inPrefix,info)
-    local
-      list<Slot> slots,newslots;
-      list<DAE.Exp> args_1;
-      list<DAE.Const> clist;
-      DAE.Dimensions dims;
-      FCore.Graph env;
-      list<Absyn.Exp> args;
-      list<Absyn.NamedArg> nargs;
-      DAE.Type funcType,t,restype;
-      list<DAE.FuncArg> params;
-      list<DAE.Type> trest;
-      FCore.Cache cache;
-      InstTypes.PolymorphicBindings polymorphicBindings;
-      Prefix.Prefix pre;
-      DAE.FunctionAttributes functionAttributes;
-      DAE.TypeSource ts;
+  while not success loop
+    func_ty :: rest_tys := rest_tys;
 
-    // We found a match.
-    case (cache,env,args,nargs,(funcType as DAE.T_FUNCTION(funcArg=params, funcResultType=restype, functionAttributes=functionAttributes, source=ts))::_,_,_,_,_,_,pre,_)
-      equation
-        slots = makeEmptySlots(params);
-        (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, onlyOneFunction, checkTypes, impl, isExternalObject,{},st,pre,info,funcType,Util.makeValueOrDefault(List.first,ts,Absyn.IDENT("builtinFunction")));
-        // Check the sanity of function parameters whose types are dependent on other parameters.
-        // e.g. input Integer i; input Integer a[i];  // type of 'a' depends on te value 'i'
-        (params, restype) = applyArgTypesToFuncType(newslots, params, restype, env, checkTypes, info);
-        dims = slotsVectorizable(newslots, info);
-        polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings,info,ts);
-        restype = Types.fixPolymorphicRestype(restype, polymorphicBindings, info);
-        t = DAE.T_FUNCTION(params,restype,functionAttributes,ts);
-        t = createActualFunctype(t,newslots,checkTypes) "only created when not checking types for error msg";
-      then
-        (cache,args_1,clist,restype,t,dims,newslots);
+    DAE.T_FUNCTION(funcArg = params, funcResultType = res_ty,
+      functionAttributes = func_attr, source = ts) := func_ty;
 
-    // We didn't find a match, try next function type
-    case (cache,env,args,nargs,_::trest,_,_,_,_,_,pre,_)
-      equation
-        (cache,args_1,clist,restype,t,dims,slots) = elabTypes(cache, env, args, nargs, trest, onlyOneFunction, checkTypes, impl, isExternalObject, st, pre, info);
-      then
-        (cache,args_1,clist,restype,t,dims,slots);
+    try
+      slots := makeEmptySlots(params);
+      path := if listEmpty(ts) then Absyn.IDENT("builtinFunction") else listHead(ts);
+      (outCache, outArgs, outSlots, outConsts, pb) := elabInputArgs(inCache, inEnv,
+        inPosArgs, inNamedArgs, slots, inOnlyOneFunction, inCheckTypes, inImplicit,
+        isExternalObject, inST, inPrefix, inInfo, func_ty, path);
 
-    // failtrace
-    case (_,_,_,_,t::_,_,_,_,_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.elabTypes failed: " + Types.unparseType(t));
-      then
-        fail();
-  end matchcontinue;
+      // Check the sanity of function parameters whose types are dependent on other parameters.
+      // e.g. input Integer i; input Integer a[i]; // type of 'a' depends on the value 'i'.
+      (params, res_ty) := applyArgTypesToFuncType(outSlots, params, res_ty, inEnv, inCheckTypes, inInfo);
+      pb := Types.solvePolymorphicBindings(pb, inInfo, ts);
+
+      outDimensions := slotsVectorizable(outSlots, inInfo);
+      outResultType := Types.fixPolymorphicRestype(res_ty, pb, inInfo);
+      outFunctionType := DAE.T_FUNCTION(params, outResultType, func_attr, ts);
+
+      // Only created when not checking types for error msg.
+      outFunctionType := createActualFunctype(outFunctionType, outSlots, inCheckTypes); 
+      success := true;
+    else
+      // The type didn't match, try next function type.
+    end try;
+  end while;
 end elabTypes;
 
 protected function applyArgTypesToFuncType
@@ -9257,67 +8634,59 @@ protected function applyArgTypesToFuncType
   input SourceInfo inInfo;
   output list<DAE.FuncArg> outParameters;
   output DAE.Type outResultType;
+protected
+  list<DAE.Type> tys;
+  list<DAE.Dimension> dims;
+  list<String> used_args;
+  list<Slot> used_slots;
+  FCore.Cache cache;
+  FCore.Graph env;
+  list<DAE.Var> vars;
+  SCode.Element dummy_var;
+  DAE.Type res_ty;
 algorithm
-  (outParameters, outResultType) :=
-  matchcontinue(inSlots, inParameters, inResultType, inEnv, checkTypes, inInfo)
-    local
-      FCore.Graph env;
-      FCore.Cache cache;
-      list<DAE.Var> vars;
-      SCode.Element dummy_var;
-      DAE.Type res_ty;
-      list<DAE.FuncArg> params;
-      list<String> used_args;
-      list<DAE.Type> tys;
-      list<DAE.Dimension> dims;
-      list<Slot> used_slots;
+  // If not checking types or no function parameters there is nothing to be done here.
+  // Even if dims don't match we need the function as candidate for error messages.
+  if not checkTypes or listEmpty(inParameters) then
+    outParameters := inParameters;
+    outResultType := inResultType;
+    return;
+  end if;
 
-    // If not checking types there is nothing to be done here.
-    // Even if dims don't match we need the function as candidate for error messages.
-    case (_, _, _, _, false, _) then (inParameters, inResultType);
+  // Get all the dims, bind the actual params to the formal params.
+  // Build a new env frame with these bindings and evaluate dimensions.
 
-    // some optimizations so we don't do all that below
-    case ({}, {}, _, _, _, _) then ({}, inResultType);
+  // Extract all dimensions from the parameters.
+  tys := list(Types.funcArgType(param) for param in inParameters);
+  dims := getAllOutputDimensions(inResultType);
+  dims := listAppend(List.mapFlat(tys, Types.getDimensions), dims);
 
-    // get all the dims, bind the actual params to the formal params
-    // build a new env frame with these bindings and evaluate dimensions
-    else
-      equation
-        // Extract all dimensions from the parameters.
-        tys = List.map(inParameters, Types.funcArgType);
-        dims = getAllOutputDimensions(inResultType);
-        dims = listAppend(List.mapFlat(tys, Types.getDimensions), dims);
-        // Use the dimensions to figure out which parameters are referenced by
-        // other parameters' dimensions. This is done to minimize the things we
-        // need to constant evaluate, a.k.a. 'things that go wrong'.
-        used_args = extractNamesFromDims(dims, {});
-        used_slots = List.filter1OnTrue(inSlots, isSlotUsed, used_args);
+  // Use the dimensions to figure out which parameters are referenced by other
+  // parameters' dimensions. This is done to minimize the things we need to
+  // constant evaluate, a.k.a. 'things that go wrong'.
+  used_args := extractNamesFromDims(dims);
+  used_slots := list(s for s guard(isSlotUsed(s, used_args)) in inSlots);
 
-        // Create DAE.Vars from the slots.
-        cache = FCore.noCache();
+  // Create DAE.Vars from the slots.
+  cache := FCore.noCache();
+  vars := list(makeVarFromSlot(s, inEnv, cache) for s in used_slots);
 
-        vars = List.map2(used_slots, makeVarFromSlot, inEnv, cache);
+  // Use a dummy SCode.Element, because we're only interested in the DAE.Vars.
+  dummy_var := SCode.COMPONENT("dummy", SCode.defaultPrefixes,
+    SCode.defaultVarAttr, Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
+    SCode.noComment, NONE(), Absyn.dummyInfo);
 
-        // Use a dummy SCode.Element, because we're only interested in the DAE.Vars.
-        dummy_var = SCode.COMPONENT("dummy", SCode.defaultPrefixes,
-          SCode.defaultVarAttr, Absyn.TPATH(Absyn.IDENT(""), NONE()),
-          SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  // Create a new implicit scope with the needed parameters on top of the
+  // current env so we can find the bindings if needed. We need an implicit
+  // scope so comp1.comp2 can be looked up without package constant restriction.
+  env := FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
 
-        // Create a new implicit scope with the needed parameters on top
-        // of the current env so we can find the bindings if needed.
-        // We need an implicit scope so comp1.comp2 can be looked up without package constant restriction
-        env = FGraph.openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(FCore.forScopeName), NONE());
-
-        // add variables to the environment
-        env = makeDummyFuncEnv(env, vars, dummy_var);
-        // Evaluate the dimensions in the types.
-        params = List.threadMap3(inSlots,inParameters, evaluateFuncParamDimAndMatchTypes, env, cache, inInfo);
-
-        res_ty = evaluateFuncArgTypeDims(inResultType, env, cache);
-      then
-        (params, res_ty);
-
-  end matchcontinue;
+  // Add variables to the environment.
+  env := makeDummyFuncEnv(env, vars, dummy_var);
+  // Evaluate the dimensions in the types.
+  outParameters := list(evaluateFuncParamDimAndMatchTypes(s, p, env, cache, inInfo)
+    threaded for s in inSlots, p in inParameters);
+  outResultType := evaluateFuncArgTypeDims(inResultType, env, cache);
 end applyArgTypesToFuncType;
 
 protected function getAllOutputDimensions
@@ -9340,25 +8709,25 @@ end getAllOutputDimensions;
 protected function extractNamesFromDims
   "Extracts a list of unique names referenced by the given list of dimensions."
   input list<DAE.Dimension> inDimensions;
-  input list<String> inAccumNames;
+  input list<String> inAccumNames := {};
   output list<String> outNames;
 algorithm
-  outNames := match(inDimensions, inAccumNames)
+  outNames := match inDimensions
     local
       DAE.Exp exp;
       list<DAE.Dimension> rest_dims;
       list<DAE.ComponentRef> crefs;
       list<String> names;
 
-    case (DAE.DIM_EXP(exp = exp) :: rest_dims, _)
-      equation
-        crefs = Expression.extractCrefsFromExp(exp);
-        names = List.fold(crefs, extractNamesFromDims2, inAccumNames);
+    case DAE.DIM_EXP(exp = exp) :: rest_dims
+      algorithm
+        crefs := Expression.extractCrefsFromExp(exp);
+        names := List.fold(crefs, extractNamesFromDims2, inAccumNames);
       then
         extractNamesFromDims(rest_dims, names);
 
-    case (_ :: rest_dims, _) then extractNamesFromDims(rest_dims, inAccumNames);
-    case ({}, _) then inAccumNames;
+    case _ :: rest_dims then extractNamesFromDims(rest_dims, inAccumNames);
+    case {} then inAccumNames;
 
   end match;
 end extractNamesFromDims;
@@ -9368,22 +8737,23 @@ protected function extractNamesFromDims2
   input list<String> inAccumNames;
   output list<String> outNames;
 algorithm
-  outNames := matchcontinue(inCref, inAccumNames)
+  outNames := match(inCref, inAccumNames)
     local
       String name;
 
     // Only interested in simple identifier, since that's all we can handle
     // anyway.
     case (DAE.CREF_IDENT(ident = name), _)
-      equation
+      algorithm
         // Make sure we haven't added this name yet.
-        false = List.isMemberOnTrue(name, inAccumNames, stringEq);
+        outNames := if List.isMemberOnTrue(name, inAccumNames, stringEq) then
+          inAccumNames else name :: inAccumNames;
       then
-        name :: inAccumNames;
+        outNames;
 
     else inAccumNames;
 
-  end matchcontinue;
+  end match;
 end extractNamesFromDims2;
 
 protected function isSlotUsed
@@ -9406,7 +8776,7 @@ protected function makeVarFromSlot
   input FCore.Cache inCache;
   output DAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inSlot, inEnv, inCache)
+  outVar := matchcontinue inSlot
     local
       DAE.Ident name;
       DAE.Type ty;
@@ -9421,26 +8791,26 @@ algorithm
 
     // If the argument expression already has known dimensions, no need to
     // constant evaluate it.
-    case (SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp)), _, _)
-      equation
-        false = Expression.expHasCref(exp,ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{}));
-        ty = Expression.typeof(exp);
-        true = Types.dimensionsKnown(ty);
-        binding = DAE.EQBOUND(exp, NONE(), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
+    case SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp))
+      algorithm
+        false := Expression.expHasCref(exp,ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{}));
+        ty := Expression.typeof(exp);
+        true := Types.dimensionsKnown(ty);
+        binding := DAE.EQBOUND(exp, NONE(), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
       then (DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE()));
 
     // Otherwise, try to constant evaluate the expression.
-    case (SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp)), _, _)
-      equation
+    case SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp))
+      algorithm
         // Constant evaluate the bound expression.
-        (_, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
-        exp = ValuesUtil.valueExp(val);
-        ty = Expression.typeof(exp);
+        (_, val) := Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
+        exp := ValuesUtil.valueExp(val);
+        ty := Expression.typeof(exp);
         // Create a binding from the evaluated expression.
-        binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
+        binding := DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
       then DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
 
-    case (SLOT(defaultArg = DAE.FUNCARG(name=name, ty=ty)), _, _)
+    case SLOT(defaultArg = DAE.FUNCARG(name=name, ty=ty))
       then (DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, DAE.UNBOUND(), NONE()));
 
   end matchcontinue;
@@ -9455,7 +8825,7 @@ protected function evaluateStructuralSlots2
   output FCore.Cache cache;
   output list<Slot> slots;
 algorithm
-  (cache,slots) := matchcontinue (inCache,inEnv,inSlots,usedSlots,acc)
+  (cache,slots) := matchcontinue inSlots
     local
       String name;
       Boolean slotFilled;
@@ -9468,27 +8838,30 @@ algorithm
       Values.Value val;
       DAE.Type ty;
       DAE.Binding binding;
-    case (_,_,{},_,_) then (inCache,listReverse(acc));
+      Integer ses;
 
-    case (_,_,slot::rest,_,_)
-      equation
-        false = isSlotUsed(slot, usedSlots);
-        (cache,slots) = evaluateStructuralSlots2(inCache,inEnv,rest,usedSlots,slot::acc);
+    case {} then (inCache,listReverse(acc));
+
+    case slot::rest
+      algorithm
+        false := isSlotUsed(slot, usedSlots);
+        (cache,slots) := evaluateStructuralSlots2(inCache,inEnv,rest,usedSlots,slot::acc);
       then (cache,slots);
 
       // If we are suggested the argument is structural, evaluate it
-    case (_,_,SLOT(defaultArg as DAE.FUNCARG(), _, SOME(exp), dims, idx)::rest, _, _)
-      equation
+    case SLOT(defaultArg as DAE.FUNCARG(), _, SOME(exp), dims, idx, ses)::rest
+      algorithm
         // Constant evaluate the bound expression.
-        (cache, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
-        exp = ValuesUtil.valueExp(val);
+        (cache, val) := Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
+        exp := ValuesUtil.valueExp(val);
         // Create a binding from the evaluated expression.
-        slot = SLOT(defaultArg,true,SOME(exp),dims,idx);
-        (cache,slots) = evaluateStructuralSlots2(cache,inEnv,rest,usedSlots,slot::acc);
+        slot := SLOT(defaultArg,true,SOME(exp),dims,idx,ses);
+        (cache,slots) := evaluateStructuralSlots2(cache,inEnv,rest,usedSlots,slot::acc);
       then (cache,slots);
-    case (_,_,slot::rest,_,_)
-      equation
-        (cache,slots) = evaluateStructuralSlots2(inCache,inEnv,rest,usedSlots,slot::acc);
+
+    case slot::rest
+      algorithm
+        (cache,slots) := evaluateStructuralSlots2(inCache,inEnv,rest,usedSlots,slot::acc);
       then (cache,slots);
   end matchcontinue;
 end evaluateStructuralSlots2;
@@ -9501,25 +8874,28 @@ protected function evaluateStructuralSlots
   output FCore.Cache cache;
   output list<Slot> slots;
 algorithm
-  (cache,slots) := match (inCache,inEnv,inSlots,funcType)
+  (cache,slots) := match funcType
     local
       list<DAE.Type> tys;
       list<DAE.Dimension> dims;
       list<String> used_args;
       list<DAE.FuncArg> funcArg;
       DAE.Type funcResultType;
-    case (_,_,_,DAE.T_FUNCTION(funcArg=funcArg,funcResultType=funcResultType))
-      equation
-        tys = List.map(funcArg, Types.funcArgType);
-        dims = getAllOutputDimensions(funcResultType);
-        dims = listAppend(List.mapFlat(tys, Types.getDimensions), dims);
+
+    case DAE.T_FUNCTION(funcArg=funcArg,funcResultType=funcResultType)
+      algorithm
+        tys := list(Types.funcArgType(arg) for arg in funcArg);
+        dims := getAllOutputDimensions(funcResultType);
+        dims := listAppend(List.mapFlat(tys, Types.getDimensions), dims);
         // Use the dimensions to figure out which parameters are referenced by
         // other parameters' dimensions. This is done to minimize the things we
         // need to constant evaluate, a.k.a. 'things that go wrong'.
-        used_args = extractNamesFromDims(dims, {});
-        (cache,slots) = evaluateStructuralSlots2(inCache,inEnv,inSlots,used_args,{});
-      then (cache,slots);
-    else (inCache,inSlots); // T_METARECORD, T_NOTYPE etc for builtins
+        used_args := extractNamesFromDims(dims);
+        (cache, slots) := evaluateStructuralSlots2(inCache, inEnv, inSlots, used_args, {});
+      then
+        (cache,slots);
+
+    else (inCache, inSlots); // T_METARECORD, T_NOTYPE etc for builtins
   end match;
 end evaluateStructuralSlots;
 
@@ -9529,28 +8905,16 @@ protected function makeDummyFuncEnv
   input FCore.Graph inEnv;
   input list<DAE.Var> inVars;
   input SCode.Element inDummyVar;
-  output FCore.Graph outEnv;
+  output FCore.Graph outEnv := inEnv;
+protected
+  SCode.Element dummy_var;
 algorithm
-  outEnv := match(inEnv, inVars, inDummyVar)
-    local
-      DAE.Var var;
-      list<DAE.Var> rest_vars;
-      FCore.Graph env;
-      SCode.Element dummyVar;
-
-    case (_, var :: rest_vars, _)
-      equation
-        dummyVar = SCode.setComponentName(inDummyVar, DAEUtil.typeVarIdent(var));
-        env = FGraph.mkComponentNode(inEnv, var, dummyVar, DAE.NOMOD(),
-          FCore.VAR_TYPED(), FGraph.empty());
-      then
-        makeDummyFuncEnv(env, rest_vars, inDummyVar);
-
-    case (_, {}, _) then inEnv;
-
-  end match;
+  for var in inVars loop
+    dummy_var := SCode.setComponentName(inDummyVar, DAEUtil.typeVarIdent(var));
+    outEnv := FGraph.mkComponentNode(outEnv, var, dummy_var, DAE.NOMOD(),
+      FCore.VAR_TYPED(), FGraph.empty()); 
+  end for;
 end makeDummyFuncEnv;
-
 
 protected function evaluateFuncParamDimAndMatchTypes
   "Constant evaluates the dimensions of a FuncArg and then makes
@@ -9562,7 +8926,7 @@ protected function evaluateFuncParamDimAndMatchTypes
   input SourceInfo inInfo;
   output DAE.FuncArg outParam;
 algorithm
-  outParam := matchcontinue(inSlot, inParam, inEnv, inCache, inInfo)
+  outParam := match(inSlot, inParam)
   local
     DAE.Ident ident;
     DAE.Type pty, sty;
@@ -9577,54 +8941,51 @@ algorithm
 
     // If we have a code exp argument we can't check dims...
     // There are all kinds of scripting function that complicate things.
-    case(_, DAE.FUNCARG(ty=DAE.T_CODE(_,_)), _, _, _)
-      then
-        inParam;
+    case (_, DAE.FUNCARG(ty=DAE.T_CODE()))
+      then inParam;
 
     // If we have an array constant-evaluate the dimensions and make sure
     // They add up
-    case(SLOT(arg = SOME(DAE.ARRAY(ty = sty)), dims = vdims), _, _, _, _)
-      equation
-        DAE.FUNCARG(ty=pty) = inParam;
+    case (SLOT(arg = SOME(DAE.ARRAY(ty = sty)), dims = vdims), _)
+      algorithm
+        DAE.FUNCARG(ty = pty) := inParam;
         // evaluate the dimesions
-        pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
+        pty := evaluateFuncArgTypeDims(pty, inEnv, inCache);
         // append the vectorization dim if argument is vectorized.
-        dims1 = Types.getDimensions(pty);
-        dims1 = listAppend(vdims,dims1);
+        dims1 := Types.getDimensions(pty);
+        dims1 := listAppend(vdims,dims1);
 
-        dims2 = Types.getDimensions(sty);
-        true = Expression.dimsEqual(dims1, dims2);
+        dims2 := Types.getDimensions(sty);
+        true := Expression.dimsEqual(dims1, dims2);
 
-        outParam = Types.setFuncArgType(inParam, pty);
+        outParam := Types.setFuncArgType(inParam, pty);
       then
         outParam;
 
-    case(SLOT(arg = SOME(DAE.MATRIX(ty = sty)), dims = vdims), _, _, _, _)
-      equation
-        DAE.FUNCARG(ty=pty) = inParam;
+    case (SLOT(arg = SOME(DAE.MATRIX(ty = sty)), dims = vdims), _)
+      algorithm
+        DAE.FUNCARG(ty=pty) := inParam;
         // evaluate the dimesions
-        pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
+        pty := evaluateFuncArgTypeDims(pty, inEnv, inCache);
         // append the vectorization dim if argument is vectorized.
-        dims1 = Types.getDimensions(pty);
-        dims1 = listAppend(dims1,vdims);
-        dims2 = Types.getDimensions(sty);
-        true = Expression.dimsEqual(dims1, dims2);
+        dims1 := Types.getDimensions(pty);
+        dims1 := listAppend(dims1,vdims);
+        dims2 := Types.getDimensions(sty);
+        true := Expression.dimsEqual(dims1, dims2);
 
-        outParam = Types.setFuncArgType(inParam, pty);
+        outParam := Types.setFuncArgType(inParam, pty);
       then
         outParam;
 
     else
-      equation
-        failure(SLOT(arg = SOME(DAE.ARRAY())) = inSlot);
-        failure(SLOT(arg = SOME(DAE.MATRIX())) = inSlot);
-        DAE.FUNCARG(ty=pty) = inParam;
-        pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
-        outParam = Types.setFuncArgType(inParam, pty);
+      algorithm
+        DAE.FUNCARG(ty=pty) := inParam;
+        pty := evaluateFuncArgTypeDims(pty, inEnv, inCache);
+        outParam := Types.setFuncArgType(inParam, pty);
       then
         outParam;
 
-  end matchcontinue;
+  end match;
 end evaluateFuncParamDimAndMatchTypes;
 
 protected function evaluateFuncArgTypeDims
@@ -9634,7 +8995,7 @@ protected function evaluateFuncArgTypeDims
   input FCore.Cache inCache;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue(inType, inEnv, inCache)
+  outType := matchcontinue inType
     local
       DAE.Type ty;
       DAE.TypeSource ts;
@@ -9644,23 +9005,23 @@ algorithm
       FCore.Graph env;
 
     // Array type, evaluate the dimension.
-    case (DAE.T_ARRAY(ty, {dim}, ts), _, _)
-      equation
-        (_, Values.INTEGER(n), _) = Ceval.cevalDimension(inCache, inEnv, dim, false, NONE(), Absyn.NO_MSG(), 0);
-        ty = evaluateFuncArgTypeDims(ty, inEnv, inCache);
+    case DAE.T_ARRAY(ty, {dim}, ts)
+      algorithm
+        (_, Values.INTEGER(n), _) := Ceval.cevalDimension(inCache, inEnv, dim, false, NONE(), Absyn.NO_MSG(), 0);
+        ty := evaluateFuncArgTypeDims(ty, inEnv, inCache);
       then
         DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(n)}, ts);
 
     // Previous case failed, keep the dimension but evaluate the rest of the type.
-    case (DAE.T_ARRAY(ty, {dim}, ts), _, _)
-      equation
-        ty = evaluateFuncArgTypeDims(ty, inEnv, inCache);
+    case DAE.T_ARRAY(ty, {dim}, ts)
+      algorithm
+        ty := evaluateFuncArgTypeDims(ty, inEnv, inCache);
       then
         DAE.T_ARRAY(ty, {dim}, ts);
 
-    case (DAE.T_TUPLE(tys, ts), _, _)
-      equation
-        tys = List.map2(tys, evaluateFuncArgTypeDims, inEnv, inCache);
+    case DAE.T_TUPLE(tys, ts)
+      algorithm
+        tys := List.map2(tys, evaluateFuncArgTypeDims, inEnv, inCache);
       then
         DAE.T_TUPLE(tys, ts);
 
@@ -9675,23 +9036,23 @@ protected function createActualFunctype
   input DAE.Type tp;
   input list<Slot> slots;
   input Boolean checkTypes;
-  output DAE.Type outTp;
+  output DAE.Type outTp := tp;
 algorithm
-  outTp := match(tp,slots,checkTypes)
+  outTp := match(outTp, checkTypes)
     local
       DAE.TypeSource ts;
       list<DAE.FuncArg> slotParams,params;
       DAE.Type restype;
       DAE.FunctionAttributes functionAttributes;
 
-    case (_,_,true) then tp;
+    case (_, true) then tp;
 
     // When not checking types, create function type by looking at the filled slots
-    case(DAE.T_FUNCTION(_,restype,functionAttributes,ts),_,false)
-      equation
-        slotParams = funcArgsFromSlots(slots);
+    case (DAE.T_FUNCTION(), _)
+      algorithm
+        outTp.funcArg := funcArgsFromSlots(slots);
       then
-        DAE.T_FUNCTION(slotParams,restype,functionAttributes,ts);
+        outTp;
 
   end match;
 end createActualFunctype;
@@ -9701,31 +9062,30 @@ protected function slotsVectorizable
   This function checks all vectorized array dimensions in the slots and
   confirms that they all are of same dimension,or no dimension, i.e. not
   vectorized. The uniform vectorized array dimension is returned."
-  input list<Slot> inSlotLst;
+  input list<Slot> inSlots;
   input SourceInfo info;
-  output DAE.Dimensions outTypesArrayDimLst;
+  output DAE.Dimensions outDims;
 algorithm
-  outTypesArrayDimLst:=
-  matchcontinue (inSlotLst,info)
+  outDims := matchcontinue(inSlots)
     local
       DAE.Dimensions ad;
       list<Slot> rest;
       DAE.Exp exp;
       String name;
-    case ({},_) then {};
-    case ((SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp), dims = (ad as (_ :: _))) :: rest),_)
-      equation
+
+    case {} then {};
+
+    case SLOT(defaultArg = DAE.FUNCARG(name=name), arg = SOME(exp), dims = (ad as (_ :: _))) :: rest
+      algorithm
         sameSlotsVectorizable(rest, ad, name, exp, info);
       then
         ad;
-    case ((SLOT(dims = {}) :: rest),_)
-      equation
-        ad = slotsVectorizable(rest, info);
-      then
-        ad;
+
+    case SLOT(dims = {}) :: rest then slotsVectorizable(rest, info);
+
     else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
         Debug.trace("-slots_vectorizable failed\n");
       then
         fail();
@@ -9738,79 +9098,90 @@ protected function sameSlotsVectorizable
   dimension as given by the second argument or no array dimension at all.
   The array dimension must match both in dimension size and number of
   dimensions."
-  input list<Slot> inSlotLst;
-  input DAE.Dimensions inTypesArrayDimLst;
+  input list<Slot> inSlots;
+  input DAE.Dimensions inDims;
   input String name;
   input DAE.Exp exp;
   input SourceInfo info;
 algorithm
-  _:=
-  match (inSlotLst,inTypesArrayDimLst, name, exp, info)
+  _ := match inSlots
     local
-      DAE.Dimensions slot_ad,ad;
+      DAE.Dimensions slot_ad;
       list<Slot> rest;
       DAE.Exp exp2;
       String name2;
-    case ({},_,_,_,_) then ();
-    case ((SLOT(defaultArg = DAE.FUNCARG(name=name2), arg = SOME(exp2), dims = (slot_ad as (_ :: _))) :: rest),ad,_,_,_) /* arraydim must match */
-      equation
-        sameArraydimLst(ad, name, exp, slot_ad, name2, exp2, info);
-        sameSlotsVectorizable(rest, ad, name, exp, info);
+
+    // Array dims must match.
+    case (SLOT(defaultArg = DAE.FUNCARG(name=name2), arg = SOME(exp2), dims = (slot_ad as (_ :: _))) :: rest)
+      algorithm
+        sameArraydimLst(inDims, name, exp, slot_ad, name2, exp2, info);
+        sameSlotsVectorizable(rest, inDims, name, exp, info);
       then
         ();
-    case ((SLOT(dims = {}) :: rest),ad,_,_,_) /* empty arradim matches too */
-      equation
-        sameSlotsVectorizable(rest, ad, name, exp, info);
+
+    // Empty array dims matches too.
+    case SLOT(dims = {}) :: rest
+      algorithm
+        sameSlotsVectorizable(rest, inDims, name, exp, info);
       then
         ();
+
+    case {} then ();
   end match;
 end sameSlotsVectorizable;
 
 protected function sameArraydimLst
 "author: PA
   Helper function to sameSlotsVectorizable. "
-  input DAE.Dimensions inTypesArrayDimLst1;
+  input DAE.Dimensions inDims1;
   input String name1;
   input DAE.Exp exp1;
-  input DAE.Dimensions inTypesArrayDimLst2;
+  input DAE.Dimensions inDims2;
   input String name2;
   input DAE.Exp exp2;
   input SourceInfo info;
 algorithm
-  _:=
-  matchcontinue (inTypesArrayDimLst1,name1,exp1,inTypesArrayDimLst2,name2,exp2,info)
+  _:= matchcontinue (inDims2, inDims2)
     local
       Integer i1,i2;
       DAE.Dimensions ads1,ads2;
       DAE.Exp e1,e2;
       DAE.Dimension ad1,ad2;
       String str1,str2,str3,str4,str;
-    case ({},_,_,{},_,_,_) then ();
-    case ((DAE.DIM_INTEGER(integer = i1) :: ads1),_,_,(DAE.DIM_INTEGER(integer = i2) :: ads2),_,_,_)
-      equation
-        true = intEq(i1, i2);
+
+    case (DAE.DIM_INTEGER(integer = i1) :: ads1,
+          DAE.DIM_INTEGER(integer = i2) :: ads2)
+      algorithm
+        true := intEq(i1, i2);
         sameArraydimLst(ads1, name1, exp1, ads2, name2, exp2, info);
       then
         ();
-    case (DAE.DIM_UNKNOWN() :: ads1,_,_,DAE.DIM_UNKNOWN() :: ads2,_,_,_)
-      equation
+
+    case (DAE.DIM_UNKNOWN() :: ads1, DAE.DIM_UNKNOWN() :: ads2)
+      algorithm
         sameArraydimLst(ads1, name1, exp1, ads2, name2, exp2, info);
       then
         ();
-    case (DAE.DIM_EXP(e1) :: ads1,_, _, DAE.DIM_EXP(e2) :: ads2, _, _, _)
-      equation
-        true = Expression.expEqual(e1,e2);
+
+    case (DAE.DIM_EXP(e1) :: ads1, DAE.DIM_EXP(e2) :: ads2)
+      algorithm
+        true := Expression.expEqual(e1,e2);
         sameArraydimLst(ads1, name1, exp1, ads2, name2, exp2, info);
       then
         ();
-    case (ad1 :: _, _, _, ad2 :: _, _, _, _)
-      equation
-        str1 = ExpressionDump.printExpStr(exp1);
-        str2 = ExpressionDump.printExpStr(exp2);
-        str3 = ExpressionDump.dimensionString(ad1);
-        str4 = ExpressionDump.dimensionString(ad2);
+
+    case ({}, {}) then ();
+
+    case (ad1 :: _, ad2 :: _)
+      algorithm
+        str1 := ExpressionDump.printExpStr(exp1);
+        str2 := ExpressionDump.printExpStr(exp2);
+        str3 := ExpressionDump.dimensionString(ad1);
+        str4 := ExpressionDump.dimensionString(ad2);
         Error.addSourceMessage(Error.VECTORIZE_CALL_DIM_MISMATCH, {name1,str1,name2,str2,str3,str4}, info);
-      then fail();
+      then
+        fail();
+
   end matchcontinue;
 end sameArraydimLst;
 
@@ -9821,7 +9192,7 @@ protected function getProperties
   input DAE.TupleConst inTupleConst;
   output DAE.Properties outProperties;
 algorithm
-  outProperties := matchcontinue (inType,inTupleConst)
+  outProperties := match(inType,inTupleConst)
     local
       DAE.Type tt,t,ty;
       DAE.TupleConst const;
@@ -9838,54 +9209,19 @@ algorithm
 
     // failure
     case (ty,const)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- get_properties failed: ");
-        tystr = Types.unparseType(ty);
-        conststr = Types.printTupleConstStr(const);
+      algorithm
+        true := Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Static.getProperties failed: ");
+        tystr := Types.unparseType(ty);
+        conststr := Types.printTupleConstStr(const);
         Debug.trace(tystr);
         Debug.trace(", ");
         Debug.traceln(conststr);
       then
         fail();
-  end matchcontinue;
-end getProperties;
 
-protected function buildTupleConst
-"author: LS
-  Build a TUPLE_CONST (DAE.TupleConst) for a PROP_TUPLE for a function call
-  from a list of bools derived from arguments
-  We should check functions actual arguments instead of their formal
-  parameters as done below"
-  input list<DAE.Const> blist;
-  output DAE.TupleConst outTupleConst;
-protected
-  list<DAE.TupleConst> clist;
-algorithm
-  clist := buildTupleConstList(blist);
-  outTupleConst := DAE.TUPLE_CONST(clist);
-end buildTupleConst;
-
-protected function buildTupleConstList
-"Helper function to buildTupleConst"
-  input list<DAE.Const> inTypesConstLst;
-  output list<DAE.TupleConst> outTypesTupleConstLst;
-algorithm
-  outTypesTupleConstLst := match (inTypesConstLst)
-    local
-      list<DAE.TupleConst> restlist;
-      DAE.Const c;
-      list<DAE.Const> crest;
-
-    case {} then {};
-
-    case (c :: crest)
-      equation
-        restlist = buildTupleConstList(crest);
-      then
-        (DAE.SINGLE_CONST(c) :: restlist);
   end match;
-end buildTupleConstList;
+end getProperties;
 
 protected function elabConsts "author: PR
   This just splits the properties list into a type list and a const list.
@@ -9895,14 +9231,14 @@ protected function elabConsts "author: PR
   input DAE.Const inConst;
   output DAE.TupleConst outTupleConst;
 algorithm
-  outTupleConst := matchcontinue (inType,inConst)
+  outTupleConst := match(inType,inConst)
     local
       list<DAE.TupleConst> consts;
       list<DAE.Type> tys;
       DAE.Const c;
       DAE.Type ty;
 
-    case (DAE.T_TUPLE(types = tys),c)
+    case (DAE.T_TUPLE(types = tys), c)
       equation
         consts = checkConsts(tys, c);
       then
@@ -9910,39 +9246,24 @@ algorithm
 
     // LS: If not a tuple then one normal type, T_INTEGER etc, but we make a list of types
     // with one element and call the same check_consts, so that we always have DAE.TUPLE_CONST as result
-    case (ty,c)
+    case (ty, c)
       equation
         consts = checkConsts({ty}, c);
       then
         DAE.TUPLE_CONST(consts);
-  end matchcontinue;
+
+  end match;
 end elabConsts;
 
 protected function checkConsts
 "LS: Changed to take a Type list, which is the functions return type. Only
    for functions returning a tuple
   LS: Update: const is derived from the input arguments and sent here "
-  input list<DAE.Type> inTypesTypeLst;
+  input list<DAE.Type> inTypes;
   input DAE.Const inConst;
-  output list<DAE.TupleConst> outTypesTupleConstLst;
+  output list<DAE.TupleConst> outTupleConsts;
 algorithm
-  outTypesTupleConstLst := match (inTypesTypeLst,inConst)
-    local
-      DAE.TupleConst c;
-      list<DAE.TupleConst> rest_1;
-      DAE.Type a;
-      list<DAE.Type> rest;
-      DAE.Const const;
-
-    case ({},_) then {};
-
-    case (a :: rest,const)
-      equation
-        c = checkConst(a, const);
-        rest_1 = checkConsts(rest, const);
-      then
-        (c :: rest_1);
-  end match;
+  outTupleConsts := list(checkConst(ty, inConst) for ty in inTypes);
 end checkConsts;
 
 protected function checkConst "author: PR
@@ -9959,7 +9280,7 @@ algorithm
   outTupleConst := match inType
     case DAE.T_TUPLE()
       equation
-        Error.addInternalError("No suport for tuples built by tuples", sourceInfo());
+        Error.addInternalError("No support for tuples built by tuples", sourceInfo());
       then fail();
 
     else DAE.SINGLE_CONST(c);
@@ -9990,155 +9311,68 @@ end splitProps;
 protected function getTypes
 "This function returns the types of a DAE.FuncArg list."
   input list<DAE.FuncArg> farg;
-  output list<DAE.Type> outTypesTypeLst;
+  output list<DAE.Type> outTypes;
 algorithm
-  outTypesTypeLst := List.map(farg,Types.funcArgType);
+  outTypes := list(Types.funcArgType(arg) for arg in farg);
 end getTypes;
 
-/*
-protected function functionParams
-"A function definition is just a clas definition where all publi
-  components are declared as either inpu or outpu.  This
-  function_ find all those components and_ separates them into two
-  separate lists.
-  LS: This can probably replaced by Types.getInputVars and Types.getOutputVars"
-  input list<DAE.Var> inTypesVarLst;
-  output list<DAE.FuncArg> outTypesFuncArgLst1;
-  output list<DAE.FuncArg> outTypesFuncArgLst2;
-algorithm
-  (outTypesFuncArgLst1,outTypesFuncArgLst2) := match (inTypesVarLst)
-    local
-      list<DAE.FuncArg> in_,out;
-      list<DAE.Var> vs;
-      String n;
-      DAE.Type t;
-      DAE.Var v;
-      SCode.Variability var;
-      DAE.Const c;
-
-    case {} then ({},{});
-
-    case ((DAE.TYPES_VAR(attributes = DAE.ATTR(visibility = SCode.PROTECTED())) :: vs)) // Ignore protected components
-      equation
-        (in_,out) = functionParams(vs);
-      then
-        (in_,out);
-
-    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.INPUT(), variability = var,
-           visibility = SCode.PUBLIC()),ty = t,binding = DAE.UNBOUND()) :: vs))
-      equation
-        c = Types.variabilityToConst(var);
-        (in_,out) = functionParams(vs);
-      then
-        (((n,t,c,NONE()) :: in_),out);
-
-    case ((DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.OUTPUT(), variability = var,
-           visibility = SCode.PUBLIC()),ty = t,binding = DAE.UNBOUND()) :: vs))
-      equation
-        c = Types.variabilityToConst(var);
-        (in_,out) = functionParams(vs);
-      then
-        (in_,((n,t,c,NONE()) :: out));
-
-    case (((v as DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(direction = Absyn.BIDIR()))) :: vs))
-      equation
-        Error.addMessage(Error.FUNCTION_COMPS_MUST_HAVE_DIRECTION, {n});
-      then
-        fail();
-
-    case (vs)
-      equation
-        // enabled only by +d=failtrace
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.functionParams failed on: " + stringDelimitList(List.map(vs, Types.printVarStr), "; "));
-      then
-        fail();
-  end match;
-end functionParams;
-*/
-
 protected function elabInputArgs
-"function_: elabInputArgs
-  This function_ elaborates on a number of expressions and_ matches
-  them to a number of `DAE.Var\' objects, applying type_ conversions
-  on the expressions when necessary to match the type_ of the
-  DAE.Var.
-  PA: Positional arguments and named arguments are filled in the argument slots as:
-  1. Positional arguments fill the first slots according to their position.
-  2. Named arguments fill slots with the same name as the named argument.
-  3. Unfilled slots are checks so that they have default values, otherwise error."
+  "This function_ elaborates on a number of expressions and_ matches them to a
+   number of `DAE.Var\' objects, applying type_ conversions on the expressions
+   when necessary to match the type_ of the DAE.Var.
+
+   Positional arguments and named arguments are filled in the argument slots as:
+     1. Positional arguments fill the first slots according to their position.
+     2. Named arguments fill slots with the same name as the named argument.
+     3. Unfilled slots are checked so that they have default values, otherwise error."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input list<Slot> inSlotLst;
-  input Boolean onlyOneFunction;
-  input Boolean checkTypes "if true, check types";
-  input Boolean impl;
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input list<Slot> inSlots;
+  input Boolean inOnlyOneFunction;
+  input Boolean inCheckTypes "if true, check types";
+  input Boolean inImplicit;
   input IsExternalObject isExternalObject;
-  input InstTypes.PolymorphicBindings inPolymorphicBindings;
-  input Option<GlobalScript.SymbolTable> st;
+  input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
-  input DAE.Type funcType "Used to determine which arguments are structural. We will evaluate them later to figure if they are used in dimensions. So we evaluate them here to get a more optimised DAE";
-  input Absyn.Path path;
-  output FCore.Cache outCache;
+  input SourceInfo inInfo;
+  input DAE.Type inFuncType "Used to determine which arguments are structural. We will evaluate them later to figure if they are used in dimensions. So we evaluate them here to get a more optimised DAE";
+  input Absyn.Path inPath;
+  output FCore.Cache outCache := inCache;
   output list<DAE.Exp> outExps;
-  output list<Slot> outSlotLst;
-  output list<DAE.Const> outTypesConstLst;
-  output InstTypes.PolymorphicBindings outPolymorphicBindings;
+  output list<Slot> outSlots := inSlots;
+  output list<DAE.Const> outConsts;
+  output InstTypes.PolymorphicBindings outPolymorphicBindings := {};
+protected
+  list<DAE.FuncArg> fargs;
+  list<DAE.Const> consts1, consts2;
 algorithm
-  (outCache,outExps,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
-  match (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,onlyOneFunction,checkTypes,impl,isExternalObject,inPolymorphicBindings,st,inPrefix,info,funcType,path)
-    local
-      list<DAE.FuncArg> farg;
-      list<Slot> slots_1,newslots,slots;
-      list<DAE.Const> clist1,clist2,clist;
-      list<DAE.Exp> explst,newexp;
-      FCore.Graph env;
-      list<Absyn.Exp> exp;
-      list<Absyn.NamedArg> narg;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      InstTypes.PolymorphicBindings polymorphicBindings;
+  // Empty function call, e.g. foo(), is always constant.
+  // adrpo 2010-11-09: TODO! FIXME! This is not always true, RecordCall() can
+  // contain DEFAULT bindings that are param.
+  if listEmpty(inPosArgs) and listEmpty(inNamedArgs) then
+    outConsts := {DAE.C_CONST()};
+  else
+    fargs := funcArgsFromSlots(inSlots);
 
-    // impl const Fill slots with positional arguments
-    case (cache,env,(exp as (_ :: _)),narg,slots,_,_,_,_,polymorphicBindings,_,pre,_,_,_)
-      equation
-        farg = funcArgsFromSlots(slots);
-        (cache,slots_1,clist1,polymorphicBindings) =
-          elabPositionalInputArgs(cache, env, exp, farg, 1, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info,path);
-        (cache,explst,newslots,clist2,polymorphicBindings) =
-          elabInputArgs(cache, env, {}, narg, slots_1, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info,funcType,path)
-          "recursive call fills named arguments" ;
-        clist = listAppend(clist1, clist2);
-      then
-        (cache,explst,newslots,clist,polymorphicBindings);
+    // Elaborate positional arguments.
+    (outCache, outSlots, consts1, outPolymorphicBindings) :=
+      elabPositionalInputArgs(outCache, inEnv, inPosArgs, fargs, outSlots,
+        inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
+        outPolymorphicBindings, inST, inPrefix, inInfo, inPath);
 
-    // Fill slots with named arguments
-    case (cache,env,{},narg as _::_,slots,_,_,_,_,polymorphicBindings,_,pre,_,_,_)
-      equation
-        farg = funcArgsFromSlots(slots);
-        (cache,newslots,clist,polymorphicBindings) =
-          elabNamedInputArgs(cache, env, narg, farg, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info,path);
-        (cache,newslots) = evaluateStructuralSlots(cache,env,newslots,funcType);
-        newexp = slotListArgs(newslots);
-      then
-        (cache,newexp,newslots,clist,polymorphicBindings);
+    // Elaborate named arguments.
+    (outCache, outSlots, consts2, outPolymorphicBindings) :=
+      elabNamedInputArgs(outCache, inEnv, inNamedArgs, fargs, outSlots,
+        inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
+        outPolymorphicBindings, inST, inPrefix, inInfo, inPath);
 
-    // Empty function call, e.g foo(), is always constant
-    // arpo 2010-11-09: TODO! FIXME! this is not always true, RecordCall() can contain DEFAULT bindings that are par
-    case (cache,env,{},{},slots,_,_,_,_,polymorphicBindings,_,_,_,_,_)
-      equation
-        (cache,slots) = evaluateStructuralSlots(cache,env,slots,funcType);
-        newexp = slotListArgs(slots);
-      then (cache,newexp,slots,{DAE.C_CONST()},polymorphicBindings);
+    outConsts := listAppend(consts1, consts2);
+  end if;
 
-    // fail trace
-    else
-      /* FAILTRACE REMOVE equation fprint(Flags.FAILTRACE,"elabInputArgs failed\n"); */
-      then fail();
-  end match;
+  (outCache, outSlots) := evaluateStructuralSlots(outCache, inEnv, outSlots, inFuncType);
+  outExps := slotListArgs(outSlots);
 end elabInputArgs;
 
 protected function makeEmptySlots
@@ -10146,7 +9380,7 @@ protected function makeEmptySlots
   input list<DAE.FuncArg> inArgs;
   output list<Slot> outSlots;
 algorithm
-  (outSlots, _) := List.mapFold(inArgs, makeEmptySlot, 1);
+  outSlots := List.mapFold(inArgs, makeEmptySlot, 1);
 end makeEmptySlots;
 
 protected function makeEmptySlot
@@ -10155,7 +9389,7 @@ protected function makeEmptySlot
   output Slot outSlot;
   output Integer outIndex;
 algorithm
-  outSlot := SLOT(inArg, false, NONE(), {}, inIndex);
+  outSlot := SLOT(inArg, false, NONE(), {}, inIndex, SLOT_NOT_EVALUATED);
   outIndex := inIndex + 1;
 end makeEmptySlot;
 
@@ -10164,7 +9398,7 @@ protected function funcArgsFromSlots
   input list<Slot> inSlots;
   output list<DAE.FuncArg> outFuncArgs;
 algorithm
-  outFuncArgs := List.map(inSlots, funcArgFromSlot);
+  outFuncArgs := list(funcArgFromSlot(slot) for slot in inSlots);
 end funcArgsFromSlots;
 
 protected function funcArgFromSlot
@@ -10175,38 +9409,23 @@ algorithm
 end funcArgFromSlot;
 
 protected function complexTypeFromSlots
-"Creates an DAE.T_COMPLEX type from a list of slots.
- Used to create type of record constructors "
+  "Creates an DAE.T_COMPLEX type from a list of slots.
+   Used to create type of record constructors "
   input list<Slot> inSlots;
   input ClassInf.State complexClassType;
-  output DAE.Type tp;
+  output DAE.Type outType;
+protected
+  String id;
+  DAE.Type ty;
+  list<DAE.Var> vars := {};
 algorithm
-  tp := match(inSlots,complexClassType)
-    local
-      DAE.Type etp;
-      DAE.Type ty;
-      String id;
-      list<DAE.Var> vLst;
-      ClassInf.State ci;
-      Absyn.Path path;
-      DAE.TypeSource ts;
-      DAE.EqualityConstraint ec;
-      DAE.Var tv;
-      list<Slot> slots;
+  for slot in inSlots loop
+    SLOT(defaultArg = DAE.FUNCARG(name = id, ty = ty)) := slot;
+    vars := Expression.makeVar(id, Types.simplifyType(ty)) :: vars;
+  end for; 
 
-    case({},_)
-      then
-        DAE.T_COMPLEX(complexClassType, {}, NONE(), DAE.emptyTypeSource);
-
-    case(SLOT(defaultArg = DAE.FUNCARG(name=id,ty=ty))::slots,_)
-      equation
-        etp = Types.simplifyType(ty);
-        DAE.T_COMPLEX(ci,vLst,ec,ts) = complexTypeFromSlots(slots,complexClassType);
-        tv = Expression.makeVar(id,etp);
-      then
-        DAE.T_COMPLEX(ci, tv::vLst, ec, ts);
-
-  end match;
+  vars := listReverse(vars);
+  outType := DAE.T_COMPLEX(complexClassType, vars, NONE(), DAE.emptyTypeSource);
 end complexTypeFromSlots;
 
 protected function slotListArgs
@@ -10231,77 +9450,67 @@ protected function fillGraphicsDefaultSlots
 
   Special case for graphics exps"
   input FCore.Cache inCache;
-  input list<Slot> inSlotLst;
+  input list<Slot> inSlots;
   input SCode.Element inClass;
   input FCore.Graph inEnv;
-  input Boolean inBoolean;
-  input InstTypes.PolymorphicBindings inPolymorphicBindings;
+  input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
-  output FCore.Cache outCache;
-  output list<Slot> outSlotLst;
-  output list<DAE.Const> outTypesConstLst;
-  output InstTypes.PolymorphicBindings outPolymorphicBindings;
+  input SourceInfo inInfo;
+  output FCore.Cache outCache := inCache;
+  output list<Slot> outSlots := {};
+  output list<DAE.Const> outConsts := {};
+  output InstTypes.PolymorphicBindings outPolymorphicBindings := {};
+protected
+  Boolean filled;
+  Absyn.Exp e;
+  DAE.Exp exp;
+  String id;
+  DAE.FuncArg defarg;
+  DAE.Type ty;
+  DAE.Const c;
 algorithm
-  (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) :=
-  matchcontinue (inCache,inSlotLst,inClass,inEnv,inBoolean,inPolymorphicBindings,inPrefix,info)
-    local
-      list<Slot> res,xs;
-      DAE.FuncArg fa;
-      Option<DAE.Exp> e;
-      DAE.Dimensions ds;
-      SCode.Element class_;
-      FCore.Graph env;
-      Boolean impl;
-      Absyn.Exp dexp;
-      DAE.Exp exp,exp_1;
-      DAE.Type t,tp;
-      DAE.Const c1,c2;
-      DAE.VarParallelism pr;
-      list<DAE.Const> constLst;
-      String id;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      InstTypes.PolymorphicBindings polymorphicBindings;
-      Integer idx;
+  for slot in inSlots loop
+    SLOT(slotFilled = filled) := slot;
 
-    case (cache,(SLOT(fa, true, e as SOME(_), ds, idx) :: xs),class_,env,impl,polymorphicBindings,pre,_)
-      equation
-        (cache, res, constLst, polymorphicBindings) = fillGraphicsDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
-      then
-        (cache, SLOT(fa,true,e,ds,idx) :: res, constLst, polymorphicBindings);
+    // Try to fill the slot if it's not yet filled.
+    if not filled then
+      slot := matchcontinue slot
+        case SLOT(defaultArg = defarg as DAE.FUNCARG())
+          algorithm
+            SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((e, _)))) :=
+              SCode.getElementNamed(defarg.name, inClass);
 
-    case (cache,(SLOT(DAE.FUNCARG(id,tp,c2,pr,e), false, NONE(), ds, idx) :: xs),class_,env,impl,polymorphicBindings,pre,_)
-      equation
-        (cache,res,constLst,polymorphicBindings) = fillGraphicsDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
+            (outCache, exp, DAE.PROP(ty, c), _) :=
+              elabExpInExpression(outCache, inEnv, e, inImplicit, NONE(), true, inPrefix, inInfo);
+              
+            (exp, _, outPolymorphicBindings) := Types.matchTypePolymorphic(exp,
+              ty, defarg.ty, FGraph.getGraphPathNoImplicitScope(inEnv), outPolymorphicBindings, false);
 
-        SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((dexp,_)))) = SCode.getElementNamed(id, class_);
+            true := Types.constEqualOrHigher(c, defarg.const);
+            outConsts := c :: outConsts;
 
-        (cache,exp,DAE.PROP(t,c1),_) = elabExpInExpression(cache, env, dexp, impl, NONE(), true, pre, info);
-        // print("Slot: " + id + " -> " + Exp.printExpStr(exp) + "\n");
-        (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
-        true = Types.constEqualOrHigher(c1,c2);
-      then
-        (cache, SLOT(DAE.FUNCARG(id,tp,c2,pr,e),true,SOME(exp_1),ds,idx) :: res, c1::constLst, polymorphicBindings);
+            slot.slotFilled := true;
+            slot.arg := SOME(exp);
+          then
+            slot;
 
-    case (cache,(SLOT(fa, false, e, ds, idx) :: xs),class_,env,impl,polymorphicBindings,pre,_)
-      equation
-        (cache, res, constLst, polymorphicBindings) = fillGraphicsDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
-      then
-        (cache,SLOT(fa,false,e,ds,idx) :: res, constLst, polymorphicBindings);
+        else slot;
+      end matchcontinue;
+    end if; 
 
+    outSlots := slot :: outSlots;
+  end for;
 
-    case (cache,{},_,_,_,_,_,_) then (cache,{},{},{});
-  end matchcontinue;
+  outSlots := listReverse(outSlots);
+  outConsts := listReverse(outConsts);
 end fillGraphicsDefaultSlots;
 
 protected function printSlotsStr
-"prints the slots to a string"
-  input list<Slot> inSlotLst;
+  "prints the slots to a string"
+  input list<Slot> inSlots;
   output String outString;
 algorithm
-  outString:=
-  match (inSlotLst)
+  outString := match inSlots
     local
       Boolean filled;
       String farg_str,filledStr,str,s,s1,s2,res;
@@ -10310,19 +9519,22 @@ algorithm
       Option<DAE.Exp> exp;
       DAE.Dimensions ds;
       list<Slot> xs;
-    case ((SLOT(defaultArg = farg,slotFilled = filled,arg = exp,dims = ds) :: xs))
-      equation
-        farg_str = Types.printFargStr(farg);
-        filledStr = if filled then "filled" else "not filled";
-        str = Dump.getOptionStr(exp, ExpressionDump.printExpStr);
-        str_lst = List.map(ds, ExpressionDump.dimensionString);
-        s = stringDelimitList(str_lst, ", ");
-        s1 = stringAppendList({"SLOT(",farg_str,", ",filledStr,", ",str,", [",s,"])\n"});
-        s2 = printSlotsStr(xs);
-        res = stringAppend(s1, s2);
+
+    case SLOT(defaultArg = farg,slotFilled = filled,arg = exp,dims = ds) :: xs
+      algorithm
+        farg_str := Types.printFargStr(farg);
+        filledStr := if filled then "filled" else "not filled";
+        str := Dump.getOptionStr(exp, ExpressionDump.printExpStr);
+        str_lst := List.map(ds, ExpressionDump.dimensionString);
+        s := stringDelimitList(str_lst, ", ");
+        s1 := stringAppendList({"SLOT(",farg_str,", ",filledStr,", ",str,", [",s,"])\n"});
+        s2 := printSlotsStr(xs);
+        res := stringAppend(s1, s2);
       then
         res;
-    case ({}) then "";
+
+    case {} then "";
+
   end match;
 end printSlotsStr;
 
@@ -10332,7 +9544,8 @@ protected uniontype IsExternalObject
 end IsExternalObject;
 
 protected function evalExternalObjectInput
-  "External Object requires us to construct before initialization for good results. So try to evaluate the inputs."
+  "External Object requires us to construct before initialization for good
+   results. So try to evaluate the inputs."
   input IsExternalObject isExternalObject;
   input DAE.Type ty;
   input DAE.Const const;
@@ -10343,32 +9556,37 @@ protected function evalExternalObjectInput
   output FCore.Cache outCache;
   output DAE.Exp outExp;
 algorithm
-  (outCache,outExp) := matchcontinue (isExternalObject)
+  (outCache,outExp) := matchcontinue isExternalObject
     local
       String str;
       Values.Value val;
+
     case NOT_EXTERNAL_OBJECT_MODEL_SCOPE()
       then (inCache,inExp);
 
-    case (_)
-      equation
-        true = Types.isParameterOrConstant(const);
-        false = Expression.isConst(inExp);
-        (outCache, val, _) = Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Absyn.MSG(info), 0);
-        outExp = ValuesUtil.valueExp(val);
-      then (outCache,outExp);
+    case _
+      algorithm
+        true := Types.isParameterOrConstant(const);
+        false := Expression.isConst(inExp);
+        (outCache, val, _) := Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Absyn.MSG(info), 0);
+        outExp := ValuesUtil.valueExp(val);
+      then
+        (outCache,outExp);
 
-    case (_)
-      equation
-        true = Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp);
-      then (inCache,inExp);
+    case _
+      algorithm
+        true := Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp);
+      then
+        (inCache,inExp);
 
     else
-      equation
-        false = Types.isParameterOrConstant(const);
-        str = ExpressionDump.printExpStr(inExp);
+      algorithm
+        false := Types.isParameterOrConstant(const);
+        str := ExpressionDump.printExpStr(inExp);
         Error.addSourceMessage(Error.EVAL_EXTERNAL_OBJECT_CONSTRUCTOR, {str}, info);
-      then (inCache,inExp);
+      then
+        (inCache,inExp);
+
   end matchcontinue;
 end evalExternalObjectInput;
 
@@ -10378,61 +9596,41 @@ protected function elabPositionalInputArgs
   positional argument."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<DAE.FuncArg> inTypesFuncArgLst;
-  input Integer position;
-  input list<Slot> inSlotLst;
-  input Boolean onlyOneFunction;
-  input Boolean checkTypes "if true, check types";
-  input Boolean inBoolean;
+  input list<Absyn.Exp> inPosArgs;
+  input list<DAE.FuncArg> inFuncArgs;
+  input list<Slot> inSlots;
+  input Boolean inOnlyOneFunction;
+  input Boolean inCheckTypes "if true, check types";
+  input Boolean inImplicit;
   input IsExternalObject isExternalObject;
   input InstTypes.PolymorphicBindings inPolymorphicBindings;
-  input Option<GlobalScript.SymbolTable> st;
+  input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
-  input SourceInfo info;
-  input Absyn.Path path;
-  output FCore.Cache outCache;
-  output list<Slot> outSlotLst;
-  output list<DAE.Const> outTypesConstLst;
-  output InstTypes.PolymorphicBindings outPolymorphicBindings;
+  input SourceInfo inInfo;
+  input Absyn.Path inPath;
+  output FCore.Cache outCache := inCache;
+  output list<Slot> outSlots := inSlots;
+  output list<DAE.Const> outConsts := {};
+  output InstTypes.PolymorphicBindings outPolymorphicBindings := inPolymorphicBindings;
+protected
+  DAE.FuncArg farg;
+  list<DAE.FuncArg> farg_rest := inFuncArgs;
+  DAE.Const c;
+  Integer position := 1;
 algorithm
-  (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
-  match (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,position,inSlotLst,onlyOneFunction,checkTypes,inBoolean,isExternalObject,inPolymorphicBindings,st,inPrefix,info,path)
-    local
-      list<Slot> slots,slots_1,newslots;
-      Boolean impl;
-      DAE.Exp e_1,e_2;
-      DAE.Type t,vt;
-      DAE.Const c1,c2;
-      DAE.VarParallelism pr;
-      list<DAE.Const> clist;
-      FCore.Graph env;
-      Absyn.Exp e;
-      list<Absyn.Exp> es;
-      DAE.FuncArg farg;
-      list<DAE.FuncArg> vs;
-      DAE.Dimensions ds;
-      FCore.Cache cache;
-      String id;
-      DAE.Properties props;
-      Prefix.Prefix pre;
-      DAE.CodeType ct;
-      InstTypes.PolymorphicBindings polymorphicBindings;
+  for arg in inPosArgs loop
+    farg :: farg_rest := farg_rest;
 
-    // the empty case
-    case (cache, _, {}, _, _, slots, _, _, _, _, polymorphicBindings,_,_,_,_)
-      then (cache,slots,{},polymorphicBindings);
+    (outCache, outSlots, c, outPolymorphicBindings) :=
+      elabPositionalInputArg(outCache, inEnv, arg, farg, position, outSlots,
+          inOnlyOneFunction, inCheckTypes, inImplicit, isExternalObject,
+          inPolymorphicBindings, inST, inPrefix, inInfo, inPath);
+    
+    position := position + 1;
+    outConsts := c :: outConsts;
+  end for;  
 
-    case (cache, env, e :: es, farg :: vs, _, slots, _, _, impl, _, polymorphicBindings,_,pre,_,_)
-      equation
-        (cache,slots,c1,polymorphicBindings) =
-        elabPositionalInputArg(cache, env, e, farg, position, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings, st, pre, info,path,Error.getNumErrorMessages());
-        (cache,slots,clist,polymorphicBindings) =
-        elabPositionalInputArgs(cache, env, es, vs, position+1, slots, onlyOneFunction, checkTypes, impl, isExternalObject, polymorphicBindings, st, pre, info,path);
-      then
-        (cache,slots,c1::clist,polymorphicBindings);
-
-  end match;
+  outConsts := listReverse(outConsts);
 end elabPositionalInputArgs;
 
 protected function elabPositionalInputArg
@@ -10454,11 +9652,12 @@ protected function elabPositionalInputArg
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
   input Absyn.Path path;
-  input Integer numErrors;
   output FCore.Cache outCache;
   output list<Slot> outSlotLst;
   output DAE.Const outConst;
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
+protected
+  Integer numErrors := Error.getNumErrorMessages();
 algorithm
   (outCache,outSlotLst,outConst,outPolymorphicBindings):=
   matchcontinue (inCache,inEnv,inExp,farg,position,inSlotLst,onlyOneFunction,checkTypes,impl,isExternalObject,inPolymorphicBindings,st,inPrefix,info,path,numErrors)
@@ -10775,7 +9974,7 @@ protected
   DAE.VarParallelism prl;
   Option<DAE.Exp> binding;
   Boolean filled;
-  Integer idx;
+  Integer idx, ses;
   Slot slot;
   list<Slot> rest_slots := inSlotLst;
 algorithm
@@ -10788,7 +9987,7 @@ algorithm
     // Check if this slot has the same name as the one we're looking for.
     if stringEq(fa1, fa2) then
       SLOT(defaultArg = DAE.FUNCARG(const = c2, par = prl, defaultBinding = binding),
-        slotFilled = filled, idx = idx) := slot;
+        slotFilled = filled, idx = idx, evalStatus = ses) := slot;
 
       // Fail if the slot is already filled.
       if filled then
@@ -10806,7 +10005,7 @@ algorithm
       end if;
 
       // Found a valid slot, fill it and reconstruct the slot list.
-      slot := SLOT(DAE.FUNCARG(fa2, ty1, c2, prl, binding), true, SOME(inExp), inDims, idx);
+      slot := SLOT(DAE.FUNCARG(fa2, ty1, c2, prl, binding), true, SOME(inExp), inDims, idx, ses);
       outSlotLst := listAppend(listReverse(outSlotLst), slot :: rest_slots);
       return;
     end if;
@@ -10826,14 +10025,14 @@ function: elabCref
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
-  input Boolean inImplict "implicit instantiation";
+  input Boolean inImplicit "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
-  (outCache,res) := elabCref1(inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,true,info);
+  (outCache,res) := elabCref1(inCache,inEnv,inComponentRef,inImplicit,performVectorization,inPrefix,true,info);
 end elabCref;
 
 public function elabCrefNoEval "
@@ -10841,7 +10040,7 @@ public function elabCrefNoEval "
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
-  input Boolean inImplict "implicit instantiation";
+  input Boolean inImplicit "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
@@ -10850,7 +10049,8 @@ public function elabCrefNoEval "
   output DAE.Properties outProperties;
   output DAE.Attributes outAttributes;
 algorithm
-  (outCache, SOME((outExp, outProperties, outAttributes))) := elabCref1(inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,false,info);
+  (outCache, SOME((outExp, outProperties, outAttributes))) :=
+    elabCref1(inCache,inEnv,inComponentRef,inImplicit,performVectorization,inPrefix,false,info);
 end elabCrefNoEval;
 
 protected function elabCref1 "
@@ -10862,7 +10062,7 @@ function: elabCref
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
-  input Boolean inImplict "implicit instantiation";
+  input Boolean inImplicit "implicit instantiation";
   input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
   input Prefix.Prefix inPrefix;
   input Boolean evalCref;
@@ -10870,7 +10070,7 @@ function: elabCref
   output FCore.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
-  (outCache,res) := matchcontinue (inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,evalCref,info)
+  (outCache,res) := matchcontinue (inCache,inEnv,inComponentRef,inImplicit,performVectorization,inPrefix,evalCref,info)
     local
       DAE.ComponentRef c_1;
       DAE.Const const,const1,const2,constCref,constSubs;
@@ -13889,6 +13089,21 @@ algorithm
     prop := DAE.PROP_TUPLE(DAE.T_TUPLE(types, DAE.emptyTypeSource), DAE.TUPLE_CONST(consts));
   end if;
 end fixTupleMetaModelica;
+
+protected function checkBuiltinCallArgs
+  input list<Absyn.Exp> inPosArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Integer inExpectedArgs;
+  input String inFnName;
+  input Absyn.Info inInfo;
+protected
+  String args_str, msg_str;
+  list<String> pos_args, named_args;
+algorithm
+  if listLength(inPosArgs) <> inExpectedArgs or not listEmpty(inNamedArgs) then
+    Error.addSourceMessageAndFail(Error.WRONG_NO_OF_ARGS, {inFnName}, inInfo);
+  end if;
+end checkBuiltinCallArgs;
 
 annotation(__OpenModelica_Interface="frontend");
 end Static;

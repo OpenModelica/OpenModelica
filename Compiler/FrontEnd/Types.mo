@@ -84,20 +84,23 @@ protected import SCodeDump;
 public function discreteType "Succeeds for all the discrete types, Integer, String, Boolean and enumeration."
   input DAE.Type inType;
 algorithm
-  _ := match (inType)
-    local Type ty;
-    case (DAE.T_INTEGER()) then ();
-    case (DAE.T_STRING()) then ();
-    case (DAE.T_BOOL()) then ();
-    // BTH
-    case (DAE.T_CLOCK()) then ();
-    case (DAE.T_ENUMERATION()) then ();
-    case (DAE.T_SUBTYPE_BASIC(complexType = ty))
-      equation
-        discreteType(ty);
-      then ();
-  end match;
+  true := isDiscreteType(inType);
 end discreteType;
+
+public function isDiscreteType
+  input DAE.Type inType;
+  output Boolean outIsDiscrete;
+algorithm
+  outIsDiscrete := match inType
+    case DAE.T_INTEGER() then true;
+    case DAE.T_STRING() then true;
+    case DAE.T_BOOL() then true;
+    case DAE.T_CLOCK() then true;
+    case DAE.T_ENUMERATION() then true;
+    case DAE.T_SUBTYPE_BASIC() then isDiscreteType(inType.complexType);
+    else false;
+  end match;
+end isDiscreteType;
 
 public function propsAnd "Function for merging a list of properties, currently only working on DAE.PROP() and not TUPLE_DAE.PROP()."
   input list<DAE.Properties> inProps;
