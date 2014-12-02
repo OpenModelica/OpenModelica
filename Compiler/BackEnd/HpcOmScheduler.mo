@@ -63,7 +63,7 @@ public type TaskAssignment = array<Integer>; //the information which node <idx> 
 //--------------
 // No Scheduling
 //--------------
-public function createEmptySchedule "function createListSchedule
+public function createEmptySchedule "function createEmptySchedule
   author: marcusw
   Create a empty-schedule to produce the serial code."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
@@ -1532,7 +1532,6 @@ end convertScheduleStrucToInfoLevel1;
 //-----------------
 // Balanced Level Scheduling
 //-----------------
-
 public function createBalancedLevelScheduling "function createBalancedLevelScheduling
   author: waurich TUD
   Creates a balanced level scheduling for the given graph"

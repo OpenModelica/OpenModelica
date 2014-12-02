@@ -31,7 +31,7 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
   let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(simulationWriteOutputCppFile(simCode, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
-  let()= textFile(simulationMainRunScript(simCode), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode)%>')
+  let()= textFile(simulationMainRunScript(simCode, "", "", "exec"), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode)%>')
   let jac =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) =>
           (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian,false) ;separator="")
          ;separator="")
@@ -1154,88 +1154,83 @@ template crefType(ComponentRef cr) "template crefType
   Like cref but with cast if type is integer."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%expTypeFlag(identType,6)%>'
-  case CREF_QUAL(__)  then '<%crefType(componentRef)%>'
-  else "crefType:ERROR"
+    case CREF_IDENT(__) then '<%expTypeFlag(identType,6)%>'
+    case CREF_QUAL(__)  then '<%crefType(componentRef)%>'
+    else "crefType:ERROR"
   end match
 end crefType;
 
 
-template simulationMainRunScript(SimCode simCode)
+template simulationMainRunScript(SimCode simCode, String preRunCommandLinux, String preRunCommandWindows, String execCommandLinux)
  "Generates code for header file for simulation target."
 ::=
-match simCode
-case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-(match makefileParams.platform
-case  "linux64"
-case  "linux32" then
-(match simCode
-case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
-let start = settings.startTime
-let end = settings.stopTime
-let stepsize = settings.stepSize
-let intervals = settings.numberOfIntervals
-let tol = settings.tolerance
-let solver = settings.method
-let moLib =  makefileParams.compileDir
-let home = makefileParams.omhome
-<<
-#!/bin/sh
-exec ./OMCpp<%fileNamePrefix%>Main -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> -o <%settings.outputFormat%> $*
->>
-end match)
-case  "win32"
-case  "win64" then
-match simCode
-case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
-let start = settings.startTime
-let end = settings.stopTime
-let stepsize = settings.stepSize
-let intervals = settings.numberOfIntervals
-let tol = settings.tolerance
-let solver = settings.method
-let moLib =  makefileParams.compileDir
-let home = makefileParams.omhome
-let libFolder =simulationLibDir(simulationCodeTarget(),simCode)
-let libPaths = makefileParams.libPaths |> path => path; separator=";"
-<<
-@echo off
-REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
-SET PATH=<%makefileParams.omhome%>/bin;<%libFolder%>;<%libPaths%>;%PATH%
-<%moLib%>/OMCpp<%fileNamePrefix%>Main.exe -s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> -o <%settings.outputFormat%>
->>
-end match)
+  match simCode
+   case SIMCODE(modelInfo = MODELINFO(__), makefileParams = MAKEFILE_PARAMS(__), simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
+    let start     = settings.startTime
+    let end       = settings.stopTime
+    let stepsize  = settings.stepSize
+    let intervals = settings.numberOfIntervals
+    let tol       = settings.tolerance
+    let solver    = settings.method
+    let moLib     =  makefileParams.compileDir
+    let home      = makefileParams.omhome
+    let execParameters = '-s <%start%> -e <%end%> -f <%stepsize%> -v <%intervals%> -y <%tol%> -i <%solver%> -r <%simulationLibDir(simulationCodeTarget(),simCode)%> -m <%moLib%> -R <%simulationResults(getRunningTestsuite(),simCode)%> -o <%settings.outputFormat%>'
+    let fileNamePrefixx = fileNamePrefix
+
+    let libFolder =simulationLibDir(simulationCodeTarget(),simCode)
+    let libPaths = makefileParams.libPaths |> path => path; separator=";"
+
+    match makefileParams.platform
+      case  "linux64"
+      case  "linux32" then
+        <<
+        #!/bin/sh
+        <%preRunCommandLinux%>
+        <%execCommandLinux%> ./OMCpp<%fileNamePrefixx%>Main <%execParameters%> $*
+        >>
+      case  "win32"
+      case  "win64" then
+        <<
+        @echo off
+        <%preRunCommandWindows%>
+        REM ::export PATH=<%libFolder%>:$PATH REPLACE C: with /C/
+        SET PATH=<%home%>/bin;<%libFolder%>;<%libPaths%>;%PATH%
+        <%moLib%>/OMCpp<%fileNamePrefixx%>Main.exe <%execParameters%>
+        >>
+    end match
+  end match
 end simulationMainRunScript;
 
 
 template simulationLibDir(String target, SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
-match target
-case "msvc" then
-match simCode
-case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-'<%makefileParams.omhome%>/lib/omc/cpp/msvc'
-end match
-else
-match simCode
-case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
-'<%makefileParams.omhome%>/lib/omc/cpp/'
-end match
+  match target
+    case "msvc" then
+      match simCode
+        case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+          '<%makefileParams.omhome%>/lib/omc/cpp/msvc'
+      end match
+    else
+      match simCode
+        case SIMCODE(makefileParams=MAKEFILE_PARAMS(__)) then
+          '<%makefileParams.omhome%>/lib/omc/cpp/'
+      end match
+  end match
 end simulationLibDir;
 
 
 template simulationResults(Boolean test, SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
-match simCode
-case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
-let results = if test then ""  else '<%makefileParams.compileDir%>/'
-<<
-<%results%><%fileNamePrefix%>_res.<%settings.outputFormat%>
->>
+  match simCode
+    case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
+      let results = if test then ""  else '<%makefileParams.compileDir%>/'
+      <<
+      <%results%><%fileNamePrefix%>_res.<%settings.outputFormat%>
+      >>
+  end match
 end simulationResults;
-
 
 
 template simulationMainRunScriptSuffix(SimCode simCode)
@@ -1257,7 +1252,6 @@ template simulationMainFile(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   <<
-
   #ifndef BOOST_ALL_DYN_LINK
     #define BOOST_ALL_DYN_LINK
   #endif
@@ -4492,19 +4486,20 @@ end alocateLinearSystemConstructor;
 
 template Update(SimCode simCode, Boolean useFlatArrayNotation)
 ::=
-match simCode
-case SIMCODE(__) then
-  <<
-  <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+  match simCode
+    case SIMCODE(__) then
+      <<
+      <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
-  <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
+      <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
 
-  <%createEvaluate(odeEquations,whenClauses,simCode,contextOther)%>
+      <%createEvaluate(odeEquations,whenClauses,simCode,contextOther)%>
 
-  <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther)%>
+      <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther)%>
 
-  <%createEvaluateConditions(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
-  >>
+      <%createEvaluateConditions(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
+      >>
+  end match
 end Update;
 /*<%update(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>*/
 
@@ -5015,131 +5010,128 @@ end generateAlgloopClassDeclarationCode;
   <%algvars%>
   */
 template DefaultImplementationCode(SimCode simCode, Boolean useFlatArrayNotation)
-
 ::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(stateVars=states))) then
-<<
-  // Release instance
-void <%lastIdentOfPath(modelInfo.name)%>::destroy()
-{
-    delete this;
-}
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(vars=SIMVARS(stateVars=states))) then
+      <<
+      // Release instance
+      void <%lastIdentOfPath(modelInfo.name)%>::destroy()
+      {
+        delete this;
+      }
 
-// Set current integration time
-void <%lastIdentOfPath(modelInfo.name)%>::setTime(const double& t)
-{
-    SystemDefaultImplementation::setTime(t);
-}
+      // Set current integration time
+      void <%lastIdentOfPath(modelInfo.name)%>::setTime(const double& t)
+      {
+        SystemDefaultImplementation::setTime(t);
+      }
 
-
-
-// Provide number (dimension) of variables according to the index
-int <%lastIdentOfPath(modelInfo.name)%>::getDimContinuousStates() const
-{
-    return(SystemDefaultImplementation::getDimContinuousStates());
-}
+      // Provide number (dimension) of variables according to the index
+      int <%lastIdentOfPath(modelInfo.name)%>::getDimContinuousStates() const
+      {
+        return(SystemDefaultImplementation::getDimContinuousStates());
+      }
 
 
-// Provide number (dimension) of variables according to the index
-int <%lastIdentOfPath(modelInfo.name)%>::getDimBoolean() const
-{
-    return(SystemDefaultImplementation::getDimBoolean());
-}
+      // Provide number (dimension) of variables according to the index
+      int <%lastIdentOfPath(modelInfo.name)%>::getDimBoolean() const
+      {
+        return(SystemDefaultImplementation::getDimBoolean());
+      }
 
-// Provide number (dimension) of variables according to the index
-int <%lastIdentOfPath(modelInfo.name)%>::getDimInteger() const
-{
-    return(SystemDefaultImplementation::getDimInteger());
-}
-// Provide number (dimension) of variables according to the index
-int <%lastIdentOfPath(modelInfo.name)%>::getDimReal() const
-{
-    return(SystemDefaultImplementation::getDimReal());
-}
+      // Provide number (dimension) of variables according to the index
+      int <%lastIdentOfPath(modelInfo.name)%>::getDimInteger() const
+      {
+        return(SystemDefaultImplementation::getDimInteger());
+      }
+      // Provide number (dimension) of variables according to the index
+      int <%lastIdentOfPath(modelInfo.name)%>::getDimReal() const
+      {
+        return(SystemDefaultImplementation::getDimReal());
+      }
 
-// Provide number (dimension) of variables according to the index
-int <%lastIdentOfPath(modelInfo.name)%>::getDimString() const
-{
-    return(SystemDefaultImplementation::getDimString());
-}
+      // Provide number (dimension) of variables according to the index
+      int <%lastIdentOfPath(modelInfo.name)%>::getDimString() const
+      {
+        return(SystemDefaultImplementation::getDimString());
+      }
 
+      // Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
+      int <%lastIdentOfPath(modelInfo.name)%>::getDimRHS() const
+      {
+        return(SystemDefaultImplementation::getDimRHS());
+      }
 
-// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
-int <%lastIdentOfPath(modelInfo.name)%>::getDimRHS() const
-{
-     return(SystemDefaultImplementation::getDimRHS());
-}
+      void <%lastIdentOfPath(modelInfo.name)%>::getContinuousStates(double* z)
+      {
+        SystemDefaultImplementation::getContinuousStates(z);
+      }
+      void <%lastIdentOfPath(modelInfo.name)%>::getNominalStates(double* z)
+      {
+        <%getNominalStateValues(states,simCode,useFlatArrayNotation)%>
+      }
 
-void <%lastIdentOfPath(modelInfo.name)%>::getContinuousStates(double* z)
-{
-    SystemDefaultImplementation::getContinuousStates(z);
-}
-void <%lastIdentOfPath(modelInfo.name)%>::getNominalStates(double* z)
-{
-   <%getNominalStateValues(states,simCode,useFlatArrayNotation)%>
-}
+      // Set variables with given index to the system
+      void <%lastIdentOfPath(modelInfo.name)%>::setContinuousStates(const double* z)
+      {
+        SystemDefaultImplementation::setContinuousStates(z);
+      }
 
-// Set variables with given index to the system
-void <%lastIdentOfPath(modelInfo.name)%>::setContinuousStates(const double* z)
-{
-    SystemDefaultImplementation::setContinuousStates(z);
-}
+      // Provide the right hand side (according to the index)
+      void <%lastIdentOfPath(modelInfo.name)%>::getRHS(double* f)
+      {
+      <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
+      <<
+      if(index == IContinuous::ALL_RESIDUES)
+      {
+        <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
+        double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode, useFlatArrayNotation));separator=","%>};
+        for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];
+      }
+      else SystemDefaultImplementation::getRHS(f);
+      >>
+      else
+      <<
+        SystemDefaultImplementation::getRHS(f);
+      >>%>
+      }
 
-// Provide the right hand side (according to the index)
-void <%lastIdentOfPath(modelInfo.name)%>::getRHS(double* f)
-{
-<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
-<<
-if(index == IContinuous::ALL_RESIDUES)
-{
-    <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
-    double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode, useFlatArrayNotation));separator=","%>};
-    for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];
-}
-else SystemDefaultImplementation::getRHS(f);
->>
-else
-<<
-    SystemDefaultImplementation::getRHS(f);
->>%>
-}
+      void <%lastIdentOfPath(modelInfo.name)%>::setRHS(const double* f)
+      {
+        SystemDefaultImplementation::setRHS(f);
+      }
 
-void <%lastIdentOfPath(modelInfo.name)%>::setRHS(const double* f)
-{
-    SystemDefaultImplementation::setRHS(f);
-}
+      bool <%lastIdentOfPath(modelInfo.name)%>::isStepEvent()
+      {
+        throw std::runtime_error("isStepEvent is not yet implemented");
+      }
 
-bool <%lastIdentOfPath(modelInfo.name)%>::isStepEvent()
-{
-    throw std::runtime_error("isStepEvent is not yet implemented");
-}
+      void <%lastIdentOfPath(modelInfo.name)%>::setTerminal(bool terminal)
+      {
+        _terminal=terminal;
+      }
 
-void <%lastIdentOfPath(modelInfo.name)%>::setTerminal(bool terminal)
-{
-   _terminal=terminal;
-}
+      bool <%lastIdentOfPath(modelInfo.name)%>::terminal()
+      {
+        return _terminal;
+      }
 
-bool <%lastIdentOfPath(modelInfo.name)%>::terminal()
-{
-   return _terminal;
-}
+      bool <%lastIdentOfPath(modelInfo.name)%>::isAlgebraic()
+      {
+        return false; // Indexreduction is enabled
+      }
 
-bool <%lastIdentOfPath(modelInfo.name)%>::isAlgebraic()
-{
-  return false; // Indexreduction is enabled
-}
+      bool <%lastIdentOfPath(modelInfo.name)%>::provideSymbolicJacobian()
+      {
+        throw std::runtime_error("provideSymbolicJacobian is not yet implemented");
+      }
 
-bool <%lastIdentOfPath(modelInfo.name)%>::provideSymbolicJacobian()
-{
-  throw std::runtime_error("provideSymbolicJacobian is not yet implemented");
-}
-
-void <%lastIdentOfPath(modelInfo.name)%>::handleEvent(const bool* events)
-{
- <%handleEvent(simCode)%>
-}
->>
+      void <%lastIdentOfPath(modelInfo.name)%>::handleEvent(const bool* events)
+      {
+        <%handleEvent(simCode)%>
+      }
+      >>
+  end match
 end DefaultImplementationCode;
 
 
@@ -7853,7 +7845,6 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
       <%measureTimeEndVar%>
     }
     >>
-
 end equation_function_create_single_func;
 
 template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, SimCode simCode, Boolean useFlatArrayNotation)
@@ -12107,16 +12098,14 @@ end update;
 */
 
 
-template equationFunctions( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context, Boolean useFlatArrayNotation, Boolean enableMeasureTime)
+template equationFunctions(list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context, Boolean useFlatArrayNotation, Boolean enableMeasureTime)
 ::=
-
- let equation_func_calls = (allEquationsPlusWhen |> eq =>
+  let equation_func_calls = (allEquationsPlusWhen |> eq =>
                     equation_function_create_single_func(eq, context/*BUFC*/, simCode,"evaluate","", useFlatArrayNotation,enableMeasureTime)
                     ;separator="\n")
-
-<<
-<%equation_func_calls%>
->>
+  <<
+  <%equation_func_calls%>
+  >>
 end equationFunctions;
 
 template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context, Boolean useFlatArrayNotation)
@@ -12183,15 +12172,14 @@ template createEvaluateConditions( list<SimEqSystem> allEquationsPlusWhen,list<S
   >>
 end createEvaluateConditions;
 
-template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause> whenClauses, SimCode simCode, Context context)
+template createEvaluate(list<list<SimEqSystem>> odeEquations, list<SimWhenClause> whenClauses, SimCode simCode, Context context)
 ::=
   let className = lastIdentOfPathFromSimCode(simCode)
   let &varDecls = buffer "" /*BUFD*/
 
-   let equation_ode_func_calls = (odeEquations |> eqs => (eqs |> eq  =>
+  let equation_ode_func_calls = (odeEquations |> eqs => (eqs |> eq  =>
                     equation_function_call(eq, context, &varDecls /*BUFC*/, simCode,"evaluate");separator="\n")
                    )
-
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {
@@ -12213,9 +12201,6 @@ template createEvaluateZeroFuncs( list<SimEqSystem> equationsForZeroCrossings, S
   let equation_zero_func_calls = (equationsForZeroCrossings |> eq  =>
                     equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode,"evaluate")
                     ;separator="\n")
-
-
-
 
   <<
   void <%className%>::evaluateZeroFuncs(const UPDATETYPE command)

@@ -903,7 +903,7 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(50, "tearingHeuristic",
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(51, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("pthreads"), NONE(),
-  Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin). Default: openmp."));
+  Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | mpi). Default: openmp."));
 
 constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(52, "rewriteRulesFile", NONE(), EXTERNAL(),
   STRING_FLAG(""), NONE(),
