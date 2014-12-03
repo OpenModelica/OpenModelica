@@ -29,6 +29,14 @@
  *
  */
 
+type StateSelect = enumeration(
+  never "Do not use as state at all.",
+  avoid "Use as state, if it cannot be avoided (but only if variable appears differentiated and no other potential state with attribute default, prefer, or always can be selected).",
+  default "Use as state if appropriate, but only if variable appears differentiated.",
+  prefer "Prefer it as state over those having the default value (also variables can be selected, which do not appear differentiated).",
+  always "Do use it as a state."
+);
+
 function der "Derivative of the input expression"
   input Real x(unit="'p");
   output Real dx(unit="'p/s");

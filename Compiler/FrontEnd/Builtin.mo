@@ -223,18 +223,6 @@ protected constant SCode.Element distribution = SCode.COMPONENT("distribution",c
           SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo); // Distribution is declared in ModelicaBuiltin.mo
 // END Extensions for uncertainties
 
-protected constant list<SCode.Element> stateSelectComps = {
-          SCode.COMPONENT("never",commonPrefixes,
-          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-          SCode.COMPONENT("avoid",commonPrefixes,
-          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-          SCode.COMPONENT("default",commonPrefixes,
-          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-          SCode.COMPONENT("prefer",commonPrefixes,
-          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
-          SCode.COMPONENT("always",commonPrefixes,
-          attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo)} "The StateSelect enumeration" ;
-
 protected constant list<SCode.Element> uncertaintyComps = {
           SCode.COMPONENT("given",commonPrefixes,
           attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
@@ -242,9 +230,6 @@ protected constant list<SCode.Element> uncertaintyComps = {
           attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo),
           SCode.COMPONENT("refine",commonPrefixes,
           attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo)} "The Uncertainty enumeration" ;
-
-protected constant SCode.Element stateSelectType = SCode.CLASS("StateSelect",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
-          SCode.PARTS(stateSelectComps,{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "The State Select Type";
 
 protected constant SCode.Element uncertaintyType = SCode.CLASS("Uncertainty",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
           SCode.PARTS(uncertaintyComps,{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "The Uncertainty Type";
@@ -524,7 +509,7 @@ protected constant SCode.Element objectiveVarComp =
             Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
             SCode.noComment, NONE(), Absyn.dummyInfo);
 
-protected constant list<SCode.Element> basicTypes = {clockType, rlType, intType, strType, boolType, enumType, ExternalObjectType, realType, integerType, stringType, booleanType, stateSelectType, uncertaintyType};
+protected constant list<SCode.Element> basicTypes = {clockType, rlType, intType, strType, boolType, enumType, ExternalObjectType, realType, integerType, stringType, booleanType, uncertaintyType};
 
 public function variableIsBuiltin
  "Returns true if cref is a builtin variable.
