@@ -454,11 +454,11 @@ template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
       <%generateDeleteAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode,className)%>
 
       <%Update(simCode,useFlatArrayNotation)%>
-      
+
       <%DefaultImplementationCode(simCode,useFlatArrayNotation)%>
       <%checkForDiscreteEvents(discreteModelVars,simCode,useFlatArrayNotation)%>
       <%giveZeroFunc1(zeroCrossings,simCode,useFlatArrayNotation)%>
-      
+
       <%setConditions(simCode)%>
       <%geConditions(simCode)%>
       <%isConsistent(simCode)%>
