@@ -525,7 +525,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%GetIntialStatus(simCode)%>
    <%SetIntialStatus(simCode)%>
-    <%initExtVars(simCode, useFlatArrayNotation)%>
+   <%initExtVars(simCode, useFlatArrayNotation)%>
    <%init(simCode, useFlatArrayNotation)%>
    >>
 
@@ -1902,13 +1902,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
             #ifdef MEASURETIME_MODELFUNCTIONS
             MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
-            measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
+            measureTimeFunctionsArray = std::vector<MeasureTimeData>(4); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput; 4 handleTimeEvents
             measuredFunctionStartValues = MeasureTime::getZeroValues();
             measuredFunctionEndValues = MeasureTime::getZeroValues();
 
             measureTimeFunctionsArray[0] = MeasureTimeData("evaluateODE");
-            measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
+            measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll_wo_ODE");
             measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
+            measureTimeFunctionsArray[3] = MeasureTimeData("handleTimeEvents");
             #endif //MEASURETIME_MODELFUNCTIONS
             >>
         %>
@@ -1957,7 +1958,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     <%generateStepStarted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
 
-    <%generatehandleTimeEvent(timeEvents, simCode)%>
+    <%generatehandleTimeEvent(timeEvents, simCode, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
     <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
     <%generateTimeEvent(timeEvents, simCode, true)%>
 
@@ -4486,20 +4487,19 @@ end alocateLinearSystemConstructor;
 
 template Update(SimCode simCode, Boolean useFlatArrayNotation)
 ::=
-  match simCode
-    case SIMCODE(__) then
-      <<
-      <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+match simCode
+case SIMCODE(__) then
+  <<
+  <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
-      <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
+  <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
-      <%createEvaluate(odeEquations,whenClauses,simCode,contextOther)%>
+  <%createEvaluate(odeEquations,whenClauses,simCode,contextOther, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
-      <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther)%>
+  <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther)%>
 
-      <%createEvaluateConditions(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
-      >>
-  end match
+  <%createEvaluateConditions(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
+  >>
 end Update;
 /*<%update(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>*/
 
@@ -7840,9 +7840,9 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     {
       <%varDeclsLocal%>
 
-      <%measureTimeStartVar%>
+      <%if(createMeasureTime) then measureTimeStartVar%>
       <%body%>
-      <%measureTimeEndVar%>
+      <%if(createMeasureTime) then measureTimeEndVar%>
     }
     >>
 end equation_function_create_single_func;
@@ -7964,15 +7964,20 @@ then
 end generateStepStarted;
 
 
-template generatehandleTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCode)
+template generatehandleTimeEvent(list<BackendDAE.TimeEvent> timeEvents, SimCode simCode, Boolean createMeasureTime)
 ::=
 
   match simCode
 case SIMCODE(modelInfo = MODELINFO(__))
 then
+  let &measureTimeStartVar = buffer "" /*BUFD*/
+  let &measureTimeEndVar = buffer "" /*BUFD*/
+  let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "handleTimeEvents", "MEASURETIME_MODELFUNCTIONS") else ""
+  let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[3]", "handleTimeEvents", "MEASURETIME_MODELFUNCTIONS") else ""
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::handleTimeEvent(int* time_events)
   {
+    <%measureTimeStartVar%>
     for(int i=0; i<_dimTimeEvent; i++)
     {
       if(time_events[i] != _time_event_counter[i])
@@ -7981,6 +7986,7 @@ then
         _time_conditions[i] = false;
     }
     memcpy(_time_event_counter, time_events, (int)_dimTimeEvent*sizeof(int));
+    <%measureTimeEndVar%>
   }
   >>
 
@@ -12108,7 +12114,7 @@ template equationFunctions(list<SimEqSystem> allEquationsPlusWhen,list<SimWhenCl
   >>
 end equationFunctions;
 
-template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context, Boolean useFlatArrayNotation)
+template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> whenClauses, SimCode simCode, Context context, Boolean useFlatArrayNotation, Boolean createMeasureTime)
 ::=
   let className = lastIdentOfPathFromSimCode(simCode)
   let &varDecls = buffer "" /*BUFD*/
@@ -12117,8 +12123,11 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
   let equation_all_func_calls = (allEquationsPlusWhen |> eq  =>
                     equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode,"evaluate")
                     ;separator="\n")
-
-
+                    
+  let equation_notOde_func_calls = (SimCodeUtil.getDaeEqsNotPartOfOdeSystem(simCode) |> eq => 
+                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode,"evaluate")
+                    ;separator="\n")
+                    
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode,context, useFlatArrayNotation)
     ;separator="\n";empty)
@@ -12126,16 +12135,20 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
   <<
   bool <%className%>::evaluateAll(const UPDATETYPE command)
   {
-    <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll", "MEASURETIME_MODELFUNCTIONS")%>
     bool state_var_reinitialized = false;
 
     <%varDecls%>
     /* Evaluate Equations*/
-    <%equation_all_func_calls%>
+    /* <%equation_all_func_calls%> */
+    evaluateODE(command);
+    
+    <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
+    
+    <%equation_notOde_func_calls%>
     /* Reinits */
     <%reinit%>
 
-    <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll", "MEASURETIME_MODELFUNCTIONS")%>
+    <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
 
     return state_var_reinitialized;
   }
@@ -12172,7 +12185,7 @@ template createEvaluateConditions( list<SimEqSystem> allEquationsPlusWhen,list<S
   >>
 end createEvaluateConditions;
 
-template createEvaluate(list<list<SimEqSystem>> odeEquations, list<SimWhenClause> whenClauses, SimCode simCode, Context context)
+template createEvaluate(list<list<SimEqSystem>> odeEquations,list<SimWhenClause> whenClauses, SimCode simCode, Context context, Boolean createMeasureTime)
 ::=
   let className = lastIdentOfPathFromSimCode(simCode)
   let &varDecls = buffer "" /*BUFD*/
@@ -12183,11 +12196,11 @@ template createEvaluate(list<list<SimEqSystem>> odeEquations, list<SimWhenClause
   <<
   void <%className%>::evaluateODE(const UPDATETYPE command)
   {
-    <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
+    <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_ode_func_calls%>
-    <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
+    <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
   }
   >>
 end createEvaluate;

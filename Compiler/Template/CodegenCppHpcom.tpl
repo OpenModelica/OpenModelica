@@ -408,16 +408,17 @@ template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
                 <%List.intRange(getConfigInt(NUM_PROC)) |> threadIdx => 'measureTimeArrayHpcom[<%intSub(threadIdx,1)%>] = MeasureTimeData("evaluateODE_thread<%threadIdx%>");'; separator="\n"%>
 
                 MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","functions",&measureTimeFunctionsArray);
-                measureTimeFunctionsArray = std::vector<MeasureTimeData>(3); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput
+                measureTimeFunctionsArray = std::vector<MeasureTimeData>(4); //1 evaluateODE ; 2 evaluateAll; 3 writeOutput; 4 handleTimeEvents
                 measuredFunctionStartValues = MeasureTime::getZeroValues();
                 measuredFunctionEndValues = MeasureTime::getZeroValues();
 
                 measureTimeFunctionsArray[0] = MeasureTimeData("evaluateODE");
-                measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll");
+                measureTimeFunctionsArray[1] = MeasureTimeData("evaluateAll_wo_ODE");
                 measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
+                measureTimeFunctionsArray[3] = MeasureTimeData("handleTimeEvents");
                 #endif //MEASURETIME_MODELFUNCTIONS
                 >>
-            %>
+           %>
 
         //DAE's are not supported yet, Index reduction is enabled
         _dimAE = 0; // algebraic equations
@@ -467,7 +468,7 @@ template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
 
       <%generateStepStarted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
 
-      <%generatehandleTimeEvent(timeEvents, simCode)%>
+      <%generatehandleTimeEvent(timeEvents, simCode, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
       <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
       <%generateTimeEvent(timeEvents, simCode, true)%>
 
@@ -610,7 +611,7 @@ template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> when
       <<
       <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
-      <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
+       <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
       <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther) %>
 
@@ -659,9 +660,9 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
 
   match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as EMPTYSCHEDULE(__)) then
-      <<
-      <%CodegenCpp.createEvaluate(odeEquations, whenClauses, simCode, context)%>
-      >>
+        <<
+        <%CodegenCpp.createEvaluate(odeEquations, whenClauses, simCode, context, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+        >>
     case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=false, tasksOfLevels=tasksOfLevels)) then
       let odeEqs = tasksOfLevels |> tasks => function_HPCOM_Level(allEquationsPlusWhen, tasks, type, &varDecls, simCode, useFlatArrayNotation); separator="\n"
 
@@ -725,13 +726,14 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
 
           <%functionHead%>
           {
-            /*<%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>*/
+            <%generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
             this->_command = command;
             //_evaluateBarrier.wait(); //start calculation
             <%mainThreadCode%>
             //_evaluateBarrier.wait(); //calculation finished
-            /*<%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>*/
+            
             <%generateStateVarPrefetchCode(simCode)%>
+            <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
           }
           >>
         else ""
@@ -845,7 +847,6 @@ template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, TaskList t
   end match
 end function_HPCOM_Level;
 
-
 template function_HPCOM_Level0(list<SimEqSystem> allEquationsPlusWhen, Task iTask, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   <<
@@ -855,7 +856,6 @@ template function_HPCOM_Level0(list<SimEqSystem> allEquationsPlusWhen, Task iTas
   }
   >>
 end function_HPCOM_Level0;
-
 
 template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen, list<list<HpcOmSimCode.Task>> tasksOfLevels, Integer iThreadIdx, String iType, Text &varDecls, Absyn.Path name, SimCode simCode, Text &mainThreadCode, Boolean useFlatArrayNotation)
 ::=
@@ -1845,9 +1845,7 @@ end MemberVariable;
 template MemberVariableDefine(String type,SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
 ::=
 match simVar
-
-     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-
+    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
     case SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
         match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
@@ -1971,7 +1969,6 @@ template MemberVariableDefine3(Option<tuple<Integer,Integer>> optVarArrayAssignm
                 case SIMVAR(__) then
                 <<
                 <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(name,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(name, useFlatArrayNotation)%>; //not optimized' %>
-                %>
                 >>
             end match
   end match
@@ -1982,8 +1979,8 @@ template MemberVariableDefine4(Option<tuple<Integer,Integer>> optVarArrayAssignm
   match optVarArrayAssignment
     case SOME((varIdx, arrayIdx)) then
         <<
-        <%if createConstructorDeclaration then ',<%cref(varName,useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
-        else '<%variableType(type_)%>& <%cref(varName,useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine4' %>
+        <%if createConstructorDeclaration then '//,<%cref(varName,useFlatArrayNotation)%>(varArray<%arrayIdx%>[<%varIdx%>])'
+        else '#define <%cref(varName,useFlatArrayNotation)%> varArray<%arrayIdx%>[<%varIdx%>] //<%variableType(type_)%>& <%cref(varName,useFlatArrayNotation)%>;// = varArray<%arrayIdx%>[<%varIdx%>] - MemberVariableDefine4' %>
         >>
     else
         <<

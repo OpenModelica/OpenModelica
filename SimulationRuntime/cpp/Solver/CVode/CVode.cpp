@@ -39,12 +39,19 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
 
   if(MeasureTime::getInstance() != NULL)
   {
-      measureTimeFunctionsArray = std::vector<MeasureTimeData>(1); //1 calcFunction
+      measureTimeFunctionsArray = std::vector<MeasureTimeData>(6); //0 calcFunction //1 solve
       MeasureTime::addResultContentBlock(system->getModelName(),"cvode",&measureTimeFunctionsArray);
       measuredFunctionStartValues = MeasureTime::getZeroValues();
       measuredFunctionEndValues = MeasureTime::getZeroValues();
+      solveFunctionStartValues = MeasureTime::getZeroValues();
+      solveFunctionEndValues = MeasureTime::getZeroValues();
 
       measureTimeFunctionsArray[0] = MeasureTimeData("calcFunction");
+      measureTimeFunctionsArray[1] = MeasureTimeData("solve");
+      measureTimeFunctionsArray[2] = MeasureTimeData("writeOutput");
+      measureTimeFunctionsArray[3] = MeasureTimeData("evaluateZeroFuncs");
+      measureTimeFunctionsArray[4] = MeasureTimeData("initialize");
+      measureTimeFunctionsArray[5] = MeasureTimeData("stepCompleted");
   }
 }
 
@@ -268,15 +275,30 @@ void Cvode::solve(const SOLVERCALL action)
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
   bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
 
+  MEASURETIME_REGION_DEFINE(cvodeSolveFunctionHandler, "solve");
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MEASURETIME_START(solveFunctionStartValues, cvodeSolveFunctionHandler, "solve");
+  }
+
   if (_cvodesettings && _system)
   {
     // Solver und System fÃ¼r Integration vorbereiten
     if ((action & RECORDCALL) && (action & FIRST_CALL))
     {
-      initialize();
-      if (writeOutput)
-        writeToFile(0, _tCurrent, _h);
-      _tLastWrite = 0;
+        MEASURETIME_REGION_DEFINE(cvodeInitializeHandler, "CVodeInitialize");
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_START(measuredFunctionStartValues, cvodeInitializeHandler, "CVodeInitialize");
+        }
+        initialize();
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[4], cvodeInitializeHandler);
+        }
+        if (writeOutput)
+          writeToFile(0, _tCurrent, _h);
+        _tLastWrite = 0;
 
       return;
     }
@@ -339,6 +361,11 @@ void Cvode::solve(const SOLVERCALL action)
 
     throw std::invalid_argument("CVode::solve()");
   }
+
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MEASURETIME_END(solveFunctionStartValues, solveFunctionEndValues, measureTimeFunctionsArray[1], cvodeSolveFunctionHandler);
+  }
 }
 bool Cvode::isInterrupted()
 {
@@ -378,11 +405,34 @@ void Cvode::CVodeCore()
     //Check if there was at least one output-point within the last solver interval
     //  -> Write output if true
     if (writeOutput)
-      writeCVodeOutput(_tCurrent, _h, _locStps);
+    {
+        MEASURETIME_REGION_DEFINE(cvodeWriteOutputHandler, "CVodeWriteOutput");
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_START(measuredFunctionStartValues, cvodeWriteOutputHandler, "CVodeWriteOutput");
+        }
+        writeCVodeOutput(_tCurrent, _h, _locStps);
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
+        }
+    }
+
+    MEASURETIME_REGION_DEFINE(cvodeStepCompletedHandler, "CVodeStepCompleted");
+    if(MeasureTime::getInstance() != NULL)
+    {
+        MEASURETIME_START(measuredFunctionStartValues, cvodeStepCompletedHandler, "CVodeStepCompleted");
+    }
 
     //set completed step to system and check if terminate was called
     if(_continuous_system->stepCompleted(_tCurrent))
         _solverStatus = DONE;
+
+    if(MeasureTime::getInstance() != NULL)
+    {
+        MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[5], cvodeStepCompletedHandler);
+    }
+
 
     // Perform state selection
     bool state_selection = stateSelection();
@@ -440,7 +490,17 @@ void Cvode::CVodeCore()
       if (writeEventOutput)
       {
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+
+        MEASURETIME_REGION_DEFINE(cvodeWriteOutputHandler, "CVodeWriteOutput");
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_START(measuredFunctionStartValues, cvodeWriteOutputHandler, "CVodeWriteOutput");
+        }
         writeToFile(0, _tCurrent, _h);
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
+        }
       }
 
       _idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
@@ -463,7 +523,17 @@ void Cvode::CVodeCore()
       {
         // If we want to write the event-results, we should evaluate the whole system again
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+
+        MEASURETIME_REGION_DEFINE(cvodeWriteOutputHandler, "CVodeWriteOutput");
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_START(measuredFunctionStartValues, cvodeWriteOutputHandler, "CVodeWriteOutput");
+        }
         writeToFile(0, _tCurrent, _h);
+        if(MeasureTime::getInstance() != NULL)
+        {
+            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
+        }
       }
 
       _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
@@ -485,7 +555,18 @@ void Cvode::CVodeCore()
 //      _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
 //      _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
       if(writeOutput)
-        writeToFile(0, _tEnd, _h);
+      {
+         MEASURETIME_REGION_DEFINE(cvodeWriteOutputHandler, "CVodeWriteOutput");
+         if(MeasureTime::getInstance() != NULL)
+         {
+             MEASURETIME_START(measuredFunctionStartValues, cvodeWriteOutputHandler, "CVodeWriteOutput");
+         }
+         writeToFile(0, _tEnd, _h);
+         if(MeasureTime::getInstance() != NULL)
+         {
+             MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
+         }
+      }
       _accStps += _locStps;
       _solverStatus = DONE;
     }
@@ -501,6 +582,12 @@ void Cvode::setTimeOut(unsigned int time_out)
   }
 void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp)
 {
+  MEASURETIME_REGION_DEFINE(cvodeWriteOutputHandler, "CVodeWriteOutput");
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MEASURETIME_START(measuredFunctionStartValues, cvodeWriteOutputHandler, "CVodeWriteOutput");
+  }
+
   if (stp > 0)
   {
     if (_cvodesettings->getDenseOutput())
@@ -546,6 +633,10 @@ void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp
     else
       SolverDefaultImplementation::writeToFile(stp, time, h);
   }
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[2], cvodeWriteOutputHandler);
+  }
 }
 
 bool Cvode::stateSelection()
@@ -590,6 +681,11 @@ int Cvode::CV_fCallback(double t, N_Vector y, N_Vector ydot, void *user_data)
 
 void Cvode::giveZeroVal(const double &t, const double *y, double *zeroValue)
 {
+  MEASURETIME_REGION_DEFINE(cvodeEvalZeroHandler, "evaluateZeroFuncs");
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MEASURETIME_START(measuredFunctionStartValues, cvodeEvalZeroHandler, "evaluateZeroFuncs");
+  }
   _time_system->setTime(t);
   _continuous_system->setContinuousStates(y);
 
@@ -597,7 +693,10 @@ void Cvode::giveZeroVal(const double &t, const double *y, double *zeroValue)
   _continuous_system->evaluateZeroFuncs(IContinuous::DISCRETE);
 
   _event_system->getZeroFunc(zeroValue);
-
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, measureTimeFunctionsArray[3], cvodeEvalZeroHandler);
+  }
 }
 
 int Cvode::CV_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_data)

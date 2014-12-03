@@ -232,7 +232,7 @@ double
    ITime* _time_system;
 
    std::vector<MeasureTimeData> measureTimeFunctionsArray;
-   MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
+   MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues, *solveFunctionStartValues, *solveFunctionEndValues;
 
 };
 

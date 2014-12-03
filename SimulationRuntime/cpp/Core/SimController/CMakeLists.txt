@@ -6,10 +6,10 @@ IF(ANALYZATION_MODE)
 	message(STATUS "Building SimController for analyzation")
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
 	add_library(${SimControllerName} STATIC Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp)
-	target_link_libraries( ${SimControllerName} ${SystemName} ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
+	target_link_libraries( ${SimControllerName} ${SystemName} ${OMCFactoryName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
 ELSE(ANALYZATION_MODE)
 	add_library(${SimControllerName} SHARED Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp)
-	target_link_libraries( ${SimControllerName} ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
+	target_link_libraries( ${SimControllerName} ${OMCFactoryName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
 ENDIF(ANALYZATION_MODE)
 
 
