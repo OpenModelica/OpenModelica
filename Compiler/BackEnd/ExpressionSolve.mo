@@ -52,6 +52,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
+protected import Inline;
 
 public function solve
 "Solves an equation consisting of a right hand side (rhs) and a
@@ -72,7 +73,7 @@ algorithm
  (outExp,outAsserts) := matchcontinue(inExp1, inExp2, inExp3)
                         case(_,_,_) then  solveSimple(inExp1, inExp2, inExp3);
                         case(_,_,_) then  solveSimple(inExp2, inExp1, inExp3);
-                        case(_,_,_) then  solveWork(inExp1, inExp2, inExp3);
+                        case(_,_,_) then  solveWork(inExp1, inExp2, inExp3, NONE());
                         else
                           equation
                            if Flags.isSet(Flags.FAILTRACE) then
@@ -87,11 +88,50 @@ algorithm
 
 end solve;
 
+
+public function solve2
+"Solves an equation consisting of a right hand side (rhs) and a
+  left hand side (lhs), with respect to the expression given as
+  third argument, usually a variable.
+"
+  input DAE.Exp inExp1 "lhs";
+  input DAE.Exp inExp2 "rhs";
+  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  input Option<DAE.FunctionTree> functions;
+  output DAE.Exp outExp;
+  output list<DAE.Statement> outAsserts;
+algorithm
+/*
+  print("Try to solve: rhs: " +
+  ExpressionDump.dumpExpStr(inExp1,0) + " lhs: " +
+  ExpressionDump.dumpExpStr(inExp2,0) + " with respect to: " +
+  ExpressionDump.printExpStr(inExp3) + "\n");
+*/
+ (outExp,outAsserts) := matchcontinue(inExp1, inExp2, inExp3, functions)
+                        case(_,_,_,_) then  solveSimple(inExp1, inExp2, inExp3);
+                        case(_,_,_,_) then  solveSimple(inExp2, inExp1, inExp3);
+                        case(_,_,_,_) then  solveWork(inExp1, inExp2, inExp3, functions);
+                        else
+                          equation
+                           if Flags.isSet(Flags.FAILTRACE) then
+                            print("\n-ExpressionSolve.solve failed:\n");
+                            print(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
+                            print(" with respect to: " + ExpressionDump.printExpStr(inExp3));
+                           end if;
+                        then fail();
+                        end matchcontinue;
+
+ (outExp,_) := ExpressionSimplify.simplify1(outExp);
+
+end solve2;
+
+
 protected function solveWork
 
  input DAE.Exp inExp1 "lhs";
  input DAE.Exp inExp2 "rhs";
  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+ input Option<DAE.FunctionTree> functions;
  output DAE.Exp outExp;
  output list<DAE.Statement> outAsserts;
 
@@ -99,8 +139,8 @@ protected
  DAE.Exp e1, e2;
 
 algorithm
- (e1, e2) := matchcontinue(inExp1, inExp2, inExp3)
-               case(_,_,_) then preprocessingSolve(inExp1, inExp2, inExp3);
+ (e1, e2) := matchcontinue(inExp1, inExp2, inExp3, functions)
+               case(_,_,_,_) then preprocessingSolve(inExp1, inExp2, inExp3, functions);
                else
                 equation
                   if Flags.isSet(Flags.FAILTRACE) then
@@ -334,7 +374,7 @@ preprocessing for solve1,
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-
+  input Option<DAE.FunctionTree> functions;
 
   output DAE.Exp h;
   output DAE.Exp k;
@@ -345,7 +385,7 @@ preprocessing for solve1,
   list<DAE.Exp> lhsWithX, rhsWithX, lhsWithoutX, rhsWithoutX, eWithX, factorWithX, factorWithoutX;
   DAE.Exp lhsX, rhsX, lhsY, rhsY, x, y, N;
   DAE.ComponentRef cr;
-  DAE.Boolean con, new_x, collect := true;
+  DAE.Boolean con, new_x, collect := true, inlineFun := true;
   Integer iter;
 
  algorithm
@@ -394,10 +434,23 @@ preprocessing for solve1,
        x := Expression.expSub(lhsX, rhsX);
        y := Expression.expSub(rhsY, lhsY);
        collect := true;
+       inlineFun := true;
      elseif collect then
        collect := false;
        con := true;
        iter := iter + 50;
+     elseif inlineFun then
+       (x,con) := matchcontinue(functions, x)
+                  local DAE.FunctionTree functions_;
+                        DAE.Exp funX;
+                  case(SOME(functions_),_)
+                  equation
+                  (funX,_) = Expression.traverseExpTopDown(x, inlineCallX, (inExp3, functions_));
+                  then (funX, not Expression.expEqual(x,funX));
+                  else (x, false);
+                  end matchcontinue;
+       collect := con;
+       inlineFun := false;
      end if;
 
      iter := iter + 1;
@@ -1022,6 +1075,36 @@ algorithm
   end matchcontinue;
 end removeSimpleCalls2;
 
+protected function inlineCallX
+"
+inline function call if depends on X where X is cref oder der(cref)
+DAE.Exp inExp2 DAE.CREF or 'der(DAE.CREF())'
+author: vitalij
+"
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp, DAE.FunctionTree> iT;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<DAE.Exp, DAE.FunctionTree> oT;
+ algorithm
+   (outExp,cont,oT) := matchcontinue(inExp, iT)
+   local 
+     DAE.Exp e, X;
+     DAE.ComponentRef cr;
+     DAE.FunctionTree functions;
+     Boolean b;
+     
+   case(DAE.CALL(path =_),(X, functions)) 
+     equation
+       //print("\nIn: ");print(ExpressionDump.printExpStr(inExp));
+       true = expHasCref(inExp, X);
+       (e,_,b) = Inline.forceInlineExp(inExp,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
+       //print("\nOut: ");print(ExpressionDump.printExpStr(e));
+     then (e, not b, iT);
+   else (inExp, true, iT);
+   end matchcontinue;
+end inlineCallX;
+
 protected function solveIfExp
 "
  solve:
@@ -1047,10 +1130,10 @@ algorithm
         equation
           false = expHasCref(e1, inExp3);
 
-          (tmp1, tmp2) = preprocessingSolve(e2, inExp2, inExp3);
+          (tmp1, tmp2) = preprocessingSolve(e2, inExp2, inExp3, NONE());
           (lhs,asserts1) = solve(tmp1, tmp2, inExp3);
 
-          (tmp1, tmp2) = preprocessingSolve(e3, inExp2, inExp3);
+          (tmp1, tmp2) = preprocessingSolve(e3, inExp2, inExp3, NONE());
           (rhs,asserts2) = solve(tmp1, tmp2, inExp3);
 
           res = DAE.IFEXP(e1,lhs,rhs);

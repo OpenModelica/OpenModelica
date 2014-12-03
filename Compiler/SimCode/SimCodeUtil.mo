@@ -2935,6 +2935,7 @@ algorithm
       Boolean initialCall;
       DAE.Expand crefExpand;
       Boolean homotopySupport;
+      DAE.FunctionTree funcs;
 
     /*
     // solve always a linear equations
@@ -2986,7 +2987,8 @@ algorithm
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
-        (exp_, asserts) = ExpressionSolve.solve(e1, e2, varexp);
+        BackendDAE.SHARED(functionTree = funcs) = shared; 
+        (exp_, asserts) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs));
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
         (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, exp_, source)}, iuniqueEqIndex+1);
@@ -4180,6 +4182,8 @@ algorithm
       list<DAE.Exp> explst1, explst2;
       BackendDAE.Equation eqn;
       list<list<DAE.Subscript>> subslst;
+      DAE.FunctionTree funcs;
+
     case ({}, _, _, _, _) then inRepl;
     case ((e, {v})::rest, _, _, _, _)
       equation
@@ -4187,7 +4191,8 @@ algorithm
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
-        (expr, {}) = ExpressionSolve.solve(e1, e2, varexp);
+        BackendDAE.SHARED(functionTree = funcs) = ishared;
+        (expr, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs));
         dcr = if BackendVariable.isStateVar(var) then ComponentReference.crefPrefixDer(cr) else cr;
         repl = BackendVarTransform.addReplacement(inRepl, dcr, expr, SOME(BackendVarTransform.skipPreOperator));
         repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;
@@ -4229,12 +4234,14 @@ algorithm
       BackendDAE.Var var;
       list<BackendDAE.Var> otherVars, rest;
       list<DAE.Exp> explst1, explst2;
+      DAE.FunctionTree funcs;
     case ({}, _, _, _, _, _) then inRepl;
     case (e1::explst1, e2::explst2, (var as BackendDAE.VAR(varName=cr))::rest, _, _, _)
       equation
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
-        (expr, {}) = ExpressionSolve.solve(e1, e2, varexp);
+        BackendDAE.SHARED(functionTree = funcs) = ishared;
+        (expr, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs));
         dcr = if BackendVariable.isStateVar(var) then ComponentReference.crefPrefixDer(cr) else cr;
         repl = BackendVarTransform.addReplacement(inRepl, dcr, expr, SOME(BackendVarTransform.skipPreOperator));
         repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;
