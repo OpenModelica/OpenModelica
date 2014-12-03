@@ -2124,7 +2124,7 @@ public function solveEquation "author: wbraun
   Algorithm, when and if-equation are left as they are."
   input BackendDAE.Equation eqn;
   input DAE.Exp crefExp;
-  input Option<DAE.FunctionTree> functions; 
+  input Option<DAE.FunctionTree> functions;
   output BackendDAE.Equation outEqn;
 algorithm
   outEqn := matchcontinue (eqn, crefExp, functions)
