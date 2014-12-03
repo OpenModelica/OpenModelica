@@ -1088,13 +1088,13 @@ author: vitalij
   output tuple<DAE.Exp, DAE.FunctionTree> oT;
  algorithm
    (outExp,cont,oT) := matchcontinue(inExp, iT)
-   local 
+   local
      DAE.Exp e, X;
      DAE.ComponentRef cr;
      DAE.FunctionTree functions;
      Boolean b;
-     
-   case(DAE.CALL(path =_),(X, functions)) 
+
+   case(DAE.CALL(path =_),(X, functions))
      equation
        //print("\nIn: ");print(ExpressionDump.printExpStr(inExp));
        true = expHasCref(inExp, X);

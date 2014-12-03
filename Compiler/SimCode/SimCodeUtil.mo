@@ -2987,7 +2987,7 @@ algorithm
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
-        BackendDAE.SHARED(functionTree = funcs) = shared; 
+        BackendDAE.SHARED(functionTree = funcs) = shared;
         (exp_, asserts) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs));
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
