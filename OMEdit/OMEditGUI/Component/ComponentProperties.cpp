@@ -519,7 +519,9 @@ QVBoxLayout *ParametersScrollArea::getLayout()
 ComponentParameters::ComponentParameters(Component *pComponent, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Component Parameters")));
+  QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+  setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Parameters")).arg(pComponent->getName())
+                 .arg(className));
   setAttribute(Qt::WA_DeleteOnClose);
   mpComponent = pComponent;
   mpMainWindow = pMainWindow;
@@ -648,13 +650,20 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
     QString tab = QString("General");
     QString groupBox = "";
     bool showStartAttribute = false;
-    /* If the component is not a parameter then we should enable the showStartAttribute by checking if it has start/fixed */
     QString start, fixed, defaultFixed;
     bool defaultFixedValue;
     bool isParameter = (pComponentInfo->getVariablity().compare("parameter") == 0);
-    getStartAndFixedValues(pOMCProxy, &start, &fixed, &defaultFixed, &defaultFixedValue, className, componentBaseClassName,
-                           componentClassName, componentName, pComponentInfo);
-    showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
+    start = pOMCProxy->getComponentModifierValue(className, componentName + "." + pComponentInfo->getName() + ".start");
+    fixed = pOMCProxy->getComponentModifierValue(className, componentName + "." + pComponentInfo->getName() + ".fixed");
+    /*
+      If the component has start/fixed modifier OR If the component is not a parameter then we should enable the
+      showStartAttribute by checking if it has start/fixed
+      */
+    if (!start.isEmpty() || !fixed.isEmpty() || !isParameter) {
+      getStartAndFixedValues(pOMCProxy, &start, &fixed, &defaultFixed, &defaultFixedValue, className, componentBaseClassName,
+                             componentClassName, componentName, pComponentInfo);
+      showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
+    }
     /* get the dialog annotation */
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
     if (isParameter || (dialogAnnotation.size() > 0) || showStartAttribute) {
@@ -735,13 +744,20 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
     QString groupBox = "";
     bool enable = true;
     bool showStartAttribute = false;
-    /* If the component has start/fixed then we should enable the showStartAttribute */
     QString start, fixed, defaultFixed;
     bool defaultFixedValue;
     bool isParameter = (pComponentInfo->getVariablity().compare("parameter") == 0);
-    getStartAndFixedValues(pOMCProxy, &start, &fixed, &defaultFixed, &defaultFixedValue, className, componentBaseClassName,
-                           componentClassName, componentName, pComponentInfo);
-    showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
+    start = pOMCProxy->getComponentModifierValue(className, componentName + "." + pComponentInfo->getName() + ".start");
+    fixed = pOMCProxy->getComponentModifierValue(className, componentName + "." + pComponentInfo->getName() + ".fixed");
+    /*
+      If the component has start/fixed modifier OR If the component is not a parameter then we should enable the
+      showStartAttribute by checking if it has start/fixed
+      */
+    if (!start.isEmpty() || !fixed.isEmpty() || !isParameter) {
+      getStartAndFixedValues(pOMCProxy, &start, &fixed, &defaultFixed, &defaultFixedValue, className, componentBaseClassName,
+                             componentClassName, componentName, pComponentInfo);
+      showStartAttribute = (!start.isEmpty() || !fixed.isEmpty()) ? true : false;
+    }
     /* get the dialog annotation */
     QString groupImage = "";
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
@@ -904,7 +920,9 @@ void ComponentParameters::updateComponentParameters()
 ComponentAttributes::ComponentAttributes(Component *pComponent, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Component Attributes")));
+  QString className = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+  setWindowTitle(tr("%1 - %2 - %3 in %4").arg(Helper::applicationName).arg(tr("Component Attributes")).arg(pComponent->getName())
+                 .arg(className));
   setAttribute(Qt::WA_DeleteOnClose);
   mpComponent = pComponent;
   mpMainWindow = pMainWindow;
