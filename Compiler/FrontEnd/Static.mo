@@ -6857,7 +6857,7 @@ algorithm
 end absynExpListToDaeExpList;
 
 public function getOptionalNamedArg
-  "This function is used to 'elaborate' interactive functions optional parameters,
+  "This function is used to 'elaborate' interactive functions' optional parameters,
    e.g. simulate(A.b, startTime=1), startTime is an optional parameter."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
@@ -6872,22 +6872,33 @@ public function getOptionalNamedArg
   output FCore.Cache outCache;
   output DAE.Exp outExp;
 protected
-  String name;
+  String name, exp_str, ty_str, ety_str;
   DAE.Type ty;
   Absyn.Exp e;
+  Boolean ty_match;
 algorithm
   for arg in inArgs loop
     Absyn.NAMEDARG(argName = name) := arg;
 
     if name == inArgName then
-      Absyn.NAMEDARG(argValue = e) := arg;
-      (outCache, outExp, DAE.PROP(type_ = ty), _) :=
-        elabExpInExpression(inCache, inEnv, e, inImplicit, inST, true, inPrefix, inInfo);
-      outExp := Types.matchType(outExp, ty, inType, true);
-      return;
+      // Found the argument, try to evaluate it.
+      try
+        Absyn.NAMEDARG(argValue = e) := arg;
+
+        (outCache, outExp, DAE.PROP(type_ = ty), _) :=
+          elabExpInExpression(inCache, inEnv, e, inImplicit, inST, true, inPrefix, inInfo);
+        outExp := Types.matchType(outExp, ty, inType, true);
+        return;
+      else
+        // The argument couldn't be evaluated, possibly due to having the wrong
+        // type. We should print an error for this, but some API functions like
+        // simulate depend on the default arguments having the wrong type.
+      end try;
+      break;
     end if;
   end for;
 
+  // The argument couldn't be found, return the default value.
   outCache := inCache;
   outExp := inDefaultExp;
 end getOptionalNamedArg;
