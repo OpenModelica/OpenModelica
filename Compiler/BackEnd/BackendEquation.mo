@@ -2124,9 +2124,10 @@ public function solveEquation "author: wbraun
   Algorithm, when and if-equation are left as they are."
   input BackendDAE.Equation eqn;
   input DAE.Exp crefExp;
+  input Option<DAE.FunctionTree> functions; 
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := matchcontinue (eqn, crefExp)
+  outEqn := matchcontinue (eqn, crefExp, functions)
     local
       DAE.Exp e1, e2;
       DAE.Exp res;
@@ -2136,33 +2137,33 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
 
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr), _) equation
-      (res, _) = ExpressionSolve.solve(e1, e2, crefExp);
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr), _, _) equation
+      (res, _) = ExpressionSolve.solve2(e1, e2, crefExp, functions);
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
-    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _) equation
-      (res, _) = ExpressionSolve.solve(e1, e2, crefExp);
+    case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _, _) equation
+      (res, _) = ExpressionSolve.solve2(e1, e2, crefExp, functions);
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr), _) equation
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr), _,_) equation
       cr = Expression.expCref(crefExp);
       true = ComponentReference.crefEqual(cref, cr);
     then (BackendDAE.EQUATION(crefExp, e2, source, eqAttr));
 
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr), _) equation
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr), _, _) equation
       cr = Expression.expCref(crefExp);
       false = ComponentReference.crefEqual(cref, cr);
       e1 = Expression.crefExp(cref);
-      (res, _) = ExpressionSolve.solve(e1, e2, crefExp);
+      (res, _) = ExpressionSolve.solve2(e1, e2, crefExp, functions);
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e2, source=source, attr=eqAttr), _) equation
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e2, source=source, attr=eqAttr), _, _) equation
       e1 = Expression.makeConstZero(Expression.typeof(e2));
-      (res, _) = ExpressionSolve.solve(e2, e1, crefExp);
+      (res, _) = ExpressionSolve.solve2(e2, e1, crefExp, functions);
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _) equation
-      (res, _) = ExpressionSolve.solve(e1, e2, crefExp);
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _, _) equation
+      (res, _) = ExpressionSolve.solve2(e1, e2, crefExp, functions);
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 /*
     case (eq as BackendDAE.ALGORITHM(alg=_), _)

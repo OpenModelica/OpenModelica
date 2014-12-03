@@ -1499,7 +1499,7 @@ algorithm
     //BackendDump.dumpList(markedComps, "markedComps: ");
 
       repl = BackendVarTransform.emptyReplacements();
-      repl = setupVarReplacements(markedComps, inEqns, inVars, vecEqsToVar, repl, mapIncRowEqn, me);
+      repl = setupVarReplacements(markedComps, inEqns, inVars, vecEqsToVar, repl, mapIncRowEqn, me, inShared);
     //BackendVarTransform.dumpReplacements(repl);
       substEqns = applyVarReplacements(redundantEqn, inEqns, repl);
 
@@ -1698,6 +1698,7 @@ protected function setupVarReplacements
   input BackendVarTransform.VariableReplacements inRepls "initially call this with empty replacements";
   input array<Integer> inMapIncRowEqn;
   input BackendDAE.AdjacencyMatrixEnhanced inME;
+  input BackendDAE.Shared inShared;
   output BackendVarTransform.VariableReplacements outRepls;
 algorithm
   outRepls := matchcontinue (inMarkedEqns, inEqns, inVars, inVecEqToVar, inRepls, inMapIncRowEqn, inME)
@@ -1712,6 +1713,7 @@ algorithm
       DAE.ComponentRef cref;
       BackendDAE.Type type_;
       DAE.Exp exp, exp1, x;
+      DAE.FunctionTree funcs;
 
     case ({}, _, _, _, _, _, _)
     then inRepls;
@@ -1727,16 +1729,17 @@ algorithm
       cref = BackendVariable.varCref(var);
       type_ = BackendVariable.varType(var);
       x = DAE.CREF(cref, type_);
-      (eqn as BackendDAE.EQUATION(scalar=exp)) = BackendEquation.solveEquation(eqn, x);
+      BackendDAE.SHARED(functionTree = funcs) = inShared;
+      (eqn as BackendDAE.EQUATION(scalar=exp)) = BackendEquation.solveEquation(eqn, x, SOME(funcs));
 
       varName = BackendVariable.varCref(var);
       (exp1, _) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (inVars, varName));
       repls = BackendVarTransform.addReplacement(inRepls, varName, exp1, NONE());
-      repls = setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, repls, inMapIncRowEqn, inME);
+      repls = setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, repls, inMapIncRowEqn, inME, inShared);
     then repls;
 
     case (_::markedEqns, _, _, _, _, _, _) equation
-      repls = setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, inRepls, inMapIncRowEqn, inME);
+      repls = setupVarReplacements(markedEqns, inEqns, inVars, inVecEqToVar, inRepls, inMapIncRowEqn, inME, inShared);
     then repls;
   end matchcontinue;
 end setupVarReplacements;
