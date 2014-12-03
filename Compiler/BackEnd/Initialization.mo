@@ -2052,7 +2052,7 @@ algorithm
       DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
       DAE.Exp startValue_;
-      DAE.Exp startExp, bindExp, crefExp, e;
+      DAE.Exp startExp, bindExp, crefExp;
       BackendDAE.VarKind varKind;
       HashSet.HashSet hs;
       String s, str, sv;
@@ -2140,9 +2140,6 @@ algorithm
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars, eqns, hs)) equation
       true = BackendVariable.varFixed(var);
       startExp = BackendVariable.varStartValueType(var);
-      e = Expression.crefExp(cr);
-      ty = Expression.typeof(e);
-      startExp = Expression.makePureBuiltinCall("$_start", {e}, ty);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, SOME(startExp));
       var = BackendVariable.setVarFixed(var, true);
