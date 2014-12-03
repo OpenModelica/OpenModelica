@@ -12123,11 +12123,11 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
   let equation_all_func_calls = (allEquationsPlusWhen |> eq  =>
                     equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode,"evaluate")
                     ;separator="\n")
-                    
-  let equation_notOde_func_calls = (SimCodeUtil.getDaeEqsNotPartOfOdeSystem(simCode) |> eq => 
+
+  let equation_notOde_func_calls = (SimCodeUtil.getDaeEqsNotPartOfOdeSystem(simCode) |> eq =>
                     equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode,"evaluate")
                     ;separator="\n")
-                    
+
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode,context, useFlatArrayNotation)
     ;separator="\n";empty)
@@ -12141,9 +12141,9 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
     /* Evaluate Equations*/
     /* <%equation_all_func_calls%> */
     evaluateODE(command);
-    
+
     <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
-    
+
     <%equation_notOde_func_calls%>
     /* Reinits */
     <%reinit%>

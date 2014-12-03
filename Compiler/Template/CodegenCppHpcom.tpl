@@ -731,7 +731,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
             //_evaluateBarrier.wait(); //start calculation
             <%mainThreadCode%>
             //_evaluateBarrier.wait(); //calculation finished
-            
+
             <%generateStateVarPrefetchCode(simCode)%>
             <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
           }
