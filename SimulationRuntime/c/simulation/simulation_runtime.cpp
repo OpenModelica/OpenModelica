@@ -736,7 +736,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   int i;
   initDumpSystem();
 
-  if(helpFlagSet(argc, argv) || checkCommandLineArguments(argc, argv))
+  if(setLogFormat(argc, argv) || helpFlagSet(argc, argv) || checkCommandLineArguments(argc, argv))
   {
     infoStreamPrint(LOG_STDOUT, 1, "usage: %s", argv[0]);
 
@@ -753,16 +753,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 
     messageClose(LOG_STDOUT);
     EXIT(0);
-  }
-  if (omc_flag[FLAG_LOG_FORMAT]) {
-    if (0==strcmp(omc_flagValue[FLAG_LOG_FORMAT],"xml")) {
-      setStreamPrintXML(1);
-    } else if (0==strcmp(omc_flagValue[FLAG_LOG_FORMAT],"text")) {
-      setStreamPrintXML(0);
-    } else {
-      warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -logFormat=%s, expected text or xml", omc_flagValue[FLAG_LOG_FORMAT]);
-      EXIT(0);
-    }
   }
 
   if(omc_flag[FLAG_HELP]) {

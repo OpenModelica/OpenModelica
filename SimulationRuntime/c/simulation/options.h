@@ -41,6 +41,7 @@ extern int omc_flag[FLAG_MAX];
 extern const char *omc_flagValue[FLAG_MAX];
 
 int helpFlagSet(int argc, char** argv);
+int setLogFormat(int argc, char** argv);
 int checkCommandLineArguments(int argc, char **argv);
 
 #ifdef __cplusplus

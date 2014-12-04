@@ -47,6 +47,31 @@ int helpFlagSet(int argc, char** argv)
   return flagSet("?", argc, argv) || flagSet("help", argc, argv);
 }
 
+int setLogFormat(int argc, char** argv)
+{
+  const char* value = getOption(FLAG_NAME[FLAG_LOG_FORMAT], argc, argv);
+  if(NULL == value)
+    value = getFlagValue(FLAG_NAME[FLAG_LOG_FORMAT], argc, argv);
+
+  if (NULL != value)
+  {
+    if (0 == strcmp(value, "xml"))
+    {
+      setStreamPrintXML(1);
+    }
+    else if (0 == strcmp(value, "text"))
+    {
+      setStreamPrintXML(0);
+    }
+    else
+    {
+      warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -logFormat=%s, expected text or xml", value);
+      return 1;
+    }
+  }
+  return 0;
+}
+
 int checkCommandLineArguments(int argc, char **argv)
 {
   int i,j;
