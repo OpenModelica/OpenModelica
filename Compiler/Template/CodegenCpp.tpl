@@ -22,6 +22,10 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
   let()= textFile(simulationMakefile(target,simCode,"","","","",false,false), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
   let()= textFile(simulationInitCppFile(simCode,false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationInitParameterCppFile(simCode,false),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+  let()= textFile(simulationInitExtVarsCppFile(simCode,false),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
+  let()= textFile(simulationInitAliasVarsCppFile(simCode,false),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
+  let()= textFile(simulationInitAlgVarsCppFile(simCode,false),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
   let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
   let()= textFile(simulationJacobianCppFile(simCode,false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
   let()= textFile(simulationStateSelectionCppFile(simCode, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
@@ -30,6 +34,9 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
   let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(simulationWriteOutputCppFile(simCode, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode, false),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
+  let()= textFile(simulationWriteOutputParameterCppFile(simCode, false),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
+  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode, false),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScript(simCode, "", "", "exec"), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode)%>')
   let jac =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) =>
@@ -38,6 +45,9 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
   let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop,false)
   let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode,contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
   let()= textFile(calcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
+  let()= textFile(calcHelperMainfile2(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp')
+  let()= textFile(calcHelperMainfile3(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp')
+  let()= textFile(calcHelperMainfile4(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain4.cpp')
  ""
   // empty result of the top-level template .., only side effects
 end translateModel;
@@ -525,11 +535,111 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%GetIntialStatus(simCode)%>
    <%SetIntialStatus(simCode)%>
-   <%initExtVars(simCode, useFlatArrayNotation)%>
+
    <%init(simCode, useFlatArrayNotation)%>
+  >>
+end simulationInitCppFile;
+
+template simulationInitParameterCppFile(SimCode simCode, Boolean useFlatArrayNotation)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(__) then
+match modelInfo
+case modelInfo as MODELINFO(vars=SIMVARS(__))  then
+   let &varDecls10 = buffer "" /*BUFD*/
+   let &varDecls11 = buffer "" /*BUFD*/
+   let &varDecls12 = buffer "" /*BUFD*/
+   let init10  = initValstWithSplit(varDecls10,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars',vars.paramVars, simCode,contextOther,useFlatArrayNotation)
+   let init11  = initValstWithSplit(varDecls11,"Int",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntParameterVars',vars.intParamVars, simCode,contextOther,useFlatArrayNotation)
+   let init12  = initValstWithSplit(varDecls12,"Bool",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolParameterVars',vars.boolParamVars, simCode,contextOther,useFlatArrayNotation)
+   <<
+     <%varDecls10%>
+     <%varDecls11%>
+     <%varDecls12%>
+     <%init10%>
+     <%init11%>
+     <%init12%>
    >>
 
-end simulationInitCppFile;
+end simulationInitParameterCppFile;
+
+template simulationInitAliasVarsCppFile(SimCode simCode, Boolean useFlatArrayNotation)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(__) then
+match modelInfo
+case modelInfo as MODELINFO(vars=SIMVARS(__))  then
+   let &varDecls7 = buffer "" /*BUFD*/
+   let &varDecls8 = buffer "" /*BUFD*/
+   let &varDecls9 = buffer "" /*BUFD*/
+   let init7   = initAliasValstWithSplit(varDecls7,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars',vars.aliasVars, simCode,contextOther,useFlatArrayNotation)
+   let init8   = initAliasValst(varDecls8,"Int",vars.intAliasVars, simCode,contextOther,useFlatArrayNotation)
+   let init9   = initValst(varDecls9,"Bool",vars.boolAliasVars, simCode,contextOther,useFlatArrayNotation)
+   <<
+    
+    <%init7%>
+    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
+    {
+       <%varDecls8%>
+       <%init8%>
+    }
+    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAliasVars()
+    {
+      <%varDecls9%>
+       <%init9%>
+    }
+   >>
+
+end simulationInitAliasVarsCppFile;
+
+
+template simulationInitAlgVarsCppFile(SimCode simCode, Boolean useFlatArrayNotation)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(__) then
+match modelInfo
+case modelInfo as MODELINFO(vars=SIMVARS(__))  then
+   let &varDecls3 = buffer "" /*BUFD*/
+   let &varDecls4 = buffer "" /*BUFD*/
+   let &varDecls5 = buffer "" /*BUFD*/
+   let &varDecls6 = buffer "" /*BUFD*/
+   let init3   = initValstWithSplit(varDecls3,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAlgVars',vars.algVars, simCode,contextOther,useFlatArrayNotation)
+   let init4   = initValst(varDecls4,"Real",vars.discreteAlgVars, simCode,contextOther,useFlatArrayNotation)
+   let init5   = initValstWithSplit(varDecls5,"Int",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAlgVars',vars.intAlgVars, simCode,contextOther,useFlatArrayNotation)
+   let init6   = initValst(varDecls6,"Bool",vars.boolAlgVars, simCode,contextOther,useFlatArrayNotation)
+   <<
+    
+     <%init3%>
+
+   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeDiscreteAlgVars()
+   {
+      <%varDecls4%>
+      <%init4%>
+   }
+
+   <%init5%>
+
+    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAlgVars()
+   {
+       <%varDecls6%>
+       <%init6%>
+   }
+   >>
+
+end simulationInitAlgVarsCppFile;
+
+
+template simulationInitExtVarsCppFile(SimCode simCode, Boolean useFlatArrayNotation)
+ "Generates code for main cpp file for simulation target."
+::=
+  initExtVars(simCode, useFlatArrayNotation)
+end simulationInitExtVarsCppFile;
+
+
+
 
 template simulationJacobianCppFile(SimCode simCode, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
@@ -632,6 +742,187 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    >>
 end simulationWriteOutputCppFile;
 
+
+template simulationWriteOutputAlgVarsCppFile(SimCode simCode, Boolean useFlatArrayNotation)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(__) then
+match modelInfo
+case modelInfo as MODELINFO(vars=SIMVARS(__)) then
+   <<
+       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultNames(vector<string>& names)
+       {
+        <% if protectedVars(vars.algVars) then
+        'names += <%(vars.algVars |> SIMVAR(isProtected=false) =>
+        '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+
+       }
+       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultNames(vector<string>& names)
+       {
+        <% if  protectedVars(vars.discreteAlgVars) then
+        'names += <%(vars.discreteAlgVars |> SIMVAR(isProtected=false) =>
+        '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+
+       }
+       void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultNames(vector<string>& names)
+        {
+         <% if  protectedVars(vars.intAlgVars) then
+         'names += <%(vars.intAlgVars |> SIMVAR(isProtected=false) =>
+           '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultNames(vector<string>& names)
+        {
+        <% if  protectedVars(vars.boolAlgVars) then
+         'names +=<%(vars.boolAlgVars |> SIMVAR(isProtected=false) =>
+           '"<%crefStrForWriteOutput(name)%>"'  ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultDescription(vector<string>& description)
+       {
+        <% if  protectedVars(vars.algVars) then
+        'description += <%(vars.algVars |> SIMVAR(isProtected=false) =>
+        '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+
+       }
+       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultDescription(vector<string>& description)
+       {
+        <% if  protectedVars(vars.discreteAlgVars) then
+        'description += <%(vars.discreteAlgVars |> SIMVAR(isProtected=false) =>
+        '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+
+       }
+       void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultDescription(vector<string>& description)
+        {
+         <% if  protectedVars(vars.intAlgVars) then
+         'description += <%(vars.intAlgVars |> SIMVAR(isProtected=false) =>
+           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultDescription(vector<string>& description)
+        {
+        <% if  protectedVars(vars.boolAlgVars) then
+         'description +=<%(vars.boolAlgVars |> SIMVAR(isProtected=false) =>
+           '"<%Util.escapeModelicaStringToCString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+
+       
+   >>
+end simulationWriteOutputAlgVarsCppFile;
+
+
+
+template simulationWriteOutputParameterCppFile(SimCode simCode, Boolean useFlatArrayNotation)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(__) then
+match modelInfo
+case modelInfo as MODELINFO(vars=SIMVARS(__)) then
+   <<
+        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParametertNames(vector<string>& names)
+        {
+         /*workarround ced*/
+
+         <% if  protectedVars(vars.paramVars) then
+          'names += <%(vars.paramVars |> SIMVAR(isProtected=false) =>
+          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+
+        }
+
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterNames(vector<string>& names)
+        {
+         <% if  protectedVars(vars.intParamVars) then
+          'names += <%(vars.intParamVars |> SIMVAR(isProtected=false) =>
+          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolParameterNames(vector<string>& names)
+        {
+         <% if  protectedVars(vars.boolParamVars) then
+          'names += <%(vars.boolParamVars |> SIMVAR(isProtected=false) =>
+          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParameterDescription(vector<string>& names)
+        {
+         /*workarround ced*/
+         <% if protectedVars(vars.paramVars) then
+          'names += <%(vars.paramVars |> SIMVAR(isProtected=false) =>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+
+        }
+
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterDescription(vector<string>& names)
+        {
+         <% if protectedVars(vars.intParamVars) then
+          'names += <%(vars.intParamVars |> SIMVAR(isProtected=false) =>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+
+         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolParameterDescription(vector<string>& names)
+        {
+         <% if protectedVars(vars.boolParamVars) then
+          'names += <%(vars.boolParamVars |> SIMVAR(isProtected=false) =>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+       
+   >>
+end simulationWriteOutputParameterCppFile;
+
+
+template simulationWriteOutputAliasVarsCppFile(SimCode simCode, Boolean useFlatArrayNotation)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(__) then
+match modelInfo
+case modelInfo as MODELINFO(vars=SIMVARS(__)) then
+   <<
+        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultNames(vector<string>& names)
+        {
+          <% if  protectedVars(vars.boolAliasVars) then
+          'names += <%(vars.boolAliasVars |> SIMVAR(isProtected=false) =>
+            '"<%crefStrForWriteOutput(name)%>"';separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultNames(vector<string>& names)
+        {
+         <% if  protectedVars(vars.aliasVars) then
+         'names +=<%(vars.aliasVars |> SIMVAR(isProtected=false) =>
+          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += "  )%>;' %>
+        }
+
+        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultNames(vector<string>& names)
+        {
+        <% if  protectedVars(vars.intAliasVars) then
+           'names += <%(vars.intAliasVars |> SIMVAR(isProtected=false) =>
+            '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+        }
+
+       
+
+
+
+        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultDescription(vector<string>& description)
+        {
+         <% if  protectedVars(vars.aliasVars) then
+         'description +=<%(vars.aliasVars |> SIMVAR(isProtected=false) =>
+          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += "  )%>;' %>
+        }
+
+       void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultDescription(vector<string>& description)
+        {
+        <% if  protectedVars(vars.intAliasVars) then
+           'description += <%(vars.intAliasVars |> SIMVAR(isProtected=false) =>
+            '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+
+        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultDescription(vector<string>& description)
+        {
+          <% if protectedVars(vars.boolAliasVars) then
+          'description += <%(vars.boolAliasVars |> SIMVAR(isProtected=false) =>
+            '"<%Util.escapeModelicaStringToCString(comment)%>"';separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
+        }
+
+       
+   >>
+end simulationWriteOutputAliasVarsCppFile;
 
 template simulationExtensionCppFile(SimCode simCode)
  "Generates code for main cpp file for simulation target."
@@ -1367,16 +1658,87 @@ template calcHelperMainfile(SimCode simCode)
     #include "OMCpp<%fileNamePrefix%>FactoryExport.cpp"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
     #include "OMCpp<%fileNamePrefix%>Functions.cpp"
+    >>
+end calcHelperMainfile;
+
+template calcHelperMainfile2(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then
+    <<
+    /*****************************************************************************
+    *
+    * Helper file that includes all generated calculation files, except the alg loops.
+    * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
+    *
+    *****************************************************************************/
+
+    #include <Core/Modelica.h>
+    #include <Core/ModelicaDefine.h>
+
+    #include "OMCpp<%fileNamePrefix%>Types.h"
+    #include "OMCpp<%fileNamePrefix%>Extension.h"
+    #include "OMCpp<%fileNamePrefix%>Functions.h"
+    #include "OMCpp<%fileNamePrefix%>InitializeParameter.cpp"
+    #include "OMCpp<%fileNamePrefix%>InitializeExtVars.cpp"
+    #include "OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp"
+    #include "OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp"
+    >>
+end calcHelperMainfile2;
+
+
+template calcHelperMainfile3(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then
+    <<
+    /*****************************************************************************
+    *
+    * Helper file that includes all generated calculation files, except the alg loops.
+    * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
+    *
+    *****************************************************************************/
+
+    #include <Core/Modelica.h>
+    #include <Core/ModelicaDefine.h>
+
+    #include "OMCpp<%fileNamePrefix%>Types.h"
+    #include "OMCpp<%fileNamePrefix%>Functions.h"
     #include "OMCpp<%fileNamePrefix%>Initialize.h"
     #include "OMCpp<%fileNamePrefix%>Initialize.cpp"
     #include "OMCpp<%fileNamePrefix%>Jacobian.h"
     #include "OMCpp<%fileNamePrefix%>Jacobian.cpp"
     #include "OMCpp<%fileNamePrefix%>StateSelection.h"
     #include "OMCpp<%fileNamePrefix%>StateSelection.cpp"
+    >>
+end calcHelperMainfile3;
+
+
+template calcHelperMainfile4(SimCode simCode)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then
+    <<
+    /*****************************************************************************
+    *
+    * Helper file that includes all generated calculation files, except the alg loops.
+    * This file is generated by the OpenModelica Compiler and produced to speed-up the compile time.
+    *
+    *****************************************************************************/
+
+    #include <Core/Modelica.h>
+    #include <Core/ModelicaDefine.h>
+
+    #include "OMCpp<%fileNamePrefix%>Types.h"
+    #include "OMCpp<%fileNamePrefix%>Functions.h"
     #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
     #include "OMCpp<%fileNamePrefix%>WriteOutput.cpp"
+    #include "OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp"
+    #include "OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp"
+    #include "OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp"
     >>
-end calcHelperMainfile;
+end calcHelperMainfile4;
+
 
 template algloopHeaderFile(SimCode simCode,SimEqSystem eq, Context context, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
@@ -1768,11 +2130,14 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 
   CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
+  CALCHELPERMAINFILE2=OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp
+  CALCHELPERMAINFILE3=OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp
+  CALCHELPERMAINFILE4=OMCpp<%fileNamePrefix%>CalcHelperMain4.cpp
   ALGLOOPMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE) $(ALGLOOPMAINFILE)
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(CALCHELPERMAINFILE) $(ALGLOOPMAINFILE) $(CFLAGS) $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(CALCHELPERMAINFILE) $(CALCHELPERMAINFILE2) $(CALCHELPERMAINFILE3) $(CALCHELPERMAINFILE4) $(ALGLOOPMAINFILE) $(CFLAGS) $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
   <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
@@ -1820,9 +2185,12 @@ case "gcc" then
             SYSTEMOBJ=OMCpp<%fileNamePrefix%>$(DLLEXT)
 
             CALCHELPERMAINFILE=OMCpp<%fileNamePrefix%>CalcHelperMain.cpp
+            CALCHELPERMAINFILE2=OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp
+            CALCHELPERMAINFILE3=OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp
+            CALCHELPERMAINFILE4=OMCpp<%fileNamePrefix%>CalcHelperMain4.cpp
             ALGLOOPSMAINFILE=OMCpp<%fileNamePrefix%>AlgLoopMain.cpp
 
-            CPPFILES=$(SYSTEMFILE) $(CALCHELPERMAINFILE) $(ALGLOOPSMAINFILE)
+            CPPFILES=$(SYSTEMFILE) $(CALCHELPERMAINFILE) $(CALCHELPERMAINFILE2) $(CALCHELPERMAINFILE3) $(CALCHELPERMAINFILE4) $(ALGLOOPSMAINFILE)
             OFILES=$(CPPFILES:.cpp=.o)
 
             .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
@@ -3846,30 +4214,16 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    //let () = System.tmpTickReset(0)
    let &varDecls1 = buffer "" /*BUFD*/
    let &varDecls2 = buffer "" /*BUFD*/
-   let &varDecls3 = buffer "" /*BUFD*/
-   let &varDecls4 = buffer "" /*BUFD*/
-   let &varDecls5 = buffer "" /*BUFD*/
-   let &varDecls6 = buffer "" /*BUFD*/
-   let &varDecls7 = buffer "" /*BUFD*/
-   let &varDecls8 = buffer "" /*BUFD*/
-   let &varDecls9 = buffer "" /*BUFD*/
-   let &varDecls10 = buffer "" /*BUFD*/
-   let &varDecls11 = buffer "" /*BUFD*/
-   let &varDecls12 = buffer "" /*BUFD*/
-   let &varDecls13 = buffer "" /*BUFD*/
+   
+   
+  
+  
+ 
    let init1   = initValst(varDecls1,"Real",vars.stateVars, simCode,contextOther,useFlatArrayNotation)
    let init2   = initValst(varDecls2,"Real",vars.derivativeVars, simCode,contextOther,useFlatArrayNotation)
-   let init3   = initValstWithSplit(varDecls3,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAlgVars',vars.algVars, simCode,contextOther,useFlatArrayNotation)
-   let init4   = initValst(varDecls4,"Real",vars.discreteAlgVars, simCode,contextOther,useFlatArrayNotation)
-   let init5   = initValstWithSplit(varDecls5,"Int",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAlgVars',vars.intAlgVars, simCode,contextOther,useFlatArrayNotation)
-   let init6   = initValst(varDecls6,"Bool",vars.boolAlgVars, simCode,contextOther,useFlatArrayNotation)
-   let init7   = initAliasValstWithSplit(varDecls7,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeAliasVars',vars.aliasVars, simCode,contextOther,useFlatArrayNotation)
-   let init8   = initAliasValst(varDecls8,"Int",vars.intAliasVars, simCode,contextOther,useFlatArrayNotation)
-   let init9   = initValst(varDecls9,"Bool",vars.boolAliasVars, simCode,contextOther,useFlatArrayNotation)
-   let init10  = initValstWithSplit(varDecls10,"Real",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeParameterVars',vars.paramVars, simCode,contextOther,useFlatArrayNotation)
-   let init11  = initValstWithSplit(varDecls11,"Int",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntParameterVars',vars.intParamVars, simCode,contextOther,useFlatArrayNotation)
-   let init12  = initValstWithSplit(varDecls12,"Bool",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolParameterVars',vars.boolParamVars, simCode,contextOther,useFlatArrayNotation)
-
+  
+   
+   
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
    {
@@ -3882,39 +4236,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
        <%init2%>
    }
 
-   <%init3%>
-
-   void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeDiscreteAlgVars()
-   {
-      <%varDecls4%>
-      <%init4%>
-   }
-
-   <%init5%>
-
-    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAlgVars()
-   {
-       <%varDecls6%>
-       <%init6%>
-   }
-
-   <%init7%>
-
-    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
-    {
-       <%varDecls8%>
-       <%init8%>
-    }
-    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeBoolAliasVars()
-    {
-      <%varDecls9%>
-       <%init9%>
-    }
-
-    <%init10%>
-    <%init11%>
-    <%init12%>
-
+  
    >>
 end init2;
 
@@ -3941,7 +4263,7 @@ template functionCallExternalObjectConstructors(Text funcNamePrefix,ExtObjInfo e
            <%cref(var.name,useFlatArrayNotation)%> = <%arg%>;
          }
         >>
-      ;separator="\n")
+        ;separator="")
    ctorCalls
   end match
 end functionCallExternalObjectConstructors;
@@ -3957,7 +4279,7 @@ template functionCallExternalObjectConstructorsCall(Text classname,Text funcName
         <<
          <%funcNamePrefix%>_<%idx%>();
         >>
-      ;separator="\n")
+      ;separator="")
    <<
     void <%classname%>::<%funcNamePrefix%>()
     {
@@ -6307,55 +6629,9 @@ template writeoutput1(ModelInfo modelInfo)
 match modelInfo
 case modelInfo as MODELINFO(vars=SIMVARS(__)) then
   <<
-       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultNames(vector<string>& names)
-       {
-        <% if protectedVars(vars.algVars) then
-        'names += <%(vars.algVars |> SIMVAR(isProtected=false) =>
-        '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
+       
 
-       }
-       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultNames(vector<string>& names)
-       {
-        <% if  protectedVars(vars.discreteAlgVars) then
-        'names += <%(vars.discreteAlgVars |> SIMVAR(isProtected=false) =>
-        '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-
-       }
-       void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultNames(vector<string>& names)
-        {
-         <% if  protectedVars(vars.intAlgVars) then
-         'names += <%(vars.intAlgVars |> SIMVAR(isProtected=false) =>
-           '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-        }
-        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultNames(vector<string>& names)
-        {
-        <% if  protectedVars(vars.boolAlgVars) then
-         'names +=<%(vars.boolAlgVars |> SIMVAR(isProtected=false) =>
-           '"<%crefStrForWriteOutput(name)%>"'  ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-        }
-
-
-        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultNames(vector<string>& names)
-        {
-         <% if  protectedVars(vars.aliasVars) then
-         'names +=<%(vars.aliasVars |> SIMVAR(isProtected=false) =>
-          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += "  )%>;' %>
-        }
-
-       void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultNames(vector<string>& names)
-        {
-        <% if  protectedVars(vars.intAliasVars) then
-           'names += <%(vars.intAliasVars |> SIMVAR(isProtected=false) =>
-            '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-        }
-
-        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultNames(vector<string>& names)
-        {
-          <% if  protectedVars(vars.boolAliasVars) then
-          'names += <%(vars.boolAliasVars |> SIMVAR(isProtected=false) =>
-            '"<%crefStrForWriteOutput(name)%>"';separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-        }
-
+       
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStateVarsResultNames(vector<string>& names)
         {
         <% if vars.stateVars then
@@ -6371,81 +6647,8 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
         }
 
 
-        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParametertNames(vector<string>& names)
-        {
-         /*workarround ced*/
-
-         <% if  protectedVars(vars.paramVars) then
-          'names += <%(vars.paramVars |> SIMVAR(isProtected=false) =>
-          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-
-        }
-
-         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterNames(vector<string>& names)
-        {
-         <% if  protectedVars(vars.intParamVars) then
-          'names += <%(vars.intParamVars |> SIMVAR(isProtected=false) =>
-          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-        }
-         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolParameterNames(vector<string>& names)
-        {
-         <% if  protectedVars(vars.boolParamVars) then
-          'names += <%(vars.boolParamVars |> SIMVAR(isProtected=false) =>
-          '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-        }
-
-
-
-        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultDescription(vector<string>& description)
-       {
-        <% if  protectedVars(vars.algVars) then
-        'description += <%(vars.algVars |> SIMVAR(isProtected=false) =>
-        '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
-
-       }
-       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultDescription(vector<string>& description)
-       {
-        <% if  protectedVars(vars.discreteAlgVars) then
-        'description += <%(vars.discreteAlgVars |> SIMVAR(isProtected=false) =>
-        '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
-
-       }
-       void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultDescription(vector<string>& description)
-        {
-         <% if  protectedVars(vars.intAlgVars) then
-         'description += <%(vars.intAlgVars |> SIMVAR(isProtected=false) =>
-           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
-        }
-        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultDescription(vector<string>& description)
-        {
-        <% if  protectedVars(vars.boolAlgVars) then
-         'description +=<%(vars.boolAlgVars |> SIMVAR(isProtected=false) =>
-           '"<%Util.escapeModelicaStringToCString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
-        }
-
-
-
-        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultDescription(vector<string>& description)
-        {
-         <% if  protectedVars(vars.aliasVars) then
-         'description +=<%(vars.aliasVars |> SIMVAR(isProtected=false) =>
-          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += "  )%>;' %>
-        }
-
-       void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultDescription(vector<string>& description)
-        {
-        <% if  protectedVars(vars.intAliasVars) then
-           'description += <%(vars.intAliasVars |> SIMVAR(isProtected=false) =>
-            '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
-        }
-
-        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultDescription(vector<string>& description)
-        {
-          <% if protectedVars(vars.boolAliasVars) then
-          'description += <%(vars.boolAliasVars |> SIMVAR(isProtected=false) =>
-            '"<%Util.escapeModelicaStringToCString(comment)%>"';separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
-        }
-
+        
+       
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStateVarsResultDescription(vector<string>& description)
         {
         <% if vars.stateVars then
@@ -6460,28 +6663,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
-         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeParameterDescription(vector<string>& names)
-        {
-         /*workarround ced*/
-         <% if protectedVars(vars.paramVars) then
-          'names += <%(vars.paramVars |> SIMVAR(isProtected=false) =>
-          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-
-        }
-
-         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntParameterDescription(vector<string>& names)
-        {
-         <% if protectedVars(vars.intParamVars) then
-          'names += <%(vars.intParamVars |> SIMVAR(isProtected=false) =>
-          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-        }
-
-         void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolParameterDescription(vector<string>& names)
-        {
-         <% if protectedVars(vars.boolParamVars) then
-          'names += <%(vars.boolParamVars |> SIMVAR(isProtected=false) =>
-          '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
-        }
+       
   >>
 end writeoutput1;
 
@@ -8317,7 +8499,7 @@ template initAlgloopsolvers(list<SimEqSystem> allEquationsPlusWhen,SimCode simCo
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
       initAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode))
-    ;separator="\n")
+    ;separator="")
 
   <<
   <%algloopsolver%>
@@ -8330,7 +8512,7 @@ template initAlgloopsolver(list<SimEqSystem> equations,SimCode simCode)
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver = (equations |> eq =>
       initAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode)
-    ;separator="\n")
+    ;separator="")
 
   <<
   <%algloopsolver%>
@@ -8371,7 +8553,7 @@ template initAlgloopVars(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode)
   let &varDecls = buffer "" /*BUFD*/
    let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
       initAlgloopVars2(eq, contextOther, &varDecls /*BUFC*/,simCode))
-    ;separator="\n")
+    ;separator="")
 
   <<
   <%algloopsolver%>
