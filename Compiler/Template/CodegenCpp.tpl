@@ -578,7 +578,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let init8   = initAliasValst(varDecls8,"Int",vars.intAliasVars, simCode,contextOther,useFlatArrayNotation)
    let init9   = initValst(varDecls9,"Bool",vars.boolAliasVars, simCode,contextOther,useFlatArrayNotation)
    <<
-    
+
     <%init7%>
     void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAliasVars()
     {
@@ -611,7 +611,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    let init5   = initValstWithSplit(varDecls5,"Int",'<%lastIdentOfPath(modelInfo.name)%>Initialize::initializeIntAlgVars',vars.intAlgVars, simCode,contextOther,useFlatArrayNotation)
    let init6   = initValst(varDecls6,"Bool",vars.boolAlgVars, simCode,contextOther,useFlatArrayNotation)
    <<
-    
+
      <%init3%>
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeDiscreteAlgVars()
@@ -804,7 +804,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
            '"<%Util.escapeModelicaStringToCString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
-       
+
    >>
 end simulationWriteOutputAlgVarsCppFile;
 
@@ -862,7 +862,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           'names += <%(vars.boolParamVars |> SIMVAR(isProtected=false) =>
           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-       
+
    >>
 end simulationWriteOutputParameterCppFile;
 
@@ -895,7 +895,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
             '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
 
-       
+
 
 
 
@@ -920,7 +920,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
             '"<%Util.escapeModelicaStringToCString(comment)%>"';separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
-       
+
    >>
 end simulationWriteOutputAliasVarsCppFile;
 
@@ -4214,16 +4214,16 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    //let () = System.tmpTickReset(0)
    let &varDecls1 = buffer "" /*BUFD*/
    let &varDecls2 = buffer "" /*BUFD*/
-   
-   
-  
-  
- 
+
+
+
+
+
    let init1   = initValst(varDecls1,"Real",vars.stateVars, simCode,contextOther,useFlatArrayNotation)
    let init2   = initValst(varDecls2,"Real",vars.derivativeVars, simCode,contextOther,useFlatArrayNotation)
-  
-   
-   
+
+
+
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeStateVars()
    {
@@ -4236,7 +4236,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
        <%init2%>
    }
 
-  
+
    >>
 end init2;
 
@@ -6629,9 +6629,9 @@ template writeoutput1(ModelInfo modelInfo)
 match modelInfo
 case modelInfo as MODELINFO(vars=SIMVARS(__)) then
   <<
-       
 
-       
+
+
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStateVarsResultNames(vector<string>& names)
         {
         <% if vars.stateVars then
@@ -6647,8 +6647,8 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
         }
 
 
-        
-       
+
+
         void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeStateVarsResultDescription(vector<string>& description)
         {
         <% if vars.stateVars then
@@ -6663,7 +6663,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
-       
+
   >>
 end writeoutput1;
 
