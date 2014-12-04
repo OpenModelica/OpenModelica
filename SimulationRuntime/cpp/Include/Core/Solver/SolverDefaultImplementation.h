@@ -12,6 +12,10 @@
 #include <Core/Solver/SystemStateSelection.h>
 #include <Core/Solver/SimulationMonitor.h>
 
+#ifdef RUNTIME_PROFILING
+#include <Core/Utils/extension/measure_time.hpp>
+#endif
+
 /// typedef to hand over (callback) functions to fortran routines
 typedef int (*U_fp)(...);
 
@@ -126,4 +130,9 @@ private:
   {
       return (c < 0) ? -1 : ((c == 0) ? 0 : 1);
   }
+
+  #ifdef RUNTIME_PROFILING
+  std::vector<MeasureTimeData> measureTimeFunctionsArray;
+  MeasureTimeValues *writeFunctionStartValues, *writeFunctionEndValues;
+  #endif
 };

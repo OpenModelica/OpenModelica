@@ -2,7 +2,10 @@
 
 #include "Configuration.h"
 #include "Initialization.h"
+
+#ifdef RUNTIME_PROFILING
 #include <Core/Utils/extension/measure_time.hpp>
+#endif
 /*Logging vorübergehend deaktiviert
 
 namespace logging = boost::log;
@@ -78,6 +81,8 @@ private:
 
     int* _sampleCycles;
 
+    #ifdef RUNTIME_PROFILING
     std::vector<MeasureTimeData> measureTimeFunctionsArray;
     MeasureTimeValues *runSimStartValues, *runSimEndValues;
+    #endif
 };

@@ -10,7 +10,10 @@
 #include <sundials/sundials_direct.h>
 #include <cvode/cvode_dense.h>
 #include <cvode/cvode_spgmr.h>
+
+#ifdef RUNTIME_PROFILING
 #include <Core/Utils/extension/measure_time.hpp>
+#endif
 
 #ifdef USE_BOOST_LOG
 #include <boost/log/core.hpp>
@@ -231,8 +234,9 @@ double
    IMixedSystem* _mixed_system;
    ITime* _time_system;
 
+   #ifdef RUNTIME_PROFILING
    std::vector<MeasureTimeData> measureTimeFunctionsArray;
    MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues, *solveFunctionStartValues, *solveFunctionEndValues;
-
+   #endif
 };
 

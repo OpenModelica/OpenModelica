@@ -37,6 +37,18 @@ SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, I
     , _outputCommand        (IWriteOutput::WRITEOUT)
 {
   _state_selection = boost::shared_ptr<SystemStateSelection>(new SystemStateSelection(system));
+
+    #ifdef RUNTIME_PROFILING
+    if(MeasureTime::getInstance() != NULL)
+    {
+        measureTimeFunctionsArray = std::vector<MeasureTimeData>(1); //0 write output
+        MeasureTime::addResultContentBlock(system->getModelName(),"solver",&measureTimeFunctionsArray);
+        writeFunctionStartValues = MeasureTime::getZeroValues();
+        writeFunctionEndValues = MeasureTime::getZeroValues();
+
+        measureTimeFunctionsArray[0] = MeasureTimeData("writeOutput");
+    }
+    #endif
 }
 
 SolverDefaultImplementation::~SolverDefaultImplementation()
@@ -49,6 +61,13 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
     delete [] _zeroValLastSuccess;
   if(_events)
     delete [] _events;
+
+  #ifdef RUNTIME_PROFILING
+  if(writeFunctionStartValues)
+      delete writeFunctionStartValues;
+  if(writeFunctionEndValues)
+      delete writeFunctionEndValues;
+  #endif
 }
 
 void SolverDefaultImplementation::setStartTime(const double& t)
@@ -171,6 +190,14 @@ void SolverDefaultImplementation::setZeroState()
 
 void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, const double& h)
 {
+  #ifdef RUNTIME_PROFILING
+  MEASURETIME_REGION_DEFINE(writeFunctionStartValues, "solverWriteOutput");
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MEASURETIME_START(writeFunctionStartValues, solverWriteOutputHandler, "solverWriteOutput");
+  }
+  #endif
+
   if(_settings->getGlobalSettings()->getOutputFormat()!= EMPTY)
   {
     IWriteOutput* writeoutput_system = dynamic_cast<IWriteOutput*>(_system);
@@ -182,6 +209,13 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
     }
   }
   checkTimeout();
+
+  #ifdef RUNTIME_PROFILING
+  if(MeasureTime::getInstance() != NULL)
+  {
+      MEASURETIME_END(writeFunctionStartValues, writeFunctionEndValues, measureTimeFunctionsArray[0], solverWriteOutputHandler);
+  }
+  #endif
 }
 
 void SolverDefaultImplementation::updateEventState()

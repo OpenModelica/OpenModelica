@@ -5,7 +5,9 @@ MeasureTime::file_map MeasureTime::toWrite;
 
 MeasureTimeValues::MeasureTimeValues() {}
 
-MeasureTimeValues::~MeasureTimeValues() {}
+MeasureTimeValues::~MeasureTimeValues()
+{
+}
 
 MeasureTimeData::MeasureTimeData() : id(""), sumMeasuredValues(MeasureTime::getZeroValues()), numCalcs(0) {}
 

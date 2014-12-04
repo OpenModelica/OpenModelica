@@ -35,6 +35,7 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* co
     _solver = _config->createSelectedSolver(system.get());
     _initialization = boost::shared_ptr<Initialization>(new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
 
+    #ifdef RUNTIME_PROFILING
     if(MeasureTime::getInstance() != NULL)
     {
         measureTimeFunctionsArray = std::vector<MeasureTimeData>(1); //0 runSimulation
@@ -44,6 +45,7 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* co
 
         measureTimeFunctionsArray[0] = MeasureTimeData("runSimulation");
     }
+    #endif
 }
 
 SimManager::~SimManager()
@@ -54,6 +56,13 @@ SimManager::~SimManager()
         delete[] _events;
     if (_sampleCycles)
         delete[] _sampleCycles;
+
+    #ifdef RUNTIME_PROFILING
+    if(runSimStartValues)
+        delete runSimStartValues;
+    if(runSimEndValues)
+        delete runSimEndValues;
+    #endif
 }
 
 void SimManager::initialize()
@@ -231,11 +240,13 @@ void SimManager::computeSampleCycles()
 
 void SimManager::runSimulation()
 {
+    #ifdef RUNTIME_PROFILING
     MEASURETIME_REGION_DEFINE(runSimHandler, "runSimulation");
     if (MeasureTime::getInstance() != NULL)
     {
         MEASURETIME_START(runSimStartValues, runSimHandler, "runSimulation");
     }
+    #endif
     try
     {
         /* Logs temporarily disabled
@@ -267,10 +278,12 @@ void SimManager::runSimulation()
          */
         throw;
     }
+    #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
     {
         MEASURETIME_END(runSimStartValues, runSimEndValues, measureTimeFunctionsArray[0], runSimHandler);
     }
+    #endif
 }
 
 void SimManager::stopSimulation()

@@ -9,6 +9,7 @@
 #     if the runtime is build for the OMC                              -DOMC_BUILD
 #     if the write-output functionality should be handled in parallel  -DUSE_PARALLEL_OUTPUT
 #     if ScoreP should be used for performance analysis                -DUSE_SCOREP
+#     if profiling for the simulation runtime should be enabled        -DRUNTIME_PROFILING
 #
 # Some of these options can be controlled by passing arguments to CMAKE 
 #     if all libraries should be linked statically                     -DANALYZATION_MODE=ON
@@ -28,6 +29,7 @@ PROJECT(CppSolverInterface)
 OPTION(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
 OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
 OPTION(USE_SCOREP "USE_SCOREP" OFF)
+OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 
 
 #Set Variables
@@ -89,13 +91,21 @@ ELSE(USE_PARALLEL_OUTPUT)
   MESSAGE(STATUS "Parallel output disabled")
 ENDIF(USE_PARALLEL_OUTPUT)
 
-#Handle ScoreP
+# Handle ScoreP
 IF(USE_SCOREP)
   ADD_DEFINITIONS(-DUSE_SCOREP)
   MESSAGE(STATUS "ScoreP enabled")
 ELSE(USE_SCOREP)
   MESSAGE(STATUS "ScoreP disabled")
 ENDIF(USE_SCOREP)
+
+# Handle runtime profiling
+IF(RUNTIME_PROFILING)
+  ADD_DEFINITIONS(-DRUNTIME_PROFILING)
+  MESSAGE(STATUS "Runtime profiling enabled")
+ELSE(RUNTIME_PROFILING)
+  MESSAGE(STATUS "Runtime profiling disabled")
+ENDIF(RUNTIME_PROFILING)
 
 # Handle build type
 IF(OMC_BUILD)

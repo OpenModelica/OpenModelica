@@ -10,7 +10,7 @@ IF(ANALYZATION_MODE)
 ELSE(ANALYZATION_MODE)
 	add_library(${SolverName} SHARED SolverDefaultImplementation.cpp SolverSettings.cpp SystemStateSelection.cpp FactoryExport.cpp SimulationMonitor.cpp )
 ENDIF(ANALYZATION_MODE)
-target_link_libraries (${SolverName} ${MathName} ${Boost_LIBRARIES}  )
+target_link_libraries (${SolverName} ${MathName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
 install (TARGETS ${SolverName} DESTINATION lib/omc/${LIBINSTALLEXT})
 install (FILES
          ${CMAKE_SOURCE_DIR}/Include/Core/Solver/IAlgLoopSolver.h 
