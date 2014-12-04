@@ -6310,7 +6310,7 @@ algorithm
       list<BackendDAE.Equation> initialEqs_lst;
       Integer numberOfInitialEquations, numberOfInitialAlgorithms;
 
-      list<SimCode.SimEqSystem> residual_equations,  allEquations, removedEquations, knvarseqns, aliasEquations, removedInitialEquations;
+      list<SimCode.SimEqSystem> residual_equations,  allEquations, solvedEquations, removedEquations, knvarseqns, aliasEquations, removedInitialEquations;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       BackendDAE.Variables knvars, aliasVars;
@@ -6320,14 +6320,14 @@ algorithm
                                  shared as BackendDAE.SHARED(knownVars=knvars,
                                                              aliasVars=aliasVars,
                                                              removedEqs=removedEqs))), _, _, _) equation
+      // generate equations from the known unfixed variables
+      ((uniqueEqIndex, allEquations)) = BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
       // generate equations from the solved systems
-      (uniqueEqIndex, _, _, allEquations, _, tempvars, _, _, _) = createEquationsForSystems(systs, shared, iuniqueEqIndex, {}, {}, {}, {}, {}, itempvars, 0, {}, {}, SimCode.NO_MAPPING());
+      (uniqueEqIndex, _, _, solvedEquations, _, tempvars, _, _, _) = createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, {}, {}, itempvars, 0, {}, {}, SimCode.NO_MAPPING());
+      allEquations = listAppend(allEquations, solvedEquations);
       // generate equations from the removed equations
       ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
       allEquations = listAppend(allEquations, removedEquations);
-      // generate equations from the known unfixed variables
-      ((uniqueEqIndex, knvarseqns)) = BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (uniqueEqIndex, {}));
-      allEquations = listAppend(allEquations, knvarseqns);
       // generate equations from the alias variables
       ((uniqueEqIndex, aliasEquations)) = BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
       allEquations = listAppend(allEquations, aliasEquations);
