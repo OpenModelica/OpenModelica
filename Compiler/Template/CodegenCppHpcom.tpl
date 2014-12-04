@@ -26,6 +26,10 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
   let()= textFile(simulationInitCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationInitParameterCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+  let()= textFile(simulationInitExtVarsCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
+  let()= textFile(simulationInitAliasVarsCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
+  let()= textFile(simulationInitAlgVarsCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
   let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
   let()= textFile(simulationJacobianCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
   let()= textFile(simulationStateSelectionCppFile(simCode,Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
@@ -34,6 +38,9 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(simulationWriteOutputCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
+  let()= textFile(simulationWriteOutputParameterCppFile(simCode, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
+  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
   let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScript(simCode), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode)%>')
   let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_) =>
@@ -42,6 +49,9 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop,Util.isSome(hpcOmMemory))
   let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode,contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
   let()= textFile(calcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
+  let()= textFile(calcHelperMainfile2(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp')
+  let()= textFile(calcHelperMainfile3(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp')
+  let()= textFile(calcHelperMainfile4(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain4.cpp')
  ""
   // empty result of the top-level template .., only side effects
 end translateModel;
