@@ -337,8 +337,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   };
   >>
 end simulationStateSelectionHeaderFile;
-
-
+/*
+ 
+    */
 template simulationWriteOutputHeaderFile(SimCode simCode)
  "Generates code for header file for simulation target."
 ::=
@@ -363,13 +364,25 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   public:
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
+    
+   
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
     virtual IHistory* getHistory();
-
+    
   protected:
     void initialize();
-
+    <% match modelInfo case MODELINFO(vars=SIMVARS(__)) then
+    <<
+    void writeParams(HistoryImplType::value_type_p& params);
+    <%List.partition(vars.paramVars, 100) |> ls hasindex idx => 'void writeParamsReal_<%idx%>(HistoryImplType::value_type_p& params,const int& startIndex);';separator="\n"%>
+    void writeParamsReal(HistoryImplType::value_type_p& params,const int& startIndex);
+    <%List.partition(vars.intParamVars, 100) |> ls hasindex idx => 'void writeParamsInt_<%idx%>(HistoryImplType::value_type_p& params,const int& startIndex);';separator="\n"%>
+    void writeParamsInt(HistoryImplType::value_type_p& params,const int& startIndex);
+    <%List.partition(vars.boolParamVars, 100) |> ls hasindex idx => 'void writeParamsBool_<%idx%>(HistoryImplType::value_type_p& params,const int& startIndex);';separator="\n"%>
+    void writeParamsBool(HistoryImplType::value_type_p& params,const int& startIndex);
+    >>
+    end match%>
   private:
     void writeAlgVarsValues(HistoryImplType::value_type_v *v);
     void writeDiscreteAlgVarsValues(HistoryImplType::value_type_v *v);
@@ -4854,6 +4867,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
   let numParamvars = numProtectedParamVars(modelInfo)
   <<
+   <%writeoutputparams(modelInfo,simCode,contextOther,useFlatArrayNotation)%>
    void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(const IWriteOutput::OUTPUT command)
    {
     //Write head line
@@ -4900,7 +4914,8 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       then
       <<
         HistoryImplType::value_type_p params;
-       <%writeoutputparams(modelInfo,simCode,useFlatArrayNotation)%>
+       
+        writeParams(params);
       >>
       else
       <<
@@ -7045,14 +7060,14 @@ template writeOutputVars(String functionName, list<SimVar> vars, Integer startIn
 end writeOutputVars;
 
 //template for write parameter values
-template writeoutputparams(ModelInfo modelInfo,SimCode simCode, Boolean useFlatArrayNotation)
+template writeoutputparams(ModelInfo modelInfo,SimCode simCode, Context context,  Boolean useFlatArrayNotation)
 
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(__)) then
  let &varDeclsCref = buffer "" /*BUFD*/
 
-    <<
+    /*<<
     const int paramVarsStart = 1;
     const int intParamVarsStart  = paramVarsStart       + <%numProtectedRealParamVars(modelInfo)%>;
     const int boolparamVarsStart    = intParamVarsStart  + <%numProtectedIntParamVars(modelInfo)%>;
@@ -7060,8 +7075,57 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(__)) then
     <%vars.paramVars         |> SIMVAR(isProtected=false) hasindex i0 =>'params(paramVarsStart+<%i0%>)=<%cref(name, useFlatArrayNotation)%>;';align=8 %>
     <%vars.intParamVars |> SIMVAR(isProtected=false) hasindex i0 =>'params(intParamVarsStart+<%i0%>)=<%cref(name, useFlatArrayNotation)%>;';align=8 %>
     <%vars.boolParamVars      |> SIMVAR(isProtected=false) hasindex i1 =>'params(boolparamVarsStart+<%i1%>)=<%cref(name, useFlatArrayNotation)%>;';align=8%>
+    >>*/
+    <<
+    void <%lastIdentOfPath(name)%>WriteOutput::writeParams(HistoryImplType::value_type_p& params)
+    {
+     const int paramVarsStart = 1;
+     const int intParamVarsStart  = paramVarsStart       + <%numProtectedRealParamVars(modelInfo)%>;
+     const int boolparamVarsStart    = intParamVarsStart  + <%numProtectedIntParamVars(modelInfo)%>;
+     writeParamsReal(params,paramVarsStart);
+     writeParamsInt(params,intParamVarsStart);
+     writeParamsBool(params,boolparamVarsStart);
+    }
+    <%writeoutputparamsWithSplit('<%lastIdentOfPath(name)%>WriteOutput::writeParams',"Real",vars.paramVars,simCode,context,useFlatArrayNotation)%>
+    <%writeoutputparamsWithSplit('<%lastIdentOfPath(name)%>WriteOutput::writeParams',"Int",vars.intParamVars,simCode,context,useFlatArrayNotation)%>
+    <%writeoutputparamsWithSplit('<%lastIdentOfPath(name)%>WriteOutput::writeParams',"Bool",vars.boolParamVars,simCode,context,useFlatArrayNotation)%>
     >>
 end writeoutputparams;
+
+
+template writeoutputparamsWithSplit(Text funcNamePrefix, Text type, list<SimVar> varsLst, SimCode simCode, Context context, Boolean useFlatArrayNotation) ::=
+  let &funcCalls = buffer "" /*BUFD*/
+  let extraFuncs = List.partition(varsLst, 100) |> ls hasindex idx =>
+    let &varDecls = buffer "" /*BUFD*/
+    let &funcCalls += '<%funcNamePrefix%><%type%>_<%idx%>(params,startIndex+i);
+                      i+=<%listLength(ls)%>;'
+    let init = writeParamValst(ls,simCode, context, useFlatArrayNotation)
+    <<
+    void <%funcNamePrefix%><%type%>_<%idx%>( HistoryImplType::value_type_p& params,const int& startIndex)
+    {
+       <%varDecls%>
+       <%init%>
+    }
+    >>
+    ;separator="\n"
+
+  <<
+  <%extraFuncs%>
+
+  void <%funcNamePrefix%><%type%>(HistoryImplType::value_type_p& params,const int& startIndex)
+  {
+     int i = 0;
+    <%funcCalls%>
+  }
+  >>
+end writeoutputparamsWithSplit;
+
+
+template writeParamValst(list<SimVar> varsLst,SimCode simCode, Context context, Boolean useFlatArrayNotation) 
+::=
+  varsLst      |> SIMVAR(isProtected=false) hasindex i0 =>'params(startIndex+<%i0%>)=<%cref(name, useFlatArrayNotation)%>;';align=8 
+end writeParamValst;
+
 
 template saveAll(ModelInfo modelInfo, SimCode simCode, Boolean useFlatArrayNotation)
 
