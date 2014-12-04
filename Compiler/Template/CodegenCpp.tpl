@@ -338,7 +338,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   >>
 end simulationStateSelectionHeaderFile;
 /*
- 
+
     */
 template simulationWriteOutputHeaderFile(SimCode simCode)
  "Generates code for header file for simulation target."
@@ -364,12 +364,12 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   public:
     <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
-    
-   
+
+
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void writeOutput(const IWriteOutput::OUTPUT command = IWriteOutput::UNDEF_OUTPUT);
     virtual IHistory* getHistory();
-    
+
   protected:
     void initialize();
     <% match modelInfo case MODELINFO(vars=SIMVARS(__)) then
@@ -4914,7 +4914,7 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       then
       <<
         HistoryImplType::value_type_p params;
-       
+
         writeParams(params);
       >>
       else
@@ -7121,9 +7121,9 @@ template writeoutputparamsWithSplit(Text funcNamePrefix, Text type, list<SimVar>
 end writeoutputparamsWithSplit;
 
 
-template writeParamValst(list<SimVar> varsLst,SimCode simCode, Context context, Boolean useFlatArrayNotation) 
+template writeParamValst(list<SimVar> varsLst,SimCode simCode, Context context, Boolean useFlatArrayNotation)
 ::=
-  varsLst      |> SIMVAR(isProtected=false) hasindex i0 =>'params(startIndex+<%i0%>)=<%cref(name, useFlatArrayNotation)%>;';align=8 
+  varsLst      |> SIMVAR(isProtected=false) hasindex i0 =>'params(startIndex+<%i0%>)=<%cref(name, useFlatArrayNotation)%>;';align=8
 end writeParamValst;
 
 
