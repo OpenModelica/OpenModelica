@@ -309,7 +309,7 @@ void Cvode::solve(const SOLVERCALL action)
         #endif
 
         initialize();
-        
+
         #ifdef RUNTIME_PROFILING
         if(MeasureTime::getInstance() != NULL)
         {
