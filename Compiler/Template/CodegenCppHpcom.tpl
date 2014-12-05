@@ -17,14 +17,14 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__), makefileParams= MAKEFILE_PARAMS(__)) then
   let target  = simulationCodeTarget()
-  
+
   let()= textFile(
-   (if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then 
-        simulationMainFileAnalyzation(simCode) 
-    else 
+   (if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then
+        simulationMainFileAnalyzation(simCode)
+    else
         simulationMainFile(simCode, (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else ""))
    ), 'OMCpp<%fileNamePrefix%>Main.cpp')
-        
+
   let()= textFile(simulationHeaderFile(simCode, generateAdditionalIncludes(simCode, Util.isSome(hpcOmMemory)), generateAdditionalProtectedMemberDeclaration(simCode, Util.isSome(hpcOmMemory)), false, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
   let()= textFile(simulationCppFile(simCode,Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
@@ -535,7 +535,7 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
           let threadFuncs = List.intRange(intSub(getConfigInt(NUM_PROC),1)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
           <<
           <%threadFuncs%>
-          
+
           <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
             <<
             #ifdef MEASURETIME_MODELFUNCTIONS
@@ -959,11 +959,11 @@ template generateLevelFixedCodeForThreadLevel(list<SimEqSystem> allEquationsPlus
     <%generateMeasureTimeStartCode("measuredSchedulerStartValues", 'evaluateODE_level_<%intAdd(iLevelIdx,1)%>', "MEASURETIME_MODELFUNCTIONS")%>
     >>
   %>
-  
+
   <%if(stringEq(tasks,"")) then '' else ''%>
   <%tasks%>
   _levelBarrier.wait();
-  
+
   <%if intEq(iThreadIdx, 0) then
     <<
     <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", 'measureTimeSchedulerArrayHpcom[<%iLevelIdx%>]', 'evaluateODE_level_<%intAdd(iLevelIdx,1)%>', "MEASURETIME_MODELFUNCTIONS")%>

@@ -1577,9 +1577,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
          >>
     end match
   %>
-  
+
   <%additionalIncludes%>
-  
+
   #ifdef USE_BOOST_THREAD
   #include <boost/thread.hpp>
   static long unsigned int getThreadNumber()
@@ -1628,9 +1628,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
                 <<
                 std::vector<MeasureTimeData> measureTimeArraySimulation = std::vector<MeasureTimeData>(2); //0 all, 1 setup
                 MeasureTimeValues *measuredSimStartValues, *measuredSimEndValues, *measuredSetupStartValues, *measuredSetupEndValues;
-                
+
                 MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","main",&measureTimeArraySimulation);
-                
+
                 measuredSimStartValues = MeasureTime::getZeroValues();
                 measuredSimEndValues = MeasureTime::getZeroValues();
                 measuredSetupStartValues = MeasureTime::getZeroValues();
@@ -1638,13 +1638,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 
                 measureTimeArraySimulation[0] = MeasureTimeData("all");
                 measureTimeArraySimulation[1] = MeasureTimeData("setup");
-                
+
                 <%generateMeasureTimeStartCode('measuredSimStartValues', "all", "")%>
                 <%generateMeasureTimeStartCode('measuredSetupStartValues', "setup", "")%>
                 >>
             %>
             <%additionalPreRunCommands%>
-            
+
             boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
             //SimController to start simulation
 
@@ -1660,7 +1660,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
             %>
 
             simulation.first->Start(system.first,simulation.second,"<%lastIdentOfPath(modelInfo.name)%>");
-            
+
             <%additionalPostRunCommands%>
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
@@ -5166,14 +5166,14 @@ match modelInfo
     void deleteAlgloopSolverVariables_<%idx%>();
     >>
     ;separator="\n")
-  
+
   <<
   <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
   <<
   #define MEASURETIME_PROFILEBLOCKS
   #define MEASURETIME_MODELFUNCTIONS
   >>%>
-  
+
   class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
   <%friendclasses%>

@@ -5435,7 +5435,7 @@ protected function analyseScheduledTaskGraphLevel
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input LevelParallelSectionFunc iParallelSectionCalculator;
   output String oCriticalPathInfo;
-  
+
   partial function LevelParallelSectionFunc //function that calculates the parallel time required for a section
     input HpcOmSimCode.TaskList iSectionTasks;
     input HpcOmTaskGraph.TaskGraph iTaskGraph;
@@ -5466,7 +5466,7 @@ algorithm
       i := 1;
       for levelCost in levelCosts loop
         costShare := intDiv(realInt(levelCost)*100,realInt(parTime));
-        print("\tcosts for level " + intString(i) + ": " + realString(levelCost) + " (" + System.snprintff("%.0f", 5, costShare) + "%)\n"); 
+        print("\tcosts for level " + intString(i) + ": " + realString(levelCost) + " (" + System.snprintff("%.0f", 5, costShare) + "%)\n");
         i := i + 1;
       end for;
   end if;
@@ -5508,12 +5508,12 @@ algorithm
         taskCosts = getLevelTaskCosts(iTask, iTaskGraphMeta);
         minWorkLoad = Array.fold(iThreadWorkLoad,realMin,arrayGet(iThreadWorkLoad,1));
         threadIdx = List.position(minWorkLoad,arrayList(iThreadWorkLoad));
-        tmpThreadWorkLoad = arrayUpdate(iThreadWorkLoad,threadIdx,minWorkLoad + taskCosts);        
+        tmpThreadWorkLoad = arrayUpdate(iThreadWorkLoad,threadIdx,minWorkLoad + taskCosts);
       then tmpThreadWorkLoad;
     case(HpcOmSimCode.CALCTASK_LEVEL(threadIdx = SOME(threadIdx)),_,_)
       equation
         taskCosts = getLevelTaskCosts(iTask, iTaskGraphMeta);
-        tmpThreadWorkLoad = arrayUpdate(iThreadWorkLoad,threadIdx,arrayGet(iThreadWorkLoad, threadIdx) + taskCosts);  
+        tmpThreadWorkLoad = arrayUpdate(iThreadWorkLoad,threadIdx,arrayGet(iThreadWorkLoad, threadIdx) + taskCosts);
       then tmpThreadWorkLoad;
   end match;
 end getLevelParallelTime1;
