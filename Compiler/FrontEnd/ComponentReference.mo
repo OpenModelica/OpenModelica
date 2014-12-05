@@ -1081,7 +1081,7 @@ algorithm
   outEqual := match(inCref1, inCref2)
     case (DAE.CREF_IDENT(), DAE.CREF_IDENT())
       then inCref1.ident == inCref2.ident and
-           Expression.subscriptEqual(inCref1.subscriptLst, inCref2.subscriptLst);  
+           Expression.subscriptEqual(inCref1.subscriptLst, inCref2.subscriptLst);
 
     case (DAE.CREF_QUAL(), DAE.CREF_QUAL())
       then inCref1.ident == inCref2.ident and

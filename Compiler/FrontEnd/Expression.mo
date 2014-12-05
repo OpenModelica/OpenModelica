@@ -8031,7 +8031,7 @@ algorithm
       then
         operatorEqual(inExp1.operator, op) and
         expEqual(inExp1.exp, e);
-        
+
     case DAE.RELATION()
       algorithm
         DAE.RELATION(exp1 = e1, operator = op, exp2 = e2) := inExp2;
@@ -8159,7 +8159,7 @@ algorithm
     else false;
   end match;
 end expEqual;
-       
+
 protected function expEqualOpt
   input Option<DAE.Exp> inExp1;
   input Option<DAE.Exp> inExp2;
