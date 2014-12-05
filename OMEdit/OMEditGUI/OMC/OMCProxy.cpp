@@ -592,6 +592,10 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
     exitApplication();
   }
   mResult = MMC_STRINGDATA(reply_str);
+
+  writeCommunicationResponseLog(&commandTime);
+  logOMCMessages(expression);
+
   // cache the OMC command
   if (cacheCommand) {
     cacheOMCCommand(className, expression, getResult());
