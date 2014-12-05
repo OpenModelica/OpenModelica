@@ -85,16 +85,16 @@ void fmi1GetReal_OMC(void* in_fmi1, int numberOfValueReferences, double* realVal
  * Wrapper for the FMI function fmiSetReal.
  * Returns status.
  */
-void fmi1SetReal_OMC(void* in_fmi1, int numberOfValueReferences, double* realValuesReferences, double* realValues, double* out_Values, int fmiType)
+void fmi1SetReal_OMC(void* in_fmi1, int numberOfValueReferences, double* realValueReferences, double* realValues, int fmiType)
 {
   if (fmiType == 1) {
     FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
-    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValueReferences);
     fmi1_import_set_real(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
     free(valuesReferences_int);
   } else if (fmiType == 2) {
     FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
-    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValueReferences);
     fmi1_import_set_real(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
     free(valuesReferences_int);
   }
@@ -124,16 +124,16 @@ void fmi1GetInteger_OMC(void* in_fmi1, int numberOfValueReferences, double* inte
  * Wrapper for the FMI function fmiSetInteger.
  * Returns status.
  */
-void fmi1SetInteger_OMC(void* in_fmi1, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double* out_Values, int fmiType)
+void fmi1SetInteger_OMC(void* in_fmi1, int numberOfValueReferences, double* integerValueReferences, int* integerValues, int fmiType)
 {
   if (fmiType == 1) {
     FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
-    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValueReferences);
     fmi1_import_set_integer(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
     free(valuesReferences_int);
   } else if (fmiType == 2) {
     FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
-    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValueReferences);
     fmi1_import_set_integer(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
     free(valuesReferences_int);
   }
@@ -163,16 +163,16 @@ void fmi1GetBoolean_OMC(void* in_fmi1, int numberOfValueReferences, double* bool
  * Wrapper for the FMI function fmiSetBoolean.
  * Returns status.
  */
-void fmi1SetBoolean_OMC(void* in_fmi1, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, double* out_Values, int fmiType)
+void fmi1SetBoolean_OMC(void* in_fmi1, int numberOfValueReferences, double* booleanValueReferences, int* booleanValues, int fmiType)
 {
   if (fmiType == 1) {
     FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
-    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValueReferences);
     fmi1_import_set_boolean(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
     free(valuesReferences_int);
   } else if (fmiType == 2) {
     FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
-    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValueReferences);
     fmi1_import_set_boolean(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
     free(valuesReferences_int);
   }
@@ -202,16 +202,16 @@ void fmi1GetString_OMC(void* in_fmi1, int numberOfValueReferences, double* strin
  * Wrapper for the FMI function fmiSetString.
  * Returns status.
  */
-void fmi1SetString_OMC(void* in_fmi1, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, double* out_Values, int fmiType)
+void fmi1SetString_OMC(void* in_fmi1, int numberOfValueReferences, double* stringValueReferences, char** stringValues, int fmiType)
 {
   if (fmiType == 1) {
     FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
-    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValueReferences);
     fmi1_import_set_string(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
     free(valuesReferences_int);
   } else if (fmiType == 2) {
     FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
-    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValueReferences);
     fmi1_import_set_string(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
     free(valuesReferences_int);
   }

@@ -75,7 +75,6 @@ void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI1ME->FMIToleranceControlled = fmi1_true;
   FMI1ME->FMIRelativeTolerance = 0.001;
   FMI1ME->FMIEventInfo = malloc(sizeof(fmi1_event_info_t));
-  fmi1_import_initialize(FMI1ME->FMIImportInstance, FMI1ME->FMIToleranceControlled, FMI1ME->FMIRelativeTolerance, FMI1ME->FMIEventInfo);
   return FMI1ME;
 }
 
@@ -93,14 +92,23 @@ void FMI1ModelExchangeDestructor_OMC(void* in_fmi1me)
 }
 
 /*
+ * Wrapper for the FMI function fmiInitialize.
+ * Returns next time event.
+ */
+void fmi1Initialize_OMC(void* in_fmi1me)
+{
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
+  fmi1_status_t status = fmi1_import_initialize(FMI1ME->FMIImportInstance, FMI1ME->FMIToleranceControlled, FMI1ME->FMIRelativeTolerance, FMI1ME->FMIEventInfo);
+}
+
+/*
  * Wrapper for the FMI function fmiSetTime.
  * Returns status.
  */
-double fmi1SetTime_OMC(void* in_fmi1me, double time)
+void fmi1SetTime_OMC(void* in_fmi1me, double time)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
   fmi1_import_set_time(FMI1ME->FMIImportInstance, time);
-  return time;
 }
 
 /*
@@ -150,10 +158,9 @@ void fmi1GetDerivatives_OMC(void* in_fmi1me, int numberOfContinuousStates, doubl
 
 /*
  * Wrapper for the FMI function fmiEventUpdate.
- * parameter flowStates is dummy and is only used to run the equations in sequence.
- * Returns FMI Event Info i.e fmi1_event_info_t
+ * Returns stateValuesChanged.
  */
-int fmi1EventUpdate_OMC(void* in_fmi1me, int intermediateResults, double flowStates)
+int fmi1EventUpdate_OMC(void* in_fmi1me, int intermediateResults)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
   fmi1_import_eventUpdate(FMI1ME->FMIImportInstance, intermediateResults, FMI1ME->FMIEventInfo);
