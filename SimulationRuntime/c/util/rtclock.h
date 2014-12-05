@@ -74,6 +74,24 @@ enum omc_rt_clock_t {
   OMC_CPU_CYCLES /* Number of CPU-Cycles */
 };
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+typedef LARGE_INTEGER rtclock_t;
+#elif defined(__APPLE_CC__)
+#include <mach/mach_time.h>
+#include <time.h>
+typedef uint64_t rtclock_t;
+#else
+#include <time.h>
+typedef union rtclock_t {
+  struct timespec time;
+  unsigned long long cycles;
+} rtclock_t;
+#endif
+
 int rt_set_clock(enum omc_rt_clock_t clockType); /* non-zero on failure */
 void rt_init(int numTimer);
 
@@ -99,6 +117,10 @@ uint32_t rt_ncall_total(int ix);
 void rt_add_ncall(int ix, int n);
 
 void rt_measure_overhead(int ix);
+
+/* tick() ... tock() with external rtclock_t -> returns the number of seconds since the tick */
+void rt_ext_tp_tick(rtclock_t* tick_tp);
+double rt_ext_tp_tock(rtclock_t* tick_tp);
 
 #ifdef __cplusplus
 }

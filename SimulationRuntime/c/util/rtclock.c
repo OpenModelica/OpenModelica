@@ -36,25 +36,6 @@
 #include <gc.h>
 #include "omc_msvc.h"
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-#include <windows.h>
-#if defined(_MSC_VER)
-#include <intrin.h>
-#endif
-typedef LARGE_INTEGER rtclock_t;
-#elif defined(__APPLE_CC__)
-#include <mach/mach_time.h>
-#include <time.h>
-typedef uint64_t rtclock_t;
-#else
-#include <time.h>
-typedef union rtclock_t {
-  struct timespec time;
-  unsigned long long cycles;
-} rtclock_t;
-//typedef struct timespec ;
-#endif
-
 /* If min_time is set, subtract this amount from measured times to avoid
  * including the time of measuring in reported statistics */
 static double min_time = 0;
@@ -272,6 +253,42 @@ double rtclock_value(LARGE_INTEGER tp) {
   }
 }
 
+void rt_ext_tp_tick(rtclock_t* tick_tp) {
+  if(selectedClock == OMC_CLOCK_REALTIME) {
+    static int init = 0;
+    if (!init) {
+
+      init = 1;
+      QueryPerformanceFrequency(&performance_frequency);
+    }
+    QueryPerformanceCounter(tick_tp);
+  } else {
+    LARGE_INTEGER time;
+    time.QuadPart = RDTSC();
+    *tick_tp = time;
+  }
+}
+
+double rt_ext_tp_tock(rtclock_t* tick_tp) {
+  double d;
+  if(selectedClock == OMC_CLOCK_REALTIME) {
+    LARGE_INTEGER tock_tp;
+    double d1, d2;
+    QueryPerformanceCounter(&tock_tp);
+    d1 = (double) (tock_tp.QuadPart - tick_tp->QuadPart);
+    d2 = (double) performance_frequency.QuadPart;
+    d = d1 / d2;
+  } else {
+    LARGE_INTEGER tock_tp;
+    tock_tp.QuadPart = RDTSC();
+    d = (double) (tock_tp.QuadPart - tick_tp->QuadPart);
+  }
+  if (d < min_time) {
+    min_time = d;
+  }
+  return d - min_time;
+}
+
 #elif defined(__APPLE_CC__)
 
 int rt_set_clock(enum omc_rt_clock_t newClock) {
@@ -281,6 +298,20 @@ int rt_set_clock(enum omc_rt_clock_t newClock) {
 void rt_tick(int ix) {
   tick_tp[ix] = mach_absolute_time();
   rt_clock_ncall[ix]++;
+}
+
+double rt_tock(int ix) {
+  uint64_t tock_tp = mach_absolute_time();
+  uint64_t nsec;
+  static mach_timebase_info_data_t info = {0,0};
+  if(info.denom == 0)
+  mach_timebase_info(&info);
+  uint64_t elapsednano = (tock_tp-tick_tp[ix]) * (info.numer / info.denom);
+  double d = elapsednano * 1e-9;
+  if (d < min_time) {
+    min_time = d;
+  }
+  return d - min_time;
 }
 
 double rt_tock(int ix) {
@@ -330,6 +361,24 @@ double rtclock_value(uint64_t tp) {
 
 int rtclock_compare(uint64_t t1, uint64_t t2) {
   return t1-t2;
+}
+
+void rt_ext_tp_tick(rtclock_t* tick_tp) {
+  *tick_tp = mach_absolute_time();
+}
+
+double rt_ext_tp_tock(rtclock_t* tick_tp) {
+  uint64_t tock_tp = mach_absolute_time();
+  uint64_t nsec;
+  static mach_timebase_info_data_t info = {0,0};
+  if(info.denom == 0)
+  mach_timebase_info(&info);
+  uint64_t elapsednano = (tock_tp-*tick_tp) * (info.numer / info.denom);
+  double d = elapsednano * 1e-9;
+  if (d < min_time) {
+    min_time = d;
+  }
+  return d - min_time;
 }
 
 #else
@@ -479,6 +528,30 @@ int rtclock_compare(rtclock_t t1, rtclock_t t2)
     }
     return t1.time.tv_sec-t2.time.tv_sec;
   }
+}
+
+void rt_ext_tp_tick(rtclock_t* tick_tp) {
+  if(omc_clock == OMC_CPU_CYCLES) {
+    tick_tp->cycles = RDTSC();
+  } else {
+    clock_gettime(omc_clock, &tick_tp->time);
+  }
+}
+
+double rt_ext_tp_tock(rtclock_t* tick_tp) {
+  double d;
+  if(omc_clock == OMC_CPU_CYCLES) {
+    unsigned long long timer = RDTSC();
+    d = (double) (timer - tick_tp->cycles);
+  } else {
+    struct timespec tock_tp = {0,0};
+    clock_gettime(omc_clock, &tock_tp);
+    d = (tock_tp.tv_sec - tick_tp->time.tv_sec) + (tock_tp.tv_nsec - tick_tp->time.tv_nsec)*1e-9;
+    if (d < min_time) {
+      min_time = d;
+    }
+  }
+  return d - min_time;
 }
 
 #endif

@@ -224,7 +224,6 @@ int solveLapack(DATA *data, int sysNumber)
     /* calculate vector b (rhs) */
     _omc_copyVector(solverData->work, solverData->x);
     wrapper_fvec_lapack(solverData->work, solverData->b, &iflag, data, sysNumber);
-    //solverData->b = _omc_negateVector(solverData->b);
   }
 
   /* Log A*x=b */

@@ -501,6 +501,12 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionZeroCrossings", data->simulationInfo.callStatistics.functionZeroCrossings);
     messageClose(LOG_STATS_V);
 
+    infoStreamPrint(LOG_STATS_V, 1, "linear systems");
+    for(ui=0; ui<data->modelData.nLinearSystems; ui++){
+     printLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
+    }
+    messageClose(LOG_STATS_V);
+
     infoStreamPrint(LOG_STATS, 0, "### END STATISTICS ###");
 
     rt_tick(SIM_TIMER_TOTAL);

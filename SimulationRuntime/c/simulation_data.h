@@ -40,6 +40,7 @@
 #include "openmodelica.h"
 #include "util/ringbuffer.h"
 #include "util/omc_error.h"
+#include "util/rtclock.h"
 
 #if defined(__cplusplus)
 typedef void* f2c_integer_ptr;
@@ -348,6 +349,11 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_integer method;              /* not used yet*/
   modelica_real residualError;          /* not used yet*/
   modelica_boolean solved;              /* 1: solved in current step - else not */
+
+  /* statistics */
+  unsigned long numberOfCall;           /* number of solving calls of this system */
+  double totalTime;                     /* save the totalTime */
+  rtclock_t totalTimeClock;             /* time clock for the totalTime  */
 }LINEAR_SYSTEM_DATA;
 
 typedef struct MIXED_SYSTEM_DATA

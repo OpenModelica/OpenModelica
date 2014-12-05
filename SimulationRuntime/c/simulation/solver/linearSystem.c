@@ -34,11 +34,14 @@
 #include <math.h>
 
 #include "omc_error.h"
+#include "rtclock.h"
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
 #include "linearSolverLis.h"
 #include "linearSolverTotalPivot.h"
 #include "simulation_info_xml.h"
+
+int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
 const char *LS_NAME[LS_MAX+1] = {
   "LS_UNKNOWN",
@@ -54,7 +57,7 @@ const char *LS_DESC[LS_MAX+1] = {
   "unknown",
 
   /* LS_LAPACK */       "method using lapack LU factorization",
-  /* LS_LIS */          "Lis",
+  /* LS_LIS */          "method using iterativ solver Lis",
   /* LS_TOTALPIVOT */   "default method - using total pivoting LU factorization",
 
   "LS_MAX"
@@ -72,7 +75,7 @@ int initializeLinearSystems(DATA *data)
   int size;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo.linearSystemData;
 
-  infoStreamPrint(LOG_LS, 1, "initialize linear system solvers");
+  infoStreamPrint(LOG_LS_V, 1, "initialize linear system solvers");
 
   for(i=0; i<data->modelData.nLinearSystems; ++i)
   {
@@ -129,7 +132,7 @@ int initializeLinearSystems(DATA *data)
     }
   }
 
-  messageClose(LOG_LS);
+  messageClose(LOG_LS_V);
   return 0;
 }
 
@@ -145,15 +148,32 @@ int updateStaticDataOfLinearSystems(DATA *data)
   int size;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo.linearSystemData;
 
-  infoStreamPrint(LOG_LS, 1, "update static data of linear system solvers");
+  infoStreamPrint(LOG_LS_V, 1, "update static data of linear system solvers");
 
   for(i=0; i<data->modelData.nLinearSystems; ++i)
   {
     linsys[i].initializeStaticLSData(data, &linsys[i]);
   }
 
-  messageClose(LOG_LS);
+  messageClose(LOG_LS_V);
   return 0;
+}
+
+/*! \fn int printLinearSystemStatistics(DATA *data)
+ *
+ *  This function print memory for all linear systems.
+ *
+ *  \param [ref] [data]
+ *         [in]  [sysNumber] index of corresponding linear System
+ */
+void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
+{
+  LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
+  infoStreamPrint(logLevel, 1, "Linear system %d of size %d solver statistics:", (int)linsys[sysNumber].equationIndex, (int)linsys[sysNumber].size);
+  infoStreamPrint(logLevel, 0, " number of calls       : %ld", linsys[sysNumber].numberOfCall);
+  infoStreamPrint(logLevel, 0, " average time per call : %f", linsys[sysNumber].totalTime/linsys[sysNumber].numberOfCall);
+  infoStreamPrint(logLevel, 0, " total time            : %f", linsys[sysNumber].totalTime);
+  messageClose(logLevel);
 }
 
 /*! \fn freeLinearSystems
@@ -167,8 +187,7 @@ int freeLinearSystems(DATA *data)
   int i;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
 
-  infoStreamPrint(LOG_LS, 1, "free linear system solvers");
-
+  infoStreamPrint(LOG_LS_V, 1, "free linear system solvers");
   for(i=0; i<data->modelData.nLinearSystems; ++i)
   {
     /* free system and solver data */
@@ -201,14 +220,14 @@ int freeLinearSystems(DATA *data)
     free(linsys[i].solverData);
   }
 
-  messageClose(LOG_LS);
+  messageClose(LOG_LS_V);
   return 0;
 }
 
-/*! \fn solve non-linear systems
+/*! \fn solve linear system
  *
  *  \param [in]  [data]
- *         [in]  [sysNumber] index of corresponding non-linear System
+ *         [in]  [sysNumber] index of corresponding linear System
  *
  *  \author wbraun
  */
@@ -217,6 +236,7 @@ int solve_linear_system(DATA *data, int sysNumber)
   int success;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
 
+  rt_ext_tp_tick(&(linsys[sysNumber].totalTimeClock));
   switch(data->simulationInfo.lsMethod)
   {
   case LS_LAPACK:
@@ -227,7 +247,6 @@ int solve_linear_system(DATA *data, int sysNumber)
     success = solveLis(data, sysNumber);
     break;
 
-
   case LS_TOTALPIVOT:
     success = solveTotalPivot(data, sysNumber);
     break;
@@ -236,6 +255,32 @@ int solve_linear_system(DATA *data, int sysNumber)
     throwStreamPrint(data->threadData, "unrecognized linear solver");
   }
   linsys[sysNumber].solved = success;
+
+  linsys[sysNumber].totalTime += rt_ext_tp_tock(&(linsys[sysNumber].totalTimeClock));
+  linsys[sysNumber].numberOfCall++;
+
+  return check_linear_solution(data, 1, sysNumber);
+}
+
+/*! \fn check_linear_solutions
+ *
+ *   This function check whether some of linear systems
+ *   are failed to solve. If one is failed it returns 1 otherwise 0.
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [printFailingSystems]
+ *  \param [out] [returnValue] It returns >0 if fail otherwise 0.
+ *
+ *  \author wbraun
+ */
+int check_linear_solutions(DATA *data, int printFailingSystems)
+{
+  long i;
+
+  for(i=0; i<data->modelData.nLinearSystems; ++i) {
+     if(check_linear_solution(data, printFailingSystems, i))
+       return 1;
+  }
 
   return 0;
 }
@@ -246,29 +291,47 @@ int solve_linear_system(DATA *data, int sysNumber)
  *
  *  \param [in]  [data]
  *  \param [in]  [printFailingSystems]
+ *  \param [in]  [sysNumber] index of corresponding linear System
+ *  \param [out] [returnValue] It returns 1 if fail otherwise 0.
  *
  *  \author wbraun
  */
-int check_linear_solutions(DATA *data, int printFailingSystems)
+int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
 {
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
-  int i, j, retVal=0;
+  long j, i = sysNumber;;
 
-  for(i=0; i<data->modelData.nLinearSystems; ++i)
+  if(linsys[i].solved == 0)
   {
-    if(0 == linsys[i].solved)
-    {
-      retVal = 1;
-      if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_LS))
+    int index = linsys[i].equationIndex, indexes[2] = {1,index};
+    if (!printFailingSystems) return 1;
+    warningStreamPrintWithEquationIndexes(LOG_LS, 1, indexes, "linear system %d fails: at t=%g", index, data->localData[0]->timeValue);
+
+    for(j=0; j<modelInfoGetEquation(&data->modelData.modelDataXml, (linsys[i]).equationIndex).numVar; ++j) {
+      int done=0;
+      long k;
+      const MODEL_DATA *mData = &(data->modelData);
+      for(k=0; k<mData->nVariablesReal && !done; ++k)
       {
-        int indexes[2] = {1, modelInfoGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).id};
-        warningStreamPrintWithEquationIndexes(LOG_LS, 1, indexes, "linear system %d fails at t=%g", indexes[1], data->localData[0]->timeValue);
-        messageClose(LOG_LS);
+        if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData.modelDataXml, (linsys[i]).equationIndex).vars[j]))
+        {
+        done = 1;
+        warningStreamPrint(LOG_LS, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
+                                     mData->realVarsData[k].info.name,
+                                     mData->realVarsData[k].attribute.start,
+                                     mData->realVarsData[k].attribute.nominal);
+        }
+      }
+      if (!done)
+      {
+        warningStreamPrint(LOG_LS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData.modelDataXml, (linsys[i]).equationIndex).vars[j]);
       }
     }
+    messageCloseWarning(LOG_LS);
+    return 1;
   }
 
-  return retVal;
+  return 0;
 }
 
 void setAElementLAPACK(int row, int col, double value, int nth, void *data)
@@ -279,8 +342,8 @@ void setAElementLAPACK(int row, int col, double value, int nth, void *data)
 
 void setAElementLis(int row, int col, double value, int nth, void *data)
 {
-  LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
-  DATA_LIS* sData = (DATA_LIS*) linSys->solverData;
+  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
+  DATA_LIS* sData = (DATA_LIS*) linsys->solverData;
   lis_matrix_set_value(LIS_INS_VALUE, row, col, value, sData->A);
 }
 
