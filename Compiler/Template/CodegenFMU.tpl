@@ -2027,7 +2027,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real postInitialized=preInitialized;
         external "C" fmi1Initialize_OMC(fmi1me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1Initialize;
-    
+
       function fmi1SetTime
         input FMI1ModelExchange fmi1me;
         input Real inTime;
@@ -2075,7 +2075,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real realValues[size(realValuesReferences, 1)];
         external "C" fmi1GetReal_OMC(fmi1me, size(realValuesReferences, 1), realValuesReferences, inFlowStatesInput, realValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1GetReal;
-      
+
       function fmi1SetReal
         input FMI1ModelExchange fmi1me;
         input Real realValueReferences[:];
@@ -2107,7 +2107,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Integer outValues[size(integerValuesReferences, 1)] = integerValues;
         external "C" fmi1SetInteger_OMC(fmi1me, size(integerValuesReferences, 1), integerValuesReferences, integerValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetInteger;
-      
+
       function fmi1SetIntegerParameter
         input FMI1ModelExchange fmi1me;
         input Real integerValuesReferences[:];
@@ -2131,7 +2131,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Integer outValues[size(booleanValueReferences, 1)] = booleanValues;
         external "C" fmi1SetBoolean_OMC(fmi1me, size(booleanValueReferences, 1), booleanValueReferences, booleanValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetBoolean;
-      
+
       function fmi1SetBooleanParameter
         input FMI1ModelExchange fmi1me;
         input Real booleanValueReferences[:];
@@ -2155,7 +2155,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Integer outValues[size(stringValueReferences, 1)] = stringValues;
         external "C" fmi1SetString_OMC(fmi1me, size(stringValueReferences, 1), stringValueReferences, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1SetString;
-      
+
       function fmi1SetStringParameter
         input FMI1ModelExchange fmi1me;
         input Real stringValueReferences[:];
