@@ -897,80 +897,48 @@ public function crefPrefixOf
     added also that a.b.c is a prefix of a.b.c[1].*!"
   input DAE.ComponentRef prefixCref;
   input DAE.ComponentRef fullCref;
-  output Boolean outBoolean;
+  output Boolean outPrefixOf;
 algorithm
-  outBoolean := match (prefixCref,fullCref)
-    local
-      DAE.ComponentRef cr1,cr2;
-      Boolean res;
-      DAE.Ident id1,id2;
-      list<DAE.Subscript> ss1,ss2;
-
-    // first is qualified, second is an unqualified ident, return false!
-    case (DAE.CREF_QUAL(), DAE.CREF_IDENT()) then false;
-
+  outPrefixOf := match (prefixCref,fullCref)
     // both are qualified, dive into
-    case (DAE.CREF_QUAL(ident = id1, subscriptLst = ss1,componentRef = cr1),
-          DAE.CREF_QUAL(ident = id2, subscriptLst = ss2,componentRef = cr2))
-      equation
-        res = stringEq(id1, id2);
-        res = if res then Expression.subscriptEqual(ss1, ss2) else false;
-        res = if res then crefPrefixOf(cr1, cr2) else false;
-      then
-        res;
+    case (DAE.CREF_QUAL(), DAE.CREF_QUAL())
+      then prefixCref.ident == fullCref.ident and
+           Expression.subscriptEqual(prefixCref.subscriptLst, fullCref.subscriptLst) and
+           crefPrefixOf(prefixCref.componentRef, fullCref.componentRef);
 
     // adrpo: 2010-10-07: first is an ID, second is qualified, see if one is prefix of the other
     //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
-    case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
-          DAE.CREF_QUAL(ident = id2))
-      then stringEq(id1, id2);
+    case (DAE.CREF_IDENT(subscriptLst = {}), DAE.CREF_QUAL())
+      then prefixCref.ident == fullCref.ident;
 
     // first is an ID, second is qualified, see if one is prefix of the other
-    case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
-          DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
-      equation
-        res = if stringEq(id1, id2) then Expression.subscriptEqual(ss1, ss2) else false;
-      then
-        res;
+    case (DAE.CREF_IDENT(), DAE.CREF_QUAL())
+      then prefixCref.ident == fullCref.ident and
+           Expression.subscriptEqual(prefixCref.subscriptLst, fullCref.subscriptLst);
 
     // adrpo: 2010-10-07: first is an ID, second is an ID, see if one is prefix of the other
     //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
-    case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
-          DAE.CREF_IDENT(ident = id2))
-      then stringEq(id1, id2);
+    case (DAE.CREF_IDENT(subscriptLst = {}), DAE.CREF_IDENT())
+      then stringEq(prefixCref.ident, fullCref.ident);
 
-    case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
-          DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
-      equation
-        res = if stringEq(id1, id2) then Expression.subscriptEqual(ss1, ss2) else false;
-      then
-        res;
-
-    /* adrpo: 2010-10-07. already handled by the cases above!
-                          they might be equal, a.b.c is a prefix of a.b.c
-    case (cr1,cr2)
-      equation
-        true = crefEqualNoStringCompare(cr1, cr2);
-      then
-        true;*/
+    case (DAE.CREF_IDENT(), DAE.CREF_IDENT())
+      then prefixCref.ident == fullCref.ident and
+           Expression.subscriptEqual(prefixCref.subscriptLst, fullCref.subscriptLst);
 
     // they are not a prefix of one-another
-    else
-      equation
-        // print("Expression.crefPrefixOf: " + printComponentRefStr(cr1) + " NOT PREFIX OF " + printComponentRefStr(cr2) + "\n");
-      then false;
+    else false;
   end match;
 end crefPrefixOf;
 
 public function crefNotPrefixOf "negation of crefPrefixOf"
- input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(cr1, cr2)
     // first is qualified, second is an unqualified ident, return false!
     case (DAE.CREF_QUAL(), DAE.CREF_IDENT()) then true;
-    else (not crefPrefixOf(cr1,cr2));
+    else not crefPrefixOf(cr1, cr2);
   end matchcontinue;
 end crefNotPrefixOf;
 
@@ -994,7 +962,7 @@ end crefInLst;
 
 public function crefEqualVerySlowStringCompareDoNotUse
 "Returns true if two component references are equal,
-  comparing strings in no other solution is found"
+  comparing strings if no other solution is found"
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
   output Boolean outBoolean;
@@ -1101,49 +1069,28 @@ public function crefEqualNoStringCompare
   IMPORTANT! do not use this function if you have
   stringified components, meaning this function will
   return false for: cref1: QUAL(x, IDENT(x)) != cref2: IDENT(x.y)"
-  input DAE.ComponentRef cr1;
-  input DAE.ComponentRef cr2;
-  output Boolean res;
+  input DAE.ComponentRef inCref1;
+  input DAE.ComponentRef inCref2;
+  output Boolean outEqual;
 algorithm
-  res := crefEqualNoStringCompare2(referenceEq(cr1,cr2),cr1,cr2);
-end crefEqualNoStringCompare;
+  if referenceEq(inCref1, inCref2) then
+    outEqual := true;
+    return;
+  end if;
 
-protected function crefEqualNoStringCompare2
-"Returns true if two component references are equal!
-  IMPORTANT! do not use this function if you have
-  stringified components, meaning this function will
-  return false for: cref1: QUAL(x, IDENT(x)) != cref2: IDENT(x.y)"
-  input Boolean refEq;
-  input DAE.ComponentRef inComponentRef1;
-  input DAE.ComponentRef inComponentRef2;
-  output Boolean res;
-algorithm
-  res := match (refEq,inComponentRef1,inComponentRef2)
-    local
-      DAE.Ident n1,n2;
-      list<DAE.Subscript> idx1,idx2;
-      DAE.ComponentRef cr1,cr2;
+  outEqual := match(inCref1, inCref2)
+    case (DAE.CREF_IDENT(), DAE.CREF_IDENT())
+      then inCref1.ident == inCref2.ident and
+           Expression.subscriptEqual(inCref1.subscriptLst, inCref2.subscriptLst);  
 
-    // check for pointer equality first, if they point to the same thing, they are equal
-    case (true,_,_) then true;
+    case (DAE.CREF_QUAL(), DAE.CREF_QUAL())
+      then inCref1.ident == inCref2.ident and
+           crefEqualNoStringCompare(inCref1.componentRef, inCref2.componentRef) and
+           Expression.subscriptEqual(inCref1.subscriptLst, inCref2.subscriptLst);
 
-    // simple identifiers
-    case (_,DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
-      equation
-        res = stringEq(n1, n2);
-        res = if res then Expression.subscriptEqual(idx1, idx2) else false;
-      then res;
-    // qualified crefs
-    case (_,DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
-      equation
-        res = stringEq(n1, n2);
-        res = if res then crefEqualNoStringCompare2(referenceEq(cr1,cr2), cr1, cr2) else false;
-        res = if res then Expression.subscriptEqual(idx1, idx2) else false;
-      then res;
-    // the crefs are not equal!
     else false;
   end match;
-end crefEqualNoStringCompare2;
+end crefEqualNoStringCompare;
 
 public function crefEqualReturn
 "author: PA

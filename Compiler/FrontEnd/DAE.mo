@@ -1517,7 +1517,7 @@ end MatchCase;
 public uniontype MatchType
   record MATCHCONTINUE end MATCHCONTINUE;
   record MATCH
-    Option<tuple<Integer,Type,Integer>> switch "The index of the pattern to switch over, its type and an the value to divide string hashes with";
+    Option<tuple<Integer,Type,Integer>> switch "The index of the pattern to switch over, its type and the value to divide string hashes with";
   end MATCH;
 end MatchType;
 

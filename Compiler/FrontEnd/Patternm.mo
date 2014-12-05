@@ -712,7 +712,7 @@ algorithm
         ht = getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,inputAliases,matchDecls,elabCases,et),hashSize);
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTableSized(hashSize));
         (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() again to filter out the last parts.";
-        elabMatchTy = optimizeMatchToSwitch(matchTy,elabCases,info);
+        (elabMatchTy, elabCases) = optimizeMatchToSwitch(matchTy,elabCases,info);
         exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,inputAliases,matchDecls,elabCases,et);
       then (cache,exp,prop,st);
     else
@@ -737,8 +737,9 @@ protected function optimizeMatchToSwitch
   input list<DAE.MatchCase> cases;
   input SourceInfo info;
   output DAE.MatchType outType;
+  output list<DAE.MatchCase> outCases;
 algorithm
-  outType := matchcontinue (matchTy,cases,info)
+  (outType, outCases) := matchcontinue (matchTy,cases,info)
     local
       tuple<Integer,DAE.Type,Integer> tpl;
       list<list<DAE.Pattern>> patternMatrix;
@@ -746,7 +747,7 @@ algorithm
       Integer numNonEmptyColumns;
       String str;
       DAE.Type ty;
-    case (Absyn.MATCHCONTINUE(),_,_) then DAE.MATCHCONTINUE();
+    case (Absyn.MATCHCONTINUE(),_,_) then (DAE.MATCHCONTINUE(), cases);
     case (_,_,_)
       equation
         true = listLength(cases) > 2;
@@ -756,10 +757,49 @@ algorithm
         (_,ty,_) = tpl;
         str = Types.unparseType(ty);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
-      then DAE.MATCH(SOME(tpl));
-    else DAE.MATCH(NONE());
+        outType = DAE.MATCH(SOME(tpl));
+        outCases = optimizeSwitchedMatchCases(outType, cases);
+      then
+        (outType, outCases);
+
+    else (DAE.MATCH(NONE()), cases);
   end matchcontinue;
 end optimizeMatchToSwitch;
+
+protected function optimizeSwitchedMatchCases
+  "This function optimizes the cases of a match that has been optimized into a switch."
+  input DAE.MatchType inMatchType;
+  input list<DAE.MatchCase> inCases;
+  output list<DAE.MatchCase> outCases;
+algorithm
+  outCases := match(inMatchType)
+    local
+      DAE.Pattern pat;
+      list<DAE.Pattern> patl;
+
+    // If we're switching on a uniontype, mark all cases that look like RECORD()
+    // as singleton, so we can skip doing pattern matching on them (we're
+    // already switching on their type, we don't need to check the type in the
+    // case also.
+    case DAE.MATCH(switch = SOME((_, DAE.T_METATYPE(), _)))
+      then list(
+          match c
+            case DAE.CASE(patterns = {pat as DAE.PAT_CALL(patterns = patl)})
+              algorithm
+                if allPatternsWild(patl) then
+                  pat.knownSingleton := true;
+                  c.patterns := {pat};
+                end if;
+              then
+                c;
+
+            else c;
+          end match
+        for c in inCases);
+
+    else inCases;
+  end match;
+end optimizeSwitchedMatchCases;
 
 protected function removeWildPatternColumnsFromMatrix
   input list<list<DAE.Pattern>> inPatternMatrix;

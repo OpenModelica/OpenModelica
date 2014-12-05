@@ -7910,300 +7910,323 @@ public function isIntegerOrReal "Returns true if Type is Integer or Real"
 input DAE.Type tp;
 output Boolean res;
 algorithm
-  res := matchcontinue(tp)
-    case(DAE.T_REAL()) then  true;
-    case(DAE.T_INTEGER()) then true;
+  res := match(tp)
+    case DAE.T_REAL() then  true;
+    case DAE.T_INTEGER() then true;
     else false;
-  end matchcontinue;
+  end match;
 end isIntegerOrReal;
 
 public function expEqual
-"Returns true if the two expressions are equal."
-  input DAE.Exp e1;
-  input DAE.Exp e2;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := expEqualWork(e1, e2, referenceEq(e1,e2),true);
-  // To enable debugging
-  /*outBoolean := matchcontinue (e1,e2)
-    local
-      String s1,s2,s;
-    case (e1,e2)
-      then expEqualWork(e1, e2, referenceEq(e1,e2),true);
-    else
-      equation
-        s1 = ExpressionDump.printExpStr(e1);
-        s2 = ExpressionDump.printExpStr(e2);
-        s = "Expression.expEqual failed for input: " + s1 + " = " + s2;
-        Error.addMessage(Error.INTERNAL_ERROR, {s});
-      then fail();
-  end matchcontinue;
-  */
-end expEqual;
-
-protected function expEqualWork
-"Returns true if the two expressions are equal."
+  "Returns true if the two expressions are equal, otherwise false."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
-  input Boolean refEq;
-  input Boolean noFailedSubExpression;
-  output Boolean outBoolean;
+  output Boolean outEqual;
 algorithm
-  outBoolean := match (inExp1,inExp2,refEq,noFailedSubExpression)
+  // Return true if the references are the same.
+  if referenceEq(inExp1, inExp2) then
+    outEqual := true;
+    return;
+  end if;
+
+  // Return false if the expressions are not of the same type.
+  if valueConstructor(inExp1) <> valueConstructor(inExp2) then
+    outEqual := false;
+    return;
+  end if;
+
+  // Otherwise, check if the expressions are equal or not.
+  // Since the expressions have already been verified to be of the same type
+  // above we can match on only one of them to allow the pattern matching to
+  // optimize this to jump directly to the correct case.
+  outEqual := match(inExp1)
     local
-      Integer i1,i2;
-      String s1,s2;
-      Boolean b1,b2,res;
-      DAE.Exp e11,e12,e21,e22,e1,e2,e13,e23;
-      Operator op1,op2;
-      Absyn.Path path1,path2;
-      list<DAE.Exp> expl1,expl2;
-      Type tp1,tp2;
-      Real r1,r2;
-      Absyn.Path enum1, enum2;
-      ComponentRef cr1,cr2;
-      list<DAE.Exp> ae1,ae2;
-    case (_,_,_,false) then false;
-    case (_,_,true,_) then true;
-    case (DAE.ICONST(integer = i1),DAE.ICONST(integer = i2),_,_) then (i1 == i2);
-    case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.ICONST(integer = i1)),DAE.ICONST(integer = i2),_,_)
-      equation
-        i1 = - i1;
-      then (i1 == i2);
-    case (DAE.ICONST(integer = i1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.ICONST(integer = i2)),_,_)
-      equation
-        i2 = - i2;
-      then (i1 == i2);
-    case (DAE.RCONST(real = r1),DAE.RCONST(real = r2),_,_) then (r1 == r2);
-    case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r1)),DAE.RCONST(real = r2),_,_)
-      equation
-        r1 = - r1;
-      then (r1 == r2);
-    case (DAE.RCONST(real = r1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r2)),_,_)
-      equation
-        r2 = - r2;
-      then (r1 == r2);
-    case (DAE.SCONST(string = s1),DAE.SCONST(string = s2),_,_) then stringEq(s1, s2);
-    case (DAE.BCONST(bool = b1),DAE.BCONST(bool = b2),_,_) then boolEq(b1, b2);
-    case (DAE.ENUM_LITERAL(name = enum1), DAE.ENUM_LITERAL(name = enum2),_,_) then Absyn.pathEqual(enum1, enum2);
-    case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2),_,_) then ComponentReference.crefEqual(cr1, cr2);
+      Integer i;
+      Real r;
+      String s;
+      Boolean b;
+      Absyn.Path p;
+      DAE.Exp e, e1, e2;
+      Option<DAE.Exp> oe;
+      list<DAE.Exp> expl;
+      list<list<DAE.Exp>> mexpl;
+      DAE.Operator op;
+      DAE.ComponentRef cr;
+      DAE.Type ty;
 
-    // binary ops
-    case (DAE.BINARY(exp1 = e11,operator = op1,exp2 = e12),DAE.BINARY(exp1 = e21,operator = op2,exp2 = e22),_,_)
-      equation
-        res = operatorEqual(op1, op2);
-        res = expEqualWork(e11, e21, referenceEq(e11, e21), res);
-        res = expEqualWork(e12, e22, referenceEq(e12, e22), res);
+    case DAE.ICONST()
+      algorithm
+        DAE.ICONST(integer = i) := inExp2;
       then
-        res;
+        inExp1.integer == i;
 
-    // logical binary ops
-    case (DAE.LBINARY(exp1 = e11,operator = op1,exp2 = e12),
-          DAE.LBINARY(exp1 = e21,operator = op2,exp2 = e22),_,_)
-      equation
-        res = operatorEqual(op1, op2);
-        res = expEqualWork(e11, e21, referenceEq(e11, e21), res);
-        res = expEqualWork(e12, e22, referenceEq(e12, e22), res);
+    case DAE.RCONST()
+      algorithm
+        DAE.RCONST(real = r) := inExp2;
       then
-        res;
+        inExp1.real == r;
 
-    // unary ops
-    case (DAE.UNARY(operator = op1,exp = e1),DAE.UNARY(operator = op2,exp = e2),_,_)
-      equation
-        res = operatorEqual(op1, op2);
-        res = expEqualWork(e1, e2, referenceEq(e1, e2), res);
+    case DAE.SCONST()
+      algorithm
+        DAE.SCONST(string = s) := inExp2;
       then
-        res;
+        inExp1.string == s;
 
-    // logical unary ops
-    case (DAE.LUNARY(operator = op1,exp = e1),DAE.LUNARY(operator = op2,exp = e2),_,_)
-      equation
-        res = operatorEqual(op1, op2);
-        res = expEqualWork(e1, e2, referenceEq(e1, e2), res);
+    case DAE.BCONST()
+      algorithm
+        DAE.BCONST(bool = b) := inExp2;
       then
-        res;
+        inExp1.bool == b;
 
-    // relational ops
-    case (DAE.RELATION(exp1 = e11,operator = op1,exp2 = e12),DAE.RELATION(exp1 = e21,operator = op2,exp2 = e22),_,_)
-      equation
-        res = operatorEqual(op1, op2);
-        res = expEqualWork(e11, e21, referenceEq(e11, e21), res);
-        res = expEqualWork(e12, e22, referenceEq(e12, e22), res);
+    case DAE.ENUM_LITERAL()
+      algorithm
+        DAE.ENUM_LITERAL(name = p) := inExp2;
       then
-        res;
+        Absyn.pathEqual(inExp1.name, p);
 
-    // if expressions
-    case (DAE.IFEXP(expCond = e11,expThen = e12,expElse = e13),DAE.IFEXP(expCond = e21,expThen = e22,expElse = e23),_,_)
-      equation
-        res = expEqualWork(e11, e21, referenceEq(e11, e21), true);
-        res = expEqualWork(e12, e22, referenceEq(e12, e22), res);
-        res = expEqualWork(e13, e23, referenceEq(e13, e23), res);
+    case DAE.CREF()
+      algorithm
+        DAE.CREF(componentRef = cr) := inExp2;
       then
-        res;
+        ComponentReference.crefEqual(inExp1.componentRef, cr);
 
-    // function calls
-    case (DAE.CALL(path = path1,expLst = expl1),DAE.CALL(path = path2,expLst = expl2),_,_)
-      equation
-        res = Absyn.pathEqual(path1, path2);
-      then expEqualWorkList(expl1, expl2, res);
-
-    case (DAE.RECORD(path = path1,exps = expl1),DAE.RECORD(path = path2,exps = expl2),_,_)
-      equation
-        res = Absyn.pathEqual(path1, path2);
-      then expEqualWorkList(expl1, expl2, res);
-
-    // partially evaluated functions
-    case (DAE.PARTEVALFUNCTION(path = path1,expList = expl1),DAE.PARTEVALFUNCTION(path = path2,expList = expl2),_,_)
-      equation
-        res = Absyn.pathEqual(path1, path2);
-      then expEqualWorkList(expl1, expl2, res);
-
-    // arrays
-    case (DAE.ARRAY(ty = tp1,array = expl1),DAE.ARRAY(ty = tp2,array = expl2),_,_)
-      equation
-        res = valueEq(tp1, tp2);
-      then expEqualWorkList(expl1, expl2, res);
-
-    // matrix
-    case (e1 as DAE.MATRIX(), e2 as DAE.MATRIX(),_,_)
-      then valueEq(e1,e2); // TODO! FIXME! should use expEqual on elements
-
-    // ranges [start:stop]
-    case (DAE.RANGE(start = e11,step = NONE(),stop = e13),
-          DAE.RANGE(start = e21,step = NONE(),stop = e23),_,_)
-      equation
-        res = expEqualWork(e11, e21, referenceEq(e11, e21), true);
-        res = expEqualWork(e13, e23, referenceEq(e13, e23), res);
+    case DAE.ARRAY()
+      algorithm
+        DAE.ARRAY(ty = ty, array = expl) := inExp2;
       then
-        res;
+        valueEq(inExp1.ty, ty) and expEqualList(inExp1.array, expl);
 
-    // ranges [start:step:stop]
-    case (DAE.RANGE(start = e11,step = SOME(e12),stop = e13),
-          DAE.RANGE(start = e21,step = SOME(e22),stop = e23),_,_)
-      equation
-        res = expEqualWork(e11, e21, referenceEq(e11, e21), true);
-        res = expEqualWork(e12, e22, referenceEq(e12, e22), res);
-        res = expEqualWork(e13, e23, referenceEq(e13, e23), res);
+    case DAE.MATRIX()
+      algorithm
+        DAE.MATRIX(ty = ty, matrix = mexpl) := inExp2;
       then
-        res;
+        valueEq(inExp1.ty, ty) and expEqualListList(inExp1.matrix, mexpl);
 
-    // tuples
-    case (DAE.TUPLE(PR = expl1),DAE.TUPLE(PR = expl2),_,_)
-      equation
-        // fails if not all mapped calls return true
-      then expEqualWorkList(expl1, expl2, true);
-
-    // casting
-    case (DAE.CAST(ty = tp1,exp = e1),DAE.CAST(ty = tp2,exp = e2),_,_)
-      equation
-        res = valueEq(tp1, tp2);
-      then expEqualWork(e1, e2, referenceEq(e1,e2), res);
-
-    // array subscripts
-    case (DAE.ASUB(exp = e1,sub = ae1),DAE.ASUB(exp = e2,sub = ae2),_,_)
-      equation
-        res = expEqualWork(e1, e2, referenceEq(e1, e2), true);
-      then expEqualWorkList(ae1, ae2, res);
-
-    // size(a)
-    case (DAE.SIZE(exp = e1,sz = NONE()),DAE.SIZE(exp = e2,sz = NONE()),_,_)
-      then expEqualWork(e1, e2, referenceEq(e1,e2), true);
-
-    // size(a, dim)
-    case (DAE.SIZE(exp = e1,sz = SOME(e11)),DAE.SIZE(exp = e2,sz = SOME(e22)),_,_)
-      equation
-        res = expEqualWork(e1, e2, referenceEq(e1, e2), true);
-        res = expEqualWork(e11, e22, referenceEq(e11, e22), res);
+    case DAE.BINARY()
+      algorithm
+        DAE.BINARY(exp1 = e1, operator = op, exp2 = e2) := inExp2;
       then
-        res;
+        operatorEqual(inExp1.operator, op) and
+        expEqual(inExp1.exp1, e1) and
+        expEqual(inExp1.exp2, e2);
 
-    // metamodeling code
-    case (DAE.CODE(),DAE.CODE(),_,_)
-      equation
-        Debug.trace("exp_equal on CODE not impl.\n");
+    case DAE.LBINARY()
+      algorithm
+        DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2) := inExp2;
       then
-        false;
+        operatorEqual(inExp1.operator, op) and
+        expEqual(inExp1.exp1, e1) and
+        expEqual(inExp1.exp2, e2);
 
-    case (DAE.REDUCTION(),DAE.REDUCTION(),_,_)
-      equation
-        // Reductions contain too much information to compare equality in a sane manner
-        res = valueEq(inExp1,inExp2);
+    case DAE.UNARY()
+      algorithm
+        DAE.UNARY(exp = e, operator = op) := inExp2;
       then
-        res;
+        operatorEqual(inExp1.operator, op) and
+        expEqual(inExp1.exp, e);
 
-    // end id
-    /*// everything else failed, try structural equality
-    case (e1,e2)
-      equation
-        equality(e1 = e2);
-      then true;
-    case (e1,e2)
-      equation
-        failure(equality(e1 = e2));
-      then false;
-    */
-    // not equal
-    case (DAE.LIST(valList = expl1),DAE.LIST(valList = expl2),_,_)
-      then expEqualWorkList(expl1, expl2, true);
-
-    case (DAE.CONS(car = e11,cdr = e12),
-          DAE.CONS(car = e21,cdr = e22),_,_)
-      equation
-        res = expEqualWork(e11, e21, referenceEq(e11, e21), true);
-        res = expEqualWork(e12, e22, referenceEq(e12, e22), res);
+    case DAE.LUNARY()
+      algorithm
+        DAE.LUNARY(exp = e, operator = op) := inExp2;
       then
-        res;
+        operatorEqual(inExp1.operator, op) and
+        expEqual(inExp1.exp, e);
+        
+    case DAE.RELATION()
+      algorithm
+        DAE.RELATION(exp1 = e1, operator = op, exp2 = e2) := inExp2;
+      then
+        operatorEqual(inExp1.operator, op) and
+        expEqual(inExp1.exp1, e1) and
+        expEqual(inExp1.exp2, e2);
 
-    case (DAE.META_TUPLE(listExp = expl1),DAE.META_TUPLE(listExp = expl2),_,_)
-      then expEqualWorkList(expl1, expl2, true);
+    case DAE.IFEXP()
+      algorithm
+        DAE.IFEXP(expCond = e, expThen = e1, expElse = e2) := inExp2;
+      then
+        expEqual(inExp1.expCond, e) and
+        expEqual(inExp1.expThen, e1) and
+        expEqual(inExp1.expElse, e2);
 
-    case (DAE.META_OPTION(exp = NONE()),
-          DAE.META_OPTION(exp = NONE()),_,_)
-      then true;
+    case DAE.CALL()
+      algorithm
+        DAE.CALL(path = p, expLst = expl) := inExp2;
+      then
+        Absyn.pathEqual(inExp1.path, p) and
+        expEqualList(inExp1.expLst, expl);
 
-    case (DAE.META_OPTION(exp = SOME(e1)),
-          DAE.META_OPTION(exp = SOME(e2)),_,_)
-      then expEqualWork(e1, e2, referenceEq(e1, e2), true);
+    case DAE.RECORD()
+      algorithm
+        DAE.RECORD(path = p, exps = expl) := inExp2;
+      then
+        Absyn.pathEqual(inExp1.path, p) and
+        expEqualList(inExp1.exps, expl);
 
-    case (DAE.METARECORDCALL(path = path1,args = expl1),DAE.METARECORDCALL(path = path2,args = expl2),_,_)
-      equation
-        res = Absyn.pathEqual(path1, path2);
-      then expEqualWorkList(expl1, expl2, res);
+    case DAE.PARTEVALFUNCTION()
+      algorithm
+        DAE.PARTEVALFUNCTION(path = p, expList = expl) := inExp2;
+      then
+        Absyn.pathEqual(inExp1.path, p) and
+        expEqualList(inExp1.expList, expl);
 
-    case (e1 as DAE.MATCHEXPRESSION(),
-          e2 as DAE.MATCHEXPRESSION(),_,_)
-      then valueEq(e1,e2);
+    case DAE.RANGE()
+      algorithm
+        DAE.RANGE(start = e1, step = oe, stop = e2) := inExp2;
+      then
+        expEqual(inExp1.start, e1) and
+        expEqual(inExp1.stop, e2) and
+        expEqualOpt(inExp1.step, oe);
 
-    case (DAE.BOX(e1),DAE.BOX(e2),_,_)
-      then expEqualWork(e1, e2, referenceEq(e1, e2), true);
+    case DAE.TUPLE()
+      algorithm
+        DAE.TUPLE(PR = expl) := inExp2;
+      then
+        expEqualList(inExp1.PR, expl);
 
-    case (DAE.UNBOX(exp=e1),DAE.UNBOX(exp=e2),_,_)
-      then expEqualWork(e1, e2, referenceEq(e1, e2), true);
+    case DAE.CAST()
+      algorithm
+        DAE.CAST(ty = ty, exp = e) := inExp2;
+      then
+        valueEq(inExp1.ty, ty) and expEqual(inExp1.exp, e);
 
-    case (DAE.SHARED_LITERAL(index=i1),DAE.SHARED_LITERAL(index=i2),_,_) then intEq(i1,i2);
+    case DAE.ASUB()
+      algorithm
+        DAE.ASUB(exp = e, sub = expl) := inExp2;
+      then
+        expEqual(inExp1.exp, e) and expEqualList(inExp1.sub, expl);
+
+    case DAE.SIZE()
+      algorithm
+        DAE.SIZE(exp = e, sz = oe) := inExp2;
+      then
+        expEqual(inExp1.exp, e) and expEqualOpt(inExp1.sz, oe);
+
+    case DAE.REDUCTION()
+      // Reductions contain too much information to compare in a sane manner.
+      then valueEq(inExp1, inExp2);
+
+    case DAE.LIST()
+      algorithm
+        DAE.LIST(valList = expl) := inExp2;
+      then
+        expEqualList(inExp1.valList, expl);
+
+    case DAE.CONS()
+      algorithm
+        DAE.CONS(car = e1, cdr = e2) := inExp2;
+      then
+        expEqual(inExp1.car, e1) and expEqual(inExp1.cdr, e2);
+
+    case DAE.META_TUPLE()
+      algorithm
+        DAE.META_TUPLE(listExp = expl) := inExp2;
+      then
+        expEqualList(inExp1.listExp, expl);
+
+    case DAE.META_OPTION()
+      algorithm
+        DAE.META_OPTION(exp = oe) := inExp2;
+      then
+        expEqualOpt(inExp1.exp, oe);
+
+    case DAE.METARECORDCALL()
+      algorithm
+        DAE.METARECORDCALL(path = p, args = expl) := inExp2;
+      then
+        Absyn.pathEqual(inExp1.path, p) and expEqualList(inExp1.args, expl);
+
+    case DAE.MATCHEXPRESSION()
+      then valueEq(inExp1, inExp2);
+
+    case DAE.BOX()
+      algorithm
+        DAE.BOX(exp = e) := inExp2;
+      then
+        expEqual(inExp1.exp, e);
+
+    case DAE.UNBOX()
+      algorithm
+        DAE.UNBOX(exp = e) := inExp2;
+      then
+        expEqual(inExp1.exp, e);
+
+    case DAE.SHARED_LITERAL()
+      algorithm
+        DAE.SHARED_LITERAL(index = i) := inExp2;
+      then
+        inExp1.index == i;
 
     else false;
   end match;
-end expEqualWork;
-
-protected function expEqualWorkList
-"Returns true if the two expressions are equal."
-  input list<DAE.Exp> inExp1;
-  input list<DAE.Exp> inExp2;
-  input Boolean noFailedSubExpression;
-  output Boolean outBoolean;
+end expEqual;
+       
+protected function expEqualOpt
+  input Option<DAE.Exp> inExp1;
+  input Option<DAE.Exp> inExp2;
+  output Boolean outEqual;
+protected
+  DAE.Exp e1, e2;
 algorithm
-  outBoolean := match (inExp1,inExp2,noFailedSubExpression)
-    local
-      DAE.Exp e1,e2;
-      list<DAE.Exp> es1,es2;
-    case (_,_,false) then false;
-    case ({},{},_) then true;
-    case (e1::es1,e2::es2,_)
-      then expEqualWorkList(es1,es2,expEqualWork(e1,e2,referenceEq(e1,e2),true));
+  outEqual := match(inExp1, inExp2)
+    case (NONE(), NONE()) then true;
+    case (SOME(e1), SOME(e2)) then expEqual(e1, e2);
     else false;
   end match;
-end expEqualWorkList;
+end expEqualOpt;
+
+protected function expEqualList
+  input list<DAE.Exp> inExpl1;
+  input list<DAE.Exp> inExpl2;
+  output Boolean outEqual;
+protected
+  DAE.Exp e2;
+  list<DAE.Exp> rest_expl2 := inExpl2;
+algorithm
+  // Check that the lists have the same length, otherwise they can't be equal.
+  if listLength(inExpl1) <> listLength(inExpl2) then
+    outEqual := false;
+    return;
+  end if;
+
+  for e1 in inExpl1 loop
+    e2 :: rest_expl2 := rest_expl2;
+
+    // Return false if the expressions are not equal.
+    if not expEqual(e1, e2) then
+      outEqual := false;
+      return;
+    end if;
+  end for;
+
+  outEqual := true;
+end expEqualList;
+
+protected function expEqualListList
+  input list<list<DAE.Exp>> inExpl1;
+  input list<list<DAE.Exp>> inExpl2;
+  output Boolean outEqual;
+protected
+  list<DAE.Exp> expl2;
+  list<list<DAE.Exp>> rest_expl2 := inExpl2;
+algorithm
+  // Check that the lists have the same length, otherwise they can't be equal.
+  if listLength(inExpl1) <> listLength(inExpl2) then
+    outEqual := false;
+    return;
+  end if;
+
+  for expl1 in inExpl1 loop
+    expl2 :: rest_expl2 := rest_expl2;
+
+    // Return false if the expression lists are not equal.
+    if not expEqualList(expl1, expl2) then
+      outEqual := false;
+      return;
+    end if;
+  end for;
+
+  outEqual := true;
+end expEqualListList;
 
 public function expStructuralEqual
 "Returns true if the two expressions are structural equal. This means
@@ -9000,14 +9023,14 @@ algorithm
 
     // slices as heads, compare the slice exps and then compare the rest
     case ((DAE.SLICE(exp = e1) :: xs1),(DAE.SLICE(exp = e2) :: xs2))
-      then subscriptEqual(xs1, xs2) and expEqual(e1, e2);
+      then expEqual(e1, e2) and subscriptEqual(xs1, xs2);
 
     // indexes as heads, compare the index exps and then compare the rest
     case ((DAE.INDEX(exp = e1) :: xs1),(DAE.INDEX(exp = e2) :: xs2))
-      then subscriptEqual(xs1, xs2) and expEqual(e1, e2);
+      then expEqual(e1, e2) and subscriptEqual(xs1, xs2);
 
     case ((DAE.WHOLE_NONEXP(exp = e1) :: xs1),(DAE.WHOLE_NONEXP(exp = e2) :: xs2))
-      then subscriptEqual(xs1, xs2) and expEqual(e1, e2);
+      then expEqual(e1, e2) and subscriptEqual(xs1, xs2);
 
     // subscripts are not equal, return false
     else false;

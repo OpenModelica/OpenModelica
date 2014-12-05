@@ -1741,35 +1741,16 @@ protected function searchForInnerPrefix
   output DAE.ComponentRef outerCrefPrefix;
   output DAE.ComponentRef innerCrefPrefix;
 algorithm
-  (outerCrefPrefix, innerCrefPrefix) := matchcontinue(fullCref, outerPrefixes)
-    local
-      DAE.ComponentRef crOuter, crInner;
-      OuterPrefixes rest;
+  for op in outerPrefixes loop
+    OUTER(outerComponentRef = outerCrefPrefix) := op;
 
-    // we haven't found it, fail!
-    case (_, {})
-      then
-        fail();
+    if ComponentReference.crefPrefixOf(outerCrefPrefix, fullCref) then
+      OUTER(innerComponentRef = innerCrefPrefix) := op;
+      return;
+    end if;
+  end for;
 
-    // handle the head that matches
-    case (_, OUTER(crOuter, crInner)::_)
-      equation
-        /*
-         print("Full: " + ComponentReference.printComponentRefStr(fullCref) +
-               " outer: " + ComponentReference.printComponentRefStr(crOuter) +
-               " inner: " + ComponentReference.printComponentRefStr(crInner) + "\n");
-         */
-         true = ComponentReference.crefPrefixOf(crOuter, fullCref);
-      then
-        (crOuter, crInner);
-
-    // handle the rest
-    case (_, _::rest)
-      equation
-         (crOuter, crInner) = searchForInnerPrefix(fullCref, rest);
-      then
-        (crOuter, crInner);
-  end matchcontinue;
+  fail();
 end searchForInnerPrefix;
 
 public function printInnerDefStr
