@@ -83,6 +83,6 @@ private:
 
     #ifdef RUNTIME_PROFILING
     std::vector<MeasureTimeData> measureTimeFunctionsArray;
-    MeasureTimeValues *runSimStartValues, *runSimEndValues;
+    MeasureTimeValues *runSimStartValues, *runSimEndValues, *initSimStartValues, *initSimEndValues;
     #endif
 };

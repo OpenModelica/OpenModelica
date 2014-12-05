@@ -13,7 +13,7 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
   case SIMCODE(modelInfo = MODELINFO(__)) then
   let target  = simulationCodeTarget()
 
-  let()= textFile(simulationMainFile(simCode), 'OMCpp<%fileNamePrefix%>Main.cpp')
+  let()= textFile(simulationMainFile(simCode, "", "", ""), 'OMCpp<%fileNamePrefix%>Main.cpp')
   let()= textFile(simulationHeaderFile(simCode, "", "", true, false), 'OMCpp<%fileNamePrefix%>.h')
   let()= textFile(simulationCppFile(simCode,false), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
@@ -1550,7 +1550,7 @@ case SIMCODE( makefileParams=params as MAKEFILE_PARAMS(__)) then
   ".sh")
 end simulationMainRunScriptSuffix;
 
-template simulationMainFile(SimCode simCode)
+template simulationMainFile(SimCode simCode, String additionalIncludes, String additionalPreRunCommands, String additionalPostRunCommands)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -1577,6 +1577,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
          >>
     end match
   %>
+  
+  <%additionalIncludes%>
+  
   #ifdef USE_BOOST_THREAD
   #include <boost/thread.hpp>
   static long unsigned int getThreadNumber()
@@ -1621,6 +1624,27 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
       %>
       try
       {
+            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+                <<
+                std::vector<MeasureTimeData> measureTimeArraySimulation = std::vector<MeasureTimeData>(2); //0 all, 1 setup
+                MeasureTimeValues *measuredSimStartValues, *measuredSimEndValues, *measuredSetupStartValues, *measuredSetupEndValues;
+                
+                MeasureTime::addResultContentBlock("<%dotPath(modelInfo.name)%>","main",&measureTimeArraySimulation);
+                
+                measuredSimStartValues = MeasureTime::getZeroValues();
+                measuredSimEndValues = MeasureTime::getZeroValues();
+                measuredSetupStartValues = MeasureTime::getZeroValues();
+                measuredSetupEndValues = MeasureTime::getZeroValues();
+
+                measureTimeArraySimulation[0] = MeasureTimeData("all");
+                measureTimeArraySimulation[1] = MeasureTimeData("setup");
+                
+                <%generateMeasureTimeStartCode('measuredSimStartValues', "all", "")%>
+                <%generateMeasureTimeStartCode('measuredSetupStartValues', "setup", "")%>
+                >>
+            %>
+            <%additionalPreRunCommands%>
+            
             boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
             //SimController to start simulation
 
@@ -1629,10 +1653,18 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
             //create Modelica system
             std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
 
-            simulation.first->Start(system.first,simulation.second,"<%lastIdentOfPath(modelInfo.name)%>");
-
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
                 <<
+                <%generateMeasureTimeEndCode("measuredSetupStartValues", "measuredSetupEndValues", "measureTimeArraySimulation[1]", "setup", "")%>
+                >>
+            %>
+
+            simulation.first->Start(system.first,simulation.second,"<%lastIdentOfPath(modelInfo.name)%>");
+            
+            <%additionalPostRunCommands%>
+            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+                <<
+                <%generateMeasureTimeEndCode("measuredSimStartValues", "measuredSimEndValues", "measureTimeArraySimulation[0]", "all", "")%>
                 MeasureTime::getInstance()->writeToJson();
                 >>
             %>
@@ -4156,7 +4188,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initAlgloopSolvers = initAlgloopsolvers(listAppend(allEquations,initialEquations),simCode)
    let initAlgloopvars = initAlgloopVars(listAppend(allEquations,initialEquations),simCode)
 
-   let initialequations  = functionInitialEquations(initialEquations,simCode, useFlatArrayNotation)
+   let initialequations  = functionInitialEquations(initialEquations,simCode, useFlatArrayNotation, false)
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
@@ -4321,11 +4353,11 @@ template functionCallExternalObjectConstructorsDecl(Text funcNamePrefix,ExtObjIn
 end functionCallExternalObjectConstructorsDecl;
 
 
-template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode simCode, Boolean useFlatArrayNotation)
+template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode simCode, Boolean useFlatArrayNotation, Boolean createMeasureTime)
   "Generates function in simulation file."
 ::=
         let equation_func_calls = (initalEquations |> eq =>
-                    equation_function_create_single_func(eq, contextOther/*BUFC*/, simCode, "initEquation","Initialize",useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))
+                    equation_function_create_single_func(eq, contextOther/*BUFC*/, simCode, "initEquation","Initialize",useFlatArrayNotation,createMeasureTime)
                     ;separator="\n")
   /*
   let &varDecls = buffer ""
@@ -5134,8 +5166,14 @@ match modelInfo
     void deleteAlgloopSolverVariables_<%idx%>();
     >>
     ;separator="\n")
-
+  
   <<
+  <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+  <<
+  #define MEASURETIME_PROFILEBLOCKS
+  #define MEASURETIME_MODELFUNCTIONS
+  >>%>
+  
   class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
   <%friendclasses%>
@@ -13878,10 +13916,10 @@ template generateMeasureTimeStartCode(String varNameStartValues, String sectionN
 ::=
   if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
    <<
-   #ifdef <%defineName%>
+   <%if stringEq(defineName, "") then '' else '#ifdef <%defineName%>'%>
      MEASURETIME_REGION_DEFINE(<%sectionName%>, "<%sectionName%>");
      MEASURETIME_START(<%varNameStartValues%>, <%sectionName%>, "<%sectionName%>");
-   #endif
+   <%if stringEq(defineName, "") then '' else '#endif'%>
    >>
 end generateMeasureTimeStartCode;
 
@@ -13889,9 +13927,9 @@ template generateMeasureTimeEndCode(String varNameStartValues, String varNameEnd
 ::=
   if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
   <<
-  #ifdef <%defineName%>
+  <%if stringEq(defineName, "") then '' else '#ifdef <%defineName%>'%>
     MEASURETIME_END(<%varNameStartValues%>,<%varNameEndValues%>,<%varNameTargetValues%>, <%sectionName%>)
-  #endif
+  <%if stringEq(defineName, "") then '' else '#endif'%>
   >>
 end generateMeasureTimeEndCode;
 

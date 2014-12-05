@@ -5,9 +5,6 @@
 #include <intrin.h>
 #endif
 
-#define MEASURETIME_PROFILEBLOCKS
-#define MEASURETIME_MODELFUNCTIONS
-
 #ifdef USE_SCOREP
   #define MEASURETIME_REGION_DEFINE(handlerName, regionName) SCOREP_USER_REGION_DEFINE( handlerName )
   #define MEASURETIME_START(valStart, handlerName, regionName) SCOREP_USER_REGION_BEGIN( handlerName, regionName, SCOREP_USER_REGION_TYPE_COMMON )

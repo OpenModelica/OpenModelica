@@ -38,12 +38,16 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system, Configuration* co
     #ifdef RUNTIME_PROFILING
     if(MeasureTime::getInstance() != NULL)
     {
-        measureTimeFunctionsArray = std::vector<MeasureTimeData>(1); //0 runSimulation
+        measureTimeFunctionsArray = std::vector<MeasureTimeData>(2); //0 runSimulation, initializeSimulation
         MeasureTime::addResultContentBlock(system->getModelName(),"simmanager",&measureTimeFunctionsArray);
+
+        initSimStartValues = MeasureTime::getZeroValues();
+        initSimEndValues = MeasureTime::getZeroValues();
         runSimStartValues = MeasureTime::getZeroValues();
         runSimEndValues = MeasureTime::getZeroValues();
 
-        measureTimeFunctionsArray[0] = MeasureTimeData("runSimulation");
+        measureTimeFunctionsArray[0] = MeasureTimeData("initializeSimulation");
+        measureTimeFunctionsArray[1] = MeasureTimeData("runSimulation");
     }
     #endif
 }
@@ -58,6 +62,10 @@ SimManager::~SimManager()
         delete[] _sampleCycles;
 
     #ifdef RUNTIME_PROFILING
+    if(initSimStartValues)
+        delete initSimStartValues;
+    if(initSimEndValues)
+        delete initSimEndValues;
     if(runSimStartValues)
         delete runSimStartValues;
     if(runSimEndValues)
@@ -67,6 +75,14 @@ SimManager::~SimManager()
 
 void SimManager::initialize()
 {
+    #ifdef RUNTIME_PROFILING
+    MEASURETIME_REGION_DEFINE(initSimHandler, "initializeSimulation");
+    if (MeasureTime::getInstance() != NULL)
+    {
+        MEASURETIME_START(initSimStartValues, initSimHandler, "initializeSimulation");
+    }
+    #endif
+
     _cont_system = boost::dynamic_pointer_cast<IContinuous>(_mixed_system);
     _timeevent_system = boost::dynamic_pointer_cast<ITime>(_mixed_system);
     _event_system = boost::dynamic_pointer_cast<IEvent>(_mixed_system);
@@ -168,6 +184,12 @@ void SimManager::initialize()
         _solver->initialize();
     }
 //#endif
+    #ifdef RUNTIME_PROFILING
+    if (MeasureTime::getInstance() != NULL)
+    {
+        MEASURETIME_END(initSimStartValues, initSimEndValues, measureTimeFunctionsArray[0], initSimHandler);
+    }
+    #endif
 }
 
 void SimManager::runSingleStep(double cycletime)
@@ -281,7 +303,7 @@ void SimManager::runSimulation()
     #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
     {
-        MEASURETIME_END(runSimStartValues, runSimEndValues, measureTimeFunctionsArray[0], runSimHandler);
+        MEASURETIME_END(runSimStartValues, runSimEndValues, measureTimeFunctionsArray[1], runSimHandler);
     }
     #endif
 }

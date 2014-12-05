@@ -5384,32 +5384,22 @@ algorithm
     local
       list<HpcOmSimCode.Task> outgoingDepTasks;
       list<Real> levelCosts;
-      list<HpcOmSimCode.TaskList> levels;
+      list<HpcOmSimCode.TaskList> tasksOfLevels;
       list<list<Integer>> parallelSets;
       list<list<Integer>> criticalPaths, criticalPathsWoC;
-      list<list<Real>> levelSectionCosts;
+      list<list<Real>> levelSectionCosts; //execution costs for each task in the levels
       array<list<HpcOmSimCode.Task>> threadTasks;
       Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
       String criticalPathInfo;
-    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=levels),_,_,_)
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=false),_,_,_)
       equation
-        //get the criticalPath
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
-        // predict speedUp
-        levelSectionCosts = List.map1(levels, getLevelListTaskCosts, taskGraphMetaIn);
-        serTime = realSum(List.map(levelSectionCosts,realSum));
-        serTime = HpcOmTaskGraph.roundReal(serTime,2);
-        levelCosts = List.map1(levelSectionCosts,getLevelParallelTime,numProcIn);
-        parTime = List.fold(levelCosts,realAdd,0.0);
-        parTime = HpcOmTaskGraph.roundReal(parTime,2);
-        criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-        if Flags.isSet(Flags.HPCOM_DUMP) then
-          print("the serialCosts: "+realString(serTime)+"\n");
-          print("the parallelCosts: "+realString(parTime)+"\n");
-        end if;
-        printPredictedExeTimeInfo(serTime,parTime,realDiv(serTime,parTime),realDiv(serTime,cpCostsWoC),numProcIn);
+        criticalPathInfo = analyseScheduledTaskGraphLevel(tasksOfLevels, numProcIn, taskGraphIn,taskGraphMetaIn, getLevelParallelTime);
       then
         criticalPathInfo;
+    case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=true),_,_,_)
+      equation
+        criticalPathInfo = analyseScheduledTaskGraphLevel(tasksOfLevels, numProcIn, taskGraphIn,taskGraphMetaIn, getLevelParallelTime);
+      then criticalPathInfo;
     case(HpcOmSimCode.THREADSCHEDULE(outgoingDepTasks=outgoingDepTasks),_,_,_)
       equation
         if Flags.isSet(Flags.HPCOM_DUMP) then
@@ -5438,32 +5428,113 @@ algorithm
   end match;
 end analyseScheduledTaskGraph;
 
+protected function analyseScheduledTaskGraphLevel
+  input list<HpcOmSimCode.TaskList> iLevelTasks;
+  input Integer iNumProc;
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input LevelParallelSectionFunc iParallelSectionCalculator;
+  output String oCriticalPathInfo;
+  
+  partial function LevelParallelSectionFunc //function that calculates the parallel time required for a section
+    input HpcOmSimCode.TaskList iSectionTasks;
+    input HpcOmTaskGraph.TaskGraph iTaskGraph;
+    input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+    input Integer iNumProc;
+    output Real oLevelCost;
+  end LevelParallelSectionFunc;
+protected
+  Integer i, costShare;
+  list<Real> levelCosts;
+  list<list<Integer>> criticalPaths, criticalPathsWoC;
+  list<list<Real>> levelSectionCosts; //execution costs for each task in the levels
+  Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax, levelCost;
+algorithm
+  //get the criticalPath
+  ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) := HpcOmTaskGraph.getCriticalPaths(iTaskGraph,iTaskGraphMeta);
+  //predict speedUp by calculating the serial and parallel time required to solve the system
+  levelSectionCosts := List.map1(iLevelTasks, getLevelListTaskCosts, iTaskGraphMeta);
+  serTime := realSum(List.map(levelSectionCosts,realSum));
+  serTime := HpcOmTaskGraph.roundReal(serTime,2);
+  levelCosts := List.map(iLevelTasks,function iParallelSectionCalculator(iTaskGraph=iTaskGraph, iTaskGraphMeta=iTaskGraphMeta, iNumProc=iNumProc));
+  parTime := realSum(levelCosts);
+  parTime := HpcOmTaskGraph.roundReal(parTime,2);
+  oCriticalPathInfo := HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+  if Flags.isSet(Flags.HPCOM_DUMP) then
+      print("the serialCosts: "+realString(serTime)+"\n");
+      print("the parallelCosts: "+realString(parTime)+"\n");
+      i := 1;
+      for levelCost in levelCosts loop
+        costShare := intDiv(realInt(levelCost)*100,realInt(parTime));
+        print("\tcosts for level " + intString(i) + ": " + realString(levelCost) + " (" + System.snprintff("%.0f", 5, costShare) + "%)\n"); 
+        i := i + 1;
+      end for;
+  end if;
+  printPredictedExeTimeInfo(serTime,parTime,realDiv(serTime,parTime),realDiv(serTime,cpCostsWoC),iNumProc);
+end analyseScheduledTaskGraphLevel;
+
 protected function getLevelParallelTime"computes the the time for the parallel computation of a parallel section
 author:Waurich TUD 2014-06"
-  input list<Real> sectionCosts;
-  input Integer numProc;
-  output Real levelCost;
+  input HpcOmSimCode.TaskList iLevelTaskList;
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input Integer iNumProc;
+  output Real oLevelCost;
 protected
   array<Real> workload;
+  list<HpcOmSimCode.Task> levelTasks;
 algorithm
-  workload := arrayCreate(numProc,0.0);
-  workload := List.fold(sectionCosts,getLevelParallelTime1,workload);
-  levelCost := Array.fold(workload,realMax,0.0);
+  levelTasks := getLevelListTasks(iLevelTaskList);
+  workload := arrayCreate(iNumProc,0.0);
+  workload := List.fold(levelTasks,function getLevelParallelTime1(iTaskGraphMeta=iTaskGraphMeta),workload);
+  oLevelCost := Array.fold(workload,realMax,0.0);
 end getLevelParallelTime;
 
 protected function getLevelParallelTime1"helper function for getLevelParallelTime. distributes the current section to the thread with the least workload
 author:Waurich TUD 2014-06"
-  input Real sectionCost;
-  input array<Real> threadWorkLoadIn;
-  output array<Real> threadWorkLoadOut;
+  input HpcOmSimCode.Task iTask;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Real> iThreadWorkLoad;
+  output array<Real> oThreadWorkLoad;
 protected
   Real minWorkLoad;
-  Integer minWLThread;
+  Real taskCosts;
+  Integer threadIdx;
+  array<Real> tmpThreadWorkLoad;
 algorithm
-  minWorkLoad := Array.fold(threadWorkLoadIn,realMin,arrayGet(threadWorkLoadIn,1));
-  minWLThread := List.position(minWorkLoad,arrayList(threadWorkLoadIn));
-  threadWorkLoadOut := arrayUpdate(threadWorkLoadIn,minWLThread,minWorkLoad + sectionCost);
+  oThreadWorkLoad := match(iTask, iTaskGraphMeta, iThreadWorkLoad)
+    case(HpcOmSimCode.CALCTASK_LEVEL(threadIdx = NONE()),_,_)
+      equation
+        taskCosts = getLevelTaskCosts(iTask, iTaskGraphMeta);
+        minWorkLoad = Array.fold(iThreadWorkLoad,realMin,arrayGet(iThreadWorkLoad,1));
+        threadIdx = List.position(minWorkLoad,arrayList(iThreadWorkLoad));
+        tmpThreadWorkLoad = arrayUpdate(iThreadWorkLoad,threadIdx,minWorkLoad + taskCosts);        
+      then tmpThreadWorkLoad;
+    case(HpcOmSimCode.CALCTASK_LEVEL(threadIdx = SOME(threadIdx)),_,_)
+      equation
+        taskCosts = getLevelTaskCosts(iTask, iTaskGraphMeta);
+        tmpThreadWorkLoad = arrayUpdate(iThreadWorkLoad,threadIdx,arrayGet(iThreadWorkLoad, threadIdx) + taskCosts);  
+      then tmpThreadWorkLoad;
+  end match;
 end getLevelParallelTime1;
+
+protected function getLevelListTasks
+  input HpcOmSimCode.TaskList iTaskList;
+  output list<HpcOmSimCode.Task> oTasks;
+protected
+  list<HpcOmSimCode.Task> tasks;
+algorithm
+  oTasks := match(iTaskList)
+    case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks))
+      then tasks;
+    case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks))
+      then tasks;
+    else
+      equation
+        print("getLevelListTasks failed! Unsupported task list.\n");
+      then {};
+  end match;
+end getLevelListTasks;
 
 protected function getLevelListTaskCosts
   input HpcOmSimCode.TaskList iTaskList;
@@ -5473,20 +5544,8 @@ protected
   list<HpcOmSimCode.Task> tasks;
   list<Real> costs;
 algorithm
-  costsOut := match(iTaskList, iMeta)
-    case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks),_)
-      equation
-        costs = List.map1(tasks,getLevelTaskCosts,iMeta);
-      then costs;
-    case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks),_)
-      equation
-        costs = List.map1(tasks,getLevelTaskCosts,iMeta);
-      then costs;
-    else
-      equation
-        print("getLevelTaskCosts failed!\n");
-      then {};
-  end match;
+  tasks := getLevelListTasks(iTaskList);
+  costsOut := List.map1(tasks,getLevelTaskCosts,iMeta);
 end getLevelListTaskCosts;
 
 protected function getLevelTaskCosts

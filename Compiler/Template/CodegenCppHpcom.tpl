@@ -17,7 +17,14 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__), makefileParams= MAKEFILE_PARAMS(__)) then
   let target  = simulationCodeTarget()
-  let()= textFile((if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then simulationMainFileAnalyzation(simCode) else simulationMainFile(simCode)), 'OMCpp<%fileNamePrefix%>Main.cpp')
+  
+  let()= textFile(
+   (if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then 
+        simulationMainFileAnalyzation(simCode) 
+    else 
+        simulationMainFile(simCode, (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else ""))
+   ), 'OMCpp<%fileNamePrefix%>Main.cpp')
+        
   let()= textFile(simulationHeaderFile(simCode, generateAdditionalIncludes(simCode, Util.isSome(hpcOmMemory)), generateAdditionalProtectedMemberDeclaration(simCode, Util.isSome(hpcOmMemory)), false, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
   let()= textFile(simulationCppFile(simCode,Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
@@ -142,7 +149,9 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Boolean u
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
       std::vector<MeasureTimeData> measureTimeArrayHpcom;
+      std::vector<MeasureTimeData> measureTimeSchedulerArrayHpcom;
       //MeasureTimeValues *measuredStartValuesODE, *measuredEndValuesODE;
+      MeasureTimeValues *measuredSchedulerStartValues, *measuredSchedulerEndValues;
       >>%>
       >>
   end match
@@ -362,7 +371,7 @@ template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__)) then
-      let hpcomConstructorExtension = getHpcomConstructorExtension(hpcOmSchedule, lastIdentOfPath(modelInfo.name))
+      let hpcomConstructorExtension = getHpcomConstructorExtension(hpcOmSchedule, lastIdentOfPath(modelInfo.name), dotPath(modelInfo.name))
       let hpcomMemberVariableDefinition = getHpcomMemberVariableDefinition(hpcOmSchedule)
       let hpcomDestructorExtension = getHpcomDestructorExtension(hpcOmSchedule)
       let type = getConfigString(HPCOM_CODE)
@@ -515,7 +524,7 @@ template getHpcomMemberVariableDefinition(Option<Schedule> hpcOmScheduleOpt)
   end match
 end getHpcomMemberVariableDefinition;
 
-template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String modelNamePrefixStr)
+template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String modelNamePrefixStr, String fullModelName)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match hpcOmScheduleOpt
@@ -526,6 +535,18 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
           let threadFuncs = List.intRange(intSub(getConfigInt(NUM_PROC),1)) |> tt hasindex i0 fromindex 1 => generateThread(i0, type, modelNamePrefixStr,"evaluateThreadFunc"); separator="\n"
           <<
           <%threadFuncs%>
+          
+          <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
+            <<
+            #ifdef MEASURETIME_MODELFUNCTIONS
+            MeasureTime::addResultContentBlock("<%fullModelName%>","functions_HPCOM_Sections",&measureTimeSchedulerArrayHpcom);
+            measureTimeSchedulerArrayHpcom = std::vector<MeasureTimeData>(<%listLength(hpcOmSchedule.tasksOfLevels)%>);
+            measuredSchedulerStartValues = MeasureTime::getZeroValues();
+            measuredSchedulerEndValues = MeasureTime::getZeroValues();
+            <%List.intRange(listLength(hpcOmSchedule.tasksOfLevels)) |> levelIdx => 'measureTimeSchedulerArrayHpcom[<%intSub(levelIdx,1)%>] = MeasureTimeData("evaluateODE_level_<%levelIdx%>");'; separator="\n"%>
+            #endif //MEASURETIME_MODELFUNCTIONS
+            >>
+          %>
           >>
         else ""
       end match
@@ -619,7 +640,7 @@ template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> when
     case SIMCODE(modelInfo = MODELINFO(__)) then
       let parCode = update2(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
-      <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+      <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,false)%>
 
        <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
@@ -869,7 +890,7 @@ end function_HPCOM_Level0;
 
 template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen, list<list<HpcOmSimCode.Task>> tasksOfLevels, Integer iThreadIdx, String iType, Text &varDecls, Absyn.Path name, SimCode simCode, Text &mainThreadCode, Boolean useFlatArrayNotation)
 ::=
-  let odeEqs = tasksOfLevels |> tasks => generateLevelFixedCodeForThreadLevel(allEquationsPlusWhen, tasks, iThreadIdx, iType, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+  let odeEqs = tasksOfLevels |> tasks hasindex levelIdx => generateLevelFixedCodeForThreadLevel(allEquationsPlusWhen, tasks, iThreadIdx, iType, levelIdx, &varDecls, simCode, useFlatArrayNotation); separator="\n"
   if (intGt(iThreadIdx, 0)) then
   <<
   void <%lastIdentOfPath(name)%>::evaluateThreadFunc<%iThreadIdx%>()
@@ -890,7 +911,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
             _levelBarrier.wait();
             break;
         }
-        <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart", 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>'%>
+        /* <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then '<%generateMeasureTimeStartCode("valuesStart", 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>'%> */
         <%odeEqs%>
 
         <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
@@ -902,7 +923,7 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
         //_measureTimeArrayLock.lock();
         //measureTimeArrayHpcom[0].sumMeasuredValues->add(valuesEnd);
         //_measureTimeArrayLock.unlock();
-        <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", 'measureTimeArrayHpcom[<%iThreadIdx%>]', 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%>
+        /* <%generateMeasureTimeEndCode("valuesStart", "valuesEnd", 'measureTimeArrayHpcom[<%iThreadIdx%>]', 'evaluateODEThread<%iThreadIdx%>', "MEASURETIME_MODELFUNCTIONS")%> */
         >>%>
 
         //_evaluateBarrier.wait();
@@ -928,14 +949,26 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
 end generateLevelFixedCodeForThread;
 
 template generateLevelFixedCodeForThreadLevel(list<SimEqSystem> allEquationsPlusWhen, list<HpcOmSimCode.Task> tasksOfLevel,
-                                              Integer iThreadIdx, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+                                              Integer iThreadIdx, String iType, Integer iLevelIdx, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
 ::=
   let tasks = tasksOfLevel |> t => function_HPCOM_Task(allEquationsPlusWhen, t, iType, varDecls, simCode, useFlatArrayNotation); separator="\n"
   <<
   //Start of Level
+  <%if intEq(iThreadIdx, 0) then
+    <<
+    <%generateMeasureTimeStartCode("measuredSchedulerStartValues", 'evaluateODE_level_<%intAdd(iLevelIdx,1)%>', "MEASURETIME_MODELFUNCTIONS")%>
+    >>
+  %>
+  
   <%if(stringEq(tasks,"")) then '' else ''%>
   <%tasks%>
   _levelBarrier.wait();
+  
+  <%if intEq(iThreadIdx, 0) then
+    <<
+    <%generateMeasureTimeEndCode("measuredSchedulerStartValues", "measuredSchedulerEndValues", 'measureTimeSchedulerArrayHpcom[<%iLevelIdx%>]', 'evaluateODE_level_<%intAdd(iLevelIdx,1)%>', "MEASURETIME_MODELFUNCTIONS")%>
+    >>
+  %>
   //End of Level
   >>
 end generateLevelFixedCodeForThreadLevel;
@@ -1582,151 +1615,32 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 end simulationMainFileAnalyzation;
 
 
-template MPIFinalize(String type)
+template MPIFinalize()
  "Finalize the MPI environment in main function."
 ::=
-  match type
-    case "mpi" then
-      <<
-      } // End sequential
-      MPI_Finalize();
-      >>
-  end match
+  <<
+  } // End sequential
+  MPI_Finalize();
+  >>
 end MPIFinalize;
 
-
-template MPIInit(String type)
+template MPIInit()
  "Initialize the MPI environment in main function."
 ::=
-  match type
-    case "mpi" then
-      <<
-      char** argvNotConst = const_cast<char**>(argv);
-      MPI_Init(&argc, &argvNotConst);
-      int world_rank, world_size;
-      MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-      MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-      std::cout << "Hello world! This is MPI process " << world_rank
-                << " of " << world_size << " processes."  << endl;
+  <<
+  char** argvNotConst = const_cast<char**>(argv);
+  MPI_Init(&argc, &argvNotConst);
+  int world_rank, world_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  std::cout << "Hello world! This is MPI process " << world_rank
+            << " of " << world_size << " processes."  << endl;
 
-      // Run simulation in sequential
-      if (0 == world_rank) {
-        std::cout << "Remark: Simulation is not (yet) MPI parallel!\n";
-      >>
-  end match
+  // Run simulation in sequential
+  if (0 == world_rank) {
+    std::cout << "Remark: Simulation is not (yet) MPI parallel!\n";
+  >>
 end MPIInit;
-
-
-template simulationMainFile(SimCode simCode)
- "Generates code for header file for simulation target."
-::=
-  //let type = getConfigString(HPCOM_CODE)
-  let type = if Flags.isSet(USEMPI) then "mpi" else ''
-  let MPIHeader = (match type case "mpi" then '#include <mpi.h>' else '')
-
-  match simCode
-    case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
-      <<
-      #ifndef BOOST_ALL_DYN_LINK
-        #define BOOST_ALL_DYN_LINK
-      #endif
-
-      #include "Modelica.h"
-      #include "ModelicaDefine.h"
-      #include <SimCoreFactory/Policies/FactoryConfig.h>
-      #include <SimController/ISimController.h>
-      <%
-      match(getConfigString(PROFILING_LEVEL))
-        case("none") then ''
-        case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
-        else
-          <<
-          #ifdef USE_SCOREP
-            #include "Core/Utils/extension/measure_time_scorep.hpp"
-          #else
-            #include "Core/Utils/extension/measure_time_rdtsc.hpp"
-          #endif
-          >>
-      end match
-      %>
-      #ifdef USE_BOOST_THREAD
-        #include <boost/thread.hpp>
-        static long unsigned int getThreadNumber()
-        {
-          boost::hash<std::string> string_hash;
-          return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
-        }
-      #else
-        static long unsigned int getThreadNumber()
-        {
-          return 0;
-        }
-      #endif
-
-      <%MPIHeader%>
-
-      #if defined(_MSC_VER) || defined(__MINGW32__)
-        #include <tchar.h>
-        int _tmain(int argc, const _TCHAR* argv[])
-      #else
-        int main(int argc, const char* argv[])
-      #endif
-      {
-        <%
-        match(getConfigString(PROFILING_LEVEL))
-          case("none") then '//no profiling used'
-          case("all_perf") then
-            <<
-            #ifdef USE_SCOREP
-              MeasureTimeScoreP::initialize();
-            #else
-              MeasureTimePAPI::initialize(getThreadNumber);
-            #endif
-            >>
-          else
-            <<
-            #ifdef USE_SCOREP
-              MeasureTimeScoreP::initialize();
-            #else
-              MeasureTimeRDTSC::initialize();
-            #endif
-            >>
-        end match
-        %>
-        try
-        {
-          <%MPIInit(type)%>
-
-          boost::shared_ptr<OMCFactory> _factory = boost::shared_ptr<OMCFactory>(new OMCFactory());
-          //SimController to start simulation
-          std::pair<boost::shared_ptr<ISimController>, SimSettings> simulation = _factory->createSimulation(argc, argv);
-
-          //Create Modelica system
-          std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>", "<%lastIdentOfPath(modelInfo.name)%>");
-
-          simulation.first->Start(system.first, simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
-
-          <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-            <<
-            MeasureTime::getInstance()->writeToJson();
-            >>
-          %>
-
-          <%MPIFinalize(type)%>
-
-          return 0;
-        }
-        catch(std::exception& ex)
-        {
-          //std::string error = ex.what();
-          std::cerr << "Simulation stopped: " << ex.what() << endl; //error;
-          return 1;
-        }
-      }
-      >>
-  end match
-end simulationMainFile;
-
 
 template MPIRunCommandInRunScript(String type, Text &getNumOfProcs, Text &execCommandLinux)
  "If MPI is used:
