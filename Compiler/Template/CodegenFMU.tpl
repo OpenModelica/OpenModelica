@@ -1840,57 +1840,57 @@ template importFMU1ModelExchange(FmiImport fmi)
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
   /* Get Real parameters and their value references */
-  let realParametersVRs = dumpRealParametersVRs(fmiModelVariablesList)
-  let realParametersNames = dumpRealParametersNames(fmiModelVariablesList)
+  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1)
+  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2)
   /* Get Integer parameters and their value references */
-  let integerParametersVRs = dumpIntegerParametersVRs(fmiModelVariablesList)
-  let integerParametersNames = dumpIntegerParametersNames(fmiModelVariablesList)
+  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1)
+  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2)
   /* Get Boolean parameters and their value references */
-  let booleanParametersVRs = dumpBooleanParametersVRs(fmiModelVariablesList)
-  let booleanParametersNames = dumpBooleanParametersNames(fmiModelVariablesList)
+  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1)
+  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2)
   /* Get String parameters and their value references */
-  let stringParametersVRs = dumpStringParametersVRs(fmiModelVariablesList)
-  let stringParametersNames = dumpStringParametersNames(fmiModelVariablesList)
+  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1)
+  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2)
   /* Get dependent Real parameters and their value references */
-  let realDependentParametersVRs = dumpDependentRealParametersVRs(fmiModelVariablesList)
-  let realDependentParametersNames = dumpDependentRealParametersNames(fmiModelVariablesList)
+  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1)
+  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2)
   /* Get dependent Integer parameters and their value references */
-  let integerDependentParametersVRs = dumpDependentIntegerParametersVRs(fmiModelVariablesList)
-  let integerDependentParametersNames = dumpDependentIntegerParametersNames(fmiModelVariablesList)
+  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1)
+  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2)
   /* Get dependent Boolean parameters and their value references */
-  let booleanDependentParametersVRs = dumpDependentBooleanParametersVRs(fmiModelVariablesList)
-  let booleanDependentParametersNames = dumpDependentBooleanParametersNames(fmiModelVariablesList)
+  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1)
+  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2)
   /* Get dependent String parameters and their value references */
-  let stringDependentParametersVRs = dumpDependentStringParametersVRs(fmiModelVariablesList)
-  let stringDependentParametersNames = dumpDependentStringParametersNames(fmiModelVariablesList)
+  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1)
+  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2)
   /* Get input Real varibales and their value references */
-  let realInputVariablesVRs = dumpInputRealVariablesVRs(fmiModelVariablesList)
-  let realInputVariablesNames = dumpInputRealVariablesNames(fmiModelVariablesList)
-  let realInputVariablesReturnNames = dumpInputRealVariablesReturnNames(fmiModelVariablesList)
+  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1)
+  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2)
+  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3)
   /* Get input Integer varibales and their value references */
-  let integerInputVariablesVRs = dumpInputIntegerVariablesVRs(fmiModelVariablesList)
-  let integerInputVariablesNames = dumpInputIntegerVariablesNames(fmiModelVariablesList)
-  let integerInputVariablesReturnNames = dumpInputIntegerVariablesReturnNames(fmiModelVariablesList)
+  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1)
+  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2)
+  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3)
   /* Get input Boolean varibales and their value references */
-  let booleanInputVariablesVRs = dumpInputBooleanVariablesVRs(fmiModelVariablesList)
-  let booleanInputVariablesNames = dumpInputBooleanVariablesNames(fmiModelVariablesList)
-  let booleanInputVariablesReturnNames = dumpInputBooleanVariablesReturnNames(fmiModelVariablesList)
+  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1)
+  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2)
+  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3)
   /* Get input String varibales and their value references */
-  let stringInputVariablesVRs = dumpInputStringVariablesVRs(fmiModelVariablesList)
-  let stringStartVariablesNames = dumpInputStringVariablesNames(fmiModelVariablesList)
-  let stringInputVariablesReturnNames = dumpInputStringVariablesReturnNames(fmiModelVariablesList)
+  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1)
+  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2)
+  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3)
   /* Get output Real varibales and their value references */
-  let realOutputVariablesVRs = dumpOutputRealVariablesVRs(fmiModelVariablesList)
-  let realOutputVariablesNames = dumpOutputRealVariablesNames(fmiModelVariablesList)
+  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1)
+  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2)
   /* Get output Integer varibales and their value references */
-  let integerOutputVariablesVRs = dumpOutputIntegerVariablesVRs(fmiModelVariablesList)
-  let integerOutputVariablesNames = dumpOutputIntegerVariablesNames(fmiModelVariablesList)
+  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1)
+  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2)
   /* Get output Boolean varibales and their value references */
-  let booleanOutputVariablesVRs = dumpOutputBooleanVariablesVRs(fmiModelVariablesList)
-  let booleanOutputVariablesNames = dumpOutputBooleanVariablesNames(fmiModelVariablesList)
+  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1)
+  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2)
   /* Get output String varibales and their value references */
-  let stringOutputVariablesVRs = dumpOutputStringVariablesVRs(fmiModelVariablesList)
-  let stringOutputVariablesNames = dumpOutputStringVariablesNames(fmiModelVariablesList)
+  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1)
+  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
@@ -1934,7 +1934,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(realParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetRealParameter(fmi1me, {"+realParametersVRs+"}, {"+realParametersNames+"});"%>
     <%if not stringEq(integerParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetIntegerParameter(fmi1me, {"+integerParametersVRs+"}, {"+integerParametersNames+"});"%>
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetBooleanParameter(fmi1me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
-    <%/*Opening the file fails the JuliansBib.mos test. fmiSetString returns out of memmory error. TODO: check the implementation of fmisetstring.*/%>
+    <%/*Opening the below line fails the JuliansBib.mos test. fmiSetString returns out of memmory error. TODO: check the implementation of fmisetstring.*/%>
     <%/*if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetStringParameter(fmi1me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"*/%>
     fmi_AInitInputs:=1;
   initial equation
@@ -2203,34 +2203,58 @@ template importFMU2ModelExchange(FmiImport fmi)
 ::=
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
+  /* Get Real parameters and their value references */
+  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1)
+  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2)
+  /* Get Integer parameters and their value references */
+  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1)
+  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2)
+  /* Get Boolean parameters and their value references */
+  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1)
+  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2)
+  /* Get String parameters and their value references */
+  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1)
+  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2)
+  /* Get dependent Real parameters and their value references */
+  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1)
+  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2)
+  /* Get dependent Integer parameters and their value references */
+  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1)
+  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2)
+  /* Get dependent Boolean parameters and their value references */
+  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1)
+  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2)
+  /* Get dependent String parameters and their value references */
+  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1)
+  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2)
   /* Get input Real varibales and their value references */
-  let realInputVariablesVRs = dumpInputRealVariablesVRs(fmiModelVariablesList)
-  let realInputVariablesNames = dumpInputRealVariablesNames(fmiModelVariablesList)
-  let realInputVariablesReturnNames = dumpInputRealVariablesReturnNames(fmiModelVariablesList)
+  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1)
+  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2)
+  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3)
   /* Get input Integer varibales and their value references */
-  let integerInputVariablesVRs = dumpInputIntegerVariablesVRs(fmiModelVariablesList)
-  let integerInputVariablesNames = dumpInputIntegerVariablesNames(fmiModelVariablesList)
-  let integerInputVariablesReturnNames = dumpInputIntegerVariablesReturnNames(fmiModelVariablesList)
+  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1)
+  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2)
+  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3)
   /* Get input Boolean varibales and their value references */
-  let booleanInputVariablesVRs = dumpInputBooleanVariablesVRs(fmiModelVariablesList)
-  let booleanInputVariablesNames = dumpInputBooleanVariablesNames(fmiModelVariablesList)
-  let booleanInputVariablesReturnNames = dumpInputBooleanVariablesReturnNames(fmiModelVariablesList)
+  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1)
+  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2)
+  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3)
   /* Get input String varibales and their value references */
-  let stringInputVariablesVRs = dumpInputStringVariablesVRs(fmiModelVariablesList)
-  let stringStartVariablesNames = dumpInputStringVariablesNames(fmiModelVariablesList)
-  let stringInputVariablesReturnNames = dumpInputStringVariablesReturnNames(fmiModelVariablesList)
+  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1)
+  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2)
+  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3)
   /* Get output Real varibales and their value references */
-  let realOutputVariablesVRs = dumpOutputRealVariablesVRs(fmiModelVariablesList)
-  let realOutputVariablesNames = dumpOutputRealVariablesNames(fmiModelVariablesList)
+  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1)
+  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2)
   /* Get output Integer varibales and their value references */
-  let integerOutputVariablesVRs = dumpOutputIntegerVariablesVRs(fmiModelVariablesList)
-  let integerOutputVariablesNames = dumpOutputIntegerVariablesNames(fmiModelVariablesList)
+  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1)
+  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2)
   /* Get output Boolean varibales and their value references */
-  let booleanOutputVariablesVRs = dumpOutputBooleanVariablesVRs(fmiModelVariablesList)
-  let booleanOutputVariablesNames = dumpOutputBooleanVariablesNames(fmiModelVariablesList)
+  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1)
+  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2)
   /* Get output String varibales and their value references */
-  let stringOutputVariablesVRs = dumpOutputStringVariablesVRs(fmiModelVariablesList)
-  let stringOutputVariablesNames = dumpOutputStringVariablesNames(fmiModelVariablesList)
+  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1)
+  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     constant String fmuFile = "<%fmuFileName%>";
@@ -2500,34 +2524,58 @@ template importFMU1CoSimulationStandAlone(FmiImport fmi)
 ::=
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
+  /* Get Real parameters and their value references */
+  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1)
+  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2)
+  /* Get Integer parameters and their value references */
+  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1)
+  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2)
+  /* Get Boolean parameters and their value references */
+  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1)
+  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2)
+  /* Get String parameters and their value references */
+  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1)
+  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2)
+  /* Get dependent Real parameters and their value references */
+  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1)
+  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2)
+  /* Get dependent Integer parameters and their value references */
+  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1)
+  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2)
+  /* Get dependent Boolean parameters and their value references */
+  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1)
+  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2)
+  /* Get dependent String parameters and their value references */
+  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1)
+  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2)
   /* Get input Real varibales and their value references */
-  let realInputVariablesVRs = dumpInputRealVariablesVRs(fmiModelVariablesList)
-  let realInputVariablesNames = dumpInputRealVariablesNames(fmiModelVariablesList)
-  let realInputVariablesReturnNames = dumpInputRealVariablesReturnNames(fmiModelVariablesList)
+  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1)
+  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2)
+  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3)
   /* Get input Integer varibales and their value references */
-  let integerInputVariablesVRs = dumpInputIntegerVariablesVRs(fmiModelVariablesList)
-  let integerInputVariablesNames = dumpInputIntegerVariablesNames(fmiModelVariablesList)
-  let integerInputVariablesReturnNames = dumpInputIntegerVariablesReturnNames(fmiModelVariablesList)
+  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1)
+  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2)
+  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3)
   /* Get input Boolean varibales and their value references */
-  let booleanInputVariablesVRs = dumpInputBooleanVariablesVRs(fmiModelVariablesList)
-  let booleanInputVariablesNames = dumpInputBooleanVariablesNames(fmiModelVariablesList)
-  let booleanInputVariablesReturnNames = dumpInputBooleanVariablesReturnNames(fmiModelVariablesList)
+  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1)
+  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2)
+  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3)
   /* Get input String varibales and their value references */
-  let stringInputVariablesVRs = dumpInputStringVariablesVRs(fmiModelVariablesList)
-  let stringStartVariablesNames = dumpInputStringVariablesNames(fmiModelVariablesList)
-  let stringInputVariablesReturnNames = dumpInputStringVariablesReturnNames(fmiModelVariablesList)
+  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1)
+  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2)
+  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3)
   /* Get output Real varibales and their value references */
-  let realOutputVariablesVRs = dumpOutputRealVariablesVRs(fmiModelVariablesList)
-  let realOutputVariablesNames = dumpOutputRealVariablesNames(fmiModelVariablesList)
+  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1)
+  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2)
   /* Get output Integer varibales and their value references */
-  let integerOutputVariablesVRs = dumpOutputIntegerVariablesVRs(fmiModelVariablesList)
-  let integerOutputVariablesNames = dumpOutputIntegerVariablesNames(fmiModelVariablesList)
+  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1)
+  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2)
   /* Get output Boolean varibales and their value references */
-  let booleanOutputVariablesVRs = dumpOutputBooleanVariablesVRs(fmiModelVariablesList)
-  let booleanOutputVariablesNames = dumpOutputBooleanVariablesNames(fmiModelVariablesList)
+  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1)
+  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2)
   /* Get output String varibales and their value references */
-  let stringOutputVariablesVRs = dumpOutputStringVariablesVRs(fmiModelVariablesList)
-  let stringOutputVariablesNames = dumpOutputStringVariablesNames(fmiModelVariablesList)
+  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1)
+  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
@@ -2922,649 +2970,152 @@ template dumpFMIModelVariablePlacementAnnotation(Integer x1Placement, Integer x2
   else if boolAnd(generateOutputConnectors, stringEq(causality, "output")) then " annotation(Placement(transformation(extent={{"+x1Placement+","+y1Placement+"},{"+x2Placement+","+y2Placement+"}})))"
 end dumpFMIModelVariablePlacementAnnotation;
 
-template dumpRealParametersVRs(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters value references"
+template dumpVariables(list<ModelVariables> fmiModelVariablesList, String type, String variabilityCausality, Boolean dependent, Integer what)
 ::=
   <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpRealParameterVR(fmiModelVariable) ;separator=", "%>
+  <%fmiModelVariablesList |> fmiModelVariable => dumpVariable(fmiModelVariable, type, variabilityCausality, dependent, what) ;separator=", "%>
   >>
-end dumpRealParametersVRs;
+end dumpVariables;
 
-template dumpRealParameterVR(ModelVariables fmiModelVariable)
- "Helper for dumpParameterRealVariablesVRs"
+template dumpVariable(ModelVariables fmiModelVariable, String type, String variabilityCausality, Boolean dependent, Integer what)
 ::=
+if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
+<<
+<%
 match fmiModelVariable
-case REALVARIABLE(variability="parameter", hasStartValue=true) then
-  <<
-  <%valueReference%>
-  >>
-end dumpRealParameterVR;
-
-template dumpIntegerParametersVRs(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters value references"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpIntegerParameterVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpIntegerParametersVRs;
-
-template dumpIntegerParameterVR(ModelVariables fmiModelVariable)
- "Helper for dumpParameterRealVariablesVRs"
-::=
+  case REALVARIABLE(variability="parameter", hasStartValue=true) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
+<<
+<%
 match fmiModelVariable
-case INTEGERVARIABLE(variability="parameter", hasStartValue=true) then
-  <<
-  <%valueReference%>
-  >>
-end dumpIntegerParameterVR;
-
-template dumpBooleanParametersVRs(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters value references"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpBooleanParameterVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpBooleanParametersVRs;
-
-template dumpBooleanParameterVR(ModelVariables fmiModelVariable)
- "Helper for dumpParameterRealVariablesVRs"
-::=
+  case INTEGERVARIABLE(variability="parameter", hasStartValue=true) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
+<<
+<%
 match fmiModelVariable
-case BOOLEANVARIABLE(variability="parameter", hasStartValue=true) then
-  <<
-  <%valueReference%>
-  >>
-end dumpBooleanParameterVR;
-
-template dumpStringParametersVRs(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters value references"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpStringParameterVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpStringParametersVRs;
-
-template dumpStringParameterVR(ModelVariables fmiModelVariable)
- "Helper for dumpParameterRealVariablesVRs"
-::=
+  case BOOLEANVARIABLE(variability="parameter", hasStartValue=true) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
+<<
+<%
 match fmiModelVariable
-case STRINGVARIABLE(variability="parameter", hasStartValue=true) then
-  <<
-  <%valueReference%>
-  >>
-end dumpStringParameterVR;
-
-template dumpRealParametersNames(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters names"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpRealParameterName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpRealParametersNames;
-
-template dumpRealParameterName(ModelVariables fmiModelVariable)
- "Helper for dumpParameterRealVariablesNames"
-::=
+  case STRINGVARIABLE(variability="parameter", hasStartValue=true) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
+<<
+<%
 match fmiModelVariable
-case REALVARIABLE(variability="parameter", hasStartValue=true) then
-  <<
-  <%name%>
-  >>
-end dumpRealParameterName;
-
-template dumpIntegerParametersNames(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters names"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpIntegerParameterName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpIntegerParametersNames;
-
-template dumpIntegerParameterName(ModelVariables fmiModelVariable)
- "Helper for dumpParameterRealVariablesNames"
-::=
+  case REALVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
+<<
+<%
 match fmiModelVariable
-case INTEGERVARIABLE(variability="parameter", hasStartValue=true) then
-  <<
-  <%name%>
-  >>
-end dumpIntegerParameterName;
-
-template dumpBooleanParametersNames(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters names"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpBooleanParameterName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpBooleanParametersNames;
-
-template dumpBooleanParameterName(ModelVariables fmiModelVariable)
- "Helper for dumpParameterRealVariablesNames"
-::=
+  case INTEGERVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
+<<
+<%
 match fmiModelVariable
-case BOOLEANVARIABLE(variability="parameter", hasStartValue=true) then
-  <<
-  <%name%>
-  >>
-end dumpBooleanParameterName;
-
-template dumpStringParametersNames(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters names"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpStringParameterName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpStringParametersNames;
-
-template dumpStringParameterName(ModelVariables fmiModelVariable)
- "Helper for dumpParameterRealVariablesNames"
-::=
+  case BOOLEANVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
+<<
+<%
 match fmiModelVariable
-case STRINGVARIABLE(variability="parameter", hasStartValue=true) then
-  <<
-  <%name%>
-  >>
-end dumpStringParameterName;
-
-template dumpDependentRealParametersVRs(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters value references"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpDependentRealParameterVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpDependentRealParametersVRs;
-
-template dumpDependentRealParameterVR(ModelVariables fmiModelVariable)
- "Helper for dumpDependentParameterRealVariablesVRs"
-::=
+  case STRINGVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "real"), stringEq(variabilityCausality, "input")) then
+<<
+<%
 match fmiModelVariable
-case REALVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
-  <<
-  <%valueReference%>
-  >>
-end dumpDependentRealParameterVR;
-
-template dumpDependentIntegerParametersVRs(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters value references"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpDependentIntegerParameterVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpDependentIntegerParametersVRs;
-
-template dumpDependentIntegerParameterVR(ModelVariables fmiModelVariable)
- "Helper for dumpDependentParameterRealVariablesVRs"
-::=
+  case REALVARIABLE(causality="input") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
+%>
+>>
+else if boolAnd(stringEq(type, "integer"), stringEq(variabilityCausality, "input")) then
+<<
+<%
 match fmiModelVariable
-case INTEGERVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
-  <<
-  <%valueReference%>
-  >>
-end dumpDependentIntegerParameterVR;
-
-template dumpDependentBooleanParametersVRs(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters value references"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpDependentBooleanParameterVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpDependentBooleanParametersVRs;
-
-template dumpDependentBooleanParameterVR(ModelVariables fmiModelVariable)
- "Helper for dumpDependentParameterRealVariablesVRs"
-::=
+  case INTEGERVARIABLE(causality="input") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
+%>
+>>
+else if boolAnd(stringEq(type, "boolean"), stringEq(variabilityCausality, "input")) then
+<<
+<%
 match fmiModelVariable
-case BOOLEANVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
-  <<
-  <%valueReference%>
-  >>
-end dumpDependentBooleanParameterVR;
-
-template dumpDependentStringParametersVRs(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters value references"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpDependentStringParameterVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpDependentStringParametersVRs;
-
-template dumpDependentStringParameterVR(ModelVariables fmiModelVariable)
- "Helper for dumpDependentParameterRealVariablesVRs"
-::=
+  case BOOLEANVARIABLE(causality="input") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
+%>
+>>
+else if boolAnd(stringEq(type, "string"), stringEq(variabilityCausality, "input")) then
+<<
+<%
 match fmiModelVariable
-case STRINGVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
-  <<
-  <%valueReference%>
-  >>
-end dumpDependentStringParameterVR;
-
-template dumpDependentRealParametersNames(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters names"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpDependentRealParameterName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpDependentRealParametersNames;
-
-template dumpDependentRealParameterName(ModelVariables fmiModelVariable)
- "Helper for dumpDependentParameterRealVariablesNames"
-::=
+  case STRINGVARIABLE(causality="input") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
+%>
+>>
+else if boolAnd(stringEq(type, "real"), stringEq(variabilityCausality, "output")) then
+<<
+<%
 match fmiModelVariable
-case REALVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
-  <<
-  <%name%>
-  >>
-end dumpDependentRealParameterName;
-
-template dumpDependentIntegerParametersNames(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters names"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpDependentIntegerParameterName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpDependentIntegerParametersNames;
-
-template dumpDependentIntegerParameterName(ModelVariables fmiModelVariable)
- "Helper for dumpDependentParameterRealVariablesNames"
-::=
+  case REALVARIABLE(variability = "",causality="") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+  case REALVARIABLE(variability = "",causality="output") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "integer"), stringEq(variabilityCausality, "output")) then
+<<
+<%
 match fmiModelVariable
-case INTEGERVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
-  <<
-  <%name%>
-  >>
-end dumpDependentIntegerParameterName;
-
-template dumpDependentBooleanParametersNames(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters names"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpDependentBooleanParameterName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpDependentBooleanParametersNames;
-
-template dumpDependentBooleanParameterName(ModelVariables fmiModelVariable)
- "Helper for dumpDependentParameterRealVariablesNames"
-::=
+  case INTEGERVARIABLE(variability = "",causality="") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+  case INTEGERVARIABLE(variability = "",causality="output") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "boolean"), stringEq(variabilityCausality, "output")) then
+<<
+<%
 match fmiModelVariable
-case BOOLEANVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
-  <<
-  <%name%>
-  >>
-end dumpDependentBooleanParameterName;
-
-template dumpDependentStringParametersNames(list<ModelVariables> fmiModelVariablesList)
- "Returns the list of parameters names"
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpDependentStringParameterName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpDependentStringParametersNames;
-
-template dumpDependentStringParameterName(ModelVariables fmiModelVariable)
- "Helper for dumpDependentParameterRealVariablesNames"
-::=
+  case BOOLEANVARIABLE(variability = "",causality="") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+  case BOOLEANVARIABLE(variability = "",causality="output") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+else if boolAnd(stringEq(type, "string"), stringEq(variabilityCausality, "output")) then
+<<
+<%
 match fmiModelVariable
-case STRINGVARIABLE(variability="parameter", hasStartValue=false, isFixed=false) then
-  <<
-  <%name%>
-  >>
-end dumpDependentStringParameterName;
-
-template dumpInputRealVariablesVRs(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputRealVariableVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputRealVariablesVRs;
-
-template dumpInputRealVariableVR(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case REALVARIABLE(causality="input") then
-  <<
-  <%valueReference%>
-  >>
-end dumpInputRealVariableVR;
-
-template dumpInputRealVariablesNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputRealVariableName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputRealVariablesNames;
-
-template dumpInputRealVariableName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case REALVARIABLE(causality="input") then
-  <<
-  <%name%>
-  >>
-end dumpInputRealVariableName;
-
-template dumpInputRealVariablesReturnNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputRealVariableReturnName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputRealVariablesReturnNames;
-
-template dumpInputRealVariableReturnName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case REALVARIABLE(causality="input") then
-  <<
-  fmi_input_<%name%>
-  >>
-end dumpInputRealVariableReturnName;
-
-template dumpInputIntegerVariablesVRs(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputIntegerVariableVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputIntegerVariablesVRs;
-
-template dumpInputIntegerVariableVR(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case INTEGERVARIABLE(causality="input") then
-  <<
-  <%valueReference%>
-  >>
-end dumpInputIntegerVariableVR;
-
-template dumpInputIntegerVariablesNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputIntegerVariableName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputIntegerVariablesNames;
-
-template dumpInputIntegerVariableName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case INTEGERVARIABLE(causality="input") then
-  <<
-  <%name%>
-  >>
-end dumpInputIntegerVariableName;
-
-template dumpInputIntegerVariablesReturnNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputIntegerVariableReturnName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputIntegerVariablesReturnNames;
-
-template dumpInputIntegerVariableReturnName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case INTEGERVARIABLE(causality="input") then
-  <<
-  fmi_input_<%name%>
-  >>
-end dumpInputIntegerVariableReturnName;
-
-template dumpInputBooleanVariablesVRs(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputBooleanVariableVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputBooleanVariablesVRs;
-
-template dumpInputBooleanVariableVR(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case BOOLEANVARIABLE(causality="input") then
-  <<
-  <%valueReference%>
-  >>
-end dumpInputBooleanVariableVR;
-
-template dumpInputBooleanVariablesNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputBooleanVariableName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputBooleanVariablesNames;
-
-template dumpInputBooleanVariableName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case BOOLEANVARIABLE(causality="input") then
-  <<
-  <%name%>
-  >>
-end dumpInputBooleanVariableName;
-
-template dumpInputBooleanVariablesReturnNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputBooleanVariableReturnName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputBooleanVariablesReturnNames;
-
-template dumpInputBooleanVariableReturnName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case BOOLEANVARIABLE(causality="input") then
-  <<
-  fmi_input_<%name%>
-  >>
-end dumpInputBooleanVariableReturnName;
-
-template dumpInputStringVariablesVRs(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputStringVariableVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputStringVariablesVRs;
-
-template dumpInputStringVariableVR(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case STRINGVARIABLE(causality="input") then
-  <<
-  <%valueReference%>
-  >>
-end dumpInputStringVariableVR;
-
-template dumpInputStringVariablesNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputStringVariableName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputStringVariablesNames;
-
-template dumpInputStringVariableName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case STRINGVARIABLE(causality="input") then
-  <<
-  <%name%>
-  >>
-end dumpInputStringVariableName;
-
-template dumpInputStringVariablesReturnNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpInputStringVariableReturnName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpInputStringVariablesReturnNames;
-
-template dumpInputStringVariableReturnName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case STRINGVARIABLE(causality="input") then
-  <<
-  fmi_input_<%name%>
-  >>
-end dumpInputStringVariableReturnName;
-
-template dumpOutputRealVariablesVRs(list<ModelVariables> fmiModelVariablesList)
- "Generates the Model Variables value reference arrays."
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpOutputRealVariableVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpOutputRealVariablesVRs;
-
-template dumpOutputRealVariableVR(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case REALVARIABLE(variability = "",causality="") then
-  <<
-  <%valueReference%>
-  >>
-case REALVARIABLE(variability = "",causality="output") then
-  <<
-  <%valueReference%>
-  >>
-end dumpOutputRealVariableVR;
-
-template dumpOutputRealVariablesNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpOutputRealVariableName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpOutputRealVariablesNames;
-
-template dumpOutputRealVariableName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case REALVARIABLE(variability = "",causality="") then
-  <<
-  <%name%>
-  >>
-case REALVARIABLE(variability = "",causality="output") then
-  <<
-  <%name%>
-  >>
-end dumpOutputRealVariableName;
-
-template dumpOutputIntegerVariablesVRs(list<ModelVariables> fmiModelVariablesList)
- "Generates the Model Variables value reference arrays."
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpOutputIntegerVariableVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpOutputIntegerVariablesVRs;
-
-template dumpOutputIntegerVariableVR(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case INTEGERVARIABLE(variability = "",causality="") then
-  <<
-  <%valueReference%>
-  >>
-case INTEGERVARIABLE(variability = "",causality="output") then
-  <<
-  <%valueReference%>
-  >>
-end dumpOutputIntegerVariableVR;
-
-template dumpOutputIntegerVariablesNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpOutputIntegerVariableName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpOutputIntegerVariablesNames;
-
-template dumpOutputIntegerVariableName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case INTEGERVARIABLE(variability = "",causality="") then
-  <<
-  <%name%>
-  >>
-case INTEGERVARIABLE(variability = "",causality="output") then
-  <<
-  <%name%>
-  >>
-end dumpOutputIntegerVariableName;
-
-template dumpOutputBooleanVariablesVRs(list<ModelVariables> fmiModelVariablesList)
- "Generates the Model Variables value reference arrays."
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpOutputBooleanVariableVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpOutputBooleanVariablesVRs;
-
-template dumpOutputBooleanVariableVR(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case BOOLEANVARIABLE(variability = "",causality="") then
-  <<
-  <%valueReference%>
-  >>
-case BOOLEANVARIABLE(variability = "",causality="output") then
-  <<
-  <%valueReference%>
-  >>
-end dumpOutputBooleanVariableVR;
-
-template dumpOutputBooleanVariablesNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpOutputBooleanVariableName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpOutputBooleanVariablesNames;
-
-template dumpOutputBooleanVariableName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case BOOLEANVARIABLE(variability = "",causality="") then
-  <<
-  <%name%>
-  >>
-case BOOLEANVARIABLE(variability = "",causality="output") then
-  <<
-  <%name%>
-  >>
-end dumpOutputBooleanVariableName;
-
-template dumpOutputStringVariablesVRs(list<ModelVariables> fmiModelVariablesList)
- "Generates the Model Variables value reference arrays."
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpOutputStringVariableVR(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpOutputStringVariablesVRs;
-
-template dumpOutputStringVariableVR(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case STRINGVARIABLE(variability = "",causality="") then
-  <<
-  <%valueReference%>
-  >>
-case STRINGVARIABLE(variability = "",causality="output") then
-  <<
-  <%valueReference%>
-  >>
-end dumpOutputStringVariableVR;
-
-template dumpOutputStringVariablesNames(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpOutputStringVariableName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpOutputStringVariablesNames;
-
-template dumpOutputStringVariableName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case STRINGVARIABLE(variability = "",causality="") then
-  <<
-  <%name%>
-  >>
-case STRINGVARIABLE(variability = "",causality="output") then
-  <<
-  <%name%>
-  >>
-end dumpOutputStringVariableName;
+  case STRINGVARIABLE(variability = "",causality="") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+  case STRINGVARIABLE(variability = "",causality="output") then
+    if intEq(what,1) then valueReference else if intEq(what,2) then name
+%>
+>>
+end dumpVariable;
 
 template dumpOutputGetEnumerationVariables(list<ModelVariables> fmiModelVariablesList, list<TypeDefinitions> fmiTypeDefinitionsList, String fmiGetFunction, String fmiType)
 ::=
