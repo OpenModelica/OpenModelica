@@ -294,23 +294,12 @@ fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
   if (comp->loggingOn)
     comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiSetString: nvr = %d",  nvr);
   for (i=0; i<nvr; i++) {
-    char* string = (char*)comp->fmuData->localData[0]->stringVars[vr[i]];
     if (vrOutOfRange(comp, "fmiSetString", vr[i], NUMBER_OF_STRINGS))
       return fmiError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiSetString: #s%d# = '%s'", vr[i], value[i]);
-    if (nullPointer(comp, "fmiSetString", "value[i]", value[i]))
+    if (setString(comp, vr[i],value[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
-    if (string==NULL || strlen(string) < strlen(value[i])) {
-      if (string) comp->functions.freeMemory(string);
-      comp->fmuData->localData[0]->stringVars[vr[i]] = *(fmiString*)comp->functions.allocateMemory(1+strlen(value[i]), sizeof(char));
-      if (!comp->fmuData->localData[0]->stringVars[vr[i]]) {
-        comp->state = modelError;
-        comp->functions.logger(NULL, comp->instanceName, fmiError, "error", "fmiSetString: Out of memory.");
-        return fmiError;
-      }
-    }
-    strcpy((char*)comp->fmuData->localData[0]->stringVars[vr[i]], (char*)value[i]);
   }
   return fmiOK;
 }

@@ -61,10 +61,6 @@ typedef struct {
   DATA* fmuData;
 } ModelInstance;
 
-fmiStatus setString(fmiComponent comp, fmiValueReference vr, fmiString value){
-  return fmiSetString(comp, &vr, 1, &value);
-}
-
 #ifdef __cplusplus
 }
 #endif

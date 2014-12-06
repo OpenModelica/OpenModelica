@@ -762,6 +762,7 @@ case SIMCODE(__) then
   fmi2Boolean getBoolean(ModelInstance* comp, const fmi2ValueReference vr);
   fmi2Status setBoolean(ModelInstance* comp, const fmi2ValueReference vr, const fmi2Boolean value);
   fmi2String getString(ModelInstance* comp, const fmi2ValueReference vr);
+  fmi2Status setString(ModelInstance* comp, const fmi2ValueReference vr, fmi2String value);
   fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value);
   >>
   else
@@ -774,6 +775,7 @@ case SIMCODE(__) then
   fmiBoolean getBoolean(ModelInstance* comp, const fmiValueReference vr);
   fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value);
   fmiString getString(ModelInstance* comp, const fmiValueReference vr);
+  fmiStatus setString(ModelInstance* comp, const fmiValueReference vr, fmiString value);
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value);
   >>
   %>
@@ -800,6 +802,7 @@ case SIMCODE(__) then
     <%getBooleanFunction2(modelInfo)%>
     <%setBooleanFunction2(modelInfo)%>
     <%getStringFunction2(modelInfo)%>
+    <%setStringFunction2(modelInfo)%>
     <%setExternalFunction2(modelInfo)%>
   >>
   else
@@ -812,6 +815,7 @@ case SIMCODE(__) then
     <%getBooleanFunction(modelInfo)%>
     <%setBooleanFunction(modelInfo)%>
     <%getStringFunction(modelInfo)%>
+    <%setStringFunction(modelInfo)%>
     <%setExternalFunction(modelInfo)%>
   >>
   %>
@@ -1100,7 +1104,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars, numAl
 end setRealFunction;
 
 template getIntegerFunction(ModelInfo modelInfo)
- "Generates setInteger function for c file."
+ "Generates getInteger function for c file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -1137,7 +1141,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 end setIntegerFunction;
 
 template getBooleanFunction(ModelInfo modelInfo)
- "Generates setBoolean function for c file."
+ "Generates getBoolean function for c file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -1148,7 +1152,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.boolParamVars |> var => SwitchParameters(var, "booleanParameter") ;separator="\n"%>
         <%vars.boolAliasVars |> var => SwitchAliasVars(var, "Boolean", "!") ;separator="\n"%>
         default:
-            return 0;
+            return fmiFalse;
     }
   }
 
@@ -1176,7 +1180,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 end setBooleanFunction;
 
 template getStringFunction(ModelInfo modelInfo)
- "Generates setString function for c file."
+ "Generates getString function for c file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -1187,7 +1191,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.stringParamVars |> var => SwitchParameters(var, "stringParameter") ;separator="\n"%>
         <%vars.stringAliasVars |> var => SwitchAliasVars(var, "string", "") ;separator="\n"%>
         default:
-            return 0;
+            return "";
     }
   }
 
@@ -1200,21 +1204,22 @@ template setStringFunction(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  fmiString getString(ModelInstance* comp, const fmiValueReference vr) {
+  fmiStatus setString(ModelInstance* comp, const fmiValueReference vr, fmiString value) {
     switch (vr) {
         <%vars.stringAlgVars |> var => SwitchVarsSet(var, "stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParametersSet(var, "stringParameter") ;separator="\n"%>
         <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var, "String", "") ;separator="\n"%>
         default:
-            return 0;
+            return fmiError;
     }
+    return fmiOK;
   }
 
   >>
 end setStringFunction;
 
 template setExternalFunction(ModelInfo modelInfo)
- "Generates setString function for c file."
+ "Generates setExternal function for c file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -1309,7 +1314,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 end getIntegerFunction2;
 
 template setIntegerFunction2(ModelInfo modelInfo)
- "Generates setInteger function for c file."
+ "Generates getInteger function for c file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -1339,7 +1344,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.boolParamVars |> var => SwitchParameters(var, "booleanParameter") ;separator="\n"%>
         <%vars.boolAliasVars |> var => SwitchAliasVars(var, "Boolean", "!") ;separator="\n"%>
         default:
-            return 0;
+            return fmi2False;
     }
   }
 
@@ -1347,7 +1352,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 end getBooleanFunction2;
 
 template setBooleanFunction2(ModelInfo modelInfo)
- "Generates setBoolean function for c file."
+ "Generates getBoolean function for c file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -1367,7 +1372,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 end setBooleanFunction2;
 
 template getStringFunction2(ModelInfo modelInfo)
- "Generates setString function for c file."
+ "Generates getString function for c file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -1378,7 +1383,7 @@ case MODELINFO(vars=SIMVARS(__)) then
         <%vars.stringParamVars |> var => SwitchParameters(var, "stringParameter") ;separator="\n"%>
         <%vars.stringAliasVars |> var => SwitchAliasVars(var, "string", "") ;separator="\n"%>
         default:
-            return 0;
+            return "";
     }
   }
 
@@ -1391,21 +1396,22 @@ template setStringFunction2(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  fmi2String getString(ModelInstance* comp, const fmi2ValueReference vr) {
+  fmi2Status setString(ModelInstance* comp, const fmi2ValueReference vr, fmi2String value) {
     switch (vr) {
         <%vars.stringAlgVars |> var => SwitchVarsSet(var, "stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParametersSet(var, "stringParameter") ;separator="\n"%>
         <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var, "String", "") ;separator="\n"%>
         default:
-            return 0;
+            return fmi2Error;
     }
+    return fmi2OK;
   }
 
   >>
 end setStringFunction2;
 
 template setExternalFunction2(ModelInfo modelInfo)
- "Generates setString function for c file."
+ "Generates setExternal function for c file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
@@ -1935,7 +1941,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(integerParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetIntegerParameter(fmi1me, {"+integerParametersVRs+"}, {"+integerParametersNames+"});"%>
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetBooleanParameter(fmi1me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
     <%/*Opening the below line fails the JuliansBib.mos test. fmiSetString returns out of memmory error. TODO: check the implementation of fmisetstring.*/%>
-    <%/*if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetStringParameter(fmi1me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"*/%>
+    <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetStringParameter(fmi1me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
     fmi_AInitInputs:=1;
   initial equation
     <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi1Functions.fmi1GetReal(fmi1me, {"+realDependentParametersVRs+"}, fmi_Initialized);"%>

@@ -649,23 +649,12 @@ fmi2Status fmi2SetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetString: nvr = %d", nvr)
 
   for (i = 0; i < nvr; i++) {
-    char* string = (char*)comp->fmuData->localData[0]->stringVars[vr[i]];
     if (vrOutOfRange(comp, "fmi2SetString", vr[i], NUMBER_OF_STRINGS))
       return fmi2Error;
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetString: #s%d# = '%s'", vr[i], value[i])
 
-    if (nullPointer(comp, "fmi2SetString", "value[i]", value[i]))
+    if (setString(comp, vr[i], value[i]) != fmi2OK) // to be implemented by the includer of this file
       return fmi2Error;
-    if (string == NULL || strlen(string) < strlen(value[i])) {
-      if (string) comp->functions->freeMemory(string);
-      comp->fmuData->localData[0]->stringVars[vr[i]] = *(fmi2String*)comp->functions->allocateMemory(1 + strlen(value[i]), sizeof(char));
-      if (!comp->fmuData->localData[0]->stringVars[vr[i]]) {
-        comp->state = modelError;
-        FILTERED_LOG(comp, fmi2Error, LOG_STATUSERROR, "fmi2SetString: Out of memory.")
-        return fmi2Error;
-      }
-    }
-    strcpy((char*)comp->fmuData->localData[0]->stringVars[vr[i]], (char*)value[i]);
   }
   return fmi2OK;
 }
