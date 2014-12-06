@@ -424,7 +424,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
     /* prevent emit if noeventemit flag is used */
     if (!(omc_flag[FLAG_NOEVENTEMIT]))
-      sim_result.emit(&sim_result,data);
+      sim_result.emit(&sim_result, data);
 
     data->simulationInfo.terminal = 0;
   }
@@ -444,7 +444,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
   {
     rt_accumulate(SIM_TIMER_TOTAL);
 
-    infoStreamPrint(LOG_STATS, 0, "### STATISTICS ###");
+    infoStreamPrint(LOG_STATS, 1, "### STATISTICS ###");
 
     infoStreamPrint(LOG_STATS, 1, "timer");
     infoStreamPrint(LOG_STATS, 0, "%12gs          reading init.xml", rt_accumulated(SIM_TIMER_INIT_XML));
@@ -456,7 +456,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] event-handling", rt_accumulated(SIM_TIMER_EVENT), rt_accumulated(SIM_TIMER_EVENT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
 
-    if(solverInfo->solverMethod != S_OPTIMIZATION)
+    if(S_OPTIMIZATION != solverInfo->solverMethod)
       infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] simulation", rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT), (rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT))/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     else
       infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] optimization", rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT), (rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT))/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
@@ -502,13 +502,11 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     messageClose(LOG_STATS_V);
 
     infoStreamPrint(LOG_STATS_V, 1, "linear systems");
-    for(ui=0; ui<data->modelData.nLinearSystems; ui++){
+    for(ui=0; ui<data->modelData.nLinearSystems; ui++)
      printLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
-    }
     messageClose(LOG_STATS_V);
 
-    infoStreamPrint(LOG_STATS, 0, "### END STATISTICS ###");
-
+    messageClose(LOG_STATS);
     rt_tick(SIM_TIMER_TOTAL);
   }
 
