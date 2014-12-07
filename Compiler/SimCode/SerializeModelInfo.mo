@@ -372,10 +372,20 @@ algorithm
       then ();
 
       // Custom operations - operations that can not be described in a general way because they are specialized
+    case DAE.NEW_DUMMY_DER()
+      equation
+        File.write(file,"{\"op\":\"dummy-der\",\"display\":\"dummy derivative");
+        File.write(file,"]\",\"data\":[\"");
+        File.write(file,crefStr(op.chosen));
+        File.write(file,"\"");
+        min(match () case () equation File.write(file,",\""); File.writeEscape(file,crefStr(cr),escape=File.Escape.JSON); File.write(file,"\""); then true; end match
+            for cr in op.candidates);
+        File.write(file,"\"]}");
+      then ();
 
     else
       equation
-        Error.addInternalError("serializeOperation failed", sourceInfo());
+        Error.addInternalError("serializeOperation failed: " + anyString(op), sourceInfo());
       then fail();
   end match;
 end serializeOperation;
