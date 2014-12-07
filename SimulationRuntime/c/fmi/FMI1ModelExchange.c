@@ -35,6 +35,10 @@ extern "C" {
 #include "FMICommon.h"
 #include "FMI1Common.h"
 
+/*
+ * FMI version 1.0 ModelExchange functions
+ */
+
 void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_directory, char* instanceName, int debugLogging)
 {
   FMI1ModelExchange* FMI1ME = malloc(sizeof(FMI1ModelExchange));
@@ -57,21 +61,27 @@ void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   strcpy(FMI1ME->FMIWorkingDirectory, working_directory);
   FMI1ME->FMIImportInstance = fmi1_import_parse_xml(FMI1ME->FMIImportContext, FMI1ME->FMIWorkingDirectory);
   if(!FMI1ME->FMIImportInstance) {
-    fprintf(stderr, "Error parsing the XML file contained in %s\n", FMI1ME->FMIWorkingDirectory);
+    ModelicaFormatError("Error parsing the XML file contained in %s\n", FMI1ME->FMIWorkingDirectory);
     return 0;
   }
   /* Load the binary (dll/so) */
-  jm_status_enu_t status;
-  status = fmi1_import_create_dllfmu(FMI1ME->FMIImportInstance, FMI1ME->FMICallbackFunctions, 0);
+  jm_status_enu_t status = fmi1_import_create_dllfmu(FMI1ME->FMIImportInstance, FMI1ME->FMICallbackFunctions, 0);
   if (status == jm_status_error) {
-    fprintf(stderr, "Could not create the DLL loading mechanism(C-API).\n");
+    ModelicaError("Loading of FMU dynamic link library failed.\n");
     return 0;
   }
   FMI1ME->FMIInstanceName = (char*) malloc(strlen(instanceName)+1);
   strcpy(FMI1ME->FMIInstanceName, instanceName);
   FMI1ME->FMIDebugLogging = debugLogging;
-  fmi1_import_instantiate_model(FMI1ME->FMIImportInstance, FMI1ME->FMIInstanceName);
-  fmi1_import_set_debug_logging(FMI1ME->FMIImportInstance, FMI1ME->FMIDebugLogging);
+  jm_status_enu_t instantiateModelStatus = fmi1_import_instantiate_model(FMI1ME->FMIImportInstance, FMI1ME->FMIInstanceName);
+  if (instantiateModelStatus == jm_status_error) {
+    ModelicaError("fmiInstantiateModel failed.\n");
+    return 0;
+  }
+  fmi1_status_t debugLoggingStatus = fmi1_import_set_debug_logging(FMI1ME->FMIImportInstance, FMI1ME->FMIDebugLogging);
+  if (debugLoggingStatus != fmi1_status_ok && debugLoggingStatus != fmi1_status_warning) {
+    ModelicaMessage("fmiSetDebugLogging failed.\n");
+  }
   FMI1ME->FMIToleranceControlled = fmi1_true;
   FMI1ME->FMIRelativeTolerance = 0.001;
   FMI1ME->FMIEventInfo = malloc(sizeof(fmi1_event_info_t));
@@ -93,12 +103,14 @@ void FMI1ModelExchangeDestructor_OMC(void* in_fmi1me)
 
 /*
  * Wrapper for the FMI function fmiInitialize.
- * Returns next time event.
  */
 void fmi1Initialize_OMC(void* in_fmi1me)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
   fmi1_status_t status = fmi1_import_initialize(FMI1ME->FMIImportInstance, FMI1ME->FMIToleranceControlled, FMI1ME->FMIRelativeTolerance, FMI1ME->FMIEventInfo);
+  if (status != fmi1_status_ok && status != fmi1_status_warning) {
+    ModelicaError("fmiInitialize failed\n");
+  }
 }
 
 /*
@@ -108,7 +120,10 @@ void fmi1Initialize_OMC(void* in_fmi1me)
 void fmi1SetTime_OMC(void* in_fmi1me, double time)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_import_set_time(FMI1ME->FMIImportInstance, time);
+  fmi1_status_t status = fmi1_import_set_time(FMI1ME->FMIImportInstance, time);
+  if (status != fmi1_status_ok && status != fmi1_status_warning) {
+    ModelicaError("fmiSetTime failed\n");
+  }
 }
 
 /*
@@ -119,7 +134,10 @@ void fmi1SetTime_OMC(void* in_fmi1me, double time)
 void fmi1GetContinuousStates_OMC(void* in_fmi1me, int numberOfContinuousStates, double flowParams, double* states)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_import_get_continuous_states(FMI1ME->FMIImportInstance, (fmi1_real_t*)states, numberOfContinuousStates);
+  fmi1_status_t status = fmi1_import_get_continuous_states(FMI1ME->FMIImportInstance, (fmi1_real_t*)states, numberOfContinuousStates);
+  if (status != fmi1_status_ok && status != fmi1_status_warning) {
+    ModelicaError("fmiGetContinuousStates failed\n");
+  }
 }
 
 /*
@@ -130,7 +148,10 @@ void fmi1GetContinuousStates_OMC(void* in_fmi1me, int numberOfContinuousStates, 
 double fmi1SetContinuousStates_OMC(void* in_fmi1me, int numberOfContinuousStates, double flowParams, double* states)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_import_set_continuous_states(FMI1ME->FMIImportInstance, (fmi1_real_t*)states, numberOfContinuousStates);
+  fmi1_status_t status = fmi1_import_set_continuous_states(FMI1ME->FMIImportInstance, (fmi1_real_t*)states, numberOfContinuousStates);
+  if (status != fmi1_status_ok && status != fmi1_status_warning) {
+    ModelicaError("fmiSetContinuousStates failed\n");
+  }
   return flowParams;
 }
 
@@ -142,7 +163,10 @@ double fmi1SetContinuousStates_OMC(void* in_fmi1me, int numberOfContinuousStates
 void fmi1GetEventIndicators_OMC(void* in_fmi1me, int numberOfEventIndicators, double flowStates, double* events)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_import_get_event_indicators(FMI1ME->FMIImportInstance, (fmi1_real_t*)events, numberOfEventIndicators);
+  fmi1_status_t status = fmi1_import_get_event_indicators(FMI1ME->FMIImportInstance, (fmi1_real_t*)events, numberOfEventIndicators);
+  if (status != fmi1_status_ok && status != fmi1_status_warning) {
+    ModelicaError("fmiGetEventIndicators failed\n");
+  }
 }
 
 /*
@@ -153,7 +177,10 @@ void fmi1GetEventIndicators_OMC(void* in_fmi1me, int numberOfEventIndicators, do
 void fmi1GetDerivatives_OMC(void* in_fmi1me, int numberOfContinuousStates, double flowStates, double* states)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_import_get_derivatives(FMI1ME->FMIImportInstance, (fmi1_real_t*)states, numberOfContinuousStates);
+  fmi1_status_t status = fmi1_import_get_derivatives(FMI1ME->FMIImportInstance, (fmi1_real_t*)states, numberOfContinuousStates);
+  if (status != fmi1_status_ok && status != fmi1_status_warning) {
+    ModelicaError("fmiGetDerivatives failed\n");
+  }
 }
 
 /*
@@ -163,12 +190,14 @@ void fmi1GetDerivatives_OMC(void* in_fmi1me, int numberOfContinuousStates, doubl
 int fmi1EventUpdate_OMC(void* in_fmi1me, int intermediateResults)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_import_eventUpdate(FMI1ME->FMIImportInstance, intermediateResults, FMI1ME->FMIEventInfo);
+  fmi1_status_t status = fmi1_import_eventUpdate(FMI1ME->FMIImportInstance, intermediateResults, FMI1ME->FMIEventInfo);
+  if (status != fmi1_status_ok && status != fmi1_status_warning) {
+    ModelicaError("fmiEventUpdate failed\n");
+  }
   return FMI1ME->FMIEventInfo->stateValuesChanged;
 }
 
 /*
- * Wrapper for the FMI function fmiEventUpdate.
  * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns FMI EventInfo nextEventTime
  */
@@ -185,7 +214,10 @@ int fmi1CompletedIntegratorStep_OMC(void* in_fmi1me, double flowStates)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
   fmi1_boolean_t callEventUpdate = fmi1_false;
-  fmi1_import_completed_integrator_step(FMI1ME->FMIImportInstance, &callEventUpdate);
+  fmi1_status_t status = fmi1_import_completed_integrator_step(FMI1ME->FMIImportInstance, &callEventUpdate);
+  if (status != fmi1_status_ok && status != fmi1_status_warning) {
+    ModelicaError("fmiCompletedIntegratorStep failed\n");
+  }
   return callEventUpdate;
 }
 

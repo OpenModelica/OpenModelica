@@ -789,7 +789,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     if (status == jm_status_error) {
       fmi1_import_free(fmi);
       fmi_import_free_context(context);
-      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Loading of FMU dynamic link library failed."), NULL, 0);
       return 0;
     }
 #endif
@@ -820,7 +820,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     if (status == jm_status_error) {
       fmi2_import_free(fmi);
       fmi_import_free_context(context);
-      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Loading of FMU dynamic link library failed."), NULL, 0);
       return 0;
     }
 #endif

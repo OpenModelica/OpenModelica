@@ -56,13 +56,14 @@ fmi2_value_reference_t* real_to_fmi2_value_reference(int numberOfValueReferences
 {
   fmi2_value_reference_t* valuesReferences_int = malloc(sizeof(fmi2_value_reference_t)*numberOfValueReferences);
   int i;
-  for (i = 0 ; i < numberOfValueReferences ; i++)
+  for (i = 0 ; i < numberOfValueReferences ; i++) {
     valuesReferences_int[i] = (int)valuesReferences[i];
+  }
   return valuesReferences_int;
 }
 
 /*
- * Wrapper for the FMI function fmiGetReal.
+ * Wrapper for the FMI function fmi2GetReal.
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns realValues.
  */
@@ -71,15 +72,18 @@ void fmi2GetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realVal
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
-    fmi2_import_get_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
+    fmi2_status_t status = fmi2_import_get_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
     free(valuesReferences_int);
+    if (status != fmi2_status_ok && status != fmi2_status_warning) {
+      ModelicaError("fmi2GetReal failed\n");
+    }
   } else if (fmiType == 2) {
 
   }
 }
 
 /*
- * Wrapper for the FMI function fmiSetReal.
+ * Wrapper for the FMI function fmi2SetReal.
  * Returns status.
  */
 void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realValuesReferences, double* realValues, int fmiType)
@@ -87,15 +91,18 @@ void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realVal
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
-    fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
+    fmi2_status_t status = fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
     free(valuesReferences_int);
+    if (status != fmi2_status_ok && status != fmi2_status_warning) {
+      ModelicaError("fmi2SetReal failed\n");
+    }
   } else if (fmiType == 2) {
 
   }
 }
 
 /*
- * Wrapper for the FMI function fmiGetInteger.
+ * Wrapper for the FMI function fmi2GetInteger.
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns integerValues.
  */
@@ -104,15 +111,18 @@ void fmi2GetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* inte
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
-    fmi2_import_get_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
+    fmi2_status_t status = fmi2_import_get_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
     free(valuesReferences_int);
+    if (status != fmi2_status_ok && status != fmi2_status_warning) {
+      ModelicaError("fmi2GetInteger failed\n");
+    }
   } else if (fmiType == 2) {
 
   }
 }
 
 /*
- * Wrapper for the FMI function fmiSetInteger.
+ * Wrapper for the FMI function fmi2SetInteger.
  * Returns status.
  */
 void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, int fmiType)
@@ -120,15 +130,18 @@ void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* inte
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
-    fmi2_import_set_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
+    fmi2_status_t status = fmi2_import_set_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
     free(valuesReferences_int);
+    if (status != fmi2_status_ok && status != fmi2_status_warning) {
+      ModelicaError("fmi2SetInteger failed\n");
+    }
   } else if (fmiType == 2) {
 
   }
 }
 
 /*
- * Wrapper for the FMI function fmiGetBoolean.
+ * Wrapper for the FMI function fmi2GetBoolean.
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns booleanValues.
  */
@@ -137,15 +150,18 @@ void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* bool
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
-    fmi2_import_get_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
+    fmi2_status_t status = fmi2_import_get_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
     free(valuesReferences_int);
+    if (status != fmi2_status_ok && status != fmi2_status_warning) {
+      ModelicaError("fmi2GetBoolean failed\n");
+    }
   } else if (fmiType == 2) {
 
   }
 }
 
 /*
- * Wrapper for the FMI function fmiSetBoolean.
+ * Wrapper for the FMI function fmi2SetBoolean.
  * Returns status.
  */
 void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, int fmiType)
@@ -153,15 +169,18 @@ void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* bool
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
-    fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
+    fmi2_status_t status = fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
     free(valuesReferences_int);
+    if (status != fmi2_status_ok && status != fmi2_status_warning) {
+      ModelicaError("fmi2SetBoolean failed\n");
+    }
   } else if (fmiType == 2) {
 
   }
 }
 
 /*
- * Wrapper for the FMI function fmiGetString.
+ * Wrapper for the FMI function fmi2GetString.
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns stringValues.
  */
@@ -170,15 +189,18 @@ void fmi2GetString_OMC(void* in_fmi2, int numberOfValueReferences, double* strin
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
-    fmi2_import_get_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
+    fmi2_status_t status = fmi2_import_get_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
     free(valuesReferences_int);
+    if (status != fmi2_status_ok && status != fmi2_status_warning) {
+      ModelicaError("fmi2GetString failed\n");
+    }
   } else if (fmiType == 2) {
 
   }
 }
 
 /*
- * Wrapper for the FMI function fmiSetString.
+ * Wrapper for the FMI function fmi2SetString.
  * Returns status.
  */
 void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, int fmiType)
@@ -186,8 +208,11 @@ void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* strin
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
-    fmi2_import_set_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
+    fmi2_status_t status = fmi2_import_set_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
     free(valuesReferences_int);
+    if (status != fmi2_status_ok && status != fmi2_status_warning) {
+      ModelicaError("fmi2SetString failed\n");
+    }
   } else if (fmiType == 2) {
 
   }
