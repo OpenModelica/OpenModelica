@@ -79,8 +79,8 @@ protected import SimCodeUtil;
 
 public function solveInitialSystem "author: lochel
   This function generates a algebraic system of equations for the initialization and solves it."
-  input BackendDAE.BackendDAE inDAE;
-  output Option<BackendDAE.BackendDAE> outInitDAE;
+  input BackendDAE.BackendDAE inDAE "simulation system";
+  output Option<BackendDAE.BackendDAE> outInitDAE "initialization system";
   output Boolean outUseHomotopy;
   output list<BackendDAE.Equation> outRemovedInitialEquations;
 protected
@@ -836,7 +836,7 @@ end warnAboutEqns2;
 // section for selecting initialization variables
 //
 //   - unfixed state
-//   - unfixed parameter
+//   - unfixed parameter (TODO: change this to secondary parameter)
 //   - unfixed discrete -> pre(vd)
 // =============================================================================
 
@@ -845,7 +845,7 @@ protected function selectInitializationVariablesDAE "author: lochel
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.Variables outVars;
 protected
-  BackendDAE.EqSystems systs;
+  list<BackendDAE.EqSystem> systs;
   BackendDAE.Variables knownVars, alias;
 algorithm
   BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knownVars, aliasVars=alias)) := inDAE;
@@ -855,7 +855,7 @@ algorithm
 end selectInitializationVariablesDAE;
 
 protected function selectInitializationVariables "author: lochel"
-  input BackendDAE.EqSystems inEqSystems;
+  input list<BackendDAE.EqSystem> inEqSystems;
   output BackendDAE.Variables outVars;
 algorithm
   outVars := BackendVariable.emptyVars();
@@ -867,13 +867,10 @@ protected function selectInitializationVariables1 "author: lochel"
   input BackendDAE.Variables inVars;
   output BackendDAE.Variables outVars;
 protected
-  BackendDAE.Variables vars;
-  BackendDAE.StateSets stateSets;
+  BackendDAE.Variables orderedVars;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, stateSets=stateSets) := inEqSystem;
-  outVars := BackendVariable.traverseBackendDAEVars(vars, selectInitializationVariables2, inVars);
-  // ignore not the states of the statesets
-  // outVars := List.fold(stateSets, selectInitialStateSetVars, outVars);
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars) := inEqSystem;
+  outVars := BackendVariable.traverseBackendDAEVars(orderedVars, selectInitializationVariables2, inVars);
 end selectInitializationVariables1;
 
 protected function selectInitializationVariables2 "author: lochel"
@@ -882,37 +879,35 @@ protected function selectInitializationVariables2 "author: lochel"
   output BackendDAE.Var outVar;
   output BackendDAE.Variables outVars;
 algorithm
-  (outVar,outVars) := matchcontinue (inVar,inVars)
+  (outVar, outVars) := matchcontinue (inVar, inVars)
     local
-      BackendDAE.Var var, preVar;
+      BackendDAE.Var preVar;
       BackendDAE.Variables vars;
       DAE.ComponentRef cr, preCR;
       DAE.Type ty;
       DAE.InstDims arryDim;
 
     // unfixed state
-    case (var as BackendDAE.VAR(varKind=BackendDAE.STATE()), vars) equation
-      false = BackendVariable.varFixed(var);
-      // ignore stateset variables
-      // false = isStateSetVar(cr);
-      vars = BackendVariable.addVar(var, vars);
-    then (var, vars);
+    case (BackendDAE.VAR(varKind=BackendDAE.STATE()), vars) equation
+      false = BackendVariable.varFixed(inVar);
+      vars = BackendVariable.addVar(inVar, vars);
+    then (inVar, vars);
 
     // unfixed parameter
-    case (var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), vars) equation
-      false = BackendVariable.varFixed(var);
-      vars = BackendVariable.addVar(var, vars);
-    then (var, vars);
+    case (BackendDAE.VAR(varKind=BackendDAE.PARAM()), vars) equation
+      false = BackendVariable.varFixed(inVar);
+      vars = BackendVariable.addVar(inVar, vars);
+    then (inVar, vars);
 
     // unfixed discrete -> pre(vd)
-    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), vars) equation
-      false = BackendVariable.varFixed(var);
+    case (BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), vars) equation
+      false = BackendVariable.varFixed(inVar);
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
       vars = BackendVariable.addVar(preVar, vars);
-    then (var, vars);
+    then (inVar, vars);
 
-    else (inVar,inVars);
+    else (inVar, inVars);
   end matchcontinue;
 end selectInitializationVariables2;
 
