@@ -1912,11 +1912,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant Integer numberOfEventIndicators = <%listLength(fmiInfo.fmiNumberOfEventIndicators)%>;
     Real fmi_z[numberOfEventIndicators] "Events Indicators";
     Boolean fmi_z_positive[numberOfEventIndicators](each fixed = true);
-    parameter Real fmi_AStartTime(fixed=false);
+    parameter Real flowStartTime(fixed=false);
     Real flowTime;
-    parameter Real fmi_Initialized(fixed=false);
+    parameter Real flowInitialized(fixed=false);
     parameter Real flowParamsStart(fixed=false);
-    parameter Real fmi_AInitInputs(fixed=false);
+    parameter Real flowInitInputs(fixed=false);
     Real flowStatesInputs;
     <%if not stringEq(realInputVariablesVRs, "") then "Real "+realInputVariablesReturnNames+";"%>
     <%if not stringEq(integerInputVariablesVRs, "") then "Real "+integerInputVariablesReturnNames+";"%>
@@ -1928,11 +1928,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Real triggerDSSEvent;
     Real nextEventTime;
   initial equation
-    fmi_AStartTime = fmi1Functions.fmi1SetTime(fmi1me, time, 1);
-    fmi_Initialized = fmi1Functions.fmi1Initialize(fmi1me, flowParamsStart+fmi_AInitInputs+fmi_AStartTime);
+    flowStartTime = fmi1Functions.fmi1SetTime(fmi1me, time, 1);
+    flowInitialized = fmi1Functions.fmi1Initialize(fmi1me, flowParamsStart+flowInitInputs+flowStartTime);
     <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
     <<
-    fmi_x = fmi1Functions.fmi1GetContinuousStates(fmi1me, numberOfContinuousStates, flowParamsStart+fmi_Initialized);
+    fmi_x = fmi1Functions.fmi1GetContinuousStates(fmi1me, numberOfContinuousStates, flowParamsStart+flowInitialized);
     >>
     %>
   initial algorithm
@@ -1942,14 +1942,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetBooleanParameter(fmi1me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
     <%/*Opening the below line fails the JuliansBib.mos test. fmiSetString returns out of memmory error. TODO: check the implementation of fmisetstring.*/%>
     <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetStringParameter(fmi1me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
-    fmi_AInitInputs:=1;
+    flowInitInputs:=1;
   initial equation
-    <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi1Functions.fmi1GetReal(fmi1me, {"+realDependentParametersVRs+"}, fmi_Initialized);"%>
-    <%if not stringEq(integerDependentParametersVRs, "") then "{"+integerDependentParametersNames+"} = fmi1Functions.fmi1GetInteger(fmi1me, {"+integerDependentParametersVRs+"}, fmi_Initialized);"%>
-    <%if not stringEq(booleanDependentParametersVRs, "") then "{"+booleanDependentParametersNames+"} = fmi1Functions.fmi1GetBoolean(fmi1me, {"+booleanDependentParametersVRs+"}, fmi_Initialized);"%>
-    <%if not stringEq(stringDependentParametersVRs, "") then "{"+stringDependentParametersNames+"} = fmi1Functions.fmi1GetString(fmi1me, {"+stringDependentParametersVRs+"}, fmi_Initialized);"%>
+    <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi1Functions.fmi1GetReal(fmi1me, {"+realDependentParametersVRs+"}, flowInitialized);"%>
+    <%if not stringEq(integerDependentParametersVRs, "") then "{"+integerDependentParametersNames+"} = fmi1Functions.fmi1GetInteger(fmi1me, {"+integerDependentParametersVRs+"}, flowInitialized);"%>
+    <%if not stringEq(booleanDependentParametersVRs, "") then "{"+booleanDependentParametersNames+"} = fmi1Functions.fmi1GetBoolean(fmi1me, {"+booleanDependentParametersVRs+"}, flowInitialized);"%>
+    <%if not stringEq(stringDependentParametersVRs, "") then "{"+stringDependentParametersNames+"} = fmi1Functions.fmi1GetString(fmi1me, {"+stringDependentParametersVRs+"}, flowInitialized);"%>
   equation
-    flowTime = fmi1Functions.fmi1SetTime(fmi1me, time, fmi_Initialized);
+    flowTime = fmi1Functions.fmi1SetTime(fmi1me, time, flowInitialized);
     <%if not stringEq(realInputVariablesVRs, "") then "{"+realInputVariablesReturnNames+"} = fmi1Functions.fmi1SetReal(fmi1me, {"+realInputVariablesVRs+"}, {"+realInputVariablesNames+"});"%>
     <%if not stringEq(integerInputVariablesVRs, "") then "{"+integerInputVariablesReturnNames+"} = fmi1Functions.fmi1SetInteger(fmi1me, {"+integerInputVariablesVRs+"}, {"+integerInputVariablesNames+"});"%>
     <%if not stringEq(booleanInputVariablesVRs, "") then "{"+booleanInputVariablesReturnNames+"} = fmi1Functions.fmi1SetBoolean(fmi1me, {"+booleanInputVariablesVRs+"}, {"+booleanInputVariablesNames+"});"%>
