@@ -874,10 +874,8 @@ QString StringHandler::escapeString(QString value)
 {
   QString res;
   value = value.trimmed();
-  for (int i = 0; i < value.length(); i++)
-  {
-    switch (value[i].toAscii())
-    {
+  for (int i = 0; i < value.length(); i++) {
+    switch (value[i].toAscii()) {
       case '"':  res.append('\"');     break;
       case '\\': res.append("\\\\");   break;
       case '\a': res.append("\\a");    break;

@@ -338,7 +338,7 @@ bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QS
     }
     mpSimulationMessage->mStream = atts.value("stream");
     mpSimulationMessage->mType = StringHandler::getSimulationMessageType(atts.value("type"));
-    mpSimulationMessage->mText = atts.value("text");
+    mpSimulationMessage->mText = Qt::convertFromPlainText(atts.value("text"));
     mpSimulationMessage->mLevel = mLevel;
     mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
     if (mLevel > 0) {
