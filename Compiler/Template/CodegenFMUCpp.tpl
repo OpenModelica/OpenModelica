@@ -61,66 +61,68 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
   let name = lastIdentOfPath(modelInfo.name)
-  let()= textFile(simulationHeaderFile(simCode,"","",true,false), 'OMCpp<%name%>.h')
-  let()= textFile(simulationCppFile(simCode,false), 'OMCpp<%name%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
-  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
-  let()= textFile(simulationTypesHeaderFile(simCode,modelInfo.functions,literals, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
-  let()= textFile(fmuModelWrapperFile(simCode,guid,name), 'OMCpp<%name%>FMU.cpp')
-  let()= textFile(fmuModelDescriptionFileCpp(simCode,guid), 'modelDescription.xml')
-  let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
-  let()= textFile(simulationInitCppFile(simCode,false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
-  let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
-  let()= textFile(simulationExtensionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>Extension.h')
-  let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
-  let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
-  let()= textFile(simulationJacobianCppFile(simCode,false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
-  let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-  let()= textFile(simulationWriteOutputCppFile(simCode,false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-  let()= textFile(simulationStateSelectionCppFile(simCode,false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
-  let()= textFile(simulationStateSelectionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>StateSelection.h')
+  let &extraFuncs = buffer "" /*BUFD*/
+  let &extraFuncsDecl = buffer "" /*BUFD*/
+  let()= textFile(simulationHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "","","",true,false), 'OMCpp<%name%>.h')
+  let()= textFile(simulationCppFile(simCode, extraFuncs ,extraFuncsDecl, "",false), 'OMCpp<%name%>.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
+  let()= textFile(simulationFunctionsFile(simCode, extraFuncs ,extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
+  let()= textFile(simulationTypesHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
+  let()= textFile(fmuModelWrapperFile(simCode, extraFuncs ,extraFuncsDecl, "",guid,name), 'OMCpp<%name%>FMU.cpp')
+  let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs ,extraFuncsDecl, "",guid), 'modelDescription.xml')
+  let()= textFile(simulationInitHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
+  let()= textFile(simulationInitCppFile(simCode, extraFuncs ,extraFuncsDecl, "",false),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationFactoryFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
+  let()= textFile(simulationExtensionHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
+  let()= textFile(simulationExtensionCppFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
+  let()= textFile(simulationJacobianHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
+  let()= textFile(simulationJacobianCppFile(simCode, extraFuncs ,extraFuncsDecl, "",false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+  let()= textFile(simulationWriteOutputHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
+  let()= textFile(simulationWriteOutputCppFile(simCode, extraFuncs ,extraFuncsDecl, "",false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationStateSelectionCppFile(simCode, extraFuncs ,extraFuncsDecl, "",false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+  let()= textFile(simulationStateSelectionHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
   let()= textFile(fmudeffile(simCode,"1.0"), '<%name%>.def')
-  let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
+  let()= textFile(fmuMakefile(target,simCode, extraFuncs ,extraFuncsDecl, ""), '<%fileNamePrefix%>_FMU.makefile')
   let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_)  =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian,false) ;separator="")
+          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode, extraFuncs ,extraFuncsDecl, "",contextAlgloopJacobian,false) ;separator="")
          ;separator="")
-  let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop,false)
-  let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode,contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
-  let()= textFile(calcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
+  let algs = algloopfiles(listAppend(allEquations,initialEquations),simCode, extraFuncs ,extraFuncsDecl, "",contextAlgloop,false)
+  let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode, extraFuncs ,extraFuncsDecl, "",contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
+  let()= textFile(calcHelperMainfile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
  ""
    // Return empty result since result written to files directly
 end translateModel;
 
-template fmuModelDescriptionFileCpp(SimCode simCode, String guid)
+template fmuModelDescriptionFileCpp(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
 case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
-  <%fmiModelDescriptionCpp(simCode,guid)%>
+  <%fmiModelDescriptionCpp(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace,guid)%>
 
   >>
 end fmuModelDescriptionFileCpp;
 
-template fmiModelDescriptionCpp(SimCode simCode, String guid)
+template fmiModelDescriptionCpp(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
-//  <%UnitDefinitions(simCode)%>
-//  <%TypeDefinitions(simCode)%>
-//  <%VendorAnnotations(simCode)%>
+//  <%UnitDefinitions(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+//  <%TypeDefinitions(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+//  <%VendorAnnotations(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
 match simCode
 case SIMCODE(__) then
   <<
   <fmiModelDescription
-    <%fmiModelDescriptionAttributesCpp(simCode,guid)%>>
+    <%fmiModelDescriptionAttributesCpp(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace,guid)%>>
     <%CodegenFMU.DefaultExperiment(simulationSettingsOpt)%>
     <%CodegenFMU.ModelVariables(modelInfo,"1.0")%>
   </fmiModelDescription>
   >>
 end fmiModelDescriptionCpp;
 
-template fmiModelDescriptionAttributesCpp(SimCode simCode, String guid)
+template fmiModelDescriptionAttributesCpp(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -135,7 +137,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let generationDateAndTime = xsdateTime(getCurrentDateTime())
   let variableNamingConvention = 'structured'
   let numberOfContinuousStates = vi.numStateVars
-  let numberOfEventIndicators = zerocrosslength(simCode)
+  let numberOfEventIndicators = zerocrosslength(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)
 //  description="<%description%>"
 //    author="<%author%>"
 //    version="<%version%>"
@@ -152,7 +154,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   >>
 end fmiModelDescriptionAttributesCpp;
 
-template fmuModelWrapperFile(SimCode simCode, String guid, String name)
+template fmuModelWrapperFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String guid, String name)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -176,7 +178,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include "OMCpp<%lastIdentOfPath(modelInfo.name)%>Extension.h"
 
   <%ModelDefineData(modelInfo)%>
-  #define NUMBER_OF_EVENT_INDICATORS <%zerocrosslength(simCode)%>
+  #define NUMBER_OF_EVENT_INDICATORS <%zerocrosslength(simCode, extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
 
   #include "FMU/FMUWrapper.cpp"
 
@@ -439,7 +441,7 @@ match platform
   >>
 end getPlatformString2;
 
-template fmuMakefile(String target,SimCode simCode)
+template fmuMakefile(String target,SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
 match target

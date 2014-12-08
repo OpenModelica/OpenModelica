@@ -13,67 +13,68 @@ import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when
 
 
 
-template translateModel(SimCode simCode, Boolean useFlatArrayNotation) ::=
+template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__), makefileParams= MAKEFILE_PARAMS(__)) then
   let target  = simulationCodeTarget()
-
+  let &extraFuncs = buffer "" /*BUFD*/
+  let &extraFuncsDecl = buffer "" /*BUFD*/
   let()= textFile(
    (if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then
-        simulationMainFileAnalyzation(simCode)
+        simulationMainFileAnalyzation(simCode ,extraFuncs ,extraFuncsDecl, "")
     else
-        simulationMainFile(simCode, (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else ""))
+        simulationMainFile(simCode ,extraFuncs ,extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else ""))
    ), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
-  let()= textFile(simulationHeaderFile(simCode, generateAdditionalIncludes(simCode, Util.isSome(hpcOmMemory)), generateAdditionalProtectedMemberDeclaration(simCode, Util.isSome(hpcOmMemory)), false, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
-  let()= textFile(simulationCppFile(simCode,Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
-  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
-  let()= textFile(simulationTypesHeaderFile(simCode,modelInfo.functions,literals,useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
-  let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
-  let()= textFile(simulationInitHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Initialize.h')
-  let()= textFile(simulationInitCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
-  let()= textFile(simulationInitParameterCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
-  let()= textFile(simulationInitExtVarsCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
-  let()= textFile(simulationInitAliasVarsCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
-  let()= textFile(simulationInitAlgVarsCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
-  let()= textFile(simulationJacobianHeaderFile(simCode), 'OMCpp<%fileNamePrefix%>Jacobian.h')
-  let()= textFile(simulationJacobianCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
-  let()= textFile(simulationStateSelectionCppFile(simCode,Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
-  let()= textFile(simulationStateSelectionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>StateSelection.h')
-  let()= textFile(simulationExtensionHeaderFile(simCode),'OMCpp<%fileNamePrefix%>Extension.h')
-  let()= textFile(simulationExtensionCppFile(simCode),'OMCpp<%fileNamePrefix%>Extension.cpp')
-  let()= textFile(simulationWriteOutputHeaderFile(simCode),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-  let()= textFile(simulationWriteOutputCppFile(simCode,Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
-  let()= textFile(simulationWriteOutputParameterCppFile(simCode, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
-  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
-  let()= textFile(simulationFactoryFile(simCode),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
-  let()= textFile(simulationMainRunScript(simCode), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode)%>')
+  let()= textFile(simulationHeaderFile(simCode ,extraFuncs ,extraFuncsDecl, "", generateAdditionalIncludes(simCode ,extraFuncs ,extraFuncsDecl, "", Util.isSome(hpcOmMemory)), generateAdditionalProtectedMemberDeclaration(simCode ,extraFuncs ,extraFuncsDecl, "", Util.isSome(hpcOmMemory)), false, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
+  let()= textFile(simulationCppFile(simCode ,extraFuncs ,extraFuncsDecl, "",Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(simCode ,extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
+  let()= textFile(simulationFunctionsFile(simCode ,extraFuncs ,extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
+  let()= textFile(simulationTypesHeaderFile(simCode ,extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals,useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
+  let()= textFile(simulationMakefile(target,simCode ,extraFuncs ,extraFuncsDecl, ""), '<%fileNamePrefix%>.makefile')
+  let()= textFile(simulationInitHeaderFile(simCode ,extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
+  let()= textFile(simulationInitCppFile(simCode ,extraFuncs ,extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationInitParameterCppFile(simCode ,extraFuncs ,extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+  let()= textFile(simulationInitExtVarsCppFile(simCode ,extraFuncs ,extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
+  let()= textFile(simulationInitAliasVarsCppFile(simCode ,extraFuncs ,extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
+  let()= textFile(simulationInitAlgVarsCppFile(simCode ,extraFuncs ,extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
+  let()= textFile(simulationJacobianHeaderFile(simCode ,extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
+  let()= textFile(simulationJacobianCppFile(simCode ,extraFuncs ,extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+  let()= textFile(simulationStateSelectionCppFile(simCode ,extraFuncs ,extraFuncsDecl, "",Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+  let()= textFile(simulationStateSelectionHeaderFile(simCode ,extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
+  let()= textFile(simulationExtensionHeaderFile(simCode ,extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
+  let()= textFile(simulationExtensionCppFile(simCode ,extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
+  let()= textFile(simulationWriteOutputHeaderFile(simCode ,extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
+  let()= textFile(simulationWriteOutputCppFile(simCode ,extraFuncs ,extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode ,extraFuncs ,extraFuncsDecl, "", Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
+  let()= textFile(simulationWriteOutputParameterCppFile(simCode ,extraFuncs ,extraFuncsDecl, "", Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
+  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode ,extraFuncs ,extraFuncsDecl, "", Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
+  let()= textFile(simulationFactoryFile(simCode ,extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
+  let()= textFile(simulationMainRunScript(simCode ,extraFuncs ,extraFuncsDecl, ""), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode ,extraFuncs ,extraFuncsDecl, "")%>')
   let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_) =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode,contextAlgloopJacobian,Util.isSome(hpcOmMemory)) ;separator="")
+          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode ,extraFuncs ,extraFuncsDecl, "",contextAlgloopJacobian,Util.isSome(hpcOmMemory)) ;separator="")
          ;separator="")
-  let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode,contextAlgloop,Util.isSome(hpcOmMemory))
-  let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode,contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
-  let()= textFile(calcHelperMainfile(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
-  let()= textFile(calcHelperMainfile2(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp')
-  let()= textFile(calcHelperMainfile3(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp')
-  let()= textFile(calcHelperMainfile4(simCode), 'OMCpp<%fileNamePrefix%>CalcHelperMain4.cpp')
+  let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, "",contextAlgloop,Util.isSome(hpcOmMemory))
+  let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, "",contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
+  let()= textFile(calcHelperMainfile(simCode ,extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
+  let()= textFile(calcHelperMainfile2(simCode ,extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp')
+  let()= textFile(calcHelperMainfile3(simCode ,extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain3.cpp')
+  let()= textFile(calcHelperMainfile4(simCode ,extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain4.cpp')
  ""
   // empty result of the top-level template .., only side effects
 end translateModel;
 
-template Update(SimCode simCode, Boolean useFlatArrayNotation)
+template Update(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
 match simCode
 case SIMCODE(__) then
   <<
-  <%update(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation)%>
+  <%update(allEquations,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,contextOther,useFlatArrayNotation)%>
   >>
 end Update;
 
 // HEADER
-template generateAdditionalIncludes(SimCode simCode, Boolean useFlatArrayNotation)
+template generateAdditionalIncludes(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -97,12 +98,12 @@ case SIMCODE(__) then
       #include <boost/numeric/ublas/matrix_sparse.hpp>
       typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
      #endif
-     <%generateHpcomSpecificIncludes(simCode)%>
+     <%generateHpcomSpecificIncludes(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
    >>
 end generateAdditionalIncludes;
 
 
-template generateAdditionalProtectedMemberDeclaration(SimCode simCode, Boolean useFlatArrayNotation)
+template generateAdditionalProtectedMemberDeclaration(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
   match simCode
@@ -309,7 +310,7 @@ template getAddHpcomFuncHeadersTaskDep(tuple<Task,list<Integer>> taskIn)
   end match
 end getAddHpcomFuncHeadersTaskDep;
 
-template generateHpcomSpecificIncludes(SimCode simCode)
+template generateHpcomSpecificIncludes(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   let type = getConfigString(HPCOM_CODE)
   match type
@@ -366,7 +367,7 @@ template generateThreadFunctionHeaderDecl(Integer threadIdx)
 end generateThreadFunctionHeaderDecl;
 
 
-template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
+template simulationCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
   match simCode
@@ -389,14 +390,14 @@ template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
         ,_simData(simData)
         <%hpcomMemberVariableDefinition%>
         <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,true)%>
-        <%simulationInitFile(simCode, useFlatArrayNotation)%>
+        <%simulationInitFile(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)%>
       {
         //I don't know why this line is necessary if we link statically, but without it a segfault occurs
         _global_settings = globalSettings;
         //Number of equations
-        <%dimension1(simCode)%>
-        _dimZeroFunc= <%zerocrosslength(simCode)%>;
-        _dimTimeEvent = <%timeeventlength(simCode)%>;
+        <%dimension1(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+        _dimZeroFunc= <%zerocrosslength(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>;
+        _dimTimeEvent = <%timeeventlength(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>;
         //Number of residues
         <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
           <<
@@ -447,7 +448,7 @@ template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
         _event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
         //Todo: arrayReindex(modelInfo,useFlatArrayNotation)
         //Initialize array elements
-        <%initializeArrayElements(simCode,useFlatArrayNotation)%>
+        <%initializeArrayElements(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
 
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
 
@@ -469,38 +470,38 @@ template simulationCppFile(SimCode simCode, Boolean useFlatArrayNotation)
         deleteAlgloopSolverVariables();
       }
 
-      <%generateInitAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode,className)%>
+      <%generateInitAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,className)%>
 
-      <%generateDeleteAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode,className)%>
+      <%generateDeleteAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,className)%>
 
-      <%Update(simCode,useFlatArrayNotation)%>
+      <%Update(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
 
-      <%DefaultImplementationCode(simCode,useFlatArrayNotation)%>
-      <%checkForDiscreteEvents(discreteModelVars,simCode,useFlatArrayNotation)%>
-      <%giveZeroFunc1(zeroCrossings,simCode,useFlatArrayNotation)%>
+      <%DefaultImplementationCode(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%checkForDiscreteEvents(discreteModelVars,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%giveZeroFunc1(zeroCrossings,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
 
-      <%setConditions(simCode)%>
-      <%geConditions(simCode)%>
-      <%isConsistent(simCode)%>
+      <%setConditions(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+      <%geConditions(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+      <%isConsistent(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
 
-      <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
+      <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
 
-      <%generateStepStarted(listAppend(allEquations,initialEquations),simCode,useFlatArrayNotation)%>
+      <%generateStepStarted(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
 
-      <%generatehandleTimeEvent(timeEvents, simCode, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
-      <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
-      <%generateTimeEvent(timeEvents, simCode, true)%>
+      <%generatehandleTimeEvent(timeEvents, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+      <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+      <%generateTimeEvent(timeEvents, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, true)%>
 
-      <%isODE(simCode)%>
-      <%DimZeroFunc(simCode)%>
+      <%isODE(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+      <%DimZeroFunc(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
 
-      <%getCondition(zeroCrossings,whenClauses,simCode,useFlatArrayNotation)%>
-      <%handleSystemEvents(zeroCrossings,whenClauses,simCode)%>
-      <%saveAll(modelInfo,simCode,useFlatArrayNotation)%>
-      <%initPrevars(modelInfo,simCode,useFlatArrayNotation)%>
-      <%saveDiscreteVars(modelInfo,simCode,useFlatArrayNotation)%>
-      <%LabeledDAE(modelInfo.labels,simCode,useFlatArrayNotation)%>
-      <%giveVariables(modelInfo,useFlatArrayNotation,simCode)%>
+      <%getCondition(zeroCrossings,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%handleSystemEvents(zeroCrossings,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+      <%saveAll(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%initPrevars(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%saveDiscreteVars(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%LabeledDAE(modelInfo.labels,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%giveVariables(modelInfo,useFlatArrayNotation,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
       >>
   end match
 end simulationCppFile;
@@ -632,34 +633,34 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
 end getHpcomDestructorExtension;
 
 
-template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, SimCode simCode, Context context, Boolean useFlatArrayNotation)
+template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
 
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__)) then
-      let parCode = update2(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
+      let parCode = update2(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
-      <%equationFunctions(allEquations,whenClauses,simCode,contextSimulationDiscrete,useFlatArrayNotation,false)%>
+      <%equationFunctions(allEquations,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,contextSimulationDiscrete,useFlatArrayNotation,false)%>
 
-       <%createEvaluateAll(allEquations,whenClauses,simCode,contextOther,useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+       <%createEvaluateAll(allEquations,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,contextOther,useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
-      <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode,contextOther) %>
+      <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,contextOther) %>
 
-      <%createEvaluateConditions(simCode, allEquationsPlusWhen, whenClauses, modelInfo.name, context, useFlatArrayNotation)%>
+      <%createEvaluateConditions(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, allEquationsPlusWhen, whenClauses, modelInfo.name, context, useFlatArrayNotation)%>
       <%parCode%>
       >>
   end match
 end update;
 
 
-template createEvaluateConditions(SimCode simCode, list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, Absyn.Path name, Context context, Boolean useFlatArrayNotation)
+template createEvaluateConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, Absyn.Path name, Context context, Boolean useFlatArrayNotation)
 ::=
   match simCode
     case SIMCODE(__) then
     let &varDecls = buffer "" /*BUFD*/
-    let eqs = equationsForConditions |> eq => equation_function_call(eq,contextSimulationNonDiscrete,&varDecls, simCode,"evaluate"); separator="\n"
-    let reinit = (whenClauses |> when hasindex i0 => genreinits(when, &varDecls,i0,simCode,context,useFlatArrayNotation) ;separator="\n";empty)
+    let eqs = equationsForConditions |> eq => equation_function_call(eq,contextSimulationNonDiscrete,&varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,"evaluate"); separator="\n"
+    let reinit = (whenClauses |> when hasindex i0 => genreinits(when, &varDecls,i0,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,context,useFlatArrayNotation) ;separator="\n";empty)
     <<
     bool <%lastIdentOfPath(name)%>::evaluateConditions(const UPDATETYPE command)
     {
@@ -673,15 +674,15 @@ template createEvaluateConditions(SimCode simCode, list<SimEqSystem> allEquation
 end createEvaluateConditions;
 
 template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>> odeEquations, Absyn.Path name,
-                 list<SimWhenClause> whenClauses, SimCode simCode, Option<Schedule> hpcOmScheduleOpt, Context context,
+                 list<SimWhenClause> whenClauses, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Option<Schedule> hpcOmScheduleOpt, Context context,
                  String modelNamePrefixStr, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   /* let all_equations = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/,simCode))
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace))
     ;separator="\n") */
 
-  /* let reinit = (whenClauses |> when hasindex i0 => genreinits(when, &varDecls,i0,simCode,context)
+  /* let reinit = (whenClauses |> when hasindex i0 => genreinits(when, &varDecls,i0,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,context)
     ;separator="\n";empty) */
 
   // Head of function is the same for all schedulers and parallelization methods:
@@ -692,10 +693,10 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
   match hpcOmScheduleOpt
     case SOME(hpcOmSchedule as EMPTYSCHEDULE(__)) then
         <<
-        <%CodegenCpp.createEvaluate(odeEquations, whenClauses, simCode, context, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+        <%CodegenCpp.createEvaluate(odeEquations, whenClauses, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, context, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
         >>
     case SOME(hpcOmSchedule as LEVELSCHEDULE(useFixedAssignments=false, tasksOfLevels=tasksOfLevels)) then
-      let odeEqs = tasksOfLevels |> tasks => function_HPCOM_Level(allEquationsPlusWhen, tasks, type, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+      let odeEqs = tasksOfLevels |> tasks => function_HPCOM_Level(allEquationsPlusWhen, tasks, type, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
 
       match type
         case ("openmp") then
@@ -750,7 +751,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
         case ("pthreads")
         case ("pthreads_spin") then
           let &mainThreadCode = buffer "" /*BUFD*/
-          let eqsFuncs = arrayList(HpcOmScheduler.convertFixedLevelScheduleToTaskLists(hpcOmSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode, &mainThreadCode, useFlatArrayNotation); separator="\n"
+          let eqsFuncs = arrayList(HpcOmScheduler.convertFixedLevelScheduleToTaskLists(hpcOmSchedule, getConfigInt(NUM_PROC))) |> tasks hasindex i0 fromindex 0 => generateLevelFixedCodeForThread(allEquationsPlusWhen, tasks, i0, type, &varDecls, name, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, &mainThreadCode, useFlatArrayNotation); separator="\n"
           let threadLocks = List.intRange(getConfigInt(NUM_PROC)) |> tt => createLockByLockName('threadLock<%tt%>', "", type); separator="\n"
           <<
           <%eqsFuncs%>
@@ -763,7 +764,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
             <%mainThreadCode%>
             //_evaluateBarrier.wait(); //calculation finished
 
-            <%generateStateVarPrefetchCode(simCode)%>
+            <%generateStateVarPrefetchCode(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
             <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[0]", "evaluateODE", "MEASURETIME_MODELFUNCTIONS")%>
           }
           >>
@@ -772,7 +773,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
    case SOME(hpcOmSchedule as THREADSCHEDULE(__)) then
       match type
         case ("openmp") then
-          let taskEqs = function_HPCOM_Thread(allEquationsPlusWhen,hpcOmSchedule.threadTasks, type, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+          let taskEqs = function_HPCOM_Thread(allEquationsPlusWhen,hpcOmSchedule.threadTasks, type, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
           //using type: <%type%>
           <%functionHead%>
@@ -790,7 +791,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           }
           >>
         else
-          let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadFunc(allEquationsPlusWhen, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+          let threadFuncs = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => generateThreadFunc(allEquationsPlusWhen, hpcOmSchedule.threadTasks, type, i0, modelNamePrefixStr, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           let threadAssignLocks1 = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => assignLockByLockName(i0, "th_lock1", type); separator="\n"
           let threadReleaseLocks = arrayList(hpcOmSchedule.threadTasks) |> tt hasindex i0 fromindex 0 => releaseLockByLockName(i0, "th_lock", type); separator="\n"
           <<
@@ -808,7 +809,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
     case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
       match type
         case ("openmp") then
-          let taskEqs = function_HPCOM_TaskDep(hpcOmSchedule.tasks, allEquationsPlusWhen, type, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+          let taskEqs = function_HPCOM_TaskDep(hpcOmSchedule.tasks, allEquationsPlusWhen, type, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
           //using type: <%type%>
           <%functionHead%>
@@ -819,8 +820,8 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           }
           >>
         case ("tbb") then
-          let taskNodes = function_HPCOM_TaskDep_tbb(hpcOmSchedule.tasks, allEquationsPlusWhen, type, name, &varDecls, simCode, useFlatArrayNotation); separator="\n"
-          let taskFuncs = function_HPCOM_TaskDep_voidfunc(hpcOmSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+          let taskNodes = function_HPCOM_TaskDep_tbb(hpcOmSchedule.tasks, allEquationsPlusWhen, type, name, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+          let taskFuncs = function_HPCOM_TaskDep_voidfunc(hpcOmSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
           //using type: <%type%>
           //void functions for functionhandling in tbb_nodes
@@ -839,7 +840,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
     else ""
 end update2;
 
-template generateStateVarPrefetchCode(SimCode simCode)
+template generateStateVarPrefetchCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match simCode
     case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
@@ -852,11 +853,11 @@ template generateStateVarPrefetchCode(SimCode simCode)
   end match
 end generateStateVarPrefetchCode;
 
-template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, TaskList tasksOfLevel, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, TaskList tasksOfLevel, String iType, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   match(tasksOfLevel)
     case(PARALLELTASKLIST(__)) then
-      let odeEqs = tasks |> task => function_HPCOM_Level0(allEquationsPlusWhen,task,iType, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+      let odeEqs = tasks |> task => function_HPCOM_Level0(allEquationsPlusWhen,task,iType, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
       <<
       #pragma omp sections
       {
@@ -864,7 +865,7 @@ template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, TaskList t
       }
       >>
     case(SERIALTASKLIST(__)) then
-      let odeEqs = tasks |> task => function_HPCOM_Level0(allEquationsPlusWhen,task,iType, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+      let odeEqs = tasks |> task => function_HPCOM_Level0(allEquationsPlusWhen,task,iType, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
       <<
       #pragma omp master
       {
@@ -878,19 +879,19 @@ template function_HPCOM_Level(list<SimEqSystem> allEquationsPlusWhen, TaskList t
   end match
 end function_HPCOM_Level;
 
-template function_HPCOM_Level0(list<SimEqSystem> allEquationsPlusWhen, Task iTask, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+template function_HPCOM_Level0(list<SimEqSystem> allEquationsPlusWhen, Task iTask, String iType, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   <<
   #pragma omp section
   {
-    <%function_HPCOM_Task(allEquationsPlusWhen,iTask,iType, &varDecls, simCode, useFlatArrayNotation)%>
+    <%function_HPCOM_Task(allEquationsPlusWhen,iTask,iType, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)%>
   }
   >>
 end function_HPCOM_Level0;
 
-template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen, list<list<HpcOmSimCode.Task>> tasksOfLevels, Integer iThreadIdx, String iType, Text &varDecls, Absyn.Path name, SimCode simCode, Text &mainThreadCode, Boolean useFlatArrayNotation)
+template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen, list<list<HpcOmSimCode.Task>> tasksOfLevels, Integer iThreadIdx, String iType, Text &varDecls, Absyn.Path name, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text &mainThreadCode, Boolean useFlatArrayNotation)
 ::=
-  let odeEqs = tasksOfLevels |> tasks hasindex levelIdx => generateLevelFixedCodeForThreadLevel(allEquationsPlusWhen, tasks, iThreadIdx, iType, levelIdx, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+  let odeEqs = tasksOfLevels |> tasks hasindex levelIdx => generateLevelFixedCodeForThreadLevel(allEquationsPlusWhen, tasks, iThreadIdx, iType, levelIdx, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
   if (intGt(iThreadIdx, 0)) then
   <<
   void <%lastIdentOfPath(name)%>::evaluateThreadFunc<%iThreadIdx%>()
@@ -949,9 +950,9 @@ template generateLevelFixedCodeForThread(list<SimEqSystem> allEquationsPlusWhen,
 end generateLevelFixedCodeForThread;
 
 template generateLevelFixedCodeForThreadLevel(list<SimEqSystem> allEquationsPlusWhen, list<HpcOmSimCode.Task> tasksOfLevel,
-                                              Integer iThreadIdx, String iType, Integer iLevelIdx, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+                                              Integer iThreadIdx, String iType, Integer iLevelIdx, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
-  let tasks = tasksOfLevel |> t => function_HPCOM_Task(allEquationsPlusWhen, t, iType, varDecls, simCode, useFlatArrayNotation); separator="\n"
+  let tasks = tasksOfLevel |> t => function_HPCOM_Task(allEquationsPlusWhen, t, iType, varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
   <<
   //Start of Level
   <%if intEq(iThreadIdx, 0) then
@@ -974,9 +975,9 @@ template generateLevelFixedCodeForThreadLevel(list<SimEqSystem> allEquationsPlus
 end generateLevelFixedCodeForThreadLevel;
 
 template function_HPCOM_TaskDep(list<tuple<Task,list<Integer>>> tasks, list<SimEqSystem> allEquationsPlusWhen, String iType,
-                                Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+                                Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
-  let odeEqs = tasks |> t => function_HPCOM_TaskDep0(t,allEquationsPlusWhen, iType, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+  let odeEqs = tasks |> t => function_HPCOM_TaskDep0(t,allEquationsPlusWhen, iType, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
   <<
 
   int t[0];
@@ -991,11 +992,11 @@ template function_HPCOM_TaskDep(list<tuple<Task,list<Integer>>> tasks, list<SimE
 end function_HPCOM_TaskDep;
 
 template function_HPCOM_TaskDep0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> allEquationsPlusWhen, String iType, Text &varDecls,
-                                 SimCode simCode, Boolean useFlatArrayNotation)
+                                 SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   match taskIn
     case ((task as CALCTASK(__),parents)) then
-      let taskEqs = function_HPCOM_Task(allEquationsPlusWhen,task,iType,&varDecls,simCode,useFlatArrayNotation); separator="\n"
+      let taskEqs = function_HPCOM_Task(allEquationsPlusWhen,task,iType,&varDecls,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation); separator="\n"
       let parentDependencies = parents |> p => 't[<%p%>]'; separator = ","
       let taskDependencies = parents |> p => '<%p%>'; separator = ","
       let depIn = if intGt(listLength(parents),0) then 'depend(in:<%parentDependencies%>) ' else ""
@@ -1010,9 +1011,9 @@ template function_HPCOM_TaskDep0(tuple<Task,list<Integer>> taskIn, list<SimEqSys
 end function_HPCOM_TaskDep0;
 
 template function_HPCOM_TaskDep_tbb(list<tuple<Task,list<Integer>>> tasks, list<SimEqSystem> allEquationsPlusWhen, String iType,
-                                    Absyn.Path name, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+                                    Absyn.Path name, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
-  let noteEqs = tasks |> t => function_HPCOM_TaskDep_tbb0(t,allEquationsPlusWhen, iType, name, &varDecls, simCode); separator="\n"
+  let noteEqs = tasks |> t => function_HPCOM_TaskDep_tbb0(t,allEquationsPlusWhen, iType, name, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace); separator="\n"
   <<
   //Init base node
   broadcast_node< continue_msg > tbb_start(tbb_graph);
@@ -1027,16 +1028,16 @@ template function_HPCOM_TaskDep_tbb(list<tuple<Task,list<Integer>>> tasks, list<
 end function_HPCOM_TaskDep_tbb;
 
 template function_HPCOM_TaskDep_voidfunc(list<tuple<Task,list<Integer>>> tasks, list<SimEqSystem> allEquationsPlusWhen,
-                                         String iType, Absyn.Path name, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+                                         String iType, Absyn.Path name, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
-  let funcTasks = tasks |> t => function_HPCOM_TaskDep_voidfunc0(t,allEquationsPlusWhen,iType, name, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+  let funcTasks = tasks |> t => function_HPCOM_TaskDep_voidfunc0(t,allEquationsPlusWhen,iType, name, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
   <<
   <%funcTasks%>
   >>
 end function_HPCOM_TaskDep_voidfunc;
 
 template function_HPCOM_TaskDep_tbb0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> allEquationsPlusWhen, String iType,
-                                     Absyn.Path name, Text &varDecls, SimCode simCode)
+                                     Absyn.Path name, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match taskIn
     case ((task as CALCTASK(__),parents)) then
@@ -1048,12 +1049,12 @@ template function_HPCOM_TaskDep_tbb0(tuple<Task,list<Integer>> taskIn, list<SimE
   end match
 end function_HPCOM_TaskDep_tbb0;
 
-template function_HPCOM_TaskDep_voidfunc0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> allEquationsPlusWhen, String iType, Absyn.Path name, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+template function_HPCOM_TaskDep_voidfunc0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> allEquationsPlusWhen, String iType, Absyn.Path name, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   match taskIn
     case ((task as CALCTASK(__),parents)) then
       let &tempvarDecl = buffer "" /*BUFD*/
-      let taskEqs = function_HPCOM_Task(allEquationsPlusWhen,task,iType,&tempvarDecl,simCode,useFlatArrayNotation); separator="\n"
+      let taskEqs = function_HPCOM_Task(allEquationsPlusWhen,task,iType,&tempvarDecl,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation); separator="\n"
       <<
       void <%lastIdentOfPath(name)%>::task_func_<%task.index%>()
       {
@@ -1064,11 +1065,11 @@ template function_HPCOM_TaskDep_voidfunc0(tuple<Task,list<Integer>> taskIn, list
   end match
 end function_HPCOM_TaskDep_voidfunc0;
 
-template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<list<Task>> threadTasks, String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<list<Task>> threadTasks, String iType, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   match iType
     case ("openmp") then
-      let odeEqs = arrayList(threadTasks) |> tt hasindex i0 => function_HPCOM_Thread0(allEquationsPlusWhen,tt,i0,iType,&varDecls,simCode, useFlatArrayNotation); separator="\n"
+      let odeEqs = arrayList(threadTasks) |> tt hasindex i0 => function_HPCOM_Thread0(allEquationsPlusWhen,tt,i0,iType,&varDecls,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
       let threadAssignLocks = arrayList(threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_assignThreadLocks(arrayGet(threadTasks, intAdd(i0, 1)), "lock", i0, iType); separator="\n"
       let threadReleaseLocks = arrayList(threadTasks) |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseThreadLocks(arrayGet(threadTasks, intAdd(i0, 1)), "lock", i0, iType); separator="\n"
       <<
@@ -1089,14 +1090,14 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
       >>
     case ("mpi") then
       let odeEqs = arrayList(threadTasks) |> tt hasindex i0 =>
-        function_HPCOM_Thread0(allEquationsPlusWhen, tt, i0, iType, &varDecls, simCode, useFlatArrayNotation); separator="\n"
+        function_HPCOM_Thread0(allEquationsPlusWhen, tt, i0, iType, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
       <<
       int world_rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
       <%odeEqs%>
       >>
     else
-      let odeEqs = arrayList(threadTasks) |> tt hasindex i0 => function_HPCOM_Thread0(allEquationsPlusWhen,tt,i0,iType,&varDecls,simCode, useFlatArrayNotation); separator="\n"
+      let odeEqs = arrayList(threadTasks) |> tt hasindex i0 => function_HPCOM_Thread0(allEquationsPlusWhen,tt,i0,iType,&varDecls,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
       <<
       <%odeEqs%>
       >>
@@ -1104,10 +1105,10 @@ template function_HPCOM_Thread(list<SimEqSystem> allEquationsPlusWhen, array<lis
 end function_HPCOM_Thread;
 
 template generateThreadFunc(list<SimEqSystem> allEquationsPlusWhen, array<list<Task>> threadTasks, String iType, Integer idx,
-                            String modelNamePrefixStr, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+                            String modelNamePrefixStr, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   let &varDeclsLoc = buffer "" /*BUFD*/
-  let taskEqs = function_HPCOM_Thread0(allEquationsPlusWhen, arrayGet(threadTasks,intAdd(idx,1)), idx, iType, &varDeclsLoc, simCode, useFlatArrayNotation); separator="\n"
+  let taskEqs = function_HPCOM_Thread0(allEquationsPlusWhen, arrayGet(threadTasks,intAdd(idx,1)), idx, iType, &varDeclsLoc, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
   let assLock = assignLockByLockName(idx, "th_lock", iType); separator="\n"
   let relLock = releaseLockByLockName(idx, "th_lock1", iType); separator="\n"
   <<
@@ -1160,9 +1161,9 @@ template function_HPCOM_releaseThreadLocks(list<Task> iThreadTasks, String iLock
 end function_HPCOM_releaseThreadLocks;
 
 template function_HPCOM_Thread0(list<SimEqSystem> allEquationsPlusWhen, list<Task> threadTaskList, Integer iThreadNum,
-                                String iType, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+                                String iType, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
-  let threadTasks = threadTaskList |> tt => function_HPCOM_Task(allEquationsPlusWhen,tt,iType,&varDecls,simCode,useFlatArrayNotation); separator="\n"
+  let threadTasks = threadTaskList |> tt => function_HPCOM_Task(allEquationsPlusWhen,tt,iType,&varDecls,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation); separator="\n"
   match iType
     case ("openmp") then
       <<
@@ -1190,11 +1191,11 @@ template function_HPCOM_Thread0(list<SimEqSystem> allEquationsPlusWhen, list<Tas
 end function_HPCOM_Thread0;
 
 template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask, String iType, Text &varDecls,
-                             SimCode simCode, Boolean useFlatArrayNotation)
+                             SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
   match iTask
     case (task as CALCTASK(__)) then
-      let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_(eq,allEquationsPlusWhen,contextSimulationNonDiscrete,&varDecls, simCode, useFlatArrayNotation); separator="\n"
+      let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_(eq,allEquationsPlusWhen,contextSimulationNonDiscrete,&varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
       let &varDeclsLocal = buffer "" /*BUFL*/
       <<
       // Task <%task.index%>
@@ -1202,7 +1203,7 @@ template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask,
       // End Task <%task.index%>
       >>
     case (task as CALCTASK_LEVEL(__)) then
-      let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_(eq,allEquationsPlusWhen,contextSimulationNonDiscrete,&varDecls, simCode, useFlatArrayNotation); separator="\n"
+      let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_(eq,allEquationsPlusWhen,contextSimulationNonDiscrete,&varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
       let taskStr = task.nodeIdc |> task => '<%task%>';separator=","
       let &varDeclsLocal = buffer "" /*BUFL*/
       <<
@@ -1222,24 +1223,24 @@ template function_HPCOM_Task(list<SimEqSystem> allEquationsPlusWhen, Task iTask,
   end match
 end function_HPCOM_Task;
 
-template equationNamesHPCOM_(Integer idx, list<SimEqSystem> allEquationsPlusWhen, Context context, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+template equationNamesHPCOM_(Integer idx, list<SimEqSystem> allEquationsPlusWhen, Context context, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
-  let eq = equationHPCOM_(getSimCodeEqByIndex(allEquationsPlusWhen, idx), idx, context, &varDecls, simCode, useFlatArrayNotation)
+  let eq = equationHPCOM_(getSimCodeEqByIndex(allEquationsPlusWhen, idx), idx, context, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)
   <<
   <%eq%>
   >>
 end equationNamesHPCOM_;
 
-template equationHPCOM_(SimEqSystem eq, Integer idx, Context context, Text &varDecls, SimCode simCode, Boolean useFlatArrayNotation)
+template equationHPCOM_(SimEqSystem eq, Integer idx, Context context, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-  equation_function_call(eq, context, &varDecls /*BUFC*/, simCode,"evaluate")
+  equation_function_call(eq, context, &varDecls /*BUFC*/, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,"evaluate")
 /*  match eq
   case e as SES_SIMPLE_ASSIGN(__) then
     let &varDeclsLocal = buffer "" BUFL
-    let eqText = equation_(eq,context,&varDeclsLocal,simCode, useFlatArrayNotation)
+    let eqText = equation_(eq,context,&varDeclsLocal,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)
     <<
     <%varDeclsLocal%>
     <%eqText%>
@@ -1477,7 +1478,7 @@ template releaseLockByLockName(String lockName, String lockPrefix, String iType)
 end releaseLockByLockName;
 
 
-template simulationMainFileAnalyzation(SimCode simCode)
+template simulationMainFileAnalyzation(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -1660,7 +1661,7 @@ template MPIRunCommandInRunScript(String type, Text &getNumOfProcs, Text &execCo
 end MPIRunCommandInRunScript;
 
 
-template simulationMainRunScript(SimCode simCode)
+template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates code for header file for simulation target."
 ::=
   let type = if Flags.isSet(Flags.USEMPI) then "mpi" else ''
@@ -1669,11 +1670,11 @@ template simulationMainRunScript(SimCode simCode)
   let _ = MPIRunCommandInRunScript(type, &preRunCommandLinux, &execCommandLinux)
   let preRunCommandWindows = ""
 
-  CodegenCpp.simulationMainRunScript(simCode, preRunCommandLinux, preRunCommandWindows, execCommandLinux)
+  CodegenCpp.simulationMainRunScript(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, preRunCommandLinux, preRunCommandWindows, execCommandLinux)
 end simulationMainRunScript;
 
 
-template simulationMakefile(String target, SimCode simCode)
+template simulationMakefile(String target, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Adds specific compiler flags for HPCOM mode to simulation makefile."
 ::=
   let type = getConfigString(HPCOM_CODE)
@@ -1692,7 +1693,7 @@ template simulationMakefile(String target, SimCode simCode)
 
   let &additionalLinkerFlags_MSVC = buffer ""
 
-  CodegenCpp.simulationMakefile(target, simCode, additionalLinkerFlags_GCC,
+  CodegenCpp.simulationMakefile(target, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, additionalLinkerFlags_GCC,
                                 additionalCFlags_MSVC, additionalCFlags_GCC,
                                 additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI),
                                 Flags.isSet(Flags.HPCOM_ANALYZATION_MODE))
