@@ -160,6 +160,7 @@ algorithm
     pwd := System.pwd();
     userLibraries := Settings.getHomeDir(Config.getRunningTestsuiteFile()<>"") + "/.openmodelica/libraries/";
     true := System.directoryExists(userLibraries);
+    true := listMember(userLibraries, mps);
     System.cd(userLibraries);
     version := match prios
       case version::_ guard version <> "default" then version;
