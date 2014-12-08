@@ -1868,7 +1868,7 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
          fprintf(stderr, "expected %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
 
         if (modelicaPathEntryVersionEqual(entries[i].version,version,j)
-            && (j==MODELICAPATH_LEVELS || modelicaPathEntryVersionGreater(entries[i].version,version,j+1))
+            && (j==MODELICAPATH_LEVELS || modelicaPathEntryVersionGreater(entries[i].version,version,MODELICAPATH_LEVELS))
             && entries[i].versionExtra[0] == '\0') {
           if (modelicaPathEntryVersionGreater(entries[i].version,foundVersion,MODELICAPATH_LEVELS)) {
             memcpy(foundVersion,entries[i].version,sizeof(long)*MODELICAPATH_LEVELS);
