@@ -314,20 +314,6 @@ double rt_tock(int ix) {
   return d - min_time;
 }
 
-double rt_tock(int ix) {
-  uint64_t tock_tp = mach_absolute_time();
-  uint64_t nsec;
-  static mach_timebase_info_data_t info = {0,0};
-  if(info.denom == 0)
-  mach_timebase_info(&info);
-  uint64_t elapsednano = (tock_tp-tick_tp[ix]) * (info.numer / info.denom);
-  double d = elapsednano * 1e-9;
-  if (d < min_time) {
-    min_time = d;
-  }
-  return d - min_time;
-}
-
 void rt_clear(int ix)
 {
   total_tp[ix] += acc_tp[ix];
