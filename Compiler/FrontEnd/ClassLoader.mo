@@ -53,6 +53,7 @@ import Flags;
 import HashTableStringToProgram;
 import List;
 import Parser;
+import Settings;
 import System;
 import Util;
 
@@ -149,11 +150,31 @@ protected function loadClassFromMps
   input Option<String> encoding;
   output Absyn.Program outProgram;
 protected
-  String mp,name;
-  Boolean isDir;
+  String mp, name, pwd, cmd, version, userLibraries;
+  Boolean isDir, impactOK;
   Absyn.Class cl;
 algorithm
-  (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
+  try
+    (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
+  else
+    pwd := System.pwd();
+    userLibraries := Settings.getHomeDir(Config.getRunningTestsuiteFile()<>"") + "/.openmodelica/libraries/";
+    true := System.directoryExists(userLibraries);
+    System.cd(userLibraries);
+    version := match prios
+      case version::_ guard version <> "default" then version;
+      else "";
+    end match;
+    cmd := "impact install \"" + id + (if version<>"" then "#" + version else "") + "\"";
+    impactOK := 0==System.systemCall(cmd, "/dev/null");
+    System.cd(pwd);
+    if impactOK then
+      Error.addMessage(Error.NOTIFY_IMPACT_FOUND, {id, (if version <> "" then (" "+version) else ""), userLibraries});
+      (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
+    else
+      fail();
+    end if;
+  end try;
   // print("System.getLoadModelPath: " + id + " {" + stringDelimitList(prios,",") + "} " + stringDelimitList(mps,",") + " => " + mp + " " + name + " " + boolString(isDir));
   Config.setLanguageStandardFromMSL(name);
   cl := loadClassFromMp(id, mp, name, isDir, encoding);

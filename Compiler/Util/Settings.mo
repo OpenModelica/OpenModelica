@@ -100,6 +100,12 @@ public function getModelicaPath
   external "C" outString=Settings_getModelicaPath(runningTestsuite) annotation(Library = "omcruntime");
 end getModelicaPath;
 
+public function getHomeDir
+  input Boolean runningTestsuite;
+  output String outString;
+  external "C" outString=Settings_getHomeDir(runningTestsuite) annotation(Library = "omcruntime");
+end getHomeDir;
+
 public function getEcho
   output Integer echo;
   external "C" echo=Settings_getEcho() annotation(Library = "omcruntime");

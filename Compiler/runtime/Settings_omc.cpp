@@ -46,7 +46,7 @@ extern const char* Settings_getInstallationDirectoryPath()
   const char *path = SettingsImpl__getInstallationDirectoryPath();
   if (path == NULL)
     MMC_THROW();
-  return strcpy(ModelicaAllocateString(strlen(path)), path);
+  return path;
 }
 
 extern const char* Settings_getModelicaPath(int runningTestsuite)

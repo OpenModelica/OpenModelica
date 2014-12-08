@@ -105,7 +105,7 @@ std::string ErrorMessage::getMessage_(int warningsAsErrors)
         return "";
       }
       message_.replace(str_pos, 2, *tok);
-      str_pos += tok->size() + 1;
+      str_pos += tok->size();
       *tok++;
     } else if(index_symbol >= '0' || index_symbol <= '9') {
       index = index_symbol - '0' - 1;
@@ -118,7 +118,7 @@ std::string ErrorMessage::getMessage_(int warningsAsErrors)
       }
 
       message_.replace(str_pos, 2, tokens_[index]);
-      str_pos += tokens_[index].size() + 1;
+      str_pos += tokens_[index].size();
     }
   }
   veryshort_msg = message_;

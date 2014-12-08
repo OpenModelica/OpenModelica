@@ -188,6 +188,21 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
 
 char* winLibPath = NULL;
 
+char* Settings_getHomeDir(int runningTestsuite)
+{
+  const char *homePath = NULL;
+#if !(defined(_MSC_VER) || defined(__MINGW32__))
+  homePath = getenv("HOME");
+  if (homePath == NULL) {
+    homePath = getpwuid(getuid())->pw_dir;
+  }
+#endif
+  if (homePath == NULL || runningTestsuite) {
+    return "";
+  }
+  return GC_strdup(homePath);
+}
+
 // Do not free the returned variable. It's malloc'ed
 char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   const char *path = getenv("OPENMODELICALIBRARY");
@@ -200,9 +215,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
     int lenOmhome = strlen(omhome);
     char *buffer;
 #if !(defined(_MSC_VER) || defined(__MINGW32__))
-    const char *homePath = getenv("HOME");
-    if (homePath == NULL)
-      homePath = getpwuid(getuid())->pw_dir;
+    const char *homePath = Settings_getHomeDir(runningTestsuite);
     if (homePath == NULL || runningTestsuite) {
 #endif
       buffer = (char*) malloc(lenOmhome+15);
@@ -210,7 +223,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
 #if !(defined(_MSC_VER) || defined(__MINGW32__))
     } else {
       int lenHome = strlen(homePath);
-      buffer = (char*) malloc(lenOmhome+lenHome+41);
+      buffer = (char*) GC_malloc_atomic(lenOmhome+lenHome+41);
       snprintf(buffer,lenOmhome+lenHome+41,"%s/lib/omlibrary:%s/.openmodelica/libraries/",omhome,homePath);
     }
 #endif
@@ -220,11 +233,11 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   /* adrpo: translate this to forward slashes! */
   /* duplicate the path */
-  winLibPath = strdup(path);
+  winLibPath = GC_strdup(path);
 
   /* ?? not enough memory for duplication */
   if (!winLibPath)
-    return strdup(path);
+    return GC_strdup(path);
 
   /* convert \\ to / */
   while(winLibPath[i] != '\0')
@@ -235,7 +248,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   return winLibPath;
 #endif
 
-  return strdup(path);
+  return GC_strdup(path);
 }
 
 static const char* SettingsImpl__getCompileCommand(void)
