@@ -42,9 +42,9 @@ omc_communication_impl.o: omc_communication.h
 Corba_omc.o: omc_communication.h corbaimpl.cpp
 Dynload_omc.o: systemimpl.h errorext.h ../OpenModelicaBootstrappingHeader.h $(SimRuntimeCDir)/read_write.h $(SimRuntimeCDir)/memory_pool.h Dynload.cpp $(RML_COMPAT)
 Database_omc.o: Database.c Database_omc.c
-Print_omc.o : printimpl.c
+Print_omc.o : printimpl.c printimpl.h
 Error_omc.o : errorext.cpp ErrorMessage.hpp ../OpenModelicaBootstrappingHeader.h
-System_omc.o : System_omc.c systemimpl.c config.h errorext.h $(configUnix) $(RML_COMPAT)
+System_omc.o : System_omc.c systemimpl.c config.h errorext.h printimpl.h $(configUnix) $(RML_COMPAT)
 Lapack_omc.o : lapackimpl.c config.h $(configUnix) $(RML_COMPAT)
 IOStreamExt_omc.o : IOStreamExt.c
 Settings_omc.o : settingsimpl.c config.h $(configUnix)

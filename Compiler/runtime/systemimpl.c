@@ -59,6 +59,7 @@ extern "C" {
 #include "config.h"
 #include "errorext.h"
 #include "settingsimpl.h"
+#include "printimpl.h"
 #include "f2c.h"
 
 #if defined(_MSC_VER) /* no iconv for VS! */
@@ -611,6 +612,46 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   }
 
   return ret_val;
+}
+
+char* System_popen(threadData_t *threadData, const char* command, int *status)
+{
+  int ret_val = -1;
+  const int debug = 0;
+  if (debug) {
+    fprintf(stderr, "System.popen: %s\n", command); fflush(NULL);
+  }
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  *status = 1;
+  return "Windows does not have popen";
+#else
+  FILE *pipe = popen(command, "r");
+  if (pipe == NULL) {
+    *status = 1;
+    return "popen returned NULL";
+  }
+  long handle = Print_saveAndClearBuf(threadData);
+  char buf[4096];
+  while (fgets(buf, 4096, pipe) != NULL){
+    Print_printBuf(threadData, buf);
+  }
+
+  if (debug) {
+    fprintf(stderr, "System.pipe: returned\n"); fflush(NULL);
+  }
+
+  ret_val = pclose(pipe);
+  char *res = GC_strdup(Print_getString(threadData));
+  Print_restoreBuf(threadData, handle);
+  return res;
+
+  if (debug) {
+    fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(NULL);
+  }
+
+  return ret_val;
+#endif
 }
 
 #ifdef WITH_HWLOC

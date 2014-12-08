@@ -309,6 +309,13 @@ public function systemCall
   external "C" outInteger=SystemImpl__systemCall(command,outFile) annotation(Library = "omcruntime");
 end systemCall;
 
+public function popen "Run the command and return the stdout as a string"
+  input String command;
+  output String contents;
+  output Integer status;
+  external "C" contents=System_popen(OpenModelica.threadData(), command, status) annotation(Library = "omcruntime");
+end popen;
+
 public function systemCallParallel
   input list<String> inStrings;
   input Integer numThreads;

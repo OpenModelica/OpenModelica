@@ -917,7 +917,7 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2,v3;
       Absyn.ComponentRef cr,cr_1;
-      Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals;
+      Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals, status;
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
       Integer fmiLogLevel;
       list<Integer> is;
@@ -2625,6 +2625,10 @@ algorithm
         files = List.flatten(List.map(mps, System.moFiles));
         dirs = List.flatten(List.map(mps, System.subDirectories));
         files = List.map(List.map1(listAppend(files,dirs), System.strtok, ". "), List.first);
+        (str, status) = System.popen("impact search '' | perl -pe 's/\\e\\[?.*?[\\@-~]//g' | grep '[^ :]*:' | cut -d: -f1 2>&1");
+        if 0==status then
+          files = listAppend(files, System.strtok(str,"\n"));
+        end if;
         files = List.sort(files,Util.strcmpBool);
         files = List.sortedUnique(files, stringEqual);
         v = ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
