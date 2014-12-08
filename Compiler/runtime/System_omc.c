@@ -671,14 +671,6 @@ extern void System_getGCStatus(double *used, double *allocated)
   *used = *allocated - GC_get_free_bytes();
 }
 
-extern void System_getLoadModelPath(const char *className, void *prios, void *mps, const char **dir, char **name, int *isDir) __attribute__ ((nonnull));
-extern void System_getLoadModelPath(const char *className, void *prios, void *mps, const char **dir, char **name, int *isDir)
-{
-  *name = NULL;
-  if (SystemImpl__getLoadModelPath(className,prios,mps,dir,name,isDir)) MMC_THROW();
-  assert(name != NULL);
-}
-
 extern const char* System_getMakeCommand()
 {
   return DEFAULT_MAKE;

@@ -92,6 +92,7 @@ public function loadClass
   input list<String> priorityList;
   input String modelicaPath;
   input Option<String> encoding;
+  input Boolean requireExactVersion = false;
   output Absyn.Program outProgram;
 algorithm
   outProgram := matchcontinue (inPath,priorityList,modelicaPath,encoding)
@@ -105,7 +106,7 @@ algorithm
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        p = loadClassFromMps(classname, priorityList, mps, encoding);
+        p = loadClassFromMps(classname, priorityList, mps, encoding, requireExactVersion);
         checkOnLoadMessage(p);
       then
         p;
@@ -114,7 +115,7 @@ algorithm
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        p = loadClassFromMps(pack, priorityList, mps, encoding);
+        p = loadClassFromMps(pack, priorityList, mps, encoding, requireExactVersion);
         checkOnLoadMessage(p);
       then
         p;
@@ -148,6 +149,7 @@ protected function loadClassFromMps
   input list<String> prios;
   input list<String> mps;
   input Option<String> encoding;
+  input Boolean requireExactVersion := false;
   output Absyn.Program outProgram;
 protected
   String mp, name, pwd, cmd, version, userLibraries;
@@ -155,7 +157,7 @@ protected
   Absyn.Class cl;
 algorithm
   try
-    (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
+    (mp,name,isDir) := System.getLoadModelPath(id,prios,mps,requireExactVersion);
   else
     pwd := System.pwd();
     userLibraries := Settings.getHomeDir(Config.getRunningTestsuiteFile()<>"") + "/.openmodelica/libraries/";
@@ -171,7 +173,7 @@ algorithm
     System.cd(pwd);
     if impactOK then
       Error.addMessage(Error.NOTIFY_IMPACT_FOUND, {id, (if version <> "" then (" "+version) else ""), userLibraries});
-      (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
+      (mp,name,isDir) := System.getLoadModelPath(id,prios,mps,true);
     else
       fail();
     end if;

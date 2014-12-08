@@ -695,7 +695,7 @@ algorithm
         // see https://trac.openmodelica.org/OpenModelica/ticket/2422
         // prio = if_(stringEq(prio,""), "default", prio);
         mp = System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
-        (p1,true) = loadModel((Absyn.IDENT(cname),{prio})::{}, mp, p, true, true, checkUses);
+        (p1,true) = loadModel((Absyn.IDENT(cname),{prio})::{}, mp, p, true, true, checkUses, true);
       then p1;
 
     case (_, _, _, _)
@@ -725,6 +725,7 @@ public function loadModel
   input Boolean forceLoad;
   input Boolean notifyLoad;
   input Boolean checkUses;
+  input Boolean requireExactVersion;
   output Absyn.Program pnew;
   output Boolean success;
 algorithm
@@ -741,13 +742,13 @@ algorithm
     case ((path,strings)::modelsToLoad,_,p,_,_,_)
       equation
         b = checkModelLoaded((path,strings),p,forceLoad,NONE());
-        pnew = if not b then ClassLoader.loadClass(path, strings, modelicaPath, NONE()) else Absyn.PROGRAM({},Absyn.TOP());
+        pnew = if not b then ClassLoader.loadClass(path, strings, modelicaPath, NONE(), requireExactVersion) else Absyn.PROGRAM({},Absyn.TOP());
         className = Absyn.pathString(path);
         version = if not b then getPackageVersion(path, pnew) else "";
         Error.assertionOrAddSourceMessage(b or not notifyLoad or forceLoad,Error.NOTIFY_NOT_LOADED,{className,version},Absyn.dummyInfo);
         p = Interactive.updateProgram(pnew, p);
-        (p,b1) = loadModel(if checkUses then Interactive.getUsesAnnotationOrDefault(pnew) else {}, modelicaPath, p, false, notifyLoad, checkUses);
-        (p,b2) = loadModel(modelsToLoad, modelicaPath, p, forceLoad, notifyLoad, checkUses);
+        (p,b1) = loadModel(if checkUses then Interactive.getUsesAnnotationOrDefault(pnew, requireExactVersion) else {}, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion);
+        (p,b2) = loadModel(modelsToLoad, modelicaPath, p, forceLoad, notifyLoad, checkUses, requireExactVersion);
       then (p,b1 and b2);
     case ((path,strings)::_,_,p,true,_,_)
       equation
@@ -760,7 +761,7 @@ algorithm
         pathStr = Absyn.pathString(path);
         versions = stringDelimitList(strings,",");
         Error.addMessage(Error.NOTIFY_LOAD_MODEL_FAILED,{pathStr,versions,modelicaPath});
-        (p,b) = loadModel(modelsToLoad, modelicaPath, p, forceLoad, notifyLoad, checkUses);
+        (p,b) = loadModel(modelsToLoad, modelicaPath, p, forceLoad, notifyLoad, checkUses, requireExactVersion);
       then (p,b);
   end matchcontinue;
 end loadModel;
@@ -945,7 +946,7 @@ algorithm
       BackendDAE.Shared shared;
       GlobalScript.SimulationOptions defaulSimOpt;
       SimCode.SimulationSettings simSettings;
-      Boolean dumpExtractionSteps;
+      Boolean dumpExtractionSteps, requireExactVersion;
       list<tuple<Absyn.Path,list<String>>> uses;
       Config.LanguageStandard oldLanguageStd;
       SCode.Element cl;
@@ -2290,7 +2291,7 @@ algorithm
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(false),st);
 
-    case (_,_,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str)},
+    case (_,_,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str),Values.BOOL(requireExactVersion)},
           (GlobalScript.SYMBOLTABLE(
             ast = p,lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_) /* add path to symboltable for compiled functions
@@ -2305,7 +2306,7 @@ algorithm
         if b1 then
           Config.setLanguageStandard(Config.versionStringToStd(str));
         end if;
-        (p,b) = loadModel({(path,strings)},mp,p,true,b,true);
+        (p,b) = loadModel({(path,strings)},mp,p,true,b,true,requireExactVersion);
         if b1 then
           Config.setLanguageStandard(oldLanguageStd);
         end if;
@@ -3623,7 +3624,7 @@ algorithm
     case (_, GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf))
       equation
         str = Absyn.pathFirstIdent(className);
-        (p,b) = loadModel({(Absyn.IDENT(str),{"default"})},Settings.getModelicaPath(Config.getRunningTestsuite()),p,true,true,true);
+        (p,b) = loadModel({(Absyn.IDENT(str),{"default"})},Settings.getModelicaPath(Config.getRunningTestsuite()),p,true,true,true,false);
         Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_NOT_LOADED,{str,"default"},Absyn.dummyInfo);
         // print(stringDelimitList(list(Absyn.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
       then GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf);
@@ -3669,7 +3670,7 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP())),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
+        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP()), false),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true,false);
         print("Load deps:      " + realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
@@ -3712,7 +3713,7 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP())),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true);
+        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP()), false),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true,false);
 
         //System.stopTimer();
         //print("\nExists+Dependency: " + realString(System.getTimerIntervalTime()));
@@ -5463,7 +5464,7 @@ algorithm
         failure(_ = Interactive.getPathedClassInProgram(Absyn.IDENT(name),program));
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        (mp,name,isDir) = System.getLoadModelPath(name,{"default"},mps);
+        (mp,name,isDir) = System.getLoadModelPath(name, {"default"}, mps);
         mp = if isDir then mp + name else mp;
         bp = findModelicaPath2(mp,names,"",true);
       then bp;

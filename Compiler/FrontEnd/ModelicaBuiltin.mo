@@ -1913,6 +1913,7 @@ function loadModel "Loads the Modelica Standard Library."
   input String[:] priorityVersion := {"default"};
   input Boolean notify := false "Give a notification of the libraries and versions that were loaded";
   input String languageStandard := "" "Override the set language standard. Parse with the given setting, but do not change it permanently.";
+  input Boolean requireExactVersion := false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>

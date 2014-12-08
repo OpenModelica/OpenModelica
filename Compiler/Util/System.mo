@@ -370,10 +370,11 @@ public function getLoadModelPath
   input String className;
   input list<String> prios;
   input list<String> mps;
+  input Boolean requireExactVersion := false;
   output String dir;
   output String name;
   output Boolean isDir;
-  external "C" System_getLoadModelPath(className,prios,mps,dir,name,isDir) annotation(Library = "omcruntime");
+  external "C" System_getLoadModelPath(className,prios,mps,requireExactVersion,dir,name,isDir) annotation(Library = "omcruntime");
 end getLoadModelPath;
 
 public function time

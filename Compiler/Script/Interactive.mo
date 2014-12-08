@@ -10984,6 +10984,7 @@ public function getUsesAnnotationOrDefault
   string of values for the Documentation annotation for the class named by the
   first argument."
   input Absyn.Program p;
+  input Boolean requireExactVersion;
   output list<tuple<Absyn.Path,list<String>>> usesStr;
 protected
   list<Absyn.Path> paths;
@@ -10992,7 +10993,9 @@ algorithm
   usesStr := getUsesAnnotation(p);
   paths := List.map(usesStr,Util.tuple21);
   strs := List.map(usesStr,Util.tuple22);
-  strs := List.map1(strs,listAppend,{"default"});
+  if not requireExactVersion then
+    strs := List.map1(strs,listAppend,{"default"});
+  end if;
   usesStr := List.threadTuple(paths,strs);
 end getUsesAnnotationOrDefault;
 
