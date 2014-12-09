@@ -8,7 +8,7 @@ all:
 endif
 
 generate-files-in-steps:
-	$(MAKE) -f $(defaultMakefileTarget) -s templates
+	$(MAKE) -f $(defaultMakefileTarget) -s templates scripting
 	$(MAKE) -f $(defaultMakefileTarget) Makefile.sources
 	$(MAKE) -f $(defaultMakefileTarget) interfaces INCLUDESOURCES=1
 	$(MAKE) -f $(defaultMakefileTarget) Makefile.depends INCLUDESOURCES=1
@@ -42,6 +42,9 @@ make-bootstrap-tarball:
 
 templates:
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template
+
+scripting:
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Script
 
 clean:
 	rm -rf $(GEN_DIR)

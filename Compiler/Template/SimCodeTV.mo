@@ -1832,6 +1832,20 @@ package DAE
     end DIM_UNKNOWN;
   end Dimension;
 
+  uniontype CodeType
+    record C_EXPRESSION
+    end C_EXPRESSION;
+
+    record C_TYPENAME
+    end C_TYPENAME;
+
+    record C_VARIABLENAME
+    end C_VARIABLENAME;
+
+    record C_VARIABLENAMES "Array of VariableName"
+    end C_VARIABLENAMES;
+  end CodeType;
+
   uniontype FunctionAttributes
     record FUNCTION_ATTRIBUTES
       Boolean isFunctionPointer;

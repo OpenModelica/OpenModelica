@@ -2183,13 +2183,11 @@ algorithm
                 (cache, ty, _) := Lookup.lookupType(cache, env, Absyn.suffixPath(className, elt.name), NONE() /*SOME(elt.info)*/);
                 if isSimpleAPIFunction(ty) then
                   tys := ty::tys;
-                  print("Found type: " + Types.unparseType(ty) + "\n");
                 end if;
               then ();
             else ();
           end matchcontinue;
         end for;
-        print("Found a total of " + String(listLength(tys)) + " functions to generate API for\n");
         s1 := Tpl.tplString(GenerateAPIFunctionsTpl.getCevalScriptInterface, tys);
       then (cache,Values.TUPLE({Values.BOOL(true),Values.STRING(s1),Values.STRING("")}),st);
 

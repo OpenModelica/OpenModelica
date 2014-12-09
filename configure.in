@@ -879,6 +879,7 @@ date=`date "+%Y-%m-%d %H:%M:%S"`
 
 GENERATED_AUTOCONF_FILES="Makefile \
 Compiler/Makefile \
+Compiler/Script/Makefile \
 Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
