@@ -11,6 +11,29 @@ std::string MeasureTimeValuesRDTSC::serializeToJson(unsigned int numCalcs)
   return ss.str();
 }
 
+void MeasureTimeValuesRDTSC::add(MeasureTimeValues *values)
+{
+  MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(values);
+  time += val->time;
+
+  if( val->time > max_time )
+    max_time = val->time;
+}
+
+void MeasureTimeValuesRDTSC::sub(MeasureTimeValues *values)
+{
+  MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(values);
+  if(time > val->time)
+    time -= val->time;
+  else
+    time = 0;
+}
+
+void MeasureTimeValuesRDTSC::div(int counter)
+{
+  time = time / counter;
+}
+
 MeasureTimeRDTSC::MeasureTimeRDTSC() : MeasureTime()
 {
 }
@@ -46,29 +69,6 @@ void MeasureTimeRDTSC::getTimeValuesEndP(MeasureTimeValues *res)
 MeasureTimeValues* MeasureTimeRDTSC::getZeroValuesP()
 {
   return new MeasureTimeValuesRDTSC(0);
-}
-
-void MeasureTimeValuesRDTSC::add(MeasureTimeValues *values)
-{
-  MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(values);
-  time += val->time;
-
-  if( val->time > max_time )
-    max_time = val->time;
-}
-
-void MeasureTimeValuesRDTSC::sub(MeasureTimeValues *values)
-{
-  MeasureTimeValuesRDTSC *val = static_cast<MeasureTimeValuesRDTSC*>(values);
-  if(time > val->time)
-    time -= val->time;
-  else
-    time = 0;
-}
-
-void MeasureTimeValuesRDTSC::div(int counter)
-{
-  time = time / counter;
 }
 
 #if defined(_MSC_VER)

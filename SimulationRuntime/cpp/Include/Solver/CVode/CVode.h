@@ -237,6 +237,7 @@ double
    #ifdef RUNTIME_PROFILING
    std::vector<MeasureTimeData> measureTimeFunctionsArray;
    MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues, *solveFunctionStartValues, *solveFunctionEndValues;
+   MeasureTimeValuesSolver *solverValues;
    #endif
 };
 

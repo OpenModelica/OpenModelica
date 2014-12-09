@@ -1328,7 +1328,6 @@ template initializeLockByLockName(String lockName, String lockPrefix, String iTy
       >>
     case ("pthreads_spin") then
       <<
-      <%lockPrefix%>_<%lockName%> = BOOST_DETAIL_SPINLOCK_INIT;
       >>
   end match
 end initializeLockByLockName;
@@ -1365,7 +1364,7 @@ template createLockByLockName(String lockName, String lockPrefix, String iType)
       >>
     case ("pthreads_spin") then
       <<
-      boost::detail::spinlock <%lockPrefix%>_<%lockName%>;
+      spinlock <%lockPrefix%>_<%lockName%>;
       >>
   end match
 end createLockByLockName;

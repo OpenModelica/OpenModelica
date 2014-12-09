@@ -7154,6 +7154,7 @@ template writeoutputparamsWithSplit(Text funcNamePrefix, Text type, list<SimVar>
   void <%funcNamePrefix%><%type%>(HistoryImplType::value_type_p& params,const int& startIndex)
   {
      int i = 0;
+     //number of vars: <%listLength(varsLst)%>
     <%funcCalls%>
   }
   >>

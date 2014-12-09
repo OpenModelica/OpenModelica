@@ -38,6 +38,23 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValues
   virtual void div(int counter) = 0;
 };
 
+class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesSolver : public MeasureTimeValues
+{
+ public:
+    MeasureTimeValuesSolver();
+    MeasureTimeValuesSolver(unsigned long long functionEvaluations, unsigned long long errorTestFailures);
+    virtual ~MeasureTimeValuesSolver();
+
+    virtual std::string serializeToJson(unsigned int numCalcs);
+
+    virtual void add(MeasureTimeValues *values);
+    virtual void sub(MeasureTimeValues *values);
+    virtual void div(int counter);
+
+    unsigned long long functionEvaluations;
+    unsigned long long errorTestFailures;
+};
+
 class BOOST_EXTENSION_EXPORT_DECL MeasureTimeData
 {
  public:

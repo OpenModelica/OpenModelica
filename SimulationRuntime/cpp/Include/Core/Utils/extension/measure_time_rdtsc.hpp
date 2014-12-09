@@ -7,8 +7,7 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimeValuesRDTSC : public MeasureTimeVal
 {
 public:
   unsigned long long time;
-
-	unsigned long long max_time;
+  unsigned long long max_time;
 
   MeasureTimeValuesRDTSC(unsigned long long time);
   virtual ~MeasureTimeValuesRDTSC();

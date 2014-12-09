@@ -12,6 +12,7 @@
 
 #include <boost/atomic.hpp>
 #include <iostream>
+#include <Modelica.h>
 
 class busywaiting_barrier
 {
@@ -19,7 +20,7 @@ class busywaiting_barrier
     busywaiting_barrier(int counterValueMax) : counterValue(counterValueMax), counterValueRelease(0), ready(true), counterValueMax(counterValueMax) {}
     ~busywaiting_barrier() {}
 
-    void wait()
+    FORCE_INLINE inline void wait()
     {
         //std::cerr << "entering wait function (counterValueMax: " << counterValueMax << ")" << std::endl;
         while(!ready.load(boost::memory_order_acquire )) {}
@@ -59,6 +60,24 @@ class busywaiting_barrier
     boost::atomic<int> counterValueRelease;
     boost::atomic<bool> ready;
     int counterValueMax;
+};
+
+class spinlock
+{
+    boost::atomic_flag flag;
+public:
+    spinlock() {}
+
+    ~spinlock() {}
+
+    void lock()
+    {
+        while(flag.test_and_set(boost::memory_order_acquire));
+    }
+    void unlock()
+    {
+        flag.clear(boost::memory_order_release);
+    }
 };
 
 #endif //USE_BOOST_THREAD

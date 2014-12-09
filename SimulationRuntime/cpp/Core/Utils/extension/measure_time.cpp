@@ -9,6 +9,44 @@ MeasureTimeValues::~MeasureTimeValues()
 {
 }
 
+
+MeasureTimeValuesSolver::MeasureTimeValuesSolver() : MeasureTimeValues(), functionEvaluations(0), errorTestFailures(0)
+{}
+
+MeasureTimeValuesSolver::MeasureTimeValuesSolver(unsigned long long functionEvaluations, unsigned long long errorTestFailures) :
+        MeasureTimeValues(), functionEvaluations(functionEvaluations), errorTestFailures(errorTestFailures)
+{}
+
+MeasureTimeValuesSolver::~MeasureTimeValuesSolver() {}
+
+std::string MeasureTimeValuesSolver::serializeToJson(unsigned int numCalcs)
+{
+  std::stringstream ss;
+  ss << "\"functionEvaluations\":" <<  functionEvaluations << ",\"errorTestFailures\":" << errorTestFailures;
+  return ss.str();
+}
+
+void MeasureTimeValuesSolver::add(MeasureTimeValues *values)
+{
+   MeasureTimeValuesSolver *val = static_cast<MeasureTimeValuesSolver*>(values);
+   functionEvaluations += val->functionEvaluations;
+   errorTestFailures += val->errorTestFailures;
+}
+
+void MeasureTimeValuesSolver::sub(MeasureTimeValues *values)
+{
+    MeasureTimeValuesSolver *val = static_cast<MeasureTimeValuesSolver*>(values);
+    functionEvaluations -= val->functionEvaluations;
+    errorTestFailures -= val->errorTestFailures;
+}
+
+void MeasureTimeValuesSolver::div(int counter)
+{
+    functionEvaluations = functionEvaluations / counter;
+    errorTestFailures = errorTestFailures / counter;
+}
+
+
 MeasureTimeData::MeasureTimeData() : id(""), sumMeasuredValues(MeasureTime::getZeroValues()), numCalcs(0) {}
 
 MeasureTimeData::MeasureTimeData(std::string id) : id(id), sumMeasuredValues(MeasureTime::getZeroValues()), numCalcs(0) {}
