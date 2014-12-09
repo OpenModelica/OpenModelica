@@ -142,8 +142,8 @@ void omc_csv_init(simulation_result *self, DATA *data)
     fprintf(fout, format, mData->booleanAlias[i].info.name);
   for(i = 0; i < mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData.stringAlias[i].aliasType != 1)
     fprintf(fout, format, mData->stringAlias[i].info.name);
-  fseek(fout, -1, SEEK_CUR);
   fseek(fout, -1, SEEK_CUR); // removes the eol comma separator
+  fprintf(fout,"\n");
   self->storage = fout;
 }
 
