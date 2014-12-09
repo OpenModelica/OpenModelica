@@ -236,7 +236,7 @@ QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelInd
     QTextDocument textDocument;
     initTextDocument(&textDocument, option.font, width);  /* we can't use option.rect.width() here since it will be empty. */
     textDocument.setHtml(text);
-    size.rheight() = qMax(textDocument.size().height(), 24.0);
+    size.rheight() = qMax(textDocument.size().height(), (qreal)24.0);
   } else if (parent() && qobject_cast<LibraryTreeWidget*>(parent())) {
     size.rheight() = size.height() + 2;
   } else {
