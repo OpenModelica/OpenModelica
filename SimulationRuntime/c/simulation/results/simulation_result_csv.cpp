@@ -107,6 +107,7 @@ void omc_csv_emit(simulation_result *self, DATA *data)
     /* there would no negation of a string happen */
     fprintf(fout, formatstring, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]);
   }
+  fseek(fout, -1, SEEK_CUR); // removes the eol comma separator
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -141,7 +142,8 @@ void omc_csv_init(simulation_result *self, DATA *data)
     fprintf(fout, format, mData->booleanAlias[i].info.name);
   for(i = 0; i < mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData.stringAlias[i].aliasType != 1)
     fprintf(fout, format, mData->stringAlias[i].info.name);
-  fprintf(fout,"\n");
+  fseek(fout, -1, SEEK_CUR);
+  fseek(fout, -1, SEEK_CUR); // removes the eol comma separator
   self->storage = fout;
 }
 
