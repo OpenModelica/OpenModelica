@@ -1,2 +1,2 @@
 OpenModelicaScriptingAPI.mo: OpenModelicaScriptingAPI.mos ../FrontEnd/ModelicaBuiltin.mo
-	$(OMC) $<
+	- $(OMC) $<
