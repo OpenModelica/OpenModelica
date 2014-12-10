@@ -8887,6 +8887,9 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   // a $_start is used to get get start value of a variable
   case CALL(path=IDENT(name="$_start"), expLst={arg}) then
     daeExpCallStart(arg, context, preExp, varDecls, &auxFunction)
+  // a $_initialGuess is used to get initial guess for nonlinear solver
+  case CALL(path=IDENT(name="$_initialGuess"), expLst={arg as CREF(__)}) then
+    '<%cref(arg.componentRef)%>'
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={LUNARY(exp = arg as CREF(__))}) then
@@ -9607,6 +9610,7 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp,
   else
     error(sourceInfo(), 'Code generation does not support start(<%printExpStr(exp)%>)')
 end daeExpCallStart;
+
 
 template daeExpSize(Exp exp, Context context, Text &preExp,
                     Text &varDecls, Text &auxFunction)

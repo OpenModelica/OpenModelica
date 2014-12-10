@@ -63,6 +63,9 @@ public function solve
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
+protected
+  list<BackendDAE.Equation> dummy1;
+  list<DAE.ComponentRef> dummy2;
 algorithm
 /*
   print("Try to solve: rhs: " +
@@ -70,10 +73,10 @@ algorithm
   ExpressionDump.dumpExpStr(inExp2,0) + " with respect to: " +
   ExpressionDump.printExpStr(inExp3) + "\n");
 */
- (outExp,outAsserts) := matchcontinue(inExp1, inExp2, inExp3)
+ (outExp,outAsserts,dummy1, dummy2) := matchcontinue(inExp1, inExp2, inExp3)
                         case(_,_,_) then  solveSimple(inExp1, inExp2, inExp3);
                         case(_,_,_) then  solveSimple(inExp2, inExp1, inExp3);
-                        case(_,_,_) then  solveWork(inExp1, inExp2, inExp3, NONE());
+                        case(_,_,_) then  solveWork(inExp1, inExp2, inExp3, NONE(), NONE());
                         else
                           equation
                            if Flags.isSet(Flags.FAILTRACE) then
@@ -90,16 +93,19 @@ end solve;
 
 
 public function solve2
-"Solves an equation consisting of a right hand side (rhs) and a
+"Solves an equation with modelica function consisting of a right hand side (rhs) and a
   left hand side (lhs), with respect to the expression given as
   third argument, usually a variable.
 "
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
-  input Option<DAE.FunctionTree> functions;
+  input Option<DAE.FunctionTree> functions "need for solve modelica functions";
+  input Option<Integer> uniqueEqIndex "offset for tmp vars";
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
+  output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs;
 algorithm
 /*
   print("Try to solve: rhs: " +
@@ -107,10 +113,10 @@ algorithm
   ExpressionDump.dumpExpStr(inExp2,0) + " with respect to: " +
   ExpressionDump.printExpStr(inExp3) + "\n");
 */
- (outExp,outAsserts) := matchcontinue(inExp1, inExp2, inExp3, functions)
-                        case(_,_,_,_) then  solveSimple(inExp1, inExp2, inExp3);
-                        case(_,_,_,_) then  solveSimple(inExp2, inExp1, inExp3);
-                        case(_,_,_,_) then  solveWork(inExp1, inExp2, inExp3, functions);
+ (outExp,outAsserts,eqnForNewVars,newVarsCrefs) := matchcontinue(inExp1, inExp2, inExp3, functions, uniqueEqIndex)
+                        case(_,_,_,_,_) then  solveSimple(inExp1, inExp2, inExp3);
+                        case(_,_,_,_,_) then  solveSimple(inExp2, inExp1, inExp3);
+                        case(_,_,_,_,_) then  solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex);
                         else
                           equation
                            if Flags.isSet(Flags.FAILTRACE) then
@@ -132,15 +138,21 @@ protected function solveWork
  input DAE.Exp inExp2 "rhs";
  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
  input Option<DAE.FunctionTree> functions;
+ input Option<Integer> uniqueEqIndex "offset for tmp vars";
  output DAE.Exp outExp;
  output list<DAE.Statement> outAsserts;
+ output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
+ output list<DAE.ComponentRef> newVarsCrefs;
+
 
 protected
  DAE.Exp e1, e2;
+ list<BackendDAE.Equation> eqnForNewVars1;
+ list<DAE.ComponentRef> newVarsCrefs1;
 
 algorithm
- (e1, e2) := matchcontinue(inExp1, inExp2, inExp3, functions)
-               case(_,_,_,_) then preprocessingSolve(inExp1, inExp2, inExp3, functions);
+ (e1, e2, eqnForNewVars, newVarsCrefs) := matchcontinue(inExp1, inExp2, inExp3, functions, uniqueEqIndex)
+               case(_,_,_,_,_) then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex);
                else
                 equation
                   if Flags.isSet(Flags.FAILTRACE) then
@@ -148,15 +160,18 @@ algorithm
                     Debug.trace(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
                     Debug.trace(" with respect to: " + ExpressionDump.printExpStr(inExp3));
                   end if;
-                then (inExp1,inExp2);
+                then (inExp1,inExp2,{},{});
               end matchcontinue;
 
- (outExp, outAsserts) := matchcontinue(e1, e2, inExp3)
-                          case(DAE.IFEXP(),_,_) then  solveIfExp(e1, e2, inExp3);
+ (outExp, outAsserts, eqnForNewVars1, newVarsCrefs1) := matchcontinue(e1, e2, inExp3)
+                          case(DAE.IFEXP(),_,_) then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex);
                           case(_,_,_) then  solveSimple(e1, e2, inExp3);
                           case(_,_,_) then  solveLinearSystem(e1, e2, inExp3);
                           else fail();
                          end matchcontinue;
+
+ eqnForNewVars := List.appendNoCopy(eqnForNewVars, eqnForNewVars1);
+ newVarsCrefs := List.appendNoCopy(newVarsCrefs, newVarsCrefs1);
 
 end solveWork;
 
@@ -195,6 +210,9 @@ protected function solveSimple
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
+  output list<BackendDAE.Equation> eqnForNewVars := {} "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs := {};
+
 algorithm
 
  /*
@@ -375,9 +393,13 @@ preprocessing for solve1,
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   input Option<DAE.FunctionTree> functions;
+  input Option<Integer> uniqueEqIndex "offset for tmp vars";
 
   output DAE.Exp h;
   output DAE.Exp k;
+  output list<BackendDAE.Equation> eqnForNewVars := {} "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs := {};
+
 
  protected
   DAE.Exp res;
@@ -412,6 +434,8 @@ preprocessing for solve1,
      con := con or new_x;
      (x, y, new_x) := preprocessingSolve4(x,y, inExp3);
      con := new_x or con;
+     (x, y, new_x, eqnForNewVars, newVarsCrefs) := preprocessingSolveTmpVars(x, y, inExp3, uniqueEqIndex, eqnForNewVars, newVarsCrefs, iter);
+     con := new_x or con;
 
      if not con then
        (x, con) := ExpressionSimplify.simplify(x);
@@ -425,7 +449,6 @@ preprocessing for solve1,
 
        con := new_x or con;
        iter := iter + 50;
-
      end if;
 
      if con and collect then
@@ -440,15 +463,7 @@ preprocessing for solve1,
        con := true;
        iter := iter + 50;
      elseif inlineFun then
-       (x,con) := matchcontinue(functions, x)
-                  local DAE.FunctionTree functions_;
-                        DAE.Exp funX;
-                  case(SOME(functions_),_)
-                  equation
-                  (funX,_) = Expression.traverseExpTopDown(x, inlineCallX, (inExp3, functions_));
-                  then (funX, not Expression.expEqual(x,funX));
-                  else (x, false);
-                  end matchcontinue;
+       (x,con) := solveFunCalls(x, inExp3, functions);
        collect := con;
        inlineFun := false;
      end if;
@@ -530,8 +545,8 @@ algorithm
 
         eWithX = Expression.expandFactors(inExp1);
         (factorWithX, factorWithoutX) = List.split1OnTrue(eWithX, expHasCref, inExp3);
-        pWithX = Expression.makeProductLst(factorWithX);
-        pWithoutX = Expression.makeProductLst(factorWithoutX);
+        pWithX = makeProductLstIf(factorWithX);
+        pWithoutX = makeProductLstIf(factorWithoutX);
 
         e = Expression.makeDiv(rhs, pWithoutX);
 
@@ -854,13 +869,13 @@ algorithm
 
   f1 := Expression.expandFactors(e1);
   (factorWithX1, factorWithoutX1) := List.split1OnTrue(f1, expHasCref, inExp3);
-  pWithX1 := Expression.makeProductLst(factorWithX1);
-  pWithoutX1 := Expression.makeProductLst(factorWithoutX1);
+  pWithX1 := makeProductLstIf(factorWithX1);
+  pWithoutX1 := makeProductLstIf(factorWithoutX1);
 
   f2 := Expression.expandFactors(inExp2);
   (factorWithX2, factorWithoutX2) := List.split1OnTrue(f2, expHasCref, inExp3);
-  (pWithX2,_) := ExpressionSimplify.simplify1(Expression.makeProductLst(factorWithX2));
-  pWithoutX2 := Expression.makeProductLst(factorWithoutX2);
+  (pWithX2,_) := ExpressionSimplify.simplify1(makeProductLstIf(factorWithX2));
+  pWithoutX2 := makeProductLstIf(factorWithoutX2);
   //print("\nf1 =");print(ExpressionDump.printExpListStr(f1));
   //print("\nf2 =");print(ExpressionDump.printExpListStr(f2));
 
@@ -965,6 +980,81 @@ algorithm
    end if;
 
 end preprocessingSolve5;
+
+protected function unifyFunCalls
+"
+e.g.
+ smooth() -> if 
+ semiLinear() -> if 
+ author: Vitalij Ruge
+"
+  input DAE.Exp inExp1 "lhs";
+  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  output DAE.Exp oExp;
+  output Boolean newX;
+algorithm
+ (oExp,_) := Expression.traverseExpTopDown(inExp1, unifyFunCallsWork, (inExp3));
+ newX := Expression.expEqual(oExp, inExp1);
+end unifyFunCalls;
+
+protected function unifyFunCallsWork
+  input DAE.Exp inExp;
+  input DAE.Exp iT;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output DAE.Exp oT;
+ algorithm
+   (outExp,cont,oT) := matchcontinue(inExp, iT)
+   local
+     DAE.Exp e, e1,e2,e3, X;
+     DAE.Type tp;
+
+   case(DAE.CALL(path = Absyn.IDENT(name = "smooth"), expLst = {_, e}),X)
+     equation
+       true = expHasCref(e, X);
+     then (e, true, iT);
+
+   case(DAE.CALL(path = Absyn.IDENT(name = "noEvent"), expLst = {e}),X)
+     equation
+       true = expHasCref(e, X);
+     then (e, true, iT);
+
+   case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1, e2, e3}),X)
+     equation
+       false = Expression.isZero(e1);
+       tp = Expression.typeof(e1);
+       e = DAE.IFEXP(DAE.RELATION(e1,DAE.GREATEREQ(tp), Expression.makeConstZero(tp),-1,NONE()),Expression.expMul(e1,e2), Expression.expMul(e1,e3));
+     then (e,true, iT);
+
+   else (inExp, true, iT);
+   end matchcontinue;
+  
+end unifyFunCallsWork;
+
+
+
+
+protected function solveFunCalls
+"
+  - inline modelica functions
+  - TODO: support annotation inverse
+ author: Vitalij Ruge
+"
+  input DAE.Exp inExp1 "lhs";
+  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  input Option<DAE.FunctionTree> functions;
+  output DAE.Exp x;
+  output Boolean con;
+algorithm
+ (x,con) := matchcontinue(functions, inExp1)
+                  local DAE.Exp funX; Boolean b;
+                  case(_,_)
+                  equation
+                    (funX,_) = Expression.traverseExpTopDown(inExp1, inlineCallX, (inExp3, functions));
+                  then (funX, not Expression.expEqual(funX, inExp1));
+                  else (inExp1, false);
+                  end matchcontinue;
+end solveFunCalls;
 
 protected function removeSimpleCalls
 "
@@ -1082,28 +1172,107 @@ DAE.Exp inExp2 DAE.CREF or 'der(DAE.CREF())'
 author: vitalij
 "
   input DAE.Exp inExp;
-  input tuple<DAE.Exp, DAE.FunctionTree> iT;
+  input tuple<DAE.Exp, Option<DAE.FunctionTree>> iT;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<DAE.Exp, DAE.FunctionTree> oT;
+  output tuple<DAE.Exp, Option<DAE.FunctionTree>> oT;
  algorithm
    (outExp,cont,oT) := matchcontinue(inExp, iT)
    local
      DAE.Exp e, X;
      DAE.ComponentRef cr;
-     DAE.FunctionTree functions;
+     Option<DAE.FunctionTree> functions;
      Boolean b;
 
    case(DAE.CALL(path =_),(X, functions))
      equation
        //print("\nIn: ");print(ExpressionDump.printExpStr(inExp));
        true = expHasCref(inExp, X);
-       (e,_,b) = Inline.forceInlineExp(inExp,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
+       (e,_,b) = Inline.forceInlineExp(inExp,(functions,{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
        //print("\nOut: ");print(ExpressionDump.printExpStr(e));
      then (e, not b, iT);
    else (inExp, true, iT);
    end matchcontinue;
 end inlineCallX;
+
+protected function preprocessingSolveTmpVars
+"
+helper function for solveWork
+creat tmp vars if needed!
+e.g. for solve abs()
+
+ author: Vitalij Ruge
+"
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  input Option<Integer> uniqueEqIndex "offset for tmp vars";
+  input list<BackendDAE.Equation> ieqnForNewVars;
+  input list<DAE.ComponentRef> inewVarsCrefs;
+  input Integer iter "offset for tmp vars";
+  output DAE.Exp x;
+  output DAE.Exp y;
+  output Boolean new_x;
+  output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs;
+algorithm
+  (x, y, new_x, eqnForNewVars, newVarsCrefs) := match(uniqueEqIndex)
+        local Integer i;
+        case(SOME(i)) then preprocessingSolveTmpVarsWork(inExp1, inExp2, inExp3, i, ieqnForNewVars, inewVarsCrefs, iter);
+        else then (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs);
+        end match;
+end preprocessingSolveTmpVars;
+
+protected function preprocessingSolveTmpVarsWork
+"
+helper function for solveWork
+creat tmp vars if needed!
+e.g. for solve abs
+"
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  input Integer uniqueEqIndex "offset for tmp vars";
+  input list<BackendDAE.Equation> ieqnForNewVars;
+  input list<DAE.ComponentRef> inewVarsCrefs;
+  input Integer iter "offset for tmp vars";
+  output DAE.Exp x;
+  output DAE.Exp y;
+  output Boolean new_x;
+  output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs;
+algorithm
+  (x, y, new_x, eqnForNewVars, newVarsCrefs) := matchcontinue(inExp1, inExp2)
+  local DAE.Exp e1, e_1, e, e2, exP;
+  DAE.ComponentRef cr;
+  DAE.Type tp;
+  BackendDAE.Equation eqn;
+  // abs(f(x)) = g(y) -> f(x) = sign(f(x))*g(y)
+  case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _) 
+  equation
+    tp = Expression.typeof(e1);
+    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_ABS_FOR_EQN" + intString(uniqueEqIndex) + "_" + intString(iter), tp , {});
+    eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    e = Expression.crefExp(cr);
+    exP = Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
+    e_1 = DAE.IFEXP(DAE.RELATION(exP, DAE.GREATEREQ(tp), DAE.RCONST(0.0),-1,NONE()),DAE.RCONST(1.0),DAE.RCONST(-1.0));
+  then(e1, Expression.expMul(e_1,inExp2), true, eqn::ieqnForNewVars,cr ::inewVarsCrefs);
+  // x^n = y -> x = y^(1/n)
+  case(DAE.BINARY(e1,DAE.POW(tp),e2),_)
+  equation
+    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_POW_FOR_EQN" + intString(uniqueEqIndex) + "_" + intString(iter), tp , {});
+    eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    e = Expression.crefExp(cr);
+    exP = Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
+    e_1 = DAE.IFEXP(DAE.RELATION(exP, DAE.GREATEREQ(tp), DAE.RCONST(0.0),-1,NONE()),DAE.RCONST(1.0),DAE.RCONST(-1.0));
+  then(e1, Expression.expMul(e_1,Expression.expPow(inExp2,DAE.BINARY(Expression.makeConstOne(tp),DAE.DIV(tp),e2))), true, eqn::ieqnForNewVars,cr ::inewVarsCrefs);
+    
+  else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs);
+  end matchcontinue;
+
+end preprocessingSolveTmpVarsWork;
+
+
 
 protected function solveIfExp
 "
@@ -1113,33 +1282,41 @@ protected function solveIfExp
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
+  input Option<DAE.FunctionTree> functions;
+  input Option<Integer> uniqueEqIndex "offset for tmp vars";
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
+  output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs;
+
 
 algorithm
-   (outExp,outAsserts) := match(inExp1,inExp2,inExp3)
+   (outExp,outAsserts,eqnForNewVars,newVarsCrefs) := match(inExp1,inExp2,inExp3, functions, uniqueEqIndex)
    local
       DAE.Exp e1,e2,e3,res,lhs,rhs, tmp1, tmp2;
       list<DAE.Statement> asserts,asserts1,asserts2;
+      list<BackendDAE.Equation> eqns, eqns1;
+      list<DAE.ComponentRef> var, var1;
+
 
       //  f(a) if(g(b)) then f1(a) else f2(a) =>
       //  a1 = solve(f(a),f1(a)) for a
       //  a2 = solve(f(a),f2(a)) for a
       //  => a = if g(b) then a1 else a2
-      case (DAE.IFEXP(e1,e2,e3),_,_)
+      case (DAE.IFEXP(e1,e2,e3),_,_,_,_)
         equation
           false = expHasCref(e1, inExp3);
 
-          (tmp1, tmp2) = preprocessingSolve(e2, inExp2, inExp3, NONE());
+          (tmp1, tmp2,eqns,var) = preprocessingSolve(e2, inExp2, inExp3, functions, uniqueEqIndex);
           (lhs,asserts1) = solve(tmp1, tmp2, inExp3);
 
-          (tmp1, tmp2) = preprocessingSolve(e3, inExp2, inExp3, NONE());
+          (tmp1, tmp2,eqns1,var1) = preprocessingSolve(e3, inExp2, inExp3, functions, uniqueEqIndex);
           (rhs,asserts2) = solve(tmp1, tmp2, inExp3);
 
           res = DAE.IFEXP(e1,lhs,rhs);
           asserts = listAppend(asserts1,asserts1);
       then
-        (res,asserts);
+        (res,asserts,List.appendNoCopy(eqns,eqns1),  List.appendNoCopy(var, var1));
       else fail();
    end match;
 
@@ -1157,6 +1334,9 @@ protected function solveLinearSystem
   input DAE.Exp inExp3;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
+  output list<BackendDAE.Equation> eqnForNewVars := {} "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs := {};
+
 
 algorithm
    (outExp,outAsserts) := match(inExp1,inExp2,inExp3)
@@ -1295,6 +1475,41 @@ protected function isCrefInIFEXPwork " helper for isCrefInIFEXP"
     case(_,_,_) then false;
   end match;
 end isCrefInIFEXPwork;
+
+protected function makeProductLstIf
+ "Takes a list of expressions an makes a product
+  expression multiplying all elements in the list.
+
+- a*if(b,c,d) -> if(b,a*c,a*d)
+
+"
+  input list<DAE.Exp> inExpLst;
+  output DAE.Exp outExp;
+protected
+  DAE.Type tp;
+algorithm
+  if List.isEmpty(inExpLst) then
+    outExp := DAE.RCONST(1.0);
+  return;
+  end if;
+
+  tp := Expression.typeof(listGet(inExpLst,1));
+  outExp := Expression.makeConstOne(tp);
+
+  for elem in inExpLst loop
+    if not Expression.isOne(elem) then
+    outExp := match(elem)
+              local DAE.Exp e1,e2,e3;
+              case(DAE.IFEXP(e1,e2,e3))
+              then DAE.IFEXP(e1, Expression.expMul(outExp,e2), Expression.expMul(outExp,e3));
+              case(DAE.BINARY(e1,DAE.DIV(),e2)) then Expression.makeDiv(Expression.expMul(outExp,e1),e2);
+              else Expression.expMul(outExp, elem);
+              end match;
+    end if;
+  end for;
+
+end makeProductLstIf;
+
 
 annotation(__OpenModelica_Interface="backend");
 end ExpressionSolve;

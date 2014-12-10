@@ -1524,6 +1524,7 @@ public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
   input BackendDAE.Equation inEquation;
   output list<BackendDAE.Equation> outEquations;
 algorithm
+
   outEquations := match (inEquation)
     local
       DAE.Exp e, e1, e2, exp;
@@ -2138,11 +2139,11 @@ algorithm
       BackendDAE.EquationAttributes eqAttr;
 
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr), _, _) equation
-      (res, _) = ExpressionSolve.solve2(e1, e2, crefExp, functions);
+      (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
     case (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _, _) equation
-      (res, _) = ExpressionSolve.solve2(e1, e2, crefExp, functions);
+      (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=e2, source=source, attr=eqAttr), _,_) equation
@@ -2154,16 +2155,16 @@ algorithm
       cr = Expression.expCref(crefExp);
       false = ComponentReference.crefEqual(cref, cr);
       e1 = Expression.crefExp(cref);
-      (res, _) = ExpressionSolve.solve2(e1, e2, crefExp, functions);
+      (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
     case (BackendDAE.RESIDUAL_EQUATION(exp=e2, source=source, attr=eqAttr), _, _) equation
       e1 = Expression.makeConstZero(Expression.typeof(e2));
-      (res, _) = ExpressionSolve.solve2(e2, e1, crefExp, functions);
+      (res, _, {}, {}) = ExpressionSolve.solve2(e2, e1, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _, _) equation
-      (res, _) = ExpressionSolve.solve2(e1, e2, crefExp, functions);
+      (res, _, {}, {}) = ExpressionSolve.solve2(e1, e2, crefExp, functions, NONE());
     then (BackendDAE.EQUATION(crefExp, res, source, eqAttr));
 /*
     case (eq as BackendDAE.ALGORITHM(alg=_), _)

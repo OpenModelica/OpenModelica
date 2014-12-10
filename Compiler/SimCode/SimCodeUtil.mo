@@ -2920,7 +2920,7 @@ algorithm
       BackendDAE.Equation eqn;
       Integer    uniqueEqIndex;
       list<DAE.Statement> algStatements;
-      list<DAE.ComponentRef> conditions;
+      list<DAE.ComponentRef> conditions, solveCr;
       list<SimCode.SimEqSystem> resEqs;
       list<BackendDAE.WhenClause> wcl;
       DAE.ComponentRef left, varOutput;
@@ -2936,6 +2936,8 @@ algorithm
       DAE.Expand crefExpand;
       Boolean homotopySupport;
       DAE.FunctionTree funcs;
+      list<BackendDAE.Equation> solveEqns;
+      list<SimCode.SimEqSystem> eqSystlst;
 
     /*
     // solve always a linear equations
@@ -2988,12 +2990,15 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) = shared;
-        (exp_, asserts) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs));
+        (exp_, asserts, solveEqns, solveCr) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(iuniqueEqIndex));
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
-        (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, exp_, source)}, iuniqueEqIndex+1);
+        (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
+        (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
+        eqSystlst = List.appendNoCopy(eqSystlst,resEqs);
+        tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
       then
-        (resEqs, uniqueEqIndex, itempvars);
+        (eqSystlst, uniqueEqIndex,tempvars); 
 
     // single equation from if-equation -> 0.0 = if .. then bla else lbu and var is not in all branches
     // change branches without variable to var - pre(var)
@@ -3768,6 +3773,21 @@ algorithm
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSES_SIMPLE_ASSIGN;
 
+protected function makeSolved_SES_SIMPLE_ASSIGN
+  input BackendDAE.Equation inEqn;
+  input Integer iuniqueEqIndex;
+  output SimCode.SimEqSystem outSimEqn;
+  output Integer ouniqueEqIndex;
+protected
+  DAE.Exp e;
+  DAE.ComponentRef cr;
+  DAE.ElementSource source;
+algorithm
+  BackendDAE.SOLVED_EQUATION(componentRef= cr, exp=e, source=source) := inEqn;
+  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source);
+  ouniqueEqIndex := iuniqueEqIndex+1;
+end makeSolved_SES_SIMPLE_ASSIGN;
+
 protected function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";
   input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
@@ -4192,7 +4212,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) = ishared;
-        (expr, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs));
+        (expr, {}, {}, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
         dcr = if BackendVariable.isStateVar(var) then ComponentReference.crefPrefixDer(cr) else cr;
         repl = BackendVarTransform.addReplacement(inRepl, dcr, expr, SOME(BackendVarTransform.skipPreOperator));
         repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;
@@ -4241,7 +4261,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(var) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) = ishared;
-        (expr, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs));
+        (expr, {}, {}, {}) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
         dcr = if BackendVariable.isStateVar(var) then ComponentReference.crefPrefixDer(cr) else cr;
         repl = BackendVarTransform.addReplacement(inRepl, dcr, expr, SOME(BackendVarTransform.skipPreOperator));
         repl = if BackendVariable.isStateVar(var) then BackendVarTransform.addDerConstRepl(cr, expr, repl) else repl;
