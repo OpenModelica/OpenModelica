@@ -104,7 +104,7 @@ algorithm
     list<CommonSubExp> cseLst;
   case(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs), BackendDAE.SHARED(functionTree=functionTree))
     equation
-      (_,m,mT) = BackendDAEUtil.getIncidenceMatrix(sysIn,BackendDAE.NORMAL(),SOME(functionTree));
+      (_,m,mT) = BackendDAEUtil.getIncidenceMatrix(sysIn,BackendDAE.ABSOLUTE(),SOME(functionTree));
           //print("start this eqSystem\n");
           //BackendDump.dumpEqSystem(sysIn,"eqSystem input");
           //BackendDump.dumpIncidenceMatrix(m);
@@ -150,8 +150,8 @@ algorithm
     vars := BackendVariable.listVar1(List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,varsIn));
     eqs := BackendEquation.listEquation(BackendEquation.getEqns(eqIdcs,eqsIn));
     eqSys := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-    (_,m,mT) := BackendDAEUtil.getIncidenceMatrix(eqSys,BackendDAE.NORMAL(),NONE());
-        //BackendDump.dumpEqSystem(eqSys,"reduced system for CSE 1");
+    (_,m,mT) := BackendDAEUtil.getIncidenceMatrix(eqSys,BackendDAE.ABSOLUTE(),NONE());
+        //BackendDump.dumpEqSystem(eqSys,"reduced system for CSE 2");
         //BackendDump.dumpIncidenceMatrix(m);
         //BackendDump.dumpIncidenceMatrix(mT);
         //varAtts := List.threadMap(List.fill(false,listLength(varIdcs)),List.fill("",listLength(varIdcs)),Util.makeTuple);
@@ -168,8 +168,8 @@ algorithm
     vars := BackendVariable.listVar1(List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,varsIn));
     eqs := BackendEquation.listEquation(BackendEquation.getEqns(eqIdcs,eqsIn));
     eqSys := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
-    (_,m,mT) := BackendDAEUtil.getIncidenceMatrix(eqSys,BackendDAE.NORMAL(),NONE());
-        //BackendDump.dumpEqSystem(eqSys,"reduced system for CSE 2");
+    (_,m,mT) := BackendDAEUtil.getIncidenceMatrix(eqSys,BackendDAE.ABSOLUTE(),NONE());
+        //BackendDump.dumpEqSystem(eqSys,"reduced system for CSE 3");
         //BackendDump.dumpIncidenceMatrix(m);
         //BackendDump.dumpIncidenceMatrix(mT);
         //varAtts := List.threadMap(List.fill(false,listLength(varIdcs)),List.fill("",listLength(varIdcs)),Util.makeTuple);
