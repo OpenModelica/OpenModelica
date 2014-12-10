@@ -5901,6 +5901,21 @@ algorithm
   end match;
 end traversingexpHasCrefNoPreorDer;
 
+public function expHasCrefsNoPreOrStart "
+ returns true if the expression contains one cref from the list, but not in pre(),change(),edge(),start(), delay()"
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inCr;
+  output Boolean hasCref;
+algorithm
+  for cr in inCr loop
+    (_,(_,hasCref)) := traverseExpTopDown(inExp, traversingexpHasCrefNoPreOrStart, (cr,false));
+    if hasCref then
+      break;
+    end if;
+  end for;
+end expHasCrefsNoPreOrStart;
+
+
 public function expHasCrefNoPreOrStart "
  returns true if the expression contains the cref, but not in pre(),change(),edge(),start(), delay()"
   input DAE.Exp inExp;

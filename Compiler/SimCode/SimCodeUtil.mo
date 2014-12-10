@@ -5920,6 +5920,8 @@ algorithm
         //check that solved vars are on lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
+        // check lhs depend on rhs
+        false = Expression.expHasCrefsNoPreOrStart(e2,crefs);
         List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
 
         eqSystlst = {SimCode.SES_ALGORITHM(iuniqueEqIndex, {DAE.STMT_TUPLE_ASSIGN(tp, expl, e2, source)})};
