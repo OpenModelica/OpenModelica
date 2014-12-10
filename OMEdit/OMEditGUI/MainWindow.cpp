@@ -684,9 +684,11 @@ void MainWindow::openResultFiles(QStringList fileNames)
     QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.fileName());
     // close the simulation result file.
     mpOMCProxy->closeSimulationResultFile();
-    mpPerspectiveTabbar->setCurrentIndex(2);
-    mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-    mpVariablesDockWidget->show();
+    if (list.size() > 0) {
+      mpPerspectiveTabbar->setCurrentIndex(2);
+      mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
+      mpVariablesDockWidget->show();
+    }
   }
   mpOMCProxy->changeDirectory(currentDirectory);
 }
