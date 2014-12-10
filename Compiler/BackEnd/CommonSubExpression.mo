@@ -111,7 +111,7 @@ algorithm
           //BackendDump.dumpIncidenceMatrixT(mT);
       cseLst = commonSubExpressionFind(m,mT,vars,eqs);
       //if List.isNotEmpty(cseLst) then print("update "+stringDelimitList(List.map(cseLst,printCSE),"")+"\n");end if;
-      (syst,shared) = commonSubExpressionUpdate(cseLst,m,mT,sysIn,sharedIn,{});
+      (syst,shared) = commonSubExpressionUpdate(cseLst,m,mT,sysIn,sharedIn,{},{});
           //print("done this eqSystem\n");
           //BackendDump.dumpEqSystem(syst,"eqSystem");
           //BackendDump.printShared(shared);
@@ -312,10 +312,11 @@ author:Waurich TUD 2014-11"
   input BackendDAE.EqSystem sysIn;
   input BackendDAE.Shared sharedIn;
   input list<Integer> deleteEqLstIn;
+  input list<DAE.ComponentRef> deleteCrefsIn;
   output BackendDAE.EqSystem sysOut;
   output BackendDAE.Shared sharedOut;
 algorithm
-  (sysOut,sharedOut) := matchcontinue(tplsIn,m,mT,sysIn,sharedIn,deleteEqLstIn)
+  (sysOut,sharedOut) := matchcontinue(tplsIn,m,mT,sysIn,sharedIn,deleteEqLstIn,deleteCrefsIn)
     local
       Integer sharedVar,eqIdx1,eqIdx2,varIdx1,varIdx2,varIdxRepl,varIdxAlias,eqIdxDel,eqIdxLeft;
       list<Integer> eqIdcs,eqs1,eqs2,vars1,vars2,aliasVars;
@@ -331,15 +332,18 @@ algorithm
       DAE.Exp varExp;
       DAE.ComponentRef cref;
       list<BackendDAE.Equation> eqLst;
-  case({},_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,stateSets=stateSets,partitionKind=partitionKind),_,_)
+  case({},_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,stateSets=stateSets,partitionKind=partitionKind),_,_,_)
     equation
       // remove superfluous equations
     eqLst = BackendEquation.equationList(eqs);
     eqLst = List.deletePositions(eqLst,List.map1(deleteEqLstIn,intSub,1));
     eqs = BackendEquation.listEquation(eqLst);
+
+    // remove alias from vars
+    vars = BackendVariable.deleteCrefs(deleteCrefsIn,vars);
     eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
     then (eqSys,sharedIn);
-  case(ASSIGNMENT_CSE(eqIdcs={eqIdx1,eqIdx2},aliasVars={varIdx1,varIdx2})::rest,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,stateSets=stateSets,partitionKind=partitionKind),_,_)
+  case(ASSIGNMENT_CSE(eqIdcs={eqIdx1,eqIdx2},aliasVars={varIdx1,varIdx2})::rest,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,stateSets=stateSets,partitionKind=partitionKind),_,_,_)
     equation
      // update the equations
      repl = BackendVarTransform.emptyReplacements();
@@ -362,16 +366,15 @@ algorithm
      (eqLst,_) = BackendVarTransform.replaceEquations(eqLst,repl,NONE());
      eqs = List.threadFold(eqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
 
-     // remove alias from vars, add alias to shared
-     vars = BackendVariable.deleteVar(cref,vars);
+     // add alias to shared
      var2 = BackendVariable.setBindExp(var2,SOME(varExp));
      shared = updateAllAliasVars(sharedIn,repl);
      shared = BackendVariable.addAliasVarDAE(var2,shared);
      eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
-    then commonSubExpressionUpdate(rest,m,mT,eqSys,shared,eqIdxDel::deleteEqLstIn);
- case(_::rest,_,_,_,_,_)
+    then commonSubExpressionUpdate(rest,m,mT,eqSys,shared,eqIdxDel::deleteEqLstIn,cref::deleteCrefsIn);
+ case(_::rest,_,_,_,_,_,_)
     equation
-  then commonSubExpressionUpdate(rest,m,mT,sysIn,sharedIn,deleteEqLstIn);
+  then commonSubExpressionUpdate(rest,m,mT,sysIn,sharedIn,deleteEqLstIn,deleteCrefsIn);
   end matchcontinue;
 end commonSubExpressionUpdate;
 
