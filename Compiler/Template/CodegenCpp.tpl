@@ -11695,6 +11695,7 @@ else
 end writeLhsCref;
 
 
+
 template scalarLhsCref(Exp ecr, Context context, Text &preExp,Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation) ::=
 match ecr
 case ecr as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
@@ -11738,7 +11739,8 @@ template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context co
       then
 
         let estr = daeExp(sub.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  &extraFuncsNamespace, useFlatArrayNotation)
-        '((<%estr%><%
+        '<%estr%><%match subrest case {} then "" else ',<%threadDimSubList(dimrest, subrest, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  &extraFuncsNamespace, useFlatArrayNotation)%>'%>'
+        /*'((<%estr%><%
           dimrest |> dim =>
           match dim
           case DIM_INTEGER(__) then ')*<%integer%>'
@@ -11746,6 +11748,7 @@ template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context co
           case DIM_ENUM(__) then '*<%size%>'
           else error(sourceInfo(),"Non-constant dimension in simulation context")
         %>)<%match subrest case {} then "" else ',<%threadDimSubList(dimrest, subrest, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  &extraFuncsNamespace, useFlatArrayNotation)%>'%>'
+        */
       else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
   else error(sourceInfo(),"Non-index subscript in indexing cref? That's odd!")
 end threadDimSubList;
