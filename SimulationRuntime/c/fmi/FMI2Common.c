@@ -75,7 +75,7 @@ void fmi2GetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realVal
     fmi2_status_t status = fmi2_import_get_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaError("fmi2GetReal failed\n");
+      ModelicaFormatError("fmi2GetReal failed with status : %s\n", fmi2_status_to_string(status));
     }
   } else if (fmiType == 2) {
 
@@ -94,7 +94,7 @@ void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realVal
     fmi2_status_t status = fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaError("fmi2SetReal failed\n");
+      ModelicaFormatError("fmi2SetReal failed with status : %s\n", fmi2_status_to_string(status));
     }
   } else if (fmiType == 2) {
 
@@ -114,7 +114,7 @@ void fmi2GetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* inte
     fmi2_status_t status = fmi2_import_get_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaError("fmi2GetInteger failed\n");
+      ModelicaFormatError("fmi2GetInteger failed with status : %s\n", fmi2_status_to_string(status));
     }
   } else if (fmiType == 2) {
 
@@ -133,7 +133,7 @@ void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* inte
     fmi2_status_t status = fmi2_import_set_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaError("fmi2SetInteger failed\n");
+      ModelicaFormatError("fmi2SetInteger failed with status : %s\n", fmi2_status_to_string(status));
     }
   } else if (fmiType == 2) {
 
@@ -153,7 +153,7 @@ void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* bool
     fmi2_status_t status = fmi2_import_get_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaError("fmi2GetBoolean failed\n");
+      ModelicaFormatError("fmi2GetBoolean failed with status : %s\n", fmi2_status_to_string(status));
     }
   } else if (fmiType == 2) {
 
@@ -172,7 +172,7 @@ void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* bool
     fmi2_status_t status = fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaError("fmi2SetBoolean failed\n");
+      ModelicaFormatError("fmi2SetBoolean failed with status : %s\n", fmi2_status_to_string(status));
     }
   } else if (fmiType == 2) {
 
@@ -192,7 +192,7 @@ void fmi2GetString_OMC(void* in_fmi2, int numberOfValueReferences, double* strin
     fmi2_status_t status = fmi2_import_get_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaError("fmi2GetString failed\n");
+      ModelicaFormatError("fmi2GetString failed with status : %s\n", fmi2_status_to_string(status));
     }
   } else if (fmiType == 2) {
 
@@ -211,7 +211,7 @@ void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* strin
     fmi2_status_t status = fmi2_import_set_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaError("fmi2SetString failed\n");
+      ModelicaFormatError("fmi2SetString failed with status : %s\n", fmi2_status_to_string(status));
     }
   } else if (fmiType == 2) {
 

@@ -68,7 +68,7 @@ void* FMI1CoSimulationConstructor_OMC(int fmi_log_level, char* working_directory
   /* Load the binary (dll/so) */
   jm_status_enu_t status = fmi1_import_create_dllfmu(FMI1CS->FMIImportInstance, FMI1CS->FMICallbackFunctions, 0);
   if (status == jm_status_error) {
-    ModelicaError("Loading of FMU dynamic link library failed.\n");
+    ModelicaFormatError("Loading of FMU dynamic link library failed with status : %s\n", jm_log_level_to_string(status));
     return 0;
   }
   FMI1CS->FMIInstanceName = (char*) malloc(strlen(instanceName)+1);
@@ -82,20 +82,20 @@ void* FMI1CoSimulationConstructor_OMC(int fmi_log_level, char* working_directory
   FMI1CS->FMIInteractive = interactive;
   jm_status_enu_t instantiateSlaveStatus = fmi1_import_instantiate_slave(FMI1CS->FMIImportInstance, FMI1CS->FMIInstanceName, FMI1CS->FMIFmuLocation, FMI1CS->FMIMimeType, FMI1CS->FMITimeOut, FMI1CS->FMIVisible, FMI1CS->FMIInteractive);
   if (instantiateSlaveStatus == jm_status_error) {
-    ModelicaError("fmiInstantiateSlave failed.\n");
+    ModelicaFormatError("fmiInstantiateSlave failed with status : %s\n", jm_log_level_to_string(instantiateSlaveStatus));
     return 0;
   }
   FMI1CS->FMIDebugLogging = debugLogging;
   fmi1_status_t debugLoggingStatus = fmi1_import_set_debug_logging(FMI1CS->FMIImportInstance, FMI1CS->FMIDebugLogging);
   if (debugLoggingStatus != fmi1_status_ok && debugLoggingStatus != fmi1_status_warning) {
-    ModelicaMessage("fmiSetDebugLogging failed.\n");
+    ModelicaFormatMessage("fmiSetDebugLogging failed with status : %s\n", fmi1_status_to_string(debugLoggingStatus));
   }
   FMI1CS->FMITStart = tStart;
   FMI1CS->FMIStopTimeDefined = stopTimeDefined;
   FMI1CS->FMITStop = tStop;
   fmi1_status_t initializeSlaveStatus = fmi1_import_initialize_slave(FMI1CS->FMIImportInstance, FMI1CS->FMITStart, FMI1CS->FMIStopTimeDefined, FMI1CS->FMITStop);
   if (initializeSlaveStatus != fmi1_status_ok && initializeSlaveStatus != fmi1_status_warning) {
-    ModelicaError("fmiInitializeSlave failed\n");
+    ModelicaFormatError("fmiInitializeSlave failed with status : %s\n", fmi1_status_to_string(initializeSlaveStatus));
   }
   return FMI1CS;
 }
@@ -123,7 +123,7 @@ double fmi1DoStep_OMC(void* in_fmi1cs, double currentCommunicationPoint, double 
   FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1cs;
   fmi1_status_t status = fmi1_import_do_step(FMI1CS->FMIImportInstance, currentCommunicationPoint, communicationStepSize, newStep);
   if (status != fmi1_status_ok && status != fmi1_status_warning) {
-    ModelicaError("fmiDoStep failed\n");
+    ModelicaFormatError("fmiDoStep failed with status : %s\n", fmi1_status_to_string(status));
   }
   return 0.0;
 }
