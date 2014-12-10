@@ -2998,7 +2998,7 @@ algorithm
         eqSystlst = List.appendNoCopy(eqSystlst,resEqs);
         tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
       then
-        (eqSystlst, uniqueEqIndex,tempvars); 
+        (eqSystlst, uniqueEqIndex,tempvars);
 
     // single equation from if-equation -> 0.0 = if .. then bla else lbu and var is not in all branches
     // change branches without variable to var - pre(var)

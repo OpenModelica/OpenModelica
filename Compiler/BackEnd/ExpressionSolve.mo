@@ -984,8 +984,8 @@ end preprocessingSolve5;
 protected function unifyFunCalls
 "
 e.g.
- smooth() -> if 
- semiLinear() -> if 
+ smooth() -> if
+ semiLinear() -> if
  author: Vitalij Ruge
 "
   input DAE.Exp inExp1 "lhs";
@@ -1028,7 +1028,7 @@ protected function unifyFunCallsWork
 
    else (inExp, true, iT);
    end matchcontinue;
-  
+
 end unifyFunCallsWork;
 
 
@@ -1248,7 +1248,7 @@ algorithm
   DAE.Type tp;
   BackendDAE.Equation eqn;
   // abs(f(x)) = g(y) -> f(x) = sign(f(x))*g(y)
-  case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _) 
+  case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _)
   equation
     tp = Expression.typeof(e1);
     cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_ABS_FOR_EQN" + intString(uniqueEqIndex) + "_" + intString(iter), tp , {});
@@ -1266,7 +1266,7 @@ algorithm
     exP = Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
     e_1 = DAE.IFEXP(DAE.RELATION(exP, DAE.GREATEREQ(tp), DAE.RCONST(0.0),-1,NONE()),DAE.RCONST(1.0),DAE.RCONST(-1.0));
   then(e1, Expression.expMul(e_1,Expression.expPow(inExp2,DAE.BINARY(Expression.makeConstOne(tp),DAE.DIV(tp),e2))), true, eqn::ieqnForNewVars,cr ::inewVarsCrefs);
-    
+
   else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs);
   end matchcontinue;
 
