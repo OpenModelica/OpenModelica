@@ -1811,8 +1811,8 @@ template calcHelperMainfile5(SimCode simCode ,Text& extraFuncs,Text& extraFuncsD
 end calcHelperMainfile5;
 
 
-    
-    
+
+
 template algloopHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq, Context context, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
@@ -9806,14 +9806,14 @@ case ARRAY(array=_::_, ty = arraytype) then
   let ArrayType = expTypeArrayforDim(ty)
   let &tmpVar = buffer ""
   let arrayVar = tempDecl(arrayTypeStr, &tmpVar /*BUFD*/)
-  let arrayassign =  if scalar then 
+  let arrayassign =  if scalar then
     let params = (array |> e =>  '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  &extraFuncsNamespace,useFlatArrayNotation)%>' ;separator=", ")
     let &varDecls +=  <<
                        <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
                        <%ArrayType%> <%arrayVar%>(<%arrayVar%>_data);<%\n%>
                      >>
                           ""
-                      else    
+                      else
                               let funcCalls = daeExpSubArray(array,arrayVar,ArrayType,context,preExp,varDecls,simCode, &extraFuncs,&extraFuncsDecl, &extraFuncsNamespace,useFlatArrayNotation)
                               let &extraFuncsDecl += 'void createArray_<%arrayVar%>(<%ArrayType%>& <%arrayVar%>);<%\n%>'
                               let &extraFuncs +=
@@ -9822,14 +9822,14 @@ case ARRAY(array=_::_, ty = arraytype) then
                                {
                                   <%funcCalls%>
                                   <%arrayVar%>.setDims(<%allocateDimensions(arraytype,context)%>);
-                                  
+
                                }
                                >>
                                <<
                                <%ArrayType%> <%arrayVar%>;
                                 createArray_<%arrayVar%>(<%arrayVar%>);<%\n%>
                                >>
-                                 
+
 
    let &preExp += '<%arrayassign%>'
   arrayVar
@@ -9837,7 +9837,7 @@ case ARRAY(array=_::_, ty = arraytype) then
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayDef = expTypeArrayforDim(ty)
-  let &tmpdecl = buffer "" 
+  let &tmpdecl = buffer ""
   let arrayVar = tempDecl(arrayTypeStr, &tmpdecl )
   let &tmpVar = buffer ""
    let &preExp += '
@@ -9867,7 +9867,7 @@ let funcCall = 'createArray_<%arrayVar%>_<%idx%>(<%arrayVar%>);<%\n%>'
 let &funcVarDecls = buffer ""
 let funcs = (array |> e hasindex i0 fromindex intAdd(intMul(idx, multiplicator),1) =>
        <<
-        <%arrayVar%>.append(<%i0%>,<%daeExp(e, context, &preExp , &funcVarDecls ,simCode , &extraFuncs , &extraFuncsDecl,  &extraFuncsNamespace,useFlatArrayNotation)%>); 
+        <%arrayVar%>.append(<%i0%>,<%daeExp(e, context, &preExp , &funcVarDecls ,simCode , &extraFuncs , &extraFuncsDecl,  &extraFuncsNamespace,useFlatArrayNotation)%>);
        >> ;separator="\n")
        let & extraFuncs +=
        <<
