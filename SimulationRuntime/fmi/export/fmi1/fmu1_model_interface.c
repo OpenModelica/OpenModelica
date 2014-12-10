@@ -732,7 +732,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       intermediateResults = fmiTrue;
       if (comp->loggingOn)
         comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiEventUpdate: Need to iterate(discrete changes)!");
-      eventInfo->iterationConverged  = fmiFalse;
+      eventInfo->iterationConverged  = fmiTrue;
       eventInfo->stateValueReferencesChanged = fmiFalse;
       eventInfo->stateValuesChanged  = fmiTrue;
       eventInfo->terminateSimulation = fmiFalse;
