@@ -9827,8 +9827,9 @@ case ARRAY(array=_::_, ty = arraytype) then
                                <<
                                void <%extraFuncsNamespace%>::createArray_<%arrayVar%>(<%ArrayType%>& <%arrayVar%>)
                                {
-                                  <%funcCalls%>
                                   <%arrayVar%>.setDims(<%allocateDimensions(arraytype,context)%>);
+                                  <%funcCalls%>
+                                  
 
                                }
                                >>
@@ -9872,26 +9873,25 @@ let func = 'void createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>);'
 let &extraFuncsDecl+= '<%func%><%\n%>'
 let funcCall = 'createArray_<%arrayVar%>_<%idx%>(<%arrayVar%>);<%\n%>'
 let &funcVarDecls = buffer ""
+let &preExpSubArrays = buffer ""
 let funcs = (array |> e hasindex i0 fromindex intAdd(intMul(idx, multiplicator),1) =>
+       let subArraycall = daeExp(e, context, &preExpSubArrays , &funcVarDecls ,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)
        <<
-        <%arrayVar%>.append(<%i0%>,<%daeExp(e, context, &preExp , &funcVarDecls ,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>);
+          <%arrayVar%>.append(<%i0%>,<%subArraycall%>);
        >> ;separator="\n")
        let & extraFuncs +=
        <<
        void <%extraFuncsNamespace%>::createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>)
        {
         <%funcVarDecls%>
+        <%preExpSubArrays%>
         <%funcs%>
        }
        >>
 funcCall
 end daeExpSubArray2;
 
-template daeExpSubArrayFunc(Integer idx,String arrayVar,String ArrayType)
-::=
-let func = 'void createArray_<%arrayVar%>_<%idx%>(<%ArrayType%>& <%arrayVar%>);'
-func
-end daeExpSubArrayFunc;
+
 
 
 
