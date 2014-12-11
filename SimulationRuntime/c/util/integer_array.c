@@ -1076,7 +1076,7 @@ void div_scalar_integer_array(modelica_integer a, const integer_array_t* b, inte
 integer_array_t div_alloc_scalar_integer_array(modelica_integer a, const integer_array_t b)
 {
     integer_array_t dest;
-    clone_integer_array_spec(&b,d&est);
+    clone_integer_array_spec(&b,&dest);
     alloc_integer_array_data(&dest);
     div_scalar_integer_array(a,&b,&dest);
 }
