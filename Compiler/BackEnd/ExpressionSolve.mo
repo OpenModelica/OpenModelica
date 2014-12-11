@@ -409,6 +409,7 @@ preprocessing for solve1,
   DAE.ComponentRef cr;
   DAE.Boolean con, new_x, collect := true, inlineFun := true;
   Integer iter;
+  Integer depth := 0;
 
  algorithm
    (x, _) := ExpressionSimplify.simplify(inExp1);
@@ -436,7 +437,7 @@ preprocessing for solve1,
      con := new_x or con;
      // TODO: use new defined function, which missing in the cpp runtime
      if not stringEqual(Config.simCodeTarget(), "Cpp") then
-       (x, y, new_x, eqnForNewVars, newVarsCrefs) := preprocessingSolveTmpVars(x, y, inExp3, uniqueEqIndex, eqnForNewVars, newVarsCrefs);
+       (x, y, new_x, eqnForNewVars, newVarsCrefs, depth) := preprocessingSolveTmpVars(x, y, inExp3, uniqueEqIndex, eqnForNewVars, newVarsCrefs, depth);
      con := new_x or con;
      end if;
 
@@ -1212,16 +1213,18 @@ e.g. for solve abs()
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
   input list<BackendDAE.Equation> ieqnForNewVars;
   input list<DAE.ComponentRef> inewVarsCrefs;
+  input Integer idepth;
   output DAE.Exp x;
   output DAE.Exp y;
   output Boolean new_x;
   output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
   output list<DAE.ComponentRef> newVarsCrefs;
+  output Integer odepth;
 algorithm
-  (x, y, new_x, eqnForNewVars, newVarsCrefs) := match(uniqueEqIndex)
+  (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := match(uniqueEqIndex)
         local Integer i;
-        case(SOME(i)) then preprocessingSolveTmpVarsWork(inExp1, inExp2, inExp3, i, ieqnForNewVars, inewVarsCrefs);
-        else then (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs);
+        case(SOME(i)) then preprocessingSolveTmpVarsWork(inExp1, inExp2, inExp3, i, ieqnForNewVars, inewVarsCrefs, idepth);
+        else then (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
         end match;
 end preprocessingSolveTmpVars;
 
@@ -1237,15 +1240,16 @@ e.g. for solve abs
   input Integer uniqueEqIndex "offset for tmp vars";
   input list<BackendDAE.Equation> ieqnForNewVars;
   input list<DAE.ComponentRef> inewVarsCrefs;
+  input Integer idepth "depth of tmp var";
   output DAE.Exp x;
   output DAE.Exp y;
   output Boolean new_x;
   output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
   output list<DAE.ComponentRef> newVarsCrefs;
+  output Integer odepth;
 algorithm
-  (x, y, new_x, eqnForNewVars, newVarsCrefs) := matchcontinue(inExp1, inExp2)
+  (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := matchcontinue(inExp1, inExp2)
   local DAE.Exp e1, e_1, e, e2, exP, lhs;
-  list<DAE.Exp> lhsF, singCall;
   DAE.ComponentRef cr;
   DAE.Type tp;
   BackendDAE.Equation eqn;
@@ -1257,41 +1261,34 @@ algorithm
   case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _)
   equation
     tp = Expression.typeof(e1);
-    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_ABS_FOR_EQN_" + intString(uniqueEqIndex), tp , {});
+    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_ABS_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
     eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     e = Expression.crefExp(cr);
-    exP = Expression.makePureBuiltinCall("$_initialGuess",{inExp3},tp);
-    e_1 = Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
-    lhsF = Expression.factors(inExp2);
-    (singCall,_) = List.split1OnTrue(lhsF, Expression.isFunCall, "$_signNoNull");
-    b = listLength(singCall) == 0;
-    lhs = if b then Expression.expMul(e_1,inExp2) else inExp2;
-    eqnForNewVars_ = if b then eqn::ieqnForNewVars else ieqnForNewVars;
-    newVarsCrefs_ = if b then cr ::inewVarsCrefs else inewVarsCrefs;
-  then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_);
+    exP = Expression.makePureBuiltinCall("$_initialGuess", {e}, tp);
+    e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
+    lhs = Expression.expMul(e_1, inExp2);
+    eqnForNewVars_ = eqn::ieqnForNewVars;
+    newVarsCrefs_ = cr::inewVarsCrefs;
+  then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
   // x^n = y -> x = y^(1/n)
-  case(DAE.BINARY(e1,DAE.POW(tp),e2),_)
+  case(DAE.BINARY(e1, DAE.POW(tp), e2),_)
   equation
-    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_POW_FOR_EQN_" + intString(uniqueEqIndex), tp , {});
+    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_POW_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
     eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     e = Expression.crefExp(cr);
     exP = Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
     e_1 = Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
-    lhsF = Expression.factors(inExp2);
-    (singCall,_) = List.split1OnTrue(lhsF, Expression.isFunCall, "$_signNoNull");
-    b = listLength(singCall) == 0;
-    eqnForNewVars_ = if b then eqn::ieqnForNewVars else ieqnForNewVars;
-    newVarsCrefs_ = if b then cr ::inewVarsCrefs else inewVarsCrefs;
+    eqnForNewVars_ = eqn::ieqnForNewVars;
+    newVarsCrefs_ = cr ::inewVarsCrefs;
     lhs = Expression.expPow(inExp2,DAE.BINARY(Expression.makeConstOne(tp),DAE.DIV(tp),e2));
-    lhs = if b then  Expression.expMul(e_1,lhs) else lhs;
-  then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_);
+    lhs = Expression.expMul(e_1, lhs);
+  then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
-  else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs);
+  else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
   end matchcontinue;
 
 end preprocessingSolveTmpVarsWork;
-
 
 
 protected function solveIfExp
