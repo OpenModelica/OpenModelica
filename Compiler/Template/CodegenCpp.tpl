@@ -9829,7 +9829,7 @@ case ARRAY(array=_::_, ty = arraytype) then
                                {
                                   <%arrayVar%>.setDims(<%allocateDimensions(arraytype,context)%>);
                                   <%funcCalls%>
-                                  
+
 
                                }
                                >>
