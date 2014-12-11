@@ -888,7 +888,28 @@ void mul_integer_array_scalar(const integer_array_t * a,modelica_integer b,integ
     }
 }
 
-integer_array_t  mul_alloc_integer_array_scalar(const integer_array_t a,modelica_integer b)
+integer_array_t mul_alloc_integer_array(const integer_array_t a, integer_array_t b)
+{
+    integer_array_t dest;
+    clone_integer_array_spec(&a,&dest);
+    alloc_integer_array_data(&dest);
+    mul_integer_array(&a,&b,&dest);
+    return dest;
+}
+
+void mul_integer_array(const integer_array_t *a,const integer_array_t *b,integer_array_t* dest)
+{
+  size_t nr_of_elements;
+  size_t i;
+  /* Assert that a,b have same sizes? */
+  nr_of_elements = base_array_nr_of_elements(*a);
+  for(i=0; i < nr_of_elements; ++i) {
+    integer_set(dest, i, integer_get(*a, i) * integer_get(*b, i));
+  }
+}
+
+
+integer_array_t mul_alloc_integer_array_scalar(const integer_array_t a, modelica_integer b)
 {
     integer_array_t dest;
     clone_integer_array_spec(&a,&dest);

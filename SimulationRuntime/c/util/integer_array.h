@@ -189,6 +189,8 @@ extern integer_array_t mul_alloc_scalar_integer_array(modelica_integer a,const i
 
 extern void mul_integer_array_scalar(const integer_array_t * a,modelica_integer b,
                                      integer_array_t* dest);
+extern void mul_integer_array(const integer_array_t *a,const integer_array_t *b,integer_array_t* dest);
+extern integer_array_t mul_alloc_integer_array(const integer_array_t a, integer_array_t b);
 extern integer_array_t mul_alloc_integer_array_scalar(const integer_array_t a,modelica_integer b);
 
 extern modelica_integer mul_integer_scalar_product(const integer_array_t a,
