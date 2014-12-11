@@ -434,7 +434,7 @@ preprocessing for solve1,
      con := con or new_x;
      (x, y, new_x) := preprocessingSolve4(x,y, inExp3);
      con := new_x or con;
-     // TODO: use new defined function, which missing in the cpp runtime 
+     // TODO: use new defined function, which missing in the cpp runtime
      if not stringEqual(Config.simCodeTarget(), "Cpp") then
        (x, y, new_x, eqnForNewVars, newVarsCrefs) := preprocessingSolveTmpVars(x, y, inExp3, uniqueEqIndex, eqnForNewVars, newVarsCrefs);
      con := new_x or con;
@@ -1031,7 +1031,7 @@ protected function unifyFunCallsWork
 
    else (inExp, true, iT);
    end matchcontinue;
-  
+
 end unifyFunCallsWork;
 
 
@@ -1254,7 +1254,7 @@ algorithm
   Boolean b;
 
   // abs(f(x)) = g(y) -> f(x) = sign(f(x))*g(y)
-  case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _) 
+  case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _)
   equation
     tp = Expression.typeof(e1);
     cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_ABS_FOR_EQN_" + intString(uniqueEqIndex), tp , {});
@@ -1286,7 +1286,7 @@ algorithm
     lhs = Expression.expPow(inExp2,DAE.BINARY(Expression.makeConstOne(tp),DAE.DIV(tp),e2));
     lhs = if b then  Expression.expMul(e_1,lhs) else lhs;
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_);
-    
+
   else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs);
   end matchcontinue;
 
