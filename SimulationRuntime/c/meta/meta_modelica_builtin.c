@@ -355,7 +355,7 @@ modelica_metatype boxptr_stringGetStringChar(threadData_t *threadData,metamodeli
   MMC_CHECK_STRING(str);
   if (ix < 1 || ix > (long) MMC_STRLEN(str))
     MMC_THROW_INTERNAL();
-  return mmc_strings_len1[MMC_STRINGDATA(str)[ix-1]];
+  return mmc_strings_len1[(size_t)MMC_STRINGDATA(str)[ix-1]];
 }
 
 modelica_integer nobox_stringGet(threadData_t *threadData,metamodelica_string str, modelica_integer ix)

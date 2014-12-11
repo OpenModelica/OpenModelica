@@ -389,13 +389,13 @@ void read_input_xml(MODEL_DATA* modelData,
   infoStreamPrint(LOG_SIMULATION, 0, "tolerance = %g", simulationInfo->tolerance);
 
   read_value_mm(mi.de["solver"], &simulationInfo->solverMethod);
-  infoStreamPrint(LOG_SIMULATION, 0, "solver method: %s", simulationInfo->solverMethod);
+  infoStreamPrint(LOG_SIMULATION, 0, "solver method: %s", MMC_STRINGDATA(simulationInfo->solverMethod));
 
   read_value_mm(mi.de["outputFormat"], &(simulationInfo->outputFormat));
-  infoStreamPrint(LOG_SIMULATION, 0, "output format: %s", simulationInfo->outputFormat);
+  infoStreamPrint(LOG_SIMULATION, 0, "output format: %s", MMC_STRINGDATA(simulationInfo->outputFormat));
 
   read_value_mm(mi.de["variableFilter"], &(simulationInfo->variableFilter));
-  infoStreamPrint(LOG_SIMULATION, 0, "variable filter: %s", simulationInfo->variableFilter);
+  infoStreamPrint(LOG_SIMULATION, 0, "variable filter: %s", MMC_STRINGDATA(simulationInfo->variableFilter));
 
   read_value(mi.md["OPENMODELICAHOME"], &simulationInfo->OPENMODELICAHOME);
   infoStreamPrint(LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);

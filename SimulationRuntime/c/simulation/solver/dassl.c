@@ -547,7 +547,7 @@ int dassl_step(DATA* data, SOLVER_INFO* solverInfo)
     externalInputUpdate(data);
     data->callback->input_function(data);
 
-    DDASKR(functionODE_residual, &mData->nStates,
+    DDASKR(functionODE_residual, (int*) &mData->nStates,
             &solverInfo->currentTime, sData->realVars, stateDer, &tout,
             dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
             dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,

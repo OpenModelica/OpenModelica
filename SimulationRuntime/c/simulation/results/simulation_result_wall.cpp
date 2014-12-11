@@ -144,19 +144,19 @@ static void write_aliases(std::ofstream &fp, MODEL_DATA *modelData, int include[
   msgpack_str(fp, "als");
   int na = 0; // Number of aliases (include time) for this request
   for(long i=0;i<modelData->nAliasReal;i++)
-    na += include[modelData->realAlias[i].aliasType];
+    na += include[(int)modelData->realAlias[i].aliasType];
   for(long i=0;i<modelData->nAliasInteger;i++)
-    na += include[modelData->integerAlias[i].aliasType];
+    na += include[(int)modelData->integerAlias[i].aliasType];
   for(long i=0;i<modelData->nAliasBoolean;i++)
-    na += include[modelData->booleanAlias[i].aliasType];
+    na += include[(int)modelData->booleanAlias[i].aliasType];
   for(long i=0;i<modelData->nAliasString;i++)
-    na += include[modelData->stringAlias[i].aliasType];
+    na += include[(int)modelData->stringAlias[i].aliasType];
 
   msgpack_obj_header(fp, na);
 
   for(long i=0;i<modelData->nAliasReal;i++) {
     DATA_REAL_ALIAS *alias = &modelData->realAlias[i];
-    if (include[alias->aliasType]==0) continue;
+    if (include[(int)alias->aliasType]==0) continue;
     if (alias->aliasType==2) sig = "time";
     if (alias->aliasType==1) sig = modelData->realParameterData[alias->nameID].info.name;
     if (alias->aliasType==0) sig = modelData->realVarsData[alias->nameID].info.name;
@@ -165,7 +165,7 @@ static void write_aliases(std::ofstream &fp, MODEL_DATA *modelData, int include[
 
   for(long i=0;i<modelData->nAliasInteger;i++) {
     DATA_INTEGER_ALIAS *alias = &modelData->integerAlias[i];
-    if (include[alias->aliasType]==0) continue;
+    if (include[(int)alias->aliasType]==0) continue;
     if (alias->aliasType==2) sig = "time";
     if (alias->aliasType==1) sig = modelData->integerParameterData[alias->nameID].info.name;
     if (alias->aliasType==0) sig = modelData->integerVarsData[alias->nameID].info.name;
@@ -174,7 +174,7 @@ static void write_aliases(std::ofstream &fp, MODEL_DATA *modelData, int include[
 
   for(long i=0;i<modelData->nAliasBoolean;i++) {
     DATA_BOOLEAN_ALIAS *alias = &modelData->booleanAlias[i];
-    if (include[alias->aliasType]==0) continue;
+    if (include[(int)alias->aliasType]==0) continue;
     if (alias->aliasType==2) sig = "time";
     if (alias->aliasType==1) sig = modelData->booleanParameterData[alias->nameID].info.name;
     if (alias->aliasType==0) sig = modelData->booleanVarsData[alias->nameID].info.name;
@@ -183,7 +183,7 @@ static void write_aliases(std::ofstream &fp, MODEL_DATA *modelData, int include[
 
   for(long i=0;i<modelData->nAliasString;i++) {
     DATA_STRING_ALIAS *alias = &modelData->stringAlias[i];
-    if (include[alias->aliasType]==0) continue;
+    if (include[(int)alias->aliasType]==0) continue;
     if (alias->aliasType==2) sig = "time";
     if (alias->aliasType==1) sig = modelData->stringParameterData[alias->nameID].info.name;
     if (alias->aliasType==0) sig = modelData->stringVarsData[alias->nameID].info.name;

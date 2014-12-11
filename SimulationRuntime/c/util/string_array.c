@@ -158,7 +158,7 @@ void print_string_matrix(const string_array_t *source)
         for(i = 0; i < source->dim_size[0]; ++i) {
             for(j = 0; j < source->dim_size[1]; ++j) {
                 value = string_get(*source, (i * source->dim_size[1]) + j);
-                printf("%s\t", value);
+                printf("%s\t", MMC_STRINGDATA(value));
             }
             printf("\n");
         }

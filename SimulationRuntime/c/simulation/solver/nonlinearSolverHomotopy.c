@@ -802,7 +802,7 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
  */
 static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
 {
-  int iflag=0;
+  int iflag = 0;
 
   /*TODO: change input to residualFunc from data to systemData */
   (solverData->data)->simulationInfo.nonlinearSystemData[solverData->sysNumber].residualFunc(solverData->data, x, f, &iflag);
@@ -1371,9 +1371,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   int numSteps = 0;
   int stepAccept = 0;
   int runHomotopy = 0;
-  double bend;
+  double bend = 0;
   double sProd, detJac;
-  double tau=0.2, tauMax = 10.0, tauMin = 1e-4, hEps = 1e-3, adaptBend = 0.05;
+  double tau = 0.2, tauMax = 10.0, tauMin = 1e-4, hEps = 1e-3, adaptBend = 0.05;
   int m = solverData->m;
   int n = solverData->n;
   int initialStep = 1;

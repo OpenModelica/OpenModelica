@@ -1128,6 +1128,7 @@ integer_array_t div_alloc_scalar_integer_array(modelica_integer a, const integer
     clone_integer_array_spec(&b,&dest);
     alloc_integer_array_data(&dest);
     div_scalar_integer_array(a,&b,&dest);
+    return dest;
 }
 
 void pow_integer_array_scalar(const integer_array_t *a, modelica_integer b, integer_array_t* dest)

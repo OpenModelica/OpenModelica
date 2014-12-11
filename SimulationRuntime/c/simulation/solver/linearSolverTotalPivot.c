@@ -353,7 +353,7 @@ int getAnalyticalJacobianTotalPivot(DATA* data, double* jac, int sysNumber)
 static int wrapper_fvec_totalpivot(double* x, double* f, void* data, int sysNumber)
 {
   int currentSys = sysNumber;
-  int iflag;
+  int iflag = 0;
   /* NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]); */
   /* DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData); */
 

@@ -295,7 +295,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 #endif
 
     ((DATA*)data)->simulationInfo.solveContinuous = 0;
-    nonlinsys->residualFunc((void*) data, nonlinsys->nlsx, fvec, &nonlinsys->size);
+    nonlinsys->residualFunc((void*) data, nonlinsys->nlsx, fvec, (int*)&nonlinsys->size);
     ((DATA*)data)->simulationInfo.solveContinuous = 1;
 
     success = 1;

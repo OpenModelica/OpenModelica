@@ -233,8 +233,8 @@ _omc_size _omc_getVectorSize(_omc_vector* vec)
  */
 _omc_scalar _omc_getVectorElement(_omc_vector* vec, const _omc_size i)
 {
-  assertStreamPrint(NULL, 0 <= i, "index out of bounds: %d", i);
-  assertStreamPrint(NULL, i < vec->size, "_omc_vector size %d smaller than %d", vec->size, i);
+  assertStreamPrint(NULL, 0 <= i, "index out of bounds: %d", (int)i);
+  assertStreamPrint(NULL, i < vec->size, "_omc_vector size %d smaller than %d", (int)vec->size, (int)i);
   return vec->data[i];
 }
 
@@ -248,8 +248,8 @@ _omc_scalar _omc_getVectorElement(_omc_vector* vec, const _omc_size i)
  */
 void _omc_setVectorElement(_omc_vector* vec, const _omc_size i, const _omc_scalar s)
 {
-  assertStreamPrint(NULL, 0 <= i, "index out of bounds: %d", i);
-  assertStreamPrint(NULL, i < vec->size, "_omc_vector size %d smaller than %d", vec->size, i);
+  assertStreamPrint(NULL, 0 <= i, "index out of bounds: %d", (int)i);
+  assertStreamPrint(NULL, i < vec->size, "_omc_vector size %d smaller than %d", (int)vec->size, (int)i);
   vec->data[i] = s;
 }
 
@@ -321,10 +321,10 @@ _omc_size _omc_getMatrixSize(_omc_matrix* mat)
  */
 _omc_scalar _omc_getMatrixElement(_omc_matrix* mat, const _omc_size i, const _omc_size j)
 {
-  assertStreamPrint(NULL, 0 <= i, "index i out of bounds: %d", i);
-  assertStreamPrint(NULL, 0 <= j, "index j out of bounds: %d", j);
-  assertStreamPrint(NULL, i < mat->rows, "_omc_matrix rows(%d) too small for %d", mat->rows, i);
-  assertStreamPrint(NULL, j < mat->cols, "_omc_matrix cols(%d) too small for %d", mat->cols, j);
+  assertStreamPrint(NULL, 0 <= i, "index i out of bounds: %d", (int)i);
+  assertStreamPrint(NULL, 0 <= j, "index j out of bounds: %d", (int)j);
+  assertStreamPrint(NULL, i < mat->rows, "_omc_matrix rows(%d) too small for %d", (int)mat->rows, (int)i);
+  assertStreamPrint(NULL, j < mat->cols, "_omc_matrix cols(%d) too small for %d", (int)mat->cols, (int)j);
   return mat->data[i + j * mat->cols];
 }
 
@@ -339,8 +339,8 @@ _omc_scalar _omc_getMatrixElement(_omc_matrix* mat, const _omc_size i, const _om
  */
 void _omc_setMatrixElement(_omc_matrix* mat, const _omc_size i, const _omc_size j, _omc_scalar s)
 {
-  assertStreamPrint(NULL, i < mat->rows, "_omc_matrix rows(%d) too small for %d", mat->rows, i);
-  assertStreamPrint(NULL, j < mat->cols, "_omc_matrix cols(%d) too small for %d", mat->cols, j);
+  assertStreamPrint(NULL, i < mat->rows, "_omc_matrix rows(%d) too small for %d", (int)mat->rows, (int)i);
+  assertStreamPrint(NULL, j < mat->cols, "_omc_matrix cols(%d) too small for %d", (int)mat->cols, (int)j);
   mat->data[i + j * mat->cols] = s;
 }
 
@@ -429,7 +429,7 @@ _omc_vector* _omc_addVector(_omc_vector* dest, const _omc_vector* src)
 {
   _omc_size i;
   assertStreamPrint(NULL, dest->size == src->size,
-      "Vectors have not the same size %d != %d", dest->size, src->size);
+      "Vectors have not the same size %d != %d", (int)dest->size, (int)src->size);
   assertStreamPrint(NULL, NULL != dest->data, "vector1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != src->data, "vector2 data is NULL pointer");
   for (i = 0; i < dest->size; ++i) {
@@ -449,7 +449,7 @@ _omc_vector* _omc_addVector(_omc_vector* dest, const _omc_vector* src)
 _omc_vector* _omc_subVector(_omc_vector* dest, const _omc_vector* src)
 {
   _omc_size i;
-  assertStreamPrint(NULL, src->size == dest->size, "Vectors have not the same size %d != %d", src->size, dest->size);
+  assertStreamPrint(NULL, src->size == dest->size, "Vectors have not the same size %d != %d", (int)src->size, (int)dest->size);
   assertStreamPrint(NULL, NULL != dest->data, "vector1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != src->data, "vector2 data is NULL pointer");
   for (i = 0; i < dest->size; ++i)
@@ -472,7 +472,7 @@ _omc_vector* _omc_addVectorVector(_omc_vector* dest, const _omc_vector* vec1, co
 {
   _omc_size i;
   assertStreamPrint(NULL, vec1->size == vec2->size && dest->size == vec1->size,
-      "Vectors have not the same size %d != %d != %d", dest->size, vec1->size, vec2->size);
+      "Vectors have not the same size %d != %d != %d", (int)dest->size, (int)vec1->size, (int)vec2->size);
   assertStreamPrint(NULL, NULL != vec1->data, "vector1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != vec2->data, "vector2 data is NULL pointer");
   assertStreamPrint(NULL, NULL != dest->data, "destination data is NULL pointer");
@@ -495,7 +495,7 @@ _omc_vector* _omc_subVectorVector(_omc_vector* dest, const _omc_vector* vec1, co
 {
   _omc_size i;
   assertStreamPrint(NULL, vec1->size == vec2->size && dest->size == vec1->size,
-      "Vectors have not the same size %d != %d", vec1->size, vec2->size);
+      "Vectors have not the same size %d != %d", (int)vec1->size, (int)vec2->size);
   assertStreamPrint(NULL, NULL != vec1->data, "vector1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != vec2->data, "vector2 data is NULL pointer");
   assertStreamPrint(NULL, NULL != dest->data, "destination data is NULL pointer");
@@ -519,7 +519,7 @@ _omc_scalar _omc_scalarProduct(const _omc_vector* vec1, const _omc_vector* vec2)
   _omc_size i;
   _omc_size m = vec1->size, n = vec2->size;
   _omc_scalar result = 0;
-  assertStreamPrint(NULL, m == n, "Vectors size doesn't match to multiply %d != %d ", m, n);
+  assertStreamPrint(NULL, m == n, "Vectors size doesn't match to multiply %d != %d ", (int)m, (int)n);
   assertStreamPrint(NULL, NULL != vec1->data, "vector1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != vec2->data, "vector2 data is NULL pointer");
   for (i = 0; i < n; ++i)
@@ -633,8 +633,8 @@ _omc_matrix* _omc_addMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
 {
   _omc_size i, j;
   assertStreamPrint(NULL, mat1->rows == mat2->rows && mat1->cols == mat2->cols,
-      "matrixes have not the same size ((%d,%d)!=(%d,%d))", mat1->rows,
-      mat1->cols, mat2->rows, mat2->cols);
+      "matrixes have not the same size ((%d,%d)!=(%d,%d))",
+      (int)mat1->rows, (int)mat1->cols, (int)mat2->rows, (int)mat2->cols);
   assertStreamPrint(NULL, NULL != mat1->data, "matrix1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != mat2->data, "matrix2 data is NULL pointer");
   for (i = 0; i < mat1->rows; ++i) {
@@ -659,8 +659,8 @@ _omc_matrix* _omc_subtractMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
 {
   _omc_size i, j;
   assertStreamPrint(NULL, mat1->rows == mat2->rows && mat1->cols == mat2->cols,
-      "matrixes have not the same size ((%d,%d)!=(%d,%d))", mat1->rows,
-      mat1->cols, mat2->rows, mat2->cols);
+      "matrixes have not the same size ((%d,%d)!=(%d,%d))",
+      (int)mat1->rows, (int)mat1->cols, (int)mat2->rows, (int)mat2->cols);
   assertStreamPrint(NULL, NULL != mat1->data, "matrix1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != mat2->data, "matrix2 data is NULL pointer");
   for (i = 0; i < mat1->rows; ++i) {
@@ -687,7 +687,7 @@ _omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
   _omc_size l = mat1->rows, m = mat1->cols, n = mat2->cols;
   assertStreamPrint(NULL, mat1->cols == mat2->rows,
       "matrixes size doesn't match to multiply"
-          "(%d!=%d)", mat1->cols, mat2->rows);
+          "(%d!=%d)", (int)mat1->cols, (int)mat2->rows);
   assertStreamPrint(NULL, NULL != mat1->data, "matrix1 data is NULL pointer");
   assertStreamPrint(NULL, NULL != mat2->data, "matrix2 data is NULL pointer");
   for (i = 0; i < l; ++i) {
@@ -723,7 +723,7 @@ void _omc_printVector(_omc_vector* vec, const char* name, const int logLevel)
   infoStreamPrint(logLevel, 1, "%s", name);
   for (i = 0; i < vec->size; ++i)
   {
-    infoStreamPrint(logLevel, 0, "[%2d] %20.12g", i, vec->data[i]);
+    infoStreamPrint(logLevel, 0, "[%2d] %20.12g", (int)i, vec->data[i]);
   }
   messageClose(logLevel);
 }

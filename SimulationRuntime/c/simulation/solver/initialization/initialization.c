@@ -884,7 +884,9 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
         omc_matlab4_val(&(mData->realVarsData[i].attribute.start), &reader, pVar, initTime);
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
       }
-      else if(strlen(mData->realVarsData[i].info.name) > 0 && mData->realVarsData[i].info.name[0] != '$' != 0 && strncmp(mData->realVarsData[i].info.name, "der($", 5) != 0)
+      else if((strlen(mData->realVarsData[i].info.name) > 0) &&
+              (mData->realVarsData[i].info.name[0] != '$') &&
+              (strncmp(mData->realVarsData[i].info.name, "der($", 5) != 0))
       {
         /* skip warnings about self-generated variables */
         warningStreamPrint(LOG_INIT, 0, "unable to import real variable %s from given file", mData->realVarsData[i].info.name);

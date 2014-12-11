@@ -48,6 +48,7 @@
 #include "model_help.h"
 #include "meta_modelica.h"
 #include "simulation/solver/epsilon.h"
+#include "linearSystem.h"
 
 #include "OptimizerInterface.h"
 
@@ -720,7 +721,7 @@ static void writeOutputVars(char* names, DATA* data)
         fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
     for(i = 0; i < data->modelData.nVariablesString; i++)
       if(!strcmp(p, data->modelData.stringVarsData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[i]);
+        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
 
     for(i = 0; i < data->modelData.nAliasReal; i++)
       if(!strcmp(p, data->modelData.realAlias[i].info.name))
@@ -748,7 +749,7 @@ static void writeOutputVars(char* names, DATA* data)
       }
     for(i = 0; i < data->modelData.nAliasString; i++)
       if(!strcmp(p, data->modelData.stringAlias[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]);
+        fprintf(stdout, ",%s=\"%s\"", p, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]));
 
     /* parameters */
     for(i = 0; i < data->modelData.nParametersReal; i++)
