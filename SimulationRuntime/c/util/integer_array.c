@@ -838,11 +838,13 @@ void sub_integer_array_data_mem(const integer_array_t * a, const integer_array_t
     }
 }
 
-void sub_alloc_integer_array(const integer_array_t * a, const integer_array_t * b,integer_array_t* dest)
+integer_array_t sub_alloc_integer_array(const integer_array_t a, const integer_array_t b)
 {
-    clone_integer_array_spec(a,dest);
-    alloc_integer_array_data(dest);
-    sub_integer_array(a,b,dest);
+  integer_array_t dest;
+  clone_integer_array_spec(&a, &dest);
+  alloc_integer_array_data(&dest);
+  sub_integer_array(&a, &b, &dest);
+  return dest;
 }
 
 void mul_scalar_integer_array(modelica_integer a,const integer_array_t * b,integer_array_t* dest)

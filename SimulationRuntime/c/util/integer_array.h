@@ -180,8 +180,7 @@ extern void add_integer_array(const integer_array_t * a, const integer_array_t *
 
 extern void sub_integer_array(const integer_array_t * a, const integer_array_t * b,
                               integer_array_t* dest);
-extern void sub_alloc_integer_array(const integer_array_t * a, const integer_array_t * b,
-                                    integer_array_t* dest);
+extern integer_array_t sub_alloc_integer_array(const integer_array_t a, const integer_array_t b);
 extern void sub_integer_array_data_mem(const integer_array_t * a, const integer_array_t * b,
                                        modelica_integer* dest);
 
