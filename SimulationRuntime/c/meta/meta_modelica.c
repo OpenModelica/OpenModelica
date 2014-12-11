@@ -830,10 +830,14 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
   /* format the anyStringBuf as array to return it */
   if (mt == record_metaType) {
     formatString = "^done,omc_element={name=\"%ld\",displayName=\"%s\",type=\"%s\"}";
-    asprintf(&formattedString, formatString, (long)name, displayName, ty);
+    if (-1 == asprintf(&formattedString, formatString, (long)name, displayName, ty)) {
+      assert(0);
+    }
   } else {
     formatString = "^done,omc_element={name=\"%ld\",displayName=\"[%d]\",type=\"%s\"}";
-    asprintf(&formattedString, formatString, (long)name, (int)i, ty);
+    if (-1 == asprintf(&formattedString, formatString, (long)name, (int)i, ty)) {
+      assert(0);
+    }
   }
   n1 = strlen(formattedString) + 1;
   n = snprintf(anyStringBuf, n1, "%s", formattedString);

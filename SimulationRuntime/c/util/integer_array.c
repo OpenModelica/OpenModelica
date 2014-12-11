@@ -780,6 +780,30 @@ void range_integer_array(modelica_integer start, modelica_integer stop, modelica
     }
 }
 
+void usub_integer_array(integer_array_t* a)
+{
+    size_t nr_of_elements, i;
+
+    nr_of_elements = base_array_nr_of_elements(*a);
+    for(i = 0; i < nr_of_elements; ++i)
+    {
+        integer_set(a, i, -integer_get(*a, i));
+    }
+}
+
+void usub_alloc_integer_array(const integer_array_t a, integer_array_t* dest)
+{
+    size_t nr_of_elements, i;
+    clone_integer_array_spec(&a,dest);
+    alloc_integer_array_data(dest);
+
+    nr_of_elements = base_array_nr_of_elements(*dest);
+    for(i = 0; i < nr_of_elements; ++i)
+    {
+        integer_set(dest, i, -integer_get(a, i));
+    }
+}
+
 void add_integer_array(const integer_array_t * a, const integer_array_t * b, integer_array_t* dest)
 {
     size_t nr_of_elements;
@@ -1077,11 +1101,13 @@ void division_integer_array_scalar(threadData_t *threadData, const integer_array
     }
 }
 
-void division_alloc_integer_array_scalar(threadData_t *threadData,const integer_array_t * a,modelica_integer b,integer_array_t* dest, const char* division_str)
+integer_array_t division_alloc_integer_array_scalar(threadData_t *threadData,const integer_array_t a,modelica_integer b, const char* division_str)
 {
-    clone_integer_array_spec(a,dest);
-    alloc_integer_array_data(dest);
-    division_integer_array_scalar(threadData,a,b,dest,division_str);
+    integer_array_t dest;
+    clone_integer_array_spec(&a,&dest);
+    alloc_integer_array_data(&dest);
+    division_integer_array_scalar(threadData,&a,b,&dest,division_str);
+    return dest;
 }
 
 void div_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest)
@@ -1116,11 +1142,13 @@ void pow_integer_array_scalar(const integer_array_t *a, modelica_integer b, inte
   }
 }
 
-void pow_alloc_integer_array_scalar(const integer_array* a, modelica_integer b, integer_array_t* dest)
+integer_array_t pow_alloc_integer_array_scalar(const integer_array a, modelica_integer b)
 {
-  clone_integer_array_spec(a, dest);
-  alloc_integer_array_data(dest);
-  pow_integer_array_scalar(a, b, dest);
+  integer_array_t dest;
+  clone_integer_array_spec(&a, &dest);
+  alloc_integer_array_data(&dest);
+  pow_integer_array_scalar(&a, b, &dest);
+  return dest;
 }
 
 void exp_integer_array(const integer_array_t * a, modelica_integer n, integer_array_t* dest)
@@ -1175,11 +1203,13 @@ void exp_integer_array(const integer_array_t * a, modelica_integer n, integer_ar
     }
 }
 
-void exp_alloc_integer_array(const integer_array_t * a,modelica_integer b,integer_array_t* dest)
+integer_array_t exp_alloc_integer_array(const integer_array_t a,modelica_integer b)
 {
-    clone_integer_array_spec(a,dest);
-    alloc_integer_array_data(dest);
-    exp_integer_array(a,b,dest);
+    integer_array_t dest;
+    clone_integer_array_spec(&a,&dest);
+    alloc_integer_array_data(&dest);
+    exp_integer_array(&a,b,&dest);
+    return dest;
 }
 
 /* function: promote_alloc_integer_array

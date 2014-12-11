@@ -177,6 +177,9 @@ extern integer_array_t add_alloc_integer_array(const integer_array_t a, const in
 extern void add_integer_array(const integer_array_t * a, const integer_array_t * b,
                               integer_array_t* dest);
 
+/* Unary subtraction */
+extern void usub_integer_array(integer_array_t* a);
+extern void usub_alloc_integer_array(const integer_array_t a, integer_array_t* dest);
 extern void sub_integer_array(const integer_array_t * a, const integer_array_t * b,
                               integer_array_t* dest);
 extern integer_array_t sub_alloc_integer_array(const integer_array_t a, const integer_array_t b);
@@ -210,17 +213,15 @@ extern integer_array_t div_alloc_integer_array_scalar(const integer_array_t a,mo
 
 extern void division_integer_array_scalar(threadData_t*,const integer_array_t * a,modelica_integer b,
                                           integer_array_t* dest, const char* division_str);
-extern void division_alloc_integer_array_scalar(threadData_t*,const integer_array_t * a,modelica_integer b,
-                                                integer_array_t* dest, const char* division_str);
+extern integer_array_t division_alloc_integer_array_scalar(threadData_t *threadData,const integer_array_t a,modelica_integer b, const char* division_str);
 extern void div_scalar_integer_array(modelica_integer a, const integer_array_t* b, integer_array_t* dest);
 extern integer_array_t div_alloc_scalar_integer_array(modelica_integer a, const integer_array_t b);
 extern void pow_integer_array_scalar(const integer_array_t *a, modelica_integer b, integer_array_t* dest);
-extern void pow_alloc_integer_array_scalar(const integer_array* a, modelica_integer b, integer_array_t* dest);
+extern integer_array_t pow_alloc_integer_array_scalar(const integer_array a, modelica_integer b);
 
 extern void exp_integer_array(const integer_array_t * a, modelica_integer n,
                               integer_array_t* dest);
-extern void exp_alloc_integer_array(const integer_array_t * a, modelica_integer b,
-                                    integer_array_t* dest);
+extern integer_array_t exp_alloc_integer_array(const integer_array_t a, modelica_integer b);
 
 extern void promote_integer_array(const integer_array_t * a, int n,integer_array_t* dest);
 extern void promote_scalar_integer_array(modelica_integer s,int n,
