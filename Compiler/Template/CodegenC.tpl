@@ -9449,9 +9449,10 @@ case CAST(__) then
   case T_ARRAY(__) then
     let arrayTypeStr = expTypeArray(ty)
     let tvar = tempDecl(arrayTypeStr, &varDecls)
+    let tevar = tempDecl(arrayTypeStr, &varDecls)
     let to = expTypeShort(ty)
     let from = expTypeFromExpShort(exp)
-    let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>'
+    let &preExp += '<%tevar%> = <%expVar%>;<%\n%>cast_<%from%>_array_to_<%to%>(&<%tevar%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
   case ty1 as T_COMPLEX(complexClassType=rec as RECORD(__)) then
     match typeof(exp)
