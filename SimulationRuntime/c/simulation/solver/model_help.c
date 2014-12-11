@@ -203,7 +203,10 @@ void printAllVars(DATA *data, int ringSegment, int stream)
 
   infoStreamPrint(stream, 1, "string variables");
   for(i=0; i<mData->nVariablesString; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
+    infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1,
+        mData->stringVarsData[i].info.name,
+        MMC_STRINGDATA(data->localData[ringSegment]->stringVars[i]),
+        MMC_STRINGDATA(sInfo->stringVarsPre[i]));
   messageClose(stream);
 
   messageClose(stream);
@@ -547,7 +550,7 @@ void setAllVarsToStart(DATA *data)
   for(i=0; i<mData->nVariablesString; ++i)
   {
     sData->stringVars[i] = mData->stringVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
   }
 
   TRACE_POP
@@ -799,7 +802,7 @@ double getNextSampleTimeFMU(DATA *data)
  */
 void initializeDataStruc(DATA *data)
 {
-  SIMULATION_DATA tmpSimData;
+  SIMULATION_DATA tmpSimData = {0};
   size_t i = 0;
 
   TRACE_PUSH
