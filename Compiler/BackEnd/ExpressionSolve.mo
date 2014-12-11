@@ -66,6 +66,7 @@ public function solve
 protected
   list<BackendDAE.Equation> dummy1;
   list<DAE.ComponentRef> dummy2;
+  Integer dummyI;
 algorithm
 /*
   print("Try to solve: rhs: " +
@@ -73,10 +74,10 @@ algorithm
   ExpressionDump.dumpExpStr(inExp2,0) + " with respect to: " +
   ExpressionDump.printExpStr(inExp3) + "\n");
 */
- (outExp,outAsserts,dummy1, dummy2) := matchcontinue(inExp1, inExp2, inExp3)
-                        case(_,_,_) then  solveSimple(inExp1, inExp2, inExp3);
-                        case(_,_,_) then  solveSimple(inExp2, inExp1, inExp3);
-                        case(_,_,_) then  solveWork(inExp1, inExp2, inExp3, NONE(), NONE());
+ (outExp,outAsserts,dummy1, dummy2, dummyI) := matchcontinue(inExp1, inExp2, inExp3)
+                        case(_,_,_) then  solveSimple(inExp1, inExp2, inExp3,0);
+                        case(_,_,_) then  solveSimple(inExp2, inExp1, inExp3,0);
+                        case(_,_,_) then  solveWork(inExp1, inExp2, inExp3, NONE(), NONE(), 0);
                         else
                           equation
                            if Flags.isSet(Flags.FAILTRACE) then
@@ -106,6 +107,8 @@ public function solve2
   output list<DAE.Statement> outAsserts;
   output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
   output list<DAE.ComponentRef> newVarsCrefs;
+protected
+  Integer dummyI;
 algorithm
 /*
   print("Try to solve: rhs: " +
@@ -113,10 +116,10 @@ algorithm
   ExpressionDump.dumpExpStr(inExp2,0) + " with respect to: " +
   ExpressionDump.printExpStr(inExp3) + "\n");
 */
- (outExp,outAsserts,eqnForNewVars,newVarsCrefs) := matchcontinue(inExp1, inExp2, inExp3, functions, uniqueEqIndex)
-                        case(_,_,_,_,_) then  solveSimple(inExp1, inExp2, inExp3);
-                        case(_,_,_,_,_) then  solveSimple(inExp2, inExp1, inExp3);
-                        case(_,_,_,_,_) then  solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex);
+ (outExp,outAsserts,eqnForNewVars,newVarsCrefs,dummyI) := matchcontinue(inExp1, inExp2, inExp3, functions, uniqueEqIndex)
+                        case(_,_,_,_,_) then  solveSimple(inExp1, inExp2, inExp3,0);
+                        case(_,_,_,_,_) then  solveSimple(inExp2, inExp1, inExp3,0);
+                        case(_,_,_,_,_) then  solveWork(inExp1, inExp2, inExp3, functions, uniqueEqIndex, 0);
                         else
                           equation
                            if Flags.isSet(Flags.FAILTRACE) then
@@ -139,20 +142,21 @@ protected function solveWork
  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
  input Option<DAE.FunctionTree> functions;
  input Option<Integer> uniqueEqIndex "offset for tmp vars";
+ input Integer idepth;
  output DAE.Exp outExp;
  output list<DAE.Statement> outAsserts;
  output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
  output list<DAE.ComponentRef> newVarsCrefs;
+ output Integer depth;
 
 
 protected
  DAE.Exp e1, e2;
  list<BackendDAE.Equation> eqnForNewVars1;
  list<DAE.ComponentRef> newVarsCrefs1;
-
 algorithm
- (e1, e2, eqnForNewVars, newVarsCrefs) := matchcontinue(inExp1, inExp2, inExp3, functions, uniqueEqIndex)
-               case(_,_,_,_,_) then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex);
+ (e1, e2, eqnForNewVars, newVarsCrefs, depth) := matchcontinue(inExp1, inExp2, inExp3, functions, uniqueEqIndex)
+               case(_,_,_,_,_) then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex, idepth);
                else
                 equation
                   if Flags.isSet(Flags.FAILTRACE) then
@@ -160,13 +164,13 @@ algorithm
                     Debug.trace(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
                     Debug.trace(" with respect to: " + ExpressionDump.printExpStr(inExp3));
                   end if;
-                then (inExp1,inExp2,{},{});
+                then (inExp1,inExp2,{},{}, idepth);
               end matchcontinue;
 
- (outExp, outAsserts, eqnForNewVars1, newVarsCrefs1) := matchcontinue(e1, e2, inExp3)
-                          case(DAE.IFEXP(),_,_) then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex);
-                          case(_,_,_) then  solveSimple(e1, e2, inExp3);
-                          case(_,_,_) then  solveLinearSystem(e1, e2, inExp3);
+ (outExp, outAsserts, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue(e1, e2, inExp3)
+                          case(DAE.IFEXP(),_,_) then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth);
+                          case(_,_,_) then  solveSimple(e1, e2, inExp3, depth);
+                          case(_,_,_) then  solveLinearSystem(e1, e2, inExp3, depth);
                           else fail();
                          end matchcontinue;
 
@@ -208,10 +212,12 @@ protected function solveSimple
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  input Integer idepth;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
   output list<BackendDAE.Equation> eqnForNewVars := {} "eqn for tmp vars";
   output list<DAE.ComponentRef> newVarsCrefs := {};
+  output Integer odepth := idepth;
 
 algorithm
 
@@ -394,12 +400,12 @@ preprocessing for solve1,
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   input Option<DAE.FunctionTree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
-
+  input Integer idepth;
   output DAE.Exp h;
   output DAE.Exp k;
   output list<BackendDAE.Equation> eqnForNewVars := {} "eqn for tmp vars";
   output list<DAE.ComponentRef> newVarsCrefs := {};
-
+  output Integer depth := idepth;
 
  protected
   DAE.Exp res;
@@ -409,7 +415,6 @@ preprocessing for solve1,
   DAE.ComponentRef cr;
   DAE.Boolean con, new_x, collect := true, inlineFun := true;
   Integer iter;
-  Integer depth := 0;
 
  algorithm
    (x, _) := ExpressionSimplify.simplify(inExp1);
@@ -1301,20 +1306,21 @@ protected function solveIfExp
   input DAE.Exp inExp3;
   input Option<DAE.FunctionTree> functions;
   input Option<Integer> uniqueEqIndex "offset for tmp vars";
+  input Integer idepth;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
   output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
   output list<DAE.ComponentRef> newVarsCrefs;
-
+  output Integer odepth;
 
 algorithm
-   (outExp,outAsserts,eqnForNewVars,newVarsCrefs) := match(inExp1,inExp2,inExp3, functions, uniqueEqIndex)
+   (outExp,outAsserts,eqnForNewVars,newVarsCrefs,odepth) := match(inExp1,inExp2,inExp3, functions, uniqueEqIndex)
    local
-      DAE.Exp e1,e2,e3,res,lhs,rhs, tmp1, tmp2;
+      DAE.Exp e1,e2,e3,res,lhs,rhs;
       list<DAE.Statement> asserts,asserts1,asserts2;
       list<BackendDAE.Equation> eqns, eqns1;
       list<DAE.ComponentRef> var, var1;
-
+      Integer depth;
 
       //  f(a) if(g(b)) then f1(a) else f2(a) =>
       //  a1 = solve(f(a),f1(a)) for a
@@ -1324,16 +1330,13 @@ algorithm
         equation
           false = expHasCref(e1, inExp3);
 
-          (tmp1, tmp2,eqns,var) = preprocessingSolve(e2, inExp2, inExp3, functions, uniqueEqIndex);
-          (lhs,asserts1) = solve(tmp1, tmp2, inExp3);
-
-          (tmp1, tmp2,eqns1,var1) = preprocessingSolve(e3, inExp2, inExp3, functions, uniqueEqIndex);
-          (rhs,asserts2) = solve(tmp1, tmp2, inExp3);
+          (lhs, asserts1, eqns, var, depth) = solveWork(e2, inExp2, inExp3, functions, uniqueEqIndex, idepth);
+          (rhs, asserts2, eqns1, var1, depth) = solveWork(e3, inExp2, inExp3, functions, uniqueEqIndex, depth);
 
           res = DAE.IFEXP(e1,lhs,rhs);
           asserts = listAppend(asserts1,asserts1);
       then
-        (res,asserts,List.appendNoCopy(eqns,eqns1),  List.appendNoCopy(var, var1));
+        (res,asserts,List.appendNoCopy(eqns,eqns1),  List.appendNoCopy(var, var1), depth);
       else fail();
    end match;
 
@@ -1349,10 +1352,12 @@ protected function solveLinearSystem
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
+  input Integer idepth;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
   output list<BackendDAE.Equation> eqnForNewVars := {} "eqn for tmp vars";
   output list<DAE.ComponentRef> newVarsCrefs := {};
+  output Integer odepth := idepth;
 
 
 algorithm
