@@ -1019,20 +1019,22 @@ void mul_integer_vector_matrix(const integer_array_t * a, const integer_array_t 
     }
 }
 
-void mul_alloc_integer_matrix_product_smart(const integer_array_t * a, const integer_array_t * b, integer_array_t* dest)
+integer_array_t mul_alloc_integer_matrix_product_smart(const integer_array_t a, const integer_array_t b)
 {
-    if((a->ndims == 1) && (b->ndims == 2)) {
-        simple_alloc_1d_integer_array(dest,b->dim_size[1]);
-        mul_integer_vector_matrix(a,b,dest);
-    } else if((a->ndims == 2) && (b->ndims == 1)) {
-        simple_alloc_1d_integer_array(dest,a->dim_size[0]);
-        mul_integer_matrix_vector(a,b,dest);
-    } else if((a->ndims == 2) && (b->ndims == 2)) {
-        simple_alloc_2d_integer_array(dest,a->dim_size[0],b->dim_size[1]);
-        mul_integer_matrix_product(a,b,dest);
+    integer_array_t dest;
+    if((a.ndims == 1) && (b.ndims == 2)) {
+        simple_alloc_1d_integer_array(&dest,b.dim_size[1]);
+        mul_integer_vector_matrix(&a,&b,&dest);
+    } else if((a.ndims == 2) && (b.ndims == 1)) {
+        simple_alloc_1d_integer_array(&dest,a.dim_size[0]);
+        mul_integer_matrix_vector(&a,&b,&dest);
+    } else if((a.ndims == 2) && (b.ndims == 2)) {
+        simple_alloc_2d_integer_array(&dest,a.dim_size[0],b.dim_size[1]);
+        mul_integer_matrix_product(&a,&b,&dest);
     } else {
-        printf("Invalid size of matrix\n");
+        assert(0 == "Invalid size of matrix");
     }
+    return dest;
 }
 
 void div_integer_array_scalar(const integer_array_t * a,modelica_integer b,integer_array_t* dest)

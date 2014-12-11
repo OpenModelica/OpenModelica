@@ -202,9 +202,7 @@ extern void mul_integer_matrix_vector(const integer_array_t * a, const integer_a
                                       integer_array_t* dest);
 extern void mul_integer_vector_matrix(const integer_array_t * a, const integer_array_t * b,
                                       integer_array_t* dest);
-extern void mul_alloc_integer_matrix_product_smart(const integer_array_t * a,
-                                                   const integer_array_t * b,
-                                                   integer_array_t* dest);
+extern integer_array_t mul_alloc_integer_matrix_product_smart(const integer_array_t a, const integer_array_t b);
 
 extern void div_integer_array_scalar(const integer_array_t * a,modelica_integer b,
                                      integer_array_t* dest);
