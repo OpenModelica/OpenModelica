@@ -9101,6 +9101,20 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let &preExp += 'transpose_alloc_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
 
+  case CALL(path=IDENT(name="symmetric"), expLst={A}) then
+    let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
+    let arr_tp_str = '<%expTypeFromExpArray(A)%>'
+    let tvar = tempDecl(arr_tp_str, &varDecls)
+    let &preExp += 'symmetric_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
+    '<%tvar%>'
+
+  case CALL(path=IDENT(name="skew"), expLst={A}) then
+    let var1 = daeExp(A, context, &preExp, &varDecls, &auxFunction)
+    let arr_tp_str = '<%expTypeFromExpArray(A)%>'
+    let tvar = tempDecl(arr_tp_str, &varDecls)
+    let &preExp += 'skew_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
+    '<%tvar%>'
+
   case CALL(path=IDENT(name="cross"), expLst={v1, v2}) then
     let var1 = daeExp(v1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(v2, context, &preExp, &varDecls, &auxFunction)
