@@ -29,7 +29,7 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
   let()= textFile(simulationInitAlgVarsCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%lastIdentOfPath(modelInfo.name)%>Initialize',false),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
   let()= textFile(simulationInitExtVarsCppFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%lastIdentOfPath(modelInfo.name)%>Initialize',false),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
   let()= textFile(simulationInitHeaderFile(simCode , &extraFuncsInit , &extraFuncsDeclInit, '<%lastIdentOfPath(modelInfo.name)%>Initialize'), 'OMCpp<%fileNamePrefix%>Initialize.h')
-  
+
   let()= textFile(simulationJacobianHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
   let()= textFile(simulationJacobianCppFile(simCode , &extraFuncs , &extraFuncsDecl, "",false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
   let()= textFile(simulationStateSelectionCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
