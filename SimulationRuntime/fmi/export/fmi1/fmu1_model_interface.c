@@ -464,11 +464,11 @@ fmiStatus fmiGetContinuousStates(fmiComponent c, fmiReal states[], size_t nx)
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetContinuousStates", not_modelError))
     return fmiError;
+#if NUMBER_OF_STATES>0
   if (invalidNumber(comp, "fmiGetContinuousStates", "nx", nx, NUMBER_OF_STATES))
     return fmiError;
   if (nullPointer(comp, "fmiGetContinuousStates", "states[]", states))
     return fmiError;
-#if NUMBER_OF_STATES>0
   for (i=0; i<nx; i++) {
     fmiValueReference vr = vrStates[i];
     states[i] = getReal(comp, vr); // to be implemented by the includer of this file
