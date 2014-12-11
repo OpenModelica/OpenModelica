@@ -3914,15 +3914,11 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
-    let tvar = tempDecl("boolean_array", &varDecls)
-    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
     copy_boolean_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);
     >>
   case "integer" then
-    let tvar = tempDecl("integer_array", &varDecls)
-    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
     copy_integer_array_data_mem(<%expPart%>, &<%cref(eqn.componentRef)%>);
@@ -8503,7 +8499,7 @@ case LUNARY(__) then
   match operator
   case NOT(ty = T_ARRAY(__)) then
     let var = tempDecl("boolean_array", &varDecls)
-    let &preExp += 'not_boolean_array(&<%e%>,&<%var%>);<%\n%>'
+    let &preExp += 'not_boolean_array(<%e%>,&<%var%>);<%\n%>'
     '<%var%>'
   else
     '(!<%e%>)'
@@ -8558,6 +8554,7 @@ case rel as RELATION(__) then
     case EQUAL(ty = T_INTEGER(__))             then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_REAL(__))            then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = T_ENUMERATION(__))     then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = T_ARRAY(__))           then '<%e2%>' /* Used for Boolean array. Called from daeExpLunary. */
 
     case NEQUAL(ty = T_BOOL(__))           then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
     case NEQUAL(ty = T_STRING(__))         then '(!stringEqual(<%e1%>, <%e2%>))'

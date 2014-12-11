@@ -143,20 +143,20 @@ void or_boolean_array(const boolean_array_t *source1, const boolean_array_t *sou
     }
 }
 
-void not_boolean_array(const boolean_array_t *source, boolean_array_t *dest)
+void not_boolean_array(const boolean_array_t source, boolean_array_t *dest)
 {
     size_t i, nr_of_elements;
 
-    assert(base_array_ok(source));
+    assert(base_array_ok(&source));
 
-    clone_base_array_spec(source, dest);
+    clone_base_array_spec(&source, dest);
     alloc_boolean_array_data(dest);
 
 
-    nr_of_elements = base_array_nr_of_elements(*source);
+    nr_of_elements = base_array_nr_of_elements(source);
 
     for(i = 0; i < nr_of_elements; ++i) {
-        boolean_set(dest, i, !boolean_get(*source, i));
+        boolean_set(dest, i, !boolean_get(source, i));
     }
 }
 
