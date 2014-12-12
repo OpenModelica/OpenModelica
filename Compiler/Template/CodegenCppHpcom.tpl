@@ -89,11 +89,11 @@ case SIMCODE(__) then
     #include <string>
     #include <vector>
     #include <map>
-  
+
     using std::string;
     using std::vector;
     using std::map;
-  
+
     #include <SimCoreFactory/Policies/FactoryConfig.h>
     #include <SimController/ISimController.h>
     #include <System/IMixedSystem.h>
@@ -611,7 +611,7 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
           <<
           <%tbbVars%>
           >>
-        else ""    
+        else ""
     else ""
   end match
 end getHpcomConstructorExtension;
@@ -662,7 +662,7 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
           for(std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* >::iterator it = _tbbNodeList.begin(); it != _tbbNodeList.end(); it++)
             delete *it;
           >>
-        else "" 
+        else ""
     else ""
   end match
 end getHpcomDestructorExtension;
@@ -835,7 +835,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           }
           >>
         case ("tbb") then
-          
+
           let taskFuncs = function_HPCOM_TaskDep_voidfunc(hpcOmSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
           //using type: <%type%>
