@@ -64,19 +64,24 @@ class busywaiting_barrier
 
 class spinlock
 {
-    boost::atomic_flag flag;
+    //boost::atomic_flag flag;
+    volatile bool locked;
 public:
-    spinlock() {}
+    spinlock() : locked(false) {}
 
     ~spinlock() {}
 
-    void lock()
+    FORCE_INLINE void lock()
     {
-        while(flag.test_and_set(boost::memory_order_acquire));
+        //while(flag.test_and_set(boost::memory_order_acquire));
+        while(locked) {}
+        locked = true;
     }
-    void unlock()
+
+    FORCE_INLINE void unlock()
     {
-        flag.clear(boost::memory_order_release);
+        //flag.clear(boost::memory_order_release);
+        locked = false;
     }
 };
 
