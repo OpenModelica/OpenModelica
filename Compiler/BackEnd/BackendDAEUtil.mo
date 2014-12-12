@@ -8037,5 +8037,27 @@ algorithm
   end matchcontinue;
 end getConditionList1;
 
+public function isWhenComp
+  input BackendDAE.StrongComponent comp;
+  output Boolean isWhen;
+algorithm
+  isWhen := match(comp)
+    case(BackendDAE.SINGLEWHENEQUATION())
+      then true;
+  else then false;
+  end match;
+end isWhenComp;
+
+public function isSingleEquationComp
+  input BackendDAE.StrongComponent comp;
+  output Boolean isWhen;
+algorithm
+  isWhen := match(comp)
+    case(BackendDAE.SINGLEEQUATION())
+      then true;
+  else then false;
+  end match;
+end isSingleEquationComp;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

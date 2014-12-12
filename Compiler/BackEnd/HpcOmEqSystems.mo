@@ -195,7 +195,7 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
-        true = intLe(listLength(tvarIdcs),3);
+        //true = intLe(listLength(tvarIdcs),3);
         print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
 
         // build the new components, the new variables and the new equations

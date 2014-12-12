@@ -3796,5 +3796,31 @@ algorithm
   print(preStr + " NrOfEquations: " + intString(n) + "\n");
 end dumpNrOfEquations;
 
+public function dumpCompInfo"dumps the information about the operations in the component"
+  input BackendDAE.compInfo compInfo;
+algorithm
+  _ := match(compInfo)
+    local
+      Integer numAdds,numMul,numOth,numTrig,numRel,numLog,numFuncs, size;
+      Real dens;
+      BackendDAE.compInfo allOps;
+      BackendDAE.StrongComponent comp;
+      case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
+        equation
+          print("COUNTER "+printComponent(comp)+"\tadd|"+intString(numAdds)+"\tmul|"+intString(numMul)+"\ttrig|"+intString(numTrig)+"\trel|"+intString(numRel)+"\tlog|"+intString(numLog)+"\toth|"+intString(numOth)+"\tfuncs|"+intString(numFuncs)+"\n");
+        then ();
+      case(BackendDAE.LES_ANALYSE(allOperations=allOps,comp=comp,size=size,density=dens))
+        equation
+          print("LES_INFO "+printComponent(comp)+"\tsize|"+intString(size)+"\tdens|"+realString(dens)+"\n\t");
+          dumpCompInfo(allOps);
+          print("\n");
+        then ();
+      else
+        equation
+          print("Dont know this compInfo\n");
+        then ();
+  end match;
+end dumpCompInfo;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDump;

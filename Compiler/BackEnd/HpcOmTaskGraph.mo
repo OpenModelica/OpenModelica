@@ -97,7 +97,6 @@ public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
   end TASKGRAPHMETA;
 end TaskGraphMeta; //TODO: Remove rootNodes from structure
 
-
 //----------------------------------------------------------
 //  Functions to build the task graph from the BLT structure
 //----------------------------------------------------------
@@ -2937,7 +2936,6 @@ algorithm
   print("--------------------------------\n");
   print(intString(arrayLength(inComps))+" nodes include components:\n");
   printInComps(inComps,1);
-  /*
   print(intString(arrayLength(varCompMapping))+" vars are solved in the nodes \n");
   printVarCompMapping(varCompMapping,1);
   print(intString(arrayLength(eqCompMapping))+" equations are computed in the nodes \n");
@@ -2955,7 +2953,6 @@ algorithm
   print("the nodeMark of the nodes\n");
   printNodeMark(nodeMark,1);
   print("\n");
-  */
 end printTaskGraphMeta;
 
 public function printInComps " prints the information about the assigned components to a taskgraph node.
@@ -4229,7 +4226,8 @@ algorithm
       then tmpTaskGraphMeta;
     else
       equation
-        tmpTaskGraphMeta = estimateCosts(iDae,iTaskGraphMeta);
+        //tmpTaskGraphMeta = estimateCosts(iDae,iTaskGraphMeta);
+        tmpTaskGraphMeta = iTaskGraphMeta;
         print("Warning: The costs have been estimated. Maybe " + benchFilePrefix + "-file is missing.\n");
       then tmpTaskGraphMeta;
   end matchcontinue;
@@ -4278,37 +4276,48 @@ author: Waurich TUD 2013-09"
 protected
   BackendDAE.StrongComponents comps;
   BackendDAE.EqSystem eqSys;
+  list<BackendDAE.compInfo> compsInfos;
 algorithm
   comps := listGet(compsLstIn,systIdx);
   eqSys := listGet(eqSystemsIn,systIdx);
-  exeCostsOut := List.map2(comps,estimateCosts1,eqSys,sharedIn);
+  compsInfos := BackendDAEOptimize.countOperationstraverseComps(comps,eqSys,sharedIn,{});
+  exeCostsOut := List.map(compsInfos,calculateCosts);
 end estimateCosts0;
 
-protected function estimateCosts1 " estimates the exeCost for one StrongComponent
-author: Waurich TUD 2013-09"
-  input BackendDAE.StrongComponent compIn;
-  input BackendDAE.EqSystem eqSysIn;
-  input BackendDAE.Shared sharedIn;
-  output tuple<Integer,Real> exeCostOut;
+public function calculateCosts "calculates the estimated costs for a compInfo
+author: Waurich TUD 2014-12"
+  input BackendDAE.compInfo compInfo;
+  output tuple<Integer,Real> exeCost;
 algorithm
-  exeCostOut := matchcontinue(compIn,eqSysIn,sharedIn)
+  exeCost := match(compInfo)
     local
-      Integer costAdd, costMul, costTrig, numOps;
-      Real costs;
-    case(_,_,_)
+      Integer numAdds,numMul,numOth,numTrig,numRel,numLog,numFuncs, costs, ops, offset,size;
+      Real allOpCosts,dens;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.compInfo allOps;
+
+    case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
       equation
-        ((costAdd,costMul,costTrig)) = countOperations(compIn, eqSysIn, sharedIn);
-        numOps = costAdd+costMul+costTrig;
-        costs = realAdd(realMul(intReal(numOps),25.0),70.0); // feel free to change this
-      then
-        ((numOps,costs));
-    else
+        ops = numAdds+numMul+numOth+numTrig+numRel+numLog;
+        if BackendDAEUtil.isSingleEquationComp(comp) then offset=30;
+        elseif BackendDAEUtil.isWhenComp(comp) then offset=800;
+        else offset = 0;
+        end if;
+        costs = offset+ 5*numAdds+ 25*numMul+ 150*numOth+250*numTrig+ 5*numRel+ 10*numLog+400*numFuncs;
+     then (ops,intReal(costs));
+
+    case(BackendDAE.LES_ANALYSE(allOperations=allOps,size=size,density=dens))
       equation
-        print("estimateCosts1 failed1\n");
-      then
-        fail();
-  end matchcontinue;
-end estimateCosts1;
+        (ops,allOpCosts) = calculateCosts(allOps);
+        allOpCosts = 5000+allOpCosts+realMul(realPow(intReal(size),3)+realPow(intReal(size),2),dens);
+      then (ops,allOpCosts);
+
+      else
+        equation
+          print("calculate costs failed!\n");
+        then (-1,-1.0);
+  end match;
+end calculateCosts;
 
 protected function getCommCostsOnly "function to compute the communicationCosts
 author: Waurich TUD 2013-09"
@@ -4577,8 +4586,8 @@ algorithm
   syst := arrayGet(compMapping,sccIndex);
   reqTime := arrayGet(iRequiredTime, sccIndex);
   //print("createExecCost0: Handling scc " + intString(sccIndex) + " with cost " + realString(reqTime) + "\n");
-  ((costAdd,costMul,costTrig)) := countOperations(comp, syst, shared);
-  oCosts := (costAdd+costMul+costTrig + iCosts_op, realAdd(iCosts_cyc,reqTime));
+  //((costAdd,costMul,costTrig)) := countOperations(comp, syst, shared);
+  oCosts := (-100 + iCosts_op, realAdd(iCosts_cyc,reqTime));
 end createExecCost0;
 
 protected function createCommCosts "author: marcusw
@@ -4620,41 +4629,6 @@ algorithm
   requiredTime := intReal(reqTimeN + numberOfVars*reqTimeM);
   oComm := COMMUNICATION(numberOfVars,integerVars,floatVars,booleanVars,stringVars,childNode,requiredTime);
 end createCommCosts0;
-
-public function countOperations "author: marcusw
-  Count the operations of the given component."
-  input BackendDAE.StrongComponent icomp;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  output tuple<Integer,Integer,Integer> operations; //<add,mul,trig>
-protected
-  DAE.ComponentRef  cr;
-  Integer eqnIdx,varIdx;
-  Integer op1,op2,op3;
-  BackendDAE.Variables vars;
-  BackendDAE.Var v;
-  BackendDAE.EquationArray eqns;
-  DAE.ElementSource source;
-  DAE.Exp e1, e2, varexp, exp_;
-  String s;
-algorithm
-  operations := matchcontinue(icomp,isyst,ishared)
-    case(BackendDAE.SINGLEEQUATION(eqn=eqnIdx,var=varIdx), BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _)
-      equation
-        BackendDAE.EQUATION(exp=e1, scalar=e2, source=source) = BackendEquation.equationNth1(eqns, eqnIdx);
-        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varIdx);
-        varexp = Expression.crefExp(cr);
-        varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
-        (exp_, _) = ExpressionSolve.solveLin(e1, e2, varexp);
-        (_,(op1,op2,_,op3)) = BackendDAEOptimize.countOperationsExp(exp_,(0,0,0,0));
-      then ((op1,op2,op3));
-    else
-      equation
-        ((op1,op2,_,op3)) = BackendDAEOptimize.countOperationstraverseComps({icomp},isyst,ishared,(0,0,0,0));
-      then ((op1,op2,op3));
-  end matchcontinue;
-end countOperations;
-
 
 //---------------------------------
 //  Functions to validate the graph

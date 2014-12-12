@@ -49,6 +49,8 @@ public import SimCode;
 // protected imports
 protected import Array;
 protected import BackendDAEUtil;
+protected import BackendDAEOptimize;
+protected import BackendDump;
 protected import ClockIndexes;
 protected import Debug;
 protected import Error;
@@ -259,6 +261,9 @@ algorithm
       //------------
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix + "_eqs_prof" , simeqCompMapping, taskGraphData);
       SimCodeUtil.execStat("hpcom create costs");
+
+      //print cost estimation infos
+      //outputTimeBenchmark(taskGraphData,inBackendDAE);
 
       //Get ODE System
       //--------------
@@ -1295,125 +1300,55 @@ author:Waurich TUD "
   input HpcOmTaskGraph.TaskGraphMeta graphData;
   input BackendDAE.BackendDAE dae;
 protected
-  list<BackendDAE.StrongComponent> allComps;
-  array<tuple<BackendDAE.EqSystem,Integer>> systCompEqSysMapping;
+  list<BackendDAE.EqSystem> eqSystems;
   array<tuple<Integer,Real>> exeCosts;
   list<Real> numCycles;
   BackendDAE.Shared shared;
 algorithm
-  BackendDAE.DAE(shared=shared) := dae;
-  (allComps,systCompEqSysMapping) := HpcOmTaskGraph.getSystemComponents(dae);
+  BackendDAE.DAE(eqs=eqSystems, shared=shared) := dae;
   HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts) := graphData;
   numCycles := List.map(arrayList(exeCosts),Util.tuple22);
-  print("compIdx\ttype\tnumAdd\tnumMul\tnumTrig\tsize\tdensity\totherEqs\tmeasuredCycles\n");
-  print("start cost benchmark\n");
-  outputTimeBenchmark2(List.intRange(listLength(allComps)),allComps,List.map(numCycles,realInt),systCompEqSysMapping,shared);
+    print("start cost benchmark\n");
+  outputTimeBenchmark2(BackendDAEUtil.getStrongComponents(List.first(eqSystems)),numCycles,eqSystems,shared,1);
     print("finish cost benchmark\n");
 end outputTimeBenchmark;
 
-protected function outputTimeBenchmark2
-  input list<Integer> sccIndex;
-  input BackendDAE.StrongComponents allComps;
-  input list<Integer> numCycles;
-  input array<tuple<BackendDAE.EqSystem,Integer>> systemCompEqSysMapping;
+protected function outputTimeBenchmark2"traverses all comps and compares measured and estimated execosts.
+author:Waurich TUD 2014-12"
+  input list<BackendDAE.StrongComponent> compsIn;
+  input list<Real> numCycles;
+  input list<BackendDAE.EqSystem> eqSystemsIn;
   input BackendDAE.Shared shared;
+  input Integer compIdx;
 algorithm
-  _ := matchcontinue(sccIndex,allComps,numCycles,systemCompEqSysMapping,shared)
+  _ := matchcontinue(compsIn,numCycles,eqSystemsIn,shared,compIdx)
     local
-      Integer idx, numAdd, numMul, numTrig, cycles;
-      list<Integer> rest;
+      Real exeCost, estimate;
+      list<Real> restCosts;
+      BackendDAE.compInfo compInfo;
+      BackendDAE.EqSystem eqSys;
       BackendDAE.StrongComponent comp;
-      BackendDAE.EqSystem eqSystem;
-    case({},_,_,_,_)
-      equation
-      then ();
-    case(_,_,_,_,_)
-      equation
-        true = listLength(allComps) <> listLength(numCycles);
-        print("The number of backenddae comps and measured comps is not the same!\n");
-      then ();
-    case(idx::rest,_,_,_,_)
-      equation
-        comp = listGet(allComps,idx);
-        cycles = listGet(numCycles,idx);
-        eqSystem = Util.tuple21(arrayGet(systemCompEqSysMapping,idx));
-        print("\n"+intString(idx)+" : ");
-        outputTimeBenchmark3(comp,cycles,eqSystem,shared);
-        outputTimeBenchmark2(rest,allComps,numCycles,systemCompEqSysMapping,shared);
-      then ();
-    else
-      equation
-        print("outputTimeBenchmark2 failed!\n");
-      then fail();
+      list<BackendDAE.EqSystem> eqSysRest;
+      list<BackendDAE.StrongComponent> comps;
+   case({},_,{eqSys},_,_)
+     equation
+     then();
+   case({},_,eqSys::eqSysRest,_,_)
+     equation
+        comps = BackendDAEUtil.getStrongComponents(List.first(eqSysRest));
+       outputTimeBenchmark2(comps,numCycles,eqSysRest,shared,compIdx);
+     then ();
+   case(comp::comps,exeCost::restCosts,eqSys::_,_,_)
+     equation
+       {compInfo} = BackendDAEOptimize.countOperationstraverseComps({comp}, eqSys, shared,{});
+       (_,estimate) = HpcOmTaskGraph.calculateCosts(compInfo);
+         BackendDump.dumpCompInfo(compInfo);
+         print("task"+intString(compIdx)+"-> measured: "+intString(realInt(exeCost))+" and estimated: "+intString(realInt(estimate))+"\n\n");
+       outputTimeBenchmark2(comps,restCosts,eqSystemsIn,shared,compIdx+1);
+     then ();
+     else then ();
   end matchcontinue;
 end outputTimeBenchmark2;
-
-protected function outputTimeBenchmark3
-  input BackendDAE.StrongComponent comp;
-  input Integer cycles;
-  input BackendDAE.EqSystem eqSystem;
-  input BackendDAE.Shared shared;
-algorithm
-  _ := matchcontinue(comp,cycles,eqSystem,shared)
-    local
-      Integer idx, numAdd, numMul, numTrig, density, size, others;
-      list<Integer> rest, resEqs, eqs;
-      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-      list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
-
-      BackendDAE.EquationArray eqns;
-       BackendDAE.Variables vars;
-
-   case(BackendDAE.SINGLEEQUATION(),_,_,_)
-      equation
-        //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
-        //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
-
-        ((numAdd,numMul,numTrig)) = HpcOmTaskGraph.countOperations(comp,eqSystem,shared);
-        density = -1;
-        size = -1;
-        others = -1;
-        print("\tSE\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
-      then ();
-   case(BackendDAE.EQUATIONSYSTEM(eqns=eqs,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac))),_,_,_)
-      equation
-        //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
-        //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
-
-        ((numAdd,numMul,numTrig)) = HpcOmTaskGraph.countOperations(comp,eqSystem,shared);
-        size = listLength(eqs);
-        density = realInt(realMul(realDiv(intReal(listLength(jac)),intReal(intMul(size,size))),100.0));
-        others = -1;
-        print("\tEQS\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
-      then ();
-    case(BackendDAE.TORNSYSTEM(residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.FULL_JACOBIAN(jacobian = SOME(jac))),_,_,_)
-      equation
-        //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
-        //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
-
-        ((numAdd,numMul,numTrig)) = HpcOmTaskGraph.countOperations(comp,eqSystem,shared);
-        size = listLength(resEqs);
-        density = realInt(realMul(realDiv(intReal(listLength(jac)),intReal(intMul(size,size))),100.0));
-        others = listLength(otherEqnVarTpl);
-        print("\tTLS1\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
-      then ();
-    case(BackendDAE.TORNSYSTEM(residualequations=resEqs,otherEqnVarTpl=otherEqnVarTpl,linear=true,jac=BackendDAE.GENERIC_JACOBIAN()),_,_,_)
-      equation
-        //BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = eqSystem;
-        //BackendDump.dumpEqnsSolved2({comp},eqns,vars);
-
-        ((numAdd,numMul,numTrig)) = HpcOmTaskGraph.countOperations(comp,eqSystem,shared);
-        density = 0;
-        size = listLength(resEqs);
-        others = listLength(otherEqnVarTpl);
-        print("\tTLS2\t"+intString(numAdd)+"\t"+intString(numMul)+"\t"+intString(numTrig)+"\t"+intString(size)+"\t"+intString(density)+"\t"+intString(others)+"\t"+intString(cycles)+"\n");
-      then ();
-    else
-      equation
-        print("\tSTUSS\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\t"+intString(-1)+"\n");
-      then ();
-  end matchcontinue;
-end outputTimeBenchmark3;
 
 annotation(__OpenModelica_Interface="backend");
 end HpcOmSimCodeMain;
