@@ -4940,6 +4940,23 @@ algorithm
   outList := list(e for e guard(inFilterFunc(e)) in inList);
 end filterOnTrue;
 
+public function filterOnFalse<T>
+  "Takes a list of values and a filter function over the values and returns a
+   sub list of values for which the matching function returns false.
+     Example:
+       filter1OnFalse({1, 2, 3, 1, 5}, isEven) => {1, 3, 1, 5}"
+  input list<T> inList;
+  input FilterFunc inFilterFunc;
+  output list<T> outList;
+
+  partial function FilterFunc
+    input T inElement;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  outList := list(e for e guard(boolNot(inFilterFunc(e))) in inList);
+end filterOnFalse;
+
 public function filter1OnTrueSync<T1, T2, ArgT1>
   "like filterOnTrue but performs the same filtering synchronously on a second list.
   Takes 2 list of values and a filter function and an extra argument over the values of the first list and returns a

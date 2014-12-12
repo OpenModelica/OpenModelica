@@ -487,7 +487,6 @@ algorithm
   threadTasks := arrayCreate(iNumberOfThreads,{});
   tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
   (tmpSchedule,_) := createListSchedule1(nodeList,threadReadyTimes, taskGraphT, iTaskGraph, commCostsT, inComps, iSccSimEqMapping, iSimVarMapping, getLockTasksByPredecessorListReverse, tmpSchedule);
-
   tmpSchedule := addSuccessorLocksToSchedule(taskGraphT,addAssignLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
   HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks) := tmpSchedule;
   threadTasks := Array.map(threadTasks, listReverse);
@@ -752,7 +751,7 @@ algorithm
         true = intNe(iThreadIdx,threadIdx);
         //print("Adding a new lock for the tasks " + intString(iTaskIdx) + " " + intString(index) + "\n");
         //print("Because task " + intString(index) + " is scheduled to " + intString(threadIdx) + "\n");
-        tmpTask = createDepTaskAndCommunicationInfo(predTask,iTask,false,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        tmpTask = createDepTaskAndCommunicationInfo(iTask,predTask,true,iCommCosts,iCompTaskMapping,iSimVarMapping);
         tmpLockTasks = tmpTask :: iLockTasks;
       then tmpLockTasks;
     else iLockTasks;
@@ -860,22 +859,21 @@ protected
   HpcOmSimCode.CommunicationInfo commInfo;
 algorithm
   oAssignTask := matchcontinue(iSourceTask,iTargetTask,iOutgoing,iCommCosts,iCompTaskMapping,iSimVarMapping)
-    case(HpcOmSimCode.CALCTASK(index=predIndex),HpcOmSimCode.CALCTASK(index=taskIndex),true,_,_,_)
+    case(HpcOmSimCode.CALCTASK(index=predIndex),HpcOmSimCode.CALCTASK(index=taskIndex),_,_,_,_)
       equation
-        //print("predIndex"+intString(predIndex)+"\n");
-        //print("taskIndex"+intString(taskIndex)+"\n");
+        //print("createDepTaskAndCommunicationInfo: Creating dependency (outgoing=" + boolString(iOutgoing) + ") between " + intString(predIndex) + " and " + intString(taskIndex) + "\n");
         commBetweenTasks = getCommunicationObjBetweenMergedTasks(predIndex,taskIndex,iCompTaskMapping,iCommCosts);
         commInfo = convertCommunicationToCommInfo(commBetweenTasks, iSimVarMapping);
-        tmpTask = createDepTask(iSourceTask, iTargetTask, true, commInfo);
+        tmpTask = createDepTask(iSourceTask, iTargetTask, iOutgoing, commInfo);
       then tmpTask;
-    case(HpcOmSimCode.CALCTASK(index=predIndex),HpcOmSimCode.CALCTASK(index=taskIndex),false,_,_,_)
+    /*case(HpcOmSimCode.CALCTASK(index=predIndex),HpcOmSimCode.CALCTASK(index=taskIndex),false,_,_,_)
       equation
         //print("predIndex"+intString(predIndex)+"\n");
         //print("taskIndex"+intString(taskIndex)+"\n");
         commBetweenTasks = getCommunicationObjBetweenMergedTasks(predIndex,taskIndex,iCompTaskMapping,iCommCosts);
         commInfo = convertCommunicationToCommInfo(commBetweenTasks, iSimVarMapping);
         tmpTask = createDepTask(iSourceTask, iTargetTask, false, commInfo);
-      then tmpTask;
+      then tmpTask; */
     else
       equation
         print("CreateDepTaskAndCommunicationInfo failed!\n");
@@ -2109,7 +2107,7 @@ algorithm
   levelExecCosts := HpcOmTaskGraph.getCostsForContractedNodes(iTasksOfLevel, exeCosts);
   threadReadyList := arrayCreate(iNumberOfThreads, 0.0);
   threadTaskList := arrayCreate(iNumberOfThreads, {});
-  sortedTasksOfLevel := List.sort(iTasksOfLevel, function sortTasksByExecTime(iExeCosts=exeCosts));
+  sortedTasksOfLevel := List.sort(iTasksOfLevel, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts));
   _ := List.fold(sortedTasksOfLevel, function createFixedLevelScheduleForTask(iLevelExecCosts=levelExecCosts, iAdviceList=iAdviceList, iThreadReadyList=threadReadyList, iGraph=iGraph, iMeta=iMeta), threadTaskList);
   threadTaskList := Array.map(threadTaskList, listReverse);
   ((_,tasksOfLevel)) := Array.fold2(threadTaskList, createFixedLevelScheduleForLevel0, inComps, iSccSimEqMapping, (1,{}));
@@ -2415,19 +2413,6 @@ algorithm
   //print("sortNodeLevelMapping: TaskIdx: " + intString(task1Idx) + " level: " + intString(elemLvl1) + "\n");
   oResult := intGe(elemLvl1,elemLvl2);
 end sortNodeLevelMapping;
-
-protected function sortTasksByExecTime
-  input Integer iTask1;
-  input Integer iTask2;
-  input array<tuple<Integer, Real>> iExeCosts;
-  output Boolean oResult;
-protected
-  Real exeCosts1, exeCosts2;
-algorithm
-  exeCosts1 := Util.tuple22(arrayGet(iExeCosts, iTask1));
-  exeCosts2 := Util.tuple22(arrayGet(iExeCosts, iTask2));
-  oResult := realGt(exeCosts1, exeCosts2);
-end sortTasksByExecTime;
 
 protected function filterNodeLevelMapping "author: marcusw
   Remove the second tuple argument (level number)."

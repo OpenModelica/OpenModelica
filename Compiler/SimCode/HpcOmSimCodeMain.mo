@@ -435,7 +435,7 @@ algorithm
 end setNumProc;
 
 
-public function applyGRS"applies several task graph rewriting rules to merge tasks. builds a new incidence matrix for the task graph after finishing ther merging
+public function applyGRS"applies several task graph rewriting rules to merge tasks. builds a new incidence matrix for the task graph after finishing their merging
 author:Waurich 2014-11"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
@@ -451,7 +451,9 @@ protected
    taskGraphMeta1 := HpcOmTaskGraph.copyTaskGraphMeta(iTaskGraphMeta);
    contractedTasks := arrayCreate(arrayLength(taskGraph1),0);
    // contract nodes in the graph
-   (taskGraph1,taskGraphMeta1) := applyGRS1(taskGraph1,taskGraphT,taskGraphMeta1,contractedTasks,true);
+   (taskGraph1,taskGraphT,taskGraphMeta1) := applyGRS1(taskGraph1,taskGraphT,taskGraphMeta1,contractedTasks,true);
+   // contract nodes schedule specific
+   //(taskGraph1,taskGraphT,taskGraphMeta1) := applyGRSForScheduler(taskGraph1, taskGraphT, taskGraphMeta1, contractedTasks); //not working at the moment
    // build new taskGraph
    (oTaskGraph,oTaskGraphMeta) := GRS_newGraph(taskGraph1,taskGraphMeta1,contractedTasks);
 end applyGRS;
@@ -462,31 +464,152 @@ author:Waurich 2014-11"
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  input array<Integer> contractedTasksIn;
+  input array<Integer> contractedTasksIn; // is updated on the fly
   input Boolean again;
   output HpcOmTaskGraph.TaskGraph oTaskGraph;
+  output HpcOmTaskGraph.TaskGraph oTaskGraphT;
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 algorithm
-  (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,again)
+  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,again)
     local
       Boolean changed,changed2;
+      HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
+      HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;
+      array<Integer> tmpContractedTasks;
     case(_,_,_,_,true)
       equation
         //Merge nodes
-        (_,_,_,_,changed) = HpcOmTaskGraph.mergeSimpleNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
-        //changed = false;
-
-        (_,_,_,_,changed2) = HpcOmTaskGraph.mergeParentNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
+        (tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta,tmpContractedTasks,changed) = HpcOmTaskGraph.mergeSimpleNodes(iTaskGraph, iTaskGraphT, iTaskGraphMeta, contractedTasksIn);
+        (tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta,tmpContractedTasks,changed2) = HpcOmTaskGraph.mergeParentNodes(tmpTaskGraph, tmpTaskGraphT, tmpTaskGraphMeta, tmpContractedTasks);
         changed = changed or changed2;
-
-        //HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) = taskGraphMeta1;
-        //doNotMerge = List.map3(doNotMergeIn,HpcOmTaskGraph.getCompInComps,1,inComps,nodeMark);
-        //(taskGraph1,taskGraphMeta1,changed3) = HpcOmTaskGraph.mergeSingleNodes(taskGraph1, taskGraphMeta1, doNotMerge);
-
-      then applyGRS1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,changed);
-    else (iTaskGraph, iTaskGraphMeta);
+        //Repeat if something has changed
+      then applyGRS1(tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta,tmpContractedTasks,changed);
+    else (iTaskGraph, iTaskGraphT, iTaskGraphMeta);
   end matchcontinue;
 end applyGRS1;
+
+public function applyGRSForScheduler "applies graph rewriting rules that are specific for the scheduler.
+author:mwalther 2014-12"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Integer> iContractedTasks; // is updated on the fly
+  output HpcOmTaskGraph.TaskGraph oTaskGraph;
+  output HpcOmTaskGraph.TaskGraph oTaskGraphT;
+  output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
+protected
+  String flagValue;
+  list<list<Integer>> levelNodes, contractedNodes;
+  HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
+  HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;
+algorithm
+  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphT,iTaskGraphMeta,iContractedTasks)
+    case(_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "levelfix");
+        levelNodes = HpcOmTaskGraph.getLevelNodes(iTaskGraph);
+        contractedNodes = applyGRSForLevelFixScheduler(iTaskGraphMeta, iContractedTasks, levelNodes, {});
+        print("applyGRSForScheduler: number of merged-node groups=" + intString(listLength(contractedNodes)) + "\n");
+        (tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta,_) = HpcOmTaskGraph.contractNodesInGraph(contractedNodes,iTaskGraph,iTaskGraphT,iTaskGraphMeta,iContractedTasks);
+      then (tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta);
+    else (iTaskGraph, iTaskGraphT, iTaskGraphMeta);
+  end matchcontinue;
+end applyGRSForScheduler;
+
+public function applyGRSForLevelFixScheduler "merges all tasks of one and the same level together, if the execution costs are below 2000 cycles
+author:mwalther 2014-12"
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Integer> iContractedTasks; //previously contracted nodes
+  input list<list<Integer>> iLevelNodes; //all nodes of all levels
+  input list<list<Integer>> iContractedLevelfixTasks;
+  output list<list<Integer>> oContractedLevelfixTasks;
+protected
+  list<list<Integer>> rest;
+  list<Integer> head, sortedHead;
+  array<Integer> sortedHeadArray;
+  list<list<Integer>> tmpContractedLevelfixTasks;
+  array<tuple<Integer, Real>> exeCosts;
+  HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
+  HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;
+algorithm
+  oContractedLevelfixTasks := match(iTaskGraphMeta, iContractedTasks, iLevelNodes, iContractedLevelfixTasks)
+    case(HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts),_,head::rest,_)
+      equation
+        sortedHead = List.sort(head, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts));
+        print("applyGRSForLevelFixScheduler - Handling level with nodes: " + stringDelimitList(List.map(sortedHead, intString), ",") + "\n"); 
+        sortedHeadArray = listArray(sortedHead);
+        tmpContractedLevelfixTasks = applyGRSForLevelFixSchedulerLevel(exeCosts, iContractedTasks, 2000, sortedHeadArray, 1, (arrayLength(sortedHeadArray), {}), iContractedLevelfixTasks);
+        tmpContractedLevelfixTasks = applyGRSForLevelFixScheduler(iTaskGraphMeta, iContractedTasks, rest, tmpContractedLevelfixTasks);
+      then tmpContractedLevelfixTasks;
+    else
+      then iContractedLevelfixTasks;
+  end match; 
+end applyGRSForLevelFixScheduler;
+
+public function applyGRSForLevelFixSchedulerLevel "merges small and big nodes of the same level into one, until they reach a critical size
+author:mwalther 2014-12"
+  input array<tuple<Integer, Real>> iExeCosts;
+  input array<Integer> iContractedTasks;
+  input Integer iCriticalSize;
+  input array<Integer> iSortedLevelTasks; //tasks of the current level
+  input Integer iCurrentSmallTask; //array-idx of iSortedLevelTasks pointing to the smallest task that is not already merged
+  input tuple<Integer, list<Integer>> iCurrentBigTask;  //<array-idx of iSortedLevelTasks pointing to the biggest task that is not already merged, list of tasks that should be merged with the big task>
+  input list<list<Integer>> iContractedLevelfixTasks;
+  output list<list<Integer>> oContractedLevelfixTasks;
+protected
+  array<tuple<Integer, Real>> exeCosts;
+  list<list<Integer>> tmpContractedTasks;
+  list<Integer> head, bigTaskChilds;
+  Real bigTaskExecTime;
+  Integer bigTaskIdx;
+  HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
+  HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;  
+algorithm
+  oContractedLevelfixTasks := matchcontinue(iExeCosts, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask, iCurrentBigTask, iContractedLevelfixTasks)
+    case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds),tmpContractedTasks)
+      equation
+        true = intLe(bigTaskIdx, iCurrentSmallTask); // the index of the big task is smaller or equal to the small task index
+        print("applyGRSForLevelFixSchedulerLevel: terminating recursion with list " + stringDelimitList(List.map(bigTaskChilds, intString), ",") + "\n");
+        if(intGt(listLength(bigTaskChilds), 0)) then
+          print("applyGRSForLevelFixSchedulerLevel: appending node to merged group\n");
+          tmpContractedTasks = (bigTaskIdx::bigTaskChilds)::tmpContractedTasks; //append the merged tasks list to result list
+        end if;
+      then tmpContractedTasks;
+    case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds),_)
+      equation
+        true = HpcOmTaskGraph.isNodeContracted(bigTaskIdx, iContractedTasks);
+        print("applyGRSForLevelFixSchedulerLevel: skipping big node " + intString(arrayGet(iSortedLevelTasks ,bigTaskIdx)) + " because it is already contracted\n");
+        //Big node is already contracted - skip it
+        tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iExeCosts, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask, (bigTaskIdx-1, {}), iContractedLevelfixTasks);
+      then tmpContractedTasks;
+    case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds),_)
+      equation
+        true = HpcOmTaskGraph.isNodeContracted(iCurrentSmallTask, iContractedTasks);
+        //Small node is already contracted - skip it
+        print("applyGRSForLevelFixSchedulerLevel: skipping small node " + intString(arrayGet(iSortedLevelTasks ,iCurrentSmallTask)) + " because it is already contracted\n");
+        tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iExeCosts, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask+1, (bigTaskIdx, bigTaskChilds), iContractedLevelfixTasks);
+      then tmpContractedTasks;
+    case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds),tmpContractedTasks)
+      equation
+        bigTaskExecTime = Util.tuple22(arrayGet(iExeCosts, arrayGet(iSortedLevelTasks, bigTaskIdx)));
+        if(realGe(bigTaskExecTime, iCriticalSize)) then
+          if(intGt(listLength(bigTaskChilds), 0)) then
+            print("appending node to merged group\n");
+            tmpContractedTasks = (arrayGet(iSortedLevelTasks, bigTaskIdx)::bigTaskChilds)::tmpContractedTasks; //append the merged tasks list to result list
+          end if;
+          // big task is already large enough, no merging required
+          tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iExeCosts, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask, (bigTaskIdx-1, {}), tmpContractedTasks);
+        else
+          print("applyGRSForLevelFixSchedulerLevel: merging small node " + intString(arrayGet(iSortedLevelTasks ,iCurrentSmallTask)) + " with big task " + intString(arrayGet(iSortedLevelTasks ,bigTaskIdx)) + "\n");
+          //merge small and big task into one
+          tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iExeCosts, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask+1, (bigTaskIdx, arrayGet(iSortedLevelTasks, iCurrentSmallTask)::bigTaskChilds), tmpContractedTasks);
+        end if;
+      then tmpContractedTasks;
+    else
+      then iContractedLevelfixTasks;
+  end matchcontinue; 
+end applyGRSForLevelFixSchedulerLevel;
 
 protected function GRS_newGraph"build a new task graph and update the inComps for the merged nodes.
 author:Waurich TUD 2014-11"
@@ -500,6 +623,7 @@ protected
   list<Integer> notRemovedNodes,removedNodes;
   array<list<Integer>> inComps,inCompsNew;
 algorithm
+  //print("GRS_newGraph: " + stringDelimitList(List.map(arrayList(contrTasks), intString), ",") + "\n");
   HpcOmTaskGraph.TASKGRAPHMETA(inComps = inComps) := metaIn;
   notRemovedNodes := HpcOmTaskGraph.filterContractedNodes(List.intRange(arrayLength(graphIn)),contrTasks);
   removedNodes := HpcOmTaskGraph.filterNonContractedNodes(List.intRange(arrayLength(graphIn)),contrTasks);
