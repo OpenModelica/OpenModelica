@@ -882,8 +882,8 @@ constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(48, "corbaObj
   Util.gettext("Sets the path for corba object reference file if +d=interactiveCorba is used."));
 
 constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(49, "hpcomScheduler",
-  NONE(), EXTERNAL(), STRING_FLAG("list"), NONE(),
-  Util.gettext("Sets123 the scheduler for task graph scheduling (list | listr | level | levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: levelfix."));
+  NONE(), EXTERNAL(), STRING_FLAG("level"), NONE(),
+  Util.gettext("Sets123 the scheduler for task graph scheduling (list | listr | level | levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: level."));
 
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(50, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("MC3"),
@@ -903,7 +903,7 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(50, "tearingHeuristic",
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(51, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("pthreads"), NONE(),
-  Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | mpi). Default: openmp."));
+  Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | tbb | mpi). Default: openmp."));
 
 constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(52, "rewriteRulesFile", NONE(), EXTERNAL(),
   STRING_FLAG(""), NONE(),

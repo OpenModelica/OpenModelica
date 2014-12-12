@@ -115,6 +115,11 @@ SET(LAPACK_LIBRARIES_ "")
 foreach(lib ${LAPACK_LIBRARIES})
 	set(LAPACK_LIBRARIES_ "${LAPACK_LIBRARIES_} ${lib}")
 endforeach(lib ${LAPACK_LIBRARIES})
+
+SET(INTEL_TBB_LIBS "")
+foreach(lib ${TBB_LIBRARIES})
+	set(INTEL_TBB_LIBS "${INTEL_TBB_LIBS} ${lib}")
+endforeach(lib ${TBB_LIBRARIES})
 #end Fix
 
 #IF(NOT ANALYZATION_MODE)

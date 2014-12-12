@@ -81,26 +81,28 @@ template generateAdditionalIncludes(SimCode simCode ,Text& extraFuncs,Text& extr
 match simCode
 case SIMCODE(__) then
   <<
-     #ifdef ANALYZATION_MODE
-      #include <boost/shared_ptr.hpp>
-      #include <boost/weak_ptr.hpp>
-      #include <boost/numeric/ublas/vector.hpp>
-      #include <boost/numeric/ublas/matrix.hpp>
-      #include <string>
-      #include <vector>
-      #include <map>
-      using std::string;
-      using std::vector;
-      using std::map;
-      #include <SimCoreFactory/Policies/FactoryConfig.h>
-      #include <SimController/ISimController.h>
-      #include <System/IMixedSystem.h>
+  #ifdef ANALYZATION_MODE
+    #include <boost/shared_ptr.hpp>
+    #include <boost/weak_ptr.hpp>
+    #include <boost/numeric/ublas/vector.hpp>
+    #include <boost/numeric/ublas/matrix.hpp>
+    #include <string>
+    #include <vector>
+    #include <map>
+  
+    using std::string;
+    using std::vector;
+    using std::map;
+  
+    #include <SimCoreFactory/Policies/FactoryConfig.h>
+    #include <SimController/ISimController.h>
+    #include <System/IMixedSystem.h>
 
-      #include <boost/numeric/ublas/matrix_sparse.hpp>
-      typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
-     #endif
-     <%generateHpcomSpecificIncludes(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
-   >>
+    #include <boost/numeric/ublas/matrix_sparse.hpp>
+    typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
+  #endif
+  <%generateHpcomSpecificIncludes(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+  >>
 end generateAdditionalIncludes;
 
 
@@ -133,7 +135,11 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode ,Text& ext
             >>
           case ("mpi") then
             <<
-            //MF Todo: Delete for mpi.
+            return -1; //not supported
+            >>
+          case ("tbb") then
+            <<
+            return -1; //not supported
             >>
           else
             <<
@@ -171,10 +177,11 @@ template getAddHpcomStructHeaders(Option<Schedule> hpcOmScheduleOpt)
           >>
         case ("tbb") then
           <<
-          struct VoidBody {
+          //Required for Intel TBB
+          struct VoidFunctionBody {
             boost::function<void(void)> void_function;
-            VoidBody(boost::function<void(void)> void_function) : void_function(void_function) { }
-            void operator()( tbb::flow::continue_msg ) const
+            VoidFunctionBody(boost::function<void(void)> void_function) : void_function(void_function) { }
+            FORCE_INLINE void operator()( tbb::flow::continue_msg ) const
             {
               void_function();
             }
@@ -292,7 +299,9 @@ template getAddHpcomVarHeaders(Option<Schedule> hpcOmScheduleOpt)
           << >>
         case ("tbb") then
           <<
-          tbb::flow::graph tbb_graph;
+          tbb::flow::graph _tbbGraph;
+          tbb::flow::broadcast_node<tbb::flow::continue_msg> _tbbStartNode;
+          std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* > _tbbNodeList;
           >>
         else ""
       end match
@@ -521,6 +530,15 @@ template getHpcomMemberVariableDefinition(Option<Schedule> hpcOmScheduleOpt)
           ,<%initializeBarrierByName("levelBarrier","",getConfigInt(NUM_PROC),type)%>
           >>
         else ""
+    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+      match type
+        case ("tbb") then
+          <<
+          ,_tbbGraph()
+          ,_tbbStartNode(_tbbGraph)
+          ,_tbbNodeList(<%listLength(hpcOmSchedule.tasks)%>,NULL)
+          >>
+        else ""
       end match
     else ""
   end match
@@ -586,6 +604,14 @@ template getHpcomConstructorExtension(Option<Schedule> hpcOmScheduleOpt, String 
           <%threadFuncs%>
           >>
       end match
+    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+      match type
+        case ("tbb") then
+          let tbbVars = generateTbbConstructorExtension(hpcOmSchedule.tasks, modelNamePrefixStr)
+          <<
+          <%tbbVars%>
+          >>
+        else ""    
     else ""
   end match
 end getHpcomConstructorExtension;
@@ -629,6 +655,14 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
           <%destroylocks%>
           <%destroyThreads%>
           >>
+    case SOME(hpcOmSchedule as TASKDEPSCHEDULE(__)) then
+      match type
+        case ("tbb") then
+          <<
+          for(std::vector<tbb::flow::continue_node<tbb::flow::continue_msg>* >::iterator it = _tbbNodeList.begin(); it != _tbbNodeList.end(); it++)
+            delete *it;
+          >>
+        else "" 
     else ""
   end match
 end getHpcomDestructorExtension;
@@ -642,37 +676,17 @@ template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> when
     case SIMCODE(modelInfo = MODELINFO(__)) then
       let parCode = update2(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
-      <%equationFunctions(allEquations,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,contextSimulationDiscrete,useFlatArrayNotation,false)%>
+      <%equationFunctions(allEquations,whenClauses,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace,contextSimulationDiscrete,useFlatArrayNotation,false)%>
 
-       <%createEvaluateAll(allEquations,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,contextOther,useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+       <%createEvaluateAll(allEquations,whenClauses,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace,contextOther,useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
-      <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,contextOther) %>
+      <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace,contextOther) %>
 
-      <%createEvaluateConditions(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, allEquationsPlusWhen, whenClauses, modelInfo.name, context, useFlatArrayNotation)%>
+      <%createEvaluateConditions(allEquations,whenClauses,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace,contextOther,useFlatArrayNotation)%>
       <%parCode%>
       >>
   end match
 end update;
-
-
-template createEvaluateConditions(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, Absyn.Path name, Context context, Boolean useFlatArrayNotation)
-::=
-  match simCode
-    case SIMCODE(__) then
-    let &varDecls = buffer "" /*BUFD*/
-    let eqs = equationsForConditions |> eq => equation_function_call(eq,contextSimulationNonDiscrete,&varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,"evaluate"); separator="\n"
-    let reinit = (whenClauses |> when hasindex i0 => genreinits(when, &varDecls,i0,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,context,useFlatArrayNotation) ;separator="\n";empty)
-    <<
-    bool <%lastIdentOfPath(name)%>::evaluateConditions(const UPDATETYPE command)
-    {
-        bool state_var_reinitialized = false;
-        //length: <%listLength(equationsForConditions)%>
-        <%eqs%>
-        <%reinit%>
-        return state_var_reinitialized;
-    }
-    >>
-end createEvaluateConditions;
 
 template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>> odeEquations, Absyn.Path name,
                  list<SimWhenClause> whenClauses, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Option<Schedule> hpcOmScheduleOpt, Context context,
@@ -821,7 +835,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
           }
           >>
         case ("tbb") then
-          let taskNodes = function_HPCOM_TaskDep_tbb(hpcOmSchedule.tasks, allEquationsPlusWhen, type, name, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
+          
           let taskFuncs = function_HPCOM_TaskDep_voidfunc(hpcOmSchedule.tasks, allEquationsPlusWhen,type, name, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation); separator="\n"
           <<
           //using type: <%type%>
@@ -830,10 +844,10 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
 
           <%functionHead%>
           {
-            using namespace tbb::flow;
-
-            // Declaration of nodes and edges
-            <%taskNodes%>
+            //Start
+            _tbbStartNode.try_put(tbb::flow::continue_msg());
+            _tbbGraph.wait_for_all();
+            //End
           }
           >>
         else ""
@@ -1011,22 +1025,29 @@ template function_HPCOM_TaskDep0(tuple<Task,list<Integer>> taskIn, list<SimEqSys
   end match
 end function_HPCOM_TaskDep0;
 
-template function_HPCOM_TaskDep_tbb(list<tuple<Task,list<Integer>>> tasks, list<SimEqSystem> allEquationsPlusWhen, String iType,
-                                    Absyn.Path name, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template generateTbbConstructorExtension(list<tuple<Task,list<Integer>>> tasks, String modelNamePrefixStr)
 ::=
-  let noteEqs = tasks |> t => function_HPCOM_TaskDep_tbb0(t,allEquationsPlusWhen, iType, name, &varDecls, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace); separator="\n"
+  let nodesAndEdges = tasks |> t hasindex i fromindex 0 => generateTbbConstructorExtensionNodesAndEdges(t,i,modelNamePrefixStr); separator="\n"
   <<
-  //Init base node
-  broadcast_node< continue_msg > tbb_start(tbb_graph);
-
-  <%noteEqs%>
-
-  //Start
-  tbb_start.try_put(continue_msg());
-  tbb_graph.wait_for_all();
-  //End
+  tbb::flow::continue_node<tbb::flow::continue_msg> *tbb_task;
+  <%nodesAndEdges%>
   >>
-end function_HPCOM_TaskDep_tbb;
+end generateTbbConstructorExtension;
+
+template generateTbbConstructorExtensionNodesAndEdges(tuple<Task,list<Integer>> taskIn, Integer taskIndex, String modelNamePrefixStr)
+::=
+  match taskIn
+    case ((task as CALCTASK(__),parents)) then
+      let parentEdges = parents |> p => 'tbb::flow::make_edge(*(_tbbNodeList.at(<%intSub(p,1)%>)),*(_tbbNodeList.at(<%taskIndex%>)));'; separator = "\n"
+      let startNodeEdge = if intEq(0, listLength(parents)) then 'tbb::flow::make_edge(_tbbStartNode,*(_tbbNodeList.at(<%taskIndex%>)));' else ""
+      <<
+      tbb_task = new tbb::flow::continue_node<tbb::flow::continue_msg>(_tbbGraph,VoidFunctionBody(boost::bind<void>(&<%modelNamePrefixStr%>::task_func_<%task.index%>,this)));
+      _tbbNodeList.at(<%taskIndex%>) = tbb_task;
+      <%parentEdges%>
+      <%startNodeEdge%>
+      >>
+  end match
+end generateTbbConstructorExtensionNodesAndEdges;
 
 template function_HPCOM_TaskDep_voidfunc(list<tuple<Task,list<Integer>>> tasks, list<SimEqSystem> allEquationsPlusWhen,
                                          String iType, Absyn.Path name, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
@@ -1036,19 +1057,6 @@ template function_HPCOM_TaskDep_voidfunc(list<tuple<Task,list<Integer>>> tasks, 
   <%funcTasks%>
   >>
 end function_HPCOM_TaskDep_voidfunc;
-
-template function_HPCOM_TaskDep_tbb0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> allEquationsPlusWhen, String iType,
-                                     Absyn.Path name, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
-::=
-  match taskIn
-    case ((task as CALCTASK(__),parents)) then
-      let parentEdges = parents |> p => 'make_edge(tbb_task_<%p%>,tbb_task_<%task.index%>);'; separator = "\n"
-      <<
-        continue_node < continue_msg > tbb_task_<%task.index%>(tbb_graph,VoidBody(boost::bind<void>(&<%lastIdentOfPath(name)%>::task_func_<%task.index%>,this)));
-        <%parentEdges%>
-      >>
-  end match
-end function_HPCOM_TaskDep_tbb0;
 
 template function_HPCOM_TaskDep_voidfunc0(tuple<Task,list<Integer>> taskIn, list<SimEqSystem> allEquationsPlusWhen, String iType, Absyn.Path name, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
 ::=
@@ -1681,6 +1689,7 @@ template simulationMakefile(String target, SimCode simCode ,Text& extraFuncs,Tex
 
   let &additionalCFlags_GCC = buffer ""
   let &additionalCFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
+  let &additionalCFlags_GCC += if stringEq(type,"tbb") then ' -I"$(INTEL_TBB_INCLUDE)"' else ""
   let &additionalCFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then ' -D ANALYZATION_MODE -I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"' else ""
 
   let &additionalCFlags_MSVC = buffer ""
@@ -1688,8 +1697,8 @@ template simulationMakefile(String target, SimCode simCode ,Text& extraFuncs,Tex
   let &additionalCFlags_MSVC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '/DANALYZATION_MODE /I"$(SUNDIALS_INCLUDE)" /I"$(SUNDIALS_INCLUDE)/kinsol" /I"$(SUNDIALS_INCLUDE)/nvector"' else ""
 
   let &additionalLinkerFlags_GCC = buffer ""
+  let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then " $(INTEL_TBB_LIBS) " else ""
   let &additionalLinkerFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPUMFPACK) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) $(SUNDIALS_LIBS) $(LAPACK_LIBS) $(BASE_LIB)' else '-lOMCppOMCFactory $(BASE_LIB)'
-  let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then "-ltbb" else ""
 
   let &additionalLinkerFlags_MSVC = buffer ""
 

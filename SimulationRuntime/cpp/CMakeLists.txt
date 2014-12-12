@@ -9,6 +9,8 @@
 #     if the runtime is build for the OMC                              -DOMC_BUILD
 #     if the write-output functionality should be handled in parallel  -DUSE_PARALLEL_OUTPUT
 #     if ScoreP should be used for performance analysis                -DUSE_SCOREP
+#     if the Intel TBB library was found                               -DUSE_INTEL_TBB
+#     if the Pugi XML library was found                                -DUSE_PUGI_XML
 #     if profiling for the simulation runtime should be enabled        -DRUNTIME_PROFILING
 #
 # Some of these options can be controlled by passing arguments to CMAKE 
@@ -23,7 +25,7 @@
 CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 PROJECT(CppSolverInterface)
 
-
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")
 
 #Set Options
 OPTION(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
@@ -166,6 +168,23 @@ FIND_LIBRARY(CMINPACK_LIBRARY
 
 INCLUDE_DIRECTORIES(${CMINPACK_INCLUDE_DIR})
 
+# Find Intel TBB
+FIND_PACKAGE(TBB)
+IF(TBB_FOUND)
+  ADD_DEFINITIONS(-DUSE_INTEL_TBB)
+  MESSAGE (STATUS "Using Intel TBB")
+ELSE(TBB_FOUND)
+  MESSAGE (STATUS "Intel TBB disabled")
+ENDIF(TBB_FOUND)
+
+# Find Pugi XML
+FIND_PACKAGE(PugiXML)
+IF(PUGIXML_FOUND)
+  ADD_DEFINITIONS(-DUSE_PUGI_XML)
+  MESSAGE (STATUS "Using Pugi XML")
+ELSE(PUGIXML_FOUND)
+  MESSAGE (STATUS "Pugi XML disabled")
+ENDIF(PUGIXML_FOUND)
 
 # Find PAPI
 FIND_LIBRARY(PAPI_LIBRARIES NAMES libpapi.a papi)
