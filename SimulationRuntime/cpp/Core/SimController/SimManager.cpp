@@ -248,7 +248,7 @@ void SimManager::computeSampleCycles()
             // Check if sample time is a multiple of the cycle time (with a tolerance)
             if ((iter->second / _config->getGlobalSettings()->getEndTime()) - int((iter->second / _config->getGlobalSettings()->gethOutput()) + 0.5) <= 1e6 * UROUND)
             {
-                _sampleCycles[counter] = int((iter->second / _config->getGlobalSettings()->getEndTime()) + 0.5);
+                _sampleCycles[counter] = int((iter->second / _config->getGlobalSettings()->gethOutput()) + 0.5);
             }
             else
             {
