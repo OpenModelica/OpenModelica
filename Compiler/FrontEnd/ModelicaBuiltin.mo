@@ -2277,7 +2277,7 @@ end translateModelFMU;
 
 function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
  The only required argument is the className, while all others have some default values.
- simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+ simulate(className, [startTime], [stopTime], [numberOfIntervals], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])
  Example command:
   simulate(A);
 "
@@ -2301,7 +2301,7 @@ end simulate;
 function buildModel "builds a modelica model by generating c code and build it.
  It does not run the code!
  The only required argument is the className, while all others have some default values.
- simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+ simulate(className, [startTime], [stopTime], [numberOfIntervals], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])
  Example command:
   simulate(A);
 "
@@ -2378,7 +2378,7 @@ end linearize;
 
 function optimize "optimize a modelica/optimica model by generating c code, build it and run the optimization executable.
  The only required argument is the className, while all others have some default values.
- simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [fileNamePrefix], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+ simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])
  Example command:
   simulate(A);"
   input TypeName className "the class that should simulated";
