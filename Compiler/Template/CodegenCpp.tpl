@@ -9814,11 +9814,7 @@ case ARRAY(array=_::_, ty = arraytype) then
   let &tmpVar = buffer ""
   let arrayVar = tempDecl(arrayTypeStr, &tmpVar /*BUFD*/)
   let arrayassign =  if scalar then
-    let params = (array |> e =>  '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>' ;separator=", ")
-    let &varDecls +=  <<
-                       <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
-                       <%ArrayType%> <%arrayVar%>(<%arrayVar%>_data);<%\n%>
-                     >>
+                     let params =    daeExpArray2(array,arrayVar,ArrayType,arrayTypeStr,context,preExp,varDecls,simCode, &extraFuncs,&extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)
                           ""
                       else
                               let funcCalls = daeExpSubArray(array,arrayVar,ArrayType,context,preExp,varDecls,simCode, &extraFuncs,&extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)
@@ -9841,7 +9837,6 @@ case ARRAY(array=_::_, ty = arraytype) then
 
    let &preExp += '<%arrayassign%>'
   arrayVar
-
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayDef = expTypeArrayforDim(ty)
@@ -9855,6 +9850,9 @@ case ARRAY(__) then
 end daeExpArray;
 
 
+
+
+
 template daeExpSubArray(list<Exp> array,String arrayVar,String ArrayType, Context context, Text &preExp /*BUFP*/,
                      Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Boolean useFlatArrayNotation)
  "Generates code for an array expression."
@@ -9863,6 +9861,22 @@ template daeExpSubArray(list<Exp> array,String arrayVar,String ArrayType, Contex
    daeExpSubArray2(subarray,i0,50,arrayVar,ArrayType,context,preExp,varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)
    ;separator ="\n")
 end daeExpSubArray;
+
+
+
+template daeExpArray2(list<Exp> array,String arrayVar,String ArrayType,String arrayTypeStr, Context context, Text &preExp /*BUFP*/,
+                     Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Boolean useFlatArrayNotation)
+ "Generates code for an array expression."
+::=
+let params = (array |> e =>  '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>' ;separator=", ")
+let &preExp +=  <<
+                       
+                       <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
+                       <%ArrayType%> <%arrayVar%>(<%arrayVar%>_data);<%\n%>
+                     >>
+
+params
+end daeExpArray2;
 
 
 template daeExpSubArray2(list<Exp> array,Integer idx,Integer multiplicator,String arrayVar,String ArrayType, Context context, Text &preExp /*BUFP*/,
