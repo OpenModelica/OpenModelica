@@ -670,7 +670,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     modelica_real* realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
     modelica_integer* integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
     modelica_boolean* booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-    modelica_string* stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+    modelica_string* stringVars = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
     MODEL_DATA *mData = &(data->modelData);
 
     assertStreamPrint(data->threadData, 0 != realVars, "out of memory");
@@ -745,7 +745,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     free(realVars);
     free(integerVars);
     free(booleanVars);
-    free(stringVars);
+    GC_free(stringVars);
   }
   else
   {
