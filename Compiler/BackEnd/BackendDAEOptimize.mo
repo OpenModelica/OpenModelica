@@ -2277,11 +2277,11 @@ algorithm
       (_,tpl) = traversecountOperationsExp(exp2,shared,tpl);
       (_,(i1,i2,i3,i4,i5,i6,i7)) = traversecountOperationsExp(cond,shared,tpl);
       then (e, (i1,i2,i3,i4,i5,i6+1,i7));
-        
+
     case (e as DAE.RECORD(exps=expLst),_,_) equation
       (_,tpl) = Expression.traverseExpList(expLst,function countOperationsExp(shared=shared),inTuple);
       then (e, tpl);
-        
+
      case (e as DAE.ARRAY(array=expLst),_,_) equation
       (_,tpl) = Expression.traverseExpList(expLst,function countOperationsExp(shared=shared),inTuple);
       then (e, tpl);
@@ -2293,16 +2293,16 @@ algorithm
     case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7)) equation
       true = stringEq(opName,"sin") or stringEq(opName,"cos") or stringEq(opName,"tan");
       then (e, (i1,i2,i3,i4+1,i5,i6,i7));
-        
+
     case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7)) equation
       true = stringEq(opName,"exp");
       then (e, (i1,i2,i3+1,i4,i5,i6,i7));
-        
+
     case (e as DAE.CALL(path=path),_,_) equation
       func = DAEUtil.getNamedFunction(path,BackendDAEUtil.getFunctions(shared));
       elemLst = DAEUtil.getFunctionElements(func);
       //print(ExpressionDump.dumpExpStr(e,0)+"\n");
-      //print("THE FUCNTION CALL\n "+DAEDump.dumpElementsStr(elemLst)+"\n");      
+      //print("THE FUCNTION CALL\n "+DAEDump.dumpElementsStr(elemLst)+"\n");
       (i1,i2,i3,i4,i5,i6,i7) = countOperationsInFunction(elemLst,shared,inTuple);
       then (e, (i1,i2,i3,i4,i5,i6,i7+1));
     else

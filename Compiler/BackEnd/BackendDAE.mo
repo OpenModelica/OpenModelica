@@ -703,19 +703,19 @@ public uniontype compInfo"types to count operations for the components"
    Integer numAdds;
    Integer numMul;
    Integer numTrig;
-   Integer numRelations; 
+   Integer numRelations;
    Integer numLog; // logical operations
    Integer numOth; // pow,...
    Integer funcCalls;
   end COUNTER;
-    
+
   record LES_ANALYSE//linear system of equations
    StrongComponent comp;
    compInfo allOperations;
    Integer size;
    Real density;
   end LES_ANALYSE;
-  
+
 end compInfo;
 
 
