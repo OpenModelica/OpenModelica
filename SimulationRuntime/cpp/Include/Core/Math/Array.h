@@ -582,11 +582,17 @@ public:
  }
   virtual T& operator()(vector<size_t> idx)
   {
-     return _real_array[(idx[2] - 1)*size2*size1 +   (idx[1] - 1)*size1 + (idx[0] - 1)];
+    //row-major order
+   return _real_array[(idx[2] - 1) + size3*((idx[1]-1)+size2*(idx[0]-1))];    
+     //column-major order
+    //return _real_array[(idx[2] - 1)*size2*size1 +   (idx[1] - 1)*size1 + (idx[0] - 1)];
   };
  inline virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
-    return _real_array[(k - 1)*size2*size1 +   (j - 1)*size1 + (i - 1)];
+    //row-major order
+    return _real_array[(k - 1) + size3*((j-1)+size2*(i-1))];  
+    //column-major order
+    //return _real_array[(k - 1)*size2*size1 +   (j - 1)*size1 + (i - 1)];
   }
 
   virtual unsigned int getNumElems()
