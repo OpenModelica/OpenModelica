@@ -140,7 +140,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   /* work arrays for DASSL */
   unsigned int i;
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
-  SIMULATION_DATA tmpSimData;
+  SIMULATION_DATA tmpSimData = {0};
 
   TRACE_PUSH
 
@@ -197,11 +197,11 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
     assertStreamPrint(data->threadData, 0 != tmpSimData.integerVars, "out of memory");
     tmpSimData.booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
     assertStreamPrint(data->threadData, 0 != tmpSimData.booleanVars, "out of memory");
-    tmpSimData.stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+    tmpSimData.stringVars = (modelica_string*) GC_malloc_uncollectable(data->modelData.nVariablesString * sizeof(modelica_string));
     assertStreamPrint(data->threadData, 0 != tmpSimData.stringVars, "out of memory");
     appendRingData(dasslData->simulationData, &tmpSimData);
   }
-  dasslData->localData = (SIMULATION_DATA**) calloc(SIZERINGBUFFER, sizeof(SIMULATION_DATA*));
+  dasslData->localData = (SIMULATION_DATA**) GC_malloc_uncollectable(SIZERINGBUFFER * sizeof(SIMULATION_DATA*));
   rotateRingBuffer(dasslData->simulationData, 0, (void**) dasslData->localData);
 
   /* end setup internal ring buffer for dassl */
@@ -427,9 +427,9 @@ int dassl_deinitial(DASSL_DATA *dasslData)
     free(tmpSimData->realVars);
     free(tmpSimData->integerVars);
     free(tmpSimData->booleanVars);
-    free(tmpSimData->stringVars);
+    GC_free(tmpSimData->stringVars);
   }
-  free(dasslData->localData);
+  GC_free(dasslData->localData);
   freeRingBuffer(dasslData->simulationData);
 
   free(dasslData);
