@@ -537,14 +537,14 @@ algorithm
     case(HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts),_,head::rest,_)
       equation
         sortedHead = List.sort(head, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts));
-        print("applyGRSForLevelFixScheduler - Handling level with nodes: " + stringDelimitList(List.map(sortedHead, intString), ",") + "\n"); 
+        print("applyGRSForLevelFixScheduler - Handling level with nodes: " + stringDelimitList(List.map(sortedHead, intString), ",") + "\n");
         sortedHeadArray = listArray(sortedHead);
         tmpContractedLevelfixTasks = applyGRSForLevelFixSchedulerLevel(exeCosts, iContractedTasks, 2000, sortedHeadArray, 1, (arrayLength(sortedHeadArray), {}), iContractedLevelfixTasks);
         tmpContractedLevelfixTasks = applyGRSForLevelFixScheduler(iTaskGraphMeta, iContractedTasks, rest, tmpContractedLevelfixTasks);
       then tmpContractedLevelfixTasks;
     else
       then iContractedLevelfixTasks;
-  end match; 
+  end match;
 end applyGRSForLevelFixScheduler;
 
 public function applyGRSForLevelFixSchedulerLevel "merges small and big nodes of the same level into one, until they reach a critical size
@@ -564,7 +564,7 @@ protected
   Real bigTaskExecTime;
   Integer bigTaskIdx;
   HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
-  HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;  
+  HpcOmTaskGraph.TaskGraphMeta tmpTaskGraphMeta;
 algorithm
   oContractedLevelfixTasks := matchcontinue(iExeCosts, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask, iCurrentBigTask, iContractedLevelfixTasks)
     case(_,_,_,_,_,(bigTaskIdx, bigTaskChilds),tmpContractedTasks)
@@ -608,7 +608,7 @@ algorithm
       then tmpContractedTasks;
     else
       then iContractedLevelfixTasks;
-  end matchcontinue; 
+  end matchcontinue;
 end applyGRSForLevelFixSchedulerLevel;
 
 protected function GRS_newGraph"build a new task graph and update the inComps for the merged nodes.
