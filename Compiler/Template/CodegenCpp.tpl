@@ -9870,7 +9870,7 @@ template daeExpArray2(list<Exp> array,String arrayVar,String ArrayType,String ar
 ::=
 let params = (array |> e =>  '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>' ;separator=", ")
 let &preExp +=  <<
-                       
+
                        <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
                        <%ArrayType%> <%arrayVar%>(<%arrayVar%>_data);<%\n%>
                      >>
