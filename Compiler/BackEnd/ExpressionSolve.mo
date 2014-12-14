@@ -554,8 +554,8 @@ algorithm
 
         eWithX = Expression.expandFactors(inExp1);
         (factorWithX, factorWithoutX) = List.split1OnTrue(eWithX, expHasCref, inExp3);
-        pWithX = makeProductLstIf(factorWithX);
-        pWithoutX = makeProductLstIf(factorWithoutX);
+        pWithX = makeProductLstSort(factorWithX);
+        pWithoutX = makeProductLstSort(factorWithoutX);
 
         e = Expression.makeDiv(rhs, pWithoutX);
 
@@ -878,13 +878,13 @@ algorithm
 
   f1 := Expression.expandFactors(e1);
   (factorWithX1, factorWithoutX1) := List.split1OnTrue(f1, expHasCref, inExp3);
-  pWithX1 := makeProductLstIf(factorWithX1);
-  pWithoutX1 := makeProductLstIf(factorWithoutX1);
+  pWithX1 := makeProductLstSort(factorWithX1);
+  pWithoutX1 := makeProductLstSort(factorWithoutX1);
 
   f2 := Expression.expandFactors(inExp2);
   (factorWithX2, factorWithoutX2) := List.split1OnTrue(f2, expHasCref, inExp3);
-  (pWithX2,_) := ExpressionSimplify.simplify1(makeProductLstIf(factorWithX2));
-  pWithoutX2 := makeProductLstIf(factorWithoutX2);
+  (pWithX2,_) := ExpressionSimplify.simplify1(makeProductLstSort(factorWithX2));
+  pWithoutX2 := makeProductLstSort(factorWithoutX2);
   //print("\nf1 =");print(ExpressionDump.printExpListStr(f1));
   //print("\nf2 =");print(ExpressionDump.printExpListStr(f2));
 
@@ -1039,8 +1039,6 @@ protected function unifyFunCallsWork
    end matchcontinue;
 
 end unifyFunCallsWork;
-
-
 
 
 protected function solveFunCalls
@@ -1498,7 +1496,7 @@ protected function isCrefInIFEXPwork " helper for isCrefInIFEXP"
   end match;
 end isCrefInIFEXPwork;
 
-protected function makeProductLstIf
+protected function makeProductLstSort
  "Takes a list of expressions an makes a product
   expression multiplying all elements in the list.
 
@@ -1509,6 +1507,9 @@ protected function makeProductLstIf
   output DAE.Exp outExp;
 protected
   DAE.Type tp;
+  list<DAE.Exp> expLstDiv, expLst, expLst2;
+  DAE.Exp e, e1, e2;
+  DAE.Operator op;
 algorithm
   if List.isEmpty(inExpLst) then
     outExp := DAE.RCONST(1.0);
@@ -1516,22 +1517,55 @@ algorithm
   end if;
 
   tp := Expression.typeof(listGet(inExpLst,1));
-  outExp := Expression.makeConstOne(tp);
 
-  for elem in inExpLst loop
+  (expLstDiv, expLst) :=  List.splitOnTrue(inExpLst, Expression.isDivBinary);
+  outExp := makeProductLstSort2(expLst, tp);
+  if not List.isEmpty(expLstDiv) then
+    expLst2 := {};
+    expLst := {};
+
+    for elem in expLstDiv loop
+      DAE.BINARY(e1,op,e2) := elem;
+      expLst := e1::expLst;
+      expLst2 := e2::expLst2;
+    end for;
+
+    if not List.isEmpty(expLst2) then
+      e := makeProductLstSort(expLst2);
+      if not Expression.isOne(e) then
+        outExp := Expression.makeDiv(outExp,e);
+      end if;
+    end if;
+
+    if not List.isEmpty(expLst) then
+      e := makeProductLstSort(expLst);
+      outExp := Expression.expMul(outExp,e);
+    end if;
+
+  end if;
+
+end makeProductLstSort;
+
+protected function makeProductLstSort2
+  input list<DAE.Exp> inExpLst;
+  input DAE.Type tp;
+  output DAE.Exp outExp := Expression.makeConstOne(tp);
+protected
+  list<DAE.Exp> rest;
+algorithm
+  rest := ExpressionSimplify.simplifyList(inExpLst, {});
+  for elem in rest loop
     if not Expression.isOne(elem) then
     outExp := match(elem)
               local DAE.Exp e1,e2,e3;
               case(DAE.IFEXP(e1,e2,e3))
               then DAE.IFEXP(e1, Expression.expMul(outExp,e2), Expression.expMul(outExp,e3));
-              case(DAE.BINARY(e1,DAE.DIV(),e2)) then Expression.makeDiv(Expression.expMul(outExp,e1),e2);
               else Expression.expMul(outExp, elem);
               end match;
     end if;
   end for;
 
-end makeProductLstIf;
-
+end makeProductLstSort2;
 
 annotation(__OpenModelica_Interface="backend");
 end ExpressionSolve;

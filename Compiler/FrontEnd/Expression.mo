@@ -7175,6 +7175,18 @@ algorithm
   end match;
 end isDiv;
 
+public function isDivBinary "returns true if BINARY is a/b"
+  input DAE.Exp iExp;
+  output Boolean res;
+protected
+  DAE.Operator op;
+algorithm
+  res := match(iExp)
+         case(DAE.BINARY(_,op,_)) then isDiv(op);
+         else false;
+         end match;
+end isDivBinary;
+
 public function isFunCall "return true if expression is DAE.CALL(path=Absyn.IDENT(name))"
   input DAE.Exp iExp;
   input String name;
