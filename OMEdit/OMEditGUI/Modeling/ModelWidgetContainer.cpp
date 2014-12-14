@@ -1339,7 +1339,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
             mpClickedComponent = pComponent;
           } else if (isCreatingConnection()) {
             addConnection(pComponent);  // end the connection
-            eventConsumed = true;
+            eventConsumed = true; // consume the event so that connection line or end component will not become selected
           }
         }
       }
