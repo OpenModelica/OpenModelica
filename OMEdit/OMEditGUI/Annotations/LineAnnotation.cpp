@@ -55,7 +55,6 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pParent)
 LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
 {
-  setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ShapeType;
   setStartComponent(0);
   setEndComponent(0);
@@ -65,11 +64,7 @@ LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Graphics
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
-  /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
-    setFlag(QGraphicsItem::ItemIsMovable);
-    setFlag(QGraphicsItem::ItemSendsGeometryChanges);
-  }
+  setShapeFlags(true);
   mpGraphicsView->addShapeObject(this);
   mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
@@ -546,6 +541,23 @@ QString LineAnnotation::getEndComponentName()
   return mEndComponentName;
 }
 
+/*!
+  Sets the shape flags.
+  */
+void LineAnnotation::setShapeFlags(bool enable)
+{
+  if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::ShapeType) && mpGraphicsView) {
+    /* Only set the ItemIsMovable flag on Line if the class is not a system library class AND Line is not an inherited Line AND Line type
+         is not ConnectionType.
+        */
+    bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
+    if (!isSystemLibrary && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType) {
+      setFlag(QGraphicsItem::ItemIsMovable, enable);
+    }
+    setFlag(QGraphicsItem::ItemIsSelectable, enable);
+  }
+}
+
 void LineAnnotation::handleComponentMoved()
 {
   if (mPoints.size() < 2) {
@@ -634,32 +646,6 @@ void LineAnnotation::duplicate()
   pLineAnnotation->update();
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
-}
-
-/*!
-  Reimplementation of mousePressEvent.\n
-  Checks if user is making a connection then makes the Line unselectable.\n
-  \param event - QGraphicsSceneMouseEvent
-  \see ShapeAnnotation::mousePressEvent
-  */
-void LineAnnotation::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-  if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::ShapeType) && mpGraphicsView) {
-    if (mpGraphicsView->isCreatingConnection()) {
-      setFlag(QGraphicsItem::ItemIsSelectable, false);
-      setFlag(QGraphicsItem::ItemIsMovable, false);
-    } else {
-      setFlag(QGraphicsItem::ItemIsSelectable, true);
-      /* Only set the ItemIsMovable flag on Line if the class is not a system library class AND Line is not an inherited Line AND Line type
-         is not ConnectionType.
-        */
-      bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
-      if (!isSystemLibrary && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType) {
-        setFlag(QGraphicsItem::ItemIsMovable, true);
-      }
-    }
-  }
-  QGraphicsItem::mousePressEvent(event);
 }
 
 ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)

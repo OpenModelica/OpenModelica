@@ -80,6 +80,7 @@ public:
   QString getStartComponentName();
   void setEndComponentName(QString name);
   QString getEndComponentName();
+  void setShapeFlags(bool enable);
 private:
   LineType mLineType;
   Component *mpStartComponent;
@@ -91,8 +92,6 @@ public slots:
   void handleComponentRotation();
   void updateConnectionAnnotation();
   void duplicate();
-protected:
-  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
 };
 
 class ConnectionArray : public QDialog

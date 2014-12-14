@@ -53,7 +53,6 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, Component *pParent)
 RectangleAnnotation::RectangleAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
   : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
 {
-  setFlag(QGraphicsItem::ItemIsSelectable);
   // set the default values
   GraphicItem::setDefaults();
   FilledShape::setDefaults();
@@ -61,11 +60,7 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, bool inheritedShape
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
-  /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
-    setFlag(QGraphicsItem::ItemIsMovable);
-    setFlag(QGraphicsItem::ItemSendsGeometryChanges);
-  }
+  setShapeFlags(true);
   mpGraphicsView->addShapeObject(this);
   mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));

@@ -184,6 +184,7 @@ public:
   void adjustCornerItemsConnectedIndexes();
   void removeRedundantPointsGeometriesAndCornerItems();
   void adjustGeometries();
+  virtual void setShapeFlags(bool enable);
 signals:
   void updateClassAnnotation();
 public slots:
@@ -240,7 +241,6 @@ protected:
   QList<CornerItem*> mCornerItemsList;
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
-  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
 };
 
 #endif // SHAPEANNOTATION_H

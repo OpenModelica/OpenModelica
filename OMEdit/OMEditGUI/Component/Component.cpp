@@ -51,7 +51,7 @@ Component::Component(QString annotation, QString name, QString className, Compon
   mInheritedClassName = inheritedClassName;
   mComponentType = Component::Root;
   initialize();
-  setComponentFlags();
+  setComponentFlags(true);
   setAcceptHoverEvents(true);
   getClassInheritedComponents(true);
   parseAnnotationString(annotation);
@@ -81,10 +81,6 @@ Component::Component(QString annotation, QString name, QString className, Compon
   // if everything is fine with icon then add it to scene
   mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
-  // if type is connector and component is not a library component and not a system library class.
-  bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
-  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
-    connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
 }
 
 /* Called for inheritance annotation instance */
@@ -102,10 +98,6 @@ Component::Component(QString annotation, QString className, StringHandler::Model
   setAcceptHoverEvents(true);
   getClassInheritedComponents();
   parseAnnotationString(annotation);
-  // if type is connector and component is not a library component and not a system library class.
-  //  bool isSystemLibrary = mpGraphicsView ? mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() : false;
-  //  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
-  //    connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
 }
 
 /* Called for component annotation instance */
@@ -128,10 +120,6 @@ Component::Component(QString annotation, QString transformationString, Component
   mpTransformation->parseTransformationString(transformationString, boundingRect().width(), boundingRect().height());
   setTransform(mpTransformation->getTransformationMatrix());
   setToolTip(QString("<b>").append(mClassName).append("</b> ").append(mName));
-  // if type is connector and component is not a library component and not a system library class.
-  bool isSystemLibrary = mpGraphicsView ? mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() : false;
-  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
-    connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
 }
 
 /* Used for Library Component */
@@ -619,14 +607,16 @@ QPointF Component::getOldPosition()
   return mOldPosition;
 }
 
-void Component::setComponentFlags()
+/*!
+  Sets the component flags.
+  */
+void Component::setComponentFlags(bool enable)
 {
-  // set the item flags
-  /* Set the ItemIsMovable flag on component if the class is not a system library class OR component is not an inherited component. */
+  /* Only set the ItemIsMovable flag on component if the class is not a system library class OR component is not an inherited shape. */
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent()) {
-    setFlag(QGraphicsItem::ItemIsMovable);
+    setFlag(QGraphicsItem::ItemIsMovable, enable);
   }
-  setFlag(QGraphicsItem::ItemIsSelectable);
+  setFlag(QGraphicsItem::ItemIsSelectable, enable);
   setFlag(QGraphicsItem::ItemSendsGeometryChanges);
 }
 
@@ -1343,41 +1333,14 @@ void Component::viewDocumentation()
   mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getDocumentationDockWidget()->show();
 }
 
-void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-  // if user is viewing the component in Icon View
-  if (mpGraphicsView->getViewType() == StringHandler::Icon)
-    return;
-  // if component is a connector type then emit the componentClicked signal
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  /*
-    #2236
-    If a user has a connector with components that are also connectors then we need to consume the event and don't propogate it.
-    So we can get the correct clicked component.
-    */
-  /* Do not consume the event for inherited/extends component as they don't have connection to componentClicked SIGNAL. */
-  bool eventConsumed = false;
-  if (event->button() == Qt::LeftButton && pMainWindow->getConnectModeAction()->isChecked() && mType == StringHandler::Connector &&
-      mComponentType != Component::Extend) {
-    emit componentClicked(this);
-    eventConsumed = true;
-  }
-  // if we are creating the connector then make sure user can not select and move components
-  if (mpGraphicsView->isCreatingConnection()) {
-    eventConsumed = true;
-  }
-  if (!eventConsumed) {
-    QGraphicsItem::mousePressEvent(event);
-  }
-}
-
 /*! Event when mouse is double clicked on a component.
  *  Shows the component properties dialog.
  */
 void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
   Q_UNUSED(event);
-  if (!mpParentComponent) { //if component (not a connector) is double clicked
+  if (!mpParentComponent) { // if root component is double clicked then show parameters.
+    mpGraphicsView->removeConnection();
     emit showParameters();
   }
 }
@@ -1390,8 +1353,9 @@ void Component::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
   if ((mType == StringHandler::Connector) &&
       (pMainWindow->getConnectModeAction()->isChecked()) &&
       (mpGraphicsView->getViewType() == StringHandler::Diagram) &&
-      (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary()))
+      (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())) {
     QApplication::setOverrideCursor(Qt::CrossCursor);
+  }
 }
 
 //! Event when mouse cursor leaves component icon.
@@ -1404,13 +1368,11 @@ void Component::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
   Component *pComponent = getRootParentComponent();
-  if (pComponent->isSelected())
+  if (pComponent->isSelected()) {
     pComponent->showResizerItems();
-  else
-  {
+  } else {
     // unselect all items
-    foreach (QGraphicsItem *pItem, mpGraphicsView->items())
-    {
+    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
       pItem->setSelected(false);
     }
     pComponent->setSelected(true);
@@ -1422,8 +1384,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
   menu.addAction(pComponent->getViewClassAction());
   menu.addAction(pComponent->getViewDocumentationAction());
   menu.addSeparator();
-  if (pComponent->isInheritedComponent())
-  {
+  if (pComponent->isInheritedComponent()) {
     mpGraphicsView->getDeleteAction()->setDisabled(true);
     mpGraphicsView->getDuplicateAction()->setDisabled(true);
     mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);

@@ -104,6 +104,7 @@ public:
   GraphicsView* getGraphicsView();
   Component* getParentComponent();
   Component* getRootParentComponent();
+  ComponentType getComponentType() {return mComponentType;}
   Transformation* getTransformation();
   QAction* getParametersAction();
   QAction* getAttributesAction();
@@ -115,7 +116,7 @@ public:
   QList<Component*> getComponentsList();
   void setOldPosition(QPointF oldPosition);
   QPointF getOldPosition();
-  void setComponentFlags();
+  void setComponentFlags(bool enable);
   void getExtents(QPointF *pExtent1, QPointF *pExtent2);
   QString getTransformationAnnotation();
   QString getPlacementAnnotation();
@@ -162,7 +163,6 @@ private:
   void duplicateHelper(GraphicsView *pGraphicsView);
 signals:
   void componentDisplayTextChanged();
-  void componentClicked(Component*);
   void componentTransformChange();
   void componentTransformHasChanged();
   void componentRotationChange();
@@ -194,7 +194,6 @@ public slots:
   void viewClass();
   void viewDocumentation();
 protected:
-  virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
   virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
   virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
   virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);

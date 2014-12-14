@@ -105,13 +105,13 @@ private:
   bool mIsCustomScale;
   bool mCanAddClassAnnotation;
   bool mIsCreatingConnection;
-  bool mDeleteCreatingConnection;
   bool mIsCreatingLineShape;
   bool mIsCreatingPolygonShape;
   bool mIsCreatingRectangleShape;
   bool mIsCreatingEllipseShape;
   bool mIsCreatingTextShape;
   bool mIsCreatingBitmapShape;
+  Component *mpClickedComponent;
   bool mIsMovingComponentsAndShapes;
   QList<Component*> mComponentsList;
   QList<LineAnnotation*> mConnectionsList;
@@ -145,8 +145,6 @@ public:
   bool canAddClassAnnotation();
   void setIsCreatingConnection(bool enable);
   bool isCreatingConnection();
-  void setDeleteCreatingConnection(bool enable);
-  bool canDeleteCreatingConnection();
   void setIsCreatingLineShape(bool enable);
   bool isCreatingLineShape();
   void setIsCreatingPolygonShape(bool enable);
@@ -159,6 +157,7 @@ public:
   bool isCreatingTextShape();
   void setIsCreatingBitmapShape(bool enable);
   bool isCreatingBitmapShape();
+  void setItemsFlags(bool enable);
   void setIsMovingComponentsAndShapes(bool enable);
   bool isMovingComponentsAndShapes();
   QAction* getDeleteConnectionAction();

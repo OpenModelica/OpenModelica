@@ -150,13 +150,13 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   setIsCustomScale(false);
   setCanAddClassAnnotation(true);
   setIsCreatingConnection(false);
-  setDeleteCreatingConnection(false);
   setIsCreatingLineShape(false);
   setIsCreatingPolygonShape(false);
   setIsCreatingRectangleShape(false);
   setIsCreatingEllipseShape(false);
   setIsCreatingTextShape(false);
   setIsCreatingBitmapShape(false);
+  mpClickedComponent = 0;
   setIsMovingComponentsAndShapes(false);
   createActions();
 }
@@ -206,6 +206,12 @@ bool GraphicsView::canAddClassAnnotation()
 void GraphicsView::setIsCreatingConnection(bool enable)
 {
   mIsCreatingConnection = enable;
+  if (enable) {
+    setDragMode(QGraphicsView::NoDrag);
+  } else {
+    setDragMode(QGraphicsView::RubberBandDrag);
+  }
+  setItemsFlags(!enable);
 }
 
 bool GraphicsView::isCreatingConnection()
@@ -213,19 +219,15 @@ bool GraphicsView::isCreatingConnection()
   return mIsCreatingConnection;
 }
 
-void GraphicsView::setDeleteCreatingConnection(bool enable)
-{
-  mDeleteCreatingConnection = enable;
-}
-
-bool GraphicsView::canDeleteCreatingConnection()
-{
-  return mDeleteCreatingConnection;
-}
-
 void GraphicsView::setIsCreatingLineShape(bool enable)
 {
   mIsCreatingLineShape = enable;
+  if (enable) {
+    setDragMode(QGraphicsView::NoDrag);
+  } else {
+    setDragMode(QGraphicsView::RubberBandDrag);
+  }
+  setItemsFlags(!enable);
 }
 
 bool GraphicsView::isCreatingLineShape()
@@ -236,6 +238,12 @@ bool GraphicsView::isCreatingLineShape()
 void GraphicsView::setIsCreatingPolygonShape(bool enable)
 {
   mIsCreatingPolygonShape = enable;
+  if (enable) {
+    setDragMode(QGraphicsView::NoDrag);
+  } else {
+    setDragMode(QGraphicsView::RubberBandDrag);
+  }
+  setItemsFlags(!enable);
 }
 
 bool GraphicsView::isCreatingPolygonShape()
@@ -246,6 +254,12 @@ bool GraphicsView::isCreatingPolygonShape()
 void GraphicsView::setIsCreatingRectangleShape(bool enable)
 {
   mIsCreatingRectangleShape = enable;
+  if (enable) {
+    setDragMode(QGraphicsView::NoDrag);
+  } else {
+    setDragMode(QGraphicsView::RubberBandDrag);
+  }
+  setItemsFlags(!enable);
 }
 
 bool GraphicsView::isCreatingRectangleShape()
@@ -256,6 +270,12 @@ bool GraphicsView::isCreatingRectangleShape()
 void GraphicsView::setIsCreatingEllipseShape(bool enable)
 {
   mIsCreatingEllipseShape = enable;
+  if (enable) {
+    setDragMode(QGraphicsView::NoDrag);
+  } else {
+    setDragMode(QGraphicsView::RubberBandDrag);
+  }
+  setItemsFlags(!enable);
 }
 
 bool GraphicsView::isCreatingEllipseShape()
@@ -266,6 +286,12 @@ bool GraphicsView::isCreatingEllipseShape()
 void GraphicsView::setIsCreatingTextShape(bool enable)
 {
   mIsCreatingTextShape = enable;
+  if (enable) {
+    setDragMode(QGraphicsView::NoDrag);
+  } else {
+    setDragMode(QGraphicsView::RubberBandDrag);
+  }
+  setItemsFlags(!enable);
 }
 
 bool GraphicsView::isCreatingTextShape()
@@ -276,11 +302,31 @@ bool GraphicsView::isCreatingTextShape()
 void GraphicsView::setIsCreatingBitmapShape(bool enable)
 {
   mIsCreatingBitmapShape = enable;
+  if (enable) {
+    setDragMode(QGraphicsView::NoDrag);
+  } else {
+    setDragMode(QGraphicsView::RubberBandDrag);
+  }
+  setItemsFlags(!enable);
 }
 
 bool GraphicsView::isCreatingBitmapShape()
 {
   return mIsCreatingBitmapShape;
+}
+
+void GraphicsView::setItemsFlags(bool enable)
+{
+  // set components, shapes and connection flags accordingly
+  foreach(Component *pComponent, mComponentsList) {
+    pComponent->setComponentFlags(enable);
+  }
+  foreach(ShapeAnnotation *pShapeAnnotation, mShapesList){
+    pShapeAnnotation->setShapeFlags(enable);
+  }
+  foreach(LineAnnotation *pLineAnnotation, mConnectionsList) {
+    pLineAnnotation->setShapeFlags(enable);
+  }
 }
 
 void GraphicsView::setIsMovingComponentsAndShapes(bool enable)
@@ -643,58 +689,51 @@ void GraphicsView::removeAllConnections()
 
 void GraphicsView::createLineShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
+  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
     return;
-
-  if (!isCreatingLineShape())
-  {
-    setIsCreatingLineShape(true);
-    mpLineShapeAnnotation = new LineAnnotation("", false, this);
-    mpLineShapeAnnotation->addPoint(point);
-    mpLineShapeAnnotation->addPoint(point);
   }
-  // if we are already creating a line then only add one point.
-  else
-  {
+
+  if (!isCreatingLineShape()) {
+    mpLineShapeAnnotation = new LineAnnotation("", false, this);
+    setIsCreatingLineShape(true);
+    mpLineShapeAnnotation->addPoint(point);
+    mpLineShapeAnnotation->addPoint(point);
+  } else {  // if we are already creating a line then only add one point.
     mpLineShapeAnnotation->addPoint(point);
   }
 }
 
 void GraphicsView::createPolygonShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
+  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
     return;
-
-  if (!isCreatingPolygonShape())
-  {
-    setIsCreatingPolygonShape(true);
-    mpPolygonShapeAnnotation = new PolygonAnnotation("", false, this);
-    mpPolygonShapeAnnotation->addPoint(point);
-    mpPolygonShapeAnnotation->addPoint(point);
-    mpPolygonShapeAnnotation->addPoint(point);
   }
-  // if we are already creating a polygon then only add one point.
-  else
-  {
+
+  if (!isCreatingPolygonShape()) {
+    mpPolygonShapeAnnotation = new PolygonAnnotation("", false, this);
+    setIsCreatingPolygonShape(true);
+    mpPolygonShapeAnnotation->addPoint(point);
+    mpPolygonShapeAnnotation->addPoint(point);
+    mpPolygonShapeAnnotation->addPoint(point);
+  } else { // if we are already creating a polygon then only add one point.
     mpPolygonShapeAnnotation->addPoint(point);
   }
 }
 
 void GraphicsView::createRectangleShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
+  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
     return;
+  }
 
-  if (!isCreatingRectangleShape())
-  {
-    setIsCreatingRectangleShape(true);
+  if (!isCreatingRectangleShape()) {
     mpRectangleShapeAnnotation = new RectangleAnnotation("", false, this);
+    setIsCreatingRectangleShape(true);
     mpRectangleShapeAnnotation->replaceExtent(0, point);
     mpRectangleShapeAnnotation->replaceExtent(1, point);
-  }
-  // if we are already creating a rectangle then finish creating it.
-  else
-  {
+  } else { // if we are already creating a rectangle then finish creating it.
+    // finish creating the rectangle
+    setIsCreatingRectangleShape(false);
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     // set the transformation matrix
     mpRectangleShapeAnnotation->setOrigin(mpRectangleShapeAnnotation->sceneBoundingRect().center());
@@ -703,8 +742,6 @@ void GraphicsView::createRectangleShape(QPointF point)
     // draw corner items for the rectangle shape
     mpRectangleShapeAnnotation->drawCornerItems();
     mpRectangleShapeAnnotation->setSelected(true);
-    // finish creating the rectangle
-    setIsCreatingRectangleShape(false);
     // make the toolbar button of rectangle unchecked
     pMainWindow->getRectangleShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
@@ -715,19 +752,18 @@ void GraphicsView::createRectangleShape(QPointF point)
 
 void GraphicsView::createEllipseShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
+  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
     return;
+  }
 
-  if (!isCreatingEllipseShape())
-  {
-    setIsCreatingEllipseShape(true);
+  if (!isCreatingEllipseShape()) {
     mpEllipseShapeAnnotation = new EllipseAnnotation("", false, this);
+    setIsCreatingEllipseShape(true);
     mpEllipseShapeAnnotation->replaceExtent(0, point);
     mpEllipseShapeAnnotation->replaceExtent(1, point);
-  }
-  // if we are already creating an ellipse then finish creating it.
-  else
-  {
+  } else { // if we are already creating an ellipse then finish creating it.
+    // finish creating the ellipse
+    setIsCreatingEllipseShape(false);
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     // set the transformation matrix
     mpEllipseShapeAnnotation->setOrigin(mpEllipseShapeAnnotation->sceneBoundingRect().center());
@@ -736,8 +772,6 @@ void GraphicsView::createEllipseShape(QPointF point)
     // draw corner items for the ellipse shape
     mpEllipseShapeAnnotation->drawCornerItems();
     mpEllipseShapeAnnotation->setSelected(true);
-    // finish creating the ellipse
-    setIsCreatingEllipseShape(false);
     // make the toolbar button of ellipse unchecked
     pMainWindow->getEllipseShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
@@ -748,20 +782,19 @@ void GraphicsView::createEllipseShape(QPointF point)
 
 void GraphicsView::createTextShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
+  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
     return;
+  }
 
-  if (!isCreatingTextShape())
-  {
-    setIsCreatingTextShape(true);
+  if (!isCreatingTextShape()) {
     mpTextShapeAnnotation = new TextAnnotation("", false, this);
+    setIsCreatingTextShape(true);
     mpTextShapeAnnotation->setTextString("text");
     mpTextShapeAnnotation->replaceExtent(0, point);
     mpTextShapeAnnotation->replaceExtent(1, point);
-  }
-  // if we are already creating a text then finish creating it.
-  else
-  {
+  } else { // if we are already creating a text then finish creating it.
+    // finish creating the text
+    setIsCreatingTextShape(false);
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     // set the transformation matrix
     mpTextShapeAnnotation->setOrigin(mpTextShapeAnnotation->sceneBoundingRect().center());
@@ -770,8 +803,6 @@ void GraphicsView::createTextShape(QPointF point)
     // draw corner items for the text shape
     mpTextShapeAnnotation->drawCornerItems();
     mpTextShapeAnnotation->setSelected(true);
-    // finish creating the text
-    setIsCreatingTextShape(false);
     // make the toolbar button of text unchecked
     pMainWindow->getTextShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
@@ -783,19 +814,18 @@ void GraphicsView::createTextShape(QPointF point)
 
 void GraphicsView::createBitmapShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary())
+  if (mpModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
     return;
+  }
 
-  if (!isCreatingBitmapShape())
-  {
-    setIsCreatingBitmapShape(true);
+  if (!isCreatingBitmapShape()) {
     mpBitmapShapeAnnotation = new BitmapAnnotation(mpModelWidget->getLibraryTreeNode()->getFileName(), "", false, this);
+    setIsCreatingBitmapShape(true);
     mpBitmapShapeAnnotation->replaceExtent(0, point);
     mpBitmapShapeAnnotation->replaceExtent(1, point);
-  }
-  // if we are already creating a bitmap then finish creating it.
-  else
-  {
+  } else { // if we are already creating a bitmap then finish creating it.
+    // finish creating the bitmap
+    setIsCreatingBitmapShape(false);
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     // set the transformation matrix
     mpBitmapShapeAnnotation->setOrigin(mpBitmapShapeAnnotation->sceneBoundingRect().center());
@@ -804,13 +834,9 @@ void GraphicsView::createBitmapShape(QPointF point)
     // draw corner items for the bitmap shape
     mpBitmapShapeAnnotation->drawCornerItems();
     mpBitmapShapeAnnotation->setSelected(true);
-    // finish creating the bitmap
-    setIsCreatingBitmapShape(false);
     ShapePropertiesDialog *pShapePropertiesDialog;
-    pShapePropertiesDialog = new ShapePropertiesDialog(mpBitmapShapeAnnotation,
-                                                       mpModelWidget->getModelWidgetContainer()->getMainWindow());
-    if (!pShapePropertiesDialog->exec())
-    {
+    pShapePropertiesDialog = new ShapePropertiesDialog(mpBitmapShapeAnnotation, mpModelWidget->getModelWidgetContainer()->getMainWindow());
+    if (!pShapePropertiesDialog->exec()) {
       /* if user cancels the bitmap shape properties then remove the bitmap shape from the scene */
       deleteShapeObject(mpBitmapShapeAnnotation);
       mpBitmapShapeAnnotation->deleteLater();
@@ -938,10 +964,7 @@ void GraphicsView::addConnection(Component *pComponent)
     if (pStartComponent == pComponent) {
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
-      /* Ticket #2162 : We don't delete the connection here instead we set the flag and delete the connection in mousepressevent.
-         Deleting the connection here raises weird mousemoveevent segfaults, i don't know why :).
-        */
-      setDeleteCreatingConnection(true);
+      removeConnection();
     } else {
       bool showConnectionArrayDialog = false;
       if (pStartComponent->getComponentInfo()) {
@@ -982,8 +1005,7 @@ void GraphicsView::addConnection(Component *pComponent)
 //! Removes the current connecting connector from the model.
 void GraphicsView::removeConnection()
 {
-  if (isCreatingConnection())
-  {
+  if (isCreatingConnection()) {
     setIsCreatingConnection(false);
     mpConnectionLineAnnotation->deleteLater();
   }
@@ -1052,8 +1074,7 @@ void GraphicsView::zoomOut()
 //! Selects all objects and connectors.
 void GraphicsView::selectAll()
 {
-  foreach (QGraphicsItem *pItem, items())
-  {
+  foreach (QGraphicsItem *pItem, items()) {
     pItem->setSelected(true);
   }
 }
@@ -1265,57 +1286,36 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 //! @param event contains information of the mouse click operation.
 void GraphicsView::mousePressEvent(QMouseEvent *event)
 {
-  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
-  /*
-    Component multi selection context menu has problems if the following condition is removed.
-    Unexpected Component::itemChange events are raised.
-    */
   if (event->button() == Qt::RightButton) {
+    QGraphicsView::mousePressEvent(event);
     return;
   }
-  bool creatingShape = false;
+  MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QPointF snappedPoint = snapPointToGrid(mapToScene(event->pos()));
   // if left button presses and we are creating a connector
   if (isCreatingConnection()) {
     mpConnectionLineAnnotation->addPoint(snappedPoint);
   }
-  /*
-    The creatingShape flag is used to stop the propagation of mousePressEvent.
-    When we start creating the shape, creatingShape will get false value and we propogate the mousePressEvent.
-    When we finish creating a shape, creatingShape will get true value and we do not propogate the mousePressEvent.
-    */
   /* if line shape tool button is checked then create a line */
   else if (pMainWindow->getLineShapeAction()->isChecked()) {
-    creatingShape = isCreatingLineShape();
     createLineShape(snappedPoint);
-    if (creatingShape) return;
   } else if (pMainWindow->getPolygonShapeAction()->isChecked()) {
     /* if polygon shape tool button is checked then create a polygon */
-    creatingShape = isCreatingPolygonShape();
     createPolygonShape(snappedPoint);
-    if (creatingShape) return;
   } else if (pMainWindow->getRectangleShapeAction()->isChecked()) {
     /* if rectangle shape tool button is checked then create a rectangle */
-    creatingShape = isCreatingRectangleShape();
     createRectangleShape(snappedPoint);
-    if (creatingShape) return;
   } else if (pMainWindow->getEllipseShapeAction()->isChecked()) {
     /* if ellipse shape tool button is checked then create an ellipse */
-    creatingShape = isCreatingEllipseShape();
     createEllipseShape(snappedPoint);
-    if (creatingShape) return;
   } else if (pMainWindow->getTextShapeAction()->isChecked()) {
     /* if text shape tool button is checked then create a text */
-    creatingShape = isCreatingTextShape();
     createTextShape(snappedPoint);
-    if (creatingShape) return;
   } else if (pMainWindow->getBitmapShapeAction()->isChecked()) {
     /* if bitmap shape tool button is checked then create a bitmap */
-    creatingShape = isCreatingBitmapShape();
     createBitmapShape(snappedPoint);
-    if (creatingShape) return;
   } else {
-    // this flag is just used to have seperate identify for if statement in mouse release event of graphicsview
+    // this flag is just used to have seperate identity for if statement in mouse release event of graphicsview
     setIsMovingComponentsAndShapes(true);
     // save the position of all components
     foreach (Component *pComponent, mComponentsList) {
@@ -1325,11 +1325,28 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
       pShapeAnnotation->setOldPosition(pShapeAnnotation->pos());
     }
   }
-  QGraphicsView::mousePressEvent(event);
-  /* Ticket #2162 : Delete the same component connect connection here. */
-  if (isCreatingConnection() && canDeleteCreatingConnection()) {
-    setDeleteCreatingConnection(false);
-    removeConnection();
+  bool eventConsumed = false;
+  // if some item is clicked
+  if (itemAt(event->pos())) {
+    QGraphicsItem *pGraphicsItem = itemAt(event->pos());
+    if (pGraphicsItem && pGraphicsItem->parentItem()) {
+      Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
+      if (pComponent && !pComponent->isSelected()) {
+        if (pMainWindow->getConnectModeAction()->isChecked() && pComponent->getType() == StringHandler::Connector &&
+            pComponent->getComponentType() != Component::Extend && !pComponent->isLibraryComponent() &&
+            !mpModelWidget->getLibraryTreeNode()->isSystemLibrary()) {
+          if (!isCreatingConnection()) {
+            mpClickedComponent = pComponent;
+          } else if (isCreatingConnection()) {
+            addConnection(pComponent);  // end the connection
+            eventConsumed = true;
+          }
+        }
+      }
+    }
+  }
+  if (!eventConsumed) {
+    QGraphicsView::mousePressEvent(event);
   }
 }
 
@@ -1366,19 +1383,19 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
   } else if (isCreatingBitmapShape()) {
     mpBitmapShapeAnnotation->updateEndExtent(snappedPoint);
     mpBitmapShapeAnnotation->update();
+  } else if (mpClickedComponent) {
+    addConnection(mpClickedComponent);  // start the connection
   }
   QGraphicsView::mouseMoveEvent(event);
 }
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
-  /*
-    Component multi selection context menu has problems if the following condition is removed.
-    Unexpected Component::itemChange events are raised.
-    */
   if (event->button() == Qt::RightButton) {
+    QGraphicsView::mouseReleaseEvent(event);
     return;
   }
+  mpClickedComponent = 0;
   if (isMovingComponentsAndShapes()) {
     setIsMovingComponentsAndShapes(false);
     bool hasMoved = false;
@@ -1409,18 +1426,15 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
       mpModelWidget->setModelModified();
     }
   }
-  if (!isCreatingConnection()) {
-    QGraphicsView::mouseReleaseEvent(event);
-  }
+  QGraphicsView::mouseReleaseEvent(event);
 }
 
 void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
 {
-  if (event->button() == Qt::RightButton) {
-    return;
-  }
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   if (isCreatingLineShape()) {
+    // finish creating the line
+    setIsCreatingLineShape(false);
     // set the transformation matrix
     mpLineShapeAnnotation->setOrigin(snapPointToGrid(mpLineShapeAnnotation->sceneBoundingRect().center()));
     mpLineShapeAnnotation->adjustPointsWithOrigin();
@@ -1429,8 +1443,6 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     mpLineShapeAnnotation->removePoint(mpLineShapeAnnotation->getPoints().size() - 1);
     mpLineShapeAnnotation->drawCornerItems();
     mpLineShapeAnnotation->setSelected(true);
-    // finish creating the line
-    setIsCreatingLineShape(false);
     // make the toolbar button of line unchecked
     pMainWindow->getLineShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
@@ -1438,6 +1450,8 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     setCanAddClassAnnotation(true);
     return;
   } else if (isCreatingPolygonShape()) {
+    // finish creating the polygon
+    setIsCreatingPolygonShape(false);
     // set the transformation matrix
     mpPolygonShapeAnnotation->setOrigin(snapPointToGrid(mpPolygonShapeAnnotation->sceneBoundingRect().center()));
     mpPolygonShapeAnnotation->adjustPointsWithOrigin();
@@ -1446,8 +1460,6 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     mpPolygonShapeAnnotation->removePoint(mpPolygonShapeAnnotation->getPoints().size() - 1);
     mpPolygonShapeAnnotation->drawCornerItems();
     mpPolygonShapeAnnotation->setSelected(true);
-    // finish creating the polygon
-    setIsCreatingPolygonShape(false);
     // make the toolbar button of polygon unchecked
     pMainWindow->getPolygonShapeAction()->setChecked(false);
     pMainWindow->getConnectModeAction()->setChecked(true);
@@ -1574,20 +1586,17 @@ void GraphicsView::keyReleaseEvent(QKeyEvent *event)
 
 void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 {
-  /* If we are creating any shape then don't show context menu */
-  if (isCreatingLineShape() ||
+  /* If we are creating the connection OR creating any shape then don't show context menu */
+  if (isCreatingConnection() ||
+      isCreatingLineShape() ||
       isCreatingPolygonShape() ||
       isCreatingRectangleShape() ||
       isCreatingEllipseShape() ||
-      isCreatingTextShape())
+      isCreatingTextShape()) {
     return;
-  /* If we are creating the connection then show the connection context menu */
-  if (isCreatingConnection()) {
-    return;         // return from it because at a time we only want one context menu.
   }
   // if some item is right clicked then don't show graphics view context menu
-  if (!itemAt(event->pos()))
-  {
+  if (!itemAt(event->pos())) {
     QMenu menu(mpModelWidget->getModelWidgetContainer()->getMainWindow());
     menu.addAction(mpModelWidget->getModelWidgetContainer()->getMainWindow()->getExportAsImageAction());
     menu.addAction(mpModelWidget->getModelWidgetContainer()->getMainWindow()->getExportToClipboardAction());
