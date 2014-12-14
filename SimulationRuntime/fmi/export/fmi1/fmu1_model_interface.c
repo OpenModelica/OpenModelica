@@ -526,7 +526,7 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx)
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 
-    comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiGetEventIndicators: terminated by an assertion.");
+    comp->functions.logger(c, comp->instanceName, fmiError, "error", "fmiGetDerivatives: terminated by an assertion.");
     return fmiError;
 }
 
