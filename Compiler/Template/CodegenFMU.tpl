@@ -1973,11 +1973,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
-    when {(<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial(),triggerDSSEvent > flowStatesInputs, nextEventTime < time} then
+    when {(<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial(),triggerDSSEvent > flowStatesInputs, nextEventTime < time, terminal()} then
   >>
   else
   <<
-    when {not initial(), triggerDSSEvent > flowStatesInputs, nextEventTime < time} then
+    when {not initial(), triggerDSSEvent > flowStatesInputs, nextEventTime < time, terminal()} then
   >>
   %>
       newStatesAvailable := fmi1Functions.fmi1EventUpdate(fmi1me, intermediateResults);
@@ -2319,11 +2319,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
-    when {(<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial(),triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time} then
+    when {(<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial(),triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time, terminal()} then
   >>
   else
   <<
-    when {not initial(), triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time} then
+    when {not initial(), triggerDSSEvent > flowStatesInputs, pre(nextEventTime) < time, terminal()} then
   >>
   %>
       (newStatesAvailable) := fmi2Functions.fmi2EventUpdate(fmi2me, flowStatesInputs);
