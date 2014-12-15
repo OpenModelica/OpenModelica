@@ -605,7 +605,7 @@ void SimManager::runSingleProcess()
         for (; iter != _tStops[0].end(); ++iter)
         {
             endTime = iter->first;
-            
+
             // Setzen von Start- bzw. Endzeit und initial step size
             _solver->setStartTime(startTime);
             _solver->setEndTime(endTime);
@@ -621,15 +621,15 @@ void SimManager::runSingleProcess()
             if (_dimtimeevent)
             {
                 // Find all time events at the current time
-				while(abs(iter->first - endTime) <1e4*UROUND)
-				{
-					_timeeventcounter[iter->second]++;
-					iter++;
-				}
-				// set the iterator back to the current end time
-				iter--;
-				
-				_timeevent_system->handleTimeEvent(_timeeventcounter);
+        while(abs(iter->first - endTime) <1e4*UROUND)
+        {
+          _timeeventcounter[iter->second]++;
+          iter++;
+        }
+        // set the iterator back to the current end time
+        iter--;
+
+        _timeevent_system->handleTimeEvent(_timeeventcounter);
                 _cont_system->evaluateAll(IContinuous::CONTINUOUS);   // vxworksupdate
                 _event_system->getZeroFunc(zeroVal_new);
                 for (int i = 0; i < _dimZeroFunc; i++)
@@ -638,8 +638,8 @@ void SimManager::runSingleProcess()
                 //reset time-events
                 _timeevent_system->handleTimeEvent(_timeeventcounter);
             }
-          
-			user_stop = (_solver->getSolverStatus() & ISolver::USER_STOP);
+
+      user_stop = (_solver->getSolverStatus() & ISolver::USER_STOP);
             if (user_stop)
                 break;
         }  // end for time events
