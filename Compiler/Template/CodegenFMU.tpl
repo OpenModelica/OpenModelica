@@ -170,7 +170,7 @@ match simVar
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability = getVariability2(varKind)
   let caus = getCausality2(causality, varKind, isValueChangeable)
-  let initial = hasStartValue(varKind, initialValue)
+  let initial = getInitialType(varKind, initialValue, causality)
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
@@ -211,16 +211,19 @@ match varKind
   else "local"
 end getCausality2Helper;
 
-template hasStartValue(VarKind varKind, Option<DAE.Exp> initialValue)
+template getInitialType(VarKind varKind, Option<DAE.Exp> initialValue, Causality c)
  "Returns the Initial Attribute of ScalarVariable."
 ::=
-match varKind
-  case STATE_DER(__) then "calculated"
-  else
-    match initialValue
-      case SOME(exp) then "exact"
-      else "calculated"
-end hasStartValue;
+match c 
+  case INPUT(__) then "approx"
+  else  
+  match varKind
+    case STATE_DER(__) then "calculated"
+    else
+      match initialValue
+        case SOME(exp) then "exact"
+        else "calculated"
+end getInitialType;
 
 template ScalarVariableType2(list<SimVar> stateVars, DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, VarKind varKind, Integer index)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
@@ -2276,10 +2279,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Boolean fmi_z_positive[numberOfEventIndicators](each fixed=true);
     Real flowTime;
     parameter Real flowParamsStart(fixed=false);
-    <%if not stringEq(realInputVariablesVRs, "") then "Real "+realInputVariablesReturnNames+";"%>
-    <%if not stringEq(integerInputVariablesVRs, "") then "Real "+integerInputVariablesReturnNames+";"%>
-    <%if not stringEq(booleanInputVariablesVRs, "") then "Real "+booleanInputVariablesReturnNames+";"%>
-    <%if not stringEq(stringInputVariablesVRs, "") then "Real "+stringInputVariablesReturnNames+";"%>
     Real flowStatesInputs;
     Boolean callEventUpdate;
     Boolean newStatesAvailable(fixed=true);
@@ -2295,20 +2294,12 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     end when;
     flowTime := fmi2Functions.fmi2SetTime(fmi2me, time);
   initial algorithm
-    <%if not stringEq(realInputVariablesVRs, "") then "fmi2Functions.fmi2SetReal(fmi2me, {"+realInputVariablesVRs+"}, {"+realInputVariablesNames+"});"%>
-    <%if not stringEq(integerInputVariablesVRs, "") then "fmi2Functions.fmi2SetInteger(fmi2me, {"+integerInputVariablesVRs+"}, {"+integerInputVariablesNames+"});"%>
-    <%if not stringEq(booleanInputVariablesVRs, "") then "fmi2Functions.fmi2SetBoolean(fmi2me, {"+booleanInputVariablesVRs+"}, {"+booleanInputVariablesNames+"});"%>
-    <%if not stringEq(stringInputVariablesVRs, "") then "fmi2Functions.fmi2SetString(fmi2me, {"+stringInputVariablesVRs+"}, {"+stringStartVariablesNames+"});"%>
     fmi2Functions.fmi2EnterInitialization(fmi2me);
     fmi_x := fmi2Functions.fmi2GetContinuousStates(fmi2me, numberOfContinuousStates, flowTime);
   algorithm
     when not initial() then
       fmi2Functions.fmi2Functions.fmi2ExitInitialization(fmi2me);
     end when;
-    <%if not stringEq(realInputVariablesVRs, "") then "fmi2Functions.fmi2SetReal(fmi2me, {"+realInputVariablesVRs+"}, {"+realInputVariablesNames+"});"%>
-    <%if not stringEq(integerInputVariablesVRs, "") then "fmi2Functions.fmi2SetInteger(fmi2me, {"+integerInputVariablesVRs+"}, {"+integerInputVariablesNames+"});"%>
-    <%if not stringEq(booleanInputVariablesVRs, "") then "fmi2Functions.fmi2SetBoolean(fmi2me, {"+booleanInputVariablesVRs+"}, {"+booleanInputVariablesNames+"});"%>
-    <%if not stringEq(stringInputVariablesVRs, "") then "fmi2Functions.fmi2SetString(fmi2me, {"+stringInputVariablesVRs+"}, {"+stringStartVariablesNames+"});"%>
     flowStatesInputs := fmi2Functions.fmi2SetContinuousStates(fmi2me, fmi_x, flowParamsStart + flowTime);
   equation
     der(fmi_x) = fmi2Functions.fmi2GetDerivatives(fmi2me, numberOfContinuousStates, flowStatesInputs);
