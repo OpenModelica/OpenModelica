@@ -2120,7 +2120,7 @@ algorithm
          compInfo = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog+1,numOth,numFuncs);
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-         
+
     case ((comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqIdx))::rest,_,_,_)
       equation
          eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
@@ -2321,7 +2321,7 @@ algorithm
     case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7)) equation
       true = stringEq(opName,"der");
       then (e, (i1,i2,i3,i4,i5,i6,i7));
-        
+
     case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7)) equation
       true = stringEq(opName,"exp");
       then (e, (i1,i2,i3+1,i4,i5,i6,i7));

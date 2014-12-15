@@ -722,7 +722,7 @@ public uniontype compInfo"types to count operations for the components"
    compInfo otherEqs;
    Integer tornSize;
   end TORN_ANALYSE;
-  
+
 end compInfo;
 
 

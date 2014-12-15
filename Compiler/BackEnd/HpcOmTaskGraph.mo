@@ -4317,7 +4317,7 @@ algorithm
         (ops,allOpCosts) = calculateCosts(allOps);
         allOpCosts = 5000+1000*size;
       then (ops,allOpCosts);
-    
+
     case(BackendDAE.TORN_ANALYSE(comp=comp,tornEqs=torn,otherEqs=other,tornSize=size))
       equation
         true = BackendDAEUtil.isLinearTornSystem(comp);
@@ -4325,7 +4325,7 @@ algorithm
         (ops1,otherCosts) = calculateCosts(other);
         allOpCosts = 7000;//*+realMul(realPow(intReal(size),3)+realPow(intReal(size),2)
       then (ops+ops1,allOpCosts);
-        
+
     case(BackendDAE.TORN_ANALYSE(comp=comp,tornEqs=torn,otherEqs=other,tornSize=size))
       equation
         (ops,tornCosts) = calculateCosts(torn);
