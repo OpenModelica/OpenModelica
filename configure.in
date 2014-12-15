@@ -94,6 +94,12 @@ FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following optio
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
+if echo $host | grep -i darwin; then
+  DARWIN=1
+else
+  DARWIN=0
+fi
+
 if test -z "$AR"; then
   AR=ar
 fi
@@ -129,7 +135,7 @@ CFLAGS="$CFLAGS_BEFORE"
 
 dnl Disables the default CFLAGS="-g -O2"
 if test -z "$CFLAGS"; then
-if  test "Darwin" = `uname`; then
+if test "$DARWIN" = "1"; then
 CFLAGS="-O3"
 else
 CFLAGS_BEFORE="$CFLAGS"
@@ -157,7 +163,7 @@ for flag in -Wno-parentheses-equality -Wno-unused-variable; do
 done
 CFLAGS="$OLD_CFLAGS"
 
-if test "Darwin" != `uname`; then
+if test ! "$DARWIN" = "1"; then
 
 if test "`getconf LONG_BIT`" = "64"; then
 
@@ -216,7 +222,7 @@ fi
 
 dnl Checks for libraries.
 
-if test ! "Darwin" = `uname`; then
+if test ! "$DARWIN" = "1"; then
   LIBS=""
   AC_SEARCH_LIBS(clock_gettime,rt,[],[AC_MSG_ERROR([clock_gettime missing])])
   LIBRT="$LIBS"
@@ -647,7 +653,7 @@ AC_CHECK_PROGS(LRELEASE,lrelease-qt4 lrelease,"")
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
-  if test "Darwin" = `uname`; then
+  if test "$DARWIN" = "1"; then
     echo "#!/bin/sh -x" > ./qmake.sh
     echo "$QMAKE \$*" >> ./qmake.sh
     echo 'MAKEFILE=`echo -- $* | grep -o "Makefile@<:@A-Z.a-z@:>@*"`' >> ./qmake.sh
@@ -729,7 +735,7 @@ if test -n "$QMAKE"; then
   fi
 fi
 
-if test "Darwin" = `uname`; then
+if test "$DARWIN" = "1"; then
   APP=".app"
   EXE=".app"
   SHREXT=".dylib"
@@ -861,12 +867,12 @@ AC_MSG_CHECKING([for OpenModelica platform name])
 # very unspecific.
 # Also, they forgot about Mac users. We will just default to uname -sm and patch
 # to Modelica Spec standards as well.
-OPENMODELICA_SPEC_PLATFORM=`uname -sm | tr "@<:@:upper:@:>@ " "@<:@:lower:@:>@-"`
+OPENMODELICA_SPEC_PLATFORM=`echo $host | sed "s/unknown-linux-gnu/linux/" | sed "s/linux-gnu/linux/" | sed "s/i@<:@3456@:>@86/i386/" | tr "@<:@:upper:@:>@ " "@<:@:lower:@:>@-"`
 AC_MSG_RESULT([$OPENMODELICA_SPEC_PLATFORM])
 AC_MSG_CHECKING([for Modelica platform name])
-if test "$OPENMODELICA_SPEC_PLATFORM" = "linux-x86_64" -o "$OPENMODELICA_SPEC_PLATFORM" = "linux-i.86"; then
+if test "$OPENMODELICA_SPEC_PLATFORM" = "x86_64-linux" -o "$OPENMODELICA_SPEC_PLATFORM" = "i386-linux"; then
   MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/linux-x86_64/linux64/" | sed "s/linux-i.86/linux32/"`
-elif test "$OPENMODELICA_SPEC_PLATFORM" = "darwin-x86_64" -o "$OPENMODELICA_SPEC_PLATFORM" = "linux-i.86"; then
+elif test "$OPENMODELICA_SPEC_PLATFORM" = "x86_64-darwin" -o "$OPENMODELICA_SPEC_PLATFORM" = "i386-darwin"; then
   MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/darwin-x86_64/darwin64/" | sed "s/darwin-i.86/darwin32/"`
 else
   MODELICA_SPEC_PLATFORM=$OPENMODELICA_SPEC_PLATFORM
