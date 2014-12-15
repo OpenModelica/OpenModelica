@@ -2041,14 +2041,16 @@ algorithm
     local
       Integer eqIdx, numAdd,numMul,numTrig,numRel,numOth, numFuncs, numLog, size;
       Real density;
-      list<Integer> eqs;
+      list<Integer> eqs, tornEqs,otherEqs;
       BackendDAE.StrongComponent comp,comp1;
       BackendDAE.StrongComponents rest;
-      BackendDAE.EquationArray eqns, tmpEqns;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Variables vars;
       BackendDAE.Equation eqn;
-      BackendDAE.compInfo compInfo, allOps;
+      BackendDAE.compInfo compInfo, allOps, torn,other;
       list<BackendDAE.Equation> eqnlst;
       BackendDAE.Jacobian jac;
+      DAE.FunctionTree funcs;
       list<BackendDAE.Var> varlst;
       list<DAE.Exp> explst;
       list<tuple<Integer,list<Integer>>> eqnvartpllst;
@@ -2079,55 +2081,77 @@ algorithm
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
         size = listLength(eqs);
         density = realDiv(intReal(getNumJacEntries(jac)),intReal(size*size ));
-        allOps = BackendDAE.COUNTER(List.first(inComps),0,0,0,0,0,0,0);
+        allOps = BackendDAE.COUNTER(comp,0,0,0,0,0,0,0);
         allOps = countOperationsJac(jac,ishared,allOps);
-        compInfo = BackendDAE.LES_ANALYSE(List.first(inComps),allOps,size,density);
-          //(eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
-          //tpl = addJacSpecificOperations(listLength(eqnlst),inTpl);
-          //tpl = countOperationsJac(jac,tpl);
-          //(explst,_) = BackendDAEUtil.getEqnSysRhs(BackendEquation.listEquation(eqnlst),BackendVariable.listVar1(varlst),SOME(funcs));
-          //(_,tpl) = Expression.traverseExpList(explst,countOperationsExp,tpl);
+        compInfo = BackendDAE.LES_ANALYSE(comp,allOps,size,density);
       then countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-   /*
-    case ((comp as BackendDAE.EQUATIONSYSTEM())::rest,_,_,_)
+
+    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac))::rest,_,_,_)
       equation
         (eqnlst,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
-        tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),countOperationsExp,inTpl);
+        size = listLength(eqnlst);
+        (numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
+        allOps = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog,numOth,numFuncs);
+        density = realDiv(intReal(getNumJacEntries(jac)),intReal(size*size ));
+        compInfo = BackendDAE.LES_ANALYSE(comp,allOps,size,density);
       then
-        countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case (BackendDAE.SINGLEARRAY(eqn=e)::rest,_,_,_)
+        countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
+
+    case ((comp as BackendDAE.SINGLEARRAY(eqn=eqIdx))::rest,_,_,_)
       equation
-         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), e);
-         (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
+         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
+         (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
+         compInfo = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog,numOth,numFuncs);
       then
-         countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case (BackendDAE.SINGLEIFEQUATION(eqn=e)::rest,_,_,_)
+         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
+
+    case ((comp as BackendDAE.SINGLEIFEQUATION(eqn=eqIdx))::rest,_,_,_)
       equation
-         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), e);
-         (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
+         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
+         (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
+         compInfo = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog+1,numOth,numFuncs);
       then
-         countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case (BackendDAE.SINGLEALGORITHM(eqn=e)::rest,_,_,_)
+         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
+
+    case ((comp as BackendDAE.SINGLEALGORITHM(eqn=eqIdx))::rest,_,_,_)
       equation
-         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), e);
-         (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
+         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
+         (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
+         compInfo = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog+1,numOth,numFuncs);
       then
-         countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest,_,_,_)
+         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
+         
+    case ((comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqIdx))::rest,_,_,_)
       equation
-         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), e);
-         (_,tpl) = BackendEquation.traverseExpsOfEquation(eqn,countOperationsExp,inTpl);
+         eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
+         (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
+         compInfo = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog+1,numOth,numFuncs);
       then
-         countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=true))::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
+
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst,  linear=true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
-        (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
-        tpl = addJacSpecificOperations(listLength(vlst),inTpl);
-        tmpEqns = BackendEquation.listEquation(eqnlst);
-        (explst,_) = BackendDAEUtil.getEqnSysRhs(tmpEqns,BackendVariable.listVar1(varlst),SOME(funcs));
-        (_,tpl) = Expression.traverseExpList(explst,countOperationsExp,tpl);
+        comp = List.first(inComps);
+        eqns = BackendEquation.getEqnsFromEqSystem(isyst);
+        vars = BackendVariable.daeVars(isyst);
+        // the torn equations
+        eqnlst = BackendEquation.getEqns(tornEqs,eqns);
+        varlst = List.map1(vlst,BackendVariable.getVarAtIndexFirst, vars);
+        (explst,_) = BackendDAEUtil.getEqnSysRhs(BackendEquation.listEquation(eqnlst),BackendVariable.listVar1(varlst),SOME(funcs));
+        (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
+        torn = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog,numOth,numFuncs);
+        // the other eqs
+        otherEqs = List.map(eqnvartpllst,Util.tuple21);
+        vlst = List.flatten(List.map(eqnvartpllst,Util.tuple22));
+        eqnlst = BackendEquation.getEqns(otherEqs,eqns);
+        varlst = List.map1(vlst,BackendVariable.getVarAtIndexFirst, vars);
+        (explst,_) = BackendDAEUtil.getEqnSysRhs(BackendEquation.listEquation(eqnlst),BackendVariable.listVar1(varlst),SOME(funcs));
+        (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
+        other = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog,numOth,numFuncs);
+        compInfo = BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
-         countOperationstraverseComps(rest,isyst,ishared,tpl);
+         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
+         /*
     case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=false))::rest,_,BackendDAE.SHARED(),_)
       equation
         (eqnlst,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
@@ -2271,7 +2295,7 @@ algorithm
       then (e, tpl);
 
     case (e as DAE.IFEXP(expCond=cond,expThen=exp1,expElse=exp2),_,_) equation
-      //count for all branches, use the complete count for the condition and one additional logical count
+      //count all branches, use the complete count for the condition and one additional logical count
       (_,tpl) = traversecountOperationsExp(cond,shared,inTuple);
       (_,tpl) = traversecountOperationsExp(exp1,shared,tpl);
       (_,tpl) = traversecountOperationsExp(exp2,shared,tpl);
@@ -2294,6 +2318,10 @@ algorithm
       true = stringEq(opName,"sin") or stringEq(opName,"cos") or stringEq(opName,"tan");
       then (e, (i1,i2,i3,i4+1,i5,i6,i7));
 
+    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7)) equation
+      true = stringEq(opName,"der");
+      then (e, (i1,i2,i3,i4,i5,i6,i7));
+        
     case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7)) equation
       true = stringEq(opName,"exp");
       then (e, (i1,i2,i3+1,i4,i5,i6,i7));

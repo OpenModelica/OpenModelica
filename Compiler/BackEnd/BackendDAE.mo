@@ -716,6 +716,13 @@ public uniontype compInfo"types to count operations for the components"
    Real density;
   end LES_ANALYSE;
 
+  record TORN_ANALYSE//torn system of equations
+   StrongComponent comp;
+   compInfo tornEqs;
+   compInfo otherEqs;
+   Integer tornSize;
+  end TORN_ANALYSE;
+  
 end compInfo;
 
 

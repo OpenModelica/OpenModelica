@@ -8037,7 +8037,7 @@ algorithm
   end matchcontinue;
 end getConditionList1;
 
-public function isWhenComp
+public function isWhenComp"outputs true if the strongComponent is a singleEquation"
   input BackendDAE.StrongComponent comp;
   output Boolean isWhen;
 algorithm
@@ -8048,7 +8048,7 @@ algorithm
   end match;
 end isWhenComp;
 
-public function isSingleEquationComp
+public function isSingleEquationComp"outputs true if the strongComponent is a singleEquation"
   input BackendDAE.StrongComponent comp;
   output Boolean isWhen;
 algorithm
@@ -8058,6 +8058,28 @@ algorithm
   else then false;
   end match;
 end isSingleEquationComp;
+
+public function isLinearEqSystemComp"outputs true if the strongComponent is a linear equationsystem"
+  input BackendDAE.StrongComponent comp;
+  output Boolean isWhen;
+algorithm
+  isWhen := match(comp)
+    case(BackendDAE.EQUATIONSYSTEM(jacType = BackendDAE.JAC_LINEAR()))
+      then true;
+  else then false;
+  end match;
+end isLinearEqSystemComp;
+
+public function isLinearTornSystem"outputs true if the strongComponent is a torn system"
+  input BackendDAE.StrongComponent comp;
+  output Boolean isWhen;
+algorithm
+  isWhen := match(comp)
+    case(BackendDAE.TORNSYSTEM(linear=true))
+      then true;
+  else then false;
+  end match;
+end isLinearTornSystem;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;

@@ -3803,7 +3803,8 @@ algorithm
     local
       Integer numAdds,numMul,numOth,numTrig,numRel,numLog,numFuncs, size;
       Real dens;
-      BackendDAE.compInfo allOps;
+      String s;
+      BackendDAE.compInfo allOps, tornEqs ,otherEqs;
       BackendDAE.StrongComponent comp;
       case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
         equation
@@ -3813,6 +3814,14 @@ algorithm
         equation
           print("LES_INFO "+printComponent(comp)+"\tsize|"+intString(size)+"\tdens|"+realString(dens)+"\n\t");
           dumpCompInfo(allOps);
+          print("\n");
+        then ();
+      case(BackendDAE.TORN_ANALYSE(tornEqs=tornEqs, otherEqs=otherEqs,comp=comp,tornSize=size))
+        equation
+          if BackendDAEUtil.isLinearTornSystem(comp) then s = "linear"; else s = "nonlinear"; end if;
+          print(s+"TORN_INFO "+printComponent(comp)+"\tsize|"+intString(size)+"\n\t");
+          dumpCompInfo(tornEqs);
+          dumpCompInfo(otherEqs);
           print("\n");
         then ();
       else
