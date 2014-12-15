@@ -2566,7 +2566,7 @@ algorithm
       Real coeff2,coeff3,coeff;
       list<tuple<DAE.Exp, Real>> res,rest;
       DAE.Exp e,e2,e1;
-      Type tp;
+      DAE.Operator op;
 
     case (_,{}) then (0.0,{});
 
@@ -2578,11 +2578,11 @@ algorithm
       then
         (coeff3,res);
 
-    case (e,((DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = tp),exp2 = e2),coeff) :: rest)) /* e11-e12 and e12-e11, negative -1.0 factor */
+    case (e,((DAE.BINARY(exp1 = e1,operator = op as DAE.DIV(),exp2 = e2),coeff) :: rest)) // pow(a/b,n) * pow(b/a,m) = pow(a/b,n-m)
       equation
-        true = Expression.expEqual(e, DAE.BINARY(e2,DAE.SUB(tp),e1));
+        true = if Expression.isOne(e1) then Expression.expEqual(e, e2) else Expression.expEqual(e, DAE.BINARY(e2, op, e1));
         (coeff2,res) = simplifyMulJoinFactorsFind(e, rest);
-        coeff3 = coeff - coeff2;
+        coeff3 = coeff2 - coeff;
       then
         (coeff3,res);
 
