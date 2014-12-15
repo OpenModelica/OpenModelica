@@ -214,9 +214,9 @@ end getCausality2Helper;
 template getInitialType(VarKind varKind, Option<DAE.Exp> initialValue, Causality c)
  "Returns the Initial Attribute of ScalarVariable."
 ::=
-match c 
+match c
   case INPUT(__) then "approx"
-  else  
+  else
   match varKind
     case STATE_DER(__) then "calculated"
     else
