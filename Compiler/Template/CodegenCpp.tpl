@@ -389,7 +389,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
         void writeParamsInt(HistoryImplType::value_type_p& params  );
         <%List.partition(protectedVars(vars.boolParamVars), 100) |> ls hasindex idx => 'void writeParamsBool_<%idx%>(HistoryImplType::value_type_p& params  );';separator="\n"%>
         void writeParamsBool(HistoryImplType::value_type_p& params  );
-       
+
 
         void writeAlgVarsValues(HistoryImplType::value_type_v *v);
         <%List.partition( protectedVars(vars.algVars), 100) |> ls hasindex idx => 'void writeAlgVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
@@ -406,10 +406,10 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
         void writeBoolAliasVarsValues(HistoryImplType::value_type_v *v);
         <%List.partition( protectedVars(vars.boolAliasVars), 100) |> ls hasindex idx => 'void writeBoolAliasVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
         void writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2);
-        
+
     >>
     end match%>
-    
+
     void writeAlgVarsResultNames(vector<string>& names);
     void writeDiscreteAlgVarsResultNames(vector<string>& names);
     void writeIntAlgVarsResultNames(vector<string>& names);
@@ -4964,7 +4964,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
   let numParamvars = numProtectedParamVars(modelInfo)
   <<
-   
+
    void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(const IWriteOutput::OUTPUT command)
    {
     //Write head line
@@ -7118,7 +7118,7 @@ case MODELINFO(vars=SIMVARS(__)) then
  let boolAliasVarsStart = intAdd(stringInt(intAliasVarsStart), stringInt(numProtectedIntAliasvars(modelInfo)))
  let stateVarsStart = intAdd(stringInt(boolAliasVarsStart), stringInt(numProtectedBoolAliasvars(modelInfo)))
  <<
- 
+
  void <%className%>::writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2)
  {
    <%(vars.stateVars      |> SIMVAR() hasindex i8 =>'(*v)(<%intAdd(stringInt(stateVarsStart), stringInt(i8))%>)=__z[<%index%>];';separator="\n")%>
@@ -7135,7 +7135,7 @@ end generateWriteOutputFunctionsForVars;
  const int aliasVarsStart     = <%aliasVarsStart%>;
  const int intAliasVarsStart  = <%intAliasVarsStart%>;
  const int boolAliasVarsStart = <%boolAliasVarsStart%>;
- const int stateVarsStart     = <%stateVarsStart%>; 
+ const int stateVarsStart     = <%stateVarsStart%>;
  */
 
 //template to generate a function that writes all given variables
