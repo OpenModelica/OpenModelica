@@ -169,8 +169,8 @@ void EventHandling::saveDiscreteVar(double var,string key)
 }
 bool EventHandling::changeDiscreteVar(double var,string key)
 {
-  unsigned int i = _pre_discrete_vars_idx[key];
-  return var != _pre_discrete_vars[i];
+  unsigned int i = _pre_vars_idx[key];
+  return var != _pre_vars[i];
 
 }
 
@@ -181,7 +181,7 @@ Handles all events occurred a the same time.
 bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
 {
   //save discrete varibales
-  _event_system->saveDiscreteVars(); // store values of discrete vars vor next check
+  //Deactivated: _event_system->saveDiscreteVars(); // store values of discrete vars vor next check
 
   unsigned int dim = _event_system->getDimZeroFunc();
 

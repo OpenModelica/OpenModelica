@@ -35,7 +35,9 @@ void Initialization::initializeSystem()
     _system->initEquations();    // vxworksupdate
     restart = event_system->checkForDiscreteEvents();
     event_system->getConditions(conditions1);
-    event_system->saveDiscreteVars();
+    //Deactivated: event_system->saveDiscreteVars();
+    event_system->saveAll();
+    
     cond_restart = !std::equal (conditions1, conditions1+dim, conditions0);
   }
 

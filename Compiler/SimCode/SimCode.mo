@@ -527,6 +527,9 @@ uniontype Context
 
   record OPTIMIZATION_CONTEXT
   end OPTIMIZATION_CONTEXT;
+  
+  record FMI_CONTEXT
+  end FMI_CONTEXT;
 end Context;
 
 public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false);
@@ -540,6 +543,7 @@ public constant Context contextOther                  = OTHER_CONTEXT();
 public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEXT();
 public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
 public constant Context contextOptimization           = OPTIMIZATION_CONTEXT();
+public constant Context contextFMI                    = FMI_CONTEXT();
 
 /****** HashTable ComponentRef -> SimCodeVar.SimVar ******/
 /* a workaround to enable "cross public import" */

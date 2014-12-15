@@ -26,8 +26,8 @@ template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
         simulationMainFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else ""))
    ), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
-  let()= textFile(simulationHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)), generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)), false, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
-  let()= textFile(simulationCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
+  let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)), generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)), false, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
+  let()= textFile(simulationCppFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
   let()= textFile(simulationTypesHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
@@ -377,7 +377,7 @@ template generateThreadFunctionHeaderDecl(Integer threadIdx)
 end generateThreadFunctionHeaderDecl;
 
 
-template simulationCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template simulationCppFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
   match simCode
@@ -511,7 +511,7 @@ template simulationCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDec
       <%initPrevars(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
       <%saveDiscreteVars(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
       <%LabeledDAE(modelInfo.labels,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
-      <%giveVariables(modelInfo,useFlatArrayNotation,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+      <%giveVariables(modelInfo,context,useFlatArrayNotation,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
       >>
   end match
 end simulationCppFile;

@@ -15,8 +15,8 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
   let()= textFile(simulationMainFile(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", ""), 'OMCpp<%fileNamePrefix%>Main.cpp')
-  let()= textFile(simulationCppFile(simCode , &extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>',false), 'OMCpp<%fileNamePrefix%>.cpp')
-  let()= textFile(simulationHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", true, false), 'OMCpp<%fileNamePrefix%>.h')
+  let()= textFile(simulationCppFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>',false), 'OMCpp<%fileNamePrefix%>.cpp')
+  let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", true, false), 'OMCpp<%fileNamePrefix%>.h')
   let()= textFile(simulationFunctionsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode , &extraFuncs , &extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes, false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
   let()= textFile(simulationTypesHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",modelInfo.functions,literals, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
@@ -68,7 +68,7 @@ template translateFunctions(FunctionCode functionCode)
   "" // Return empty result since result written to files directly
 end translateFunctions;
 
-template simulationHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
+template simulationHeaderFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -76,7 +76,7 @@ case SIMCODE(__) then
    <<
    <%generateHeaderIncludeString(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
    <%additionalIncludes%>
-   <%generateClassDeclarationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, additionalProtectedMembers, useDefaultMemberVariables, useFlatArrayNotation)%>
+   <%generateClassDeclarationCode(simCode ,context, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, additionalProtectedMembers, useDefaultMemberVariables, useFlatArrayNotation)%>
    >>
 end simulationHeaderFile;
 
@@ -2325,7 +2325,7 @@ end simulationMakefile;
 
 
 
-template simulationCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template simulationCppFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
 match simCode
@@ -2445,12 +2445,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%handleSystemEvents(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%saveAll(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
     <%initPrevars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
-    <%saveDiscreteVars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
+   
     <%LabeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
-    <%giveVariables(modelInfo, useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%extraFuncs%>
     >>
 end simulationCppFile;
+ //<%saveDiscreteVars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
    /*Initialize the equations array. Point to each equation function*/
     /*initialize_equations_array();*/
  /*<%InitializeEquationsArray(allEquations, className)%>*/
@@ -5188,7 +5189,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   >>
 end generateAlgloopHeaderInlcudeString;
 
-template generateClassDeclarationCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
+template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
 match simCode
@@ -5203,7 +5204,8 @@ match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
   let allVarCount = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
 
-  let getrealvars = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx =>
+  let getrealvars = 
+  (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx =>
     <<
     void getReal_<%idx%>(double* z);
     void setReal_<%idx%>(const double* z);
@@ -5264,12 +5266,14 @@ match modelInfo
       void deleteAlgloopSolverVariables();
 
       <%initDeleteAlgloopSolverVars%>
-
+      <% match context case FMI_CONTEXT(__) then
+      <<
       <%getrealvars%>
       <%getintvars%>
       <%getboolvars%>
       <%getstringvars%>
-
+      >>
+      %>
       bool isConsistent();
       //Called to handle all events occured at same time
       bool handleSystemEvents(bool* events);
@@ -5716,16 +5720,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     //returns the terminal status
     virtual bool terminal();
 
-    virtual void saveDiscreteVars();
-
-    <%
-    let discVarCount = intAdd(intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , listLength(vars.boolAlgVars )))
-    let saveDiscreteVarFuncs = (List.partition(List.intRange(stringInt(discVarCount)), 100) |> ls hasindex idx => 'virtual void saveDiscreteVars_<%idx%>(double *discreteVars);';separator="\n")
-    <<
-    <%saveDiscreteVarFuncs%>
-    >>
-    %>
-
+  
+    
     // M is regular
     virtual bool isODE();
     // M is singular
@@ -5772,6 +5768,17 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual void setString(const std::string* z);
     >>
 end generateMethodDeclarationCode;
+   /*
+    deactivated: MethodDeclarationCode virtual void saveDiscreteVars();
+    <%
+    let discVarCount = intAdd(intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , listLength(vars.boolAlgVars )))
+    let saveDiscreteVarFuncs = (List.partition(List.intRange(stringInt(discVarCount)), 100) |> ls hasindex idx => 'virtual void saveDiscreteVars_<%idx%>(double *discreteVars);';separator="\n")
+    <<
+    <%saveDiscreteVarFuncs%>
+    >>
+    %>
+   */
+
  /*! Evaluates only the equations whose indices are passed to it. */
     //bool evaluate_selective(const std::vector<int>& indices);
 
@@ -7410,7 +7417,15 @@ end saveDiscreteVars;
 
 template saveDiscreteVars1(list<SimCodeVar.SimVar> partVars, Integer partIdx, Integer multiplicator, Text &funcCalls, Boolean useFlatArrayNotation, Text className)
 ::=
+  <<
+  void <%className%>::saveDiscreteVars_<%partIdx%>(double* discreteVars)
+  {
+     
+  }
+  >>
+  /*
   let &funcCalls += 'saveDiscreteVars_<%partIdx%>(discreteVars);'
+  Deactivated:
   <<
   void <%className%>::saveDiscreteVars_<%partIdx%>(double* discreteVars)
   {
@@ -7418,6 +7433,7 @@ template saveDiscreteVars1(list<SimCodeVar.SimVar> partVars, Integer partIdx, In
         'discreteVars[<%i0%>] = <%cref(name,useFlatArrayNotation)%>;';separator="\n")%>
   }
   >>
+  */
 end saveDiscreteVars1;
 
 template initAlgloopvars( Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,ModelInfo modelInfo,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Context context,Boolean useFlatArrayNotation)
@@ -13783,19 +13799,21 @@ end functionStoreDelay;
 
 
 template giveVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcParams,list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation) ::=
+ 
   let &funcCalls = buffer "" /*BUFD*/
-  let funcs = List.partition(varsLst, 100) |> ls hasindex idx =>
-    let &varDecls = buffer "" /*BUFD*/
-    let &funcCalls += '<%funcNamePrefix%>_<%idx%>(<%funcParams%>);'
-    let init = giveVariablesWithSplit2(ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation, idx, 100)
-    <<
-    void <%funcNamePrefix%>_<%idx%>(<%funcArgs%>)
-    {
-       <%varDecls%>
-       <%init%>
-    }
-    >>
-    ;separator="\n"
+  let funcs =   List.partition(varsLst, 100) |> ls hasindex idx =>
+                let &varDecls = buffer "" /*BUFD*/
+                let &funcCalls += '<%funcNamePrefix%>_<%idx%>(<%funcParams%>);'
+                let init = giveVariablesWithSplit2(ls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation, idx, 100)
+                <<
+                void <%funcNamePrefix%>_<%idx%>(<%funcArgs%>)
+                {
+                   <%varDecls%>
+                   <%init%>
+                }
+                >>
+                ;separator="\n"
+       
 
   <<
   <%funcs%>
@@ -13805,6 +13823,8 @@ template giveVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcPara
     <%funcCalls%>
   }
   >>
+ 
+  
 end giveVariablesWithSplit;
 
 
@@ -13858,21 +13878,22 @@ end setVariablesWithSplit2;
 
 
 
-template giveVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template giveVariables(ModelInfo modelInfo, Context context,Boolean useFlatArrayNotation,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Define Memeber Function getReal off Cpp Target"
 ::=
+match context  case FMI_CONTEXT(__) then
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
 
 
-  let getrealvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, useFlatArrayNotation)
-  let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, useFlatArrayNotation)
+  let getrealvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getReal","double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
+  let setrealvariable = setVariablesWithSplit(lastIdentOfPath(name)+ "::setReal","const double* z","z",listAppend( listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
 
-  let getintvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, useFlatArrayNotation)
+  let getintvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getInteger","int* z","z",listAppend(listAppend( vars.intAlgVars, vars.intParamVars ), vars.intAliasVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
 
-  let getboolvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, useFlatArrayNotation)
+  let getboolvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getBoolean","bool* z","z",listAppend(listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
 
-  let getstringvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, useFlatArrayNotation)
+  let getstringvariable = giveVariablesWithSplit(lastIdentOfPath(name)+ "::getString","string* z","z",listAppend(listAppend( vars.stringAlgVars, vars.stringParamVars ), vars.stringAliasVars ), simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, useFlatArrayNotation)
   <<
 
   <%getrealvariable%>
@@ -13893,9 +13914,13 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
   {
-    <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
+   
+   
+     <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
         var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation)
         ;separator="\n"%>
+  
+   
   }
 
   void <%lastIdentOfPath(name)%>::setString(const string* z)
@@ -13903,6 +13928,48 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   }
 
+  >>
+  end match
+  else 
+  match modelInfo
+  case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  void <%lastIdentOfPath(name)%>::getReal(double* z)
+  {
+    throw std::invalid_argument("getReal is not implemented yet");
+  }
+  void <%lastIdentOfPath(name)%>::getInteger(int* z)
+  {
+    throw std::invalid_argument("getInteger is not implemented yet");
+  }
+
+  void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
+  {
+      throw std::invalid_argument("getBoolean is not implemented yet");
+  }
+
+  void <%lastIdentOfPath(name)%>::getString(string* z)
+  {
+        throw std::invalid_argument("getString is not implemented yet");
+  }
+  void <%lastIdentOfPath(name)%>::setReal(const double* z)
+  {
+    throw std::invalid_argument("setReal is not implemented yet");
+  }
+  void <%lastIdentOfPath(name)%>::setInteger(const int* z)
+  {
+    throw std::invalid_argument("setInteger is not implemented yet");
+  }
+
+  void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
+  {
+      throw std::invalid_argument("setBoolean is not implemented yet");
+  }
+
+  void <%lastIdentOfPath(name)%>::setString(const string* z)
+  {
+        throw std::invalid_argument("setString is not implemented yet");
+  }
   >>
   /*
   <%System.tmpTickReset(0)%>

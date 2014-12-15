@@ -375,6 +375,8 @@ package SimCode
     end ZEROCROSSINGS_CONTEXT;
     record OPTIMIZATION_CONTEXT
     end OPTIMIZATION_CONTEXT;
+    record FMI_CONTEXT
+    end FMI_CONTEXT;
   end Context;
 
   uniontype Variable
@@ -690,6 +692,7 @@ package SimCode
   constant Context contextParallelFunction;
   constant Context contextZeroCross;
   constant Context contextOptimization;
+  constant Context contextFMI;
   constant list<DAE.Exp> listExpLength1;
   constant list<Variable> boxedRecordOutVars;
 

@@ -27,7 +27,8 @@ public:
 
     virtual void  setConditions(bool* c) = 0;
     virtual void getConditions(bool* c) = 0;
-    virtual void saveDiscreteVars() = 0;
+    //Deactivated: virtual void saveDiscreteVars() = 0;
+    virtual void saveAll() = 0;
     /// Called to handle an event
     virtual void handleEvent(const bool* events) = 0;
     ///Checks if a discrete variable has changed and triggered an event, returns true if a second event iteration is needed
