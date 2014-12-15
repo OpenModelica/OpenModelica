@@ -86,22 +86,20 @@ unsigned long long MeasureTimeRDTSC::RDTSC()
 }
 #endif // defined(__i386__) || defined(__x86_64__)
 #else
-#if defined(__i386__)
-unsigned long long MeasureTimeRDTSC::RDTSC()
-{
-  unsigned long long res;
-  asm volatile (".byte 0x0f, 0x31" : "=A" (res));
-  return res;
-}
-
-#elif defined(__x86_64__)
+#if defined(__x86_64__)
 unsigned long long MeasureTimeRDTSC::RDTSC()
 {
   unsigned hi, lo;
   __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
   return ((unsigned long long) lo) | (((unsigned long long) hi) << 32);
 }
-
+#elif defined(__i386__)
+unsigned long long MeasureTimeRDTSC::RDTSC()
+{
+  unsigned long long res;
+  asm volatile (".byte 0x0f, 0x31" : "=A" (res));
+  return res;
+}
 #else
 unsigned long long MeasureTimeRDTSC::RDTSC()
 {
