@@ -527,7 +527,7 @@ uniontype Context
 
   record OPTIMIZATION_CONTEXT
   end OPTIMIZATION_CONTEXT;
-  
+
   record FMI_CONTEXT
   end FMI_CONTEXT;
 end Context;

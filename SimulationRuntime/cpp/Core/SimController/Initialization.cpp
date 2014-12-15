@@ -37,7 +37,7 @@ void Initialization::initializeSystem()
     event_system->getConditions(conditions1);
     //Deactivated: event_system->saveDiscreteVars();
     event_system->saveAll();
-    
+
     cond_restart = !std::equal (conditions1, conditions1+dim, conditions0);
   }
 

@@ -2445,7 +2445,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%handleSystemEvents(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%saveAll(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
     <%initPrevars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)%>
-   
+
     <%LabeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
     <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%extraFuncs%>
@@ -5204,7 +5204,7 @@ match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
   let allVarCount = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
 
-  let getrealvars = 
+  let getrealvars =
   (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx =>
     <<
     void getReal_<%idx%>(double* z);
@@ -5720,8 +5720,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     //returns the terminal status
     virtual bool terminal();
 
-  
-    
+
+
     // M is regular
     virtual bool isODE();
     // M is singular
@@ -7420,7 +7420,7 @@ template saveDiscreteVars1(list<SimCodeVar.SimVar> partVars, Integer partIdx, In
   <<
   void <%className%>::saveDiscreteVars_<%partIdx%>(double* discreteVars)
   {
-     
+
   }
   >>
   /*
@@ -13799,7 +13799,7 @@ end functionStoreDelay;
 
 
 template giveVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcParams,list<SimVar> varsLst, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation) ::=
- 
+
   let &funcCalls = buffer "" /*BUFD*/
   let funcs =   List.partition(varsLst, 100) |> ls hasindex idx =>
                 let &varDecls = buffer "" /*BUFD*/
@@ -13813,7 +13813,7 @@ template giveVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcPara
                 }
                 >>
                 ;separator="\n"
-       
+
 
   <<
   <%funcs%>
@@ -13823,8 +13823,8 @@ template giveVariablesWithSplit(Text funcNamePrefix, Text funcArgs,Text funcPara
     <%funcCalls%>
   }
   >>
- 
-  
+
+
 end giveVariablesWithSplit;
 
 
@@ -13914,13 +13914,13 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
   {
-   
-   
+
+
      <%listAppend( listAppend( vars.boolAlgVars, vars.boolParamVars ), vars.boolAliasVars ) |>
         var hasindex i0 fromindex 0 => setVariablesDefault(var, i0, useFlatArrayNotation)
         ;separator="\n"%>
-  
-   
+
+
   }
 
   void <%lastIdentOfPath(name)%>::setString(const string* z)
@@ -13930,7 +13930,7 @@ case MODELINFO(vars=SIMVARS(__)) then
 
   >>
   end match
-  else 
+  else
   match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
   <<
