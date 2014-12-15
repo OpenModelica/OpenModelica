@@ -379,27 +379,37 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
 
   protected:
     void initialize();
+   private:
     <% match modelInfo case MODELINFO(vars=SIMVARS(__)) then
     <<
-    void writeParams(HistoryImplType::value_type_p& params);
-    <%List.partition(protectedVars(vars.paramVars), 100) |> ls hasindex idx => 'void writeParamsReal_<%idx%>(HistoryImplType::value_type_p& params );';separator="\n"%>
-    void writeParamsReal(HistoryImplType::value_type_p& params  );
-    <%List.partition(protectedVars(vars.intParamVars), 100) |> ls hasindex idx => 'void writeParamsInt_<%idx%>(HistoryImplType::value_type_p& params  );';separator="\n"%>
-    void writeParamsInt(HistoryImplType::value_type_p& params  );
-    <%List.partition(protectedVars(vars.boolParamVars), 100) |> ls hasindex idx => 'void writeParamsBool_<%idx%>(HistoryImplType::value_type_p& params  );';separator="\n"%>
-    void writeParamsBool(HistoryImplType::value_type_p& params  );
+        void writeParams(HistoryImplType::value_type_p& params);
+        <%List.partition(protectedVars(vars.paramVars), 100) |> ls hasindex idx => 'void writeParamsReal_<%idx%>(HistoryImplType::value_type_p& params );';separator="\n"%>
+        void writeParamsReal(HistoryImplType::value_type_p& params  );
+        <%List.partition(protectedVars(vars.intParamVars), 100) |> ls hasindex idx => 'void writeParamsInt_<%idx%>(HistoryImplType::value_type_p& params  );';separator="\n"%>
+        void writeParamsInt(HistoryImplType::value_type_p& params  );
+        <%List.partition(protectedVars(vars.boolParamVars), 100) |> ls hasindex idx => 'void writeParamsBool_<%idx%>(HistoryImplType::value_type_p& params  );';separator="\n"%>
+        void writeParamsBool(HistoryImplType::value_type_p& params  );
+       
+
+        void writeAlgVarsValues(HistoryImplType::value_type_v *v);
+        <%List.partition( protectedVars(vars.algVars), 100) |> ls hasindex idx => 'void writeAlgVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
+        void writeDiscreteAlgVarsValues(HistoryImplType::value_type_v *v);
+        <%List.partition( protectedVars(vars.discreteAlgVars), 100) |> ls hasindex idx => 'void writeDiscreteAlgVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
+        void writeIntAlgVarsValues(HistoryImplType::value_type_v *v);
+        <%List.partition( protectedVars(vars.intAlgVars), 100) |> ls hasindex idx => 'void writeIntAlgVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
+        void writeBoolAlgVarsValues(HistoryImplType::value_type_v *v);
+        <%List.partition( protectedVars(vars.boolAlgVars), 100) |> ls hasindex idx => 'void writeBoolAlgVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
+        void writeAliasVarsValues(HistoryImplType::value_type_v *v);
+        <%List.partition( protectedVars(vars.aliasVars), 100) |> ls hasindex idx => 'void writeAliasVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
+        void writeIntAliasVarsValues(HistoryImplType::value_type_v *v);
+        <%List.partition( protectedVars(vars.intAliasVars), 100) |> ls hasindex idx => 'void writeIntAliasVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
+        void writeBoolAliasVarsValues(HistoryImplType::value_type_v *v);
+        <%List.partition( protectedVars(vars.boolAliasVars), 100) |> ls hasindex idx => 'void writeBoolAliasVarsValues_<%idx%>(HistoryImplType::value_type_v *v);';separator="\n"    %>
+        void writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2);
+        
     >>
     end match%>
-  private:
-    void writeAlgVarsValues(HistoryImplType::value_type_v *v);
-    void writeDiscreteAlgVarsValues(HistoryImplType::value_type_v *v);
-    void writeIntAlgVarsValues(HistoryImplType::value_type_v *v);
-    void writeBoolAlgVarsValues(HistoryImplType::value_type_v *v);
-    void writeAliasVarsValues(HistoryImplType::value_type_v *v);
-    void writeIntAliasVarsValues(HistoryImplType::value_type_v *v);
-    void writeBoolAliasVarsValues(HistoryImplType::value_type_v *v);
-    void writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2);
-
+    
     void writeAlgVarsResultNames(vector<string>& names);
     void writeDiscreteAlgVarsResultNames(vector<string>& names);
     void writeIntAlgVarsResultNames(vector<string>& names);
@@ -770,60 +780,68 @@ match simCode
 case SIMCODE(__) then
 match modelInfo
 case modelInfo as MODELINFO(vars=SIMVARS(__)) then
+ let className = lastIdentOfPath(modelInfo.name)
+ let algVarsStart = "1"
+ let discrAlgVarsStart = intAdd(stringInt(algVarsStart), stringInt(numProtectedRealAlgvars(modelInfo)))
+ let intAlgVarsStart = intAdd(stringInt(discrAlgVarsStart), stringInt(numProtectedDiscreteAlgVars(modelInfo)))
+ let boolAlgVarsStart = intAdd(stringInt(intAlgVarsStart), stringInt(numProtectedIntAlgvars(modelInfo)))
    <<
-       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultNames(vector<string>& names)
+       void <%className%>WriteOutput::writeAlgVarsResultNames(vector<string>& names)
        {
         <% if protectedVars(vars.algVars) then
         'names += <%(vars.algVars |> SIMVAR(isProtected=false) =>
         '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
 
        }
-       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultNames(vector<string>& names)
+       void <%className%>WriteOutput::writeDiscreteAlgVarsResultNames(vector<string>& names)
        {
         <% if  protectedVars(vars.discreteAlgVars) then
         'names += <%(vars.discreteAlgVars |> SIMVAR(isProtected=false) =>
         '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
 
        }
-       void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultNames(vector<string>& names)
+       void  <%className%>WriteOutput::writeIntAlgVarsResultNames(vector<string>& names)
         {
          <% if  protectedVars(vars.intAlgVars) then
          'names += <%(vars.intAlgVars |> SIMVAR(isProtected=false) =>
            '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultNames(vector<string>& names)
+        void <%className%>WriteOutput::writeBoolAlgVarsResultNames(vector<string>& names)
         {
         <% if  protectedVars(vars.boolAlgVars) then
          'names +=<%(vars.boolAlgVars |> SIMVAR(isProtected=false) =>
            '"<%crefStrForWriteOutput(name)%>"'  ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAlgVarsResultDescription(vector<string>& description)
+       void <%className%>WriteOutput::writeAlgVarsResultDescription(vector<string>& description)
        {
         <% if  protectedVars(vars.algVars) then
         'description += <%(vars.algVars |> SIMVAR(isProtected=false) =>
         '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
 
        }
-       void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeDiscreteAlgVarsResultDescription(vector<string>& description)
+       void <%className%>WriteOutput::writeDiscreteAlgVarsResultDescription(vector<string>& description)
        {
         <% if  protectedVars(vars.discreteAlgVars) then
         'description += <%(vars.discreteAlgVars |> SIMVAR(isProtected=false) =>
         '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
 
        }
-       void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAlgVarsResultDescription(vector<string>& description)
+       void  <%className%>WriteOutput::writeIntAlgVarsResultDescription(vector<string>& description)
         {
          <% if  protectedVars(vars.intAlgVars) then
          'description += <%(vars.intAlgVars |> SIMVAR(isProtected=false) =>
            '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
-        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAlgVarsResultDescription(vector<string>& description)
+        void <%className%>WriteOutput::writeBoolAlgVarsResultDescription(vector<string>& description)
         {
         <% if  protectedVars(vars.boolAlgVars) then
          'description +=<%(vars.boolAlgVars |> SIMVAR(isProtected=false) =>
            '"<%Util.escapeModelicaStringToCString(comment)%>"'  ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
-
+        <%writeOutputVarsWithSplit("writeAlgVarsValues", protectedVars(vars.algVars), stringInt(algVarsStart), '<%className%>WriteOutput', false, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
+        <%writeOutputVarsWithSplit("writeDiscreteAlgVarsValues", protectedVars(vars.discreteAlgVars), stringInt(discrAlgVarsStart), '<%className%>WriteOutput', false, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
+        <%writeOutputVarsWithSplit("writeIntAlgVarsValues", protectedVars(vars.intAlgVars), stringInt(intAlgVarsStart), '<%className%>WriteOutput', false, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
+        <%writeOutputVarsWithSplit("writeBoolAlgVarsValues", protectedVars(vars.boolAlgVars), stringInt(boolAlgVarsStart), '<%className%>WriteOutput', false, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
 
    >>
 end simulationWriteOutputAlgVarsCppFile;
@@ -882,7 +900,7 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
           'names += <%(vars.boolParamVars |> SIMVAR(isProtected=false) =>
           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-
+        <%writeoutputparams(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther,useFlatArrayNotation)%>
    >>
 end simulationWriteOutputParameterCppFile;
 
@@ -894,21 +912,30 @@ match simCode
 case SIMCODE(__) then
 match modelInfo
 case modelInfo as MODELINFO(vars=SIMVARS(__)) then
+ let className = lastIdentOfPath(modelInfo.name)
+ let algVarsStart = "1"
+ let discrAlgVarsStart = intAdd(stringInt(algVarsStart), stringInt(numProtectedRealAlgvars(modelInfo)))
+ let intAlgVarsStart = intAdd(stringInt(discrAlgVarsStart), stringInt(numProtectedDiscreteAlgVars(modelInfo)))
+ let boolAlgVarsStart = intAdd(stringInt(intAlgVarsStart), stringInt(numProtectedIntAlgvars(modelInfo)))
+ let aliasVarsStart = intAdd(stringInt(boolAlgVarsStart), stringInt(numProtectedBoolAlgvars(modelInfo)))
+ let intAliasVarsStart = intAdd(stringInt(aliasVarsStart), stringInt(numProtectedRealAliasvars(modelInfo)))
+ let boolAliasVarsStart = intAdd(stringInt(intAliasVarsStart), stringInt(numProtectedIntAliasvars(modelInfo)))
+ let stateVarsStart = intAdd(stringInt(boolAliasVarsStart), stringInt(numProtectedBoolAliasvars(modelInfo)))
    <<
-        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultNames(vector<string>& names)
+        void <%className%>WriteOutput::writeBoolAliasVarsResultNames(vector<string>& names)
         {
           <% if  protectedVars(vars.boolAliasVars) then
           'names += <%(vars.boolAliasVars |> SIMVAR(isProtected=false) =>
             '"<%crefStrForWriteOutput(name)%>"';separator=",";align=10;alignSeparator=";\n names += " )%>;' %>
         }
-        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultNames(vector<string>& names)
+        void  <%className%>WriteOutput::writeAliasVarsResultNames(vector<string>& names)
         {
          <% if  protectedVars(vars.aliasVars) then
          'names +=<%(vars.aliasVars |> SIMVAR(isProtected=false) =>
           '"<%crefStrForWriteOutput(name)%>"' ;separator=",";align=10;alignSeparator=";\n names += "  )%>;' %>
         }
 
-        void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultNames(vector<string>& names)
+        void   <%className%>WriteOutput::writeIntAliasVarsResultNames(vector<string>& names)
         {
         <% if  protectedVars(vars.intAliasVars) then
            'names += <%(vars.intAliasVars |> SIMVAR(isProtected=false) =>
@@ -919,26 +946,29 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
 
 
 
-        void  <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeAliasVarsResultDescription(vector<string>& description)
+        void  <%className%>WriteOutput::writeAliasVarsResultDescription(vector<string>& description)
         {
          <% if  protectedVars(vars.aliasVars) then
          'description +=<%(vars.aliasVars |> SIMVAR(isProtected=false) =>
           '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += "  )%>;' %>
         }
 
-       void   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeIntAliasVarsResultDescription(vector<string>& description)
+       void   <%className%>WriteOutput::writeIntAliasVarsResultDescription(vector<string>& description)
         {
         <% if  protectedVars(vars.intAliasVars) then
            'description += <%(vars.intAliasVars |> SIMVAR(isProtected=false) =>
             '"<%Util.escapeModelicaStringToCString(comment)%>"' ;separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
 
-        void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeBoolAliasVarsResultDescription(vector<string>& description)
+        void <%className%>WriteOutput::writeBoolAliasVarsResultDescription(vector<string>& description)
         {
           <% if protectedVars(vars.boolAliasVars) then
           'description += <%(vars.boolAliasVars |> SIMVAR(isProtected=false) =>
             '"<%Util.escapeModelicaStringToCString(comment)%>"';separator=",";align=10;alignSeparator=";\n description += " )%>;' %>
         }
+        <%writeOutputVarsWithSplit("writeAliasVarsValues", protectedVars(vars.aliasVars), stringInt(aliasVarsStart), '<%className%>WriteOutput', true, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
+        <%writeOutputVarsWithSplit("writeIntAliasVarsValues", protectedVars(vars.intAliasVars), stringInt(intAliasVarsStart), '<%className%>WriteOutput', true, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
+        <%writeOutputVarsWithSplit("writeBoolAliasVarsValues", protectedVars(vars.boolAliasVars), stringInt(boolAliasVarsStart), '<%className%>WriteOutput', true, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
 
 
    >>
@@ -4934,7 +4964,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
   let numParamvars = numProtectedParamVars(modelInfo)
   <<
-   <%writeoutputparams(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,contextOther,useFlatArrayNotation)%>
+   
    void <%lastIdentOfPath(modelInfo.name)%>WriteOutput::writeOutput(const IWriteOutput::OUTPUT command)
    {
     //Write head line
@@ -7087,26 +7117,8 @@ case MODELINFO(vars=SIMVARS(__)) then
  let intAliasVarsStart = intAdd(stringInt(aliasVarsStart), stringInt(numProtectedRealAliasvars(modelInfo)))
  let boolAliasVarsStart = intAdd(stringInt(intAliasVarsStart), stringInt(numProtectedIntAliasvars(modelInfo)))
  let stateVarsStart = intAdd(stringInt(boolAliasVarsStart), stringInt(numProtectedBoolAliasvars(modelInfo)))
-
  <<
- /* const int algVarsStart = <%algVarsStart%>;
- const int discrAlgVarsStart  = <%discrAlgVarsStart%>;
- const int intAlgVarsStart    = <%intAlgVarsStart%>;
- const int boolAlgVarsStart   = <%boolAlgVarsStart%>;
- const int aliasVarsStart     = <%aliasVarsStart%>;
- const int intAliasVarsStart  = <%intAliasVarsStart%>;
- const int boolAliasVarsStart = <%boolAliasVarsStart%>;
- const int stateVarsStart     = <%stateVarsStart%>; */
-
- <%writeOutputVars("writeAlgVarsValues", vars.algVars, stringInt(algVarsStart), className, false, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
- <%writeOutputVars("writeDiscreteAlgVarsValues", vars.discreteAlgVars, stringInt(discrAlgVarsStart), className, false, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
- <%writeOutputVars("writeIntAlgVarsValues", vars.intAlgVars, stringInt(intAlgVarsStart), className, false, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
- <%writeOutputVars("writeBoolAlgVarsValues", vars.boolAlgVars, stringInt(boolAlgVarsStart), className, false, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
-
- <%writeOutputVars("writeAliasVarsValues", vars.aliasVars, stringInt(aliasVarsStart), className, true, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
- <%writeOutputVars("writeIntAliasVarsValues", vars.intAliasVars, stringInt(intAliasVarsStart), className, true, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
- <%writeOutputVars("writeBoolAliasVarsValues", vars.boolAliasVars, stringInt(boolAliasVarsStart), className, true, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)%>
-
+ 
  void <%className%>::writeStateValues(HistoryImplType::value_type_v *v, HistoryImplType::value_type_dv *v2)
  {
    <%(vars.stateVars      |> SIMVAR() hasindex i8 =>'(*v)(<%intAdd(stringInt(stateVarsStart), stringInt(i8))%>)=__z[<%index%>];';separator="\n")%>
@@ -7114,6 +7126,17 @@ case MODELINFO(vars=SIMVARS(__)) then
  }
  >>
 end generateWriteOutputFunctionsForVars;
+
+/*
+ const int algVarsStart = <%algVarsStart%>;
+ const int discrAlgVarsStart  = <%discrAlgVarsStart%>;
+ const int intAlgVarsStart    = <%intAlgVarsStart%>;
+ const int boolAlgVarsStart   = <%boolAlgVarsStart%>;
+ const int aliasVarsStart     = <%aliasVarsStart%>;
+ const int intAliasVarsStart  = <%intAliasVarsStart%>;
+ const int boolAliasVarsStart = <%boolAliasVarsStart%>;
+ const int stateVarsStart     = <%stateVarsStart%>; 
+ */
 
 //template to generate a function that writes all given variables
 template writeOutputVars(String functionName, list<SimVar> vars, Integer startIndex, String className, Boolean areAliasVars, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
@@ -7132,6 +7155,45 @@ template writeOutputVars(String functionName, list<SimVar> vars, Integer startIn
   }
   >>
 end writeOutputVars;
+
+template writeOutputVarsWithSplit(String functionName, list<SimVar> vars, Integer startIndex, String className, Boolean areAliasVars, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+::=
+ let &funcCalls = buffer "" /*BUFD*/
+  let funcs = List.partition(vars, 100) |> ls hasindex idx =>
+    let &varDecls = buffer "" /*BUFD*/
+    let &funcCalls += '<%className%>::<%functionName%>_<%idx%>(v);'
+    let init = writeValueValst(ls,startIndex,idx,100,areAliasVars,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,  useFlatArrayNotation)
+    <<
+    void <%className%>::<%functionName%>_<%idx%>(HistoryImplType::value_type_v *v)
+    {
+       <%varDecls%>
+       <%init%>
+    }
+    >>
+    ;separator="\n"
+
+  <<
+  <%funcs%>
+
+  void <%className%>::<%functionName%>(HistoryImplType::value_type_v *v)
+  {
+    //number of vars: <%listLength(vars)%>
+    <%funcCalls%>
+  }
+  >>
+end writeOutputVarsWithSplit;
+
+template writeValueValst(list<SimVar> vars,Integer startIndex,Integer idx, Integer multiplicator, Boolean areAliasVars, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Boolean useFlatArrayNotation)
+::=
+  if(areAliasVars) then
+    <<
+    <%vars |> SIMVAR(isProtected=false) hasindex i1 =>'(*v)(<%intAdd(intMul(idx,multiplicator),intAdd(startIndex, stringInt(i1)))%>)=<%getAliasVar(aliasvar, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, contextOther, useFlatArrayNotation)%>;';separator="\n"%>
+    >>
+    else
+    <<
+    <%vars |> SIMVAR(isProtected=false) hasindex i0 =>'(*v)(<%intAdd(intMul(idx,multiplicator),intAdd(startIndex, stringInt(i0)))%>)=<%cref(name, useFlatArrayNotation)%>;';separator="\n"%>
+    >>
+end writeValueValst;
 
 //template for write parameter values
 template writeoutputparams(ModelInfo modelInfo,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context,  Boolean useFlatArrayNotation)
