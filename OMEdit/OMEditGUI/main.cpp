@@ -41,6 +41,12 @@
   Source code documentation. Provides brief information about the classes used.
 
   \section contributors_section Contributors
+  \subsection year_2014_subsection 2014
+  - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
+  - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
+  - Alachew Shitahun - <a href="mailto:alachew.mengist@liu.se">alachew.mengist@liu.se</a>
+  - Jan Kokert - <a href="mailto:jan.kokert@imtek.uni-freiburg.de">jan.kokert@imtek.uni-freiburg.de</a>
+
   \subsection year_2013_subsection 2013
   - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
   - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
