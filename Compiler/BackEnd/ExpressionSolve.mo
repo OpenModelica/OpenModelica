@@ -1106,11 +1106,13 @@ algorithm
     local
       DAE.Exp e1, e2, e3;
 
+
     //tanh(x) =y -> x = 1/2 * ln((1+y)/(1-y))
     case (DAE.CALL(path = Absyn.IDENT(name = "tanh"),expLst = {e1}),_,_)
        equation
          true = expHasCref(e1, inExp3);
          false = expHasCref(inExp2, inExp3);
+         true = not(Expression.isCref(inExp2) or Expression.isConst(inExp2));
          e2 = Expression.expAdd(DAE.RCONST(1.0), inExp2);
          e3 = Expression.expSub(DAE.RCONST(1.0), inExp2);
          e2 = Expression.makeDiv(e2, e3);
@@ -1122,6 +1124,7 @@ algorithm
       equation
          true = expHasCref(e1, inExp3);
          false = expHasCref(inExp2, inExp3);
+         true = not(Expression.isCref(inExp2) or Expression.isConst(inExp2));
          e2 = Expression.expPow(inExp2, DAE.RCONST(2.0));
          e3 = Expression.expAdd(e2,DAE.RCONST(1.0));
          e2 = Expression.makePureBuiltinCall("sqrt",{e3},DAE.T_REAL_DEFAULT);
@@ -1252,40 +1255,106 @@ e.g. for solve abs
   output Integer odepth;
 algorithm
   (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := matchcontinue(inExp1, inExp2)
-  local DAE.Exp e1, e_1, e, e2, exP, lhs;
+  local DAE.Exp e1, e_1, e, e2, exP, lhs, e3;
   DAE.ComponentRef cr;
   DAE.Type tp;
   BackendDAE.Equation eqn;
   list<BackendDAE.Equation> eqnForNewVars_;
   list<DAE.ComponentRef> newVarsCrefs_;
-  Boolean b;
+  Boolean b, b1, b2;
+
+  //tanh(x) =y -> x = 1/2 * ln((1+y)/(1-y))
+  case (DAE.CALL(path = Absyn.IDENT(name = "tanh"),expLst = {e1}),_)
+    equation
+      true = expHasCref(e1, inExp3);
+      false = expHasCref(inExp2, inExp3);
+      b = not(Expression.isCref(inExp2) or Expression.isConst(inExp2));
+      if b then
+        tp = Expression.typeof(inExp2);
+        cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_TANH_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+        eqn = BackendDAE.SOLVED_EQUATION(cr, inExp2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+        e = Expression.crefExp(cr);
+        eqnForNewVars_ = eqn::ieqnForNewVars;
+        newVarsCrefs_ = cr::inewVarsCrefs;
+      else
+        e = inExp2;
+        eqnForNewVars_ = ieqnForNewVars;
+        newVarsCrefs_ = inewVarsCrefs;
+      end if;
+      e2 = Expression.expAdd(DAE.RCONST(1.0), e);
+      e3 = Expression.expSub(DAE.RCONST(1.0), e);
+      e2 = Expression.makeDiv(e2, e3);
+      e2 = Expression.makePureBuiltinCall("log",{e2},DAE.T_REAL_DEFAULT);
+      e2 = Expression.expMul(DAE.RCONST(0.5), e2);
+     then (e1, e2, true,eqnForNewVars_,newVarsCrefs_,idepth + 1);
+
+  // sinh(x) -> ln(y+(sqrt(1+y^2))
+  case (DAE.CALL(path = Absyn.IDENT(name = "sinh"),expLst = {e1}),_)
+    equation
+      true = expHasCref(e1, inExp3);
+      false = expHasCref(inExp2, inExp3);
+      b = Expression.isCref(inExp2) or Expression.isConst(inExp2);
+      if b then
+        tp = Expression.typeof(inExp2);
+        cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_SINH_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+        eqn = BackendDAE.SOLVED_EQUATION(cr, inExp2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+        e = Expression.crefExp(cr);
+      else
+        e = inExp2;
+        eqnForNewVars_ = ieqnForNewVars;
+        newVarsCrefs_ = inewVarsCrefs;
+      end if;
+      e2 = Expression.expPow(e, DAE.RCONST(2.0));
+      e3 = Expression.expAdd(e2,DAE.RCONST(1.0));
+      e2 = Expression.makePureBuiltinCall("sqrt",{e3},DAE.T_REAL_DEFAULT);
+      e3 = Expression.expAdd(e, e2);
+      e2 = Expression.makePureBuiltinCall("log",{e3},DAE.T_REAL_DEFAULT);
+    then (e1,e2,true,eqnForNewVars_,newVarsCrefs_,idepth + 1);
 
   // abs(f(x)) = g(y) -> f(x) = sign(f(x))*g(y)
   case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _)
   equation
-    tp = Expression.typeof(e1);
-    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_ABS_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-    eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    e = Expression.crefExp(cr);
-    exP = Expression.makePureBuiltinCall("$_initialGuess", {e}, tp);
-    e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
-    lhs = Expression.expMul(e_1, inExp2);
-    eqnForNewVars_ = eqn::ieqnForNewVars;
-    newVarsCrefs_ = cr::inewVarsCrefs;
+    b1 = Expression.isPositiveOrZero(e1);
+    b2 = Expression.isNegativeOrZero(e1);
+    b = not(b1 or b2);
+    if b then
+      tp = Expression.typeof(e1);
+      cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_ABS_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+      eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+      e = Expression.crefExp(cr);
+      exP = Expression.makePureBuiltinCall("$_initialGuess", {e}, tp);
+      e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
+      eqnForNewVars_ = eqn::ieqnForNewVars;
+      newVarsCrefs_ = cr::inewVarsCrefs;
+      lhs = Expression.expMul(e_1, inExp2);
+    else
+      lhs = inExp2;
+      eqnForNewVars_ = ieqnForNewVars;
+      newVarsCrefs_ = inewVarsCrefs;
+    end if;
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
   // x^n = y -> x = y^(1/n)
   case(DAE.BINARY(e1, DAE.POW(tp), e2),_)
   equation
-    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_POW_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-    eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    e = Expression.crefExp(cr);
-    exP = Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
-    e_1 = Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
-    eqnForNewVars_ = eqn::ieqnForNewVars;
-    newVarsCrefs_ = cr ::inewVarsCrefs;
-    lhs = Expression.expPow(inExp2,DAE.BINARY(Expression.makeConstOne(tp),DAE.DIV(tp),e2));
-    lhs = Expression.expMul(e_1, lhs);
+    b1 = Expression.isPositiveOrZero(e1);
+    b2 = Expression.isNegativeOrZero(e1);
+    b = not(b1 or b2);
+    if b then
+      cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_POW_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+      eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+      e = Expression.crefExp(cr);
+      exP = Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
+      e_1 = Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
+      eqnForNewVars_ = eqn::ieqnForNewVars;
+      newVarsCrefs_ = cr ::inewVarsCrefs;
+      lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
+      lhs = Expression.expMul(e_1, lhs);
+    else
+      lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
+      eqnForNewVars_ = ieqnForNewVars;
+      newVarsCrefs_ = inewVarsCrefs;
+    end if;
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
   else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
@@ -1334,7 +1403,7 @@ algorithm
           res = DAE.IFEXP(e1,lhs,rhs);
           asserts = listAppend(asserts1,asserts1);
       then
-        (res,asserts,List.appendNoCopy(eqns,eqns1),  List.appendNoCopy(var, var1), depth);
+        (res,asserts,List.appendNoCopy(eqns1,eqns),  List.appendNoCopy(var1, var), depth);
       else fail();
    end match;
 

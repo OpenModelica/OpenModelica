@@ -6785,6 +6785,10 @@ algorithm
       Real r;
       /* abs(e) */
     case DAE.CALL(path = Absyn.IDENT("abs")) then true;
+    // exp(x)
+    case DAE.CALL(path = Absyn.IDENT("exp")) then true;
+    // cosh(x)
+    case DAE.CALL(path = Absyn.IDENT("cosh")) then true;
       /* literals */
     case DAE.ICONST(i) then i>=0;
     case DAE.RCONST(r) then realGe(r,0.0);
@@ -6817,6 +6821,8 @@ algorithm
         b = b2 or b3;
       then b1 and b;
     case DAE.BINARY(_,DAE.POW(),e2) then isEven(e2);
+    // -(x)
+    case DAE.UNARY(DAE.UMINUS(), e1) then not isPositiveOrZero(e1);
     else isZero(inExp);
 
   end match;
@@ -6828,8 +6834,14 @@ public function isNegativeOrZero
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inExp)
+    local Integer i; Real r; DAE.Exp e1;
+    /* literals */
+    case DAE.ICONST(i) then i <= 0;
+    case DAE.RCONST(r) then r <= 0.0;
+    // -(x)
+    case DAE.UNARY(DAE.UMINUS(), e1) then isPositiveOrZero(e1);
 
-    case _ then isZero(inExp);
+    else isZero(inExp);
 
   end match;
 end isNegativeOrZero;
@@ -7918,19 +7930,21 @@ algorithm
   res :=isPositiveOrZero(e) and not isZero(e);
 end expIsPositive;
 
-public function isEven "returns true if expression is even"
+public function isEven "returns true if const expression is even"
   input DAE.Exp e;
   output Boolean even;
 algorithm
-  even := matchcontinue(e)
+  even := match(e)
     local
       Integer i;
-    case(DAE.ICONST(i))
-      equation
-        0 = intMod(i,2);
-      then true;
+      Real r;
+      DAE.Exp exp;
+
+    case(DAE.ICONST(i)) then intMod(i,2) == 0;
+    case(DAE.RCONST(r)) then realMod(r, 2.0) == 0.0;
+    case(DAE.CAST(exp = exp)) then isEven(exp);
     else false;
-  end matchcontinue;
+  end match;
 end isEven;
 
 public function isIntegerOrReal "Returns true if Type is Integer or Real"
