@@ -3744,7 +3744,7 @@ public function expPow "author: vitalij"
   output DAE.Exp outExp;
 
 algorithm
-  outExp := matchcontinue(e1,e2)
+  outExp := match(e1,e2)
     local
       Type tp;
       DAE.Exp e,e3,e4,e5;
@@ -3753,54 +3753,43 @@ algorithm
       Operator op;
 
     // e1^1 = e1
-    case(_,_) equation
-      true = isOne(e2);
+    case(_,_) guard(isOne(e2))
     then e1;
 
     // e1^0 = 1
-    case(_,_) equation
-      true = isZero(e2);
-      false = isZero(e1);
+    case(_,_) guard(isZero(e2))
     then makeConstOne(typeof(e1));
 
     // 1^e2 = 1
-    case (_,_) equation
-      true = isConstOne(e1);
+    case (_,_) guard(isConstOne(e1))
     then e1;
 
     // 0^e2 = 0
-    case (_,_) equation
-      true = isZero(e1);
-      false = isZero(e2);
+    case (_,_) guard(isZero(e1) and expIsPositive(e2))
     then makeConstZero(typeof(e1));
 
-   // (-e)^r = e^r if r is even
-   case (DAE.UNARY(DAE.UMINUS(),e), DAE.RCONST(r1)) equation
-    0.0 = realMod(r1,2.0);
-    e = expPow(e,DAE.RCONST(r1));
-   then e;
+    // (-e)^r = e^r if r is even
+    case (DAE.UNARY(DAE.UMINUS(),e), e3) guard(isEven(e3))
+    then expPow(e, e3);
 
-  // (x/y)^(-z) = (y/x)^z
-  case (DAE.BINARY(e3, DAE.DIV(), e4), DAE.UNARY(DAE.UMINUS(),e5)) equation
-    e = makeDiv(e4,e3);
-    e = expPow(e,e5);
-  then e;
+    // (x/y)^(-z) = (y/x)^z
+    case (DAE.BINARY(e3, DAE.DIV(), e4), DAE.UNARY(DAE.UMINUS(),e5))
+    equation
+      e = makeDiv(e4,e3);
+      e = expPow(e,e5);
+    then e;
 
-  // (e1/e2)^(-r) = (e2/e1)^r
-  case (DAE.BINARY(e3, DAE.DIV(), e4) , DAE.RCONST(r2)) equation
-    true = realLt(r2, 0.0);
-    r2 = realNeg(r2);
-    e = makeDiv(e4,e3);
-    e = expPow(e,DAE.RCONST(r2));
-  then e;
+    // (e1/e2)^(-r) = (e2/e1)^r
+    case (DAE.BINARY(e3, DAE.DIV(), e4) , e5) guard(isNegativeOrZero(e5)) 
+    then expPow(makeDiv(e4,e3), negate(e5));
 
-  else equation
-     tp = typeof(e1);
-     b = DAEUtil.expTypeArray(tp);
-     op = if b then DAE.POW_ARR(tp) else DAE.POW(tp);
-  then DAE.BINARY(e1,op,e2);
+    else equation
+      tp = typeof(e1);
+      b = DAEUtil.expTypeArray(tp);
+      op = if b then DAE.POW_ARR(tp) else DAE.POW(tp);
+    then DAE.BINARY(e1,op,e2);
 
-  end matchcontinue;
+  end match;
 end expPow;
 
 public function expPowLst
@@ -6805,7 +6794,7 @@ algorithm
         b2 = (isNegativeOrZero(e1) and isNegativeOrZero(e2));
         b3 = expEqual(e1,e2);
       then b1 or b2 or b3;
-      /* e1 * e2, -e1 * -e2 */
+      /* e1 / e2, -e1 / -e2 */
     case DAE.BINARY(e1,DAE.DIV(),e2)
       equation
         b1 = (isPositiveOrZero(e1) and isPositiveOrZero(e2));
@@ -6834,12 +6823,14 @@ public function isNegativeOrZero
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inExp)
-    local Integer i; Real r; DAE.Exp e1;
+    local Integer i; Real r; DAE.Exp e1,e2;
     /* literals */
     case DAE.ICONST(i) then i <= 0;
     case DAE.RCONST(r) then r <= 0.0;
     // -(x)
     case DAE.UNARY(DAE.UMINUS(), e1) then isPositiveOrZero(e1);
+    /* Integer power we can say something good about */
+    case DAE.BINARY(e1,DAE.POW(),e2) guard(isOdd(e2)) then isNegativeOrZero(e2);
 
     else isZero(inExp);
 
@@ -7946,6 +7937,23 @@ algorithm
     else false;
   end match;
 end isEven;
+
+public function isOdd "returns true if const expression is odd"
+  input DAE.Exp e;
+  output Boolean even;
+algorithm
+  even := match(e)
+    local
+      Integer i;
+      Real r;
+      DAE.Exp exp;
+
+    case(DAE.ICONST(i)) then intMod(i,2) == 1;
+    case(DAE.RCONST(r)) then realMod(r, 2.0) == 1.0;
+    case(DAE.CAST(exp = exp)) then isOdd(exp);
+    else false;
+  end match;
+end isOdd;
 
 public function isIntegerOrReal "Returns true if Type is Integer or Real"
 input DAE.Type tp;
