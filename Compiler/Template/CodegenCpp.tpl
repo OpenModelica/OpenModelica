@@ -1522,8 +1522,8 @@ template simulationMainRunScript(SimCode simCode ,Text& extraFuncs,Text& extraFu
     let libPaths = makefileParams.libPaths |> path => path; separator=";"
 
     match makefileParams.platform
-      case  "linux64"
-      case  "linux32" then
+      case  "linux-i686"
+      case  "x86_64-linux" then
         <<
         #!/bin/sh
         <%preRunCommandLinux%>
@@ -2154,8 +2154,8 @@ end simulationMainDLLib;
 template simulationMainDLLib2(String platform)
 ::=
 match platform
-case "linux64"
-case "linux32" then
+case "linux-i686"
+case "x86_64-linux" then
 <<
 "-ldl"
 >>
