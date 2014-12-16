@@ -416,11 +416,7 @@ void OptionsDialog::saveGeneralSettings()
   // save user customizations
   mpSettings->setValue("userCustomizations", mpGeneralSettingsPage->getPreserveUserCustomizations());
   // save library icon size
-  int libraryIconSize = mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value();
-  mpSettings->setValue("libraryIconSize", libraryIconSize);
-  if (mpMainWindow->getLibraryTreeWidget()->iconSize().width() != libraryIconSize) {
-    mpMainWindow->getLibraryTreeWidget()->setIconSize(QSize(libraryIconSize, libraryIconSize));
-  }
+  mpSettings->setValue("libraryIconSize", mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value());
   // save show protected classes
   mpSettings->setValue("showProtectedClasses", mpGeneralSettingsPage->getShowProtectedClasses());
   // show/hide the protected classes
@@ -901,7 +897,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   // Libraries Browser group box
   mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));
   // library icon size
-  mpLibraryIconSizeLabel = new Label(tr("Library Icon Size:"));
+  mpLibraryIconSizeLabel = new Label(tr("Library Icon Size: *"));
   mpLibraryIconSizeSpinBox = new QSpinBox;
   mpLibraryIconSizeSpinBox->setMinimum(16);
   mpLibraryIconSizeSpinBox->setValue(24);

@@ -91,21 +91,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   value = index.data(Qt::DecorationRole);
   if (value.isValid()) {
     if (value.type() == QVariant::Icon) {
-      QPixmap componentPixmap;
-      LibraryTreeWidget *pLibraryTreeWidget = 0;
-      if (parent() && (pLibraryTreeWidget = qobject_cast<LibraryTreeWidget*>(parent()))) {
-        LibraryTreeNode *pLibraryTreeNode = static_cast<LibraryTreeNode*>(index.internalPointer());
-        LibraryComponent *pLibraryComponent = pLibraryTreeWidget->getLibraryComponentObject(pLibraryTreeNode->getNameStructure());
-        if (pLibraryComponent) {
-          int libraryIconSize = pLibraryTreeWidget->getMainWindow()->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
-          componentPixmap = pLibraryComponent->getComponentPixmap(QSize(libraryIconSize, libraryIconSize));
-        }
-      }
-      if (componentPixmap.isNull()) {
-        icon = qvariant_cast<QIcon>(value);
-      } else {
-        icon = QIcon(componentPixmap);
-      }
+      icon = qvariant_cast<QIcon>(value);
       decorationRect = QRect(QPoint(0, 0), icon.actualSize(option.decorationSize, iconMode, iconState));
     } else {
       pixmap = decoration(opt, value);
@@ -2015,16 +2001,19 @@ void LibraryTreeWidget::loadLibraryComponent(LibraryTreeNode *pLibraryTreeNode)
 {
   OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
   QString result = pOMCProxy->getIconAnnotation(pLibraryTreeNode->getNameStructure());
-  LibraryComponent *libComponent = new LibraryComponent(result, pLibraryTreeNode->getNameStructure(), pOMCProxy);
-  int libraryIconSize = mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
-  QPixmap pixmap = libComponent->getComponentPixmap(QSize(libraryIconSize, libraryIconSize));
+  LibraryComponent *pLibraryComponent = getLibraryComponentObject(pLibraryTreeNode->getNameStructure());
+  if (pLibraryComponent) {
+    mLibraryComponentsList.removeOne(pLibraryComponent);
+  }
+  pLibraryComponent = new LibraryComponent(result, pLibraryTreeNode->getNameStructure(), pOMCProxy);
+  QPixmap pixmap = pLibraryComponent->getComponentPixmap(iconSize());
   // if the component does not have icon annotation check if it has non standard dymola annotation or not.
   if (pixmap.isNull()) {
     pOMCProxy->sendCommand("getNamedAnnotation(" + pLibraryTreeNode->getNameStructure() + ", __Dymola_DocumentationClass)");
     if (StringHandler::unparseBool(StringHandler::removeFirstLastCurlBrackets(pOMCProxy->getResult())) || pLibraryTreeNode->isDocumentationClass()) {
       result = pOMCProxy->getIconAnnotation("Modelica.Icons.Information");
-      libComponent = new LibraryComponent(result, pLibraryTreeNode->getNameStructure(), pOMCProxy);
-      pixmap = libComponent->getComponentPixmap(QSize(libraryIconSize, libraryIconSize));
+      pLibraryComponent = new LibraryComponent(result, pLibraryTreeNode->getNameStructure(), pOMCProxy);
+      pixmap = pLibraryComponent->getComponentPixmap(iconSize());
       // if still the pixmap is null for some unknown reasons then used the pre defined image
       if (pixmap.isNull()) {
         pLibraryTreeNode->setIcon(0, QIcon(":/Resources/icons/info-icon.svg"));
@@ -2033,8 +2022,10 @@ void LibraryTreeWidget::loadLibraryComponent(LibraryTreeNode *pLibraryTreeNode)
       // if the component does not have non standard dymola annotation as well.
       pLibraryTreeNode->setIcon(0, pLibraryTreeNode->getModelicaNodeIcon());
     }
+  } else {
+    pLibraryTreeNode->setIcon(0, QIcon(pixmap));
   }
-  addLibraryComponentObject(libComponent);
+  addLibraryComponentObject(pLibraryComponent);
 }
 
 void LibraryTreeWidget::mouseDoubleClickEvent(QMouseEvent *event)

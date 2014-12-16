@@ -1141,17 +1141,13 @@ void GraphicsView::addClassAnnotation()
   }
   annotationString.append(")");
   // add the class annotation to model through OMC
-  if (pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeNode()->getNameStructure(), annotationString))
-  {
+  if (pMainWindow->getOMCProxy()->addClassAnnotation(mpModelWidget->getLibraryTreeNode()->getNameStructure(), annotationString)) {
     mpModelWidget->setModelModified();
     /* When something is added/changed in the icon layer then update the LibraryTreeNode in the Library Browser */
-    if (mViewType == StringHandler::Icon)
-    {
+    if (mViewType == StringHandler::Icon) {
       pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
     }
-  }
-  else
-  {
+  } else {
     pMainWindow->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
                                                                     tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
                                                                     Helper::scriptingKind, Helper::errorLevel, 0));
