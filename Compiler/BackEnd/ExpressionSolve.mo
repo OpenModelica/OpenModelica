@@ -1261,7 +1261,7 @@ algorithm
   BackendDAE.Equation eqn;
   list<BackendDAE.Equation> eqnForNewVars_;
   list<DAE.ComponentRef> newVarsCrefs_;
-  Boolean b, b1, b2;
+  Boolean b, b1, b2, b3;
 
   //tanh(x) =y -> x = 1/2 * ln((1+y)/(1-y))
   case (DAE.CALL(path = Absyn.IDENT(name = "tanh"),expLst = {e1}),_)
@@ -1299,6 +1299,8 @@ algorithm
         cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_SINH_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
         eqn = BackendDAE.SOLVED_EQUATION(cr, inExp2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
         e = Expression.crefExp(cr);
+        eqnForNewVars_ = eqn::ieqnForNewVars;
+        newVarsCrefs_ = cr::inewVarsCrefs;
       else
         e = inExp2;
         eqnForNewVars_ = ieqnForNewVars;
@@ -1308,6 +1310,46 @@ algorithm
       e3 = Expression.expAdd(e2,DAE.RCONST(1.0));
       e2 = Expression.makePureBuiltinCall("sqrt",{e3},DAE.T_REAL_DEFAULT);
       e3 = Expression.expAdd(e, e2);
+      e2 = Expression.makePureBuiltinCall("log",{e3},DAE.T_REAL_DEFAULT);
+    then (e1,e2,true,eqnForNewVars_,newVarsCrefs_,idepth + 1);
+
+  // cosh(x) -> ln(y +- (sqrt(y^2 - 1))
+  case (DAE.CALL(path = Absyn.IDENT(name = "cosh"),expLst = {e1}),_)
+    equation
+      true = expHasCref(e1, inExp3);
+      false = expHasCref(inExp2, inExp3);
+      b1 = Expression.isPositiveOrZero(e1);
+      b2 = Expression.isNegativeOrZero(e1);
+      b3 = Expression.isCref(inExp2) or Expression.isConst(inExp2);
+      b = not(b1 or b2);
+      if b or b3 then
+        tp = Expression.typeof(e1);
+        cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_SIGN_COSH_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+        eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+        e = Expression.crefExp(cr);
+        exP = Expression.makePureBuiltinCall("$_initialGuess", {e}, tp);
+        e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
+        eqnForNewVars_ = eqn::ieqnForNewVars;
+        newVarsCrefs_ = cr::inewVarsCrefs;
+      else
+        e = e1;
+        eqnForNewVars_ = ieqnForNewVars;
+        newVarsCrefs_ = inewVarsCrefs;
+      end if;
+      if b3 then
+        tp = Expression.typeof(inExp2);
+        cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_COSH_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+        eqn = BackendDAE.SOLVED_EQUATION(cr, inExp2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+        lhs = Expression.crefExp(cr);
+        eqnForNewVars_ = eqn::eqnForNewVars_;
+        newVarsCrefs_ = cr::newVarsCrefs_;
+      else
+        lhs = inExp2;
+      end if;
+      e2 = Expression.expPow(lhs, DAE.RCONST(2.0));
+      e3 = Expression.expSub(e2,DAE.RCONST(1.0));
+      e2 = Expression.makePureBuiltinCall("sqrt",{e3},DAE.T_REAL_DEFAULT);
+      e3 = if b then Expression.expAdd(lhs, Expression.expMul(e_1,e2)) else Expression.expAdd(lhs, e2);
       e2 = Expression.makePureBuiltinCall("log",{e3},DAE.T_REAL_DEFAULT);
     then (e1,e2,true,eqnForNewVars_,newVarsCrefs_,idepth + 1);
 
