@@ -195,9 +195,9 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
-        //true = intLe(listLength(tvarIdcs),3);
+        true = intLe(listLength(tvarIdcs),3);
         print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
-
+        false = compHasDummyState(comp,systIn);
         // build the new components, the new variables and the new equations
         (varsNew,eqsNew,_,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
 
@@ -307,6 +307,38 @@ algorithm
         (systTmp,tornSysIdx);
   end matchcontinue;
 end reduceLinearTornSystem1;
+
+protected function compHasDummyState"outputs true if the component solves a dummy state var
+author: Waurich TUD 2014-12"
+  input BackendDAE.StrongComponent comp;
+  input BackendDAE.EqSystem syst;
+  output Boolean hasDummy;
+algorithm
+  hasDummy := match(comp,syst)
+    local
+      Boolean b;
+      BackendDAE.Variables vars;
+      list<Integer> varIdcs, otherVars;
+      list<BackendDAE.Var> varLst;
+      list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
+  case(BackendDAE.TORNSYSTEM(tearingvars=varIdcs,otherEqnVarTpl=otherEqnVarTpl),BackendDAE.EQSYSTEM(orderedVars=vars))
+    equation
+      otherVars = List.flatten(List.map(otherEqnVarTpl,Util.tuple22));
+      //varIdcs = listAppend(varIdcs,otherVars);
+      varLst = List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,vars);
+      b = List.fold(List.map(varLst,BackendVariable.isDummyStateVar),boolOr,false);
+      if b then print("THERE IS A DUMMY STATE!"); end if;
+    then b;
+  case(BackendDAE.EQUATIONSYSTEM(vars=varIdcs),BackendDAE.EQSYSTEM(orderedVars=vars))
+    equation
+      varLst = List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,vars);
+      b = List.fold(List.map(varLst,BackendVariable.isDummyStateVar),boolOr,false);
+      if b then print("THERE IS A DUMMY STATE!"); end if;
+    then b;
+    else
+      then false;
+  end match;
+end compHasDummyState;
 
 protected function updateAssignmentsByComp"updates the assignments by the information given in the component.
 author:Waurich TUD 2014-11"
