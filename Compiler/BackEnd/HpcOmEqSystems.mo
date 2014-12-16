@@ -196,7 +196,7 @@ algorithm
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
         true = intLe(listLength(tvarIdcs),3);
-        print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
+        //print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
         false = compHasDummyState(comp,systIn);
         // build the new components, the new variables and the new equations
         (varsNew,eqsNew,_,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
@@ -245,7 +245,7 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs, jac=jac, jacType=jacType) = comp;
         true = intLe(listLength(varIdcs),3);
-        print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
+        //print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
           //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
 
          // get equations and variables
@@ -327,13 +327,14 @@ algorithm
       //varIdcs = listAppend(varIdcs,otherVars);
       varLst = List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,vars);
       b = List.fold(List.map(varLst,BackendVariable.isDummyStateVar),boolOr,false);
-      if b then print("THERE IS A DUMMY STATE!"); end if;
+      b = b and intGt(listLength(varIdcs),1);
+      //if b then print("THERE IS A DUMMY STATE!\n"); end if;
     then b;
   case(BackendDAE.EQUATIONSYSTEM(vars=varIdcs),BackendDAE.EQSYSTEM(orderedVars=vars))
     equation
       varLst = List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,vars);
       b = List.fold(List.map(varLst,BackendVariable.isDummyStateVar),boolOr,false);
-      if b then print("THERE IS A DUMMY STATE!"); end if;
+      //if b then print("THERE IS A DUMMY STATE!"); end if;
     then b;
     else
       then false;
