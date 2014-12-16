@@ -1253,9 +1253,13 @@ void ShapeAnnotation::adjustGeometries()
   */
 void ShapeAnnotation::setShapeFlags(bool enable)
 {
-  /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
+  /*
+    Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
+    OR shape is not an inherited shape.
+    */
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
+    setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }
   setFlag(QGraphicsItem::ItemIsSelectable, enable);
 }
@@ -1847,8 +1851,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
 QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &value)
 {
   QGraphicsItem::itemChange(change, value);
-  if (change == QGraphicsItem::ItemSelectedHasChanged)
-  {
+  if (change == QGraphicsItem::ItemSelectedHasChanged) {
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
     if (pLineAnnotation) {

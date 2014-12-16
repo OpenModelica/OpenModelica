@@ -612,12 +612,16 @@ QPointF Component::getOldPosition()
   */
 void Component::setComponentFlags(bool enable)
 {
+  /*
+    Only set the ItemIsMovable & ItemSendsGeometryChanges flags on component if the class is not a system library class
+    OR component is not an inherited shape.
+    */
   /* Only set the ItemIsMovable flag on component if the class is not a system library class OR component is not an inherited shape. */
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent()) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
+    setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }
   setFlag(QGraphicsItem::ItemIsSelectable, enable);
-  setFlag(QGraphicsItem::ItemSendsGeometryChanges);
 }
 
 void Component::getExtents(QPointF *pExtent1, QPointF *pExtent2)
