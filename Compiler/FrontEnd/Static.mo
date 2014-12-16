@@ -6869,8 +6869,8 @@ public function getOptionalNamedArg
   input DAE.Exp inDefaultExp;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
+  output FCore.Cache outCache := inCache;
+  output DAE.Exp outExp := inDefaultExp;
 protected
   String name, exp_str, ty_str, ety_str;
   DAE.Type ty;
@@ -6888,19 +6888,15 @@ algorithm
         (outCache, outExp, DAE.PROP(type_ = ty), _) :=
           elabExpInExpression(inCache, inEnv, e, inImplicit, inST, true, inPrefix, inInfo);
         outExp := Types.matchType(outExp, ty, inType, true);
-        return;
       else
         // The argument couldn't be evaluated, possibly due to having the wrong
         // type. We should print an error for this, but some API functions like
         // simulate depend on the default arguments having the wrong type.
       end try;
+
       break;
     end if;
   end for;
-
-  // The argument couldn't be found, return the default value.
-  outCache := inCache;
-  outExp := inDefaultExp;
 end getOptionalNamedArg;
 
 public function elabUntypedCref
