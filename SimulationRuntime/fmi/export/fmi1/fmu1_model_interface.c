@@ -874,28 +874,3 @@ fmiStatus fmiSetExternalFunction(fmiComponent c, fmiValueReference vr[], size_t 
   }
   return fmiOK;
 }
-
-// relation functions used in zero crossing detection
-fmiReal
-FmiLess(fmiReal a, fmiReal b)
-{
-  return a - b;
-}
-
-fmiReal
-FmiLessEq(fmiReal a, fmiReal b)
-{
-  return a - b;
-}
-
-fmiReal
-FmiGreater(fmiReal a, fmiReal b)
-{
-  return b - a;
-}
-
-fmiReal
-FmiGreaterEq(fmiReal a, fmiReal b)
-{
-  return b - a;
-}

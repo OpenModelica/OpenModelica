@@ -191,17 +191,18 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     if(comp->fmuData->callback->checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData) || eventInfo->valuesOfContinuousStatesChanged)
     {
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate(discrete changes)!")
-      eventInfo->newDiscreteStatesNeeded  = fmi2False;
+      eventInfo->newDiscreteStatesNeeded  = fmi2True;
       eventInfo->nominalsOfContinuousStatesChanged = fmi2False;
       eventInfo->valuesOfContinuousStatesChanged  = fmi2True;
       eventInfo->terminateSimulation = fmi2False;
     }
     else
     {
-      eventInfo->newDiscreteStatesNeeded  = fmi2True;
+      eventInfo->newDiscreteStatesNeeded  = fmi2False;
       eventInfo->nominalsOfContinuousStatesChanged = fmi2False;
       eventInfo->terminateSimulation = fmi2False;
     }
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: newDiscreteStatesNeeded %s",eventInfo->newDiscreteStatesNeeded?"true":"false");
 
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);
@@ -975,29 +976,4 @@ fmi2Status fmi2SetExternalFunction(fmi2Component c, fmi2ValueReference vr[], siz
       return fmi2Error;
   }
   return fmi2OK;
-}
-
-// relation functions used in zero crossing detection
-fmi2Real
-FmiLess(fmi2Real a, fmi2Real b)
-{
-  return a - b;
-}
-
-fmi2Real
-FmiLessEq(fmi2Real a, fmi2Real b)
-{
-  return a - b;
-}
-
-fmi2Real
-FmiGreater(fmi2Real a, fmi2Real b)
-{
-  return b - a;
-}
-
-fmi2Real
-FmiGreaterEq(fmi2Real a, fmi2Real b)
-{
-  return b - a;
 }
