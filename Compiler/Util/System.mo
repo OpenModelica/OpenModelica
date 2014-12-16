@@ -864,8 +864,8 @@ end uriToClassAndPath;
 public function modelicaPlatform "Returns the standardized platform name according to the Modelica specification:
   win32 [Microsoft Windows 32 bit]
   win64 [Microsoft Windows 64 bit]
-  linux32 [Linux Intel 32 bit]
-  linux64 [Linux Intel 64 bit]
+  i386-pc-linux [Linux Intel 32 bit]
+  x64_86-linux  [Linux Intel 64 bit]
   Else, the openModelicaPlatform() is returned
   "
   output String platform;
