@@ -3780,7 +3780,7 @@ algorithm
     then e;
 
     // (e1/e2)^(-r) = (e2/e1)^r
-    case (DAE.BINARY(e3, DAE.DIV(), e4) , e5) guard(isNegativeOrZero(e5)) 
+    case (DAE.BINARY(e3, DAE.DIV(), e4) , e5) guard(isNegativeOrZero(e5))
     then expPow(makeDiv(e4,e3), negate(e5));
 
     else equation
