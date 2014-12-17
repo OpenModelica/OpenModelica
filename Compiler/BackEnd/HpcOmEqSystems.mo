@@ -105,7 +105,7 @@ algorithm
       BackendDAE.Shared shared;
     case(BackendDAE.DAE(eqs=eqs,shared=shared))
      equation
-       true = Flags.isSet(Flags.PARTLINTORNSYSTEM);
+       //true = Flags.isSet(Flags.PARTLINTORNSYSTEM);
        (eqs,_) = List.map1Fold(eqs,reduceLinearTornSystem,shared,1);
     then BackendDAE.DAE(eqs,shared);
     else then daeIn;
@@ -195,7 +195,7 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
-        true = intLe(listLength(tvarIdcs),3);
+        true = intLe(listLength(tvarIdcs),3) or Flags.isSet(Flags.PARTLINTORNSYSTEM);
         //print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
         false = compHasDummyState(comp,systIn);
         // build the new components, the new variables and the new equations
@@ -244,7 +244,7 @@ algorithm
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
         BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs, jac=jac, jacType=jacType) = comp;
-        true = intLe(listLength(varIdcs),3);
+        true = intLe(listLength(varIdcs),3) or Flags.isSet(Flags.PARTLINTORNSYSTEM);
         //print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
           //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
 
