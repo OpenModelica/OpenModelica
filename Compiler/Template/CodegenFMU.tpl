@@ -189,7 +189,7 @@ match varKind
   case PARAM(__) then "fixed"
   /*case PARAM(__) then "tunable"*/  /*TODO! Don't know how tunable variables are represented in OpenModelica.*/
   case CONST(__) then "constant"
-  else 
+  else
   match type_
     case T_REAL(__) then "continuous"
     else "discrete"
@@ -272,7 +272,7 @@ match varKind
   match initialValue
     case SOME(exp) then
     match varKind
-      case PARAM(__) then if isValueChangeable then '<%StartString2(exp)%>' else ''  
+      case PARAM(__) then if isValueChangeable then '<%StartString2(exp)%>' else ''
       else '<%StartString2(exp)%>'
 end RealVariableTypeCommonAttribute2;
 

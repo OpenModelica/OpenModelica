@@ -70,7 +70,7 @@ int signedchar_to_int(signed char* modelicaBoolean, int* fmiBoolean, int size)
 {
   int i;
   for (i = 0; i < size; i++) {
-	  fmiBoolean[i] = (int) modelicaBoolean[i];
+    fmiBoolean[i] = (int) modelicaBoolean[i];
   }
   return 0;
 }
@@ -173,7 +173,7 @@ void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* inte
 void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, signed char* booleanValues, int fmiType)
 {
   if (fmiType == 1) {
-	int i;
+  int i;
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
     int* fmiBoolean = malloc(sizeof(int)*numberOfValueReferences);
