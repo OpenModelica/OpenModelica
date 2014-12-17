@@ -168,9 +168,9 @@ match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
-  let variability = getVariability2(varKind)
+  let variability = getVariability2(varKind, type_)
   let caus = getCausality2(causality, varKind, isValueChangeable)
-  let initial = getInitialType(varKind, initialValue, causality)
+  let initial = getInitialType(varKind, initialValue, causality, isValueChangeable)
   <<
   name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
@@ -181,7 +181,7 @@ match simVar
   >>
 end ScalarVariableAttribute2;
 
-template getVariability2(VarKind varKind)
+template getVariability2(VarKind varKind, DAE.Type type_)
  "Returns the variability Attribute of ScalarVariable."
 ::=
 match varKind
@@ -189,7 +189,10 @@ match varKind
   case PARAM(__) then "fixed"
   /*case PARAM(__) then "tunable"*/  /*TODO! Don't know how tunable variables are represented in OpenModelica.*/
   case CONST(__) then "constant"
-  else "continuous"
+  else 
+  match type_
+    case T_REAL(__) then "continuous"
+    else "discrete"
 end getVariability2;
 
 template getCausality2(Causality c, VarKind varKind, Boolean isValueChangeable)
@@ -211,30 +214,31 @@ match varKind
   else "local"
 end getCausality2Helper;
 
-template getInitialType(VarKind varKind, Option<DAE.Exp> initialValue, Causality c)
+template getInitialType(VarKind varKind, Option<DAE.Exp> initialValue, Causality c, Boolean isValueChangeable)
  "Returns the Initial Attribute of ScalarVariable."
 ::=
 match c
   case INPUT(__) then "approx"
   else
-  match varKind
-    case STATE_DER(__) then "calculated"
-    else
-      match initialValue
-        case SOME(exp) then "exact"
-        else "calculated"
+  match initialValue
+    case SOME(exp) then
+    match varKind
+      case STATE_DER(__) then "calculated"
+      case PARAM(__) then if isValueChangeable then "exact" else "calculated"
+      else "approx"
+    else "calculated"
 end getInitialType;
 
-template ScalarVariableType2(list<SimVar> stateVars, DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, VarKind varKind, Integer index)
+template ScalarVariableType2(list<SimVar> stateVars, DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, VarKind varKind, Integer index, Boolean isValueChangeable)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match type_
-  case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
+  case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(initialValue, varKind, isValueChangeable)%>/>'
   /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
-  case T_REAL(__) then '<Real<%RealVariableTypeCommonAttribute2(stateVars, initialValue, varKind, index)%>/>'
-  case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
-  case T_STRING(__) then '<String<%StringVariableTypeCommonAttribute2(initialValue)%>/>'
-  case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%ScalarVariableTypeCommonAttribute2(initialValue)%>/>'
+  case T_REAL(__) then '<Real<%RealVariableTypeCommonAttribute2(stateVars, initialValue, varKind, isValueChangeable, index)%>/>'
+  case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(initialValue, varKind, isValueChangeable)%>/>'
+  case T_STRING(__) then '<String<%StringVariableTypeCommonAttribute2(initialValue, varKind, isValueChangeable)%>/>'
+  case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%ScalarVariableTypeCommonAttribute2(initialValue, varKind, isValueChangeable)%>/>'
   else 'UNKOWN_TYPE'
 end ScalarVariableType2;
 
@@ -249,28 +253,36 @@ match exp
   else ''
 end StartString2;
 
-template ScalarVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue)
+template ScalarVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue, VarKind varKind, Boolean isValueChangeable)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match initialValue
-  case SOME(exp) then '<%StartString2(exp)%>'
+  case SOME(exp) then
+    match varKind
+    case PARAM(__) then if isValueChangeable then '<%StartString2(exp)%>' else ''
+    else '<%StartString2(exp)%>'
 end ScalarVariableTypeCommonAttribute2;
 
-template RealVariableTypeCommonAttribute2(list<SimVar> stateVars, Option<DAE.Exp> initialValue, VarKind varKind, Integer index)
+template RealVariableTypeCommonAttribute2(list<SimVar> stateVars, Option<DAE.Exp> initialValue, VarKind varKind, Boolean isValueChangeable, Integer index)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match varKind
   case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
   else
-    match initialValue
-      case SOME(exp) then '<%StartString2(exp)%>'
+  match initialValue
+    case SOME(exp) then
+    match varKind
+      case PARAM(__) then if isValueChangeable then '<%StartString2(exp)%>' else ''  
+      else '<%StartString2(exp)%>'
 end RealVariableTypeCommonAttribute2;
 
-template StringVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue)
+template StringVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue, VarKind varKind, Boolean isValueChangeable)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match initialValue
-  case SOME(exp) then ' start=<%initVal(exp)%>'
+  case SOME(exp) then
+    match varKind
+    case PARAM(__) then if isValueChangeable then ' start=<%initVal(exp)%>' else ''
 end StringVariableTypeCommonAttribute2;
 
 // Code for generating modelDescription.xml file for FMI 1.0 ModelExchange.
@@ -496,7 +508,7 @@ case SIMVAR(__) then
   <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
   <ScalarVariable
     <%ScalarVariableAttribute2(simVar)%>>
-    <%ScalarVariableType2(stateVars, type_,unit,displayUnit,initialValue,varKind,index)%>
+    <%ScalarVariableType2(stateVars, type_,unit,displayUnit,initialValue,varKind,index,isValueChangeable)%>
   </ScalarVariable>
   >>
   else

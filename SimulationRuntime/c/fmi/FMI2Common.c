@@ -63,6 +63,31 @@ fmi2_value_reference_t* real_to_fmi2_value_reference(int numberOfValueReferences
 }
 
 /*
+ * OpenModelica uses signed char for boolean and according to FMI specifications boolean are ints.
+ * So to this function converts signed char into int
+ */
+int signedchar_to_int(signed char* modelicaBoolean, int* fmiBoolean, int size)
+{
+  int i;
+  for (i = 0; i < size; i++) {
+	  fmiBoolean[i] = (int) modelicaBoolean[i];
+  }
+  return 0;
+}
+/*
+ * OpenModelica uses signed char for boolean and according to FMI specifications boolean are ints.
+ * So to this function converts int into signed char
+ */
+int int_to_signedchar(int* fmiBoolean, signed char* modelicaBoolean, int size)
+{
+  int i;
+  for (i = 0; i < size; i++) {
+    modelicaBoolean[i] = (signed char) fmiBoolean[i];
+  }
+  return 0;
+}
+
+/*
  * Wrapper for the FMI function fmi2GetReal.
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns realValues.
@@ -145,13 +170,19 @@ void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* inte
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns booleanValues.
  */
-void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues, int fmiType)
+void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, signed char* booleanValues, int fmiType)
 {
   if (fmiType == 1) {
+	int i;
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
-    fmi2_status_t status = fmi2_import_get_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
+    int* fmiBoolean = malloc(sizeof(int)*numberOfValueReferences);
+    fmi2_status_t status = fmi2_import_get_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, fmiBoolean);
+    int_to_signedchar(fmiBoolean, booleanValues, numberOfValueReferences);
+    free(fmiBoolean);
     free(valuesReferences_int);
+
+
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
       ModelicaFormatError("fmi2GetBoolean failed with status : %s\n", fmi2_status_to_string(status));
     }
@@ -164,12 +195,15 @@ void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* bool
  * Wrapper for the FMI function fmi2SetBoolean.
  * Returns status.
  */
-void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, int fmiType)
+void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, signed char* booleanValues, int fmiType)
 {
   if (fmiType == 1) {
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
-    fmi2_status_t status = fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
+    int* fmiBoolean = malloc(sizeof(int)*numberOfValueReferences);
+    signedchar_to_int(booleanValues, fmiBoolean, numberOfValueReferences);
+    fmi2_status_t status = fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, fmiBoolean);
+    free(fmiBoolean);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
       ModelicaFormatError("fmi2SetBoolean failed with status : %s\n", fmi2_status_to_string(status));
