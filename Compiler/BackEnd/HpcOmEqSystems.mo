@@ -180,8 +180,9 @@ algorithm
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents compsNew, compsTmp, otherComps;
       BackendDAE.Variables vars;
+      BackendVarTransform.VariableReplacements derRepl;
       list<BackendDAE.Equation> eqLst, eqsNew, eqsOld, resEqs, addEqs;
-      list<BackendDAE.Var> varLst, varsNew, varsOld, tvars, addVars;
+      list<BackendDAE.Var> varLst,varLstRepl, varsNew, varsOld, tvars, addVars;
       EqSys syst;
     case(_,_,_,_,_,_,_)
       equation
@@ -246,6 +247,8 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs, jac=jac, jacType=jacType) = comp;
         true = intLe(listLength(varIdcs),3);
+        false = compHasDummyState(comp,systIn);
+
         //print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
           //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
 
@@ -253,14 +256,19 @@ algorithm
          eqLst = BackendEquation.getEqns(eqIdcs, eqs);
          eqLst = BackendEquation.replaceDerOpInEquationList(eqLst);
          varLst = List.map1r(varIdcs, BackendVariable.getVarAt, vars);
-         varLst = List.map(varLst, BackendVariable.transformXToXd);
+         varLstRepl = List.map(varLst, BackendVariable.transformXToXd);
+         derRepl = BackendVarTransform.emptyReplacements(); // to retransform $DER. to der(.) in the new equations
+         derRepl = List.threadFold(varLst,varLstRepl,addDerReplacement,derRepl);
+         
               //BackendDump.dumpVarList(varLst,"varLst");
               //BackendDump.dumpEquationList(eqLst,"eqLst");
 
          // build linear system
-         syst = getEqSystem(eqLst,varLst);
+         syst = getEqSystem(eqLst,varLstRepl);
            //dumpEqSys(syst);
          (eqsNew,addEqs,addVars) = CramerRule(syst);
+         (eqsNew,_) = BackendVarTransform.replaceEquations(eqsNew,derRepl,NONE());//introduce der(.) for $DER.
+         
            //BackendDump.dumpEquationList(eqsNew,"eqsNew");
            //BackendDump.dumpVarList(addVars,"addVars");
            //BackendDump.dumpEquationList(addEqs,"addEqs");
@@ -268,7 +276,7 @@ algorithm
         // make new components for the system equations and add the comps for the additional equations in front of them
         varsOld = BackendVariable.varList(vars);
         eqsOld = BackendEquation.equationList(eqs);
-        compsNew = matchComponent(eqsNew,varLst,eqIdcs,varIdcs,sharedIn);
+        compsNew = matchComponent(eqsNew,varLstRepl,eqIdcs,varIdcs,sharedIn);
         otherComps = matchComponent(addEqs,addVars,List.intRange2(listLength(eqsOld)+1,listLength(eqsOld)+1+listLength(addEqs)),List.intRange2(listLength(varsOld)+1,listLength(varsOld)+1+listLength(addVars)),sharedIn);
         compsNew = listAppend(otherComps,compsNew);
 
@@ -328,6 +336,7 @@ algorithm
       //varIdcs = listAppend(varIdcs,otherVars);
       varLst = List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,vars);
       b = List.fold(List.map(varLst,BackendVariable.isDummyStateVar),boolOr,false);
+      //b = List.fold(List.map(varLst,BackendVariable.isDummyDerVar),boolOr,b);
       b = b and intGt(listLength(varIdcs),1);
       //if b then print("THERE IS A DUMMY STATE!\n"); end if;
     then b;
@@ -335,6 +344,7 @@ algorithm
     equation
       varLst = List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,vars);
       b = List.fold(List.map(varLst,BackendVariable.isDummyStateVar),boolOr,false);
+      //b = List.fold(List.map(varLst,BackendVariable.isDummyDerVar),boolOr,b);
       //if b then print("THERE IS A DUMMY STATE!"); end if;
     then b;
     else
@@ -500,13 +510,14 @@ algorithm
         //BackendDump.dumpEquationList(hs,"new residuals");
 
    tVarsOut := tvarsReplaced;
-   (resEqsOut,_) := BackendVarTransform.replaceEquations(hs,derRepl,NONE());//introduce der(.) for $DER.i
-
+   resEqsOut := hs;
+   
    // some optimization
    (eqsNewOut,varsNewOut,resEqsOut) := simplifyNewEquations(eqsNewOut,varsNewOut,resEqsOut,listLength(List.flatten(arrayList(xa_iArr))),2);
 
    // handle the strongComponent (system of equations) to solve the tearing vars
    (compsEqSys,resEqsOut,tVarsOut,addEqLst,addVarLst) := buildEqSystemComponent(resEqIdcs0,tVarIdcs0,resEqsOut,tVarsOut,a_iArr,ishared);
+   (resEqsOut,_) := BackendVarTransform.replaceEquations(hs,derRepl,NONE());//introduce der(.) for $DER.i
        //BackendDump.dumpComponents(compsEqSys);
        //BackendDump.dumpVarList(tVarsOut,"tVarsOut");
        //BackendDump.dumpEquationList(resEqsOut,"resEqsOut");
