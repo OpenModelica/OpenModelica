@@ -3780,14 +3780,14 @@ algorithm
     then e;
 
     // (e1/e2)^(-r) = (e2/e1)^r
-    case (DAE.BINARY(e3, DAE.DIV(), e4) , _) guard(isNegativeOrZero(e2)) 
+    case (DAE.BINARY(e3, DAE.DIV(), e4) , _) guard(isNegativeOrZero(e2))
     then expPow(makeDiv(e4,e3), negate(e2));
 
     // x^0.5 => sqrt(x)
     case (_, _) guard(isHalf(e2))
     then Expression.makePureBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
 
-    else equation 
+    else equation
       tp = typeof(e1);
       b = DAEUtil.expTypeArray(tp);
       op = if b then DAE.POW_ARR(tp) else DAE.POW(tp);

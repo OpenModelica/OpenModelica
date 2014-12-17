@@ -1420,19 +1420,19 @@ protected function simplifyBinaryMulCoeff
 "generalization of ExpressionSimplify.simplifyBinaryMulCoeff2"
   input DAE.Exp inExp;
   output tuple<DAE.Exp, DAE.Exp> outRes;
-algorithm 
+algorithm
   outRes := match(inExp)
     local
       DAE.Exp e,e1,e2;
       DAE.Exp coeff;
-  
+
     case ((e as DAE.CREF()))
-      then ((e, DAE.RCONST(1.0))); 
+      then ((e, DAE.RCONST(1.0)));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(),exp2 = DAE.UNARY(operator = DAE.UMINUS(), exp = coeff)))
       then
         ((e1, Expression.negate(coeff)));
-  
+
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(),exp2 = coeff))
       then ((e1,coeff));
 
@@ -1553,7 +1553,7 @@ algorithm
 
     rhs := DAE.IFEXP(con, e7 ,lhs);
     lhs := e2;
-    
+
 end solveQE;
 
 protected function solveIfExp
