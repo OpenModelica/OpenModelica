@@ -1519,7 +1519,7 @@ algorithm
   (allTerms,coeffsIn) := foldIn;
   (coeffs,allTerms) := List.extract1OnTrue(allTerms,Expression.expHasCref,cref);
   coeff := List.fold(coeffs,Expression.expAdd,DAE.RCONST(0));
-  if Expression.containFunctioncall(coeff) then print("This system of equations cannot be decomposed because its actually not linear (the coeffs are function calls of x).\n");fail(); end if;
+  //if Expression.containFunctioncall(coeff) then print("This system of equations cannot be decomposed because its actually not linear (the coeffs are function calls of x).\n");fail(); end if;
   (coeff,_) := Expression.replaceExp(coeff,Expression.crefExp(cref),DAE.RCONST(1.0));
   (coeff,_) := ExpressionSimplify.simplify(coeff);
   foldOut := (allTerms,coeff::coeffsIn);
