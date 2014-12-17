@@ -48,6 +48,7 @@ QTreeView#TreeWithBranches::branch:has-siblings,
 QTreeView#TreeWithBranches::branch:open:has-children:has-siblings {
   background: url(:/Resources/icons/vline.png);
   background-repeat: repeat-y;
+  background-position: top;
 }
 QTreeWidget#TreeWithBranches::branch:has-siblings:adjoins-item,
 QTreeView#TreeWithBranches::branch:has-siblings:adjoins-item {
@@ -74,6 +75,7 @@ QTreeWidget#TreeWithBranches::branch:closed:has-children:!has-siblings:adjoins-i
 QTreeView#TreeWithBranches::branch:closed:has-children:!has-siblings:adjoins-item {
   background: url(:/Resources/icons/branch-end.png);
   background-repeat: no-repeat;
+  background-position: top;
   image: url(:/Resources/icons/branch-closed.png);
   image-position: top;
 }
@@ -81,6 +83,7 @@ QTreeWidget#TreeWithBranches::branch:open:has-children:!has-siblings:adjoins-ite
 QTreeView#TreeWithBranches::branch:open:has-children:!has-siblings:adjoins-item {
   background: url(:/Resources/icons/branch-end.png);
   background-repeat: no-repeat;
+  background-position: top;
   image: url(:/Resources/icons/branch-open.png);
   image-position: top;
 }
