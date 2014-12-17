@@ -1487,6 +1487,9 @@ algorithm
     guard(Expression.isOne(e1))
       then(e2, DAE.RCONST(-1.0));
 
+    case(DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e}))
+      then ((e,DAE.RCONST(0.5)));
+
     case (e) then ((e,DAE.RCONST(1.0)));
 
   end match;
