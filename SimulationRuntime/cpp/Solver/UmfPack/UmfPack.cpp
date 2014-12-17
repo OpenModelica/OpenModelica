@@ -38,13 +38,14 @@ void UmfPack::solve()
         long int dimRHS  = 1;          // Dimension of right hand side of linear system (=b)
         long int dimSys = _algLoop->getDimReal();
         long int irtrn  = 0;          // Retrun-flag of Fortran code        _algLoop->getReal(_y);
-        double * _helpArray = new double[_algLoop->getDimReal()];
+        long int * _helpArray = new long int[_algLoop->getDimReal()];
         _algLoop->evaluate();
         _algLoop->getRHS(_rhs);
         _algLoop->getSystemMatrix(_jacd);
         dgesv_(&dimSys,&dimRHS,_jacd,&dimSys,_helpArray,_rhs,&dimSys,&irtrn);
         memcpy(_x,_rhs,dimSys*sizeof(double));
         _algLoop->setReal(_x);
+        delete [] _helpArray;
   } else {
        _algLoop->evaluate();
       _algLoop->getRHS(_rhs);

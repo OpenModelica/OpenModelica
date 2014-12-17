@@ -28,8 +28,7 @@ AC_SUBST(IDLPYTHONCMD)
 AC_SUBST(USE_GRAPH)
 AC_SUBST(USE_METIS)
 AC_SUBST(USE_PATOH)
-AC_SUBST(METISHOME)
-AC_SUBST(PATOHHOME)
+AC_SUBST(GRAPHLIB)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
 AC_SUBST(RT_LDFLAGS)
 AC_SUBST(RT_LDFLAGS_SIM)
@@ -818,7 +817,7 @@ AC_ARG_WITH(METIS, [  --with-METIS=DIR                 Compile with Metis graph 
   USE_METIS=1
   USE_GRAPH=1
   AC_MSG_RESULT([Enabling METIS... METISHOME="$withval"]);
-  METISHOME="$withval";
+  GRAPHLIB="-L$withval -lmetis";
   USE_PATOH=0
 ], [
     USE_GRAPH=0
@@ -838,7 +837,7 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
     USE_METIS=0
     USE_GRAPH=1
     AC_MSG_RESULT([Enabling PATOH... PATOHHOME="$withval"]);
-  PATOHHOME="$withval";
+    GRAPHLIB="-L$withval -lpatoh";
 ], [
     if test "$USE_METIS" = 0; then
         USE_GRAPH=0

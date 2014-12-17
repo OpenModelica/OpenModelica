@@ -52,7 +52,7 @@
 #define CONFIG_SYSTEMLIBS mmc_mk_cons(mmc_mk_scon("-lomcruntime"),mmc_mk_cons(mmc_mk_scon("-lexpat"),mmc_mk_cons(mmc_mk_scon("-lsqlite3"),mmc_mk_cons(mmc_mk_scon(CONFIG_LPSOLVE55),mmc_mk_cons(mmc_mk_scon(CONFIG_CORBALIBS),mmc_mk_nil())))))
 
 #define USE_GRAPH @USE_GRAPH@
-#if usegraph
+#if USE_GRAPH
 #define USE_PATOH @USE_PATOH@
 #define USE_METIS @USE_METIS@
 #endif
