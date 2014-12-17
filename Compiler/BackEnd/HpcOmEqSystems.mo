@@ -1162,7 +1162,7 @@ algorithm
         aCRef = ComponentReference.makeCrefIdent(aName,ty,{});
         a_ii = BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
         a_ii = BackendVariable.setVarStartValue(a_ii,DAE.RCONST(0.0));
-        
+
         // build the equations to solve for the coefficients
         d_lst = arrayGet(a_iArrIn,1);
         dVar = listGet(d_lst, resIdx);
