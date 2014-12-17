@@ -1255,7 +1255,8 @@ e.g. for solve abs
   output Integer odepth;
 algorithm
   (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := matchcontinue(inExp1, inExp2)
-  local DAE.Exp e1, e_1, e, e2, exP, lhs, e3;
+  local DAE.Exp e1, e_1, e, e2, exP, lhs, e3, e4, e5, e6, rhs, a1,x1, a2,x2;
+  tuple<DAE.Exp, DAE.Exp> a, c;
   DAE.ComponentRef cr;
   DAE.Type tp;
   BackendDAE.Equation eqn;
@@ -1399,11 +1400,161 @@ algorithm
     end if;
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
+  //QE
+  case( DAE.BINARY(DAE.BINARY(a1,DAE.MUL(),x1), DAE.ADD(),DAE.BINARY(a2,DAE.MUL(),x2)),_)
+  equation
+    a = simplifyBinaryMulCoeff(x1);
+    c = simplifyBinaryMulCoeff(x2);
+    (e2 ,e3) = a;
+    (e5, e6) = c;
+    (lhs, rhs, eqnForNewVars_, newVarsCrefs_) = solveQE(a1,e2,e3,a2,e5,e6,inExp2,inExp3,ieqnForNewVars,inewVarsCrefs,uniqueEqIndex,idepth);
+  then(lhs, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
+
   else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
+
   end matchcontinue;
 
 end preprocessingSolveTmpVarsWork;
 
+protected function simplifyBinaryMulCoeff
+"generalization of ExpressionSimplify.simplifyBinaryMulCoeff2"
+  input DAE.Exp inExp;
+  output tuple<DAE.Exp, DAE.Exp> outRes;
+algorithm 
+  outRes := match(inExp)
+    local
+      DAE.Exp e,e1,e2;
+      DAE.Exp coeff;
+  
+    case ((e as DAE.CREF()))
+      then ((e, DAE.RCONST(1.0))); 
+
+    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(),exp2 = DAE.UNARY(operator = DAE.UMINUS(), exp = coeff)))
+      then
+        ((e1, Expression.negate(coeff)));
+  
+    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(),exp2 = coeff))
+      then ((e1,coeff));
+
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2))
+    guard(Expression.expEqual(e1, e2))
+      then
+        ((e1, DAE.RCONST(2.0)));
+
+    case (e) then ((e,DAE.RCONST(1.0)));
+
+  end match;
+end simplifyBinaryMulCoeff;
+
+protected function solveQE
+"
+solve Quadratic equation with respect to inExp3
+IN: a,x,n,b,y,m
+where solve(a*x^n + b*y^m = inExp2) with 2*m = n or 2*n = m and y = x
+
+author: Vitalij Ruge
+"
+ input DAE.Exp e1,e2,e3,e4,e5,e6;
+ input DAE.Exp inExp2;
+ input DAE.Exp inExp3;
+
+ input list<BackendDAE.Equation> ieqnForNewVars "eqn for tmp vars";
+ input list<DAE.ComponentRef> inewVarsCrefs "cref for tmp vars";
+ input Integer uniqueEqIndex, idepth "need for tmp vars";
+
+ output DAE.Exp rhs, lhs;
+ output list<BackendDAE.Equation> eqnForNewVars;
+ output list<DAE.ComponentRef> newVarsCrefs;
+
+protected
+  DAE.Exp e_1, e, exP, q, p, e7, con, invExp;
+  DAE.ComponentRef cr;
+  DAE.Type tp;
+  BackendDAE.Equation eqn;
+  Boolean b1,b2;
+algorithm
+    false := Expression.isZero(e1) and Expression.isZero(e2);
+    true := Expression.expEqual(e2,e5);
+    b1 := Expression.expEqual(e3, Expression.expMul(DAE.RCONST(2.0),e6));
+    b2 := Expression.expEqual(e6, Expression.expMul(DAE.RCONST(2.0),e3));
+
+    true := b1 or b2;
+    false := expHasCref(e1, inExp3);
+    true := expHasCref(e2, inExp3);
+    false := expHasCref(e3, inExp3);
+    false := expHasCref(e4, inExp3);
+    true := expHasCref(e5, inExp3);
+    false := expHasCref(e6, inExp3);
+    false := expHasCref(inExp2, inExp3);
+
+
+    p := if b1 then Expression.expDiv(e4,e1) else Expression.expDiv(e1,e4);
+    p := Expression.expMul(DAE.RCONST(0.5),p);
+    tp := Expression.typeof(p);
+
+    con := if b1 then DAE.RELATION(e1,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()) else DAE.RELATION(e4,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE());
+    con := Expression.makeNoEvent(con);
+    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_CON_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), DAE.T_BOOL_DEFAULT, {});
+    eqn := BackendDAE.SOLVED_EQUATION(cr, con, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    eqnForNewVars := eqn::ieqnForNewVars;
+    newVarsCrefs := cr ::inewVarsCrefs;
+    con := Expression.crefExp(cr);
+
+    (p, _) :=  ExpressionSimplify.simplify1(p);
+    p := DAE.IFEXP(con, Expression.makeConstOne(tp), p);
+    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_P_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+    eqn := BackendDAE.SOLVED_EQUATION(cr, p, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    p := Expression.crefExp(cr);
+
+    eqnForNewVars := eqn::eqnForNewVars;
+    newVarsCrefs := cr::newVarsCrefs;
+
+    q := if b1 then Expression.expDiv(inExp2,e1) else Expression.expDiv(inExp2,e4);
+    q := Expression.negate(q);
+    (q, _) :=  ExpressionSimplify.simplify1(q);
+    q := DAE.IFEXP(con, Expression.makeConstOne(tp), q);
+    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_Q_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+    eqn := BackendDAE.SOLVED_EQUATION(cr, q, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    q := Expression.crefExp(cr);
+
+    eqnForNewVars := eqn::eqnForNewVars;
+    newVarsCrefs := cr ::newVarsCrefs;
+
+    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_SIGN_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+    eqn := BackendDAE.SOLVED_EQUATION(cr, e2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    eqnForNewVars := eqn::eqnForNewVars;
+    newVarsCrefs := cr ::newVarsCrefs;
+    e := Expression.crefExp(cr);
+    exP := Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
+    e_1 := Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
+
+    e := Expression.expPow(p,DAE.RCONST(2.0));
+    e := Expression.expSub(e,q);
+    lhs := Expression.makePureBuiltinCall("sqrt",{e},tp);
+    e := Expression.negate(p);
+    lhs := Expression.expMul(e_1, lhs);
+    lhs := Expression.expAdd(e, lhs);
+
+    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+    e := Expression.crefExp(cr);
+    exP := Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
+    e_1 := Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
+    eqn := BackendDAE.SOLVED_EQUATION(cr, e2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+
+    e7 := if b1 then Expression.makeDiv(inExp2, e4) else Expression.makeDiv(inExp2, e1);
+    invExp := if b1 then Expression.inverseFactors(e6) else Expression.inverseFactors(e3);
+    (invExp, _) :=  ExpressionSimplify.simplify1(invExp);
+    e7 := Expression.expPow(e7, invExp);
+
+    eqnForNewVars := eqn::eqnForNewVars;
+    newVarsCrefs := cr ::newVarsCrefs;
+
+    e7 := Expression.expMul(e_1, e7);
+
+    rhs := DAE.IFEXP(con, e7 ,lhs);
+    lhs := e2;
+    
+end solveQE;
 
 protected function solveIfExp
 "

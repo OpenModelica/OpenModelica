@@ -3769,8 +3769,8 @@ algorithm
     then makeConstZero(typeof(e1));
 
     // (-e)^r = e^r if r is even
-    case (DAE.UNARY(DAE.UMINUS(),e), e3) guard(isEven(e3))
-    then expPow(e, e3);
+    case (DAE.UNARY(DAE.UMINUS(),e), _) guard(isEven(e2))
+    then expPow(e, e2);
 
     // (x/y)^(-z) = (y/x)^z
     case (DAE.BINARY(e3, DAE.DIV(), e4), DAE.UNARY(DAE.UMINUS(),e5))
@@ -3780,10 +3780,14 @@ algorithm
     then e;
 
     // (e1/e2)^(-r) = (e2/e1)^r
-    case (DAE.BINARY(e3, DAE.DIV(), e4) , e5) guard(isNegativeOrZero(e5))
-    then expPow(makeDiv(e4,e3), negate(e5));
+    case (DAE.BINARY(e3, DAE.DIV(), e4) , _) guard(isNegativeOrZero(e2)) 
+    then expPow(makeDiv(e4,e3), negate(e2));
 
-    else equation
+    // x^0.5 => sqrt(x)
+    case (_, _) guard(isHalf(e2))
+    then Expression.makePureBuiltinCall("sqrt",{e1},DAE.T_REAL_DEFAULT);
+
+    else equation 
       tp = typeof(e1);
       b = DAEUtil.expTypeArray(tp);
       op = if b then DAE.POW_ARR(tp) else DAE.POW(tp);
@@ -3980,16 +3984,13 @@ public function makeDiv "Takes two expressions and create a division"
   input DAE.Exp e2;
   output DAE.Exp res;
 algorithm
-  res := matchcontinue(e1,e2)
-    case(_,_) equation
-      true = isZero(e1);
-      false = isZero(e2);
+  res := match(e1,e2)
+    case(_,_) guard(isZero(e1) and not isZero(e2))
     then e1;
-    case(_,_) equation
-      true = isOne(e2);
+    case(_,_) guard(isOne(e2))
     then e1;
     else expDiv(e1,e2);
-  end matchcontinue;
+  end match;
 end makeDiv;
 
 public function makeDivVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
