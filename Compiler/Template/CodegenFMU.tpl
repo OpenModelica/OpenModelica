@@ -2294,13 +2294,19 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     end when;
     flowTime := fmi2Functions.fmi2SetTime(fmi2me, time);
   initial algorithm
-    fmi2Functions.fmi2EnterInitialization(fmi2me);
-    fmi_x := fmi2Functions.fmi2GetContinuousStates(fmi2me, numberOfContinuousStates, flowTime);
+    flowParamsStart := fmi2Functions.fmi2EnterInitialization(fmi2me, flowTime);
+    <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
+    <<fmi_x := fmi2Functions.fmi2GetContinuousStates(fmi2me, numberOfContinuousStates, flowTime);>>
+    %>
   algorithm
     when not initial() then
       fmi2Functions.fmi2Functions.fmi2ExitInitialization(fmi2me);
     end when;
-    flowStatesInputs := fmi2Functions.fmi2SetContinuousStates(fmi2me, fmi_x, flowParamsStart + flowTime);
+    <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
+    <<flowStatesInputs := fmi2Functions.fmi2SetContinuousStates(fmi2me, fmi_x, flowParamsStart + flowTime);>>
+    else
+    <<flowStatesInputs :=  flowParamsStart + flowTime;>>
+    %>
   equation
     der(fmi_x) = fmi2Functions.fmi2GetDerivatives(fmi2me, numberOfContinuousStates, flowStatesInputs);
     fmi_z  = fmi2Functions.fmi2GetEventIndicators(fmi2me, numberOfEventIndicators, flowStatesInputs);
@@ -2381,6 +2387,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
 
       function fmi2EnterInitialization
         input FMI2ModelExchange fmi2me;
+        input Real inFlowVariable;
+        output Real outFlowVariable = inFlowVariable;        
         external "C" fmi2EnterInitializationModel_OMC(fmi2me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2EnterInitialization;
 
