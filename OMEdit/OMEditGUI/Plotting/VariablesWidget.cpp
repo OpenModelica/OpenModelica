@@ -437,18 +437,15 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   /* open the model_init.xml file for reading */
   QString initFileName = QString(fileName).replace(resultTypeRegExp, "_init.xml");
   QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
-  if (initFile.open(QIODevice::ReadOnly))
-  {
+  if (initFile.open(QIODevice::ReadOnly)) {
     QXmlStreamReader initXmlReader(&initFile);
     parseInitXml(initXmlReader);
     initFile.close();
-  }
-  else
-  {
+  } else {
     MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
     pMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
                                                    GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
-                                                   .arg(initFile.errorString()),Helper::scriptingKind, Helper::errorLevel, 0));
+                                                   .arg(initFile.errorString()),Helper::scriptingKind, Helper::warningLevel, 0));
   }
   /* open the .mat file */
   ModelicaMatReader matReader;

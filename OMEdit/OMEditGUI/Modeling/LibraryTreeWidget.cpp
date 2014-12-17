@@ -169,7 +169,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   if (!icon.isNull()) {
     // adjust the decorationRect for multiline items. So that icon remains at top.
     if (mDrawRichText) {
-      decorationRect = QRect(decorationRect.left(), displayRect.top() + 3, decorationRect.width(), decorationRect.height());
+      decorationRect = QRect(decorationRect.left(), displayRect.top() + 4, decorationRect.width(), decorationRect.height());
     }
     icon.paint(painter, decorationRect, option.decorationAlignment, QIcon::Normal, QIcon::Off);
   } else {
