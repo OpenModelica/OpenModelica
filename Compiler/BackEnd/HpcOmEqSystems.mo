@@ -441,7 +441,7 @@ algorithm
    tcrs := List.map(tvarsReplaced, BackendVariable.varCref);
    derRepl := BackendVarTransform.emptyReplacements(); // to retransform $DER. to der(.) in the new residual equations
    derRepl := List.threadFold(tvars,tvarsReplaced,addDerReplacement,derRepl);
-  
+
    // get residual eqns
    reqns := BackendEquation.getEqns(resEqIdcs0, eqns);
    reqns := BackendEquation.replaceDerOpInEquationList(reqns);
