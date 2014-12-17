@@ -1255,14 +1255,16 @@ e.g. for solve abs
   output Integer odepth;
 algorithm
   (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := matchcontinue(inExp1, inExp2)
-  local DAE.Exp e1, e_1, e, e2, exP, lhs, e3, e4, e5, e6, rhs, a1,x1, a2,x2;
+  local DAE.Exp e1, e_1, e, e2, exP, lhs, e3, e4, e5, e6, rhs, a1,x1, a2,x2, ee1, ee2;
   tuple<DAE.Exp, DAE.Exp> a, c;
+  list<DAE.Exp> z1, z2, z3, z4;
   DAE.ComponentRef cr;
   DAE.Type tp;
   BackendDAE.Equation eqn;
   list<BackendDAE.Equation> eqnForNewVars_;
   list<DAE.ComponentRef> newVarsCrefs_;
   Boolean b, b1, b2, b3;
+  DAE.Operator op1, op2;
 
   //tanh(x) =y -> x = 1/2 * ln((1+y)/(1-y))
   case (DAE.CALL(path = Absyn.IDENT(name = "tanh"),expLst = {e1}),_)
@@ -1401,14 +1403,30 @@ algorithm
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
   //QE
-  case( DAE.BINARY(DAE.BINARY(a1,DAE.MUL(),x1), DAE.ADD(),DAE.BINARY(a2,DAE.MUL(),x2)),_)
+  // a*x^n + b*x^m = c
+  case(DAE.BINARY(ee1, DAE.ADD(), ee2),_)
   equation
+    (z1, z2) = List.split1OnTrue(Expression.factors(ee1), expHasCref, inExp3);
+    (z3, z4) = List.split1OnTrue(Expression.factors(ee2), expHasCref, inExp3);
+
+    x1 = makeProductLstSort(z1);
+    a1 = makeProductLstSort(z2);
+
+    x2 = makeProductLstSort(z3);
+    a2 = makeProductLstSort(z4);
+/*
+    print("\nx1 = ");print(ExpressionDump.printExpStr(x1));
+    print("\nx2 = ");print(ExpressionDump.printExpStr(x2));
+    print("\na1 = ");print(ExpressionDump.printExpStr(a1));
+    print("\na2 = ");print(ExpressionDump.printExpStr(a2));
+*/
     a = simplifyBinaryMulCoeff(x1);
     c = simplifyBinaryMulCoeff(x2);
     (e2 ,e3) = a;
     (e5, e6) = c;
     (lhs, rhs, eqnForNewVars_, newVarsCrefs_) = solveQE(a1,e2,e3,a2,e5,e6,inExp2,inExp3,ieqnForNewVars,inewVarsCrefs,uniqueEqIndex,idepth);
   then(lhs, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
+
 
   else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
 
@@ -1420,19 +1438,19 @@ protected function simplifyBinaryMulCoeff
 "generalization of ExpressionSimplify.simplifyBinaryMulCoeff2"
   input DAE.Exp inExp;
   output tuple<DAE.Exp, DAE.Exp> outRes;
-algorithm
+algorithm 
   outRes := match(inExp)
     local
       DAE.Exp e,e1,e2;
       DAE.Exp coeff;
-
+  
     case ((e as DAE.CREF()))
-      then ((e, DAE.RCONST(1.0)));
+      then ((e, DAE.RCONST(1.0))); 
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(),exp2 = DAE.UNARY(operator = DAE.UMINUS(), exp = coeff)))
       then
         ((e1, Expression.negate(coeff)));
-
+  
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(),exp2 = coeff))
       then ((e1,coeff));
 
@@ -1440,6 +1458,10 @@ algorithm
     guard(Expression.expEqual(e1, e2))
       then
         ((e1, DAE.RCONST(2.0)));
+
+    case(DAE.BINARY(e1, DAE.DIV(), e2))
+    guard(Expression.isOne(e1))
+      then(e2, DAE.RCONST(-1.0));
 
     case (e) then ((e,DAE.RCONST(1.0)));
 
@@ -1467,7 +1489,7 @@ author: Vitalij Ruge
  output list<DAE.ComponentRef> newVarsCrefs;
 
 protected
-  DAE.Exp e_1, e, exP, q, p, e7, con, invExp;
+  DAE.Exp e_1, e, exP, q, p, e7, con, invExp, c;
   DAE.ComponentRef cr;
   DAE.Type tp;
   BackendDAE.Equation eqn;
@@ -1477,7 +1499,7 @@ algorithm
     true := Expression.expEqual(e2,e5);
     b1 := Expression.expEqual(e3, Expression.expMul(DAE.RCONST(2.0),e6));
     b2 := Expression.expEqual(e6, Expression.expMul(DAE.RCONST(2.0),e3));
-
+  
     true := b1 or b2;
     false := expHasCref(e1, inExp3);
     true := expHasCref(e2, inExp3);
@@ -1486,7 +1508,6 @@ algorithm
     true := expHasCref(e5, inExp3);
     false := expHasCref(e6, inExp3);
     false := expHasCref(inExp2, inExp3);
-
 
     p := if b1 then Expression.expDiv(e4,e1) else Expression.expDiv(e1,e4);
     p := Expression.expMul(DAE.RCONST(0.5),p);
@@ -1552,8 +1573,8 @@ algorithm
     e7 := Expression.expMul(e_1, e7);
 
     rhs := DAE.IFEXP(con, e7 ,lhs);
-    lhs := e2;
-
+    lhs := if b1 then Expression.expPow(e2, e6) else Expression.expPow(e2, e3);
+    
 end solveQE;
 
 protected function solveIfExp
