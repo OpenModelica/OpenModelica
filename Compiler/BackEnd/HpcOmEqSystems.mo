@@ -105,7 +105,7 @@ algorithm
       BackendDAE.Shared shared;
     case(BackendDAE.DAE(eqs=eqs,shared=shared))
      equation
-       //true = Flags.isSet(Flags.PARTLINTORNSYSTEM);
+       true = Flags.isSet(Flags.PARTLINTORNSYSTEM);
        (eqs,_) = List.map1Fold(eqs,reduceLinearTornSystem,shared,1);
     then BackendDAE.DAE(eqs,shared);
     else then daeIn;
