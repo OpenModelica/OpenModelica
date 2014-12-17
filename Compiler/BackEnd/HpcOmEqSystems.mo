@@ -62,6 +62,7 @@ protected import Flags;
 protected import GraphML;
 protected import HpcOmSimCodeMain;
 protected import HpcOmScheduler;
+protected import IndexReduction;
 protected import List;
 protected import Matching;
 protected import Tearing;
@@ -195,7 +196,7 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
-        true = intLe(listLength(tvarIdcs),3) or Flags.isSet(Flags.PARTLINTORNSYSTEM);
+        true = intLe(listLength(tvarIdcs),3);
         //print("LINEAR TORN SYSTEM OF SIZE "+intString(listLength(tvarIdcs))+"\n");
         false = compHasDummyState(comp,systIn);
         // build the new components, the new variables and the new equations
@@ -244,7 +245,7 @@ algorithm
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
         BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs, jac=jac, jacType=jacType) = comp;
-        true = intLe(listLength(varIdcs),3) or Flags.isSet(Flags.PARTLINTORNSYSTEM);
+        true = intLe(listLength(varIdcs),3);
         //print("EQUATION SYSTEM OF SIZE "+intString(listLength(varIdcs))+"\n");
           //print("Jac:\n" + BackendDump.jacobianString(jac) + "\n");
 
@@ -414,6 +415,7 @@ protected
   BackendDAE.Matching matchingNew;
   BackendDAE.StrongComponents comps, compsNew, oComps, compsEqSys;
   BackendDAE.Variables vars, kv,  diffVars, ovars, dVars;
+  BackendVarTransform.VariableReplacements derRepl;
   DAE.FunctionTree functree;
   list<BackendDAE.Equation> eqLst,reqns, otherEqnsLst,otherEqnsLstReplaced, eqNew, hs, hs1, hLst, hsLst, hs_0, addEqLst;
   list<BackendDAE.EquationArray> gEqs, hEqs, hsEqs;
@@ -437,7 +439,9 @@ algorithm
    tvars := List.map1r(tVarIdcs0, BackendVariable.getVarAt, vars);
    tvarsReplaced := List.map(tvars, BackendVariable.transformXToXd);
    tcrs := List.map(tvarsReplaced, BackendVariable.varCref);
-
+   derRepl := BackendVarTransform.emptyReplacements(); // to retransform $DER. to der(.) in the new residual equations
+   derRepl := List.threadFold(tvars,tvarsReplaced,addDerReplacement,derRepl);
+  
    // get residual eqns
    reqns := BackendEquation.getEqns(resEqIdcs0, eqns);
    reqns := BackendEquation.replaceDerOpInEquationList(reqns);
@@ -496,7 +500,7 @@ algorithm
         //BackendDump.dumpEquationList(hs,"new residuals");
 
    tVarsOut := tvarsReplaced;
-   resEqsOut := hs;
+   (resEqsOut,_) := BackendVarTransform.replaceEquations(hs,derRepl,NONE());//introduce der(.) for $DER.i
 
    // some optimization
    (eqsNewOut,varsNewOut,resEqsOut) := simplifyNewEquations(eqsNewOut,varsNewOut,resEqsOut,listLength(List.flatten(arrayList(xa_iArr))),2);
@@ -522,6 +526,29 @@ algorithm
    matchingOut := BackendDAE.MATCHING(ass1New,ass2New,oComps);
        //BackendDump.dumpComponents(oComps);
 end reduceLinearTornSystem2;
+
+protected function addDerReplacement"if var1 is a state and var2 is $DER.var, add a new replacement rule: $DER.var-->der(var)"
+  input BackendDAE.Var var1;
+  input BackendDAE.Var var2;
+  input BackendVarTransform.VariableReplacements replIn;
+  output BackendVarTransform.VariableReplacements replOut;
+algorithm
+  replOut := match(var1,var2,replIn)
+  local
+    DAE.Exp dest;
+    DAE.ComponentRef source;
+    BackendVarTransform.VariableReplacements repl;
+  case(BackendDAE.VAR(varKind=BackendDAE.STATE()),_,_)
+      equation
+        source = BackendVariable.varCref(var2);
+        dest = BackendVariable.varExp(var1);
+        dest = IndexReduction.makeder(dest);
+        repl =  BackendVarTransform.addReplacement(replIn,source,dest,NONE());
+      then repl;
+  else
+    then replIn;
+  end match;
+end addDerReplacement;
 
 protected function simplifyNewEquations
   input list<BackendDAE.Equation> eqsIn;

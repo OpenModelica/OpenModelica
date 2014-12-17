@@ -3451,7 +3451,7 @@ algorithm
   s := "Determinant: " + stringDelimitList(List.map(Util.tuple22(iTpl),intString),", ") + " \n" + ExpressionDump.printExpStr(Util.tuple21(iTpl)) + "\n";
 end dumpDeterminants;
 
-protected function makeder
+public function makeder
 "Author: Frenkel TUD 2012-09"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
