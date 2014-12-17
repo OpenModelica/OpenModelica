@@ -2388,7 +2388,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       function fmi2EnterInitialization
         input FMI2ModelExchange fmi2me;
         input Real inFlowVariable;
-        output Real outFlowVariable = inFlowVariable;        
+        output Real outFlowVariable = inFlowVariable;
         external "C" fmi2EnterInitializationModel_OMC(fmi2me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi2EnterInitialization;
 

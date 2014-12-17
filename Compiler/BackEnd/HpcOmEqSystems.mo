@@ -259,7 +259,7 @@ algorithm
          varLstRepl = List.map(varLst, BackendVariable.transformXToXd);
          derRepl = BackendVarTransform.emptyReplacements(); // to retransform $DER. to der(.) in the new equations
          derRepl = List.threadFold(varLst,varLstRepl,addDerReplacement,derRepl);
-         
+
               //BackendDump.dumpVarList(varLst,"varLst");
               //BackendDump.dumpEquationList(eqLst,"eqLst");
 
@@ -268,7 +268,7 @@ algorithm
            //dumpEqSys(syst);
          (eqsNew,addEqs,addVars) = CramerRule(syst);
          (eqsNew,_) = BackendVarTransform.replaceEquations(eqsNew,derRepl,NONE());//introduce der(.) for $DER.
-         
+
            //BackendDump.dumpEquationList(eqsNew,"eqsNew");
            //BackendDump.dumpVarList(addVars,"addVars");
            //BackendDump.dumpEquationList(addEqs,"addEqs");
@@ -511,7 +511,7 @@ algorithm
 
    tVarsOut := tvarsReplaced;
    resEqsOut := hs;
-   
+
    // some optimization
    (eqsNewOut,varsNewOut,resEqsOut) := simplifyNewEquations(eqsNewOut,varsNewOut,resEqsOut,listLength(List.flatten(arrayList(xa_iArr))),2);
 
