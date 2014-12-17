@@ -1132,6 +1132,7 @@ algorithm
         ty = DAE.T_REAL_DEFAULT;
         aCRef = ComponentReference.makeCrefIdent(aName,ty,{});
         a_ii = BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
+        a_ii = BackendVariable.setVarStartValue(a_ii,DAE.RCONST(0.0));
 
         // build the equations to solve for the coefficients
         lhs = varExp(a_ii);
@@ -1159,8 +1160,9 @@ algorithm
         aName = "$a"+intString(tornSysIdx)+"_"+intString(resIdx)+"_"+intString(iIdx);
         ty = DAE.T_REAL_DEFAULT;
         aCRef = ComponentReference.makeCrefIdent(aName,ty,{});
-        //aExp = Expression.makeCrefExp(aCRef,ty);
         a_ii = BackendDAE.VAR(aCRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
+        a_ii = BackendVariable.setVarStartValue(a_ii,DAE.RCONST(0.0));
+        
         // build the equations to solve for the coefficients
         d_lst = arrayGet(a_iArrIn,1);
         dVar = listGet(d_lst, resIdx);
@@ -1443,6 +1445,7 @@ algorithm
   replacementOut := BackendVarTransform.addReplacement(replacementIn,oVarCRef,varExp,NONE());
   ty := ComponentReference.crefLastType(cRef);
   replVar := BackendDAE.VAR(cRef,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
+  replVar := BackendVariable.setVarStartValue(replVar,DAE.RCONST(0.0));
   replVarLstOut := replVar::replVarLstIn;
   tplOut := (replVarLstOut,replacementOut);
 end replaceOtherVarsWithPrefixCref;
@@ -1519,7 +1522,10 @@ algorithm
   (allTerms,coeffsIn) := foldIn;
   (coeffs,allTerms) := List.extract1OnTrue(allTerms,Expression.expHasCref,cref);
   coeff := List.fold(coeffs,Expression.expAdd,DAE.RCONST(0));
-  //if Expression.containFunctioncall(coeff) then print("This system of equations cannot be decomposed because its actually not linear (the coeffs are function calls of x).\n");fail(); end if;
+  if Expression.containFunctioncall(coeff) then
+  //print("This system of equations cannot be decomposed because its actually not linear (the coeffs are function calls of x).\n");
+  fail();
+  end if;
   (coeff,_) := Expression.replaceExp(coeff,Expression.crefExp(cref),DAE.RCONST(1.0));
   (coeff,_) := ExpressionSimplify.simplify(coeff);
   foldOut := (allTerms,coeff::coeffsIn);
