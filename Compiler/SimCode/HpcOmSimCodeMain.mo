@@ -461,7 +461,7 @@ protected
    contractedTasks := arrayCreate(arrayLength(taskGraph1),0);
    // contract nodes in the graph
    (taskGraph1,taskGraphT,taskGraphMeta1) := applyGRS1(taskGraph1,taskGraphT,taskGraphMeta1,contractedTasks,true);
-   
+
    //DEBUG
    (taskGraph1,taskGraphMeta1) := GRS_newGraph(taskGraph1,taskGraphMeta1,contractedTasks);
    taskGraphT := BackendDAEUtil.transposeMatrix(taskGraph1,arrayLength(taskGraph1));
@@ -469,7 +469,7 @@ protected
    schedulerInfo := arrayCreate(arrayLength(taskGraph1), (-1,-1,-1.0));
    HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphMeta1, iBackendDAE, fileName, "", {}, {}, iSccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
    contractedTasks := arrayCreate(arrayLength(taskGraph1),0);
-   
+
    // contract nodes schedule specific
    (taskGraph1,taskGraphT,taskGraphMeta1) := applyGRSForScheduler(taskGraph1, taskGraphT, taskGraphMeta1, contractedTasks); //not working at the moment
    // build new taskGraph
@@ -559,13 +559,13 @@ algorithm
         sortedHead = List.sort(head, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts,iTaskComps=inComps));
         //print("applyGRSForLevelFixScheduler - Handling level with sorted nodes: " + stringDelimitList(List.map(sortedHead, intString), ",") + "\n");
         sortedHeadArray = listArray(sortedHead);
-        
+
         if(intGt(arrayLength(sortedHeadArray), 0)) then
           bigTaskExecTime = HpcOmTaskGraph.getExeCostReqCycles(arrayGet(sortedHeadArray, arrayLength(sortedHeadArray)), iTaskGraphMeta);
         else
           bigTaskExecTime = 0.0;
         end if;
-        
+
         tmpContractedLevelfixTasks = applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, 500, sortedHeadArray, 1, (arrayLength(sortedHeadArray), {}, bigTaskExecTime), iContractedLevelfixTasks);
         tmpContractedLevelfixTasks = applyGRSForLevelFixScheduler(iTaskGraphMeta, iContractedTasks, rest, tmpContractedLevelfixTasks);
       then tmpContractedLevelfixTasks;
@@ -631,12 +631,12 @@ algorithm
             //print("appending node to merged group\n");
             tmpContractedTasks = (arrayGet(iSortedLevelTasks, bigTaskIdx)::bigTaskChilds)::tmpContractedTasks; //append the merged tasks list to result list
           end if;
-        
-	        if(intGt(bigTaskIdx, 1)) then
-	          mergedGroupExecTime = HpcOmTaskGraph.getExeCostReqCycles(arrayGet(iSortedLevelTasks, bigTaskIdx-1), iTaskGraphMeta);
-	        else
-	          mergedGroupExecTime = 0.0;
-	        end if;
+
+          if(intGt(bigTaskIdx, 1)) then
+            mergedGroupExecTime = HpcOmTaskGraph.getExeCostReqCycles(arrayGet(iSortedLevelTasks, bigTaskIdx-1), iTaskGraphMeta);
+          else
+            mergedGroupExecTime = 0.0;
+          end if;
           // big task is already large enough, no merging required
           tmpContractedTasks = applyGRSForLevelFixSchedulerLevel(iTaskGraphMeta, iContractedTasks, iCriticalSize, iSortedLevelTasks, iCurrentSmallTask, (bigTaskIdx-1, {}, mergedGroupExecTime), tmpContractedTasks);
         else

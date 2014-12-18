@@ -2615,7 +2615,7 @@ algorithm
       //(graphMerged,metaMerged) = HpcOmSimCodeMain.applyGRS(graph,meta);
       (graphMerged,metaMerged) = (graph,meta);
       Error.addMessage(Error.INTERNAL_ERROR, {"function pts_traverseCompsAndParallelize failed. GRS is temporarily disabled."});
-      
+
       dumpEquationSystemDAG(graphMerged,metaMerged,"tornSys_matched2_"+intString(compIdxIn));
         //HpcOmTaskGraph.printTaskGraph(graphMerged);
         //HpcOmTaskGraph.printTaskGraphMeta(metaMerged);
