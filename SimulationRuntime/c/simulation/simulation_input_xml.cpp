@@ -769,21 +769,25 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
 {
   omc_CommandLineOverrides mOverrides;
   char* overrideStr = NULL;
-  if((override != NULL) && (overrideFile != NULL)) {
+  if((override != NULL) && (overrideFile != NULL))
+  {
     throwStreamPrint(NULL, "simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
   }
 
-  if(override != NULL) {
+  if(override != NULL)
+  {
     overrideStr = strdup(override);
   }
 
-  if(overrideFile != NULL) {
+  if(overrideFile != NULL)
+  {
     /* read override values from file */
     infoStreamPrint(LOG_SOLVER, 0, "read override values from file: %s", overrideFile);
     std::ifstream infile;
 
     infile.open(overrideFile, ifstream::in);
-    if(infile.is_open() == false) {
+    if(infile.is_open() == false)
+    {
       throwStreamPrint(NULL, "simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
     }
 
@@ -795,7 +799,9 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
       tline = ltrim(line);
       // if is comment //, ignore line
       if (tline.size() > 2 && tline[0] == '/' && tline[1] == '/')
+      {
         continue;
+      }
 
       if (overrideLine.empty())
       {
@@ -812,36 +818,38 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     infile.close();
   }
 
-  if(overrideStr != NULL) {
+  if(overrideStr != NULL)
+  {
     std::string key, value;
     /* read override values */
     infoStreamPrint(LOG_SOLVER, 0, "read override values: %s", overrideStr);
     char *p = strtok(overrideStr, ",");
-    while(p) {
-        std::string *key_val = new string(p);
-        // split it key = value => map[key]=value
-        size_t pos = key_val->find("=");
-        key = key_val->substr(0,pos);
-        value = key_val->substr(pos + 1,key_val->length() - pos - 1);
+    while(p)
+    {
+      std::string *key_val = new string(p);
+      // split it key = value => map[key]=value
+      size_t pos = key_val->find("=");
+      key = key_val->substr(0,pos);
+      value = key_val->substr(pos + 1,key_val->length() - pos - 1);
 
-        /* un-quote key and value
-        if(key[0] == '"')
-         key = key.substr(1,key.length() - 1);
-        if(key[key.length()] == '"')
-         key = key.substr(0,key.length() - 1);
-        if(value[0] == '"')
-         value = value.substr(1,value.length() - 1);
-        if(value[value.length()] == '"')
-         value = value.substr(0,value.length() - 1);
-        */
+      /* un-quote key and value
+      if(key[0] == '"')
+       key = key.substr(1,key.length() - 1);
+      if(key[key.length()] == '"')
+       key = key.substr(0,key.length() - 1);
+      if(value[0] == '"')
+       value = value.substr(1,value.length() - 1);
+      if(value[value.length()] == '"')
+       value = value.substr(0,value.length() - 1);
+      */
 
-        // map[key]=value
-        mOverrides[key] = value;
+      // map[key]=value
+      mOverrides[key] = value;
 
-        infoStreamPrint(LOG_SOLVER, 0, "override %s = %s", key.c_str(), value.c_str());
+      infoStreamPrint(LOG_SOLVER, 0, "override %s = %s", key.c_str(), value.c_str());
 
-        // move to next
-        p = strtok(NULL, ",");
+      // move to next
+      p = strtok(NULL, ",");
     }
 
     free(overrideStr);
@@ -879,18 +887,22 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     }
     for(long i=0; i<modelData->nParametersReal; i++)
     {
+      // TODO: only allow to override primary parameters
       mi.rPar[i]["start"] = mOverrides.count(mi.rPar[i]["name"]) ? mOverrides[mi.rPar[i]["name"]] : mi.rPar[i]["start"];
     }
     for(long i=0; i<modelData->nParametersInteger; i++)
     {
+      // TODO: only allow to override primary parameters
       mi.iPar[i]["start"] = mOverrides.count(mi.iPar[i]["name"]) ? mOverrides[mi.iPar[i]["name"]] : mi.iPar[i]["start"];
     }
     for(long i=0; i<modelData->nParametersBoolean; i++)
     {
+      // TODO: only allow to override primary parameters
       mi.bPar[i]["start"] = mOverrides.count(mi.bPar[i]["name"]) ? mOverrides[mi.bPar[i]["name"]] : mi.bPar[i]["start"];
     }
     for(long i=0; i<modelData->nParametersString; i++)
     {
+      // TODO: only allow to override primary parameters
       mi.sPar[i]["start"] = mOverrides.count(mi.sPar[i]["name"]) ? mOverrides[mi.sPar[i]["name"]] : mi.sPar[i]["start"];
     }
     for(long i=0; i<modelData->nAliasReal; i++)
