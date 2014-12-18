@@ -12581,7 +12581,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
     <%varDecls%>
     /* Evaluate Equations*/
     <%equation_all_func_calls%>
-    
+
     /* evaluateODE(command);
 
     <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
