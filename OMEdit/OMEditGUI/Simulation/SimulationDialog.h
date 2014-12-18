@@ -44,11 +44,21 @@
 
 class SimulationOutputWidget;
 
-class ArchivedSimulationItem : public QListWidgetItem
+class ArchivedSimulationItem : public QTreeWidgetItem
 {
 public:
-  ArchivedSimulationItem(QString text, SimulationOutputWidget *pSimulationOutputWidget)
-    : mpSimulationOutputWidget(pSimulationOutputWidget) {setText(text);}
+  ArchivedSimulationItem(SimulationOptions simulationOptions, SimulationOutputWidget *pSimulationOutputWidget)
+    : mpSimulationOutputWidget(pSimulationOutputWidget)
+  {
+    setText(0, simulationOptions.getClassName());
+    setToolTip(0, simulationOptions.getClassName());
+    setText(1, QDateTime::currentDateTime().toString());
+    setToolTip(1, QDateTime::currentDateTime().toString());
+    setText(2, simulationOptions.getStartTime());
+    setToolTip(2, simulationOptions.getStartTime());
+    setText(3, simulationOptions.getStopTime());
+    setToolTip(3, simulationOptions.getStopTime());
+  }
   SimulationOutputWidget* getSimulationOutputWidget() {return mpSimulationOutputWidget;}
 private:
   SimulationOutputWidget *mpSimulationOutputWidget;
@@ -167,7 +177,7 @@ private:
   QLineEdit *mpAdditionalSimulationFlagsTextBox;
   // Archived Simulation Flags Tab
   QWidget *mpArchivedSimulationsTab;
-  QListWidget *mpArchivedSimulationsListWidget;
+  QTreeWidget *mpArchivedSimulationsTreeWidget;
   // buttons
   QPushButton *mpCancelButton;
   QPushButton *mpSimulateButton;
@@ -195,7 +205,7 @@ public slots:
   void buildOnly(bool checked);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
-  void showArchivedSimulation(QListWidgetItem *pListWidgetItem);
+  void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
   void simulate();
 };
 

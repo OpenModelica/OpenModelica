@@ -473,13 +473,18 @@ void SimulationDialog::setUpForm()
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
   // Archived Simulations tab
   mpArchivedSimulationsTab = new QWidget;
-  mpArchivedSimulationsListWidget = new QListWidget;
-  mpArchivedSimulationsListWidget->setItemDelegate(new ItemDelegate(mpArchivedSimulationsListWidget));
-  mpArchivedSimulationsListWidget->setTextElideMode(Qt::ElideMiddle);
-  connect(mpArchivedSimulationsListWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), SLOT(showArchivedSimulation(QListWidgetItem*)));
+  mpArchivedSimulationsTreeWidget = new QTreeWidget;
+  mpArchivedSimulationsTreeWidget->setItemDelegate(new ItemDelegate(mpArchivedSimulationsTreeWidget));
+  mpArchivedSimulationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpArchivedSimulationsTreeWidget->setColumnCount(4);
+  QStringList headers;
+  headers << tr("Class") << tr("DateTime") << tr("Start Time") << tr("Stop Time");
+  mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
+  mpArchivedSimulationsTreeWidget->setIndentation(0);
+  connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));
   QGridLayout *pArchivedSimulationsTabLayout = new QGridLayout;
   pArchivedSimulationsTabLayout->setAlignment(Qt::AlignTop);
-  pArchivedSimulationsTabLayout->addWidget(mpArchivedSimulationsListWidget, 0, 0);
+  pArchivedSimulationsTabLayout->addWidget(mpArchivedSimulationsTreeWidget, 0, 0);
   mpArchivedSimulationsTab->setLayout(pArchivedSimulationsTabLayout);
   // add Archived simulations Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpArchivedSimulationsTab, tr("Archived Simulations"));
@@ -958,8 +963,9 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
     }
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions, mpMainWindow);
     mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
-    ArchivedSimulationItem *pArchivedSimulationItem = new ArchivedSimulationItem(simulationOptions.getClassName(), pSimulationOutputWidget);
-    mpArchivedSimulationsListWidget->addItem(pArchivedSimulationItem);
+
+    ArchivedSimulationItem *pArchivedSimulationItem = new ArchivedSimulationItem(simulationOptions, pSimulationOutputWidget);
+    mpArchivedSimulationsTreeWidget->addTopLevelItem(pArchivedSimulationItem);
     int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
     int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
     pSimulationOutputWidget->setGeometry(xPos, yPos, pSimulationOutputWidget->width(), pSimulationOutputWidget->height());
@@ -1109,9 +1115,9 @@ void SimulationDialog::browseEquationSystemInitializationFile()
   Slot activated when mpArchivedSimulationsListWidget itemDoubleClicked signal is raised.\n
   Shows the archived SimulationOutputWidget.
   */
-void SimulationDialog::showArchivedSimulation(QListWidgetItem *pListWidgetItem)
+void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
 {
-  ArchivedSimulationItem *pArchivedSimulationItem = dynamic_cast<ArchivedSimulationItem*>(pListWidgetItem);
+  ArchivedSimulationItem *pArchivedSimulationItem = dynamic_cast<ArchivedSimulationItem*>(pTreeWidgetItem);
   if (pArchivedSimulationItem) {
     SimulationOutputWidget *pSimulationOutputWidget = pArchivedSimulationItem->getSimulationOutputWidget();
     pSimulationOutputWidget->show();

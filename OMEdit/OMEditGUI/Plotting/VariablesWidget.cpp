@@ -558,6 +558,13 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   QModelIndex idx = variablesTreeItemIndex(pTopVariablesTreeItem);
   idx = mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->mapFromSource(idx);
   mpVariablesTreeView->expand(idx);
+  /*
+    Ticket #3016.
+    If you only have one model the message "You must select a class to re-simulate" is annoying.
+    A default behavior of selecting the (single) model would be good.
+    The following line selects the result tree top level item.
+    */
+  mpVariablesTreeView->setCurrentIndex(idx);
 }
 
 bool VariablesTreeModel::removeVariableTreeItem(QString variable)
@@ -801,8 +808,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   /* add the plot variables */
   mpVariablesTreeModel->insertVariablesItems(fileName, filePath, variablesList, simulationOptions);
   /* update the plot variables tree */
-  if (variableItemDeleted)
-  {
+  if (variableItemDeleted) {
     variablesUpdated();
   }
   mpVariablesTreeView->setSortingEnabled(true);
