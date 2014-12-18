@@ -170,9 +170,9 @@ public:
   QString changeDirectory(QString directory = QString());
   bool loadModel(QString library, QString version = QString("default"));
   bool loadFile(QString fileName, QString encoding = Helper::utf8);
-  bool loadString(QString value, bool checkError = true);
+  bool loadString(QString value, QString fileName, bool checkError = true);
   bool parseFile(QString fileName, QString encoding = Helper::utf8);
-  QStringList parseString(QString value);
+  QStringList parseString(QString value, QString fileName);
   bool createClass(QString type, QString className, QString extendsClass);
   bool createSubClass(QString type, QString className, QString parentClassName, QString extendsClass);
   bool existClass(QString className);

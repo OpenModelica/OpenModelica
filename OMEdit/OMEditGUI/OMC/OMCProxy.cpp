@@ -1741,9 +1741,9 @@ bool OMCProxy::loadFile(QString fileName, QString encoding)
   \param value - the string to load.
   \return true on success
   */
-bool OMCProxy::loadString(QString value, bool checkError)
+bool OMCProxy::loadString(QString value, QString fileName, bool checkError)
 {
-  sendCommand("loadString(\"" + value.replace("\"", "\\\"") + "\")");
+  sendCommand("loadString(\"" + value.replace("\"", "\\\"") + "\", \"" + fileName + "\")");
   bool result = StringHandler::unparseBool(getResult());
   if (checkError) {
     printMessagesStringInternal();
@@ -1774,9 +1774,9 @@ bool OMCProxy::parseFile(QString fileName, QString encoding)
   \param value - the string to parse.
   \return the list of models inside the string.
   */
-QStringList OMCProxy::parseString(QString value)
+QStringList OMCProxy::parseString(QString value, QString fileName)
 {
-  sendCommand("parseString(\"" + value.replace("\"", "\\\"") + "\")");
+  sendCommand("parseString(\"" + value.replace("\"", "\\\"") + "\", \"" + fileName + "\")");
   QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
   QStringList list = result.split(",", QString::SkipEmptyParts);
   printMessagesStringInternal();
@@ -1797,7 +1797,7 @@ bool OMCProxy::createClass(QString type, QString className, QString extendsClass
   } else {
     expression = type + " " + className + " extends " + extendsClass + "; end " + className + ";";
   }
-  return loadString(StringHandler::escapeString(expression), false);
+  return loadString(StringHandler::escapeString(expression), className, false);
 }
 
 /*!
@@ -1815,7 +1815,7 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
   } else {
     expression = "within " + parentClassName + "; " + type + " " + className + " extends " + extendsClass + "; end " + className + ";";
   }
-  return loadString(StringHandler::escapeString(expression), false);
+  return loadString(StringHandler::escapeString(expression), parentClassName + "." + className, false);
 }
 
 /*!

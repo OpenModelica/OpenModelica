@@ -167,21 +167,21 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
   OMCProxy *pOMCProxy = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   QStringList classNames;
   LibraryTreeNode *pLibraryTreeNode = mpModelWidget->getLibraryTreeNode();
-  if (toPlainText().isEmpty())
-  {
+  if (toPlainText().isEmpty()) {
     *errorString = tr("Start and End modifiers are different");
     return QStringList();
+  } else {
+    if (pLibraryTreeNode->getParentName().isEmpty()) {
+      classNames = pOMCProxy->parseString(StringHandler::escapeString(toPlainText()), pLibraryTreeNode->getNameStructure());
+    } else {
+      classNames = pOMCProxy->parseString("within " + pLibraryTreeNode->getParentName() + ";" + StringHandler::escapeString(toPlainText()), pLibraryTreeNode->getNameStructure());
+    }
   }
-  else
-  {
-    if (pLibraryTreeNode->getParentName().isEmpty())
-    {
-      classNames = pOMCProxy->parseString(StringHandler::escapeString(toPlainText()));
-    }
-    else
-    {
-      classNames = pOMCProxy->parseString("within " + pLibraryTreeNode->getParentName() + ";" + StringHandler::escapeString(toPlainText()));
-    }
+  // if user is defining multiple top level classes.
+  if (classNames.size() > 1) {
+    *errorString = QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(pLibraryTreeNode->getNameStructure())
+        .arg(classNames.join(","));
+    return QStringList();
   }
   bool existModel = false;
   QStringList existingmodelsList;

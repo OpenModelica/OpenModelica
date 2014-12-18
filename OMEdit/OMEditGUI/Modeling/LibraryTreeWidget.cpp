@@ -1924,49 +1924,41 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
 
 void LibraryTreeWidget::parseAndLoadModelicaText(QString modelText)
 {
-  QStringList modelsList = mpMainWindow->getOMCProxy()->parseString(StringHandler::escapeString(modelText));
-  if (modelsList.size() == 0)
+  QStringList classNames = mpMainWindow->getOMCProxy()->parseString(StringHandler::escapeString(modelText), "");
+  if (classNames.size() == 0) {
     return;
-  QStringList existingmodelsList;
-  bool existModel = false;
-  // check if the model already exists
-  foreach(QString model, modelsList)
-  {
-    if (mpMainWindow->getOMCProxy()->existClass(model))
-    {
-      existingmodelsList.append(model);
-      existModel = true;
-    }
   }
+  // if user is defining multiple top level classes.
+  if (classNames.size() > 1) {
+    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg("").arg(classNames.join(",")),
+                          Helper::ok);
+    return;
+  }
+  QString className = classNames.at(0);
+  bool existModel = mpMainWindow->getOMCProxy()->existClass(className);
   // check if existModel is true
-  if (existModel)
-  {
+  if (existModel) {
     QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
     pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
     pMessageBox->setIcon(QMessageBox::Information);
     pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).arg("")));
     pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
-                                    .arg(existingmodelsList.join(",")).append("\n")
+                                    .arg(className).append("\n")
                                     .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg("")));
     pMessageBox->setStandardButtons(QMessageBox::Ok);
     pMessageBox->exec();
-  }
-  // if no conflicting model found then just load the file simply
-  else
-  {
+  } else {  // if no conflicting model found then just load the file simply
     // load the model text in OMC
-    if (mpMainWindow->getOMCProxy()->loadString(StringHandler::escapeString(modelText)))
-    {
-      foreach (QString model, modelsList)
-      {
-        QString modelName = StringHandler::getLastWordAfterDot(model);
-        QString parentName = StringHandler::removeLastWordAfterDot(model);
-        if (modelName.compare(parentName) == 0)
-          parentName = "";
-        LibraryTreeNode *pLibraryTreeNode;
-        pLibraryTreeNode = addLibraryTreeNode(modelName, mpMainWindow->getOMCProxy()->getClassRestriction(modelName), parentName);
-        createLibraryTreeNodes(pLibraryTreeNode);
+    if (mpMainWindow->getOMCProxy()->loadString(StringHandler::escapeString(modelText), className)) {
+      QString modelName = StringHandler::getLastWordAfterDot(className);
+      QString parentName = StringHandler::removeLastWordAfterDot(className);
+      if (modelName.compare(parentName) == 0) {
+        parentName = "";
       }
+      LibraryTreeNode *pLibraryTreeNode;
+      pLibraryTreeNode = addLibraryTreeNode(modelName, mpMainWindow->getOMCProxy()->getClassRestriction(className), parentName);
+      createLibraryTreeNodes(pLibraryTreeNode);
     }
   }
 }

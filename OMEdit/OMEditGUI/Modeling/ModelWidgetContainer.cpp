@@ -2708,10 +2708,8 @@ bool ModelWidget::modelicaEditorTextChanged()
   QStringList classNames = mpModelicaTextEditor->getClassNames(&errorString);
   LibraryTreeWidget *pLibraryTreeWidget = mpModelWidgetContainer->getMainWindow()->getLibraryTreeWidget();
   OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
-  if (classNames.size() == 0)
-  {
-    if (!errorString.isEmpty())
-    {
+  if (classNames.size() == 0) {
+    if (!errorString.isEmpty()) {
       MessagesWidget *pMessagesWidget = getModelWidgetContainer()->getMainWindow()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, errorString, Helper::syntaxKind, Helper::errorLevel, 0));
     }
@@ -2719,15 +2717,13 @@ bool ModelWidget::modelicaEditorTextChanged()
   }
   /* if no errors are found with the Modelica Text then load it in OMC */
   QString modelicaText = mpModelicaTextEditor->toPlainText();
-  if (mpLibraryTreeNode->getParentName().isEmpty())
-  {
-    if (!pOMCProxy->loadString(StringHandler::escapeString(modelicaText)))
+  if (mpLibraryTreeNode->getParentName().isEmpty()) {
+    if (!pOMCProxy->loadString(StringHandler::escapeString(modelicaText), classNames.at(0)))
       return false;
-  }
-  else
-  {
-    if (!pOMCProxy->loadString("within " + mpLibraryTreeNode->getParentName() + ";" + StringHandler::escapeString(modelicaText)))
+  } else {
+    if (!pOMCProxy->loadString("within " + mpLibraryTreeNode->getParentName() + ";" + StringHandler::escapeString(modelicaText), classNames.at(0))) {
       return false;
+    }
   }
   /* first handle the current class */
   /* if user has changed the class then refresh it. */
