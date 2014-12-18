@@ -1127,6 +1127,10 @@ LibraryTreeNode* LibraryTreeWidget::findParentLibraryTreeNodeSavedInSameFile(Lib
 bool LibraryTreeWidget::isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode)
 {
   if (pLibraryTreeNode) {
+    // if the class is partial then return false.
+    if (mpMainWindow->getOMCProxy()->isPartial(pLibraryTreeNode->getNameStructure())) {
+      return false;
+    }
     switch (pLibraryTreeNode->getModelicaType()) {
       case StringHandler::Model:
       case StringHandler::Class:
