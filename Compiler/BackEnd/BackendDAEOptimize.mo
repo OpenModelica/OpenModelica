@@ -2129,7 +2129,7 @@ algorithm
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst,  linear=true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst, linear = true)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
         comp = List.first(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
@@ -2151,28 +2151,28 @@ algorithm
         compInfo = BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-         /*
-    case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=false))::rest,_,BackendDAE.SHARED(),_)
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
-        (eqnlst,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
-        ((i1_1,i2_1,i3_1,i4_1,i5_1)) = addJacSpecificOperations(listLength(vlst),(0,0,0,0,0));
-        (i1_1,i2_1,i3_1,i4_1,i5_1) = (i1_1*3,i2_1*3,i3_1*3,i4_1*3,i5_1*3);
-        (i1,i2,i3,i4,i5,i6) = inTpl;
-        tpl = (i1_1+i1,i2_1+i2,i3_1+i3,i4_1+i4,i5,i6+i5_1);
-        tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),countOperationsExp,tpl);
-        //print("countOperationstraverseComps: Nonlinear systems are in beta state!\n");
+        comp = List.first(inComps);
+        eqns = BackendEquation.getEqnsFromEqSystem(isyst);
+        vars = BackendVariable.daeVars(isyst);
+        // the torn equations
+        eqnlst = BackendEquation.getEqns(tornEqs,eqns);
+        explst = List.map(eqnlst,BackendEquation.getEquationRHS);
+        (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
+        torn = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog,numOth,numFuncs);
+        // the other eqs
+        otherEqs = List.map(eqnvartpllst,Util.tuple21);
+        eqnlst = BackendEquation.getEqns(otherEqs,eqns);
+        explst = List.map(eqnlst,BackendEquation.getEquationRHS);
+        (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = Expression.traverseExpList(explst,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
+        other = BackendDAE.COUNTER(comp,numAdd,numMul,numTrig,numRel,numLog,numOth,numFuncs);
+        compInfo = BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
-          countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case (_::rest,_,_,_)
+         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
+    case (comp::rest,_,_,_)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("BackendDAEOptimize.countOperationstraverseComps failed!");
-      then
-         countOperationstraverseComps(rest,isyst,ishared,inTpl);
-     */
-    case (_::rest,_,_,_)
-      equation
-        print("not supported component\n");
+        print("not supported component: "+BackendDump.strongComponentString(comp)+"\n");
       then
         countOperationstraverseComps(rest,isyst,ishared,compInfosIn);
   end matchcontinue;

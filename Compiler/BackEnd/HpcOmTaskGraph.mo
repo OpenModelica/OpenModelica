@@ -4294,7 +4294,7 @@ author: Waurich TUD 2014-12"
   input BackendDAE.compInfo compInfo;
   output tuple<Integer,Real> exeCost;
 algorithm
-  exeCost := match(compInfo)
+  exeCost := matchcontinue(compInfo)
     local
       Integer numAdds,numMul,numOth,numTrig,numRel,numLog,numFuncs, costs, ops,ops1, offset,size;
       Real allOpCosts,tornCosts,otherCosts,dens;
@@ -4343,7 +4343,7 @@ algorithm
         equation
           print("calculate costs failed!\n");
         then (-1,-1.0);
-  end match;
+  end matchcontinue;
 end calculateCosts;
 
 protected function getCommCostsOnly "function to compute the communicationCosts
