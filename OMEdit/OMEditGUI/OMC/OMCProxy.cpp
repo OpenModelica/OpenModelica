@@ -763,9 +763,9 @@ void OMCProxy::exitApplication()
 }
 
 /*!
-  Returns the OMC error string.
+  Returns the OMC error string.\n
   \return the error string.
-  \deprecated Use printMessagesStringInternal()
+  \deprecated Use printMessagesStringInternal(). Now used where we want to consume the error message without showing it to user.
   */
 QString OMCProxy::getErrorString()
 {
@@ -1760,13 +1760,12 @@ bool OMCProxy::parseFile(QString fileName, QString encoding)
 {
   fileName = fileName.replace('\\', '/');
   sendCommand("parseFile(\"" + fileName + "\",\"" + encoding + "\")");
-  if (getResult() == "{}")
-  {
+  if (getResult() == "{}") {
     printMessagesStringInternal();
     return false;
-  }
-  else
+  } else {
     return true;
+  }
 }
 
 /*!
@@ -1826,10 +1825,9 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
 bool OMCProxy::existClass(QString className)
 {
   sendCommand("existClass(" + className + ")");
-  if (StringHandler::unparseBool(getResult()))
-    return true;
-  else
-    return false;
+  bool result = StringHandler::unparseBool(getResult());
+  getErrorString();
+  return result;
 }
 
 /*!

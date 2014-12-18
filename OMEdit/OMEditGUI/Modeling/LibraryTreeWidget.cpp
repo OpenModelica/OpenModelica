@@ -203,17 +203,13 @@ QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelInd
   if (value.isValid())
     return qvariant_cast<QSize>(value);
   QSize size = QItemDelegate::sizeHint(option, index);
-  /* Only calculate the height of the item based on the text for MessagesTreeView items. Fix for multi line messages. Ticket #2269. */
-  if (mDrawRichText && parent() && (qobject_cast<MessagesTreeView*>(parent()) || qobject_cast<SimulationOutputTree*>(parent()))) {
-    MessagesTreeView *pMessagesTreeView = qobject_cast<MessagesTreeView*>(parent());
+  /* Only calculate the height of the item based on the text for SimulationOutputTree items. Fix for multi line messages. */
+  if (mDrawRichText && parent() && qobject_cast<SimulationOutputTree*>(parent())) {
     SimulationOutputTree *pSimulationOutputTree = qobject_cast<SimulationOutputTree*>(parent());
     int width;
-    if (pMessagesTreeView) {
-      width = pMessagesTreeView->columnWidth(index.column()) - (pMessagesTreeView->indentation() * pMessagesTreeView->getDepth(index));
-    } else if (pSimulationOutputTree) {
+    if (pSimulationOutputTree) {
       width = pSimulationOutputTree->columnWidth(index.column()) - (pSimulationOutputTree->indentation() * pSimulationOutputTree->getDepth(index));
     }
-
     QVariant value = index.data(Qt::DisplayRole);
     QString text;
     if (value.isValid()) {

@@ -522,7 +522,7 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
   \param url - the url that is clicked
   */
 /*
-  <a href="omedittransformationsbrowser://model_info.json?&index=4></a>"
+  <a href="omedittransformationsbrowser://model_info.json?index=4></a>"
   */
 void SimulationOutputWidget::openTransformationBrowser(QUrl url)
 {

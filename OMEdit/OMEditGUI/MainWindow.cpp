@@ -217,10 +217,11 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())
   {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
-    bool restoreMessagesWidget = false;
-    if (mpMessagesWidget->getMessagesModel()->getRootMessageItem()->children().size() > 0) restoreMessagesWidget = true;
+    bool restoreMessagesWidget = !mpMessagesWidget->getMessagesTextBrowser()->toPlainText().isEmpty();
     restoreState(pSettings->value("application/windowState").toByteArray());
-    if (restoreMessagesWidget) mpMessagesDockWidget->show();
+    if (restoreMessagesWidget) {
+      mpMessagesDockWidget->show();
+    }
   }
   switchToWelcomePerspective();
   // read last Open Directory location
