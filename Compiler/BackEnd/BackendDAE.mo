@@ -199,7 +199,7 @@ uniontype Var "variables"
     .DAE.InstDims arryDim "array dimensions of non-expanded var";
     .DAE.ElementSource source "origin of variable";
     Option< .DAE.VariableAttributes> values "values on built-in attributes";
-  Option<TearingSelect> tearingSelectOption "value for TearingSelect";
+    Option<TearingSelect> tearingSelectOption "value for TearingSelect";
     Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   end VAR;

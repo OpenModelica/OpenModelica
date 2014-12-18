@@ -6394,7 +6394,7 @@ algorithm
       DAE.ElementSource source;
     case (v as BackendDAE.VAR(varName = cr, bindExp=SOME(exp), source=source), (uniqueEqIndex, eqns))
       equation
-        false = BackendVariable.varFixed(v);
+        //false = BackendVariable.varFixed(v);
         false = BackendVariable.isVarOnTopLevelAndInput(v);
       then
         (v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source)::eqns));
@@ -6623,7 +6623,7 @@ algorithm
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EquationArray ie, pe, emptyeqns, remeqns;
-      list<SimCode.SimEqSystem> simvarasserts, inalgs;
+      list<SimCode.SimEqSystem> simvarasserts, inalgs := {};
       list<DAE.Algorithm> varasserts, ialgs;
       BackendDAE.BackendDAE paramdlow;
       BackendDAE.ExternalObjectClasses extObjClasses;
@@ -6649,7 +6649,7 @@ algorithm
 
     case (BackendDAE.SHARED(knownVars=knvars, externalObjects=extobj,
                             initialEqs=ie, constraints=constrs, classAttrs=clsAttrs, cache=cache, graph=graph,
-                            extObjClasses=extObjClasses, functionTree=funcs,  info = ei), _, _, _)
+                            extObjClasses=extObjClasses, functionTree=funcs,  info=ei), _, _, _)
       equation
         // kvars params
         ((parameterEquationsTmp, lv, lkn, lv1, lv2, _)) = BackendVariable.traverseBackendDAEVars(knvars, createInitialParamAssignments, ({}, {}, {}, {}, {}, 1));
@@ -6674,15 +6674,18 @@ algorithm
         end if;
         (parameterEquations, _, uniqueEqIndex, _) = createEquations(false, false, true, false, syst, shared, comps, iuniqueEqIndex, {});
 
-        ialgs = BackendEquation.traverseEquationArray(ie, traverseAlgorithmFinder, {});
-        ialgs = listReverse(ialgs);
-        (inalgs, uniqueEqIndex) = List.mapFold(if initialSystemSolved then {} else ialgs, dlowAlgToSimEqSystem, uniqueEqIndex);
+        if not initialSystemSolved then
+          ialgs = BackendEquation.traverseEquationArray(ie, traverseAlgorithmFinder, {});
+          ialgs = listReverse(ialgs);
+          (inalgs, uniqueEqIndex) = List.mapFold(ialgs, dlowAlgToSimEqSystem, uniqueEqIndex);
+        end if;
+
         // get minmax and nominal asserts
         varasserts = BackendVariable.traverseBackendDAEVars(knvars, createVarAsserts, {});
         (simvarasserts, uniqueEqIndex) = List.mapFold(varasserts, dlowAlgToSimEqSystem, uniqueEqIndex);
 
         // do not append the inital algorithms to the parameter equation if the system is solved symbolically
-        parameterEquations = listAppend(parameterEquations, listAppend(simvarasserts,inalgs));
+        parameterEquations = listAppend(parameterEquations, listAppend(simvarasserts, inalgs));
         parameterEquations = listAppend(parameterEquations, acc);
       then
         (uniqueEqIndex, parameterEquations);
@@ -6844,23 +6847,34 @@ algorithm
 
     // ignore constants
     case (var as BackendDAE.VAR(varKind=BackendDAE.CONST()), (eqns, v, kn, v1, v2, pos))
-      then (var, (eqns, v, var::kn, v1, v2, pos));
+    then (var, (eqns, v, var::kn, v1, v2, pos));
 
-    case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source), (eqns, v, kn, v1, v2, pos))
-      equation
-        false = BackendVariable.isVarOnTopLevelAndInput(var);
-        b1 = BackendVariable.isParam(var);
-        b2 = Expression.isConstValue(e);
-        // if not parameter use it, else use it only if not constant
-        true = (not b1) or (b1 and not b2);
-        cre = Expression.crefExp(cr);
-        initialEquation = BackendDAE.EQUATION(cre, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-        var1 = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
-      then (var, (initialEquation :: eqns, var1::v, kn, pos::v1, pos::v2, pos+1));
-    case (var, (eqns, v, kn, v1, v2, pos))
-      equation
-        var1 = BackendVariable.setVarKind(var, BackendDAE.PARAM());
-      then (var, (eqns, v, var1::kn, v1, v2, pos));
+    case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source=source), (eqns, v, kn, v1, v2, pos)) equation
+      false = BackendVariable.isVarOnTopLevelAndInput(var);
+      b1 = BackendVariable.isParam(var);
+      b2 = Expression.isConstValue(e);
+      // if not parameter use it, else use it only if not constant
+      true = (not b1) or (b1 and not b2);
+      cre = Expression.crefExp(cr);
+      initialEquation = BackendDAE.EQUATION(cre, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+      var1 = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+    then (var, (initialEquation::eqns, var1::v, kn, pos::v1, pos::v2, pos+1));
+
+    case (var as BackendDAE.VAR(varName=cr, bindExp=NONE(), source=source), (eqns, v, kn, v1, v2, pos)) equation
+      false = BackendVariable.isVarOnTopLevelAndInput(var);
+      e = BackendVariable.varStartValue(var);
+      b1 = BackendVariable.isParam(var);
+      b2 = Expression.isConstValue(e);
+      // if not parameter use it, else use it only if not constant
+      true = (not b1) or (b1 and not b2);
+      cre = Expression.crefExp(cr);
+      initialEquation = BackendDAE.EQUATION(cre, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+      var1 = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+    then (var, (initialEquation::eqns, var1::v, kn, pos::v1, pos::v2, pos+1));
+
+    case (var, (eqns, v, kn, v1, v2, pos)) equation
+      var1 = BackendVariable.setVarKind(var, BackendDAE.PARAM());
+    then (var, (eqns, v, var1::kn, v1, v2, pos));
   end matchcontinue;
 end createInitialParamAssignments;
 

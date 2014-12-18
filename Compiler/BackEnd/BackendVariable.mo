@@ -256,7 +256,7 @@ public function varStartValue "author: PA
 protected
   Option<DAE.VariableAttributes> attr;
 algorithm
-  BackendDAE.VAR(values = attr) := v;
+  BackendDAE.VAR(values=attr) := v;
   sv := DAEUtil.getStartAttr(attr);
 end varStartValue;
 
@@ -2341,8 +2341,7 @@ public function varsSize
   input BackendDAE.Variables inVariables;
   output Integer outNumVariables;
 algorithm
-  BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements =
-    outNumVariables)) := inVariables;
+  BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=outNumVariables)) := inVariables;
 end varsSize;
 
 protected function varsLoadFactor
@@ -2901,7 +2900,7 @@ public function getVarAt
 protected
   BackendDAE.VariableArray arr;
 algorithm
-  BackendDAE.VARIABLES(varArr = arr) := inVariables;
+  BackendDAE.VARIABLES(varArr=arr) := inVariables;
   outVar := vararrayNth(arr, inIndex);
 end getVarAt;
 

@@ -316,7 +316,7 @@ end solveInitialSystemEqSystem;
 // section for inlining when-clauses
 //
 // This section contains all the helper functions to replace all when-clauses
-// from a given BackenDAE to get the initial equation system.
+// from a given BackendDAE to get the initial equation system.
 // =============================================================================
 
 protected function inlineWhenForInitialization "author: lochel
@@ -836,7 +836,7 @@ end warnAboutEqns2;
 // section for selecting initialization variables
 //
 //   - unfixed state
-//   - unfixed parameter (TODO: change this to secondary parameter)
+//   - secondary parameter
 //   - unfixed discrete -> pre(vd)
 // =============================================================================
 
@@ -846,13 +846,151 @@ protected function selectInitializationVariablesDAE "author: lochel
   output BackendDAE.Variables outVars;
 protected
   list<BackendDAE.EqSystem> systs;
-  BackendDAE.Variables knownVars, alias;
+  BackendDAE.Variables knownVars, alias, allParameters;
+  BackendDAE.EquationArray allParameterEqns;
+  BackendDAE.EqSystem paramSystem;
+  BackendDAE.IncidenceMatrix m, mT;
+  array<Integer> ass1 "vecVarsToEq";
+  array<Integer> ass2 "vecEqsToVar";
+  list<list<Integer>> comps;
+  list<Integer> flatComps;
+  Integer nParam;
+  array<Integer> secondary;
+  Integer i;
+  BackendDAE.Var p;
 algorithm
   BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knownVars, aliasVars=alias)) := inDAE;
   outVars := selectInitializationVariables(systs);
   outVars := BackendVariable.traverseBackendDAEVars(knownVars, selectInitializationVariables2, outVars);
   outVars := BackendVariable.traverseBackendDAEVars(alias, selectInitializationVariables2, outVars);
+
+  // select all parameters
+  allParameters := BackendVariable.emptyVars();
+  allParameterEqns := BackendEquation.emptyEqns();
+  (allParameters, allParameterEqns) := BackendVariable.traverseBackendDAEVars(knownVars, selectParameter2, (allParameters, allParameterEqns));
+  nParam := BackendVariable.varsSize(allParameters);
+
+  if nParam > 0 then
+    // BackendDump.dumpVariables(allParameters, "all parameters");
+    // BackendDump.dumpEquationArray(allParameterEqns, "all parameter equations");
+
+    paramSystem := BackendDAE.EQSYSTEM(allParameters, allParameterEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+    (_, m, mT, _, _) := BackendDAEUtil.getIncidenceMatrixScalar(paramSystem, BackendDAE.SOLVABLE(), NONE());
+    // BackendDump.dumpIncidenceMatrix(m);
+    // BackendDump.dumpIncidenceMatrix(mT);
+
+    // match the system (nVars+nAddVars == nEqns+nAddEqs)
+    ass1 := arrayCreate(nParam, -1);
+    ass2 := arrayCreate(nParam, -1);
+    Matching.matchingExternalsetIncidenceMatrix(nParam, nParam, m);
+    BackendDAEEXT.matching(nParam, nParam, 5, 0, 0.0, 1);
+    BackendDAEEXT.getAssignment(ass2, ass1);
+    // BackendDump.dumpMatchingVars(ass1);
+    // BackendDump.dumpMatchingEqns(ass2);
+
+    comps := BackendDAETransform.tarjanAlgorithm(mT, ass2);
+    // BackendDump.dumpComponentsOLD(comps);
+    comps := mapListIndices(comps, ass2) "map to var indices" ;
+    // BackendDump.dumpComponentsOLD(comps);
+
+    // flattern list and look for cyclic dependencies
+    flatComps := flatternParamComps(comps, {}, allParameters);
+    // BackendDump.dumpComponentsOLD({flatComps});
+
+    // select secondary parameters
+    secondary := arrayCreate(nParam, 0);
+    secondary := selectSecondaryParameters(flatComps, allParameters, mT, secondary);
+    // BackendDump.dumpMatchingVars(secondary);
+
+    // get secondary parameters
+    for i in 1:nParam loop
+      if 1 == secondary[i] then
+        p := BackendVariable.getVarAt(allParameters, i);
+        outVars := BackendVariable.addVar(p, outVars);
+      end if;
+    end for;
+  end if;
 end selectInitializationVariablesDAE;
+
+protected function markIndex
+  input Integer inIndex;
+  input array<Integer> inArray;
+  output array<Integer> outArray := inArray;
+algorithm
+  arrayUpdate(outArray, inIndex, 1);
+end markIndex;
+
+protected function selectSecondaryParameters
+  input list<Integer> inOrdering;
+  input BackendDAE.Variables inParameters;
+  input BackendDAE.IncidenceMatrix inM;
+  input array<Integer> inSecondaryParams;
+  output array<Integer> outSecondaryParams;
+algorithm
+  outSecondaryParams := matchcontinue(inOrdering)
+    local
+      Integer i;
+      array<Integer> secondaryParams;
+      list<Integer> rest;
+      BackendDAE.Var param;
+
+    case {}
+    then inSecondaryParams;
+
+    // fixed=false
+    case i::rest equation
+      param = BackendVariable.getVarAt(inParameters, i);
+      false = BackendVariable.varFixed(param);
+
+      secondaryParams = List.fold(inM[i], markIndex, inSecondaryParams);
+      secondaryParams = selectSecondaryParameters(rest, inParameters, inM, secondaryParams);
+    then secondaryParams;
+
+    // fixed=true, but dependent
+    case i::rest equation
+      1 = inSecondaryParams[i];
+
+      secondaryParams = List.fold(inM[i], markIndex, inSecondaryParams);
+      secondaryParams = selectSecondaryParameters(rest, inParameters, inM, secondaryParams);
+    then secondaryParams;
+
+    // primary
+    else inSecondaryParams;
+  end matchcontinue;
+end selectSecondaryParameters;
+
+protected function flatternParamComps
+  input list<list<Integer>> inComps;
+  input list<Integer> inFlatComps;
+  input BackendDAE.Variables inAllParameters;
+  output list<Integer> outFlatComps;
+algorithm
+  outFlatComps := match(inComps)
+    local
+      Integer i;
+      list<list<Integer>> rest;
+      list<Integer> rest2;
+      list<Integer> paramIndices;
+      list<BackendDAE.Var> paramLst;
+      BackendDAE.Var param;
+
+    case {}
+    then listReverse(inFlatComps);
+
+    case {i}::rest equation
+      rest2 = flatternParamComps(rest, inFlatComps, inAllParameters);
+    then i::rest2;
+
+    case paramIndices::rest algorithm
+      paramLst := {};
+      for i in paramIndices loop
+        param := BackendVariable.getVarAt(inAllParameters, i);
+        paramLst := param::paramLst;
+      end for;
+      Error.addCompilerError("Cyclically dependent parameters found:\n" + warnAboutVars2(paramLst));
+    then fail();
+  end match;
+end flatternParamComps;
 
 protected function selectInitializationVariables "author: lochel"
   input list<BackendDAE.EqSystem> inEqSystems;
@@ -873,6 +1011,44 @@ algorithm
   outVars := BackendVariable.traverseBackendDAEVars(orderedVars, selectInitializationVariables2, inVars);
 end selectInitializationVariables1;
 
+protected function selectParameter2 "author: lochel"
+  input BackendDAE.Var inVar;
+  input tuple<BackendDAE.Variables, BackendDAE.EquationArray> inTpl;
+  output BackendDAE.Var outVar := inVar;
+  output tuple<BackendDAE.Variables, BackendDAE.EquationArray> outTpl;
+algorithm
+  outTpl := match (inVar, inTpl)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      DAE.Exp bindExp, crefExp;
+      BackendDAE.Equation eqn;
+      DAE.ComponentRef cref;
+
+    // parameter without binding
+    case (BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, eqns)) equation
+      vars = BackendVariable.addVar(inVar, vars);
+
+      cref = BackendVariable.varCref(inVar);
+      crefExp = Expression.crefExp(cref);
+      eqn = BackendDAE.EQUATION(crefExp, DAE.RCONST(0.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqns = BackendEquation.addEquation(eqn, eqns);
+    then ((vars, eqns));
+
+    // parameter with binding
+    case (BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, eqns)) equation
+      vars = BackendVariable.addVar(inVar, vars);
+
+      cref = BackendVariable.varCref(inVar);
+      crefExp = Expression.crefExp(cref);
+      eqn = BackendDAE.EQUATION(crefExp, bindExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqns = BackendEquation.addEquation(eqn, eqns);
+    then ((vars, eqns));
+
+    else inTpl;
+  end match;
+end selectParameter2;
+
 protected function selectInitializationVariables2 "author: lochel"
   input BackendDAE.Var inVar;
   input BackendDAE.Variables inVars;
@@ -889,12 +1065,6 @@ algorithm
 
     // unfixed state
     case (BackendDAE.VAR(varKind=BackendDAE.STATE()), vars) equation
-      false = BackendVariable.varFixed(inVar);
-      vars = BackendVariable.addVar(inVar, vars);
-    then (inVar, vars);
-
-    // unfixed parameter
-    case (BackendDAE.VAR(varKind=BackendDAE.PARAM()), vars) equation
       false = BackendVariable.varFixed(inVar);
       vars = BackendVariable.addVar(inVar, vars);
     then (inVar, vars);
@@ -1594,6 +1764,15 @@ algorithm
   outIndices := List.map1(inIndices, mapIndex, inMapping);
 end mapIndices;
 
+protected function mapListIndices "author: lochel
+  This function applies 'inMapping' to the input index list list."
+  input list<list<Integer>> inListIndices;
+  input array<Integer> inMapping;
+  output list<list<Integer>> outListIndices;
+algorithm
+  outListIndices := List.map1(inListIndices, mapIndices, inMapping);
+end mapListIndices;
+
 protected function compsMarker "author: mwenzler"
   input Integer inUnassignedEqn;
   input array<Integer> inVecVarToEq;
@@ -1815,7 +1994,7 @@ algorithm
       nEqns = BackendDAEUtil.equationSize(inEqnsOrig);
       true = intGt(counter, nEqns-nVars);
 
-      Error.addCompilerError("Initialization problem is structural singular. Please, check the initial conditions." );
+      Error.addCompilerError("Initialization problem is structural singular. Please, check the initial conditions.");
     then ({}, true, {});
 
     case (currID, _, _, _, _, _, _, _) equation
@@ -2055,7 +2234,7 @@ algorithm
       DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
       DAE.Exp startValue_;
-      DAE.Exp startExp, bindExp, crefExp;
+      DAE.Exp startExp, bindExp, crefExp, e;
       BackendDAE.VarKind varKind;
       HashSet.HashSet hs;
       String s, str, sv;
@@ -2071,7 +2250,9 @@ algorithm
       //startExp = Expression.makePureBuiltinCall("$_start", {crefExp}, ty);
       startExp = BackendVariable.varStartValue(var);
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      eqns = if isFixed then BackendEquation.addEquation(eqn, eqns) else eqns;
+      if isFixed then
+        eqns = BackendEquation.addEquation(eqn, eqns);
+      end if;
 
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
 
@@ -2143,16 +2324,22 @@ algorithm
     case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars, eqns, hs)) equation
       true = BackendVariable.varFixed(var);
       startExp = BackendVariable.varStartValueType(var);
+
+      s = ComponentReference.printComponentRefStr(cr);
+      str = ExpressionDump.printExpStr(startExp);
+
+      // e = Expression.crefExp(cr);
+      // ty = Expression.typeof(e);
+      // startExp = Expression.makePureBuiltinCall("$_start", {e}, ty);
+
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       var = BackendVariable.setBindExp(var, SOME(startExp));
       var = BackendVariable.setVarFixed(var, true);
 
-      s = ComponentReference.printComponentRefStr(cr);
-      str = ExpressionDump.printExpStr(startExp);
       info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(var));
       Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s, str}, info);
 
-      vars = BackendVariable.addVar(var, vars);
+      //vars = BackendVariable.addVar(var, vars);
     then (var, (vars, fixvars, eqns, hs));
 
     // parameter with binding and fixed=false
