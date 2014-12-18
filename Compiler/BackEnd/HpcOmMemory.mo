@@ -191,22 +191,29 @@ encapsulated package HpcOmMemory
           simCodeVarTypes = arrayCreate(varCount, (-1,-1));
           varCount = 0;
 
-          List.map_0(List.intRange2(varCount+1, varCount+listLength(stateVars)), function Array.updateIndexFirst(inValue = (VARTYPE_FLOAT,VARSIZE_FLOAT), inArray=simCodeVarTypes));
+          if(intGt(listLength(stateVars), 0)) then
+            List.map_0(List.intRange2(varCount+1, varCount+listLength(stateVars)), function Array.updateIndexFirst(inValue = (VARTYPE_FLOAT,VARSIZE_FLOAT), inArray=simCodeVarTypes));
+          end if;
           varCount = varCount + listLength(stateVars);
-
-          List.map_0(List.intRange2(varCount+1, varCount+listLength(derivativeVars)), function Array.updateIndexFirst(inValue = (VARTYPE_FLOAT,VARSIZE_FLOAT), inArray=simCodeVarTypes));
+          if(intGt(listLength(derivativeVars), 0)) then
+            List.map_0(List.intRange2(varCount+1, varCount+listLength(derivativeVars)), function Array.updateIndexFirst(inValue = (VARTYPE_FLOAT,VARSIZE_FLOAT), inArray=simCodeVarTypes));
+          end if;
           varCount = varCount + listLength(derivativeVars);
-
-          List.map_0(List.intRange2(varCount+1, varCount+listLength(algVars)), function Array.updateIndexFirst(inValue = (VARTYPE_FLOAT,VARSIZE_FLOAT), inArray=simCodeVarTypes));
+          if(intGt(listLength(algVars), 0)) then
+            List.map_0(List.intRange2(varCount+1, varCount+listLength(algVars)), function Array.updateIndexFirst(inValue = (VARTYPE_FLOAT,VARSIZE_FLOAT), inArray=simCodeVarTypes));
+          end if;
           varCount = varCount + listLength(algVars);
-
-          List.map_0(List.intRange2(varCount+1, varCount+listLength(discreteAlgVars)), function Array.updateIndexFirst(inValue = (VARTYPE_FLOAT,VARSIZE_FLOAT), inArray=simCodeVarTypes));
+          if(intGt(listLength(discreteAlgVars), 0)) then
+            List.map_0(List.intRange2(varCount+1, varCount+listLength(discreteAlgVars)), function Array.updateIndexFirst(inValue = (VARTYPE_FLOAT,VARSIZE_FLOAT), inArray=simCodeVarTypes));
+          end if;
           varCount = varCount + listLength(discreteAlgVars);
-
-          List.map_0(List.intRange2(varCount+1, varCount+listLength(intAlgVars)), function Array.updateIndexFirst(inValue = (VARTYPE_INTEGER,VARSIZE_INT), inArray=simCodeVarTypes));
+          if(intGt(listLength(intAlgVars), 0)) then
+            List.map_0(List.intRange2(varCount+1, varCount+listLength(intAlgVars)), function Array.updateIndexFirst(inValue = (VARTYPE_INTEGER,VARSIZE_INT), inArray=simCodeVarTypes));
+          end if;
           varCount = varCount + listLength(intAlgVars);
-
-          List.map_0(List.intRange2(varCount+1, varCount+listLength(boolAlgVars)), function Array.updateIndexFirst(inValue = (VARTYPE_BOOLEAN,VARSIZE_BOOL), inArray=simCodeVarTypes));
+          if(intGt(listLength(boolAlgVars), 0)) then
+            List.map_0(List.intRange2(varCount+1, varCount+listLength(boolAlgVars)), function Array.updateIndexFirst(inValue = (VARTYPE_BOOLEAN,VARSIZE_BOOL), inArray=simCodeVarTypes));
+          end if;
           varCount = varCount + listLength(boolAlgVars);
 
           //print("-------------------------------------\n");

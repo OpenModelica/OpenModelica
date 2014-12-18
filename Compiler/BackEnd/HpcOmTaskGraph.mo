@@ -1151,13 +1151,18 @@ public function compareTasksByExecTime "author: marcusw
   Compares two given tasks regarding their execution costs."
   input Integer iTask1;
   input Integer iTask2;
+  input  array<list<Integer>> iTaskComps;
   input array<tuple<Integer, Real>> iExeCosts;
   output Boolean oResult;
 protected
   Real exeCosts1, exeCosts2;
+  list<Integer> taskComps1, taskComps2;
 algorithm
-  exeCosts1 := Util.tuple22(arrayGet(iExeCosts, iTask1));
-  exeCosts2 := Util.tuple22(arrayGet(iExeCosts, iTask2));
+  taskComps1 := arrayGet(iTaskComps, iTask1);
+  taskComps2 := arrayGet(iTaskComps, iTask2);
+  exeCosts1 := addUpExeCostsForNode(taskComps1, iExeCosts, 0.0);
+  exeCosts2 := addUpExeCostsForNode(taskComps2, iExeCosts, 0.0);
+  //print("compareTasksByExecTime: Task '" + intString(iTask1) + "' with exeCost '" + realString(exeCosts1) + "' and Task '" + intString(iTask2) + "' with exeCost '" + realString(exeCosts2) + "'\n");
   oResult := realGt(exeCosts1, exeCosts2);
 end compareTasksByExecTime;
 
@@ -3649,6 +3654,7 @@ algorithm
     then (graphIn,graphTIn,graphDataIn,contractedTasksIn);
   case(contrNodes::rest,_,_,TASKGRAPHMETA(inComps = inComps),_)
     equation
+      //print("contractNodesInGraph: Merging nodes " + stringDelimitList(List.map(contrNodes,intString),",") + "\n");
       //add new edges to the contrNode
       contrNode::removeNodes = contrNodes;
       List.map_0(removeNodes,function Array.updateIndexFirst(inValue = -1, inArray=contractedTasksIn));  // mark in contrTask array

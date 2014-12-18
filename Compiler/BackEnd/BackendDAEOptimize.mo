@@ -2061,7 +2061,7 @@ algorithm
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
         eqn = BackendEquation.equationNth1(eqns, eqIdx);
           //BackendDump.dumpBackendDAEEqnList({eqn},"AN EQUATION",true);
-          BackendDump.dumpEquationList({eqn},"");
+        //BackendDump.dumpEquationList({eqn},"");
         (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
         compInfo = BackendDAE.COUNTER(List.first(inComps),numAdd,numMul,numTrig,numRel,numLog,numOth,numFuncs);
         if Flags.isSet(Flags.COUNT_OPERATIONS) then BackendDump.dumpCompInfo(compInfo); end if;
@@ -2070,7 +2070,7 @@ algorithm
     case (BackendDAE.SINGLEWHENEQUATION(eqn=eqIdx)::rest,_,_,_)
       equation
          eqn = BackendEquation.equationNth1(BackendEquation.getEqnsFromEqSystem(isyst), eqIdx);
-           BackendDump.printEquation(eqn);
+         //BackendDump.printEquation(eqn);
          (_,(numAdd,numMul,numOth,numTrig,numRel,numLog,numFuncs)) = BackendEquation.traverseExpsOfEquation(eqn,function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0));
          compInfo = BackendDAE.COUNTER(List.first(inComps),numAdd,numMul,numTrig,numRel,numLog+1,numOth,numFuncs);
         if Flags.isSet(Flags.COUNT_OPERATIONS) then BackendDump.dumpCompInfo(compInfo); end if;

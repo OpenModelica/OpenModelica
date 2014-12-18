@@ -19,6 +19,7 @@ template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
   let target  = simulationCodeTarget()
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
+  let stateDerVectorName = "__zDot"
   let()= textFile(
    (if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then
         simulationMainFileAnalyzation(simCode ,&extraFuncs ,&extraFuncsDecl, "")
@@ -27,34 +28,34 @@ template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
    ), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
   let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)), generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)), false, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
-  let()= textFile(simulationCppFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
-  let()= textFile(simulationFunctionsHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,false), 'OMCpp<%fileNamePrefix%>Functions.h')
-  let()= textFile(simulationFunctionsFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
-  let()= textFile(simulationTypesHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
+  let()= textFile(simulationCppFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
+  let()= textFile(simulationFunctionsFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
+  let()= textFile(simulationTypesHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
   let()= textFile(simulationMakefile(target,simCode ,&extraFuncs ,&extraFuncsDecl, ""), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationInitHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
-  let()= textFile(simulationInitCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
-  let()= textFile(simulationInitParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
-  let()= textFile(simulationInitExtVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
-  let()= textFile(simulationInitAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
-  let()= textFile(simulationInitAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
+  let()= textFile(simulationInitCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationInitParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+  let()= textFile(simulationInitExtVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
+  let()= textFile(simulationInitAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
+  let()= textFile(simulationInitAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
   let()= textFile(simulationJacobianHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
-  let()= textFile(simulationJacobianCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
-  let()= textFile(simulationStateSelectionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+  let()= textFile(simulationJacobianCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+  let()= textFile(simulationStateSelectionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
   let()= textFile(simulationStateSelectionHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
   let()= textFile(simulationExtensionHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
   let()= textFile(simulationExtensionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-  let()= textFile(simulationWriteOutputCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
+  let()= textFile(simulationWriteOutputCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
   let()= textFile(simulationWriteOutputParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
-  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
+  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
   let()= textFile(simulationFactoryFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScript(simCode ,&extraFuncs ,&extraFuncsDecl, ""), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode ,&extraFuncs ,&extraFuncsDecl, "")%>')
   let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_) =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloopJacobian,Util.isSome(hpcOmMemory)) ;separator="")
+          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, Util.isSome(hpcOmMemory)) ;separator="")
          ;separator="")
-  let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloop,Util.isSome(hpcOmMemory))
+  let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloop, stateDerVectorName, Util.isSome(hpcOmMemory))
   let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
   let()= textFile(calcHelperMainfile(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
   let()= textFile(calcHelperMainfile2(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp')
@@ -65,12 +66,12 @@ template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
   // empty result of the top-level template .., only side effects
 end translateModel;
 
-template Update(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template Update(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
 match simCode
 case SIMCODE(__) then
   <<
-  <%update(allEquations,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,contextOther,useFlatArrayNotation)%>
+  <%update(allEquations,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation)%>
   >>
 end Update;
 
@@ -377,7 +378,7 @@ template generateThreadFunctionHeaderDecl(Integer threadIdx)
 end generateThreadFunctionHeaderDecl;
 
 
-template simulationCppFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
   match simCode
@@ -400,7 +401,7 @@ template simulationCppFile(SimCode simCode ,Context context,Text& extraFuncs,Tex
         ,_simData(simData)
         <%hpcomMemberVariableDefinition%>
         <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,true)%>
-        <%simulationInitFile(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)%>
+        <%simulationInitFile(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       {
         //I don't know why this line is necessary if we link statically, but without it a segfault occurs
         _global_settings = globalSettings;
@@ -484,34 +485,35 @@ template simulationCppFile(SimCode simCode ,Context context,Text& extraFuncs,Tex
 
       <%generateDeleteAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,className)%>
 
-      <%Update(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%Update(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-      <%DefaultImplementationCode(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%DefaultImplementationCode(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       <%checkForDiscreteEvents(discreteModelVars,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
-      <%giveZeroFunc1(zeroCrossings,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%giveZeroFunc1(zeroCrossings,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
       <%setConditions(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
       <%geConditions(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
       <%isConsistent(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
 
-      <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-      <%generateStepStarted(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%generateStepStarted(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, useFlatArrayNotation)%>
 
       <%generatehandleTimeEvent(timeEvents, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
       <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
-      <%generateTimeEvent(timeEvents, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, true)%>
+      <%generateTimeEvent(timeEvents, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, true)%>
 
       <%isODE(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
       <%DimZeroFunc(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
 
-      <%getCondition(zeroCrossings,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%getCondition(zeroCrossings,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       <%handleSystemEvents(zeroCrossings,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
       <%saveAll(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
       <%initPrevars(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
-      <%saveDiscreteVars(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
-      <%LabeledDAE(modelInfo.labels,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+
+      <%LabeledDAE(modelInfo.labels,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       <%giveVariables(modelInfo,context,useFlatArrayNotation,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
+      <%extraFuncs%>
       >>
   end match
 end simulationCppFile;
@@ -668,7 +670,7 @@ template getHpcomDestructorExtension(Option<Schedule> hpcOmScheduleOpt)
 end getHpcomDestructorExtension;
 
 
-template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Boolean useFlatArrayNotation)
+template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let &varDecls = buffer "" /*BUFD*/
 
@@ -676,13 +678,13 @@ template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> when
     case SIMCODE(modelInfo = MODELINFO(__)) then
       let parCode = update2(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
-      <%equationFunctions(allEquations,whenClauses,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace,contextSimulationDiscrete,useFlatArrayNotation,false)%>
+      <%equationFunctions(allEquations,whenClauses,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace,contextSimulationDiscrete,stateDerVectorName,useFlatArrayNotation,false)%>
 
-       <%createEvaluateAll(allEquations,whenClauses,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace,contextOther,useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
+      <%createEvaluateAll(allEquations,whenClauses,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation, boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")))%>
 
       <%createEvaluateZeroFuncs(equationsForZeroCrossings,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace,contextOther) %>
 
-      <%createEvaluateConditions(allEquations,whenClauses,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace,contextOther,useFlatArrayNotation)%>
+      <%createEvaluateConditions(allEquations,whenClauses,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace,contextOther, stateDerVectorName, useFlatArrayNotation)%>
       <%parCode%>
       >>
   end match
@@ -1876,12 +1878,23 @@ match simVar
               >>
       end match
    /*special case for varibales that marked as array but are not arrays */
-    case SIMVAR(numArrayElement=_::_) then
+    case SIMVAR(numArrayElement=_::_,type_=varType,name=varName) then
       let& dims = buffer "" /*BUFD*/
-      let varName = arraycref2(name,dims)
-      let varType = variableType(type_)
+      let varNameStr = arraycref2(name,dims)
+      let varTypeStr = variableType(type_)
       match dims
-        case "0" then (if createConstructorDeclaration then '' else '<%varType%> <%varName%>;')
+        case "0" then (if createConstructorDeclaration then '' else (
+            match(hpcOmMemoryOpt)
+                case SOME(hpcOmMemory) then
+                  <<
+                  <%MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), varName, varType, useFlatArrayNotation, createConstructorDeclaration)%>
+                  >>
+                else
+                  <<
+                  <%varTypeStr%> <%varNameStr%>;
+                  >>
+           end match)
+        )
         else ''
       end match
 end MemberVariableDefine2;

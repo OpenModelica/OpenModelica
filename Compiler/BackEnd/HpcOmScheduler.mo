@@ -2107,7 +2107,7 @@ algorithm
   levelExecCosts := HpcOmTaskGraph.getCostsForContractedNodes(iTasksOfLevel, exeCosts);
   threadReadyList := arrayCreate(iNumberOfThreads, 0.0);
   threadTaskList := arrayCreate(iNumberOfThreads, {});
-  sortedTasksOfLevel := List.sort(iTasksOfLevel, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts));
+  sortedTasksOfLevel := List.sort(iTasksOfLevel, function HpcOmTaskGraph.compareTasksByExecTime(iExeCosts=exeCosts, iTaskComps=inComps));
   _ := List.fold(sortedTasksOfLevel, function createFixedLevelScheduleForTask(iLevelExecCosts=levelExecCosts, iAdviceList=iAdviceList, iThreadReadyList=threadReadyList, iGraph=iGraph, iMeta=iMeta), threadTaskList);
   threadTaskList := Array.map(threadTaskList, listReverse);
   ((_,tasksOfLevel)) := Array.fold2(threadTaskList, createFixedLevelScheduleForLevel0, inComps, iSccSimEqMapping, (1,{}));
@@ -2454,11 +2454,9 @@ algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping,iSimVarMapping)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_)
       equation
-        print("Funktionsaufruf!");
         (xadj,adjncy,vwgt,adjwgt) = prepareMetis(iTaskGraph,iTaskGraphMeta);
         extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
         extInfoArr = listArray(extInfo);
-        print("Hier geht MetaModelica los!\n");
         print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
 
