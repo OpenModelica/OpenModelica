@@ -55,6 +55,7 @@ void* FMI1CoSimulationConstructor_OMC(int fmi_log_level, char* working_directory
   FMI1CS->FMIImportContext = fmi_import_allocate_context(&FMI1CS->JMCallbacks);
   /* FMI callback functions */
   FMI1CS->FMICallbackFunctions.logger = fmi1logger;
+  FMI1CS->FMICallbackFunctions.stepFinished = NULL;
   FMI1CS->FMICallbackFunctions.allocateMemory = calloc;
   FMI1CS->FMICallbackFunctions.freeMemory = free;
   /* parse the xml file */
@@ -93,10 +94,6 @@ void* FMI1CoSimulationConstructor_OMC(int fmi_log_level, char* working_directory
   FMI1CS->FMITStart = tStart;
   FMI1CS->FMIStopTimeDefined = stopTimeDefined;
   FMI1CS->FMITStop = tStop;
-  fmi1_status_t initializeSlaveStatus = fmi1_import_initialize_slave(FMI1CS->FMIImportInstance, FMI1CS->FMITStart, FMI1CS->FMIStopTimeDefined, FMI1CS->FMITStop);
-  if (initializeSlaveStatus != fmi1_status_ok && initializeSlaveStatus != fmi1_status_warning) {
-    ModelicaFormatError("fmiInitializeSlave failed with status : %s\n", fmi1_status_to_string(initializeSlaveStatus));
-  }
   return FMI1CS;
 }
 
@@ -115,17 +112,29 @@ void FMI1CoSimulationDestructor_OMC(void* in_fmi1cs)
 }
 
 /*
- * Wrapper for the FMI function fmiDoStep.
- * Return value is dummy and is only used to run the equations in sequence.
+ * Wrapper for the FMI function fmiInitializeSlave.
  */
-double fmi1DoStep_OMC(void* in_fmi1cs, double currentCommunicationPoint, double communicationStepSize, int newStep)
+void fmi1InitializeSlave_OMC(void* in_fmi1cs)
 {
   FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1cs;
-  fmi1_status_t status = fmi1_import_do_step(FMI1CS->FMIImportInstance, currentCommunicationPoint, communicationStepSize, newStep);
-  if (status != fmi1_status_ok && status != fmi1_status_warning) {
-    ModelicaFormatError("fmiDoStep failed with status : %s\n", fmi1_status_to_string(status));
+  fmi1_status_t initializeSlaveStatus = fmi1_import_initialize_slave(FMI1CS->FMIImportInstance, FMI1CS->FMITStart, FMI1CS->FMIStopTimeDefined, FMI1CS->FMITStop);
+  if (initializeSlaveStatus != fmi1_status_ok && initializeSlaveStatus != fmi1_status_warning) {
+    ModelicaFormatError("fmiInitializeSlave failed with status : %s\n", fmi1_status_to_string(initializeSlaveStatus));
   }
-  return 0.0;
+}
+
+/*
+ * Wrapper for the FMI function fmiDoStep.
+ */
+void fmi1DoStep_OMC(void* in_fmi1cs, double currentCommunicationPoint, double communicationStepSize, int newStep)
+{
+  FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1cs;
+  if (currentCommunicationPoint < FMI1CS->FMITStop) {
+    fmi1_status_t status = fmi1_import_do_step(FMI1CS->FMIImportInstance, currentCommunicationPoint, communicationStepSize, newStep);
+    if (status != fmi1_status_ok && status != fmi1_status_warning && status != fmi1_status_discard && status != fmi1_status_pending) {
+      ModelicaFormatError("fmiDoStep failed with status : %s\n", fmi1_status_to_string(status));
+    }
+  }
 }
 
 #ifdef __cplusplus
