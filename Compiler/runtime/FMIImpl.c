@@ -763,7 +763,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("The FMU version is %s. Unknown/Unsupported FMU version."), tokens, 1);
     return 0;
   }
-  if (version == 1) {
+  if (version == fmi_version_1_enu) {
     static int init_fmi1_callback_functions = 0;
     // FMI callback functions
     static fmi1_callback_functions_t fmi1_callback_functions;
@@ -794,7 +794,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     }
 #endif
     FMIImpl__initializeFMI1Import(fmi, fmiInfo, version, typeDefinitionsList, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);
-  } else if (version == 2) {
+  } else if (version == fmi_version_2_0_enu) {
     static int init_fmi2_callback_functions = 0;
     // FMI callback functions
     static fmi2_callback_functions_t fmi2_callback_functions;
@@ -810,6 +810,15 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     if(!fmi) {
       fmi_import_free_context(context);
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the modelDescription.xml file."), NULL, 0);
+      return 0;
+    }
+    /* remove the following block once we have support for FMI 2.0 CS. */
+    fmi2_fmu_kind_enu_t fmiType = fmi2_import_get_fmu_kind(fmi);
+    if (fmiType == fmi2_fmu_kind_cs || fmiType == fmi2_fmu_kind_me_and_cs) {
+      fmi2_import_free(fmi);
+      fmi_import_free_context(context);
+      const char* tokens[1] = {fmi2_fmu_kind_to_string(fmiType)};
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("The FMU version is 2.0 and FMU type is %s. Unsupported FMU type. Only FMI 2.0 ModelExchange is supported."), tokens, 1);
       return 0;
     }
     *fmiInstance = mmc_mk_some(fmi);
