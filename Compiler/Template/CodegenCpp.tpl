@@ -12580,13 +12580,15 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
 
     <%varDecls%>
     /* Evaluate Equations*/
-    /* <%equation_all_func_calls%> */
-    evaluateODE(command);
+    <%equation_all_func_calls%>
+    
+    /* evaluateODE(command);
 
     <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
 
     <%equation_notOde_func_calls%>
-    /* Reinits */
+    */
+    // Reinits
     <%reinit%>
 
     <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
@@ -12690,7 +12692,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCo
       let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)
       let initial_assign = match initialCall
         case true then functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation)
-        else '; /* nothing to do */'
+        else '; // nothing to do'
 
       if reinits then
       <<
