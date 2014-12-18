@@ -183,6 +183,7 @@ public:
   void unloadClassHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   LibraryTreeNode* findParentLibraryTreeNodeSavedInSameFile(LibraryTreeNode *pLibraryTreeNode, QFileInfo fileInfo);
+  bool isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode);
 private:
   MainWindow *mpMainWindow;
   bool mIsSearchTree;

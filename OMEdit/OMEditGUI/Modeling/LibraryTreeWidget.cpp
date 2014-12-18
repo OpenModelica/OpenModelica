@@ -1124,6 +1124,22 @@ LibraryTreeNode* LibraryTreeWidget::findParentLibraryTreeNodeSavedInSameFile(Lib
   }
 }
 
+bool LibraryTreeWidget::isSimulationAllowed(LibraryTreeNode *pLibraryTreeNode)
+{
+  if (pLibraryTreeNode) {
+    switch (pLibraryTreeNode->getModelicaType()) {
+      case StringHandler::Model:
+      case StringHandler::Class:
+      case StringHandler::Block:
+        return true;
+      default:
+        return false;
+    }
+  } else {
+    return false;
+  }
+}
+
 bool LibraryTreeWidget::saveModelicaLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
 {
   bool result = false;
@@ -1573,17 +1589,14 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
 {
   int adjust = 24;
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(itemAt(point));
-  if (pLibraryTreeNode)
-  {
+  if (pLibraryTreeNode) {
     QMenu menu(this);
-    switch (pLibraryTreeNode->getLibraryType())
-    {
+    switch (pLibraryTreeNode->getLibraryType()) {
       case LibraryTreeNode::Modelica:
       default:
         menu.addAction(mpViewClassAction);
         menu.addAction(mpViewDocumentationAction);
-        if (!(pLibraryTreeNode->isSystemLibrary() || isSearchedTree()))
-        {
+        if (!(pLibraryTreeNode->isSystemLibrary() || isSearchedTree())) {
           menu.addSeparator();
           menu.addAction(mpNewModelicaClassAction);
         }
@@ -1591,13 +1604,18 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
         menu.addAction(mpInstantiateModelAction);
         menu.addAction(mpCheckModelAction);
         menu.addAction(mpCheckAllModelsAction);
-        menu.addAction(mpSimulateAction);
-        menu.addAction(mpSimulateWithTransformationalDebuggerAction);
-        menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
-        menu.addAction(mpSimulationSetupAction);
+        /*
+          Ticket #3040.
+          Only show the simulation actions for Modelica types on which the simulation is allowed.
+          */
+        if (isSimulationAllowed(pLibraryTreeNode)) {
+          menu.addAction(mpSimulateAction);
+          menu.addAction(mpSimulateWithTransformationalDebuggerAction);
+          menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
+          menu.addAction(mpSimulationSetupAction);
+        }
         /* If item is OpenModelica or part of it or is search tree item then don't show the unload for it. */
-        if (!((StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()).compare("OpenModelica") == 0)  || isSearchedTree()))
-        {
+        if (!((StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()).compare("OpenModelica") == 0)  || isSearchedTree())) {
           menu.addSeparator();
           menu.addAction(mpCopyClassAction);
           menu.addAction(mpUnloadClassAction);

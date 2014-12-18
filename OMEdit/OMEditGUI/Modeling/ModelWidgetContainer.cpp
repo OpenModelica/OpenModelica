@@ -3141,10 +3141,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getResetZoomAction()->setEnabled(enabled && modelica);
   getMainWindow()->getZoomInAction()->setEnabled(enabled && modelica);
   getMainWindow()->getZoomOutAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getSimulateModelAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica);
-  getMainWindow()->getSimulationSetupAction()->setEnabled(enabled && modelica);
+  getMainWindow()->getSimulateModelAction()->setEnabled(enabled && modelica && mpMainWindow->getLibraryTreeWidget()->isSimulationAllowed(pLibraryTreeNode));
+  getMainWindow()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && mpMainWindow->getLibraryTreeWidget()->isSimulationAllowed(pLibraryTreeNode));
+  getMainWindow()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica && mpMainWindow->getLibraryTreeWidget()->isSimulationAllowed(pLibraryTreeNode));
+  getMainWindow()->getSimulationSetupAction()->setEnabled(enabled && modelica && mpMainWindow->getLibraryTreeWidget()->isSimulationAllowed(pLibraryTreeNode));
   getMainWindow()->getInstantiateModelAction()->setEnabled(enabled && modelica);
   getMainWindow()->getCheckModelAction()->setEnabled(enabled && modelica);
   getMainWindow()->getCheckAllModelsAction()->setEnabled(enabled && modelica);
