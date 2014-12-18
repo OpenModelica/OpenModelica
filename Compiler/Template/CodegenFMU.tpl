@@ -2658,13 +2658,13 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%dumpFMITypeDefinitionsArrayMappingFunctions(fmiTypeDefinitionsList)%>
 
     package fmi1Functions
-      function fmi1InitializeSlave    
+      function fmi1InitializeSlave
         input FMI1CoSimulation fmi1cs;
         input Real preInitialized;
         output Real postInitialized=preInitialized;
         external "C" fmi1InitializeSlave_OMC(fmi1cs) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmi1InitializeSlave;
-      
+
       function fmi1DoStep
         input FMI1CoSimulation fmi1cs;
         input Real currentCommunicationPoint;
