@@ -566,12 +566,7 @@ template simulationFile(SimCode simCode, String guid)
   match simCode
     case simCode as SIMCODE(__) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
-    let mainInit = if boolAnd(Flags.isSet(HPCOM), boolNot(stringEq(getConfigString(HPCOM_CODE),"pthreads_spin"))) then
-                     <<
-                     mmc_init_nogc();
-                     omc_alloc_interface = omc_alloc_interface_pooled;
-                     >>
-                   else if Flags.isSet(Flags.PARMODAUTO) then
+    let mainInit = if boolOr(Flags.isSet(Flags.PARMODAUTO), Flags.isSet(HPCOM)) then
                      <<
                      mmc_init_nogc();
                      omc_alloc_interface = omc_alloc_interface_pooled;
@@ -2494,7 +2489,6 @@ template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, S
       {
          <%odeEqs%>
       }
-      #pragma omp barrier //I'm not sure if this is required
       >>
     case(SERIALTASKLIST(__)) then
       let odeEqs = tasks |> task => functionXXX_system0_HPCOM_Level0(derivativEquations,name,task,iType,modelNamePrefixStr); separator="\n"
