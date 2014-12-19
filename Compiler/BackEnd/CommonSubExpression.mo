@@ -81,7 +81,6 @@ algorithm
     //print("SYSTEM IN\n");
     //BackendDump.printBackendDAE(daeIn);
     daeOut := BackendDAEUtil.mapEqSystem(daeIn,commonSubExpression);
-    //daeOut := daeIn;
     //print("SYSTEM OUT\n");
     //BackendDump.printBackendDAE(daeOut);
 end commonSubExpressionReplacement;
@@ -351,9 +350,9 @@ algorithm
      eqs2 = arrayGet(mT,varIdx2);
            //print("eqs1 "+stringDelimitList(List.map(eqs1,intString),", ")+"\n");
            //print("eqs2 "+stringDelimitList(List.map(eqs2,intString),", ")+"\n");
-     true = intEq(listLength(eqs1),1) or intEq(listLength(eqs2),1);  // choose the variable to be removed, that does not influence the causalization
-     if intEq(listLength(eqs2),1) then varIdxAlias = varIdx2; varIdxRepl = varIdx1; else varIdxAlias = varIdx1; varIdxRepl = varIdx2; end if;
-     if intEq(listLength(eqs2),1) then eqIdxDel = eqIdx2; eqIdxLeft = eqIdx1; else eqIdxDel = eqIdx1; eqIdxLeft = eqIdx2; end if;
+     //true = intEq(listLength(eqs1),1) or intEq(listLength(eqs2),1);  // choose the variable to be removed, that does not influence the causalization
+     if intLe(listLength(eqs2),listLength(eqs1)) then varIdxAlias = varIdx2; varIdxRepl = varIdx1; else varIdxAlias = varIdx1; varIdxRepl = varIdx2; end if;
+     if intLe(listLength(eqs2),listLength(eqs1)) then eqIdxDel = eqIdx2; eqIdxLeft = eqIdx1; else eqIdxDel = eqIdx1; eqIdxLeft = eqIdx2; end if;
 
      var1 = BackendVariable.getVarAt(vars,varIdxAlias);
      var2 = BackendVariable.getVarAt(vars,varIdxRepl);
