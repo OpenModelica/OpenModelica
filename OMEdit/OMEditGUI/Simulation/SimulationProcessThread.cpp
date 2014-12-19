@@ -211,7 +211,7 @@ void SimulationProcessThread::simulationProcessFinished(int exitCode, QProcess::
   QString exitCodeStr = tr("Simulation process exited with code %1").arg(QString::number(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     emit sendSimulationOutput(exitCodeStr, StringHandler::OMEditInfo, true);
-  } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
+  } else if (mpSimulationProcess->error() == QProcess::UnknownError) {
     emit sendSimulationOutput(exitCodeStr, StringHandler::Error, true);
   } else {
     emit sendSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error, true);
