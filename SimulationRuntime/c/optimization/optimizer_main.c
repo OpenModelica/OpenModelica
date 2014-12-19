@@ -328,6 +328,7 @@ static inline void freeOptimizerData(OptData*optData){
   free(optData->dim.inputName);
 
   for(k = 0; k < 2; ++k){
+  if(optData->s.matrix[2+k]){
     for(i = 0; i< nsi; ++i){
       for(j = 0; j< np; ++j){
         free(optData->dim.analyticJacobians_tmpVars[k][i][j]);
@@ -335,6 +336,7 @@ static inline void freeOptimizerData(OptData*optData){
       free(optData->dim.analyticJacobians_tmpVars[k][i]);
     }
     free(optData->dim.analyticJacobians_tmpVars[k]);
+  }
   }
   free(optData->dim.analyticJacobians_tmpVars);
 
