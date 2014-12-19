@@ -1536,11 +1536,12 @@ algorithm
     false := expHasCref(e6, inExp3);
     false := expHasCref(inExp2, inExp3);
 
+    c := if b1 then e1 else e4;
     p := if b1 then Expression.expDiv(e4,e1) else Expression.expDiv(e1,e4);
     p := Expression.expMul(DAE.RCONST(0.5),p);
     tp := Expression.typeof(p);
 
-    con := if b1 then DAE.RELATION(e1,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()) else DAE.RELATION(e4,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE());
+    con := DAE.RELATION(c,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE());
     con := Expression.makeNoEvent(con);
     cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_CON_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), DAE.T_BOOL_DEFAULT, {});
     eqn := BackendDAE.SOLVED_EQUATION(cr, con, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
@@ -1557,7 +1558,7 @@ algorithm
     eqnForNewVars := eqn::eqnForNewVars;
     newVarsCrefs := cr::newVarsCrefs;
 
-    q := if b1 then Expression.expDiv(inExp2,e1) else Expression.expDiv(inExp2,e4);
+    q := Expression.expDiv(inExp2, c);
     q := Expression.negate(q);
     (q, _) :=  ExpressionSimplify.simplify1(q);
     q := DAE.IFEXP(con, Expression.makeConstOne(tp), q);
@@ -1582,12 +1583,6 @@ algorithm
     e := Expression.negate(p);
     lhs := Expression.expMul(e_1, lhs);
     lhs := Expression.expAdd(e, lhs);
-
-    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-    e := Expression.crefExp(cr);
-    exP := Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
-    e_1 := Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
-    eqn := BackendDAE.SOLVED_EQUATION(cr, e2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
 
     e7 := if b1 then Expression.makeDiv(inExp2, e4) else Expression.makeDiv(inExp2, e1);
     invExp := if b1 then Expression.inverseFactors(e6) else Expression.inverseFactors(e3);
