@@ -143,13 +143,11 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
   textCursor.movePosition(QTextCursor::End);
   mpMessagesTextBrowser->setTextCursor(textCursor);
   static int errorCounter = 1;
-  QString location, message;
+  QString message;
   if (pMessageItem->getFileName().isEmpty()) { // if custom error message
-    location = "";
     message = pMessageItem->getMessage();
   } else if (mpMainWindow->getOMCProxy()->existClass(pMessageItem->getFileName())) {
     // If the class is only loaded in AST then create link for the error message otherwise display filename to user where error occurred.
-    location = QString("in class %1").arg(pMessageItem->getFileName());
     message = QString("[%1: %2]: <a href=\"omeditmessagesbrowser:///%3?lineNumber=%4\">%5</a>")
         .arg(pMessageItem->getFileName())
         .arg(pMessageItem->getLocation())
@@ -157,7 +155,6 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
         .arg(pMessageItem->getLineStart())
         .arg(pMessageItem->getMessage());
   } else {
-    location = QString("in file %1").arg(pMessageItem->getFileName());
     message = QString("[%1: %2]: %3")
         .arg(pMessageItem->getFileName())
         .arg(pMessageItem->getLocation())
@@ -166,16 +163,15 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
   QString errorString = QString("<span>"
                                 "<b>[%1]</b> "
                                 "<span style=\"color: #777777;\"><b>%2</b></span> "
-                                "<b>%3 %4 %5</b>"
+                                "<b>%3 %4</b>"
                                 "</span><br />"
                                 "<span>"
-                                "%6"
+                                "%5"
                                 "</span><br /><br />")
       .arg(QString::number(errorCounter))
       .arg(QTime::currentTime().toString())
       .arg(StringHandler::getErrorKindString(pMessageItem->getErrorKind()))
       .arg(StringHandler::getErrorTypeDisplayString(pMessageItem->getErrorType()))
-      .arg(location)
       .arg(message);
   mpMessagesTextBrowser->insertHtml(errorString);
   errorCounter++;
