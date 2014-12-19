@@ -49,9 +49,9 @@ void* HpcOmSchedulerExtImpl__readScheduleFromGraphMl(const char *filename)
 #if USE_METIS
 void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, int* adjwgt, int xadjCount, int adjncyCount, int nparts)
 {
-    void *res = mmc_mk_nil();
-    int nvert=xadjCount-1;
-    idx_t met_nvtxs=xadjCount-1;
+  void *res = mmc_mk_nil();
+  int nvert=xadjCount-1;
+  idx_t met_nvtxs=xadjCount-1;
   idx_t met_ncon=1;
   //double * part=new double[nvert];
   idx_t * met_xadj=new idx_t[nvert+1]; //={0,2,5,8,11,13,16,20,24,28,31,33,36,39,42,44};
@@ -76,7 +76,9 @@ void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, in
 //    cout<<met_adjncy[i]<<" "<<met_adjwgt[i]<<endl;
   }
     int * result=new int[nvert];
+    std::cerr << "test" << std::endl;
     returnval=METIS_PartGraphKway(&met_nvtxs,&met_ncon,met_xadj,met_adjncy,met_vwgt,NULL,met_adjwgt,&met_nparts,NULL,NULL,NULL,&met_objval,met_part);
+    std::cerr << "test2" << std::endl;
     for(int i=nvert-1; i>=0; i--) {
         result[i]=met_part[i]+1;
         res = mmc_mk_cons(mmc_mk_icon(result[i]),res);

@@ -2455,9 +2455,17 @@ algorithm
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_)
       equation
         (xadj,adjncy,vwgt,adjwgt) = prepareMetis(iTaskGraph,iTaskGraphMeta);
-        extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
-        extInfoArr = listArray(extInfo);
-        print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
+        
+        print("createMetisSchedule: Weights of nodes = " + stringDelimitList(List.map(arrayList(vwgt), intString), ",") + "\n");
+        
+        if(intGt(iNumberOfThreads, 1)) then //check if more then one thread is given -- otherwise a division through zero will occur
+          extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
+          extInfoArr = listArray(extInfo);
+        else
+          extInfoArr = arrayCreate(arrayLength(iTaskGraph), 1);
+        end if;
+        
+        //print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
 
         taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
@@ -2624,13 +2632,15 @@ algorithm
   _:=arrayUpdate(vwgt,node,realInt(rv));
 end setVwgt;
 
-protected function prepareMetis
+protected function prepareMetis "function prepareMetis
+  author: mkloeppel
+  Create all arrays that are necessary to perform a clustering with metis."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-  output array<Integer> xadj;
-  output array<Integer> adjncy;
-  output array<Integer> vwgt;
-  output array<Integer> adjwgt;
+  output array<Integer> xadj; //The adjacency structure of the graph
+  output array<Integer> adjncy; //The adjacency structure of the graph - see metis CSR-format
+  output array<Integer> vwgt; //The weights of the nodes
+  output array<Integer> adjwgt; //The weights of the edges
 protected
   Integer n;
   Integer m;
