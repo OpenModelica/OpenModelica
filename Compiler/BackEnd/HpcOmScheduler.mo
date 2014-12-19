@@ -2455,16 +2455,16 @@ algorithm
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_)
       equation
         (xadj,adjncy,vwgt,adjwgt) = prepareMetis(iTaskGraph,iTaskGraphMeta);
-        
+
         print("createMetisSchedule: Weights of nodes = " + stringDelimitList(List.map(arrayList(vwgt), intString), ",") + "\n");
-        
+
         if(intGt(iNumberOfThreads, 1)) then //check if more then one thread is given -- otherwise a division through zero will occur
           extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
           extInfoArr = listArray(extInfo);
         else
           extInfoArr = arrayCreate(arrayLength(iTaskGraph), 1);
         end if;
-        
+
         //print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
 
