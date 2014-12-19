@@ -11175,7 +11175,6 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
          *index_Dres = $P$OMC$objectMayerTerm$pDERC$indexdiffed;
          return 0;
          #endif
-         return -1;
         >>
       let startTimeOpt = match startTimeE
   case SOME(exp) then
@@ -11192,7 +11191,6 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
          *index_DresC = $P$OMC$objectLagrangeTerm$pDERC$indexdiffed;
          return 0;
          #endif
-         return -1;
         >>
       let inputBounds = match simCode
                case simCode as SIMCODE(__) then
