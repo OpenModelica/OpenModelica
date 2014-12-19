@@ -86,7 +86,7 @@ LoadCompilerInterface.mos: Makefile.sources
 	@test -f $@ || (rm -f $< && $(MAKE) -f $(defaultMakefileTarget) $<)
 Makefile.depends: MakeDepends.mos LoadCompilerInterface.mos Makefile.sources $(ALL_INTERFACES:%.stamp.mo=%.interface.mo)
 	@rm -f $@
-	$(OMC) $<
+	$(OMC) +n=1 $<
 endif
 
 $(GEN_DIR)%.stamp:
