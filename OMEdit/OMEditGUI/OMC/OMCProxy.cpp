@@ -1128,7 +1128,12 @@ QVariantMap OMCProxy::getClassInformation(QString className)
   res["partialPrefix"] = lst[2];
   res["finalPrefix"] = lst[3];
   res["encapsulatedPrefix"] = lst[4];
-  res["fileName"] = StringHandler::unparse(lst[5].toString());
+  /*
+    Since now we set the fileName via loadString() & parseString() so this API might return us className/<interactive>.
+    We only set the fileName field if returned value is really a file path.
+    */
+  QString fileName = StringHandler::unparse(lst[5].toString());
+  res["fileName"] = fileName.endsWith(".mo") ? fileName : "";
   res["fileReadOnly"] = lst[6];
   res["lineNumberStart"] = lst[7];
   res["columnNumberStart"] = lst[8];
@@ -1146,7 +1151,11 @@ QVariantMap OMCProxy::getClassInformation(QString className)
   res["partialPrefix"] = r.partialPrefix;
   res["finalPrefix"] = r.finalPrefix;
   res["encapsulatedPrefix"] = r.encapsulatedPrefix;
-  res["fileName"] = r.fileName;
+  /*
+    Since now we set the fileName via loadString() & parseString() so this API might return us className/<interactive>.
+    We only set the fileName field if returned value is really a file path.
+    */
+  res["fileName"] = r.fileName.endsWith(".mo") ? r.fileName : "";
   res["fileReadOnly"] = r.fileReadOnly;
   res["lineNumberStart"] = (long long) r.lineNumberStart;
   res["columnNumberStart"] = (long long) r.columnNumberStart;

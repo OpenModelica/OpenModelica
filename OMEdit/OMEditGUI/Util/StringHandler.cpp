@@ -1164,11 +1164,7 @@ QString StringHandler::createTooltip(QVariantMap info, QString name, QString pat
     QString tooltip = QString(Helper::type).append(": ").append(info["restriction"].toString()).append("<br />")
         .append(Helper::name).append(" ").append(name).append("<br />")
         .append(Helper::description).append(": ").append(info["comment"].toString()).append("<br />");
-    if (QString(info["fileName"].toString()).compare("<interactive>") == 0) {
-      tooltip.append(Helper::errorLocation).append(": ").append("<br />");
-    } else {
-      tooltip.append(Helper::errorLocation).append(": ").append(QString(info["fileName"].toString()).replace("\\", "/")).append("<br />");
-    }
+    tooltip.append(Helper::errorLocation).append(": ").append(QString(info["fileName"].toString()).replace("\\", "/")).append("<br />");
     tooltip.append(tr("Path")).append(": ").append(path);
     return tooltip;
   }
