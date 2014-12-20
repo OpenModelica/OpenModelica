@@ -63,6 +63,7 @@ public:
     setLaunchTransformationalDebugger(false);
     setLaunchAlgorithmicDebugger(false);
     setNumberofIntervals(500);
+    setStepSize(0.002);
     setOutputFormat("mat");
     setFileNamePrefix("");
     setVariableFilter("");
@@ -140,6 +141,9 @@ public:
   void setLaunchAlgorithmicDebugger(bool launchAlgorithmicDebugger) {mLaunchAlgorithmicDebugger = launchAlgorithmicDebugger;}
   bool getLaunchAlgorithmicDebugger() {return mLaunchAlgorithmicDebugger;}
   void setNumberofIntervals(int numberofIntervals) {mNumberofIntervals = numberofIntervals;}
+  int getNumberofIntervals() {return mNumberofIntervals;}
+  void setStepSize(qreal stepSize) {mStepSize = stepSize;}
+  qreal getStepSize() {return mStepSize;}
   void setOutputFormat(QString outputFormat) {mOutputFormat = outputFormat;}
   QString getOutputFormat() {return mOutputFormat;}
   void setFileNamePrefix(QString fileNamePrefix) {mFileNamePrefix = fileNamePrefix;}
@@ -247,6 +251,7 @@ private:
   bool mLaunchTransformationalDebugger;
   bool mLaunchAlgorithmicDebugger;
   int mNumberofIntervals;
+  qreal mStepSize;
   QString mOutputFormat;
   QString mFileNamePrefix;
   QString mVariableFilter;

@@ -605,7 +605,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     // build only
     mpBuildOnlyCheckBox->setChecked(simulationOptions.getBuildOnly());
     // Output Interval
-    mpNumberofIntervalsSpinBox->setDisabled(true);
+    mpNumberofIntervalsSpinBox->setValue(simulationOptions.getNumberofIntervals());
     // Output Format
     mpOutputFormatComboBox->setDisabled(true);
     // Output filename
@@ -735,6 +735,9 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setLaunchTransformationalDebugger(mpLaunchTransformationalDebuggerCheckBox->isChecked());
   simulationOptions.setLaunchAlgorithmicDebugger(mpLaunchAlgorithmicDebuggerCheckBox->isChecked());
   simulationOptions.setNumberofIntervals(mpNumberofIntervalsSpinBox->value());
+  qreal startTime = mpStartTimeTextBox->text().toDouble();
+  qreal stopTime = mpStopTimeTextBox->text().toDouble();
+  simulationOptions.setStepSize((stopTime - startTime)/mpNumberofIntervalsSpinBox->value());
   simulationOptions.setOutputFormat(mpOutputFormatComboBox->currentText());
   simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
   simulationOptions.setVariableFilter(mpVariableFilterTextBox->text());
@@ -776,12 +779,14 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setAdditionalSimulationFlags(mpAdditionalSimulationFlagsTextBox->text());
   // setup simulation flags
   QStringList simulationFlags;
-  simulationFlags.append(QString("-override=%1=%2,%3=%4,%5=%6,%7=%8,%9=%10,%11=%12").arg("startTime").arg(simulationOptions.getStartTime())
-                          .arg("stopTime").arg(simulationOptions.getStopTime())
-                          .arg("tolerance").arg(simulationOptions.getTolerance())
-                          .arg("solver").arg(simulationOptions.getMethod())
-                          .arg("outputFormat").arg(simulationOptions.getOutputFormat())
-                          .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
+  simulationFlags.append(QString("-override=%1=%2,%3=%4,%5=%6,%7=%8,%9=%10,%11=%12,%13=%14")
+                         .arg("startTime").arg(simulationOptions.getStartTime())
+                         .arg("stopTime").arg(simulationOptions.getStopTime())
+                         .arg("stepSize").arg(simulationOptions.getStepSize())
+                         .arg("tolerance").arg(simulationOptions.getTolerance())
+                         .arg("solver").arg(simulationOptions.getMethod())
+                         .arg("outputFormat").arg(simulationOptions.getOutputFormat())
+                         .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
   // dassl options
   if (mpDasslOptionsGroupBox->isEnabled()) {
     // dassl jacobian
