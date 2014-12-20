@@ -226,6 +226,9 @@ public:
   static QString size;
   static QString lineStyle;
   static QString color;
+  static QString fontAndColors;
+  static QString fontFamily;
+  static QString fontSize;
   static QString pickColor;
   static QString pattern;
   static QString fillStyle;

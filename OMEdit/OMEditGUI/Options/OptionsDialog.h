@@ -50,6 +50,7 @@ class ModelicaTextSettings;
 class ModelicaTextEditorPage;
 class GraphicalViewsPage;
 class SimulationPage;
+class MessagesPage;
 class NotificationsPage;
 class LineStylePage;
 class FillStylePage;
@@ -69,6 +70,7 @@ public:
   void readModelicaTextSettings();
   void readGraphicalViewsSettings();
   void readSimulationSettings();
+  void readMessagesSettings();
   void readNotificationsSettings();
   void readLineStyleSettings();
   void readFillStyleSettings();
@@ -80,6 +82,7 @@ public:
   void saveModelicaTextSettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
+  void saveMessagesSettings();
   void saveNotificationsSettings();
   void saveLineStyleSettings();
   void saveFillStyleSettings();
@@ -89,18 +92,19 @@ public:
   void setUpDialog();
   void addListItems();
   void createPages();
-  MainWindow* getMainWindow();
-  GeneralSettingsPage* getGeneralSettingsPage();
-  ModelicaTextSettings* getModelicaTextSettings();
-  ModelicaTextEditorPage* getModelicaTextEditorPage();
-  GraphicalViewsPage* getGraphicalViewsPage();
-  SimulationPage* getSimulationPage();
-  NotificationsPage* getNotificationsPage();
-  LineStylePage* getLineStylePage();
-  FillStylePage* getFillStylePage();
-  CurveStylePage* getCurveStylePage();
-  FigaroPage* getFigaroPage();
-  DebuggerPage* getDebuggerPage();
+  MainWindow* getMainWindow() {return mpMainWindow;}
+  GeneralSettingsPage* getGeneralSettingsPage() {return mpGeneralSettingsPage;}
+  ModelicaTextSettings* getModelicaTextSettings() {return mpModelicaTextSettings;}
+  ModelicaTextEditorPage* getModelicaTextEditorPage() {return mpModelicaTextEditorPage;}
+  GraphicalViewsPage* getGraphicalViewsPage() {return mpGraphicalViewsPage;}
+  SimulationPage* getSimulationPage() {return mpSimulationPage;}
+  MessagesPage* getMessagesPage() {return mpMessagesPage;}
+  NotificationsPage* getNotificationsPage() {return mpNotificationsPage;}
+  LineStylePage* getLineStylePage() {return mpLineStylePage;}
+  FillStylePage* getFillStylePage() {return mpFillStylePage;}
+  CurveStylePage* getCurveStylePage() {return mpCurveStylePage;}
+  FigaroPage* getFigaroPage() {return mpFigaroPage;}
+  DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
 signals:
   void modelicaTextSettingsChanged();
   void updateLineWrapping();
@@ -116,6 +120,7 @@ private:
   ModelicaTextEditorPage *mpModelicaTextEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
   SimulationPage *mpSimulationPage;
+  MessagesPage *mpMessagesPage;
   NotificationsPage *mpNotificationsPage;
   LineStylePage *mpLineStylePage;
   FillStylePage *mpFillStylePage;
@@ -462,6 +467,48 @@ private:
   QGroupBox *mpOutputGroupBox;
   QRadioButton *mpStructuredRadioButton;
   QRadioButton *mpFormattedTextRadioButton;
+};
+
+class MessagesPage : public QWidget
+{
+  Q_OBJECT
+public:
+  MessagesPage(OptionsDialog *pParent);
+  QSpinBox* getOutputSizeSpinBox() {return mpOutputSizeSpinBox;}
+  QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
+  DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
+  void setNotificationColor(QColor color) {mNotificaitonColor = color;}
+  QColor getNotificationColor() {return mNotificaitonColor;}
+  void setNotificationPickColorButtonIcon();
+  void setWarningColor(QColor color) {mWarningColor = color;}
+  QColor getWarningColor() {return mWarningColor;}
+  void setWarningPickColorButtonIcon();
+  void setErrorColor(QColor color) {mErrorColor = color;}
+  QColor getErrorColor() {return mErrorColor;}
+  void setErrorPickColorButtonIcon();
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpGeneralGroupBox;
+  Label *mpOutputSizeLabel;
+  QSpinBox *mpOutputSizeSpinBox;
+  QGroupBox *mpFontColorsGroupBox;
+  Label *mpFontFamilyLabel;
+  QFontComboBox *mpFontFamilyComboBox;
+  Label *mpFontSizeLabel;
+  DoubleSpinBox *mpFontSizeSpinBox;
+  Label *mpNotificationColorLabel;
+  QPushButton *mpNotificationColorButton;
+  QColor mNotificaitonColor;
+  Label *mpWarningColorLabel;
+  QPushButton *mpWarningColorButton;
+  QColor mWarningColor;
+  Label *mpErrorColorLabel;
+  QPushButton *mpErrorColorButton;
+  QColor mErrorColor;
+public slots:
+  void pickNotificationColor();
+  void pickWarningColor();
+  void pickErrorColor();
 };
 
 class NotificationsPage : public QWidget

@@ -56,6 +56,7 @@ OptionsDialog::OptionsDialog(MainWindow *pParent)
   mpModelicaTextEditorPage = new ModelicaTextEditorPage(this);
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
   mpSimulationPage = new SimulationPage(this);
+  mpMessagesPage = new MessagesPage(this);
   mpNotificationsPage = new NotificationsPage(this);
   mpLineStylePage = new LineStylePage(this);
   mpFillStylePage = new FillStylePage(this);
@@ -84,6 +85,7 @@ void OptionsDialog::readSettings()
   emit modelicaTextSettingsChanged();
   readGraphicalViewsSettings();
   readSimulationSettings();
+  readMessagesSettings();
   readNotificationsSettings();
   readLineStyleSettings();
   readFillStyleSettings();
@@ -279,6 +281,49 @@ void OptionsDialog::readSimulationSettings()
   }
   if (mpSettings->contains("simulation/outputMode")) {
     mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
+  }
+}
+//! Reads the Messages section settings from omedit.ini
+void OptionsDialog::readMessagesSettings()
+{
+  // read output size
+  if (mpSettings->contains("messages/outputSize")) {
+    mpMessagesPage->getOutputSizeSpinBox()->setValue(mpSettings->value("messages/outputSize").toInt());
+  }
+  // read font family
+  if (mpSettings->contains("messages/fontFamily")) {
+    int currentIndex;
+    // select font family item
+    currentIndex = mpMessagesPage->getFontFamilyComboBox()->findText(mpSettings->value("messages/fontFamily").toString(), Qt::MatchExactly);
+    mpMessagesPage->getFontFamilyComboBox()->setCurrentIndex(currentIndex);
+  }
+  // read font size
+  if (mpSettings->contains("messages/fontSize")) {
+    mpMessagesPage->getFontSizeSpinBox()->setValue(mpSettings->value("messages/fontSize").toDouble());
+  }
+  // read notification color
+  if (mpSettings->contains("messages/notificationColor")) {
+    QColor color = QColor(mpSettings->value("messages/notificationColor").toUInt());
+    if (color.isValid()) {
+      mpMessagesPage->setNotificationColor(color);
+      mpMessagesPage->setNotificationPickColorButtonIcon();
+    }
+  }
+  // read warning color
+  if (mpSettings->contains("messages/warningColor")) {
+    QColor color = QColor(mpSettings->value("messages/warningColor").toUInt());
+    if (color.isValid()) {
+      mpMessagesPage->setWarningColor(color);
+      mpMessagesPage->setWarningPickColorButtonIcon();
+    }
+  }
+  // read error color
+  if (mpSettings->contains("messages/errorColor")) {
+    QColor color = QColor(mpSettings->value("messages/errorColor").toUInt());
+    if (color.isValid()) {
+      mpMessagesPage->setErrorColor(color);
+      mpMessagesPage->setErrorPickColorButtonIcon();
+    }
   }
 }
 
@@ -561,6 +606,24 @@ void OptionsDialog::saveSimulationSettings()
   mpSettings->setValue("simulation/outputMode", mpSimulationPage->getOutputMode());
 }
 
+//! Saves the Messages section settings to omedit.ini
+void OptionsDialog::saveMessagesSettings()
+{
+  // save output size
+  mpSettings->setValue("messages/outputSize", mpMessagesPage->getOutputSizeSpinBox()->value());
+  // save font
+  mpSettings->setValue("messages/fontFamily", mpMessagesPage->getFontFamilyComboBox()->currentFont().family());
+  mpSettings->setValue("messages/fontSize", mpMessagesPage->getFontSizeSpinBox()->value());
+  // save notification color
+  mpSettings->setValue("messages/notificationColor", mpMessagesPage->getNotificationColor().rgba());
+  // save warning color
+  mpSettings->setValue("messages/warningColor", mpMessagesPage->getWarningColor().rgba());
+  // save error color
+  mpSettings->setValue("messages/errorColor", mpMessagesPage->getErrorColor().rgba());
+  // apply the above settings to Messages
+  mpMainWindow->getMessagesWidget()->applyMessagesSettings();
+}
+
 //! Saves the Notifications section settings to omedit.ini
 void OptionsDialog::saveNotificationsSettings()
 {
@@ -695,6 +758,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pSimulationItem = new QListWidgetItem(mpOptionsList);
   pSimulationItem->setIcon(QIcon(":/Resources/icons/simulate.svg"));
   pSimulationItem->setText(Helper::simulation);
+  // Messages Item
+  QListWidgetItem *pMessagesItem = new QListWidgetItem(mpOptionsList);
+  pMessagesItem->setIcon(QIcon(":/Resources/icons/messages.svg"));
+  pMessagesItem->setText(tr("Messages"));
   // Notifications Item
   QListWidgetItem *pNotificationsItem = new QListWidgetItem(mpOptionsList);
   pNotificationsItem->setIcon(QIcon(":/Resources/icons/notificationicon.svg"));
@@ -730,6 +797,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpModelicaTextEditorPage);
   mpPagesWidget->addWidget(mpGraphicalViewsPage);
   mpPagesWidget->addWidget(mpSimulationPage);
+  mpPagesWidget->addWidget(mpMessagesPage);
   mpPagesWidget->addWidget(mpNotificationsPage);
   mpPagesWidget->addWidget(mpLineStylePage);
   mpPagesWidget->addWidget(mpFillStylePage);
@@ -738,72 +806,12 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpDebuggerPage);
 }
 
-MainWindow* OptionsDialog::getMainWindow()
-{
-  return mpMainWindow;
-}
-
-GeneralSettingsPage* OptionsDialog::getGeneralSettingsPage()
-{
-  return mpGeneralSettingsPage;
-}
-
-ModelicaTextSettings* OptionsDialog::getModelicaTextSettings()
-{
-  return mpModelicaTextSettings;
-}
-
-ModelicaTextEditorPage* OptionsDialog::getModelicaTextEditorPage()
-{
-  return mpModelicaTextEditorPage;
-}
-
-GraphicalViewsPage* OptionsDialog::getGraphicalViewsPage()
-{
-  return mpGraphicalViewsPage;
-}
-
-SimulationPage* OptionsDialog::getSimulationPage()
-{
-  return mpSimulationPage;
-}
-
-NotificationsPage* OptionsDialog::getNotificationsPage()
-{
-  return mpNotificationsPage;
-}
-
-LineStylePage* OptionsDialog::getLineStylePage()
-{
-  return mpLineStylePage;
-}
-
-FillStylePage* OptionsDialog::getFillStylePage()
-{
-  return mpFillStylePage;
-}
-
-CurveStylePage* OptionsDialog::getCurveStylePage()
-{
-  return mpCurveStylePage;
-}
-
-FigaroPage* OptionsDialog::getFigaroPage()
-{
-  return mpFigaroPage;
-}
-
-DebuggerPage* OptionsDialog::getDebuggerPage()
-{
-  return mpDebuggerPage;
-}
-
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
 void OptionsDialog::changePage(QListWidgetItem *current, QListWidgetItem *previous)
 {
-  if (!current)
+  if (!current) {
     current = previous;
-
+  }
   mpPagesWidget->setCurrentIndex(mpOptionsList->row(current));
 }
 
@@ -827,6 +835,7 @@ void OptionsDialog::saveSettings()
   emit updateLineWrapping();
   saveGraphicalViewsSettings();
   saveSimulationSettings();
+  saveMessagesSettings();
   saveNotificationsSettings();
   saveLineStyleSettings();
   saveFillStyleSettings();
@@ -1801,16 +1810,16 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pParent)
   mpLineWrappingCheckbox = new QCheckBox(tr("Enable Line Wrapping"));
   mpLineWrappingCheckbox->setChecked(true);
   // fonts & colors groupbox
-  mpFontColorsGroupBox = new QGroupBox(tr("Font and Colors"));
+  mpFontColorsGroupBox = new QGroupBox(Helper::fontAndColors);
   // font family combobox
-  mpFontFamilyLabel = new Label(tr("Font Family:"));
+  mpFontFamilyLabel = new Label(Helper::fontFamily);
   mpFontFamilyComboBox = new QFontComboBox;
   int currentIndex;
   currentIndex = mpFontFamilyComboBox->findText(mpOptionsDialog->getModelicaTextSettings()->getFontFamily(), Qt::MatchExactly);
   mpFontFamilyComboBox->setCurrentIndex(currentIndex);
   connect(mpFontFamilyComboBox, SIGNAL(currentFontChanged(QFont)), SLOT(fontFamilyChanged(QFont)));
   // font size combobox
-  mpFontSizeLabel = new Label(tr("Font Size:"));
+  mpFontSizeLabel = new Label(Helper::fontSize);
   mpFontSizeSpinBox = new DoubleSpinBox;
   mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpFontSizeSpinBox->setValue(mpOptionsDialog->getModelicaTextSettings()->getFontSize());
@@ -2516,6 +2525,146 @@ QString SimulationPage::getOutputMode()
   }
 }
 
+//! @class MessagesPage
+//! @brief Creates an interface for MessagesWidget settings.
+
+//! Constructor
+//! @param pParent is the pointer to OptionsDialog
+MessagesPage::MessagesPage(OptionsDialog *pParent)
+  : QWidget(pParent)
+{
+  mpOptionsDialog = pParent;
+  // general groupbox
+  mpGeneralGroupBox = new QGroupBox(Helper::general);
+  // output size
+  mpOutputSizeLabel = new Label(tr("Output size:"));
+  mpOutputSizeLabel->setToolTip(tr("Specifies the maximum number of rows the Messages Browser may have. "
+                                   "If there are more rows then the rows are removed from the beginning."));
+  mpOutputSizeSpinBox = new QSpinBox;
+  mpOutputSizeSpinBox->setRange(0, std::numeric_limits<int>::max());
+  mpOutputSizeSpinBox->setSingleStep(1000);
+  mpOutputSizeSpinBox->setSuffix(" rows");
+  mpOutputSizeSpinBox->setSpecialValueText(tr("unlimited"));
+  // set general groupbox layout
+  QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
+  pGeneralGroupBoxLayout->setColumnStretch(1, 1);
+  pGeneralGroupBoxLayout->addWidget(mpOutputSizeLabel, 0, 0);
+  pGeneralGroupBoxLayout->addWidget(mpOutputSizeSpinBox, 0, 1);
+  mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
+  // Font and Colors
+  mpFontColorsGroupBox = new QGroupBox(Helper::fontAndColors);
+  // font family combobox
+  mpFontFamilyLabel = new Label(Helper::fontFamily);
+  mpFontFamilyComboBox = new QFontComboBox;
+  QTextBrowser textBrowser;
+  int currentIndex;
+  currentIndex = mpFontFamilyComboBox->findText(textBrowser.font().family(), Qt::MatchExactly);
+  mpFontFamilyComboBox->setCurrentIndex(currentIndex);
+  // font size combobox
+  mpFontSizeLabel = new Label(Helper::fontSize);
+  mpFontSizeSpinBox = new DoubleSpinBox;
+  mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpFontSizeSpinBox->setValue(textBrowser.font().pointSizeF());
+  mpFontSizeSpinBox->setSingleStep(1);
+  // Notification Color
+  mpNotificationColorLabel = new Label(tr("Notification Color:"));
+  mpNotificationColorButton = new QPushButton(Helper::pickColor);
+  mpNotificationColorButton->setAutoDefault(false);
+  connect(mpNotificationColorButton, SIGNAL(clicked()), SLOT(pickNotificationColor()));
+  setNotificationColor(Qt::black);
+  setNotificationPickColorButtonIcon();
+  // Warning Color
+  mpWarningColorLabel = new Label(tr("Warning Color:"));
+  mpWarningColorButton = new QPushButton(Helper::pickColor);
+  mpWarningColorButton->setAutoDefault(false);
+  connect(mpWarningColorButton, SIGNAL(clicked()), SLOT(pickWarningColor()));
+  setWarningColor(Qt::black);
+  setWarningPickColorButtonIcon();
+  // Error Color
+  mpErrorColorLabel = new Label(tr("Error Color:"));
+  mpErrorColorButton = new QPushButton(Helper::pickColor);
+  mpErrorColorButton->setAutoDefault(false);
+  connect(mpErrorColorButton, SIGNAL(clicked()), SLOT(pickErrorColor()));
+  setErrorColor(Qt::red);
+  setErrorPickColorButtonIcon();
+  // set the layout of FontColors group
+  QGridLayout *pFontColorsLayout = new QGridLayout;
+  pFontColorsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pFontColorsLayout->setColumnStretch(1, 1);
+  pFontColorsLayout->addWidget(mpFontFamilyLabel, 0, 0);
+  pFontColorsLayout->addWidget(mpFontFamilyComboBox, 0, 1);
+  pFontColorsLayout->addWidget(mpFontSizeLabel, 1, 0);
+  pFontColorsLayout->addWidget(mpFontSizeSpinBox, 1, 1);
+  pFontColorsLayout->addWidget(mpNotificationColorLabel, 2, 0);
+  pFontColorsLayout->addWidget(mpNotificationColorButton, 2, 1);
+  pFontColorsLayout->addWidget(mpWarningColorLabel, 3, 0);
+  pFontColorsLayout->addWidget(mpWarningColorButton, 3, 1);
+  pFontColorsLayout->addWidget(mpErrorColorLabel, 4, 0);
+  pFontColorsLayout->addWidget(mpErrorColorButton, 4, 1);
+  mpFontColorsGroupBox->setLayout(pFontColorsLayout);
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpGeneralGroupBox);
+  pMainLayout->addWidget(mpFontColorsGroupBox);
+  setLayout(pMainLayout);
+}
+
+void MessagesPage::setNotificationPickColorButtonIcon()
+{
+  QPixmap pixmap(Helper::iconSize);
+  pixmap.fill(getNotificationColor());
+  mpNotificationColorButton->setIcon(pixmap);
+}
+
+void MessagesPage::setWarningPickColorButtonIcon()
+{
+  QPixmap pixmap(Helper::iconSize);
+  pixmap.fill(getWarningColor());
+  mpWarningColorButton->setIcon(pixmap);
+}
+
+void MessagesPage::setErrorPickColorButtonIcon()
+{
+  QPixmap pixmap(Helper::iconSize);
+  pixmap.fill(getErrorColor());
+  mpErrorColorButton->setIcon(pixmap);
+}
+
+void MessagesPage::pickNotificationColor()
+{
+  QColor color = QColorDialog::getColor(getNotificationColor());
+  // if user press ESC
+  if (!color.isValid()) {
+    return;
+  }
+  setNotificationColor(color);
+  setNotificationPickColorButtonIcon();
+}
+
+void MessagesPage::pickWarningColor()
+{
+  QColor color = QColorDialog::getColor(getWarningColor());
+  // if user press ESC
+  if (!color.isValid()) {
+    return;
+  }
+  setWarningColor(color);
+  setWarningPickColorButtonIcon();
+}
+
+void MessagesPage::pickErrorColor()
+{
+  QColor color = QColorDialog::getColor(getErrorColor());
+  // if user press ESC
+  if (!color.isValid()) {
+    return;
+  }
+  setErrorColor(color);
+  setErrorPickColorButtonIcon();
+}
+
 //! @class NotificationsPage
 //! @brief Creates an interface for Notifications settings.
 
@@ -2784,8 +2933,8 @@ FillStylePage::FillStylePage(OptionsDialog *pParent)
   pFillStyleLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pFillStyleLayout->addWidget(mpFillColorLabel, 0, 0);
   pFillStyleLayout->addWidget(mpFillPickColorButton, 0, 1);
-  pFillStyleLayout->addWidget(mpFillPatternLabel, 2, 0);
-  pFillStyleLayout->addWidget(mpFillPatternComboBox, 2, 1);
+  pFillStyleLayout->addWidget(mpFillPatternLabel, 1, 0);
+  pFillStyleLayout->addWidget(mpFillPatternComboBox, 1, 1);
   mpFillStyleGroupBox->setLayout(pFillStyleLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);

@@ -25,7 +25,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="11.197802"
-     inkscape:cx="-12.130521"
+     inkscape:cx="4.5240421"
      inkscape:cy="16"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -44,7 +44,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -54,7 +54,7 @@
      inkscape:groupmode="layer">
     <g
        id="g3"
-       transform="matrix(0.08349054,0,0,0.08349054,-3.6355417,-3.4383566)">
+       transform="matrix(0.08349054,0,0,0.08349054,-3.6355417,-2.5453246)">
       <circle
          cx="151.341"
          cy="149.802"
@@ -67,14 +67,14 @@
          sodipodi:ry="104.428"
          style="fill:#d40000;fill-opacity:1;stroke:#000000;stroke-width:6.73729038;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
       <polygon
-         points="213.878,180.6 182.131,212.344 151.338,181.547 120.541,212.344 88.799,180.6 119.586,149.802 88.799,119.013 120.541,87.256 151.338,118.058 182.131,87.256 213.878,119.013 183.077,149.802 "
+         points="213.878,119.013 183.077,149.802 213.878,180.6 182.131,212.344 151.338,181.547 120.541,212.344 88.799,180.6 119.586,149.802 88.799,119.013 120.541,87.256 151.338,118.058 182.131,87.256 "
          id="polygon9"
          style="fill:#ffffff" />
     </g>
     <g
        inkscape:label="Layer 1"
        id="layer1-7"
-       transform="matrix(0.56250002,0,0,0.56250002,8.5,13.999999)">
+       transform="matrix(0.56250002,0,0,0.56250002,8.5,13.106969)">
       <g
          transform="matrix(0.14842762,0,0,0.14842407,-6.389268,-6.2338513)"
          id="g3-4">
@@ -88,7 +88,7 @@
           <polygon
              style="fill:#ffffff"
              id="polygon11"
-             points="166.366,93.402 165.801,162.025 137.031,162.025 135.33,93.402 " />
+             points="137.031,162.025 135.33,93.402 166.366,93.402 165.801,162.025 " />
           <path
              style="fill:#ffffff"
              inkscape:connector-curvature="0"
@@ -100,7 +100,7 @@
     <g
        inkscape:label="Layer 1"
        id="layer1-9"
-       transform="matrix(0.56250002,0,0,0.56250002,14.005894,-0.00588982)">
+       transform="matrix(0.56250002,0,0,0.56250002,14.005894,0.8871424)">
       <g
          transform="matrix(0.14842762,0,0,0.14842407,-6.389268,-6.2338513)"
          id="g3-48">

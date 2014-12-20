@@ -69,15 +69,16 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   setMinimumSize(400, 300);
   resize(800, 600);
   setContentsMargins(1, 1, 1, 1);
-  // Create an object of MessagesWidget.
-  mpMessagesWidget = new MessagesWidget(this);
   // Create the OMCProxy object.
   pSplashScreen->showMessage(tr("Connecting to OpenModelica Compiler"), Qt::AlignRight, Qt::white);
   mpOMCProxy = new OMCProxy(this);
-  if (getExitApplicationStatus())
+  if (getExitApplicationStatus()) {
     return;
+  }
   pSplashScreen->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
   mpOptionsDialog = new OptionsDialog(this);
+  // Create an object of MessagesWidget.
+  mpMessagesWidget = new MessagesWidget(this);
   //Set the name and size of the main window
   pSplashScreen->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // Create MessagesDockWidget dock

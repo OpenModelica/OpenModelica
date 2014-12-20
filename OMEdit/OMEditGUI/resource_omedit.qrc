@@ -84,9 +84,7 @@
         <file>Resources/icons/export-fmu.svg</file>
         <file>Resources/icons/import-fmu.svg</file>
         <file>Resources/icons/libraries.svg</file>
-        <file>Resources/icons/erroricon.svg</file>
         <file>Resources/icons/notificationicon.svg</file>
-        <file>Resources/icons/warningicon.svg</file>
         <file>Resources/icons/messages.svg</file>
         <file>Resources/icons/clear.svg</file>
         <file>Resources/icons/switch.svg</file>

@@ -86,6 +86,7 @@ private:
 public:
   MessagesWidget(MainWindow *pMainWindow);
   QTextBrowser* getMessagesTextBrowser() {return mpMessagesTextBrowser;}
+  void applyMessagesSettings();
   void addGUIMessage(MessageItem *pMessageItem);
 signals:
   void MessageAdded();

@@ -95,7 +95,6 @@ QString MessageItem::getLocation()
 MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   : QWidget(pMainWindow, Qt::WindowTitleHint)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Messages")));
   mpMainWindow = pMainWindow;
   mpMessagesTextBrowser = new QTextBrowser;
   mpMessagesTextBrowser->setOpenLinks(false);
@@ -107,6 +106,7 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   mpMessagesTextBrowser->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(mpMessagesTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openErrorMessageClass(QUrl)));
   connect(mpMessagesTextBrowser, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+  applyMessagesSettings();
   // create actions
   mpSelectAllAction = new QAction(tr("Select All"), this);
   mpSelectAllAction->setShortcut(QKeySequence("Ctrl+a"));
@@ -133,6 +133,30 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
 }
 
 /*!
+  Applies the Messages settings e.g size, font, color.
+  */
+void MessagesWidget::applyMessagesSettings()
+{
+  MessagesPage *pMessagesPage = mpMainWindow->getOptionsDialog()->getMessagesPage();
+  // set the output size
+  mpMessagesTextBrowser->document()->setMaximumBlockCount(pMessagesPage->getOutputSizeSpinBox()->value());
+  // set the font
+  QString fontFamily = pMessagesPage->getFontFamilyComboBox()->currentFont().family();
+  double fontSize = pMessagesPage->getFontSizeSpinBox()->value();
+  QFont font(fontFamily);
+  font.setPointSizeF(fontSize);
+  mpMessagesTextBrowser->setFont(font);
+  // set the messages color by setting the style sheet
+  QString messagesCSS = QString(".notification {color: %1}"
+                                ".warning {color: %2}"
+                                ".error {color: %3}")
+      .arg(mpMainWindow->getOptionsDialog()->getMessagesPage()->getNotificationColor().name())
+      .arg(mpMainWindow->getOptionsDialog()->getMessagesPage()->getWarningColor().name())
+      .arg(mpMainWindow->getOptionsDialog()->getMessagesPage()->getErrorColor().name());
+  mpMessagesTextBrowser->document()->setDefaultStyleSheet(messagesCSS);
+}
+
+/*!
   Adds the error message.\n
   Moves to the most recent error message in the view.
   */
@@ -142,6 +166,21 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
   QTextCursor textCursor = mpMessagesTextBrowser->textCursor();
   textCursor.movePosition(QTextCursor::End);
   mpMessagesTextBrowser->setTextCursor(textCursor);
+  // set the CSS class depending on message type
+  QString messageCSSClass;
+  switch (pMessageItem->getErrorType()) {
+    case StringHandler::Warning:
+      messageCSSClass = "warning";
+      break;
+    case StringHandler::OMError:
+      messageCSSClass = "error";
+      break;
+    case StringHandler::Notification:
+    default:
+      messageCSSClass = "notification";
+      break;
+  }
+  // the error count number
   static int errorCounter = 1;
   QString message;
   if (pMessageItem->getFileName().isEmpty()) { // if custom error message
@@ -160,14 +199,11 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
         .arg(pMessageItem->getLocation())
         .arg(pMessageItem->getMessage());
   }
-  QString errorString = QString("<span>"
-                                "<b>[%1]</b> "
-                                "<span style=\"color: #777777;\"><b>%2</b></span> "
-                                "<b>%3 %4</b>"
-                                "</span><br />"
-                                "<span>"
-                                "%5"
-                                "</span><br /><br />")
+  QString errorString = QString("<div class=\"%1\">"
+                                "<b>[%2] %3 %4 %5</b><br />"
+                                "%6"
+                                "</div><br />")
+      .arg(messageCSSClass)
       .arg(QString::number(errorCounter))
       .arg(QTime::currentTime().toString())
       .arg(StringHandler::getErrorKindString(pMessageItem->getErrorKind()))
