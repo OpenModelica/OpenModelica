@@ -839,7 +839,7 @@ void CopyClassDialog::copyClass()
     }
   }
   // check if new class already exists
-  QString newClassPath = mpNameTextBox->text() + (mpPathTextBox->text().isEmpty() ? "" : "." + mpPathTextBox->text());
+  QString newClassPath = (mpPathTextBox->text().isEmpty() ? "" : mpPathTextBox->text() + ".") + mpNameTextBox->text();
   if (mpMainWindow->getOMCProxy()->existClass(newClassPath)) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg("class").arg(mpNameTextBox->text())
