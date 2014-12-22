@@ -1549,7 +1549,7 @@ algorithm
         tp = Expression.typeof(exp);
         (exp_1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then (exp_1, inFuncs);
-        
+
     case ("max",_,_,_,_,_)
       equation
         tp = Expression.typeof(exp);
@@ -1557,7 +1557,7 @@ algorithm
         exp_1 = Expression.makePureBuiltinCall("max",{exp_1},tp);
       then
        (exp_1, funcs);
-       
+
     case ("min",_,_,_,_,_)
       equation
         tp = Expression.typeof(exp);
