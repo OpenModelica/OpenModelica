@@ -1578,7 +1578,7 @@ protected
   DAE.Exp e1,e2;
   list<DAE.Exp> rest;
 algorithm
- e1::e2::rest := expl; 
+ e1::e2::rest := expl;
  result := Expression.makePureBuiltinCall(funcName,{e1,e2},tp);
  for elem in rest loop
    result := Expression.makePureBuiltinCall(funcName,{result,elem},tp);
