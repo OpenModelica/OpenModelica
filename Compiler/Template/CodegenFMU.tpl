@@ -229,61 +229,82 @@ match c
     else "calculated"
 end getInitialType;
 
-template ScalarVariableType2(list<SimVar> stateVars, DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, VarKind varKind, Integer index, Boolean isValueChangeable)
- "Generates code for ScalarVariable Type file for FMU 2.0 target."
+template ScalarVariableType2(SimVar simvar, list<SimVar> stateVars)
+ "Generates code for ScalarVariable Type file for FMU 2.0 target.
+  - Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also.
+ "
 ::=
-match type_
-  case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(initialValue, varKind, isValueChangeable)%>/>'
-  /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
-  case T_REAL(__) then '<Real<%RealVariableTypeCommonAttribute2(stateVars, initialValue, varKind, isValueChangeable, index)%>/>'
-  case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(initialValue, varKind, isValueChangeable)%>/>'
-  case T_STRING(__) then '<String<%StringVariableTypeCommonAttribute2(initialValue, varKind, isValueChangeable)%>/>'
-  case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%ScalarVariableTypeCommonAttribute2(initialValue, varKind, isValueChangeable)%>/>'
-  else 'UNKOWN_TYPE'
+match simvar
+case SIMVAR(__) then
+  match type_
+    case T_REAL(__) then '<Real<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
+    case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
+    case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
+    case T_STRING(__) then '<String<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
+    case T_ENUMERATION(__) then '<Enumeration declaredType="<%Absyn.pathString2NoLeadingDot(path, ".")%>"<%ScalarVariableTypeCommonAttribute2(simvar, stateVars)%>/>'
+    else 'UNKOWN_TYPE'
 end ScalarVariableType2;
 
-template StartString2(DAE.Exp exp)
-::=
-match exp
-  case ICONST(__) then ' start="<%initValXml(exp)%>"'
-  case RCONST(__) then ' start="<%initValXml(exp)%>"'
-  case SCONST(__) then ' start="<%initValXml(exp)%>"'
-  case BCONST(__) then ' start="<%initValXml(exp)%>"'
-  case ENUM_LITERAL(__) then ' start="<%initValXml(exp)%>"'
-  else ''
-end StartString2;
-
-template ScalarVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue, VarKind varKind, Boolean isValueChangeable)
+template ScalarVariableTypeCommonAttribute2(SimVar simvar, list<SimVar> stateVars)
  "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
-match initialValue
-  case SOME(exp) then
-    match varKind
-    case PARAM(__) then if isValueChangeable then '<%StartString2(exp)%>' else ''
-    else '<%StartString2(exp)%>'
-end ScalarVariableTypeCommonAttribute2;
-
-template RealVariableTypeCommonAttribute2(list<SimVar> stateVars, Option<DAE.Exp> initialValue, VarKind varKind, Boolean isValueChangeable, Integer index)
- "Generates code for ScalarVariable Type file for FMU 2.0 target."
-::=
-match varKind
+match simvar
+case SIMVAR(varKind = varKind, initialValue = initialValue, isValueChangeable = isValueChangeable, index = index) then
+  match varKind
   case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
   else
-  match initialValue
-    case SOME(exp) then
     match varKind
-      case PARAM(__) then if isValueChangeable then '<%StartString2(exp)%>' else ''
-      else '<%StartString2(exp)%>'
-end RealVariableTypeCommonAttribute2;
+    case PARAM(__) then if isValueChangeable then '<%StartString2(simvar)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>' else '<%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>'
+    else '<%StartString2(simvar)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>'
+end ScalarVariableTypeCommonAttribute2;
 
-template StringVariableTypeCommonAttribute2(Option<DAE.Exp> initialValue, VarKind varKind, Boolean isValueChangeable)
- "Generates code for ScalarVariable Type file for FMU 2.0 target."
+template StartString2(SimVar simvar)
 ::=
-match initialValue
-  case SOME(exp) then
-    match varKind
-    case PARAM(__) then if isValueChangeable then ' start=<%initVal(exp)%>' else ''
-end StringVariableTypeCommonAttribute2;
+match simvar
+case SIMVAR(initialValue = initialValue) then
+  match initialValue 
+    case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
+    else ''
+end StartString2;
+
+template MinString2(SimVar simvar)
+::=
+match simvar
+case SIMVAR(minValue = minValue) then
+  match minValue 
+    case SOME(e as ICONST(__)) then ' min="<%initValXml(e)%>"'
+    case SOME(e as RCONST(__)) then ' min="<%initValXml(e)%>"'
+    case SOME(e as SCONST(__)) then ' min="<%initValXml(e)%>"'
+    case SOME(e as BCONST(__)) then ' min="<%initValXml(e)%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' min="<%initValXml(e)%>"'
+    else ''
+end MinString2;
+
+template MaxString2(SimVar simvar)
+::=
+match simvar
+case SIMVAR(maxValue = maxValue) then
+  match maxValue 
+    case SOME(e as ICONST(__)) then ' max="<%initValXml(e)%>"'
+    case SOME(e as RCONST(__)) then ' max="<%initValXml(e)%>"'
+    case SOME(e as SCONST(__)) then ' max="<%initValXml(e)%>"'
+    case SOME(e as BCONST(__)) then ' max="<%initValXml(e)%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' max="<%initValXml(e)%>"'
+    else ''
+end MaxString2;
+
+template NominalString2(SimVar simvar)
+::=
+match simvar
+case SIMVAR(nominalValue = nominalValue) then
+  match nominalValue 
+    case SOME(e as RCONST(__)) then ' nominal="<%initValXml(e)%>"'
+    else ''
+end NominalString2;
 
 // Code for generating modelDescription.xml file for FMI 1.0 ModelExchange.
 template fmiModelDescription(SimCode simCode, String guid)
@@ -508,7 +529,7 @@ case SIMVAR(__) then
   <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
   <ScalarVariable
     <%ScalarVariableAttribute2(simVar)%>>
-    <%ScalarVariableType2(stateVars, type_,unit,displayUnit,initialValue,varKind,index,isValueChangeable)%>
+    <%ScalarVariableType2(simVar, stateVars)%>
   </ScalarVariable>
   >>
   else
