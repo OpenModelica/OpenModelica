@@ -262,7 +262,7 @@ template StartString2(SimVar simvar)
 ::=
 match simvar
 case SIMVAR(initialValue = initialValue) then
-  match initialValue 
+  match initialValue
     case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
     case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
     case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
@@ -275,7 +275,7 @@ template MinString2(SimVar simvar)
 ::=
 match simvar
 case SIMVAR(minValue = minValue) then
-  match minValue 
+  match minValue
     case SOME(e as ICONST(__)) then ' min="<%initValXml(e)%>"'
     case SOME(e as RCONST(__)) then ' min="<%initValXml(e)%>"'
     case SOME(e as SCONST(__)) then ' min="<%initValXml(e)%>"'
@@ -288,7 +288,7 @@ template MaxString2(SimVar simvar)
 ::=
 match simvar
 case SIMVAR(maxValue = maxValue) then
-  match maxValue 
+  match maxValue
     case SOME(e as ICONST(__)) then ' max="<%initValXml(e)%>"'
     case SOME(e as RCONST(__)) then ' max="<%initValXml(e)%>"'
     case SOME(e as SCONST(__)) then ' max="<%initValXml(e)%>"'
@@ -301,7 +301,7 @@ template NominalString2(SimVar simvar)
 ::=
 match simvar
 case SIMVAR(nominalValue = nominalValue) then
-  match nominalValue 
+  match nominalValue
     case SOME(e as RCONST(__)) then ' nominal="<%initValXml(e)%>"'
     else ''
 end NominalString2;
