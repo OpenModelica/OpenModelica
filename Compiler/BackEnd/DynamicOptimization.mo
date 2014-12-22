@@ -74,7 +74,7 @@ protected
   list<BackendDAE.Equation> e;
 algorithm
 
- 
+
 
   if not inOptimicaFlag and not inDynOptimization then //no optimization
     outVars := inVars;
@@ -109,7 +109,7 @@ protected function joinConstraints "author: Vitalij Ruge"
   input list< .DAE.Constraint> inConstraint;
   input String name;
   input BackendDAE.VarKind conKind;
-  input BackendDAE.Variables knvars; 
+  input BackendDAE.Variables knvars;
   input list<BackendDAE.Var> varlst;
   input BackendDAE.Variables vars;
   input list<BackendDAE.Equation> e;
