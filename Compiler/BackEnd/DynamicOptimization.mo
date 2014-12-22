@@ -67,92 +67,117 @@ public function addOptimizationVarsEqns
   output BackendDAE.Variables outVars;
   output list<BackendDAE.Equation>  outEqns;
   output list< .DAE.ClassAttributes> outClassAttr;
+protected
+  Option<DAE.Exp> mayer, lagrange, startTimeE, finalTimeE;
+  BackendDAE.Variables v, inVarsAndknvars;
+  list<BackendDAE.Var> varlst;
+  list<BackendDAE.Equation> e;
 algorithm
-  (outVars, outEqns, outClassAttr) := match(inVars, inEqns, inOptimicaFlag, inClassAttr, inConstraint, knvars, inDynOptimization)
-  local
-      DAE.ComponentRef leftcref;
-      list<BackendDAE.Equation> objectEqn;
-      BackendDAE.Var dummyVar;
-      Boolean b;
-      BackendDAE.Variables v, inVarsAndknvars;
-      list<BackendDAE.Equation> e;
-      Option<DAE.Exp> mayer, mayer1, lagrange, lagrange1;
-      list< .DAE.Exp> constraintLst;
-      list< .DAE.Constraint> constraints;
-      list<BackendDAE.Var> varlst;
-      list< .DAE.ClassAttributes> tmpClassAttr;
 
-    case (v, e, true, {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer, objectiveIntegrandE=lagrange)}, _, _,_)
-      equation
-        inVarsAndknvars = BackendVariable.mergeVariables(inVars, knvars);
-        varlst = BackendVariable.varList(inVarsAndknvars);
+ 
 
-        leftcref = ComponentReference.makeCrefIdent("$OMC$objectMayerTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
-        mayer1 = findMayerTerm(varlst);
-        mayer1 = mergeObjectVars(mayer1,mayer);
-        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-        b = not List.isEmpty(objectEqn);
+  if not inOptimicaFlag and not inDynOptimization then //no optimization
+    outVars := inVars;
+    outEqns := inEqns;
+    outClassAttr := inClassAttr;
+  else
 
-        v = if b then BackendVariable.addNewVar(dummyVar, v) else v;
-        e = if b then listAppend(e, objectEqn) else e;
+   if not inOptimicaFlag then
+    Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
+   end if;
 
-        leftcref = ComponentReference.makeCrefIdent("$OMC$objectLagrangeTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
-        lagrange1 = findLagrangeTerm(varlst);
-        lagrange1 = mergeObjectVars(lagrange1,lagrange);
-        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-        b = not List.isEmpty(objectEqn);
+    (mayer,lagrange,startTimeE,finalTimeE) := match(inClassAttr)
+                        local Option<DAE.Exp> mayer_, lagrange_, startTimeE_, finalTimeE_;
+                        case({DAE.OPTIMIZATION_ATTRS(objetiveE=mayer_, objectiveIntegrandE=lagrange_,startTimeE=startTimeE_,finalTimeE=finalTimeE_)}) then(mayer_,lagrange_,startTimeE_,finalTimeE_);
+                        else (NONE(), NONE(),NONE(),NONE());
+                        end match;
 
-        v = if b then BackendVariable.addNewVar(dummyVar, v) else v;
-        e = if b then listAppend(e, objectEqn) else e;
+    inVarsAndknvars := BackendVariable.addVariables(inVars, knvars);
+    varlst := BackendVariable.varList(inVarsAndknvars);
+    (v, e, mayer) := joinObjectFun(makeObject("$OMC$objectMayerTerm", findMayerTerm, varlst, mayer), inVars, inEqns);
+    (v, e, lagrange) := joinObjectFun(makeObject("$OMC$objectLagrangeTerm", findLagrangeTerm, varlst, lagrange), v, e);
+    (v, e) := joinConstraints(inConstraint, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR(), knvars, varlst ,v, e, BackendVariable.hasConTermAnno);
+    (outVars, outEqns) := joinConstraints({}, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR(), knvars, varlst, v, e, BackendVariable.hasFinalConTermAnno);
+    Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
 
-        constraints = addConstraints(varlst, inConstraint);
-        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());
+    outClassAttr := {DAE.OPTIMIZATION_ATTRS(mayer, lagrange, startTimeE, finalTimeE)};
+  end if;
 
-        constraints = findFinalConstraints(varlst, {});
-        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
-
-        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
-    then (v, e, inClassAttr);
-    case (v, e, true, _, _, _,_)
-      equation
-        inVarsAndknvars = BackendVariable.mergeVariables(inVars, knvars);
-        varlst = BackendVariable.varList(inVarsAndknvars);
-
-        leftcref = ComponentReference.makeCrefIdent("$OMC$objectMayerTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
-        mayer1 = findMayerTerm(varlst);
-        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-        b = not List.isEmpty(objectEqn);
-
-        v = if b then BackendVariable.addNewVar(dummyVar, v) else v;
-        e = if b then listAppend(e, objectEqn) else e;
-
-        leftcref = ComponentReference.makeCrefIdent("$OMC$objectLagrangeTerm", DAE.T_REAL_DEFAULT, {});
-        dummyVar = BackendDAE.VAR(leftcref, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
-        lagrange1 = findLagrangeTerm(varlst);
-        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange1, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
-        b = not List.isEmpty(objectEqn);
-        v = if b then BackendVariable.addNewVar(dummyVar, v) else v;
-        e = if b then listAppend(e, objectEqn) else e;
-
-        constraints = addConstraints(varlst, inConstraint);
-        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR());
-
-        constraints = findFinalConstraints(varlst, {});
-        (v, e) = addOptimizationVarsEqns2(constraints, 1, v, e, knvars, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR());
-
-        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);
-       then (v, e,{DAE.OPTIMIZATION_ATTRS(mayer1, lagrange1, NONE(), NONE())});
-    case (_, _, false, _, _, _, true)
-      equation
-        Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
-        (v, e, tmpClassAttr) =  addOptimizationVarsEqns(inVars, inEqns, true, inClassAttr, inConstraint, knvars, true);
-       then (v,e,tmpClassAttr);
-    else then(inVars, inEqns, inClassAttr);
-  end match;
 end addOptimizationVarsEqns;
+
+protected function joinConstraints "author: Vitalij Ruge"
+  input list< .DAE.Constraint> inConstraint;
+  input String name;
+  input BackendDAE.VarKind conKind;
+  input BackendDAE.Variables knvars; 
+  input list<BackendDAE.Var> varlst;
+  input BackendDAE.Variables vars;
+  input list<BackendDAE.Equation> e;
+  input MapFunc findCon;
+  output BackendDAE.Variables ovars;
+  output list<BackendDAE.Equation> oe;
+
+  partial function MapFunc
+    input BackendDAE.Var inVar;
+    output Boolean outBoolean;
+  end MapFunc;
+
+protected
+  list< .DAE.Constraint> constraints;
+algorithm
+  constraints := addConstraints(varlst, inConstraint, findCon);
+  (ovars, oe) := addOptimizationVarsEqns2(constraints, 1, vars, e, knvars, name, conKind);
+end joinConstraints;
+
+protected function joinObjectFun "author: Vitalij Ruge"
+  input tuple<BackendDAE.Var, list<BackendDAE.Equation>, Option<DAE.Exp>> obj;
+  input BackendDAE.Variables vars;
+  input list<BackendDAE.Equation> e;
+  output BackendDAE.Variables ovars;
+  output list<BackendDAE.Equation> oe;
+  output Option<DAE.Exp> objExp;
+algorithm
+  (ovars, oe, objExp) := match(obj)
+                local BackendDAE.Var v; list<BackendDAE.Equation> e_; Option<DAE.Exp> e1;
+                case((_,{},_)) then(vars, e, NONE());
+                case((v, e_, e1)) then(BackendVariable.addNewVar(v, vars), listAppend(e_, e), e1);
+                end match;
+end joinObjectFun;
+
+protected function makeObject  "author: Vitalij Ruge"
+  input String name;
+  input MapFunc findObj;
+  input list<BackendDAE.Var> varlst;
+  input Option<DAE.Exp> optimicaExp "expression from optimica";
+  output  tuple< BackendDAE.Var, list<BackendDAE.Equation>,  Option<DAE.Exp>> outTpl;
+
+  partial function MapFunc
+    input list<BackendDAE.Var> varlst;
+    output Option<DAE.Exp>  objExp;
+  end MapFunc;
+
+protected
+  DAE.ComponentRef cr;
+  Option<DAE.Exp> annoObj;
+  BackendDAE.Var v;
+  list<BackendDAE.Equation> e;
+algorithm
+  (cr, v) := makeVar(name);
+  annoObj := findObj(varlst);
+  annoObj := mergeObjectVars(annoObj, optimicaExp);
+  e := BackendEquation.generateSolvedEqnsfromOption(cr, annoObj, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
+  outTpl := (v, e, annoObj);
+end makeObject;
+
+protected function makeVar "author: Vitalij Ruge"
+  input String name;
+  output DAE.ComponentRef cr;
+  output BackendDAE.Var v;
+
+algorithm
+  cr := ComponentReference.makeCrefIdent(name, DAE.T_REAL_DEFAULT, {});
+  v :=  BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
+end makeVar;
 
 protected function addOptimizationVarsEqns1
  input list<DAE.Exp> constraintLst;
@@ -290,6 +315,7 @@ algorithm
     then SOME(e3);
     case(NONE(), SOME(_)) then inmayer2;
     case(_, NONE()) then inmayer1;
+    else NONE();
 
   end match;
 end mergeObjectVars;
@@ -298,28 +324,29 @@ protected function addConstraints
 "author: Vitalij Ruge"
 input list<BackendDAE.Var> InVarlst;
 input list< .DAE.Constraint> inConstraint;
+input MapFunc findCon;
 output list< .DAE.Constraint> outConstraint;
 
-algorithm
-  outConstraint := match(InVarlst, inConstraint)
-  local list<BackendDAE.Var> varlst; BackendDAE.Variables v; list< .DAE.Exp> constraintLst; list< .DAE.Constraint> constraints;
+  partial function MapFunc
+    input BackendDAE.Var inVar;
+    output Boolean outBoolean;
+  end MapFunc;
 
-    case(_, {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}) equation
-      //print("\n1-->");
-      varlst = List.select(InVarlst, BackendVariable.hasConTermAnno);
-      //print("\n1.3-->");
-      constraintLst = addConstraints2(constraintLst, varlst);
-      constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
-      //print("\n1.5-->");
-    then constraints;
-    case(_, {}) equation
-      //print("\n2-->");
-      varlst = List.select(InVarlst, BackendVariable.hasConTermAnno);
-      constraintLst = addConstraints2({}, varlst);
-      constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
-    then constraints;
-    else then (inConstraint);
-  end match;
+
+protected
+list<BackendDAE.Var> varlst;
+list< .DAE.Exp> constraintLst;
+algorithm
+  constraintLst := match(inConstraint)
+                   local list< .DAE.Exp> constraintLst_;
+                   case({DAE.CONSTRAINT_EXPS(constraintLst = constraintLst_)}) then constraintLst_;
+                   else {};
+                   end match;
+
+  varlst := List.select(InVarlst, findCon); //BackendVariable.hasConTermAnno //BackendVariable.hasFinalConTermAnno
+  constraintLst := addConstraints2(constraintLst, varlst);
+  outConstraint := {DAE.CONSTRAINT_EXPS(constraintLst)};
+
 end addConstraints;
 
 protected function addConstraints2
