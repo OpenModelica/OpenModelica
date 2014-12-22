@@ -1404,31 +1404,9 @@ algorithm
 
   //QE
   // a*x^n + b*x^m = c
-  case(DAE.BINARY(ee1, DAE.ADD(), ee2),_)
-  equation
-    (z1, z2) = List.split1OnTrue(Expression.factors(ee1), expHasCref, inExp3);
-    (z3, z4) = List.split1OnTrue(Expression.factors(ee2), expHasCref, inExp3);
-
-    x1 = makeProductLstSort(z1);
-    a1 = makeProductLstSort(z2);
-
-    x2 = makeProductLstSort(z3);
-    a2 = makeProductLstSort(z4);
-/*
-    print("\nx1 = ");print(ExpressionDump.printExpStr(x1));
-    print("\nx2 = ");print(ExpressionDump.printExpStr(x2));
-    print("\na1 = ");print(ExpressionDump.printExpStr(a1));
-    print("\na2 = ");print(ExpressionDump.printExpStr(a2));
-*/
-    a = simplifyBinaryMulCoeff(x1);
-    c = simplifyBinaryMulCoeff(x2);
-    (e2 ,e3) = a;
-    (e5, e6) = c;
-    (lhs, rhs, eqnForNewVars_, newVarsCrefs_) = solveQE(a1,e2,e3,a2,e5,e6,inExp2,inExp3,ieqnForNewVars,inewVarsCrefs,uniqueEqIndex,idepth);
-  then(lhs, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
-
   // a*x^n - b*x^m = c
-  case(DAE.BINARY(ee1, DAE.SUB(), ee2),_)
+  case(DAE.BINARY(ee1, op1, ee2),_)
+  guard(Expression.isAddOrSub(op1))
   equation
     (z1, z2) = List.split1OnTrue(Expression.factors(ee1), expHasCref, inExp3);
     (z3, z4) = List.split1OnTrue(Expression.factors(ee2), expHasCref, inExp3);
@@ -1437,7 +1415,7 @@ algorithm
     a1 = makeProductLstSort(z2);
 
     x2 = makeProductLstSort(z3);
-    a2 = Expression.negate(makeProductLstSort(z4));
+    a2 = if Expression.isAdd(op1) then makeProductLstSort(z4) else  Expression.negate(makeProductLstSort(z4));
 /*
     print("\nx1 = ");print(ExpressionDump.printExpStr(x1));
     print("\nx2 = ");print(ExpressionDump.printExpStr(x2));
@@ -1450,7 +1428,6 @@ algorithm
     (e5, e6) = c;
     (lhs, rhs, eqnForNewVars_, newVarsCrefs_) = solveQE(a1,e2,e3,a2,e5,e6,inExp2,inExp3,ieqnForNewVars,inewVarsCrefs,uniqueEqIndex,idepth);
   then(lhs, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
-
 
   else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
 
