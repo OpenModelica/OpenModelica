@@ -188,33 +188,23 @@ protected function addOptimizationVarsEqns1
  input String prefConCrefName;
  input BackendDAE.VarKind conKind;
 
- output BackendDAE.Variables outVars;
- output list<BackendDAE.Equation>  outEqns;
-algorithm
- (outVars, outEqns) := match(constraintLst, inI, inVars, inEqns, knvars,prefConCrefName,conKind)
- local
-   list<DAE.Exp> conLst;
-   DAE.Exp e;
-   DAE.ComponentRef leftcref;
-   BackendDAE.Var dummyVar;
-   list<BackendDAE.Equation> conEqn;
-   BackendDAE.Variables v;
-   list<BackendDAE.Equation> eqns;
-   String conCrefName;
+ output BackendDAE.Variables outVars := inVars;
+ output list<BackendDAE.Equation>  outEqns := inEqns;
 
-   case({}, _, _, _, _, _, _) then (inVars, inEqns);
-   case(e::conLst, _, _, _, _, _, _) equation
-    //print("con"+ intString(inI) + " "+ ExpressionDump.printExpStr(e) + "\n=>" + ExpressionDump.dumpExpStr(e,0) + "\n");
-    //BackendDump.printVariables(inVars);
-    //BackendDump.printVariables(knvars);
-    conCrefName = prefConCrefName + intString(inI);
-    (conEqn, dummyVar) = BackendEquation.generateResidualFromRelation(conCrefName, e, DAE.emptyElementSource, inVars, knvars, conKind);
-    v = BackendVariable.addNewVar(dummyVar, inVars);
-    eqns = listAppend(conEqn, inEqns);
-    (v, eqns)= addOptimizationVarsEqns1(conLst, inI + 1, v, eqns, knvars, prefConCrefName, conKind);
-   then (v, eqns);
-   else (inVars, inEqns);
-   end match;
+protected
+ Integer i := inI;
+ BackendDAE.Var dummyVar;
+ list<BackendDAE.Equation> conEqn;
+ String conCrefName;
+algorithm
+
+ for elem in constraintLst loop
+   conCrefName := prefConCrefName + intString(i);
+   (conEqn, dummyVar) := BackendEquation.generateResidualFromRelation(conCrefName, elem, DAE.emptyElementSource, outVars, knvars, conKind);
+   outVars := BackendVariable.addNewVar(dummyVar, outVars);
+   outEqns := listAppend(conEqn, outEqns);
+   i := i + 1;
+ end for;
 end addOptimizationVarsEqns1;
 
 protected function addOptimizationVarsEqns2
@@ -246,59 +236,43 @@ protected function findMayerTerm
 "author: Vitalij Ruge
 find mayer-term from annotation"
 input list<BackendDAE.Var> varlst;
-output Option<DAE.Exp> mayer;
-protected
-list<BackendDAE.Var> varlst_filter;
-algorithm
-  varlst_filter := List.select(varlst, BackendVariable.hasMayerTermAnno);
-  mayer := findMayerTerm2(varlst_filter, NONE());
+output Option<DAE.Exp> mayer := findObjTerm(varlst,BackendVariable.hasMayerTermAnno);
 end findMayerTerm;
 
 protected function findLagrangeTerm
 "author: Vitalij Ruge
 find lagrange-term from annotation"
 input list<BackendDAE.Var> varlst;
-output Option<DAE.Exp> lagrange;
-protected
-list<BackendDAE.Var> varlst_filter;
-algorithm
-  varlst_filter := List.select(varlst, BackendVariable.hasLagrangeTermAnno);
-  lagrange := findMayerTerm2(varlst_filter, NONE());
+output Option<DAE.Exp> lagrange := findObjTerm(varlst,BackendVariable.hasLagrangeTermAnno);
 end findLagrangeTerm;
 
 
-protected function findMayerTerm2
+protected function findObjTerm
 "author: Vitalij Ruge
 helper findLagrangeTerm, findMayerTerm"
 input list<BackendDAE.Var> InVarlst;
-input Option<DAE.Exp> Inmayer;
-output Option<DAE.Exp> mayer;
+input MapFunc findObjTermFun;
+output Option<DAE.Exp> objeExp := NONE();
+
+partial function MapFunc
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+end MapFunc;
+
+protected
+DAE.Exp e, nom; DAE.ComponentRef cr;
+list<BackendDAE.Var> varlst := List.select(InVarlst, findObjTermFun);
 
 algorithm
-  mayer := match(InVarlst, Inmayer)
-  local list<BackendDAE.Var> varlst; BackendDAE.Var v;
-        DAE.Exp e, e2, e3, nom; Option<DAE.Exp> opte; DAE.ComponentRef cr;
+  for v in varlst loop
+      nom := BackendVariable.getVarNominalValue(v);
+      cr := BackendVariable.varCref(v);
+      e := DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+      e := Expression.expDiv(e, nom);
+      objeExp := mergeObjectVars(objeExp, SOME(e));
+  end for;
 
-    case({},_) then Inmayer;
-    case(v::varlst, SOME(e)) equation
-      nom = BackendVariable.getVarNominalValue(v);
-      cr = BackendVariable.varCref(v);
-      e2 = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
-      e2 = Expression.expDiv(e2, nom);
-      e3 = Expression.expAdd(e,e2);
-      opte = SOME(e3);
-      then findMayerTerm2(varlst, opte);
-    case(v::varlst, NONE()) equation
-      nom = BackendVariable.getVarNominalValue(v);
-      cr = BackendVariable.varCref(v);
-      e2 = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
-      e2 = Expression.expDiv(e2, nom);
-      opte = SOME(e2);
-      then findMayerTerm2(varlst, opte);
-    else then NONE();
-  end match;
-
-end findMayerTerm2;
+end findObjTerm;
 
 protected function mergeObjectVars
 "author: Vitalij Ruge"
@@ -353,55 +327,20 @@ protected function addConstraints2
 "author: Vitalij Ruge"
 input list< .DAE.Exp> inConstraintLst;
 input list<BackendDAE.Var> inVarlst;
-output list< .DAE.Exp> outConstraintLst;
+output list< .DAE.Exp> outConstraintLst := inConstraintLst;
 
+protected
+ DAE.ComponentRef cr;
+ .DAE.Exp e;
 algorithm
-  outConstraintLst := match(inConstraintLst, inVarlst)
-  local list<BackendDAE.Var> varlst; list< .DAE.Exp> constraintLst;
-    BackendDAE.Var v; .DAE.Exp e; DAE.ComponentRef cr; list< .DAE.Exp> ConstraintLst;
 
-    case({}, {}) then {};
-    case({}, v::varlst) equation
-      cr = BackendVariable.varCref(v);
-      e = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
-    then addConstraints2({e},varlst);
-    case(ConstraintLst, v::varlst) equation
-      cr = BackendVariable.varCref(v);
-      e = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
-    then addConstraints2(e::ConstraintLst,varlst);
-    else then(inConstraintLst);
+  for v in inVarlst loop
+    cr := BackendVariable.varCref(v);
+    e := DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+    outConstraintLst := e :: outConstraintLst;
+  end for;
 
-  end match;
 end addConstraints2;
-
-
-protected function findFinalConstraints
-"author: Vitalij Ruge"
-input list<BackendDAE.Var> inVarlst;
-input list< .DAE.Constraint> inConstraint;
-output list< .DAE.Constraint> outConstraint;
-
-algorithm
-  outConstraint := match(inVarlst, inConstraint)
-  local list<BackendDAE.Var> varlst; BackendDAE.Variables v; list< .DAE.Exp> constraintLst; list< .DAE.Constraint> constraints;
-
-    case(_,  {DAE.CONSTRAINT_EXPS(constraintLst = constraintLst)}) equation
-      //print("\n1-->");
-      varlst = List.select(inVarlst, BackendVariable.hasFinalConTermAnno);
-      //print("\n1.3-->");
-      constraintLst = addConstraints2(constraintLst, varlst);
-      constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
-      //print("\n1.5-->");
-    then constraints;
-    case(_, {}) equation
-      //print("\n2-->");
-      varlst = List.select(inVarlst, BackendVariable.hasFinalConTermAnno);
-      constraintLst = addConstraints2({}, varlst);
-      constraints =  {DAE.CONSTRAINT_EXPS(constraintLst)};
-    then constraints;
-    else then (inConstraint);
-  end match;
-end findFinalConstraints;
 
 annotation(__OpenModelica_Interface="backend");
 end DynamicOptimization;
