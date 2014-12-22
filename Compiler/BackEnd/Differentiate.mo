@@ -1424,6 +1424,7 @@ algorithm
       DAE.Exp exp_1,exp_2;
       DAE.FunctionTree funcs;
       DAE.Type tp;
+      list<DAE.Exp> expl;
 
     // diff(sin(x)) = cos(x)*der(x)
     case ("sin",_,_,_,_,_)
@@ -1550,24 +1551,39 @@ algorithm
         (exp_1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then (exp_1, inFuncs);
 
-    case ("max",_,_,_,_,_)
+    case ("max",DAE.ARRAY(array=expl,ty=tp),_,_,_,_)
       equation
-        tp = Expression.typeof(exp);
-        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_1 = Expression.makePureBuiltinCall("max",{exp_1},tp);
+        tp = Types.arrayElementType(tp);
+        exp_1 = createFromNCall2ArgsCall("max", expl, tp);
+        (exp_2, funcs) = differentiateExp(exp_1, inDiffwrtCref, inInputData, inDiffType, inFuncs);
       then
-       (exp_1, funcs);
+       (exp_2, funcs);
 
-    case ("min",_,_,_,_,_)
+    case ("min",DAE.ARRAY(array=expl,ty=tp),_,_,_,_)
       equation
-        tp = Expression.typeof(exp);
-        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
-        exp_1 = Expression.makePureBuiltinCall("min",{exp_1},tp);
+        tp = Types.arrayElementType(tp);
+        exp_1 = createFromNCall2ArgsCall("min", expl, tp);
+        (exp_2, funcs) = differentiateExp(exp_1, inDiffwrtCref, inInputData, inDiffType, inFuncs);
       then
-       (exp_1, funcs);
+       (exp_2, funcs);
   end match;
 end differentiateCallExp1Arg;
 
+function createFromNCall2ArgsCall
+  input String funcName;
+  input list<DAE.Exp> expl;
+  input DAE.Type tp;
+  output DAE.Exp result;
+protected
+  DAE.Exp e1,e2;
+  list<DAE.Exp> rest;
+algorithm
+ e1::e2::rest := expl; 
+ result := Expression.makePureBuiltinCall(funcName,{e1,e2},tp);
+ for elem in rest loop
+   result := Expression.makePureBuiltinCall(funcName,{result,elem},tp);
+ end for;
+end createFromNCall2ArgsCall;
 
 protected function differentiateCallExpNArg "
   This function differentiates builtin call expressions with N argument
