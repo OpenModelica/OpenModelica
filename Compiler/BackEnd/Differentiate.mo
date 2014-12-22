@@ -1549,6 +1549,22 @@ algorithm
         tp = Expression.typeof(exp);
         (exp_1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then (exp_1, inFuncs);
+        
+    case ("max",_,_,_,_,_)
+      equation
+        tp = Expression.typeof(exp);
+        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
+        exp_1 = Expression.makePureBuiltinCall("max",{exp_1},tp);
+      then
+       (exp_1, funcs);
+       
+    case ("min",_,_,_,_,_)
+      equation
+        tp = Expression.typeof(exp);
+        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs);
+        exp_1 = Expression.makePureBuiltinCall("min",{exp_1},tp);
+      then
+       (exp_1, funcs);
   end match;
 end differentiateCallExp1Arg;
 
@@ -1639,30 +1655,12 @@ algorithm
       then
         (DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.GREATER(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), res1, res2), funcs);
 
-    case ("max", expl as (_::_::_), DAE.CALL_ATTR(ty=tp), _, _, _, _)
-      equation
-        /* TODO: Implement Derivative of max(a,b,...,n)  */
-        res1 = Expression.makePureBuiltinCall("max",expl,tp);
-        e_str = ExpressionDump.printExpStr(res1);
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
-      then
-        fail();
-
     case ("min", {e1,e2}, DAE.CALL_ATTR(ty=tp), _, _, _, _)
       equation
         (res1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (res2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
       then
         (DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.LESS(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), res1, res2), funcs);
-
-    case ("min", expl as (_::_::_), DAE.CALL_ATTR(ty=tp), _, _, _, _)
-      equation
-        /* TODO: Implement Derivative of min(a,b,...,n)  */
-        res1 = Expression.makePureBuiltinCall("min",expl,tp);
-        e_str = ExpressionDump.printExpStr(res1);
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
-      then
-        fail();
 
   end match;
 end differentiateCallExpNArg;
