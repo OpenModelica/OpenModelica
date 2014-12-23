@@ -62,3 +62,5 @@ GraphStreamExt_omc.o : ../OpenModelicaBootstrappingHeader.h GraphStreamExt_impl.
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*
+
+reallyclean: clean
