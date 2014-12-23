@@ -1336,6 +1336,9 @@ algorithm
         newVarsCrefs_ = cr::inewVarsCrefs;
       else
         e = e1;
+        if b2 then
+          e = Expression.negate(e);
+        end if;
         eqnForNewVars_ = ieqnForNewVars;
         newVarsCrefs_ = inewVarsCrefs;
       end if;
@@ -1356,6 +1359,43 @@ algorithm
       e2 = Expression.makePureBuiltinCall("log",{e3},DAE.T_REAL_DEFAULT);
     then (e1,e2,true,eqnForNewVars_,newVarsCrefs_,idepth + 1);
 
+  // cos(y) = x -> y = acos(x) + 2*pi*k
+  case (DAE.CALL(path = Absyn.IDENT(name = "cos"),expLst = {e1}),_)
+  equation
+    true = expHasCref(e1, inExp3);
+    false = expHasCref(inExp2, inExp3);
+    tp = Expression.typeof(e1);
+
+    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_COS_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+    newVarsCrefs_ = cr ::inewVarsCrefs;
+
+    eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    eqnForNewVars_ = eqn::ieqnForNewVars;
+
+    e = Expression.crefExp(cr);
+    exP = Expression.makePureBuiltinCall("$_initialGuess", {e}, tp);
+
+    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_COS_INV_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
+    newVarsCrefs_ = cr ::newVarsCrefs_;
+
+    e2 = Expression.makePureBuiltinCall("acos", {inExp2}, tp);
+    ee2 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
+
+    eqn = BackendDAE.SOLVED_EQUATION(cr, Expression.expMul(ee2,e2), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    eqnForNewVars_ = eqn::eqnForNewVars_;
+
+    e2 = Expression.crefExp(cr);
+    ee1 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
+
+    e_1 = Expression.makeDiv(Expression.expSub(exP, e2), ee1);
+
+    e3 = Expression.makePureBuiltinCall("$_round", {e_1}, tp);
+
+    lhs = Expression.expAdd(Expression.expMul(e3, ee1),e2);
+
+  then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
+
+
   // abs(f(x)) = g(y) -> f(x) = sign(f(x))*g(y)
   case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _)
   equation
@@ -1374,6 +1414,9 @@ algorithm
       lhs = Expression.expMul(e_1, inExp2);
     else
       lhs = inExp2;
+      if b2 then
+        lhs = Expression.negate(lhs);
+      end if;
       eqnForNewVars_ = ieqnForNewVars;
       newVarsCrefs_ = inewVarsCrefs;
     end if;
@@ -1397,6 +1440,9 @@ algorithm
       lhs = Expression.expMul(e_1, lhs);
     else
       lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
+      if b2 then
+        lhs = Expression.negate(lhs);
+      end if;
       eqnForNewVars_ = ieqnForNewVars;
       newVarsCrefs_ = inewVarsCrefs;
     end if;

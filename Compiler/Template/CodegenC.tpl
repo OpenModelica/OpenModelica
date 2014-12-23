@@ -8890,6 +8890,10 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   case CALL(path=IDENT(name="$_signNoNull"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     '(<%var1%> >= 0.0 ? 1.0:-1.0)'
+  // round
+  case CALL(path=IDENT(name="$_round"), expLst={e1}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
+    '((modelica_integer)round((modelica_real)<%var1%>))'
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={LUNARY(exp = arg as CREF(__))}) then
