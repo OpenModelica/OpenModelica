@@ -106,7 +106,7 @@ solveUmfPack(DATA *data, int sysNumber)
   double control[UMFPACK_CONTROL], info[UMFPACK_INFO];
 
   int i, j, status = 0, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
-  
+
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with UMFPACK Solver",
          eqSystemNumber, (int) systemData->size,
          data->localData[0]->timeValue);
@@ -116,12 +116,12 @@ solveUmfPack(DATA *data, int sysNumber)
   if (0 == systemData->method)
   {
     /* set A matrix */
-	  solverData->Ap[0] = 0;
-	  systemData->setA(data, systemData);
-	  solverData->Ap[solverData->n_row] = solverData->nnz;
+    solverData->Ap[0] = 0;
+    systemData->setA(data, systemData);
+    solverData->Ap[solverData->n_row] = solverData->nnz;
 
-	  /* set b vector */
-	  systemData->setb(data, systemData);
+    /* set b vector */
+    systemData->setb(data, systemData);
   } else {
     assertStreamPrint(data->threadData, 0, "Tearing system not implemented yet!");
   }
@@ -129,15 +129,15 @@ solveUmfPack(DATA *data, int sysNumber)
 
   if (ACTIVE_STREAM(LOG_LS_V))
   {
-		infoStreamPrint(LOG_LS_V, 1, "Matrix A");
-	  for (i=0; i<solverData->n_row; i++)
-	    for (j=solverData->Ap[i]; j<solverData->Ap[i+1]; j++)
-		    infoStreamPrint(LOG_LS_V, 0, "A[%d,%d] = %f", i, solverData->Ai[j], solverData->Ax[j]);
-    
+    infoStreamPrint(LOG_LS_V, 1, "Matrix A");
+    for (i=0; i<solverData->n_row; i++)
+      for (j=solverData->Ap[i]; j<solverData->Ap[i+1]; j++)
+        infoStreamPrint(LOG_LS_V, 0, "A[%d,%d] = %f", i, solverData->Ai[j], solverData->Ax[j]);
+
     messageClose(LOG_LS_V);
 
-	  for (i=0; i<solverData->n_row; i++)
-		  infoStreamPrint(LOG_LS_V, 0, "b[%d] = %e", i, systemData->b[i]);
+    for (i=0; i<solverData->n_row; i++)
+      infoStreamPrint(LOG_LS_V, 0, "b[%d] = %e", i, systemData->b[i]);
   }
 
   control[UMFPACK_PIVOT_TOLERANCE] = 1.0;

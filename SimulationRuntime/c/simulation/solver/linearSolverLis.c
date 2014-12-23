@@ -106,8 +106,8 @@ freeLisData(void **voiddata)
 
 void printLisMatrixCSR(LIS_MATRIX A, int n)
 {
-	char buffer[16384];
-	int i, j;
+  char buffer[16384];
+  int i, j;
   /* A matrix */
   infoStreamPrint(LOG_LS_V, 1, "A matrix [%dx%d] nnz = %d ", n, n, A->nnz);
   for(i=0; i<n; i++)
@@ -175,9 +175,9 @@ solveLis(DATA *data, int sysNumber)
   infoStreamPrint(LOG_LS, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if (err){
-	  warningStreamPrint(LOG_LS_V, 0, "lis_solve : %s(code=%lld)\n\n ", lis_returncode[err], err);
-	  printLisMatrixCSR(solverData->A, solverData->n_row);
-	  success = 0;
+    warningStreamPrint(LOG_LS_V, 0, "lis_solve : %s(code=%lld)\n\n ", lis_returncode[err], err);
+    printLisMatrixCSR(solverData->A, solverData->n_row);
+    success = 0;
   }
 
 
