@@ -28,58 +28,37 @@
  *
  */
 
-/*! \file linearSystem.h
+/*! \file linearSolverUmfpack.h
  */
 
-
-#ifndef _LINEARSYSTEM_H_
-#define _LINEARSYSTEM_H_
+#ifndef _LINEARSOLVERUMFPACK_H_
+#define _LINEARSOLVERUMFPACK_H_
 
 #include "simulation_data.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-#ifdef VOID
-#undef VOID
-#endif
-
-enum LINEAR_SOLVER
+typedef struct DATA_UMFPACK
 {
-  LS_NONE = 0,
+  int *Ap;
+  int *Ai;
+  double *Ax;
+  int n_col;
+  int n_row;
+  int nnz;
+  void *symbolic, *numeric;
 
-  LS_LAPACK,
-  LS_LIS,
-  LS_UMFPACK,
-  LS_TOTALPIVOT,
+  int col_akt;
+  int akt;
 
-  LS_MAX
-};
+  double* work;
 
-extern const char *LS_NAME[LS_MAX+1];
-extern const char *LS_DESC[LS_MAX+1];
+  rtclock_t timeClock;             /* time clock */
+  int numberSolving;
 
-typedef void* LS_SOLVER_DATA;
+} DATA_UMFPACK;
 
-int initializeLinearSystems(DATA *data);
-int updateStaticDataOfLinearSystems(DATA *data);
-int freeLinearSystems(DATA *data);
-int solve_linear_system(DATA *data, int sysNumber);
-int check_linear_solutions(DATA *data, int printFailingSystems);
-void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
-
-void setAElementLAPACK(int row, int col, double value, int nth, void *data);
-void setAElementLis(int row, int col, double value, int nth, void *data);
-void setAElementTotalPivot(int row, int col, double value, int nth, void *data);
-void setAElementUmfpack(int row, int col, double value, int nth, void *data );
-void setBElementLAPACK(int row, double value, void *data );
-void setBElementLis(int row, double value, void *data );
-void setBElementTotalPivot(int row, double value, void *data );
-void setBElementUmfpack(int row, double value, void *data );
-
-#ifdef __cplusplus
-}
-#endif
+int allocateUmfPackData(int n_row, int n_col, int nz, void **data);
+int freeUmfPackData(void **data);
+int solveUmfPack(DATA *data, int sysNumber);
 
 #endif

@@ -35,18 +35,22 @@
 #define _LINEARSOLVERLAPACK_H_
 
 #include "simulation_data.h"
+#include "omc_math.h"
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
+typedef struct DATA_LAPACK
+{
+  int *ipiv;  /* vector pivot values */
+  int nrhs;   /* number of righthand sides*/
+  int info;   /* output */
+  _omc_vector* work;
 
-#ifdef VOID
-  #undef VOID
-#endif
+  _omc_vector* x;
+  _omc_vector* b;
+  _omc_matrix* A;
 
-#ifdef __cplusplus
-  }
-#endif
+  rtclock_t timeClock;             /* time clock */
+
+} DATA_LAPACK;
 
 int allocateLapackData(int size, void **data);
 int freeLapackData(void **data);

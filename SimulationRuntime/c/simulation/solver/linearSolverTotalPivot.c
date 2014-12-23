@@ -43,7 +43,7 @@
 
 #include "linearSystem.h"
 #include "linearSolverTotalPivot.h"
-#include "blaswrap.h"
+
 
 void debugMatrixDoubleLS(int logName, char* matrixName, double* matrix, int n, int m)
 {
@@ -261,8 +261,10 @@ int solveSystemWithTotalPivotSearchLS(int n, double* x, double* A, int* indRow, 
  *
  *  \author bbachmann
  */
-int allocateTotalPivotData(int size, DATA_TOTALPIVOT *data)
+int allocateTotalPivotData(int size, void** voiddata)
 {
+  DATA_TOTALPIVOT* data = (DATA_TOTALPIVOT*) malloc(sizeof(DATA_TOTALPIVOT));
+
   /* memory for linear system */
   data->Ab = (double*) calloc((size*(size+1)),sizeof(double));
   data->b = (double*) malloc(size*sizeof(double));
@@ -272,6 +274,7 @@ int allocateTotalPivotData(int size, DATA_TOTALPIVOT *data)
   data->indRow =(int*) calloc(size,sizeof(int));
   data->indCol =(int*) calloc(size+1,sizeof(int));
 
+  *voiddata = (void*)data;
   return 0;
 }
 
@@ -279,8 +282,10 @@ int allocateTotalPivotData(int size, DATA_TOTALPIVOT *data)
  *
  *  \author bbachmann
  */
-int freeTotalPivotData(DATA_TOTALPIVOT *data)
+int freeTotalPivotData(void** voiddata)
 {
+  DATA_TOTALPIVOT* data = (DATA_TOTALPIVOT*) *voiddata;
+
   /* memory for linear system */
   free(data->Ab);
   free(data->b);
@@ -289,6 +294,7 @@ int freeTotalPivotData(DATA_TOTALPIVOT *data)
    /* used for pivot strategy */
   free(data->indRow);
   free(data->indCol);
+
   return 0;
 }
 
@@ -373,10 +379,11 @@ int solveTotalPivot(DATA *data, int sysNumber)
   int i, j;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.linearSystemData[sysNumber]);
   DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*)systemData->solverData;
-  int n = systemData->size;
+  int n = systemData->size, status;
   double fdeps = 1e-8;
   double xTol = 1e-8;
   int eqSystemNumber = systemData->equationIndex;
+  int indexes[2] = {1,eqSystemNumber};
   int rank;
 
   /* We are given the number of the linear system.
@@ -384,9 +391,15 @@ int solveTotalPivot(DATA *data, int sysNumber)
   /* int eqSystemNumber = systemData->equationIndex; */
   int success = 1;
 
-  debugVectorDoubleLS(LOG_LS_V,"SCALING",systemData->nominal,n);
-  debugVectorDoubleLS(LOG_LS,"Old VALUES",systemData->x,n);
+  infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with Total Pivot Solver",
+         eqSystemNumber, (int) systemData->size,
+         data->localData[0]->timeValue);
 
+
+  debugVectorDoubleLS(LOG_LS_V,"SCALING",systemData->nominal,n);
+  debugVectorDoubleLS(LOG_LS_V,"Old VALUES",systemData->x,n);
+
+  rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method){
 
     /* reset matrix A */
@@ -394,9 +407,12 @@ int solveTotalPivot(DATA *data, int sysNumber)
     /* update matrix A -> first n columns of matrix Ab*/
     systemData->setA(data, systemData);
     vecCopyLS(n*n, systemData->A, solverData->Ab);
+
     /* update vector b (rhs) -> -b is last column of matrix Ab*/
+    rt_ext_tp_tick(&(solverData->timeClock));
     systemData->setb(data, systemData);
     vecScalarMultLS(n, systemData->b, -1.0, solverData->Ab + n*n);
+
   } else {
 
     /* calculate jacobian -> first n columns of matrix Ab*/
@@ -408,15 +424,20 @@ int solveTotalPivot(DATA *data, int sysNumber)
     /* calculate vector b (rhs) -> -b is last column of matrix Ab */
     wrapper_fvec_totalpivot(systemData->x, solverData->Ab + n*n, data, sysNumber);
   }
+  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
   debugMatrixDoubleLS(LOG_LS_V,"LGS: matrix Ab",solverData->Ab, n, n+1);
 
-  if (solveSystemWithTotalPivotSearchLS(n, solverData->x, solverData->Ab, solverData->indRow, solverData->indCol, &rank) != 0)
+  rt_ext_tp_tick(&(solverData->timeClock));
+  status = solveSystemWithTotalPivotSearchLS(n, solverData->x, solverData->Ab, solverData->indRow, solverData->indCol, &rank);
+  infoStreamPrint(LOG_LS, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
+
+  if (status != 0)
   {
     warningStreamPrint(LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f.", (int)systemData->equationIndex, data->localData[0]->timeValue);
     success = 0;
   } else {
 
-    debugVectorDoubleLS(LOG_LS, "SOLUTION:", solverData->x, n+1);
+    debugVectorDoubleLS(LOG_LS_V, "SOLUTION:", solverData->x, n+1);
     if (1 == systemData->method){
       /* add the solution to old solution vector*/
       vecAddLS(n, systemData->x, solverData->x, systemData->x);
@@ -426,14 +447,14 @@ int solveTotalPivot(DATA *data, int sysNumber)
        vecCopyLS(n, solverData->x, systemData->x);
     }
 
-    if (ACTIVE_STREAM(LOG_LS)){
-      infoStreamPrint(LOG_LS, 1, "Solution x:");
-      infoStreamPrint(LOG_LS, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).numVar);
+    if (ACTIVE_STREAM(LOG_LS_V)){
+      infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).numVar);
       for(i=0; i<systemData->size; ++i)
       {
-        infoStreamPrint(LOG_LS, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
       }
-      messageClose(LOG_LS);
+      messageClose(LOG_LS_V);
     }
   }
   return success;

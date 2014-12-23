@@ -323,6 +323,7 @@ typedef struct LINEAR_SYSTEM_DATA
   void (*setb)(void* data, void* systemData);
 
   void (*setAElement)(int row, int col, double value, int nth, void *data);
+  void (*setBElement)(int row, double value, void *data);
 
   int (*analyticalJacobianColumn)(void*);
   int (*initialAnalyticalJacobian)(void*);
