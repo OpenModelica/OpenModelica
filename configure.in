@@ -746,7 +746,7 @@ if test "$DARWIN" = "1"; then
   FMILIB_SHARED=ON
   LIBCMINPACKLIB=libcminpack.dylib
   CMINPACKLIB_SHARED=ON
-  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lumfpack -lamd -lcdaskr -lcminpack -lf2c -lexpat -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
+  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lcdaskr -lcminpack -lf2c -lexpat -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
@@ -773,7 +773,7 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   FMILIB_SHARED=OFF
   LIBCMINPACKLIB=libcminpack.a
   CMINPACKLIB_SHARED=OFF
-  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lumfpack -lamd -lcminpack -lstdc++ -lf2c -lgc -lexpat -lm"
+  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lcminpack -lstdc++ -lf2c -lgc -lexpat -lm"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc -lexpat -lpthread -lm"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
@@ -799,7 +799,7 @@ else
   CMINPACKLIB_SHARED=ON
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
-  RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $LIBRT -linteractive -llis -lumfpack -lamd -lcdaskr -lcminpack -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
+  RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $LIBRT -linteractive -llis -lcdaskr -lcminpack -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -lpthread -rdynamic"
@@ -843,6 +843,13 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
         USE_GRAPH=0
     fi
     USE_PATOH=0;
+])
+
+AC_ARG_WITH(UMFPACK, [  --with-UMFPACK                   Compile with UMFPACK, a sparse linear systems solver],
+[
+    UMFPACK_TARGET="umfpack";
+], [
+    UMFPACK_TARGET="";
 ])
 
 AC_MSG_CHECKING([for revision])

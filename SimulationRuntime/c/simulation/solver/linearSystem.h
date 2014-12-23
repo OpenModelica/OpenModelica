@@ -51,7 +51,6 @@ enum LINEAR_SOLVER
 
   LS_LAPACK,
   LS_LIS,
-  LS_UMFPACK,
   LS_TOTALPIVOT,
 
   LS_MAX
@@ -72,11 +71,6 @@ void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
 void setAElementLAPACK(int row, int col, double value, int nth, void *data);
 void setAElementLis(int row, int col, double value, int nth, void *data);
 void setAElementTotalPivot(int row, int col, double value, int nth, void *data);
-void setAElementUmfpack(int row, int col, double value, int nth, void *data );
-void setBElementLAPACK(int row, double value, void *data );
-void setBElementLis(int row, double value, void *data );
-void setBElementTotalPivot(int row, double value, void *data );
-void setBElementUmfpack(int row, double value, void *data );
 
 #ifdef __cplusplus
 }

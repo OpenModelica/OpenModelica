@@ -24,7 +24,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release qtclients mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall CMinpack Cdaskr umfpack boehm-gc
+.PHONY : interactive omc release qtclients mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall CMinpack Cdaskr boehm-gc
 
 mkbuilddirs:
 	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -63,7 +63,7 @@ install-python:
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET) umfpack
+interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)

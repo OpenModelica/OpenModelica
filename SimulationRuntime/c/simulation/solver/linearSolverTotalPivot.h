@@ -36,6 +36,18 @@
 
 #include "simulation_data.h"
 
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
+#ifdef VOID
+  #undef VOID
+#endif
+
+#ifdef __cplusplus
+  }
+#endif
+
 typedef struct DATA_TOTALPIVOT
 {
   /* memory for linear system */
@@ -47,12 +59,10 @@ typedef struct DATA_TOTALPIVOT
   int* indRow;
   int* indCol;
 
-  rtclock_t timeClock;             /* time clock */
-
 } DATA_TOTALPIVOT;
 
-int allocateTotalPivotData(int size, void** data);
-int freeTotalPivotData(void** data);
+int allocateTotalPivotData(int size, DATA_TOTALPIVOT *data);
+int freeTotalPivotData(DATA_TOTALPIVOT *data);
 int solveTotalPivot(DATA *data, int sysNumber);
 
 #endif

@@ -1637,7 +1637,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations, String m
          let vectorb = (eq.beqs |> exp hasindex i0 =>
            let &preExp = buffer "" /*BUFD*/
            let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, &varDecls2, &auxFunction)
-             '<%preExp%>linearSystemData->setBElement(<%i0%>, <%expPart%>, linearSystemData);'
+           '<%preExp%>linearSystemData->b[<%i0%>] =  <%expPart%>;'
           ;separator="\n")
          let body_initializeStaticLSData = (eq.vars |> var hasindex i0 =>
            <<

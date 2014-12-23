@@ -49,6 +49,19 @@
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
 
+typedef struct DATA_LAPACK
+{
+  int *ipiv;  /* vector pivot values */
+  int nrhs;   /* number of righthand sides*/
+  int info;   /* output */
+  _omc_vector* work;
+
+  _omc_vector* x;
+  _omc_vector* b;
+  _omc_matrix* A;
+
+} DATA_LAPACK;
+
 /*! \fn allocate memory for linear system solver lapack
  *
  */
@@ -167,7 +180,7 @@ static int wrapper_fvec_lapack(_omc_vector* x, _omc_vector* f, int* iflag, void*
 /*! \fn solve linear system with lapack method
  *
  *  \param [in]  [data]
- *               [sysNumber] index of the corresponding linear system
+ *               [sysNumber] index of the corresponding non-linear system
  *
  *  \author wbraun
  */
@@ -182,21 +195,13 @@ int solveLapack(DATA *data, int sysNumber)
   /* We are given the number of the linear system.
    * We want to look it up among all equations. */
   int eqSystemNumber = systemData->equationIndex;
-  int indexes[2] = {1,eqSystemNumber};
   _omc_scalar residualNorm = 0;
-
-  infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with Lapack Solver",
-         eqSystemNumber, (int) systemData->size,
-         data->localData[0]->timeValue);
-
 
   /* set data */
   _omc_setVectorData(solverData->x, systemData->x);
   _omc_setVectorData(solverData->b, systemData->b);
   _omc_setMatrixData(solverData->A, systemData->A);
 
-
-  rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method) {
 
     /* reset matrix A */
@@ -204,9 +209,9 @@ int solveLapack(DATA *data, int sysNumber)
 
     /* update matrix A */
     systemData->setA(data, systemData);
-
     /* update vector b (rhs) */
     systemData->setb(data, systemData);
+
   } else {
 
     /* calculate jacobian -> matrix A*/
@@ -220,7 +225,6 @@ int solveLapack(DATA *data, int sysNumber)
     _omc_copyVector(solverData->work, solverData->x);
     wrapper_fvec_lapack(solverData->work, solverData->b, &iflag, data, sysNumber);
   }
-  infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
 
   /* Log A*x=b */
   if(ACTIVE_STREAM(LOG_LS_V)){
@@ -228,8 +232,6 @@ int solveLapack(DATA *data, int sysNumber)
     _omc_printMatrix(solverData->A, "Matrix A", LOG_LS_V);
     _omc_printVector(solverData->b, "Vector b", LOG_LS_V);
   }
-
-  rt_ext_tp_tick(&(solverData->timeClock));
 
   /* Solve system */
   dgesv_((int*) &systemData->size,
@@ -240,8 +242,6 @@ int solveLapack(DATA *data, int sysNumber)
          solverData->b->data,
          (int*) &systemData->size,
          &solverData->info);
-
-  infoStreamPrint(LOG_LS, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if(solverData->info < 0)
   {
@@ -278,15 +278,15 @@ int solveLapack(DATA *data, int sysNumber)
     }
 
 
-    if (ACTIVE_STREAM(LOG_LS_V)){
-      infoStreamPrint(LOG_LS_V, 1, "Residual Norm %f of solution x:", residualNorm);
-      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).numVar);
+    if (ACTIVE_STREAM(LOG_LS)){
+      infoStreamPrint(LOG_LS, 1, "Residual Norm %f of solution x:", residualNorm);
+      infoStreamPrint(LOG_LS, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i) {
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+        infoStreamPrint(LOG_LS, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
       }
 
-      messageClose(LOG_LS_V);
+      messageClose(LOG_LS);
     }
   }
 
