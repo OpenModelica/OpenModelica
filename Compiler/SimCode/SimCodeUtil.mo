@@ -13907,7 +13907,7 @@ algorithm
        then SOME(matrix);
        case ( _::rest, _)
         then getJacobianMatrix(rest, inJacobianName);
-       else then NONE();
+       else NONE();
   end matchcontinue;
 end getJacobianMatrix;
 

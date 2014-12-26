@@ -1380,7 +1380,7 @@ algorithm
 
     case (BackendDAE.VAR(comment= SOME(comm) ))
        then SCode.commentHasBooleanNamedAnnotation(comm, "isMayer");
-    else then false;
+    else false;
   end match;
 end hasMayerTermAnno;
 
@@ -1395,7 +1395,7 @@ algorithm
 
     case (BackendDAE.VAR(comment=  SOME(comm) ))
        then SCode.commentHasBooleanNamedAnnotation(comm, "isLagrange");
-    else then false;
+    else false;
   end match;
 end hasLagrangeTermAnno;
 
@@ -1410,7 +1410,7 @@ algorithm
 
     case (BackendDAE.VAR(comment=  SOME(comm) ))
        then SCode.commentHasBooleanNamedAnnotation(comm, "isConstraint");
-    else then false;
+    else false;
   end match;
 end hasConTermAnno;
 
@@ -1425,7 +1425,7 @@ algorithm
 
     case (BackendDAE.VAR(comment=  SOME(comm) ))
        then SCode.commentHasBooleanNamedAnnotation(comm, "isFinalConstraint");
-    else then false;
+    else false;
   end match;
 end hasFinalConTermAnno;
 

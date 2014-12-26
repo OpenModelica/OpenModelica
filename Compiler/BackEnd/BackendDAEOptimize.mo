@@ -2715,7 +2715,7 @@ algorithm
       then
         listAppend(eqns,inEqns);
 
-    else then BackendDAE.IF_EQUATION(conditions,theneqns,elseenqs,source,inEqAttr)::inEqns;
+    else BackendDAE.IF_EQUATION(conditions,theneqns,elseenqs,source,inEqAttr)::inEqns;
   end matchcontinue;
 end simplifyIfEquation1;
 

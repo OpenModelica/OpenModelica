@@ -11828,7 +11828,7 @@ algorithm
     case("log10") then true;
     case("tanh") then true;
     case("sinh") then true;
-    else then false;
+    else false;
   end match;
 end createResidualExp4;
 
@@ -11839,7 +11839,7 @@ algorithm
   isAsub := match(expIn)
     case(DAE.ASUB(_,_)) equation
       then true;
-    else then false;
+    else false;
   end match;
 end isAsubExp;
 

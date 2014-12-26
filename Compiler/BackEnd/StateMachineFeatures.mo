@@ -320,7 +320,7 @@ algorithm
         transition = if (name == "transition") then (cref, TRANSITION()) else (cref, INITIAL_STATE());
       then
         SOME(transition);
-    else then NONE();
+    else NONE();
   end match;
 
 

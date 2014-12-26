@@ -6079,7 +6079,7 @@ algorithm
         {Absyn.CREF(componentRef = cref1)}
         ))))
       then {cref1};
-    else then {};
+    else {};
   end match;
 end extractSMStates;
 

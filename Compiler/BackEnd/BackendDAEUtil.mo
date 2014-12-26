@@ -8044,7 +8044,7 @@ algorithm
   isWhen := match(comp)
     case(BackendDAE.SINGLEWHENEQUATION())
       then true;
-  else then false;
+  else false;
   end match;
 end isWhenComp;
 
@@ -8055,7 +8055,7 @@ algorithm
   isWhen := match(comp)
     case(BackendDAE.SINGLEEQUATION())
       then true;
-  else then false;
+  else false;
   end match;
 end isSingleEquationComp;
 
@@ -8066,7 +8066,7 @@ algorithm
   isWhen := match(comp)
     case(BackendDAE.EQUATIONSYSTEM(jacType = BackendDAE.JAC_LINEAR()))
       then true;
-  else then false;
+  else false;
   end match;
 end isLinearEqSystemComp;
 
@@ -8077,7 +8077,7 @@ algorithm
   isWhen := match(comp)
     case(BackendDAE.TORNSYSTEM(linear=true))
       then true;
-  else then false;
+  else false;
   end match;
 end isLinearTornSystem;
 

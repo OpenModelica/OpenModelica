@@ -948,7 +948,7 @@ algorithm
       equation
           crefs = matchcontinue()
             case () then BaseHashTable.get(cref1,itable);
-            else then {};
+            else {};
           end matchcontinue;
           table = BaseHashTable.add((cref1,cref2::crefs),itable);
       then

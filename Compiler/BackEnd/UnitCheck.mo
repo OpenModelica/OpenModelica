@@ -617,7 +617,7 @@ algorithm
       end if;
     then ();
 
-  else then ();
+  else ();
   end matchcontinue;
 end notification;
 

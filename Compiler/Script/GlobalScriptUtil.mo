@@ -557,7 +557,7 @@ algorithm
 
     case Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF())) :: _ then true;
     case _ :: elts then eltsHasLocalClass(elts);
-    else then false;
+    else false;
   end matchcontinue;
 end eltsHasLocalClass;
 

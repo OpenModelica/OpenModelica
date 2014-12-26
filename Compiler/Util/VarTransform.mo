@@ -1428,38 +1428,38 @@ algorithm
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory).
 
-    case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
+    case ((DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         e1 = getReplacement(repl, cr);
         e2 = avoidDoubleHashLookup(e1,t);
       then
         (e2,true);
-    case ((e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
+    case ((DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,c1) = replaceExp(e1, repl, cond);
         (e2_1,c2) = replaceExp(e2, repl, cond);
         true = c1 or c2;
       then
         (DAE.BINARY(e1_1,op,e2_1),true);
-    case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
+    case ((DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,c1) = replaceExp(e1, repl, cond);
         (e2_1,c2) = replaceExp(e2, repl, cond);
         true = c1 or c2;
       then
         (DAE.LBINARY(e1_1,op,e2_1),true);
-    case ((e as DAE.UNARY(operator = op,exp = e1)),repl,cond)
+    case ((DAE.UNARY(operator = op,exp = e1)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,true) = replaceExp(e1, repl, cond);
       then
         (DAE.UNARY(op,e1_1),true);
-    case ((e as DAE.LUNARY(operator = op,exp = e1)),repl,cond)
+    case ((DAE.LUNARY(operator = op,exp = e1)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,true) = replaceExp(e1, repl, cond);
       then
         (DAE.LUNARY(op,e1_1),true);
@@ -1470,9 +1470,9 @@ algorithm
         true = c1 or c2;
       then
         (DAE.RELATION(e1_1,op,e2_1,index_,isExpisASUB),true);
-    case ((e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
+    case ((DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,c1) = replaceExp(e1, repl, cond);
         (e2_1,c2) = replaceExp(e2, repl, cond);
         (e3_1,c3) = replaceExp(e3, repl, cond);
@@ -1492,64 +1492,64 @@ algorithm
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
         (DAE.CALL(path,expl_1,attr),true);
-    case ((e as DAE.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
+    case ((DAE.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
         (DAE.ARRAY(tp,c,expl_1),true);
-    case ((e as DAE.MATRIX(ty = t,integer = b,matrix = bexpl)),repl,cond)
+    case ((DAE.MATRIX(ty = t,integer = b,matrix = bexpl)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (bexpl_1,true) = replaceExpMatrix(bexpl, repl, cond, {}, false);
       then
         (DAE.MATRIX(t,b,bexpl_1),true);
-    case ((e as DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),repl,cond)
+    case ((DAE.RANGE(ty = tp,start = e1,step = NONE(),stop = e2)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,c1) = replaceExp(e1, repl, cond);
         (e2_1,c2) = replaceExp(e2, repl, cond);
         true = c1 or c2;
       then
         (DAE.RANGE(tp,e1_1,NONE(),e2_1),true);
-    case ((e as DAE.RANGE(ty = tp,start = e1,step = SOME(e3),stop = e2)),repl,cond)
+    case ((DAE.RANGE(ty = tp,start = e1,step = SOME(e3),stop = e2)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,c1) = replaceExp(e1, repl, cond);
         (e2_1,c2) = replaceExp(e2, repl, cond);
         (e3_1,c3) = replaceExp(e3, repl, cond);
         true = c1 or c2 or c3;
       then
         (DAE.RANGE(tp,e1_1,SOME(e3_1),e2_1),true);
-    case ((e as DAE.TUPLE(PR = expl)),repl,cond)
+    case ((DAE.TUPLE(PR = expl)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
         (DAE.TUPLE(expl_1),true);
-    case ((e as DAE.CAST(ty = tp,exp = e1)),repl,cond)
+    case ((DAE.CAST(ty = tp,exp = e1)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,true) = replaceExp(e1, repl, cond);
       then
         (DAE.CAST(tp,e1_1),true);
-    case ((e as DAE.ASUB(exp = e1,sub = expl)),repl,cond)
+    case ((DAE.ASUB(exp = e1,sub = expl)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,c1) = replaceExp(e1, repl, cond);
         (expl_1,c2) = replaceExpList(expl, repl, cond, {}, false);
         true = c1 or c2;
       then
         (Expression.makeASUB(e1_1,expl_1),true);
-    case ((e as DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
+    case ((DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,true) = replaceExp(e1, repl, cond);
       then
         (DAE.SIZE(e1_1,NONE()),true);
-    case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
+    case ((DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,c1) = replaceExp(e1, repl, cond);
         (e2_1,c2) = replaceExp(e2, repl, cond);
         true = c1 or c2;
@@ -1560,9 +1560,9 @@ algorithm
         print("replace_exp on CODE not impl.\n");
       then
         (DAE.CODE(a,tp),false);
-    case ((e as DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters)),repl,cond)
+    case ((DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, inExp);
         (e1_1,_) = replaceExp(e1, repl, cond);
         (iters,true) = replaceExpIters(iters, repl, cond, {}, false);
       then (DAE.REDUCTION(reductionInfo,e1_1,iters),true);

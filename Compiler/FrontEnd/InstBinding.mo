@@ -229,7 +229,7 @@ algorithm
               mod2 = Mod.lookupIdxModification(mod, index);
               result = instBinding2(mod2, etype, res, bind_name,useConstValue);
             then result;
-          else then NONE();
+          else NONE();
         end matchcontinue;
       then
         result;

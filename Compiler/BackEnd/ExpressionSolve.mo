@@ -1230,7 +1230,7 @@ algorithm
   (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := match(uniqueEqIndex)
         local Integer i;
         case(SOME(i)) then preprocessingSolveTmpVarsWork(inExp1, inExp2, inExp3, i, ieqnForNewVars, inewVarsCrefs, idepth);
-        else then (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
+        else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
         end match;
 end preprocessingSolveTmpVars;
 
