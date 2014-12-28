@@ -166,7 +166,7 @@ algorithm
         BackendDAE.SHARED(functionTree = funcs) := shared;
         tmpvars := iNewVars;
         try
-          //TODO: 
+          //TODO:
           //(e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(eindex));
           (e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
            if List.isEmpty(solveEqns) then
@@ -182,7 +182,7 @@ algorithm
          try
            (varexp, e, solveEqns, solveCr, _) := preprocessingSolve(e1, e2, varexp, SOME(funcs), NONE(), 0);
            true := List.isEmpty(solveEqns);
-           eqn_ := BackendDAE.EQUATION(varexp, e, source, attr); 
+           eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
          else
            eqn_ := eqn_;
          end try;
@@ -231,7 +231,7 @@ algorithm
 
   alg_ := DAE.ALGORITHM_STMTS(statementLst=statementLst);
   alg := BackendDAE.ALGORITHM(len,
-                              alg_, 
+                              alg_,
                               source, expand, attr);
 
 end eqnLst2Alg;
