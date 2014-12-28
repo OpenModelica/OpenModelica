@@ -694,6 +694,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "inlineArrayEqn",
     "constantLinearSystem",
     "simplifysemiLinear",
+    //"solveSimpleEquations", // can change matching, some issues with HeatingSystem
     "removeSimpleEquations",
     "encapsulateWhenConditions",  // must called after remove simple equations
     "reshufflePost",

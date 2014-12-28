@@ -82,6 +82,7 @@ protected import EvaluateParameter;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import ExpressionSolve;
 protected import FindZeroCrossings;
 protected import Flags;
 protected import Global;
@@ -7607,6 +7608,7 @@ algorithm
                         (SymbolicJacobian.inputDerivativesUsed, "inputDerivativesUsed", false),
                         (BackendDAEOptimize.simplifysemiLinear, "simplifysemiLinear", false),
                         (BackendDAEOptimize.removeConstants, "removeConstants", false),
+                        (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
                         (Initialization.optimizeInitialSystem, "optimizeInitialSystem", false),
                         (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", false),
                         (Tearing.tearingSystem, "tearingSystem", false),

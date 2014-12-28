@@ -49,10 +49,192 @@ protected import Debug;
 protected import Differentiate;
 protected import Expression;
 protected import ExpressionDump;
+protected import BackendDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import Inline;
+protected import BackendEquation;
+protected import BackendVariable;
+protected import BackendDAEUtil;
+
+// =============================================================================
+// section for postOptModule >>solveSimpleEquations<<
+//
+// solve simple equations otherwise detect EQUATIONSYSTEM
+// =============================================================================
+
+public function solveSimpleEquations
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+ (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, findSimpleEquation0, false);
+end solveSimpleEquations;
+
+protected function findSimpleEquation0
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared outShared;
+  output Boolean outChanged;
+protected
+  BackendDAE.StrongComponents comps;
+algorithm
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := isyst;
+  (osyst, outShared, outChanged) := findSimpleEquation1(isyst, inShared, comps, inChanged);
+end findSimpleEquation0;
+
+protected function findSimpleEquation1
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StrongComponents inComps;
+  input Boolean inchanged;
+  output BackendDAE.EqSystem osyst := isyst;
+  output BackendDAE.Shared oshared := ishared;
+  output Boolean changed := inchanged "not used";
+protected
+  Boolean b;
+  BackendDAE.StrongComponent c;
+  Integer i := 1;
+  list<BackendDAE.Var> newVars := {};
+
+  BackendDAE.Variables vars;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.EquationArray eqns;
+
+algorithm
+  for comp in inComps loop
+    (osyst,oshared, newVars) := findSimpleEquationWork(osyst,oshared,comp, i, newVars);
+    i := i + 1;
+  end for;
+
+  if  not List.isEmpty(newVars) then
+    BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind) := osyst;
+    vars := BackendVariable.addVars(newVars, vars);
+    osyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),matching,stateSets,partitionKind);
+    //BackendDump.printEqSystem(osyst);
+  end if;
+
+end findSimpleEquation1;
+
+protected function findSimpleEquationWork
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StrongComponent icomp;
+  input Integer iter;
+  input list<BackendDAE.Var> iNewVars;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output list<BackendDAE.Var> oNewVars;
+algorithm
+  (osyst,oshared,oNewVars):=
+  matchcontinue (isyst,ishared,icomp)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> solveCr;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns, eqns_;
+      BackendDAE.Equation eqn_;
+      BackendDAE.Var var_;
+      list<BackendDAE.Var> tmpvars;
+      Integer eindex,vindx;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      DAE.ElementSource source;
+      BackendDAE.Matching matching;
+      BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      DAE.FunctionTree funcs;
+      list<BackendDAE.Equation> solveEqns;
+      DAE.Exp e1,e2,varexp,e;
+      list<DAE.Statement> asserts;
+      BackendDAE.EquationAttributes attr;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.StrongComponents comps;
+      array<Integer> ass1, ass2;
+
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind),shared,BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx))
+      algorithm
+        (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr)) := BackendEquation.equationNth1(eqns, eindex);
+        (var_ as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx);
+
+        varexp := Expression.crefExp(cr);
+        varexp := if BackendVariable.isStateVar(var_) then Expression.expDer(varexp) else varexp;
+        BackendDAE.SHARED(functionTree = funcs) := shared;
+        tmpvars := iNewVars;
+        try
+          //TODO: 
+          //(e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(eindex));
+          (e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
+           if List.isEmpty(solveEqns) then
+             eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
+           else
+             solveCr := listReverse(solveCr);
+             tmpvars := List.appendNoCopy(tmpvars, List.map(solveCr, BackendVariable.makeVar));
+             eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
+             solveEqns := eqn_::solveEqns;
+             eqn_ := eqnLst2Alg(solveEqns,source,attr);
+           end if;
+        else
+         try
+           (varexp, e, solveEqns, solveCr, _) := preprocessingSolve(e1, e2, varexp, SOME(funcs), NONE(), 0);
+           true := List.isEmpty(solveEqns);
+           eqn_ := BackendDAE.EQUATION(varexp, e, source, attr); 
+         else
+           eqn_ := eqn_;
+         end try;
+          comp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx},  BackendDAE.EMPTY_JACOBIAN() ,BackendDAE.JAC_NONLINEAR(), false);
+          BackendDAE.MATCHING(comps = comps, ass1 = ass1, ass2 = ass2) := matching;
+          comps := List.replaceAt(comp, iter, comps);
+          matching := BackendDAE.MATCHING(ass1, ass2, comps);
+        end try;
+        eqns_ := BackendEquation.setAtIndex(eqns,eindex,eqn_);
+        syst := BackendDAE.EQSYSTEM(vars,eqns_,NONE(),NONE(),matching,stateSets,partitionKind);
+
+        then(syst,shared,tmpvars);
+
+    else (isyst,ishared,{});
+  end matchcontinue;
+end findSimpleEquationWork;
+
+public function eqnLst2Alg
+  input list<BackendDAE.Equation> eqns;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes attr;
+  output BackendDAE.Equation alg;
+protected
+  Integer len := 0;
+  DAE.ElementSource source_ := DAE.emptyElementSource;
+  //EquationAttributes attr_ := BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN;
+  DAE.Expand expand := DAE.NOT_EXPAND();
+  DAE.Exp e1,e2,e11,e22;
+  list<DAE.Statement> statementLst := {};
+  DAE.Type tp;
+  DAE.Algorithm alg_;
+  DAE.ComponentRef cr;
+algorithm
+
+  for eqn in eqns loop
+    try
+      BackendDAE.EQUATION(exp=e1, scalar=e2, source=source_) := eqn;
+    else
+      BackendDAE.SOLVED_EQUATION(cr, e2, source=source_) := eqn;
+      e1 := Expression.crefExp(cr);
+    end try;
+    tp := Expression.typeof(e1);
+    statementLst := DAE.STMT_ASSIGN(type_ = tp, exp1 = e1, exp = e2, source = source_) :: statementLst;
+    len := len + 1;
+  end for;
+
+  alg_ := DAE.ALGORITHM_STMTS(statementLst=statementLst);
+  alg := BackendDAE.ALGORITHM(len,
+                              alg_, 
+                              source, expand, attr);
+
+end eqnLst2Alg;
 
 public function solve
 "Solves an equation consisting of a right hand side (rhs) and a
@@ -1611,9 +1793,6 @@ algorithm
     invExp := if b1 then Expression.inverseFactors(e6) else Expression.inverseFactors(e3);
     (invExp, _) :=  ExpressionSimplify.simplify1(invExp);
     e7 := Expression.expPow(e7, invExp);
-
-    eqnForNewVars := eqn::eqnForNewVars;
-    newVarsCrefs := cr ::newVarsCrefs;
 
     e7 := Expression.expMul(e_1, e7);
 

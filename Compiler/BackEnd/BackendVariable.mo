@@ -2658,6 +2658,11 @@ algorithm
   end try;
 end existsVar;
 
+public function makeVar
+ input DAE.ComponentRef cr;
+ output BackendDAE.Var v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
+end makeVar;
+
 public function addVarDAE
 "author: Frenkel TUD 2011-04
   Add a variable to Variables of a BackendDAE.
