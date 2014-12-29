@@ -160,27 +160,34 @@ public function differentiateExpSolve
   Differentiates an equation with respect to the cref variable."
   input DAE.Exp inExp;
   input DAE.ComponentRef inCref;
+  input Option<DAE.FunctionTree> functions;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp, inCref)
     local
       String msg;
-      DAE.Exp dexp, zero;
+      DAE.Exp dexp;
       BackendDAE.DifferentiateInputData diffData;
-      DAE.Type tp;
+      DAE.FunctionTree fun;
 
-    case (_, _)
+    case (_,_)
       equation
+        fun = match(functions)
+              local DAE.FunctionTree fun_;
+              case(SOME(fun_)) then fun_; 
+              else DAE.emptyFuncTree;
+              end match;
         diffData = BackendDAE.DIFFINPUTDATA(NONE(), NONE(), NONE(), NONE(), SOME({}), NONE(), NONE());
-        (dexp, _) = differentiateExp(inExp, inCref, diffData, BackendDAE.SIMPLE_DIFFERENTIATION(), DAE.emptyFuncTree);
+        (dexp, _) = differentiateExp(inExp, inCref, diffData, BackendDAE.SIMPLE_DIFFERENTIATION(), fun);
         (dexp,_) = ExpressionSimplify.simplify(dexp);
       then dexp;
 
     else
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        msg = "\nDifferentiate.differentiateExpSolve failed for " + ExpressionDump.printExpStr(inExp) + "\n\n";
-        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+        if Flags.isSet(Flags.FAILTRACE) then
+          msg = "\nDifferentiate.differentiateExpSolve failed for " + ExpressionDump.printExpStr(inExp) + "\n\n";
+          Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {msg});
+        end if;
       then fail();
 
   end matchcontinue;

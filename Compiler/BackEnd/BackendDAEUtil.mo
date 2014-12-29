@@ -4958,7 +4958,7 @@ algorithm
         cr1 = ComponentReference.crefPrefixDer(cr);
         e = Expression.crefExp(cr);
         ((e,_)) = Expression.replaceExp(Expression.expSub(e1,e2), DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), Expression.crefExp(cr1));
-        de = Differentiate.differentiateExpSolve(e, cr1);
+        de = Differentiate.differentiateExpSolve(e, cr1, NONE());
         (de,_) = ExpressionSimplify.simplify(de);
         (_,crlst) = Expression.traverseExp(de, Expression.traversingComponentRefFinder, {});
         solvab = adjacencyRowEnhanced2(cr1,de,crlst,vars,kvars);
@@ -4972,7 +4972,7 @@ algorithm
         // de/dvar
         BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars, rabs);
         e = Expression.expSub(e1,e2);
-        de = Differentiate.differentiateExpSolve(e, cr);
+        de = Differentiate.differentiateExpSolve(e, cr, NONE());
         (de,_) = ExpressionSimplify.simplify(de);
         (_,crlst) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
         solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,kvars);

@@ -3708,7 +3708,7 @@ algorithm
         cr = BackendVariable.varCref(v);
         (_,i::_) = BackendVariable.getVar(cr,vars);
         false = intGt(vec1[i],0);
-        e1 = Differentiate.differentiateExpSolve(e, cr);
+        e1 = Differentiate.differentiateExpSolve(e, cr,NONE());
         (e2,_) = ExpressionSimplify.simplify(e1);
         true = Expression.isConstOne(e2) or Expression.isConstMinusOne(e2);
       then

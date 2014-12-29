@@ -352,7 +352,7 @@ algorithm
  (outExp, outAsserts, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue(e1, e2, inExp3)
                           case(DAE.IFEXP(),_,_) then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth);
                           case(_,_,_) then  solveSimple(e1, e2, inExp3, depth);
-                          case(_,_,_) then  solveLinearSystem(e1, e2, inExp3, depth);
+                          case(_,_,_) then  solveLinearSystem(e1, e2, inExp3, functions, depth);
                           else fail();
                          end matchcontinue;
 
@@ -657,6 +657,13 @@ preprocessing for solve1,
        (x,con) := solveFunCalls(x, inExp3, functions);
        collect := con;
        inlineFun := false;
+     end if;
+
+     if con and collect then
+       (lhsX, lhsY) := preprocessingSolve5(x, inExp3, true);
+       (rhsX, rhsY) := preprocessingSolve5(y, inExp3, false);
+       x := Expression.expSub(lhsX, rhsX);
+       y := Expression.expSub(rhsY, lhsY);
      end if;
 
      iter := iter + 1;
@@ -1240,7 +1247,8 @@ algorithm
                   case(_,_)
                   equation
                     (funX,_) = Expression.traverseExpTopDown(inExp1, inlineCallX, (inExp3, functions));
-                  then (funX, not Expression.expEqual(funX, inExp1));
+                    b = not Expression.expEqual(funX, inExp1);
+                  then (funX, b);
                   else (inExp1, false);
                   end matchcontinue;
 end solveFunCalls;
@@ -1857,6 +1865,7 @@ protected function solveLinearSystem
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
+  input Option<DAE.FunctionTree> functions;
   input Integer idepth;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
@@ -1880,7 +1889,9 @@ algorithm
         e = Expression.makeDiff(inExp1,inExp2);
         (e,_) = ExpressionSimplify.simplify1(e);
         ({},_) = List.split1OnTrue(Expression.factors(e),isCrefInIFEXP,cr); // check: differentiateExpSolve is allowed
-        dere = Differentiate.differentiateExpSolve(e, cr);
+        //print("\n\ne: ");print(ExpressionDump.printExpStr(e));
+        dere = Differentiate.differentiateExpSolve(e, cr, functions);
+        //print("\nder(e): ");print(ExpressionDump.printExpStr(dere));
         (dere,_) = ExpressionSimplify.simplify(dere);
         false = Expression.isZero(dere);
         false = Expression.expHasCrefNoPreOrStart(dere, cr);
