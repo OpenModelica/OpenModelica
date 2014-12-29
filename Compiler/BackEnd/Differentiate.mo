@@ -174,7 +174,7 @@ algorithm
       equation
         fun = match(functions)
               local DAE.FunctionTree fun_;
-              case(SOME(fun_)) then fun_; 
+              case(SOME(fun_)) then fun_;
               else DAE.emptyFuncTree;
               end match;
         diffData = BackendDAE.DIFFINPUTDATA(NONE(), NONE(), NONE(), NONE(), SOME({}), NONE(), NONE());
