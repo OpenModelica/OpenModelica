@@ -342,7 +342,7 @@ void Cvode::solve(const SOLVERCALL action)
         writeToFile(0, _tCurrent, _h);
       if (writeOutput)
         writeCVodeOutput(_tCurrent, _h, _locStps);
-	  _continuous_system->getContinuousStates(_z);
+    _continuous_system->getContinuousStates(_z);
     }
 
     // Solver soll fortfahren
