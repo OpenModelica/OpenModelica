@@ -553,7 +553,7 @@ void SimManager::runSingleProcess()
 {
     double startTime, endTime, *zeroVal_0, *zeroVal_new;
     int dimZeroF;
-
+	
     std::vector<std::pair<double, int> > tStopsSub;
 
     _H = _tEnd;
@@ -618,30 +618,31 @@ void SimManager::runSingleProcess()
                 _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECALL);
             }
             startTime = endTime;
-            if (_dimtimeevent)
-            {
-                // Find all time events at the current time
-        while(abs(iter->first - endTime) <1e4*UROUND)
-        {
-          _timeeventcounter[iter->second]++;
-          iter++;
-        }
-        // set the iterator back to the current end time
-        iter--;
+			if (_dimtimeevent)
+			{
+				// Find all time events at the current time
+				while(abs(iter->first - endTime) <1e4*UROUND)
+				{
+				  _timeeventcounter[iter->second]++;
+				  iter++;
+				}
+				// set the iterator back to the current end time
+				iter--;
+				
+				// Then handle time events
+				_timeevent_system->handleTimeEvent(_timeeventcounter);
+				
+				_event_system->getZeroFunc(zeroVal_new);
+				for (int i = 0; i < _dimZeroFunc; i++)
+					_events[i] = bool(zeroVal_new[i]);
+				_mixed_system->handleSystemEvents(_events);
+				//reset time-events
+				_timeevent_system->handleTimeEvent(_timeeventcounter);
+			}
 
-        _timeevent_system->handleTimeEvent(_timeeventcounter);
-                _cont_system->evaluateAll(IContinuous::CONTINUOUS);   // vxworksupdate
-                _event_system->getZeroFunc(zeroVal_new);
-                for (int i = 0; i < _dimZeroFunc; i++)
-                    _events[i] = bool(zeroVal_new[i]);
-                _mixed_system->handleSystemEvents(_events);
-                //reset time-events
-                _timeevent_system->handleTimeEvent(_timeeventcounter);
-            }
-
-      user_stop = (_solver->getSolverStatus() & ISolver::USER_STOP);
-            if (user_stop)
-                break;
+			user_stop = (_solver->getSolverStatus() & ISolver::USER_STOP);
+			if (user_stop)
+				break;
         }  // end for time events
         if (abs(_tEnd - endTime) > _config->getSimControllerSettings()->dTendTol && !user_stop)
         {
