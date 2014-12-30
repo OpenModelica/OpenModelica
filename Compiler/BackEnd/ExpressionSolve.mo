@@ -169,6 +169,7 @@ algorithm
           //TODO:
           //(e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(eindex));
           (e, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), NONE());
+          source := DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, e, asserts);
            if List.isEmpty(solveEqns) then
              eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
            else
@@ -180,7 +181,7 @@ algorithm
            end if;
         else
          try
-           (varexp, e, solveEqns, solveCr, _) := preprocessingSolve(e1, e2, varexp, SOME(funcs), NONE(), 0);
+           (varexp, e, solveEqns, solveCr, _) := preprocessingSolve(e1, e2, varexp, NONE(), NONE(), 0);
            true := List.isEmpty(solveEqns);
            eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
          else
@@ -196,7 +197,7 @@ algorithm
 
         then(syst,shared,tmpvars);
 
-    else (isyst,ishared,{});
+    else (isyst,ishared, iNewVars);
   end matchcontinue;
 end findSimpleEquationWork;
 
@@ -618,6 +619,9 @@ preprocessing for solve1,
      (x, y, con) := preprocessingSolve2(x,y, inExp3);
      (x, y, new_x) := preprocessingSolve3(x,y, inExp3);
      con := con or new_x;
+     while new_x loop
+       (x, y, new_x) := preprocessingSolve3(x,y, inExp3);
+     end while;
      (x, y, new_x) := removeSimpleCalls(x,y, inExp3);
      con := con or new_x;
      (x, y, new_x) := preprocessingSolve4(x,y, inExp3);
