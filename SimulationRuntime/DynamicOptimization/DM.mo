@@ -1,6 +1,6 @@
 optimization diesel_model (objective = cost1,
        objectiveIntegrand = cost2)
-       
+
 
 /*output */
 Real cost1 = (w_ice - 0.515309170685596)^2
@@ -193,5 +193,5 @@ equation
   der(p_im) = 20.2505119361145*((0.526906365590249*sqrt(Cm_temp))-dot_m_ci);
   der(p_em) = 0.0476078551344513*(T_eo*(dot_m_ci+dot_m_f-dot_m_t-dot_m_wg));
   der(w_tc) = 0.0001*((P_t-P_c)/(0.000197779559297041*W_TC)-2.47230109968751E-005*W_TC*W_TC);
- 
+
 end diesel_model;
