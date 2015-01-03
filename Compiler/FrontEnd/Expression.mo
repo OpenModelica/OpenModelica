@@ -659,12 +659,21 @@ algorithm
       Boolean b,b_1;
       Real r,r_1;
       Integer i,i_1;
-      DAE.Exp e;
+      DAE.Exp e,e1,e2;
 
     // to avoid un-necessary --e
     case(DAE.UNARY(DAE.UMINUS(_),e)) then e;
     case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then e;
     case(DAE.LUNARY(DAE.NOT(_),e)) then e;
+
+    // -(a*b) = (-a)*b
+    // -(a/b) = (-a)/b
+    case(DAE.BINARY(e1,op,e2)) guard(isMulOrDiv(op))
+    then DAE.BINARY(negate(e1),op,e2);
+
+    // -(a-b) = b-a
+    case(DAE.BINARY(e1,op,e2)) guard(isSub(op))
+    then DAE.BINARY(e2,op,e1);
 
     case (DAE.ICONST(i))
       equation
