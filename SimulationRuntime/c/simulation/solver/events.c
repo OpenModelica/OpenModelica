@@ -406,7 +406,7 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
     event_id = *((long*)listFirstData(tmpEventList));
     listPopFront(tmpEventList);
 
-    infoStreamPrint(LOG_EVENTS, 0, "%ld ", event_id);
+    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Event id: %ld ", event_id);
 
     listPushFront(eventList, &event_id);
   }
@@ -451,9 +451,10 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
  */
 double bisection(DATA* data, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
 {
-  double TTOL = 1e-9;
+  double TTOL = MINIMAL_STEP_SIZE;
   double c;
   long i=0;
+  int counter = 0;
 
   double *backup_gout = (double*) malloc(data->modelData.nZeroCrossings * sizeof(double));
 
@@ -466,9 +467,14 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to: %e", TTOL);
 
-  while(fabs(*b - *a) > TTOL)
+  while(fabs(*b - *a) > TTOL && counter++ < 100)
   {
     c = 0.5* (*a + *b);
+
+    if ( data->localData[0]->timeValue == c){
+      break;
+    }
+
     data->localData[0]->timeValue = c;
 
     /*calculates states at time c */

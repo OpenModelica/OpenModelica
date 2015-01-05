@@ -112,27 +112,25 @@ function serializeVars
 algorithm
   _ := matchcontinue vars
     local
-      Integer i;
+      Boolean b;
     case SimCodeVar.SIMVARS()
       equation
-        serializeVar(file,listGet(vars.stateVars,1),withOperations,first=true); // Assume we always have 1 state variable in the model
-        min(serializeVar(file,v,withOperations) for v in List.restOrEmpty(vars.stateVars));
-        min(serializeVar(file,v,withOperations) for v in vars.derivativeVars);
-        min(serializeVar(file,v,withOperations) for v in vars.algVars);
-        min(serializeVar(file,v,withOperations) for v in vars.intAlgVars);
-        min(serializeVar(file,v,withOperations) for v in vars.boolAlgVars);
-        min(serializeVar(file,v,withOperations) for v in vars.inputVars);
-        min(serializeVar(file,v,withOperations) for v in vars.intAliasVars);
-        min(serializeVar(file,v,withOperations) for v in vars.boolAliasVars);
-        min(serializeVar(file,v,withOperations) for v in vars.paramVars);
-        min(serializeVar(file,v,withOperations) for v in vars.intParamVars);
-        min(serializeVar(file,v,withOperations) for v in vars.boolParamVars);
-        min(serializeVar(file,v,withOperations) for v in vars.stringAlgVars);
-        min(serializeVar(file,v,withOperations) for v in vars.stringParamVars);
-        min(serializeVar(file,v,withOperations) for v in vars.stringAliasVars);
-        min(serializeVar(file,v,withOperations) for v in vars.extObjVars);
-        min(serializeVar(file,v,withOperations) for v in vars.constVars);
-        min(serializeVar(file,v,withOperations) for v in vars.jacobianVars);
+        b = serializeVarsHelp(file, vars.stateVars, withOperations, false);
+        b = serializeVarsHelp(file, vars.derivativeVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.algVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.intAlgVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.boolAlgVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.inputVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.intAliasVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.boolAliasVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.paramVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.intParamVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.boolParamVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.stringAlgVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.stringAliasVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.extObjVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.constVars, withOperations, b);
+        b = serializeVarsHelp(file, vars.jacobianVars, withOperations, b);
       then ();
     else
       equation
@@ -140,6 +138,28 @@ algorithm
       then fail();
   end matchcontinue;
 end serializeVars;
+
+function serializeVarsHelp
+  input File.File file;
+  input list<SimCodeVar.SimVar> vars;
+  input Boolean withOperations;
+  input Boolean inFirst;
+  output Boolean outFirst;
+algorithm
+  outFirst := match vars
+  local
+    SimCodeVar.SimVar var;
+    list<SimCodeVar.SimVar> rest;
+  case ({}) then inFirst;
+    
+  case (var::rest)
+    equation
+      serializeVar(file,var,withOperations,not inFirst);
+      min(serializeVar(file,v,withOperations) for v in List.restOrEmpty(rest));
+   then true;
+     
+  end match;
+end serializeVarsHelp;
 
 function serializeVar
   input File.File file;

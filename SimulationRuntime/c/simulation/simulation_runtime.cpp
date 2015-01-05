@@ -696,6 +696,12 @@ int callSolver(DATA* simData, string init_initMethod,
         solverID = i;
     }
   }
+  /* if no states are present, than we can
+   * use euler method, since it does nothing.
+   */
+  if (simData->modelData.nStates < 1 && solverID != S_OPTIMIZATION) {
+    solverID = S_EULER;
+  }
 
   if(S_UNKNOWN == solverID) {
     warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", (char*) simData->simulationInfo.solverMethod);
@@ -825,13 +831,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   initializeMixedSystems(data);
   initializeLinearSystems(data);
   initializeNonlinearSystems(data);
-
-  // this sets the static variable that is in the file with the generated-model functions
-  if(data->modelData.nVariablesReal == 0 && data->modelData.nVariablesInteger && data->modelData.nVariablesBoolean)
-  {
-    std::cerr << "No variables in the model." << std::endl;
-    return 1;
-  }
 
   sim_noemit = omc_flag[FLAG_NOEMIT];
 

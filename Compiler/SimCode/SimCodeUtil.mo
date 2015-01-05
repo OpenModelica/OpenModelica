@@ -1570,7 +1570,8 @@ algorithm
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
       // check if the Sytems has states
-      dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
+      // TODO: fix cpp runtime to avoid adding a dummy state
+      dlow =  if ifcpp then BackendDAEUtil.addDummyStateIfNeeded(dlow) else dlow;
 
       // initialization stuff
       (residuals, initialEquations, removedInitialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow, initDAE, removedInitialEquationLst, uniqueEqIndex, {});

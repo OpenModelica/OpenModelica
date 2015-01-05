@@ -575,25 +575,44 @@ int solver_main(DATA* data, const char* init_initMethod,
   }
   omc_alloc_interface.collect_a_little();
 
-  /* starts the simulation main loop */
+
   if(0 == retVal)
   {
+    /* if the model has no time changing variables skip the main loop*/
+    if(data->modelData.nVariablesReal == 0    &&
+       data->modelData.nVariablesInteger == 0 &&
+       data->modelData.nVariablesBoolean == 0 &&
+       data->modelData.nVariablesString == 0 )
+    {
+      /* prevent emit if noeventemit flag is used */
+      if (!(omc_flag[FLAG_NOEVENTEMIT]))
+        sim_result.emit(&sim_result, data);
 
-    if(solverInfo.solverMethod != S_OPTIMIZATION)
-      sim_result.emit(&sim_result,data);
+      infoStreamPrint(LOG_SOLVER, 0, "The model has no time changing variables, no integration will be performed.");
+      solverInfo.currentTime = simInfo->stopTime;
+      data->localData[0]->timeValue = simInfo->stopTime;
+      overwriteOldSimulationData(data);
+      finishSimulation(data, &solverInfo, outputVariablesAtEnd);
+    }
+    /* starts the simulation main loop */
+    else
+    {
+      if(solverInfo.solverMethod != S_OPTIMIZATION)
+        sim_result.emit(&sim_result,data);
 
-    /* overwrite the whole ring-buffer with initialized values */
-    overwriteOldSimulationData(data);
+      /* overwrite the whole ring-buffer with initialized values */
+      overwriteOldSimulationData(data);
 
-    /* store all values for non-dassl event search */
-    storeOldValues(data);
+      /* store all values for non-dassl event search */
+      storeOldValues(data);
 
-    infoStreamPrint(LOG_SOLVER, 0, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
-    retVal = data->callback->performSimulation(data, &solverInfo);
-    omc_alloc_interface.collect_a_little();
-    /* terminate the simulation */
-    finishSimulation(data, &solverInfo, outputVariablesAtEnd);
-    omc_alloc_interface.collect_a_little();
+      infoStreamPrint(LOG_SOLVER, 0, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
+      retVal = data->callback->performSimulation(data, &solverInfo);
+      omc_alloc_interface.collect_a_little();
+      /* terminate the simulation */
+      finishSimulation(data, &solverInfo, outputVariablesAtEnd);
+      omc_alloc_interface.collect_a_little();
+    }
   }
 
   /* free SolverInfo memory */
