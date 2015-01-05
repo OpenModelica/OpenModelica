@@ -8140,7 +8140,7 @@ algorithm
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars))
       equation
-        //special order for fmi: real => intger => boolean => string => external 
+        //special order for fmi: real => intger => boolean => string => external
         //real variables
         (stateVars, index_) = setVariableIndexHelper(stateVars, 1);
         (derivativeVars, index_) = setVariableIndexHelper(derivativeVars, index_);
@@ -8149,28 +8149,28 @@ algorithm
         (paramVars, index_) = setVariableIndexHelper(paramVars, index_);
         (aliasVars, index_) = setVariableIndexHelper(aliasVars, index_);
         (constVars, index_) = setVariableIndexHelper(constVars, index_);
-        
+
         //integer variables
         (intAlgVars, index_) = setVariableIndexHelper(intAlgVars, index_);
         (intParamVars, index_) = setVariableIndexHelper(intParamVars, index_);
         (intAliasVars, index_) = setVariableIndexHelper(intAliasVars, index_);
         (intConstVars, index_) = setVariableIndexHelper(intConstVars, index_);
-        
+
         //boolean varriables
         (boolAlgVars, index_) = setVariableIndexHelper(boolAlgVars, index_);
         (boolParamVars, index_) = setVariableIndexHelper(boolParamVars, index_);
         (boolAliasVars, index_) = setVariableIndexHelper(boolAliasVars, index_);
         (boolConstVars, index_) = setVariableIndexHelper(boolConstVars, index_);
-        
+
         //string varriables
         (stringAlgVars, index_) = setVariableIndexHelper(stringAlgVars, index_);
         (stringParamVars, index_) = setVariableIndexHelper(stringParamVars, index_);
         (stringAliasVars, index_) = setVariableIndexHelper(stringAliasVars, index_);
         (stringConstVars, index_) = setVariableIndexHelper(stringConstVars, index_);
-        
+
         //external variables
         (extObjVars, index_) = setVariableIndexHelper(extObjVars, index_);
-        
+
         (inputVars, index_) = setVariableIndexHelper(inputVars, index_);
         (outputVars, index_) = setVariableIndexHelper(outputVars, index_);
         (realOptimizeConstraintsVars, index_) = setVariableIndexHelper(realOptimizeConstraintsVars, index_);
