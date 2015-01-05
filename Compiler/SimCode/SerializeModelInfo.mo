@@ -151,13 +151,13 @@ algorithm
     SimCodeVar.SimVar var;
     list<SimCodeVar.SimVar> rest;
   case ({}) then inFirst;
-    
+
   case (var::rest)
     equation
       serializeVar(file,var,withOperations,not inFirst);
       min(serializeVar(file,v,withOperations) for v in List.restOrEmpty(rest));
    then true;
-     
+
   end match;
 end serializeVarsHelp;
 
