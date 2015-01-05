@@ -2399,9 +2399,10 @@ algorithm
     then (var, (vars, fixvars, eqns, hs));
 
     // parameter with constant binding
+    // skip these parameters (#3050)
     case (var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, fixvars, eqns, hs)) equation
       true = Expression.isConst(bindExp);
-      fixvars = BackendVariable.addVar(var, fixvars);
+      //fixvars = BackendVariable.addVar(var, fixvars);
     then (var, (vars, fixvars, eqns, hs));
 
     // parameter
