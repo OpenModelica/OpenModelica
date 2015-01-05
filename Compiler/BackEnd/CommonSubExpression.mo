@@ -135,7 +135,7 @@ protected
   BackendDAE.EqSystem eqSys;
   BackendDAE.IncidenceMatrix m,mT;
   list<CommonSubExp> cseLst2,cseLst3;
-    list<tuple<Boolean,String>> varAtts,eqAtts;
+  list<tuple<Boolean,String>> varAtts,eqAtts;
 algorithm
   try
     range := List.intRange(arrayLength(mIn));
@@ -350,7 +350,7 @@ algorithm
      eqs2 = arrayGet(mT,varIdx2);
            //print("eqs1 "+stringDelimitList(List.map(eqs1,intString),", ")+"\n");
            //print("eqs2 "+stringDelimitList(List.map(eqs2,intString),", ")+"\n");
-     true = intEq(listLength(eqs1),1) or intEq(listLength(eqs2),1);  // choose the variable to be removed, that does not influence the causalization
+     //true = intEq(listLength(eqs1),1) or intEq(listLength(eqs2),1);  // choose the variable to be removed, that does not influence the causalization
      if intLe(listLength(eqs2),listLength(eqs1)) then varIdxAlias = varIdx2; varIdxRepl = varIdx1; else varIdxAlias = varIdx1; varIdxRepl = varIdx2; end if;
      if intLe(listLength(eqs2),listLength(eqs1)) then eqIdxDel = eqIdx2; eqIdxLeft = eqIdx1; else eqIdxDel = eqIdx1; eqIdxLeft = eqIdx2; end if;
 
@@ -366,6 +366,11 @@ algorithm
      eqLst = BackendEquation.getEqns(eqIdcs,eqs);
      (eqLst,_) = BackendVarTransform.replaceEquations(eqLst,repl,NONE());
      eqs = List.threadFold(eqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
+
+     // transfer initial value
+     if BackendVariable.varHasStartValue(var2) and not BackendVariable.varHasStartValue(var1) then var1 = BackendVariable.setVarStartValue(var1,BackendVariable.varStartValue(var2));
+        var1 = BackendVariable.setVarFixed(var1,BackendVariable.varFixed(var2)) ; end if;
+     vars = BackendVariable.setVarAt(vars,varIdxAlias,var1);
 
      // add alias to shared
      var2 = BackendVariable.setBindExp(var2,SOME(varExp));
