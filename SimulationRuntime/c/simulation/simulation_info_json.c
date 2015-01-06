@@ -284,13 +284,15 @@ static const char* readEquations(const char *str,MODEL_DATA_XML *xml)
   int i;
   str=assertChar(str,'[');
   str = readEquation(str,xml->equationInfo,0);
-  str = assertChar(str,',');
   for (i=1; i<xml->nEquations; i++) {
+    str = assertChar(str,',');
     str = readEquation(str,xml->equationInfo+i,i);
     /* TODO: Odd, it seems there is 1 fewer equation than expected... */
+    /*
     if (i != xml->nEquations-1) {
       str=assertChar(str,',');
     }
+    */
   }
   str=assertChar(str,']');
   return str;
