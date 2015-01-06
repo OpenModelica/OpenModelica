@@ -2244,7 +2244,12 @@ template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Tex
            <<
            /* no <%name%> systems */
            >>
-       ""
+       <<
+       void terminateHpcOmThreads()
+       {
+       
+       }
+       >>
      case 1 then //1 function
        let &loop +=
            <<
