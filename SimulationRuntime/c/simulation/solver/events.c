@@ -454,7 +454,6 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
   double TTOL = MINIMAL_STEP_SIZE;
   double c;
   long i=0;
-  int counter = 0;
 
   double *backup_gout = (double*) malloc(data->modelData.nZeroCrossings * sizeof(double));
 
@@ -467,14 +466,9 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to: %e", TTOL);
 
-  while(fabs(*b - *a) > TTOL && counter++ < 100)
+  while(fabs(*b - *a) > TTOL + fabs(*b)*TTOL)
   {
     c = 0.5* (*a + *b);
-
-    if ( data->localData[0]->timeValue == c){
-      break;
-    }
-
     data->localData[0]->timeValue = c;
 
     /*calculates states at time c */
