@@ -451,24 +451,22 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
  */
 double bisection(DATA* data, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
 {
-  double TTOL = MINIMAL_STEP_SIZE;
+  double TTOL = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE*fabs(*b-*a); /* absTol + relTol*abs(b-a) */
   double c;
   long i=0;
-
-  double *backup_gout = (double*) malloc(data->modelData.nZeroCrossings * sizeof(double));
+  /* n >= log(2)/log(2) + log(|b-a|/TOL)/log(2) + 2 (to go for sure)*/
+  unsigned int n = 1 + log(fabs(*b - *a)/TTOL)/log(2) + 2;
 
   TRACE_PUSH
 
-  assert(backup_gout);
-
-  memcpy(backup_gout, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
+  memcpy(data->simulationInfo.zeroCrossingsBackup, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(modelica_real));
 
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
-  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to: %e", TTOL);
+  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to %e and maximum number of intersections %d.", TTOL, n);
 
-  while(fabs(*b - *a) > TTOL + fabs(*b)*TTOL)
+  while(n-- > 0)
   {
-    c = 0.5* (*a + *b);
+    c = 0.5 * (*a + *b);
     data->localData[0]->timeValue = c;
 
     /*calculates states at time c */
@@ -488,19 +486,18 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
 
     if(checkZeroCrossings(data, tmpEventList, eventList))  /* If Zerocrossing in left Section */
     {
-      memcpy(states_b, data->localData[0]->realVars, data->modelData.nStates * sizeof(double));
+      memcpy(states_b, data->localData[0]->realVars, data->modelData.nStates * sizeof(modelica_real));
       *b = c;
-      memcpy(backup_gout, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
+      memcpy(data->simulationInfo.zeroCrossingsBackup, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(modelica_real));
     }
     else  /*else Zerocrossing in right Section */
     {
-      memcpy(states_a, data->localData[0]->realVars, data->modelData.nStates * sizeof(double));
+      memcpy(states_a, data->localData[0]->realVars, data->modelData.nStates * sizeof(modelica_real));
       *a = c;
-      memcpy(data->simulationInfo.zeroCrossingsPre, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(double));
-      memcpy(data->simulationInfo.zeroCrossings, backup_gout, data->modelData.nZeroCrossings * sizeof(double));
+      memcpy(data->simulationInfo.zeroCrossingsPre, data->simulationInfo.zeroCrossings, data->modelData.nZeroCrossings * sizeof(modelica_real));
+      memcpy(data->simulationInfo.zeroCrossings, data->simulationInfo.zeroCrossingsBackup, data->modelData.nZeroCrossings * sizeof(modelica_real));
     }
   }
-  free(backup_gout);
   c = 0.5*(*a + *b);
 
   TRACE_POP
