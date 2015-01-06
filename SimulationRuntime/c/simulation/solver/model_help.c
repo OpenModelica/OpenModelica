@@ -863,6 +863,7 @@ void initializeDataStruc(DATA *data)
 
   data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
+  data->simulationInfo.zeroCrossingsBackup = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.relations = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
   data->simulationInfo.relationsPre = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
   data->simulationInfo.storedRelations = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
@@ -1043,6 +1044,7 @@ void deInitializeDataStruc(DATA *data)
   /* free simulationInfo arrays */
   free(data->simulationInfo.zeroCrossings);
   free(data->simulationInfo.zeroCrossingsPre);
+  free(data->simulationInfo.zeroCrossingsBackup);
   free(data->simulationInfo.relations);
   free(data->simulationInfo.relationsPre);
   free(data->simulationInfo.storedRelations);
