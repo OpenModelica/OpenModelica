@@ -513,6 +513,7 @@ typedef struct SIMULATION_INFO
 
   modelica_real* zeroCrossings;
   modelica_real* zeroCrossingsPre;
+  modelica_real* zeroCrossingsBackup;  /* used by bisection in event.c */
   modelica_boolean* relations;
   modelica_boolean* relationsPre;
   modelica_boolean* storedRelations;   /* this array contains a copy of relations each time the event iteration starts */
