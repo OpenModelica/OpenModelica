@@ -2247,7 +2247,7 @@ template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Tex
        <<
        void terminateHpcOmThreads()
        {
-       
+
        }
        >>
      case 1 then //1 function
