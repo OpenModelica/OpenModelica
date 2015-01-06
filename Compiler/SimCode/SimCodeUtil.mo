@@ -6614,88 +6614,81 @@ protected function createParameterEquations
   input Integer iuniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
   input Boolean initialSystemSolved;
-  output Integer ouniqueEqIndex;
-  output list<SimCode.SimEqSystem> parameterEquations;
+  output Integer ouniqueEqIndex := iuniqueEqIndex;
+  output list<SimCode.SimEqSystem> parameterEquations := {};
+protected
+  list<BackendDAE.Equation> parameterEquationsTmp;
+  BackendDAE.Variables knvars, extobj, v, kn;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
+  BackendDAE.EquationArray ie, pe, emptyeqns, remeqns;
+  list<SimCode.SimEqSystem> simvarasserts, inalgs := {};
+  list<DAE.Algorithm> varasserts, ialgs;
+  BackendDAE.BackendDAE paramdlow;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrixT mT;
+  array<Integer> v1, v2;
+  list<Integer> lv1, lv2;
+  BackendDAE.StrongComponents comps;
+  list<BackendDAE.Var> lv, lkn;
+  BackendDAE.Shared shared;
+  BackendDAE.EqSystem syst;
+  BackendDAE.Variables aliasVars, alisvars;
+  FCore.Cache cache;
+  FCore.Graph graph;
+  DAE.FunctionTree funcs;
+  BackendDAE.EventInfo einfo;
+  BackendDAE.BackendDAEType btp;
+  BackendDAE.SymbolicJacobians symjacs;
+  Integer uniqueEqIndex;
+  BackendDAE.ExtraInfo ei;
 algorithm
-  (ouniqueEqIndex, parameterEquations) := matchcontinue (inShared, iuniqueEqIndex, acc, initialSystemSolved)
-    local
-      list<BackendDAE.Equation> parameterEquationsTmp;
-      BackendDAE.Variables knvars, extobj, v, kn;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      BackendDAE.EquationArray ie, pe, emptyeqns, remeqns;
-      list<SimCode.SimEqSystem> simvarasserts, inalgs := {};
-      list<DAE.Algorithm> varasserts, ialgs;
-      BackendDAE.BackendDAE paramdlow;
-      BackendDAE.ExternalObjectClasses extObjClasses;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mT;
-      array<Integer> v1, v2;
-      list<Integer> lv1, lv2;
-      BackendDAE.StrongComponents comps;
-      list<BackendDAE.Var> lv, lkn;
-      BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Variables aliasVars, alisvars;
+  try
+    BackendDAE.SHARED(knownVars=knvars, externalObjects=extobj, initialEqs=ie,
+      constraints=constrs, classAttrs=clsAttrs, cache=cache, graph=graph,
+      extObjClasses=extObjClasses, functionTree=funcs, info=ei) := inShared;
 
-      FCore.Cache cache;
-      FCore.Graph graph;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      Integer uniqueEqIndex;
+    // kvars params
+    ((parameterEquationsTmp, lv, lkn, lv1, lv2, _)) := BackendVariable.traverseBackendDAEVars(knvars, createInitialParamAssignments, ({}, {}, {}, {}, {}, 1));
 
-      BackendDAE.ExtraInfo ei;
+    // sort the equations
+    emptyeqns := BackendEquation.emptyEqns();
+    pe := BackendEquation.listEquation(parameterEquationsTmp);
+    alisvars := BackendVariable.emptyVars();
+    v := BackendVariable.listVar(lv);
+    kn := BackendVariable.listVar(lkn);
+    funcs := DAEUtil.avlTreeNew();
+    syst := BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+    shared := BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
+    (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
+    v1 := listArray(lv1);
+    v2 := listArray(lv2);
+    syst := BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(v1, v2, {}));
+    (syst, comps) := BackendDAETransform.strongComponents(syst, shared);
+    paramdlow := BackendDAE.DAE({syst}, shared);
+    if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
+      BackendDump.dumpEqnsSolved(paramdlow, "parameters: eqns in order");
+    end if;
+    (parameterEquations, _, uniqueEqIndex, _) := createEquations(false, false, true, false, syst, shared, comps, iuniqueEqIndex, {});
 
-    case (BackendDAE.SHARED(knownVars=knvars, externalObjects=extobj,
-                            initialEqs=ie, constraints=constrs, classAttrs=clsAttrs, cache=cache, graph=graph,
-                            extObjClasses=extObjClasses, functionTree=funcs,  info=ei), _, _, _)
-      equation
-        // kvars params
-        ((parameterEquationsTmp, lv, lkn, lv1, lv2, _)) = BackendVariable.traverseBackendDAEVars(knvars, createInitialParamAssignments, ({}, {}, {}, {}, {}, 1));
+    if not initialSystemSolved then
+      ialgs := BackendEquation.traverseEquationArray(ie, traverseAlgorithmFinder, {});
+      ialgs := listReverse(ialgs);
+      (inalgs, uniqueEqIndex) := List.mapFold(ialgs, dlowAlgToSimEqSystem, uniqueEqIndex);
+    end if;
 
-        // sort the equations
-        emptyeqns = BackendEquation.emptyEqns();
-        pe = BackendEquation.listEquation(parameterEquationsTmp);
-        alisvars = BackendVariable.emptyVars();
-        v = BackendVariable.listVar(lv);
-        kn = BackendVariable.listVar(lkn);
-        funcs = DAEUtil.avlTreeNew();
-        syst = BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-        shared = BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
-        (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
-        v1 = listArray(lv1);
-        v2 = listArray(lv2);
-        syst = BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(v1, v2, {}));
-        (syst, comps) = BackendDAETransform.strongComponents(syst, shared);
-        paramdlow = BackendDAE.DAE({syst}, shared);
-        if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
-          BackendDump.dumpEqnsSolved(paramdlow, "parameters: eqns in order");
-        end if;
-        (parameterEquations, _, uniqueEqIndex, _) = createEquations(false, false, true, false, syst, shared, comps, iuniqueEqIndex, {});
+    // get minmax and nominal asserts
+    varasserts := BackendVariable.traverseBackendDAEVars(knvars, createVarAsserts, {});
+    (simvarasserts, ouniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, uniqueEqIndex);
 
-        if not initialSystemSolved then
-          ialgs = BackendEquation.traverseEquationArray(ie, traverseAlgorithmFinder, {});
-          ialgs = listReverse(ialgs);
-          (inalgs, uniqueEqIndex) = List.mapFold(ialgs, dlowAlgToSimEqSystem, uniqueEqIndex);
-        end if;
-
-        // get minmax and nominal asserts
-        varasserts = BackendVariable.traverseBackendDAEVars(knvars, createVarAsserts, {});
-        (simvarasserts, uniqueEqIndex) = List.mapFold(varasserts, dlowAlgToSimEqSystem, uniqueEqIndex);
-
-        // do not append the inital algorithms to the parameter equation if the system is solved symbolically
-        parameterEquations = listAppend(parameterEquations, listAppend(simvarasserts, inalgs));
-        parameterEquations = listAppend(parameterEquations, acc);
-      then
-        (uniqueEqIndex, parameterEquations);
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createParameterEquations failed"});
-      then fail();
-  end matchcontinue;
+    // do not append the inital algorithms to the parameter equation if the system is solved symbolically
+    parameterEquations := listAppend(parameterEquations, listAppend(simvarasserts, inalgs));
+    parameterEquations := listAppend(parameterEquations, acc);
+  else
+    Error.addMessage(Error.INTERNAL_ERROR, {"createParameterEquations failed"});
+    fail();
+  end try;
 end createParameterEquations;
 
 protected function traverseAlgorithmFinder "author: Frenkel TUD 2010-12
