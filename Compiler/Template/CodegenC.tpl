@@ -4020,8 +4020,6 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls, Stri
       }
       /* write solution */
       <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
-      /* update inner equations */
-      <%innerBody%>
       <% if profileSome() then 'SIM_PROF_ACC_EQ(modelInfoGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);' %>
       >>
 end equationNonlinear;
