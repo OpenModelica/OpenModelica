@@ -454,8 +454,8 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
   double TTOL = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE*fabs(*b-*a); /* absTol + relTol*abs(b-a) */
   double c;
   long i=0;
-  /* n >= log(2)/log(2) + log(|b-a|/TOL)/log(2) + 2 (to go for sure)*/
-  unsigned int n = 1 + log(fabs(*b - *a)/TTOL)/log(2) + 2;
+  /* n >= log(2)/log(2) + log(|b-a|/TOL)/log(2)*/
+  unsigned int n = 1 + ceil(log(fabs(*b - *a)/TTOL)/log(2));
 
   TRACE_PUSH
 
@@ -464,7 +464,7 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
   infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to %e and maximum number of intersections %d.", TTOL, n);
 
-  while(n-- > 0)
+  while(fabs(*b - *a) > MINIMAL_STEP_SIZE && n-- > 0)
   {
     c = 0.5 * (*a + *b);
     data->localData[0]->timeValue = c;
