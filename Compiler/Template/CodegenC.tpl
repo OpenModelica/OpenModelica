@@ -11230,7 +11230,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
           return 0;
           #endif
           >>
-          
+
       let startTimeOpt = match startTimeE
         case SOME(exp) then
           let startTimeOptExp = daeExp(exp, contextOther, &preExp, &varDecls, &auxFunction)
@@ -11248,7 +11248,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
           return 0;
           #endif
           >>
-          
+
       let inputBounds = match simCode
         case simCode as SIMCODE(__) then
           match modelInfo
