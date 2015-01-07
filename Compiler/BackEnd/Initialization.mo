@@ -894,7 +894,7 @@ algorithm
     // BackendDump.dumpComponentsOLD(comps);
 
     // flattern list and look for cyclic dependencies
-    flatComps := flatternParamComps(comps, {}, allParameters);
+    flatComps := list(flattenParamComp(comp, allParameters) for comp in comps);
     // BackendDump.dumpComponentsOLD({flatComps});
 
     // select secondary parameters
@@ -959,38 +959,30 @@ algorithm
   end matchcontinue;
 end selectSecondaryParameters;
 
-protected function flatternParamComps
-  input list<list<Integer>> inComps;
-  input list<Integer> inFlatComps;
+protected function flattenParamComp
+  input list<Integer> paramIndices;
   input BackendDAE.Variables inAllParameters;
-  output list<Integer> outFlatComps;
+  output Integer outFlatComp;
 algorithm
-  outFlatComps := match(inComps)
+  outFlatComp := match paramIndices
     local
       Integer i;
-      list<list<Integer>> rest;
-      list<Integer> rest2;
-      list<Integer> paramIndices;
       list<BackendDAE.Var> paramLst;
       BackendDAE.Var param;
 
-    case {}
-    then listReverse(inFlatComps);
+    case {i} then i;
 
-    case {i}::rest equation
-      rest2 = flatternParamComps(rest, inFlatComps, inAllParameters);
-    then i::rest2;
-
-    case paramIndices::rest algorithm
-      paramLst := {};
-      for i in paramIndices loop
-        param := BackendVariable.getVarAt(inAllParameters, i);
-        paramLst := param::paramLst;
-      end for;
-      Error.addCompilerError("Cyclically dependent parameters found:\n" + warnAboutVars2(paramLst));
-    then fail();
+    else
+      algorithm
+        paramLst := {};
+        for i in paramIndices loop
+          param := BackendVariable.getVarAt(inAllParameters, i);
+          paramLst := param::paramLst;
+        end for;
+        Error.addCompilerError("Cyclically dependent parameters found:\n" + warnAboutVars2(paramLst));
+      then fail();
   end match;
-end flatternParamComps;
+end flattenParamComp;
 
 protected function selectInitializationVariables "author: lochel"
   input list<BackendDAE.EqSystem> inEqSystems;
