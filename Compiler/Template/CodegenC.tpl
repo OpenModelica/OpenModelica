@@ -1308,17 +1308,27 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
     <<
     int <%symbolName(modelNamePrefix,"input_function")%>(DATA *data)
     {
+      TRACE_PUSH
+
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
         '<%cref(name)%> = data->simulationInfo.inputVars[<%i0%>];'
-      ;separator="\n"%>
+        ;separator="\n"
+      %>
+
+      TRACE_POP
       return 0;
     }
 
     int <%symbolName(modelNamePrefix,"input_function_init")%>(DATA *data)
     {
+      TRACE_PUSH
+
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
         '$P$ATTRIBUTE<%cref(name)%>.start = data->simulationInfo.inputVars[<%i0%>];'
-      ;separator="\n"%>
+        ;separator="\n"
+      %>
+
+      TRACE_POP
       return 0;
     }
     >>
@@ -1333,9 +1343,14 @@ template functionOutput(ModelInfo modelInfo, String modelNamePrefix)
     <<
     int <%symbolName(modelNamePrefix,"output_function")%>(DATA *data)
     {
+      TRACE_PUSH
+
       <%vars.outputVars |> SIMVAR(__) hasindex i0 =>
         'data->simulationInfo.outputVars[<%i0%>] = <%cref(name)%>;'
-      ;separator="\n"%>
+        ;separator="\n"
+      %>
+
+      TRACE_POP
       return 0;
     }
     >>
@@ -1883,6 +1898,7 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
   <%&tmp%>
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data)
   {
+    TRACE_PUSH
     <%varDecls%>
 
     /* min ******************************************************** */
@@ -1894,7 +1910,8 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
       $P$ATTRIBUTE<%cref(cref)%>.min = <%cref(cref)%>;
         infoStreamPrint(LOG_INIT, 0, "%s(min=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.min);
       >>
-    ;separator="\n"%>
+      ;separator="\n"
+    %>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* max ******************************************************** */
@@ -1906,7 +1923,8 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
       $P$ATTRIBUTE<%cref(cref)%>.max = <%cref(cref)%>;
         infoStreamPrint(LOG_INIT, 0, "%s(max=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.max);
       >>
-    ;separator="\n"%>
+      ;separator="\n"
+    %>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* nominal **************************************************** */
@@ -1918,7 +1936,8 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
       $P$ATTRIBUTE<%cref(cref)%>.nominal = <%cref(cref)%>;
         infoStreamPrint(LOG_INIT, 0, "%s(nominal=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) $P$ATTRIBUTE<%cref(cref)%>.nominal);
       >>
-    ;separator="\n"%>
+      ;separator="\n"
+    %>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     /* start ****************************************************** */
@@ -1930,9 +1949,11 @@ template functionUpdateBoundVariableAttributes(list<SimEqSystem> startValueEquat
       $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;
         infoStreamPrint(LOG_INIT, 0, "%s(start=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>)  $P$ATTRIBUTE<%cref(cref)%>.start);
       >>
-    ;separator="\n"%>
+      ;separator="\n"
+    %>
     if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -1952,9 +1973,11 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   <%&tmp%>
   int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data)
   {
+    TRACE_PUSH
     <%varDecls%>
     <%body%>
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -2021,6 +2044,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations, String mod
   <%tmp%>
   int <%symbolName(modelNamePrefix,"initial_residual")%>(DATA *data, double *initialResiduals)
   {
+    TRACE_PUSH
     const int *equationIndexes = NULL;
     int i = 0;
     <%varDecls%>
@@ -2029,6 +2053,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations, String mod
     <%body%>
     if (ACTIVE_STREAM(LOG_RES_INIT)) messageClose(LOG_RES_INIT);
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -2069,6 +2094,7 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
 
   int <%symbolName(modelNamePrefix,"functionInitialEquations")%>(DATA *data)
   {
+    TRACE_PUSH
     <%varDecls%>
 
     <%errorMsg%>
@@ -2077,6 +2103,7 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
     else '<%fncalls%>' %>
     data->simulationInfo.discreteCall = 0;
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -2123,12 +2150,14 @@ template functionRemovedInitialEquations(Boolean useSymbolicInitialization, list
   <%tmp%>
   int <%symbolName(modelNamePrefix,"functionRemovedInitialEquations")%>(DATA *data)
   {
+    TRACE_PUSH
     const int *equationIndexes = NULL;
     double res = 0.0;
     <%varDecls%>
 
     <%body%>
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -2153,8 +2182,12 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   <%auxFunction%>
   int <%symbolName(modelNamePrefix,"function_storeDelayed")%>(DATA *data)
   {
+    TRACE_PUSH
+
     <%varDecls%>
     <%storePart%>
+
+    TRACE_POP
     return 0;
   }
   >>
@@ -2959,11 +2992,11 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
 
   int <%symbolName(modelNamePrefix,"functionODE")%>(DATA *data)
   {
+    TRACE_PUSH
     <% if profileFunctions() then "rt_tick(SIM_TIMER_FUNCTION_ODE);" %>
 
     <%varDecls%>
 
-    TRACE_PUSH
     data->simulationInfo.callStatistics.functionODE++;
 
     data->simulationInfo.discreteCall = 0;
@@ -2995,9 +3028,8 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   /* for continuous time variables */
   int <%symbolName(modelNamePrefix,"functionAlgebraics")%>(DATA *data)
   {
-    <%varDecls%>
-
     TRACE_PUSH
+    <%varDecls%>
 
     data->simulationInfo.discreteCall = 0;
     <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, functionAlg_systems);'
@@ -3076,11 +3108,11 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
 
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data)
   {
+    TRACE_PUSH
     int equationIndexes[1] = {0};<%/*reinits may use equation indexes, even though it has no equation...*/%>
     <%addRootsTempArray()%>
     <%varDecls%>
 
-    TRACE_PUSH
 
     data->simulationInfo.needToIterate = 0;
     data->simulationInfo.discreteCall = 1;
@@ -3139,9 +3171,9 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
 
   int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data)
   {
+    TRACE_PUSH
     <%varDecls%>
 
-    TRACE_PUSH
     data->simulationInfo.callStatistics.functionZeroCrossingsEquations++;
 
     data->simulationInfo.discreteCall = 0;
@@ -3153,9 +3185,9 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
 
   int <%symbolName(modelNamePrefix,"function_ZeroCrossings")%>(DATA *data, double *gout)
   {
+    TRACE_PUSH
     <%varDecls2%>
 
-    TRACE_PUSH
     data->simulationInfo.callStatistics.functionZeroCrossings++;
 
     <%zeroCrossingsCode%>
@@ -3274,9 +3306,9 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
 
   int <%symbolName(modelNamePrefix,"function_updateRelations")%>(DATA *data, int evalforZeroCross)
   {
+    TRACE_PUSH
     <%varDecls%>
 
-    TRACE_PUSH
 
     if(evalforZeroCross)
     {
@@ -3339,9 +3371,8 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
   <<
   int <%symbolName(modelNamePrefix, "checkForDiscreteChanges")%>(DATA *data)
   {
-    int needToIterate = 0;
-
     TRACE_PUSH
+    int needToIterate = 0;
 
     infoStreamPrint(LOG_EVENTS_V, 1, "check for discrete changes at time=%.12g", data->localData[0]->timeValue);
     <%changediscreteVars%>
@@ -3389,10 +3420,12 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
   /* function to check assert after a step is done */
   int <%symbolName(modelNamePrefix,"checkForAsserts")%>(DATA *data)
   {
+    TRACE_PUSH
     <%varDecls%>
 
     <%algAndEqAssertsPart%>
 
+    TRACE_POP
     return 0;
   }
   >>
@@ -3551,6 +3584,8 @@ case {} then
 <<
 int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
 {
+  TRACE_PUSH
+  TRACE_POP
   return 1;
 }
 >>
@@ -3560,6 +3595,8 @@ case _ then
     <<
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
     {
+      TRACE_PUSH
+      TRACE_POP
       return 1;
     }
     >>
@@ -3593,6 +3630,7 @@ case _ then
 
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
       {
+        TRACE_PUSH
         DATA* data = ((DATA*)inData);
         int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixname%>;
 
@@ -3622,6 +3660,7 @@ case _ then
         /* write color array */
         <%colorArray%>
 
+        TRACE_POP
         return 0;
       }
       >>
@@ -3639,6 +3678,8 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
     <<
     int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(void* data)
     {
+      TRACE_PUSH
+      TRACE_POP
       return 0;
     }
     >>
@@ -3648,6 +3689,8 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
         <<
         int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(void* data)
         {
+          TRACE_PUSH
+          TRACE_POP
           return 0;
         }
         >>
@@ -3678,10 +3721,14 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   <%&tmp%>
   int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(void* inData)
   {
+    TRACE_PUSH
+
     DATA* data = ((DATA*)inData);
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
     <%varDecls%>
     <%eqns_%>
+
+    TRACE_POP
     return 0;
   }
   >>
@@ -11176,38 +11223,41 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
 
       let objectiveFunction = match objetiveE
         case SOME(exp) then
-        <<
-         *res =  &$P$OMC$objectMayerTerm;
-         #ifdef $P$OMC$objectMayerTerm$pDERC$indexdiffed
-         *index_Dres = $P$OMC$objectMayerTerm$pDERC$indexdiffed;
-         return 0;
-         #endif
-        >>
+          <<
+          *res =  &$P$OMC$objectMayerTerm;
+          #ifdef $P$OMC$objectMayerTerm$pDERC$indexdiffed
+          *index_Dres = $P$OMC$objectMayerTerm$pDERC$indexdiffed;
+          return 0;
+          #endif
+          >>
+          
       let startTimeOpt = match startTimeE
-  case SOME(exp) then
-         let startTimeOptExp = daeExp(exp, contextOther, &preExp, &varDecls, &auxFunction)
-   <<
+        case SOME(exp) then
+          let startTimeOptExp = daeExp(exp, contextOther, &preExp, &varDecls, &auxFunction)
+          <<
           *startTimeOpt = <%startTimeOptExp%>;
-   >>
+          >>
 
-      let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
-        <<
-         *res =  &$P$OMC$objectLagrangeTerm;
-         #ifdef $P$OMC$objectLagrangeTerm$pDERB$indexdiffed
-         *index_DresB = $P$OMC$objectLagrangeTerm$pDERB$indexdiffed;
-         *index_DresC = $P$OMC$objectLagrangeTerm$pDERC$indexdiffed;
-         return 0;
-         #endif
-        >>
+      let objectiveIntegrand = match objectiveIntegrandE
+        case SOME(exp) then
+          <<
+          *res =  &$P$OMC$objectLagrangeTerm;
+          #ifdef $P$OMC$objectLagrangeTerm$pDERB$indexdiffed
+          *index_DresB = $P$OMC$objectLagrangeTerm$pDERB$indexdiffed;
+          *index_DresC = $P$OMC$objectLagrangeTerm$pDERC$indexdiffed;
+          return 0;
+          #endif
+          >>
+          
       let inputBounds = match simCode
-               case simCode as SIMCODE(__) then
-                 match modelInfo
-                   case MODELINFO(vars=SIMVARS(__)) then
-                   <<
-                     <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
-                     'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] =(char *) <%cref(name)%>__varInfo.name;<%\n%>start[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
-                     ;separator="\n"%>
-                   >>
+        case simCode as SIMCODE(__) then
+          match modelInfo
+            case MODELINFO(vars=SIMVARS(__)) then
+              <<
+              <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+              'min[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.min;<%\n%>max[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.max;<%\n%>nominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.nominal;<%\n%>useNominal[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.useNominal;<%\n%>name[<%i0%>] =(char *) <%cref(name)%>__varInfo.name;<%\n%>start[<%i0%>] = $P$ATTRIBUTE<%cref(name)%>.start;'
+              ;separator="\n"%>
+              >>
            <<
            <%auxFunction%>
            /* objectiveFunction */
