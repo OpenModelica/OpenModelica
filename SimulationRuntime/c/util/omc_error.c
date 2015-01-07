@@ -134,7 +134,7 @@ int showAllWarnings = 0;
     }
     return 0;
   }
-  
+
   int DEBUG_TRACE_POP_HELPER(int traceID)
   {
     if(useStream[LOG_TRACE])
