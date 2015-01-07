@@ -33,7 +33,7 @@ encapsulated package BaseHashSet
 "
   file:        BaseHashSet.mo
   package:     BaseHashSet
-  author:      Peter Aronsson (MathCore), Jens Frenkek (TU Dresden)
+  author:      Peter Aronsson (MathCore), Jens Frenkel (TU Dresden)
   description: BaseHashSet is a generic implementation of hashsets.
                See HashSet*.mo to see how to use it.
 
