@@ -2839,28 +2839,28 @@ protected function selectCausalVars
       equation
         interEqs = List.intersectionOnTrue(row,selEqs,intEq);
         size = List.fold4(interEqs,sizeOfAssignable,me,ass1In,selVars,indx,0);
-        if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        true = size < num;
+		if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Var " + intString(listGet(selVars,indx)) + " would causalize " + intString(size) + " Eqns\n");
         end if;
-        true = size < num;
       then ((me,ass1In,selEqs,selVars,cVars,num,indx+1,size::counts));
     case(_,(me,ass1In,selEqs,selVars,cVars,num,indx,counts))
       equation
         interEqs = List.intersectionOnTrue(row,selEqs,intEq);
         size = List.fold4(interEqs,sizeOfAssignable,me,ass1In,selVars,indx,0);
-        if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        true = size == num;
+		if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Var " + intString(listGet(selVars,indx)) + " would causalize " + intString(size) + " Eqns\n");
         end if;
-        true = size == num;
       then ((me,ass1In,selEqs,selVars,indx::cVars,num,indx+1,size::counts));
     case(_,(me,ass1In,selEqs,selVars,_,num,indx,counts))
       equation
         interEqs = List.intersectionOnTrue(row,selEqs,intEq);
         size = List.fold4(interEqs,sizeOfAssignable,me,ass1In,selVars,indx,0);
-        if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+        true = size > num;
+		if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Var " + intString(listGet(selVars,indx)) + " would causalize " + intString(size) + " Eqns\n");
         end if;
-        true = size > num;
       then ((me,ass1In,selEqs,selVars,{indx},size,indx+1,size::counts));
     end matchcontinue;
   end selectCausalVars;

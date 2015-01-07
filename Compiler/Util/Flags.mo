@@ -859,7 +859,7 @@ constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(43, "delayBreakLoop",
   Util.gettext("Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization."));
 
 constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
-  NONE(), EXTERNAL(), STRING_FLAG("omcTearing"),
+  NONE(), EXTERNAL(), STRING_FLAG("cellier"),
   SOME(STRING_DESC_OPTION({
     ("noTearing", Util.gettext("Skip tearing.")),
     ("omcTearing", Util.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
