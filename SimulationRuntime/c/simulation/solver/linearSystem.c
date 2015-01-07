@@ -71,6 +71,7 @@ const char *LS_DESC[LS_MAX+1] = {
  */
 int initializeLinearSystems(DATA *data)
 {
+  TRACE_PUSH
   int i, nnz;
   int size;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo.linearSystemData;
@@ -133,6 +134,8 @@ int initializeLinearSystems(DATA *data)
   }
 
   messageClose(LOG_LS_V);
+
+  TRACE_POP
   return 0;
 }
 
@@ -144,6 +147,7 @@ int initializeLinearSystems(DATA *data)
  */
 int updateStaticDataOfLinearSystems(DATA *data)
 {
+  TRACE_PUSH
   int i, nnz;
   int size;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo.linearSystemData;
@@ -156,6 +160,8 @@ int updateStaticDataOfLinearSystems(DATA *data)
   }
 
   messageClose(LOG_LS_V);
+
+  TRACE_POP
   return 0;
 }
 
@@ -184,6 +190,7 @@ void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
  */
 int freeLinearSystems(DATA *data)
 {
+  TRACE_PUSH
   int i;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
 
@@ -221,6 +228,8 @@ int freeLinearSystems(DATA *data)
   }
 
   messageClose(LOG_LS_V);
+
+  TRACE_POP
   return 0;
 }
 
@@ -233,7 +242,9 @@ int freeLinearSystems(DATA *data)
  */
 int solve_linear_system(DATA *data, int sysNumber)
 {
+  TRACE_PUSH
   int success;
+  int retVal;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
 
   rt_ext_tp_tick(&(linsys[sysNumber].totalTimeClock));
@@ -259,7 +270,10 @@ int solve_linear_system(DATA *data, int sysNumber)
   linsys[sysNumber].totalTime += rt_ext_tp_tock(&(linsys[sysNumber].totalTimeClock));
   linsys[sysNumber].numberOfCall++;
 
-  return check_linear_solution(data, 1, sysNumber);
+  retVal = check_linear_solution(data, 1, sysNumber);
+
+  TRACE_POP
+  return retVal;
 }
 
 /*! \fn check_linear_solutions
@@ -275,13 +289,19 @@ int solve_linear_system(DATA *data, int sysNumber)
  */
 int check_linear_solutions(DATA *data, int printFailingSystems)
 {
+  TRACE_PUSH
   long i;
 
-  for(i=0; i<data->modelData.nLinearSystems; ++i) {
-     if(check_linear_solution(data, printFailingSystems, i))
-       return 1;
+  for(i=0; i<data->modelData.nLinearSystems; ++i)
+  {
+    if(check_linear_solution(data, printFailingSystems, i))
+    {
+      TRACE_POP
+      return 1;
+    }
   }
 
+  TRACE_POP
   return 0;
 }
 
@@ -298,13 +318,18 @@ int check_linear_solutions(DATA *data, int printFailingSystems)
  */
 int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
 {
+  TRACE_PUSH
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
-  long j, i = sysNumber;;
+  long j, i = sysNumber;
 
   if(linsys[i].solved == 0)
   {
     int index = linsys[i].equationIndex, indexes[2] = {1,index};
-    if (!printFailingSystems) return 1;
+    if (!printFailingSystems)
+    {
+      TRACE_POP
+      return 1;
+    }
     warningStreamPrintWithEquationIndexes(LOG_LS, 1, indexes, "linear system %d fails: at t=%g", index, data->localData[0]->timeValue);
 
     for(j=0; j<modelInfoGetEquation(&data->modelData.modelDataXml, (linsys[i]).equationIndex).numVar; ++j) {
@@ -328,9 +353,12 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       }
     }
     messageCloseWarning(LOG_LS);
+
+    TRACE_POP
     return 1;
   }
 
+  TRACE_POP
   return 0;
 }
 

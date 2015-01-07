@@ -651,7 +651,9 @@ static int numeric_initialization(DATA *data, int optiMethod, int lambda_steps)
  */
 static int symbolic_initialization(DATA *data, long numLambdaSteps)
 {
+  TRACE_PUSH
   long step;
+  int retVal;
 
   /* initial sample and delay before initial the system */
   initDelay(data, data->simulationInfo.startTime);
@@ -766,7 +768,10 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
   }
 
   /* check for over-determined systems */
-  return data->callback->functionRemovedInitialEquations(data);
+  retVal = data->callback->functionRemovedInitialEquations(data);
+
+  TRACE_POP
+  return retVal;
 }
 
 /*! \fn static char *mapToDymolaVars(const char *varname)

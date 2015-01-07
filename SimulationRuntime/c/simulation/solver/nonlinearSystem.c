@@ -107,6 +107,7 @@ struct dataNewtonAndHybrid {
  */
 int initializeNonlinearSystems(DATA *data)
 {
+  TRACE_PUSH
   int i;
   int size;
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo.nonlinearSystemData;
@@ -179,6 +180,8 @@ int initializeNonlinearSystems(DATA *data)
   }
 
   messageClose(LOG_NLS);
+
+  TRACE_POP
   return 0;
 }
 
@@ -190,6 +193,7 @@ int initializeNonlinearSystems(DATA *data)
  */
 int updateStaticDataOfNonlinearSystems(DATA *data)
 {
+  TRACE_PUSH
   int i;
   int size;
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo.nonlinearSystemData;
@@ -203,6 +207,8 @@ int updateStaticDataOfNonlinearSystems(DATA *data)
   }
 
   messageClose(LOG_NLS);
+
+  TRACE_POP
   return 0;
 }
 
@@ -214,6 +220,7 @@ int updateStaticDataOfNonlinearSystems(DATA *data)
  */
 int freeNonlinearSystems(DATA *data)
 {
+  TRACE_PUSH
   int i;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
 
@@ -261,6 +268,8 @@ int freeNonlinearSystems(DATA *data)
   }
 
   messageClose(LOG_NLS);
+
+  TRACE_POP
   return 0;
 }
 

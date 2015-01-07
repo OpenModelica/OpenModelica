@@ -306,6 +306,7 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
  */
 int stateSelection(DATA *data, char reportError, int switchStates)
 {
+  TRACE_PUSH
   long i=0;
   long j=0;
   int globalres=0;
@@ -356,5 +357,7 @@ int stateSelection(DATA *data, char reportError, int switchStates)
     free(oldColPivot);
     free(oldRowPivot);
   }
+  
+  TRACE_POP
   return globalres;
 }
