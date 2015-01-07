@@ -240,6 +240,13 @@ void setGlobalVerboseLevel(int argc, char**argv)
   if(useStream[LOG_DSS_JAC])
     useStream[LOG_DSS] = 1;
 
+#ifndef USE_DEBUG_TRACE
+  if(useStream[LOG_TRACE])
+  {
+    warningStreamPrint(LOG_STDOUT, 0, "LOG_TRACE is not available. Please recompile runtime with '#define USE_DEBUG_TRACE' and try again.");
+  }
+#endif
+
   delete flags;
 }
 
