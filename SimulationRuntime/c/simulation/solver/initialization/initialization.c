@@ -662,8 +662,6 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
   storePreValues(data);
   overwriteOldSimulationData(data);
 
-  /* do pivoting for dynamic state selection */
-  stateSelection(data, 0, 1);
   if (data->callback->useHomotopy && numLambdaSteps > 1) {
     long i;
     char buffer[4096];
@@ -757,13 +755,13 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
   storeRelations(data);
 
   /* do pivoting for dynamic state selection if selection changed try again an */
-  if(stateSelection(data, 1, 1) == 1)
+  if(stateSelection(data, 0, 1) == 1)
   {
     data->callback->functionInitialEquations(data);
     storeRelations(data);
 
     /* report a warning about strange start values */
-    if(stateSelection(data, 1, 1) == 1)
+    if(stateSelection(data, 0, 1) == 1)
       warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
   }
 
