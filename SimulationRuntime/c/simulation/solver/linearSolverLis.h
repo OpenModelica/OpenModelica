@@ -37,27 +37,18 @@
 #include "simulation_data.h"
 #include <lis.h>
 
-#ifdef __cplusplus
-  extern "C" {
-#endif
-
-#ifdef VOID
-  #undef VOID
-#endif
-
-#ifdef __cplusplus
-  }
-#endif
-
 typedef struct DATA_LIS
 {
   LIS_MATRIX A;
   LIS_VECTOR x,b;
   LIS_SOLVER solver;
-  LIS_INT err;
+
   int n_col;
   int n_row;
   int nnz;
+
+  rtclock_t timeClock;             /* time clock */
+
 } DATA_LIS;
 
 

@@ -33,11 +33,13 @@
 
 #include <math.h>
 
+#include "../../../../Compiler/runtime/config.h"
 #include "omc_error.h"
 #include "rtclock.h"
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
 #include "linearSolverLis.h"
+#include "linearSolverUmfpack.h"
 #include "linearSolverTotalPivot.h"
 #include "simulation_info_xml.h"
 
@@ -48,6 +50,7 @@ const char *LS_NAME[LS_MAX+1] = {
 
   /* LS_LAPACK */       "lapack",
   /* LS_LIS */          "lis",
+  /* LS_UMFPACK */      "umfpack",
   /* LS_TOTALPIVOT */   "totalpivot",
 
   "LS_MAX"
@@ -58,6 +61,7 @@ const char *LS_DESC[LS_MAX+1] = {
 
   /* LS_LAPACK */       "method using lapack LU factorization",
   /* LS_LIS */          "method using iterativ solver Lis",
+  /* LS_UMFPACK */      "method using umfpack sparse linear solver",
   /* LS_TOTALPIVOT */   "default method - using total pivoting LU factorization",
 
   "LS_MAX"
@@ -82,6 +86,8 @@ int initializeLinearSystems(DATA *data)
   {
     size = linsys[i].size;
     nnz = linsys[i].nnz;
+
+    linsys[i].totalTime = 0;
 
     /* allocate system data */
     linsys[i].x = (double*) malloc(size*sizeof(double));
@@ -114,20 +120,35 @@ int initializeLinearSystems(DATA *data)
     case LS_LAPACK:
       linsys[i].A = (double*) malloc(size*size*sizeof(double));
       linsys[i].setAElement = setAElementLAPACK;
+      linsys[i].setBElement = setBElementLAPACK;
       allocateLapackData(size, &linsys[i].solverData);
       break;
 
     case LS_LIS:
       linsys[i].setAElement = setAElementLis;
+      linsys[i].setBElement = setBElementLis;
       allocateLisData(size, size, nnz, &linsys[i].solverData);
       break;
+
+#ifdef WITH_UMFPACK
+    case LS_UMFPACK:
+      linsys[i].setAElement = setAElementUmfpack;
+      linsys[i].setBElement = setBElementUmfpack;
+      allocateUmfPackData(size, size, nnz, &linsys[i].solverData);
+      break;
+#else
+    case LS_UMFPACK:
+      throwStreamPrint(data->threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+      break;
+#endif
 
     case LS_TOTALPIVOT:
       linsys[i].A = (double*) malloc(size*size*sizeof(double));
       linsys[i].setAElement = setAElementTotalPivot;
-      linsys[i].solverData = (DATA_TOTALPIVOT*) malloc(sizeof(DATA_TOTALPIVOT));
-      allocateTotalPivotData(size, linsys[i].solverData);
+      linsys[i].setBElement = setBElementTotalPivot;
+      allocateTotalPivotData(size, &(linsys[i].solverData));
       break;
+
     default:
       throwStreamPrint(data->threadData, "unrecognized linear solver");
     }
@@ -215,9 +236,19 @@ int freeLinearSystems(DATA *data)
       freeLisData(&linsys[i].solverData);
       break;
 
+#ifdef WITH_UMFPACK
+    case LS_UMFPACK:
+      freeUmfPackData(&linsys[i].solverData);
+      break;
+#else
+    case LS_UMFPACK:
+      throwStreamPrint(data->threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+      break;
+#endif
+
     case LS_TOTALPIVOT:
-      freeTotalPivotData(linsys[i].solverData);
       free(linsys[i].A);
+      freeTotalPivotData(&(linsys[i].solverData));
       break;
 
     default:
@@ -257,6 +288,15 @@ int solve_linear_system(DATA *data, int sysNumber)
   case LS_LIS:
     success = solveLis(data, sysNumber);
     break;
+#ifdef WITH_UMFPACK
+  case LS_UMFPACK:
+    success = solveUmfPack(data, sysNumber);
+    break;
+#else
+  case LS_UMFPACK:
+    throwStreamPrint(data->threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+    break;
+#endif
 
   case LS_TOTALPIVOT:
     success = solveTotalPivot(data, sysNumber);
@@ -367,6 +407,12 @@ void setAElementLAPACK(int row, int col, double value, int nth, void *data)
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   linsys->A[row + col * linsys->size] = value;
 }
+void setBElementLAPACK(int row, double value, void *data )
+{
+  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
+  linsys->b[row] = value;
+}
+
 
 void setAElementLis(int row, int col, double value, int nth, void *data)
 {
@@ -375,8 +421,44 @@ void setAElementLis(int row, int col, double value, int nth, void *data)
   lis_matrix_set_value(LIS_INS_VALUE, row, col, value, sData->A);
 }
 
+void setBElementLis(int row, double value, void *data )
+{
+  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
+  DATA_LIS* sData = (DATA_LIS*) linsys->solverData;
+  lis_vector_set_value(LIS_INS_VALUE, row, value, sData->b);
+}
+
+#ifdef WITH_UMFPACK
+void setAElementUmfpack(int row, int col, double value, int nth, void *data)
+{
+  LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
+  DATA_UMFPACK* sData = (DATA_UMFPACK*) linSys->solverData;
+
+  if (row > 0)
+     if (sData->Ap[row] == 0)
+       sData->Ap[row] = nth;
+
+   sData->Ai[nth] = col;
+   sData->Ax[nth] = value;
+
+}
+
+void setBElementUmfpack(int row, double value, void *data)
+{
+  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
+  linsys->b[row] = value;
+}
+#endif
+
 void setAElementTotalPivot(int row, int col, double value, int nth, void *data)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   linsys->A[row + col * linsys->size] = value;
 }
+
+void setBElementTotalPivot(int row, double value, void *data)
+{
+  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
+  linsys->b[row] = value;
+}
+
