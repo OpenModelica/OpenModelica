@@ -7968,16 +7968,24 @@ template daeExternalCExp(Exp exp, Context context, Text &preExp, Text &varDecls,
     case T_ARRAY(__) then  // Array-expressions
       let shortTypeStr = expTypeShort(typeof(exp))
       '(<%extType(typeof(exp),true,true)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
+    case T_STRING(__) then
+      let mstr = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+      'MMC_STRINGDATA(<%mstr%>)'
     else daeExp(exp, context, &preExp, &varDecls, &auxFunction)
 end daeExternalCExp;
 
 template daeExternalF77Exp(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
-  "Like daeExp, but also converts the type to external C"
+  "Like daeExp, but also converts the type to external Fortran"
 ::=
   match typeof(exp)
     case T_ARRAY(__) then  // Array-expressions
       let shortTypeStr = expTypeShort(typeof(exp))
       '(<%extType(typeof(exp),true,true)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
+    case T_STRING(__) then
+      let texp = daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
+      let tvar = tempDecl(expTypeFromExpFlag(exp,8),&varDecls)
+      let &preExp += '<%tvar%> = MMC_STRINGDATA(<%texp%>);<%\n%>'
+      '&<%tvar%>'
     else
       let texp = daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
       let tvar = tempDecl(expTypeFromExpFlag(exp,8),&varDecls)
