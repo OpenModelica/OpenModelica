@@ -8141,25 +8141,21 @@ algorithm
         (discreteAlgVars, index_) = setVariableIndexHelper(discreteAlgVars, index_);
         (paramVars, index_) = setVariableIndexHelper(paramVars, index_);
         (aliasVars, index_) = setVariableIndexHelper(aliasVars, index_);
-        (constVars, index_) = setVariableIndexHelper(constVars, index_);
 
         //integer variables
         (intAlgVars, index_) = setVariableIndexHelper(intAlgVars, index_);
         (intParamVars, index_) = setVariableIndexHelper(intParamVars, index_);
         (intAliasVars, index_) = setVariableIndexHelper(intAliasVars, index_);
-        (intConstVars, index_) = setVariableIndexHelper(intConstVars, index_);
 
         //boolean varriables
         (boolAlgVars, index_) = setVariableIndexHelper(boolAlgVars, index_);
         (boolParamVars, index_) = setVariableIndexHelper(boolParamVars, index_);
         (boolAliasVars, index_) = setVariableIndexHelper(boolAliasVars, index_);
-        (boolConstVars, index_) = setVariableIndexHelper(boolConstVars, index_);
 
         //string varriables
         (stringAlgVars, index_) = setVariableIndexHelper(stringAlgVars, index_);
         (stringParamVars, index_) = setVariableIndexHelper(stringParamVars, index_);
         (stringAliasVars, index_) = setVariableIndexHelper(stringAliasVars, index_);
-        (stringConstVars, index_) = setVariableIndexHelper(stringConstVars, index_);
 
         //external variables
         (extObjVars, index_) = setVariableIndexHelper(extObjVars, index_);
