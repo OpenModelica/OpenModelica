@@ -10926,7 +10926,7 @@ template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Tex
  cref2simvar(cr, simCode) |> var as SIMVAR(index=i) =>
     match varKind
         case STATE(__)     then
-              let statvar = '__z[<%i%>] /*blubb*/ '
+              let statvar = '__z[<%i%>]'
               let tmpArr = '<%daeExpCrefRhsArrayBox2(statvar,ty,context,preExp,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
               tmpArr
         case STATE_DER(__)      then
@@ -12257,6 +12257,7 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
   <<
   bool <%className%>::evaluateAll(const UPDATETYPE command)
   {
+    <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
     bool state_var_reinitialized = false;
 
     <%varDecls%>
@@ -12265,15 +12266,12 @@ template createEvaluateAll( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenC
 
     /* evaluateODE(command);
 
-    <%if createMeasureTime then generateMeasureTimeStartCode("measuredFunctionStartValues", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
-
     <%equation_notOde_func_calls%>
     */
     // Reinits
     <%reinit%>
 
     <%if createMeasureTime then generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "measureTimeFunctionsArray[1]", "evaluateAll_wo_ODE", "MEASURETIME_MODELFUNCTIONS") else ""%>
-
     return state_var_reinitialized;
   }
   >>
