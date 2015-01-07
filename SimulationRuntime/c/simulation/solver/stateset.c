@@ -357,7 +357,7 @@ int stateSelection(DATA *data, char reportError, int switchStates)
     free(oldColPivot);
     free(oldRowPivot);
   }
-  
+
   TRACE_POP
   return globalres;
 }
