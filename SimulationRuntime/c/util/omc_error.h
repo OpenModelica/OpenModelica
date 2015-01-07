@@ -102,7 +102,6 @@ enum LOG_STREAM
   LOG_SOTI,
   LOG_STATS,
   LOG_STATS_V,
-  LOG_TRACE,
   LOG_UTIL,
   LOG_ZEROCROSSINGS,
 
@@ -144,10 +143,8 @@ void setStreamPrintXML(int isXML);
 #endif
 
 #ifdef USE_DEBUG_TRACE
-  extern int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln);
-  extern int DEBUG_TRACE_POP_HELPER(int traceID);
-  #define TRACE_PUSH int __DEBUG_TRACE_HELPER = DEBUG_TRACE_PUSH_HELPER(__FUNCTION__, __FILE__, __LINE__);
-  #define TRACE_POP DEBUG_TRACE_POP_HELPER(__DEBUG_TRACE_HELPER);
+  #define TRACE_PUSH printf("TRACE: push %s (%s:%d)\n", __FUNCTION__, __FILE__, __LINE__);
+  #define TRACE_POP printf("TRACE: pop\n");
 #else
   #define TRACE_PUSH
   #define TRACE_POP

@@ -130,10 +130,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     threadData->currentErrorStage = ERROR_SIMULATION;
 
 #ifdef USE_DEBUG_TRACE
-    if(useStream[LOG_TRACE])
-    {
-      printf("TRACE: push loop step=%ld, time=%.12g\n", __currStepNo, solverInfo->currentTime);
-    }
+    printf("TRACE: push loop step=%ld, time=%.12g\n", __currStepNo, solverInfo->currentTime);
 #endif
 
     omc_alloc_interface.collect_a_little();
