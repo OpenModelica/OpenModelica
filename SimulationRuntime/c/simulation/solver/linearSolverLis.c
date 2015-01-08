@@ -51,8 +51,8 @@ int
 allocateLisData(int n_row, int n_col, int nz, void** voiddata)
 {
   DATA_LIS* data = (DATA_LIS*) malloc(sizeof(DATA_LIS));
-  assertStreamPrint(NULL, 0 != data, "Could not allocate data for linear solver Lis.");
   char buffer[128];
+  assertStreamPrint(NULL, 0 != data, "Could not allocate data for linear solver Lis.");
 
   data->n_col = n_col;
   data->n_row = n_row;
