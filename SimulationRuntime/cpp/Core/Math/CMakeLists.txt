@@ -8,7 +8,7 @@ ELSE(ANALYZATION_MODE)
 	add_library(${MathName} SHARED ArrayOperations.cpp Functions.cpp SparseMatrix.cpp FactoryExport.cpp)
 ENDIF(ANALYZATION_MODE)
 
-target_link_libraries (${MathName}  ${Boost_LIBRARIES} )
+target_link_libraries (${MathName} ${Boost_LIBRARIES} ${SUITESPARSE_LIBRARIES} ${LAPACK_LIBRARIES})
 if (UNIX)
 set_target_properties(${MathName} PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
