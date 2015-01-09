@@ -50,6 +50,7 @@ protected import Debug;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionSolve;
+protected import ExpressionDump;
 protected import Flags;
 protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
@@ -2061,6 +2062,399 @@ algorithm
     then fail();
   end matchcontinue;
 end resolveEquations;
+
+// =============================================================================
+// section for postOptModule >solveLinearSystem<<
+//
+// solve linear system of equations (A x = b)
+// =============================================================================
+
+public function solveLinearSystem
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, solveLinearSystem0, (false,1));
+end solveLinearSystem;
+
+protected function solveLinearSystem0
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared inShared;
+  input tuple<Boolean,Integer> inTpl;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared outShared;
+  output tuple<Boolean,Integer> outTpl;
+protected
+  BackendDAE.StrongComponents comps;
+algorithm
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := isyst;
+  (osyst, outShared, outTpl) := solveLinearSystem1(isyst, inShared, comps, inTpl);
+end solveLinearSystem0;
+
+protected function solveLinearSystem1
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StrongComponents inComps;
+  input tuple<Boolean,Integer> inTpl;
+  output BackendDAE.EqSystem osyst := isyst;
+  output BackendDAE.Shared oshared := ishared;
+  output tuple<Boolean,Integer> outTpl;
+protected
+  Boolean b;
+  Boolean runMatching;
+  list<Integer> ii := {};
+  Integer offset;
+algorithm
+  (runMatching, offset) := inTpl;
+  for comp in inComps loop
+     (osyst,oshared,b,ii,offset) := solveLinearSystem2(osyst,oshared,comp,ii, offset);
+     runMatching := runMatching or b;
+  end for;
+  outTpl := (runMatching, offset);
+             
+
+  if runMatching then
+  osyst := match(osyst)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets,partitionKind=partitionKind))
+      equation
+        // remove empty entries from vars/eqns
+        eqns = List.fold(ii,BackendEquation.equationRemove,eqns);
+        vars = BackendVariable.listVar1(BackendVariable.varList(vars));
+        eqns = BackendEquation.listEquation(BackendEquation.equationList(eqns));
+      then
+        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
+    end match;
+  end if;
+end solveLinearSystem1;
+
+protected function solveLinearSystem2
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StrongComponent comp;
+  input list<Integer> ii;
+  input Integer offset;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output Boolean outRunMatching;
+  output list<Integer> oi;
+  output Integer offset_;
+algorithm
+  (osyst,oshared,outRunMatching, oi, offset_):=
+  matchcontinue (isyst,ishared,comp)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponent comp1;
+      Boolean b,b1;
+      list<BackendDAE.Equation> eqn_lst;
+      list<BackendDAE.Var> var_lst;
+      list<Integer> eindex,vindx;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      Integer toffset;
+
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,(BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=BackendDAE.FULL_JACOBIAN(SOME(jac)),jacType=BackendDAE.JAC_LINEAR())))
+      equation
+        eqn_lst = BackendEquation.getEqns(eindex,eqns);
+        var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
+        true = listLength(var_lst) <= Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM) or Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM) < 0;
+        ({},_) = List.splitOnTrue(var_lst, BackendVariable.isStateVar) "TODO: fix BackendDAEUtil.getEqnSysRhs for x and der(x)";
+        (syst,shared, toffset) = solveLinearSystem3(syst,shared,eqn_lst,eindex,var_lst,vindx,jac,offset);
+      then (syst,shared,true, List.appendNoCopy(eindex, ii), toffset);
+    else (isyst,ishared,false, ii, offset);
+  end matchcontinue;
+end solveLinearSystem2;
+
+protected function solveLinearSystem3
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared ishared;
+  input list<BackendDAE.Equation> eqn_lst;
+  input list<Integer> eqn_indxs;
+  input list<BackendDAE.Var> var_lst;
+  input list<Integer> var_indxs;
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+  input Integer offset;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output Integer offset_;
+algorithm
+  (osyst,oshared, offset_):=
+  match (syst,ishared,eqn_lst,eqn_indxs,var_lst,var_indxs,jac)
+    local
+      BackendDAE.Variables vars,v;
+      BackendDAE.EquationArray eqns, eqns1;
+      list<DAE.Exp> beqs;
+      list<DAE.ElementSource> sources;
+      Integer linInfo;
+      list<DAE.ComponentRef> names;
+      BackendDAE.Matching matching;
+      DAE.FunctionTree funcs;
+      BackendDAE.Shared shared;
+      BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      Integer n;
+
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind), shared as BackendDAE.SHARED(functionTree=funcs),_,_,_,_,_)
+      equation
+        v = BackendVariable.listVar1(var_lst);
+        eqns1 = BackendEquation.listEquation(eqn_lst);
+        (beqs,sources) = BackendDAEUtil.getEqnSysRhs(eqns1,v,SOME(funcs));
+        beqs = listReverse(beqs);
+        n = listLength(beqs);
+        names = List.map(var_lst,BackendVariable.varCref);
+        (eqns,vars, n) = solveLinearSystem4(beqs, jac, names, var_lst, n, eqns, vars, offset);
+        //eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns);
+      then
+        (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),matching,stateSets,partitionKind),shared,n);
+  end match;
+end solveLinearSystem3;
+
+protected function solveLinearSystem4
+"
+  author: Vitalij Ruge
+"
+  input list<DAE.Exp> b_lst;
+  input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+  input list<DAE.ComponentRef> cr_x;
+  input list<BackendDAE.Var> var_lst;
+  input Integer n;
+  input BackendDAE.EquationArray ieqns;
+  input BackendDAE.Variables ivars;
+  input Integer offset;
+  output BackendDAE.EquationArray oeqns := ieqns;
+  output BackendDAE.Variables ovars := ivars;
+  output Integer offset_ := offset + 1;
+protected
+  array<DAE.Exp> R;
+  array<DAE.Exp> Qb := arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> b := arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> A := arrayCreate(n*n,DAE.RCONST(0.0));
+  array<DAE.Exp> ax := arrayCreate(n,DAE.RCONST(0.0));
+  DAE.Exp a, x;
+  Integer m, ii, jj, mm;
+  list<DAE.Exp> x_lst := List.map(cr_x, Expression.crefExp);
+  DAE.ComponentRef cr;
+  list<DAE.ComponentRef> X := cr_x;
+  DAE.Exp detA, detAb;
+  BackendDAE.Var tmpvar;
+  String name;
+  list<BackendDAE.Var> vars := var_lst;
+  BackendDAE.Var var;
+  BackendDAE.Equation eqn;
+  list<tuple<Integer, Integer, BackendDAE.Equation>> jac_ := jac;
+algorithm
+  mm := listLength(jac);
+  //A
+  for i in 1:mm loop
+    (jj,ii,BackendDAE.RESIDUAL_EQUATION(exp = a)) :: jac_ := jac_; // jac(1) = a11, jac(2)=a12,.., jac(n+1) = an1
+    m := ii + (jj-1)*n;
+    (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$A$" + intString(m), offset, oeqns, ovars);
+    arrayUpdate(A,m,a);
+  end for;
+
+
+  // b
+  m := 1;
+  for b_ in b_lst loop
+     (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(b_, "QR$b$" + intString(m), offset, oeqns, ovars);
+     arrayUpdate(b, m, a);
+     m := m + 1;
+  end for;
+  //qrDecomposition3(b, n, false, "b");
+  
+  // x
+  m := 1;
+  for xx in x_lst loop
+    var :: vars := vars;
+    if BackendVariable.isStateVar(var) then
+      arrayUpdate(ax,m,Expression.expDer(xx));
+    else
+      arrayUpdate(ax,m,xx);
+    end if;
+    m := m + 1;
+  end for;
+  //qrDecomposition3(ax, n, false, "x");
+
+  // A*x = b -> R*x = Q'b
+  (R, Qb, oeqns, ovars) := qrDecomposition(A, n, b, oeqns, ovars, offset);
+
+  // R*x = Q'*b
+  for i in 1:n loop
+    m := (i-1)*n;
+    a := Expression.makeSum1(list(Expression.expMul(arrayGet(R, m + j), arrayGet(ax, j)) for j in i:n));
+    eqn := BackendDAE.EQUATION(a, arrayGet(Qb,i), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    eqn := BackendEquation.solveEquation(eqn, arrayGet(ax,i), NONE());
+    oeqns := BackendEquation.addEquation(eqn, oeqns);
+  end for;
+
+end solveLinearSystem4;
+
+protected function qrDecomposition
+"
+  author: Vitalij Ruge
+"
+  input array<DAE.Exp> A;
+  input Integer n;
+  input array<DAE.Exp> ib;
+  input BackendDAE.EquationArray ieqns;
+  input BackendDAE.Variables ivars;
+  output array<DAE.Exp> R := arrayCreate(n*n,DAE.RCONST(0.0));
+  output array<DAE.Exp> b := arrayCreate(n,DAE.RCONST(0.0));
+  output BackendDAE.EquationArray oeqns := ieqns;
+  output BackendDAE.Variables ovars := ivars;
+  input Integer offset;
+protected
+  array<DAE.Exp> Q := arrayCreate(n*n,DAE.RCONST(0.0));
+  array<DAE.Exp> v := arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> u := arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> w := arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> e := arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> vv := arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> x,y,p;
+  DAE.Exp a, ex;
+  BackendDAE.Var tmpvar;
+  String name;
+  DAE.ComponentRef cr;
+  Integer kk := 1;
+  Integer m := n-1;
+  Integer nn;
+algorithm
+//Gram–Schmidt process
+  v := qrDecomposition1(A,n,kk);
+  (u, oeqns, ovars) := BackendEquation.normalizationVec(v,"QR$NOM$" + intString(kk), offset, oeqns, ovars);
+
+  for j in 1:n loop
+    (a,_) := ExpressionSimplify.simplify(arrayGet(u,j));
+    (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$Q$" + intString(kk + (j-1)*n), offset, oeqns, ovars);
+    arrayUpdate(Q, kk + (j-1)*n, a);
+  end for;
+
+  for k in 1:m loop
+    v := qrDecomposition1(A,n,k+1);
+    for j in 1:k loop
+      u := qrDecomposition1(Q,n,j);
+      (v, oeqns, ovars) := gramSchmidtProcessHelper(v,u,"QR$W$" + intString(kk) + "$" + intString(kk), offset, oeqns, ovars);
+      kk := kk +1;
+    end for;
+    (u, oeqns, ovars) := BackendEquation.normalizationVec(v,"QR$NOM$" + intString(k+1), offset, oeqns, ovars);
+    //qrDecomposition3(u, n, false, "u");
+    for j in 1:n loop
+      nn := k+1 + (j-1)*n;
+      (a,_) := ExpressionSimplify.simplify(arrayGet(u,j));
+      (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$Q$" + intString(nn), offset, oeqns, ovars);
+      arrayUpdate(Q, nn, a);
+    end for;
+
+  end for;
+  //qrDecomposition3(Q, n, true, "Q");
+ 
+
+  // R
+  for i in 1:n loop
+    x := qrDecomposition1(Q,n,i);
+    m := (i-1)*n;
+    //qrDecomposition3(x, n, false, "x" + intString(i));
+    for j in i:n loop
+      y := qrDecomposition1(A,n,j);
+      a := Expression.makeScalarProduct(x,y);
+      (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$R$" + intString(m + j), offset, oeqns, ovars);
+      arrayUpdate(R, m+j, a);
+    end for;
+  end for;
+
+  //qrDecomposition3(R, n, true, "R");
+  //qrDecomposition3(Q, n, true, "Q");
+  // Q*b
+  for i in 1:n loop
+     x := qrDecomposition1(Q,n,i);
+     //qrDecomposition3(x, n, false, "x" + intString(i));
+     a := Expression.makeScalarProduct(x,ib);
+     (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$Qb$" + intString(i), offset, oeqns, ovars);
+     arrayUpdate(b, i, a);
+  end for;
+  //qrDecomposition3(b, n, false, "Qb");
+
+end qrDecomposition;
+
+protected function qrDecomposition1
+"return column of A"
+  input array<DAE.Exp> A;
+  input Integer sizeA;
+  input Integer i;
+  output array<DAE.Exp> column := arrayCreate(sizeA,DAE.RCONST(0.0)) "A(:,i)";
+algorithm
+  for j in 1:sizeA loop
+    arrayUpdate(column, j, arrayGet(A,i + (j-1)*sizeA));
+  end for;
+end qrDecomposition1;
+
+protected function qrDecomposition2
+"return row of A"
+  input array<DAE.Exp> A;
+  input Integer sizeA;
+  input Integer i "row";
+  output array<DAE.Exp> row := arrayCreate(sizeA,DAE.RCONST(0.0)) "A(:,i)";
+protected 
+  Integer k := i - 1;
+algorithm
+  for j in 1:sizeA loop
+    arrayUpdate(row, j, arrayGet(A,j + k*sizeA));
+  end for;
+end qrDecomposition2;
+
+protected function qrDecomposition3
+"for debuge"
+input array<DAE.Exp> A;
+input Integer sizeA;
+input Boolean isMat;
+input String s;
+protected
+ Integer n := sizeA;
+ Integer m := if isMat then sizeA else 1;
+algorithm
+     print("\n");
+  for i in 1:n loop
+     print("\n");
+     for j in 1:m loop
+       print(s + "(" + intString(i) + "," + intString(j) + ") = " + ExpressionDump.printExpStr(arrayGet(A, (i-1)*m + j)) + "\t");
+     end for;
+  end for;
+     print("\n");
+end qrDecomposition3;
+
+protected function gramSchmidtProcessHelper
+"
+  author: Vitalij Ruge
+  small step inside gram–schmidt process
+"
+  input array<DAE.Exp> w;
+  input array<DAE.Exp> u;
+  input String name "var name";
+  input Integer offset;
+  input BackendDAE.EquationArray ieqns;
+  input BackendDAE.Variables ivars; 
+  output array<DAE.Exp> v;
+  output BackendDAE.EquationArray oeqns;
+  output BackendDAE.Variables ovars;
+protected
+  DAE.Exp h := Expression.makeScalarProduct(w,u);
+  Integer n := arrayLength(w);
+algorithm
+  (h,oeqns,ovars) := BackendEquation.makeTmpEqnForExp(h, name + "_h", offset, ieqns, ivars);
+  v := Array.map1(u, Expression.expMul, h);
+  v := Expression.subVec(w,v);
+  for i in 1:n loop
+     (h,oeqns,ovars) := BackendEquation.makeTmpEqnForExp(arrayGet(v,i), name + "_" + intString(i), offset, oeqns, ovars);
+     arrayUpdate(v,i,h);
+  end for;
+  
+end gramSchmidtProcessHelper;
 
 annotation(__OpenModelica_Interface="backend");
 end ResolveLoops;

@@ -695,6 +695,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "constantLinearSystem",
     "simplifysemiLinear",
     //"solveSimpleEquations", // can change matching, some issues with HeatingSystem
+    //"solveLinearSystem",
     "removeSimpleEquations",
     "encapsulateWhenConditions",  // must called after remove simple equations
     "reshufflePost",
@@ -953,6 +954,11 @@ constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(60, "gDynOpt
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generate dynamic optimization problem based on annation approach."));
 
+constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(61, "maxSizeSolveLinearSystem",
+  NONE(), EXTERNAL(), INT_FLAG(-1), NONE(),
+  Util.gettext("Max size for solveLinearSystem."));
+
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1017,7 +1023,8 @@ constant list<ConfigFlag> allConfigFlags = {
   PROFILING_LEVEL,
   RESHUFFLE,
   NEW_UNIT_CHECKING,
-  GENERATE_DYN_OPTIMIZATION_PROBLEM
+  GENERATE_DYN_OPTIMIZATION_PROBLEM,
+  MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM
 };
 
 public function new

@@ -7616,7 +7616,8 @@ algorithm
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false),
                         (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians", false),
                         (SymbolicJacobian.calculateStateSetsJacobians, "calculateStateSetsJacobians", false),
-                        (ResolveLoops.reshuffling_post, "reshufflePost", false)
+                        (ResolveLoops.reshuffling_post, "reshufflePost", false),
+                        (ResolveLoops.solveLinearSystem, "solveLinearSystem", false)
                         };
 
   strpostOptModules := getPostOptModulesString();

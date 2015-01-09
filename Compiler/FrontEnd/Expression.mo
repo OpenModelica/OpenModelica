@@ -60,6 +60,7 @@ type Subscript = DAE.Subscript;
 type Var = DAE.Var;
 
 // protected imports
+protected import Array;
 protected import ClassInf;
 protected import ComponentReference;
 protected import Config;
@@ -3847,6 +3848,68 @@ public function makeProductVector "takes and expression e1 and a list of express
 algorithm
   res := List.map1(v,makeProduct,e1);
 end makeProductVector;
+
+public function makeScalarProduct
+"calculate a scalr product <v,w>"
+  input array<DAE.Exp> v;
+  input array<DAE.Exp> w;
+  output DAE.Exp s := DAE.RCONST(0.0);
+protected
+  Integer size1:=arrayLength(v), size2:= arrayLength(w);
+algorithm
+  if size1 <> size2 then
+    print("makeScalarProduct faili.\n");
+    return ;
+  end if;
+
+  s := makeSum1(list( expMul(arrayGet(v,i), arrayGet(w,i))  for i in 1:size1 ));
+  (s,_) := ExpressionSimplify.simplify(s);
+
+end makeScalarProduct;
+
+public function lenVec
+  input array<DAE.Exp> v;
+  output DAE.Exp len := makeScalarProduct(v,v);
+  algorithm
+  len := Expression.makePureBuiltinCall("sqrt",{len},DAE.T_REAL_DEFAULT);
+end lenVec;
+
+public function addVec
+  input array<DAE.Exp> v;
+  input array<DAE.Exp> w;
+  output array<DAE.Exp> y;
+  
+protected
+  Integer size1:=arrayLength(v), size2:= arrayLength(w);
+algorithm
+  if size1 <> size2 then
+    print("addVec fail.\n");
+    return ;
+  end if;
+  y := arrayCreate(size1, DAE.RCONST(0.0));
+  for i in 1:size1 loop
+    arrayUpdate(y,i,expAdd(arrayGet(v,i), arrayGet(w,i)));
+  end for;
+end addVec;
+
+public function subVec
+  input array<DAE.Exp> v;
+  input array<DAE.Exp> w;
+  output array<DAE.Exp> y;
+  
+protected
+  Integer size1:=arrayLength(v), size2:= arrayLength(w);
+algorithm
+  if size1 <> size2 then
+    print("addVec fail.\n");
+    return ;
+  end if;
+  y := arrayCreate(size1, DAE.RCONST(0.0));
+  for i in 1:size1 loop
+    arrayUpdate(y,i,expSub(arrayGet(v,i), arrayGet(w,i)));
+  end for;
+end subVec;
+
 
 public function makeProduct
 "Makes a product of two expressions"

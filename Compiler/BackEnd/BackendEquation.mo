@@ -2119,6 +2119,61 @@ algorithm
   end match;
 end generateResidualFromRelation;
 
+public function makeTmpEqnForExp
+"
+  author: Vitalij Ruge
+  make and append an eqn and var for expression
+"
+  input DAE.Exp iExp;
+  input String name "var name";
+  input Integer offset;
+  input BackendDAE.EquationArray ieqns;
+  input BackendDAE.Variables ivars;
+  output DAE.Exp oExp;
+  output BackendDAE.EquationArray oeqns;
+  output BackendDAE.Variables ovars;
+protected
+  DAE.ComponentRef cr;
+  BackendDAE.Var tmpvar;
+  String name_ := "$TMP$" + intString(offset) + "$" + name;
+  DAE.Exp x;
+algorithm
+  if not (Expression.isCref(iExp) or Expression.isConst(iExp)) then
+    cr  := ComponentReference.makeCrefIdent(name_, DAE.T_REAL_DEFAULT , {});
+    tmpvar := BackendVariable.makeVar(cr);
+    ovars := BackendVariable.addVar(tmpvar, ivars);
+    x := Expression.crefExp(cr);
+    (x, _) := ExpressionSimplify.simplify(x);
+    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(x, iExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), ieqns);
+    oExp := x;
+  else
+    oExp := iExp;
+    oeqns := ieqns;
+    ovars := ivars;
+  end if;
+
+end makeTmpEqnForExp;
+
+public function normalizationVec
+"
+  author: Vitalij Ruge
+  normalization of vector
+"
+  input array<DAE.Exp> vec;
+  input String name "var name";
+  input Integer offset;
+  input BackendDAE.EquationArray ieqns;
+  input BackendDAE.Variables ivars;  
+  output array<DAE.Exp> nvec;
+  output BackendDAE.EquationArray oeqns;
+  output BackendDAE.Variables ovars;
+protected
+  DAE.Exp len := Expression.lenVec(vec);
+algorithm
+  (len,oeqns,ovars) := makeTmpEqnForExp(len, name, offset, ieqns, ivars);
+  nvec := Array.map1(vec, Expression.makeDiv, len);
+end normalizationVec;
+
 public function solveEquation "author: wbraun
   Solves an equation w.r.t. a component reference. All equations are transformed
   to a EQUATION(cref, exp).
