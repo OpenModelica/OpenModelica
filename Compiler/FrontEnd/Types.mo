@@ -8335,7 +8335,7 @@ public function filterRecordComponents
   input SourceInfo inInfo;
   output list<DAE.Var> outRecordVars;
 algorithm
-  outRecordVars := matchcontinue(inRecordVars, inInfo)
+  outRecordVars := match (inRecordVars, inInfo)
     local
       list<DAE.Var> rest;
       DAE.Var v;
@@ -8349,20 +8349,16 @@ algorithm
     // TODO! FIXME! check other restrictions too (no protected input output inner outer stream flow)
     case ((v as DAE.TYPES_VAR(ty = ty))::rest, _)
       equation
-        false = allowedInRecord(ty);
-        str = unparseVar(v);
-        Error.addSourceMessage(Error.ILLEGAL_RECORD_COMPONENT, {str}, inInfo);
+        if not allowedInRecord(ty) then
+          str = unparseVar(v);
+          Error.addSourceMessage(Error.ILLEGAL_RECORD_COMPONENT, {str}, inInfo);
+          fail();
+        end if;
         rest = filterRecordComponents(rest, inInfo);
       then
         rest;
 
-    case (v::rest, _)
-      equation
-        rest = filterRecordComponents(rest, inInfo);
-      then
-        v::rest;
-
-  end matchcontinue;
+  end match;
 end filterRecordComponents;
 
 public function allowedInRecord
