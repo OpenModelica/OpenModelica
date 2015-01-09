@@ -219,7 +219,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       else /* no event */
       {
         solverInfo->laststep = solverInfo->currentTime;
-        solverInfo->didEventStep=0;
+        solverInfo->didEventStep = 0;
       }
 
       if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);

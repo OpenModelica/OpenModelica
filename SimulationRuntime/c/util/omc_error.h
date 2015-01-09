@@ -143,8 +143,10 @@ void setStreamPrintXML(int isXML);
 #endif
 
 #ifdef USE_DEBUG_TRACE
-  #define TRACE_PUSH printf("TRACE: push %s (%s:%d)\n", __FUNCTION__, __FILE__, __LINE__);
-  #define TRACE_POP printf("TRACE: pop\n");
+  extern int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln);
+  extern int DEBUG_TRACE_POP_HELPER(int traceID);
+  #define TRACE_PUSH int __DEBUG_TRACE_HANDLE = DEBUG_TRACE_PUSH_HELPER(__FUNCTION__, __FILE__, __LINE__);
+  #define TRACE_POP DEBUG_TRACE_POP_HELPER(__DEBUG_TRACE_HANDLE);
 #else
   #define TRACE_PUSH
   #define TRACE_POP

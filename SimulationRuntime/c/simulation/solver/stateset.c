@@ -318,8 +318,10 @@ int stateSelection(DATA *data, char reportError, int switchStates)
     STATE_SET_DATA *set = &(data->simulationInfo.stateSetData[i]);
     modelica_integer* oldColPivot = (modelica_integer*) malloc(set->nCandidates * sizeof(modelica_integer));
     modelica_integer* oldRowPivot = (modelica_integer*) malloc(set->nDummyStates * sizeof(modelica_integer));
+
     /* generate jacobian, stored in set->J */
     getAnalyticalJacobianSet(data, i);
+
     /* call pivoting function to select the states */
     memcpy(oldColPivot, set->colPivot, set->nCandidates*sizeof(modelica_integer));
     memcpy(oldRowPivot, set->rowPivot, set->nDummyStates*sizeof(modelica_integer));

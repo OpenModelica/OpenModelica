@@ -123,6 +123,11 @@ int lastType[SIM_LOG_MAX];
 int lastStream = LOG_UNKNOWN;
 int showAllWarnings = 0;
 
+#ifdef USE_DEBUG_TRACE
+  int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln){printf("TRACE: push %s (%s:%d)\n", pFnc, pFile, ln); return 0;}
+  int DEBUG_TRACE_POP_HELPER(int traceID){printf("TRACE: pop\n"); return 0;}
+#endif
+
 void initDumpSystem()
 {
   int i;

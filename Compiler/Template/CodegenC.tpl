@@ -5637,7 +5637,6 @@ case FUNCTION(__) then
   {
     <%varDecls%>
     _tailrecursive: OMC_LABEL_UNUSED
-    TRACE_PUSH
     <%outVarInits%>
     <%varInits%>
     <%bodyPart%>
@@ -5647,7 +5646,6 @@ case FUNCTION(__) then
     <%if acceptParModelicaGrammar() then
     '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
     <%freeConstructedExternalObjects%>
-    TRACE_POP
     <%match outVars
        case {} then 'return;'
        case v::_ then 'return <%funArgName(v)%>;'
