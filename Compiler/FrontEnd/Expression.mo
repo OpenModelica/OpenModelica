@@ -3878,7 +3878,7 @@ public function addVec
   input array<DAE.Exp> v;
   input array<DAE.Exp> w;
   output array<DAE.Exp> y;
-  
+
 protected
   Integer size1:=arrayLength(v), size2:= arrayLength(w);
 algorithm
@@ -3896,7 +3896,7 @@ public function subVec
   input array<DAE.Exp> v;
   input array<DAE.Exp> w;
   output array<DAE.Exp> y;
-  
+
 protected
   Integer size1:=arrayLength(v), size2:= arrayLength(w);
 algorithm

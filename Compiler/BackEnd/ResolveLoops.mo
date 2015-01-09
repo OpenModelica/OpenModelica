@@ -2110,7 +2110,7 @@ algorithm
      runMatching := runMatching or b;
   end for;
   outTpl := (runMatching, offset);
-             
+
 
   if runMatching then
   osyst := match(osyst)
@@ -2267,7 +2267,7 @@ algorithm
      m := m + 1;
   end for;
   //qrDecomposition3(b, n, false, "b");
-  
+
   // x
   m := 1;
   for xx in x_lst loop
@@ -2353,7 +2353,7 @@ algorithm
 
   end for;
   //qrDecomposition3(Q, n, true, "Q");
- 
+
 
   // R
   for i in 1:n loop
@@ -2400,7 +2400,7 @@ protected function qrDecomposition2
   input Integer sizeA;
   input Integer i "row";
   output array<DAE.Exp> row := arrayCreate(sizeA,DAE.RCONST(0.0)) "A(:,i)";
-protected 
+protected
   Integer k := i - 1;
 algorithm
   for j in 1:sizeA loop
@@ -2438,7 +2438,7 @@ protected function gramSchmidtProcessHelper
   input String name "var name";
   input Integer offset;
   input BackendDAE.EquationArray ieqns;
-  input BackendDAE.Variables ivars; 
+  input BackendDAE.Variables ivars;
   output array<DAE.Exp> v;
   output BackendDAE.EquationArray oeqns;
   output BackendDAE.Variables ovars;
@@ -2453,7 +2453,7 @@ algorithm
      (h,oeqns,ovars) := BackendEquation.makeTmpEqnForExp(arrayGet(v,i), name + "_" + intString(i), offset, oeqns, ovars);
      arrayUpdate(v,i,h);
   end for;
-  
+
 end gramSchmidtProcessHelper;
 
 annotation(__OpenModelica_Interface="backend");

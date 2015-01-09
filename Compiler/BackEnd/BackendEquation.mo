@@ -2163,7 +2163,7 @@ public function normalizationVec
   input String name "var name";
   input Integer offset;
   input BackendDAE.EquationArray ieqns;
-  input BackendDAE.Variables ivars;  
+  input BackendDAE.Variables ivars;
   output array<DAE.Exp> nvec;
   output BackendDAE.EquationArray oeqns;
   output BackendDAE.Variables ovars;
