@@ -8335,30 +8335,15 @@ public function filterRecordComponents
   input SourceInfo inInfo;
   output list<DAE.Var> outRecordVars;
 algorithm
-  outRecordVars := match (inRecordVars, inInfo)
-    local
-      list<DAE.Var> rest;
-      DAE.Var v;
-      DAE.Type ty;
-      Boolean allow;
-      String str;
-
-    case ({}, _) then {};
-
-    // record cannot contain anything but basic types or other records
-    // TODO! FIXME! check other restrictions too (no protected input output inner outer stream flow)
-    case ((v as DAE.TYPES_VAR(ty = ty))::rest, _)
-      equation
-        if not allowedInRecord(ty) then
-          str = unparseVar(v);
-          Error.addSourceMessage(Error.ILLEGAL_RECORD_COMPONENT, {str}, inInfo);
-          fail();
-        end if;
-        rest = filterRecordComponents(rest, inInfo);
-      then
-        rest;
-
-  end match;
+  outRecordVars := list(match v case DAE.TYPES_VAR()
+    algorithm
+      if not allowedInRecord(v.ty) then
+        Error.addSourceMessage(Error.ILLEGAL_RECORD_COMPONENT, {unparseVar(v)}, inInfo);
+        fail();
+      end if;
+    then v;
+    end match for v in inRecordVars
+  );
 end filterRecordComponents;
 
 public function allowedInRecord
