@@ -662,7 +662,8 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
   storePreValues(data);
   overwriteOldSimulationData(data);
 
-  if (data->callback->useHomotopy && numLambdaSteps > 1) {
+  if (data->callback->useHomotopy && numLambdaSteps > 1)
+  {
     long i;
     char buffer[4096];
     FILE *pFile = NULL;
@@ -753,17 +754,6 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     data->callback->functionInitialEquations(data);
   }
   storeRelations(data);
-
-  /* do pivoting for dynamic state selection if selection changed try again an */
-  if(stateSelection(data, 0, 1) == 1)
-  {
-    data->callback->functionInitialEquations(data);
-    storeRelations(data);
-
-    /* report a warning about strange start values */
-    if(stateSelection(data, 0, 1) == 1)
-      warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
-  }
 
   /* check for over-determined systems */
   retVal = data->callback->functionRemovedInitialEquations(data);
@@ -1137,6 +1127,16 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   else
   {
     throwStreamPrint(data->threadData, "unsupported option -iim");
+  }
+  
+  /* do pivoting for dynamic state selection if selection changed try again */
+  if(stateSelection(data, 0, 1) == 1)
+  {
+    if(stateSelection(data, 1, 1) == 1)
+    {
+      /* report a warning about strange start values */
+      warningStreamPrint(LOG_STDOUT, 0, "Cannot initialize the dynamic state selection in an unique way. Use -lv LOG_DSS to see the switching state set.");
+    }
   }
 
   /* check for unsolved (nonlinear|linear|mixed) systems
