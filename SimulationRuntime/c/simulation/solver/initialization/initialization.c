@@ -1128,7 +1128,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   {
     throwStreamPrint(data->threadData, "unsupported option -iim");
   }
-  
+
   /* do pivoting for dynamic state selection if selection changed try again */
   if(stateSelection(data, 0, 1) == 1)
   {
