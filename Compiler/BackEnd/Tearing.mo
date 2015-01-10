@@ -1784,7 +1784,7 @@ algorithm
   unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
   if not List.isEmpty(unsolvableDiscretes) then
     Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
-	fail();
+  fail();
   end if;
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
