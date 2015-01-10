@@ -106,7 +106,7 @@ algorithm
       false = stringEqual(methodString, "shuffleTearing") and stringEq("simulation",BackendDump.printBackendDAEType2String(DAEtype));
       method = getTearingMethod(methodString);
       BackendDAE.DAE() = inDAE;
-      if Flags.isSet(Flags.TEARING_DUMP) then
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n\n\n\n" + UNDERLINE + UNDERLINE + "\nCalling Tearing for ");
         BackendDump.printBackendDAEType(DAEtype);
         print("!\n" + UNDERLINE + UNDERLINE + "\n");
@@ -244,13 +244,13 @@ algorithm
 
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
       equality(jacType = BackendDAE.JAC_LINEAR());
-      if Flags.isSet(Flags.TEARING_DUMP) then
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
       true = Flags.isSet(Flags.LINEAR_TEARING);
       // TODO: Remove when cpp runtime ready for doLinearTearing
       false = stringEqual(Config.simCodeTarget(), "Cpp");
-      if Flags.isSet(Flags.TEARING_DUMP) then
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Flag 'doLinearTearing' is set\n\n");
       end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -262,7 +262,7 @@ algorithm
     // tearing of non-linear systems
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
       failure(equality(jacType = BackendDAE.JAC_LINEAR()));
-      if Flags.isSet(Flags.TEARING_DUMP) then
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nCase non-linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -333,7 +333,7 @@ algorithm
   funcs := BackendDAEUtil.getFunctions(ishared);
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs));
      //  IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System" + intString(size) + ".graphml");
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n\n###BEGIN print Strong Component#####################\n(Function:omcTearing)\n");
      BackendDump.printEqSystem(subsyst);
      print("\n###END print Strong Component#######################\n(Function:omcTearing)\n\n\n");
@@ -375,7 +375,7 @@ algorithm
 
   // unassign tvars
   ass1 := List.fold(tvars,unassignTVars,ass1);
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n" + BORDER + "\n* BFS RESULTS:\n* ass1: "+ stringDelimitList(List.map(arrayList(ass1),intString),",") +"\n");
      print("* ass2: "+ stringDelimitList(List.map(arrayList(ass2),intString),",") + "\n" + BORDER +"\n\n");
   end if;
@@ -414,7 +414,7 @@ algorithm
   (residual, mark) := sortResidualDepentOnTVars(residual, tvars, ass1, m, mt1, columark, mark);
   (ocomp,outRunMatching) := omcTearing4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark,mixedSystem);
 
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print(if outRunMatching then "\nStatus:\nOk system torn\n\n" else "\nStatus:\nSystem not torn\n\n");
      print("\n" + BORDER + "\n* TEARING RESULTS:\n*\n* No of equations in strong Component: "+intString(size)+"\n");
      print("* No of tVars: "+intString(tornsize)+"\n");
@@ -878,7 +878,7 @@ algorithm
         if listMember(tvar,tSel_never) then
           Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
         end if;
-        if Flags.isSet(Flags.TEARING_DUMP) then
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nForced selection of Tearing Variable:\n" + UNDERLINE + "\n");
         end if;
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -902,7 +902,7 @@ algorithm
         (outTVars,oMark);
     case (_,_)
       equation
-        if Flags.isSet(Flags.TEARING_DUMP) then
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nForced selection of Tearing Variables:\n" + UNDERLINE + "\n");
           print("Variables with annotation attribute 'always' as tVars: " + stringDelimitList(List.map(tSel_always,intString),",")+"\n");
         end if;
@@ -1004,7 +1004,7 @@ algorithm
         if listMember(tvar,tSel_never) then
           Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
         end if;
-        if Flags.isSet(Flags.TEARING_DUMP) then
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nForced selection of Tearing Variable:\n" + UNDERLINE + "\n");
         end if;
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1714,7 +1714,7 @@ author: Waurich TUD 2012-10, enhanced: ptaeuber FHB 2013/2014"
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 protected
-  list<Integer> residual,residual_coll,unsolvables,discreteVars;
+  list<Integer> residual,residual_coll,unsolvables,discreteVars,unsolvableDiscretes;
   list<list<Integer>> order;
   BackendDAE.EqSystem subsyst;
   list<Integer> ass1,ass2;
@@ -1751,7 +1751,7 @@ algorithm
   m := Array.map1(m,deleteNegativeEntries,1);
   mt := Array.map1(mt,deleteNegativeEntries,1);
 
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n\n###BEGIN print Strong Component#####################\n(Function:tearingsSystem1_1)\n");
     BackendDump.printEqSystem(subsyst);
     print("\n###END print Strong Component#######################\n(Function:tearingsSystem1_1)\n\n\n");
@@ -1780,6 +1780,12 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nDiscrete Vars:\n" + stringDelimitList(List.map(discreteVars,intString),",") + "\n\n");
   end if;
+  // Look for unsolvable discrete variables because this leads to causalization error
+  unsolvableDiscretes := List.intersectionOnTrue(unsolvables,discreteVars,intEq);
+  if not List.isEmpty(unsolvableDiscretes) then
+    Error.addCompilerError("None of the equations can be solved for the following discrete variables:\n" + BackendDump.varListString(List.map1r(unsolvableDiscretes, BackendVariable.getVarAt, BackendVariable.daeVars(subsyst)),""));
+	fail();
+  end if;
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst);
   ass1 := List.fill(-1,size);
@@ -1801,7 +1807,7 @@ algorithm
   ((_,residual)) := List.fold(ass2,getUnassigned,(1,{}));
   residual_coll := List.map1r(residual,arrayGet,mapIncRowEqn);
   residual_coll := List.unique(residual_coll);
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\n* TEARING RESULTS:\n*\n* No of equations in strong Component: "+intString(size)+"\n");
     print("* No of tVars: "+intString(listLength(OutTVars))+"\n");
     print("*\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n");
@@ -1810,7 +1816,7 @@ algorithm
   // Convert indexes
   OutTVars := listReverse(selectFromList(vindx, OutTVars));
   residual := listReverse(selectFromList(eindex, residual_coll));
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n* Related to entire Equationsystem:\n* =====\n* tVars: "+ stringDelimitList(List.map(OutTVars,intString),",") + "\n* =====\n");
      print("*\n* =====\n* resEq: "+ stringDelimitList(List.map(residual,intString),",") + "\n* =====\n" + BORDER + "\n");
   end if;
@@ -1979,7 +1985,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of Tarjan\n" + BORDER + "\n\n");
       end if;
-      if Flags.isSet(Flags.TEARING_DUMP) then
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.map(ass1,intString),",")+"\n");
         print("* ass2: "+stringDelimitList(List.map(ass2,intString),",")+"\n");
         print("* order: "+stringDelimitList(List.map(listReverse(List.flatten(order)),intString),",")+"\n" + BORDER + "\n");
@@ -1999,7 +2005,7 @@ algorithm
       if listLength(tVar_never)<>0 then
         Error.addCompilerWarning("There are tearing variables with annotation attribute 'tearingSelect = never'. Use +d=tearingdump and +d=tearingdumpV for more information.");
       end if;
-      if Flags.isSet(Flags.TEARING_DUMP) then
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nForced selection of Tearing Variables:\n" + UNDERLINE + "\nUnsolvables as tVars: "+ stringDelimitList(List.map(Unsolvables,intString),",")+"\n");
         print("Variables with annotation attribute 'always' as tVars: "+ stringDelimitList(List.map(tSel_always,intString),",")+"\n");
       end if;
@@ -2023,7 +2029,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of Tarjan\n" + BORDER + "\n\n");
       end if;
-      if Flags.isSet(Flags.TEARING_DUMP) then
+      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\n* TARJAN RESULTS:\n* ass1: " + stringDelimitList(List.map(ass1,intString),",")+"\n");
         print("* ass2: "+stringDelimitList(List.map(ass2,intString),",")+"\n");
         print("* order: "+stringDelimitList(List.map(listReverse(List.flatten(order)),intString),",")+"\n" + BORDER + "\n");
@@ -2759,7 +2765,7 @@ algorithm
     print("\n\nHeuristic [MC3]\n"+ BORDER +"\n");
   end if;
   potentials10 := potentialsCellier10(m,mt,me,met,varInfo,mapInfo);
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print(BORDER + "\n\nSynopsis:\n=========\n[MC1]: " + stringDelimitList(List.map(potentials1,intString),",")+"\n");
     print("[MC2]: " + stringDelimitList(List.map(potentials2,intString),",")+"\n");
     print("[MC11]: " + stringDelimitList(List.map(potentials3,intString),",")+"\n");
@@ -2773,12 +2779,12 @@ algorithm
   end if;
   // 2. Collect all variables from different potential-sets in one list
   selectedvars := listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(listAppend(potentials1,potentials2),potentials3),potentials4),potentials5),potentials6),potentials7),potentials8),potentials9),potentials10);
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("1st: "+ stringDelimitList(List.map(selectedvars,intString),",")+"\n(All potentials)\n\n");
   end if;
   // 3. determine potentials with most occurrence in potential sets
  (count,selectedvars,_) := countMultiples(arrayCreate(1,selectedvars));
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("2nd: "+ stringDelimitList(List.map(selectedvars,intString),",")+"\n(Variables from (1st) occurring in most potential-sets (" + stringDelimitList(List.map(count,intString),",") + " sets))\n\n");
   end if;
   // 4. Choose vars with most occurrence in equations as potentials
@@ -2787,7 +2793,7 @@ algorithm
   potentials := List.unique(potentials);
   // 5. convert indexes from mtsel to indexes from mt
   potentials := selectFromList(selectedvars,potentials);
-  if Flags.isSet(Flags.TEARING_DUMP) then
+  if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("3rd: "+ stringDelimitList(List.map(potentials,intString),",")+"\n(Variables from (2nd) with most occurrence in equations (" + intString(edges) +" times) - potentials)\n\n\n");
   end if;
 end potentialsCellier11;
@@ -3001,7 +3007,7 @@ algorithm
      equation
      ((_,unassigned)) = List.fold(ass1In,getUnassigned,(1,{}));
        false = List.isEmpty(unassigned);
-       if Flags.isSet(Flags.TEARING_DUMP) then
+       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
          print("\nnoncausal\n");
        end if;
      then (ass1In,ass2In,mIn,mtIn,orderIn,false);
