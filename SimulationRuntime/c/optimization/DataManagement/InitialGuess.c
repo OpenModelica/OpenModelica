@@ -330,7 +330,7 @@ static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const
     do{
       if(data->modelData.nStates < 1){
         solverInfo->currentTime = tstop;
-        data->localData[0]->timeValue = tstop; 
+        data->localData[0]->timeValue = tstop;
         break;
       }
       solverInfo->currentStepSize = a*(tstop - solverInfo->currentTime);
