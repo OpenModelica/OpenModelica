@@ -2705,6 +2705,12 @@ package List
     output list<Type_b> outTypeALst;
     replaceable type Type_a subtypeof Any;
   end unzipSecond;
+
+  function last
+    replaceable type ElementType subtypeof Any;
+    input list<ElementType> inList;
+    output ElementType val;
+  end last;
 end List;
 
 package ComponentReference

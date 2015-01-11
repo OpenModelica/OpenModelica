@@ -9950,7 +9950,6 @@ case exp as MATCHEXPRESSION(__) then
       error(sourceInfo(), 'Unknown switch: <%printExpStr(exp)%>')
     else tempDecl('volatile mmc_switch_type', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
-  let onPatternFail = 'goto <%prefix%>_end'
   let &preExp +=
       <<
       <%endModelicaLine()%>
@@ -9982,7 +9981,7 @@ case exp as MATCHEXPRESSION(__) then
           >>
           %>
             switch (MMC_SWITCH_CAST(<%ix%>)) {
-            <%daeExpMatchCases(exp.cases, tupleAssignExps, exp.matchType, ix, res, startIndexOutputs, prefix, startIndexInputs, exp.inputs, onPatternFail, done, context, &varDecls, &auxFunction, System.tmpTickIndexReserve(1,0) /* Returns the current MM tick */)%>
+            <%daeExpMatchCases(exp.cases, tupleAssignExps, exp.matchType, ix, res, startIndexOutputs, prefix, startIndexInputs, exp.inputs, done, context, &varDecls, &auxFunction, System.tmpTickIndexReserve(1,0) /* Returns the current MM tick */)%>
             }
             goto <%prefix%>_end;
             <%prefix%>_end: ;
@@ -10002,20 +10001,33 @@ case exp as MATCHEXPRESSION(__) then
   res
 end daeExpMatch2;
 
-template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.MatchType ty, Text ix, Text res, Text startIndexOutputs, Text prefix, Text startIndexInputs, list<Exp> inputs, Text onPatternFail, Text done, Context context, Text &varDecls, Text &auxFunction, Integer startTmpTickIndex)
+template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.MatchType ty, Text ix, Text res, Text startIndexOutputs, Text prefix, Text startIndexInputs, list<Exp> inputs, Text done, Context context, Text &varDecls, Text &auxFunction, Integer startTmpTickIndex)
 ::=
   cases |> c as CASE(__) hasindex i0 =>
   let() = System.tmpTickSetIndex(startTmpTickIndex,1)
+  // Susan doesn't let us do this outside the loop...
+  let lastSwitchIndex = (match ty
+    case MATCH(switch=SOME((n,ty as T_STRING(__),div))) then
+      (match List.last(cases)
+      case last as CASE(__) then
+        (match switchIndex(listGet(last.patterns,n),div)
+          case "default" then 'goto <%prefix%>_default'
+          else 'goto <%prefix%>_end'))
+    else 'goto <%prefix%>_end')
+  let onPatternFail = (match ty
+    case MATCH(switch=SOME((switchIndex,ty as T_STRING(__),div))) then
+      lastSwitchIndex
+    else 'goto <%prefix%>_end')
   let &varDeclsCaseInner = buffer ""
   let &preExpCaseInner = buffer ""
   let &assignments = buffer ""
   let &preRes = buffer ""
   let &varFrees = buffer ""
-  let patternMatching = (sortPatternsByComplexity(c.patterns) |> (lhs,i0) => patternMatch(lhs,'<%getTempDeclMatchInputName(inputs, prefix, startIndexInputs, i0)%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
+  let patternMatching = (sortPatternsByComplexity(c.patterns) |> (lhs,i0) => patternMatch(lhs,'<%getTempDeclMatchInputName(inputs, prefix, startIndexInputs, i0)%>', onPatternFail, &varDeclsCaseInner, &assignments); empty)
   let() = System.tmpTickSetIndex(startTmpTickIndex,1)
   let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner, &auxFunction); separator="\n")
   let &preGuardCheck = buffer ""
-  let guardCheck = (match patternGuard case SOME(exp) then
+  let guardCheck = (match c.patternGuard case SOME(exp) then
     <<
     /* Check guard condition after assignments */
     if (!<%daeExp(exp,context,&preGuardCheck,&varDeclsCaseInner, &auxFunction)%>) <%onPatternFail%>;<%\n%>
@@ -10036,7 +10048,19 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
       callRet
     case SOME(e) then '<%res%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner, &auxFunction)%>;<%\n%>')
   let _ = (elementVars(c.localDecls) |> var => varInit(var, "", &varDeclsCaseInner, &preExpCaseInner, &varFrees, &auxFunction))
-  <<<%match ty case MATCH(switch=SOME((n,_,ea))) then switchIndex(listGet(c.patterns,n),ea) else 'case <%i0%>'%>: {
+  <<<%match ty case MATCH(switch=SOME((n,_,ea)))
+    then
+      let name = switchIndex(listGet(c.patterns,n),ea)
+      (match name
+        case "default" then
+          <<
+          <%name%>: {
+            <%prefix%>_default: OMC_LABEL_UNUSED;
+          >>
+        else
+          '<%name%>: {')
+    else
+      'case <%i0%>: {'%>
     <%varDeclsCaseInner%>
     <%preExpCaseInner%>
     <%patternMatching%>
