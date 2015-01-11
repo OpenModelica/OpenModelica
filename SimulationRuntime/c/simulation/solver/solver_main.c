@@ -111,7 +111,12 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
 
 #ifdef WITH_IPOPT
   case S_OPTIMIZATION:
-    retVal = ipopt_step(data, solverInfo);
+    if((int)(data->modelData.nStates + data->modelData.nInputVars) > 0){
+      retVal = ipopt_step(data, solverInfo);
+    }else{
+      solverInfo->solverMethod = S_EULER;
+      retVal = euler_ex_step(data, solverInfo);
+    }
     TRACE_POP
     return retVal;
 #endif

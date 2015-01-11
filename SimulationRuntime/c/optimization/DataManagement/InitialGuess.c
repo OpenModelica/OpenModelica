@@ -328,6 +328,11 @@ static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const
 
     rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
     do{
+      if(data->modelData.nStates < 1){
+        solverInfo->currentTime = tstop;
+        data->localData[0]->timeValue = tstop; 
+        break;
+      }
       solverInfo->currentStepSize = a*(tstop - solverInfo->currentTime);
       err = dassl_step(data, solverInfo);
       a *= 0.5;
