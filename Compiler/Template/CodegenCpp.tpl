@@ -17,7 +17,7 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
         let &extraFuncsDecl = buffer "" /*BUFD*/
         let()= textFile(simulationMainFile(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", ""), 'OMCpp<%fileNamePrefix%>Main.cpp')
         let()= textFile(simulationCppFile(simCode, contextOther, &extraFuncs, &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
-        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", true, false), 'OMCpp<%fileNamePrefix%>.h')
+        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", "", true, false), 'OMCpp<%fileNamePrefix%>.h')
         let()= textFile(simulationFunctionsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
         let()= textFile(simulationFunctionsFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, externalFunctionIncludes, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
         let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
@@ -72,15 +72,15 @@ template translateFunctions(FunctionCode functionCode)
   "" // Return empty result since result written to files directly
 end translateFunctions;
 
-template simulationHeaderFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
+template simulationHeaderFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes, String additionalPublicMembers, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
 match simCode
 case SIMCODE(__) then
    <<
-   <%generateHeaderIncludeString(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+   <%generateHeaderIncludeString(simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace)%>
    <%additionalIncludes%>
-   <%generateClassDeclarationCode(simCode ,context, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, additionalProtectedMembers, useDefaultMemberVariables, useFlatArrayNotation)%>
+   <%generateClassDeclarationCode(simCode ,context, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, additionalPublicMembers, additionalProtectedMembers, useDefaultMemberVariables, useFlatArrayNotation)%>
    >>
 end simulationHeaderFile;
 
@@ -455,14 +455,14 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
   #pragma once
   #include "OMCpp<%fileNamePrefix%>WriteOutput.h"
   #include "OMCpp<%fileNamePrefix%>Initialize.h"
-   #include "OMCpp<%fileNamePrefix%>Jacobian.h"
-   #include "OMCpp<%fileNamePrefix%>StateSelection.h"
+  #include "OMCpp<%fileNamePrefix%>Jacobian.h"
+  #include "OMCpp<%fileNamePrefix%>StateSelection.h"
   /*****************************************************************************
   *
   * Simulation code
   *
   *****************************************************************************/
-  class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
+  VAR_ALIGN_PRE class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
   {
   public:
     <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
@@ -510,7 +510,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual int getA_sparsePattern_maxColors();
 
     virtual string getModelName();
-  };
+  } VAR_ALIGN_POST;
   >>
 end simulationExtensionHeaderFile;
 
@@ -5067,6 +5067,17 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include "System/SystemDefaultImplementation.h"
   #include "Core/Utils/extension/measure_time.hpp"
 
+  #ifdef __GNUC__
+    #define VAR_ALIGN_PRE
+    #define VAR_ALIGN_POST __attribute__((aligned(0x40)))
+  #elif defined _MSC_VER 
+    #define VAR_ALIGN_PRE __declspec(align(64))
+    #define VAR_ALIGN_POST
+  #else
+    #define VAR_ALIGN_PRE 
+    #define VAR_ALIGN_POST 
+  #endif
+
   //Forward declaration to speed-up the compilation process
   class Functions;
 
@@ -5107,7 +5118,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   >>
 end generateAlgloopHeaderInlcudeString;
 
-template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
+template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalPublicMembers, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
 match simCode
@@ -5159,10 +5170,12 @@ match modelInfo
   #define MEASURETIME_MODELFUNCTIONS
   >>%>
 
-  class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+  VAR_ALIGN_PRE class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
   <%friendclasses%>
   public:
+      <%additionalPublicMembers%>
+  
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor, boost::shared_ptr<ISimData>);
 
       virtual ~<%lastIdentOfPath(modelInfo.name)%>();
@@ -5233,7 +5246,7 @@ match modelInfo
       <%memberfuncs%>
       <%additionalProtectedMembers%>
       <%extraFuncsDecl%>
-   };
+   } VAR_ALIGN_POST;
   >>
    /*! Equations Array. pointers to all the equation functions listed above stored in this
       array. It is used to randomly access and evaluate a single equation by index.

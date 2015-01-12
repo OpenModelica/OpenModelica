@@ -1256,12 +1256,13 @@ algorithm
   oTask := arrayGet(iAllCalcTasks,iTaskIdx);
 end getTaskByIndex;
 
-protected function getSuccessorsByTask
-  input HpcOmSimCode.Task iTask;
+public function getSuccessorsByTask "author: marcusw
+  Get all successor tasks of the given calc-task."
+  input HpcOmSimCode.Task iTask; //the task of type CALCTASK
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
-  input array<tuple<HpcOmSimCode.Task,Integer>> iAllCalcTasks;
-  output list<tuple<HpcOmSimCode.Task,Integer>> oTasks;
-  output list<Integer> oTaskIdc;
+  input array<tuple<HpcOmSimCode.Task,Integer>> iAllCalcTasks; //all calc tasks of the scheduler (with reference counter)
+  output list<tuple<HpcOmSimCode.Task,Integer>> oTasks; //all successor tasks (with reference counter)
+  output list<Integer> oTaskIdc; // all successor tasks as indices
 protected
   Integer taskIdx;
   list<Integer> successors;
@@ -2456,7 +2457,7 @@ algorithm
       equation
         (xadj,adjncy,vwgt,adjwgt) = prepareMetis(iTaskGraph,iTaskGraphMeta);
 
-        print("createMetisSchedule: Weights of nodes = " + stringDelimitList(List.map(arrayList(vwgt), intString), ",") + "\n");
+        //print("createMetisSchedule: Weights of nodes = " + stringDelimitList(List.map(arrayList(vwgt), intString), ",") + "\n");
 
         if(intGt(iNumberOfThreads, 1)) then //check if more then one thread is given -- otherwise a division through zero will occur
           extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);

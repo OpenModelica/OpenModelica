@@ -27,35 +27,39 @@ template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
         simulationMainFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else ""))
    ), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
-  let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)), generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)), false, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.h')
-  let()= textFile(simulationCppFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
+  let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 
+                    generateAdditionalPublicMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, ""),
+                    generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 
+                    false, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 
+                    'OMCpp<%fileNamePrefix%>.h')
+  let()= textFile(simulationCppFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
   let()= textFile(simulationTypesHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
   let()= textFile(simulationMakefile(target,simCode ,&extraFuncs ,&extraFuncsDecl, ""), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationInitHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
-  let()= textFile(simulationInitCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
-  let()= textFile(simulationInitParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
-  let()= textFile(simulationInitExtVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
-  let()= textFile(simulationInitAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
-  let()= textFile(simulationInitAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
+  let()= textFile(simulationInitCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationInitParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+  let()= textFile(simulationInitExtVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
+  let()= textFile(simulationInitAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
+  let()= textFile(simulationInitAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
   let()= textFile(simulationJacobianHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
-  let()= textFile(simulationJacobianCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
-  let()= textFile(simulationStateSelectionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+  let()= textFile(simulationJacobianCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+  let()= textFile(simulationStateSelectionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
   let()= textFile(simulationStateSelectionHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
   let()= textFile(simulationExtensionHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
   let()= textFile(simulationExtensionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-  let()= textFile(simulationWriteOutputCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
-  let()= textFile(simulationWriteOutputParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
-  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, Util.isSome(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
+  let()= textFile(simulationWriteOutputCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
+  let()= textFile(simulationWriteOutputParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
+  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
   let()= textFile(simulationFactoryFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScript(simCode ,&extraFuncs ,&extraFuncsDecl, ""), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode ,&extraFuncs ,&extraFuncsDecl, "")%>')
   let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_) =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, Util.isSome(hpcOmMemory)) ;separator="")
+          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)) ;separator="")
          ;separator="")
-  let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloop, stateDerVectorName, Util.isSome(hpcOmMemory))
+  let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloop, stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory))
   let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
   let()= textFile(calcHelperMainfile(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
   let()= textFile(calcHelperMainfile2(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp')
@@ -106,6 +110,22 @@ case SIMCODE(__) then
   >>
 end generateAdditionalIncludes;
 
+template generateAdditionalPublicMemberDeclaration(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+::=
+  match simCode
+    case SIMCODE(modelInfo = MODELINFO(__)) then
+      if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)) then
+        let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
+        <<
+        <%addHpcomArrayHeaders%>
+  
+        void* operator new(size_t);
+        void operator delete(void*);  
+        >>
+      else ''
+   else ''
+ end match
+end generateAdditionalPublicMemberDeclaration;
 
 template generateAdditionalProtectedMemberDeclaration(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
  "Generates class declarations."
@@ -114,18 +134,9 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode ,Text& ext
     case SIMCODE(modelInfo = MODELINFO(__)) then
       let addHpcomFunctionHeaders = getAddHpcomFunctionHeaders(hpcOmSchedule)
       let addHpcomVarHeaders = getAddHpcomVarHeaders(hpcOmSchedule)
-      let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
       let type = getConfigString(HPCOM_CODE)
 
       <<
-      // HPCOM
-      #ifdef __GNUC__
-        #define VARARRAY_ALIGN_PRE
-        #define VARARRAY_ALIGN_POST __attribute__((aligned(0x40)))
-      #else
-        #define VARARRAY_ALIGN_PRE __declspec(align(64))
-        #define VARARRAY_ALIGN_POST
-      #endif
 
       static long unsigned int getThreadNumber()
       {
@@ -151,7 +162,6 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode ,Text& ext
       }
 
       <%addHpcomFunctionHeaders%>
-      <%addHpcomArrayHeaders%>
       <%addHpcomVarHeaders%>
       <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
 
@@ -242,9 +252,9 @@ template getAddHpcomVarArrays(Option<MemoryMap> optHpcomMemoryMap)
       match hpcomMemoryMap
         case(MEMORYMAP_ARRAY(__)) then
           <<
-          <%if intGt(floatArraySize,0) then 'VARARRAY_ALIGN_PRE double varArray1[<%floatArraySize%>] VARARRAY_ALIGN_POST ; //float variables'%>
-          <%if intGt(intArraySize,0) then 'VARARRAY_ALIGN_PRE int varArray2[<%intArraySize%>] VARARRAY_ALIGN_POST ; //int variables'%>
-          <%if intGt(boolArraySize,0) then 'VARARRAY_ALIGN_PRE bool varArray3[<%boolArraySize%>] VARARRAY_ALIGN_POST ; //bool variables'%>
+          <%if intGt(floatArraySize,0) then 'double varArray1[<%floatArraySize%>]; //float variables'%>
+          <%if intGt(intArraySize,0) then 'int varArray2[<%intArraySize%>]; //int variables'%>
+          <%if intGt(boolArraySize,0) then 'bool varArray3[<%boolArraySize%>]; //bool variables'%>
           >>
         else ''
       end match
@@ -465,6 +475,30 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
 
         <%hpcomConstructorExtension%>
       }
+      
+      <%if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)) then
+        <<
+        void* <%lastIdentOfPath(modelInfo.name)%>::operator new(size_t size)
+        {
+           //see: http://stackoverflow.com/questions/12504776/aligned-malloc-in-c
+           void *p1;
+           void **p2;
+           size_t alignment = 64;
+           int offset=alignment - 1 + sizeof(void*);
+           p1 = malloc(size + offset);
+           p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));
+           p2[-1]=p1; //line 6
+           return p2;
+        }
+
+        void <%lastIdentOfPath(modelInfo.name)%>::operator delete(void* p)
+        {
+           void* p1 = ((void**)p)[-1];         // get the pointer to the buffer we allocated
+           free( p1 );
+        }
+        >>
+        else ''
+      %>
 
       <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>()
       {
@@ -676,7 +710,7 @@ template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> when
 
   match simCode
     case SIMCODE(modelInfo = MODELINFO(__)) then
-      let parCode = update2(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
+      let parCode = generateParallelEvaluateOde(allEquationsPlusWhen, odeEquations, modelInfo.name, whenClauses, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, hpcOmSchedule, context, lastIdentOfPath(modelInfo.name), useFlatArrayNotation)
       <<
       <%equationFunctions(allEquations,whenClauses,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace,contextSimulationDiscrete,stateDerVectorName,useFlatArrayNotation,false)%>
 
@@ -690,7 +724,7 @@ template update(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> when
   end match
 end update;
 
-template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>> odeEquations, Absyn.Path name,
+template generateParallelEvaluateOde(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>> odeEquations, Absyn.Path name,
                  list<SimWhenClause> whenClauses, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Option<Schedule> hpcOmScheduleOpt, Context context,
                  String modelNamePrefixStr, Boolean useFlatArrayNotation)
 ::=
@@ -855,7 +889,7 @@ template update2(list<SimEqSystem> allEquationsPlusWhen, list<list<SimEqSystem>>
         else ""
       end match
     else ""
-end update2;
+end generateParallelEvaluateOde;
 
 template generateStateVarPrefetchCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
@@ -1832,51 +1866,54 @@ template MemberVariableDefine2(SimVar simVar, String arrayName, Option<MemoryMap
 match simVar
       case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
 
-      case SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
-        match(hpcOmMemoryOpt)
+      case simVar as SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
+        if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemoryOpt)) then
+          match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
               <<
               <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
               >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else '<%variableType(simVar.type_)%> <%cref(simVar.name,useFlatArrayNotation)%>; //no cacheMap defined'%>
-              >>
-        end match
+          end match
+        else
+          <<
+          <%if createConstructorDeclaration then '' else '<%variableType(simVar.type_)%> <%cref(simVar.name,useFlatArrayNotation)%>; //no cacheMap defined'%>
+          >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
         let &dims = buffer "" /*BUFD*/
         let arrayName = arraycref2(name,dims)
         let typeString = variableType(type_)
         let arraysize = arrayextentDims(name,v.numArrayElement)
-        match(hpcOmMemoryOpt)
+        if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemoryOpt)) then
+          match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
               let varDeclarations = HpcOmMemory.expandCref(arrayCrefLocal,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
               <<
               // case 2 MemberVariableDefine2
               <%varDeclarations%>
               >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>,<%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
-              >>
-        end match
+          end match
+        else
+          <<
+          <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>,<%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
+          >>
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(arrayCrefLocal),numArrayElement=num,type_=varType) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
       let typeString = variableType(type_)
       let arraysize = arrayextentDims(name,v.numArrayElement)
-      match(hpcOmMemoryOpt)
+      if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemoryOpt)) then
+        match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
               let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
               <<
               // case 3 MemberVariableDefine2 dims:<%dims%> nums:<%num%>
               <%varDeclarations%>
               >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>, <%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
-              >>
-      end match
+        end match
+      else
+        <<
+        <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%typeString%>, <%arraysize%>> <%arrayName%>; //no cacheMap defined' %>
+        >>
    /*special case for varibales that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_,type_=varType,name=varName) then
       let& dims = buffer "" /*BUFD*/
@@ -1884,16 +1921,18 @@ match simVar
       let varTypeStr = variableType(type_)
       match dims
         case "0" then (if createConstructorDeclaration then '' else (
+          if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemoryOpt)) then
             match(hpcOmMemoryOpt)
                 case SOME(hpcOmMemory) then
                   <<
                   <%MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), varName, varType, useFlatArrayNotation, createConstructorDeclaration)%>
                   >>
-                else
-                  <<
-                  <%varTypeStr%> <%varNameStr%>;
-                  >>
-           end match)
+            end match
+          else
+            <<
+            <%varTypeStr%> <%varNameStr%>;
+            >>     
+          )
         )
         else ''
       end match

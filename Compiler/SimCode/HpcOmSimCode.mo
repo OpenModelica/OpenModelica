@@ -43,6 +43,8 @@ encapsulated package HpcOmSimCode
       HashTableCrILst.HashTable scVarNameIdxMapping; //maps each var-name to the scVar-idx
       list<Integer> otherVars; //a list of not optimized variables
     end MEMORYMAP_ARRAY;
+    record MEMORYMAP_UNIFORM
+    end MEMORYMAP_UNIFORM;
   end MemoryMap;
 
   public uniontype CommunicationInfo //stores more detailed information about a communication (edge)
@@ -69,7 +71,7 @@ encapsulated package HpcOmSimCode
     end CALCTASK;
     record CALCTASK_LEVEL
       list<Integer> eqIdc;
-      list<Integer> nodeIdc; //indices of the graph-node
+      list<Integer> nodeIdc; //graph-node indices of same level nodes 
       Option<Integer> threadIdx; //an advice which thread should calculate the task
     end CALCTASK_LEVEL;
     record DEPTASK

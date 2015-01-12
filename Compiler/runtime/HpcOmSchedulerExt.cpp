@@ -76,9 +76,7 @@ void* HpcOmSchedulerExtImpl__scheduleMetis(int* xadj, int* adjncy, int* vwgt, in
 //    cout<<met_adjncy[i]<<" "<<met_adjwgt[i]<<endl;
   }
     int * result=new int[nvert];
-    std::cerr << "test" << std::endl;
     returnval=METIS_PartGraphKway(&met_nvtxs,&met_ncon,met_xadj,met_adjncy,met_vwgt,NULL,met_adjwgt,&met_nparts,NULL,NULL,NULL,&met_objval,met_part);
-    std::cerr << "test2" << std::endl;
     for(int i=nvert-1; i>=0; i--) {
         result[i]=met_part[i]+1;
         res = mmc_mk_cons(mmc_mk_icon(result[i]),res);

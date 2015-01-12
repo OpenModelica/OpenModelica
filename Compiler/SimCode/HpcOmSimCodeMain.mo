@@ -199,6 +199,8 @@ algorithm
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, _, _, _, crefToSimVarHT, backendMapping) = simCode;
+                 
+      //print("Number of literals pre: " + intString(listLength(simCodeLiterals)) + "\n");
 
       SOME(SimCode.BACKENDMAPPING(simVarMapping=simVarMapping)) = backendMapping;
 
@@ -352,7 +354,7 @@ algorithm
 
       //Create Memory-Map and Sim-Code
       //------------------------------
-      optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphSimplified, taskGraphDataSimplified, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
+      optTmpMemoryMap = HpcOmMemory.createMemoryMap(modelInfo, taskGraphSimplified, BackendDAEUtil.transposeMatrix(taskGraphSimplified,arrayLength(taskGraphSimplified)), taskGraphDataSimplified, eqs, filenamePrefix, schedulerInfo, schedule, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, allComps);
       SimCodeUtil.execStat("hpcom create memory map");
 
       equationsForConditions = allEquations; //getSimCodeEqsByTaskList(eventSystemTaskList, simEqIdxSimEqMapping);
@@ -361,7 +363,8 @@ algorithm
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossingsEquations, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, SOME(schedule), optTmpMemoryMap, equationsForConditions, crefToSimVarHT, backendMapping);
 
-      //evaluateCacheBehaviour(schedulerInfo,taskGraphDataSimplified,clTaskMapping, transposeCacheLineTaskMapping(clTaskMapping, arrayLength(taskGraphSimplified)));
+      //print("Number of literals post: " + intString(listLength(simCodeLiterals)) + "\n");
+
       SimCodeUtil.execStat("hpcom other");
       print("HpcOm is still under construction.\n");
       then simCode;
@@ -462,6 +465,7 @@ protected
    // contract nodes in the graph
    (taskGraph1,taskGraphT,taskGraphMeta1) := applyGRS1(taskGraph1,taskGraphT,taskGraphMeta1,contractedTasks,true);
 
+/*
    //DEBUG
    (taskGraph1,taskGraphMeta1) := GRS_newGraph(taskGraph1,taskGraphMeta1,contractedTasks);
    taskGraphT := BackendDAEUtil.transposeMatrix(taskGraph1,arrayLength(taskGraph1));
@@ -469,6 +473,7 @@ protected
    schedulerInfo := arrayCreate(arrayLength(taskGraph1), (-1,-1,-1.0));
    HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphMeta1, iBackendDAE, fileName, "", {}, {}, iSccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));
    contractedTasks := arrayCreate(arrayLength(taskGraph1),0);
+*/
 
    // contract nodes schedule specific
    (taskGraph1,taskGraphT,taskGraphMeta1) := applyGRSForScheduler(taskGraph1, taskGraphT, taskGraphMeta1, contractedTasks); //not working at the moment
