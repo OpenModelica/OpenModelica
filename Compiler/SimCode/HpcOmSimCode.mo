@@ -71,7 +71,7 @@ encapsulated package HpcOmSimCode
     end CALCTASK;
     record CALCTASK_LEVEL
       list<Integer> eqIdc;
-      list<Integer> nodeIdc; //graph-node indices of same level nodes 
+      list<Integer> nodeIdc; //graph-node indices of same level nodes
       Option<Integer> threadIdx; //an advice which thread should calculate the task
     end CALCTASK_LEVEL;
     record DEPTASK

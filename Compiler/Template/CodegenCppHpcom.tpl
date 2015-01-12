@@ -27,10 +27,10 @@ template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
         simulationMainFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else ""))
    ), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
-  let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 
+  let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),
                     generateAdditionalPublicMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, ""),
-                    generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 
-                    false, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 
+                    generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),
+                    false, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),
                     'OMCpp<%fileNamePrefix%>.h')
   let()= textFile(simulationCppFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
@@ -118,9 +118,9 @@ template generateAdditionalPublicMemberDeclaration(SimCode simCode ,Text& extraF
         let addHpcomArrayHeaders = getAddHpcomVarArrays(hpcOmMemory)
         <<
         <%addHpcomArrayHeaders%>
-  
+
         void* operator new(size_t);
-        void operator delete(void*);  
+        void operator delete(void*);
         >>
       else ''
    else ''
@@ -475,7 +475,7 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
 
         <%hpcomConstructorExtension%>
       }
-      
+
       <%if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)) then
         <<
         void* <%lastIdentOfPath(modelInfo.name)%>::operator new(size_t size)
@@ -1931,7 +1931,7 @@ match simVar
           else
             <<
             <%varTypeStr%> <%varNameStr%>;
-            >>     
+            >>
           )
         )
         else ''

@@ -3460,7 +3460,7 @@ package HpcOmMemory
     input Option<HpcOmSimCode.MemoryMap> iMemoryMapOpt;
     output Boolean oUseMemoryOptimization;
   end useHpcomMemoryOptimization;
-  
+
   function getPositionMappingByArrayName
     input HpcOmSimCode.MemoryMap iMemoryMap;
     input DAE.ComponentRef iVarName;

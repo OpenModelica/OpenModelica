@@ -5070,12 +5070,12 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #ifdef __GNUC__
     #define VAR_ALIGN_PRE
     #define VAR_ALIGN_POST __attribute__((aligned(0x40)))
-  #elif defined _MSC_VER 
+  #elif defined _MSC_VER
     #define VAR_ALIGN_PRE __declspec(align(64))
     #define VAR_ALIGN_POST
   #else
-    #define VAR_ALIGN_PRE 
-    #define VAR_ALIGN_POST 
+    #define VAR_ALIGN_PRE
+    #define VAR_ALIGN_POST
   #endif
 
   //Forward declaration to speed-up the compilation process
@@ -5175,7 +5175,7 @@ match modelInfo
   <%friendclasses%>
   public:
       <%additionalPublicMembers%>
-  
+
       <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor, boost::shared_ptr<ISimData>);
 
       virtual ~<%lastIdentOfPath(modelInfo.name)%>();
