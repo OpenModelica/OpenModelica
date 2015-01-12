@@ -51,7 +51,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           ("OutputFormat,o", po::value< string >()->default_value("csv"),  "output Format [csv,empty]")
           ("number-of-intervals,v", po::value< int >()->default_value(500),  "number of intervals")
           ("tolerance,y", po::value< double >()->default_value(1e-6),  "solver tolerance")
-          ("log-type,l", po::value< string >()->default_value("off"),  "log information: stats ,nls,ode,off")
+          ("log-type,l", po::value< string >()->default_value("off"),  "log information: stats,nls,ode,off")
           ("alarm,a", po::value<unsigned int >()->default_value(360),  "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"),  "the points in time written to result file: all (output steps + events), step (just output points), none")
           ;

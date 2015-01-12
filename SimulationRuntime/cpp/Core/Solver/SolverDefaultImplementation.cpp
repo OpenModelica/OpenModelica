@@ -117,7 +117,7 @@ void SolverDefaultImplementation::initialize()
   //    // Write a line break into output stream
   //    *_outputStream << std::endl;
   //}
-  if(_settings->getGlobalSettings()->getOutputPointType() != EMPTY2)
+  if(_settings->getGlobalSettings()->getOutputPointType() != EMPTY2 && _settings->getGlobalSettings()->getOutputFormat() != EMPTY)
     writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
 
   // Allocate array with values of zero functions

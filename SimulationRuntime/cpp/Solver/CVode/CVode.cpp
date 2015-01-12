@@ -289,7 +289,7 @@ void Cvode::initialize()
 void Cvode::solve(const SOLVERCALL action)
 {
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
 
   #ifdef RUNTIME_PROFILING
   MEASURETIME_REGION_DEFINE(cvodeSolveFunctionHandler, "solve");
@@ -429,7 +429,7 @@ void Cvode::CVodeCore()
     throw std::runtime_error("CVode::ReInit");
 
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
-  bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
+  bool writeOutput = !(_settings->getGlobalSettings()->getOutputFormat() == EMPTY) && !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
 
   while (_solverStatus & ISolver::CONTINUE && !_interrupt )
   {
