@@ -490,8 +490,9 @@ static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataSt
   if(s->lagrange){
     for(i = 0; i< nv; ++i){
       for(j = 0; j <nv; ++j){
-        if(s->gradL[i]*s->gradL[j])
+        if(s->gradL[i]*s->gradL[j]){
           Hl[i][j] = (modelica_boolean)1;
+         }
       }
     }
   }
@@ -509,24 +510,42 @@ static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataSt
   /***********************************/
   for(i = 0; i< nv; ++i){
     for(j = 0; j <nv; ++j){
-      for(l = 0; l <nJ; ++l){
-        tmp = Hg[l][i][j] || Hl[i][j];
-        if(tmp && !H0[i][j]){
-          H0[i][j] = (modelica_boolean)1;
-          ++dim->nH0;
-          if(i <= j)
-            ++dim->nH0_;
+      if(nJ>0){
+        for(l = 0; l <nJ; ++l){
+          tmp = Hg[l][i][j] || Hl[i][j];
+          if(tmp && !H0[i][j]){
+            H0[i][j] = (modelica_boolean)1;
+            ++dim->nH0;
+            if(i <= j)
+              ++dim->nH0_;
+          }
+          if((tmp || Hm[i][j]) && !H1[i][j]){
+            H1[i][j] = (modelica_boolean)1;
+            ++dim->nH1;
+            if(i <= j)
+              ++dim->nH1_;
+          }
+          if(H0[i][j] && H1[i][j])
+            break;
         }
-        if((tmp || Hm[i][j]) && !H1[i][j]){
-          H1[i][j] = (modelica_boolean)1;
-          ++dim->nH1;
-          if(i <= j)
-            ++dim->nH1_;
-        }
-        if(H0[i][j] && H1[i][j])
-          break;
-      }
+     }else{
+       tmp = Hl[i][j];
+       if(tmp && !H0[i][j]){
+         H0[i][j] = (modelica_boolean)1;
+         ++dim->nH0;
+         if(i <= j)
+           ++dim->nH0_;
+       }
+       if((tmp || Hm[i][j]) && !H1[i][j]){
+         H1[i][j] = (modelica_boolean)1;
+         ++dim->nH1;
+         if(i <= j)
+           ++dim->nH1_;
+       }
+       if(H0[i][j] && H1[i][j])
+         break;
     }
+   }
   }
 
   /*******************************/
