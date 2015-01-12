@@ -4296,19 +4296,19 @@ author: Waurich TUD 2014-12"
 algorithm
   exeCost := matchcontinue(compInfo)
     local
-      Integer numAdds,numMul,numOth,numTrig,numRel,numLog,numFuncs, costs, ops,ops1, offset,size;
+      Integer numAdds,numMul,numDiv,numOth,numTrig,numRel,numLog,numFuncs, costs, ops,ops1, offset,size;
       Real allOpCosts,tornCosts,otherCosts,dens;
       BackendDAE.StrongComponent comp;
       BackendDAE.compInfo allOps, torn, other;
 
-    case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
+    case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
       equation
         ops = numAdds+numMul+numOth+numTrig+numRel+numLog;
         if BackendDAEUtil.isSingleEquationComp(comp) then offset=30;
         elseif BackendDAEUtil.isWhenComp(comp) then offset=800;
         else offset = 0;
         end if;
-        costs = offset+ 5*numAdds+ 25*numMul+ 150*numOth+250*numTrig+ 5*numRel+ 10*numLog+400*numFuncs;
+        costs = offset+ 5*numAdds+ 25*numMul+ 10*numDiv+ 150*numOth+250*numTrig+ 5*numRel+ 10*numLog+400*numFuncs;
      then (ops,intReal(costs));
 
     case(BackendDAE.LES_ANALYSE(comp=comp,allOperations=allOps,size=size,density=dens))

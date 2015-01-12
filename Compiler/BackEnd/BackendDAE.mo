@@ -702,6 +702,7 @@ public uniontype compInfo"types to count operations for the components"
    StrongComponent comp;
    Integer numAdds;
    Integer numMul;
+   Integer numDiv;
    Integer numTrig;
    Integer numRelations;
    Integer numLog; // logical operations
