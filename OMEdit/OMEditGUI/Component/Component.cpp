@@ -171,7 +171,7 @@ void Component::initialize()
     mpCoOrdinateSystem->setInitialScale(0.1);
   }
   mpCoOrdinateSystem->setGrid(QPointF(2, 2));
-  //Construct the temporary polygon that is shown when scaling
+  //Construct the temporary polygon that is used when scaling
   mpResizerRectangle = new QGraphicsRectItem;
   mpResizerRectangle->setZValue(3000);  // set to a very high value
   if (mpGraphicsView) mpGraphicsView->scene()->addItem(mpResizerRectangle);
@@ -179,6 +179,7 @@ void Component::initialize()
   pen.setStyle(Qt::DotLine);
   pen.setColor(Qt::transparent);
   mpResizerRectangle->setPen(pen);
+  setOldScenePosition(QPointF(0, 0));
   setOldPosition(QPointF(0, 0));
 }
 
@@ -597,16 +598,6 @@ QList<Component*> Component::getComponentsList()
   return mComponentsList;
 }
 
-void Component::setOldPosition(QPointF oldPosition)
-{
-  mOldPosition = oldPosition;
-}
-
-QPointF Component::getOldPosition()
-{
-  return mOldPosition;
-}
-
 /*!
   Sets the component flags.
   */
@@ -614,9 +605,8 @@ void Component::setComponentFlags(bool enable)
 {
   /*
     Only set the ItemIsMovable & ItemSendsGeometryChanges flags on component if the class is not a system library class
-    OR component is not an inherited shape.
+    AND component is not an inherited shape.
     */
-  /* Only set the ItemIsMovable flag on component if the class is not a system library class OR component is not an inherited shape. */
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent()) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
@@ -624,28 +614,19 @@ void Component::setComponentFlags(bool enable)
   setFlag(QGraphicsItem::ItemIsSelectable, enable);
 }
 
-void Component::getExtents(QPointF *pExtent1, QPointF *pExtent2)
-{
-  qreal angle = mpTransformation->getRotateAngle();
-  qreal sx = transform().m11() / (cos(angle * (M_PI / 180)));
-  qreal sy = transform().m22() / (cos(angle * (M_PI / 180)));
-  pExtent1->setX(sx * boundingRect().left());
-  pExtent1->setY(sy * boundingRect().top());
-  pExtent2->setX(sx * boundingRect().right());
-  pExtent2->setY(sy * boundingRect().bottom());
-}
-
 QString Component::getTransformationAnnotation()
 {
   QString annotationString;
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
-    annotationString.append("iconTransformation=transformation(origin=");
+    annotationString.append("iconTransformation=transformation(");
   } else if (mpGraphicsView->getViewType() == StringHandler::Diagram) {
-    annotationString.append("transformation=transformation(origin=");
+    annotationString.append("transformation=transformation(");
   }
-  // add the icon origin
-  annotationString.append("{").append(QString::number(scenePos().x())).append(",");
-  annotationString.append(QString::number(scenePos().y())).append("}, ");
+  // add the origin
+  if (mpTransformation->hasOrigin()) {
+    annotationString.append("origin={").append(QString::number(mpTransformation->getOrigin().x())).append(",");
+    annotationString.append(QString::number(mpTransformation->getOrigin().y())).append("}, ");
+  }
   // add extent points
   QPointF extent1 = mpTransformation->getExtent1();
   QPointF extent2 = mpTransformation->getExtent2();
@@ -694,6 +675,11 @@ QString Component::getPlacementAnnotation()
 
 void Component::applyRotation(qreal angle)
 {
+  if (!mpTransformation->hasOrigin()) {
+    mpTransformation->setOrigin(scenePos());
+    mpTransformation->setExtent1(sceneBoundingRect().topLeft() - scenePos());
+    mpTransformation->setExtent2(sceneBoundingRect().bottomRight() - scenePos());
+  }
   mpTransformation->setRotateAngle(angle);
   setTransform(mpTransformation->getTransformationMatrix());
   showResizerItems();
@@ -705,11 +691,6 @@ void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
   connect(this, SIGNAL(componentTransformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
   connect(this, SIGNAL(componentRotationChange()), pConnectorLineAnnotation, SLOT(handleComponentRotation()));
   connect(this, SIGNAL(componentTransformHasChanged()), pConnectorLineAnnotation, SLOT(updateConnectionAnnotation()));
-}
-
-void Component::updateConnection()
-{
-  emit componentTransformHasChanged();
 }
 
 void Component::componentNameHasChanged(QString newName)
@@ -849,12 +830,12 @@ void Component::prepareResizeComponent(ResizerItem *pResizerItem)
   mpSelectedResizerItem = pResizerItem;
   mTransform = transform();
   mSceneBoundingRect = sceneBoundingRect();
-  QPointF topLeft = mpGraphicsView->snapPointToGrid(sceneBoundingRect().topLeft());
-  QPointF topRight = mpGraphicsView->snapPointToGrid(sceneBoundingRect().topRight());
-  QPointF bottomLeft = mpGraphicsView->snapPointToGrid(sceneBoundingRect().bottomLeft());
-  QPointF bottomRight = mpGraphicsView->snapPointToGrid(sceneBoundingRect().bottomRight());
-  mTransformationStartPosition = mpGraphicsView->snapPointToGrid(scenePos());
-  mPivotPoint = mpGraphicsView->snapPointToGrid(sceneBoundingRect().center());
+  QPointF topLeft = sceneBoundingRect().topLeft();
+  QPointF topRight = sceneBoundingRect().topRight();
+  QPointF bottomLeft = sceneBoundingRect().bottomLeft();
+  QPointF bottomRight = sceneBoundingRect().bottomRight();
+  mTransformationStartPosition = scenePos();
+  mPivotPoint = sceneBoundingRect().center();
 
   if (mpSelectedResizerItem->getResizePosition() == ResizerItem::BottomLeft) {
     mTransformationStartPosition = topLeft;
@@ -898,32 +879,23 @@ void Component::resizeComponent(QPointF newPosition)
   mXFactor = 1 + mXFactor;
   mYFactor = 1 + mYFactor;
   // if preserveAspectRatio is true then resize equally
-  if (mpGraphicsView->getCoOrdinateSystem()->getPreserveAspectRatio())
-  {
+  if (mpGraphicsView->getCoOrdinateSystem()->getPreserveAspectRatio()) {
     qreal factor = qMax(fabs(mXFactor), fabs(mYFactor));
     mXFactor = mXFactor < 0 ? mXFactor = factor * -1 : mXFactor = factor;
     mYFactor = mYFactor < 0 ? mYFactor = factor * -1 : mYFactor = factor;
   }
   // Apply the transformation to the temporary polygon using the new scaling factors
   QPointF pivot = mPivotPoint - pos();
-  //Creates a temporaty transformation
+  // Creates a temporaty transformation
   QTransform tmpTransform = QTransform().translate(pivot.x(), pivot.y()).rotate(0)
       .scale(mXFactor, mYFactor)
       .translate(-pivot.x(), -pivot.y());
-  mpResizerRectangle->setTransform(mTransform * tmpTransform); //Multiplies the previous matrix * the temporary
+  mpResizerRectangle->setTransform(mTransform * tmpTransform); //Multiplies the previous transform * the temporary
   setTransform(mTransform * tmpTransform);
   // set the final resize on component.
-  QPointF extent1, extent2;
-  qreal angle = mpTransformation->getRotateAngle();
-  qreal sx = transform().m11() / (cos(angle * (M_PI / 180)));
-  qreal sy = transform().m22() / (cos(angle * (M_PI / 180)));
-  extent1.setX(sx * boundingRect().left());
-  extent1.setY(sy * boundingRect().top());
-  extent2.setX(sx * boundingRect().right());
-  extent2.setY(sy * boundingRect().bottom());
-  mpTransformation->setOrigin(mpGraphicsView->roundPoint(QPointF(transform().m31(), transform().m32())));
-  mpTransformation->setExtent1(mpGraphicsView->roundPoint(extent1));
-  mpTransformation->setExtent2(mpGraphicsView->roundPoint(extent2));
+  mpTransformation->setOrigin(scenePos());
+  mpTransformation->setExtent1(sceneBoundingRect().topLeft() - scenePos());
+  mpTransformation->setExtent2(sceneBoundingRect().bottomRight() - scenePos());
   setTransform(mpTransformation->getTransformationMatrix());
   // let connections know that component has changed.
   emit componentTransformChange();
@@ -993,55 +965,31 @@ void Component::rotateAntiClockwise()
 void Component::flipHorizontal()
 {
   QPointF extent1, extent2;
-  getExtents(&extent1, &extent2);
-  qreal angle = StringHandler::getNormalizedAngle(mpTransformation->getRotateAngle());
-  bool flip = false;
-  if ((angle >= 0 && angle < 90) || (angle >= 180 && angle < 270))
-  {
-    mpTransformation->setExtent1(QPointF(extent2.x(), extent1.y()));
-    mpTransformation->setExtent2(QPointF(extent1.x(), extent2.y()));
-    flip = true;
-  }
-  else if ((angle >= 90 && angle < 180) || (angle >= 270 && angle < 360))
-  {
-    mpTransformation->setExtent1(QPointF(extent1.x(), extent2.y()));
-    mpTransformation->setExtent2(QPointF(extent2.x(), extent1.y()));
-    flip = true;
-  }
-  if (flip)
-  {
-    setTransform(mpTransformation->getTransformationMatrix());
-    emit componentRotationChange();
-    emit componentTransformHasChanged();
-    showResizerItems();
-  }
+  extent1 = mpTransformation->getExtent1();
+  extent1.setX(extent1.x() * -1);
+  mpTransformation->setExtent1(extent1);
+  extent2 = mpTransformation->getExtent2();
+  extent2.setX(extent2.x() * -1);
+  mpTransformation->setExtent2(extent2);
+  setTransform(mpTransformation->getTransformationMatrix());
+  emit componentRotationChange();
+  emit componentTransformHasChanged();
+  showResizerItems();
 }
 
 void Component::flipVertical()
 {
   QPointF extent1, extent2;
-  getExtents(&extent1, &extent2);
-  qreal angle = StringHandler::getNormalizedAngle(mpTransformation->getRotateAngle());
-  bool flip = false;
-  if ((angle >= 0 && angle < 90) || (angle >= 180 && angle < 270))
-  {
-    mpTransformation->setExtent1(QPointF(extent1.x(), extent2.y()));
-    mpTransformation->setExtent2(QPointF(extent2.x(), extent1.y()));
-    flip = true;
-  }
-  else if ((angle >= 90 && angle < 180) || (angle >= 270 && angle < 360))
-  {
-    mpTransformation->setExtent1(QPointF(extent2.x(), extent1.y()));
-    mpTransformation->setExtent2(QPointF(extent1.x(), extent2.y()));
-    flip = true;
-  }
-  if (flip)
-  {
-    setTransform(mpTransformation->getTransformationMatrix());
-    emit componentRotationChange();
-    emit componentTransformHasChanged();
-    showResizerItems();
-  }
+  extent1 = mpTransformation->getExtent1();
+  extent1.setY(extent1.y() * -1);
+  mpTransformation->setExtent1(extent1);
+  extent2 = mpTransformation->getExtent2();
+  extent2.setY(extent2.y() * -1);
+  mpTransformation->setExtent2(extent2);
+  setTransform(mpTransformation->getTransformationMatrix());
+  emit componentRotationChange();
+  emit componentTransformHasChanged();
+  showResizerItems();
 }
 
 /*!
@@ -1060,7 +1008,7 @@ void Component::flipVertical()
   */
 void Component::moveUp()
 {
-  mpTransformation->updatePosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mpTransformation->adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1081,7 +1029,7 @@ void Component::moveUp()
   */
 void Component::moveShiftUp()
 {
-  mpTransformation->updatePosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  mpTransformation->adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1102,7 +1050,7 @@ void Component::moveShiftUp()
   */
 void Component::moveCtrlUp()
 {
-  mpTransformation->updatePosition(0, 1);
+  mpTransformation->adjustPosition(0, 1);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1123,7 +1071,7 @@ void Component::moveCtrlUp()
   */
 void Component::moveDown()
 {
-  mpTransformation->updatePosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mpTransformation->adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1144,7 +1092,7 @@ void Component::moveDown()
   */
 void Component::moveShiftDown()
 {
-  mpTransformation->updatePosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
+  mpTransformation->adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1165,7 +1113,7 @@ void Component::moveShiftDown()
   */
 void Component::moveCtrlDown()
 {
-  mpTransformation->updatePosition(0, -1);
+  mpTransformation->adjustPosition(0, -1);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1186,7 +1134,7 @@ void Component::moveCtrlDown()
   */
 void Component::moveLeft()
 {
-  mpTransformation->updatePosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mpTransformation->adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1207,7 +1155,7 @@ void Component::moveLeft()
   */
 void Component::moveShiftLeft()
 {
-  mpTransformation->updatePosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
+  mpTransformation->adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1228,7 +1176,7 @@ void Component::moveShiftLeft()
   */
 void Component::moveCtrlLeft()
 {
-  mpTransformation->updatePosition(-1, 0);
+  mpTransformation->adjustPosition(-1, 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1249,7 +1197,7 @@ void Component::moveCtrlLeft()
   */
 void Component::moveRight()
 {
-  mpTransformation->updatePosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mpTransformation->adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1270,7 +1218,7 @@ void Component::moveRight()
   */
 void Component::moveShiftRight()
 {
-  mpTransformation->updatePosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
+  mpTransformation->adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1291,7 +1239,7 @@ void Component::moveShiftRight()
   */
 void Component::moveCtrlRight()
 {
-  mpTransformation->updatePosition(1, 0);
+  mpTransformation->adjustPosition(1, 0);
   setTransform(mpTransformation->getTransformationMatrix());
   emit componentTransformChange();
 }
@@ -1484,8 +1432,9 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
     emit componentTransformChange();
   }
   else if (change == QGraphicsItem::ItemPositionChange) {
-    // snap to grid while dragging component
-    return mpGraphicsView->snapPointToGrid(value.toPointF(), mpTransformation);
+    // move by grid distance while dragging component
+    QPointF positionDifference = mpGraphicsView->movePointByGrid(value.toPointF() - pos());
+    return pos() + positionDifference;
   }
   return value;
 }

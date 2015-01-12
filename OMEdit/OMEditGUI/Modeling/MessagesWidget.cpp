@@ -154,6 +154,10 @@ void MessagesWidget::applyMessagesSettings()
       .arg(mpMainWindow->getOptionsDialog()->getMessagesPage()->getWarningColor().name())
       .arg(mpMainWindow->getOptionsDialog()->getMessagesPage()->getErrorColor().name());
   mpMessagesTextBrowser->document()->setDefaultStyleSheet(messagesCSS);
+  // move the cursor to end.
+  QTextCursor textCursor = mpMessagesTextBrowser->textCursor();
+  textCursor.movePosition(QTextCursor::End);
+  mpMessagesTextBrowser->setTextCursor(textCursor);
 }
 
 /*!

@@ -547,12 +547,14 @@ QString LineAnnotation::getEndComponentName()
 void LineAnnotation::setShapeFlags(bool enable)
 {
   if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::ShapeType) && mpGraphicsView) {
-    /* Only set the ItemIsMovable flag on Line if the class is not a system library class AND Line is not an inherited Line AND Line type
-         is not ConnectionType.
-        */
+    /*
+      Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
+      AND Line is not an inherited Line AND Line type is not ConnectionType.
+      */
     bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
     if (!isSystemLibrary && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType) {
       setFlag(QGraphicsItem::ItemIsMovable, enable);
+      setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
     }
     setFlag(QGraphicsItem::ItemIsSelectable, enable);
   }

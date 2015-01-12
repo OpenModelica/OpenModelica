@@ -36,7 +36,6 @@
  *
  */
 
-#include <stdexcept>
 #include "Transformation.h"
 
 Transformation::Transformation(StringHandler::ViewType viewType)
@@ -45,20 +44,20 @@ Transformation::Transformation(StringHandler::ViewType viewType)
   mWidth = 200.0;
   mHeight = 200.0;
   mVisible = true;
-  mPositionXDiagram = 0.0;
-  mPositionYDiagram = 0.0;
-  mFlipHorizontalDiagram = false;
-  mFlipVerticalDiagram = false;
+  mOriginDiagram = QPointF(0.0, 0.0);
+  mHasOriginDiagramX = true;
+  mHasOriginDiagramY = true;
+  mExtent1Diagram = QPointF(0.0, 0.0);
+  mExtent2Diagram = QPointF(0.0, 0.0);
   mRotateAngleDiagram = 0.0;
-  mScaleDiagram = 1.0;
-  mAspectRatioDiagram = 1.0;
-  mPositionXIcon = 0.0;
-  mPositionYIcon = 0.0;
-  mFlipHorizontalIcon = false;
-  mFlipVerticalIcon = false;
+  mPositionDiagram = QPointF(0.0, 0.0);
+  mOriginIcon = QPointF(0.0, 0.0);
+  mHasOriginIconX = true;
+  mHasOriginIconY = true;
+  mExtent1Icon = QPointF(0.0, 0.0);
+  mExtent2Icon = QPointF(0.0, 0.0);
   mRotateAngleIcon = 0.0;
-  mScaleIcon = 1.0;
-  mAspectRatioIcon = 1.0;
+  mPositionIcon = QPointF(0.0, 0.0);
 }
 
 void Transformation::parseTransformationString(QString value, qreal width, qreal height)
@@ -67,77 +66,76 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
     if width and height are greater than zero then use them else use fixed width and height of 200. Otherwise OMEdit will crash!!!!
     e.g BusUsage crash problem!!!!!
     */
-  if (width > 0)
+  if (width > 0) {
     mWidth = width;
-  if (height > 0)
+  }
+  if (height > 0) {
     mHeight = height;
+  }
   value = StringHandler::removeFirstLastCurlBrackets(value);
-  if (value.isEmpty())
+  if (value.isEmpty()) {
     return;
+  }
   QStringList annotations = StringHandler::getStrings(value, '(', ')');
-  foreach (QString annotation, annotations)
-  {
-    if (annotation.startsWith("Placement"))
-    {
+  foreach (QString annotation, annotations) {
+    if (annotation.startsWith("Placement")) {
       annotation = annotation.mid(QString("Placement").length());
       annotation = StringHandler::removeFirstLastBrackets(annotation);
       QStringList list = StringHandler::getStrings(annotation);
       // get transformations of diagram
       // get the visible value
-      mVisible = static_cast<QString>(list.at(0)).contains("true");
+      mVisible = list.at(0).contains("true");
       // origin x position
-      mOriginDiagram.setX(static_cast<QString>(list.at(1)).toFloat());
+      mOriginDiagram.setX(list.at(1).toFloat(&mHasOriginDiagramX));
       // origin y position
-      mOriginDiagram.setY(static_cast<QString>(list.at(2)).toFloat());
+      mOriginDiagram.setY(list.at(2).toFloat(&mHasOriginDiagramY));
       // extent1 x
-      mExtent1Diagram.setX(static_cast<QString>(list.at(3)).toFloat());
+      mExtent1Diagram.setX(list.at(3).toFloat());
       // extent1 y
-      mExtent1Diagram.setY(static_cast<QString>(list.at(4)).toFloat());
+      mExtent1Diagram.setY(list.at(4).toFloat());
       // extent2 x
-      mExtent2Diagram.setX(static_cast<QString>(list.at(5)).toFloat());
+      mExtent2Diagram.setX(list.at(5).toFloat());
       // extent2 y
-      mExtent2Diagram.setY(static_cast<QString>(list.at(6)).toFloat());
+      mExtent2Diagram.setY(list.at(6).toFloat());
       // rotate angle
-      mRotateAngleDiagram = static_cast<QString>(list.at(7)).toFloat();
-      try
-      {
-        // get transformations of icon now
-        // origin x position
-        bool ok = true;
-        mOriginIcon.setX(static_cast<QString>(list.at(8)).toFloat(&ok));
-        if (!ok)
-          throw std::runtime_error("Invalid number format exception");
-        // origin y position
-        mOriginIcon.setY(static_cast<QString>(list.at(9)).toFloat(&ok));
-        if (!ok)
-          throw std::runtime_error("Invalid number format exception");
-        // extent1 x
-        mExtent1Icon.setX(static_cast<QString>(list.at(10)).toFloat(&ok));
-        if (!ok)
-          throw std::runtime_error("Invalid number format exception");
-        // extent1 y
-        mExtent1Icon.setY(static_cast<QString>(list.at(11)).toFloat(&ok));
-        if (!ok)
-          throw std::runtime_error("Invalid number format exception");
-        // extent1 x
-        mExtent2Icon.setX(static_cast<QString>(list.at(12)).toFloat(&ok));
-        if (!ok)
-          throw std::runtime_error("Invalid number format exception");
-        // extent1 y
-        mExtent2Icon.setY(static_cast<QString>(list.at(13)).toFloat(&ok));
-        if (!ok)
-          throw std::runtime_error("Invalid number format exception");
-        // rotate angle
-        mRotateAngleIcon = static_cast<QString>(list.at(14)).toFloat(&ok);
-        if (!ok)
-          throw std::runtime_error("Invalid number format exception");
+      mRotateAngleDiagram = list.at(7).toFloat();
+      // get transformations of icon now
+      // origin x position
+      bool hasExtent1X, hasExtent1Y, hasExtent2X, hasExtent2Y, hasRotation = false;
+      mOriginIcon.setX(list.at(8).toFloat(&mHasOriginIconX));
+      if (!mHasOriginIconX) {
+        mOriginIcon.setX(mOriginDiagram.x());
       }
-      catch(std::exception &exception)
-      {
-        Q_UNUSED(exception);
-        mOriginIcon = mOriginDiagram;
-        mExtent1Icon = mExtent1Diagram;
-        mExtent2Icon = mExtent2Diagram;
+      // origin y position
+      mOriginIcon.setY(list.at(9).toFloat(&mHasOriginIconY));
+      if (!mHasOriginIconY) {
+        mOriginIcon.setY(mOriginDiagram.y());
+      }
+      // extent1 x
+      mExtent1Icon.setX(list.at(10).toFloat(&hasExtent1X));
+      if (!hasExtent1X) {
+        mExtent1Icon.setX(mExtent1Diagram.x());
+      }
+      // extent1 y
+      mExtent1Icon.setY(list.at(11).toFloat(&hasExtent1Y));
+      if (!hasExtent1Y) {
+        mExtent1Icon.setY(mExtent1Diagram.y());
+      }
+      // extent1 x
+      mExtent2Icon.setX(list.at(12).toFloat(&hasExtent2X));
+      if (!hasExtent2X) {
+        mExtent2Icon.setX(mExtent2Diagram.x());
+      }
+      // extent1 y
+      mExtent2Icon.setY(list.at(13).toFloat(&hasExtent2Y));
+      if (!hasExtent2Y) {
+        mExtent2Icon.setY(mExtent2Diagram.y());
+      }
+      // rotate angle
+      if (list.size() > 14) {
+        mRotateAngleIcon = list.at(14).toFloat(&hasRotation);
+      }
+      if (!hasRotation) {
         mRotateAngleIcon = mRotateAngleDiagram;
       }
     }
@@ -146,12 +144,10 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
 
 QTransform Transformation::getTransformationMatrix()
 {
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      return getTransformationMatrixDiagram();
+  switch (mViewType) {
     case StringHandler::Icon:
       return getTransformationMatrixIcon();
+    case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
       return getTransformationMatrixDiagram();
@@ -163,31 +159,39 @@ bool Transformation::getVisible()
   return mVisible;
 }
 
-void Transformation::updatePosition(qreal x, qreal y)
+void Transformation::adjustPosition(qreal x, qreal y)
 {
-  switch (mViewType)
-  {
+  switch (mViewType) {
     case StringHandler::Icon:
-      updatePositionIcon(x, y);
+      adjustPositionIcon(x, y);
       break;
     case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
-      updatePositionDiagram(x, y);
+      adjustPositionDiagram(x, y);
       break;
+  }
+}
+
+bool Transformation::hasOrigin()
+{
+  switch (mViewType) {
+    case StringHandler::Icon:
+      return hasOriginIcon();
+    case StringHandler::Diagram:
+    case StringHandler::ModelicaText:
+    default:
+      return hasOriginDiagram();
   }
 }
 
 void Transformation::setOrigin(QPointF origin)
 {
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      setOriginDiagram(origin);
-      break;
+  switch (mViewType) {
     case StringHandler::Icon:
       setOriginIcon(origin);
       break;
+    case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
       setOriginDiagram(origin);
@@ -197,28 +201,35 @@ void Transformation::setOrigin(QPointF origin)
 
 QPointF Transformation::getOrigin()
 {
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      return getOriginDiagram();
+  switch (mViewType) {
     case StringHandler::Icon:
       return getOriginIcon();
+    case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
       return getOriginDiagram();
   }
 }
 
+QPointF Transformation::getPosition()
+{
+  switch (mViewType) {
+    case StringHandler::Icon:
+      return getPositionIcon();
+    case StringHandler::Diagram:
+    case StringHandler::ModelicaText:
+    default:
+      return getPositionDiagram();
+  }
+}
+
 void Transformation::setExtent1(QPointF extent)
 {
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      setExtent1Diagram(extent);
-      break;
+  switch (mViewType) {
     case StringHandler::Icon:
       setExtent1Icon(extent);
       break;
+    case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
       setExtent1Diagram(extent);
@@ -228,12 +239,10 @@ void Transformation::setExtent1(QPointF extent)
 
 QPointF Transformation::getExtent1()
 {
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      return getExtent1Diagram();
+  switch (mViewType) {
     case StringHandler::Icon:
       return getExtent1Icon();
+    case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
       return getExtent1Diagram();
@@ -242,14 +251,11 @@ QPointF Transformation::getExtent1()
 
 void Transformation::setExtent2(QPointF extent)
 {
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      setExtent2Diagram(extent);
-      break;
+  switch (mViewType) {
     case StringHandler::Icon:
       setExtent2Icon(extent);
       break;
+    case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
       setExtent2Diagram(extent);
@@ -259,12 +265,10 @@ void Transformation::setExtent2(QPointF extent)
 
 QPointF Transformation::getExtent2()
 {
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      return getExtent2Diagram();
+  switch (mViewType) {
     case StringHandler::Icon:
       return getExtent2Icon();
+    case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
       return getExtent2Diagram();
@@ -273,14 +277,11 @@ QPointF Transformation::getExtent2()
 
 void Transformation::setRotateAngle(qreal rotateAngle)
 {
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      setRotateAngleDiagram(rotateAngle);
-      break;
+  switch (mViewType) {
     case StringHandler::Icon:
       setRotateAngleIcon(rotateAngle);
       break;
+    case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
       setRotateAngleDiagram(rotateAngle);
@@ -290,205 +291,61 @@ void Transformation::setRotateAngle(qreal rotateAngle)
 
 qreal Transformation::getRotateAngle()
 {
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      return getRotateAngleDiagram();
+  switch (mViewType) {
     case StringHandler::Icon:
       return getRotateAngleIcon();
+    case StringHandler::Diagram:
     case StringHandler::ModelicaText:
     default:
       return getRotateAngleDiagram();
-  }
-}
-
-qreal Transformation::getScale()
-{
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      return getScaleDiagram();
-    case StringHandler::Icon:
-      return getScaleIcon();
-    case StringHandler::ModelicaText:
-    default:
-      return getScaleDiagram();
-  }
-}
-
-void Transformation::setFlipHorizontal(bool On)
-{
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      setFlipHorizontalDiagram(On);
-      break;
-    case StringHandler::Icon:
-      setFlipHorizontalIcon(On);
-      break;
-    case StringHandler::ModelicaText:
-    default:
-      setFlipHorizontalDiagram(On);
-      break;
-  }
-}
-
-bool Transformation::getFlipHorizontal()
-{
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      return getFlipHorizontalDiagram();
-    case StringHandler::Icon:
-      return getFlipHorizontalIcon();
-    case StringHandler::ModelicaText:
-    default:
-      return getFlipHorizontalDiagram();
-  }
-}
-
-void Transformation::setFlipVertical(bool On)
-{
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      setFlipVerticalDiagram(On);
-      break;
-    case StringHandler::Icon:
-      setFlipVerticalIcon(On);
-      break;
-    case StringHandler::ModelicaText:
-    default:
-      setFlipVerticalDiagram(On);
-      break;
-  }
-}
-
-bool Transformation::getFlipVertical()
-{
-  switch (mViewType)
-  {
-    case StringHandler::Diagram:
-      return getFlipVerticalDiagram();
-    case StringHandler::Icon:
-      return getFlipVerticalIcon();
-    case StringHandler::ModelicaText:
-    default:
-      return getFlipVerticalDiagram();
   }
 }
 
 QTransform Transformation::getTransformationMatrixDiagram()
 {
-  // determine X position
-  if (mExtent1Diagram.x() + mExtent2Diagram.x() == 0) {
-    mPositionXDiagram = mOriginDiagram.x();
-  } else if ((mExtent1Diagram.x() + mExtent2Diagram.x() != 0) && mOriginDiagram.x() == 0) {
-    mPositionXDiagram = (mExtent1Diagram.x() + mExtent2Diagram.x()) / 2;
-  } else {
-    mPositionXDiagram = mOriginDiagram.x() + ((mExtent1Diagram.x() + mExtent2Diagram.x()) / 2);
-  }
-  // determine Y position
-  if (mExtent1Diagram.y() + mExtent2Diagram.y() == 0) {
-    mPositionYDiagram = mOriginDiagram.y();
-  } else if ((mExtent1Diagram.y() + mExtent2Diagram.y() != 0) && mOriginDiagram.y() == 0) {
-    mPositionYDiagram = (mExtent1Diagram.y() + mExtent2Diagram.y()) / 2;
-  } else {
-    mPositionYDiagram = mOriginDiagram.y() + ((mExtent1Diagram.y() + mExtent2Diagram.y()) / 2);
-  }
+  // calculate X position
+  mPositionDiagram.setX(mOriginDiagram.x() + ((mExtent1Diagram.x() + mExtent2Diagram.x()) / 2));
+  // calculate Y position
+  mPositionDiagram.setY(mOriginDiagram.y() + ((mExtent1Diagram.y() + mExtent2Diagram.y()) / 2));
   // get scale
   qreal tempwidth = fabs(mExtent1Diagram.x() - mExtent2Diagram.x());
+  qreal sx = tempwidth / mWidth;
   qreal tempHeight = fabs(mExtent1Diagram.y() - mExtent2Diagram.y());
-  mScaleDiagram = tempwidth / mWidth;
-  // get aspectratio
-  mAspectRatioDiagram = tempHeight / (mHeight * mScaleDiagram);
+  qreal sy = tempHeight / mHeight;
   // get the horizontal flip
-  mFlipHorizontalDiagram = mExtent2Diagram.x() < mExtent1Diagram.x();
-  // get the vertical flip
-  mFlipVerticalDiagram = mExtent2Diagram.y() < mExtent1Diagram.y();
-  // create transformation matrix
-  qreal m11, m12, m21, m22, m31, m32;
-  qreal sx = mScaleDiagram;
-  qreal sy = mScaleDiagram * mAspectRatioDiagram;
-  // if flipping
-  if (mFlipHorizontalDiagram)
+  if (mExtent2Diagram.x() < mExtent1Diagram.x()) {
     sx = -sx;
-  if (mFlipVerticalDiagram)
+  }
+  // get the vertical flip
+  if (mExtent2Diagram.y() < mExtent1Diagram.y()) {
     sy = -sy;
-  // calculate horizontal scale m11 and vertical shearing m12
-  m11 = sx * cos(mRotateAngleDiagram * (M_PI / 180));
-  m12 = sx * sin(mRotateAngleDiagram * (M_PI / 180));
-  // calculate horizontal shearing m21 and vertical scaling m22
-  m21 = -sy * sin(mRotateAngleDiagram * (M_PI / 180));
-  m22 = sy * cos(mRotateAngleDiagram * (M_PI / 180));
-  // set origin
-  m31 = mPositionXDiagram;
-  m32 = mPositionYDiagram;
-  // return all transformations
-  return QTransform (m11, m12, m21, m22, m31, m32);
+  }
+  // rotation origin point
+  QPointF rotationOriginPoint;
+  if (mHasOriginDiagramX && mHasOriginDiagramY) {
+    rotationOriginPoint = mOriginDiagram;
+  } else {
+    rotationOriginPoint = mPositionDiagram;
+  }
+  // return the transformations
+  return QTransform().translate(rotationOriginPoint.x(), rotationOriginPoint.y())
+      .rotate(mRotateAngleDiagram)
+      .translate(-rotationOriginPoint.x(), -rotationOriginPoint.y())
+      .translate(mPositionDiagram.x(), mPositionDiagram.y())
+      .scale(sx, sy);
 }
 
-QTransform Transformation::getTransformationMatrixIcon()
+void Transformation::adjustPositionDiagram(qreal x, qreal y)
 {
-  // determine X position
-  if (mExtent1Icon.x() + mExtent2Icon.x() == 0) {
-    mPositionXIcon = mOriginIcon.x();
-  } else if ((mExtent1Icon.x() + mExtent2Icon.x() != 0) && mOriginIcon.x() == 0) {
-    mPositionXIcon = (mExtent1Icon.x() + mExtent2Icon.x()) / 2;
-  } else {
-    mPositionXIcon = mOriginIcon.x() + ((mExtent1Icon.x() + mExtent2Icon.x()) / 2);
-  }
-  // determine Y position
-  if (mExtent1Icon.y() + mExtent2Icon.y() == 0) {
-    mPositionYIcon = mOriginIcon.y();
-  } else if ((mExtent1Icon.y() + mExtent2Icon.y() != 0) && mOriginIcon.y() == 0) {
-    mPositionYIcon = (mExtent1Icon.y() + mExtent2Icon.y()) / 2;
-  } else {
-    mPositionYIcon = mOriginIcon.y() + ((mExtent1Icon.y() + mExtent2Icon.y()) / 2);
-  }
-  // get scale
-  qreal tempwidthIcon = fabs(mExtent1Icon.x() - mExtent2Icon.x());
-  qreal tempHeightIcon = fabs(mExtent1Icon.y() - mExtent2Icon.y());
-  mScaleIcon = tempwidthIcon / mWidth;
-  // get aspectratio
-  mAspectRatioIcon = tempHeightIcon / (mHeight * mScaleIcon);
-  // get the horizontal flip
-  mFlipHorizontalIcon = mExtent2Icon.x() < mExtent1Icon.x();
-  // get the vertical flip
-  mFlipVerticalIcon = mExtent2Icon.y() < mExtent1Icon.y();
-  // create transformation matrix
-  qreal m11, m12, m21, m22, m31, m32;
-  qreal sx = mScaleIcon;
-  qreal sy = mScaleIcon * mAspectRatioIcon;
-  // if flipping
-  if (mFlipHorizontalIcon)
-    sx = -sx;
-  if (mFlipVerticalIcon)
-    sy = -sy;
-  // calculate horizontal and vertical scaling
-  m11 = sx * cos(mRotateAngleIcon * (M_PI / 180));
-  m12 = sx * sin(mRotateAngleIcon * (M_PI / 180));
-  // calculate horizontal and vertical shearing
-  m21 = -sy * sin(mRotateAngleIcon * (M_PI / 180));
-  m22 = sy * cos(mRotateAngleIcon * (M_PI / 180));
-  // set origin
-  m31 = mPositionXIcon;
-  m32 = mPositionYIcon;
-  // return all transformations
-  return QTransform (m11, m12, m21, m22, m31, m32);
-}
-
-void Transformation::updatePositionDiagram(qreal x, qreal y)
-{
-  // determine X position
-  if (mExtent1Diagram.x() + mExtent2Diagram.x() == 0) {
+  // adjust X position
+  if (mHasOriginDiagramX) {
     mOriginDiagram.setX(mOriginDiagram.x() +  x);
   } else {
     mExtent1Diagram.setX(mExtent1Diagram.x() +  x);
     mExtent2Diagram.setX(mExtent2Diagram.x() +  x);
   }
-  // determine Y position
-  if (mExtent1Diagram.y() + mExtent2Diagram.y() == 0) {
+  // adjust Y position
+  if (mHasOriginDiagramY) {
     mOriginDiagram.setY(mOriginDiagram.y() +  y);
   } else {
     mExtent1Diagram.setY(mExtent1Diagram.y() +  y);
@@ -498,69 +355,46 @@ void Transformation::updatePositionDiagram(qreal x, qreal y)
 
 void Transformation::setOriginDiagram(QPointF origin)
 {
+  mHasOriginDiagramX = true;
+  mHasOriginDiagramY = true;
   mOriginDiagram = origin;
 }
 
-QPointF Transformation::getOriginDiagram()
+QTransform Transformation::getTransformationMatrixIcon()
 {
-  return QPointF(mPositionXDiagram, mPositionYDiagram);
+  // calculate X position
+  mPositionIcon.setX(mOriginIcon.x() + ((mExtent1Icon.x() + mExtent2Icon.x()) / 2));
+  // calculate Y position
+  mPositionIcon.setY(mOriginIcon.y() + ((mExtent1Icon.y() + mExtent2Icon.y()) / 2));
+  // get scale
+  qreal tempwidth = fabs(mExtent1Icon.x() - mExtent2Icon.x());
+  qreal sx = tempwidth / mWidth;
+  qreal tempHeight = fabs(mExtent1Icon.y() - mExtent2Icon.y());
+  qreal sy = tempHeight / mHeight;
+  // get the horizontal flip
+  if (mExtent2Icon.x() < mExtent1Icon.x()) {
+    sx = -sx;
+  }
+  // get the vertical flip
+  if (mExtent2Icon.y() < mExtent1Icon.y()) {
+    sy = -sy;
+  }
+  // rotation origin point
+  QPointF rotationOriginPoint;
+  if (mHasOriginIconX && mHasOriginIconY) {
+    rotationOriginPoint = mOriginIcon;
+  } else {
+    rotationOriginPoint = mPositionIcon;
+  }
+  // return the transformations
+  return QTransform().translate(rotationOriginPoint.x(), rotationOriginPoint.y())
+      .rotate(mRotateAngleIcon)
+      .translate(-rotationOriginPoint.x(), -rotationOriginPoint.y())
+      .translate(mPositionIcon.x(), mPositionIcon.y())
+      .scale(sx, sy);
 }
 
-void Transformation::setExtent1Diagram(QPointF extent)
-{
-  mExtent1Diagram = extent;
-}
-
-QPointF Transformation::getExtent1Diagram()
-{
-  return mExtent1Diagram;
-}
-
-void Transformation::setExtent2Diagram(QPointF extent)
-{
-  mExtent2Diagram = extent;
-}
-
-QPointF Transformation::getExtent2Diagram()
-{
-  return mExtent2Diagram;
-}
-
-void Transformation::setRotateAngleDiagram(qreal rotateAngle)
-{
-  mRotateAngleDiagram = rotateAngle;
-}
-
-qreal Transformation::getRotateAngleDiagram()
-{
-  return mRotateAngleDiagram;
-}
-
-qreal Transformation::getScaleDiagram()
-{
-  return mScaleDiagram;
-}
-
-void Transformation::setFlipHorizontalDiagram(bool On)
-{
-  mFlipHorizontalDiagram = On;
-}
-
-bool Transformation::getFlipHorizontalDiagram()
-{
-  return mFlipHorizontalDiagram;
-}
-
-void Transformation::setFlipVerticalDiagram(bool On)
-{
-  mFlipVerticalDiagram = On;
-}
-
-bool Transformation::getFlipVerticalDiagram()
-{
-  return mFlipVerticalDiagram;
-}
-void Transformation::updatePositionIcon(qreal x, qreal y)
+void Transformation::adjustPositionIcon(qreal x, qreal y)
 {
   // determine X position
   if (mExtent1Icon.x() + mExtent2Icon.x() == 0) {
@@ -580,65 +414,7 @@ void Transformation::updatePositionIcon(qreal x, qreal y)
 
 void Transformation::setOriginIcon(QPointF origin)
 {
+  mHasOriginIconX = true;
+  mHasOriginIconY = true;
   mOriginIcon = origin;
-}
-
-QPointF Transformation::getOriginIcon()
-{
-  return mOriginIcon;
-}
-
-void Transformation::setExtent1Icon(QPointF extent)
-{
-  mExtent1Icon = extent;
-}
-
-QPointF Transformation::getExtent1Icon()
-{
-  return mExtent1Icon;
-}
-
-void Transformation::setExtent2Icon(QPointF extent)
-{
-  mExtent2Icon = extent;
-}
-
-QPointF Transformation::getExtent2Icon()
-{
-  return mExtent2Icon;
-}
-
-void Transformation::setRotateAngleIcon(qreal rotateAngle)
-{
-  mRotateAngleIcon = rotateAngle;
-}
-
-qreal Transformation::getRotateAngleIcon()
-{
-  return mRotateAngleIcon;
-}
-
-qreal Transformation::getScaleIcon()
-{
-  return mScaleIcon;
-}
-
-void Transformation::setFlipHorizontalIcon(bool On)
-{
-  mFlipHorizontalIcon = On;
-}
-
-bool Transformation::getFlipHorizontalIcon()
-{
-  return mFlipHorizontalIcon;
-}
-
-void Transformation::setFlipVerticalIcon(bool On)
-{
-  mFlipVerticalIcon = On;
-}
-
-bool Transformation::getFlipVerticalIcon()
-{
-  return mFlipVerticalIcon;
 }

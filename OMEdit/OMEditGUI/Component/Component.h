@@ -114,15 +114,16 @@ public:
   QList<Component*> getInheritanceList();
   QList<ShapeAnnotation*> getShapesList();
   QList<Component*> getComponentsList();
-  void setOldPosition(QPointF oldPosition);
-  QPointF getOldPosition();
+  void setOldScenePosition(QPointF oldScenePosition) {mOldScenePosition = oldScenePosition;}
+  QPointF getOldScenePosition() {return mOldScenePosition;}
+  void setOldPosition(QPointF oldPosition) {mOldPosition = oldPosition;}
+  QPointF getOldPosition() {return mOldPosition;}
   void setComponentFlags(bool enable);
-  void getExtents(QPointF *pExtent1, QPointF *pExtent2);
   QString getTransformationAnnotation();
   QString getPlacementAnnotation();
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
-  void updateConnection();
+  void emitComponentTransformHasChanged() {emit componentTransformHasChanged();}
   void componentNameHasChanged(QString newName);
   void componentParameterHasChanged();
   QString getParameterDisplayString(QString parameterName);
@@ -159,6 +160,7 @@ private:
   QList<Component*> mInheritanceList;
   QList<ShapeAnnotation*> mShapesList;
   QList<Component*> mComponentsList;
+  QPointF mOldScenePosition;
   QPointF mOldPosition;
   void duplicateHelper(GraphicsView *pGraphicsView);
 signals:

@@ -107,10 +107,10 @@ qreal CoOrdinateSystem::getVerticalGridStep()
 
 //! Constructor.
 //! @param parent defines a parent to the new instanced object.
-GraphicsScene::GraphicsScene(int iconType, ModelWidget *parent)
-  : QGraphicsScene(parent), mIconType(iconType)
+GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pModelWidget)
+  : QGraphicsScene(pModelWidget), mViewType(viewType)
 {
-  mpModelWidget = parent;
+  mpModelWidget = pModelWidget;
 }
 
 //! @class GraphicsView
@@ -872,21 +872,12 @@ QPointF GraphicsView::snapPointToGrid(QPointF point)
   return point;
 }
 
-QPointF GraphicsView::snapPointToGrid(QPointF point, Transformation *pTransformation)
+QPointF GraphicsView::movePointByGrid(QPointF point)
 {
   qreal stepX = mpCoOrdinateSystem->getHorizontalGridStep();
   qreal stepY = mpCoOrdinateSystem->getVerticalGridStep();
-  // refine snapping if Ctrl key is pressed
-  if (QApplication::keyboardModifiers().testFlag(Qt::ControlModifier)) {
-    stepX = stepX / 4;
-    stepY = stepY / 4;
-  }
-  qreal originX = pTransformation->getOrigin().x();
-  qreal originY = pTransformation->getOrigin().y();
-  qreal oldXn = (point.x() + originX) / stepX;
-  qreal oldYn = (point.y() + originY) / stepY;
-  point.setX(stepX * qFloor(oldXn + 0.5) - originX);
-  point.setY(stepY * qFloor(oldYn + 0.5) - originY);
+  point.setX(qRound(point.x() / stepX) * stepX);
+  point.setY(qRound(point.y() / stepY) * stepY);
   return point;
 }
 
@@ -1283,7 +1274,6 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 void GraphicsView::mousePressEvent(QMouseEvent *event)
 {
   if (event->button() == Qt::RightButton) {
-    QGraphicsView::mousePressEvent(event);
     return;
   }
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
@@ -1310,12 +1300,15 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   } else if (pMainWindow->getBitmapShapeAction()->isChecked()) {
     /* if bitmap shape tool button is checked then create a bitmap */
     createBitmapShape(snappedPoint);
+  } else if (dynamic_cast<ResizerItem*>(itemAt(event->pos()))) {
+    // do nothing if resizer item is clicked. It will be handled in its class mousePressEvent();
   } else {
     // this flag is just used to have seperate identity for if statement in mouse release event of graphicsview
     setIsMovingComponentsAndShapes(true);
     // save the position of all components
     foreach (Component *pComponent, mComponentsList) {
-      pComponent->setOldPosition(pComponent->pos());
+      pComponent->setOldScenePosition(pComponent->pos());
+      pComponent->setOldScenePosition(pComponent->scenePos());
     }
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
       pShapeAnnotation->setOldPosition(pShapeAnnotation->pos());
@@ -1388,19 +1381,25 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
   if (event->button() == Qt::RightButton) {
-    QGraphicsView::mouseReleaseEvent(event);
     return;
   }
   mpClickedComponent = 0;
   if (isMovingComponentsAndShapes()) {
     setIsMovingComponentsAndShapes(false);
     bool hasMoved = false;
-    // if component position is changed then update component annotation
+    // if component position is really changed then update component annotation
     foreach (Component *pComponent, mComponentsList) {
       if (pComponent->getOldPosition() != pComponent->pos()) {
-        pComponent->updatePlacementAnnotation();
-        // if there are any connectors associated to component update their annotations as well.
-        pComponent->updateConnection();
+        QPointF positionDifference = pComponent->scenePos() - pComponent->getOldScenePosition();
+        pComponent->resetTransform();
+        bool state = pComponent->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+        pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
+        pComponent->setPos(0, 0);
+        pComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
+        pComponent->getTransformation()->adjustPosition(positionDifference.x(), positionDifference.y());
+        pComponent->setTransform(pComponent->getTransformation()->getTransformationMatrix());
+        // update the component placement annotation and if there are any connections associated to component update their annotations as well.
+        pComponent->emitComponentTransformHasChanged();
         hasMoved = true;
       }
     }
@@ -1409,10 +1408,13 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
     // if shape position is changed then update class annotation
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
       if (pShapeAnnotation->getOldPosition() != pShapeAnnotation->pos()) {
-        pShapeAnnotation->getTransformation()->setOrigin(snapPointToGrid(pShapeAnnotation->scenePos()));
+        pShapeAnnotation->getTransformation()->setOrigin(pShapeAnnotation->scenePos());
+        bool state = pShapeAnnotation->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+        pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
         pShapeAnnotation->setPos(0, 0);
+        pShapeAnnotation->setFlag(QGraphicsItem::ItemSendsGeometryChanges, state);
         pShapeAnnotation->setTransform(pShapeAnnotation->getTransformation()->getTransformationMatrix());
-        pShapeAnnotation->setOrigin(pShapeAnnotation->getTransformation()->getOrigin());
+        pShapeAnnotation->setOrigin(pShapeAnnotation->getTransformation()->getPosition());
         hasMoved = true;
       }
     }
@@ -1432,7 +1434,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     // finish creating the line
     setIsCreatingLineShape(false);
     // set the transformation matrix
-    mpLineShapeAnnotation->setOrigin(snapPointToGrid(mpLineShapeAnnotation->sceneBoundingRect().center()));
+    mpLineShapeAnnotation->setOrigin(mpLineShapeAnnotation->sceneBoundingRect().center());
     mpLineShapeAnnotation->adjustPointsWithOrigin();
     mpLineShapeAnnotation->initializeTransformation();
     // draw corner items for the Line shape
@@ -1449,7 +1451,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     // finish creating the polygon
     setIsCreatingPolygonShape(false);
     // set the transformation matrix
-    mpPolygonShapeAnnotation->setOrigin(snapPointToGrid(mpPolygonShapeAnnotation->sceneBoundingRect().center()));
+    mpPolygonShapeAnnotation->setOrigin(mpPolygonShapeAnnotation->sceneBoundingRect().center());
     mpPolygonShapeAnnotation->adjustPointsWithOrigin();
     mpPolygonShapeAnnotation->initializeTransformation();
     // draw corner items for the polygon shape

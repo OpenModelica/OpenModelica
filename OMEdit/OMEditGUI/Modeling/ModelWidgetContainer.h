@@ -89,9 +89,9 @@ class GraphicsScene : public QGraphicsScene
 {
   Q_OBJECT
 public:
-  GraphicsScene(int iconType, ModelWidget *parent);
+  GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
   ModelWidget *mpModelWidget;
-  int mIconType;
+  StringHandler::ViewType mViewType;
 };
 
 class GraphicsView : public QGraphicsView
@@ -194,7 +194,7 @@ public:
   void createBitmapShape(QPointF point);
   QRectF itemsBoundingRect();
   QPointF snapPointToGrid(QPointF point);
-  QPointF snapPointToGrid(QPointF point, Transformation *pTransformation);
+  QPointF movePointByGrid(QPointF point);
   QPointF roundPoint(QPointF point);
 private:
   void createActions();

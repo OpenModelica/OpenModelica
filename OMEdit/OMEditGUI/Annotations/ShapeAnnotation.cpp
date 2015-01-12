@@ -1116,7 +1116,7 @@ void ShapeAnnotation::adjustPointsWithOrigin()
 {
   QList<QPointF> points;
   foreach (QPointF point, mPoints) {
-    QPointF adjustedPoint = mpGraphicsView->snapPointToGrid(point - mOrigin);
+    QPointF adjustedPoint = point - mOrigin;
     points.append(adjustedPoint);
   }
   mPoints = points;
@@ -1160,9 +1160,12 @@ void ShapeAnnotation::updateCornerItem(int index)
 {
   CornerItem *pCornerItem = getCornerItem(index);
   if (pCornerItem) {
-    bool state = pCornerItem->blockSignals(true);
+    bool signalsState = pCornerItem->blockSignals(true);
+    bool flagState = pCornerItem->flags().testFlag(QGraphicsItem::ItemSendsGeometryChanges);
+    pCornerItem->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
     pCornerItem->setPos(mPoints.at(index));
-    pCornerItem->blockSignals(state);
+    pCornerItem->setFlag(QGraphicsItem::ItemSendsGeometryChanges, flagState);
+    pCornerItem->blockSignals(signalsState);
   }
 }
 
@@ -1174,7 +1177,6 @@ void ShapeAnnotation::updateCornerItem(int index)
 void ShapeAnnotation::insertPointsGeometriesAndCornerItems(int index)
 {
   QPointF point = (mPoints[index - 1] + mPoints[index]) / 2;
-  point = mpGraphicsView->snapPointToGrid(point);
   mPoints.insert(index, point);
   mPoints.insert(index, point);
   if (mGeometries[index - 1] == ShapeAnnotation::HorizontalLine) {
@@ -1255,7 +1257,7 @@ void ShapeAnnotation::setShapeFlags(bool enable)
 {
   /*
     Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
-    OR shape is not an inherited shape.
+    AND shape is not an inherited shape.
     */
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape()) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
@@ -1439,9 +1441,9 @@ void ShapeAnnotation::rotateAntiClockwiseMouseRightClick()
   */
 void ShapeAnnotation::moveUp()
 {
-  mpTransformation->updatePosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mpTransformation->adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1460,9 +1462,9 @@ void ShapeAnnotation::moveUp()
   */
 void ShapeAnnotation::moveShiftUp()
 {
-  mpTransformation->updatePosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
+  mpTransformation->adjustPosition(0, mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5);
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1481,9 +1483,9 @@ void ShapeAnnotation::moveShiftUp()
   */
 void ShapeAnnotation::moveCtrlUp()
 {
-  mpTransformation->updatePosition(0, 1);
+  mpTransformation->adjustPosition(0, 1);
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1502,9 +1504,9 @@ void ShapeAnnotation::moveCtrlUp()
   */
 void ShapeAnnotation::moveDown()
 {
-  mpTransformation->updatePosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  mpTransformation->adjustPosition(0, -mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 
@@ -1524,9 +1526,9 @@ void ShapeAnnotation::moveDown()
   */
 void ShapeAnnotation::moveShiftDown()
 {
-  mpTransformation->updatePosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
+  mpTransformation->adjustPosition(0, -(mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep() * 5));
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1545,9 +1547,9 @@ void ShapeAnnotation::moveShiftDown()
   */
 void ShapeAnnotation::moveCtrlDown()
 {
-  mpTransformation->updatePosition(0, -1);
+  mpTransformation->adjustPosition(0, -1);
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1566,9 +1568,9 @@ void ShapeAnnotation::moveCtrlDown()
   */
 void ShapeAnnotation::moveLeft()
 {
-  mpTransformation->updatePosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mpTransformation->adjustPosition(-mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1587,9 +1589,9 @@ void ShapeAnnotation::moveLeft()
   */
 void ShapeAnnotation::moveShiftLeft()
 {
-  mpTransformation->updatePosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
+  mpTransformation->adjustPosition(-(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5), 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1608,9 +1610,9 @@ void ShapeAnnotation::moveShiftLeft()
   */
 void ShapeAnnotation::moveCtrlLeft()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() - 1, mpTransformation->getOrigin().y()));
+  mpTransformation->setOrigin(QPointF(mpTransformation->getPosition().x() - 1, mpTransformation->getPosition().y()));
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1629,9 +1631,9 @@ void ShapeAnnotation::moveCtrlLeft()
   */
 void ShapeAnnotation::moveRight()
 {
-  mpTransformation->updatePosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
+  mpTransformation->adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(), 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1650,9 +1652,9 @@ void ShapeAnnotation::moveRight()
   */
 void ShapeAnnotation::moveShiftRight()
 {
-  mpTransformation->updatePosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
+  mpTransformation->adjustPosition(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep() * 5, 0);
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1671,9 +1673,9 @@ void ShapeAnnotation::moveShiftRight()
   */
 void ShapeAnnotation::moveCtrlRight()
 {
-  mpTransformation->setOrigin(QPointF(mpTransformation->getOrigin().x() + 1, mpTransformation->getOrigin().y()));
+  mpTransformation->setOrigin(QPointF(mpTransformation->getPosition().x() + 1, mpTransformation->getPosition().y()));
   setTransform(mpTransformation->getTransformationMatrix());
-  mOrigin = mpTransformation->getOrigin();
+  mOrigin = mpTransformation->getPosition();
 }
 
 /*!
@@ -1923,8 +1925,9 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
       }
     }
   } else if (change == QGraphicsItem::ItemPositionChange) {
-    // snap to grid while dragging shapes
-    return mpGraphicsView->snapPointToGrid(value.toPointF(), mpTransformation);
+    // move by grid distance while dragging component
+    QPointF positionDifference = mpGraphicsView->movePointByGrid(value.toPointF() - pos());
+    return pos() + positionDifference;
   }
   return value;
 }

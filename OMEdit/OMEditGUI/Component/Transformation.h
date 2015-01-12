@@ -52,7 +52,8 @@ public:
   void parseTransformationString(QString value, qreal width, qreal height);
   QTransform getTransformationMatrix();
   bool getVisible();
-  void updatePosition(qreal x, qreal y);
+  void adjustPosition(qreal x, qreal y);
+  bool hasOrigin();
   void setOrigin(QPointF origin);
   QPointF getOrigin();
   void setExtent1(QPointF extent);
@@ -61,66 +62,51 @@ public:
   QPointF getExtent2();
   void setRotateAngle(qreal rotateAngle);
   qreal getRotateAngle();
-  qreal getScale();
-  void setFlipHorizontal(bool On);
-  bool getFlipHorizontal();
-  void setFlipVertical(bool On);
-  bool getFlipVertical();
+  QPointF getPosition();
 private:
   StringHandler::ViewType mViewType;
   qreal mWidth;
   qreal mHeight;
   bool mVisible;
   QPointF mOriginDiagram;
-  qreal mPositionXDiagram;
-  qreal mPositionYDiagram;
+  bool mHasOriginDiagramX;
+  bool mHasOriginDiagramY;
   QPointF mExtent1Diagram;
   QPointF mExtent2Diagram;
   qreal mRotateAngleDiagram;
-  qreal mScaleDiagram;
-  qreal mAspectRatioDiagram;
-  bool mFlipHorizontalDiagram;
-  bool mFlipVerticalDiagram;
+  QPointF mPositionDiagram;
   QPointF mOriginIcon;
-  qreal mPositionXIcon;
-  qreal mPositionYIcon;
+  bool mHasOriginIconX;
+  bool mHasOriginIconY;
   QPointF mExtent1Icon;
   QPointF mExtent2Icon;
   qreal mRotateAngleIcon;
-  qreal mScaleIcon;
-  qreal mAspectRatioIcon;
-  bool mFlipHorizontalIcon;
-  bool mFlipVerticalIcon;
+  QPointF mPositionIcon;
+
   QTransform getTransformationMatrixDiagram();
-  QTransform getTransformationMatrixIcon();
-  void updatePositionDiagram(qreal x, qreal y);
+  void adjustPositionDiagram(qreal x, qreal y);
+  bool hasOriginDiagram() {return mHasOriginDiagramX && mHasOriginDiagramY;}
   void setOriginDiagram(QPointF origin);
-  QPointF getOriginDiagram();
-  void setExtent1Diagram(QPointF extent);
-  QPointF getExtent1Diagram();
-  void setExtent2Diagram(QPointF extent);
-  QPointF getExtent2Diagram();
-  void setRotateAngleDiagram(qreal rotateAngle);
-  qreal getRotateAngleDiagram();
-  qreal getScaleDiagram();
-  void setFlipHorizontalDiagram(bool On);
-  bool getFlipHorizontalDiagram();
-  void setFlipVerticalDiagram(bool On);
-  bool getFlipVerticalDiagram();
-  void updatePositionIcon(qreal x, qreal y);
+  QPointF getOriginDiagram() {return mOriginDiagram;}
+  void setExtent1Diagram(QPointF extent) {mExtent1Diagram = extent;}
+  QPointF getExtent1Diagram() {return mExtent1Diagram;}
+  void setExtent2Diagram(QPointF extent) {mExtent2Diagram = extent;}
+  QPointF getExtent2Diagram() {return mExtent2Diagram;}
+  void setRotateAngleDiagram(qreal rotateAngle) {mRotateAngleDiagram = rotateAngle;}
+  qreal getRotateAngleDiagram() {return mRotateAngleDiagram;}
+  QPointF getPositionDiagram() {return mPositionDiagram;}
+  QTransform getTransformationMatrixIcon();
+  void adjustPositionIcon(qreal x, qreal y);
+  bool hasOriginIcon() {return mHasOriginIconX && mHasOriginIconY;}
   void setOriginIcon(QPointF origin);
-  QPointF getOriginIcon();
-  void setExtent1Icon(QPointF extent);
-  QPointF getExtent1Icon();
-  void setExtent2Icon(QPointF extent);
-  QPointF getExtent2Icon();
-  void setRotateAngleIcon(qreal rotateAngle);
-  qreal getRotateAngleIcon();
-  qreal getScaleIcon();
-  void setFlipHorizontalIcon(bool On);
-  bool getFlipHorizontalIcon();
-  void setFlipVerticalIcon(bool On);
-  bool getFlipVerticalIcon();
+  QPointF getOriginIcon() {return mOriginIcon;}
+  void setExtent1Icon(QPointF extent) {mExtent1Icon = extent;}
+  QPointF getExtent1Icon() {return mExtent1Icon;}
+  void setExtent2Icon(QPointF extent) {mExtent2Icon = extent;}
+  QPointF getExtent2Icon() {return mExtent2Icon;}
+  void setRotateAngleIcon(qreal rotateAngle) {mRotateAngleIcon = rotateAngle;}
+  qreal getRotateAngleIcon() {return mRotateAngleIcon;}
+  QPointF getPositionIcon() {return mPositionIcon;}
 };
 
 #endif // TRANSFORMATION_H

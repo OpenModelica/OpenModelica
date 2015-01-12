@@ -52,11 +52,11 @@
 CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotation *pParent)
   : QGraphicsItem(pParent), mpShapeAnnotation(pParent), mConnectedPointIndex(connectedPointIndex)
 {
-  setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable
-           | QGraphicsItem::ItemSendsGeometryChanges);
   setCursor(Qt::ArrowCursor);
   setToolTip(Helper::clickAndDragToResize);
   setPos(x, y);
+  setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable
+           | QGraphicsItem::ItemSendsGeometryChanges);
   mRectangle = QRectF (-3, -3, 6, 6);
   if (mpShapeAnnotation->isInheritedShape()) {
     setFlag(QGraphicsItem::ItemIsMovable, false);
@@ -168,21 +168,22 @@ QVariant CornerItem::itemChange(GraphicsItemChange change, const QVariant &value
       emit cornerItemMoved(mConnectedPointIndex, value.toPointF());
     }
   } else if (change == QGraphicsItem::ItemPositionChange) {
-    // snap to grid while resizing shapes
-    return mpShapeAnnotation->getGraphicsView()->snapPointToGrid(value.toPointF(), mpShapeAnnotation->getTransformation());
+    // move by grid distance while dragging component
+    QPointF positionDifference = mpShapeAnnotation->getGraphicsView()->movePointByGrid(value.toPointF() - pos());
+    return pos() + positionDifference;
   }
   return value;
 }
 
 /*!
   \class ResizerItem
-  \brief Represents a red rectangle box around the Component, RectangleAnnotation, EllipseAnnotation, TextAnnotation and BitmapAnnotation.
+  \brief Represents a red rectangle box around the Component.
   */
 /*!
   \param pParent - pointer to QGraphicsItem.
   */
 ResizerItem::ResizerItem(Component *pComponent)
-  : mIsPressed(false)
+  : QGraphicsItem(pComponent), mIsPressed(false)
 {
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsSelectable);
   setCursor(Qt::ArrowCursor);
@@ -276,7 +277,7 @@ void ResizerItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
   if (event->button() == Qt::LeftButton) {
     emit resizerItemPressed(this);
     mIsPressed = true;
-    mResizerItemOldPosition = mpComponent->getGraphicsView()->snapPointToGrid(event->scenePos());
+    mResizerItemOldPosition = event->scenePos();
   }
   QGraphicsItem::mousePressEvent(event);
 }
@@ -290,7 +291,8 @@ void ResizerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
   // indicates that user is dragging the resizer item
   if (mIsPressed) {
-    emit resizerItemMoved(mpComponent->getGraphicsView()->snapPointToGrid(event->scenePos()));
+    QPointF positionDifference = mpComponent->getGraphicsView()->movePointByGrid(event->scenePos() - scenePos());
+    emit resizerItemMoved(scenePos() + positionDifference);
   }
   QGraphicsItem::mouseMoveEvent(event);
 }
