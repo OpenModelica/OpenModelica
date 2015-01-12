@@ -222,9 +222,9 @@ record FilledShape \"Style attributes for filled shapes\"
 end FilledShape;
 
 record Transformation
-  Real origin[2]/*(each final unit=\"mm\")*/ = {0.0, 0.0};
+  Real origin[2]/*(each final unit=\"mm\")*/;
   Real extent[2,2]/*(each final unit=\"mm\")*/;
-  Real rotation/*(quantity=\"angle\", unit=\"deg\")*/=0;
+  Real rotation/*(quantity=\"angle\", unit=\"deg\")*/;
 end Transformation;
 
 record Placement
