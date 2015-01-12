@@ -2297,11 +2297,11 @@ algorithm
     case (e as DAE.LUNARY(operator=op),_,_) equation
       tpl = countOperator(op,inTuple);
       then (e, tpl);
-        
+
     case (e as DAE.RELATION(operator=op),_,_) equation
       tpl = countOperator(op,inTuple);
       then (e, tpl);
-    
+
     case (e as DAE.IFEXP(expCond=cond,expThen=exp1,expElse=exp2),_,_) equation
       //count all branches, use the complete count for the condition and one additional logical count
       (_,tpl) = traversecountOperationsExp(cond,shared,inTuple);
@@ -2333,7 +2333,7 @@ algorithm
     case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8)) equation
       true = stringEq(opName,"exp");
       then (e, (i1,i2,i3,i4,i5,i6,i7+1,i8));
-        
+
     case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8)) equation
       true = stringEq(opName,"pre");
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8+1));
