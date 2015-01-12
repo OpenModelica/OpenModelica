@@ -2151,7 +2151,7 @@ algorithm
         compInfo = BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst, linear = false)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
       equation
         comp = List.first(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);

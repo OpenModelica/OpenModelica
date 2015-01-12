@@ -3796,10 +3796,18 @@ algorithm
   print(preStr + " NrOfEquations: " + intString(n) + "\n");
 end dumpNrOfEquations;
 
-public function dumpCompInfo"dumps the information about the operations in the component"
+public function dumpCompInfo"dumps the information about the operations in the component.
+author Waurich TUD 2014-04"
   input BackendDAE.compInfo compInfo;
 algorithm
-  _ := matchcontinue(compInfo)
+  print(printCompInfo(compInfo));
+end dumpCompInfo;
+
+protected function printCompInfo""
+  input BackendDAE.compInfo compInfo;
+  output String sOut;
+algorithm
+  sOut := matchcontinue(compInfo)
     local
       Integer numAdds,numMul,numDiv,numOth,numTrig,numRel,numLog,numFuncs, size;
       Real dens;
@@ -3808,30 +3816,27 @@ algorithm
       BackendDAE.StrongComponent comp;
       case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
         equation
-          if BackendDAEUtil.isSingleEquationComp(comp) then s= "SE"; end if;
-          if BackendDAEUtil.isWhenComp(comp) then s= "WE"; end if;
-          print(s+printComponent(comp)+"\tadd|"+intString(numAdds)+"\tmul|"+intString(numMul)+"\tdiv|"+intString(numDiv)+"\ttrig|"+intString(numTrig)+"\trel|"+intString(numRel)+"\tlog|"+intString(numLog)+"\toth|"+intString(numOth)+"\tfuncs|"+intString(numFuncs)+"\n");
-        then ();
+          s = "";
+          if BackendDAEUtil.isSingleEquationComp(comp) then s= "SE "+printComponent(comp);
+          elseif BackendDAEUtil.isWhenComp(comp) then s= "WE "+printComponent(comp);
+          end if;
+          s = s+"\tadd|"+intString(numAdds)+"\tmul|"+intString(numMul)+"\tdiv|"+intString(numDiv)+"\ttrig|"+intString(numTrig)+"\trel|"+intString(numRel)+"\tlog|"+intString(numLog)+"\toth|"+intString(numOth)+"\tfuncs|"+intString(numFuncs)+"\n";
+        then s;
       case(BackendDAE.LES_ANALYSE(allOperations=allOps,comp=comp,size=size,density=dens))
         equation
-          print("LES_INFO "+printComponent(comp)+"\tsize|"+intString(size)+"\tdens|"+realString(dens)+"\n\t");
-          dumpCompInfo(allOps);
-          print("\n");
-        then ();
+          s = "LES_INFO "+printComponent(comp)+"\tsize|"+intString(size)+"\tdens|"+realString(dens)+"\n\t"+ printCompInfo(allOps)+"\n";
+        then s;
       case(BackendDAE.TORN_ANALYSE(tornEqs=tornEqs, otherEqs=otherEqs,comp=comp,tornSize=size))
         equation
           if BackendDAEUtil.isLinearTornSystem(comp) then s = "linear"; else s = "nonlinear"; end if;
-          print(s+"TORN_INFO "+printComponent(comp)+"\tsize|"+intString(size)+"\n\t");
-          dumpCompInfo(tornEqs);
-          dumpCompInfo(otherEqs);
-          print("\n");
-        then ();
+          s = s +" TORN_INFO "+printComponent(comp)+"\tsize|"+intString(size)+"\n";
+          s = s + "\tthe torn eqs:\t"+ printCompInfo(tornEqs);
+          s = s + "\tthe other eqs:\t" + printCompInfo(otherEqs) +"\n";
+        then s;
       else
-        equation
-          print("Dont know this compInfo\n");
-        then ();
+        then "Dont know this compInfo\n";
   end matchcontinue;
-end dumpCompInfo;
+end printCompInfo;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDump;
