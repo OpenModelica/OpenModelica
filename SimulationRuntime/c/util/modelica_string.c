@@ -37,71 +37,196 @@
 #include "gc.h"
 #include "meta/meta_modelica.h"
 
-/* Convert a modelica_real to a modelica_string, used in String(real, format="xxx") */
-modelica_string modelica_real_to_modelica_string_format(modelica_real r,modelica_string format)
+#define FMT_BUFSIZE 400
+
+static const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
+
+static inline void checkBufSize(const char *str, int n)
 {
-  char buf[400];
-  sprintf(buf,MMC_STRINGDATA(stringAppend(mmc_strings_len1['%'],format)),r);
+  if (n >= FMT_BUFSIZE) {
+    omc_assert(NULL, dummyFILE_INFO, "Could not parse format string; ran out of buffer size (%d): %s", FMT_BUFSIZE, str);
+  }
+}
+
+modelica_string modelica_string_format_to_c_string_format(modelica_string format)
+{
+  char buf[FMT_BUFSIZE];
+  const char *str = MMC_STRINGDATA(format), *tmp = str;
+  int len = MMC_STRLEN(format), cont=1, n=0;
+  buf[n++] = '%';
+  while (cont) { /* Parse flag characters */
+    switch (*tmp) {
+    /* Extended flags? ',I */
+    case '#':
+    case '0':
+    case '-':
+    case ' ':
+    case '+':
+      buf[n] = *(tmp++);
+      checkBufSize(str, n++);
+      break;
+    default:
+      cont = 0;
+    }
+  }
+  // width: [1-9][0-9]*
+  if ((*tmp >= '1') || (*tmp <= '9')) {
+    while (*tmp >= '0' && *tmp <= '9') {
+      buf[n] = *(tmp++);
+      checkBufSize(str, n++);
+    }
+  }
+  // precision: .[0-9]*
+  if (*tmp == '.') {
+    buf[n] = *(tmp++);
+    checkBufSize(str, n++);
+    while (*tmp >= '0' && *tmp <= '9') {
+      buf[n] = *(tmp++);
+      checkBufSize(str, n++);
+    }
+  }
+
+  switch (*tmp) {
+  case 'f':
+  case 'e':
+  case 'E':
+  case 'g':
+  case 'G':
+    /* double */
+  case 'c':
+    /* int */
+    buf[n] = *(tmp++);
+    checkBufSize(str, n++);
+    break;
+  case 'd':
+  case 'i':
+    /* int */
+  case 'o':
+  case 'x':
+  case 'X':
+  case 'u':
+    /* uint */
+    buf[n] = 'l'; /* we use long in OpenModelica */
+    checkBufSize(str, n++);
+    buf[n] = *(tmp++);
+    checkBufSize(str, n++);
+    break;
+  case 'h':
+  case 'l':
+  case 'L':
+  case 'q':
+  case 'j':
+  case 'z':
+  case 't':
+    omc_assert(NULL, dummyFILE_INFO, "Length modifiers are not legal in Modelica format strings: %s", str);
+    break;
+  default:
+    omc_assert(NULL, dummyFILE_INFO, "Could not parse format string: invalid conversion specifier: %c in %s", *tmp, str);
+  }
+  if (*tmp) {
+    omc_assert(NULL, dummyFILE_INFO, "Could not parse format string: trailing data after the format directive", *tmp, str);
+  }
+  buf[n] = '\0';
   return mmc_mk_scon(buf);
 }
+
 /* Convert a modelica_integer to a modelica_string, used in String(integer, format="xxx") */
 modelica_string modelica_integer_to_modelica_string_format(modelica_integer i,modelica_string format)
 {
-  char buf[400];
-  sprintf(buf,MMC_STRINGDATA(stringAppend(mmc_strings_len1['%'],format)),i);
-  return mmc_mk_scon(buf);
+  void *res;
+  size_t sz;
+
+  void *c_fmt = modelica_string_format_to_c_string_format(format);
+
+  switch (MMC_STRINGDATA(c_fmt)[MMC_STRLEN(c_fmt)-1]) {
+  case 'f':
+  case 'e':
+  case 'E':
+  case 'g':
+  case 'G':
+    /* double */
+    sz = snprintf(NULL, 0, MMC_STRINGDATA(c_fmt), (double) i);
+    res = alloc_modelica_string(sz);
+    sprintf(MMC_STRINGDATA(res), MMC_STRINGDATA(c_fmt), (double) i);
+    break;
+  case 'c':
+  case 'd':
+  case 'i':
+    /* int */
+    sz = snprintf(NULL, 0, MMC_STRINGDATA(c_fmt), (long) i);
+    res = alloc_modelica_string(sz);
+    sprintf(MMC_STRINGDATA(res), MMC_STRINGDATA(c_fmt), (long) i);
+    break;
+  case 'o':
+  case 'x':
+  case 'X':
+  case 'u':
+    /* uint */
+    sz = snprintf(NULL, 0, MMC_STRINGDATA(c_fmt), (unsigned long) i);
+    res = alloc_modelica_string(sz);
+    sprintf(MMC_STRINGDATA(res), MMC_STRINGDATA(c_fmt), (unsigned long) i);
+    break;
+  default:
+    /* integer values, etc */
+    omc_assert(NULL, dummyFILE_INFO, "Invalid conversion specifier for Real: %c", MMC_STRINGDATA(c_fmt)[MMC_STRLEN(c_fmt)-1]);
+  }
+  return res;
 }
-/* Convert a modelica_integer to a modelica_string, used in String(string, format="xxx") */
-modelica_string modelica_stringo_modelica_string_format(modelica_string s,modelica_string format)
+
+/* Convert a modelica_real to a modelica_string, used in String(real, format="xxx") */
+modelica_string modelica_real_to_modelica_string_format(modelica_real r,modelica_string format)
 {
-  char buf[4000];
-  sprintf(buf,MMC_STRINGDATA(stringAppend(mmc_strings_len1['%'],format)),s);
-  return mmc_mk_scon(buf);
+  void *res;
+  size_t sz;
+
+  void *c_fmt = modelica_string_format_to_c_string_format(format);
+
+  switch (MMC_STRINGDATA(c_fmt)[MMC_STRLEN(c_fmt)-1]) {
+  case 'f':
+  case 'e':
+  case 'E':
+  case 'g':
+  case 'G':
+    /* double */
+    sz = snprintf(NULL, 0, MMC_STRINGDATA(c_fmt), (double) r);
+    res = alloc_modelica_string(sz);
+    sprintf(MMC_STRINGDATA(res), MMC_STRINGDATA(c_fmt), (double) r);
+    break;
+  default:
+    /* integer values, etc */
+    omc_assert(NULL, dummyFILE_INFO, "Invalid conversion specifier for Real: %c", MMC_STRINGDATA(c_fmt)[MMC_STRLEN(c_fmt)-1]);
+  }
+  return res;
 }
 
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
 
 modelica_string modelica_integer_to_modelica_string(modelica_integer i, modelica_integer minLen, modelica_boolean leftJustified)
 {
-  char buf[400];
-  size_t sz = snprintf(buf, 400, leftJustified ? "%-*ld" : "%*ld", (int) minLen, i);
-  if (sz > 400) {
-    void *res = alloc_modelica_string(sz-1);
-    sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*ld" : "%*ld", (int) minLen, i);
-    return res;
-  } else {
-    return mmc_mk_scon(buf);
-  }
+  size_t sz = snprintf(NULL, 0, leftJustified ? "%-*ld" : "%*ld", (int) minLen, i);
+  void *res = alloc_modelica_string(sz);
+  sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*ld" : "%*ld", (int) minLen, i);
+  return res;
 }
 
 /* Convert a modelica_real to a modelica_string, used in String(r) */
 
 modelica_string modelica_real_to_modelica_string(modelica_real r,modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits)
 {
-  char buf[400];
-  size_t sz = snprintf(buf, 400, leftJustified ? "%-*.*g" : "%*.*g", (int) minLen, (int) signDigits, r);
-  if (sz > 400) {
-    void *res = alloc_modelica_string(sz-1);
-    sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*.*g" : "%*.*g", (int) minLen, (int) signDigits, r);
-    return res;
-  } else {
-    return mmc_mk_scon(buf);
-  }
+  size_t sz = snprintf(NULL, 0, leftJustified ? "%-*.*g" : "%*.*g", (int) minLen, (int) signDigits, r);
+  void *res = alloc_modelica_string(sz);
+  sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*.*g" : "%*.*g", (int) minLen, (int) signDigits, r);
+  return res;
 }
 
 /* Convert a modelica_boolean to a modelica_string, used in String(b) */
 
 modelica_string modelica_boolean_to_modelica_string(modelica_boolean b, modelica_integer minLen, modelica_boolean leftJustified)
 {
-  char buf[400];
-  size_t sz = snprintf(buf, 400, leftJustified ? "%-*s" : "%*s", (int) minLen, b ? "true" : "false");
-  if (sz > 400) {
-    void *res = alloc_modelica_string(sz-1);
-    sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*s" : "%*s", (int) minLen, b ? "true" : "false");
-    return res;
-  } else {
-    return mmc_mk_scon(buf);
-  }
+  size_t sz = snprintf(NULL, 0, leftJustified ? "%-*s" : "%*s", (int) minLen, b ? "true" : "false");
+  void *res = alloc_modelica_string(sz);
+  sprintf(MMC_STRINGDATA(res), leftJustified ? "%-*s" : "%*s", (int) minLen, b ? "true" : "false");
+  return res;
 }
 
 /* Convert a modelica_enumeration to a modelica_string, used in String(b) */
