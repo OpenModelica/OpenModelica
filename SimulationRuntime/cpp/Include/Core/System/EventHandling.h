@@ -57,7 +57,7 @@ public:
   //Handles  all events occured a the same time. Returns true if a second event iteration is needed
   bool IterateEventQueue(bool& state_vars_reinitialized);
 
-  
+
   bool changeDiscreteVar(double& var);
   bool changeDiscreteVar(int& var);
   bool changeDiscreteVar(bool& var);
@@ -67,9 +67,9 @@ private:
   //Stores all varibales occured before an event
   unordered_map<double* const, unsigned int> _pre_real_vars_idx;
   //stores all eventes
-  unordered_map<int* const, unsigned int> _pre_int_vars_idx; 
+  unordered_map<int* const, unsigned int> _pre_int_vars_idx;
    //stores all eventes
-  unordered_map<bool* const, unsigned int> _pre_bool_vars_idx; 
+  unordered_map<bool* const, unsigned int> _pre_bool_vars_idx;
   IEvent* _event_system;
   //Helpvarsvector for discrete variables
   //double* _h;

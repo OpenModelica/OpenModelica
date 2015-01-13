@@ -7273,11 +7273,11 @@ template initPreVars1(list<SimCodeVar.SimVar> partVars, Integer partIdx, Integer
   <<
   void <%className%>::initPre<%pretype%>Vars_<%partIdx%>(unordered_map<double* const,unsigned int>& vars1,unordered_map<int* const,unsigned int>& vars2,unordered_map<bool* const,unsigned int>& vars3)
   {
-      
+
       <%(partVars |> SIMVAR(__) hasindex i0 fromindex (intAdd(startIdx,intMul(partIdx, multiplicator))) =>
         '<%\t%><%varsLst%>[&<%cref1(name, simCode,extraFuncs,extraFuncsDecl,extraFuncsNamespace,contextOther,varDecls,stateDerVectorName,useFlatArrayNotation)%>]=<%i0%>;'
         ;separator="\n")%>;
-      
+
   }
   >>
 end initPreVars1;

@@ -34,9 +34,9 @@ void EventHandling::initialize(IEvent* system,int dim)
   _mixed_system= dynamic_cast<IMixedSystem*>(_event_system);
   _event_system->initPreVars(_pre_real_vars_idx,_pre_int_vars_idx,_pre_bool_vars_idx);
   _pre_vars.resize((boost::extents[_pre_real_vars_idx.size()+_pre_int_vars_idx.size()+_pre_bool_vars_idx.size()]));
- 
-  
-  
+
+
+
   /*if(_dimH > 0)
   {
   // Initialize help vars vector
