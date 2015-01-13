@@ -7479,17 +7479,17 @@ template initValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simC
           case vStr as "0.0"
           case vStr as "(0)" then
           '<%preExp%>
-           set<%type%>StartValue(<%cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>,<%vStr%>,"<%cref(sv.name, useFlatArrayNotation)%>");'
+           set<%type%>StartValue(<%cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>,<%vStr%>);'
           case vStr as "" then
           '<%preExp%>
-           set<%type%>StartValue(<%cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>,<%vStr%>,"<%cref(sv.name, useFlatArrayNotation)%>");'
+           set<%type%>StartValue(<%cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>,<%vStr%>);'
           case vStr then
           '<%preExp%>
-           set<%type%>StartValue(<%cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>,<%vStr%>,"<%cref(sv.name, useFlatArrayNotation)%>");'
+           set<%type%>StartValue(<%cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>,<%vStr%>);'
         end match
       else
         '<%preExp%>
-         set<%type%>StartValue(<%cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>,<%startValue(sv.type_)%> ,"<%cref(sv.name, useFlatArrayNotation)%>");'
+         set<%type%>StartValue(<%cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>,<%startValue(sv.type_)%>);'
       ;separator="\n"
 end initValst;
 
@@ -7500,7 +7500,7 @@ template initAliasValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode
        let &preExp = buffer ""
        let initval = getAliasInitVal(sv.aliasvar, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         '<%preExp%>
-         set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>,<%initval%>,"<%cref(sv.name, useFlatArrayNotation)%>");'
+         set<%type%>StartValue(<%getAliasVarName(sv.aliasvar, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, stateDerVectorName, useFlatArrayNotation)%>,<%initval%>);'
     ;separator="\n"
 end initAliasValst;
 
@@ -10486,9 +10486,9 @@ template daeExpCallStart(Exp exp, Context context, Text &preExp /*BUFP*/,
   case cr as CREF(__) then
   match context
     case  ALGLOOP_CONTEXT(genInitialisation=false) then
-    '_system->get<%crefStartValueType(cr.componentRef)%>StartValue("<%cref(cr.componentRef, useFlatArrayNotation)%>")'
+    '_system->get<%crefStartValueType(cr.componentRef)%>StartValue(<%cref1(cr.componentRef, simCode , extraFuncs, extraFuncsDecl, extraFuncsNamespace,  context,  &varDecls,  stateDerVectorName ,  useFlatArrayNotation)%>)'
     else
-    'get<%crefStartValueType(cr.componentRef)%>StartValue("<%cref(cr.componentRef, useFlatArrayNotation)%>")'
+    'get<%crefStartValueType(cr.componentRef)%>StartValue(<%cref1(cr.componentRef, simCode , extraFuncs, extraFuncsDecl, extraFuncsNamespace,  context,  &varDecls,  stateDerVectorName ,  useFlatArrayNotation)%>)'
   case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
     let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let cref = cref1(cr.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)

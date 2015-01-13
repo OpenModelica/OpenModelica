@@ -38,11 +38,11 @@ template <class T>
 class InitVars
 {
 public:
-  void setStartValue(T variable, string key);
-  T& getGetStartValue(string key);
+  void setStartValue(T& variable,T val);
+  T& getGetStartValue(T& variable);
 
 private:
-  boost::unordered_map<std::string, T> _start_values;
+  boost::unordered_map<T*, T> _start_values;
 };
 
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
@@ -121,12 +121,12 @@ protected:
     double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
     bool isConsistent();
 
-    double& getRealStartValue(string key);
-    bool& getBoolStartValue(string key);
-    int& getIntStartValue(string key);
-    void setRealStartValue(double& var,double val,string key);
-    void setBoolStartValue(bool& var,bool val, string key);
-    void setIntStartValue(int& var,int val, string key);
+    double& getRealStartValue(double& var);
+    bool& getBoolStartValue(bool& var);
+    int& getIntStartValue(int& var);
+    void setRealStartValue(double& var,double val);
+    void setBoolStartValue(bool& var,bool val);
+    void setIntStartValue(int& var,int val);
 
     double
         _simTime;             ///< current simulation time (given by the solver)

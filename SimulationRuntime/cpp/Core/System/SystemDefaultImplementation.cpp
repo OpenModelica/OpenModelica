@@ -7,15 +7,15 @@
 
 
 template <class T>
-void InitVars<T>::setStartValue(T variable,string key)
+void InitVars<T>::setStartValue(T& variable,T val)
 {
-  _start_values[key] = variable;
+  _start_values[&variable] = val;
 };
 
 template <class T>
-T& InitVars<T>::getGetStartValue(string key)
+T& InitVars<T>::getGetStartValue(T& variable)
 {
-  return _start_values[key];
+  return _start_values[&variable];
 };
 
 
@@ -445,37 +445,37 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
     throw  std::invalid_argument("invalid delay expression id");
 }
 
-double& SystemDefaultImplementation::getRealStartValue(string key)
+double& SystemDefaultImplementation::getRealStartValue(double& key)
 {
   return _real_start_values.getGetStartValue(key);
 }
 
-bool& SystemDefaultImplementation::getBoolStartValue(string key)
+bool& SystemDefaultImplementation::getBoolStartValue(bool& var)
 {
-  return _bool_start_values.getGetStartValue(key);
+  return _bool_start_values.getGetStartValue(var);
 }
 
-int& SystemDefaultImplementation::getIntStartValue(string key)
+int& SystemDefaultImplementation::getIntStartValue(int& var)
 {
-  return _int_start_values.getGetStartValue(key);
+  return _int_start_values.getGetStartValue(var);
 }
 
-void SystemDefaultImplementation::setRealStartValue(double& var,double val,string key)
+void SystemDefaultImplementation::setRealStartValue(double& var,double val)
 {
   var=val;
-  _real_start_values.setStartValue(val,key);
+  _real_start_values.setStartValue(var,val);
 }
 
-void SystemDefaultImplementation::setBoolStartValue(bool& var,bool val, string key)
+void SystemDefaultImplementation::setBoolStartValue(bool& var,bool val)
 {
   var=val;
-  _bool_start_values.setStartValue(val,key);
+  _bool_start_values.setStartValue(var,val);
 }
 
-void SystemDefaultImplementation::setIntStartValue(int& var,int val, string key)
+void SystemDefaultImplementation::setIntStartValue(int& var,int val)
 {
   var=val;
-  _int_start_values.setStartValue(val,key);
+  _int_start_values.setStartValue(var,val);
 }
 
 
