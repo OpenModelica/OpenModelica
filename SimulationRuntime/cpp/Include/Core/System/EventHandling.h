@@ -23,19 +23,33 @@ public:
   //int getDimHelpVars() const;
 
   //saves a variable in _pre_vars vector
-  void save(double var, string key);
+  void save(double& var);
+  void save(int& var);
+  void save(bool& var);
   void savePreVars(double vars [], unsigned int n);
-  void saveDiscretPreVars(double vars [], unsigned int n);
+
   //saves all helpvariables
   //void saveH();
   // void setHelpVar(unsigned int i,double var);
   //const double& operator[](unsigned int i) const;
   //Implementation of the Modelica pre  operator
-  double pre(double var, string key);
+  double pre(double& var);
   //Implementation of the Modelica edge  operator
-  bool edge(double var, string key);
+  bool edge(double& var);
   //Implementation of the Modelica change  operator
-  bool change(double var, string key);
+  bool change(double& var);
+  //Implementation of the Modelica pre  operator
+  double pre(int& var);
+  //Implementation of the Modelica edge  operator
+  bool edge(int& var);
+  //Implementation of the Modelica change  operator
+  bool change(int& var);
+  //Implementation of the Modelica pre  operator
+  double pre(bool& var);
+  //Implementation of the Modelica edge  operator
+  bool edge(bool& var);
+  //Implementation of the Modelica change  operator
+  bool change(bool& var);
   //Adds an event to the eventqueue
   //void addEvent(long index);
   //removes an event from the eventqueue
@@ -43,16 +57,19 @@ public:
   //Handles  all events occured a the same time. Returns true if a second event iteration is needed
   bool IterateEventQueue(bool& state_vars_reinitialized);
 
-  void saveDiscreteVar(double var, string key);
-  bool changeDiscreteVar(double var, string key);
-
+  
+  bool changeDiscreteVar(double& var);
+  bool changeDiscreteVar(int& var);
+  bool changeDiscreteVar(bool& var);
   getCondition_type getCondition;
 
 private:
   //Stores all varibales occured before an event
-  unordered_map<string, unsigned int> _pre_vars_idx;
+  unordered_map<double* const, unsigned int> _pre_real_vars_idx;
   //stores all eventes
-  unordered_map<string, unsigned int> _pre_discrete_vars_idx; // i guess this was used in a wrong way. it might be obsolete.
+  unordered_map<int* const, unsigned int> _pre_int_vars_idx; 
+   //stores all eventes
+  unordered_map<bool* const, unsigned int> _pre_bool_vars_idx; 
   IEvent* _event_system;
   //Helpvarsvector for discrete variables
   //double* _h;

@@ -542,8 +542,8 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
 
       <%getCondition(zeroCrossings,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       <%handleSystemEvents(zeroCrossings,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
-      <%saveAll(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
-      <%initPrevars(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+      <%saveAll(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
+      <%initPrevars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
 
       <%LabeledDAE(modelInfo.labels,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       <%giveVariables(modelInfo,context,useFlatArrayNotation,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>

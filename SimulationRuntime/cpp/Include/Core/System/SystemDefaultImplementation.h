@@ -39,7 +39,7 @@ class InitVars
 {
 public:
   void setStartValue(T variable, string key);
-  T getGetStartValue(string key);
+  T& getGetStartValue(string key);
 
 private:
   boost::unordered_map<std::string, T> _start_values;
@@ -121,9 +121,9 @@ protected:
     double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
     bool isConsistent();
 
-    double getRealStartValue(string key);
-    bool getBoolStartValue(string key);
-    int getIntStartValue(string key);
+    double& getRealStartValue(string key);
+    bool& getBoolStartValue(string key);
+    int& getIntStartValue(string key);
     void setRealStartValue(double& var,double val,string key);
     void setBoolStartValue(bool& var,bool val, string key);
     void setIntStartValue(int& var,int val, string key);

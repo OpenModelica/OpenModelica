@@ -32,10 +32,11 @@ void EventHandling::initialize(IEvent* system,int dim)
   _event_system=system;
   _countinous_system = dynamic_cast<IContinuous*>(_event_system);
   _mixed_system= dynamic_cast<IMixedSystem*>(_event_system);
-
-  _event_system->initPreVars(_pre_vars_idx,_pre_discrete_vars_idx);
-  _pre_vars.resize((boost::extents[_pre_vars_idx.size()]));
-  _pre_discrete_vars.resize((boost::extents[_pre_discrete_vars_idx.size()]));
+  _event_system->initPreVars(_pre_real_vars_idx,_pre_int_vars_idx,_pre_bool_vars_idx);
+  _pre_vars.resize((boost::extents[_pre_real_vars_idx.size()+_pre_int_vars_idx.size()+_pre_bool_vars_idx.size()]));
+ 
+  
+  
   /*if(_dimH > 0)
   {
   // Initialize help vars vector
@@ -120,26 +121,63 @@ void EventHandling::savePreVars(double vars[], unsigned int n)
   _pre_vars.assign(vars,vars+n);
 }
 
-void EventHandling::saveDiscretPreVars(double vars [], unsigned int n)
-{
-  _pre_discrete_vars.assign(vars,vars+n);
-}
+
 /**
 Saves a variable in _pre_vars vector
 */
 
-void EventHandling::save(double var,string key)
+void EventHandling::save(double& var)
 {
-  unsigned int i = _pre_vars_idx[key];
+  unsigned int i = _pre_real_vars_idx[&var];
+  _pre_vars[i]=var;
+}
+
+/**
+Saves a variable in _pre_vars vector
+*/
+
+void EventHandling::save(int& var)
+{
+  unsigned int i = _pre_int_vars_idx[&var];
+  _pre_vars[i]=var;
+}
+
+/**
+Saves a variable in _pre_vars vector
+*/
+
+void EventHandling::save(bool& var)
+{
+  unsigned int i = _pre_bool_vars_idx[&var];
   _pre_vars[i]=var;
 }
 
 /**
 Implementation of the Modelica pre  operator
 */
-double EventHandling::pre(double var,string key)
+double EventHandling::pre(double& var)
 {
-  unsigned int i = _pre_vars_idx[key];
+  unsigned int i = _pre_real_vars_idx[&var];
+  return _pre_vars[i];
+
+}
+
+/**
+Implementation of the Modelica pre  operator
+*/
+double EventHandling::pre(int& var)
+{
+  unsigned int i = _pre_int_vars_idx[&var];
+  return _pre_vars[i];
+
+}
+
+/**
+Implementation of the Modelica pre  operator
+*/
+double EventHandling::pre(bool& var)
+{
+  unsigned int i = _pre_bool_vars_idx[&var];
   return _pre_vars[i];
 
 }
@@ -147,33 +185,76 @@ double EventHandling::pre(double var,string key)
 Implementation of the Modelica edge  operator
 Returns true for a variable when it  changes from false to true
 */
-bool EventHandling::edge(double var,string key)
+bool EventHandling::edge(double& var)
 {
-  return var && !pre(var,key);
+  return var && !pre(var);
+}
+
+/**
+Implementation of the Modelica edge  operator
+Returns true for a variable when it  changes from false to true
+*/
+bool EventHandling::edge(int& var)
+{
+  return var && !pre(var);
+}
+
+/**
+Implementation of the Modelica edge  operator
+Returns true for a variable when it  changes from false to true
+*/
+bool EventHandling::edge(bool& var)
+{
+  return var && !pre(var);
 }
 
 /**
 Implementation of the Modelica change  operator
 Returns true for a variable when it change value
 */
-bool EventHandling::change(double var,string key)
+bool EventHandling::change(double& var)
 {
-  return var != pre(var, key);
+  return var != pre(var);
 }
 
-void EventHandling::saveDiscreteVar(double var,string key)
+/**
+Implementation of the Modelica change  operator
+Returns true for a variable when it change value
+*/
+bool EventHandling::change(int& var)
 {
-  unsigned int i = _pre_discrete_vars_idx[key];
-  _pre_discrete_vars[i]=var;
+  return var != pre(var);
+}
+
+/**
+Implementation of the Modelica change  operator
+Returns true for a variable when it change value
+*/
+bool EventHandling::change(bool& var)
+{
+  return var != pre(var);
+}
+
+
+bool EventHandling::changeDiscreteVar(double& var)
+{
+  unsigned int i = _pre_real_vars_idx[&var];
+  return var != _pre_vars[i];
 
 }
-bool EventHandling::changeDiscreteVar(double var,string key)
+bool EventHandling::changeDiscreteVar(int& var)
 {
-  unsigned int i = _pre_vars_idx[key];
+  unsigned int i = _pre_int_vars_idx[&var];
   return var != _pre_vars[i];
 
 }
 
+bool EventHandling::changeDiscreteVar(bool& var)
+{
+  unsigned int i = _pre_bool_vars_idx[&var];
+  return var != _pre_vars[i];
+
+}
 
 /**
 Handles all events occurred a the same time.

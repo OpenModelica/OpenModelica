@@ -13,7 +13,7 @@ void InitVars<T>::setStartValue(T variable,string key)
 };
 
 template <class T>
-T InitVars<T>::getGetStartValue(string key)
+T& InitVars<T>::getGetStartValue(string key)
 {
   return _start_values[key];
 };
@@ -445,17 +445,17 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
     throw  std::invalid_argument("invalid delay expression id");
 }
 
-double SystemDefaultImplementation::getRealStartValue(string key)
+double& SystemDefaultImplementation::getRealStartValue(string key)
 {
   return _real_start_values.getGetStartValue(key);
 }
 
-bool SystemDefaultImplementation::getBoolStartValue(string key)
+bool& SystemDefaultImplementation::getBoolStartValue(string key)
 {
   return _bool_start_values.getGetStartValue(key);
 }
 
-int SystemDefaultImplementation::getIntStartValue(string key)
+int& SystemDefaultImplementation::getIntStartValue(string key)
 {
   return _int_start_values.getGetStartValue(key);
 }
