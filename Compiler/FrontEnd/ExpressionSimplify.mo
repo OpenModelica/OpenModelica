@@ -304,7 +304,7 @@ protected function simplifyCall
 algorithm
   outExp := matchcontinue inExp
     local
-      DAE.Exp e,e1,e2,exp;
+      DAE.Exp e,e1,e2,exp,zero;
       list<DAE.Exp> matrix,expl;
       DAE.CallAttributes attr;
       DAE.Type tp;
@@ -381,8 +381,16 @@ algorithm
     // simplify identity
     case DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)})
       equation
-        matrix = simplifyIdentity(1,n);
+        matrix = list(DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),false,list(if i==j then DAE.ICONST(1) else DAE.ICONST(0) for i in 1:n)) for j in 1:n);
       then DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),false,matrix);
+
+    case DAE.CALL(path = Absyn.IDENT(name = "diagonal"), expLst = {DAE.ARRAY(array=expl,ty=tp)})
+      equation
+        n = listLength(expl);
+        tp = Types.arrayElementType(tp);
+        zero = Expression.makeConstZero(tp);
+        matrix = list(DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),false,list(if i==j then listGet(expl,i) else zero for i in 1:n)) for j in 1:n);
+      then DAE.ARRAY(DAE.T_ARRAY(tp,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),false,matrix);
 
     // arcxxx(xxx(e)) => e; xxx(arcxxx(e)) => e
     case (DAE.CALL(path=Absyn.IDENT("sin"),expLst={DAE.CALL(path=Absyn.IDENT("asin"),expLst={e})}))
@@ -1632,61 +1640,6 @@ algorithm
 
   end matchcontinue;
 end simplifyBuiltinConstantCalls;
-
-protected function simplifyIdentity ""
-  input Integer row;
-  input Integer n;
-  output list<DAE.Exp> outExp;
-algorithm
-  outExp := matchcontinue(row,n)
-    local
-      list<DAE.Exp> rowExps;
-      DAE.Exp arrExp;
-
-    case(_,_) // bottom right
-      equation
-        true = intEq(row,n);
-        rowExps = simplifyIdentityMakeRow(n,1,row);
-      then
-       {DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)}, DAE.emptyTypeSource),true,rowExps)};
-
-    else // bottom right
-      equation
-        true = row < n;
-        rowExps = simplifyIdentityMakeRow(n,1,row);
-        outExp = simplifyIdentity(row+1,n);
-        arrExp = DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)}, DAE.emptyTypeSource),true,rowExps);
-      then
-        arrExp::outExp;
-  end matchcontinue;
-end simplifyIdentity;
-
-protected function simplifyIdentityMakeRow ""
-  input Integer n;
-  input Integer col;
-  input Integer row;
-  output list<DAE.Exp> expl;
-algorithm
-  expl := matchcontinue(n,col,row)
-    local
-      Integer i;
-
-    case(_,_,_)
-      equation
-        true = intEq(n,col);
-        i = if intEq(col,row) then 1 else 0;
-      then
-        {DAE.ICONST(i)};
-
-    else
-      equation
-        true = col < n;
-        i = if intEq(col,row) then 1 else 0;
-        expl = simplifyIdentityMakeRow(n,col+1,row);
-      then
-        DAE.ICONST(i)::expl;
-  end matchcontinue;
-end simplifyIdentityMakeRow;
 
 protected function simplifyCref
 " Function for simplifying

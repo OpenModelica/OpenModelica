@@ -162,6 +162,15 @@ algorithm
   end match;
 end isZero;
 
+public function makeZero "Returns a zero value based on a DAE.Type"
+  input DAE.Type ty;
+  output Values.Value zero;
+algorithm
+  zero := match ty
+    case DAE.T_REAL() then Values.REAL(0.0);
+    case DAE.T_INTEGER() then Values.INTEGER(0);
+  end match;
+end makeZero;
 
 public function isArray "Return true if Value is an array."
   input Values.Value inValue;

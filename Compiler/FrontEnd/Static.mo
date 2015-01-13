@@ -5380,38 +5380,8 @@ algorithm
   outProperties := DAE.PROP(ty, c);
   ty := Types.simplifyType(ty);
 
-  try
-    DAE.ARRAY(array = expl) := exp;
-    outExp := elabBuiltinDiagonal2(expl, ty);
-  else
-    outExp := Expression.makePureBuiltinCall("diagonal", {exp}, ty);
-  end try;
+  outExp := Expression.makePureBuiltinCall("diagonal", {exp}, ty);
 end elabBuiltinDiagonal;
-
-protected function elabBuiltinDiagonal2
-  "Tries to symbolically simplify diagonal.
-   For instance diagonal({a,b}) => {a,0;0,b}"
-  input list<DAE.Exp> inExpl;
-  input DAE.Type inType;
-  output DAE.Exp outRes;
-protected
-  Integer dim, row_idx;
-  list<DAE.Exp> row;
-  list<list<DAE.Exp>> mat := {};
-  DAE.Exp zero_exp;
-algorithm
-  dim := listLength(inExpl);
-  row_idx := 0;
-  zero_exp := Expression.makeConstZero(inType);
-
-  for e in inExpl loop
-    mat := listAppend(list(zero_exp for i in 1:row_idx),
-                 e :: list(zero_exp for i in (row_idx + 2):dim)) :: mat;
-    row_idx := row_idx + 1;
-  end for;
-
-  outRes := DAE.MATRIX(inType, dim, listReverse(mat));
-end elabBuiltinDiagonal2;
 
 protected function elabBuiltinSimplify "This function elaborates the simplify function.
   The call in mosh is: simplify(x+yx-x,\"Real\") if the variable should be

@@ -1849,7 +1849,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      Integer dim_int,dim_int_1;
+      Integer dimension;
       list<DAE.Exp> expl;
       list<Values.Value> retExp;
       FCore.Graph env;
@@ -1857,17 +1857,15 @@ algorithm
       Boolean impl;
       Option<GlobalScript.SymbolTable> st;
       Absyn.Msg msg;
-       FCore.Cache cache;
+      FCore.Cache cache;
+      Values.Value res;
 
     case (cache,env,{dim},impl,st,msg,_)
-      equation
-        (cache,Values.INTEGER(dim_int),_) = ceval(cache,env,dim,impl,st,msg,numIter+1);
-        dim_int_1 = dim_int + 1;
-        expl = List.fill(DAE.ICONST(1), dim_int);
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, DAE.ARRAY(DAE.T_INTEGER_DEFAULT,true,expl), impl, st, dim_int_1,
-          1, {},msg,numIter+1);
+      algorithm
+        (cache,Values.INTEGER(dimension),_) := ceval(cache,env,dim,impl,st,msg,numIter+1);
+        res := Values.ARRAY(list(Values.ARRAY(list(if i==j then Values.INTEGER(1) else Values.INTEGER(0) for i in 1:dimension),{dimension}) for j in 1:dimension), {dimension,dimension});
       then
-        (cache,ValuesUtil.makeArray(retExp),st);
+        (cache,res,st);
 
   end match;
 end cevalBuiltinIdentity;
@@ -4008,7 +4006,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
     local
-      list<Values.Value> rv2,retExp;
+      list<Values.Value> vals,retExp;
       Integer dimension,correctDimension;
       FCore.Graph env;
       DAE.Exp exp;
@@ -4018,13 +4016,15 @@ algorithm
       FCore.Cache cache;
       Values.Value res;
       SourceInfo info;
+      Values.Value zero;
+      DAE.Type ty;
 
     case (cache,env,{exp},impl,st,msg,_)
-      equation
-        (cache,Values.ARRAY(_,{dimension}),_) = ceval(cache,env,exp,impl,st,msg,numIter+1);
-        correctDimension = dimension + 1;
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, exp, impl, st, correctDimension, 1, {},msg,numIter+1);
-        res = Values.ARRAY(retExp,{dimension,dimension});
+      algorithm
+        DAE.T_ARRAY(ty=ty) := Expression.typeof(exp);
+        (cache,Values.ARRAY(vals,{dimension}),_) := ceval(cache,env,exp,impl,st,msg,numIter+1);
+        zero := ValuesUtil.makeZero(ty);
+        res := Values.ARRAY(list(Values.ARRAY(list(if i==j then listGet(vals,i) else zero for i in 1:dimension),{dimension}) for j in 1:dimension), {dimension,dimension});
       then
         (cache,res,st);
     case (_,_,_,_,_,Absyn.MSG(info = info),_)
@@ -4035,114 +4035,6 @@ algorithm
         fail();
   end matchcontinue;
 end cevalBuiltinDiagonal;
-
-protected function cevalBuiltinDiagonal2 " This is a help function that is calling itself recursively to
-   generate the a nxn matrix with some special diagonal elements.
-   See cevalBuiltinDiagonal."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv1;
-  input DAE.Exp inExp2;
-  input Boolean inBoolean3;
-  input Option<GlobalScript.SymbolTable> inST4;
-  input Integer inInteger5 "matrix dimension";
-  input Integer inInteger6 "row";
-  input list<Values.Value> inValuesValueLst7;
-  input Absyn.Msg inMsg8;
-  input Integer numIter;
-  output FCore.Cache outCache;
-  output list<Values.Value> outValuesValueLst;
-algorithm
-  (outCache,outValuesValueLst) :=
-  matchcontinue (inCache,inEnv1,inExp2,inBoolean3,inST4,inInteger5,inInteger6,inValuesValueLst7,inMsg8,numIter)
-    local
-      Real rv2;
-      Integer correctDim,correctPlace,newRow,matrixDimension,row,iv2;
-      list<Values.Value> zeroList,listWithElement,retExp,appendedList,listIN,list_;
-      FCore.Graph env;
-      DAE.Exp s1,s2;
-      Boolean impl;
-      Option<GlobalScript.SymbolTable> st;
-      Absyn.Msg msg;
-      FCore.Cache cache;
-      Values.Value v;
-      SourceInfo info;
-      String str;
-
-    case (cache,env,s1,impl,st,matrixDimension,row,{},msg,_)
-      equation
-        s2 = DAE.ICONST(row);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
-        correctDim = matrixDimension - 1;
-        zeroList = List.fill(Values.REAL(0.0), correctDim);
-        listWithElement = List.replaceAt(Values.REAL(rv2), row, zeroList);
-        newRow = row + 1;
-        v = ValuesUtil.makeArray(listWithElement);
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v},msg,numIter);
-      then
-        (cache,retExp);
-
-    case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg,_)
-      equation
-        s2 = DAE.ICONST(row);
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
-
-        false = intEq(matrixDimension, row);
-
-        correctDim = matrixDimension - 1;
-        zeroList = List.fill(Values.REAL(0.0), correctDim);
-        listWithElement = List.replaceAt(Values.REAL(rv2), row, zeroList);
-        newRow = row + 1;
-        v = ValuesUtil.makeArray(listWithElement);
-        appendedList = listAppend(listIN, {v});
-        (cache,retExp)= cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList,msg,numIter);
-      then
-        (cache,retExp);
-
-    case (cache,env,s1,impl,st,matrixDimension,row,{},msg,_)
-      equation
-        s2 = DAE.ICONST(row);
-        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
-        correctDim = matrixDimension - 1;
-        zeroList = List.fill(Values.INTEGER(0), correctDim);
-        listWithElement = List.replaceAt(Values.INTEGER(iv2), row, zeroList);
-        newRow = row + 1;
-        v = ValuesUtil.makeArray(listWithElement);
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v},msg,numIter);
-      then
-        (cache,retExp);
-
-    case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg,_)
-      equation
-        s2 = DAE.ICONST(row);
-        (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg,numIter+1);
-
-        false = intEq(matrixDimension, row);
-
-        correctDim = matrixDimension - 1;
-        zeroList = List.fill(Values.INTEGER(0), correctDim);
-        listWithElement = List.replaceAt(Values.INTEGER(iv2), row, zeroList);
-        newRow = row + 1;
-        v = ValuesUtil.makeArray(listWithElement);
-        appendedList = listAppend(listIN, {v});
-        (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, appendedList, msg, numIter);
-      then
-        (cache,retExp);
-
-    case (cache,_,_,_,_,matrixDimension,row,listIN,_,_)
-      equation
-        true = intEq(matrixDimension, row);
-      then
-        (cache,listIN);
-
-    case (_,_,_,_,_,_,_,_,Absyn.MSG(info = info),_)
-      equation
-        true = Flags.isSet(Flags.CEVAL);
-        str = Error.infoStr(info);
-        Debug.traceln(str + " Ceval.cevalBuiltinDiagonal2 failed");
-      then
-        fail();
-  end matchcontinue;
-end cevalBuiltinDiagonal2;
 
 protected function cevalBuiltinCross "
   x,y => {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}"
