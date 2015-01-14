@@ -768,7 +768,7 @@ if test "$DARWIN" = "1"; then
   FMILIB_SHARED=ON
   LIBCMINPACKLIB=libcminpack.dylib
   CMINPACKLIB_SHARED=ON
-  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLASG -linteractive -llis -lcdaskr -lcminpack -lf2c -lexpat -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
+  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -linteractive -llis -lcdaskr -lcminpack -lf2c -lexpat -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
