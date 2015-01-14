@@ -2267,20 +2267,18 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
       stop here, because the class can not contain any components, etc.
       Also check for cyclic loops.
       */
-    if (pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)
-      return;
-    getModelComponents(inheritedClass, true);
+    if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)) {
+      getModelComponents(inheritedClass, true);
+    }
   }
   // get the components
   QList<ComponentInfo*> componentsList = pMainWindow->getOMCProxy()->getComponents(className);
   // get the components annotations
   QStringList componentsAnnotationsList = pMainWindow->getOMCProxy()->getComponentAnnotations(className);
   int i = 0;
-  foreach (ComponentInfo *pComponentInfo, componentsList)
-  {
+  foreach (ComponentInfo *pComponentInfo, componentsList) {
     /* if the component type is one of the builtin type then don't show it */
-    if (pMainWindow->getOMCProxy()->isBuiltinType(pComponentInfo->getClassName()))
-    {
+    if (pMainWindow->getOMCProxy()->isBuiltinType(pComponentInfo->getClassName())) {
       i++;
       continue;
     }
@@ -2328,9 +2326,9 @@ void ModelWidget::getModelIconDiagramShapes(QString className, bool inheritedCyc
       stop here, because the class can not contain any components, etc.
       Also check for cyclic loops.
       */
-    if (pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)
-      return;
-    getModelIconDiagramShapes(inheritedClass, true);
+    if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)) {
+      getModelIconDiagramShapes(inheritedClass, true);
+    }
   }
   OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
   QString iconAnnotationString = pOMCProxy->getIconAnnotation(className);
@@ -2451,10 +2449,9 @@ void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
       stop here, because the class can not contain any components, etc.
       Also check for cyclic loops.
       */
-    if (pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0) {
-      return;
+    if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)) {
+      getModelConnections(inheritedClass, true);
     }
-    getModelConnections(inheritedClass, true);
   }
   int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(className);
   for (int i = 1 ; i <= connectionCount ; i++) {

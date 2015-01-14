@@ -206,27 +206,29 @@ void Component::getClassInheritedComponents(bool isRootComponent, bool isPortCom
   {
     QString inheritedClass = mpOMCProxy->getNthInheritedClass(mClassName, i);
     // avoid cycles
-    if (inheritedClass.compare(mClassName) == 0)
-      return;
-    // If the inherited class is one of the builtin type such as Real we can
-    // stop here, because the class can not contain any components, etc.
-    if (mpOMCProxy->isBuiltinType(inheritedClass))
-      return;
-    // get the inherited class annotation
-    StringHandler::ModelicaClasses type = mpOMCProxy->getClassRestriction(inheritedClass);
-    QString annotationString;
-    if (isLibraryComponent() || !isRootComponent)
-      annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
-    else if (type == StringHandler::Connector && mpGraphicsView->getViewType() == StringHandler::Diagram)
-      annotationString = mpOMCProxy->getDiagramAnnotation(inheritedClass);
-    else
-      annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
-    Component *pInheritedComponent;
-    pInheritedComponent  = new Component(annotationString, inheritedClass, type, this);
-    /* if component is the port component and it has inherited components then stack its inherited components behind it. */
-    if (isPortComponent)
-      pInheritedComponent->setFlag(QGraphicsItem::ItemStacksBehindParent);
-    mInheritanceList.append(pInheritedComponent);
+    if (inheritedClass.compare(mClassName) != 0) {
+      // If the inherited class is one of the builtin type such as Real we can
+      // stop here, because the class can not contain any components, etc.
+      if (!mpOMCProxy->isBuiltinType(inheritedClass)) {
+        // get the inherited class annotation
+        StringHandler::ModelicaClasses type = mpOMCProxy->getClassRestriction(inheritedClass);
+        QString annotationString;
+        if (isLibraryComponent() || !isRootComponent) {
+          annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
+        } else if (type == StringHandler::Connector && mpGraphicsView->getViewType() == StringHandler::Diagram) {
+          annotationString = mpOMCProxy->getDiagramAnnotation(inheritedClass);
+        } else {
+          annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
+        }
+        Component *pInheritedComponent;
+        pInheritedComponent  = new Component(annotationString, inheritedClass, type, this);
+        /* if component is the port component and it has inherited components then stack its inherited components behind it. */
+        if (isPortComponent) {
+          pInheritedComponent->setFlag(QGraphicsItem::ItemStacksBehindParent);
+        }
+        mInheritanceList.append(pInheritedComponent);
+      }
+    }
   }
 }
 
@@ -334,24 +336,23 @@ void Component::getClassComponents()
   }
   // get components
   QList<ComponentInfo*> componentInfoList = mpOMCProxy->getComponents(mClassName);
-  if (componentInfoList.isEmpty())
+  if (componentInfoList.isEmpty()) {
     return;
+  }
   QStringList componentsAnnotations = mpOMCProxy->getComponentAnnotations(mClassName);
   int i = 0;
-  foreach (ComponentInfo *pComponentInfo, componentInfoList)
-  {
+  foreach (ComponentInfo *pComponentInfo, componentInfoList) {
     // just to be on safe-side.
-    if (componentsAnnotations.size() <= i)
+    if (componentsAnnotations.size() <= i) {
       continue;
+    }
     QString transformation = StringHandler::getPlacementAnnotation(componentsAnnotations.at(i));
     // if component is protected we don't show it in the icon layer.
-    if (transformation.isEmpty() || pComponentInfo->getProtected() || mpOMCProxy->isBuiltinType(pComponentInfo->getClassName()))
-    {
+    if (transformation.isEmpty() || pComponentInfo->getProtected() || mpOMCProxy->isBuiltinType(pComponentInfo->getClassName())) {
       i++;
       continue;
     }
-    if (mpOMCProxy->isWhat(StringHandler::Connector, pComponentInfo->getClassName()))
-    {
+    if (mpOMCProxy->isWhat(StringHandler::Connector, pComponentInfo->getClassName())) {
       QString result = mpOMCProxy->getIconAnnotation(pComponentInfo->getClassName());
       Component *pComponent = new Component(result, transformation, pComponentInfo, StringHandler::Connector,
                                             getRootParentComponent());
