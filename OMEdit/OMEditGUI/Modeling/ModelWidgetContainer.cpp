@@ -1613,8 +1613,14 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
 void GraphicsView::resizeEvent(QResizeEvent *event)
 {
   // only resize the view if user has not set any custom scaling like zoom in and zoom out.
-  if (!isCustomScale())
-    fitInView(getExtentRectangle(), Qt::KeepAspectRatio);
+  if (!isCustomScale()) {
+    // make the fitInView rectangle bigger so that the scene rectangle will show up properly on the screen.
+    QRectF extentRectangle = getExtentRectangle();
+    qreal x1, y1, x2, y2;
+    extentRectangle.getCoords(&x1, &y1, &x2, &y2);
+    extentRectangle.setCoords(x1 -5, y1 -5, x2 + 5, y2 + 5);
+    fitInView(extentRectangle, Qt::KeepAspectRatio);
+  }
   QGraphicsView::resizeEvent(event);
 }
 
