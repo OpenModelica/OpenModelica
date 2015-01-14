@@ -11602,7 +11602,7 @@ algorithm
         // get terms
         explst = terms(iExp1);
         explst1 = terms(iExp2);
-        // N1/D1 = N2/D2 
+        // N1/D1 = N2/D2
         (N1,D1) = makeFraction(iExp1);
         (N2,D2) = makeFraction(iExp2);
         // N1*D2 = N2*D1
