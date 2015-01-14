@@ -6033,7 +6033,7 @@ algorithm
     /* consider also array and record crefs */
     case (DAE.CREF(componentRef=cr), _)
       equation
-        
+
         crefs = ComponentReference.expandCref(cr, true);
         false = valueEq({cr},crefs); // Not an expanded element
         expLst = List.map(crefs, Expression.crefExp);
@@ -6047,7 +6047,7 @@ algorithm
 /*
     case (DAE.CALL(expLst=expLst),_) equation
       List.foldAllValue(expLst, createSingleComplexEqnCode3, true, iht);
-    then (true, iht); 
+    then (true, iht);
 */
     else
       (false, iht);
