@@ -11587,7 +11587,7 @@ algorithm
 
   resExp := matchcontinue(iExp1, iExp2)
     local
-      DAE.Exp e, e1, res, res1, res2;
+      DAE.Exp e, e1, e2, res, res1, res2, N1, D1, N2, D2, N ,D;
       list<DAE.Exp> explst, explst1, mexplst;
       DAE.Type ty;
 
@@ -11602,24 +11602,19 @@ algorithm
         // get terms
         explst = terms(iExp1);
         explst1 = terms(iExp2);
-        // get all divisors and multiply them to the other terms
-        (explst, mexplst) = moveDivToMul(explst, {}, {});
-        e = makeProductLst(mexplst);
-        (e1, _) = ExpressionSimplify.simplify(e);
-        //explst1 = List.map1(explst1, expMul, e);
-        explst1 = ExpressionSimplify.simplifyList(explst1, {});
-        (explst1, mexplst) = moveDivToMul(explst1, {}, {});
-        e = makeProductLst(mexplst);
-        e = expMul(e,e1);
-        (e, _) = ExpressionSimplify.simplify(e);
-        //explst = List.map1(explst, expMul, e);
-        res1 = makeSum1(explst);
-        res1 = expMul(res1,e);
-        //explst1 = List.map(explst1, negate);
-        //explst = listAppend(explst, explst1);
-        res2 = makeSum1(explst1);
-        res2 = expMul(res2,e1);
-        res = if isConst(res1) or (listLength(explst1) + 1) > listLength(explst) then expSub(res2, res1) else expSub(res1, res2); //heuristic
+        // N1/D1 = N2/D2 
+        (N1,D1) = makeFraction(iExp1);
+        (N2,D2) = makeFraction(iExp2);
+        // N1*D2 = N2*D1
+        res1 = expMul(N1,D2);
+        res2 = expMul(N2,D1);
+
+        if isConst(res1) or (listLength(explst1) + 1) > listLength(explst) then //heuristic
+          res = expSub(res2,res1);
+        else
+          res = expSub(res1,res2);
+        end if;
+
         (res, _) = ExpressionSimplify.simplify(res);
       then
         res;
@@ -11671,6 +11666,7 @@ protected
   DAE.Type tp := typeof(iExp);
 algorithm
   T := terms(iExp);
+  T := ExpressionSimplify.simplifyList(T, {});
   (N,D) := moveDivToMul(T, {}, {});
   N := ExpressionSimplify.simplifyList(N, {});
   D := ExpressionSimplify.simplifyList(D, {});
