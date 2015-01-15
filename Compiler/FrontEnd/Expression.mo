@@ -11602,19 +11602,19 @@ algorithm
         // N1/D1 = N2/D2
         (N1,D1) = makeFraction(iExp1);
         (N2,D2) = makeFraction(iExp2);
-        // N1*D2 = N2*D1 // simplify N1*D2 e.g. N1*D2 = (a/b + c)*b -> a+c/b 
+        // N1*D2 = N2*D1 // simplify N1*D2 e.g. N1*D2 = (a/b + c)*b -> a+c/b
         res1 = ExpressionSimplify.simplifySumOperatorExpression(N1, DAE.MUL(ty), D2);
         res2 = ExpressionSimplify.simplifySumOperatorExpression(N2, DAE.MUL(ty), D1);
 
         //heuristic
-        explst = terms(iExp1); 
-        explst1 = terms(iExp2); 
+        explst = terms(iExp1);
+        explst1 = terms(iExp2);
         if isConst(res1) or (listLength(explst1) + 1) > listLength(explst) then
-          res = expSub(res2,res1); 
-        else 
-          res = expSub(res1,res2); 
-        end if; 
-        
+          res = expSub(res2,res1);
+        else
+          res = expSub(res1,res2);
+        end if;
+
         (res, _) = ExpressionSimplify.simplify(res);
         //print("\n\niExp1:\n");print(ExpressionDump.printExpStr(iExp1));
         //print("\niExp2:\n");print(ExpressionDump.printExpStr(iExp2));
