@@ -68,6 +68,9 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_SOTI",
   "LOG_STATS",
   "LOG_STATS_V",
+#ifdef USE_DEBUG_TRACE
+  "LOG_TRACE",
+#endif
   "LOG_UTIL",
   "LOG_ZEROCROSSINGS",
 };
@@ -104,6 +107,9 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "final solution of the initialization",               /* LOG_SOTI */
   "additional statistics about timer/events/solver",    /* LOG_STATS */
   "additional statistics for LOG_STATS",                /* LOG_STATS_V */
+#ifdef USE_DEBUG_TRACE
+  "enables additional output to trace call stack",      /* LOG_TRACE */
+#endif
   "???",                                                /* LOG_UTIL*/
   "additional information about the zerocrossings"      /* LOG_ZEROCROSSINGS */
 };
@@ -124,8 +130,8 @@ int lastStream = LOG_UNKNOWN;
 int showAllWarnings = 0;
 
 #ifdef USE_DEBUG_TRACE
-  int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln){printf("TRACE: push %s (%s:%d)\n", pFnc, pFile, ln); return 0;}
-  int DEBUG_TRACE_POP_HELPER(int traceID){printf("TRACE: pop\n"); return 0;}
+  int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln){if(useStream[LOG_TRACE]) printf("TRACE: push %s (%s:%d)\n", pFnc, pFile, ln); return 0;}
+  int DEBUG_TRACE_POP_HELPER(int traceID){if(useStream[LOG_TRACE]) printf("TRACE: pop\n"); return 0;}
 #endif
 
 void initDumpSystem()
