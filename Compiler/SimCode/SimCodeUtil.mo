@@ -1549,6 +1549,7 @@ algorithm
       list<tuple<Integer,Integer>> equationSccMapping, eqBackendSimCodeMapping;
       Integer highestSimEqIndex;
       SimCode.BackendMapping backendMapping;
+      list<BackendDAE.Var> primaryParameters "already sorted";
 
     case (dlow, class_, _, fileDir, _,_, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
@@ -1560,7 +1561,7 @@ algorithm
       // fcall(Flags.FAILTRACE, print, "is that Cpp? : " + Dump.printBoolStr(ifcpp) + "\n");
 
       // generate initDAE before replacing pre(alias)!
-      (initDAE, useHomotopy, removedInitialEquationLst) = Initialization.solveInitialSystem(dlow);
+      (initDAE, useHomotopy, removedInitialEquationLst, primaryParameters) = Initialization.solveInitialSystem(dlow);
 
       if Flags.isSet(Flags.ITERATION_VARS) then
         BackendDAEOptimize.listAllIterationVariables(dlow);
@@ -1606,7 +1607,7 @@ algorithm
       ((uniqueEqIndex, minValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, maxValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
-      (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, useSymbolicInitialization);
+      (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, useSymbolicInitialization, primaryParameters);
 
       ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
       discreteModelVars = BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
@@ -6613,13 +6614,31 @@ algorithm
   end matchcontinue;
 end createMaxValueEquations;
 
+protected function makeSolved_SES_SIMPLE_ASSIGN_fromStartValue
+  input BackendDAE.Var inVar;
+  input Integer inUniqueEqIndex;
+  output SimCode.SimEqSystem outSimEqn;
+  output Integer outUniqueEqIndex;
+protected
+  DAE.Exp e;
+  DAE.ComponentRef cr;
+  DAE.ElementSource source;
+algorithm
+  cr := BackendVariable.varCref(inVar);
+  e := BackendVariable.varBindExpStartValue(inVar);
+  source := BackendVariable.getVarSource(inVar);
+  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(inUniqueEqIndex, cr, e, source);
+  outUniqueEqIndex := inUniqueEqIndex+1;
+end makeSolved_SES_SIMPLE_ASSIGN_fromStartValue;
+
 protected function createParameterEquations
   input BackendDAE.Shared inShared;
-  input Integer iuniqueEqIndex;
+  input Integer inUniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
-  input Boolean initialSystemSolved;
-  output Integer ouniqueEqIndex := iuniqueEqIndex;
-  output list<SimCode.SimEqSystem> parameterEquations := {};
+  input Boolean inSymbolicInitialization;
+  input list<BackendDAE.Var> inPrimaryParameters "already sorted";
+  output Integer outUniqueEqIndex := inUniqueEqIndex;
+  output list<SimCode.SimEqSystem> outParameterEquations := {};
 protected
   list<BackendDAE.Equation> parameterEquationsTmp;
   BackendDAE.Variables knvars, extobj, v, kn;
@@ -6645,50 +6664,61 @@ protected
   BackendDAE.EventInfo einfo;
   BackendDAE.BackendDAEType btp;
   BackendDAE.SymbolicJacobians symjacs;
-  Integer uniqueEqIndex;
   BackendDAE.ExtraInfo ei;
+  BackendDAE.Var p;
+  SimCode.SimEqSystem simEq;
 algorithm
   try
     BackendDAE.SHARED(knownVars=knvars, externalObjects=extobj, initialEqs=ie,
       constraints=constrs, classAttrs=clsAttrs, cache=cache, graph=graph,
       extObjClasses=extObjClasses, functionTree=funcs, info=ei) := inShared;
 
-    // kvars params
-    ((parameterEquationsTmp, lv, lkn, lv1, lv2, _)) := BackendVariable.traverseBackendDAEVars(knvars, createInitialParamAssignments, ({}, {}, {}, {}, {}, 1));
+    if inSymbolicInitialization then
+      if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
+        BackendDump.dumpVarList(inPrimaryParameters, "parameters in order");
+      end if;
+      
+      for p in inPrimaryParameters loop
+        (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
+        outParameterEquations := simEq::outParameterEquations;
+      end for;
+      outParameterEquations := listReverse(outParameterEquations);
+    else
+      // kvars params
+      ((parameterEquationsTmp, lv, lkn, lv1, lv2, _)) := BackendVariable.traverseBackendDAEVars(knvars, createInitialParamAssignments, ({}, {}, {}, {}, {}, 1));
 
-    // sort the equations
-    emptyeqns := BackendEquation.emptyEqns();
-    pe := BackendEquation.listEquation(parameterEquationsTmp);
-    alisvars := BackendVariable.emptyVars();
-    v := BackendVariable.listVar(lv);
-    kn := BackendVariable.listVar(lkn);
-    funcs := DAEUtil.avlTreeNew();
-    syst := BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-    shared := BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
-    (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
-    v1 := listArray(lv1);
-    v2 := listArray(lv2);
-    syst := BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(v1, v2, {}));
-    (syst, comps) := BackendDAETransform.strongComponents(syst, shared);
-    paramdlow := BackendDAE.DAE({syst}, shared);
-    if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
-      BackendDump.dumpEqnsSolved(paramdlow, "parameters: eqns in order");
-    end if;
-    (parameterEquations, _, uniqueEqIndex, _) := createEquations(false, false, true, false, syst, shared, comps, iuniqueEqIndex, {});
+      // sort the equations
+      emptyeqns := BackendEquation.emptyEqns();
+      pe := BackendEquation.listEquation(parameterEquationsTmp);
+      alisvars := BackendVariable.emptyVars();
+      v := BackendVariable.listVar(lv);
+      kn := BackendVariable.listVar(lkn);
+      funcs := DAEUtil.avlTreeNew();
+      syst := BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
+      shared := BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
+      (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
+      v1 := listArray(lv1);
+      v2 := listArray(lv2);
+      syst := BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(v1, v2, {}));
+      (syst, comps) := BackendDAETransform.strongComponents(syst, shared);
+      paramdlow := BackendDAE.DAE({syst}, shared);
+      if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
+        BackendDump.dumpEqnsSolved(paramdlow, "parameters: eqns in order");
+      end if;
+      (outParameterEquations, _, outUniqueEqIndex, _) := createEquations(false, false, true, false, syst, shared, comps, outUniqueEqIndex, {});
 
-    if not initialSystemSolved then
+      // do not append the inital algorithms to the parameter equation if the system is solved symbolically
       ialgs := BackendEquation.traverseEquationArray(ie, traverseAlgorithmFinder, {});
       ialgs := listReverse(ialgs);
-      (inalgs, uniqueEqIndex) := List.mapFold(ialgs, dlowAlgToSimEqSystem, uniqueEqIndex);
+      (inalgs, outUniqueEqIndex) := List.mapFold(ialgs, dlowAlgToSimEqSystem, outUniqueEqIndex);
     end if;
 
     // get minmax and nominal asserts
     varasserts := BackendVariable.traverseBackendDAEVars(knvars, createVarAsserts, {});
-    (simvarasserts, ouniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, uniqueEqIndex);
+    (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
 
-    // do not append the inital algorithms to the parameter equation if the system is solved symbolically
-    parameterEquations := listAppend(parameterEquations, listAppend(simvarasserts, inalgs));
-    parameterEquations := listAppend(parameterEquations, acc);
+    outParameterEquations := listAppend(outParameterEquations, listAppend(simvarasserts, inalgs));
+    outParameterEquations := listAppend(outParameterEquations, acc);
   else
     Error.addMessage(Error.INTERNAL_ERROR, {"createParameterEquations failed"});
     fail();
@@ -6699,16 +6729,17 @@ protected function traverseAlgorithmFinder "author: Frenkel TUD 2010-12
   collect all used algorithms"
   input BackendDAE.Equation inEq;
   input list<DAE.Algorithm> inAlgs;
-  output BackendDAE.Equation eqn;
-  output list<DAE.Algorithm> algs;
+  output BackendDAE.Equation outEqn := inEq;
+  output list<DAE.Algorithm> outAlgs;
+protected
+  DAE.Algorithm alg;
 algorithm
-  (eqn,algs) := matchcontinue (inEq,inAlgs)
-    local
-      DAE.Algorithm alg;
-    case (eqn as BackendDAE.ALGORITHM(alg=alg), algs)
-      then (eqn, alg::algs);
-    else (inEq,inAlgs);
-  end matchcontinue;
+  outAlgs := match (inEq)
+    case BackendDAE.ALGORITHM(alg=alg)
+    then alg::inAlgs;
+
+    else inAlgs;
+  end match;
 end traverseAlgorithmFinder;
 
 protected function createInitialAssignmentsFromStart

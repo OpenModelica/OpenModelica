@@ -83,6 +83,7 @@ public function solveInitialSystem "author: lochel
   output Option<BackendDAE.BackendDAE> outInitDAE "initialization system";
   output Boolean outUseHomotopy;
   output list<BackendDAE.Equation> outRemovedInitialEquations;
+  output list<BackendDAE.Var> outPrimaryParameters "already sorted";
 protected
   BackendDAE.BackendDAE dae;
   BackendDAE.Variables initVars;
@@ -113,7 +114,7 @@ algorithm
     dae := inlineWhenForInitialization(inDAE);
     // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae, "inlineWhenForInitialization");
 
-    initVars := selectInitializationVariablesDAE(dae);
+    (initVars, outPrimaryParameters) := selectInitializationVariablesDAE(dae);
     // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVariables, initVars, "selected initialization variables");
     hs := collectPreVariables(dae);
     BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars,
@@ -260,6 +261,7 @@ algorithm
     outInitDAE := NONE();
     outUseHomotopy := false;
     outRemovedInitialEquations := {};
+    outPrimaryParameters := {};
   end try;
 end solveInitialSystem;
 
@@ -844,6 +846,7 @@ protected function selectInitializationVariablesDAE "author: lochel
   This function wraps selectInitializationVariables."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.Variables outVars;
+  output list<BackendDAE.Var> outPrimaryParameters := {};
 protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Variables knownVars, alias, allParameters;
@@ -856,8 +859,9 @@ protected
   list<Integer> flatComps;
   Integer nParam;
   array<Integer> secondary;
-  Integer i;
+  Integer i, j;
   BackendDAE.Var p;
+  DAE.Exp bindExp;
 algorithm
   BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knownVars, aliasVars=alias)) := inDAE;
   outVars := selectInitializationVariables(systs);
@@ -895,20 +899,31 @@ algorithm
 
     // flattern list and look for cyclic dependencies
     flatComps := list(flattenParamComp(comp, allParameters) for comp in comps);
-    // BackendDump.dumpComponentsOLD({flatComps});
+    // BackendDump.dumpIncidenceRow(flatComps);
 
     // select secondary parameters
     secondary := arrayCreate(nParam, 0);
     secondary := selectSecondaryParameters(flatComps, allParameters, mT, secondary);
     // BackendDump.dumpMatchingVars(secondary);
 
-    // get secondary parameters
-    for i in 1:nParam loop
-      if 1 == secondary[i] then
-        p := BackendVariable.getVarAt(allParameters, i);
+    // get primary and secondary parameters
+    for i in 1:nParam loop // for i in flatComps loop
+      j := listGet(flatComps, i) "workaround since 'for i in flatComps loop' does not work properly" ;
+      p := BackendVariable.getVarAt(allParameters, j);
+      if 1 == secondary[j] then
         outVars := BackendVariable.addVar(p, outVars);
+      else
+        try
+          bindExp := BackendVariable.varBindExpStartValue(p);
+          if not Expression.isConst(bindExp) then
+            outPrimaryParameters := p::outPrimaryParameters;
+          end if;
+        else
+        end try;
       end if;
     end for;
+    
+    outPrimaryParameters := listReverse(outPrimaryParameters);
   end if;
 end selectInitializationVariablesDAE;
 
@@ -972,15 +987,14 @@ algorithm
 
     case {i} then i;
 
-    else
-      algorithm
-        paramLst := {};
-        for i in paramIndices loop
-          param := BackendVariable.getVarAt(inAllParameters, i);
-          paramLst := param::paramLst;
-        end for;
-        Error.addCompilerError("Cyclically dependent parameters found:\n" + warnAboutVars2(paramLst));
-      then fail();
+    else algorithm
+      paramLst := {};
+      for i in paramIndices loop
+        param := BackendVariable.getVarAt(inAllParameters, i);
+        paramLst := param::paramLst;
+      end for;
+      Error.addCompilerError("Cyclically dependent parameters found:\n" + warnAboutVars2(paramLst));
+    then fail();
   end match;
 end flattenParamComp;
 
