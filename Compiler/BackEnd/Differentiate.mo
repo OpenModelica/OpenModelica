@@ -165,7 +165,7 @@ public function differentiateExpSolve
 protected
   list<DAE.Exp> fac := Expression.factors(inExp);
 algorithm
-  ({},_) := List.split1OnTrue(fac,Expression.expHasCrefInIf,inCref); // check: differentiateExpSolve is allowed  
+  ({},_) := List.split1OnTrue(fac,Expression.expHasCrefInIf,inCref); // check: differentiateExpSolve is allowed
   outExp := matchcontinue(inExp, inCref)
     local
       String msg;
