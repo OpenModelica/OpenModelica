@@ -2803,6 +2803,48 @@ algorithm
   end matchcontinue;
 end simplifyBinaryMulCoeff2;
 
+public function simplifySumOperatorExpression
+"
+  In: (a/b + c + d + e/b)
+  In: operator in {MUL, DIV}
+  In: b
+  -> (a/b + c  + d)  operator b
+  Out: a' + e' + (c + b) operator b
+
+  where a' = simplified(a operator b) and e' = simplified(e operator b)
+
+  author: Vitalij Ruge
+"
+  input DAE.Exp iSum;
+  input DAE.Operator iop "MUL or DIV";
+  input DAE.Exp iExp;
+  output DAE.Exp oExp;
+protected
+  list<DAE.Exp> T := Expression.terms(iSum);
+  Boolean b "simplifed?";
+  DAE.Exp e, newE, sE;
+  DAE.Type tp := Expression.typeofOp(iop);
+algorithm
+  oExp := Expression.makeConstZero(tp);
+  sE := oExp;
+
+  for elem in T loop
+    e := DAE.BINARY(elem,iop,iExp);
+    newE := simplifyBinaryCoeff(e);
+    b := not Expression.expEqual(e, newE);
+    if b then
+      sE := Expression.expAdd(sE, newE);
+    else
+      oExp := Expression.expAdd(oExp, elem);
+    end if;
+  end for;
+
+  e := DAE.BINARY(oExp, iop, iExp);
+  oExp := Expression.expAdd(sE, e);
+
+end simplifySumOperatorExpression;
+
+
 protected function simplifyAsub0 "simplifies asub when expression already has been simplified with simplify1
 Earlier these cases were directly in simplify1, but now they are here so simplify1 only is called once for
 the subexpression"
