@@ -162,7 +162,10 @@ public function differentiateExpSolve
   input DAE.ComponentRef inCref;
   input Option<DAE.FunctionTree> functions;
   output DAE.Exp outExp;
+protected
+  list<DAE.Exp> fac := Expression.factors(inExp);
 algorithm
+  ({},_) := List.split1OnTrue(fac,Expression.expHasCrefInIf,inCref); // check: differentiateExpSolve is allowed  
   outExp := matchcontinue(inExp, inCref)
     local
       String msg;
@@ -192,6 +195,7 @@ algorithm
 
   end matchcontinue;
 end differentiateExpSolve;
+
 
 public function differentiateExpCrefFullJacobian "function: differentiateEquationTime
   Differentiates an equation with respect to the time variable."

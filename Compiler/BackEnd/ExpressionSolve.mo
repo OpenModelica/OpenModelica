@@ -1892,7 +1892,6 @@ algorithm
         false = hasOnlyFactors(inExp1,inExp2);
         e = Expression.makeDiff(inExp1,inExp2);
         (e,_) = ExpressionSimplify.simplify1(e);
-        ({},_) = List.split1OnTrue(Expression.factors(e),isCrefInIFEXP,cr); // check: differentiateExpSolve is allowed
         //print("\n\ne: ");print(ExpressionDump.printExpStr(e));
         dere = Differentiate.differentiateExpSolve(e, cr, functions);
         //print("\nder(e): ");print(ExpressionDump.printExpStr(dere));
@@ -1977,46 +1976,6 @@ algorithm
          end match;
 
 end expHasCref;
-
-protected function isCrefInIFEXP
-" Returns true if expression is DAE.IFEXP(f(cr)) or e.g. sign(f(cr)) for cr = incr
-ToDo: fix me for all cases!!
-"
-  input DAE.Exp e;
-  input DAE.ComponentRef incr;
-  output Boolean res;
-  algorithm
-  res := isCrefInIFEXPwork(e, incr, false);
-end isCrefInIFEXP;
-
-protected function isCrefInIFEXPwork " helper for isCrefInIFEXP"
-  input DAE.Exp e;
-  input DAE.ComponentRef incr;
-  input Boolean inres;
-  output Boolean res;
-  algorithm
-  res := match(e,incr, inres)
-  local DAE.Exp e1, e2; Boolean b;
-
-    case(_,_,true) then true;
-    case(DAE.BINARY(e1, DAE.ADD(_),e2),_,_)
-      equation
-        b = isCrefInIFEXPwork(e1,incr, inres);
-        b = isCrefInIFEXPwork(e2,incr, b);
-      then b;
-    case(DAE.BINARY(e1, DAE.SUB(_),e2),_,_)
-      equation
-        b = isCrefInIFEXPwork(e1,incr, inres);
-        b = isCrefInIFEXPwork(e2,incr, b);
-      then b;
-    case(DAE.IFEXP(e1,_,_),_,_) then Expression.expHasCref(e1, incr);
-    case(DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}),_,_) then Expression.expHasCrefNoPreOrStart(e1, incr);
-    case(DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {_,e1}),_,_) then isCrefInIFEXPwork(e1,incr,inres);
-    case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1,_,_}),_,_)then Expression.expHasCrefNoPreOrStart(e1,incr);
-    case(DAE.CAST(exp =e1),_,_) then isCrefInIFEXPwork(e1,incr,inres);
-    case(_,_,_) then false;
-  end match;
-end isCrefInIFEXPwork;
 
 protected function makeProductLstSort
  "Takes a list of expressions an makes a product

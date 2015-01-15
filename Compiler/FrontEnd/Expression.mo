@@ -6022,6 +6022,56 @@ algorithm
   end match;
 end traversingexpHasCrefNoPreOrStart;
 
+public function expHasCrefInIf "
+Returns a true if the exp contains the componentRef in if,sign,semiLinear"
+
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inCr;
+  output Boolean hasCref;
+algorithm
+  (_,(_,hasCref)) := traverseExpTopDown(inExp,expHasCrefInIfWork, (inCr,false));
+end expHasCrefInIf;
+
+public function expHasCrefInIfWork "
+Returns a true if the exp contains the componentRef in if,sign,semiLinear"
+  input DAE.Exp inExp;
+  input tuple<DAE.ComponentRef,Boolean> inTpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<DAE.ComponentRef,Boolean> outTpl;
+algorithm
+  (outExp,cont,outTpl) := matchcontinue(inExp,inTpl)
+    local
+      Boolean b;
+      ComponentRef cr;
+      DAE.Exp e1;
+
+    case(DAE.IFEXP(e1,_,_),(cr,false))
+     equation
+       b = expHasCref(e1,cr);
+     then (e1,not b,(cr,b));
+/*
+    case(DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {_,e1}),(cr,false))
+     equation
+       (b,_) = expHasCrefInIfWork(e1,inTpl);
+     then (e1, b,(cr,b));
+*/
+    case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1,_,_}),(cr,false))
+     equation
+       b = expHasCref(e1,cr);
+     then (e1,not b,(cr,b));
+
+    case(DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}),(cr,false))
+     equation
+       b = expHasCref(e1,cr);
+     then (e1,not b,(cr,b));
+
+    case (_,(_,b)) then (inExp,not b,inTpl);
+
+  end matchcontinue;
+end expHasCrefInIfWork;
+
+
 
 public function traverseCrefsFromExp "
 Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."
