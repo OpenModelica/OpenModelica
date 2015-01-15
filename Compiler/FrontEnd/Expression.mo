@@ -6059,12 +6059,12 @@ algorithm
     case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1,_,_}),(cr,false))
      equation
        b = expHasCref(e1,cr);
-     then (e1,not b,(cr,b));
+     then (e1, b,(cr,b));
 
     case(DAE.CALL(path = Absyn.IDENT(name = "sign"),expLst = {e1}),(cr,false))
      equation
        b = expHasCref(e1,cr);
-     then (e1,not b,(cr,b));
+     then (e1, b,(cr,b));
 
     case (_,(_,b)) then (inExp,not b,inTpl);
 
