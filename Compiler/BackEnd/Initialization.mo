@@ -922,7 +922,7 @@ algorithm
         end try;
       end if;
     end for;
-    
+
     outPrimaryParameters := listReverse(outPrimaryParameters);
   end if;
 end selectInitializationVariablesDAE;
