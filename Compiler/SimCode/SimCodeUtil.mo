@@ -271,7 +271,7 @@ algorithm
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.T_REAL_DEFAULT, {});
         /* Todo: This also generates an error for example itearation variables, so i commented  out
         "Template did not find the simulation variable for "+ ComponentReference.printComponentRefStr(cref) + ". ";
-        Error.addMessage(Error.INTERNAL_ERROR, {errstr});*/
+        Error.addInternalError(errstr, sourceInfo());*/
       then
          SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true);
   end matchcontinue;
@@ -541,7 +541,7 @@ algorithm
         (libs2, libpaths2,includes2, includeDirs2, recordDecls, fns, dlow, dae, literals);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Creation of Modelica functions failed. "});
+        Error.addInternalError("Creation of Modelica functions failed.", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -2560,7 +2560,7 @@ algorithm
     else
       equation
         message = "function createEquationsForSystem1 failed for component " + BackendDump.strongComponentString(comp);
-        Error.addMessage(Error.INTERNAL_ERROR, {message});
+        Error.addInternalError(message, sourceInfo());
       then fail();
 
   end matchcontinue;
@@ -2750,7 +2750,7 @@ algorithm
 
     // failure
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"createEquation failed"});
+      Error.addInternalError("createEquation failed", sourceInfo());
     then fail();
   end matchcontinue;
 end createEquationsWork;
@@ -3092,7 +3092,7 @@ algorithm
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
         message = ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
         message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
-        Error.addMessage(Error.INTERNAL_ERROR, {message});
+        Error.addInternalError(message, sourceInfo());
       then fail();
   end matchcontinue;
 end createEquation;
@@ -3195,7 +3195,7 @@ algorithm
     then listReverse(simWhenClauses);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"function createSimWhenClauses failed"});
+      Error.addInternalError("function createSimWhenClauses failed", sourceInfo());
     then fail();
   end matchcontinue;
 end createSimWhenClauses;
@@ -3442,7 +3442,7 @@ algorithm
       s1 = ExpressionDump.printExpStr(inExp);
       s2 = ExpressionDump.printExpStr(inExp1);
       s = stringAppendList({"function createNonlinearResidualEquationsComplex failed for: ", s1, " = " , s2 });
-      Error.addMessage(Error.INTERNAL_ERROR, {s});
+      Error.addInternalError(s, sourceInfo());
     then fail();
   end matchcontinue;
 end createNonlinearResidualEquationsComplex;
@@ -3883,7 +3883,7 @@ algorithm
     else
       equation
         msg = "function createOdeSystem failed for component " + BackendDump.strongComponentString(inComp);
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+        Error.addInternalError(msg, sourceInfo());
       then fail();
   end matchcontinue;
 end createOdeSystem;
@@ -3986,7 +3986,7 @@ algorithm
     else equation
       str = BackendDump.jacobianTypeStr(inJacobianType);
       str = stringAppendList({"createOdeSystem2 failed for ", str});
-      Error.addMessage(Error.INTERNAL_ERROR, {str});
+      Error.addInternalError(str, sourceInfo());
     then fail();
   end matchcontinue;
 end createOdeSystem2;
@@ -4485,7 +4485,7 @@ algorithm
     else
       equation
         errorMessage = "function createStateSetsSets failed.";
-        Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+        Error.addInternalError(errorMessage, sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -4635,7 +4635,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.JAC_DUMP);
         errorMessage = "function createSymbolicSimulationJacobian failed.";
-        Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+        Error.addInternalError(errorMessage, sourceInfo());
       then (NONE(), iuniqueEqIndex, itempvars);
 
     else (NONE(), iuniqueEqIndex, itempvars);
@@ -4809,7 +4809,7 @@ algorithm
         (linearModelMatrices, uniqueEqIndex);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of symbolic matrix SimCode (SimCode.createSymbolicJacobianssSimCode) failed"});
+        Error.addInternalError("Generation of symbolic matrix SimCode (SimCode.createSymbolicJacobianssSimCode) failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -4932,7 +4932,7 @@ algorithm
 
     else
      equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"function createAllDiffedSimVars failed"});
+      Error.addInternalError("function createAllDiffedSimVars failed", sourceInfo());
     then fail();
   end matchcontinue;
 end createAllDiffedSimVars;
@@ -5098,7 +5098,7 @@ algorithm
         (delayedExps, maxDelayedExpIndex+1);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"function extractDelayedExpressions failed"});
+        Error.addInternalError("function extractDelayedExpressions failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -5420,7 +5420,7 @@ algorithm
       then ((uniqueEqIndex, result));
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"function createAlgorithmAndEquationAsserts failed"});
+        Error.addInternalError("function createAlgorithmAndEquationAsserts failed", sourceInfo());
       then fail();
   end matchcontinue;
 end createAlgorithmAndEquationAsserts;
@@ -5447,7 +5447,7 @@ algorithm
       then removedEquations;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"function createRemovedEquations failed"});
+        Error.addInternalError("function createRemovedEquations failed", sourceInfo());
       then fail();
   end matchcontinue;
 end createRemovedEquations;
@@ -5495,7 +5495,7 @@ algorithm
       then vLst2;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"function extractDiscreteModelVars failed"});
+        Error.addInternalError("function extractDiscreteModelVars failed", sourceInfo());
       then fail();
   end matchcontinue;
 end extractDiscreteModelVars;
@@ -5584,7 +5584,7 @@ algorithm
     // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"function createSingleWhenEqnCode failed. When equations currently only supported on form v = ..."});
+        Error.addInternalError("function createSingleWhenEqnCode failed. When equations currently only supported on form v = ...", sourceInfo());
       then fail();
   end matchcontinue;
 end createSingleWhenEqnCode;
@@ -5647,7 +5647,7 @@ algorithm
     then ({SimCode.SES_IFEQUATION(uniqueEqIndex, ifbranches, equations_, source_)}, uniqueEqIndex+1, tempvars);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"SimCodeUtil.createSingleIfEqnCode failed."});
+      Error.addInternalError("SimCodeUtil.createSingleIfEqnCode failed.", sourceInfo());
     then fail();
   end matchcontinue;
 end createSingleIfEqnCode;
@@ -5689,7 +5689,7 @@ algorithm
     then (ifbranches, uniqueEqIndex, tempvars);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"SimCodeUtil.createEquationfromList failed."});
+      Error.addInternalError("SimCodeUtil.createEquationfromList failed.", sourceInfo());
     then fail();
   end matchcontinue;
 end createEquationsIfBranch;
@@ -5738,7 +5738,7 @@ algorithm
     then (equations_, uniqueEqIndex, tempvars);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"SimCodeUtil.createEquationfromList failed."});
+      Error.addInternalError("SimCodeUtil.createEquationfromList failed.", sourceInfo());
     then fail();
 
   end matchcontinue;
@@ -5798,7 +5798,7 @@ algorithm
       s2 = ExpressionDump.printExpStr(e2);
       s3 = ComponentReference.printComponentRefListStr(crefs);
       s = stringAppendList({"No support of solving not real variables with a non-linear solver. Equation:\n", s1, " = " , s2, " solve for ", s3 });
-      Error.addMessage(Error.INTERNAL_ERROR, {s});
+      Error.addInternalError(s, sourceInfo());
     then fail();
 
     // failure
@@ -5813,7 +5813,7 @@ algorithm
       s2 = ExpressionDump.printExpStr(e2);
       s3 = ComponentReference.printComponentRefListStr(crefs);
       s = stringAppendList({"complex equations currently only supported on form v = functioncall(...). Equation: ", s1, " = " , s2, " solve for ", s3 });
-      Error.addMessage(Error.INTERNAL_ERROR, {s});
+      Error.addInternalError(s, sourceInfo());
     then fail();
   end matchcontinue;
 end createSingleComplexEqnCode;
@@ -6153,7 +6153,7 @@ algorithm
     else equation
       str = BackendDump.dumpEqnsStr(inEquations);
       str = "for Eqn: " + str + "\narray equations currently only supported on form v = functioncall(...)";
-      Error.addMessage(Error.INTERNAL_ERROR, {str});
+      Error.addInternalError(str, sourceInfo());
     then fail();
   end matchcontinue;
 end createSingleArrayEqnCode;
@@ -6219,15 +6219,13 @@ algorithm
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
         message = ComponentReference.printComponentRefListStr(solvedVars);
         message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
-        Error.addMessage(Error.INTERNAL_ERROR, {message});
+        Error.addInternalError(message, sourceInfo());
       then
          fail();
     // failure
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"function createSingleAlgorithmCode failed!"});
-      then
-        fail();
+    else equation
+      Error.addInternalError("function createSingleAlgorithmCode failed", sourceInfo());
+    then fail();
   end matchcontinue;
 end createSingleAlgorithmCode;
 
@@ -6308,7 +6306,7 @@ algorithm
        s2 = ExpressionDump.printExpStr(e2);
        s3 = ComponentReference.crefStr(cr);
        s = stringAppendList({"function createSingleArrayEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
-       Error.addMessage(Error.INTERNAL_ERROR, {s});
+       Error.addInternalError(s, sourceInfo());
     then
       fail();
 */
@@ -6378,7 +6376,7 @@ algorithm
     then (residual_equations, {}, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, false);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"function createInitialResiduals failed"});
+      Error.addInternalError("function createInitialResiduals failed", sourceInfo());
     then fail();
   end matchcontinue;
 end createInitialResiduals;
@@ -6522,7 +6520,7 @@ algorithm
       ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"createStartValueEquations failed"});
+      Error.addInternalError("function createStartValueEquations failed", sourceInfo());
     then fail();
   end matchcontinue;
 end createStartValueEquations;
@@ -6551,7 +6549,7 @@ algorithm
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"createNominalValueEquations failed"});
+      Error.addInternalError("function createNominalValueEquations failed", sourceInfo());
     then fail();
   end matchcontinue;
 end createNominalValueEquations;
@@ -6580,7 +6578,7 @@ algorithm
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"createMinValueEquations failed"});
+      Error.addInternalError("function createMinValueEquations failed", sourceInfo());
     then fail();
   end matchcontinue;
 end createMinValueEquations;
@@ -6609,7 +6607,7 @@ algorithm
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"createMaxValueEquations failed"});
+      Error.addInternalError("function createMaxValueEquations failed", sourceInfo());
     then fail();
   end matchcontinue;
 end createMaxValueEquations;
@@ -6720,7 +6718,7 @@ algorithm
     outParameterEquations := listAppend(outParameterEquations, listAppend(simvarasserts, inalgs));
     outParameterEquations := listAppend(outParameterEquations, acc);
   else
-    Error.addMessage(Error.INTERNAL_ERROR, {"createParameterEquations failed"});
+    Error.addInternalError("function createParameterEquations failed", sourceInfo());
     fail();
   end try;
 end createParameterEquations;
@@ -8304,13 +8302,11 @@ algorithm
         ht = List.fold(jacobianVars, addSimVarToHashTable, ht);
         ht = List.fold(realOptimizeConstraintsVars, addSimVarToHashTable, ht);
         ht = List.fold(realOptimizeFinalConstraintsVars, addSimVarToHashTable, ht);
-      then
-        ht;
-    case (_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createCrefToSimVarHT failed"});
-      then
-        fail();
+      then ht;
+
+    else equation
+      Error.addInternalError("function createCrefToSimVarHT failed", sourceInfo());
+    then fail();
   end matchcontinue;
 end createCrefToSimVarHT;
 
@@ -8337,7 +8333,7 @@ algorithm
       then outHT;
     case (_, _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"addSimVarToHashTable failed"});
+        Error.addInternalError("function addSimVarToHashTable failed", sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -8588,7 +8584,7 @@ algorithm
       equation
         failure(_ = DAEUtil.getNamedFunction(path, funcs));
         str = "function getCalledFunctionsInFunction2: Class " + pathstr + " not found in global scope.";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        Error.addInternalError(str, sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -9305,7 +9301,7 @@ algorithm
 
     case _
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Failed to process Library annotation for external function"});
+        Error.addInternalError("Failed to process Library annotation for external function", sourceInfo());
       then fail();
   end matchcontinue;
 end getLibraryStringInMSVCFormat;
@@ -9367,7 +9363,7 @@ algorithm
 
     case _
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Failed to process Library annotation for external function"});
+        Error.addInternalError("Failed to process Library annotation for external function", sourceInfo());
       then fail();
   end matchcontinue;
 end getLibraryStringInGccFormat;
@@ -11498,7 +11494,7 @@ algorithm
 
     case _
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"function collectAllFiles failed to collect files from SimCode!"});
+        Error.addInternalError("function collectAllFiles failed to collect files from SimCode!", sourceInfo());
       then
         inSimCode;
   end matchcontinue;
@@ -11603,7 +11599,7 @@ algorithm
     case (_, _)
       equation
         // errstr = "Template did not find the file: "+ file + " in the SimCode.modelInfo.files.";
-        // Error.addMessage(Error.INTERNAL_ERROR, {errstr});
+        // Error.addInternalError(errstr, sourceInfo());
       then
         -1;
   end matchcontinue;
