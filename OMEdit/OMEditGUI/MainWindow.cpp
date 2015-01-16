@@ -1759,10 +1759,14 @@ void MainWindow::toggleShapesButton()
 
 void MainWindow::openRecentModelWidget()
 {
-  QAction *action = qobject_cast<QAction*>(sender());
-  if (action)
-  {
-    LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->getLibraryTreeNode(action->data().toString());
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  QToolButton *pToolButton = qobject_cast<QToolButton*>(sender());
+  LibraryTreeNode *pLibraryTreeNode;
+  if (pAction) {
+    pLibraryTreeNode = mpLibraryTreeWidget->getLibraryTreeNode(pAction->data().toString());
+    mpModelWidgetContainer->addModelWidget(pLibraryTreeNode->getModelWidget(), false);
+  } else if (pToolButton && mpModelSwitcherActions[0]->isVisible()) {
+    pLibraryTreeNode = mpLibraryTreeWidget->getLibraryTreeNode(mpModelSwitcherActions[0]->data().toString());
     mpModelWidgetContainer->addModelWidget(pLibraryTreeNode->getModelWidget(), false);
   }
 }
@@ -1817,22 +1821,25 @@ void MainWindow::hideProgressBar()
 void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
 {
   Q_UNUSED(pActivatedWindow);
-  ModelWidgetContainer *pModelWidgetContainer = qobject_cast<ModelWidgetContainer*>(sender());
   // get list of opened Model Widgets
   QList<QMdiSubWindow*> subWindowsList = mpModelWidgetContainer->subWindowList(QMdiArea::ActivationHistoryOrder);
-  if (subWindowsList.isEmpty() && pModelWidgetContainer)
-  {
+  // remove the current active ModelWidget from the list.
+  if (!subWindowsList.isEmpty()) {
+    subWindowsList.removeLast();
+    mpModelSwitcherToolButton->setEnabled(true);
+  }
+  // if there is no other ModelWidgets then disable the ModelSwitcher button.
+  if (subWindowsList.isEmpty()) {
     mpModelSwitcherToolButton->setEnabled(false);
     return;
   }
   int j = 0;
-  for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--)
-  {
-    if (j >= MaxRecentFiles)
+  for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
+    if (j >= MaxRecentFiles) {
       break;
+    }
     ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
-    if (pModelWidget)
-    {
+    if (pModelWidget) {
       mpModelSwitcherActions[j]->setText(pModelWidget->getLibraryTreeNode()->getNameStructure());
       mpModelSwitcherActions[j]->setData(pModelWidget->getLibraryTreeNode()->getNameStructure());
       mpModelSwitcherActions[j]->setVisible(true);
@@ -1841,8 +1848,9 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
   }
   // if subwindowlist size is less than MaxRecentFiles then hide the remaining actions
   int numRecentModels = qMin(subWindowsList.size(), (int)MaxRecentFiles);
-  for (j = numRecentModels ; j < MaxRecentFiles ; j++)
+  for (j = numRecentModels ; j < MaxRecentFiles ; j++) {
     mpModelSwitcherActions[j]->setVisible(false);
+  }
 }
 
 void MainWindow::toggleAutoSave()
@@ -2212,8 +2220,7 @@ void MainWindow::createActions()
   mpConnectModeAction->setChecked(true);
   connect(mpConnectModeAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
   // model switcher actions
-  for (int i = 0; i < MaxRecentFiles; ++i)
-  {
+  for (int i = 0; i < MaxRecentFiles; ++i) {
     mpModelSwitcherActions[i] = new QAction(this);
     mpModelSwitcherActions[i]->setVisible(false);
     connect(mpModelSwitcherActions[i], SIGNAL(triggered()), this, SLOT(openRecentModelWidget()));
@@ -2452,7 +2459,6 @@ void MainWindow::switchToModelingPerspective()
   mpPlotWindowContainer->tileSubWindows();
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-  mpModelSwitcherToolButton->setEnabled(true);
   mpVariablesDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
 }
@@ -2581,8 +2587,7 @@ void MainWindow::createToolbars()
   mpModelSwitcherToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // Model Switcher Menu
   mpModelSwitcherMenu = new QMenu;
-  for (int i = 0; i < MaxRecentFiles; ++i)
-  {
+  for (int i = 0; i < MaxRecentFiles; ++i) {
     mpModelSwitcherMenu->addAction(mpModelSwitcherActions[i]);
   }
   // Model Switcher ToolButton
@@ -2591,6 +2596,7 @@ void MainWindow::createToolbars()
   mpModelSwitcherToolButton->setMenu(mpModelSwitcherMenu);
   mpModelSwitcherToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   mpModelSwitcherToolButton->setIcon(QIcon(":/Resources/icons/switch.svg"));
+  connect(mpModelSwitcherToolButton, SIGNAL(clicked()), this, SLOT(openRecentModelWidget()));
   mpModelSwitcherToolBar->addWidget(mpModelSwitcherToolButton);
   // Plot Toolbar
   mpPlotToolBar = addToolBar(tr("Plot Toolbar"));
