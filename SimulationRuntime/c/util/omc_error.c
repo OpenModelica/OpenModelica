@@ -407,6 +407,7 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
 #ifndef OMC_EMCC
     return threadData->simulationJumpBuffer;
 #endif
+  case ERROR_EVENTHANDLING:
   default:
     return threadData->globalJumpBuffer;
   }
