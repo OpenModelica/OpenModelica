@@ -1060,6 +1060,11 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
       throwStreamPrint(data->threadData, "see last warning");
     }
   }
+  
+  if(IIM_NUMERIC == initMethod)
+  {
+    warningStreamPrint(LOG_STDOUT, 0, "The numeric initialization is deprecated. It is recommended to switch to symbolic initialization.");
+  }
 
   if(pOptiMethod && strcmp(pOptiMethod, ""))
   {
