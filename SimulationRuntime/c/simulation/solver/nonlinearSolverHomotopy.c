@@ -968,7 +968,7 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
    int r,s;
    double *res;
 
-   debugMatrixDouble(LOG_NLS_JAC,"LGS:",A, n, m);
+   debugMatrixDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res]:",A, n, m);
 
    /* assume full rank of matrix [n x (n+1)] */
    *rank = n;
@@ -1018,7 +1018,7 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     }
   }
 
-  debugMatrixPermutedDouble(LOG_NLS_JAC,"LGS after decomposition",A, n, m, indRow, indCol);
+  debugMatrixPermutedDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res] after decomposition",A, n, m, indRow, indCol);
   /* Solve even singular matrices !!! */
   for (i=n-1;i>=0; i--) {
     if (i>=*rank) {
