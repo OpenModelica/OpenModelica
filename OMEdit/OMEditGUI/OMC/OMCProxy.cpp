@@ -2338,13 +2338,12 @@ QStringList OMCProxy::getSimulationOptions(QString className, double defaultTole
   \param className - the name of the class.
   \return the created FMU location
   */
-bool OMCProxy::translateModelFMU(QString className)
+bool OMCProxy::translateModelFMU(QString className, double version)
 {
-  sendCommand("translateModelFMU(" + className + ")");
-  if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to FMU") == 0)
+  sendCommand("translateModelFMU(" + className + ", version=\"" + QString::number(version) + "\")");
+  if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     return true;
-  else
-  {
+  } else {
     printMessagesStringInternal();
     return false;
   }

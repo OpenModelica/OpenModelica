@@ -57,12 +57,13 @@ class FillStylePage;
 class CurveStylePage;
 class FigaroPage;
 class DebuggerPage;
+class FMIPage;
 
 class OptionsDialog : public QDialog
 {
   Q_OBJECT
 public:
-  OptionsDialog(MainWindow *pParent);
+  OptionsDialog(MainWindow *pMainWindow);
   ~OptionsDialog();
   void readSettings();
   void readGeneralSettings();
@@ -77,6 +78,7 @@ public:
   void readCurveStyleSettings();
   void readFigaroSettings();
   void readDebuggerSettings();
+  void readFMISettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
   void saveModelicaTextSettings();
@@ -89,6 +91,7 @@ public:
   void saveCurveStyleSettings();
   void saveFigaroSettings();
   void saveDebuggerSettings();
+  void saveFMISettings();
   void setUpDialog();
   void addListItems();
   void createPages();
@@ -105,6 +108,7 @@ public:
   CurveStylePage* getCurveStylePage() {return mpCurveStylePage;}
   FigaroPage* getFigaroPage() {return mpFigaroPage;}
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
+  FMIPage* getFMIPage() {return mpFMIPage;}
 signals:
   void modelicaTextSettingsChanged();
   void updateLineWrapping();
@@ -127,6 +131,7 @@ private:
   CurveStylePage *mpCurveStylePage;
   FigaroPage *mpFigaroPage;
   DebuggerPage *mpDebuggerPage;
+  FMIPage *mpFMIPage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -140,7 +145,7 @@ class GeneralSettingsPage : public QWidget
 {
   Q_OBJECT
 public:
-  GeneralSettingsPage(OptionsDialog *pParent);
+  GeneralSettingsPage(OptionsDialog *pOptionsDialog);
   QComboBox* getLanguageComboBox();
   void setWorkingDirectory(QString value);
   QString getWorkingDirectory();
@@ -208,7 +213,7 @@ class LibrariesPage : public QWidget
 {
   Q_OBJECT
 public:
-  LibrariesPage(OptionsDialog *pParent);
+  LibrariesPage(OptionsDialog *pOptionsDialog);
   QTreeWidget* getSystemLibrariesTree();
   QCheckBox* getForceModelicaLoadCheckBox();
   QTreeWidget* getUserLibrariesTree();
@@ -242,7 +247,7 @@ class AddSystemLibraryDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddSystemLibraryDialog(LibrariesPage *pParent);
+  AddSystemLibraryDialog(LibrariesPage *pLibrariesPage);
   bool nameExists(QTreeWidgetItem *pItem = 0);
 
   LibrariesPage *mpLibrariesPage;
@@ -260,7 +265,7 @@ class AddUserLibraryDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddUserLibraryDialog(LibrariesPage *pParent);
+  AddUserLibraryDialog(LibrariesPage *pLibrariesPage);
   bool pathExists(QTreeWidgetItem *pItem = 0);
 
   LibrariesPage *mpLibrariesPage;
@@ -323,7 +328,7 @@ class ModelicaTextEditorPage : public QWidget
 {
   Q_OBJECT
 public:
-  ModelicaTextEditorPage(OptionsDialog *pParent);
+  ModelicaTextEditorPage(OptionsDialog *pOptionsDialog);
   void addListItems();
   QString getPreviewText();
   void initializeFields();
@@ -367,7 +372,7 @@ class GraphicalViewsPage : public QWidget
 {
   Q_OBJECT
 public:
-  GraphicalViewsPage(OptionsDialog *pParent);
+  GraphicalViewsPage(OptionsDialog *pOptionsDialog);
   void setIconViewExtentLeft(double extentLeft);
   double getIconViewExtentLeft();
   void setIconViewExtentBottom(double extentBottom);
@@ -447,7 +452,7 @@ class SimulationPage : public QWidget
 {
   Q_OBJECT
 public:
-  SimulationPage(OptionsDialog *pParent);
+  SimulationPage(OptionsDialog *pOptionsDialog);
   QComboBox* getMatchingAlgorithmComboBox();
   QComboBox* getIndexReductionMethodComboBox();
   QLineEdit* getOMCFlagsTextBox();
@@ -473,7 +478,7 @@ class MessagesPage : public QWidget
 {
   Q_OBJECT
 public:
-  MessagesPage(OptionsDialog *pParent);
+  MessagesPage(OptionsDialog *pOptionsDialog);
   QSpinBox* getOutputSizeSpinBox() {return mpOutputSizeSpinBox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
@@ -515,7 +520,7 @@ class NotificationsPage : public QWidget
 {
   Q_OBJECT
 public:
-  NotificationsPage(OptionsDialog *pParent);
+  NotificationsPage(OptionsDialog *pOptionsDialog);
   QCheckBox* getQuitApplicationCheckBox();
   QCheckBox* getItemDroppedOnItselfCheckBox();
   QCheckBox* getReplaceableIfPartialCheckBox();
@@ -535,7 +540,7 @@ class LineStylePage : public QWidget
 {
   Q_OBJECT
 public:
-  LineStylePage(OptionsDialog *pParent);
+  LineStylePage(OptionsDialog *pOptionsDialog);
   void setLineColor(QColor color);
   QColor getLineColor();
   void setLinePickColorButtonIcon();
@@ -577,7 +582,7 @@ class FillStylePage : public QWidget
 {
   Q_OBJECT
 public:
-  FillStylePage(OptionsDialog *pParent);
+  FillStylePage(OptionsDialog *pOptionsDialog);
   void setFillColor(QColor color);
   QColor getFillColor();
   void setFillPickColorButtonIcon();
@@ -599,7 +604,7 @@ class CurveStylePage : public QWidget
 {
   Q_OBJECT
 public:
-  CurveStylePage(OptionsDialog *pParent);
+  CurveStylePage(OptionsDialog *pOptionsDialog);
   void setCurvePattern(int pattern);
   int getCurvePattern();
   void setCurveThickness(qreal thickness);
@@ -617,7 +622,7 @@ class FigaroPage : public QWidget
 {
   Q_OBJECT
 public:
-  FigaroPage(OptionsDialog *pParent);
+  FigaroPage(OptionsDialog *pOptionsDialog);
   QLineEdit* getFigaroDatabaseFileTextBox() {return mpFigaroDatabaseFileTextBox;}
   QComboBox* getFigaroModeComboBox() {return mpFigaroModeComboBox;}
   QLineEdit* getFigaroOptionsTextBox() {return mpFigaroOptionsFileTextBox;}
@@ -646,7 +651,7 @@ class DebuggerPage : public QWidget
 {
   Q_OBJECT
 public:
-  DebuggerPage(OptionsDialog *pParent);
+  DebuggerPage(OptionsDialog *pOptionsDialog);
   void setGDBPath(QString path);
   QString getGDBPath();
   QSpinBox* getGDBCommandTimeoutSpinBox() {return mpGDBCommandTimeoutSpinBox;}
@@ -673,6 +678,21 @@ private:
   QCheckBox *mpGenerateOperationsCheckBox;
 public slots:
   void browseGDBPath();
+};
+
+class FMIPage : public QWidget
+{
+  Q_OBJECT
+public:
+  FMIPage(OptionsDialog *pOptionsDialog);
+  void setFMIExportVersion(double version);
+  double getFMIExportVersion();
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpExportGroupBox;
+  QGroupBox *mpVersionGroupBox;
+  QRadioButton *mpVersion1RadioButton;
+  QRadioButton *mpVersion2RadioButton;
 };
 
 #endif // OPTIONSDIALOG_H

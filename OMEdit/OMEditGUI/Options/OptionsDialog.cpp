@@ -43,13 +43,13 @@
 //! @brief Creates an interface with options like Modelica Text, Pen Styles, Libraries etc.
 
 //! Constructor
-//! @param pParent is the pointer to MainWindow
-OptionsDialog::OptionsDialog(MainWindow *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint), mpSettings(OpenModelica::getApplicationSettings())
+//! @param pMainWindow is the pointer to MainWindow
+OptionsDialog::OptionsDialog(MainWindow *pMainWindow)
+  : QDialog(pMainWindow, Qt::WindowTitleHint), mpSettings(OpenModelica::getApplicationSettings())
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::options));
   setModal(true);
-  mpMainWindow = pParent;
+  mpMainWindow = pMainWindow;
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
   mpModelicaTextSettings = new ModelicaTextSettings();
@@ -63,6 +63,7 @@ OptionsDialog::OptionsDialog(MainWindow *pParent)
   mpCurveStylePage = new CurveStylePage(this);
   mpFigaroPage = new FigaroPage(this);
   mpDebuggerPage = new DebuggerPage(this);
+  mpFMIPage = new FMIPage(this);
   // get the settings
   readSettings();
   // set up the Options Dialog
@@ -92,6 +93,7 @@ void OptionsDialog::readSettings()
   readCurveStyleSettings();
   readFigaroSettings();
   readDebuggerSettings();
+  readFMISettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -420,7 +422,7 @@ void OptionsDialog::readFigaroSettings()
 }
 
 /*!
-  Reads the Debugger section settings to omedit.ini
+  Reads the Debugger section settings from omedit.ini
   */
 void OptionsDialog::readDebuggerSettings()
 {
@@ -440,6 +442,16 @@ void OptionsDialog::readDebuggerSettings()
     mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->setChecked(mpSettings->value("transformationalDebugger/alwaysShowTransformationalDebugger").toBool());
   if (mpSettings->contains("transformationalDebugger/generateOperations"))
     mpDebuggerPage->getGenerateOperationsCheckBox()->setChecked(mpSettings->value("transformationalDebugger/generateOperations").toBool());
+}
+
+/*!
+  Reads the FMI section settings from omedit.ini
+  */
+void OptionsDialog::readFMISettings()
+{
+  if (mpSettings->contains("FMIExport/Version")) {
+    mpFMIPage->setFMIExportVersion(mpSettings->value("FMIExport/Version").toDouble());
+  }
 }
 
 //! Saves the General section settings to omedit.ini
@@ -691,6 +703,14 @@ void OptionsDialog::saveDebuggerSettings()
   mpSettings->endGroup();
 }
 
+/*!
+  Saves the FMI section settings to omedit.ini
+  */
+void OptionsDialog::saveFMISettings()
+{
+  mpSettings->setValue("FMIExport/Version", mpFMIPage->getFMIExportVersion());
+}
+
 //! Sets up the Options Widget dialog
 void OptionsDialog::setUpDialog()
 {
@@ -786,6 +806,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pDebuggerItem = new QListWidgetItem(mpOptionsList);
   pDebuggerItem->setIcon(QIcon(":/Resources/icons/debugger.svg"));
   pDebuggerItem->setText(tr("Debugger"));
+  // FMI Item
+  QListWidgetItem *pFMIItem = new QListWidgetItem(mpOptionsList);
+  pFMIItem->setIcon(QIcon(":/Resources/icons/fmi.svg"));
+  pFMIItem->setText(tr("FMI"));
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -804,6 +828,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpCurveStylePage);
   mpPagesWidget->addWidget(mpFigaroPage);
   mpPagesWidget->addWidget(mpDebuggerPage);
+  mpPagesWidget->addWidget(mpFMIPage);
 }
 
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
@@ -842,6 +867,7 @@ void OptionsDialog::saveSettings()
   saveCurveStyleSettings();
   saveFigaroSettings();
   saveDebuggerSettings();
+  saveFMISettings();
   mpSettings->sync();
   accept();
 }
@@ -850,11 +876,11 @@ void OptionsDialog::saveSettings()
 //! @brief Creates an interface for genaral settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   mpGeneralSettingsGroupBox = new QGroupBox(Helper::general);
   // Language Option
   mpLanguageLabel = new Label(tr("Language: *"));
@@ -1202,11 +1228,11 @@ void GeneralSettingsPage::autoSaveIntervalValueChanged(int value)
 //! @brief Creates an interface for Libraries settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-LibrariesPage::LibrariesPage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   // system libraries groupbox
   mpSystemLibrariesGroupBox = new QGroupBox(tr("System Libraries *"));
   // system libraries note
@@ -1386,14 +1412,14 @@ void LibrariesPage::openEditUserLibrary()
 //! @brief Creates an interface for Adding new System Libraries.
 
 //! Constructor
-//! @param pParent is the pointer to LibrariesPage
-AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint), mEditFlag(false)
+//! @param pLibrariesPage is the pointer to LibrariesPage
+AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage)
+  : QDialog(pLibrariesPage, Qt::WindowTitleHint), mEditFlag(false)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Add System Library")));
   setAttribute(Qt::WA_DeleteOnClose);
   setModal(true);
-  mpLibrariesPage = pParent;
+  mpLibrariesPage = pLibrariesPage;
   mpNameLabel = new Label(Helper::name);
   mpNameComboBox = new QComboBox;
   foreach (const QString &key, mpLibrariesPage->mpOptionsDialog->getMainWindow()->getOMCProxy()->getAvailableLibraries()) {
@@ -1496,14 +1522,14 @@ void AddSystemLibraryDialog::addSystemLibrary()
 //! @brief Creates an interface for Adding new User Libraries.
 
 //! Constructor
-//! @param pParent is the pointer to LibrariesPage
-AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint), mEditFlag(false)
+//! @param pLibrariesPage is the pointer to LibrariesPage
+AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pLibrariesPage)
+  : QDialog(pLibrariesPage, Qt::WindowTitleHint), mEditFlag(false)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Add User Library")));
   setAttribute(Qt::WA_DeleteOnClose);
   setModal(true);
-  mpLibrariesPage = pParent;
+  mpLibrariesPage = pLibrariesPage;
   mpPathLabel = new Label(Helper::path);
   mpPathTextBox = new QLineEdit;
   mpPathBrowseButton = new QPushButton(Helper::browse);
@@ -1796,11 +1822,11 @@ QColor ModelicaTextSettings::getTLMQuotesRuleColor()
 //! @brief Creates an interface for Modelica Text settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   // general groupbox
   mpGeneralGroupBox = new QGroupBox(Helper::general);
   // syntax highlighting checkbox
@@ -2066,10 +2092,10 @@ void ModelicaTextEditorPage::pickColor()
   emit updatePreview();
 }
 
-GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
-  : QWidget(pParent)
+GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   // graphical view tab widget
   mpGraphicalViewsTabWidget = new QTabWidget;
   // Icon View Widget
@@ -2413,11 +2439,11 @@ bool GraphicalViewsPage::getDiagramViewPreserveAspectRation()
 //! @brief Creates an interface for simulation settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-SimulationPage::SimulationPage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   // Matching Algorithm
   mpSimulationGroupBox = new QGroupBox(Helper::simulation);
   mpMatchingAlgorithmLabel = new Label(tr("Matching Algorithm:"));
@@ -2529,11 +2555,11 @@ QString SimulationPage::getOutputMode()
 //! @brief Creates an interface for MessagesWidget settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-MessagesPage::MessagesPage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   // general groupbox
   mpGeneralGroupBox = new QGroupBox(Helper::general);
   // output size
@@ -2669,11 +2695,11 @@ void MessagesPage::pickErrorColor()
 //! @brief Creates an interface for Notifications settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-NotificationsPage::NotificationsPage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   // create the notifications groupbox
   mpNotificationsGroupBox = new QGroupBox(tr("Notifications"));
   // create the exit application checkbox
@@ -2736,11 +2762,11 @@ QCheckBox* NotificationsPage::getSaveModelForBitmapInsertionCheckBox()
 //! @brief Creates an interface for line style settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-LineStylePage::LineStylePage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+LineStylePage::LineStylePage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   mpLineStyleGroupBox = new QGroupBox(Helper::lineStyle);
   // Line Color
   mpLineColorLabel = new Label(Helper::color);
@@ -2911,9 +2937,9 @@ void LineStylePage::linePickColor()
 //! @brief Creates an interface for fill style settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-FillStylePage::FillStylePage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+FillStylePage::FillStylePage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
   mpFillStyleGroupBox = new QGroupBox(Helper::fillStyle);
   // Fill Color
@@ -2986,11 +3012,11 @@ void FillStylePage::fillPickColor()
 //! @brief Creates an interface for curve style settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-CurveStylePage::CurveStylePage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+CurveStylePage::CurveStylePage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   mpCurveStyleGroupBox = new QGroupBox(Helper::curveStyle);
   // Curve Pattern
   mpCurvePatternLabel = new Label(Helper::pattern);
@@ -3057,11 +3083,11 @@ qreal CurveStylePage::getCurveThickness()
 //! @brief Creates an interface for Figaro settings.
 
 //! Constructor
-//! @param pParent is the pointer to OptionsDialog
-FigaroPage::FigaroPage(OptionsDialog *pParent)
-  : QWidget(pParent)
+//! @param pOptionsDialog is the pointer to OptionsDialog
+FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   mpFigaroGroupBox = new QGroupBox(Helper::figaro);
   // Figaro database file
   mpFigaroDatabaseFileLabel = new Label(tr("Figaro Database File:"));
@@ -3133,10 +3159,10 @@ void FigaroPage::browseFigaroProcessFile()
 /*!
   \param pParent - pointer to OptionsDialog
   */
-DebuggerPage::DebuggerPage(OptionsDialog *pParent)
-  : QWidget(pParent)
+DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
 {
-  mpOptionsDialog = pParent;
+  mpOptionsDialog = pOptionsDialog;
   mpAlgorithmicDebuggerGroupBox = new QGroupBox(Helper::algorithmicDebugger);
   // GDB Path
   mpGDBPathLabel = new Label(tr("GDB Path:"));
@@ -3225,4 +3251,59 @@ void DebuggerPage::browseGDBPath()
   if (GDBPath.isEmpty())
     return;
   mpGDBPathTextBox->setText(GDBPath);
+}
+
+/*!
+  \class DebuggerPage
+  \brief Creates an interface for debugger settings.
+  */
+/*!
+  \param pParent - pointer to OptionsDialog
+  */
+FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  mpExportGroupBox = new QGroupBox(tr("Export"));
+  // version groupbox
+  mpVersionGroupBox = new QGroupBox("Version");
+  mpVersion1RadioButton = new QRadioButton("1.0");
+  mpVersion2RadioButton = new QRadioButton("2.0");
+  mpVersion2RadioButton->setChecked(true);
+  // set the version group box layout
+  QHBoxLayout *pVersionLayout = new QHBoxLayout;
+  pVersionLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pVersionLayout->addWidget(mpVersion1RadioButton);
+  pVersionLayout->addWidget(mpVersion2RadioButton);
+  mpVersionGroupBox->setLayout(pVersionLayout);
+  // set the export group box layout
+  QGridLayout *pExportLayout = new QGridLayout;
+  pExportLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pExportLayout->setColumnStretch(0, 1);
+  pExportLayout->addWidget(mpVersionGroupBox, 0, 0);
+  mpExportGroupBox->setLayout(pExportLayout);
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpExportGroupBox);
+  setLayout(pMainLayout);
+}
+
+void FMIPage::setFMIExportVersion(double version)
+{
+  if (version == 1.0) {
+    mpVersion1RadioButton->setChecked(true);
+  } else {
+    mpVersion2RadioButton->setChecked(true);
+  }
+}
+
+double FMIPage::getFMIExportVersion()
+{
+  if (mpVersion1RadioButton->isChecked()) {
+    return 1.0;
+  } else {
+    return 2.0;
+  }
 }

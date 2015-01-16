@@ -209,7 +209,7 @@ public:
   QString checkAllModelsRecursive(QString className);
   bool isExperiment(QString className);
   QStringList getSimulationOptions(QString className, double defaultTolerance = 1e-4);
-  bool translateModelFMU(QString className);
+  bool translateModelFMU(QString className, double version);
   bool translateModelXML(QString className);
   QString importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors);
   QString getMatchingAlgorithm();
