@@ -5545,7 +5545,7 @@ algorithm
       comps := arrayGet(inComps, taskIdx);
       //print("getAllSCCsOfGraph: components are '" + stringDelimitList(List.map(comps, intString), ",") + "'\n");
       tmpSccs := listAppend(tmpSccs, comps);
-    //end if;   
+    //end if;
   end for;
   oSccs := tmpSccs;
 end getAllSCCsOfGraph;

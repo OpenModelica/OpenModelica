@@ -11549,7 +11549,7 @@ case SOME(when as STMT_WHEN(__)) then
 end algStatementWhenElse;
 
 
-template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp, Text &varDecls, SimCode simCode, 
+template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp, Text &varDecls, SimCode simCode,
                       Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName, Boolean useFlatArrayNotation)
  "Generates code for writing a returnStructur to var."
 ::=
@@ -11559,12 +11559,12 @@ case ecr as CREF(componentRef=WILD(__)) then
 case ecr as CREF(ty= t as DAE.T_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   if(useFlatArrayNotation) then
-    let expressions = HpcOmMemory.expandCrefWithDims(ecr.componentRef,t.dims) |> crefLocal hasindex i0 fromindex 1 => 
+    let expressions = HpcOmMemory.expandCrefWithDims(ecr.componentRef,t.dims) |> crefLocal hasindex i0 fromindex 1 =>
           '<%contextCref(crefLocal, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%> = (<%rhsStr%>)(<%i0%>);'; separator="\n"
     <<
     <%expressions%>
     /* blubb blubb */
-    >>    
+    >>
   else
     <<
     <%lhsStr%>.assign(<%rhsStr%>);
