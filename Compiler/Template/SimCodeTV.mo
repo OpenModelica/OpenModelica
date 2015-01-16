@@ -3373,6 +3373,11 @@ package FMI
     output String fmiType;
   end getFMIType;
 
+  function isFMIVersion20 "Checks if the FMI version is 2.0."
+    input String inFMUVersion;
+    output Boolean success;
+  end isFMIVersion20;
+
   function getEnumerationTypeFromTypes
     input list<TypeDefinitions> inTypeDefinitionsList;
     input String inBaseType;

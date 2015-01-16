@@ -85,7 +85,7 @@ case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
   <%
-  if stringEq(FMUVersion, "2.0") then fmi2ModelDescription(simCode,guid)
+  if isFMIVersion20(FMUVersion) then fmi2ModelDescription(simCode,guid)
   else fmiModelDescription(simCode,guid)
   %>
   >>
@@ -404,7 +404,7 @@ template TypeDefinitionType(DAE.Type type_, String FMUVersion)
 ::=
 match type_
   case T_ENUMERATION(__) then
-  if stringEq(FMUVersion, "2.0") then
+  if isFMIVersion20(FMUVersion) then
   <<
   <SimpleType name="<%Absyn.pathString2NoLeadingDot(path, ".")%>">
     <Enumeration>
@@ -524,7 +524,7 @@ case SIMVAR(__) then
   <<>>
   else if stringEq(crefStr(name),"der($dummy)") then
   <<>>
-  else if stringEq(FMUVersion, "2.0") then
+  else if isFMIVersion20(FMUVersion) then
   <<
   <!-- Index of variable = "<%getVariableIndex(simVar)%>" -->
   <ScalarVariable
@@ -777,7 +777,7 @@ case SIMCODE(__) then
   #include "<%fileNamePrefix%>_literals.h"
   #include "simulation/solver/initialization/initialization.h"
   #include "simulation/solver/events.h"
-  <%if stringEq(FMUVersion, "2.0") then
+  <%if isFMIVersion20(FMUVersion) then
   '#include "fmu2_model_interface.h"'
   else
   '#include "fmu1_model_interface.h"'%>
@@ -788,7 +788,7 @@ case SIMCODE(__) then
 
   void setStartValues(ModelInstance *comp);
   void setDefaultStartValues(ModelInstance *comp);
-  <%if stringEq(FMUVersion, "2.0") then
+  <%if isFMIVersion20(FMUVersion) then
   <<
   void eventUpdate(ModelInstance* comp, fmi2EventInfo* eventInfo);
   fmi2Real getReal(ModelInstance* comp, const fmi2ValueReference vr);
@@ -819,7 +819,7 @@ case SIMCODE(__) then
   <%ModelDefineData(modelInfo)%>
 
   // implementation of the Model Exchange functions
-  <%if stringEq(FMUVersion, "2.0") then
+  <%if isFMIVersion20(FMUVersion) then
   '#define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
   #include "fmu2_model_interface.c"'
   else
@@ -828,7 +828,7 @@ case SIMCODE(__) then
 
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
-  <%if stringEq(FMUVersion, "2.0") then
+  <%if isFMIVersion20(FMUVersion) then
   <<
     <%eventUpdateFunction2(simCode)%>
     <%getRealFunction2(modelInfo)%>
@@ -1682,7 +1682,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" <%if stringEq(FMUVersion, "2.0") then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
+  CFLAGS=/Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" <%if isFMIVersion20(FMUVersion) then '/I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '/I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
 
   # /ZI enable Edit and Continue debug info
   CDFLAGS = /ZI
@@ -1759,7 +1759,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PLATFORM = <%platformstr%>
   PLAT34 = <%makefileParams.platform%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
-  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" <%if stringEq(FMUVersion, "2.0") then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> -I. <%makefileParams.includes ; separator=" "%>
+  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" <%if isFMIVersion20(FMUVersion) then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> -I. <%makefileParams.includes ; separator=" "%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%dirExtra%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%>_FMU.c
@@ -1786,7 +1786,7 @@ template fmudeffile(SimCode simCode, String FMUVersion)
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-  if stringEq(FMUVersion, "2.0") then
+  if isFMIVersion20(FMUVersion) then
   <<
   EXPORTS
     ;***************************************************
