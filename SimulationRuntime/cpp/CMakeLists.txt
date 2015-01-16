@@ -64,6 +64,7 @@ SET(DataExchangeName ${LIBPREFIX}DataExchange)
 SET(ModelicaUtilitiesName ${LIBPREFIX}ModelicaUtilities)
 SET(ExtensionUtilitiesName ${LIBPREFIX}ExtensionUtilities)
 SET(BasiLibName ${LIBPREFIX}Base)
+SET(ModelicaCompilerName ${LIBPREFIX}ModelicaCompiler)
 
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
@@ -325,6 +326,7 @@ include_directories ("Include")
 include_directories ("Solver")
 
 
+#add_subdirectory (ModelicaCompiler)
 add_subdirectory (Core/Math)
 
 add_subdirectory (Core/Utils/Modelica)
@@ -420,6 +422,8 @@ GET_FILENAME_COMPONENT(libMathName ${libMath} NAME)
 GET_TARGET_PROPERTY(libDataExchange ${DataExchangeName} LOCATION)
 GET_FILENAME_COMPONENT(libDataExchangeName ${libDataExchange} NAME)
 
+GET_TARGET_PROPERTY(libModelicaCompiler ${ModelicaCompilerName} LOCATION)
+GET_FILENAME_COMPONENT(libModelicaCompilerName ${libModelicaCompiler} NAME)
 
 GET_TARGET_PROPERTY(libSimObjFactory ${OMCFactoryName} LOCATION)
 GET_FILENAME_COMPONENT(libSimObjFactoryName ${libSimObjFactory} NAME)
@@ -439,6 +443,7 @@ set (SIMOBJFACTORY_LIB ${libSimObjFactoryName})
 set (DATAEXCHANGE_LIB ${libDataExchangeName})
 set (SIMCONRTOLLER_LIB ${libSimControllerName})
 set (EXTENSIONUTILITIES_LIB ${libExtensionUtilitiesName})
+set (MODELICACOMPILER_LIB ${libModelicaCompilerName})
 
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate
