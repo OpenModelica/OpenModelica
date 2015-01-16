@@ -304,7 +304,6 @@ algorithm
       //-----------------------------
       (scheduledTasks,scheduledDAENodes) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,simVarMapping,inBackendDAE);
 
-
       //Apply filters
       //-------------
       taskGraphDataSimplified = taskGraphDataOde;
@@ -349,7 +348,9 @@ algorithm
       //Check ODE-System size
       //---------------------
       System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
-      checkOdeSystemSize(taskGraphOde,odeEquations);
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataScheduled);
+      
+      checkOdeSystemSize(taskGraphDataScheduled,odeEquations);
       SimCodeUtil.execStat("hpcom check ODE system size");
 
       //Create Memory-Map and Sim-Code
@@ -476,7 +477,7 @@ protected
 */
 
    // contract nodes schedule specific
-   (taskGraph1,taskGraphT,taskGraphMeta1) := applyGRSForScheduler(taskGraph1, taskGraphT, taskGraphMeta1, contractedTasks); //not working at the moment
+   //(taskGraph1,taskGraphT,taskGraphMeta1) := applyGRSForScheduler(taskGraph1, taskGraphT, taskGraphMeta1, contractedTasks); //not working at the moment
    // build new taskGraph
    (oTaskGraph,oTaskGraphMeta) := GRS_newGraph(taskGraph1,taskGraphMeta1,contractedTasks);
 end applyGRS;
@@ -1209,42 +1210,31 @@ end removeDummyStateFromMapping1;
 //------------------------------------------
 //------------------------------------------
 
-protected function checkOdeSystemSize " compares the size of the ode-taskgraph with the number of ode-equations in the simCode.
+protected function checkOdeSystemSize "Compares the number of components in the graph with the number of ode-equations in the simCode-structure.
 Remark: this can occure when asserts are added to the ode-system.
-author:Waurich TUD 2013-07"
-  input HpcOmTaskGraph.TaskGraph taskGraphOdeIn;
-  input list<list<SimCode.SimEqSystem>> odeEqsIn;
+author:marcusw"
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input list<list<SimCode.SimEqSystem>> iOdeEqs;
+  output Boolean oIsCorrect;
+protected
+  list<Integer> sccs;
+  Integer actualSizePre, actualSize;
+  Integer targetSize;
 algorithm
-  _ := matchcontinue(taskGraphOdeIn,odeEqsIn)
-    local
-      Integer actualSize;
-      Integer targetSize;
-    case(_,_)
-      equation
-        targetSize = listLength(List.flatten(odeEqsIn));
-        actualSize = arrayLength(taskGraphOdeIn);
-        true = intEq(targetSize,actualSize);
-        print("the ODE-system size is correct("+intString(actualSize)+")\n");
-        then
-          ();
-    case(_,_)
-      equation
-        targetSize = listLength(List.flatten(odeEqsIn));
-        actualSize = arrayLength(taskGraphOdeIn);
-        true = intEq(targetSize,1) and intEq(actualSize,0);
-        // there is a dummyDER in the simcode
-        print("the ODE-system size is correct(0)\n");
-        then
-          ();
-    else
-      equation
-        targetSize = listLength(List.flatten(odeEqsIn));
-        actualSize = arrayLength(taskGraphOdeIn);
-        print("the size should be "+intString(targetSize)+" but it is "+intString(actualSize)+" !\n");
-        print("the ODE-system is NOT correct\n");
-      then
-        ();
-  end matchcontinue;
+  sccs := List.sort(HpcOmTaskGraph.getAllSCCsOfGraph(iTaskGraphMeta), intGt);
+  actualSizePre := listLength(sccs);
+  actualSize := listLength(List.sortedUnique(sccs, intEq));
+  if(intNe(actualSizePre, actualSize)) then
+    print("There are simCode-equations multiple times in the graph structure.\n");
+  end if;
+  targetSize := listLength(List.flatten(iOdeEqs));
+  oIsCorrect := intEq(targetSize,actualSize);
+  if(oIsCorrect) then
+    print("the ODE-system size is correct("+intString(actualSize)+")\n");
+  else
+    print("the size should be "+intString(targetSize)+" but it is "+intString(actualSize)+"!\n");
+    print("the ODE-system is NOT correct\n");
+  end if;
 end checkOdeSystemSize;
 
 /*

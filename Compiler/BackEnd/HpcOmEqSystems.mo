@@ -2772,7 +2772,7 @@ protected
   array<tuple<Integer,Integer,Integer>> eqCompMapping, varCompMapping;
   list<list<String>> eqCharsLst;
   array<Integer> nodeMark;
-  array<String> nodeDescs, nodeNames;
+  array<String> compDescs, nodeNames;
   array<list<Integer>> inComps;
   array<tuple<Integer,Real>> exeCosts;
   array<HpcOmTaskGraph.Communications> commCosts;
@@ -2792,8 +2792,8 @@ algorithm
   varStrings := List.map(varLst,HpcOmTaskGraph.getVarString);
   descLst := List.map1(eqStrings,stringAppend," FOR ");
   descLst := List.threadMap(descLst,varStrings,stringAppend);
-  nodeDescs := listArray(descLst);
-  metaOut := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,{},nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+  compDescs := listArray(descLst);
+  metaOut := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,{},nodeNames,compDescs,exeCosts,commCosts,nodeMark);
 end buildTaskgraphMetaForTornSystem;
 
 protected function buildDummyCommCosts "generates preliminary commCosts for a children list.
@@ -2890,13 +2890,13 @@ protected
   GraphML.GraphInfo tmpGraph;
   Integer nameAttIdx;
   list<Integer> childNodes;
-  array<String> nodeDescs;
+  array<String> compDescs;
   array<list<Integer>> inComps;
   GraphML.NodeLabel nodeLabel;
   String nodeString, nodeDesc, nodeName;
 algorithm
-  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeDescs=nodeDescs) := metaIn;
-  nodeDesc := arrayGet(nodeDescs,nodeIdx);
+  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,compDescs=compDescs) := metaIn;
+  nodeDesc := arrayGet(compDescs,nodeIdx);
   nodeString := intString(nodeIdx);
   nodeName := stringDelimitList(List.map(arrayGet(inComps,nodeIdx),intString),",");
   nameAttIdx := listGet(atts,1);

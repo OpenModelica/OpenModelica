@@ -1552,7 +1552,7 @@ protected
   list<HpcOmSimCode.TaskList> levelTasks;
   array<tuple<Integer,Integer,Integer>> varCompMapping, eqCompMapping;
   list<Integer> rootNodes;
-  array<String> nodeNames, nodeDescs;
+  array<String> nodeNames, compDescs;
   array<tuple<Integer,Real>> exeCosts;
   array<HpcOmTaskGraph.Communications> commCosts;
 algorithm
@@ -1584,11 +1584,11 @@ algorithm
   oSchedule := HpcOmSimCode.LEVELSCHEDULE(levelTasks, false);
 
   //update nodeMark for graphml representation
-  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts, commCosts=commCosts) := iMeta;
+  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,compDescs=compDescs,exeCosts=exeCosts, commCosts=commCosts) := iMeta;
   nodeMark := arrayCreate(arrayLength(inComps),-1);
   level := List.map(allSections,List.flatten);
   ((_,nodeMark)) := List.fold(level,getLevelAssignment,(1,nodeMark));
-  oMeta := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+  oMeta := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,rootNodes,nodeNames,compDescs,exeCosts,commCosts,nodeMark);
 end createBalancedLevelScheduling;
 
 protected function BLS_mergeSmallSections"traverses the sections in a level and merges them if they are to small
@@ -1940,9 +1940,9 @@ protected
   list<Integer> rootNodes;
   array<HpcOmTaskGraph.Communications> commCosts;
   array<tuple<Integer,Integer,Integer>> varCompMapping, eqCompMapping; //Map each variable to the scc that solves her
-  array<String> nodeNames, nodeDescs;
+  array<String> nodeNames, compDescs;
 algorithm
-  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts, commCosts=commCosts) := iMeta;
+  HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,compDescs=compDescs,exeCosts=exeCosts, commCosts=commCosts) := iMeta;
 
   graphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
   //(_,startNodes) := List.filterOnTrueSync(arrayList(graphT),List.isEmpty,List.intRange(arrayLength(graphT)));
@@ -1963,7 +1963,7 @@ algorithm
   //update nodeMark for graphml representation
   nodeMark := arrayCreate(arrayLength(inComps),-1);
   ((_,nodeMark)) := List.fold(level,getLevelAssignment,(1,nodeMark));
-  oMeta := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+  oMeta := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,rootNodes,nodeNames,compDescs,exeCosts,commCosts,nodeMark);
 end createLevelSchedule;
 
 protected function getLevelAssignment"folding function to get a levelassignment for each node"
@@ -3075,7 +3075,7 @@ algorithm
       array<tuple<Integer,Integer,Integer>> varCompMapping,eqCompMapping,mapDupl;
       tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> idcs;
       list<Integer> order, rootNodes;
-      array<String> nodeNames, nodeDescs;
+      array<String> nodeNames, compDescs;
       list<list<Integer>> clusters, duplSccSimEqMap, duplComps;
       HpcOmSimCode.Schedule schedule;
       SimCode.ModelInfo modelInfo;
@@ -3118,7 +3118,7 @@ algorithm
         // extract object stuff
         SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars), odeEquations=odes) = iSimCode;
         SimCodeVar.SIMVARS(algVars=algVars) = simVars;
-        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark) = iTaskGraphMeta;
+        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,rootNodes=rootNodes,nodeNames=nodeNames,compDescs=compDescs,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark) = iTaskGraphMeta;
         /*
         //dumping stuff-------------------------
         print("simCode1 \n");
@@ -3161,10 +3161,10 @@ algorithm
         varCompMapping = arrayAppend(varCompMapping,arrayCreate(numDupl,(0,0,0)));
         eqCompMapping = arrayAppend(eqCompMapping,arrayCreate(numDupl,(0,0,0)));
         nodeNames = arrayAppend(nodeNames,arrayCreate(numDupl,"duplicated"));
-        nodeDescs = arrayAppend(nodeDescs,arrayCreate(numDupl,"duplicated"));
+        compDescs = arrayAppend(compDescs,arrayCreate(numDupl,"duplicated"));
         exeCosts = arrayAppend(exeCosts,arrayCreate(numDupl,(1,1.0)));
         nodeMark = arrayAppend(nodeMark,arrayCreate(numDupl,-1));
-        meta = HpcOmTaskGraph.TASKGRAPHMETA(comps,varCompMapping,eqCompMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+        meta = HpcOmTaskGraph.TASKGRAPHMETA(comps,varCompMapping,eqCompMapping,rootNodes,nodeNames,compDescs,exeCosts,commCosts,nodeMark);
         //assign new simEqSysIndexes
         newIdxAss = arrayCreate(SimCodeUtil.getMaxSimEqSystemIndex(simCode),-1);
         (simCode,newIdxAss) = TDS_assignNewSimEqSysIdxs(simCode,newIdxAss);

@@ -3477,6 +3477,12 @@ package HpcOmMemory
     input list<String> iNumArrayElems;
     output list<DAE.ComponentRef> oCrefs;
   end expandCref;
+  
+  function expandCrefWithDims
+    input DAE.ComponentRef iCref;
+    input DAE.Dimensions iDims;
+    output list<DAE.ComponentRef> oCrefs;
+  end expandCrefWithDims;
 
   function getSubscriptListOfArrayCref
     input DAE.ComponentRef iCref;

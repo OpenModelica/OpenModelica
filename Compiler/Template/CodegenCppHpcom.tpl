@@ -1816,18 +1816,19 @@ template MemberVariableDefine(String type,SimVar simVar, String arrayName, Optio
 ::=
 match simVar
     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
-    case SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
+    case simVar as SIMVAR(name=varName,numArrayElement={},arrayCref=NONE()) then
+      if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemoryOpt)) then
         match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
               <<
               // case 2 MemberVariableDefine
               <%MemberVariableDefine3(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,varName), simVar, useFlatArrayNotation, createConstructorDeclaration)%>
               >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else '<%variableType(simVar.type_)%> <%cref(simVar.name,useFlatArrayNotation)%>; //no cacheMap defined'%>
-              >>
         end match
+      else
+        <<
+        <%if createConstructorDeclaration then '' else '<%variableType(simVar.type_)%> <%cref(simVar.name,useFlatArrayNotation)%>; //no cacheMap defined'%>
+        >>
     case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
@@ -1839,18 +1840,19 @@ match simVar
       let arrayName = arraycref2(name,dims)
       let typeString = variableType(type_)
       let arraysize = arrayextentDims(name,v.numArrayElement)
-      match(hpcOmMemoryOpt)
+      if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemoryOpt)) then
+        match(hpcOmMemoryOpt)
             case SOME(hpcOmMemory) then
               let varDeclarations = HpcOmMemory.expandCref(name,num) |> crefLocal => MemberVariableDefine4(HpcOmMemory.getPositionMappingByArrayName(hpcOmMemory,crefLocal), crefLocal, varType, useFlatArrayNotation, createConstructorDeclaration); separator="\n"
               <<
               // case 3 MemberVariableDefine dims:<%dims%> nums:<%num%>
               <%varDeclarations%>
               >>
-            else
-              <<
-              <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%variableType(v.type_)%>,<%arraysize%>>  <%arrayName%>; //no cacheMap defined' %>
-              >>
-      end match
+        end match
+      else
+        <<
+        <%if createConstructorDeclaration then '' else 'StatArrayDim<%dims%><<%variableType(v.type_)%>,<%arraysize%>>  <%arrayName%>; //no cacheMap defined' %>
+        >>
     case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)

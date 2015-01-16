@@ -1270,12 +1270,22 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
  end functionDimStateSets;
 
 
-template createAssignArray(DAE.ComponentRef sourceOrTargetArrayCref, String sourceArrayName, String targetArrayName, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotationSource, Boolean useFlatArrayNotationTarget)
+template createAssignArray(DAE.ComponentRef sourceOrTargetArrayCref, String sourceArrayName, String targetArrayName, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotationSource, Boolean useFlatArrayNotationTarget, String dimsArrayName)
 ::=
   match SimCodeUtil.cref2simvar(sourceOrTargetArrayCref, simCode)
     case v as SIMVAR(numArrayElement=num) then
       if boolOr(useFlatArrayNotationSource,useFlatArrayNotationTarget) then (
         <<
+        <%if boolNot(useFlatArrayNotationSource) then
+            '//<%targetArrayName%>.resize(<%sourceArrayName%>.getDims());'
+        %>
+        <%if boolNot(useFlatArrayNotationTarget) then
+            <<
+            <%dimsArrayName%> = std::vector<size_t>(<%listLength(num)%>,0);
+            <%(num |> n hasindex i0 fromindex 0 => '<%dimsArrayName%>.at(<%i0%>) = <%n%>;'; separator="\n")%>
+            <%targetArrayName%>.resize(<%dimsArrayName%>);
+            >>
+        %>
         <%HpcOmMemory.getSubscriptListOfArrayCref(sourceOrTargetArrayCref, num) |> ai => '<%targetArrayName%><%subscriptsToCStr(ai,useFlatArrayNotationTarget)%> = <%sourceArrayName%><%subscriptsToCStr(ai,useFlatArrayNotationSource)%>;';separator="\n"%>
         >>
       )
@@ -1294,7 +1304,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then
              'case <%i1%>:
-               <%createAssignArray(crA, arrayname1, "A", simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation, false)%>
+               <%createAssignArray(crA, arrayname1, "A", simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation, false, "dims")%>
                return true;
             '
             else ""
@@ -1305,7 +1315,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then "" else
              'case <%i1%>:
-               <%createAssignArray(crA, arrayname1, "A", simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation, false)%>
+               <%createAssignArray(crA, arrayname1, "A", simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, useFlatArrayNotation, false, "dims")%>
                return true;
             '
 
@@ -1316,7 +1326,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then
              'case <%i1%>:
-               <%createAssignArray(crA, "A", arrayname1, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, false, useFlatArrayNotation)%>
+               <%createAssignArray(crA, "A", arrayname1, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, false, useFlatArrayNotation, "dims")%>
                break;
             '
             else ""
@@ -1327,7 +1337,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
            let arrayname1 = arraycref(crA, useFlatArrayNotation)
            match nStates  case 1 then "" else
              'case <%i1%>:
-               <%createAssignArray(crA, "A", arrayname1, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, false, useFlatArrayNotation)%>
+               <%createAssignArray(crA, "A", arrayname1, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, false, useFlatArrayNotation, "dims")%>
                break;
             '
 
@@ -1439,6 +1449,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
        bool  <%classname%>StateSelection::getAMatrix(unsigned int index,DynArrayDim2<int> & A)
         {
+        <%if useFlatArrayNotation then "std::vector<size_t> dims;" %>
         <%match getAMatrix2 case "" then 'return false;' else
         <<
          switch (index)
@@ -1452,6 +1463,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        }
        bool  <%classname%>StateSelection::getAMatrix(unsigned int index,DynArrayDim1<int> & A)
         {
+        <%if useFlatArrayNotation then "std::vector<size_t> dims;" %>
        <%match getAMatrix1 case "" then 'return false;' else
         <<
         switch (index)
@@ -1466,6 +1478,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
        void  <%classname%>StateSelection::setAMatrix(unsigned int index,DynArrayDim2<int> & A)
         {
+        <%if useFlatArrayNotation then "std::vector<size_t> dims;" %>
         <%match setAMatrix2 case "" then '' else
         <<
          switch (index)
@@ -1479,6 +1492,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        }
        void  <%classname%>StateSelection::setAMatrix(unsigned int index,DynArrayDim1<int> & A)
         {
+        <%if useFlatArrayNotation then "std::vector<size_t> dims;" %>
        <%match setAMatrix1 case "" then '' else
         <<
         switch (index)
@@ -10671,7 +10685,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     //let var = tempDecl(type,&varDecls /*BUFD*/)
     let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
     //let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
-  // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));//testhier1<%\n%>'
+  // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
     let &preExp +='multiply_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
     '<%var1%>'
   case MUL_MATRIX_PRODUCT(ty=T_ARRAY(dims=dims)) then
@@ -10687,8 +10701,8 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else "double"
     //let var = tempDecl(type,&varDecls /*BUFD*/)
     let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
-  // previous multi_array let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));//testhier1<%\n%>'
-    let &preExp +='multiply_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);//testhier1<%\n%>'
+  // previous multi_array let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
+    let &preExp +='multiply_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
     '<%var1%>'
   case DIV_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
  //let dimensions = (dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator=",")
@@ -10710,7 +10724,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     let var1 = tempDecl(type,&tempvarDecl /*BUFD*/)
   let &preExp +='<%tempvarDecl%><%\n%> '
     //let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
-  // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));//testhier1<%\n%>'
+  // previous multiarray let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
     let &preExp +='divide_array<<%type1%>>(<%e1%>, <%e2%>, <%var1%>);<%\n%>'
     '<%var1%>'
   case DIV_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
@@ -10964,7 +10978,7 @@ template daeExpCrefRhsArrayBox(ComponentRef cr,DAE.Type ty, Context context, Tex
               let tmpArr = '<%daeExpCrefRhsArrayBox2(statvar,ty,context,preExp,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
               tmpArr
         case STATE_DER(__)      then
-              let statvar = '__zDot[<%i%>] /*blaa*/'
+              let statvar = '__zDot[<%i%>]'
               let tmpArr = '<%daeExpCrefRhsArrayBox2(statvar,ty,context,preExp,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>'
               tmpArr
         else
@@ -11467,8 +11481,8 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   //previous multi_array let rhsStr = 'boost::get<<%i1%>>(<%retStruct%>.data)'
 
   let lhsCrefs = (expExpLst |> cr hasindex i1 fromindex 0 =>
-                    let rhsStr = 'boost::get<<%i1%>>(<%retStruct%>.data)/*testhier*/'
-                    writeLhsCref(cr, rhsStr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/ , simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+                    let rhsStr = 'boost::get<<%i1%>>(<%retStruct%>.data)'
+                    writeLhsCref(cr, rhsStr, context, &afterExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                   ;separator="\n";empty)
   <<
   /* algStmtTupleAssign: preExp printout <%marker%>*/
@@ -11535,23 +11549,26 @@ case SOME(when as STMT_WHEN(__)) then
 end algStatementWhenElse;
 
 
-template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BUFP*/,
-              Text &varDecls /*BUFP*/, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp, Text &varDecls, SimCode simCode, 
+                      Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName, Boolean useFlatArrayNotation)
  "Generates code for writing a returnStructur to var."
 ::=
 match exp
 case ecr as CREF(componentRef=WILD(__)) then
   ''
-case CREF(ty= t as DAE.T_ARRAY(__)) then
+case ecr as CREF(ty= t as DAE.T_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  match context
-  case SIMULATION_CONTEXT(__) then
+  if(useFlatArrayNotation) then
+    let expressions = HpcOmMemory.expandCrefWithDims(ecr.componentRef,t.dims) |> crefLocal hasindex i0 fromindex 1 => 
+          '<%contextCref(crefLocal, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%> = (<%rhsStr%>)(<%i0%>);'; separator="\n"
     <<
-    <%lhsStr%>.assign(<%rhsStr%> )/*blabla*/;
-    >>
+    <%expressions%>
+    /* blubb blubb */
+    >>    
   else
-    '<%lhsStr%>.assign(<%rhsStr%>);'
-  //previous multi_array '<%lhsStr%> = <%rhsStr%>;' '<%lhsStr%>.assign(<%rhsStr%>);'
+    <<
+    <%lhsStr%>.assign(<%rhsStr%>);
+    >>
 case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   match context
@@ -11565,7 +11582,7 @@ case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
 case CREF(__) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
-  <%lhsStr%> = <%rhsStr%>;
+  <%lhsStr%> = <%rhsStr%> /*writeLhsCref1*/;
   >>
 case UNARY(exp = e as CREF(__)) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -11582,7 +11599,7 @@ case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
   let body = (threadTuple(expl,dimsToAllIndexes(dims)) |>  (lhs,indxs) =>
                  let lhsstr = scalarLhsCref(lhs, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                  let indxstr = (indxs |> i => '<%i%>' ;separator=",")
-                 '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);'
+                 '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);/*writeLhsCref2*/'
               ;separator="\n")
   <<
   <%body%>
@@ -11609,7 +11626,7 @@ case ecr as CREF(componentRef=cr as CREF_QUAL(__)) then
     else
       let arrName = contextCref(crefStripSubs(cr), context, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       <<
-      <%arrName%>(<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)/*testindex2*/
+      <%arrName%>(<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)
       >>
 
 case ecr as CREF(componentRef=CREF_QUAL(__)) then
@@ -13169,7 +13186,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     <<
 
     <%preExp%>
-    <%varPart%> = <%expPart%>;
+    <%varPart%> = <%expPart%> /*stmtAssign*/;
 
     >>
   case STMT_ASSIGN(exp1=exp1 as ASUB(__),exp=val) then

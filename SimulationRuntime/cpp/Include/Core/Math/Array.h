@@ -23,6 +23,7 @@ public:
   virtual unsigned int getNumElems() = 0;
   virtual unsigned int getNumDims() = 0;
   virtual void setDims(std::vector<size_t> v) = 0;
+  virtual void resize(std::vector<size_t> dims) = 0;
 
   virtual T& operator()(unsigned int i)
   {
@@ -136,6 +137,12 @@ public:
       _real_array= rhs._real_array;
   }
   return *this;
+ }
+
+ virtual void resize(std::vector<size_t> dims)
+ {
+     if (dims != getDims())
+         std::runtime_error("Cannot resize static array!");
  }
 
    virtual void assign(const T* data)
@@ -259,6 +266,11 @@ public:
   //  _real_array = otherArray._real_array;
   //}
 
+ virtual void resize(std::vector<size_t> dims)
+ {
+     if (dims != getDims())
+         std::runtime_error("Cannot resize static array!");
+ }
 
   StatArrayDim1<string,size>& operator=(BaseArray<string>& rhs)
  {
@@ -435,6 +447,13 @@ public:
     memcpy( _real_array.begin()+(i-1)*size2, data, size2 * sizeof( T ) );
 
   }
+
+  virtual void resize(std::vector<size_t> dims)
+  {
+      if (dims != getDims())
+          std::runtime_error("Cannot resize static array!");
+  }
+
   virtual void assign(const BaseArray<T>& otherArray)
   {
 
@@ -514,8 +533,6 @@ private:
 
 
 
-
-
 template<typename T ,std::size_t size1, std::size_t size2, std::size_t size3> class StatArrayDim3 : public BaseArray<T>
 {
   //friend class ArrayDim3<T, size1, size2, size3>;
@@ -562,6 +579,12 @@ public:
   {
      //std::copy(data,data+size1*size2*size3,_real_array.begin());
      memcpy( _real_array.begin(), data, size1*size2*size3 * sizeof( T ) );
+  }
+
+  virtual void resize(std::vector<size_t> dims)
+  {
+      if (dims != getDims())
+          std::runtime_error("Cannot resize static array!");
   }
 
   virtual std::vector<size_t> getDims() const
@@ -928,15 +951,22 @@ public:
     _multi_array.assign(data, data + otherArray._multi_array.num_elements());
   }
   */
+
+  virtual void resize(std::vector<size_t> dims)
+  {
+      if (dims != getDims())
+      {
+          _multi_array.resize(dims);
+          _multi_array.reindex(1);
+      }
+  }
+
   virtual  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
 
-    if ( v != getDims())
-  {
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
-  }     const T* data_otherarray = otherArray.getData();
+    resize(v);
+    const T* data_otherarray = otherArray.getData();
     _multi_array.assign(data_otherarray,data_otherarray+ v[0]);
     /*for (int i = 1; i <= v[0]; i++)
     {
@@ -1026,6 +1056,7 @@ public:
     boost::multi_array<T, 1> _multi_array;
 };
 
+
 template<typename T >class DynArrayDim2 : public BaseArray<T>
 {
 
@@ -1056,6 +1087,7 @@ public:
     const T* data_otherarray = otherArray.getData();
     _multi_array.assign(data_otherarray,data_otherarray+v[0]*v[1]);
    }
+
   DynArrayDim2(unsigned int size1, unsigned int size2)
   :BaseArray<T>(false)
   {
@@ -1066,6 +1098,15 @@ public:
     _multi_array.reindex(1);
   }
   ~DynArrayDim2(){}
+
+  virtual void resize(std::vector<size_t> dims)
+  {
+      if (dims != getDims())
+      {
+          _multi_array.resize(dims);
+          _multi_array.reindex(1);
+      }
+  }
 
   /*void assign(DynArrayDim2<T> otherArray)
   {
@@ -1078,8 +1119,7 @@ public:
   virtual  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
+    resize(v);
      const T* data = otherArray.getData();
     _multi_array.assign(data, data + v[0]*v[1]);
   }
@@ -1169,9 +1209,6 @@ private:
 };
 
 
-
-
-
 template<typename T> class DynArrayDim3 : public BaseArray<T>
 {
   //friend class ArrayDim3<T, size1, size2, size3>;
@@ -1214,6 +1251,16 @@ public:
     _multi_array.assign(data, data + v[0]*v[1]*v[2]);
   }
   */
+
+  virtual void resize(std::vector<size_t> dims)
+  {
+      if (dims != getDims())
+      {
+          _multi_array.resize(dims);
+          _multi_array.reindex(1);
+      }
+  }
+
   virtual void assign(const T* data)
   {
     _multi_array.assign(data, data + _multi_array.num_elements() );
@@ -1221,8 +1268,7 @@ public:
   virtual  void assign(const BaseArray<T>& otherArray)
   {
     std::vector<size_t> v = otherArray.getDims();
-    _multi_array.resize(v);
-    _multi_array.reindex(1);
+    resize(v);
      const T* data = otherArray.getData();
     _multi_array.assign(data, data + v[0]*v[1]*v[2]);
   }
