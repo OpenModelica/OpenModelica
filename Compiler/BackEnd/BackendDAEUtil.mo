@@ -6832,8 +6832,7 @@ end traverseZeroCrossingExps;
  * Equation System Pipeline
  ************************************************/
 
-public function getSolvedSystem "
-  Run the equation system pipeline."
+public function getSolvedSystem "Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
   input String fileNamePrefix;
   input Option<list<String>> strPreOptModules := NONE();
@@ -6861,16 +6860,13 @@ algorithm
   end if;
 
   // pre-optimization phase
-  // Frenkel TUD: why is this neccesarray? it only consumes time!
-  _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
-  SimCodeUtil.execStat("preOpt SimplifyAllExp");
   (optdae, Util.SUCCESS()) := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using index reduction method)
   sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
 
   if Flags.isSet(Flags.GRAPHML) then
-  HpcOmTaskGraph.dumpBipartiteGraph(sode,fileNamePrefix);
+    HpcOmTaskGraph.dumpBipartiteGraph(sode, fileNamePrefix);
   end if;
 
   if Flags.isSet(Flags.BLT_DUMP) then
@@ -6879,10 +6875,13 @@ algorithm
 
   // post-optimization phase
   (optsode, Util.SUCCESS()) := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
+
   sode1 := FindZeroCrossings.findZeroCrossings(optsode);
   SimCodeUtil.execStat("findZeroCrossings");
+
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
-  SimCodeUtil.execStat("postOpt SimplifyAllExp");
+  SimCodeUtil.execStat("SimplifyAllExp");
+
   outSODE := calculateValues(sode1);
   SimCodeUtil.execStat("calculateValue");
 
