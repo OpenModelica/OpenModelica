@@ -246,7 +246,7 @@ protected function chooseResult "Returns the first result that is UnitAbsyn.INCO
 protected
   UnitAbsyn.UnitCheckResult incon;
 algorithm
-  resout := matchcontinue(res1,res2,res3)
+  resout := match(res1,res2,res3)
     case(UnitAbsyn.CONSISTENT(),UnitAbsyn.CONSISTENT(),UnitAbsyn.CONSISTENT()) then UnitAbsyn.CONSISTENT();
     case(UnitAbsyn.CONSISTENT(),UnitAbsyn.CONSISTENT(),incon) then incon;
     case(UnitAbsyn.CONSISTENT(),incon,_) then incon;
@@ -256,7 +256,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("UnitChecker::chooseResult() failed\n");
       then fail();
-  end matchcontinue;
+  end match;
 end chooseResult;
 
 protected function unify
@@ -410,15 +410,16 @@ public function unitHasUnknown
   input UnitAbsyn.Unit u;
   output Boolean res;
 algorithm
-  res := matchcontinue(u)
+  res := match(u)
     local
       UnitAbsyn.SpecUnit su;
+      Boolean unk;
     case(UnitAbsyn.SPECIFIED(su))
       equation
-        false = hasUnknown(su);
-      then false;
+        unk = hasUnknown(su);
+      then unk;
     else true;
-  end matchcontinue;
+  end match;
 end unitHasUnknown;
 
 public function mulSpecUnit "Multiplying two units corresponds to adding the units and joining the typeParameter list."

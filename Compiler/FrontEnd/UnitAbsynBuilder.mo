@@ -564,7 +564,7 @@ protected function printTypeParameterStr "help function to printUnit"
   input tuple<MMath.Rational,UnitAbsyn.TypeParameter> typeParam;
   output String str;
 algorithm
-  str := matchcontinue(typeParam)
+  str := match(typeParam)
   local String name; Integer i1,i2,i3,indx;
     case((MMath.RATIONAL(0,0),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
       str = name + "[indx =" + intString(indx) + "]";
@@ -575,7 +575,7 @@ algorithm
     case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))) equation
       str = name+ "^("+ intString(i1) + "/" + intString(i2)+")" + "[indx=" + intString(indx) + "]";
     then str;
-  end matchcontinue;
+  end match;
 end printTypeParameterStr;
 
 public function splitRationals "splits a list of Rationals into a list of numerators and denominators"
@@ -1492,12 +1492,12 @@ parent expression as type of a constant expression"
   input Option<DAE.Operator> op;
   output UnitAbsyn.Unit unit;
 algorithm
-  unit := matchcontinue(op)
+  unit := match(op)
     case(NONE()) then UnitAbsyn.UNSPECIFIED();
     case(SOME(DAE.ADD(_))) then UnitAbsyn.UNSPECIFIED();
     case(SOME(DAE.SUB(_))) then UnitAbsyn.UNSPECIFIED();
     case(SOME(_)) then str2unit("1",NONE());
-  end matchcontinue;
+  end match;
 end selectConstantUnit;
 
 public function unit2str "Translate a unit to a string"

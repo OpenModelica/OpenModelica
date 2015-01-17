@@ -1220,10 +1220,10 @@ public function arrayType "Test whether a type is an array type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inType)
+  outBoolean := match (inType)
     case (DAE.T_ARRAY()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end arrayType;
 
 public function setVarInput "Sets a DAE.Var to input"
@@ -2976,18 +2976,13 @@ public function getFixedVarAttributeParameterOrConstant
   input DAE.Type tp;
   output Boolean fix;
 algorithm
-  fix :=  matchcontinue(tp)
+  try
     // there is a fixed!
-    case _
-      equation
-        fix = getFixedVarAttribute(tp);
-      then
-        fix;
-
+    fix := getFixedVarAttribute(tp);
+  else
     // there is no fixed!
-    else true;
-
-  end matchcontinue;
+    fix := true;
+  end try;
 end getFixedVarAttributeParameterOrConstant;
 
 public function getFixedVarAttribute "Returns the value of the fixed attribute of a builtin type"
@@ -3098,10 +3093,10 @@ public function isInputAttr "Returns true if the Attributes of a variable indica
   input DAE.Attributes inAttributes;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inAttributes)
+  outBoolean := match (inAttributes)
     case DAE.ATTR(direction = Absyn.INPUT()) then true;
     case _ then false;
-  end matchcontinue;
+  end match;
 end isInputAttr;
 
 public function isOutputAttr "Returns true if the Attributes of a variable indicates
@@ -3109,10 +3104,10 @@ public function isOutputAttr "Returns true if the Attributes of a variable indic
   input DAE.Attributes inAttributes;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inAttributes)
+  outBoolean := match (inAttributes)
     case DAE.ATTR(direction = Absyn.OUTPUT()) then true;
     case _ then false;
-  end matchcontinue;
+  end match;
 end isOutputAttr;
 
 public function isBidirAttr "Returns true if the Attributes of a variable indicates that the variable
@@ -3120,10 +3115,10 @@ public function isBidirAttr "Returns true if the Attributes of a variable indica
   input DAE.Attributes inAttributes;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inAttributes)
+  outBoolean := match (inAttributes)
     case DAE.ATTR(direction = Absyn.BIDIR()) then true;
     case _ then false;
-  end matchcontinue;
+  end match;
 end isBidirAttr;
 
 public function isPublicAttr
@@ -3735,7 +3730,7 @@ algorithm
   end matchcontinue;
 end isPropTuple;
 
-public function isPropArray " Return true if properties contain an array type."
+public function isPropArray "Return true if properties contain an array type."
   input DAE.Properties p;
   output Boolean b;
 protected
@@ -3985,15 +3980,11 @@ public function typesElabEquivalent
   input DAE.Type inType2;
   output Boolean isEqual;
 algorithm
-  isEqual := matchcontinue(inType1, inType2)
-    local
-      DAE.Type ty1, ty2;
-
-    case (ty1, ty2)
-      then ttypesElabEquivalent(ty1, ty2);
-
-    else false;
-  end matchcontinue;
+  try
+    isEqual := ttypesElabEquivalent(inType1, inType2);
+  else
+    isEqual := false;
+  end try;
 end typesElabEquivalent;
 
 protected function ttypesElabEquivalent
@@ -5203,7 +5194,7 @@ public function constOr "Returns the *or* operator of two Const's.
   input DAE.Const inConst2;
   output DAE.Const outConst;
 algorithm
-  outConst := matchcontinue (inConst1,inConst2)
+  outConst := match (inConst1,inConst2)
     case (DAE.C_CONST(),_) then DAE.C_CONST();
     case (_,DAE.C_CONST()) then DAE.C_CONST();
     case (DAE.C_PARAM(),_) then DAE.C_PARAM();
@@ -5211,7 +5202,7 @@ algorithm
     case (DAE.C_UNKNOWN(),_) then DAE.C_UNKNOWN();
     case (_, DAE.C_UNKNOWN()) then DAE.C_UNKNOWN();
     else DAE.C_VAR();
-  end matchcontinue;
+  end match;
 end constOr;
 
 public function boolConst "author: PA
@@ -5544,7 +5535,7 @@ public function isBoxedType
   input DAE.Type ty;
   output Boolean b;
 algorithm
-  b := matchcontinue (ty)
+  b := match (ty)
     case (DAE.T_STRING()) then true;
     case (DAE.T_METAOPTION()) then true;
     case (DAE.T_METALIST()) then true;
@@ -5562,7 +5553,7 @@ algorithm
     case (DAE.T_CODE()) then true;
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_))) then true;
     case _ then false;
-  end matchcontinue;
+  end match;
 end isBoxedType;
 
 public function boxIfUnboxedType
@@ -6330,14 +6321,14 @@ public function resTypeToListTypes
   input DAE.Type inType;
   output list<DAE.Type> outType;
 algorithm
-  outType := matchcontinue (inType)
+  outType := match (inType)
     local
       list<DAE.Type> tys;
       Type ty;
     case DAE.T_TUPLE(types = tys) then tys;
     case DAE.T_NORETCALL() then {};
     case ty then {ty};
-  end matchcontinue;
+  end match;
 end resTypeToListTypes;
 
 public function getRealOrIntegerDimensions
@@ -6887,7 +6878,7 @@ public function liftArraySubscript "Lifts a type to an array using DAE.Subscript
   input DAE.Subscript inSubscript;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inType,inSubscript)
+  outType := match (inType,inSubscript)
     local
       Type ty;
       Integer i;
@@ -6904,7 +6895,7 @@ algorithm
     // All other kinds of subscripts denote an index, so the type stays the same
     case (ty,_)
       then ty;
-  end matchcontinue;
+  end match;
 end liftArraySubscript;
 
 public function liftArraySubscriptList "
@@ -7938,10 +7929,10 @@ public function hasBinding
   input DAE.Var inVar;
   output Boolean b;
 algorithm
-  b := matchcontinue(inVar)
+  b := match (inVar)
     case (DAE.TYPES_VAR(binding = DAE.UNBOUND())) then false;
     else true;
-  end matchcontinue;
+  end match;
 end hasBinding;
 
 public function typeErrorSanityCheck

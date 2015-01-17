@@ -10334,12 +10334,12 @@ public function applySubscriptsVariability
   input DAE.Const inSubsConst;
   output SCode.Variability outVariability;
 algorithm
-  outVariability := matchcontinue(inVariability, inSubsConst)
+  outVariability := match(inVariability, inSubsConst)
     case (SCode.PARAM(), DAE.C_VAR()) then SCode.VAR();
     case (SCode.CONST(), DAE.C_VAR()) then SCode.VAR();
     case (SCode.CONST(), DAE.C_PARAM()) then SCode.PARAM();
     else inVariability;
-  end matchcontinue;
+  end match;
 end applySubscriptsVariability;
 
 public function makeEnumerationArray
@@ -12075,7 +12075,7 @@ protected function subscriptCrefType2
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inComponentRef,inType)
+  outType := match (inComponentRef,inType)
     local
       DAE.Type t,t_1;
       list<DAE.Subscript> subs;
@@ -12092,7 +12092,7 @@ algorithm
         t_1 = subscriptCrefType2(c, t);
       then
         t_1;
-  end matchcontinue;
+  end match;
 end subscriptCrefType2;
 
 protected function subscriptType "Given an array dimensionality and a list of subscripts, this
