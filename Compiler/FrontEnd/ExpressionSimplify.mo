@@ -4706,7 +4706,7 @@ algorithm
     // a < b
     case(_,DAE.LESS(),_,_)
       then simplifyRelation2(origExp,inOperator2, inExp4,inExp3, index,optionExpisASUB,Expression.isPositiveOrZero);
-      
+
     else origExp;
 
   end matchcontinue;
@@ -4744,7 +4744,7 @@ algorithm
             else DAE.RELATION(oExp, inOp,Expression.makeConstZero(tp),index,optionExpisASUB);
 */
   else
-    if Expression.isGreatereqOrLesseq(inOp) then 
+    if Expression.isGreatereqOrLesseq(inOp) then
       oExp := origExp;
     else
       oExp := Expression.negate(oExp);
