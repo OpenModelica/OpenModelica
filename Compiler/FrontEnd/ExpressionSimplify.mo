@@ -211,9 +211,9 @@ algorithm
       then (e,options);
 
     // relations
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),_)
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2, index=index_, optionExpisASUB=isExpisASUB),_)
       equation
-        e = simplifyRelation(inExp, op, e1, e2);
+        e = simplifyRelation(inExp, op, e1, e2,index_,isExpisASUB);
       then (e,options);
 
     // logical unary expressions
@@ -4659,6 +4659,8 @@ protected function simplifyRelation
   input Operator inOperator2;
   input DAE.Exp inExp3 "Note: already simplified"; // lhs
   input DAE.Exp inExp4 "Note: aldready simplified"; // rhs
+  input Integer index;
+  input Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (origExp,inOperator2,inExp3,inExp4)
@@ -4668,7 +4670,7 @@ algorithm
       Type ty,ty2,tp,tp2,ty1;
       list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
-      Boolean b;
+      Boolean b ,b1;
       Real r;
       Option<DAE.Exp> oexp;
 
@@ -4692,16 +4694,65 @@ algorithm
         true = ComponentReference.crefEqual(cr1,cr2);
       then DAE.BCONST(false);
 
+    // a >= b
     case(_,DAE.GREATEREQ(),_,_)
-      equation
-        true = Expression.isPositiveOrZero(inExp3);
-        true = Expression.isNegativeOrZero(inExp4);
-      then DAE.BCONST(true);
-
+      then simplifyRelation2(origExp,inOperator2, inExp3,inExp4, index,optionExpisASUB,Expression.isPositiveOrZero);
+     // a > b
+    case(_,DAE.GREATER(),_,_)
+      then simplifyRelation2(origExp,inOperator2, inExp3,inExp4, index,optionExpisASUB,Expression.isPositiveOrZero);
+    // a <= b
+    case(_,DAE.LESSEQ(),_,_)
+      then simplifyRelation2(origExp,inOperator2, inExp4,inExp3, index,optionExpisASUB,Expression.isPositiveOrZero);
+    // a < b
+    case(_,DAE.LESS(),_,_)
+      then simplifyRelation2(origExp,inOperator2, inExp4,inExp3, index,optionExpisASUB,Expression.isPositiveOrZero);
+      
     else origExp;
 
   end matchcontinue;
 end simplifyRelation;
+
+protected function simplifyRelation2
+"This function simplifies logical binary expressions."
+  input DAE.Exp origExp;
+  input Operator inOp;
+  input DAE.Exp lhs "Note: already simplified";
+  input DAE.Exp rhs "Note: aldready simplified";
+  input Integer index;
+  input Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
+  input Fun isPositive;
+  output DAE.Exp oExp;
+
+  partial function Fun
+    input DAE.Exp x;
+    output Boolean positive;
+  end Fun;
+
+protected
+  Boolean b;
+  Type tp;
+algorithm
+  oExp := Expression.expSub(lhs, rhs);
+  (oExp,b) := simplify(oExp);
+  if Expression.isGreatereqOrLesseq(inOp) and isPositive(oExp) then
+    oExp := DAE.BCONST(true);
+/*
+  elseif b and not (Expression.isConstValue(rhs) or Expression.isConstValue(lhs)) then
+    tp := Expression.typeof(oExp);
+    oExp := if Expression.isLesseqOrLess(inOp) then
+                 DAE.RELATION(Expression.makeConstZero(tp), inOp, oExp, index,optionExpisASUB)
+            else DAE.RELATION(oExp, inOp,Expression.makeConstZero(tp),index,optionExpisASUB);
+*/
+  else
+    if Expression.isGreatereqOrLesseq(inOp) then 
+      oExp := origExp;
+    else
+      oExp := Expression.negate(oExp);
+      (oExp,_) := simplify(oExp);
+      oExp := if isPositive(oExp) then DAE.BCONST(false) else origExp;
+    end if;
+  end if;
+end simplifyRelation2;
 
 protected function simplifyBinaryDistributePow
 "author: PA

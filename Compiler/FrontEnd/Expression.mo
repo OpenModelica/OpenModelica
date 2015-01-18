@@ -6889,6 +6889,8 @@ public function isPositiveOrZero
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
+
+
   outBoolean := match (inExp)
     local
       Boolean b,b1,b2,b3;
@@ -6934,7 +6936,7 @@ algorithm
       then b1 and b;
     case DAE.BINARY(_,DAE.POW(),e2) then isEven(e2);
     // -(x)
-    case DAE.UNARY(DAE.UMINUS(), e1) then not isPositiveOrZero(e1);
+    case DAE.UNARY(DAE.UMINUS(), e1) then isNegativeOrZero(e1);
     else isZero(inExp);
 
   end match;
@@ -7513,6 +7515,29 @@ algorithm
     else false;
   end match;
 end isConstMinusOne;
+
+
+public function isGreatereqOrLesseq
+  input DAE.Operator op;
+  output Boolean b;
+algorithm
+  b := match(op)
+       case(DAE.GREATEREQ()) then true;
+       case(DAE.LESSEQ()) then true;
+       else false;
+       end match;
+end isGreatereqOrLesseq;
+
+public function isLesseqOrLess
+  input DAE.Operator op;
+  output Boolean b;
+algorithm
+  b := match(op)
+       case(DAE.LESS()) then true;
+       case(DAE.LESSEQ()) then true;
+       else false;
+       end match;
+end isLesseqOrLess;
 
 
 public function containVectorFunctioncall
