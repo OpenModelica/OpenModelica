@@ -755,14 +755,14 @@ algorithm
       Boolean b;
     case (_, _)
       equation
-        if Config.acceptMetaModelicaGrammar()
-        then // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
+        if Config.acceptMetaModelicaGrammar() then
+          // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
           b = true;
         else // compare
-         ty1 = Expression.typeof(inExp1);
-         ty2 = Expression.typeof(inExp2);
-         ty2 = Types.traverseType(ty2, -1, Types.makeExpDimensionsUnknown);
-         b = Types.equivtypes(ty1,ty2);
+          ty1 = Expression.typeof(inExp1);
+          ty2 = Expression.typeof(inExp2);
+          ty2 = Types.traverseType(ty2, -1, Types.makeExpDimensionsUnknown);
+          b = Types.equivtypes(ty1,ty2);
         end if;
       then b;
   end match;

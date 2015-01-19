@@ -9115,7 +9115,7 @@ public function dimensionsEqualAllowZero
   input DAE.Dimension dim2;
   output Boolean res;
 algorithm
-  res := matchcontinue(dim1, dim2)
+  res := match(dim1, dim2)
     local
       Boolean b;
       Integer d1, d2;
@@ -9136,7 +9136,7 @@ algorithm
                 boolAnd(intEq(d2,0), intNe(d1,0))));
       then
         b;
-  end matchcontinue;
+  end match;
 end dimensionsEqualAllowZero;
 
 public function dimensionsKnownAndEqual
@@ -9157,14 +9157,14 @@ public function dimensionKnown
   input DAE.Dimension dim;
   output Boolean known;
 algorithm
-  known := matchcontinue(dim)
+  known := match(dim)
     case DAE.DIM_UNKNOWN() then false;
     case DAE.DIM_EXP(exp = DAE.ICONST()) then true;
     case DAE.DIM_EXP(exp = DAE.BCONST()) then true;
     case DAE.DIM_EXP(exp = DAE.ENUM_LITERAL()) then true;
     case DAE.DIM_EXP() then false;
-    case _ then true;
-  end matchcontinue;
+    else true;
+  end match;
 end dimensionKnown;
 
 public function dimensionKnownAndNonZero
@@ -9172,11 +9172,11 @@ public function dimensionKnownAndNonZero
   input DAE.Dimension dim;
   output Boolean known;
 algorithm
-  known := matchcontinue(dim)
+  known := match(dim)
     case DAE.DIM_EXP(exp = DAE.ICONST(0)) then false;
     case DAE.DIM_INTEGER(0) then false;
     else dimensionKnown(dim);
-  end matchcontinue;
+  end match;
 end dimensionKnownAndNonZero;
 
 public function dimensionsKnownAndNonZero
@@ -9193,12 +9193,22 @@ public function dimensionUnknownOrExp
   input DAE.Dimension dim;
   output Boolean known;
 algorithm
-  known := matchcontinue(dim)
+  known := match(dim)
     case DAE.DIM_UNKNOWN() then true;
     case DAE.DIM_EXP() then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end dimensionUnknownOrExp;
+
+public function dimensionUnknown
+  input DAE.Dimension inDimension;
+  output Boolean outUnknown;
+algorithm
+  outUnknown := match(inDimension)
+    case DAE.DIM_UNKNOWN() then true;
+    else false;
+  end match;
+end dimensionUnknown;
 
 public function subscriptEqual
 "Returns true if two subscript lists are equal."
@@ -11988,6 +11998,27 @@ algorithm
     else false;
   end match;
 end isAsubExp;
+
+public function typeCast
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  output DAE.Exp outExp;
+algorithm
+  outExp := DAE.CAST(inType, inExp);
+  outExp := ExpressionSimplify.simplify1(outExp);
+end typeCast;
+
+public function typeCastElements
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  output DAE.Exp outExp;
+protected
+  DAE.Type ty;
+algorithm
+  ty := typeof(inExp);
+  ty := Types.setArrayElementType(ty, inType);
+  outExp := typeCast(inExp, ty);
+end typeCastElements;
 
 annotation(__OpenModelica_Interface="frontend");
 end Expression;

@@ -493,7 +493,7 @@ algorithm
           inEnv, true_e, inImplicit, st, inDoVect, inPrefix, inInfo);
         (outCache, false_exp, false_prop, outST) := elabExpInExpression(outCache,
           inEnv, false_e, inImplicit, outST, inDoVect, inPrefix, inInfo);
-        (outCache, outExp, outProperties) := makeIfexp(outCache, inEnv, cond_exp,
+        (outCache, outExp, outProperties) := makeIfExp(outCache, inEnv, cond_exp,
           cond_prop, true_exp, true_prop, false_exp, false_prop, inImplicit,
           outST, inPrefix, inInfo);
         ErrorExt.delCheckpoint("Static.elabExp:IFEXP");
@@ -1912,7 +1912,7 @@ algorithm
         (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
         (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         (cache,e3_1,prop3) = elabGraphicsExp(cache,env, e3, impl,pre,info);
-        (cache,e_1,prop) = makeIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl,NONE(),pre, info);
+        (cache,e_1,prop) = makeIfExp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl,NONE(),pre, info);
       then
         (cache,e_1,prop);
 
@@ -12140,181 +12140,98 @@ algorithm
   end matchcontinue;
 end subscriptType;
 
-protected function makeIfexp "This function elaborates on the parts of an if expression."
+protected function makeIfExp
   input FCore.Cache inCache;
-  input FCore.Graph inEnv1;
-  input DAE.Exp inExp2;
-  input DAE.Properties inProperties3;
-  input DAE.Exp inExp4;
-  input DAE.Properties inProperties5;
-  input DAE.Exp inExp6;
-  input DAE.Properties inProperties7;
-  input Boolean inBoolean8;
+  input FCore.Graph inEnv;
+  input DAE.Exp inCondition;
+  input DAE.Properties inCondProp;
+  input DAE.Exp inTrueBranch;
+  input DAE.Properties inTrueProp;
+  input DAE.Exp inFalseBranch;
+  input DAE.Properties inFalseProp;
+  input Boolean inImplicit;
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache;
+  output FCore.Cache outCache := inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+protected
+  Boolean ty_match, cond;
+  DAE.Type cond_ty, true_ty, false_ty, true_ty2, false_ty2, exp_ty;
+  DAE.Const cond_c, true_c, false_c, exp_c;
+  String cond_str, cond_ty_str, e1_str, e2_str, ty1_str, ty2_str, pre_str;
+  DAE.Exp cond_exp, true_exp, false_exp;
 algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv1,inExp2,inProperties3,inExp4,inProperties5,inExp6,inProperties7,inBoolean8,inST,inPrefix,inInfo)
-    local
-      DAE.Const c,c1,c2,c3;
-      DAE.Exp exp,e1,e2,e3,e2_1,e3_1;
-      FCore.Graph env;
-      DAE.Type t2,t3,t2_1,t3_1,t1,ty;
-      Boolean impl;
-      Option<GlobalScript.SymbolTable> st;
-      String e_str,t_str,e1_str,t1_str,e2_str,t2_str,pre_str;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
+  // Check that the condition is a boolean expression.
+  DAE.PROP(type_ = cond_ty, constFlag = cond_c) := inCondProp;
+  (cond_exp, _, ty_match) := Types.matchTypeNoFail(inCondition, cond_ty, DAE.T_BOOL_DEFAULT);
 
-    /*
-    case (cache,env,e1,DAE.PROP(type_ = DAE.T_BOOL(varLst = _),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
-      equation
-        true = Types.semiEquivTypes(t2, t3);
-        c = constIfexp(e1, c1, c2, c3);
-        (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2, e3, c1, impl, st, inInfo);
-      then
-        (cache,exp,DAE.PROP(t2,c));
-    */
+  // Print an error message and fail if the condition is not a boolean expression.
+  if not ty_match then
+    cond_str := ExpressionDump.printExpStr(inCondition);
+    cond_ty_str := Types.unparseTypeNoAttr(cond_ty);
+    Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
+      {cond_str, cond_ty_str}, inInfo);
+  end if;
+    
+  // Check that both branches are type compatible.
+  DAE.PROP(type_ = true_ty, constFlag = true_c) := inTrueProp;
+  DAE.PROP(type_ = false_ty, constFlag = false_c) := inFalseProp;
 
-    case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
-      equation
-        (e1,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true);
-        (t2_1,t3_1) = Types.ifExpMakeDimsUnknown(t2,t3);
-        t2_1 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t2_1);
-        t3_1 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t3_1);
-        (e2_1,t2_1) = Types.matchType(e2, t2_1, t3_1, true);
-        c = constIfexp(e1, c1, c2, c3) "then-part type converted to match else-part" ;
-        (cache,exp,ty) = cevalIfexpIfConstant(cache,env, e1, e2_1, e3, c1, t2, t3, t2_1, impl, st, inInfo);
-      then
-        (cache,exp,DAE.PROP(ty,c));
+  (true_exp, false_exp, exp_ty, ty_match) :=
+    Types.checkTypeCompat(inTrueBranch, true_ty, inFalseBranch, false_ty);
 
-    case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
-      equation
-        (e1,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true);
-        (_,t3_1) = Types.ifExpMakeDimsUnknown(t2,t3);
-        t2 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t2);
-        t3 = Types.getUniontypeIfMetarecordReplaceAllSubtypes(t3);
-        (e3_1,t3_1) = Types.matchType(e3, t3, t2, true);
-        c = constIfexp(e1, c1, c2, c3) "else-part type converted to match then-part" ;
-        (cache,exp,_) = cevalIfexpIfConstant(cache,env, e1, e2, e3_1, c1, t2, t3, t3_1, impl, st, inInfo);
-      then
-        (cache,exp,DAE.PROP(t2,c));
-
-    case (_,_,e1,DAE.PROP(type_ = t1),_,DAE.PROP(),_,DAE.PROP(),_,_,pre,_)
-      equation
-        failure((_,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true));
-        e_str = ExpressionDump.printExpStr(e1);
-        t_str = Types.unparseTypeNoAttr(t1);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        t_str = t_str + " (in component: "+pre_str+")";
-        Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str}, inInfo);
-      then
-        fail();
-
-    case (_,_,_,DAE.PROP(type_ = DAE.T_BOOL()),e2,DAE.PROP(type_ = t2),e3,DAE.PROP(type_ = t3),_,_,pre,_)
-      equation
-        false = Types.semiEquivTypes(t2, t3);
-        e1_str = ExpressionDump.printExpStr(e2);
-        t1_str = Types.unparseTypeNoAttr(t2);
-        e2_str = ExpressionDump.printExpStr(e3);
-        t2_str = Types.unparseTypeNoAttr(t3);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Types.typeErrorSanityCheck(t1_str, t2_str, inInfo);
-        Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP, {pre_str,e1_str,t1_str,e2_str,t2_str}, inInfo);
-      then
-        fail();
-
+  // If the compatible type is an array with some unknown dimensions, and we're
+  // not in a function, then we need to choose one of the branches.
+  if Types.arrayHasUnknownDims(exp_ty) and not FGraph.inFunctionScope(inEnv) then
+    // Check if the condition is reasonably constant, so we can evaluate it.
+    if Types.isParameterOrConstant(cond_c) then
+      cond_c := DAE.C_CONST();
     else
-      equation
-        Print.printBuf("- Static.makeIfexp failed\n");
-      then
-        fail();
-  end matchcontinue;
-end makeIfexp;
+      // Otherwise it's a type error.
+      ty_match := false;
+    end if;
+  end if;
 
-protected function cevalIfexpIfConstant "author: PA
-  Constant evaluates the condition of an expression if it is constants and
-  elimitates the if expressions by selecting branch."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv1;
-  input DAE.Exp inExp2;
-  input DAE.Exp inExp3;
-  input DAE.Exp inExp4;
-  input DAE.Const inConst5;
-  input DAE.Type trueType;
-  input DAE.Type falseType;
-  input DAE.Type defaultType;
-  input Boolean inBoolean6;
-  input Option<GlobalScript.SymbolTable> inST;
-  input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Type outType;
-algorithm
-  (outCache,outExp,outType) :=
-  matchcontinue (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,trueType,falseType,defaultType,inBoolean6,inST,inInfo)
-    local
-      FCore.Graph env;
-      DAE.Exp e1,e2,e3,res;
-      Boolean impl,cond;
-      Option<GlobalScript.SymbolTable> st;
-      FCore.Cache cache;
-      Absyn.Msg msg;
-      DAE.Type ty;
+  // If the types are not matching, print an error and fail.
+  if not ty_match then
+    e1_str := ExpressionDump.printExpStr(inTrueBranch);
+    e2_str := ExpressionDump.printExpStr(inFalseBranch);
+    ty1_str := Types.unparseTypeNoAttr(true_ty);
+    ty2_str := Types.unparseTypeNoAttr(false_ty);
+    pre_str := PrefixUtil.printPrefixStr3(inPrefix);
+   // print("True Type: " + anyString(true_ty) + "\n");
+   // print("False Type: " + anyString(false_ty) + "\n");
+    Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_IF_EXP,
+      {pre_str, e1_str, ty1_str, e2_str, ty2_str}, inInfo);
+  end if;
 
-    case (cache,_,e1,e2,e3,DAE.C_VAR(),_,_,_,_,_,_) then (cache,DAE.IFEXP(e1,e2,e3),defaultType);
-    case (cache,env,e1,e2,e3,DAE.C_PARAM(),_,_,_,impl,st,_)
-      equation
-        false = valueEq(Types.getDimensionSizes(trueType),Types.getDimensionSizes(falseType));
-        // We have different dimensions in the branches, so we should consider the condition structural in order to handle more models
-        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st, Absyn.NO_MSG(),0);
-        res = if cond then e2 else e3;
-        ty = if cond then trueType else falseType;
-      then (cache,res,ty);
-    case (cache,_,e1,e2,e3,DAE.C_PARAM(),_,_,_,_,_,_) then (cache,DAE.IFEXP(e1,e2,e3),defaultType);
-    case (cache,env,e1,e2,e3,DAE.C_CONST(),_,_,_,impl,st,_)
-      equation
-        msg = if FGraph.inFunctionScope(env) or FGraph.inForOrParforIterLoopScope(env) then Absyn.NO_MSG() else Absyn.MSG(inInfo);
-        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,msg,0);
-        res = if cond then e2 else e3;
-        ty = if cond then trueType else falseType;
-      then
-        (cache,res,ty);
-    // Allow ceval of constant if expressions to fail. This is needed because of
-    // the stupid Lookup which instantiates packages without modifiers.
-    case (cache,env,e1,e2,e3,DAE.C_CONST(),_,_,_,_,_,_)
-      equation
-        true = FGraph.inFunctionScope(env) or FGraph.inForOrParforIterLoopScope(env);
-      then
-        (cache, DAE.IFEXP(e1, e2, e3),defaultType);
+  if Types.isConstant(cond_c) then
+    // If the condition is constant, try to evaluate it and choose a branch.
+    try
+      (outCache, Values.BOOL(cond), _) := Ceval.ceval(inCache, inEnv, cond_exp,
+        inImplicit, inST, Absyn.NO_MSG(), 0);
+      
+      if cond then
+        outExp := true_exp;
+        outProperties := inTrueProp;
+      else
+        outExp := false_exp;
+        outProperties := inFalseProp;
+      end if;
 
-  end matchcontinue;
-end cevalIfexpIfConstant;
+      // Evaluation succeeded, return the chosen branch.
+      return;
+    else
+    end try;
+  end if;
 
-protected function constIfexp "Tests wether an *if* expression is constant.  This is done by
-  first testing if the conditional is constant, and if so evaluating
-  it to see which branch should be tested for constant-ness.
-  This will miss some occations where the expression actually
-  is constant, as in the expression *if x then 1.0 else 1.0*"
-  input DAE.Exp inExp1;
-  input DAE.Const inConst2;
-  input DAE.Const inConst3;
-  input DAE.Const inConst4;
-  output DAE.Const outConst;
-algorithm
-  outConst := match (inExp1,inConst2,inConst3,inConst4)
-    local DAE.Const const,c1,c2,c3;
-    case (_,c1,c2,c3)
-      equation
-        const = List.fold({c1,c2,c3}, Types.constAnd, DAE.C_CONST());
-      then
-        const;
-  end match;
-end constIfexp;
+  // If the condition is not constant or ceval failed, create an if-expression.
+  exp_c := Types.constAnd(c for c in {cond_c, false_c, true_c});
+  outExp := DAE.IFEXP(cond_exp, true_exp, false_exp);
+  outProperties := DAE.PROP(exp_ty, exp_c);
+end makeIfExp;
 
 protected function canonCref2 "This function relates a DAE.ComponentRef to its canonical form,
   which is when all subscripts are evaluated to constant values.
@@ -12343,7 +12260,7 @@ algorithm
     case (cache,env,DAE.CREF_IDENT(ident = n,identType = ty2, subscriptLst = ss),prefixCr,impl) /* impl */
       equation
         cr = ComponentReference.crefPrependIdent(prefixCr,n,{},ty2);
-        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,_,t) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Absyn.NO_MSG(),0);
       then
@@ -12413,104 +12330,6 @@ algorithm
   end matchcontinue;
 end canonCref;
 
-public function eqCref "- Equality functions
-  function: eqCref
-
-  This function checks if two component references can be considered
-  equal and fails if not.  Two component references are equal if all
-  corresponding identifiers are the same, and if the subscripts are
-  equal, according to the function `eq_subscripts\'.
-"
-  input DAE.ComponentRef inComponentRef1;
-  input DAE.ComponentRef inComponentRef2;
-algorithm
-  _:=
-  match (inComponentRef1,inComponentRef2)
-    local
-      String n1,n2;
-      list<DAE.Subscript> s1,s2;
-      DAE.ComponentRef c1,c2;
-    case (DAE.CREF_IDENT(ident = n1,subscriptLst = s1),DAE.CREF_IDENT(ident = n2,subscriptLst = s2))
-      equation
-        true = stringEq(n1, n2);
-        eqSubscripts(s1, s2);
-      then
-        ();
-    case (DAE.CREF_QUAL(ident = n1,subscriptLst = s1,componentRef = c1),DAE.CREF_QUAL(ident = n2,subscriptLst = s2,componentRef = c2))
-      equation
-        true = stringEq(n1, n2);
-        eqSubscripts(s1, s2);
-        eqCref(c1, c2);
-      then
-        ();
-  end match;
-end eqCref;
-
-protected function eqSubscripts "
-  Two list of subscripts are equal if they are of equal length and
-  all their elements are pairwise equal according to the function
-  `eq_subscript\'.
-"
-  input list<DAE.Subscript> inExpSubscriptLst1;
-  input list<DAE.Subscript> inExpSubscriptLst2;
-algorithm
-  _:=
-  match (inExpSubscriptLst1,inExpSubscriptLst2)
-    local
-      DAE.Subscript s1,s2;
-      list<DAE.Subscript> ss1,ss2;
-    case ({},{}) then ();
-    case ((s1 :: ss1),(s2 :: ss2))
-      equation
-        eqSubscript(s1, s2);
-        eqSubscripts(ss1, ss2);
-      then
-        ();
-  end match;
-end eqSubscripts;
-
-protected function eqSubscript "This function test whether two subscripts are equal.
-  Two subscripts are equal if they have the same constructor, and
-  if all corresponding expressions are either syntactically equal,
-  or if they have the same constant value."
-  input DAE.Subscript inSubscript1;
-  input DAE.Subscript inSubscript2;
-algorithm
-  _ := match (inSubscript1,inSubscript2)
-    local DAE.Exp s1,s2;
-    case (DAE.WHOLEDIM(),DAE.WHOLEDIM()) then ();
-    case (DAE.INDEX(exp = s1),DAE.INDEX(exp = s2))
-      equation
-        true = Expression.expEqual(s1, s2);
-      then
-        ();
-  end match;
-end eqSubscript;
-
-protected function elementType "Returns the element type of a type, i.e. for arrays, return the
-  element type, and for bulitin scalar types return the type itself."
-  input DAE.Type inType;
-  output DAE.Type outType;
-algorithm
-  outType := match (inType)
-    local DAE.Type t,t_1;
-    case ((t as DAE.T_INTEGER())) then t;
-    case ((t as DAE.T_REAL())) then t;
-    case ((t as DAE.T_STRING())) then t;
-    case ((t as DAE.T_BOOL())) then t;
-    case ((t as DAE.T_CLOCK())) then t;
-    case (DAE.T_ARRAY(ty = t))
-      equation
-        t_1 = elementType(t);
-      then
-        t_1;
-    case (DAE.T_SUBTYPE_BASIC(complexType = t))
-      equation
-        t_1 = elementType(t);
-      then t_1;
-  end match;
-end elementType;
-
 protected function unevaluatedFunctionVariability
   "In a function we might have input arguments with unknown dimensions, and in
   that case we can't expand calls such as fill. A function call is therefore
@@ -12526,17 +12345,16 @@ protected function unevaluatedFunctionVariability
   input FCore.Graph inEnv;
   output DAE.Const outConst;
 algorithm
-  outConst := matchcontinue(inEnv)
-    case _ equation true = FGraph.inFunctionScope(inEnv); then DAE.C_VAR();
-    case _ equation true = Flags.getConfigBool(Flags.CHECK_MODEL); then DAE.C_UNKNOWN();
+  if FGraph.inFunctionScope(inEnv) then
+    outConst := DAE.C_VAR();
+  elseif Flags.getConfigBool(Flags.CHECK_MODEL) or Config.splitArrays() then
     // bug #2113, seems that there is nothing in the specs
     // that requires that fill arguments are of parameter/constant
     // variability, so allow it.
-    else
-      equation
-        true = Config.splitArrays();
-      then DAE.C_UNKNOWN();
-  end matchcontinue;
+    outConst := DAE.C_UNKNOWN();
+  else
+    fail();
+  end if;
 end unevaluatedFunctionVariability;
 
 protected function slotAnd
@@ -12558,7 +12376,7 @@ public function elabCodeExp
   input SourceInfo info;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (exp,cache,env,ct,st,info)
+  outExp := matchcontinue (exp,ct)
     local
       String s1,s2;
       Absyn.ComponentRef cr;
@@ -12573,7 +12391,7 @@ algorithm
       DAE.CodeType ct2;
 
     // first; try to elaborate the exp (maybe there is a binding in the environment that says v is a VariableName
-    case (_,_,_,_,_,_)
+    case (_,_)
       equation
         // adrpo: be very careful with this as it can take quite a long time, for example a call to:
         //        getDerivedClassModifierValue(Modelica.Fluid.Vessels.BaseClasses.PartialLumpedVessel.Medium.MassFlowRate,unit);
@@ -12584,34 +12402,34 @@ algorithm
         dexp;
 
     // Expression
-    case (_,_,_,DAE.C_EXPRESSION(),_,_)
+    case (_,DAE.C_EXPRESSION())
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
 
     // Type Name
-    case (Absyn.CREF(componentRef=cr),_,_,DAE.C_TYPENAME(),_,_)
+    case (Absyn.CREF(componentRef=cr),DAE.C_TYPENAME())
       equation
         path = Absyn.crefToPath(cr);
       then DAE.CODE(Absyn.C_TYPENAME(path),DAE.T_UNKNOWN_DEFAULT);
 
     // Variable Names
-    case (Absyn.ARRAY(es),_,_,DAE.C_VARIABLENAMES(),_,_)
+    case (Absyn.ARRAY(es),DAE.C_VARIABLENAMES())
       equation
         es_1 = List.map5(es,elabCodeExp,cache,env,DAE.C_VARIABLENAME(),st,info);
         i = listLength(es);
         et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(i)}, DAE.emptyTypeSource);
       then DAE.ARRAY(et,false,es_1);
 
-    case (_,_,_,DAE.C_VARIABLENAMES(),_,_)
+    case (_,DAE.C_VARIABLENAMES())
       equation
         et = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
         dexp = elabCodeExp(exp,cache,env,DAE.C_VARIABLENAME(),st,info);
       then DAE.ARRAY(et,false,{dexp});
 
     // Variable Name
-    case (Absyn.CREF(componentRef=cr),_,_,DAE.C_VARIABLENAME(),_,_)
+    case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME())
       then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.T_UNKNOWN_DEFAULT);
 
-    case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF()},argNames={})),_,_,DAE.C_VARIABLENAME(),_,_)
+    case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF()},argNames={})),DAE.C_VARIABLENAME())
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
 
     // failure
@@ -12637,7 +12455,7 @@ public function elabCodeExp_dispatch
   input Absyn.Info info;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (exp,cache,env,ct,st,info)
+  outExp := matchcontinue exp
     local
       String s1,s2;
       Absyn.ComponentRef cr;
@@ -12653,27 +12471,27 @@ algorithm
       Absyn.Ident id;
 
     // for a component reference make sure the first ident is either "OpenModelica" or not a class
-    case (Absyn.CREF(componentRef=cr),_,_,_,_,_)
+    case Absyn.CREF(componentRef=cr)
       equation
         ErrorExt.setCheckpoint("elabCodeExp_dispatch1");
         id = Absyn.crefFirstIdent(cr);
-        _ = matchcontinue(id)
-          case (_) // if the first one is OpenModelica, search
+        _ = matchcontinue()
+          case () // if the first one is OpenModelica, search
             equation
               true = id == "OpenModelica";
               (_,dexp,prop,_) = elabExpInExpression(cache,env,exp,false,st,false,Prefix.NOPRE(),info);
             then
               ();
 
-          case (_) // not a class or OpenModelica, continue
+          case () // not a class or OpenModelica, continue
             equation
               failure((_,_,_) = Lookup.lookupClass(cache, env, Absyn.IDENT(id), false));
               (_,dexp,prop,_) = elabExpInExpression(cache,env,exp,false,st,false,Prefix.NOPRE(),info);
             then
               ();
 
-          else // a class which is not OpenModelica, fail
-            then fail();
+          // a class which is not OpenModelica, fail
+          else fail();
         end matchcontinue;
         DAE.T_CODE(ty=ct2) = Types.getPropType(prop);
         true = valueEq(ct,ct2);
@@ -12681,12 +12499,12 @@ algorithm
         // print(ExpressionDump.printExpStr(dexp) + " " + Types.unparseType(ty) + "\n");
       then dexp;
 
-    case (Absyn.CREF(),_,_,_,_,_)
+    case Absyn.CREF()
       equation
         ErrorExt.rollBack("elabCodeExp_dispatch1");
       then fail();
 
-    case (_,_,_,_,_,_)
+    case _
       equation
         false = Absyn.isCref(exp);
         ErrorExt.setCheckpoint("elabCodeExp_dispatch");
@@ -12697,7 +12515,7 @@ algorithm
         // print(ExpressionDump.printExpStr(dexp) + " " + Types.unparseType(ty) + "\n");
       then dexp;
 
-    case (_,_,_,_,_,_)
+    else
       equation
         false = Absyn.isCref(exp);
         ErrorExt.rollBack("elabCodeExp_dispatch");
