@@ -551,7 +551,7 @@ algorithm
     then (stmts, leftCrs);
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function inlineWhenForInitializationWhenStmt failed", sourceInfo());
+      Error.addInternalError("function inlineWhenForInitializationWhenStmt failed", sourceInfo());
     then fail();
 
   end matchcontinue;
@@ -1251,7 +1251,7 @@ algorithm
     then (inVars, inEqs, iB, inDumpVars);
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function preBalanceInitialSystem1 failed", sourceInfo());
+      Error.addInternalError("function preBalanceInitialSystem1 failed", sourceInfo());
     then fail();
   end matchcontinue;
 end preBalanceInitialSystem2;
@@ -1359,7 +1359,7 @@ algorithm
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
     else //equation
-      //Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function analyzeInitialSystem2 failed");
+      //Error.addInternalError("function analyzeInitialSystem2 failed", sourceInfo());
     then fail();
   end matchcontinue;
 end analyzeInitialSystem2;
@@ -1595,7 +1595,7 @@ algorithm
     then (eqns, var::dumpVars);
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function addStartValueEquations failed", sourceInfo());
+      Error.addInternalError("function addStartValueEquations failed", sourceInfo());
     then fail();
   end matchcontinue;
 end addStartValueEquations;
@@ -2474,7 +2474,7 @@ algorithm
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed for: " + BackendDump.varString(inVar), sourceInfo());
+        Error.addInternalError("function collectInitialVars failed for: " + BackendDump.varString(inVar), sourceInfo());
       then fail();
 
   end matchcontinue;
@@ -2566,7 +2566,7 @@ algorithm
 
     else
       equation
-        Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed for: " + BackendDump.varString(inVar), sourceInfo());
+        Error.addInternalError("function collectInitialBindings failed for: " + BackendDump.varString(inVar), sourceInfo());
       then fail();
 
   end match;
