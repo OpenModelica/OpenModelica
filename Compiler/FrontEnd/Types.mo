@@ -5512,7 +5512,7 @@ public function isBoxedType
   input DAE.Type ty;
   output Boolean b;
 algorithm
-  b := match ty 
+  b := match ty
     case DAE.T_STRING() then true;
     case DAE.T_METAOPTION() then true;
     case DAE.T_METALIST() then true;
@@ -8683,7 +8683,7 @@ algorithm
     // metarecords actually have uniontype type.
     case (DAE.T_METARECORD(), DAE.T_METAUNIONTYPE(source = {path}))
       algorithm
-        outCompatible := Absyn.pathEqual(ty1.utPath, path); 
+        outCompatible := Absyn.pathEqual(ty1.utPath, path);
       then
         ty2;
 
@@ -8716,7 +8716,7 @@ algorithm
 
   end match;
 end checkTypeCompat_cast;
-        
+
 public function arrayHasUnknownDims
   "Checks if an array type has dimensions which are unknown."
   input DAE.Type inType;
@@ -8730,6 +8730,6 @@ algorithm
     else false;
   end match;
 end arrayHasUnknownDims;
-    
+
 annotation(__OpenModelica_Interface="frontend");
 end Types;

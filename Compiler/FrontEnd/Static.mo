@@ -12174,7 +12174,7 @@ algorithm
     Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR,
       {cond_str, cond_ty_str}, inInfo);
   end if;
-    
+
   // Check that both branches are type compatible.
   DAE.PROP(type_ = true_ty, constFlag = true_c) := inTrueProp;
   DAE.PROP(type_ = false_ty, constFlag = false_c) := inFalseProp;
@@ -12212,7 +12212,7 @@ algorithm
     try
       (outCache, Values.BOOL(cond), _) := Ceval.ceval(inCache, inEnv, cond_exp,
         inImplicit, inST, Absyn.NO_MSG(), 0);
-      
+
       if cond then
         outExp := true_exp;
         outProperties := inTrueProp;
