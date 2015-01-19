@@ -904,7 +904,7 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(50, "tearingHeuristic",
     Util.gettext("Sets the tearing heuristic to use for Cellier-tearing."));
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(51, "hpcomCode",
-  NONE(), EXTERNAL(), STRING_FLAG("pthreads"), NONE(),
+  NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
   Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | tbb | mpi). Default: openmp."));
 
 constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(52, "rewriteRulesFile", NONE(), EXTERNAL(),
