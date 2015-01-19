@@ -6988,85 +6988,76 @@ public function createModelInfo
   input Integer numStateSets;
   input String fileDir;
   output SimCode.ModelInfo modelInfo;
+protected
+  String description,directory;
+  SimCode.VarInfo varInfo;
+  SimCodeVar.SimVars vars;
+  list<SimCodeVar.SimVar> stateVars;
+  list<SimCodeVar.SimVar> derivativeVars;
+  list<SimCodeVar.SimVar> algVars;
+  list<SimCodeVar.SimVar> discreteAlgVars;
+  list<SimCodeVar.SimVar> intAlgVars;
+  list<SimCodeVar.SimVar> boolAlgVars;
+  list<SimCodeVar.SimVar> inputVars;
+  list<SimCodeVar.SimVar> outputVars;
+  list<SimCodeVar.SimVar> aliasVars;
+  list<SimCodeVar.SimVar> intAliasVars;
+  list<SimCodeVar.SimVar> boolAliasVars;
+  list<SimCodeVar.SimVar> paramVars;
+  list<SimCodeVar.SimVar> intParamVars;
+  list<SimCodeVar.SimVar> boolParamVars;
+  list<SimCodeVar.SimVar> stringAlgVars;
+  list<SimCodeVar.SimVar> stringParamVars;
+  list<SimCodeVar.SimVar> stringAliasVars;
+  list<SimCodeVar.SimVar> extObjVars;
+  list<SimCodeVar.SimVar> constVars;
+  list<SimCodeVar.SimVar> intConstVars;
+  list<SimCodeVar.SimVar> boolConstVars;
+  list<SimCodeVar.SimVar> stringConstVars;
+  list<SimCodeVar.SimVar> jacobianVars;
+  list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
+  list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
+  Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints;
+  Integer na_bool, ny_string, np_string, na_string;
+  list<SimCodeVar.SimVar> states1, states_lst, states_lst2, der_states_lst;
+  list<SimCodeVar.SimVar> states_2, derivatives_2;
 algorithm
-  modelInfo :=
-  matchcontinue (class_, dlow, functions, labels, numInitialEquations, numInitialAlgorithms, numStateSets, fileDir)
-    local
-      String description,directory;
-      SimCode.VarInfo varInfo;
-      SimCodeVar.SimVars vars;
-      list<SimCodeVar.SimVar> stateVars;
-      list<SimCodeVar.SimVar> derivativeVars;
-      list<SimCodeVar.SimVar> algVars;
-      list<SimCodeVar.SimVar> discreteAlgVars;
-      list<SimCodeVar.SimVar> intAlgVars;
-      list<SimCodeVar.SimVar> boolAlgVars;
-      list<SimCodeVar.SimVar> inputVars;
-      list<SimCodeVar.SimVar> outputVars;
-      list<SimCodeVar.SimVar> aliasVars;
-      list<SimCodeVar.SimVar> intAliasVars;
-      list<SimCodeVar.SimVar> boolAliasVars;
-      list<SimCodeVar.SimVar> paramVars;
-      list<SimCodeVar.SimVar> intParamVars;
-      list<SimCodeVar.SimVar> boolParamVars;
-      list<SimCodeVar.SimVar> stringAlgVars;
-      list<SimCodeVar.SimVar> stringParamVars;
-      list<SimCodeVar.SimVar> stringAliasVars;
-      list<SimCodeVar.SimVar> extObjVars;
-      list<SimCodeVar.SimVar> constVars;
-      list<SimCodeVar.SimVar> intConstVars;
-      list<SimCodeVar.SimVar> boolConstVars;
-      list<SimCodeVar.SimVar> stringConstVars;
-      list<SimCodeVar.SimVar> jacobianVars;
-      list<SimCodeVar.SimVar> realOptimizeConstraintsVars;
-      list<SimCodeVar.SimVar> realOptimizeFinalConstraintsVars;
-      Integer nx, ny, ndy, np, na, next, numOutVars, numInVars, ny_int, np_int, na_int, ny_bool, np_bool, dim_1, dim_2, numOptimizeConstraints, numOptimizeFinalConstraints;
-      Integer na_bool, ny_string, np_string, na_string;
-      list<SimCodeVar.SimVar> states1, states_lst, states_lst2, der_states_lst;
-      list<SimCodeVar.SimVar> states_2, derivatives_2;
-
-
-    case (_, _, _, _, _, _, _, _)
-      equation
-        // name = Absyn.pathStringNoQual(class_);
-        directory = System.trim(fileDir, "\"");
-        vars = createVars(dlow);
-        SimCodeVar.SIMVARS(stateVars=stateVars, algVars=algVars, discreteAlgVars=discreteAlgVars, intAlgVars=intAlgVars, boolAlgVars=boolAlgVars,
-                inputVars=inputVars, outputVars=outputVars, aliasVars=aliasVars, intAliasVars=intAliasVars, boolAliasVars=boolAliasVars,
-                paramVars=paramVars, intParamVars=intParamVars, boolParamVars=boolParamVars, stringAlgVars=stringAlgVars,
-                stringParamVars=stringParamVars, stringAliasVars=stringAliasVars, extObjVars=extObjVars,
-                    realOptimizeConstraintsVars=realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars= realOptimizeFinalConstraintsVars) = vars;
-        BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) = dlow;
-        nx = listLength(stateVars);
-        ny = listLength(algVars);
-        ndy = listLength(discreteAlgVars);
-        ny_int = listLength(intAlgVars);
-        ny_bool = listLength(boolAlgVars);
-        numOutVars = listLength(outputVars);
-        numInVars = listLength(inputVars);
-        na = listLength(aliasVars);
-        na_int = listLength(intAliasVars);
-        na_bool = listLength(boolAliasVars);
-        np = listLength(paramVars);
-        np_int = listLength(intParamVars);
-        np_bool = listLength(boolParamVars);
-        ny_string = listLength(stringAlgVars);
-        np_string = listLength(stringParamVars);
-        na_string = listLength(stringAliasVars);
-        next = listLength(extObjVars);
-        numOptimizeConstraints =  listLength(realOptimizeConstraintsVars);
-        numOptimizeFinalConstraints = listLength(realOptimizeFinalConstraintsVars);
-        varInfo = createVarInfo(dlow, nx, ny, ndy, np, na, next, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms,
-                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string, numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints);
-      then
-        SimCode.MODELINFO(class_, description, directory, varInfo, vars, functions, labels);
-
-    else
-      equation
-        Error.addInternalError("createModelInfo failed", sourceInfo());
-      then
-        fail();
-  end matchcontinue;
+  try
+    // name = Absyn.pathStringNoQual(class_);
+    directory := System.trim(fileDir, "\"");
+    vars := createVars(dlow);
+    SimCodeVar.SIMVARS(stateVars=stateVars, algVars=algVars, discreteAlgVars=discreteAlgVars, intAlgVars=intAlgVars, boolAlgVars=boolAlgVars,
+          inputVars=inputVars, outputVars=outputVars, aliasVars=aliasVars, intAliasVars=intAliasVars, boolAliasVars=boolAliasVars,
+          paramVars=paramVars, intParamVars=intParamVars, boolParamVars=boolParamVars, stringAlgVars=stringAlgVars,
+          stringParamVars=stringParamVars, stringAliasVars=stringAliasVars, extObjVars=extObjVars,
+          realOptimizeConstraintsVars=realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars= realOptimizeFinalConstraintsVars) := vars;
+    BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
+    nx := listLength(stateVars);
+    ny := listLength(algVars);
+    ndy := listLength(discreteAlgVars);
+    ny_int := listLength(intAlgVars);
+    ny_bool := listLength(boolAlgVars);
+    numOutVars := listLength(outputVars);
+    numInVars := listLength(inputVars);
+    na := listLength(aliasVars);
+    na_int := listLength(intAliasVars);
+    na_bool := listLength(boolAliasVars);
+    np := listLength(paramVars);
+    np_int := listLength(intParamVars);
+    np_bool := listLength(boolParamVars);
+    ny_string := listLength(stringAlgVars);
+    np_string := listLength(stringParamVars);
+    na_string := listLength(stringAliasVars);
+    next := listLength(extObjVars);
+    numOptimizeConstraints := listLength(realOptimizeConstraintsVars);
+    numOptimizeFinalConstraints := listLength(realOptimizeFinalConstraintsVars);
+    varInfo := createVarInfo(dlow, nx, ny, ndy, np, na, next, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms,
+           ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string, numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints);
+    modelInfo := SimCode.MODELINFO(class_, description, directory, varInfo, vars, functions, labels);
+  else
+    Error.addInternalError("createModelInfo failed", sourceInfo());
+    fail();
+  end try;
 end createModelInfo;
 
 
@@ -7109,40 +7100,34 @@ end createVarInfo;
 
 protected function createVars
   input BackendDAE.BackendDAE dlow;
-  output SimCodeVar.SimVars varsOut;
+  output SimCodeVar.SimVars outVars;
+protected
+  BackendDAE.Variables knvars;
+  BackendDAE.Variables extvars;
+  BackendDAE.Variables aliasVars;
+  BackendDAE.EqSystems systs;
 algorithm
-  varsOut :=
-  match (dlow)
-    local
-      BackendDAE.Variables knvars;
-      BackendDAE.Variables extvars;
-      BackendDAE.EquationArray ie;
-      BackendDAE.Variables aliasVars;
-      BackendDAE.EqSystems systs;
-    case (BackendDAE.DAE(eqs=systs, shared=BackendDAE.SHARED(
-      knownVars = knvars,
-      externalObjects = extvars,
-      aliasVars = aliasVars)))
-      equation
-        /* Extract from variable list */
-        ((varsOut, _, _)) = List.fold1(List.map(systs, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars, knvars));
-        /* Extract from known variable list */
-        ((varsOut, _, _)) = BackendVariable.traverseBackendDAEVars(knvars, extractVarsFromList, (varsOut, aliasVars, knvars));
-        /* Extract from removed variable list */
-        ((varsOut, _, _)) = BackendVariable.traverseBackendDAEVars(aliasVars, extractVarsFromList, (varsOut, aliasVars, knvars));
-        /* Extract from external object list */
-        ((varsOut, _, _)) = BackendVariable.traverseBackendDAEVars(extvars, extractVarsFromList, (varsOut, aliasVars, knvars));
-        /* sort variables on index */
-        varsOut = sortSimvars(varsOut);
-        varsOut = if stringEqual(Config.simCodeTarget(), "Cpp") then extendIncompleteArray(varsOut) else varsOut;
-        /* Index of algebraic and parameters need
-         to fix due to separation of int Vars*/
-        varsOut = fixIndex(varsOut);
-        varsOut = setVariableIndex(varsOut);
-      then
-        varsOut;
+  BackendDAE.DAE(eqs=systs, shared=BackendDAE.SHARED(knownVars=knvars, externalObjects=extvars, aliasVars=aliasVars)) := dlow;
 
-  end match;
+  /* Extract from variable list */
+  ((outVars, _, _)) := List.fold1(List.map(systs, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars, knvars));
+
+  /* Extract from known variable list */
+  ((outVars, _, _)) := BackendVariable.traverseBackendDAEVars(knvars, extractVarsFromList, (outVars, aliasVars, knvars));
+
+  /* Extract from removed variable list */
+  ((outVars, _, _)) := BackendVariable.traverseBackendDAEVars(aliasVars, extractVarsFromList, (outVars, aliasVars, knvars));
+
+  /* Extract from external object list */
+  ((outVars, _, _)) := BackendVariable.traverseBackendDAEVars(extvars, extractVarsFromList, (outVars, aliasVars, knvars));
+
+  /* sort variables on index */
+  outVars := sortSimvars(outVars);
+  outVars := if stringEqual(Config.simCodeTarget(), "Cpp") then extendIncompleteArray(outVars) else outVars;
+
+  /* Index of algebraic and parameters need to fix due to separation of int Vars*/
+  outVars := fixIndex(outVars);
+  outVars := setVariableIndex(outVars);
 end createVars;
 
 protected function setRecordVariability"evaluates if all scalar record values are parameter
