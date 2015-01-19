@@ -364,7 +364,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case _ then ();  /* LS: for non-COMPS, which are only FUNCTIONS at the moment */
+    else ();  /* LS: for non-COMPS, which are only FUNCTIONS at the moment */
   end matchcontinue;
 end dumpCompElement;
 
@@ -961,7 +961,7 @@ algorithm
       then
         ();
 
-    case _ then ();
+    else ();
   end matchcontinue;
 end dumpInitialEquation;
 
@@ -1060,7 +1060,7 @@ algorithm
       then
         str;
     // adrpo: TODO! FIXME! should we say UNKNOWN equation here? we don't handle all cases!
-    case _ then "#UNKNOWN_EQUATION#";
+    else "#UNKNOWN_EQUATION#";
   end matchcontinue;
 end dumpEquationStr;
 
@@ -1075,7 +1075,7 @@ algorithm
         Dump.printList(stmts, ppStatement, "");
       then
         ();
-    case _ then ();
+    else ();
   end matchcontinue;
 end dumpAlgorithm;
 
@@ -1090,7 +1090,7 @@ algorithm
         Dump.printList(stmts, ppStatement, "");
       then
         ();
-    case _ then ();
+    else ();
   end matchcontinue;
 end dumpInitialAlgorithm;
 
@@ -1113,7 +1113,7 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
-    case _ then ();
+    else ();
   end matchcontinue;
 end dumpExtObjectClass;
 
@@ -1216,7 +1216,7 @@ algorithm
       then
         ();
 
-    case _ then ();
+    else ();
   end matchcontinue;
 end dumpFunction;
 
@@ -3377,7 +3377,7 @@ algorithm
       then
         s;
 
-    case _ then "";
+    else "";
   end matchcontinue;
 end dumpFunctionStr;
 
@@ -3400,7 +3400,7 @@ algorithm
       then
         s;
 
-    case _ then "";
+    else "";
   end matchcontinue;
 end dumpExtObjClassStr;
 

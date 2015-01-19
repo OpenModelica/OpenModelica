@@ -4472,7 +4472,7 @@ protected function attrIsParam
 algorithm
   outBoolean := matchcontinue (inAttributes)
     case SCode.ATTR(variability = SCode.PARAM()) then true;
-    case _ then false;
+    else false;
   end matchcontinue;
 end attrIsParam;
 

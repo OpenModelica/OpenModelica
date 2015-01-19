@@ -537,7 +537,7 @@ algorithm
       then
         DAE.ICONST(i);
 
-    case _ then DAE.RCONST(inVal);
+    else DAE.RCONST(inVal);
   end matchcontinue;
 end realToIntIfPossible;
 
@@ -2079,7 +2079,7 @@ algorithm
     case DAE.T_UNKNOWN(_) then 0;
 
     // for all other consider it just 1 variable
-    case _ then 1;
+    else 1;
   end matchcontinue;
 end sizeOf;
 
@@ -3033,7 +3033,7 @@ algorithm
       equation
         expLst = List.flatten(List.map(List.flatten(mexpl),flattenArrayExpToList));
       then expLst;
-    case _ then {e};
+    else {e};
   end matchcontinue;
 end flattenArrayExpToList;
 
@@ -4028,7 +4028,7 @@ output DAE.Type outTp;
 algorithm
   outTp := matchcontinue(inTp)
     case (DAE.T_UNKNOWN(_)) then DAE.T_REAL_DEFAULT;
-    case _ then inTp;
+    else inTp;
   end matchcontinue;
 end checkIfOther;
 
@@ -5697,7 +5697,7 @@ algorithm
       then
         (olcrefs,orcrefs);
 
-    case _ then  ({},{});
+    else ({},{});
 
   end match;
 end extractCrefsStatment;
@@ -6799,11 +6799,11 @@ public function operatorDivOrMul "returns true if operator is division or multip
   input DAE.Operator op;
   output Boolean res;
 algorithm
-  res := matchcontinue(op)
+  res := match(op)
     case(DAE.MUL(_)) then true;
     case(DAE.DIV(_)) then true;
     else false;
-  end matchcontinue;
+  end match;
 end operatorDivOrMul;
 
 public function isRange
@@ -6811,20 +6811,20 @@ public function isRange
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp)
+  outBoolean := match (inExp)
     case DAE.RANGE() then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isRange;
 
 public function isReduction
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp)
+  outBoolean := match (inExp)
     case DAE.REDUCTION() then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isReduction;
 
 public function isOne

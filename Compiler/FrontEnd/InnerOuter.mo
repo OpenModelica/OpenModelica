@@ -555,10 +555,10 @@ protected function convertInnerOuterInnerToOuter
   input Absyn.InnerOuter io;
   output Absyn.InnerOuter oio;
 algorithm
-  oio := matchcontinue(io)
+  oio := match(io)
     case(Absyn.INNER()) then Absyn.OUTER();
-    case _ then io;
-  end matchcontinue;
+    else io;
+  end match;
 end convertInnerOuterInnerToOuter;
 
 protected function addOuterConnectIfEmpty

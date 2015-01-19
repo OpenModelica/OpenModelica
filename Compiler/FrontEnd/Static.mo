@@ -10320,7 +10320,7 @@ algorithm
       then
         DAE.T_ENUMERATION(NONE(), p, n, v, al, ts);
 
-    case _ then inType;
+    else inType;
   end matchcontinue;
 end fixEnumerationType;
 

@@ -1949,7 +1949,7 @@ algorithm
       then "ALIAS(" + Absyn.pathString(p) + "." + name + ")";
     case (PROCESSED_MODIFIER(modifier = ALIAS(name = name)))
       then "ALIAS(" + name + ")";
-    case _ then SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions);
+    else SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare),SCodeDump.defaultOptions);
   end matchcontinue;
 end printRedeclarationStr;
 

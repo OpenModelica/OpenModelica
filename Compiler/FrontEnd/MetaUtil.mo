@@ -210,7 +210,7 @@ algorithm
         body = Absyn.PARTS(typeVars,classAttrs,classParts,ann,comment);
       then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info);
 
-    case _ then cl;
+    else cl;
   end matchcontinue;
 end createMetaClassesFromPackage;
 
@@ -235,7 +235,7 @@ algorithm
         els = List.flatten(lels);
       then Absyn.PROTECTED(els);
 
-    case _ then classPart;
+    else classPart;
   end matchcontinue;
 end createMetaClassesFromClassParts;
 
@@ -257,7 +257,7 @@ algorithm
         classes = cl2 :: metaClasses;
         elementItems = List.map1r(classes,setElementItemClass,elementItem);
       then elementItems;
-    case _ then {elementItem};
+    else {elementItem};
   end matchcontinue;
 end createMetaClassesFromElementItem;
 
@@ -578,10 +578,10 @@ public function isTupleExp
   input Absyn.Exp inExp;
   output Boolean b;
 algorithm
-  b := matchcontinue (inExp)
+  b := match (inExp)
     case Absyn.TUPLE(_) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isTupleExp;
 
 public function extractListFromTuple "author: KS
@@ -592,14 +592,14 @@ public function extractListFromTuple "author: KS
   output list<Absyn.Exp> outList;
 algorithm
   outList :=
-  matchcontinue (inExp,numOfExps)
+  match (inExp,numOfExps)
     local
       list<Absyn.Exp> l;
       Absyn.Exp exp;
     case (Absyn.TUPLE(l),1) then {Absyn.TUPLE(l)};
     case (Absyn.TUPLE(l),_) then l;
-    case (exp,_) then {exp};
-  end matchcontinue;
+    else {inExp};
+  end match;
 end extractListFromTuple;
 
 public function tryToConvertArrayToList

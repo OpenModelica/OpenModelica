@@ -1875,11 +1875,11 @@ public function toConst
 input SCode.Variability inVar;
 output DAE.Const outConst;
 algorithm
-  outConst := matchcontinue (inVar)
+  outConst := match (inVar)
     case(SCode.CONST()) then DAE.C_CONST();
     case(SCode.PARAM()) then DAE.C_PARAM();
-    case _ then DAE.C_VAR();
-  end matchcontinue;
+    else DAE.C_VAR();
+  end match;
 end toConst;
 
 public function setClassName

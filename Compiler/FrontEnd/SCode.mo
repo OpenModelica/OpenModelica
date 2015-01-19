@@ -777,7 +777,7 @@ algorithm
       then
         res;
 
-    case _ then 0;
+    else 0;
 
   end matchcontinue;
 end countParts;
@@ -3031,7 +3031,7 @@ public function getElementClass
 algorithm
   cl := match(el)
     case CLASS() then el;
-    case _ then fail();
+    else fail();
   end match;
 end getElementClass;
 

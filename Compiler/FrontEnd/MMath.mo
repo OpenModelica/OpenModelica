@@ -66,10 +66,10 @@ protected function normalizeZero "if numerator is zero, set denominator to 1"
   input Rational r;
   output Rational outR;
 algorithm
-  outR := matchcontinue(r)
+  outR := match(r)
     case(RATIONAL(0,_)) then RATIONAL(0,1);
-    case _ then r;
-  end matchcontinue;
+    else r;
+  end match;
 end normalizeZero;
 
 public function rationalString "converts a rational to a string"

@@ -111,39 +111,39 @@ public function printPrefixStr2 "Prints a Prefix to a string. Designed to be use
   input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
-  outString :=  matchcontinue (inPrefix)
+  outString :=  match (inPrefix)
   local
     Prefix.Prefix p;
   case Prefix.NOPRE() then "";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
   case p then printPrefixStr(p)+".";
-  end matchcontinue;
+  end match;
 end printPrefixStr2;
 
 public function printPrefixStr3 "Prints a Prefix to a string as a component name. Designed to be used in Error messages"
   input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
-  outString :=  matchcontinue (inPrefix)
+  outString :=  match (inPrefix)
   local
     Prefix.Prefix p;
   case Prefix.NOPRE() then "<NO COMPONENT>";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<NO COMPONENT>";
   case p then printPrefixStr(p);
-  end matchcontinue;
+  end match;
 end printPrefixStr3;
 
 public function printPrefixStrIgnoreNoPre "Prints a Prefix to a string as a component name. Designed to be used in Error messages"
   input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
-  outString :=  matchcontinue (inPrefix)
+  outString :=  match (inPrefix)
   local
     Prefix.Prefix p;
   case Prefix.NOPRE() then "";
   case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
   case p then printPrefixStr(p);
-  end matchcontinue;
+  end match;
 end printPrefixStrIgnoreNoPre;
 
 public function printPrefix "Prints a prefix to the Print buffer."

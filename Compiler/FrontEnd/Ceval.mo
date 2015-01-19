@@ -1586,7 +1586,7 @@ algorithm
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env,dimExp,impl,st,msg,numIter+1);
         v2 = match(val)
                case Values.ARRAY({},adims) then Values.INTEGER(listGet(adims,dimv));
-               case _ then cevalBuiltinSize2(val, dimv);
+               else cevalBuiltinSize2(val, dimv);
              end match;
       then
         (cache,v2,st_1);

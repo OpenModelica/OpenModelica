@@ -2263,7 +2263,7 @@ protected function valEqual
   input Boolean equal;
   output Boolean bEq;
 algorithm
-  bEq := matchcontinue(inV1, inV2, equal)
+  bEq := match(inV1, inV2, equal)
     local Values.Value v1, v2;
     case (_, _, true) then true;
     case (NONE(), NONE(), _) then equal;
@@ -2274,7 +2274,7 @@ algorithm
                   ValuesUtil.valueExp(v2));
       then
         bEq;
-  end matchcontinue;
+  end match;
 end valEqual;
 
 protected function eqModEqual "Returns true if two EqMods are equal"
@@ -2664,11 +2664,11 @@ public function emptyModOrEquality
   input DAE.Mod mod;
   output Boolean b;
 algorithm
-  b := matchcontinue mod
+  b := match mod
     case DAE.NOMOD() then true;
     case DAE.MOD(subModLst={}) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end emptyModOrEquality;
 
 protected function intStringDot

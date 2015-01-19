@@ -196,7 +196,7 @@ public function printStateStr "- Printing
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inState)
+  match (inState)
     local
       Absyn.Path p;
       Boolean b1,b2,b3;
@@ -227,8 +227,8 @@ algorithm
     case META_POLYMORPHIC() then "polymorphic";
     case META_ARRAY() then "meta_array";
     case META_UNIONTYPE() then "uniontype";
-    case _ then "#printStateStr failed#";
-  end matchcontinue;
+    else "#printStateStr failed#";
+  end match;
 end printStateStr;
 
 public function printState
@@ -374,7 +374,7 @@ algorithm
     case META_ARRAY(p) then p;
     case META_POLYMORPHIC(p) then p;
 
-    case _ then Absyn.IDENT("#getStateName failed#");
+    else Absyn.IDENT("#getStateName failed#");
   end match;
 end getStateName;
 

@@ -462,7 +462,7 @@ algorithm
         DAE.T_METABOXED(ty, ts);
 
     // the rest fall in line!
-    case _ then inType;
+    else inType;
 
   end matchcontinue;
 end expTypetoTypesType;
@@ -3023,7 +3023,7 @@ algorithm
       equation
         {p} = getTypeSource(inType);
       then SOME(p);
-    case _ then NONE();
+    else NONE();
   end matchcontinue;
 end getClassnameOpt;
 
@@ -3077,7 +3077,7 @@ public function isInputAttr "Returns true if the Attributes of a variable indica
 algorithm
   outBoolean := match (inAttributes)
     case DAE.ATTR(direction = Absyn.INPUT()) then true;
-    case _ then false;
+    else false;
   end match;
 end isInputAttr;
 
@@ -3088,7 +3088,7 @@ public function isOutputAttr "Returns true if the Attributes of a variable indic
 algorithm
   outBoolean := match (inAttributes)
     case DAE.ATTR(direction = Absyn.OUTPUT()) then true;
-    case _ then false;
+    else false;
   end match;
 end isOutputAttr;
 
@@ -3099,7 +3099,7 @@ public function isBidirAttr "Returns true if the Attributes of a variable indica
 algorithm
   outBoolean := match (inAttributes)
     case DAE.ATTR(direction = Absyn.BIDIR()) then true;
-    case _ then false;
+    else false;
   end match;
 end isBidirAttr;
 
@@ -7330,7 +7330,7 @@ algorithm
   outInt := match(inInt)
     local Integer i;
     case (SOME(i)) then i;
-    case _ then -1;
+    else -1;
   end match;
 end optInteger;
 

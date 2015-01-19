@@ -1318,7 +1318,7 @@ algorithm
     then true;
 
       /* All other cases are false */
-    case _ then false;
+    else false;
   end matchcontinue;
 end crefHasScalarSubscripts;
 
