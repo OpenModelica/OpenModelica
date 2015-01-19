@@ -410,7 +410,6 @@ TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWi
   setSortingEnabled(true);
   sortByColumn(0, Qt::AscendingOrder);
   setExpandsOnDoubleClick(false);
-  header()->setStretchLastSection(true);
 }
 
 EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWidget)
@@ -433,7 +432,6 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
   QStringList headerLabels;
   headerLabels << Helper::index << Helper::type << Helper::equation << Helper::executionCount << Helper::executionMaxTime << Helper::executionTime << Helper::executionFraction;
   setHeaderLabels(headerLabels);
-  header()->setStretchLastSection(true);
   connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), mpTransformationWidget, SLOT(fetchEquationData(QTreeWidgetItem*,int)));
 }
 
@@ -541,7 +539,6 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpVariableOperationsTreeWidget->setColumnCount(1);
   mpVariableOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpVariableOperationsTreeWidget->setHeaderLabel(tr("Operations"));
-  mpVariableOperationsTreeWidget->header()->setStretchLastSection(true);
   QGridLayout *pVariableOperationsGridLayout = new QGridLayout;
   pVariableOperationsGridLayout->setSpacing(1);
   pVariableOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -576,7 +573,6 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QStringList headerLabels;
   headerLabels << tr("Variable");
   mpDefinesVariableTreeWidget->setHeaderLabels(headerLabels);
-  mpDefinesVariableTreeWidget->header()->setStretchLastSection(true);
   QGridLayout *pDefinesGridLayout = new QGridLayout;
   pDefinesGridLayout->setSpacing(1);
   pDefinesGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -595,7 +591,6 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpDependsVariableTreeWidget->setSortingEnabled(true);
   mpDependsVariableTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   mpDependsVariableTreeWidget->setHeaderLabel(tr("Variable"));
-  mpDependsVariableTreeWidget->header()->setStretchLastSection(true);
   QGridLayout *pDependsGridLayout = new QGridLayout;
   pDependsGridLayout->setSpacing(1);
   pDependsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -612,7 +607,6 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpEquationOperationsTreeWidget->setColumnCount(1);
   mpEquationOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpEquationOperationsTreeWidget->setHeaderLabel(tr("Operations"));
-  mpEquationOperationsTreeWidget->header()->setStretchLastSection(true);
   QGridLayout *pEquationOperationsGridLayout = new QGridLayout;
   pEquationOperationsGridLayout->setSpacing(1);
   pEquationOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -939,11 +933,9 @@ void TransformationsWidget::fetchOperations(const OMVariable &variable)
   /* add operations */
   if (hasOperationsEnabled) {
     foreach (OMOperation *op, variable.ops) {
-      QString toolTip = op->toString();
       QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem();
-      pOperationTreeItem->setToolTip(0, toolTip);
       mpVariableOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
-
+      // set label item
       Label *opText = new Label("<html><div style=\"margin:3px;\">" + op->toHtml() + "</div></html>");
       mpVariableOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
     }
@@ -961,6 +953,7 @@ void TransformationsWidget::fetchOperations(const OMVariable &variable)
     pOperationTreeItem->setToolTip(0, toolTip);
     mpVariableOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
   }
+  mpVariableOperationsTreeWidget->resizeColumnToContents(0);
 }
 
 QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationIndex, int allowChild)
@@ -983,7 +976,7 @@ QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationI
   QTreeWidgetItem *pEquationTreeItem = new IntegerTreeWidgetItem(values, mpEquationsTreeWidget);
   pEquationTreeItem->setToolTip(0, values[0]);
   pEquationTreeItem->setToolTip(1, values[1]);
-  pEquationTreeItem->setToolTip(2, values[2]);
+  pEquationTreeItem->setToolTip(2, "<html><div style=\"margin:3px;\">" + Qt::escape(values[2]) + "</div></html>");
   pEquationTreeItem->setToolTip(4, "Maximum execution time in a single step");
   pEquationTreeItem->setToolTip(5, "Total time excluding the overhead of measuring.");
   pEquationTreeItem->setToolTip(6, "Fraction of time, 100% is the total time of all non-child equations.");
@@ -1104,6 +1097,7 @@ void TransformationsWidget::fetchDefines(OMEquation *equation)
     pDefineTreeItem->setToolTip(0, toolTip);
     mpDefinesVariableTreeWidget->addTopLevelItem(pDefineTreeItem);
   }
+  mpDefinesVariableTreeWidget->resizeColumnToContents(0);
 }
 
 void TransformationsWidget::fetchDepends(OMEquation *equation)
@@ -1120,6 +1114,7 @@ void TransformationsWidget::fetchDepends(OMEquation *equation)
     pDependTreeItem->setToolTip(0, toolTip);
     mpDependsVariableTreeWidget->addTopLevelItem(pDependTreeItem);
   }
+  mpDependsVariableTreeWidget->resizeColumnToContents(0);
 }
 
 void TransformationsWidget::fetchOperations(OMEquation *equation)
@@ -1127,15 +1122,12 @@ void TransformationsWidget::fetchOperations(OMEquation *equation)
   /* Clear the operations tree. */
   clearTreeWidgetItems(mpEquationOperationsTreeWidget);
   /* add operations */
-  if (hasOperationsEnabled)
-  {
-    foreach (OMOperation *op, equation->ops)
-    {
-      QString toolTip = op->toString();
+  if (hasOperationsEnabled) {
+    foreach (OMOperation *op, equation->ops) {
       QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem();
-      Label *opText = new Label("<html><div style=\"margin:3px;\">" + op->toHtml() + "</div></html>");
-      pOperationTreeItem->setToolTip(0, toolTip);
       mpEquationOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+      // set label item
+      Label *opText = new Label("<html><div style=\"margin:3px;\">" + op->toHtml() + "</div></html>");
       mpEquationOperationsTreeWidget->setItemWidget(pOperationTreeItem, 0, opText);
     }
   } else {
@@ -1152,6 +1144,7 @@ void TransformationsWidget::fetchOperations(OMEquation *equation)
     pOperationTreeItem->setToolTip(0, toolTip);
     mpEquationOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
   }
+  mpEquationOperationsTreeWidget->resizeColumnToContents(0);
 }
 
 void TransformationsWidget::clearTreeWidgetItems(QTreeWidget *pTreeWidget)
