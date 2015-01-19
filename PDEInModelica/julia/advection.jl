@@ -3,13 +3,23 @@ include("incl.jl")
 
 # - model static data
 nU = 1                 #number of state fields
+nV = 0
 
 # - model values
 L = 1.0                #length of domain
 
-c = 1.0
+type P
+	c
+end
+
+p = P(1.0)
+
 
 #model functions:
+function initializeBoundParameters(p)
+end
+
+
 
 function initFun(p,i,x)
     if i == 1 
@@ -19,38 +29,25 @@ function initFun(p,i,x)
     end
 end
 
-function lBCFun(t)
-    if 0 < t < 0.1 
-        sin(10.0*2.0*pi*t)
-    else
-        0
-    end
+function BCFun(p,t,X,U)
+    lbc = if 0 < t < 0.1 
+             sin(10.0*2.0*pi*t)
+          else
+             0
+          end
+    ([lbc], [extrapolate(1,right,X,U)])
 end
 
-function BCFun(nState,side,p,t,X,U)
-    if nState == 1
-        if side == left lBCFun(t)
-        elseif side == right extrapolate(X,U,nState,side) 
-        end
-    else
-        error("wrong state index in advection")
-    end
+function maxEigValFun(p,U,V)
+    p.c
 end
 
-function maxEigValFun(p)
-    c
-end
-
-function vFun(p,x,u,u_x,t)
+function algebraicFun(p,x,u,u_x,t)
     []
 end
 
-function utFun(p,x,u,ux,t,iState)
-    if iState == 1
-        -c*ux
-    else
-        error("wrong variable index in utFun()")
-    end   
+function statesDerFun(p,x,u,u_x,v,v_x,t)
+    [-p.c*u_x[1]]
 end
 
-include("solver.jl")
+#include("solver.jl")

@@ -4107,32 +4107,26 @@ solution
 \end_layout
 
 \begin_layout Standard
-New attributes 
+New attribute 
 \family typewriter
-startPrime
+startTD
 \family default
- and 
-\family typewriter
-startSecond
-\family default
- (May be 
-\family typewriter
-startSecond
-\family default
- is not needed??) for field variables are introduced.
+ for field variables to assign its first time derivative start value is
+ introduced.
  Usage e.g.:
 \end_layout
 
 \begin_layout Standard
 
 \family typewriter
-field Real u(start = 0, startPrime = sin(omega.x*omega.y));
+field Real u(start = 0, startDer = sin(omega.x*omega.y));
 \begin_inset Newline newline
 \end_inset
 
 
 \family default
-Initial values for higher derivatives must be assigned in 
+Initial values for higher time derivatives or space derivatives must be
+ assigned in 
 \family typewriter
 initial equation
 \family default

@@ -39,17 +39,17 @@ function BCFun(p,t,X,U)
     ([l1BCFun(t); extrapolate(2,left,X,U)],[0.0; extrapolate(2,right,X,U)])
 end
 
-function maxEigValFun(p)
+function maxEigValFun(p,U,V)
     p.c
 end
 
-function vFun(p,x,u,u_x,t)
+function algebraicFun(p,x,u,u_x,t)
     [p.c*u[2]]          #w = c*v;
 end
 
 
-function utFun(p,x,u,ux,v,vx,t)
-    [vx[1]; ux[1]]    #pder(u,time) - pder(w,x) = 0 ;  pder(v,time) - pder(u,x) = 0
+function statesDerFun(p,x,u,u_x,v,v_x,t)
+    [v_x[1]; u_x[1]]    #pder(u,time) - pder(w,x) = 0 ;  pder(v,time) - pder(u,x) = 0
 end
 
 include("solver.jl")

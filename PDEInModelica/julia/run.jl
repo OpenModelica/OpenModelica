@@ -1,14 +1,15 @@
 #include("advection.jl")
 #include("string.jl")
 #include("stringAlg.jl")
-include("artery.jl")
-(X,U) = simulate(5.0)
+#include("artery.jl")
+include("solver.jl")
+(X,U) = simulate("advection.jl", 2.0, 1)
 
-function writeData(X,U)
+function writeData(X,U)option
 f = open("result.txt","w")
 (nU,nX) = size(U)
     for iX = 1:nX
-        write(f,string(X[iX])" ")            
+        write(f,string(X[iX])" ")
         for iU = 1:nU
             write(f,string(U[iU,iX])" ")
         end
@@ -16,8 +17,7 @@ f = open("result.txt","w")
     end
     close(f)
 end
-
-writeData(X,U)
+#writeData(X,U)
 
 #using Gadfly
 #plot(x = X, y = U[1,:])

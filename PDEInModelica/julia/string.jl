@@ -10,7 +10,11 @@ nV = 0
 # - model values
 L = 2.0                #length of domain
 
-c = 2.0
+type P
+	c
+end
+
+p = P(2.0)
 
 
 #model functions:
@@ -23,32 +27,21 @@ function initFun(p,i,x)
     end 
 end
 
-function l1BCFun(t)
-    if 0.0 < t < 0.5 sin(2.0*pi*t) else 0.0 end
+function BCFun(p,t,X,U)
+    lbc1 = if 0.0 < t < 0.5 sin(2.0*pi*t) else 0.0 end
+    ([lbc1,extrapolate(2,left,X,U)],[0.0,extrapolate(2,right,X,U)])
 end
 
-function BCFun(nState,side,p,t,X,U)
-    if nState == 1
-        if side == left 
-            l1BCFun(t)
-        elseif side == right
-            0.0
-        end
-    else
-        extrapolate(nState,side,X,U)
-    end
+function maxEigValFun(p,U,V)
+    p.c
 end
 
-function maxEigValFun(p)
-    c
-end
-
-function vFun(p,x,u,u_x,t)
+function algebraicFun(p,x,u,u_x,t)
 []
 end
 
-function utFun(p,x,u,ux,v,vx,t,)
-    [c*ux[2]; ux[1]]
+function statesDerFun(p,x,u,u_x,v,v_x,t)
+    [p.c*u_x[2]; u_x[1]]
 end
 
 include("solver.jl")

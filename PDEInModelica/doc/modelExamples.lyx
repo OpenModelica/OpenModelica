@@ -2101,12 +2101,31 @@ Euler equations
 \end_layout
 
 \begin_layout Standard
+
+\lang czech
 \begin_inset Formula 
 \begin{eqnarray*}
-\frac{\partial\varrho}{\partial t} & = & -\frac{\partial}{\partial x}\left(\varrho v\right)\\
-\frac{\partial}{\partial t}\left(\varrho v\right) & = & -\frac{\partial p}{\partial x}\\
-\varrho\frac{\partial\varepsilon}{\partial t} & = & -p\frac{\partial v}{\partial x}
+\varrho_{t} & +(\varrho u)_{x} & =0\\
+(\varrho u)_{t} & +(\varrho u^{2}+p)_{x} & =0\\
+E_{t} & +(u(E+p))_{x} & =0
 \end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang czech
+equation of state
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+E & =\frac{p}{\gamma-1}+\varrho\frac{u^{2}}{2}
+\end{align*}
 
 \end_inset
 
@@ -2119,7 +2138,7 @@ Euler equations
 
  ..
  density, 
-\begin_inset Formula $v$
+\begin_inset Formula $u$
 \end_inset
 
  ..
@@ -2129,23 +2148,15 @@ Euler equations
 
  ..
  pressure, 
-\begin_inset Formula $\varepsilon$
+\begin_inset Formula $E$
 \end_inset
 
  ..
- specific internal energy
+ total energy density
 \end_layout
 
 \begin_layout Standard
 state equation
-\begin_inset Formula 
-\begin{align*}
-p & =\varepsilon\varrho(\gamma-1)
-\end{align*}
-
-\end_inset
-
-
 \end_layout
 
 \begin_layout Standard
@@ -2155,6 +2166,94 @@ p & =\varepsilon\varrho(\gamma-1)
  ..
  gas constant (fraction of specific heat capacities at constant pressure
  and volume)
+\end_layout
+
+\begin_layout Standard
+speed of sound
+\end_layout
+
+\begin_layout Standard
+
+\lang czech
+\begin_inset Formula 
+\[
+u_{s}=\sqrt{(\gamma-1)\gamma\varepsilon}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang czech
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+
+\lang czech
+differentiated form
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang czech
+\begin_inset Formula 
+\begin{eqnarray*}
+\varrho_{t} & = & -\varrho_{x}u-\varrho u_{x}\\
+(\varrho u)_{t} & = & -\varrho_{x}u^{2}-\varrho uu_{x}-p_{x}\\
+\varrho\varepsilon_{t} & = & -pu_{x}\\
+p & = & \varepsilon\varrho(\gamma-1)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang czech
+with numerical viscosity
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang czech
+\begin_inset Formula 
+\begin{eqnarray*}
+\varrho_{t} & = & -(\varrho u)_{x}\\
+(\varrho u)_{t} & = & -(\varrho u^{2}+p+q)_{x}\\
+\varrho\varepsilon_{t} & = & -(p+q)u_{x}\\
+p & = & \varepsilon\varrho(\gamma-1)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\lang czech
+\begin_inset Formula 
+\begin{eqnarray*}
+\varrho_{t} & = & -\varrho_{x}u-\varrho u_{x}\\
+(\varrho u)_{t} & = & -\varrho_{x}u^{2}-\varrho uu_{x}-p_{x}-q_{x}\\
+\varrho\varepsilon_{t} & = & -(p+q)u_{x}\\
+p & = & \varepsilon\varrho(\gamma-1)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
