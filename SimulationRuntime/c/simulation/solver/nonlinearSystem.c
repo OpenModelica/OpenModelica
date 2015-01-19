@@ -118,6 +118,8 @@ int initializeNonlinearSystems(DATA *data)
   for(i=0; i<data->modelData.nNonLinearSystems; ++i)
   {
     size = nonlinsys[i].size;
+    nonlinsys[i].numberOfFEval = 0;
+    nonlinsys[i].numberOfIterations = 0;
 
     /* check if residual function pointer are valid */
     assertStreamPrint(data->threadData, 0 != nonlinsys[i].residualFunc, "residual function pointer is invalid" );
@@ -143,40 +145,32 @@ int initializeNonlinearSystems(DATA *data)
     nonlinsys[i].initializeStaticNLSData(data, &nonlinsys[i]);
 
     /* allocate solver data */
-    if(nonlinsys[i].method == 1)
+    switch(data->simulationInfo.nlsMethod)
     {
+    case NLS_HYBRID:
+      allocateHybrdData(size, &nonlinsys[i].solverData);
+      break;
+    case NLS_KINSOL:
+      nls_kinsol_allocate(data, &nonlinsys[i]);
+      break;
+    case NLS_NEWTON:
       allocateNewtonData(size, &nonlinsys[i].solverData);
+      break;
+    case NLS_HOMOTOPY:
+      allocateHomotopyData(size, &nonlinsys[i].solverData);
+      break;
+    case NLS_MIXED:
+      mixedSolverData = (struct dataNewtonAndHybrid*) malloc(sizeof(struct dataNewtonAndHybrid));
+      allocateHomotopyData(size, &(mixedSolverData->newtonData));
+
+      allocateHybrdData(size, &(mixedSolverData->hybridData));
+
+      nonlinsys[i].solverData = (void*) mixedSolverData;
+
+      break;
+    default:
+      throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
     }
-    else
-    {
-      switch(data->simulationInfo.nlsMethod)
-      {
-      case NLS_HYBRID:
-        allocateHybrdData(size, &nonlinsys[i].solverData);
-        break;
-      case NLS_KINSOL:
-        nls_kinsol_allocate(data, &nonlinsys[i]);
-        break;
-      case NLS_NEWTON:
-        allocateNewtonData(size, &nonlinsys[i].solverData);
-        break;
-      case NLS_HOMOTOPY:
-        allocateHomotopyData(size, &nonlinsys[i].solverData);
-        break;
-      case NLS_MIXED:
-        mixedSolverData = (struct dataNewtonAndHybrid*) malloc(sizeof(struct dataNewtonAndHybrid));
-        allocateHomotopyData(size, &(mixedSolverData->newtonData));
-
-        allocateHybrdData(size, &(mixedSolverData->hybridData));
-
-        nonlinsys[i].solverData = (void*) mixedSolverData;
-
-        break;
-      default:
-        throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
-      }
-    }
-
   }
 
   messageClose(LOG_NLS);
@@ -236,33 +230,26 @@ int freeNonlinearSystems(DATA *data)
     free(nonlinsys[i].max);
 
     /* free solver data */
-    if(nonlinsys[i].method == 1)
+    switch(data->simulationInfo.nlsMethod)
     {
+    case NLS_HYBRID:
+      freeHybrdData(&nonlinsys[i].solverData);
+      break;
+    case NLS_KINSOL:
+      nls_kinsol_free(&nonlinsys[i]);
+      break;
+    case NLS_NEWTON:
       freeNewtonData(&nonlinsys[i].solverData);
-    }
-    else
-    {
-      switch(data->simulationInfo.nlsMethod)
-      {
-      case NLS_HYBRID:
-        freeHybrdData(&nonlinsys[i].solverData);
-        break;
-      case NLS_KINSOL:
-        nls_kinsol_free(&nonlinsys[i]);
-        break;
-      case NLS_NEWTON:
-        freeNewtonData(&nonlinsys[i].solverData);
-        break;
-      case NLS_HOMOTOPY:
-        freeHomotopyData(&nonlinsys[i].solverData);
-        break;
-      case NLS_MIXED:
-        freeHomotopyData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->newtonData);
-        freeHybrdData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->hybridData);
-        break;
-      default:
-        throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
-      }
+      break;
+    case NLS_HOMOTOPY:
+      freeHomotopyData(&nonlinsys[i].solverData);
+      break;
+    case NLS_MIXED:
+      freeHomotopyData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->newtonData);
+      freeHybrdData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->hybridData);
+      break;
+    default:
+      throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
     }
     free(nonlinsys[i].solverData);
   }
@@ -273,16 +260,35 @@ int freeNonlinearSystems(DATA *data)
   return 0;
 }
 
+/*! \fn int printNonLinearSystemSolvingStatistics(DATA *data)
+ *
+ *  This function print memory for all non-linear systems.
+ *
+ *  \param [ref] [data]
+ *         [in]  [sysNumber] index of corresponding non-linear system
+ */
+void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
+{
+  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+  infoStreamPrint(logLevel, 1, "Non-linear system %d of size %d solver statistics:", (int)nonlinsys[sysNumber].equationIndex, (int)nonlinsys[sysNumber].size);
+  infoStreamPrint(logLevel, 0, " number of calls                : %ld", nonlinsys[sysNumber].numberOfCall);
+  infoStreamPrint(logLevel, 0, " number of iterations           : %ld", nonlinsys[sysNumber].numberOfIterations);
+  infoStreamPrint(logLevel, 0, " number of function evaluations : %ld", nonlinsys[sysNumber].numberOfFEval);
+  infoStreamPrint(logLevel, 0, " average time per call          : %f", nonlinsys[sysNumber].totalTime/nonlinsys[sysNumber].numberOfCall);
+  infoStreamPrint(logLevel, 0, " total time                     : %f", nonlinsys[sysNumber].totalTime);
+  messageClose(logLevel);
+}
+
+
 /*! \fn solve non-linear systems
  *
  *  \param [in]  [data]
- *  \param [in]  [sysNumber] index of corresponding non-linear System
+ *  \param [in]  [sysNumber] index of corresponding non-linear system
  *
  *  \author wbraun
  */
 int solve_nonlinear_system(DATA *data, int sysNumber)
 {
-  /* NONLINEAR_SYSTEM_DATA* system = &(data->simulationInfo.nonlinearSystemData[sysNumber]); */
   int success = 0, saveJumpState;
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   threadData_t *threadData = data->threadData;
@@ -293,6 +299,9 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
   /* enable to avoid division by zero */
   data->simulationInfo.noThrowDivZero = 1;
   ((DATA*)data)->simulationInfo.solveContinuous = 1;
+
+
+  rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
   if(data->simulationInfo.discreteCall){
     double *fvec = malloc(sizeof(double)*nonlinsys->size);
@@ -318,8 +327,6 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 
     free(fvec);
   }
-
-
 
   /* strategy for solving nonlinear system
    *
@@ -378,6 +385,9 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
   /* enable to avoid division by zero */
   data->simulationInfo.noThrowDivZero = 0;
   ((DATA*)data)->simulationInfo.solveContinuous = 0;
+
+  nonlinsys->totalTime += rt_ext_tp_tock(&(nonlinsys->totalTimeClock));
+  nonlinsys->numberOfCall++;
 
   return check_nonlinear_solution(data, 1, sysNumber);
 }

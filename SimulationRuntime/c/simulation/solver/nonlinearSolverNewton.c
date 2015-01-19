@@ -156,9 +156,6 @@ int freeNewtonData(void **voiddata)
 {
   DATA_NEWTON* data = (DATA_NEWTON*) *voiddata;
 
-  infoStreamPrint(LOG_STATS_V, 0, ":number of function evaluations: %d", (data->numberOfFunctionEvaluations));
-  infoStreamPrint(LOG_STATS_V, 0, ":number of iterations: %d", data->numberOfIterations);
-
   free(data->resScaling);
   free(data->fvecScaled);
   free(data->x);
@@ -425,6 +422,10 @@ int solveNewton(DATA *data, int sysNumber)
   }
   if(ACTIVE_STREAM(LOG_NLS))
       messageClose(LOG_NLS);
+
+  /* write statistics */
+  systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;
+  systemData->numberOfIterations = solverData->numberOfIterations;
 
   return success;
 }

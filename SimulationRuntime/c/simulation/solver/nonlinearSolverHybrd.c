@@ -84,6 +84,9 @@ typedef struct DATA_HYBRD
   double* wa3;
   double* wa4;
 
+  unsigned int numberOfIterations; /* over the whole simulation time */
+  unsigned int numberOfFunctionEvaluations; /* over the whole simulation time */
+
 } DATA_HYBRD;
 
 struct dataAndSys {
@@ -138,6 +141,9 @@ int allocateHybrdData(int size, void** voiddata)
   data->wa2 = (double*) malloc(size*sizeof(double));
   data->wa3 = (double*) malloc(size*sizeof(double));
   data->wa4 = (double*) malloc(size*sizeof(double));
+
+  data->numberOfIterations = 0;
+  data->numberOfFunctionEvaluations = 0;
 
   assertStreamPrint(NULL, 0 != *voiddata, "allocationHybrdData() voiddata failed!");
   return 0;
@@ -375,6 +381,7 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
       infoStreamPrint(LOG_NLS_RES, 0, "-- end of residual function call %d --", (int)solverData->nfev);
     }
 
+    solverData->numberOfFunctionEvaluations++;
     break;
   case 2:
     /* set residual function continuous for jacobian calculation */
@@ -468,6 +475,7 @@ int solveHybrd(DATA *data, int sysNumber)
 
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
 
+  solverData->numberOfFunctionEvaluations = 0;
   /* debug output */
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
@@ -1067,6 +1075,11 @@ int solveHybrd(DATA *data, int sysNumber)
   /* reset some solving data */
   solverData->factor = initial_factor;
   solverData->mode = 1;
+
+  /* write statistics */
+  systemData->numberOfFEval += solverData->numberOfFunctionEvaluations;
+  /* iteration in hybrid are equal to the nfev numbers */
+  systemData->numberOfIterations += nfunc_evals;
 
   free(relationsPreBackup);
 

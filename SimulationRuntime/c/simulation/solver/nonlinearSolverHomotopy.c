@@ -202,11 +202,6 @@ int freeHomotopyData(void **voiddata)
 {
   DATA_HOMOTOPY* data = (DATA_HOMOTOPY*) *voiddata;
 
-  infoStreamPrint(LOG_STATS_V, 0, "+number of NLS: %d", (data->eqSystemNumber));
-  infoStreamPrint(LOG_STATS_V, 0, ":mixed : %d", (data->mixedSystem));
-  infoStreamPrint(LOG_STATS_V, 0, ":number of function evaluations: %d", (data->numberOfFunctionEvaluations));
-  infoStreamPrint(LOG_STATS_V, 0, ":number of iterations: %d", data->numberOfIterations);
-
   free(data->resScaling);
   free(data->fvecScaled);
   free(data->hvecScaled);
@@ -1669,7 +1664,7 @@ int solveHomotopy(DATA *data, int sysNumber)
   /* Modelica homotopy operator could be used!! */
   int runHomotopy = 0;
   int skipNewton = 0;
-  int numberOfFunctionEvaluationsOld =solverData->numberOfFunctionEvaluations;
+  int numberOfFunctionEvaluationsOld = solverData->numberOfFunctionEvaluations;
 
   modelica_boolean* relationsPreBackup;
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
@@ -1877,5 +1872,10 @@ int solveHomotopy(DATA *data, int sysNumber)
   {
     debugString(LOG_NLS_V,"Homotopy solver did not converge!");
   }
+
+  /* write statistics */
+  systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;
+  systemData->numberOfIterations = solverData->numberOfIterations;
+
   return success;
 }

@@ -313,6 +313,13 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_integer method;             /* used for linear tearing system if 1: Newton step is done otherwise 0 */
   modelica_real residualError;         /* not used */
   modelica_boolean solved;             /* 1: solved in current step - else not */
+
+  /* statistics */
+  unsigned long numberOfCall;           /* number of solving calls of this system */
+  unsigned long numberOfFEval;          /* number of function evaluations of this system */
+  unsigned long numberOfIterations;     /* number of iteration of non-linear solvers of this system */
+  double totalTime;                     /* save the totalTime */
+  rtclock_t totalTimeClock;             /* time clock for the totalTime  */
 }NONLINEAR_SYSTEM_DATA;
 
 typedef struct LINEAR_SYSTEM_DATA

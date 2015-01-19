@@ -32,6 +32,7 @@
  */
 
 #include <math.h>
+#include <string.h>
 
 #include "../../../../Compiler/runtime/config.h"
 #include "omc_error.h"
@@ -197,9 +198,9 @@ void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
 {
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
   infoStreamPrint(logLevel, 1, "Linear system %d of size %d solver statistics:", (int)linsys[sysNumber].equationIndex, (int)linsys[sysNumber].size);
-  infoStreamPrint(logLevel, 0, " number of calls       : %ld", linsys[sysNumber].numberOfCall);
-  infoStreamPrint(logLevel, 0, " average time per call : %f", linsys[sysNumber].totalTime/linsys[sysNumber].numberOfCall);
-  infoStreamPrint(logLevel, 0, " total time            : %f", linsys[sysNumber].totalTime);
+  infoStreamPrint(logLevel, 0, " number of calls                : %ld", linsys[sysNumber].numberOfCall);
+  infoStreamPrint(logLevel, 0, " average time per call          : %f", linsys[sysNumber].totalTime/linsys[sysNumber].numberOfCall);
+  infoStreamPrint(logLevel, 0, " total time                     : %f", linsys[sysNumber].totalTime);
   messageClose(logLevel);
 }
 
@@ -413,7 +414,6 @@ void setBElementLAPACK(int row, double value, void *data )
   linsys->b[row] = value;
 }
 
-
 void setAElementLis(int row, int col, double value, int nth, void *data)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
@@ -440,7 +440,6 @@ void setAElementUmfpack(int row, int col, double value, int nth, void *data)
 
    sData->Ai[nth] = col;
    sData->Ax[nth] = value;
-
 }
 
 void setBElementUmfpack(int row, double value, void *data)

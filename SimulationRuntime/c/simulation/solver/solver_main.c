@@ -509,7 +509,12 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
     infoStreamPrint(LOG_STATS_V, 1, "linear systems");
     for(ui=0; ui<data->modelData.nLinearSystems; ui++)
-     printLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
+      printLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
+    messageClose(LOG_STATS_V);
+
+    infoStreamPrint(LOG_STATS_V, 1, "non-linear systems");
+    for(ui=0; ui<data->modelData.nNonLinearSystems; ui++)
+      printNonLinearSystemSolvingStatistics(data, ui, LOG_STATS_V);
     messageClose(LOG_STATS_V);
 
     messageClose(LOG_STATS);

@@ -82,6 +82,7 @@ typedef void* NLS_SOLVER_DATA;
 int initializeNonlinearSystems(DATA *data);
 int updateStaticDataOfNonlinearSystems(DATA *data);
 int freeNonlinearSystems(DATA *data);
+void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
 int solve_nonlinear_system(DATA *data, int sysNumber);
 int check_nonlinear_solutions(DATA *data, int printFailingSystems);
 double extraPolate(DATA *data, const double old1, const double old2, const double minValue, const double maxValue);
