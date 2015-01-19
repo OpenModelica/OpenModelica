@@ -410,6 +410,7 @@ TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWi
   setSortingEnabled(true);
   sortByColumn(0, Qt::AscendingOrder);
   setExpandsOnDoubleClick(false);
+  header()->setStretchLastSection(true);
 }
 
 EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWidget)
@@ -432,6 +433,7 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
   QStringList headerLabels;
   headerLabels << Helper::index << Helper::type << Helper::equation << Helper::executionCount << Helper::executionMaxTime << Helper::executionTime << Helper::executionFraction;
   setHeaderLabels(headerLabels);
+  header()->setStretchLastSection(true);
   connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), mpTransformationWidget, SLOT(fetchEquationData(QTreeWidgetItem*,int)));
 }
 
@@ -539,6 +541,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpVariableOperationsTreeWidget->setColumnCount(1);
   mpVariableOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpVariableOperationsTreeWidget->setHeaderLabel(tr("Operations"));
+  mpVariableOperationsTreeWidget->header()->setStretchLastSection(true);
   QGridLayout *pVariableOperationsGridLayout = new QGridLayout;
   pVariableOperationsGridLayout->setSpacing(1);
   pVariableOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -573,6 +576,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   QStringList headerLabels;
   headerLabels << tr("Variable");
   mpDefinesVariableTreeWidget->setHeaderLabels(headerLabels);
+  mpDefinesVariableTreeWidget->header()->setStretchLastSection(true);
   QGridLayout *pDefinesGridLayout = new QGridLayout;
   pDefinesGridLayout->setSpacing(1);
   pDefinesGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -591,6 +595,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpDependsVariableTreeWidget->setSortingEnabled(true);
   mpDependsVariableTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   mpDependsVariableTreeWidget->setHeaderLabel(tr("Variable"));
+  mpDependsVariableTreeWidget->header()->setStretchLastSection(true);
   QGridLayout *pDependsGridLayout = new QGridLayout;
   pDependsGridLayout->setSpacing(1);
   pDependsGridLayout->setContentsMargins(0, 0, 0, 0);
@@ -607,6 +612,7 @@ TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWi
   mpEquationOperationsTreeWidget->setColumnCount(1);
   mpEquationOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpEquationOperationsTreeWidget->setHeaderLabel(tr("Operations"));
+  mpEquationOperationsTreeWidget->header()->setStretchLastSection(true);
   QGridLayout *pEquationOperationsGridLayout = new QGridLayout;
   pEquationOperationsGridLayout->setSpacing(1);
   pEquationOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
