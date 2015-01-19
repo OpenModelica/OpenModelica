@@ -285,7 +285,7 @@ algorithm
   dumpVariables(knownVars, "Known Variables (constants)");
   dumpVariables(externalObjects, "External Objects");
   dumpExternalObjectClasses(extObjClasses, "Classes of External Objects");
-  dumpVariables(aliasVars, "AliasVariables");
+  dumpVariables(aliasVars, "Alias Variables");
   dumpEquationArray(removedEqs, "Simple Equations");
   dumpEquationArray(initialEqs, "Initial Equations");
   dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings");
