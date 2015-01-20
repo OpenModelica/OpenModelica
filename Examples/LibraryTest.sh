@@ -27,7 +27,7 @@ fi
 TESTMODELS="$OMHOME/share/doc/omc/testmodels/"
 HISTORY="$WWW/history"
 
-"$OMHOME/bin/omc" ++v
+"$OMHOME/bin/omc" +version
 
 rm -rf "$WORKDIR"
 mkdir -p "$WORKDIR" "$WWW/$LIB_DIR" "$HISTORY"
