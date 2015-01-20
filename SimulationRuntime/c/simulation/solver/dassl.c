@@ -123,14 +123,38 @@ dummy_precondition(int *neq, double *t, double *y, double *yprime, double *savr,
     return 0;
 }
 
-
 static int continue_DASSL(int* idid, double* tolarence);
 
+enum EVAL_CONTEXT
+{
+  CONTEXT_UNKNOWN = 0,
 
+  CONTEXT_ODE,
+  CONTEXT_JACOBIAN,
+  CONTEXT_EVENTS,
+
+  CONTEXT_MAX
+};
+
+const char *context_string[CONTEXT_MAX] = {
+ "context UNKNOWN",
+ "context ODE evaluation",
+ "context Jacobian",
+ "context Event Search"
+};
+
+void setDasslContext(DASSL_DATA* dasslData, double* currentTime, int currentContext){
+  dasslData->currentContextOld =  dasslData->currentContext;
+  dasslData->currentContext =  currentContext;
+  infoStreamPrint(LOG_DASSL, 0, "+++ Set DASSL %s +++ at time %f", context_string[dasslData->currentContext], *currentTime);
+}
+void unsetDasslContext(DASSL_DATA* dasslData){
+  infoStreamPrint(LOG_DASSL, 0, "--- Unset DASSL %s ---", context_string[dasslData->currentContext]);
+  dasslData->currentContext =  dasslData->currentContextOld;
+}
 
 /* function for calculating state values on residual form */
 static int functionODE_residual(double *t, double *x, double *xprime, double *cj, double *delta, int *ires, double *rpar, int* ipar);
-
 /* function for calculating zeroCrossings */
 static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
         int *ng, double *gout, double *rpar, int* ipar);
@@ -174,6 +198,8 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   dasslData->delta_hh = (double*) malloc(data->modelData.nStates*sizeof(double));
   dasslData->newdelta = (double*) malloc(data->modelData.nStates*sizeof(double));
   dasslData->stateDer = (double*) malloc(data->modelData.nStates*sizeof(double));
+
+  dasslData->currentContext = CONTEXT_UNKNOWN;
 
   /* setup internal ring buffer for dassl */
 
@@ -437,6 +463,29 @@ int dassl_deinitial(DASSL_DATA *dasslData)
   TRACE_POP
   return 0;
 }
+
+/* \fn printCurrentStatesVector(int logLevel, double* y, DATA* data)
+ *
+ * \param [in] [logLevel]
+ * \param [in] [states]
+ * \param [ref] [Data]
+ *
+ * This function outputs states vector.
+ *
+ */
+int printCurrentStatesVector(int logLevel, double* states, DATA* data){
+  int i;
+  infoStreamPrint(logLevel, 1, "States: ");
+  for(i=0;i<data->modelData.nStates;++i)
+  {
+    infoStreamPrint(logLevel, 0, " %d. %s = %f ", i+1, data->modelData.realVarsData[i].info.name, states[i]);
+  }
+  messageClose(logLevel);
+  
+  return 0;
+}
+
+
 
 /**********************************************************************************************
  * DASSL with synchronous treating of when equation
@@ -727,6 +776,7 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
                     int *ires, double *rpar, int *ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = data->threadData;
 
   double timeBackup;
@@ -735,6 +785,10 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   int success = 0;
 
   TRACE_PUSH
+  if (dasslData->currentContext == CONTEXT_UNKNOWN){
+    setDasslContext(dasslData, t, CONTEXT_ODE);
+    printCurrentStatesVector(LOG_DASSL_STATES, y, data);
+  }
 
   timeBackup = data->localData[0]->timeValue;
   data->localData[0]->timeValue = *t;
@@ -773,6 +827,10 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
 
   data->localData[0]->timeValue = timeBackup;
 
+  if (dasslData->currentContext == CONTEXT_ODE){
+    unsetDasslContext(dasslData);
+  }
+
   TRACE_POP
   return 0;
 }
@@ -781,11 +839,15 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
         int *ng, double *gout, double *rpar, int* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
 
   double timeBackup;
   int saveJumpState;
 
   TRACE_PUSH
+  if (dasslData->currentContext == CONTEXT_UNKNOWN){
+    setDasslContext(dasslData, t, CONTEXT_EVENTS);
+  }
 
   saveJumpState = data->threadData->currentErrorStage;
   data->threadData->currentErrorStage = ERROR_EVENTSEARCH;
@@ -803,6 +865,10 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
 
   data->threadData->currentErrorStage = saveJumpState;
   data->localData[0]->timeValue = timeBackup;
+
+  if (dasslData->currentContext == CONTEXT_EVENTS){
+    unsetDasslContext(dasslData);
+  }
 
   TRACE_POP
   return 0;
@@ -929,6 +995,7 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
          double *rpar, int* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double* backupStates;
   double timeBackup;
   int i;
@@ -936,9 +1003,10 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
 
   TRACE_PUSH
 
+  setDasslContext(dasslData, t, CONTEXT_JACOBIAN);
+
   backupStates = data->localData[0]->realVars;
   timeBackup = data->localData[0]->timeValue;
-
 
   data->localData[0]->timeValue = *t;
   data->localData[0]->realVars = y;
@@ -958,6 +1026,8 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
   }
   data->localData[0]->realVars = backupStates;
   data->localData[0]->timeValue = timeBackup;
+  
+  unsetDasslContext(dasslData);
 
   TRACE_POP
   return 0;
@@ -970,12 +1040,15 @@ static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD
          double *rpar, int* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double* backupStates;
   double timeBackup;
   int i;
   int j;
 
   TRACE_PUSH
+
+  setDasslContext(dasslData, t, CONTEXT_JACOBIAN);
 
   backupStates = data->localData[0]->realVars;
   timeBackup = data->localData[0]->timeValue;
@@ -998,6 +1071,8 @@ static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD
   }
   data->localData[0]->realVars = backupStates;
   data->localData[0]->timeValue = timeBackup;
+ 
+  unsetDasslContext(dasslData);
 
   TRACE_POP
   return 0;
@@ -1071,8 +1146,10 @@ static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, 
 {
   int i,j;
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
 
   TRACE_PUSH
+  setDasslContext(dasslData, t, CONTEXT_JACOBIAN);
 
   if(jacA_num(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
@@ -1087,6 +1164,7 @@ static int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, 
     pd[j] -= (double) *cj;
     j += data->modelData.nStates + 1;
   }
+  unsetDasslContext(dasslData);
 
   TRACE_POP
   return 0;
@@ -1177,9 +1255,11 @@ static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *d
    double *rpar, int* ipar)
 {
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   int i,j;
 
   TRACE_PUSH
+  setDasslContext(dasslData, t, CONTEXT_JACOBIAN);
 
   if(jacA_numColored(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
@@ -1195,6 +1275,7 @@ static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *d
     pd[j] -= (double) *cj;
     j += data->modelData.nStates + 1;
   }
+  unsetDasslContext(dasslData);
 
   TRACE_POP
   return 0;

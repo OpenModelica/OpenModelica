@@ -61,6 +61,10 @@ typedef struct DASSL_DATA{
   unsigned int* dasslStatistics;
   unsigned int* dasslStatisticsTmp;
 
+  /* current context evaulation */
+  int currentContext;
+  int currentContextOld;
+
   int* info;
 
   int idid;
@@ -97,7 +101,6 @@ typedef struct DASSL_DATA{
 /* main dassl function to make a step */
 int
 dassl_step(DATA* simData, SOLVER_INFO* solverInfo);
-
 
 /* initial main dassl Data */
 int
