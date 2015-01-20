@@ -787,8 +787,8 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   TRACE_PUSH
   if (dasslData->currentContext == CONTEXT_UNKNOWN){
     setDasslContext(dasslData, t, CONTEXT_ODE);
-    printCurrentStatesVector(LOG_DASSL_STATES, y, data);
   }
+  printCurrentStatesVector(LOG_DASSL_STATES, y, data);
 
   timeBackup = data->localData[0]->timeValue;
   data->localData[0]->timeValue = *t;
