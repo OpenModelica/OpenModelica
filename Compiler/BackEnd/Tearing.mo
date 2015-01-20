@@ -241,6 +241,7 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
       BackendDAE.JacobianType jacType;
       Boolean mixedSystem;
+	  TearingMethod inMethod2;
 
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
       equality(jacType = BackendDAE.JAC_LINEAR());
@@ -256,7 +257,12 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
       end if;
-      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
+      if listLength(vindx) > 200 then
+        inMethod2 = OMC_TEARING();
+      else
+	    inMethod2 = inMethod;
+      end if;
+      (comp1, true) = callTearingMethod(inMethod2, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
     then (comp1, true);
 
     // tearing of non-linear systems
@@ -268,7 +274,12 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
       end if;
-      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
+      if listLength(vindx) > 200 then
+        inMethod2 = OMC_TEARING();
+      else
+	    inMethod2 = inMethod;
+      end if;
+      (comp1, true) = callTearingMethod(inMethod2, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
     then (comp1, true);
 
     // no component for tearing
