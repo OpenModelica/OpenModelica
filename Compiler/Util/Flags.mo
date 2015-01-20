@@ -566,7 +566,7 @@ constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
   Util.gettext("Used when running the testsuite."));
 
 constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
-  SOME("v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  SOME("-v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Print the version and exit."));
 
 constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
