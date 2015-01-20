@@ -41,12 +41,12 @@ encapsulated package Flags
   retrieved with set/getGlobalRoot so that they can be accessed everywhere in
   the compiler.
 
-  Configuration flags are flags such as +std which affects the behaviour of the
+  Configuration flags are flags such as --std which affects the behaviour of the
   compiler. These flags can have different types, see the FlagData uniontype
   below, and they also have a default value. There is also another package,
   Config, which acts as a wrapper for many of these flags.
 
-  Debug flags are boolean flags specified with +d, which can be used together
+  Debug flags are boolean flags specified with -d, which can be used together
   with the Debug package. They are typically used to enable printing of extra
   information that helps debugging, such as the failtrace flag. Unlike
   configuration flags they are only on or off, i.e. true or false.
@@ -69,7 +69,7 @@ public import Util;
 public uniontype DebugFlag
   record DEBUG_FLAG
     Integer index "Unique index.";
-    String name "The name of the flag used by +d";
+    String name "The name of the flag used by -d";
     Boolean default "Default enabled or not";
     Util.TranslatableContent description "A description of the flag.";
   end DEBUG_FLAG;
@@ -307,7 +307,7 @@ constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(70, "backenddaeinfo", false
 constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(71, "gendebugsymbols", false,
   Util.gettext("Generate code with debugging symbols."));
 constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(72, "stateselection", false,
-  Util.gettext("Enables dumping of selected states. Extends +d=backenddaeinfo."));
+  Util.gettext("Enables dumping of selected states. Extends -d=backenddaeinfo."));
 constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(73, "dumpeqninorder", false,
   Util.gettext("Enables dumping of the equations in the order they are calculated."));
 constant DebugFlag SYMBOLIC_INITIALIZATION = DEBUG_FLAG(74, "symbolicInitialization", false,
@@ -327,11 +327,11 @@ constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(80, "dumpinitialsystem", fal
 constant DebugFlag GRAPH_INST = DEBUG_FLAG(81, "graphInst", false,
   Util.gettext("Do graph based instantation."));
 constant DebugFlag GRAPH_INST_RUN_DEP = DEBUG_FLAG(82, "graphInstRunDep", false,
-  Util.gettext("Run scode dependency analysis. Use with +d=graphInst"));
+  Util.gettext("Run scode dependency analysis. Use with -d=graphInst"));
 constant DebugFlag GRAPH_INST_GEN_GRAPH = DEBUG_FLAG(83, "graphInstGenGraph", false,
-  Util.gettext("Dumps a graph of the program. Use with +d=graphInst"));
+  Util.gettext("Dumps a graph of the program. Use with -d=graphInst"));
 constant DebugFlag GRAPH_INST_SHOW_GRAPH = DEBUG_FLAG(84, "graphInstShowGraph", false,
-  Util.gettext("Diplay a graph of the program interactively. Use with +d=graphInst"));
+  Util.gettext("Diplay a graph of the program interactively. Use with -d=graphInst"));
 constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(85, "dumpConstrepl", false,
   Util.gettext("Dump the found replacements for constants."));
 constant DebugFlag PEDANTIC = DEBUG_FLAG(86, "pedantic", false,
@@ -357,7 +357,7 @@ constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(95, "disableSingleFlowEq"
 constant DebugFlag PARTLINTORNSYSTEM = DEBUG_FLAG(96, "partlintornsystem", false,
   Util.gettext("Disassembles linear torn systems to various singleEquations and a reduced tornSystem."));
 constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(97, "discreteinfo", false,
-  Util.gettext("Enables dumping of discrete variables. Extends +d=backenddaeinfo."));
+  Util.gettext("Enables dumping of discrete variables. Extends -d=backenddaeinfo."));
 constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(98, "graphvizDump", false,
   Util.gettext("Activates additional graphviz dumps (as *.dot files). It can be used in addition to one of the following flags: {dumpdaelow|dumpinitialsystems|dumpindxdae}."));
 constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(99, "infoXmlOperations", false,
@@ -555,18 +555,18 @@ public
 // CONFIGURATION FLAGS
 constant ConfigFlag DEBUG = CONFIG_FLAG(1, "debug",
   SOME("d"), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
-  Util.gettext("Sets debug flags. Use +help=debug to see available flags."));
+  Util.gettext("Sets debug flags. Use --help=debug to see available flags."));
 
 constant ConfigFlag HELP = CONFIG_FLAG(2, "help",
   SOME("h"), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Displays the help text. Use +help=topics for more information."));
+  Util.gettext("Displays the help text. Use --help=topics for more information."));
 
 constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
   NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Used when running the testsuite."));
 
 constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
-  SOME("+v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  SOME("v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Print the version and exit."));
 
 constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
@@ -648,7 +648,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("evalFunc", Util.gettext("evaluates functions partially")),
     ("comSubExp", Util.gettext("replaces common sub expressions"))
     })),
-  Util.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
+  Util.gettext("Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."));
 
 constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgorithm",
   NONE(), EXTERNAL(), INT_FLAG(3),
@@ -679,14 +679,14 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("HKDWExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
     ("ABMPExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
     ("PRExt", Util.gettext("Matching algorithm using push relabel mechanism external c implementation."))})),
-    Util.gettext("Sets the matching algorithm to use. See +help=optmodules for more info."));
+    Util.gettext("Sets the matching algorithm to use. See --help=optmodules for more info."));
 
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"),
   SOME(STRING_DESC_OPTION({
     ("uode", Util.gettext("Use the underlying ODE without the constraints.")),
     ("dynamicStateSelection", Util.gettext("Simple index reduction method, select (dynamic) dummy states based on analysis of the system."))})),
-    Util.gettext("Sets the index reduction method to use. See +help=optmodules for more info."));
+    Util.gettext("Sets the index reduction method to use. See --help=optmodules for more info."));
 
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
@@ -747,7 +747,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("reshufflePost", Util.gettext("Reshuffles algebraic loops."))
     })),
-  Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
+  Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
 
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
@@ -776,7 +776,7 @@ constant ConfigFlag SILENT = CONFIG_FLAG(22, "silent",
 
 constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(23, "corbaSessionName",
   SOME("c"), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets the name of the corba session if +d=interactiveCorba is used."));
+  Util.gettext("Sets the name of the corba session if -d=interactiveCorba is used."));
 
 constant ConfigFlag NUM_PROC = CONFIG_FLAG(24, "numProcs",
   SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
@@ -881,7 +881,7 @@ constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(47, "scalarizeBindings",
 
 constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(48, "corbaObjectReferenceFilePath",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets the path for corba object reference file if +d=interactiveCorba is used."));
+  Util.gettext("Sets the path for corba object reference file if -d=interactiveCorba is used."));
 
 constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(49, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG("level"), NONE(),
@@ -1303,7 +1303,8 @@ algorithm
 
   // Flags beginning with + can be both short and long, i.e. +h or +help.
   if flagtype == "+" then
-    if len == 1 then // + alone is not a valid flag.
+    if len == 1 then
+      // + alone is not a valid flag.
       parseFlag(inArg, NO_FLAGS());
     else
       parseFlag(System.substring(inArg, 2, len), inFlags, flagtype);
@@ -1311,16 +1312,26 @@ algorithm
     outConsumed := true;
   // Flags beginning with - must have another - for long flags, i.e. -h or --help.
   elseif flagtype == "-" then
-    if len == 1 then // - alone is not a valid flag.
+    if len == 1 then
+      // - alone is not a valid flag.
       parseFlag(inArg, NO_FLAGS());
-    elseif len == 2 then // Short flag, i.e. -h.
+    elseif len == 2 then
+      // Short flag without argument, i.e. -h.
       parseFlag(System.substring(inArg, 2, 2), inFlags, flagtype);
-    elseif len == 3 then // Too long for short flag, too short for long flag.
-      parseFlag(inArg, NO_FLAGS());
-    else // Long flag, i.e. --help.
-      if stringGetStringChar(inArg, 2) == "-" then
-        parseFlag(System.substring(inArg, 3, len), inFlags, "--");
+    elseif stringGetStringChar(inArg, 2) == "-" then
+      if len < 4 or stringGetStringChar(inArg, 4) == "=" then
+        // Short flags may not be used with --, i.e. --h or --h=debug.
+        parseFlag(inArg, NO_FLAGS());
       else
+        // Long flag, i.e. --help or --help=debug.
+        parseFlag(System.substring(inArg, 3, len), inFlags, "--");
+      end if;
+    else
+      if stringGetStringChar(inArg, 3) == "=" then
+        // Short flag with argument, i.e. -h=debug.
+        parseFlag(System.substring(inArg, 2, len), inFlags, flagtype);
+      else
+        // Long flag used with -, i.e. -help, which is not allowed.
         parseFlag(inArg, NO_FLAGS());
       end if;
     end if;
@@ -1882,16 +1893,16 @@ algorithm
 
     case {"optmodules"}
       equation
-        str1 = System.gettext("The +preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list, where the valid modules are:");
+        str1 = System.gettext("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list, where the valid modules are:");
         str1 = stringAppendList(Util.stringWrap(str1,System.getTerminalWidth(),"\n"));
         str2 = printFlagValidOptionsDesc(PRE_OPT_MODULES);
-        str3 = System.gettext("The +matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules. Valid options are:");
+        str3 = System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules. Valid options are:");
         str3 = stringAppendList(Util.stringWrap(str3,System.getTerminalWidth(),"\n"));
         str4 = printFlagValidOptionsDesc(MATCHING_ALGORITHM);
-        str5 = System.gettext("The +indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules. Valid options are:");
+        str5 = System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules. Valid options are:");
         str5 = stringAppendList(Util.stringWrap(str5,System.getTerminalWidth(),"\n"));
         str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD);
-        str7 = System.gettext("The +postOptModules then sets the optimization modules which are used after the index reduction, specified as a comma-separated list. The valid modules are:");
+        str7 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction, specified as a comma-separated list. The valid modules are:");
         str7 = stringAppendList(Util.stringWrap(str7,System.getTerminalWidth(),"\n"));
         str8 = printFlagValidOptionsDesc(POST_OPT_MODULES);
         help = stringAppendList({str1,"\n\n",str2,"\n",str3,"\n\n",str4,"\n",str5,"\n\n",str6,"\n",str7,"\n\n",str8,"\n"});
@@ -1900,7 +1911,7 @@ algorithm
     case {str}
       equation
         (config_flag as CONFIG_FLAG(name=name,description=desc)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
-        str1 = "+" + name;
+        str1 = "-" + name;
         str2 = stringAppendList(Util.stringWrap(Util.translateContent(desc), System.getTerminalWidth(), "\n"));
         str = printFlagValidOptionsDesc(config_flag);
         help = stringAppendList({str1,"\n",str2,"\n",str});
