@@ -656,7 +656,7 @@ int initializeResultData(DATA* simData, int cpuTime)
   }
   initializeOutputFilter(&(simData->modelData), simData->simulationInfo.variableFilter, resultFormatHasCheapAliasesAndParameters);
   sim_result.init(&sim_result, simData);
-  infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", (char*) simData->simulationInfo.outputFormat, sim_result.filename);
+  infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", (char*) MMC_STRINGDATA(simData->simulationInfo.outputFormat), sim_result.filename);
   return 0;
 }
 
@@ -855,7 +855,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     sim_communication_port_open &= sim_communication_port.create();
     sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
 
-    if(0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat))) {
+    if(0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat)))
+    {
       communicateStatus("Starting", 0.0);
     }
   }
@@ -883,7 +884,8 @@ void SimulationRuntime_printStatus(int sig)
 void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*/)
 {
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  if(sim_communication_port_open) {
+  if(sim_communication_port_open)
+  {
     std::stringstream s;
     s << (int)(completionPercent*10000) << " " << phase << endl;
     std::string str(s.str());

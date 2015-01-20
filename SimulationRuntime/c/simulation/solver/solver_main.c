@@ -435,7 +435,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     data->simulationInfo.terminal = 0;
   }
 
-  if(0 != strcmp("ia", data->simulationInfo.outputFormat))
+  if(0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat)))
   {
     communicateStatus("Finished", 1);
   }
