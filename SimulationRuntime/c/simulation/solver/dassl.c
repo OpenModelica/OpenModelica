@@ -481,7 +481,7 @@ int printCurrentStatesVector(int logLevel, double* states, DATA* data){
     infoStreamPrint(logLevel, 0, " %d. %s = %f ", i+1, data->modelData.realVarsData[i].info.name, states[i]);
   }
   messageClose(logLevel);
-  
+
   return 0;
 }
 
@@ -1026,7 +1026,7 @@ static int JacobianSymbolicColored(double *t, double *y, double *yprime, double 
   }
   data->localData[0]->realVars = backupStates;
   data->localData[0]->timeValue = timeBackup;
-  
+
   unsetDasslContext(dasslData);
 
   TRACE_POP
@@ -1071,7 +1071,7 @@ static int JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD
   }
   data->localData[0]->realVars = backupStates;
   data->localData[0]->timeValue = timeBackup;
- 
+
   unsetDasslContext(dasslData);
 
   TRACE_POP
