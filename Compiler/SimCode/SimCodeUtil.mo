@@ -6067,11 +6067,11 @@ algorithm
   (equations_, noDiscequations, ouniqueEqIndex, otempvars) := matchcontinue(genDiscrete, inEquations, inVars, iuniqueEqIndex, itempvars, iextra)
     local
       list<Integer> ds;
-      DAE.Exp e1, e2;
-      list<DAE.Exp> ea1, ea2;
+      DAE.Exp e1, e2, e1_1, e2_1;
+      list<DAE.Exp> ea1, ea2, expLst, expLstTmp;
       list<BackendDAE.Equation> re;
       list<BackendDAE.Var> vars;
-      DAE.ComponentRef cr, cr_1;
+      DAE.ComponentRef cr, cr_1, left;
       BackendDAE.Variables evars, vars1;
       BackendDAE.EquationArray eeqns, eqns_1;
       FCore.Cache cache;
@@ -6081,6 +6081,7 @@ algorithm
       BackendDAE.Variables av;
       BackendDAE.BackendDAE subsystem_dae;
       SimCode.SimEqSystem equation_;
+      list<SimCode.SimEqSystem> eqSystlst;
       BackendDAE.StrongComponents comps;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -6089,8 +6090,13 @@ algorithm
       list<list<DAE.Subscript>> subslst;
       list<SimCodeVar.SimVar> tempvars;
       BackendDAE.EquationKind eqKind;
+      BackendDAE.Equation eq1;
+      HashSet.HashSet ht;
+      list<DAE.ComponentRef> crefs, crefstmp;
+      DAE.Type ty;
+      list<tuple<DAE.Exp, DAE.Exp>> exptl;
 
-    case (_, BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source)::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
+    case (_, (eq1 as BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
       // We need to strip subs from the name since they are removed in cr.
       cr_1 = ComponentReference.crefStripLastSubs(cr);
       e1 = Expression.replaceDerOpInExp(e1);
@@ -6101,7 +6107,32 @@ algorithm
       (equation_, uniqueEqIndex) = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2, iuniqueEqIndex, source);
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
-    case (_, BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind))::_, vars, _, _, _) equation
+    // An array equation
+    // {z1,z2,..} = f(...) -> solved for {z1,z2,..}
+    // => tmp = f(x); {z1,z2} = tmp;
+    case (_, (eq1 as BackendDAE.ARRAY_EQUATION(dimSize=ds, left=(e1 as DAE.ARRAY()), right=(e2 as DAE.CALL()), source=source))::{}, vars, _, _, _) equation
+      (e1_1 as DAE.ARRAY(array=expLst)) = Expression.replaceDerOpInExp(e1);
+      e2_1 = Expression.replaceDerOpInExp(e2);
+      //check that {z1,z2,...} are in e1
+      crefs = List.map(inVars, BackendVariable.varCref);
+      ht = HashSet.emptyHashSet();
+      ht = List.fold(crefs, BaseHashSet.add, ht);
+      List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
+
+      // create tmp vars and exps
+      ty = Expression.typeof(e1);
+      left = ComponentReference.makeCrefIdent("$TMP_" + intString(iuniqueEqIndex), ty, {});
+      crefstmp = ComponentReference.expandCref(left, false);
+      expLstTmp = List.map(crefstmp, Expression.crefExp);
+      tempvars = createArrayTempVar(left, ds, expLstTmp, itempvars);
+
+      exptl = List.threadTuple(expLst, expLstTmp);
+      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);      
+
+      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, left, e2_1, source)::eqSystlst;
+    then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
+      
+    case (_, (eq1 as BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind)))::_, vars, _, _, _) equation
       true = Expression.isArray(e1) or Expression.isMatrix(e1);
       true = Expression.isArray(e2) or Expression.isMatrix(e2);
       e1 = Expression.replaceDerOpInExp(e1);
