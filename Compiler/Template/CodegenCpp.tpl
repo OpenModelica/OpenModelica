@@ -2363,7 +2363,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
         , _simData(simData)
         <%simulationInitFile(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, false)%>
     {
-      initAlgloopSolverVariables();
       //Number of equations
       <%dimension1(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       _dimZeroFunc = <%zerocrosslength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>;
@@ -2601,19 +2600,15 @@ match simCode
            if(_useSparseFormat)
            {
              if(__Asparse == NULL)
-             {
-               //sometimes initialize was not called before
-               <%alocateLinearSystem(eq)%>
-             }
+                __Asparse = new sparse_inserter;
+                
              evaluate(__Asparse);
            }
            else
            {
              if(! __A )
-             {
-               //sometimes initialize was not called before
-               <%alocateLinearSystem(eq)%>
-             }
+                __A = boost::shared_ptr<AMATRIX>( new AMATRIX());
+             
              evaluate(__A.get());
            }
         }
@@ -4212,6 +4207,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+      
+      initializeAlgloopSolverVariables();
+      
       _simTime = 0.0;
       /*variable decls*/
       <%varDecls%>
@@ -4233,7 +4231,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
       initializeStateVars();
       initializeDerVars();
+      
       <%initFunctions%>
+      
       //_event_handling.initialize(this,<%helpvarlength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
       _event_handling.initialize(this,<%helpvarlength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>);
 
@@ -4241,14 +4241,18 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       <%initEventHandling%>
       //init alg loop vars
       <%initAlgloopvars%>
+      
       //init equations
       initEquations();
+      
       //init alg loop solvers
       <%initAlgloopSolvers%>
+      
       for(int i=0;i<_dimZeroFunc;i++)
       {
          getCondition(i);
       }
+      
       //initialAnalyticJacobian();
       saveAll();
 
@@ -4371,7 +4375,7 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, SimCode sim
         equation_function_create_single_func(eq, contextOther, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "initEquation", "Initialize", stateDerVectorName, useFlatArrayNotation, createMeasureTime)
       ;separator="\n")
   <<
-   <%equation_func_calls%>
+  <%equation_func_calls%>
   >>
 end functionInitialEquations;
 
@@ -5172,7 +5176,7 @@ match modelInfo
 
   let initDeleteAlgloopSolverVars = (List.partition(listAppend(allEquations,initialEquations), 100) |> ls hasindex idx =>
     <<
-    void initAlgloopSolverVariables_<%idx%>();
+    void initializeAlgloopSolverVariables_<%idx%>();
     void deleteAlgloopSolverVariables_<%idx%>();
     >>
     ;separator="\n")
@@ -5210,7 +5214,7 @@ match modelInfo
       %>
   protected:
       //Methods:
-      void initAlgloopSolverVariables();
+      void initializeAlgloopSolverVariables();
       void deleteAlgloopSolverVariables();
 
       <%initDeleteAlgloopSolverVars%>
@@ -7892,8 +7896,7 @@ template functionInitial(list<SimEqSystem> startValueEquations, Text &varDecls, 
       equation_(eq, contextSimulationDiscrete, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator="\n")
   <<
-
-    <%eqPart%>
+  <%eqPart%>
   >>
 end functionInitial;
 
@@ -8442,7 +8445,7 @@ template generateInitAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWh
   <<
   <%algloopsolverFuncs%>
 
-  void <%className%>::initAlgloopSolverVariables()
+  void <%className%>::initializeAlgloopSolverVariables()
   {
     <%funcCalls%>
   }
@@ -8457,9 +8460,9 @@ template generateInitAlgloopsolverVariables1(list<SimEqSystem> allEquationsPlusW
       generateInitAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace);separator="\n")
     ;separator="\n")
 
-  let &funcCalls += 'initAlgloopSolverVariables_<%partIdx%>();'
+  let &funcCalls += 'initializeAlgloopSolverVariables_<%partIdx%>();'
   <<
-  void <%className%>::initAlgloopSolverVariables_<%partIdx%>()
+  void <%className%>::initializeAlgloopSolverVariables_<%partIdx%>()
   {
     <%algloopsolver%>
   }
@@ -8473,20 +8476,19 @@ template generateInitAlgloopsolverVariables2(SimEqSystem eq, Context context, Te
   Residual equations are handled differently."
 ::=
   match eq
-   case SES_LINEAR(__)
-  case e as SES_NONLINEAR(__)
-    then
-  let num = index
-  match simCode
-  case SIMCODE(modelInfo = MODELINFO(__)) then
-   <<
-    _conditions0<%num%> = NULL;
-    _conditions1<%num%> = NULL;
-    _algloop<%num%>Vars = NULL;
-   >>
-   end match
-  else
-    ""
+    case SES_LINEAR(__)
+    case e as SES_NONLINEAR(__)
+      then
+        let num = index
+        match simCode
+          case SIMCODE(modelInfo = MODELINFO(__)) then
+            <<
+            _conditions0<%num%> = NULL;
+            _conditions1<%num%> = NULL;
+            _algloop<%num%>Vars = NULL;
+            >>
+        end match
+    else ""
 end generateInitAlgloopsolverVariables2;
 
 template generateDeleteAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text className)
@@ -8588,8 +8590,7 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-    // Initialize the solver
-    if(_algLoopSolver<%num%>)
+   if(_algLoopSolver<%num%>)
        _algLoopSolver<%num%>->initialize();
    >>
    end match
@@ -8599,7 +8600,7 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
    <%initAlgloopsolvers2(eq_sys,context,varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
    >>
   else
-    " "
+    ""
  end initAlgloopsolvers2;
 
 

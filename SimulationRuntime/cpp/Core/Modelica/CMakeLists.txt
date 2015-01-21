@@ -120,11 +120,14 @@ SET(INTEL_TBB_LIBS "")
 foreach(lib ${TBB_LIBRARIES})
 	set(INTEL_TBB_LIBS "${INTEL_TBB_LIBS} ${lib}")
 endforeach(lib ${TBB_LIBRARIES})
+
+SET(UMFPACK_LIBS "")
+foreach(lib ${UMFPACK_LIB})
+	set(UMFPACK_LIBS "${UMFPACK_LIBS} ${lib}")
+endforeach(lib ${UMFPACK_LIB})
 #end Fix
 
-#IF(NOT ANALYZATION_MODE)
-	add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
-#ENDIF(NOT ANALYZATION_MODE )
+add_precompiled_header(${ModelicaName} Include/Core/Modelica.h )
 
  configure_file (
   "ModelicaConfig.inc.in"
