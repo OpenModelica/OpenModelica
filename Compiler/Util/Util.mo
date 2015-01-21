@@ -1462,9 +1462,11 @@ algorithm
       delim := inDelimiter;
     end while;
 
-    // Add the remainder of the line to the list.
-    str := delim + substring(line, start_pos, stringLength(line));
-    outStrings := str :: outStrings;
+    // Add any remainder of the line to the list.
+    if start_pos < stringLength(line) then
+      str := delim + substring(line, start_pos, stringLength(line));
+      outStrings := str :: outStrings;
+    end if;
 
     // Continue with the next line.
     start_pos := 1;
