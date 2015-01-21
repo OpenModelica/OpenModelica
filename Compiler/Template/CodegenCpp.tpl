@@ -2601,14 +2601,14 @@ match simCode
            {
              if(__Asparse == NULL)
                 __Asparse = new sparse_inserter;
-                
+
              evaluate(__Asparse);
            }
            else
            {
              if(! __A )
                 __A = boost::shared_ptr<AMATRIX>( new AMATRIX());
-             
+
              evaluate(__A.get());
            }
         }
@@ -4207,9 +4207,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-      
+
       initializeAlgloopSolverVariables();
-      
+
       _simTime = 0.0;
       /*variable decls*/
       <%varDecls%>
@@ -4231,9 +4231,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
       initializeStateVars();
       initializeDerVars();
-      
+
       <%initFunctions%>
-      
+
       //_event_handling.initialize(this,<%helpvarlength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
       _event_handling.initialize(this,<%helpvarlength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>);
 
@@ -4241,18 +4241,18 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       <%initEventHandling%>
       //init alg loop vars
       <%initAlgloopvars%>
-      
+
       //init equations
       initEquations();
-      
+
       //init alg loop solvers
       <%initAlgloopSolvers%>
-      
+
       for(int i=0;i<_dimZeroFunc;i++)
       {
          getCondition(i);
       }
-      
+
       //initialAnalyticJacobian();
       saveAll();
 
