@@ -420,6 +420,8 @@ constant DebugFlag DUMP_CSE = DEBUG_FLAG(127, "dumpCSE", false,
   Util.gettext("Additional ouput for CSE module."));
 constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(128, "dumpCSE_verbose", false,
   Util.gettext("Additional ouput for CSE module."));
+constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(129, "dumpSimCode", false,
+  Util.gettext("Dumps the simCode model used for code generation."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -554,7 +556,8 @@ constant list<DebugFlag> allDebugFlags = {
   GRAPHML,
   USEMPI,
   DUMP_CSE,
-  DUMP_CSE_VERBOSE
+  DUMP_CSE_VERBOSE,
+  DUMP_SIMCODE
 };
 
 public

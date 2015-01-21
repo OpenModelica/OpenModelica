@@ -1748,6 +1748,9 @@ algorithm
       // adrpo: collect all the files from SourceInfo and DAE.ElementSource
       // simCode = collectAllFiles(simCode);
       // print("*** SimCode -> collect all files done!: " + realString(clock()) + "\n");
+      if Flags.isSet(Flags.DUMP_SIMCODE) then
+          dumpSimCode(simCode);
+      end if;
     then (simCode, (highestSimEqIndex, equationSccMapping));
 
     else equation
