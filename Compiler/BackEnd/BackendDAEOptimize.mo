@@ -947,7 +947,12 @@ public function removeEqualFunctionCalls "author: Frenkel TUD 2011-04
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
 algorithm
-  odae := BackendDAEUtil.mapEqSystem(dae,removeEqualFunctionCallsWork);
+  if Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL) then
+    // skip this module if cse module is activated
+    odae := dae;
+  else
+    odae := BackendDAEUtil.mapEqSystem(dae,removeEqualFunctionCallsWork);
+  end if;
 end removeEqualFunctionCalls;
 
 protected function removeEqualFunctionCallsWork "author: Frenkel TUD 2011-04

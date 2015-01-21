@@ -416,6 +416,10 @@ constant DebugFlag GRAPHML = DEBUG_FLAG(125, "graphml", false,
   Util.gettext("Dumps .graphml files for the bipartite graph after Index Reduction and a task graph for the SCCs. Can be displayed with yEd. "));
 constant DebugFlag USEMPI = DEBUG_FLAG(126, "useMPI", false,
   Util.gettext("Add MPI init and finalize to main method (CPPruntime). "));
+constant DebugFlag DUMP_CSE = DEBUG_FLAG(127, "dumpCSE", false,
+  Util.gettext("Additional ouput for CSE module."));
+constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(128, "dumpCSE_verbose", false,
+  Util.gettext("Additional ouput for CSE module."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -548,7 +552,9 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_HOMOTOPY,
   MODEL_INFO_JSON,
   GRAPHML,
-  USEMPI
+  USEMPI,
+  DUMP_CSE,
+  DUMP_CSE_VERBOSE
 };
 
 public
@@ -618,9 +624,11 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "comSubExp",
     // "addInitialStmtsToAlgorithms",
     "resolveLoops",
-    "evalFunc"
+    "evalFunc",
+    "CSE"
     }),
   SOME(STRING_DESC_OPTION({
+    ("CSE", Util.gettext("Common SubExpression Elimination")),
     ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeAllSimpleEquations", removeSimpleEquationDesc),
@@ -952,9 +960,21 @@ constant ConfigFlag NEW_UNIT_CHECKING = CONFIG_FLAG(59,
 
 constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(60, "gDynOpt",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Generate dynamic optimization problem based on annation approach."));
+  Util.gettext("Generate dynamic optimization problem based on annotation approach."));
+  
+constant ConfigFlag CSE_CALL = CONFIG_FLAG(61,
+  "cseCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Experimental feature: cse of duplicate call expressions (this deactivates module removeEqualFunctionCalls)"));
+  
+constant ConfigFlag CSE_BINARY = CONFIG_FLAG(62,
+  "cseBinary", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Experimental feature: cse of duplicate binary expressions"));
 
-constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(61, "maxSizeSolveLinearSystem",
+constant ConfigFlag CSE_EACHCALL = CONFIG_FLAG(63,
+  "cseEachCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Experimental feature: cse of each call expression (this deactivates module removeEqualFunctionCalls)"));
+
+constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(64, "maxSizeSolveLinearSystem",
   NONE(), EXTERNAL(), INT_FLAG(-1), NONE(),
   Util.gettext("Max size for solveLinearSystem."));
 
@@ -1024,6 +1044,9 @@ constant list<ConfigFlag> allConfigFlags = {
   RESHUFFLE,
   NEW_UNIT_CHECKING,
   GENERATE_DYN_OPTIMIZATION_PROBLEM,
+  CSE_CALL,
+  CSE_BINARY,
+  CSE_EACHCALL,
   MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM
 };
 

@@ -7560,7 +7560,8 @@ algorithm
                        (ResolveLoops.resolveLoops, "resolveLoops", false),
                        (EvaluateFunctions.evalFunctions, "evalFunc", false),
                        (UnitCheck.unitChecking, "unitChecking", true),
-                       (CommonSubExpression.commonSubExpressionReplacement, "comSubExp", false)
+                       (CommonSubExpression.commonSubExpressionReplacement, "comSubExp", false),
+                       (CommonSubExpression.CSE, "CSE", false)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
@@ -7617,6 +7618,7 @@ algorithm
                         (SymbolicJacobian.calculateStateSetsJacobians, "calculateStateSetsJacobians", false),
                         (ResolveLoops.reshuffling_post, "reshufflePost", false),
                         (ResolveLoops.solveLinearSystem, "solveLinearSystem", false)
+                        //(CommonSubExpression.CSE, "CSE", false)
                         };
 
   strpostOptModules := getPostOptModulesString();
