@@ -6127,11 +6127,11 @@ algorithm
       tempvars = createArrayTempVar(left, ds, expLstTmp, itempvars);
 
       exptl = List.threadTuple(expLst, expLstTmp);
-      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);      
+      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
 
       eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, left, e2_1, source)::eqSystlst;
     then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
-      
+
     case (_, (eq1 as BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind)))::_, vars, _, _, _) equation
       true = Expression.isArray(e1) or Expression.isMatrix(e1);
       true = Expression.isArray(e2) or Expression.isMatrix(e2);
