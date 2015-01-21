@@ -2131,21 +2131,17 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp rightSide, cond;
       BackendDAE.Equation res;
-      list<BackendDAE.Equation> trueEqns, elseEqnsRest;
+      list<BackendDAE.Equation> trueEqns, elseEqnsRest, result;
       BackendDAE.WhenEquation foundEquation;
       DAE.ElementSource source;
       Integer size;
       BackendDAE.EquationAttributes attr;
 
-    case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=rightSide), source=source, attr=attr)::trueEqns, _, _) equation
-      (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr, elseEqnList);
-      res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr, rightSide, SOME(foundEquation)), source, attr);
-    then mergeClauses(trueEqns, elseEqnsRest, res::inEquationLst);
-
     case (BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left = cr, right=rightSide), source=source, attr=attr)::trueEqns, _, _) equation
-      (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr, elseEqnList);
+      (foundEquation, elseEqnsRest) = getWhenEquationFromVariable(cr, elseEqnList, {});
       res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr, rightSide, SOME(foundEquation)), source, attr);
-    then mergeClauses(trueEqns, elseEqnsRest, res::inEquationLst);
+      result = mergeClauses(trueEqns, elseEqnsRest, res::inEquationLst);
+    then result;
 
     case ({}, {}, _)
     then inEquationLst;
@@ -2161,26 +2157,34 @@ protected function getWhenEquationFromVariable
  the found equation is then taken out of the list."
   input DAE.ComponentRef inCr;
   input list<BackendDAE.Equation> inEquations;
+  input list<BackendDAE.Equation> inEquations2;
   output BackendDAE.WhenEquation outEquation;
   output list<BackendDAE.Equation> outEquations;
 algorithm
-  (outEquation, outEquations) := match(inCr, inEquations)
+  (outEquation, outEquations) := matchcontinue(inCr, inEquations, inEquations2)
     local
       DAE.ComponentRef cr1, cr2;
-      BackendDAE.WhenEquation eq;
-      list<BackendDAE.Equation> rest;
+      BackendDAE.WhenEquation wheneq;
+      BackendDAE.Equation eq;
+      list<BackendDAE.Equation> rest, rest2;
 
-    case (cr1, BackendDAE.WHEN_EQUATION(whenEquation=eq as BackendDAE.WHEN_EQ(left=cr2))::rest)
-      equation
+    case (cr1, BackendDAE.WHEN_EQUATION(whenEquation=wheneq as BackendDAE.WHEN_EQ(left=cr2))::rest, rest2)
+      equation 
         true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
-      then (eq, rest);
+        rest = listAppend(rest2, rest);
+      then (wheneq, rest);
 
-    case (_, {})
+    case (cr1, (eq as BackendDAE.WHEN_EQUATION(whenEquation=wheneq as BackendDAE.WHEN_EQ(left=cr2)))::rest, rest2)
+      equation
+        (wheneq, rest) = getWhenEquationFromVariable(cr1, rest, eq::rest2);
+      then (wheneq, rest);
+
+    case (_, {}, _)
       equation
         Error.addMessage(Error.DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN, {});
       then
         fail();
-  end match;
+  end matchcontinue;
 end getWhenEquationFromVariable;
 
 
