@@ -10,7 +10,7 @@ public:
   //Inits the event variables
   void initialize(IEvent* system);
   bool startEventIteration(bool& state_vars_reinitialized);
-  
+
 private:
   IEvent* _event_system;
   event_times_type _time_events;

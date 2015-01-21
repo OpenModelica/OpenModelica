@@ -8,7 +8,7 @@ public:
   virtual ~DiscreteEvents( );
   //Inits the event variables
   void initialize();
-  
+
 
   //saves a variable in _pre_vars vector
   void save(double& var);
@@ -16,7 +16,7 @@ public:
   void save(bool& var);
   //void savePreVars(double vars [], unsigned int n);
 
-  
+
   //Implementation of the Modelica pre  operator
   double pre(double& var);
   double pre(int& var);
@@ -29,8 +29,8 @@ public:
   bool change(int& var);
   bool change(bool& var);
   bool change(double& var);
- 
-  
+
+
   bool changeDiscreteVar(double& var);
   bool changeDiscreteVar(int& var);
   bool changeDiscreteVar(bool& var);

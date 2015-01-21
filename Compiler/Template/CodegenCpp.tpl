@@ -464,10 +464,10 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   let allVarCount = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
   <<
   #pragma once
- 
+
   /*****************************************************************************
   *
-  * Simulation code for pre- variables 
+  * Simulation code for pre- variables
   *
   *****************************************************************************/
 
@@ -496,7 +496,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     %>
    protected:
      <%MemberVariablePreVariables(modelInfo,useFlatArrayNotation)%>
-    
+
   };
   >>
 end simulationPreVarsHeaderFile;
@@ -591,13 +591,13 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #else
 
   using boost::extensions::factory;
-   BOOST_EXTENSION_TYPE_MAP_FUNCTION 
+   BOOST_EXTENSION_TYPE_MAP_FUNCTION
    {
     types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
     ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>Extension>();
-    
+
    }
-    
+
   #endif
   >>
 end simulationFactoryFile;
@@ -839,16 +839,16 @@ template simulationPreVarsCppFile(SimCode simCode ,Text& extraFuncs,Text& extraF
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
-  
+
    <%lastIdentOfPath(modelInfo.name)%>PreVariables::<%lastIdentOfPath(modelInfo.name)%>PreVariables()
     :PreVariables()
    {
-    
+
    }
 
    <%lastIdentOfPath(modelInfo.name)%>PreVariables::~<%lastIdentOfPath(modelInfo.name)%>PreVariables()
    {
-    
+
    }
 
     <%savePreVars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
@@ -2544,7 +2544,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%getCondition(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     <%handleSystemEvents(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%saveAll(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
-    
+
 
     <%LabeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
@@ -5235,7 +5235,7 @@ let conditionvariables =  conditionvariable(zeroCrossings,simCode , &extraFuncs 
 
 match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
-  
+
 
   let getrealvars =
   (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx =>
@@ -5286,7 +5286,7 @@ match modelInfo
 
       <%generateMethodDeclarationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       virtual bool getCondition(unsigned int index);
-     
+
   protected:
       //Methods:
       void initializeAlgloopSolverVariables();
@@ -5307,14 +5307,14 @@ match modelInfo
       //Saves all variables before an event is handled, is needed for the pre, edge and change operator
       void saveAll();
 
-      
+
 
       void getJacobian(SparseMatrix& matrix);
       void deleteObjects();
       //Variables:
       EventHandling _event_handling;
       boost::shared_ptr<DiscreteEvents> _discrete_events;
-      
+
       <%if(useDefaultMemberVariables) then '<%MemberVariable(modelInfo, useFlatArrayNotation)%>'%>
       <%conditionvariables%>
       Functions* _functions;
@@ -6248,7 +6248,7 @@ match simVar
         case "0" then  '<%varType%> <%varName%>;'
         else ''
       end match
-  
+
 
 end MemberVariableDefine2;
 
@@ -7320,7 +7320,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
 
       <%funcCalls%>
 
-     
+
     }
     >>
     */
@@ -7330,7 +7330,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
          savePreVariables();
     }
     >>
-  
+
 end saveAll;
 
 template savePreVars(ModelInfo modelInfo, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Text stateDerVectorName,Boolean useFlatArrayNotation)
@@ -7349,15 +7349,15 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
 
     void <%className%>PreVariables::savePreVariables()
     {
-      
+
 
       <%funcCalls%>
 
-     
+
     }
     >>
-    
-  
+
+
 end savePreVars;
 
 

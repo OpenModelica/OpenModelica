@@ -26,7 +26,7 @@ public:
   virtual void getStateSetJacobian(unsigned int index, SparseMatrix& matrix) = 0;
   /// Called to handle all  events occured at same time
   virtual bool handleSystemEvents(bool* events) = 0;
- 
+
   //virtual void saveAll() = 0;
 
   virtual string getModelName() = 0;

@@ -131,7 +131,7 @@ protected:
     double
         _simTime;             ///< current simulation time (given by the solver)
 
-   
+
     bool
         * _conditions,        ///< External conditions changed by the solver
         * _time_conditions;

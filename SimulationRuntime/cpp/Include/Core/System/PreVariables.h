@@ -13,7 +13,7 @@ public:
   unordered_map<bool* const, unsigned int> _pre_bool_vars_idx;
   //Stores all variables occurred before an event
   boost::multi_array<double,1> _pre_vars;
-protected: 
+protected:
  double
         *__z,                 ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot;              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations

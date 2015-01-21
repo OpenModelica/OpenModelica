@@ -961,11 +961,11 @@ constant ConfigFlag NEW_UNIT_CHECKING = CONFIG_FLAG(59,
 constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(60, "gDynOpt",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generate dynamic optimization problem based on annotation approach."));
-  
+
 constant ConfigFlag CSE_CALL = CONFIG_FLAG(61,
   "cseCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: cse of duplicate call expressions (this deactivates module removeEqualFunctionCalls)"));
-  
+
 constant ConfigFlag CSE_BINARY = CONFIG_FLAG(62,
   "cseBinary", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: cse of duplicate binary expressions"));

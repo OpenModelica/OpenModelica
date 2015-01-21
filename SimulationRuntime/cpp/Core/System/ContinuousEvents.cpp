@@ -11,7 +11,7 @@ ContinuousEvents::ContinuousEvents() : _countinous_system(NULL), _mixed_system(N
 
 ContinuousEvents::~ContinuousEvents(void)
 {
-  
+
   if(_conditions0)
     delete[] _conditions0;
   if(_conditions1)
@@ -27,7 +27,7 @@ void ContinuousEvents::initialize(IEvent* system)
   _event_system=system;
   _countinous_system = dynamic_cast<IContinuous*>(_event_system);
   _mixed_system= dynamic_cast<IMixedSystem*>(_event_system);
- 
+
 
   if(_conditions0)
     delete[] _conditions0;
@@ -54,7 +54,7 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
   //Handle all events
 
   state_vars_reinitialized = _countinous_system->evaluateConditions();
- 
+
 
   //check if discrete variables changed
   bool drestart= _event_system->checkForDiscreteEvents(); //discrete time conditions

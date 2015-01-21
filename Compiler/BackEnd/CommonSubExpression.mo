@@ -131,7 +131,7 @@ algorithm
       orderedVars = BackendVariable.listVar(varList_mod);
       orderedEqs = BackendEquation.listEquation(eqList_mod);
     then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind);
-    
+
     else inSyst;
   end matchcontinue;
 end CSE1;
@@ -147,13 +147,13 @@ algorithm
     local
       BackendDAE.Equation eq;
       tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashSet.HashSet, list<BackendDAE.Equation>, list<BackendDAE.Var>> tpl;
-    
+
     case BackendDAE.ALGORITHM() then (inEq, inTuple);
     case BackendDAE.WHEN_EQUATION() then (inEq, inTuple);  // not necessary
     case BackendDAE.COMPLEX_EQUATION() then (inEq, inTuple);
     case BackendDAE.ARRAY_EQUATION() then (inEq, inTuple);
     case BackendDAE.IF_EQUATION() then (inEq, inTuple);
-    
+
     else equation
       (eq,tpl) = BackendEquation.traverseExpsOfEquation(inEq, traverseExpsEquation_2, inTuple);
     then (eq,tpl);
@@ -207,7 +207,7 @@ algorithm
         eqList = eq::eqList;
       end if;
     then (value , (HT, HT2, HS, eqList, varList));
-    
+
     case (key as DAE.CALL(path, CallListe, attr), (HT, HT2, HS, eqList, varList)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
       (value as DAE.CREF(cr, _)) = BaseHashTable.get(key, HT);
@@ -225,7 +225,7 @@ algorithm
           eqList = eq::eqList;
       end if;
     then (value, (HT, HT2, HS, eqList, varList));
-    
+
     else (inExp, inTuple);
   end matchcontinue;
 end traverseSubExp_2;
@@ -241,7 +241,7 @@ algorithm
     local
       BackendDAE.Equation eq;
       tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> tpl;
-    
+
     case BackendDAE.ALGORITHM() then (inEq, inTuple);
     case BackendDAE.WHEN_EQUATION() then (inEq, inTuple);  // not necessary
     case BackendDAE.COMPLEX_EQUATION() then (inEq, inTuple);
@@ -301,12 +301,12 @@ algorithm
 
     case (key as DAE.BINARY(exp1, op, exp2), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_BINARY);
-      if checkOp(op) then  
+      if checkOp(op) then
         if BaseHashTable.hasKey(key, HT) then
           value = BaseHashTable.get(key, HT);
           value2 = BaseHashTable.get(value, HT2);
           HT2 = BaseHashTable.update((value, value2 + 1), HT2);
-        else 
+        else
           str = "$CSE" + intString(i);
           cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});
           value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
@@ -319,14 +319,14 @@ algorithm
         end if;
       end if;
     then (value , (HT, HT2, i));
-    
+
     case (key as DAE.CALL(path, CallListe, attr), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
       if BaseHashTable.hasKey(key, HT) then
         value = BaseHashTable.get(key, HT);
         value2 = BaseHashTable.get(value, HT2);
         HT2 = BaseHashTable.update((value, value2 + 1), HT2);
-      else 
+      else
         str = "$CSE" + intString(i);
         cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});
         value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
@@ -335,7 +335,7 @@ algorithm
         i = i+1;
       end if;
     then (value, (HT, HT2, i));
-    
+
     else (inExp, inTuple);
   end matchcontinue;
 end traverseSubExp_1;
@@ -356,7 +356,7 @@ end commutativeBinaryExp;
 protected function checkOp
   input DAE.Operator inOp;
   output Boolean outB;
-algorithm 
+algorithm
   outB:=match(inOp)
     case DAE.ADD() then true;
     case DAE.SUB() then true;
