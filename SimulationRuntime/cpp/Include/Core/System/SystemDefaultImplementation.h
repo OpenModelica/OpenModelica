@@ -45,7 +45,7 @@ private:
   boost::unordered_map<T*, T> _start_values;
 };
 
-class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
+class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation: public virtual PreVariables
 {
 public:
   SystemDefaultImplementation(IGlobalSettings* globalSettings);
@@ -131,9 +131,7 @@ protected:
     double
         _simTime;             ///< current simulation time (given by the solver)
 
-    double
-        *__z,                 ///< "Extended state vector", containing all states and algebraic variables of all types
-        *__zDot;              ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
+   
     bool
         * _conditions,        ///< External conditions changed by the solver
         * _time_conditions;

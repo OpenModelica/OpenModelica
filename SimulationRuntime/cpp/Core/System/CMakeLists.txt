@@ -19,12 +19,12 @@ IF(ANALYZATION_MODE)
         set_target_properties(${SystemName} PROPERTIES COMPILE_FLAGS -fPIC)
     endif(UNIX)
 ELSE(ANALYZATION_MODE)
-	add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp FactoryExport.cpp)
+	add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp FactoryExport.cpp)
 	target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} )
 ENDIF(ANALYZATION_MODE)
 
 # add a static library with the system default implementation for generating c++ fmu targets
-add_library(${SystemName}_static STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp )
+add_library(${SystemName}_static STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp )
 
 target_link_libraries (${SystemName}_static ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
 if (UNIX)
@@ -40,6 +40,9 @@ install (FILES
 	${CMAKE_SOURCE_DIR}/Include/Core/System/SystemDefaultImplementation.h
 	${CMAKE_SOURCE_DIR}/Include/Core/System/AlgLoopDefaultImplementation.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/EventHandling.h
+        ${CMAKE_SOURCE_DIR}/Include/Core/System/PreVariables.h
+        ${CMAKE_SOURCE_DIR}/Include/Core/System/DiscreteEvents.h
+        ${CMAKE_SOURCE_DIR}/Include/Core/System/ContinuousEvents.h
 	DESTINATION include/omc/cpp/Core/System)
 install (FILES
 	${CMAKE_SOURCE_DIR}/Include/Core/System/IAlgLoop.h

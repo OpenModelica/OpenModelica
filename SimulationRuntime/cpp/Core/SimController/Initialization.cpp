@@ -41,7 +41,7 @@ void Initialization::initializeSystem()
     cond_restart = !std::equal (conditions1, conditions1+dim, conditions0);
   }
 
-  mixed_system->saveAll();
+  event_system->saveAll();
   _system->setInitial(false);
 
   if( _solver->stateSelection())

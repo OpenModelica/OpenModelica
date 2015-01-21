@@ -2,6 +2,7 @@
 #include "FactoryExport.h"
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <Core/System/EventHandling.h>
+#include <Core/System/PreVariables.h>
 #include <Core/System/SystemDefaultImplementation.h>
 #include <Core/System/AlgLoopSolverFactory.h>
 
@@ -26,8 +27,8 @@ bool greaterTime( pair<unsigned int,double> t1, double t2)
 
 SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings)
   : _simTime        (0.0)
-  , __z          (NULL)
-  , __zDot        (NULL)
+  /*, __z          (NULL)
+  , __zDot        (NULL)*/
   , _conditions      (NULL)
   , _time_conditions    (NULL)
   , _dimContinuousStates  (0)

@@ -39,7 +39,9 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
         let()= textFile(simulationExtensionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
         let()= textFile(simulationExtensionCppFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
+        let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",false),'OMCpp<%fileNamePrefix%>PreVariables.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+        let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
         let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
         let()= textFile(simulationWriteOutputParameterCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", false),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
         let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
@@ -95,6 +97,7 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
   case modelInfo as MODELINFO(vars=SIMVARS(__)) then
   <<
   #pragma once
+  #include "OMCpp<%fileNamePrefix%>PreVariables.h"
   #include "OMCpp<%fileNamePrefix%>.h"
 
   /*****************************************************************************
@@ -106,7 +109,7 @@ let initeqs = generateEquationMemberFuncDecls(initialEquations,"initEquation")
   class <%lastIdentOfPath(modelInfo.name)%>Initialize : virtual public <%lastIdentOfPath(modelInfo.name)%>
   {
   public:
-    <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
+    <%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Initialize();
     virtual bool initial();
     virtual void setInitial(bool);
@@ -155,6 +158,7 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
   #pragma once
+  #include "OMCpp<%fileNamePrefix%>PreVariables.h"
   #include "OMCpp<%fileNamePrefix%>.h"
 
   <% (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
@@ -175,7 +179,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
      ;separator="")
   %>
   public:
-    <%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
+    <%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Jacobian();
 
   protected:
@@ -319,6 +323,7 @@ match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
   #pragma once
+  #include "OMCpp<%fileNamePrefix%>PreVariables.h"
   #include "OMCpp<%fileNamePrefix%>.h"
 
   /*****************************************************************************
@@ -329,7 +334,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   class <%lastIdentOfPath(modelInfo.name)%>StateSelection: virtual public  <%lastIdentOfPath(modelInfo.name)%>
   {
   public:
-    <%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
+    <%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>StateSelection();
     int getDimStateSets() const;
     int getDimStates(unsigned int index) const;
@@ -361,6 +366,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   let numparams = match   settings.outputFormat case "csv" then "1" else n
   <<
   #pragma once
+  #include "OMCpp<%fileNamePrefix%>PreVariables.h"
   #include "OMCpp<%fileNamePrefix%>.h"
   typedef HistoryImpl<<%outputtype%>,<%numProtectedAlgvars(modelInfo)%>+<%numProtectedAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0,<%numparams%>> HistoryImplType;
 
@@ -373,7 +379,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
   class <%lastIdentOfPath(modelInfo.name)%>WriteOutput : virtual public <%lastIdentOfPath(modelInfo.name)%>
   {
   public:
-    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
+    <%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>WriteOutput();
 
 
@@ -446,6 +452,55 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
 end simulationWriteOutputHeaderFile;
 
 
+
+
+template simulationPreVarsHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+ "Generates code for header file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__)) then
+  match modelInfo
+  case MODELINFO(vars=SIMVARS(__)) then
+  let allVarCount = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
+  <<
+  #pragma once
+ 
+  /*****************************************************************************
+  *
+  * Simulation code for pre- variables 
+  *
+  *****************************************************************************/
+
+  class <%lastIdentOfPath(modelInfo.name)%>PreVariables : public virtual PreVariables
+  {
+  public:
+    <%lastIdentOfPath(modelInfo.name)%>PreVariables() ;
+    virtual ~<%lastIdentOfPath(modelInfo.name)%>PreVariables() ;
+    virtual void initPreVariables();
+    virtual void savePreVariables();
+    <%
+      let savePreVarFuncs = (List.partition(List.intRange(stringInt(allVarCount)), 100) |> ls hasindex idx => 'virtual void savePreVariables_<%idx%>();';separator="\n")
+      <<
+      <%savePreVarFuncs%>
+      >>
+    %>
+    <%
+      let initPreRealVarFuncs = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.stateVars), 100) |> ls hasindex idx => 'virtual void initPreRealVariables_<%idx%>();';separator="\n")
+      let initPreIntVarFuncs = (List.partition(vars.intAlgVars, 100) |> ls hasindex idx => 'virtual void initPreIntVariables_<%idx%>();';separator="\n")
+      let initPreBoolVarFuncs = (List.partition(vars.boolAlgVars, 100) |> ls hasindex idx => 'virtual void initPreBoolVariables_<%idx%>();';separator="\n")
+      <<
+      <%initPreRealVarFuncs%>
+      <%initPreIntVarFuncs%>
+      <%initPreBoolVarFuncs%>
+      >>
+    %>
+   protected:
+     <%MemberVariablePreVariables(modelInfo,useFlatArrayNotation)%>
+    
+  };
+  >>
+end simulationPreVarsHeaderFile;
+
 template simulationExtensionHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
  "Generates code for header file for simulation target."
 ::=
@@ -465,7 +520,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
   VAR_ALIGN_PRE class <%lastIdentOfPath(modelInfo.name)%>Extension: public ISystemInitialization, public IMixedSystem,public IWriteOutput, public IStateSelection, public <%lastIdentOfPath(modelInfo.name)%>WriteOutput, public <%lastIdentOfPath(modelInfo.name)%>Initialize, public <%lastIdentOfPath(modelInfo.name)%>Jacobian,public <%lastIdentOfPath(modelInfo.name)%>StateSelection
   {
   public:
-    <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData);
+    <%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data);
     virtual ~<%lastIdentOfPath(modelInfo.name)%>Extension();
 
     ///Intialization methods from ISystemInitialization
@@ -528,18 +583,21 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   #if defined(__TRICORE__)  || defined(__vxworks)
 
-  extern "C" IMixedSystem* create<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor, boost::shared_ptr<ISimData> simData)
+  extern "C" IMixedSystem* create<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor, boost::shared_ptr<ISimData> sim_data)
   {
-     return new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, nonlinsolverfactor, simData);
+     return new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, nonlinsolverfactor, sim_data);
   }
 
   #else
 
   using boost::extensions::factory;
-   BOOST_EXTENSION_TYPE_MAP_FUNCTION {
+   BOOST_EXTENSION_TYPE_MAP_FUNCTION 
+   {
     types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
     ["<%lastIdentOfPath(modelInfo.name)%>"].set<<%lastIdentOfPath(modelInfo.name)%>Extension>();
-    }
+    
+   }
+    
   #endif
   >>
 end simulationFactoryFile;
@@ -558,8 +616,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
-   <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData)
-   : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, simData)
+   <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
+   : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data)
    {
    }
 
@@ -683,8 +741,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Jacobian.h" */
 
-   <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData)
-       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, simData)
+   <%lastIdentOfPath(modelInfo.name)%>Jacobian::<%lastIdentOfPath(modelInfo.name)%>Jacobian(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
+       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data)
        , _A_sparsePattern_leadindex(NULL)
        , _A_sparsePattern_index(NULL)
        , _A_sparsePattern_colorCols(NULL)
@@ -720,8 +778,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    /* #include <Core/Modelica.h>
    #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>StateSelection.h" */
-   <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData)
-       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, simData)
+   <%lastIdentOfPath(modelInfo.name)%>StateSelection::<%lastIdentOfPath(modelInfo.name)%>StateSelection(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
+       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data)
    {
    }
 
@@ -745,8 +803,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>WriteOutput.h" */
 
-   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData)
-       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, simData)
+   <%lastIdentOfPath(modelInfo.name)%>WriteOutput::<%lastIdentOfPath(modelInfo.name)%>WriteOutput(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
+       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data)
    {
      _historyImpl = new HistoryImplType(*globalSettings);
    }
@@ -773,6 +831,30 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%writeoutput(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
    >>
 end simulationWriteOutputCppFile;
+
+
+template simulationPreVarsCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates code for main cpp file for simulation target."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(__)) then
+   <<
+  
+   <%lastIdentOfPath(modelInfo.name)%>PreVariables::<%lastIdentOfPath(modelInfo.name)%>PreVariables()
+    :PreVariables()
+   {
+    
+   }
+
+   <%lastIdentOfPath(modelInfo.name)%>PreVariables::~<%lastIdentOfPath(modelInfo.name)%>PreVariables()
+   {
+    
+   }
+
+    <%savePreVars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
+    <%initPrevars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
+   >>
+end simulationPreVarsCppFile;
 
 
 template simulationWriteOutputAlgVarsCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -986,12 +1068,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    /* #include <Core/Modelica.h>
    #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Extension.h" */
-   <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData)
-       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, simData)
-       , <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,nonlinsolverfactory, simData)
-       , <%lastIdentOfPath(modelInfo.name)%>Initialize(globalSettings, nonlinsolverfactory, simData)
-       , <%lastIdentOfPath(modelInfo.name)%>Jacobian(globalSettings, nonlinsolverfactory, simData)
-       , <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings, nonlinsolverfactory, simData)
+   <%lastIdentOfPath(modelInfo.name)%>Extension::<%lastIdentOfPath(modelInfo.name)%>Extension(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
+       : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data)
+       , <%lastIdentOfPath(modelInfo.name)%>WriteOutput(globalSettings,nonlinsolverfactory, sim_data)
+       , <%lastIdentOfPath(modelInfo.name)%>Initialize(globalSettings, nonlinsolverfactory, sim_data)
+       , <%lastIdentOfPath(modelInfo.name)%>Jacobian(globalSettings, nonlinsolverfactory, sim_data)
+       , <%lastIdentOfPath(modelInfo.name)%>StateSelection(globalSettings, nonlinsolverfactory, sim_data)
 
    {
    }
@@ -1852,10 +1934,11 @@ template calcHelperMainfile5(SimCode simCode ,Text& extraFuncs,Text& extraFuncsD
 
     #include "OMCpp<%fileNamePrefix%>Types.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
-     #include "OMCpp<%fileNamePrefix%>Jacobian.h"
+    #include "OMCpp<%fileNamePrefix%>Jacobian.h"
     #include "OMCpp<%fileNamePrefix%>Jacobian.cpp"
     #include "OMCpp<%fileNamePrefix%>StateSelection.h"
     #include "OMCpp<%fileNamePrefix%>StateSelection.cpp"
+    #include "OMCpp<%fileNamePrefix%>PreVariables.cpp"
     >>
 end calcHelperMainfile5;
 
@@ -2245,6 +2328,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   JACOBIANFILE=OMCpp<%fileNamePrefix%>Jacobian.cpp
   STATESELECTIONFILE=OMCpp<%fileNamePrefix%>StateSelection.cpp
   WRITEOUTPUTFILE=OMCpp<%fileNamePrefix%>WriteOutput.cpp
+  PREVARSFILE=OMCpp<%fileNamePrefix%>PreVariables.cpp
   SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
   MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
   MAINOBJ=OMCpp<%fileNamePrefix%>Main$(EXEEXT)
@@ -2350,6 +2434,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <<
     #include <Core/Modelica.h>
     #include <Core/ModelicaDefine.h>
+    #include "OMCpp<%fileNamePrefix%>PreVariables.h"
     #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
     #if defined(__TRICORE__) || defined(__vxworks)
@@ -2357,10 +2442,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     #endif
 
     /* Constructor */
-    <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> simData)
+    <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
         : SystemDefaultImplementation(globalSettings)
+        , <%className%>PreVariables()
         , _algLoopSolverFactory(nonlinsolverfactory)
-        , _simData(simData)
+        , _sim_data(sim_data)
         <%simulationInitFile(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, false)%>
     {
       //Number of equations
@@ -2458,7 +2544,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%getCondition(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     <%handleSystemEvents(zeroCrossings,whenClauses,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
     <%saveAll(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
-    <%initPrevars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
+    
 
     <%LabeledDAE(modelInfo.labels,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     <%giveVariables(modelInfo, context,useFlatArrayNotation,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
@@ -2492,7 +2578,7 @@ match eq
 
 
 
-   <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(<%systemname%>* system, double* z,double* zDot,bool* conditions, EventHandling& event_handling )
+   <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(<%systemname%>* system, double* z,double* zDot,bool* conditions, boost::shared_ptr<DiscreteEvents> discrete_events )
        : AlgLoopDefaultImplementation()
        , _system(system)
        , __z(z)
@@ -2507,7 +2593,7 @@ match eq
 
    //<%alocateLinearSystemConstructor(eq, useFlatArrayNotation)%>
        , _conditions(conditions)
-       , _event_handling(event_handling)
+       , _discrete_events(discrete_events)
        , _useSparseFormat(false)
        , _functions(system->_functions)
    {
@@ -4235,7 +4321,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       <%initFunctions%>
 
       //_event_handling.initialize(this,<%helpvarlength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
-      _event_handling.initialize(this,<%helpvarlength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>);
+      _discrete_events = _event_handling.initialize(this);
 
       //init event handling
       <%initEventHandling%>
@@ -5130,7 +5216,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #endif
   #include "System/AlgLoopDefaultImplementation.h"
 
-  class EventHandling;
+  //class EventHandling;
   class <%systemname%>;
   class Functions;
   >>
@@ -5149,7 +5235,7 @@ let conditionvariables =  conditionvariable(zeroCrossings,simCode , &extraFuncs 
 
 match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
-  let allVarCount = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
+  
 
   let getrealvars =
   (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.paramVars), 100) |> ls hasindex idx =>
@@ -5188,7 +5274,7 @@ match modelInfo
   #define MEASURETIME_MODELFUNCTIONS
   >>%>
 
-  VAR_ALIGN_PRE class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+  VAR_ALIGN_PRE class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation, public <%lastIdentOfPath(modelInfo.name)%>PreVariables
   {
   <%friendclasses%>
   public:
@@ -5200,18 +5286,7 @@ match modelInfo
 
       <%generateMethodDeclarationCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
       virtual bool getCondition(unsigned int index);
-      virtual void initPreVars(unordered_map<double* const,unsigned int>&,unordered_map<int* const,unsigned int>&,unordered_map<bool* const,unsigned int>&);
-
-      <%
-      let initPreRealVarFuncs = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.stateVars), 100) |> ls hasindex idx => 'virtual void initPreRealVars_<%idx%>(unordered_map<double* const,unsigned int>&,unordered_map<int* const,unsigned int>&,unordered_map<bool* const,unsigned int>&);';separator="\n")
-      let initPreIntVarFuncs = (List.partition(vars.intAlgVars, 100) |> ls hasindex idx => 'virtual void initPreIntVars_<%idx%>(unordered_map<double* const,unsigned int>&,unordered_map<int* const,unsigned int>&,unordered_map<bool* const,unsigned int>&);';separator="\n")
-      let initPreBoolVarFuncs = (List.partition(vars.boolAlgVars, 100) |> ls hasindex idx => 'virtual void initPreBoolVars_<%idx%>(unordered_map<double* const,unsigned int>&,unordered_map<int* const,unsigned int>&,unordered_map<bool* const,unsigned int>&);';separator="\n")
-      <<
-      <%initPreRealVarFuncs%>
-      <%initPreIntVarFuncs%>
-      <%initPreBoolVarFuncs%>
-      >>
-      %>
+     
   protected:
       //Methods:
       void initializeAlgloopSolverVariables();
@@ -5232,25 +5307,21 @@ match modelInfo
       //Saves all variables before an event is handled, is needed for the pre, edge and change operator
       void saveAll();
 
-      <%
-      let saveAllVarFuncs = (List.partition(List.intRange(stringInt(allVarCount)), 100) |> ls hasindex idx => 'virtual void saveAll_<%idx%>(double *discreteVars);';separator="\n")
-      <<
-      <%saveAllVarFuncs%>
-      >>
-      %>
+      
 
       void getJacobian(SparseMatrix& matrix);
       void deleteObjects();
       //Variables:
       EventHandling _event_handling;
-
+      boost::shared_ptr<DiscreteEvents> _discrete_events;
+      
       <%if(useDefaultMemberVariables) then '<%MemberVariable(modelInfo, useFlatArrayNotation)%>'%>
       <%conditionvariables%>
       Functions* _functions;
 
       boost::shared_ptr<IAlgLoopSolverFactory> _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
       <%algloopsolver%>
-      boost::shared_ptr<ISimData> _simData;
+      boost::shared_ptr<ISimData> _sim_data;
 
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
@@ -5351,7 +5422,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
       <%modelname%>Algloop<%index%>( <%systemname%>* system
                                         ,double* z,double* zDot, bool* conditions
-                                       ,EventHandling& event_handling
+                                       ,boost::shared_ptr<DiscreteEvents> discrete_events
                                       );
       virtual ~<%modelname%>Algloop<%index%>();
 
@@ -5395,8 +5466,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //boost::multi_array<double,1> __b;
     bool* _conditions;
 
-    EventHandling& _event_handling;
-
+     boost::shared_ptr<DiscreteEvents> _discrete_events;
      <%systemname%>* _system;
 
      bool _useSparseFormat;
@@ -5787,53 +5857,70 @@ template MemberVariable(ModelInfo modelInfo, Boolean useFlatArrayNotation)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  <%vars.algVars |> var =>
-    MemberVariableDefine2(var, "algebraics", useFlatArrayNotation)
-  ;separator="\n"%>
-  /*discrete algebraic vars*/
-  <%vars.discreteAlgVars |> var =>
-    MemberVariableDefine2(var, "algebraics", useFlatArrayNotation)
-  ;separator="\n"%>
-  /*parameter vars*/
-  <%vars.paramVars |> var =>
+   /*parameter real vars*/
+   <%vars.paramVars |> var =>
     MemberVariableDefine2(var, "parameters", useFlatArrayNotation)
-  ;separator="\n"%>
-  <%vars.aliasVars |> var =>
-    MemberVariableDefine2(var, "aliasVars", useFlatArrayNotation)
-  ;separator="\n"%>
-  <%vars.intAlgVars |> var =>
-    MemberVariableDefine("int", var, "intVariables.algebraics", useFlatArrayNotation)
-  ;separator="\n"%>
+   ;separator="\n"%>
+   /*parameter int vars*/
   <%vars.intParamVars |> var =>
     MemberVariableDefine("int", var, "intVariables.parameters", useFlatArrayNotation)
   ;separator="\n"%>
-  <%vars.intAliasVars |> var =>
-    MemberVariableDefine("int", var, "intVariables.AliasVars", useFlatArrayNotation)
-  ;separator="\n"%>
-  <%vars.boolAlgVars |> var =>
-    MemberVariableDefine("bool",var, "boolVariables.algebraics", useFlatArrayNotation)
-  ;separator="\n"%>
-  <%vars.boolParamVars |> var =>
+   /*parameter bool vars*/
+   <%vars.boolParamVars |> var =>
     MemberVariableDefine("bool",var, "boolVariables.parameters", useFlatArrayNotation)
   ;separator="\n"%>
-  <%vars.boolAliasVars |> var =>
-    MemberVariableDefine("bool ",var, "boolVariables.AliasVars", useFlatArrayNotation)
-  ;separator="\n"%>
-  <%vars.stringAlgVars |> var =>
-    MemberVariableDefine("string",var, "stringVariables.algebraics", useFlatArrayNotation)
-  ;separator="\n"%>
-  <%vars.stringParamVars |> var =>
+   <%vars.stringParamVars |> var =>
     MemberVariableDefine("string",var, "stringVariables.parameters", useFlatArrayNotation)
   ;separator="\n"%>
-  <%vars.stringAliasVars |> var =>
+   <%vars.stringAliasVars |> var =>
     MemberVariableDefine("string",var, "stringVariables.AliasVars", useFlatArrayNotation)
   ;separator="\n"%>
-  <%vars.extObjVars |> var =>
+   <%vars.extObjVars |> var =>
     MemberVariableDefine("void*",var, "extObjVars", useFlatArrayNotation)
   ;separator="\n"%>
 
   >>
 end MemberVariable;
+
+
+
+
+template MemberVariablePreVariables(ModelInfo modelInfo, Boolean useFlatArrayNotation)
+ "Define membervariable in simulation file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  //Variables saved for pre, edge and change operator
+  <%vars.algVars |> var =>
+    MemberVariableDefine2(var, "algebraics", useFlatArrayNotation)
+  ;separator="\n"%>
+  <%vars.discreteAlgVars |> var =>
+    MemberVariableDefine2(var, "algebraics", useFlatArrayNotation)
+  ;separator="\n"%>
+  <%vars.boolAlgVars |> var =>
+    MemberVariableDefine("bool",var, "boolVariables.algebraics", useFlatArrayNotation)
+  ;separator="\n"%>
+  <%vars.stringAlgVars |> var =>
+    MemberVariableDefine("string",var, "stringVariables.algebraics", useFlatArrayNotation)
+  ;separator="\n"%>
+   <%vars.intAlgVars |> var =>
+    MemberVariableDefine("int", var, "intVariables.algebraics", useFlatArrayNotation)
+  ;separator="\n"%>
+   /*alias real vars*/
+   <%vars.aliasVars |> var =>
+    MemberVariableDefine2(var, "aliasVars", useFlatArrayNotation)
+   ;separator="\n"%>
+   /*alias int vars*/
+   <%vars.intAliasVars |> var =>
+    MemberVariableDefine("int", var, "intVariables.AliasVars", useFlatArrayNotation)
+   ;separator="\n"%>
+    /*alias bool vars*/
+   <%vars.boolAliasVars |> var =>
+    MemberVariableDefine("bool ",var, "boolVariables.AliasVars", useFlatArrayNotation)
+   ;separator="\n"%>
+  >>
+end MemberVariablePreVariables;
 
 template MemberVariableAlgloop(ModelInfo modelInfo, Boolean useFlatArrayNotation)
  "Define membervariable in simulation file."
@@ -6161,7 +6248,7 @@ match simVar
         case "0" then  '<%varType%> <%varName%>;'
         else ''
       end match
-
+  
 
 end MemberVariableDefine2;
 
@@ -7224,7 +7311,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
     let &funcCalls = buffer "" /*BUFD*/
     let saveAllVarFuncs = (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.stateVars, listAppend(vars.intAlgVars,vars.boolAlgVars )))), 100) |> part hasindex i0 =>
       saveAllVars1(part, i0, 100, &funcCalls ,className,simCode,extraFuncs,extraFuncsDecl,extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation);separator="\n")
-    <<
+    /*<<
     <%saveAllVarFuncs%>
 
     void <%className%>::saveAll()
@@ -7233,24 +7320,56 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
 
       <%funcCalls%>
 
-      _event_handling.savePreVars(allVars,<%n_vars%>);
+     
     }
     >>
-  /*
-  //save all zero crossing condtions
-   <%saveconditionvar(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-   */
+    */
+    <<
+    void <%className%>::saveAll()
+    {
+         savePreVariables();
+    }
+    >>
+  
 end saveAll;
+
+template savePreVars(ModelInfo modelInfo, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Text stateDerVectorName,Boolean useFlatArrayNotation)
+
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
+  then
+    let className = lastIdentOfPath(modelInfo.name)
+    let n_vars = intAdd( intAdd(listLength(vars.algVars), listLength(vars.discreteAlgVars)), intAdd( listLength(vars.intAlgVars) , intAdd(listLength(vars.boolAlgVars ), listLength(vars.stateVars ))))
+    let &funcCalls = buffer "" /*BUFD*/
+    let saveAllVarFuncs = (List.partition(listAppend(vars.algVars, listAppend(vars.discreteAlgVars, listAppend(vars.stateVars, listAppend(vars.intAlgVars,vars.boolAlgVars )))), 100) |> part hasindex i0 =>
+      saveAllVars1(part, i0, 100, &funcCalls ,className,simCode,extraFuncs,extraFuncsDecl,extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation);separator="\n")
+    <<
+    <%saveAllVarFuncs%>
+
+    void <%className%>PreVariables::savePreVariables()
+    {
+      
+
+      <%funcCalls%>
+
+     
+    }
+    >>
+    
+  
+end savePreVars;
+
 
 template saveAllVars1(list<SimCodeVar.SimVar> partVars, Integer partIdx, Integer multiplicator, Text &funcCalls,Text className, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Text stateDerVectorName, Boolean useFlatArrayNotation)
 ::=
-  let &funcCalls += 'saveAll_<%partIdx%>(allVars);'
+  let &funcCalls += 'savePreVariables_<%partIdx%>();'
   let &varDecls = buffer "" /*BUFD*/
   <<
-  void <%className%>::saveAll_<%partIdx%>(double* allVars)
+  void <%className%>PreVariables::savePreVariables_<%partIdx%>()
   {
      <%(partVars |> SIMVAR(__) hasindex i0 fromindex (intMul(partIdx, multiplicator)) =>
-        'allVars[<%i0%>] = <%cref1(name,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, contextOther, varDecls, stateDerVectorName, useFlatArrayNotation)%>;'
+        '_pre_vars[<%i0%>] = <%cref1(name,simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, contextOther, varDecls, stateDerVectorName, useFlatArrayNotation)%>;'
         ;separator="\n")
      %>
   }
@@ -7267,17 +7386,17 @@ case SIMCODE(modelInfo = MODELINFO(varInfo=VARINFO(numAlgVars= numAlgVars, numDi
     let realVarsCount = intAdd(intAdd(numAlgVars,numDiscreteReal),numStateVars)
     let realIntVarsCount = intAdd(intAdd(intAdd(numAlgVars,numDiscreteReal),numStateVars),numIntAlgVars)
     let initRealPreVarsFuncs = (List.partition(listAppend(listAppend(vars.algVars, vars.discreteAlgVars), vars.stateVars), 100) |> part hasindex i0 =>
-       initPreVars1(part, i0, 100,0, "vars1","Real" ,&funcCalls ,className,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace,stateDerVectorName, useFlatArrayNotation);separator="\n")
+       initPreVars1(part, i0, 100,0, "_pre_real_vars_idx","Real" ,&funcCalls ,className,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace,stateDerVectorName, useFlatArrayNotation);separator="\n")
     let initIntPreVarsFuncs = (List.partition(vars.intAlgVars, 100) |> part hasindex i0 =>
-       initPreVars1(part,i0, 100, stringInt(realVarsCount),"vars2","Int" ,&funcCalls ,className,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace,stateDerVectorName, useFlatArrayNotation);separator="\n")
+       initPreVars1(part,i0, 100, stringInt(realVarsCount),"_pre_int_vars_idx","Int" ,&funcCalls ,className,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace,stateDerVectorName, useFlatArrayNotation);separator="\n")
    let initBoolPreVarsFuncs = (List.partition(vars.boolAlgVars, 100) |> part hasindex i0 =>
-       initPreVars1(part, i0, 100,stringInt(realIntVarsCount), "vars3","Bool" ,&funcCalls ,className,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace,stateDerVectorName, useFlatArrayNotation);separator="\n")
+       initPreVars1(part, i0, 100,stringInt(realIntVarsCount), "_pre_bool_vars_idx","Bool" ,&funcCalls ,className,simCode ,extraFuncs,extraFuncsDecl,extraFuncsNamespace,stateDerVectorName, useFlatArrayNotation);separator="\n")
     <<
     <%initRealPreVarsFuncs%>
     <%initIntPreVarsFuncs%>
     <%initBoolPreVarsFuncs%>
 
-    void <%className%>::initPreVars(unordered_map<double* const,unsigned int>& vars1,unordered_map<int* const,unsigned int>& vars2,unordered_map<bool* const,unsigned int>& vars3)
+    void <%className%>PreVariables::initPreVariables()
     {
       <%funcCalls%>
     }
@@ -7286,10 +7405,10 @@ end initPrevars;
 
 template initPreVars1(list<SimCodeVar.SimVar> partVars, Integer partIdx, Integer multiplicator,Integer startIdx, Text varsLst,Text pretype,Text &funcCalls,Text className, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Text stateDerVectorName, Boolean useFlatArrayNotation)
 ::=
-  let &funcCalls += 'initPre<%pretype%>Vars_<%partIdx%>(vars1, vars2,vars3);<%\n%>'
+  let &funcCalls += 'initPre<%pretype%>Variables_<%partIdx%>();<%\n%>'
   let &varDecls = buffer ""
   <<
-  void <%className%>::initPre<%pretype%>Vars_<%partIdx%>(unordered_map<double* const,unsigned int>& vars1,unordered_map<int* const,unsigned int>& vars2,unordered_map<bool* const,unsigned int>& vars3)
+  void <%className%>PreVariables::initPre<%pretype%>Variables_<%partIdx%>()
   {
 
       <%(partVars |> SIMVAR(__) hasindex i0 fromindex (intAdd(startIdx,intMul(partIdx, multiplicator))) =>
@@ -7865,7 +7984,7 @@ template contextCref(ComponentRef cr, Context context,SimCode simCode ,Text& ext
 ::=
 match cr
 case CREF_QUAL(ident = "$PRE") then
-   '_event_handling.pre(<%contextCref(componentRef,context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)'
+   '_discrete_events->pre(<%contextCref(componentRef,context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)'
  else
   let &varDeclsCref = buffer "" /*BUFD*/
   match context
@@ -8149,7 +8268,7 @@ let store_delay_expr = functionStoreDelay(delayedExps, simCode ,&extraFuncs ,&ex
           let &optpreExp = buffer "" /*BUFD*/
 
           let outputnames = vars.outputVars |>  SIMVAR(__) hasindex i0 =>
-             'dynamic_cast<SimDouble*>(_simData->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue() = <%cref(name, useFlatArrayNotation)%>;';separator="\n"
+             'dynamic_cast<SimDouble*>(_sim_data->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue() = <%cref(name, useFlatArrayNotation)%>;';separator="\n"
           <<
           #if defined(__TRICORE__) || defined(__vxworks)
               <%outputnames%>
@@ -8185,7 +8304,7 @@ then
           let &optpreExp = buffer "" /*BUFD*/
 
           let inputnames = vars.inputVars |>  SIMVAR(__) hasindex i0 =>
-             '<%cref(name, useFlatArrayNotation)%> = dynamic_cast<SimDouble*>(_simData->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue();';separator="\n"
+             '<%cref(name, useFlatArrayNotation)%> = dynamic_cast<SimDouble*>(_sim_data->Get("<%cref(name, useFlatArrayNotation)%>"))->getValue();';separator="\n"
           <<
           #if defined(__TRICORE__) || defined(__vxworks)
               <%inputnames%>
@@ -8378,7 +8497,7 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  _algLoop<%num%> =  boost::shared_ptr<IAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_event_handling));
+  _algLoop<%num%> =  boost::shared_ptr<IAlgLoop>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_discrete_events));
   _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
   >>
   end match
@@ -8391,7 +8510,7 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
     ""
  end generateAlgloopsolvers2;
 
-//_algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions,_event_handling )
+
 
 template generateAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
@@ -8945,13 +9064,13 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
   let &varDeclsCref = buffer "" /*BUFD*/
   match eq
      case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
-      let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_event_handling.pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
+      let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
 
         let initial_assign =
         if initialCall then
           whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         else
-           '<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _event_handling.pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);'
+           '<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       <<
       if(_initial)
@@ -8964,16 +9083,16 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
       }
       else
       {
-        <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _event_handling.pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);
+        <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);
       }
       >>
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
-       let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_event_handling.pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
+       let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
       let initial_assign =
         if initialCall then
           whenAssign(left,typeof(right),right,context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         else
-         '<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _event_handling.pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);'
+         '<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);'
       let assign = whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       <<
@@ -8988,7 +9107,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode s
       <%elseWhen%>
       else
       {
-         <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _event_handling.pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);
+         <%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> = _discrete_events->pre(<%cref1(left,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>);
       }
       >>
 end equationWhen;
@@ -9046,7 +9165,7 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls, SimCo
 let &varDeclsCref = buffer "" /*BUFD*/
 match eq
 case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
-  let helpIf =  (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_event_handling.pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
+  let helpIf =  (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
   let assign = whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
   else if(0<%helpIf%>)
@@ -9055,7 +9174,7 @@ case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) th
   }
   >>
 case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
-  let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_event_handling.pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
+  let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
   let assign = whenAssign(left, typeof(right), right, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let elseWhen = equationElseWhen(elseWhenEq, context, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
@@ -9116,7 +9235,7 @@ case SES_SIMPLE_ASSIGN(__) then
   case CREF_QUAL(ident = "$PRE")  then
     <<
     <%cref(componentRef, useFlatArrayNotation)%> = <%expPart%>;
-    _event_handling.save( <%cref(componentRef, useFlatArrayNotation)%>);
+    _discrete_events->save( <%cref(componentRef, useFlatArrayNotation)%>);
     >>
   else
    match exp
@@ -9962,12 +10081,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name="edge"),
             expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    '_event_handling.edge(<%var1%>)'
+    '_discrete_events.edge(<%var1%>)'
 
   case CALL(path=IDENT(name="pre"),
             expLst={arg as CREF(__)}) then
     let var1 = daeExp(arg, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    '_event_handling.pre(<%var1%>)'
+    '_discrete_events->pre(<%var1%>)'
 
   case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), start, interval}) then
     let &preExp = buffer "" /*BUFD*/
@@ -11539,7 +11658,7 @@ template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls /*BUFP*
 match stmt
 case SOME(when as STMT_WHEN(__)) then
   let &varDeclsCref = buffer "" /*BUFD*/
-  let elseCondStr = (when.conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_event_handling.pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
+  let elseCondStr = (when.conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
   <<
   else if (0<%elseCondStr%>) {
     <% when.statementLst |> stmt =>  algStatement(stmt, contextSimulationDiscrete,&varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -11833,31 +11952,7 @@ end literalExpConstImpl;
 
 
 
-/*
-template timeEventcondition(list<SampleCondition> sampleConditions,Text &varDecls /*BUFP*/,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
-::=
-  (sampleConditions |> (relation_,index)  =>
-    timeEventcondition1(index, relation_, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
-  ;separator="\n")
-end timeEventcondition;
 
-template timeEventcondition1(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
-::=
-  match relation
-  case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), start, interval}) then
-    let &preExp = buffer "" /*BUFD*/
-    let eStart = daeExp(start, contextOther, &preExp, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let eInterval = daeExp(interval, contextOther, &preExp, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,useFlatArrayNotation)
-    let res = tempDecl("bool", &varDecls /*BUFC*/)
-    <<
-    <%preExp%>
-    <%res%>= false;
-    _condition<%intSub(index, 1)%> = <%res%>;
-     event_times_type sample<%intSub(index, 1)%> = _event_handling.makePeriodeEvents(<%eStart%>,te,<%eInterval%>,<%intSub(index, 1)%>);
-    _event_handling.addTimeEvents(sample<%intSub(index, 1)%>);
-    >>
-end timeEventcondition1;
-*/
 
 
 
@@ -11971,7 +12066,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     {
         bool st_vars_reinit = false;
         //iterate and handle all events inside the eventqueue
-        restart = _event_handling.IterateEventQueue(st_vars_reinit);
+        restart = _event_handling.startEventIteration(st_vars_reinit);
         state_vars_reinitialized = state_vars_reinitialized || st_vars_reinit;
 
         saveAll();
@@ -12150,7 +12245,7 @@ template saveconditionvar1(Integer index1, Exp relation,SimCode simCode ,Text& e
   match relation
   case RELATION(index=zerocrossingIndex) then
     <<
-    _event_handling.save(_condition<%zerocrossingIndex%>);
+    _discrete_events->save(_condition<%zerocrossingIndex%>);
     >>
 end saveconditionvar1;
 
@@ -12264,7 +12359,7 @@ template checkForDiscreteEvents(list<ComponentRef> discreteModelVars,SimCode sim
 ::=
 
   let changediscreteVars = (discreteModelVars |> var => match var case CREF_QUAL(__) case CREF_IDENT(__) then
-       'if (_event_handling.changeDiscreteVar(<%cref(var, useFlatArrayNotation)%>)) {  return true; }'
+       'if (_discrete_events->changeDiscreteVar(<%cref(var, useFlatArrayNotation)%>)) {  return true; }'
        ;separator="\n")
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
@@ -12419,7 +12514,7 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCo
   match whenClauses
     case SIM_WHEN_CLAUSE(__) then
       let &varDeclsCref = buffer "" /*BUFD*/
-      let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_event_handling.pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>))')
+      let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>))')
       let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       let initial_assign = match initialCall
         case true then functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -13243,7 +13338,7 @@ case SIMULATION_CONTEXT(__) then
   match when
   case STMT_WHEN(__) then
     let &varDeclsCref = buffer "" /*BUFD*/
-    let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref,stateDerVectorName,useFlatArrayNotation)%> && !_event_handling.pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
+    let helpIf = (conditions |> e => ' || (<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref,stateDerVectorName,useFlatArrayNotation)%> && !_discrete_events->pre(<%cref1(e, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>))')
     let statements = (statementLst |> stmt =>
         algStatement(stmt, context, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       ;separator="\n")
@@ -13284,7 +13379,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     >>
     */
     <<
-    _event_handling.save(<%expPart1%>,"<%expPart1%>");
+    _discrete_events->save(<%expPart1%>,"<%expPart1%>");
      <%preExp%>
     <%expPart1%> = <%expPart2%>;
     >>

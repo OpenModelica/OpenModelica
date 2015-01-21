@@ -65,6 +65,8 @@ public:
     {
       throw std::invalid_argument("No system found");
     }
+    
+   
 
     std::map<std::string, factory<ISimData> >::iterator simdata_iter;
     std::map<std::string, factory<ISimData > >& simdata_factory(_system_type_map->get());

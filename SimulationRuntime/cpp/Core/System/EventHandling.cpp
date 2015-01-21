@@ -9,298 +9,40 @@ Constructor
 \param system Modelica system object
 \param dim Dimenson of help variables
 */
-EventHandling::EventHandling() : _countinous_system(NULL), _mixed_system(NULL), _conditions0(NULL), _conditions1(NULL)
-  //:_h(NULL)
+EventHandling::EventHandling()
 {
 }
 
 EventHandling::~EventHandling(void)
 {
-  // if(_h) delete [] _h;
-  if(_conditions0)
-    delete[] _conditions0;
-  if(_conditions1)
-    delete[] _conditions1;
+  
+ 
 }
 
 /**
 Inits the event variables
 */
-void EventHandling::initialize(IEvent* system,int dim)
+boost::shared_ptr<DiscreteEvents> EventHandling::initialize(IEvent* event_system)
 {
-  // _dimH=dim;
-  _event_system=system;
-  _countinous_system = dynamic_cast<IContinuous*>(_event_system);
-  _mixed_system= dynamic_cast<IMixedSystem*>(_event_system);
-  _event_system->initPreVars(_pre_real_vars_idx,_pre_int_vars_idx,_pre_bool_vars_idx);
-  _pre_vars.resize((boost::extents[_pre_real_vars_idx.size()+_pre_int_vars_idx.size()+_pre_bool_vars_idx.size()]));
-
-
-
-  /*if(_dimH > 0)
-  {
-  // Initialize help vars vector
-  if(_h) delete [] _h ;
-  _h = new double[_dimH];
-  memset(_h,0,(_dimH)*sizeof(double));
-  }
-  */
-  if(_conditions0)
-    delete[] _conditions0;
-  if(_conditions1)
-    delete[] _conditions1;
-
-  _conditions0 = new bool[_event_system->getDimZeroFunc()];
-  _conditions1 = new bool[_event_system->getDimZeroFunc()];
-}
-
-/**
-Returns the help vector
-*/
-/*
-void EventHandling::getHelpVars(double* h)
-{
-for(int i=0; i<_dimH; ++i)
-{
-h[i] = _h[i];
-}
-}
-*/
-/**
-Sets the help vector
-*/
-/*
-void EventHandling::setHelpVars(const double* h)
-{
-for(int i=0; i<_dimH; ++i)
-{
-_h[i] = h[i];
-}
-}
-*/
-/**
-Saves all helpvariables
-*/
-/*
-void EventHandling::saveH()
-{
-for(int i=0; i<_dimH; ++i)
-{
-std::ostringstream s1;
-s1 << "h" << i  ;
-save(_h[i],s1.str());
-}
-}
-*/
-/**
-Returns the dimension of the help vector
-*/
-/*
-int EventHandling::getDimHelpVars() const
-{
-return _dimH;
-}
-
-void EventHandling::setHelpVar(unsigned int i,double var)
-{
-
-assert(i >= 0 && i < _dimH);
-_h[i]=var;
-}
-*/
-/*
-const double& EventHandling::operator[](unsigned int i) const
-{
-assert(i >= 0 && i < _dimH);
-
-return _h[i];
-}
-*/
-void EventHandling::savePreVars(double vars[], unsigned int n)
-{
-  _pre_vars.assign(vars,vars+n);
+  //initialize prevars
+  //event_system->initPreVariables(preVars->_pre_real_vars_idx,preVars->_pre_int_vars_idx,preVars->_pre_bool_vars_idx);
+  //preVars->_pre_vars.resize((boost::extents[preVars->_pre_real_vars_idx.size()+preVars->_pre_int_vars_idx.size()+preVars->_pre_bool_vars_idx.size()]));
+  //initialize discrete event handling
+  PreVariables* preVars = dynamic_cast<PreVariables*>(event_system);
+  boost::shared_ptr<DiscreteEvents> discreteEvents = boost::shared_ptr<DiscreteEvents>(new DiscreteEvents(preVars));
+  discreteEvents->initialize();
+  //initialize continuous event handling
+  _continuousEvents.initialize(event_system);
+  return discreteEvents;
 }
 
 
-/**
-Saves a variable in _pre_vars vector
-*/
 
-void EventHandling::save(double& var)
+
+bool EventHandling::startEventIteration(bool& state_vars_reinitialized)
 {
-  unsigned int i = _pre_real_vars_idx[&var];
-  _pre_vars[i]=var;
-}
-
-/**
-Saves a variable in _pre_vars vector
-*/
-
-void EventHandling::save(int& var)
-{
-  unsigned int i = _pre_int_vars_idx[&var];
-  _pre_vars[i]=var;
-}
-
-/**
-Saves a variable in _pre_vars vector
-*/
-
-void EventHandling::save(bool& var)
-{
-  unsigned int i = _pre_bool_vars_idx[&var];
-  _pre_vars[i]=var;
-}
-
-/**
-Implementation of the Modelica pre  operator
-*/
-double EventHandling::pre(double& var)
-{
-  unsigned int i = _pre_real_vars_idx[&var];
-  return _pre_vars[i];
-
-}
-
-/**
-Implementation of the Modelica pre  operator
-*/
-double EventHandling::pre(int& var)
-{
-  unsigned int i = _pre_int_vars_idx[&var];
-  return _pre_vars[i];
-
-}
-
-/**
-Implementation of the Modelica pre  operator
-*/
-double EventHandling::pre(bool& var)
-{
-  unsigned int i = _pre_bool_vars_idx[&var];
-  return _pre_vars[i];
-
-}
-/**
-Implementation of the Modelica edge  operator
-Returns true for a variable when it  changes from false to true
-*/
-bool EventHandling::edge(double& var)
-{
-  return var && !pre(var);
-}
-
-/**
-Implementation of the Modelica edge  operator
-Returns true for a variable when it  changes from false to true
-*/
-bool EventHandling::edge(int& var)
-{
-  return var && !pre(var);
-}
-
-/**
-Implementation of the Modelica edge  operator
-Returns true for a variable when it  changes from false to true
-*/
-bool EventHandling::edge(bool& var)
-{
-  return var && !pre(var);
-}
-
-/**
-Implementation of the Modelica change  operator
-Returns true for a variable when it change value
-*/
-bool EventHandling::change(double& var)
-{
-  return var != pre(var);
-}
-
-/**
-Implementation of the Modelica change  operator
-Returns true for a variable when it change value
-*/
-bool EventHandling::change(int& var)
-{
-  return var != pre(var);
-}
-
-/**
-Implementation of the Modelica change  operator
-Returns true for a variable when it change value
-*/
-bool EventHandling::change(bool& var)
-{
-  return var != pre(var);
+   return _continuousEvents.startEventIteration(state_vars_reinitialized);
 }
 
 
-bool EventHandling::changeDiscreteVar(double& var)
-{
-  unsigned int i = _pre_real_vars_idx[&var];
-  return var != _pre_vars[i];
-
-}
-bool EventHandling::changeDiscreteVar(int& var)
-{
-  unsigned int i = _pre_int_vars_idx[&var];
-  return var != _pre_vars[i];
-
-}
-
-bool EventHandling::changeDiscreteVar(bool& var)
-{
-  unsigned int i = _pre_bool_vars_idx[&var];
-  return var != _pre_vars[i];
-
-}
-
-/**
-Handles all events occurred a the same time.
-*/
-bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
-{
-  //save discrete varibales
-  //Deactivated: _event_system->saveDiscreteVars(); // store values of discrete vars vor next check
-
-  unsigned int dim = _event_system->getDimZeroFunc();
-
-  _event_system->getConditions(_conditions0);
-  //Handle all events
-
-  state_vars_reinitialized = _countinous_system->evaluateConditions();
-  //state_vars_reinitialized = evaluateAll();
-  //_countinous_system->evaluateODE();
-  //state_vars_reinitialized = _countinous_system->evaluateConditions();
-
-  //check if discrete variables changed
-  bool drestart= _event_system->checkForDiscreteEvents(); //discrete time conditions
-
-
-  _event_system->getConditions(_conditions1);
-  bool crestart = !std::equal (_conditions1, _conditions1+dim,_conditions0);
-
-  return((drestart||crestart)); //returns true if new events occured
-}
-
-/*
-bool EventHandling::checkConditions(const bool* events, bool all)
-{
-IEvent* event_system= dynamic_cast<IEvent*>(_system);
-int dim = event_system->getDimZeroFunc();
-bool* conditions0 = new bool[dim];
-bool* conditions1 = new bool[dim];
-event_system->getConditions(conditions0);
-
-for(int i=0;i<dim;i++)
-{
-if(all||events[i])
-getCondition(i);
-}
-event_system->getConditions(conditions1);
-return !std::equal (conditions1, conditions1+dim,conditions0);
-
-}
-*/
 

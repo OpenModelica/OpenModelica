@@ -211,7 +211,7 @@ void SimManager::runSingleStep(double cycletime)
         //Handle time event
         _timeevent_system->handleTimeEvent(_timeeventcounter);
         _cont_system->evaluateAll(IContinuous::CONTINUOUS);
-        _mixed_system->saveAll();
+        _event_system->saveAll();
         _timeevent_system->handleTimeEvent(_timeeventcounter);
     }
 
