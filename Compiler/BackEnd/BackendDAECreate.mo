@@ -2169,7 +2169,7 @@ algorithm
       list<BackendDAE.Equation> rest, rest2;
 
     case (cr1, BackendDAE.WHEN_EQUATION(whenEquation=wheneq as BackendDAE.WHEN_EQ(left=cr2))::rest, rest2)
-      equation 
+      equation
         true = ComponentReference.crefEqualNoStringCompare(cr1, cr2);
         rest = listAppend(rest2, rest);
       then (wheneq, rest);
