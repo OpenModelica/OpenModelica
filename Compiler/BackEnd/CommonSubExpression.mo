@@ -331,7 +331,7 @@ algorithm
         value2 = BaseHashTable.get(value, HT2);
         HT2 = BaseHashTable.update((value, value2 + 1), HT2);
       else
-        (value, i) = createReturnExp(tp, i); 
+        (value, i) = createReturnExp(tp, i);
         HT = BaseHashTable.add((key, value), HT);
         HT2 = BaseHashTable.add((value, 1), HT2);
         i = i+1;
@@ -396,7 +396,7 @@ algorithm
       cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});
       value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
     then (value, i+1);
-    
+
     case (DAE.T_INTEGER(), i) equation
       str = "$CSE" + intString(i);
       cr = DAE.CREF_IDENT(str, DAE.T_INTEGER_DEFAULT,{});
@@ -407,13 +407,13 @@ algorithm
       str = "$CSE" + intString(i);
       cr = DAE.CREF_IDENT(str, DAE.T_STRING_DEFAULT,{});
       value = DAE.CREF(cr, DAE.T_STRING_DEFAULT);
-    then (value, i+1);              
+    then (value, i+1);
 
     case (DAE.T_BOOL(), i) equation
       str = "$CSE" + intString(i);
       cr = DAE.CREF_IDENT(str, DAE.T_BOOL_DEFAULT,{});
       value = DAE.CREF(cr, DAE.T_BOOL_DEFAULT);
-    then (value, i+1);              
+    then (value, i+1);
 
     case (DAE.T_CLOCK(), i) equation
       str = "$CSE" + intString(i);
@@ -422,7 +422,7 @@ algorithm
     then (value, i+1);
 
     case (DAE.T_TUPLE(typeLst), i) equation
-      (expLst, i) = List.mapFold(typeLst, createReturnExp, i); 
+      (expLst, i) = List.mapFold(typeLst, createReturnExp, i);
       value = DAE.TUPLE(expLst);
     then (value, i+1);
 
@@ -436,11 +436,11 @@ algorithm
 
     case (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)), i) equation
       str = "$CSE" + intString(i);
-      cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});      
+      cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});
       expLst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
       varNames = List.map(varLst, Expression.varName);
       value = DAE.RECORD(path, expLst, varNames, tp);
-    then (value, i+1);      
+    then (value, i+1);
 
     // all other are failing cases
     else fail();
