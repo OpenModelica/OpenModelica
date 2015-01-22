@@ -48,6 +48,7 @@ protected import BackendVarTransform;
 protected import BackendVariable;
 protected import BaseHashSet;
 protected import BaseHashTable;
+protected import ComponentReference;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSolve;
@@ -193,15 +194,16 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var var;
       BackendDAE.Equation eq;
+      DAE.Type tp;
 
     case (key as DAE.BINARY(exp1, op, exp2), (HT, HT2, HS, eqList, varList)) equation
       true = Flags.getConfigBool(Flags.CSE_BINARY);
-      (value as DAE.CREF(cr, _)) = BaseHashTable.get(key, HT);
+      (value as DAE.CREF(cr, tp)) = BaseHashTable.get(key, HT);
       value2 = BaseHashTable.get(value, HT2);
       true = intGt(value2, 1);
       if not BaseHashSet.has(cr, HS) then
         HS = BaseHashSet.add(cr, HS);
-        var = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
+        var = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), tp, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
         varList = var::varList;
         eq = BackendDAE.EQUATION(value, key, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
         eqList = eq::eqList;
@@ -210,7 +212,7 @@ algorithm
 
     case (key as DAE.CALL(path, CallListe, attr), (HT, HT2, HS, eqList, varList)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
-      (value as DAE.CREF(cr, _)) = BaseHashTable.get(key, HT);
+      (value as DAE.CREF(cr, tp)) = BaseHashTable.get(key, HT);
       value2 = BaseHashTable.get(value, HT2);
 
       if not Flags.getConfigBool(Flags.CSE_EACHCALL) then
@@ -219,7 +221,7 @@ algorithm
 
       if not BaseHashSet.has(cr, HS) then
           HS = BaseHashSet.add(cr, HS);
-          var = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
+          var = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), tp, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
           varList = var::varList;
           eq = BackendDAE.EQUATION(value, key, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
           eqList = eq::eqList;
@@ -285,7 +287,7 @@ algorithm
   (outExp, outTuple) := matchcontinue(inExp, inTuple)
     local
       DAE.Exp exp1, exp2, key, value;
-      list<DAE.Exp> CallListe;
+      list<DAE.Exp> expLst;
       DAE.Operator op;
       Absyn.Path path;
       DAE.CallAttributes attr;
@@ -298,6 +300,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var var;
       BackendDAE.Equation eq;
+      DAE.Type tp;
 
     case (key as DAE.BINARY(exp1, op, exp2), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_BINARY);
@@ -320,16 +323,15 @@ algorithm
       end if;
     then (value , (HT, HT2, i));
 
-    case (key as DAE.CALL(path, CallListe, attr), (HT, HT2, i)) equation
+    case (DAE.CALL(path=Absyn.IDENT("der")), _) then (inExp, inTuple);
+    case (key as DAE.CALL(path = path, attr = attr as DAE.CALL_ATTR(ty=tp)), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
       if BaseHashTable.hasKey(key, HT) then
         value = BaseHashTable.get(key, HT);
         value2 = BaseHashTable.get(value, HT2);
         HT2 = BaseHashTable.update((value, value2 + 1), HT2);
       else
-        str = "$CSE" + intString(i);
-        cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});
-        value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+        (value, i) = createReturnExp(tp, i); 
         HT = BaseHashTable.add((key, value), HT);
         HT2 = BaseHashTable.add((value, 1), HT2);
         i = i+1;
@@ -368,7 +370,82 @@ algorithm
   end match;
 end checkOp;
 
+protected function createReturnExp
+  input DAE.Type inType;
+  input Integer inUniqueCSEIndex;
+  output DAE.Exp outExp;
+  output Integer outUniqueCSEIndex;
+algorithm
+  (outExp, outUniqueCSEIndex) := match (inType, inUniqueCSEIndex)
+  local
+    Integer i;
+    String str;
+    DAE.Exp value;
+    DAE.ComponentRef cr;
+    list<DAE.Type> typeLst;
+    list<DAE.Exp> expLst;
+    DAE.Dimensions dims;
+    DAE.Type tp;
+    list<DAE.ComponentRef> crefs;
+    Absyn.Path path;
+    list<DAE.Var> varLst;
+    list<String> varNames;
 
+    case (DAE.T_REAL(), i) equation
+      str = "$CSE" + intString(i);
+      cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});
+      value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+    then (value, i+1);
+    
+    case (DAE.T_INTEGER(), i) equation
+      str = "$CSE" + intString(i);
+      cr = DAE.CREF_IDENT(str, DAE.T_INTEGER_DEFAULT,{});
+      value = DAE.CREF(cr, DAE.T_INTEGER_DEFAULT);
+    then (value, i+1);
+
+    case (DAE.T_STRING(), i) equation
+      str = "$CSE" + intString(i);
+      cr = DAE.CREF_IDENT(str, DAE.T_STRING_DEFAULT,{});
+      value = DAE.CREF(cr, DAE.T_STRING_DEFAULT);
+    then (value, i+1);              
+
+    case (DAE.T_BOOL(), i) equation
+      str = "$CSE" + intString(i);
+      cr = DAE.CREF_IDENT(str, DAE.T_BOOL_DEFAULT,{});
+      value = DAE.CREF(cr, DAE.T_BOOL_DEFAULT);
+    then (value, i+1);              
+
+    case (DAE.T_CLOCK(), i) equation
+      str = "$CSE" + intString(i);
+      cr = DAE.CREF_IDENT(str, DAE.T_CLOCK_DEFAULT,{});
+      value = DAE.CREF(cr, DAE.T_CLOCK_DEFAULT);
+    then (value, i+1);
+
+    case (DAE.T_TUPLE(typeLst), i) equation
+      (expLst, i) = List.mapFold(typeLst, createReturnExp, i); 
+      value = DAE.TUPLE(expLst);
+    then (value, i+1);
+
+    case (DAE.T_ARRAY(ty=tp, dims=dims), i) equation
+      (value, i) = createReturnExp(tp, i);
+      cr = Expression.expCref(value);
+      crefs = ComponentReference.expandArrayCref(cr, dims);
+      expLst = List.map(crefs, Expression.crefExp);
+      value = DAE.ARRAY(tp, true, expLst);
+    then (value, i+1);
+
+    case (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)), i) equation
+      str = "$CSE" + intString(i);
+      cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});      
+      expLst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+      varNames = List.map(varLst, Expression.varName);
+      value = DAE.RECORD(path, expLst, varNames, tp);
+    then (value, i+1);      
+
+    // all other are failing cases
+    else fail();
+end match;
+end createReturnExp;
 
 // =============================================================================
 // Common Sub Expressions
