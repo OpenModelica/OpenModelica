@@ -37,7 +37,7 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
 
 6. Installing Modelica Development Tooling (MDT) and setting your Eclipse workspace
    Start Eclipse and follow instructions from:
-   http://www.ida.liu.se/~pelab/modelica/OpenModelica/MDT/
+   https://trac.openmodelica.org/documents/MDT/install/InstallingMDT.pdf
    to install MDT. Eclipse will restart at the end.
    Start Eclipse, change workspace to your installation:
    - note here that your workspace must point one directory
