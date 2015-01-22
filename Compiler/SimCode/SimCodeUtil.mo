@@ -2539,6 +2539,37 @@ algorithm
       then
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
 
+    // EQUATIONSYSTEM size 1 -> single equation
+    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, (BackendDAE.EQUATIONSYSTEM(eqns={index}, vars={vindex})), _, _, _, _, _, _, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings)
+      equation
+        eqn = BackendEquation.equationNth1(eqns, index);
+        // ignore when equations if we should not generate them
+        bwhen = BackendEquation.isWhenEquation(eqn);
+        // ignore discrete if we should not generate them
+        v = BackendVariable.getVarAt(vars, index);
+        _ = BackendVariable.isVarDiscrete(v);
+        // block is dynamic, belong in dynamic section
+        bdynamic = BackendDAEUtil.blockIsDynamic({index}, stateeqnsmark);
+        // block need to evaluate zeroCrossings
+        bzceqns = BackendDAEUtil.blockIsDynamic({index}, zceqnsmark);
+        (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, false, iuniqueEqIndex, itempvars);
+
+        firstSES = List.first(equations1);  // check if the all equations occure with this index in the c file
+        isEqSys = isSimEqSys(firstSES);
+        firstEqIndex = if isEqSys then uniqueEqIndex-1 else iuniqueEqIndex;
+        //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+
+        tmpEqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+        tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, index, ieqBackendSimCodeMapping);
+        tmpBackendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex - 1),{index}, iBackendMapping);
+
+        odeEquations = if bdynamic and (not bwhen) then equations1::odeEquations else odeEquations;
+        algebraicEquations = if (not bdynamic) and (not bwhen) then equations1::algebraicEquations else algebraicEquations;
+        equationsforZeroCrossings = if bzceqns and (not bwhen) then equations1::equationsforZeroCrossings else equationsforZeroCrossings;
+        allEquations = equations1::allEquations;
+      then
+        (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
+
     // a system of equations
     case (_, _, _, _, _, _, _, _, _, _, _, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings)
       equation

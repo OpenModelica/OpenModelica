@@ -155,8 +155,11 @@ algorithm
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents comps;
       array<Integer> ass1, ass2;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind),shared,BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx))
+
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching,stateSets=stateSets,partitionKind=partitionKind, m=m,mT=mT),shared,BackendDAE.SINGLEEQUATION(eqn=eindex,var=vindx))
       algorithm
         (eqn_ as BackendDAE.EQUATION(exp=e1, scalar=e2, source=source,attr=attr)) := BackendEquation.equationNth1(eqns, eindex);
         (var_ as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, vindx);
@@ -181,19 +184,23 @@ algorithm
            end if;
         else
          try
+           // ExpressionSolve fail!
+           // try simplify equation
+           fail(); //TODO: ./simulation/libraries/msl32/Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest.mos
            (varexp, e, solveEqns, solveCr, _) := preprocessingSolve(e1, e2, varexp, NONE(), NONE(), 0);
            true := List.isEmpty(solveEqns);
            eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
          else
            eqn_ := eqn_;
          end try;
+          // ExressionSolve can't solve eqn -> make equastion system
           comp := BackendDAE.EQUATIONSYSTEM({eindex}, {vindx},  BackendDAE.EMPTY_JACOBIAN() ,BackendDAE.JAC_NONLINEAR(), false);
           BackendDAE.MATCHING(comps = comps, ass1 = ass1, ass2 = ass2) := matching;
           comps := List.replaceAt(comp, iter, comps);
           matching := BackendDAE.MATCHING(ass1, ass2, comps);
         end try;
         eqns_ := BackendEquation.setAtIndex(eqns,eindex,eqn_);
-        syst := BackendDAE.EQSYSTEM(vars,eqns_,NONE(),NONE(),matching,stateSets,partitionKind);
+        syst := BackendDAE.EQSYSTEM(vars,eqns_,m,mT,matching,stateSets,partitionKind);
 
         then(syst,shared,tmpvars);
 

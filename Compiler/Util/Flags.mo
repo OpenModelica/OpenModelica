@@ -705,7 +705,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "inlineArrayEqn",
     "constantLinearSystem",
     "simplifysemiLinear",
-    //"solveSimpleEquations", // can change matching, some issues with HeatingSystem
     //"solveLinearSystem",
     "removeSimpleEquations",
     "encapsulateWhenConditions",  // must called after remove simple equations
@@ -720,7 +719,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "generateSymbolicJacobian",
     "generateSymbolicLinearization",
     "removeUnusedFunctions",
-    "removeConstants"
+    "removeConstants",
+    "solveSimpleEquations"
     // "partitionIndependentBlocks",
     // "addInitialStmtsToAlgorithms"
     }),
