@@ -4292,6 +4292,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
+      _discrete_events = _event_handling.initialize(this);
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
       initializeAlgloopSolverVariables();
@@ -4320,8 +4321,8 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
 
       <%initFunctions%>
 
-      //_event_handling.initialize(this,<%helpvarlength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>,boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::initPreVars, this, _1,_2));
-      _discrete_events = _event_handling.initialize(this);
+      
+
 
       //init event handling
       <%initEventHandling%>
@@ -10705,13 +10706,12 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
 
   <%if msgVar then
       <<
-      if(!<%condVar%>)
-      {
-
-        <%preExpCond%>
-        <%preExpMsg%>
-        throw std::runtime_error(<%msgVar%>);
-      }
+       <%preExpCond%>
+       if(!<%condVar%>)
+       {
+         <%preExpMsg%>
+         throw std::runtime_error(<%msgVar%>);
+       }
       >>
       else
       <<
