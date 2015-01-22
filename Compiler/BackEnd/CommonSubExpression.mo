@@ -349,8 +349,8 @@ protected function commutativeBinaryExp
   output Boolean outB;
 algorithm
   outB := match(inOp)
-    case DAE.MUL(ty=_) then true;
-    case DAE.ADD(ty=_) then true;
+    case DAE.MUL() then true;
+    case DAE.ADD() then true;
     else false;
   end match;
 end commutativeBinaryExp;
@@ -377,75 +377,75 @@ protected function createReturnExp
   output DAE.Exp outExp;
   output Integer outUniqueCSEIndex;
 algorithm
-  (outExp, outUniqueCSEIndex) := match (inType, inUniqueCSEIndex)
-  local
-    Integer i;
-    String str;
-    DAE.Exp value;
-    DAE.ComponentRef cr;
-    list<DAE.Type> typeLst;
-    list<DAE.Exp> expLst;
-    DAE.Dimensions dims;
-    DAE.Type tp;
-    list<DAE.ComponentRef> crefs;
-    Absyn.Path path;
-    list<DAE.Var> varLst;
-    list<String> varNames;
+  (outExp, outUniqueCSEIndex) := match (inType)
+    local
+      Integer i;
+      String str;
+      DAE.Exp value;
+      DAE.ComponentRef cr;
+      list<DAE.Type> typeLst;
+      list<DAE.Exp> expLst;
+      DAE.Dimensions dims;
+      DAE.Type tp;
+      list<DAE.ComponentRef> crefs;
+      Absyn.Path path;
+      list<DAE.Var> varLst;
+      list<String> varNames;
 
-    case (DAE.T_REAL(), i) equation
-      str = "$CSE" + intString(i);
+    case DAE.T_REAL() equation
+      str = "$CSE" + intString(inUniqueCSEIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});
       value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
-    then (value, i+1);
+    then (value, inUniqueCSEIndex+1);
 
-    case (DAE.T_INTEGER(), i) equation
-      str = "$CSE" + intString(i);
+    case DAE.T_INTEGER() equation
+      str = "$CSE" + intString(inUniqueCSEIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_INTEGER_DEFAULT,{});
       value = DAE.CREF(cr, DAE.T_INTEGER_DEFAULT);
-    then (value, i+1);
+    then (value, inUniqueCSEIndex+1);
 
-    case (DAE.T_STRING(), i) equation
-      str = "$CSE" + intString(i);
+    case DAE.T_STRING() equation
+      str = "$CSE" + intString(inUniqueCSEIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_STRING_DEFAULT,{});
       value = DAE.CREF(cr, DAE.T_STRING_DEFAULT);
-    then (value, i+1);
+    then (value, inUniqueCSEIndex+1);
 
-    case (DAE.T_BOOL(), i) equation
-      str = "$CSE" + intString(i);
+    case DAE.T_BOOL() equation
+      str = "$CSE" + intString(inUniqueCSEIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_BOOL_DEFAULT,{});
       value = DAE.CREF(cr, DAE.T_BOOL_DEFAULT);
-    then (value, i+1);
+    then (value, inUniqueCSEIndex+1);
 
-    case (DAE.T_CLOCK(), i) equation
-      str = "$CSE" + intString(i);
+    case DAE.T_CLOCK() equation
+      str = "$CSE" + intString(inUniqueCSEIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_CLOCK_DEFAULT,{});
       value = DAE.CREF(cr, DAE.T_CLOCK_DEFAULT);
-    then (value, i+1);
+    then (value, inUniqueCSEIndex+1);
 
-    case (DAE.T_TUPLE(typeLst), i) equation
-      (expLst, i) = List.mapFold(typeLst, createReturnExp, i);
+    case DAE.T_TUPLE(typeLst) equation
+      (expLst, i) = List.mapFold(typeLst, createReturnExp, inUniqueCSEIndex);
       value = DAE.TUPLE(expLst);
     then (value, i+1);
 
-    case (DAE.T_ARRAY(ty=tp, dims=dims), i) equation
-      (value, i) = createReturnExp(tp, i);
+    case DAE.T_ARRAY(ty=tp, dims=dims) equation
+      (value, i) = createReturnExp(tp, inUniqueCSEIndex);
       cr = Expression.expCref(value);
       crefs = ComponentReference.expandArrayCref(cr, dims);
       expLst = List.map(crefs, Expression.crefExp);
       value = DAE.ARRAY(tp, true, expLst);
     then (value, i+1);
 
-    case (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)), i) equation
-      str = "$CSE" + intString(i);
+    case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)) equation
+      str = "$CSE" + intString(inUniqueCSEIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});
       expLst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
       varNames = List.map(varLst, Expression.varName);
-      value = DAE.RECORD(path, expLst, varNames, tp);
-    then (value, i+1);
+      value = DAE.RECORD(path, expLst, varNames, inType);
+    then (value, inUniqueCSEIndex+1);
 
     // all other are failing cases
     else fail();
-end match;
+  end match;
 end createReturnExp;
 
 // =============================================================================
