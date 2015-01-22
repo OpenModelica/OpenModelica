@@ -11,7 +11,7 @@ Constructor
 */
 EventHandling::EventHandling()
 {
-	 _continuousEvents =  boost::shared_ptr<ContinuousEvents>(new ContinuousEvents());
+   _continuousEvents =  boost::shared_ptr<ContinuousEvents>(new ContinuousEvents());
 }
 
 EventHandling::~EventHandling(void)

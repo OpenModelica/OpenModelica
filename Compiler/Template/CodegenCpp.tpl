@@ -5172,7 +5172,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_IMPORT_DECL
   #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
   #endif
-  
+
   #include "System/SystemDefaultImplementation.h"
 
 
@@ -8115,7 +8115,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
              }
              catch(std::exception &ex)
              {
-               
+
                 throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
              }
       }
@@ -9285,7 +9285,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
          catch(std::exception& ex)
          {
 
-             
+
              throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
          }
          >>
@@ -9336,7 +9336,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
             }
             catch(std::exception& ex)
             {
-                
+
                 throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
             }
 
