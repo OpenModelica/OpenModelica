@@ -286,11 +286,10 @@ algorithm
 
   (outExp, outTuple) := matchcontinue(inExp, inTuple)
     local
-      DAE.Exp exp1, exp2, key, value;
+      DAE.Exp exp1, exp2, value;
       list<DAE.Exp> expLst;
       DAE.Operator op;
       Absyn.Path path;
-      DAE.CallAttributes attr;
       HashTableExpToExp.HashTable HT;
       HashTableExpToIndex.HashTable HT2;
       list<BackendDAE.Equation> eqList;
@@ -302,18 +301,18 @@ algorithm
       BackendDAE.Equation eq;
       DAE.Type tp;
 
-    case (key as DAE.BINARY(exp1, op, exp2), (HT, HT2, i)) equation
+    case (DAE.BINARY(exp1, op, exp2), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_BINARY);
       if checkOp(op) then
-        if BaseHashTable.hasKey(key, HT) then
-          value = BaseHashTable.get(key, HT);
+        if BaseHashTable.hasKey(inExp, HT) then
+          value = BaseHashTable.get(inExp, HT);
           value2 = BaseHashTable.get(value, HT2);
           HT2 = BaseHashTable.update((value, value2 + 1), HT2);
         else
           str = "$CSE" + intString(i);
           cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT,{});
           value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
-          HT = BaseHashTable.add((key, value), HT);
+          HT = BaseHashTable.add((inExp, value), HT);
           HT2 = BaseHashTable.add((value, 1), HT2);
           if commutativeBinaryExp(op) then
             HT = BaseHashTable.add((DAE.BINARY(exp2, op, exp1), value), HT);
@@ -323,16 +322,18 @@ algorithm
       end if;
     then (value , (HT, HT2, i));
 
-    case (DAE.CALL(path=Absyn.IDENT("der")), _) then (inExp, inTuple);
-    case (key as DAE.CALL(path = path, attr = attr as DAE.CALL_ATTR(ty=tp)), (HT, HT2, i)) equation
+    case (DAE.CALL(path=Absyn.IDENT("der")), _)
+    then (inExp, inTuple);
+
+    case (DAE.CALL(path=path, attr=DAE.CALL_ATTR(ty=tp)), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
-      if BaseHashTable.hasKey(key, HT) then
-        value = BaseHashTable.get(key, HT);
+      if BaseHashTable.hasKey(inExp, HT) then
+        value = BaseHashTable.get(inExp, HT);
         value2 = BaseHashTable.get(value, HT2);
         HT2 = BaseHashTable.update((value, value2 + 1), HT2);
       else
         (value, i) = createReturnExp(tp, i);
-        HT = BaseHashTable.add((key, value), HT);
+        HT = BaseHashTable.add((inExp, value), HT);
         HT2 = BaseHashTable.add((value, 1), HT2);
         i = i+1;
       end if;
