@@ -185,6 +185,7 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/DataExchange/Policies/MatfileWriter.h>
 #include <Core/SimulationSettings/ISettingsFactory.h>
+
 #if defined(__vxworks) || defined(__TRICORE__)
 #include <Core/DataExchange/SimDouble.h>
 #endif

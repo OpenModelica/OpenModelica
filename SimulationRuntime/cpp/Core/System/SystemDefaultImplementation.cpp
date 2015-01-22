@@ -1,6 +1,6 @@
 #include <Core/Modelica.h>
-#include "FactoryExport.h"
 #include <SimCoreFactory/Policies/FactoryConfig.h>
+#include "FactoryExport.h"
 #include <Core/System/EventHandling.h>
 #include <Core/System/PreVariables.h>
 #include <Core/System/SystemDefaultImplementation.h>

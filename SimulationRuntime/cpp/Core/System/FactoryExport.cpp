@@ -15,7 +15,6 @@ extern "C" IAlgLoopSolverFactory* createAlgLoopSolverFactory(IGlobalSettings* gl
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include <Core/System/FactoryExport.h>
 #include <Core/System/AlgLoopSolverFactory.h>
 
 /*Simster factory*/
@@ -29,7 +28,6 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_system(boost::exten
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 #include <SimCoreFactory/OMCFactory/OMCFactory.h>
-#include <Core/System/FactoryExport.h>
 #include <Core/System/AlgLoopSolverFactory.h>
 
 /*OMC factory*/

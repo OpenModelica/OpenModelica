@@ -1,6 +1,5 @@
 #include <Core/Modelica.h>
 #include "FactoryExport.h"
-#include <Core/System/IEvent.h>
 #include <Core/System/ContinuousEvents.h>
 #include <Core/Math/Functions.h>
 

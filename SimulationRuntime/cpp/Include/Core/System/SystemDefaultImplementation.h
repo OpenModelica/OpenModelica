@@ -162,7 +162,7 @@ protected:
     InitVars<int> _int_start_values;
     InitVars<bool> _bool_start_values;
 
-    EventHandling _event_handling;
+   
 
     typedef boost::circular_buffer<double> buffer_type;
     map<unsigned int, buffer_type> _delay_buffer;

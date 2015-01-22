@@ -613,7 +613,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    /* #include <Core/Modelica.h>
    #include <Core/ModelicaDefine.h>
    #include "OMCpp<%fileNamePrefix%>Initialize.h" */
-
+   #include <Core/System/EventHandling.h>
+   #include <Core/System/DiscreteEvents.h>
    <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
@@ -2437,6 +2438,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     #include "OMCpp<%fileNamePrefix%>PreVariables.h"
     #include "OMCpp<%fileNamePrefix%>.h"
     #include "OMCpp<%fileNamePrefix%>Functions.h"
+    #include <Core/System/EventHandling.h>
+    #include <Core/System/DiscreteEvents.h>
     #if defined(__TRICORE__) || defined(__vxworks)
     #include <DataExchange/SimDouble.h>
     #endif
@@ -2454,6 +2457,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       _dimZeroFunc = <%zerocrosslength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>;
       _dimTimeEvent = <%timeeventlength(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>;
       //Number of residues
+       _event_handling= boost::shared_ptr<EventHandling>(new EventHandling());
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
       _dimResidues = <%numResidues(allEquations)%>;
@@ -4292,7 +4296,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    <<
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
-      _discrete_events = _event_handling.initialize(this);
+      _discrete_events = _event_handling->initialize(this);
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
       initializeAlgloopSolverVariables();
@@ -5168,9 +5172,9 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_IMPORT_DECL
   #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
   #endif
-  #include "System/EventHandling.h"
+  
   #include "System/SystemDefaultImplementation.h"
-  #include "Core/Utils/extension/measure_time.hpp"
+
 
   #ifdef __GNUC__
     #define VAR_ALIGN_PRE
@@ -5185,7 +5189,8 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
 
   //Forward declaration to speed-up the compilation process
   class Functions;
-
+  class EventHandling;
+  class DiscreteEvents;
   <%algloopForwardDeclaration(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
   /*****************************************************************************
@@ -5313,7 +5318,7 @@ match modelInfo
       void getJacobian(SparseMatrix& matrix);
       void deleteObjects();
       //Variables:
-      EventHandling _event_handling;
+       boost::shared_ptr<EventHandling> _event_handling;
       boost::shared_ptr<DiscreteEvents> _discrete_events;
 
       <%if(useDefaultMemberVariables) then '<%MemberVariable(modelInfo, useFlatArrayNotation)%>'%>
@@ -7468,7 +7473,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
 
        <%funcCalls%>
 
-      _event_handling.saveDiscretPreVars(discreteVars,<%n_vars%>);
+      _event_handling->saveDiscretPreVars(discreteVars,<%n_vars%>);
     }
 
     >>
@@ -8061,8 +8066,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     }
     catch(std::exception &ex)
     {
-      deleteObjects();
-      throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+         throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
     }
     >>
     else
@@ -8111,7 +8115,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
              }
              catch(std::exception &ex)
              {
-                deleteObjects();
+               
                 throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
              }
       }
@@ -8240,7 +8244,7 @@ case SES_MIXED(__) then
           <%preDisc%>
          <%discvars2%>
          bool* cur_disc_vars<%num%>[<%numDiscVarsStr%>]= {<%discVars |> SIMVAR(__) => '&<%cref(name, useFlatArrayNotation)%>' ;separator=", "%>};
-       restart<%num%>=!(_event_handling.CheckDiscreteValues(values<%num%>,pre_disc_vars<%num%>,new_disc_vars<%num%>,cur_disc_vars<%num%>,<%numDiscVarsStr%>,iter<%num%>,<%valuesLenStr%>));
+       restart<%num%>=!(_event_handling->CheckDiscreteValues(values<%num%>,pre_disc_vars<%num%>,new_disc_vars<%num%>,cur_disc_vars<%num%>,<%numDiscVarsStr%>,iter<%num%>,<%valuesLenStr%>));
        iter<%num%>++;
     }
     if(iter<%num%>>max_iter<%num%> && (restart<%num%> == true) )
@@ -9281,7 +9285,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
          catch(std::exception& ex)
          {
 
-             deleteObjects();
+             
              throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
          }
          >>
@@ -9332,7 +9336,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
             }
             catch(std::exception& ex)
             {
-                deleteObjects();
+                
                 throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
             }
 
@@ -11974,7 +11978,7 @@ template checkConditions(list<ZeroCrossing> zeroCrossings,list<SimWhenClause> wh
    bool <%lastIdentOfPath(modelInfo.name)%>::checkConditions()
    {
      _callType = IContinuous::DISCRETE;
-      return _event_handling.checkConditions(0,true);
+      return _event_handling->checkConditions(0,true);
      _callType = IContinuous::CONTINUOUS;
    }
    >>
@@ -12066,7 +12070,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     {
         bool st_vars_reinit = false;
         //iterate and handle all events inside the eventqueue
-        restart = _event_handling.startEventIteration(st_vars_reinit);
+        restart = _event_handling->startEventIteration(st_vars_reinit);
         state_vars_reinitialized = state_vars_reinitialized || st_vars_reinit;
 
         saveAll();
