@@ -110,7 +110,7 @@ public:
   virtual void solve(const SOLVERCALL command = UNDEF_CALL);
 
   /// Liefert den Status des Solvers nach Beendigung der Simulation
-  virtual const ISolver::SOLVERSTATUS getSolverStatus()
+  virtual ISolver::SOLVERSTATUS getSolverStatus()
   {
     return (SolverDefaultImplementation::getSolverStatus());
   };

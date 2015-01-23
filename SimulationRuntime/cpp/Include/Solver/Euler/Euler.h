@@ -46,7 +46,7 @@ public:
     virtual void solve(const SOLVERCALL command = UNDEF_CALL);
 
     /// Provides the status of the solver after returning
-    const ISolver::SOLVERSTATUS getSolverStatus();
+    ISolver::SOLVERSTATUS getSolverStatus();
 
     /// Write out statistical information (statistical information of last simulation, e.g. time, number of steps, etc.)
      virtual void writeSimulationInfo();

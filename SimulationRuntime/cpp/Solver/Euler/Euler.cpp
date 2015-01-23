@@ -156,7 +156,7 @@ void Euler::setInitStepSize(const double& h)
 
 
 /// Provides the status of the solver after returning
-const ISolver::SOLVERSTATUS Euler::getSolverStatus()
+ISolver::SOLVERSTATUS Euler::getSolverStatus()
 {
     return (SolverDefaultImplementation::getSolverStatus());
 };
