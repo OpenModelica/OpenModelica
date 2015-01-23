@@ -4217,6 +4217,136 @@ algorithm
 end updateStatesVars;
 
 // =============================================================================
+// section for introduceDerAlias
+//
+// =============================================================================
+
+public function introduceDerAlias
+" This module introduces alias for derivatove call in the form
+  dx = der(x);
+  This helps tearing and non-linear solvers to handle them more efficent."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  if Flags.isSet(Flags.ADD_DER_ALIASES) then
+    outDAE := BackendDAEUtil.mapEqSystem(inDAE, introduceDerAliasWork);
+  else
+    outDAE := inDAE;
+  end if;
+end introduceDerAlias;
+
+protected function introduceDerAliasWork
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared := shared;
+protected
+  Option<BackendDAE.IncidenceMatrix> m, mT;
+  BackendDAE.Variables vars, vars1;
+  BackendDAE.EquationArray eqns, eqns1;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  list<BackendDAE.Equation> eqnsList;
+algorithm
+  BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets, partitionKind) := syst;
+  (eqns1, (vars1, eqnsList, _, _)) := BackendEquation.traverseEquationArray_WithUpdate(eqns, traverserintroduceDerAliasEquation, (vars, {}, shared, true));
+  eqns1 := BackendEquation.addEquations(eqnsList, eqns1);
+  osyst := BackendDAE.EQSYSTEM(vars1, eqns1, m, mT, matching, stateSets, partitionKind);
+end introduceDerAliasWork;
+
+protected function traverserintroduceDerAliasEquation "
+  Help function to e.g. introduceDerAliasWork"
+  input BackendDAE.Equation inEq;
+  input tuple<BackendDAE.Variables, list<BackendDAE.Equation>, BackendDAE.Shared, Boolean> tpl;
+  output BackendDAE.Equation outEq;
+  output tuple<BackendDAE.Variables, list<BackendDAE.Equation>, BackendDAE.Shared, Boolean> outTpl;
+protected
+  BackendDAE.Equation e;
+  BackendDAE.Variables vars;
+  Boolean b;
+  list<DAE.SymbolicOperation> ops;
+  BackendDAE.Shared shared;
+  list<BackendDAE.Equation> eqnLst;
+algorithm
+  (vars, eqnLst, shared, b) := tpl;
+  (e, (vars, eqnLst, shared, ops, _)) := BackendEquation.traverseExpsOfEquation(inEq, traverserintroduceDerAliasExp, (vars, eqnLst, shared, {}, b));
+  outEq := List.foldr(ops, BackendEquation.addOperation, e);
+  outTpl := (vars, eqnLst, shared, b);
+end traverserintroduceDerAliasEquation;
+
+protected function traverserintroduceDerAliasExp "
+  Help function to e.g. traverserintroduceDerAliasEquation"
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables, list<BackendDAE.Equation>, BackendDAE.Shared, list<DAE.SymbolicOperation>, Boolean> tpl;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables, list<BackendDAE.Equation>, BackendDAE.Shared, list<DAE.SymbolicOperation>, Boolean> outTpl;
+protected
+  DAE.Exp e, e1;
+  tuple<BackendDAE.Variables, list<BackendDAE.Equation>, BackendDAE.Shared, Boolean, Boolean> ext_arg;
+  BackendDAE.Variables vars;
+  list<DAE.SymbolicOperation> ops;
+  DAE.FunctionTree funcs;
+  Boolean b, addVars;
+  BackendDAE.Shared shared;
+  list<BackendDAE.Equation> eqnLst;
+algorithm
+  e := inExp;
+  (vars, eqnLst, shared, ops, addVars) := tpl;
+  ext_arg := (vars, eqnLst, shared, addVars, false);
+  (e1, (vars, eqnLst, shared, _, b)) := Expression.traverseExp(e, introDerAlias, ext_arg);
+  ops := List.consOnTrue(b, DAE.SUBSTITUTION({e1}, e), ops);
+  outExp := e1;
+  outTpl := (vars, eqnLst, shared, ops, addVars);
+end traverserintroduceDerAliasExp;
+
+protected function introDerAlias "
+  Help function to e.g. traverserintroduceDerAliasExp"
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables, list<BackendDAE.Equation>, BackendDAE.Shared, Boolean, Boolean> itpl;
+  output DAE.Exp outExp;
+  output tuple<BackendDAE.Variables, list<BackendDAE.Equation>, BackendDAE.Shared, Boolean, Boolean> tpl;
+algorithm
+  (outExp,tpl) := matchcontinue (inExp, itpl)
+    local
+      BackendDAE.Variables vars;
+      DAE.ComponentRef cr,cref;
+      DAE.Type ty;
+      String str;
+      BackendDAE.Shared shared;
+      list<BackendDAE.Var> varlst;
+      BackendDAE.Var v, v1;
+      Boolean b, addVar;
+      DAE.FunctionTree funcs;
+      list<BackendDAE.Equation> eqnLst;
+      Integer numVars;
+      list<DAE.Exp> expLst;
+      String str;
+
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=ty)}), (vars, eqnLst, shared, addVar, _)) equation
+      ({v}, _) = BackendVariable.getVar(cr, vars);
+      cref = BackendVariable.varCref(v);
+      v1 = BackendVariable.createAliasDerVar(cref);
+      v1 = BackendVariable.mergeNominalAttribute(v, v1, false);
+      cref = BackendVariable.varCref(v1);
+      outExp = DAE.CREF(cref,ty);
+      if addVar then
+        numVars = BackendVariable.varsSize(vars);
+        vars = BackendVariable.addVar(v1, vars);
+        eqnLst = if numVars < BackendVariable.varsSize(vars) then BackendDAE.EQUATION(inExp, outExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::eqnLst else eqnLst;
+      end if;
+    then (outExp, (vars, eqnLst, shared, addVar, true));
+    
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst=expLst), (vars, eqnLst, shared, addVar, _)) equation
+      str = "BackendDAEOptimize.introduceDerAlias failed for: " + ExpressionDump.printExpStr(inExp) + "\n";
+      Error.addMessage(Error.INTERNAL_ERROR, {str});
+    then fail();
+
+    else (inExp, itpl);
+  end matchcontinue;
+end introDerAlias;
+
+// =============================================================================
 // replace expression with rewritten expression
 //
 // =============================================================================

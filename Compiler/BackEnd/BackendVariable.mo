@@ -1555,6 +1555,21 @@ algorithm
   outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
 end createpDerVar;
 
+public function createAliasDerVar "author: wbraun
+  Create variable with $DER.v as cref for dummy vars."
+  input DAE.ComponentRef inCref;
+  output BackendDAE.Var outVar;
+protected
+  BackendDAE.Var var;
+  DAE.ComponentRef cr;
+algorithm
+  cr := ComponentReference.prependStringCref(BackendDAE.derivativeNamePrefix, inCref);
+  outVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
+                          DAE.emptyElementSource,
+                          NONE(),
+                          NONE(), NONE(), DAE.NON_CONNECTOR());
+end createAliasDerVar;
+
 public function createDummyVar "author: wbraun
   Creates variable with $dummy."
   output BackendDAE.Var outVar;
@@ -3908,7 +3923,7 @@ algorithm
   end match;
 end startOriginToValue;
 
-protected function mergeNominalAttribute
+public function mergeNominalAttribute
   input BackendDAE.Var inAVar;
   input BackendDAE.Var inVar;
   input Boolean negate;

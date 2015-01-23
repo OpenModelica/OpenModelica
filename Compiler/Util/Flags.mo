@@ -422,6 +422,10 @@ constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(128, "dumpCSE_verbose", false,
   Util.gettext("Additional ouput for CSE module."));
 constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(129, "dumpSimCode", false,
   Util.gettext("Dumps the simCode model used for code generation."));
+constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(130, "addDerAliases", false,
+  Util.gettext("Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-round flag,
+                which helps im some cases to simulate the models e.g. 
+                Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -557,7 +561,8 @@ constant list<DebugFlag> allDebugFlags = {
   USEMPI,
   DUMP_CSE,
   DUMP_CSE_VERBOSE,
-  DUMP_SIMCODE
+  DUMP_SIMCODE,
+  ADD_DER_ALIASES
 };
 
 public
@@ -621,6 +626,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "clockPartitioning",
     "expandDerOperator",
     "findStateOrder",
+    "introduceDerAlias",
     "replaceEdgeChange",
     "inlineArrayEqn",
     "removeSimpleEquations",
@@ -651,6 +657,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("stateMachineElab", Util.gettext("Does the elaboration of state machines.")),
     ("expandDerOperator", Util.notrans("DESCRIBE ME")),
     ("findStateOrder", Util.notrans("DESCRIBE ME")),
+    ("introduceDerAlias", Util.notrans("Adds for every der-call an alias equation e.g. dx = der(x).")),
     ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
     ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
     ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x.")),

@@ -7557,6 +7557,7 @@ algorithm
                        (SynchronousFeatures.clockPartitioning, "clockPartitioning", true),
                        (StateMachineFeatures.stateMachineElab, "stateMachineElab", true),
                        (BackendDAEOptimize.expandDerOperator, "expandDerOperator", false),
+                       (BackendDAEOptimize.introduceDerAlias, "introduceDerAlias", false),
                        (IndexReduction.findStateOrder, "findStateOrder", false),
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
