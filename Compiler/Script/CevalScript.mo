@@ -882,7 +882,7 @@ public function cevalInteractiveFunctions2
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
-      String omdev,simflags,s1,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
+      String omdev,simflags,s1,s2,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
              outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
@@ -2189,7 +2189,8 @@ algorithm
           end matchcontinue;
         end for;
         s1 := Tpl.tplString(GenerateAPIFunctionsTpl.getCevalScriptInterface, tys);
-      then (cache,Values.TUPLE({Values.BOOL(true),Values.STRING(s1),Values.STRING("")}),st);
+        s2 := Tpl.tplString2(GenerateAPIFunctionsTpl.getQtInterface, tys, "OMCProxy");
+      then (cache,Values.TUPLE({Values.BOOL(true),Values.STRING(s1),Values.STRING(s2)}),st);
 
     case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       then (cache,Values.TUPLE({Values.BOOL(false),Values.STRING(""),Values.STRING("")}),st);
