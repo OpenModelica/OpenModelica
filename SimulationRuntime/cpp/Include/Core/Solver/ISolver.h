@@ -61,7 +61,7 @@ public:
   virtual void solve(const SOLVERCALL command = UNDEF_CALL) = 0;
 
   /// Provides the status of the solver after returning
-  virtual const SOLVERSTATUS getSolverStatus() = 0;
+  virtual SOLVERSTATUS getSolverStatus() = 0;
   virtual void setTimeOut(unsigned int time_out) = 0;
   virtual void stop() = 0;
 
