@@ -719,8 +719,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "generateSymbolicJacobian",
     "generateSymbolicLinearization",
     "removeUnusedFunctions",
-    "removeConstants",
-    "solveSimpleEquations"
+    "removeConstants"
+    //"solveSimpleEquations"
     // "partitionIndependentBlocks",
     // "addInitialStmtsToAlgorithms"
     }),
