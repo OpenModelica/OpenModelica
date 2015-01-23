@@ -468,26 +468,10 @@ public function top
   input Ref inRef;
   output Ref outTop;
 algorithm
-  outTop := matchcontinue(inRef)
-    local
-      Ref t;
-
-    // already at the top
-    case (_)
-      equation
-        false = hasParents(fromRef(inRef));
-      then
-        inRef;
-
-    // not the top
-    case (_)
-      equation
-        true = hasParents(fromRef(inRef));
-        t = top(original(parents(fromRef(inRef))));
-      then
-        t;
-
-  end matchcontinue;
+  outTop := inRef;
+  while hasParents(fromRef(outTop)) loop
+    outTop := original(parents(fromRef(outTop)));
+  end while;
 end top;
 
 public function children

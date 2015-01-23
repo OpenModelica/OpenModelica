@@ -813,7 +813,7 @@ algorithm
         failure(_ = List.getMemberOnTrue(inNode, nodes, inEqualFunc));
         //print("Found color on index : " + intString(inIndex) + "\n");
       then inIndex;
-    case (_, _, _, _, _, _)
+    else
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );

@@ -400,7 +400,7 @@ public function getSimulationOption
   input String optionName;
   output DAE.Exp outOptionValue;
 algorithm
-  outOptionValue := matchcontinue(inSimOpt, optionName)
+  outOptionValue := match(inSimOpt, optionName)
     local
       DAE.Exp e;
       String name, msg;
@@ -423,7 +423,7 @@ algorithm
         Error.addCompilerWarning(msg);
       then
         fail();
-  end matchcontinue;
+  end match;
 end getSimulationOption;
 
 public function buildSimulationOptionsFromModelExperimentAnnotation
@@ -524,9 +524,9 @@ algorithm
     case (Absyn.REAL(str),    DAE.T_REAL()) equation r = System.stringReal(str); then DAE.RCONST(r);
     case (Absyn.INTEGER(i), DAE.T_REAL()) equation r = intReal(i); then DAE.RCONST(r);
 
-    case (exp,    _)
+    else
       equation
-        str = "CevalScript.getConst: experiment annotation contains unsupported expression: " + Dump.printExpStr(exp) + " of type " + Types.unparseType(inExpType) + "\n";
+        str = "CevalScript.getConst: experiment annotation contains unsupported expression: " + Dump.printExpStr(inAbsynExp) + " of type " + Types.unparseType(inExpType) + "\n";
         Error.addCompilerError(str);
       then
         fail();
@@ -3486,8 +3486,7 @@ algorithm
        then ".bat";
     case ("Cpp","WIN64")
        then ".bat";
-    else
-  then System.getExeExt();
+    else System.getExeExt();
   end match;
  end getSimulationExtension;
 
@@ -3753,7 +3752,7 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then fail();
 
-    case (cache,env,_,st,_,_)
+    else
       equation
         str = Absyn.pathString(className);
         true = Error.getNumErrorMessages() == numError;
@@ -3872,11 +3871,11 @@ algorithm
 
       then
         (cache,outValMsg,st);
-    case (cache,_,_,st,_,_,_,_) /* mo file directory */
+    else /* mo file directory */
       equation
          str = Error.printMessagesStr(false);
       then
-        (cache,ValuesUtil.makeArray({Values.STRING("translateModelFMU error."),Values.STRING(str)}),st);
+        (inCache,ValuesUtil.makeArray({Values.STRING("translateModelFMU error."),Values.STRING(str)}),inInteractiveSymbolTable);
   end match;
 end translateModelFMU;
 
@@ -3910,11 +3909,11 @@ algorithm
           SimCodeMain.translateModelXML(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
       then
         (cache,outValMsg,st);
-    case (cache,_,_,st,_,_,_) /* mo file directory */
+    else /* mo file directory */
       equation
          str = Error.printMessagesStr(false);
       then
-        (cache,ValuesUtil.makeArray({Values.STRING("translateModelXML error."),Values.STRING(str)}),st);
+        (inCache,ValuesUtil.makeArray({Values.STRING("translateModelXML error."),Values.STRING(str)}),inInteractiveSymbolTable);
   end match;
 end translateModelXML;
 
@@ -4222,9 +4221,9 @@ algorithm
         (cache,st2,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues);
 
     // failure
-    case (_,_,vals,_,_)
+    else
       equation
-        Error.assertion(listLength(vals) == 12, "buildModel failure, length = " + intString(listLength(vals)), Absyn.dummyInfo);
+        Error.assertion(listLength(inValues) == 12, "buildModel failure, length = " + intString(listLength(inValues)), Absyn.dummyInfo);
       then fail();
   end matchcontinue;
 end buildModel;
@@ -4387,7 +4386,7 @@ algorithm
         dir_1 = stringAppendList({cit,omhome_1,pd,"work",cit});
       then
         dir_1;
-    case (_,_) then "";  /* this function should never fail */
+    else "";  /* this function should never fail */
   end matchcontinue;
 end getFileDir;
 
@@ -4475,7 +4474,7 @@ algorithm
       equation
         "WIN32" = System.platform();
       then "\"";
-    case () then "";
+    else "";
   end matchcontinue;
 end winCitation;
 
@@ -4570,7 +4569,7 @@ protected function selectIfNotEmpty
   input String selector " ";
   output String outString;
 algorithm
-  outString := matchcontinue(inString, selector)
+  outString := match(inString, selector)
     local
       String s;
 
@@ -4580,7 +4579,7 @@ algorithm
       equation
         s = inString + selector;
       then s;
-  end matchcontinue;
+  end match;
 end selectIfNotEmpty;
 
 protected function getWithinStatement "To get a correct Within-path with unknown input-path."
@@ -4588,9 +4587,9 @@ protected function getWithinStatement "To get a correct Within-path with unknown
   output Absyn.Within op;
 algorithm op :=  matchcontinue(ip)
   local Absyn.Path path;
-  case(path) equation path = Absyn.stripLast(path); then Absyn.WITHIN(path);
-  case(_) then Absyn.TOP();
-end matchcontinue;
+    case(path) equation path = Absyn.stripLast(path); then Absyn.WITHIN(path);
+    else Absyn.TOP();
+  end matchcontinue;
 end getWithinStatement;
 
 public function subtractDummy
@@ -4964,7 +4963,7 @@ algorithm
         result = List.flatten(List.map2(result_path_lst, getAllClassPathsRecursive, b, p));
       then
         inPath::result;
-    case (_, _, _)
+    else
       equation
         parent_string = Absyn.pathString(inPath);
         s = Error.printMessagesStr(false);
@@ -5029,7 +5028,7 @@ algorithm
         res = System.stringFind(inStr, "successfully");
         true = (res >= 0);
       then "OK";
-    case (_) then "FAILED!";
+    else "FAILED!";
   end matchcontinue;
 end failOrSuccess;
 
@@ -5156,7 +5155,7 @@ algorithm
         (cache,st2,compileDir,filenameprefix,"","");
 
     // failure
-    case (_,_,_,_,_)
+    else
       then
         fail();
   end match;
@@ -5191,7 +5190,7 @@ algorithm
         name = name + "_" + intString(tick());
       then
         name;
-    case (_)
+    else
       equation
         name = Absyn.pathStringUnquoteReplaceDot(functionPath, "_");
       then
@@ -6838,7 +6837,7 @@ algorithm
         Absyn.CLASS(body = Absyn.DERIVED()) = Interactive.getPathedClassInProgram(path, p);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isShortDefinition;
 
@@ -7357,8 +7356,7 @@ algorithm
      then
        false;
 
-   case (_, _, _)
-     then true;
+   else true;
 
   end matchcontinue;
 end isCompleteFunction;

@@ -157,7 +157,7 @@ algorithm
       then
         Absyn.DERIVED(ts,attrs,args,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(resAnnList)),cmt)));
 
-    case(cd,_,_,_) then cd;
+    else inDef;
 
   end matchcontinue;
 
@@ -205,7 +205,6 @@ algorithm
       list<Absyn.ElementItem> elContent,resultElContent;
       list<Absyn.EquationItem> eqContent,resultEqContent;
       list<Absyn.AlgorithmItem> algContent,resultAlgContent;
-      Absyn.ClassPart cp;
       Absyn.Path cPath;
       FCore.Graph env;
 
@@ -245,7 +244,7 @@ algorithm
       then
         Absyn.INITIALALGORITHMS(resultAlgContent);
 
-    case(cp,_,_,_) then cp;
+    else inPart;
   end matchcontinue;
 end refactorGraphAnnInClassPart;
 
@@ -324,7 +323,6 @@ algorithm
     local
       Absyn.Program p;
       Absyn.Equation e;
-      Absyn.EquationItem ei;
       Option<String> com;
       list<Absyn.ElementArg> annList;
       SourceInfo info;
@@ -335,7 +333,7 @@ algorithm
         annList = transformConnectAnnList(annList,{"Connect"},{},p); //Connectannotation
       then
         Absyn.EQUATIONITEM(e,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)),info);
-    case(ei,_,_,_) then ei;
+    else then inItem;
   end matchcontinue;
 end refactorGraphAnnInEqItem;
 
@@ -350,7 +348,6 @@ algorithm
   outItem := matchcontinue (inItem,inProgram,classPath,inClassEnv)
     local
       Absyn.Program p;
-      Absyn.AlgorithmItem algI;
       Absyn.Algorithm alg;
       Option<String> com;
       list<Absyn.ElementArg> annList;
@@ -363,7 +360,7 @@ algorithm
       then
         Absyn.ALGORITHMITEM(alg,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)),info);
 
-    case(algI,_,_,_) then algI;
+    else inItem;
 
   end matchcontinue;
 
@@ -488,11 +485,7 @@ algorithm
       then
         Absyn.COMPONENTS(at,Absyn.TPATH(path,z), resultComp :: resCompList); //resultCompList);
 
-
-
-    case(e,_,_,_)
-
-    then e;
+    else inSpec;
 
   end matchcontinue;
 
@@ -535,8 +528,7 @@ algorithm
       then
         Absyn.COMPONENTITEM(comp,con,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),str))/*NONE*/);
 
-    case(Absyn.COMPONENTITEM(comp, con, com),_,_,_,_)
-    then Absyn.COMPONENTITEM(comp,con,com);
+    else inCom;
 
   end matchcontinue;
 
@@ -649,7 +641,7 @@ algorithm
       then
         restriction;
 
-    case(_,_,_, _)
+    else
       equation
 //        debug_print("\ngetPathedClassInProgram:", "failed!");
       then fail();
@@ -1017,7 +1009,7 @@ algorithm
       then
         (x1,y1,x2,y2);//(Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0));
 
-    case(_,_,_,_, _) // if it doesn't work, try the hard way
+    else // if it doesn't work, try the hard way
       equation
   //     debug_print("\ngetPathedClassInProgram:", "failed!");
       then fail();
@@ -1721,9 +1713,9 @@ algorithm
         SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::inArgs,resultList,context);
       then outArgs;
 
-    case(_,_, context)
+    else
       equation
-        outArgs = cleanStyleAttrs2(inArgs,resultList,context);
+        outArgs = cleanStyleAttrs2(inArgs,resultList,inCon);
       then outArgs;
   end matchcontinue;
 end cleanStyleAttrs;
@@ -1738,7 +1730,7 @@ algorithm
     case(Absyn.MODIFICATION(path = Absyn.IDENT("color"),
         modification = SOME(Absyn.CLASSMOD(_,_))))
       then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isLineColorModifier;
 
@@ -1748,7 +1740,7 @@ protected function isStyleModifier
 algorithm
   res := matchcontinue(arg)
     case(Absyn.MODIFICATION(path = Absyn.IDENT("style"))) then true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isStyleModifier;
 
@@ -1756,23 +1748,23 @@ protected function isLinebasedGraphic "Returns true if context string is a line 
   input Context context;
   output Boolean res;
 algorithm
-  res := matchcontinue(context)
+  res := match(context)
     case("Rectangle"::_) then true;
     case("Ellipse"::_) then true;
     case("Polygon"::_) then true;
     case("Text"::_) then true;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isLinebasedGraphic;
 
 protected function isLineGraphic "Returns true if context string is a Line"
   input Context context;
   output Boolean res;
 algorithm
-  res := matchcontinue(context)
+  res := match(context)
     case("Line"::_) then true;
-    case(_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isLineGraphic;
 
 
@@ -2107,7 +2099,7 @@ algorithm
         tLst = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT("fillColor"), SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.INTEGER(3),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::tLst;
       then (oLst,tLst);
 
-    case(oLst,tLst) then (oLst,tLst);
+    else (oldList,transformedList);
   end matchcontinue;
 end setDefaultFillColor;
 
@@ -2123,11 +2115,11 @@ algorithm
       list<Absyn.ElementArg> rest;
       Absyn.ElementArg arg;
     case({})
-    then false;
+      then false;
     case( Absyn.MODIFICATION(path = Absyn.IDENT(name = "fillColor")):: _)
-    then true;
+      then true;
     case(_::rest)
-    then isFillColorInList(rest);
+      then isFillColorInList(rest);
   end matchcontinue;
 end isFillColorInList;
 
@@ -2223,9 +2215,9 @@ algorithm
     local
       Real val,val2;
     case(Absyn.REAL(value = val))
-    then val;
+      then val;
     case(Absyn.UNARY(exp = Absyn.REAL(value = val)))
-    then - val;
+      then - val;
   end matchcontinue;
 end getValueFromRealExp;  */
 
@@ -2354,9 +2346,7 @@ algorithm
       then
         out;
 
-    case (_, ip2) // if everything else fails, return ip2
-      then
-        ip2;
+    else inPath2; // if everything else fails, return inPath2
 
   end matchcontinue;
 end fixPaths;

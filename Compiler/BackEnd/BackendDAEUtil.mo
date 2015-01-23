@@ -237,7 +237,7 @@ algorithm
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {eqnstr,tstr}, DAEUtil.getElementSourceFileInfo(source));
       then ();
       //
-    case _ then ();
+    else ();
   end matchcontinue;
 end printEqnSizeError;
 

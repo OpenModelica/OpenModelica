@@ -499,8 +499,7 @@ algorithm
           //BackendDump.dumpEqSystem(syst,"eqSystem");
           //BackendDump.printShared(shared);
       then (syst,shared);
-    else
-      then (sysIn,sharedIn);
+    else (sysIn,sharedIn);
   end matchcontinue;
 end commonSubExpression;
 
@@ -620,8 +619,7 @@ algorithm
       varIdcs1 = List.map1(varIdcs1,List.getIndexFirst,varMap);
       eqIdcs = List.map1(partition,List.getIndexFirst,eqMap);
     then ASSIGNMENT_CSE(eqIdcs,sharedVarIdcs,varIdcs1)::cseIn;
-  else
-    then cseIn;
+  else cseIn;
   end matchcontinue;
 end getCSE2;
 
@@ -681,8 +679,7 @@ algorithm
       varIdcs1 = List.map1(varIdcs1,List.getIndexFirst,varMap);
       eqIdcs = List.map1(loop1,List.getIndexFirst,eqMap);
     then ASSIGNMENT_CSE(eqIdcs,sharedVarIdcs,varIdcs1)::cseIn;
-  else
-    then cseIn;
+  else cseIn;
   end matchcontinue;
 end getCSE3;
 
@@ -763,7 +760,6 @@ algorithm
      eqSys = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
     then commonSubExpressionUpdate(rest,m,mT,eqSys,shared,eqIdxDel::deleteEqLstIn,cref::deleteCrefsIn);
  case(_::rest,_,_,_,_,_,_)
-    equation
   then commonSubExpressionUpdate(rest,m,mT,sysIn,sharedIn,deleteEqLstIn,deleteCrefsIn);
   end matchcontinue;
 end commonSubExpressionUpdate;
@@ -804,7 +800,6 @@ local
   list<Integer> sharedVars;
   list<Integer> aliasVars;
     case(ASSIGNMENT_CSE(eqIdcs=eqIdcs,sharedVars=sharedVars,aliasVars=aliasVars))
-      equation
   then "ASSIGN_CSE: eqs{"+stringDelimitList(List.map(eqIdcs,intString),", ")+"}"+"   sharedVars{"+stringDelimitList(List.map(sharedVars,intString),", ")+"}"+"   aliasVars{"+stringDelimitList(List.map(aliasVars,intString),", ")+"}";
     end matchcontinue;
 end printCSE;

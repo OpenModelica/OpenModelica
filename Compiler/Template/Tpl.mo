@@ -131,10 +131,10 @@ algorithm
         MEM_TEXT(ST_STRING(str) :: toks, blstack);
 
     // a new-line is inside
-    case (txt, str )
+    else
       then
-        //writeChars(txt, stringListStringChar(str));
-        writeChars(txt, System.strtokIncludingDelimiters(str, "\n"));
+        //writeChars(inText, stringListStringChar(inStr));
+        writeChars(inText, System.strtokIncludingDelimiters(inStr, "\n"));
   end matchcontinue;
 end writeStr;
 
@@ -202,7 +202,7 @@ algorithm
 
     //should not ever happen
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
-    case (_ , _)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.writeText failed - incomplete text was passed to be written\n");
       then
@@ -356,7 +356,7 @@ algorithm
 
 
     //should not ever happen
-    case (_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.softNL failed. \n");
       then
@@ -637,7 +637,7 @@ algorithm
 
 
     //should not ever happen
-    case (_ )
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.nextIter failed - nextIter was called in a non-iteration context ? \n");
       then
@@ -970,7 +970,7 @@ algorithm
     //    (str, nchars, isstart, aind);
 
     //should not ever happen
-    case (_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.stringListString failed.\n");
       then
@@ -1138,7 +1138,7 @@ algorithm
 
 
     //should not ever happen
-    case (_,_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tokString failed.\n");
       then
@@ -1236,7 +1236,7 @@ algorithm
 
 
     //should not ever happen
-    case (_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterSeparatorAlignWrapString failed.\n");
       then
@@ -1309,7 +1309,7 @@ algorithm
         (pos, isstart);
 
     //should not ever happen
-    case (_,_,_,_,_,_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
       then
@@ -1349,7 +1349,7 @@ algorithm
         (pos, isstart, aind);
 
     //should not ever happen
-    case (_,_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.tryWrap failed.\n");
       then
@@ -1380,7 +1380,7 @@ public function textStrTok
   input Text inText;
   output StringToken outStringToken;
 algorithm
-  outStringToken := matchcontinue inText
+  outStringToken := match inText
     local
       Tokens toks, txttoks;
 
@@ -1397,12 +1397,12 @@ algorithm
 
     //should not ever happen
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
-    case (_ )
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end textStrTok;
 
 
@@ -1717,7 +1717,7 @@ algorithm
         ();
 
     //TODO: let this function fail and the error message can be reported via  # ( textFile(txt,"file.cpp") ; failMsg="error" )
-    case (_,_)
+    else
       equation
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("-!!!Tpl.textFile failed - a system error ?\n");
@@ -1764,7 +1764,7 @@ algorithm
         ();
 
     //TODO: let this function fail and the error message can be reported via  # ( textFile(txt,"file.cpp") ; failMsg="error" )
-    case (_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.textFile failed - a system error ?\n");
       then

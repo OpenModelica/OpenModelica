@@ -2609,7 +2609,7 @@ algorithm
         nsystems = partitionSystemstraverseRows(rows,{},m,mT,rowmarkarr,collmarkarr,iNSystems);
       then
         partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,nsystems);
-    case (_,_,_,_,_,_)
+    else
       equation
         // if marked skipp it
         true = intGt(rowmarkarr[index],0);
@@ -3716,7 +3716,7 @@ algorithm
         (assigend,unassigned) =  checkAssignment(indx+1,len,ass,vars,(cr,indx)::inAssigned,inUnassigned);
       then
         (assigend,unassigned);
-    case (_,_,_,_,_,_)
+    else
       equation
         BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars,indx);
         (assigend,unassigned) =  checkAssignment(indx+1,len,ass,vars,inAssigned,(cr,indx)::inUnassigned);
@@ -4276,7 +4276,7 @@ algorithm
         dername = ComponentReference.crefPrefixDer(iName);
       then
         (iName,dername);
-    case(_,_)
+    else
       equation
         dername = ComponentReference.crefPrefixDer(iName);
         (name,dername) = crefPrefixDerN(n-1,dername);
@@ -4951,7 +4951,7 @@ algorithm
       then
         ((e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
 
-    case _ then inExp;
+    else inExp;
 
   end matchcontinue;
 end changeDerVariablestoStatesFinder;
@@ -5028,7 +5028,7 @@ algorithm
         (_::_,_::_) = BackendVariable.getVar(inDCr, inVars);
       then
         (inEqns,inSo);
-    case (_,_,_,_,_,_,_,_,_)
+    else
       equation
         ecr = Expression.makeCrefExp(inCr,DAE.T_REAL_DEFAULT);
         edcr = Expression.makeCrefExp(inDCr,DAE.T_REAL_DEFAULT);

@@ -337,7 +337,7 @@ algorithm
       then
         crefExp;
 
-    case (_, _) then inExp;
+    else inExp;
 
   end matchcontinue;
 end hackArrayReverseToCref;
@@ -362,7 +362,7 @@ algorithm
         cr = ComponentReference.crefStripLastSubs(cr);
         true = ComponentReference.crefEqualNoStringCompare(inCref, cr);
       then isArrayExpansion(aRest, inCref, index+1);
-    case (_, _, _) then false;
+    else false;
   end matchcontinue;
 end isArrayExpansion;
 
@@ -394,7 +394,7 @@ algorithm
       then
         crefExp;
 
-    case (_, _) then inExp;
+    else inExp;
 
   end matchcontinue;
 end hackMatrixReverseToCref;
@@ -1183,13 +1183,11 @@ protected function isFunctionPtr
   input SimCode.Variable var;
   output Boolean b;
 algorithm
-  b := matchcontinue var
-    local
+  b := match var
       /* Yes, they are VARIABLE, not SimCode.FUNCTION_PTR. */
-    case SimCode.FUNCTION_PTR()
-    then true;
-    case _ then false;
-  end matchcontinue;
+    case SimCode.FUNCTION_PTR() then true;
+    else false;
+  end match;
 end isFunctionPtr;
 
 protected function isBoxedArg
@@ -5317,14 +5315,12 @@ protected function generateVarName
   output String outName;
 algorithm
   outName :=
-  matchcontinue (inVar)
+  match (inVar)
     local
       DAE.Ident name;
-    case DAE.TYPES_VAR(name = name)
-    then name;
-    case (_)
-    then "NULL";
-  end matchcontinue;
+    case DAE.TYPES_VAR(name = name) then name;
+    else "NULL";
+  end match;
 end generateVarName;
 
 protected function elaborateNestedRecordDeclarations
@@ -8412,7 +8408,7 @@ algorithm
         (e, _) = ExpressionSimplify.simplify(e);
         alias = getAliasVar1(e, var);
       then alias;
-    case(_, _) then SimCodeVar.NOALIAS();
+    else SimCodeVar.NOALIAS();
   end matchcontinue;
 end getAliasVar;
 
@@ -8446,7 +8442,7 @@ algorithm
        Builtin.isDer(fname);
        name = ComponentReference.crefPrefixDer(name);
     then SimCodeVar.NEGATEDALIAS(name);
-    case(_, _) then SimCodeVar.NOALIAS();
+    else SimCodeVar.NOALIAS();
   end matchcontinue;
 end getAliasVar1;
 
@@ -8454,10 +8450,10 @@ protected function unparseCommentOptionNoAnnotationNoQuote
   input Option<SCode.Comment> absynComment;
   output String commentStr;
 algorithm
-  commentStr := matchcontinue (absynComment)
+  commentStr := match (absynComment)
     case (SOME(SCode.COMMENT(_, SOME(commentStr)))) then commentStr;
-    case (_) then "";
-  end matchcontinue;
+    else "";
+  end match;
 end unparseCommentOptionNoAnnotationNoQuote;
 
 // =============================================================================
@@ -8510,7 +8506,7 @@ algorithm
         (e22, rhs);
 
         // not succeded to solve, return unsolved equation., catched later.
-    case (_, _, _) then (e1, e2);
+    else (e1, e2);
   end matchcontinue;
 end solveTrivialArrayEquation;
 
@@ -8989,7 +8985,7 @@ algorithm
       equation
         (_, _) = BackendVariable.getVar(cr, knvars);
       then SimCodeVar.INPUT();
-    case(_, _) then SimCodeVar.INTERNAL();
+    else SimCodeVar.INTERNAL();
   end matchcontinue;
 end getCausality;
 
@@ -9349,7 +9345,7 @@ algorithm
         str = str + ".lib";
       then {str};
 
-    case _
+    else
       equation
         Error.addInternalError("Failed to process Library annotation for external function", sourceInfo());
       then fail();
@@ -9411,7 +9407,7 @@ algorithm
         str = "-l" + str;
       then {str};
 
-    case _
+    else
       equation
         Error.addInternalError("Failed to process Library annotation for external function", sourceInfo());
       then fail();
@@ -9745,8 +9741,7 @@ algorithm
         unitStr = System.stringReplace(unitStr, "\"", "");
         unitStr = System.stringReplace(unitStr, "\\", "\\\\");
       then (unitStr, unitStr);
-    case (_)
-    then ("", "");
+    else ("", "");
   end matchcontinue;
 end extractVarUnit;
 
@@ -9882,8 +9877,7 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))
     then SOME(e);
 
-    case (_)
-    then NONE();
+    else NONE();
   end matchcontinue;
 end getStartValue;
 
@@ -9902,8 +9896,7 @@ algorithm
       // true = Expression.isConstValue(e);
     then SOME(e);
 
-    case (_)
-    then NONE();
+    else NONE();
   end matchcontinue;
 end getNominalValue;
 
@@ -10524,9 +10517,7 @@ algorithm
         s = stringAppend("0", s);
       then
         s;
-    case _
-      then
-        intString(i);
+    else intString(i);
   end matchcontinue;
 end twodigit;
 
@@ -10617,7 +10608,7 @@ algorithm outOrder := matchcontinue(inDlow, syst)
      // fcall(Flags.FAILTRACE, print, "Deriving Variable indexis:\n" + dumpVariableindex(variableIndex) + "\n");
      then
       variableIndex;
-  case(_, _)
+  else
       equation
          print(" Failure in setVariableDerIndex2 \n");
          then fail();
@@ -10822,7 +10813,7 @@ algorithm (oi, firstOrderDers) := matchcontinue(inDer, inEqns)
       (oi, firstOrderDers) = locateDerAndSerachOtherSide22(inDer, inEqns);
     then
       (oi, firstOrderDers);
-  case(_, _) then (0, {});
+  else (0, {});
 end matchcontinue;
   end locateDerAndSerachOtherSide2;
 
@@ -10950,7 +10941,7 @@ algorithm (OutInteger1, OutInteger2):= matchcontinue(dae_low)
       (nvar1, nvar2)=calculateVariableDimensions(ordered_states);
       then
         (nvar1, nvar2);
-  case(_)
+  else
     equation print(" failure in dimensions  \n"); then fail();
 end matchcontinue;
 end dimensions;
@@ -11542,7 +11533,7 @@ algorithm
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
                   discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
 
-    case _
+    else
       equation
         Error.addInternalError("function collectAllFiles failed to collect files from SimCode!", sourceInfo());
       then
@@ -11646,7 +11637,7 @@ algorithm
       then
         index;
 
-    case (_, _)
+    else
       equation
         // errstr = "Template did not find the file: "+ file + " in the SimCode.modelInfo.files.";
         // Error.addInternalError(errstr, sourceInfo());
@@ -12482,7 +12473,6 @@ algorithm
       then
         mapping;
     else
-      then
         SimCode.NO_MAPPING();
   end matchcontinue;
 end setUpBackendMapping;

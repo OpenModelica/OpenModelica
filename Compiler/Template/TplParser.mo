@@ -245,7 +245,7 @@ algorithm
     case (_, linfo as LINE_INFO( parseInfo = PARSE_INFO(wasFatalError = true)), _, _)
        then (linfo);
 
-    case (_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- !!! TplParser.parseError failed.\n");
@@ -289,7 +289,7 @@ algorithm
         LINE_INFO(parseInfo = pinfo) = parseError(charspp, linfopp, errMsg, isfatal);
       then LINE_INFO(pinfo, lnum, llen,solchars);
 
-    case (_,_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- !!! TplParser.parseErrorPrevPosition failed.\n");
@@ -302,16 +302,12 @@ public function wasFatalError
   input LineInfo inLineInfo;
   output Boolean outWasError;
 algorithm
-  (outWasError) := matchcontinue (inLineInfo)
-    local
-      LineInfo linfo;
-
+  (outWasError) := match (inLineInfo)
     case (LINE_INFO( parseInfo = PARSE_INFO(wasFatalError = true)) )
       then true;
 
-    case (_) then false;
-
-  end matchcontinue;
+    else false;
+  end match;
 end wasFatalError;
 
 public function mergeErrors
@@ -336,7 +332,7 @@ algorithm
         //wasFatalError = wasFatalError or wasFatalErrorToAdd;
       then (LINE_INFO(PARSE_INFO(fname, errLst, wasFatalError), lnum, llen, solchars));
 
-    case (_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- !!! TplParser.mergeErrors failed.\n");
@@ -371,7 +367,7 @@ algorithm
         (linfo) = parseErrorPrevPosition(charspp, linfopp, linfo, errMsg, isfatal);
       then (linfo);
 
-    case (_,_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- !!! TplParser.parseErrorPrevPositionOpt failed.\n");
@@ -408,7 +404,7 @@ algorithm
         //fprint(Flags.FAILTRACE, "???Expected character '" + ec + "'\n");
       then (chars, linfo);
 
-    case (_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("- !!! TplParser.expectChar failed.\n");
       then fail();
@@ -531,7 +527,7 @@ algorithm
         (linfo) = parseError(chars, linfo, "Expected keyword '" + kw + "' at the position.", isfatal);
       then (chars, linfo);
 
-    case (_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("- !!! TplParser.interleaveExpectKeyWord failed.\n");
       then fail();
@@ -562,7 +558,7 @@ algorithm
         (linfo) = parseError(chars, linfo, "Expected end of file at the position.", false);
       then (chars, linfo);
 
-    case (_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("- !!! TplParser.interleaveExpectEndOfFile failed.\n");
       then fail();
@@ -600,10 +596,10 @@ algorithm
         errStr = "No such file '" + file + "'.";
       then (chars, linfo, SOME(errStr));
 
-    case (file)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.openFile failed for file '" + file + "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.openFile failed for file '" + inFile + "'.\n");
       then fail();
 
   end matchcontinue;
@@ -630,10 +626,10 @@ algorithm
           printAndFailIfError(linfo);
         then tplPackage;
 
-    case (file)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.templPackageFromFile failed for file '" + file + "'.\n");
+        true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.templPackageFromFile failed for file '" + inFile + "'.\n");
       then fail();
 
   end matchcontinue;
@@ -666,7 +662,7 @@ algorithm
         (_, linfo) = interleaveExpectEndOfFile(chars, linfo);
       then (astDefs, linfo, errOpt);
 
-    case (_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
@@ -707,7 +703,7 @@ algorithm
         astDefs = TplAbsyn.AST_DEF(packageName, isUnqualifiedImport, astTypes) :: astDefs;
       then (astDefs, linfo, errOpt);
 
-    case (_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
@@ -738,7 +734,7 @@ algorithm
         oargs = List.filter(iargs, TplAbsyn.isText);
       then ( (id, TplAbsyn.TI_FUN_TYPE(iargs,oargs,{})) );
 
-    case (_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse error - TplParser.templateDefToAstDefType failed.\n");
@@ -1019,7 +1015,7 @@ algorithm
         (chars, restIdChars) = identifier_rest(chars);
       then (chars, c :: restIdChars);
 
-    case chars then (chars, {});
+    else (inChars, {});
 
   end matchcontinue;
 end identifier_rest;
@@ -1199,7 +1195,7 @@ algorithm
         (chars, linfo) = endDefPathIdent(chars, linfo,pid);
       then (chars, linfo, TplAbsyn.TEMPL_PACKAGE(pid, astDefs, templDefs, annotationFooter));
 
-    case (_, _)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!!Parse error - TplParser.templPackage failed.\n");
       then fail();
@@ -1503,18 +1499,15 @@ public function typeSigFromPathIdent
   input TplAbsyn.PathIdent inPathIdent;
   output TplAbsyn.TypeSignature outTypeSignature;
 algorithm
-  (outTypeSignature) := matchcontinue (inPathIdent)
-    local
-      TplAbsyn.PathIdent pid;
-
+  (outTypeSignature) := match (inPathIdent)
     case (TplAbsyn.IDENT("String") )  then TplAbsyn.STRING_TYPE();
     case (TplAbsyn.IDENT("Integer") ) then TplAbsyn.INTEGER_TYPE();
     case (TplAbsyn.IDENT("Real") )    then TplAbsyn.REAL_TYPE();
     case (TplAbsyn.IDENT("Boolean") ) then TplAbsyn.BOOLEAN_TYPE();
 
-    case (pid) then TplAbsyn.NAMED_TYPE(pid);
+    else TplAbsyn.NAMED_TYPE(inPathIdent);
 
-  end matchcontinue;
+  end match;
 end typeSigFromPathIdent;
 
 /*
@@ -2574,7 +2567,7 @@ algorithm
         (chars, linfo, exp) = expression(chars, linfo, "<", ">", false);
       then (chars, linfo, exp, "<", ">");
 
-  case (_, _)
+  else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!!Parse error - TplParser.templDef_Templ failed.\n");
       then fail();
@@ -3335,7 +3328,7 @@ algorithm
   //    then (chars, linfo, TplAbsyn.ERROR_EXP());
 
 
-   case (_, _, _, _)
+   else
      equation
        if Flags.isSet(Flags.FAILTRACE) then
          Debug.trace("!!!Parse error - TplParser.letExp failed.\n");
@@ -3905,15 +3898,13 @@ public function rightVerbatimConstQuote
   input  String inLeftQuote;
   output String outRightQuote;
 algorithm
-  (outRightQuote) := matchcontinue (inLeftQuote)
-    local
-      String lquot;
+  (outRightQuote) := match (inLeftQuote)
     case ("(" ) then ")";
     case ("{" ) then "}";
     case ("<" ) then ">";
     case ("[" ) then "]";
-    case (lquot) then lquot;
-  end matchcontinue;
+    else inLeftQuote;
+  end match;
 end rightVerbatimConstQuote;
 
 /*
@@ -4183,7 +4174,7 @@ algorithm
       then Tpl.ST_STRING_LIST(strList, false);
 
     // should not ever happen
-    case ( _ )
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("Parse invalid operation error - TplParser.makeStrTokFromRevStrList failed (an empty string list passed?) .\n");
@@ -4206,7 +4197,7 @@ public function plusMinus
   output list<String> outChars;
   output String outSign;
 algorithm
-  (outChars, outSign) := matchcontinue (inChars)
+  (outChars, outSign) := match (inChars)
     local
       list<String> chars;
 
@@ -4216,10 +4207,10 @@ algorithm
     case ("-" :: chars)
       then (chars, "-");
 
-    case (chars)
-      then (chars, "");
+    else
+      then (inChars, "");
 
-  end matchcontinue;
+  end match;
 end plusMinus;
 /*
 digits:
@@ -4858,7 +4849,7 @@ algorithm
       then (expLst, indStack,  lineInd, errOpt);
 
    //should not happen
-   case (_,_,_,_,_,_)
+   else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse unexpected error - TplParser.onEscapedExp failed .\n");
       then fail();
@@ -4981,7 +4972,7 @@ algorithm
       then (expLst, indStack,  actInd, errOpt);
 
    //should not happen
-   case (_,_,_,_,_)
+   else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("Parse unexpected error - TplParser.onNewLine failed .\n");
       then fail();
@@ -5089,7 +5080,7 @@ algorithm
       then expLst;
 
    //should not happen
-   case (_,_,_,_,_,_)
+   else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!!Parse error - TplParser.onTemplEnd failed .\n");
       then fail();
@@ -5136,7 +5127,7 @@ algorithm
 
 
    //should not happen
-   case (_,_,_,_)
+   else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!!Parse error - TplParser.popIndentStack failed .\n");
       then fail();
@@ -5209,7 +5200,7 @@ algorithm
 
 
    //should not happen
-   case (_,_)
+   else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!!Parse error - TplParser.addAccStringChars failed .\n");
       then fail();
@@ -5296,7 +5287,7 @@ algorithm
       then expLst;
 
    //should ever not happen
-   case (_)
+   else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!!Parse error - TplParser.finalizeLastStringToken failed .\n");
       then fail();
@@ -5382,7 +5373,7 @@ algorithm
        (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
      then (chars, linfo, exp);
 
-   case (_,_,_,_)
+   else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("- !!! TplParser.thenBranch failed.\n");
       then fail();
@@ -5846,7 +5837,7 @@ algorithm
         (linfo) = parseError(chars, linfo, "Expected keyword 'case' at the position.", true);
       then (chars, linfo, {});
 
-   case (_,_,_,_)
+   else
       equation
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("!!! TplParser.matchCaseListNoOpt failed.\n");
       then fail();

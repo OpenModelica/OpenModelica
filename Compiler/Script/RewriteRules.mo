@@ -974,7 +974,7 @@ algorithm
     case (DAE.POW_ARR2(),DAE.POW()) then true;
 
     // all other forward to Expression.operatorEqual
-    case (_,_) then Expression.operatorEqual(op1, op2);
+    else Expression.operatorEqual(op1, op2);
 
   end matchcontinue;
 end operatorMatches;
@@ -1091,7 +1091,7 @@ algorithm
       then
         ();
 
-    case _
+    else
       equation
         Error.addInternalError("Unable to parse rewrite rules file: " + inFile, sourceInfo());
         setGlobalRoot(Global.rewriteRulesIndex, NONE());

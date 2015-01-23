@@ -939,7 +939,7 @@ public function expPriority
   input DAE.Exp inExp;
   output Integer outInteger;
 algorithm
-  outInteger := matchcontinue (inExp)
+  outInteger := match (inExp)
     case (DAE.ICONST(_)) then 0;
     case (DAE.RCONST(_)) then 0;
     case (DAE.SCONST(_)) then 0;
@@ -986,8 +986,8 @@ algorithm
     case (DAE.RANGE()) then 19;
     case (DAE.IFEXP()) then 21;
     case (DAE.TUPLE(_)) then 23;  /* Not valid in inner expressions, only included here for completeness */
-    case (_) then 25;
-  end matchcontinue;
+    else 25;
+  end match;
 end expPriority;
 
 public function printRowStr

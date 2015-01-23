@@ -1714,7 +1714,7 @@ algorithm
     case(DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e}))
       then ((e,DAE.RCONST(0.5)));
 
-    case (e) then ((e,DAE.RCONST(1.0)));
+    else ((inExp,DAE.RCONST(1.0)));
 
   end match;
 end simplifyBinaryMulCoeff;

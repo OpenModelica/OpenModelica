@@ -1002,7 +1002,7 @@ algorithm
         invHt_1 = addReplacementInv(invHt, src_1, dst_1);
       then
         REPLACEMENTS(ht_1,invHt_1);
-    case (_,_,_)
+    else
       equation
         print("-add_replacement failed\n");
       then
@@ -1334,7 +1334,7 @@ TODO: find out why array residual functions containing arrays as xloc[] does not
 algorithm  outExp := matchcontinue(inExp,inType)
   local DAE.ComponentRef cr;
   case(DAE.CREF(cr,DAE.T_UNKNOWN()),_) then Expression.makeCrefExp(cr,inType);
-  case (_,_) then inExp;
+  else inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
 
@@ -1379,7 +1379,7 @@ algorithm
         true = i > maxIter;
       then e;
     case (_,_,_,_,_,true) then e;
-    case (_,_,_,_,_,_)
+    else
       equation
         (e1,b) = replaceExp(e,repl,func);
         res = replaceExpRepeated2(e1,repl,func,maxIter,i+1,not b /*Expression.expEqual(e,e1)*/);
