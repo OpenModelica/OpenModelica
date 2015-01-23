@@ -1506,7 +1506,7 @@ algorithm
       (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "SIGN$SINH", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
       exP = makeIntialGuess(e,tp);
 
-  
+
       e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
 
       e2 = Expression.expPow(rhs, DAE.RCONST(2.0));
@@ -1526,7 +1526,7 @@ algorithm
 
     tp = Expression.typeof(inExp2);
     (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$COS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
-    
+
     acosy = Expression.makePureBuiltinCall("acos", {rhs}, tp);
     (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ACOS$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
@@ -1535,16 +1535,16 @@ algorithm
     (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "GUESS$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
     k1 = helpInvCos(acosy, exP, tp, true);
-    k2 = helpInvCos(acosy, exP, tp, false); 
+    k2 = helpInvCos(acosy, exP, tp, false);
     (k1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k1, tp, "k1$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
     (k2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k2, tp, "k2$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
-    x1 = helpInvCos2(k1, acosy, tp ,true); 
+    x1 = helpInvCos2(k1, acosy, tp ,true);
     x2 = helpInvCos2(k2, acosy, tp ,false);
     (x1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x1, tp, "x1$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
     (x2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x2, tp, "x2$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
-    rhs = helpInvCos3(x1,x2,exP,tp); 
+    rhs = helpInvCos3(x1,x2,exP,tp);
 
   then(e1, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
@@ -1601,7 +1601,7 @@ algorithm
 
     rhs = Expression.expMul(k1,e);
     rhs = Expression.expAdd(acosy, rhs);
- 
+
   then(e1, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
   // abs(f(x)) = g(y) -> f(x) = sign(f(x))*g(y)
@@ -2100,10 +2100,10 @@ algorithm
  if Expression.isCref(iExp) then
   con := Expression.makePureBuiltinCall("initial",{},tp);
   e := Expression.makePureBuiltinCall("$_start",{iExp},tp);
-  oExp := DAE.IFEXP(con,e,Expression.makePureBuiltinCall("$_initialGuess",{iExp},tp)); 
+  oExp := DAE.IFEXP(con,e,Expression.makePureBuiltinCall("$_initialGuess",{iExp},tp));
  else
   oExp := Expression.makePureBuiltinCall("$_initialGuess",{iExp},tp);
- end if; 
+ end if;
 end makeIntialGuess;
 
 protected function helpInvCos
@@ -2122,7 +2122,7 @@ algorithm
   k := Expression.makeDiv(k, pi2);
   k := Expression.makePureBuiltinCall("$_round",{k},tp);
 
-end helpInvCos; 
+end helpInvCos;
 
 protected function helpInvSin
   input DAE.Exp asiny;
@@ -2160,7 +2160,7 @@ algorithm
 end helpInvCos2;
 
 protected function helpInvSin2
-  input DAE.Exp k; 
+  input DAE.Exp k;
   input DAE.Exp asiny;
   input DAE.Type tp;
   input Boolean neg;
@@ -2169,12 +2169,12 @@ protected
   DAE.Exp pi2 := DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
   DAE.Exp p := DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
   DAE.Exp e;
-algorithm 
+algorithm
 
   x := if neg then Expression.negate(asiny) else asiny;
   e := if neg then Expression.expAdd(Expression.expMul(k,pi2), p) else Expression.expMul(k,pi2);
   x := Expression.expAdd(x, e);
-  
+
 end helpInvSin2;
 
 protected function helpInvCos3
@@ -2183,9 +2183,9 @@ protected function helpInvCos3
   input DAE.Exp x;
   input DAE.Type tp;
   output DAE.Exp y;
-protected 
-  DAE.Exp diffx1 := absDiff(x1,x,tp); 
-  DAE.Exp diffx2 := absDiff(x2,x,tp); 
+protected
+  DAE.Exp diffx1 := absDiff(x1,x,tp);
+  DAE.Exp diffx2 := absDiff(x2,x,tp);
   DAE.Exp con := DAE.RELATION(diffx1, DAE.LESS(tp), diffx2, -1, NONE());
 algorithm
   con := Expression.makeNoEvent(con);
