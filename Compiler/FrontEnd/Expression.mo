@@ -6011,6 +6011,11 @@ algorithm
       then (inExp,false,inTpl);
     case (DAE.CALL(path = Absyn.IDENT(name = "$_start")), _)
       then (inExp,false,inTpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "$_initialGuess")), _)
+      then (inExp,false,inTpl);
+    case (DAE.CALL(path = Absyn.IDENT(name = "$_round")), _)
+      then (inExp,false,inTpl);
+
 
     case (DAE.CREF(componentRef = cr1), (cr,false))
       equation

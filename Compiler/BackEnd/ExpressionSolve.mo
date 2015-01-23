@@ -186,7 +186,6 @@ algorithm
          try
            // ExpressionSolve fail!
            // try simplify equation
-           fail(); //TODO: ./simulation/libraries/msl32/Modelica.Electrical.Analog.Examples.ThyristorBehaviourTest.mos
            (varexp, e, solveEqns, solveCr, _) := preprocessingSolve(e1, e2, varexp, NONE(), NONE(), 0);
            true := List.isEmpty(solveEqns);
            eqn_ := BackendDAE.EQUATION(varexp, e, source, attr);
@@ -313,7 +312,7 @@ algorithm
                         else
                           equation
                            if Flags.isSet(Flags.FAILTRACE) then
-                            print("\n-ExpressionSolve.solve failed:\n");
+                            print("\n-ExpressionSolve.solve2 failed:\n");
                             print(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
                             print(" with respect to: " + ExpressionDump.printExpStr(inExp3));
                            end if;
@@ -685,7 +684,6 @@ preprocessing for solve1,
 
    // h(x) = k(y)
    (h,_) := ExpressionSimplify.simplify(x);
-
 /*
    if not Expression.expEqual(inExp1,h) then
      print("\nIn: ");print(ExpressionDump.printExpStr(inExp1));print(" = ");print(ExpressionDump.printExpStr(inExp2));
@@ -693,7 +691,6 @@ preprocessing for solve1,
      print("\t w.r.t ");print(ExpressionDump.printExpStr(inExp3));
    end if;
 */
-
 end preprocessingSolve;
 
 protected function preprocessingSolve2
@@ -1457,6 +1454,7 @@ e.g. for solve abs
 algorithm
   (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := matchcontinue(inExp1, inExp2)
   local DAE.Exp e1, e_1, e, e2, exP, lhs, e3, e4, e5, e6, rhs, a1,x1, a2,x2, ee1, ee2;
+  DAE.Exp acosy, k1, k2;
   tuple<DAE.Exp, DAE.Exp> a, c;
   list<DAE.Exp> z1, z2, z3, z4;
   DAE.ComponentRef cr;
@@ -1472,19 +1470,8 @@ algorithm
     equation
       true = expHasCref(e1, inExp3);
       false = expHasCref(inExp2, inExp3);
-      b = not(Expression.isCref(inExp2) or Expression.isConst(inExp2));
-      if b then
-        tp = Expression.typeof(inExp2);
-        cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_TANH_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-        eqn = BackendDAE.SOLVED_EQUATION(cr, inExp2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-        e = Expression.crefExp(cr);
-        eqnForNewVars_ = eqn::ieqnForNewVars;
-        newVarsCrefs_ = cr::inewVarsCrefs;
-      else
-        e = inExp2;
-        eqnForNewVars_ = ieqnForNewVars;
-        newVarsCrefs_ = inewVarsCrefs;
-      end if;
+      tp = Expression.typeof(inExp2);
+      (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$TANH", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
       e2 = Expression.expAdd(DAE.RCONST(1.0), e);
       e3 = Expression.expSub(DAE.RCONST(1.0), e);
       e2 = Expression.makeDiv(e2, e3);
@@ -1497,19 +1484,8 @@ algorithm
     equation
       true = expHasCref(e1, inExp3);
       false = expHasCref(inExp2, inExp3);
-      b = Expression.isCref(inExp2) or Expression.isConst(inExp2);
-      if b then
-        tp = Expression.typeof(inExp2);
-        cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_SINH_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-        eqn = BackendDAE.SOLVED_EQUATION(cr, inExp2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-        e = Expression.crefExp(cr);
-        eqnForNewVars_ = eqn::ieqnForNewVars;
-        newVarsCrefs_ = cr::inewVarsCrefs;
-      else
-        e = inExp2;
-        eqnForNewVars_ = ieqnForNewVars;
-        newVarsCrefs_ = inewVarsCrefs;
-      end if;
+      tp = Expression.typeof(inExp2);
+      (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$SINH", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
       e2 = Expression.expPow(e, DAE.RCONST(2.0));
       e3 = Expression.expAdd(e2,DAE.RCONST(1.0));
       e2 = Expression.makePureBuiltinCall("sqrt",{e3},DAE.T_REAL_DEFAULT);
@@ -1522,42 +1498,24 @@ algorithm
     equation
       true = expHasCref(e1, inExp3);
       false = expHasCref(inExp2, inExp3);
-      b1 = Expression.isPositiveOrZero(e1);
-      b2 = Expression.isNegativeOrZero(e1);
-      b3 = Expression.isCref(inExp2) or Expression.isConst(inExp2);
-      b = not(b1 or b2);
-      if b or b3 then
-        tp = Expression.typeof(e1);
-        cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_SIGN_COSH_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-        eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-        e = Expression.crefExp(cr);
-        exP = Expression.makePureBuiltinCall("$_initialGuess", {e}, tp);
-        e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
-        eqnForNewVars_ = eqn::ieqnForNewVars;
-        newVarsCrefs_ = cr::inewVarsCrefs;
-      else
-        e = e1;
-        if b2 then
-          e = Expression.negate(e);
-        end if;
-        eqnForNewVars_ = ieqnForNewVars;
-        newVarsCrefs_ = inewVarsCrefs;
-      end if;
-      if b3 then
-        tp = Expression.typeof(inExp2);
-        cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_COSH_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-        eqn = BackendDAE.SOLVED_EQUATION(cr, inExp2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-        lhs = Expression.crefExp(cr);
-        eqnForNewVars_ = eqn::eqnForNewVars_;
-        newVarsCrefs_ = cr::newVarsCrefs_;
-      else
-        lhs = inExp2;
-      end if;
-      e2 = Expression.expPow(lhs, DAE.RCONST(2.0));
-      e3 = Expression.expSub(e2,DAE.RCONST(1.0));
+
+      tp = Expression.typeof(inExp2);
+      (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$SINH", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
+
+      tp = Expression.typeof(e1);
+      (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "SIGN$SINH", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
+      exP = makeIntialGuess(e,tp);
+
+  
+      e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
+
+      e2 = Expression.expPow(rhs, DAE.RCONST(2.0));
+      e3 = Expression.expSub(e2, DAE.RCONST(1.0));
       e2 = Expression.makePureBuiltinCall("sqrt",{e3},DAE.T_REAL_DEFAULT);
-      e3 = if b then Expression.expAdd(lhs, Expression.expMul(e_1,e2)) else Expression.expAdd(lhs, e2);
+
+      e3 = Expression.expAdd(rhs, Expression.expMul(e_1,e2));
       e2 = Expression.makePureBuiltinCall("log",{e3},DAE.T_REAL_DEFAULT);
+
     then (e1,e2,true,eqnForNewVars_,newVarsCrefs_,idepth + 1);
 
   // cos(y) = x -> y = acos(x) + 2*pi*k
@@ -1565,37 +1523,86 @@ algorithm
   equation
     true = expHasCref(e1, inExp3);
     false = expHasCref(inExp2, inExp3);
-    tp = Expression.typeof(e1);
 
-    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_COS_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-    newVarsCrefs_ = cr ::inewVarsCrefs;
+    tp = Expression.typeof(inExp2);
+    (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$COS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
+    
+    acosy = Expression.makePureBuiltinCall("acos", {rhs}, tp);
+    (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ACOS$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
-    eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    eqnForNewVars_ = eqn::ieqnForNewVars;
+    (lhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+    exP = makeIntialGuess(lhs,tp);
+    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "GUESS$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
-    e = Expression.crefExp(cr);
-    exP = Expression.makePureBuiltinCall("$_initialGuess", {e}, tp);
+    k1 = helpInvCos(acosy, exP, tp, true);
+    k2 = helpInvCos(acosy, exP, tp, false); 
+    (k1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k1, tp, "k1$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+    (k2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k2, tp, "k2$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
-    cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_COS_INV_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-    newVarsCrefs_ = cr ::newVarsCrefs_;
+    x1 = helpInvCos2(k1, acosy, tp ,true); 
+    x2 = helpInvCos2(k2, acosy, tp ,false);
+    (x1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x1, tp, "x1$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+    (x2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x2, tp, "x2$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
-    e2 = Expression.makePureBuiltinCall("acos", {inExp2}, tp);
-    ee2 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
+    rhs = helpInvCos3(x1,x2,exP,tp); 
 
-    eqn = BackendDAE.SOLVED_EQUATION(cr, Expression.expMul(ee2,e2), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    eqnForNewVars_ = eqn::eqnForNewVars_;
+  then(e1, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
-    e2 = Expression.crefExp(cr);
-    ee1 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
 
-    e_1 = Expression.makeDiv(Expression.expSub(exP, e2), ee1);
+  // sin(y) = x -> y = asin(x) + 2*pi*k
+  //                 = -asin(x) + pi*(2*k+1)
+  case (DAE.CALL(path = Absyn.IDENT(name = "sin"),expLst = {e1}),_)
+  equation
+    true = expHasCref(e1, inExp3);
+    false = expHasCref(inExp2, inExp3);
 
-    e3 = Expression.makePureBuiltinCall("$_round", {e_1}, tp);
+    tp = Expression.typeof(inExp2);
+    (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$SIN", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
 
-    lhs = Expression.expAdd(Expression.expMul(e3, ee1),e2);
+    acosy = Expression.makePureBuiltinCall("asin", {rhs}, tp);
+    (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ASIN$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
-  then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
+    (lhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+    exP = makeIntialGuess(lhs,tp);
 
+    k1 = helpInvSin(acosy, e1, tp, true);
+    k2 = helpInvSin(acosy, e1, tp, false);
+    (k1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k1, tp, "k1$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+    (k2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k2, tp, "k2$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+
+    x1 = helpInvSin2(k1, acosy, tp ,true);
+    x2 = helpInvSin2(k2, acosy, tp ,false);
+    (x1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x1, tp, "x1$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+    (x2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x2, tp, "x2$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+
+    rhs = helpInvCos3(x1,x2,exP,tp);
+
+  then(e1, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
+
+  // tan(x) = y -> x = atan(y) + k*pi
+  case (DAE.CALL(path = Absyn.IDENT(name = "tan"),expLst = {e1}),_)
+  equation
+    true = expHasCref(e1, inExp3);
+    false = expHasCref(inExp2, inExp3);
+
+    tp = Expression.typeof(inExp2);
+    (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$TAN", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
+
+    acosy = Expression.makePureBuiltinCall("atan", {rhs}, tp);
+    (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ATAN$TAN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
+
+    (lhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$TAN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+    exP = makeIntialGuess(lhs,tp);
+    e = DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
+
+    k1 = Expression.expSub(exP, acosy);
+    k1 = Expression.makeDiv(k1,e);
+    k1 = Expression.makePureBuiltinCall("$_round",{k1},tp);
+
+    rhs = Expression.expMul(k1,e);
+    rhs = Expression.expAdd(acosy, rhs);
+ 
+  then(e1, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
   // abs(f(x)) = g(y) -> f(x) = sign(f(x))*g(y)
   case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _)
@@ -2034,6 +2041,7 @@ algorithm
 
 end makeProductLstSort;
 
+
 protected function makeProductLstSort2
   input list<DAE.Exp> inExpLst;
   input DAE.Type tp;
@@ -2054,6 +2062,145 @@ algorithm
   end for;
 
 end makeProductLstSort2;
+
+protected function makeTmpEqnAndCrefFromExp
+  input DAE.Exp iExp;
+  input DAE.Type tp;
+  input String name;
+  input Integer index1, index2;
+  input list<BackendDAE.Equation> ieqnForNewVars;
+  input list<DAE.ComponentRef> inewVarsCrefs;
+  input Boolean need;
+  output DAE.Exp oExp;
+  output list<BackendDAE.Equation> oeqnForNewVars;
+  output list<DAE.ComponentRef> onewVarsCrefs;
+protected
+  DAE.ComponentRef cr = ComponentReference.makeCrefIdent("$TMP$VAR$" + intString(index1) + "$" + intString(index2) + name, tp , {});
+  BackendDAE.Equation eqn;
+algorithm
+  (oExp,_) := ExpressionSimplify.simplify1(iExp);
+  if need or not Expression.isCref(oExp) then
+    eqn := BackendDAE.SOLVED_EQUATION(cr, oExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+    oExp := Expression.crefExp(cr);
+    oeqnForNewVars := eqn::ieqnForNewVars;
+    onewVarsCrefs := cr :: inewVarsCrefs;
+  else
+    oeqnForNewVars := ieqnForNewVars;
+    onewVarsCrefs := inewVarsCrefs;
+  end if;
+end makeTmpEqnAndCrefFromExp;
+
+protected function makeIntialGuess
+  input DAE.Exp iExp;
+  input DAE.Type tp;
+  output DAE.Exp oExp;
+protected
+  DAE.Exp con, e;
+algorithm
+ if Expression.isCref(iExp) then
+  con := Expression.makePureBuiltinCall("initial",{},tp);
+  e := Expression.makePureBuiltinCall("$_start",{iExp},tp);
+  oExp := DAE.IFEXP(con,e,Expression.makePureBuiltinCall("$_initialGuess",{iExp},tp)); 
+ else
+  oExp := Expression.makePureBuiltinCall("$_initialGuess",{iExp},tp);
+ end if; 
+end makeIntialGuess;
+
+protected function helpInvCos
+  input DAE.Exp acosy;
+  input DAE.Exp x;
+  input DAE.Type tp;
+  input Boolean neg;
+  output DAE.Exp k;
+protected
+  DAE.Exp pi2 := DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
+algorithm
+  k := if neg then
+         Expression.expAdd(x,acosy)
+       else
+         Expression.expSub(x,acosy);
+  k := Expression.makeDiv(k, pi2);
+  k := Expression.makePureBuiltinCall("$_round",{k},tp);
+
+end helpInvCos; 
+
+protected function helpInvSin
+  input DAE.Exp asiny;
+  input DAE.Exp x;
+  input DAE.Type tp;
+  input Boolean neg;
+  output DAE.Exp k;
+protected
+  DAE.Exp pi2 := DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
+algorithm
+  k := if neg then
+         Expression.expAdd(x,asiny)
+       else
+         Expression.expSub(x,asiny);
+  k := Expression.makeDiv(k, pi2);
+  if neg then
+    k := Expression.expSub(k, DAE.RCONST(0.5));
+  end if;
+  k := Expression.makePureBuiltinCall("$_round",{k},tp);
+end helpInvSin;
+
+protected function helpInvCos2
+  input DAE.Exp k;
+  input DAE.Exp acosy;
+  input DAE.Type tp;
+  input Boolean neg;
+  output DAE.Exp x;
+protected
+  DAE.Exp pi2 := DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
+algorithm
+
+  x := if neg then Expression.negate(acosy) else acosy;
+  x := Expression.expAdd(x, Expression.expMul(k,pi2));
+
+end helpInvCos2;
+
+protected function helpInvSin2
+  input DAE.Exp k; 
+  input DAE.Exp asiny;
+  input DAE.Type tp;
+  input Boolean neg;
+  output DAE.Exp x;
+protected
+  DAE.Exp pi2 := DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
+  DAE.Exp p := DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
+  DAE.Exp e;
+algorithm 
+
+  x := if neg then Expression.negate(asiny) else asiny;
+  e := if neg then Expression.expAdd(Expression.expMul(k,pi2), p) else Expression.expMul(k,pi2);
+  x := Expression.expAdd(x, e);
+  
+end helpInvSin2;
+
+protected function helpInvCos3
+  input DAE.Exp x1;
+  input DAE.Exp x2;
+  input DAE.Exp x;
+  input DAE.Type tp;
+  output DAE.Exp y;
+protected 
+  DAE.Exp diffx1 := absDiff(x1,x,tp); 
+  DAE.Exp diffx2 := absDiff(x2,x,tp); 
+  DAE.Exp con := DAE.RELATION(diffx1, DAE.LESS(tp), diffx2, -1, NONE());
+algorithm
+  con := Expression.makeNoEvent(con);
+  y := DAE.IFEXP(con, x1, x2);
+end helpInvCos3;
+
+protected function absDiff
+  input DAE.Exp x;
+  input DAE.Exp y;
+  input DAE.Type tp;
+  output DAE.Exp z;
+algorithm
+  z := Expression.expSub(x,y);
+  z := Expression.makePureBuiltinCall("abs",{z},tp);
+end absDiff;
 
 annotation(__OpenModelica_Interface="backend");
 end ExpressionSolve;

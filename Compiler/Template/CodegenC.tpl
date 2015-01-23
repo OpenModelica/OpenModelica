@@ -8941,7 +8941,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
   // a $_initialGuess is used to get initial guess for nonlinear solver
   case CALL(path=IDENT(name="$_initialGuess"), expLst={arg as CREF(__)}) then
     let namestr = cref(arg.componentRef)
-    '($P$ATTRIBUTE<%namestr%>.start = _<%namestr%>(0))'
+    '( <%namestr%>)' //
   // if arg >= 0 then 1 else -1
   case CALL(path=IDENT(name="$_signNoNull"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
