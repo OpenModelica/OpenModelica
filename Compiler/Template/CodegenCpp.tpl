@@ -8914,7 +8914,7 @@ template algloopMainfile(list<SimEqSystem> allEquations, SimCode simCode ,Text& 
     #include "OMCpp<%fileNamePrefix%>Extension.h"
     #include "OMCpp<%modelfilename%>.h"
     #include "OMCpp<%modelfilename%>Functions.h"
-
+    #include <Core/System/DiscreteEvents.h>
     //jac files
     <%jacfiles%>
     //alg loop files
