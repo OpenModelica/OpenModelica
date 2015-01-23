@@ -555,7 +555,7 @@ algorithm
       arryDim = dim,
       source = source,
       values = attr,
-    tearingSelectOption = ts,
+      tearingSelectOption = ts,
       comment = comment,
       connectorType = ct))
       equation

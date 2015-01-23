@@ -2815,57 +2815,8 @@ public function replaceDerOpInEquationList
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := List.map(inEqns, replaceDerOpInEquation);
+  (outEqns, ) := traverseExpsOfEquationList(inEqns, Expression.replaceDerOpInExpCond, NONE());
 end replaceDerOpInEquationList;
-
-protected function replaceDerOpInEquation
-  "Replaces all der(cref) with $DER.cref in an equation."
-  input BackendDAE.Equation inEqn;
-  output BackendDAE.Equation outEqn;
-algorithm
-  outEqn := matchcontinue (inEqn)
-    local
-      DAE.Exp e1, e2;
-      DAE.ElementSource src;
-      DAE.ComponentRef cr;
-      list<Integer> dimSize;
-      Integer size;
-      DAE.Algorithm alg;
-      list<DAE.Statement> stmts, stmts1;
-      DAE.Expand crefExpand;
-      BackendDAE.EquationAttributes attr;
-
-    case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=src, attr=attr)) equation
-      e1 = Expression.replaceDerOpInExp(e1);
-      e2 = Expression.replaceDerOpInExp(e2);
-    then BackendDAE.EQUATION(e1, e2, src, attr);
-
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=e1, right=e2, source=src, attr=attr)) equation
-      e1 = Expression.replaceDerOpInExp(e1);
-      e2 = Expression.replaceDerOpInExp(e2);
-    then BackendDAE.ARRAY_EQUATION(dimSize, e1, e2, src, attr);
-
-    case (BackendDAE.COMPLEX_EQUATION(size=size, left=e1, right=e2, source=src, attr=attr)) equation
-      e1 = Expression.replaceDerOpInExp(e1);
-      e2 = Expression.replaceDerOpInExp(e2);
-    then BackendDAE.COMPLEX_EQUATION(size, e1, e2, src, attr);
-
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e1, source=src, attr=attr)) equation
-      e1 = Expression.replaceDerOpInExp(e1);
-    then BackendDAE.RESIDUAL_EQUATION(e1, src, attr);
-
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e1, source=src, attr=attr)) equation
-      e1 = Expression.replaceDerOpInExp(e1);
-    then BackendDAE.SOLVED_EQUATION(cr, e1, src, attr);
-
-    case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statementLst=stmts), source=src, expand=crefExpand, attr=attr)) equation
-      (stmts1, _) = DAEUtil.traverseDAEEquationsStmts(stmts, Expression.replaceDerOpInExpTraverser, NONE());
-      alg = if referenceEq(stmts, stmts1) then alg else DAE.ALGORITHM_STMTS(stmts1);
-    then BackendDAE.ALGORITHM(size, alg, src, crefExpand, attr);
-
-    else inEqn;
-  end matchcontinue;
-end replaceDerOpInEquation;
 
 public function getEquationRHS"gets the right hand side expression of an equation.
 author:Waurich TUD 2014-10"

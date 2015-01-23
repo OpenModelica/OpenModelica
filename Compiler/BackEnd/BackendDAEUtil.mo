@@ -5692,20 +5692,22 @@ algorithm
       list<list<DAE.Subscript>> subslst;
       Option<DAE.FunctionTree> funcs;
       BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef componentRef;
+
     case (eqn as BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),(v,explst,sources,funcs,repl))
       equation
-        rhs_exp = getEqnsysRhsExp(e, v,funcs,SOME(repl));
+        rhs_exp = getEqnsysRhsExp(e, v, funcs, SOME(repl));
       then (eqn,(v,rhs_exp::explst,source::sources,funcs,repl));
 
     case (eqn as BackendDAE.EQUATION(exp=e1, scalar=e2,source=source),(v,explst,sources,funcs,repl))
       equation
         new_exp = Expression.expSub(e1,e2);
-        rhs_exp = getEqnsysRhsExp(new_exp, v,funcs,SOME(repl));
+        rhs_exp = getEqnsysRhsExp(new_exp, v, funcs, SOME(repl));
         rhs_exp_1 = Expression.negate(rhs_exp);
         (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
       then (eqn,(v,rhs_exp_2::explst,source::sources,funcs,repl));
 
-    case (eqn as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2,source=source),(v,explst,sources,funcs,repl))
+    case (eqn as BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source), (v,explst,sources,funcs,repl))
       equation
         new_exp = Expression.expSub(e1,e2);
         subslst = Expression.dimensionSizesSubscripts(ds);
@@ -5718,12 +5720,14 @@ algorithm
         sources = List.consN(BackendEquation.equationSize(eqn), source, sources);
       then (eqn,(v,explst,sources,funcs,repl));
 
-    case (eqn as BackendDAE.SOLVED_EQUATION(),_)
+    case (eqn as BackendDAE.SOLVED_EQUATION(componentRef=componentRef, exp=e2, source=source),(v,explst,sources,funcs,repl))
       equation
-        str = BackendDump.equationString(eqn);
-        str = "BackendDAEUtil.equationToExp failed for solved equation: " + str;
-        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
-      then fail();
+        e1 = Expression.crefExp(componentRef);
+        new_exp = Expression.expSub(e1,e2);
+        rhs_exp = getEqnsysRhsExp(new_exp, v, funcs, SOME(repl));
+        rhs_exp_1 = Expression.negate(rhs_exp);
+        (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
+      then (eqn,(v,rhs_exp_2::explst,source::sources,funcs,repl));
 
     case (eqn as BackendDAE.COMPLEX_EQUATION(),_)
       equation
