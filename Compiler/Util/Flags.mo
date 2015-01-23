@@ -424,7 +424,7 @@ constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(129, "dumpSimCode", false,
   Util.gettext("Dumps the simCode model used for code generation."));
 constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(130, "addDerAliases", false,
   Util.gettext("Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-round flag,
-                which helps im some cases to simulate the models e.g. 
+                which helps im some cases to simulate the models e.g.
                 Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A

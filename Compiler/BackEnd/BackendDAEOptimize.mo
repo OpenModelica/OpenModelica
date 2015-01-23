@@ -4336,7 +4336,7 @@ algorithm
         eqnLst = if numVars < BackendVariable.varsSize(vars) then BackendDAE.EQUATION(inExp, outExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::eqnLst else eqnLst;
       end if;
     then (outExp, (vars, eqnLst, shared, addVar, true));
-    
+
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst=expLst), (vars, eqnLst, shared, addVar, _)) equation
       str = "BackendDAEOptimize.introduceDerAlias failed for: " + ExpressionDump.printExpStr(inExp) + "\n";
       Error.addMessage(Error.INTERNAL_ERROR, {str});
