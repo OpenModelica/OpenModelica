@@ -7622,7 +7622,7 @@ public function dumpSimEqSystemLst
 protected
   list<String> sLst;
 algorithm
-  sLst := List.map(eqSysLstIn,dumpSimEqSystem);
+  sLst := List.mapReverse(eqSysLstIn,dumpSimEqSystem);
   sLst := List.map1(sLst,stringAppend,"\n");
   sOut := List.fold(sLst,stringAppend,"");
 end dumpSimEqSystemLst;
