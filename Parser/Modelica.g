@@ -1237,7 +1237,7 @@ factor returns [void* ast]
 
 primary returns [void* ast]
 @declarations { int tupleExpressionIsTuple = 0; }
-@init { v = 0; ptr = 0; el = 0; for_or_el.ast = 0; for_or_el.isFor = 0; } :
+@init { v = 0; ptr.ast = 0; el = 0; for_or_el.ast = 0; for_or_el.isFor = 0; } :
   ( v=UNSIGNED_INTEGER
     {
       char* chars = (char*)$v.text->chars;
@@ -1292,7 +1292,7 @@ primary returns [void* ast]
   | v=STRING           { $ast = Absyn__STRING(mmc_mk_scon((char*)$v.text->chars)); }
   | T_FALSE            { $ast = Absyn__BOOL(MMC_FALSE); }
   | T_TRUE             { $ast = Absyn__BOOL(MMC_TRUE); }
-  | ptr=component_reference__function_call { $ast = ptr; }
+  | ptr=component_reference__function_call { $ast = ptr.ast; }
   | DER el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("der"), mmc_mk_nil()),el); }
   | LPAR el=output_expression_list[&tupleExpressionIsTuple]
     {
@@ -1318,10 +1318,14 @@ matrix_expression_list returns [void* ast]
   ;
 
 component_reference__function_call returns [void* ast]
-@init{ cr.ast = 0; fc = 0; i = 0; } :
-  cr=component_reference ( fc=function_call )? {
+@init{ cr.ast = 0; fc = 0; i = 0; e.ast = 0; } :
+  cr=component_reference ( fc=function_call (DOT e=expression[metamodelica_enabled()])? )? {
       if (fc != NULL) {
-        $ast = Absyn__CALL(cr.ast,fc);
+        $ast = Absyn__CALL(cr.ast, fc);
+        if (e.ast != 0) {
+          modelicaParserAssert(ModelicaParser_langStd >= 1000, "Dot operator is not allowed in function calls in current Modelica standards.", component_reference__function_call, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+          $ast = Absyn__DOT($ast, e.ast);
+        }
       } else {
         $ast = Absyn__CREF(cr.ast);
       }

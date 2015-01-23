@@ -1252,10 +1252,11 @@ algorithm
     DAE.TypeSource ts;
     list<DAE.TupleConst> tupleConst,tupleConst2;
     DAE.Const tconst;
+    Option<list<String>> names;
 
   case(Absyn.TUPLE(aexpl),
-    DAE.PROP_TUPLE( DAE.T_TUPLE(typeList, _), _),
-    (DAE.PROP_TUPLE(DAE.T_TUPLE(lst,ts), DAE.TUPLE_CONST(tupleConst)
+    DAE.PROP_TUPLE( DAE.T_TUPLE(types=typeList,names=names), _),
+    (DAE.PROP_TUPLE(DAE.T_TUPLE(types=lst,source=ts), DAE.TUPLE_CONST(tupleConst)
     )))
     equation
       fillValue = (listLength(typeList)-listLength(aexpl));
@@ -1266,9 +1267,9 @@ algorithm
       lst = listAppend(lst,lst2);
       tupleConst = listAppend(tupleConst,tupleConst2);
     then
-      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE(DAE.T_TUPLE(lst,ts),DAE.TUPLE_CONST(tupleConst)));
+      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE(DAE.T_TUPLE(lst,names,ts),DAE.TUPLE_CONST(tupleConst)));
 
-  case(_, DAE.PROP_TUPLE(DAE.T_TUPLE(typeList,_), _), DAE.PROP(propType,tconst))
+  case(_, DAE.PROP_TUPLE(DAE.T_TUPLE(typeList,names,_), _), DAE.PROP(propType,tconst))
     equation
       fillValue = (listLength(typeList)-1);
       aexpl2 = List.fill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions";
@@ -1278,7 +1279,7 @@ algorithm
       lst = propType::lst2;
       tupleConst = DAE.SINGLE_CONST(tconst)::tupleConst2;
     then
-      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE(DAE.T_TUPLE(lst,DAE.emptyTypeSource),DAE.TUPLE_CONST(tupleConst)));
+      (Absyn.TUPLE(aexpl),DAE.PROP_TUPLE(DAE.T_TUPLE(lst,names,DAE.emptyTypeSource),DAE.TUPLE_CONST(tupleConst)));
 
   case(_,_,_)
     equation

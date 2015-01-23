@@ -2224,7 +2224,7 @@ algorithm
       equation
          tys = List.map(exps, typeof);
       then
-        DAE.T_TUPLE(tys, DAE.emptyTypeSource);
+        DAE.T_TUPLE(tys, NONE(), DAE.emptyTypeSource);
     case (DAE.META_OPTION(_))then DAE.T_METATYPE(DAE.T_NONE_DEFAULT, DAE.emptyTypeSource);
     case (DAE.METARECORDCALL(path=p, index = i))
       equation

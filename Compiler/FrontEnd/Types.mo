@@ -1118,7 +1118,7 @@ algorithm
       equation
         ts = List.map(vs, typeOfValue);
       then
-        DAE.T_TUPLE(ts,DAE.emptyTypeSource);
+        DAE.T_TUPLE(ts,NONE(),DAE.emptyTypeSource);
 
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = -1)
       equation
@@ -2172,7 +2172,12 @@ algorithm
 
     case (DAE.T_TUPLE(types = tys))
       equation
-        tystrs = List.map(tys, unparseType);
+        tystrs = match inType.names
+          local
+            list<String> names;
+          case SOME(names) then list(unparseType(t) + " " + n threaded for t in tys, n in names);
+          else list(unparseType(t) for t in tys);
+        end match;
         tystr = stringDelimitList(tystrs, ", ");
         res = stringAppendList({"(",tystr,")"});
       then
@@ -2439,7 +2444,7 @@ algorithm
     // MetaModelica tuple
     case (DAE.T_METATUPLE(types = tys, source = ts))
       equation
-        str = printTypeStr(DAE.T_TUPLE(tys,ts));
+        str = printTypeStr(DAE.T_TUPLE(tys,NONE(),ts));
         str = str + printTypeSourceStr(ts);
       then
         str;
@@ -3281,10 +3286,10 @@ algorithm
         ty;
 
     case vl
-      equation
-        tys = makeReturnTypeTuple(vl);
-      then
-        DAE.T_TUPLE(tys,DAE.emptyTypeSource);
+      then DAE.T_TUPLE(
+        list(makeReturnTypeSingle(v) for v in vl),
+        SOME(list(varName(v) for v in vl)),
+        DAE.emptyTypeSource);
   end matchcontinue;
 end makeReturnType;
 
@@ -3300,28 +3305,6 @@ algorithm
     case DAE.TYPES_VAR(ty = ty) then ty;
   end match;
 end makeReturnTypeSingle;
-
-protected function makeReturnTypeTuple "author: LS
-  Create the return type for a tuple, i.e. a function returning several
-  values."
-  input list<DAE.Var> inVarLst;
-  output list<DAE.Type> outTypeLst;
-algorithm
-  outTypeLst := match (inVarLst)
-    local
-      list<DAE.Type> tys;
-      Type ty;
-      list<DAE.Var> vl;
-
-    case {} then {};
-
-    case (DAE.TYPES_VAR(ty = ty) :: vl)
-      equation
-        tys = makeReturnTypeTuple(vl);
-      then
-        (ty :: tys);
-  end match;
-end makeReturnTypeTuple;
 
 public function isParameterVar "author: LS
   Succeds if a variable is a parameter."
@@ -3867,7 +3850,7 @@ algorithm
     case (DAE.T_TUPLE(types = tys))
       equation
         tys = List.map(tys, simplifyType);
-      then DAE.T_TUPLE(tys, DAE.emptyTypeSource);
+      then DAE.T_TUPLE(tys, inType.names, DAE.emptyTypeSource);
 
     case (DAE.T_ENUMERATION()) then inType;
 
@@ -4565,7 +4548,7 @@ algorithm
       equation
         (elist_1,tys_1) = typeConvertList(elist, tys1, tys2, printFailtrace);
       then
-        (DAE.TUPLE(elist_1),DAE.T_TUPLE(tys_1,ts2));
+        (DAE.TUPLE(elist_1),DAE.T_TUPLE(tys_1,expected.names,ts2));
 
     // Implicit conversion from Integer literal to an enumeration
     // This is not a valid Modelica conversion, but was widely used in the past,
@@ -5431,7 +5414,7 @@ algorithm
 
     case DAE.T_METATUPLE(types = tys)
       equation
-        exps = getAllExpsTt(DAE.T_TUPLE(tys, DAE.emptyTypeSource));
+        exps = getAllExpsTt(DAE.T_TUPLE(tys, NONE(), DAE.emptyTypeSource));
       then
         exps;
 
@@ -6066,10 +6049,10 @@ algorithm
         tys = List.map(tys, boxIfUnboxedType);
       then DAE.T_METATUPLE(tys,DAE.emptyTypeSource);
 
-    case (DAE.T_TUPLE(types = tys),_,_,_)
+    case (t1 as DAE.T_TUPLE(),_,_,_)
       equation
-        tys = List.map3(tys, fixPolymorphicRestype2, prefix, bindings, info);
-      then DAE.T_TUPLE(tys,DAE.emptyTypeSource);
+        t1.types = List.map3(t1.types, fixPolymorphicRestype2, prefix, bindings, info);
+      then t1;
 
     case (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts1),_,_,_)
       equation
@@ -6273,11 +6256,12 @@ algorithm
       list<DAE.Type> tys, dummyBoxedTypeList;
       list<DAE.Exp> dummyExpList;
 
-    case DAE.T_TUPLE(tys,ts)
+    case (ty as DAE.T_TUPLE(tys))
       equation
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(tys);
         (_,tys) = matchTypeTuple(dummyExpList, tys, dummyBoxedTypeList, false);
-      then DAE.T_TUPLE(tys,ts);
+        ty.types = tys;
+      then ty;
     case (ty as DAE.T_NORETCALL()) then ty;
     case ty1
       equation
@@ -6694,7 +6678,7 @@ algorithm
     case (DAE.T_TUPLE(types = tys),solvedBindings)
       equation
         tys = replaceSolvedBindings(tys,solvedBindings,false);
-        ty = DAE.T_TUPLE(tys,DAE.emptyTypeSource);
+        ty = DAE.T_TUPLE(tys,ity.names,DAE.emptyTypeSource);
       then ty;
 
     case (DAE.T_FUNCTION(args,resType,functionAttributes,ts),solvedBindings)
@@ -7231,7 +7215,7 @@ algorithm
         tys = List.map(tys, unboxedType);
         tys = List.map(tys, boxIfUnboxedType);
         tys = List.map(tys, unboxedType); // Yes. Crazy
-      then (DAE.T_TUPLE(tys,DAE.emptyTypeSource));
+      then (DAE.T_TUPLE(tys,NONE(),DAE.emptyTypeSource));
 
     case (false,_) then ty;
   end match;
@@ -7738,7 +7722,10 @@ algorithm
     case (DAE.T_FUNCTION(funcArg, funcRType, funcAttr, _), ts) then DAE.T_FUNCTION(funcArg, funcRType, funcAttr, ts);
     case (DAE.T_FUNCTION_REFERENCE_VAR(t, _), ts) then DAE.T_FUNCTION_REFERENCE_VAR(t, ts);
     case (DAE.T_FUNCTION_REFERENCE_FUNC(b, t, _), ts) then DAE.T_FUNCTION_REFERENCE_FUNC(b, t, ts);
-    case (DAE.T_TUPLE(tys, _), ts) then DAE.T_TUPLE(tys, ts);
+    case (t as DAE.T_TUPLE(), ts)
+      algorithm
+        t.source := ts;
+      then t;
     case (DAE.T_CODE(ct, _), ts) then DAE.T_CODE(ct, ts);
     case (DAE.T_ANYTYPE(ocis, s), _) then DAE.T_ANYTYPE(ocis, s);
 
@@ -8509,7 +8496,7 @@ algorithm
         (tys, outCompatible) :=
           checkTypeCompatList(inExp1, inType1.types, inExp2, tys);
       then
-        DAE.T_TUPLE(tys, inType1.source);
+        DAE.T_TUPLE(tys, inType1.names, inType1.source);
 
     // MetaModelica types.
     case DAE.T_METALIST()

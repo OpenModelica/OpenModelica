@@ -1693,7 +1693,7 @@ algorithm
 
     else
       equation
-        print("Inst.getCrefFromMod: could not retrieve crefs from SCode.Mod: " + SCodeDump.printModStr(inMod,SCodeDump.defaultOptions) + "\n");
+        print(getInstanceName() + ": could not retrieve crefs from SCode.Mod: " + SCodeDump.printModStr(inMod,SCodeDump.defaultOptions) + "\n");
       then
         fail();
 

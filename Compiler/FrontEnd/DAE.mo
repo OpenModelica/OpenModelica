@@ -910,6 +910,7 @@ public uniontype Type "models the different front-end and back-end types"
 
   record T_TUPLE
     list<Type> types "For functions returning multiple values.";
+    Option<list<String>> names "For tuples elements that have names (function outputs)";
     TypeSource source;
   end T_TUPLE;
 
@@ -1107,7 +1108,7 @@ uniontype TupleConst "A tuple is added to the Types. This is used by functions w
   end SINGLE_CONST;
 
   record TUPLE_CONST
-    list<TupleConst> tupleConstLst "tupleConstLst" ;
+    list<TupleConst> tupleConstLst;
   end TUPLE_CONST;
 
 end TupleConst;

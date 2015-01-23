@@ -1609,7 +1609,7 @@ algorithm
 
     case {ty} then (ty, false);
 
-    else  (DAE.T_TUPLE(inTypeLst,DAE.emptyTypeSource), true);
+    else  (DAE.T_TUPLE(inTypeLst,NONE(),DAE.emptyTypeSource), true);
 
   end match;
 end makeCallReturnType;

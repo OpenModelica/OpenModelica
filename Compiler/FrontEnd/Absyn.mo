@@ -795,6 +795,10 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     list<Exp> exps;
   end LIST;
 
+  record DOT "exp.index"
+    Exp exp, index;
+  end DOT;
+
 end Exp;
 
 uniontype Case "case in match or matchcontinue"
@@ -1578,7 +1582,7 @@ algorithm
       list<list<Exp>> mat_expl;
       FunctionArgs fargs;
       String error_msg;
-      Ident id;
+      Ident id, enterName, exitName;
       MatchType match_ty;
       list<ElementItem> match_decls;
       list<Case> match_cases;
@@ -1708,10 +1712,19 @@ algorithm
     case (CODE(), _, _, _)
       then (inExp, inArg);
 
-    else
+    case (DOT(), _, _, arg)
       equation
-        error_msg = "in traverseExpBidirSubExps - Unknown expression: ";
-        error_msg = error_msg + Dump.printExpStr(inExp);
+        (e1, arg) = traverseExpBidir(inExp.exp, enterFunc, exitFunc, arg);
+        (e2, arg) = traverseExpBidir(inExp.index, enterFunc, exitFunc, arg);
+      then
+        (DOT(e1, e2), arg);
+
+    else
+      algorithm
+        (,,enterName) := System.dladdr(enterFunc);
+        (,,exitName) := System.dladdr(exitFunc);
+        error_msg := "in traverseExpBidirSubExps(" + enterName + ", " + exitName + ") - Unknown expression: ";
+        error_msg := error_msg + Dump.printExpStr(inExp);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
         fail();
@@ -3371,7 +3384,7 @@ public function getCrefFromExp
   input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<ComponentRef> outComponentRefLst;
 algorithm
-  outComponentRefLst := matchcontinue (inExp,includeSubs,includeFunctions)
+  outComponentRefLst := match (inExp,includeSubs,includeFunctions)
     local
       ComponentRef cr;
       list<ComponentRef> l1,l2,res;
@@ -3515,11 +3528,15 @@ algorithm
 
     case (MATCHEXP(),_,_) then fail();
 
-    case (e1,_,_)
+    case (DOT(),_,_)
+      // inExp.index is only allowed to contain names to index the function call; not crefs that are evaluated in any way
+      then getCrefFromExp(inExp.exp,includeSubs,includeFunctions);
+
+    else
       equation
-        print("Internal error: getCrefFromExp failed " + Dump.printExpStr(e1) + "\n");
+        Error.addInternalError(getInstanceName() + " failed " + Dump.printExpStr(inExp), sourceInfo());
       then fail();
-  end matchcontinue;
+  end match;
 end getCrefFromExp;
 
 public function getCrefFromFarg "Returns the flattened list of all component references

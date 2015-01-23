@@ -2862,7 +2862,7 @@ algorithm
       equation
         tys2 = List.map(tys, Types.unboxedType);
         (exps,tys2) = Types.matchTypeTuple(exps, tys, tys2, false);
-      then (DAE.TUPLE(exps),DAE.T_TUPLE(tys2,source));
+      then (DAE.TUPLE(exps),DAE.T_TUPLE(tys2,NONE(),source));
     else (inExp,inType);
   end match;
 end makeTupleFromMetaTuple;

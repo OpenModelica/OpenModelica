@@ -294,6 +294,7 @@ algorithm
       list<list<DAE.Exp>> scalarExp;
       list<DAE.Statement> stmts;
       list<DAE.Type> outputVarTypes;
+      list<String> outputVarNames;
       list<list<DAE.ComponentRef>> scalarInputs, scalarOutputs;
     case(DAE.CALL(path=path, expLst=exps, attr=attr1),_,_,_)
       equation
@@ -423,7 +424,8 @@ algorithm
         // which rhs
         newOutputVars = List.filterOnTrue(updatedVarOutputs,DAEUtil.isOutputVar);
         outputVarTypes = List.map(newOutputVars,DAEUtil.getVariableType);
-        attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE(outputVarTypes,DAE.emptyTypeSource));
+        outputVarNames = List.map(newOutputVars,DAEUtil.varName);
+        attr2 = DAEUtil.replaceCallAttrType(attr1,DAE.T_TUPLE(outputVarTypes,SOME(outputVarNames),DAE.emptyTypeSource));
         DAE.CALL_ATTR(ty = singleOutputType) = attr1;
         singleOutputType = if List.isNotEmpty(newOutputVars) then List.first(outputVarTypes) else singleOutputType;//if the function is evaluated completely
         attr1 = DAEUtil.replaceCallAttrType(attr1,singleOutputType);
@@ -1058,11 +1060,13 @@ algorithm
       DAE.Type outType;
       list<DAE.Type> outTypeLst;
       list<DAE.FuncArg> inputs;
+      list<String> outNames;
   case(DAE.T_FUNCTION(funcArg = inputs, funcResultType = outType, functionAttributes = atts, source = source),_,_)
     equation
       //print("the out types1: "+Types.unparseType(outType)+"\n");
-      outTypeLst = List.map(outputs,DAEUtil.getVariableType);
-      outType = if intEq(listLength(outTypeLst),1) then List.first(outTypeLst) else DAE.T_TUPLE(outTypeLst,DAE.emptyTypeSource);
+      outTypeLst = list(DAEUtil.getVariableType(o) for o in outputs);
+      outNames = list(DAEUtil.varName(o) for o in outputs);
+      outType = if intEq(listLength(outTypeLst),1) then List.first(outTypeLst) else DAE.T_TUPLE(outTypeLst,SOME(outNames),DAE.emptyTypeSource);
       outType = DAE.T_FUNCTION(inputs,outType,atts,source);
       //print("the out types2: "+Types.unparseType(outType)+"\n");
     then

@@ -336,6 +336,7 @@ algorithm
       case Absyn.CONS() then elabExp_Cons;
       case Absyn.LIST() then elabExp_List;
       case Absyn.MATCHEXP() then Patternm.elabMatchExpression;
+      case Absyn.DOT() then elabExp_Dot;
       else elabExp_BuiltinType;
     end match;
 
@@ -551,6 +552,48 @@ algorithm
         ();
   end match;
 end elabExp_Call;
+
+protected function elabExp_Dot
+  extends PartialElabExpFunc;
+algorithm
+  (outExp, outProperties) := match(inExp)
+    local
+      String s;
+      DAE.Type ty;
+    case Absyn.DOT()
+      algorithm
+        s := match inExp.index
+          case Absyn.CREF(Absyn.CREF_IDENT(name=s)) then s;
+          else
+            algorithm
+              Error.addSourceMessage(Error.COMPILER_ERROR, {"Dot operator is only allowed when indexing using a single simple name, got: " + Dump.printExpStr(inExp.index)}, inInfo);
+            then fail();
+        end match;
+        (outCache,outExp,outProperties,outST) := elabExp(inCache,inEnv,inExp.exp,inImplicit,inST, inDoVect, inPrefix, inInfo);
+        ty := Types.getPropType(outProperties);
+        _ := match ty
+          local
+            list<String> names;
+            Integer i;
+          case DAE.T_TUPLE(names=SOME(names))
+            algorithm
+              if not listMember(s, names) then
+                Error.addSourceMessage(Error.COMPILER_ERROR, {"Dot operator could not find " + s + " in " + Types.unparseType(ty)}, inInfo);
+                fail();
+              end if;
+              i := List.position(s, names);
+              outExp := DAE.TSUB(outExp, i, listGet(ty.types,i));
+              outProperties := DAE.PROP(listGet(ty.types,i), Types.propAllConst(outProperties));
+            then ();
+          else
+            algorithm
+              Error.addSourceMessage(Error.COMPILER_ERROR, {"Dot operator is only allowed when the expression returns a named tuple. Got expression: " + ExpressionDump.printExpStr(outExp) + " with type " + Types.unparseType(ty)}, inInfo);
+            then fail();
+        end match;
+      then (outExp, outProperties);
+
+  end match;
+end elabExp_Dot;
 
 protected function elabExp_PartEvalFunction
   "turns an Absyn.PARTEVALFUNCTION into an DAE.PARTEVALFUNCTION"
@@ -1931,7 +1974,7 @@ algorithm
         (cache,es_1,props) = elabTuple(cache,env,es,impl,false,pre,info);
         (types,consts) = splitProps(props);
       then
-        (cache,DAE.TUPLE(es_1),DAE.PROP_TUPLE(DAE.T_TUPLE(types,DAE.emptyTypeSource),DAE.TUPLE_CONST(consts)));
+        (cache,DAE.TUPLE(es_1),DAE.PROP_TUPLE(DAE.T_TUPLE(types,NONE(),DAE.emptyTypeSource),DAE.TUPLE_CONST(consts)));
 
     // array-related expressions
     case (cache,env,Absyn.RANGE(start = start,step = NONE(),stop = stop),impl,pre,_)
@@ -7200,8 +7243,6 @@ algorithm
         args_2 = slotListArgs(newslots2);
 
         tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
-        //tyconst = elabConsts(outtype, const);
-        //prop = getProperties(outtype, tyconst);
       then
         (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP(DAE.T_UNKNOWN_DEFAULT,DAE.C_CONST()))));
 
@@ -7790,7 +7831,7 @@ algorithm
         str := "Failed to match types:\n    actual:   " +
           Types.unparseType(Types.getPropType(prop)) +
           "\n    expected: " +
-          Types.unparseType(DAE.T_TUPLE(tys, DAE.emptyTypeSource));
+          Types.unparseType(DAE.T_TUPLE(tys, NONE(), DAE.emptyTypeSource));
         fn_str := Absyn.pathString(fq_path);
         Error.addSourceMessage(Error.META_RECORD_FOUND_FAILURE, {fn_str, str}, inInfo);
       then
@@ -8997,11 +9038,10 @@ algorithm
       then
         DAE.T_ARRAY(ty, {dim}, ts);
 
-    case DAE.T_TUPLE(tys, ts)
+    case ty as DAE.T_TUPLE()
       algorithm
-        tys := List.map2(tys, evaluateFuncArgTypeDims, inEnv, inCache);
-      then
-        DAE.T_TUPLE(tys, ts);
+        ty.types := List.map2(ty.types, evaluateFuncArgTypeDims, inEnv, inCache);
+      then ty;
 
     else inType;
 
@@ -12882,7 +12922,7 @@ algorithm
     prop := DAE.PROP(DAE.T_METATUPLE(tys2, DAE.emptyTypeSource), c);
   else
     exp := DAE.TUPLE(exps);
-    prop := DAE.PROP_TUPLE(DAE.T_TUPLE(types, DAE.emptyTypeSource), DAE.TUPLE_CONST(consts));
+    prop := DAE.PROP_TUPLE(DAE.T_TUPLE(types, NONE(), DAE.emptyTypeSource), DAE.TUPLE_CONST(consts));
   end if;
 end fixTupleMetaModelica;
 

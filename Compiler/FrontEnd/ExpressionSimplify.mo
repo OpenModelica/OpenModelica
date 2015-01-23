@@ -5536,7 +5536,7 @@ algorithm
       then listGet(expl, i);
     case DAE.TSUB(exp = DAE.TUPLE(PR = expl), ix = i)
       then listGet(expl, i);
-    case DAE.TSUB(exp= e as (DAE.RCONST(_))) then e;
+    case DAE.TSUB(exp= e as (DAE.RCONST())) then e;
     else origExp;
   end match;
 end simplifyTSub;

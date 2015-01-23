@@ -1438,7 +1438,7 @@ algorithm
     case (_,_,{},_,_,_)
       equation
         (cache,Util.SUCCESS()) = Static.instantiateDaeFunctionFromTypes(inCache, env, acc, false, NONE(), true, Util.SUCCESS());
-        (DAE.T_TUPLE(funcs,{}),_) = Types.traverseType(DAE.T_TUPLE(acc,{}), -1, Types.makeExpDimensionsUnknown);
+        (DAE.T_TUPLE(funcs,_,{}),_) = Types.traverseType(DAE.T_TUPLE(acc,NONE(),{}), -1, Types.makeExpDimensionsUnknown);
       then (cache,funcs);
   end matchcontinue;
 end getOperatorFuncsOrEmpty;

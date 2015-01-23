@@ -806,6 +806,8 @@ match exp
   case LIST(__) then
     let list_str = (exps |> e => dumpExp(e) ;separator=", ")
     '{<%list_str%>}'
+  case DOT(__) then
+    '<%dumpExp(exp)%>.<%dumpExp(index)%>'
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
 

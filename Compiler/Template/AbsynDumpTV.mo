@@ -590,6 +590,12 @@ package Absyn
     record LIST
       list<Exp> exps;
     end LIST;
+
+    record DOT "exp.index"
+      Exp exp;
+      Exp index;
+    end DOT;
+
   end Exp;
 
   uniontype Case

@@ -2879,6 +2879,21 @@ extern struct record_description Absyn_Exp_LIST__desc;
 #define Absyn__LIST_3dBOX1 25
 #define Absyn__LIST(exps) (mmc_mk_box2(25,&Absyn_Exp_LIST__desc,exps))
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Absyn_Exp_DOT__desc_added
+#define Absyn_Exp_DOT__desc_added
+ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_DOT__desc__fields[2] = {"exp","index"};
+ADD_METARECORD_DEFINITIONS struct record_description Absyn_Exp_DOT__desc = {
+  "Absyn_Exp_DOT",
+  "Absyn.Exp.DOT",
+  Absyn_Exp_DOT__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Exp_DOT__desc;
+#endif
+#define Absyn__DOT_3dBOX2 26
+#define Absyn__DOT(exp,index) (mmc_mk_box3(26,&Absyn_Exp_DOT__desc,exp,index))
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Case_CASE__desc_added
 #define Absyn_Case_CASE__desc_added
 ADD_METARECORD_DEFINITIONS const char* Absyn_Case_CASE__desc__fields[9] = {"pattern","patternGuard","patternInfo","localDecls","classPart","result","resultInfo","comment","info"};
