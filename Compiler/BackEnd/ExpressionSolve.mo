@@ -2106,8 +2106,8 @@ algorithm
  else
   (e,_) := Expression.traverseExp(iExp2,makeIntialGuess2,iExp3);
  end if;
- 
- oExp := DAE.IFEXP(con,e,Expression.makePureBuiltinCall("$_initialGuess",{iExp},tp)); 
+
+ oExp := DAE.IFEXP(con,e,Expression.makePureBuiltinCall("$_initialGuess",{iExp},tp));
 end makeIntialGuess;
 
 protected function makeIntialGuess2
@@ -2120,11 +2120,11 @@ algorithm
  oExp := match(iExp, iecr)
          local DAE.ComponentRef cr1,cr2;
                DAE.Type tp;
- 
+
          case(DAE.CREF(componentRef = cr1), DAE.CREF(componentRef = cr2))
            guard(Expression.expEqual(iExp, iecr))
            equation
-             tp = Expression.typeof(iExp); 
+             tp = Expression.typeof(iExp);
            then Expression.makePureBuiltinCall("$_start",{iExp},tp);
          else iExp;
          end match;
