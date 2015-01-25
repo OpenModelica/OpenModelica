@@ -1607,27 +1607,15 @@ algorithm
   // abs(f(x)) = g(y) -> f(x) = sign(f(x))*g(y)
   case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _)
   equation
-    b1 = Expression.isPositiveOrZero(e1);
-    b2 = Expression.isNegativeOrZero(e1);
-    b = not(b1 or b2);
-    if b then
-      tp = Expression.typeof(e1);
-      cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_ABS_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-      eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-      e = Expression.crefExp(cr);
-      exP = Expression.makePureBuiltinCall("$_initialGuess", {e}, tp);
-      e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
-      eqnForNewVars_ = eqn::ieqnForNewVars;
-      newVarsCrefs_ = cr::inewVarsCrefs;
-      lhs = Expression.expMul(e_1, inExp2);
-    else
-      lhs = inExp2;
-      if b2 then
-        lhs = Expression.negate(lhs);
-      end if;
-      eqnForNewVars_ = ieqnForNewVars;
-      newVarsCrefs_ = inewVarsCrefs;
-    end if;
+    true = expHasCref(e1, inExp3);
+    false = expHasCref(inExp2, inExp3);
+
+    tp = Expression.typeof(e1);
+    (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
+    exP = makeIntialGuess(e,tp,inExp3,e1);
+    e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
+    lhs = Expression.expMul(e_1, inExp2);
+
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
   // x^n = y -> x = y^(1/n)
