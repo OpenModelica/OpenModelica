@@ -403,14 +403,21 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
       <<
       #include <Core/Modelica.h>
       #include <Core/ModelicaDefine.h>
+      #include "OMCpp<%fileNamePrefix%>PreVariables.h"
       #include "OMCpp<%fileNamePrefix%>.h"
       #include "OMCpp<%fileNamePrefix%>Functions.h"
+      #include <Core/System/EventHandling.h>
+      #include <Core/System/DiscreteEvents.h>
+      #if defined(__TRICORE__) || defined(__vxworks)
+      #include <DataExchange/SimDouble.h>
+      #endif
 
       /* Constructor */
-      <%className%>::<%className%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
+      <%className%>::<%className%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> sim_data)
         :SystemDefaultImplementation(globalSettings)
+        , <%className%>PreVariables()
         ,_algLoopSolverFactory(nonlinsolverfactory)
-        ,sim_Data(simData)
+        ,_sim_data(sim_data)
         <%hpcomMemberVariableDefinition%>
         <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,true)%>
         <%simulationInitFile(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -468,14 +475,11 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
         //Initialize the state vector
         SystemDefaultImplementation::initialize();
         //Instantiate auxiliary object for event handling functionality
-        _event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
-        //Todo: arrayReindex(modelInfo,useFlatArrayNotation)
-        //Initialize array elements
-        <%initializeArrayElements(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,useFlatArrayNotation)%>
+        //_event_handling.getCondition =  boost::bind(&<%className%>::getCondition, this, _1);
+
+        //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
 
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
-
-        <%hpcomConstructorExtension%>
       }
 
       <%if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)) then
@@ -502,20 +506,21 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
         else ''
       %>
 
-      <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>()
+      /* Destructor */
+      <%className%>::~<%className%>()
       {
-        if(_functions != NULL)
-          delete _functions;
-        <%hpcomDestructorExtension%>
+        deleteObjects();
       }
 
       void <%className%>::deleteObjects()
       {
+
         if(_functions != NULL)
           delete _functions;
 
         deleteAlgloopSolverVariables();
       }
+
 
       <%generateInitAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,className)%>
 
@@ -545,7 +550,6 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
       <%getCondition(zeroCrossings,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       <%handleSystemEvents(zeroCrossings,whenClauses,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
       <%saveAll(modelInfo,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
-      <%initPrevars(modelInfo,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>
 
       <%LabeledDAE(modelInfo.labels,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       <%giveVariables(modelInfo,context,useFlatArrayNotation,simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
