@@ -4193,7 +4193,7 @@ algorithm
         (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
 
         Error.clearMessages() "Clear messages";
-        compileDir = System.pwd() + System.pathDelimiter();
+        compileDir = "\"" + System.pwd() + "\"" + System.pathDelimiter();
         (cache,simSettings) = calculateSimulationSettings(cache, env, values, st, msg);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str)
            = simSettings;
