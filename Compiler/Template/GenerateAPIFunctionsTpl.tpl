@@ -117,15 +117,30 @@ end getCevalScriptInterfaceFunc;
 
 template getQtInterface(list<DAE.Type> tys, String className)
 ::=
-  let heads = tys |> ty as T_FUNCTION(source=path::_) => '<%getQtInterfaceHeader(pathLastIdent(path), "", ty.funcArg, ty.funcResultType, className)%><%\n%>'
   let funcs = tys |> ty as T_FUNCTION(source=path::_) => '<%getQtInterfaceFunc(pathLastIdent(path), ty.funcArg, ty.funcResultType, className)%><%\n%>'
   <<
   #include <Qt/QtCore>
   #include "OpenModelicaScriptingAPI.h"
+  #include <stdexcept>
+  #include "OpenModelicaScriptingAPIQt.h"
 
   <%funcs%>
   >>
 end getQtInterface;
+
+template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
+::=
+  let heads = tys |> ty as T_FUNCTION(source=path::_) => '<%getQtInterfaceHeader(pathLastIdent(path), "", ty.funcArg, ty.funcResultType, className, true)%>;<%\n%>'
+  <<
+  #include <Qt/QtCore>
+
+  class <%className%> {
+  threadData_t *threadData;
+  void *st;
+  <%heads%>
+  };
+  >>
+end getQtInterfaceHeaders;
 
 template getQtType(DAE.Type ty)
 ::=
@@ -134,22 +149,25 @@ template getQtType(DAE.Type ty)
     case T_INTEGER(__) then "modelica_integer"
     case T_BOOL(__) then "modelica_boolean"
     case T_REAL(__) then "modelica_real"
-    case aty as T_ARRAY(__) then 'QList<<%getQtType(aty.ty)%>>'
+    case aty as T_ARRAY(__) then 'QList<<%getQtType(aty.ty)%> >'
     case T_CODE(ty=C_TYPENAME(__)) then "QString"
     else error(sourceInfo(), 'getQtType failed for <%unparseType(ty)%>')
 end getQtType;
 
-template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args, DAE.Type res, String className)
+template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args, DAE.Type res, String className, Boolean addStructs)
 ::=
   let inTypes = args |> arg as FUNCARG(__) => '<%getQtType(arg.ty)%> <%arg.name%>' ; separator=", "
   let outType = match res
     case T_TUPLE(__) then
+      if addStructs then
       <<
       typedef struct {
         <%types |> ty hasindex i fromindex 1 => '<%getQtType(ty)%> res<%i%>;' ; separator="\n" %>
       } <%name%>_res;
       <%name%>_res
       >>
+      else
+      '<%prefix%><%name%>_res'
     case T_NORETCALL(__) then "void"
     else '<%getQtType(res)%>'
   <<
@@ -170,12 +188,13 @@ template getQtInArg(Text name, DAE.Type ty, Text &varDecl)
     case aty as T_ARRAY(__) then
       let &varDecl2 = buffer ""
       let elt = '<%name%>_elt'
-      let body = getQtInArg(elt, aty.ty, varDecl2)
+      let body = getQtInArgBoxed(getQtInArg(elt, aty.ty, varDecl2), aty.ty)
+      let i = '<%name%>_i'
       let &varDecl +=
       <<
       void *<%name%>_lst = mmc_mk_nil();
-      for (int <%name%>_i = <%name%>.size()-1; i>=0; i--) {
-        <%getQtType(aty.ty)%> <%elt%> = <%name%>[<%name%>_i];
+      for (int <%i%> = <%name%>.size()-1; <%i%>>=0; <%i%>--) {
+        <%getQtType(aty.ty)%> <%elt%> = <%name%>[<%i%>];
         <%varDecl2%>
         <%name%>_lst = mmc_mk_cons(<%body%>, <%name%>_lst);
       }<%\n%>
@@ -184,6 +203,18 @@ template getQtInArg(Text name, DAE.Type ty, Text &varDecl)
     else error(sourceInfo(), 'getQtInArg failed for <%unparseType(ty)%>')
 end getQtInArg;
 
+template getQtInArgBoxed(Text name, DAE.Type ty)
+::=
+  match ty
+    case T_CODE(ty=C_TYPENAME(__))
+    case T_STRING(__)
+    case T_ARRAY(__) then name
+    case T_INTEGER(__)
+    case T_BOOL(__) then 'mmc_mk_icon(<%name%>)'
+    case T_REAL(__) then 'mmc_mk_rcon(<%name%>)'
+    else error(sourceInfo(), 'getQtInArgBoxed failed for <%unparseType(ty)%>')
+end getQtInArgBoxed;
+
 template getQtOutArg(Text name, Text shortName, DAE.Type ty, Text &varDecl, Text &postCall)
 ::=
   match ty
@@ -191,25 +222,38 @@ template getQtOutArg(Text name, Text shortName, DAE.Type ty, Text &varDecl, Text
     case T_STRING(__) then
       let &varDecl += 'void *<%shortName%>_mm = NULL;<%\n%>'
       let &postCall += '<%name%> = QString::fromUtf8(MMC_STRINGDATA(<%shortName%>_mm));<%\n%>'
-      '&<%name%>_mm'
+      '&<%shortName%>_mm'
     case T_INTEGER(__)
     case T_BOOL(__)
     case T_REAL(__) then '&<%name%>'
     case aty as T_ARRAY(__) then
       let &varDecl += 'void *<%shortName%>_mm = NULL;<%\n%>'
-      let &varDecl2 = buffer ""
-      let &postCall +=
-      <<
-      while (!listEmpty(<%shortName%>_mm)) {
-        <%varDecl2%>
-        <%getQtType(aty.ty)%> <%shortName%>_elt = MMC_CAR(<%shortName%>_mm);
-        <%name%>.push_back(...);
-        <%shortName%>_mm = MMC_CDR(<%shortName%>_mm);
-      }<%\n%>
-      >>
-      '&<%name%>_mm'
+      let &postCall += getQtOutArgArray(name, shortName, '<%shortName%>_mm', aty)
+      '&<%shortName%>_mm'
     else error(sourceInfo(), 'getQtOutArg failed for <%unparseType(ty)%>')
 end getQtOutArg;
+
+template getQtOutArgArray(Text name, Text shortName, Text mm, DAE.Type ty)
+::=
+  match ty
+    case T_CODE(ty=C_TYPENAME(__))
+    case T_STRING(__) then '<%name%> = MMC_STRINGDATA(<%mm%>);<%\n%>'
+    case T_INTEGER(__) then '<%name%> = mmc_unbox_integer(<%mm%>);<%\n%>'
+    case T_BOOL(__) then '<%name%> = mmc_unbox_boolean(<%mm%>);<%\n%>'
+    case T_REAL(__) then '<%name%> = mmc_unbox_real(<%mm%>);<%\n%>'
+    case aty as T_ARRAY(__) then
+    let elt = '<%shortName%>_elt'
+    <<
+    <%name%>.clear();
+    while (!listEmpty(<%mm%>)) {
+      <%getQtType(aty.ty)%> <%elt%>;
+      <%getQtOutArgArray(elt, elt, 'MMC_CAR(<%mm%>)', aty.ty)%>
+      <%name%>.push_back(<%elt%>);
+      <%mm%> = MMC_CDR(<%mm%>);
+    }<%\n%>
+    >>
+    else error(sourceInfo(), 'getOutValueArray failed for <%unparseType(ty)%>')
+end getQtOutArgArray;
 
 template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, String className)
 ::=
@@ -226,23 +270,18 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
       ', <%getQtOutArg('result', 'result', res, varDecl, postCall)%>'
     )
   <<
-  <%getQtInterfaceHeader(name, '<%className%>::', args, res, className)%>
+  <%getQtInterfaceHeader(name, '<%className%>', args, res, className, false)%>
   {
     <%varDecl%>
 
     MMC_TRY_TOP_INTERNAL()
 
-    st = omc_OpenModelicaScriptingAPI_<%name%>(threadData, st<%inArgs%><%outArgs%>);
+    st = omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData, st<%inArgs%><%outArgs%>);
     <%postCall%>
 
     MMC_CATCH_TOP(throw std::runtime_error("getClassInformation failed");)
 
-    /*
-    while (!MMC_NILTEST(dimensions)) {
-      result.dimensions.push_back(MMC_STRINGDATA(MMC_CAR(dimensions)));
-      dimensions = MMC_CDR(dimensions);
-    }
-    */
+    <%if outArgs then "return result;"%>
   }
   >>
 end getQtInterfaceFunc;

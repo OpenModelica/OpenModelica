@@ -3369,6 +3369,7 @@ function generateScriptingAPI
   output Boolean success;
   output String moFile;
   output String qtFile;
+  output String qtHeader;
 external "builtin";
 annotation(
   Documentation(info="<html>

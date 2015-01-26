@@ -146,7 +146,7 @@ typedef int mmc_switch_type;
 
 #endif
 
-#define MMC_STRUCTHDR(slots,ctor) (((slots) << 10) + (((ctor) & 255) << 2))
+#define MMC_STRUCTHDR(_slots,ctor) (((_slots) << 10) + (((ctor) & 255) << 2))
 #define MMC_NILHDR                MMC_STRUCTHDR(0,0)
 #define MMC_CONSHDR               MMC_STRUCTHDR(2,1)
 #define MMC_NONEHDR               MMC_STRUCTHDR(0,1)
@@ -379,20 +379,20 @@ char* mmc_mk_scon_len_ret_ptr(size_t nbytes);
 /* Non-varargs versions */
 #include "meta_modelica_mk_box.h"
 
-static inline void *mmc_mk_box(int slots, unsigned int ctor, ...)
+static inline void *mmc_mk_box(int _slots, unsigned int ctor, ...)
 {
   int i;
   va_list argp;
 
-  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(slots+1);
-  p->header = MMC_STRUCTHDR(slots, ctor);
+  struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(_slots+1);
+  p->header = MMC_STRUCTHDR(_slots, ctor);
   va_start(argp, ctor);
-  for (i=0; i<slots; i++) {
+  for (i=0; i<_slots; i++) {
     p->data[i] = va_arg(argp, void*);
   }
   va_end(argp);
 #ifdef MMC_MK_DEBUG
-  fprintf(stderr, "BOXNN slots:%d ctor: %u\n", slots, ctor); fflush(NULL);
+  fprintf(stderr, "BOXNN slots:%d ctor: %u\n", _slots, ctor); fflush(NULL);
 #endif
   return MMC_TAGPTR(p);
 }
@@ -415,13 +415,13 @@ static inline void *mmc_mk_some(void *x)
     return mmc_mk_box1(1, x);
 }
 
-extern void *mmc_mk_box_arr(int slots, unsigned int ctor, void** args);
-static inline void *mmc_mk_box_no_assign(int slots, unsigned int ctor)
+extern void *mmc_mk_box_arr(int _slots, unsigned int ctor, void** args);
+static inline void *mmc_mk_box_no_assign(int _slots, unsigned int ctor)
 {
-    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(slots+1);
-    p->header = MMC_STRUCTHDR(slots, ctor);
+    struct mmc_struct *p = (struct mmc_struct*)mmc_alloc_words(_slots+1);
+    p->header = MMC_STRUCTHDR(_slots, ctor);
 #ifdef MMC_MK_DEBUG
-    fprintf(stderr, "STRUCT NO ASSIGN slots%d ctor %u\n", slots, ctor); fflush(NULL);
+    fprintf(stderr, "STRUCT NO ASSIGN slots%d ctor %u\n", _slots, ctor); fflush(NULL);
 #endif
     return MMC_TAGPTR(p);
 }

@@ -5131,7 +5131,7 @@ template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> 
 ::=
   let boxvar =
     <<
-    static const MMC_DEFSTRUCTLIT(boxvar_lit_<%fname%>,2,0) {boxptr_<%fname%>,0}};
+    static const MMC_DEFSTRUCTLIT(boxvar_lit_<%fname%>,2,0) {(void*) boxptr_<%fname%>,0}};
     #define boxvar_<%fname%> MMC_REFSTRUCTLIT(boxvar_lit_<%fname%>)<%\n%>
     >>
   <<
