@@ -1621,27 +1621,15 @@ algorithm
   // x^n = y -> x = y^(1/n)
   case(DAE.BINARY(e1, DAE.POW(tp), e2),_)
   equation
-    b1 = Expression.isPositiveOrZero(e1);
-    b2 = Expression.isNegativeOrZero(e1);
-    b = not(b1 or b2);
-    if b then
-      cr  = ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_POW_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-      eqn = BackendDAE.SOLVED_EQUATION(cr, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-      e = Expression.crefExp(cr);
-      exP = Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
-      e_1 = Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
-      eqnForNewVars_ = eqn::ieqnForNewVars;
-      newVarsCrefs_ = cr ::inewVarsCrefs;
-      lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
-      lhs = Expression.expMul(e_1, lhs);
-    else
-      lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
-      if b2 then
-        lhs = Expression.negate(lhs);
-      end if;
-      eqnForNewVars_ = ieqnForNewVars;
-      newVarsCrefs_ = inewVarsCrefs;
-    end if;
+    true = expHasCref(e1, inExp3);
+    false = expHasCref(e2, inExp3);
+    tp = Expression.typeof(e1);
+    (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
+    exP = makeIntialGuess(e,tp,inExp3,e1);
+    e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
+    lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
+    lhs = Expression.expMul(e_1,lhs);
+
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
   //QE
