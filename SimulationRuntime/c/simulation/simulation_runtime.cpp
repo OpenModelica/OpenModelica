@@ -806,11 +806,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     sim_communication_port_open = 1;
     sim_communication_port_open &= sim_communication_port.create();
     sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
-
-    if(0 != strcmp("ia", MMC_STRINGDATA(data->simulationInfo.outputFormat)))
-    {
-      communicateStatus("Starting", 0.0);
-    }
   }
 #endif
 
@@ -831,20 +826,6 @@ void SimulationRuntime_printStatus(int sig)
   printf("<currentTime>%g</currentTime>\n", data->localData[0]->timeValue);
   printf("<diffCurrentTime>%g</diffCurrentTime>\n", data->localData[0]->timeValue-data->localData[1]->timeValue);
   printf("</status>\n");
-}
-
-void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*/)
-{
-#ifndef NO_INTERACTIVE_DEPENDENCY
-  if(sim_communication_port_open)
-  {
-    std::stringstream s;
-    s << (int)(completionPercent*10000) << " " << phase << endl;
-    std::string str(s.str());
-    sim_communication_port.send(str);
-    // cout << str;
-  }
-#endif
 }
 
 void communicateMsg(char id, unsigned int size, const char *data)
