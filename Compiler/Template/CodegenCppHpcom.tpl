@@ -50,7 +50,9 @@ template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
   let()= textFile(simulationExtensionHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
   let()= textFile(simulationExtensionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
+  let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",false),'OMCpp<%fileNamePrefix%>PreVariables.h')
   let()= textFile(simulationWriteOutputCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
   let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
   let()= textFile(simulationWriteOutputParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
   let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
@@ -408,7 +410,7 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
       <%className%>::<%className%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData)
         :SystemDefaultImplementation(globalSettings)
         ,_algLoopSolverFactory(nonlinsolverfactory)
-        ,_simData(simData)
+        ,sim_Data(simData)
         <%hpcomMemberVariableDefinition%>
         <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,true)%>
         <%simulationInitFile(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
