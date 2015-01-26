@@ -1,2 +1,6 @@
+all: OpenModelicaScriptingAPI.mo OpenModelicaScriptingAPIQt.cpp OpenModelicaScriptingAPIQt.h
+
 OpenModelicaScriptingAPI.mo: OpenModelicaScriptingAPI.mos ../FrontEnd/ModelicaBuiltin.mo
 	- $(OMC) $<
+OpenModelicaScriptingAPIQt.cpp: OpenModelicaScriptingAPI.mo
+OpenModelicaScriptingAPIQt.h: OpenModelicaScriptingAPI.mo

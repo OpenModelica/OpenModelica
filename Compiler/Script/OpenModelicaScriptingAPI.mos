@@ -7,6 +7,8 @@ if bool then
   if bool then
     bool := 0 == system("mv OpenModelicaScriptingAPI.tmp.mo OpenModelicaScriptingAPI.mo");
   end if;
+  writeFile("OpenModelicaScriptingAPIQt.cpp", b);
+  writeFile("OpenModelicaScriptingAPIQt.h", c);
 end if;
 if not bool then
   print("Failed to generate OpenModelicaScriptingAPI; falling back to old generated one until new tarball exists: " + getErrorString());
