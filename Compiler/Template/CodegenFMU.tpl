@@ -1760,7 +1760,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PLAT34 = <%makefileParams.platform%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc/c" <%if isFMIVersion20(FMUVersion) then '-I"<%makefileParams.omhome%>/include/omc/c/fmi2"' else '-I"<%makefileParams.omhome%>/include/omc/c/fmi1"'%> -I. <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%dirExtra%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lSimulationRuntimeC <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%dirExtra%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%>_FMU.c
   MAINOBJ=<%fileNamePrefix%>_FMU.o
