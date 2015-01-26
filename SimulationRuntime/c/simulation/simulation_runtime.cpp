@@ -55,8 +55,7 @@
  *
  */
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  #include "../../interactive/omi_ServiceInterface.h"
-  #include "../../interactive/socket.h"
+  #include "socket.h"
   extern Socket sim_communication_port;
 #endif
 
@@ -98,8 +97,6 @@ using namespace std;
 
 extern "C" {
 
-static int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
-
 int terminationTerminate = 0; /* Becomes non-zero when user terminates simulation. */
 FILE_INFO TermInfo;           /* message for termination. */
 
@@ -108,8 +105,6 @@ char* TermMsg;                /* message for termination. */
 int sim_noemit = 0;           /* Flag for not emitting data */
 
 const std::string *init_method = NULL; /* method for  initialization. */
-
-int isInteractiveSimulation(void);
 
 /*! \fn void setTermMsg(const char* msg)
  *
@@ -307,40 +302,6 @@ int getNewtonStrategy(int argc, char**argv)
   throwStreamPrint(NULL,"see last warning");
 
   return NEWTON_NONE;
-}
-
-
-/**
- * Signals the type of the simulation
- * retuns true for interactive and false for non-interactive
- */
-int isInteractiveSimulation(void)
-{
-  return interactiveSimulation;
-}
-
-/**
- * Starts an Interactive simulation session
- * the runtime waits until a user shuts down the simulation
- */
-int startInteractiveSimulation(int argc, char**argv, void* data)
-{
-  int retVal = -1;
-
-  // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
-#ifndef NO_INTERACTIVE_DEPENDENCY
-  initServiceInterfaceData(argc, argv, data);
-
-  //Create the Control Server Thread
-  Thread *threadSimulationControl = createControlThread();
-  threadSimulationControl->Join();
-  delete threadSimulationControl;
-
-  std::cout << "simulation finished!" << std::endl;
-#else
-  std::cout << "Interactive Simulation not supported when LEAST_DEPENDENCY is defined!!!" << std::endl;
-#endif
-  return retVal; //TODO 20100211 pv return value implementation / error handling
 }
 
 /**
@@ -619,7 +580,7 @@ int initializeResultData(DATA* simData, int cpuTime)
   sim_result.filename = strdup(simData->modelData.resultFileName);
   sim_result.numpoints = maxSteps;
   sim_result.cpuTime = cpuTime;
-  if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
+  if (sim_noemit || 0 == strcmp("empty", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
     /* Default is set to noemit */
   } else if(0 == strcmp("csv", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
     sim_result.init = omc_csv_init;
@@ -837,16 +798,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  interactiveSimulation = omc_flag[FLAG_INTERACTIVE];
-  if(interactiveSimulation && omc_flag[FLAG_PORT])
-  {
-    cout << "userPort" << endl;
-    std::istringstream stream(omc_flagValue[FLAG_PORT]);
-    int userPort;
-    stream >> userPort;
-    setPortOfControlServer(userPort);
-  }
-  else if(!interactiveSimulation && omc_flag[FLAG_PORT])
+  if(omc_flag[FLAG_PORT])
   {
     std::istringstream stream(omc_flagValue[FLAG_PORT]);
     int port;
@@ -935,15 +887,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
     signal(SIGUSR1, SimulationRuntime_printStatus);
 #endif
 
-    if(interactiveSimulation)
-    {
-      cout << "startInteractiveSimulation: " << endl;
-      retVal = startInteractiveSimulation(argc, argv, data);
-    }
-    else
-    {
-      retVal = startNonInteractiveSimulation(argc, argv, data);
-    }
+    retVal = startNonInteractiveSimulation(argc, argv, data);
 
     freeMixedSystems(data);        /* free mixed system data */
     freeLinearSystems(data);       /* free linear system data */

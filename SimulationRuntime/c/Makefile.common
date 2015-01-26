@@ -179,6 +179,8 @@ $(SIMOBJSPATHC):%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 $(OPTIMIZATIONOBJSPATH):%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
+util/socket$(OBJ_EXT): util/socket_win.cpp util/socket_unix.cpp
+
 simulation/libf2c/libf2c.a:
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
 
