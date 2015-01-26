@@ -422,6 +422,7 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
         <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,true)%>
         <%simulationInitFile(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       {
+        _event_handling= boost::shared_ptr<EventHandling>(new EventHandling());
         //I don't know why this line is necessary if we link statically, but without it a segfault occurs
         _global_settings = globalSettings;
         //Number of equations

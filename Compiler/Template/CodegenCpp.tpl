@@ -13959,7 +13959,7 @@ template generateMeasureTimeEndCode(String varNameStartValues, String varNameEnd
   if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
   <<
   <%if stringEq(defineName, "") then '' else '#ifdef <%defineName%>'%>
-    MEASURETIME_END(<%varNameStartValues%>,<%varNameEndValues%>,<%varNameTargetValues%>, <%sectionName%>)
+    MEASURETIME_END(<%varNameStartValues%>,<%varNameEndValues%>,<%varNameTargetValues%>, <%sectionName%>);
   <%if stringEq(defineName, "") then '' else '#endif'%>
   >>
 end generateMeasureTimeEndCode;
