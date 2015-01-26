@@ -161,7 +161,7 @@ algorithm
   end match;
 end expTypeArray;
 
-public function expTypeTuple 
+public function expTypeTuple
 "returns true if type is tuple type."
   input DAE.Type tp;
   output Boolean isTuple;

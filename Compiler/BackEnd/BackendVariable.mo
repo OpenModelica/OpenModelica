@@ -1542,7 +1542,7 @@ algorithm
   end match;
 end getAnnotationComment;
 
-public function createpDerVar 
+public function createpDerVar
 "Creates a variable with $pDER.v as cref for jacobian variables."
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
@@ -1555,7 +1555,7 @@ algorithm
   outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
 end createpDerVar;
 
-public function createAliasDerVar 
+public function createAliasDerVar
 "Creates an alias variable with the name $DER_inCref for a der-call."
   input DAE.ComponentRef inCref;
   output BackendDAE.Var outVar;
@@ -1570,7 +1570,7 @@ algorithm
                           NONE(), NONE(), DAE.NON_CONNECTOR());
 end createAliasDerVar;
 
-public function createDummyVar 
+public function createDummyVar
 "Creates variable with $dummy."
   output BackendDAE.Var outVar;
   output DAE.ComponentRef outCr;
@@ -1582,7 +1582,7 @@ algorithm
                             NONE(),NONE(),DAE.NON_CONNECTOR());
 end createDummyVar;
 
-public function createCSEVar 
+public function createCSEVar
 "Creates a cse variable with the name $DER_inCref for a der-call."
   input DAE.ComponentRef inCref;
   output BackendDAE.Var outVar;
