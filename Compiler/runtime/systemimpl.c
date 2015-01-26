@@ -644,13 +644,12 @@ char* System_popen(threadData_t *threadData, const char* command, int *status)
   ret_val = pclose(pipe);
   char *res = GC_strdup(Print_getString(threadData));
   Print_restoreBuf(threadData, handle);
-  return res;
 
   if (debug) {
     fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(NULL);
   }
 
-  return ret_val;
+  return res;
 #endif
 }
 
@@ -769,7 +768,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
   pid_t pid;
   int status;
   const char *argv[4] = {"/bin/sh","-c",str,NULL};
-  ret_val = 0 == posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ);
+  ret_val = (0 == posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ));
 #endif
   fflush(NULL); /* flush output so the testsuite is deterministic */
 
