@@ -65,8 +65,6 @@ install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
 interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
-	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
-	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
 
 docs: mkbuilddirs
@@ -75,7 +73,6 @@ docs: mkbuilddirs
 	(cp -p doc/SimulationRuntime/IntegrationAlgorithms/IntegrationAlgorithms.pdf $(builddir_doc)/omc/SimulationRuntime/IntegrationAlgorithms)
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
-	cp -p ./SimulationRuntime/interactive/README.txt $(builddir_doc)/omc/OpenModelica-InteractiveSimulation-README.txt
 	# man pages
 	(cd doc/manpages/ && for f in *.1; do cp -p $$f ../../$(builddir_man)/man1/ && gzip -f ../../$(builddir_man)/man1/$$f ; done)
 

@@ -187,12 +187,9 @@ $(builddir_lib)/libf2c.a: simulation/libf2c/libf2c.a
 
 install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS) $(builddir_lib)/libf2c.a
 	# copy libraries
-	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) \
-	   ../interactive/libinteractive.a $(builddir_lib)
+	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) $(builddir_lib)
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
 	test ! -f simulation/libf2c/libf2c.bc || cp simulation/libf2c/libf2c.bc $(builddir_lib)/emcc/libf2c.so
-	# copy interactive sample client
-	cp $(INTERACTIVECLIENT) $(builddir_bin)
 	# copy header files
 	cp -p $(RUNTIME_HEADERS) $(builddir_inc)/c/
 	cp -p $(RUNTIMELINEAR_HEADERS) $(builddir_inc)/c/linearization/
