@@ -161,6 +161,17 @@ algorithm
   end match;
 end expTypeArray;
 
+public function expTypeTuple 
+"returns true if type is tuple type."
+  input DAE.Type tp;
+  output Boolean isTuple;
+algorithm
+  isTuple := match(tp)
+    case(DAE.T_TUPLE()) then true;
+    else false;
+  end match;
+end expTypeTuple;
+
 public function expTypeArrayDimensions "returns the array dimensions of an ExpType"
   input DAE.Type tp;
   output list<Integer> dims;

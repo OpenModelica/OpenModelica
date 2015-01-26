@@ -1542,8 +1542,8 @@ algorithm
   end match;
 end getAnnotationComment;
 
-public function createpDerVar "author: wbraun
-  Create variable with $pDER.v as cref for jacobian variables."
+public function createpDerVar 
+"Creates a variable with $pDER.v as cref for jacobian variables."
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
 protected
@@ -1555,8 +1555,8 @@ algorithm
   outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
 end createpDerVar;
 
-public function createAliasDerVar "author: wbraun
-  Create variable with $DER.v as cref for dummy vars."
+public function createAliasDerVar 
+"Creates an alias variable with the name $DER_inCref for a der-call."
   input DAE.ComponentRef inCref;
   output BackendDAE.Var outVar;
 protected
@@ -1570,8 +1570,8 @@ algorithm
                           NONE(), NONE(), DAE.NON_CONNECTOR());
 end createAliasDerVar;
 
-public function createDummyVar "author: wbraun
-  Creates variable with $dummy."
+public function createDummyVar 
+"Creates variable with $dummy."
   output BackendDAE.Var outVar;
   output DAE.ComponentRef outCr;
 algorithm
@@ -1581,6 +1581,16 @@ algorithm
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),NONE(),DAE.NON_CONNECTOR());
 end createDummyVar;
+
+public function createCSEVar 
+"Creates a cse variable with the name $DER_inCref for a der-call."
+  input DAE.ComponentRef inCref;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
+                           ComponentReference.crefLastType(inCref), NONE(), NONE(), {}, DAE.emptyElementSource,
+                           NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
+end createCSEVar;
 
 public function copyVarNewName "author: Frenkel TUD 2012-5
   Create variable with new name as cref from other var."

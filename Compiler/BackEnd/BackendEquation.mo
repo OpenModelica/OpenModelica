@@ -1868,15 +1868,18 @@ end equationLstSize_impl;
 
 public function generateEquation "author Frenkel TUD 2012-12
   helper to generate an equation from lhs and rhs.
+  the type of this function is determined by the lhs.
   This function is called if an equation is found which is not simple"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
-  input DAE.Type ty;
   input DAE.ElementSource source;
   input BackendDAE.EquationAttributes inEqAttr;
   output BackendDAE.Equation outEqn;
+protected
+  DAE.Type ty;
 algorithm
-  outEqn := matchcontinue (lhs, rhs, ty, source, inEqAttr)
+  ty := Expression.typeof(lhs);
+  outEqn := matchcontinue ()
     local
       Integer size;
       DAE.Dimensions dims;
@@ -1884,20 +1887,20 @@ algorithm
       Boolean b1, b2;
 
     // complex types to complex equations
-    case (_, _, _, _, _) equation
-      true = DAEUtil.expTypeComplex(ty);
+    case () equation
+      true = DAEUtil.expTypeComplex(ty) or DAEUtil.expTypeTuple(ty);
       size = Expression.sizeOf(ty);
     then BackendDAE.COMPLEX_EQUATION(size, lhs, rhs, source, inEqAttr);
 
     // array types to array equations
-    case (_, _, _, _, _) equation
+    case () equation
       true = DAEUtil.expTypeArray(ty);
       dims = Expression.arrayDimension(ty);
       ds = Expression.dimensionsSizes(dims);
     then BackendDAE.ARRAY_EQUATION(ds, lhs, rhs, source, inEqAttr);
 
     // other types
-    case (_, _, _, _, _) equation
+    case () equation
       b1 = DAEUtil.expTypeComplex(ty);
       b2 = DAEUtil.expTypeArray(ty);
       false = b1 or b2;

@@ -426,7 +426,6 @@ algorithm
       DAE.ComponentRef left;
       DAE.Exp condition, right, crexp;
       BackendDAE.Equation eqn;
-      DAE.Type identType;
       list<BackendDAE.Equation> eqns;
       BackendDAE.WhenEquation weqn;
       BackendDAE.Variables vars;
@@ -435,8 +434,7 @@ algorithm
     case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), _, _, _, _) equation
       true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
       crexp = Expression.crefExp(left);
-      identType = Expression.typeof(crexp);
-      eqn = BackendEquation.generateEquation(crexp, right, identType, inSource, inEqAttr);
+      eqn = BackendEquation.generateEquation(crexp, right, inSource, inEqAttr);
     then (eqn::inEqns, inVars);
 
     // inactive when equation during initialization
