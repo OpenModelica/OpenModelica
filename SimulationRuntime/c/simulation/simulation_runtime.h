@@ -79,6 +79,7 @@ extern const char* getNameString(const char** ptr);
 extern double getSimulationStepSize();
 extern void printSimulationStepSize(double in_stepSize, double time);
 
+extern void communicateStatus(const char *phase, double completionPercent);
 extern void communicateMsg(char id, unsigned int size, const char *data);
 
 /* the main function of the simulation runtime!
