@@ -1503,8 +1503,8 @@ algorithm
       (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$SINH", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
 
       tp = Expression.typeof(e1);
-      (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "SIGN$SINH", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
-      exP = makeIntialGuess(e,tp,inExp3,e1);
+      exP = makeIntialGuess(e1,tp,inExp3,e1);
+      (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "SIGN$SINH", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
 
       e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
@@ -1530,9 +1530,8 @@ algorithm
     acosy = Expression.makePureBuiltinCall("acos", {rhs}, tp);
     (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ACOS$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
-    (lhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-    exP = makeIntialGuess(lhs,tp,inExp3,e1);
-    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "GUESS$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
+    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "PREX$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
     k1 = helpInvCos(acosy, exP, tp, true);
     k2 = helpInvCos(acosy, exP, tp, false);
@@ -1562,8 +1561,8 @@ algorithm
     acosy = Expression.makePureBuiltinCall("asin", {rhs}, tp);
     (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ASIN$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
-    (lhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-    exP = makeIntialGuess(lhs,tp,inExp3,e1);
+    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "PREX$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
     k1 = helpInvSin(acosy, e1, tp, true);
     k2 = helpInvSin(acosy, e1, tp, false);
@@ -1591,8 +1590,8 @@ algorithm
     acosy = Expression.makePureBuiltinCall("atan", {rhs}, tp);
     (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ATAN$TAN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
-    (lhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$TAN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-    exP = makeIntialGuess(lhs,tp,inExp3,e1);
+    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "PREX$TAN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
     e = DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
 
     k1 = Expression.expSub(exP, acosy);
@@ -1611,8 +1610,8 @@ algorithm
     false = expHasCref(inExp2, inExp3);
 
     tp = Expression.typeof(e1);
-    (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
-    exP = makeIntialGuess(e,tp,inExp3,e1);
+    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
     e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
     lhs = Expression.expMul(e_1, inExp2);
 
@@ -1624,8 +1623,8 @@ algorithm
     true = expHasCref(e1, inExp3);
     false = expHasCref(e2, inExp3);
     tp = Expression.typeof(e1);
-    (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(e1, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
-    exP = makeIntialGuess(e,tp,inExp3,e1);
+    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
     e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
     lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
     lhs = Expression.expMul(e_1,lhs);
@@ -1723,7 +1722,7 @@ author: Vitalij Ruge
  output list<DAE.ComponentRef> newVarsCrefs;
 
 protected
-  DAE.Exp e_1, e, exP, q, p, e7, con, invExp, c;
+  DAE.Exp e_1, e, exP, q, p, e7, con, invExp, c, sgnp, sqrtExp, p2, x1, x2, x;
   DAE.ComponentRef cr;
   DAE.Type tp;
   BackendDAE.Equation eqn;
@@ -1745,60 +1744,61 @@ algorithm
 
     c := if b1 then e1 else e4;
     p := if b1 then Expression.expDiv(e4,e1) else Expression.expDiv(e1,e4);
-    p := Expression.expMul(DAE.RCONST(0.5),p);
     tp := Expression.typeof(p);
 
     con := DAE.RELATION(c,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE());
     con := Expression.makeNoEvent(con);
-    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_CON_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), DAE.T_BOOL_DEFAULT, {});
-    eqn := BackendDAE.SOLVED_EQUATION(cr, con, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    eqnForNewVars := eqn::ieqnForNewVars;
-    newVarsCrefs := cr ::inewVarsCrefs;
-    con := Expression.crefExp(cr);
+    (con, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(con, tp, "CON$QE", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
 
+    // p
     (p, _) :=  ExpressionSimplify.simplify1(p);
     p := DAE.IFEXP(con, Expression.makeConstOne(tp), p);
-    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_P_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-    eqn := BackendDAE.SOLVED_EQUATION(cr, p, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    p := Expression.crefExp(cr);
+    (p, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(p, tp, "P$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
-    eqnForNewVars := eqn::eqnForNewVars;
-    newVarsCrefs := cr::newVarsCrefs;
-
+    //q
     q := Expression.expDiv(inExp2, c);
     q := Expression.negate(q);
     (q, _) :=  ExpressionSimplify.simplify1(q);
     q := DAE.IFEXP(con, Expression.makeConstOne(tp), q);
-    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_Q_FOR_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-    eqn := BackendDAE.SOLVED_EQUATION(cr, q, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    q := Expression.crefExp(cr);
+    (q, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(q, tp, "Q$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
-    eqnForNewVars := eqn::eqnForNewVars;
-    newVarsCrefs := cr ::newVarsCrefs;
+    //sign(p)
+    sgnp := Expression.makePureBuiltinCall("sign",{p},tp);
+    (sgnp, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(sgnp, tp, "SIGNP$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
-    cr  := ComponentReference.makeCrefIdent("$TMP_VAR_SOLVE_QE_SIGN_EQN_" + intString(uniqueEqIndex) + "_" + intString(idepth), tp , {});
-    eqn := BackendDAE.SOLVED_EQUATION(cr, e2, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-    eqnForNewVars := eqn::eqnForNewVars;
-    newVarsCrefs := cr ::newVarsCrefs;
-    e := Expression.crefExp(cr);
-    exP := Expression.makePureBuiltinCall("$_initialGuess",{e},tp);
+    p2 := Expression.expMul(DAE.RCONST(0.5), p); //p/2
+    (p2, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(p2, tp, "P2$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+
+    // sqrt((p/2)^2-q)
+    sqrtExp := Expression.expPow(p2,DAE.RCONST(2.0)); // (p/2)^2
+    sqrtExp := Expression.expSub(sqrtExp, q); // (p/2)^2 -q
+    sqrtExp := Expression.makePureBuiltinCall("sqrt",{sqrtExp},tp);
+
+    x1 := Expression.expAdd(p2, Expression.expMul(sgnp,sqrtExp));
+    x1 := Expression.negate(x1);
+    (x1, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(x1, tp, "x1$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+
+    //Vieta
+    x2 := Expression.makeDiv(q,x1);
+    x2 := DAE.IFEXP(DAE.RELATION(x1,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()), DAE.RCONST(0.0), x2);
+    (x2, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(x2, tp, "x2$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+
+    exP := makeIntialGuess(e2,tp,inExp3,e2);
+    (exP, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(exP, tp, "X$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+
+    x := helpInvCos3(x1,x2,exP,tp);
+
+    // a = 0
     e_1 := Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
-
-    e := Expression.expPow(p,DAE.RCONST(2.0));
-    e := Expression.expSub(e,q);
-    lhs := Expression.makePureBuiltinCall("sqrt",{e},tp);
-    e := Expression.negate(p);
-    lhs := Expression.expMul(e_1, lhs);
-    lhs := Expression.expAdd(e, lhs);
-
     e7 := if b1 then Expression.makeDiv(inExp2, e4) else Expression.makeDiv(inExp2, e1);
     invExp := if b1 then Expression.inverseFactors(e6) else Expression.inverseFactors(e3);
     (invExp, _) :=  ExpressionSimplify.simplify1(invExp);
     e7 := Expression.expPow(e7, invExp);
-
     e7 := Expression.expMul(e_1, e7);
 
-    rhs := DAE.IFEXP(con, e7 ,lhs);
+    // if a==0
+    rhs := DAE.IFEXP(con, e7 , x);
+    //
     lhs := if b1 then Expression.expPow(e2, e6) else Expression.expPow(e2, e3);
 
 end solveQE;
@@ -2055,7 +2055,7 @@ protected
   BackendDAE.Equation eqn;
 algorithm
   (oExp,_) := ExpressionSimplify.simplify1(iExp);
-  if need or not Expression.isCref(oExp) then
+  if need or not Expression.isCref(oExp) or not Expression.isConstValue(oExp) then
     eqn := BackendDAE.SOLVED_EQUATION(cr, oExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     oExp := Expression.crefExp(cr);
     oeqnForNewVars := eqn::ieqnForNewVars;
@@ -2076,39 +2076,76 @@ protected
   DAE.Exp con, e;
 algorithm
  con := Expression.makePureBuiltinCall("initial",{},tp);
-
- if Expression.isCref(iExp2) then
-  e := Expression.makePureBuiltinCall("$_start",{iExp},tp);
- else
-  (e,_) := Expression.traverseExp(iExp2,makeIntialGuess2,iExp3);
- end if;
-
- oExp := DAE.IFEXP(con,e,Expression.makePureBuiltinCall("$_initialGuess",{iExp},tp));
+ (e,_) := Expression.traverseExp(iExp2,makeIntialGuess2,(iExp3, "$_start",tp,true));
+ (oExp,_) := Expression.traverseExp(iExp2,makeIntialGuess2,(iExp3, "$_initialGuess",tp,false));
+ oExp := DAE.IFEXP(con,e,oExp);
 end makeIntialGuess;
 
 protected function makeIntialGuess2
   input DAE.Exp iExp;
-  input DAE.Exp iecr;
+  input tuple<DAE.Exp, String, DAE.Type, Boolean> itpl;
   output DAE.Exp oExp;
-  output DAE.Exp oecr = iecr;
-
+  output tuple<DAE.Exp, String, DAE.Type, Boolean> otpl = itpl;
 algorithm
- oExp := match(iExp, iecr)
+ oExp := match(iExp, itpl)
          local DAE.ComponentRef cr1,cr2;
                DAE.Type tp;
+               String fun;
+               DAE.Exp e;
 
-         case(DAE.CREF(componentRef = cr1), DAE.CREF(componentRef = cr2))
-           guard(Expression.expEqual(iExp, iecr))
-           equation
-             tp = Expression.typeof(iExp);
-           then Expression.makePureBuiltinCall("$_start",{iExp},tp);
+         case(DAE.CREF(componentRef = cr1), (DAE.CREF(componentRef = cr2), fun, tp,_))
+           guard(ComponentReference.crefEqual(cr1, cr2))
+           then Expression.makePureBuiltinCall(fun,{iExp},tp);
+         case(_,(_,_,tp,true))
+           algorithm
+             try
+               SOME(e) := makeIntialGuess3(iExp, tp);
+             else
+               e := iExp;
+             end try;
+             then e;
          else iExp;
          end match;
 
 end makeIntialGuess2;
 
+protected function makeIntialGuess3
+  input DAE.Exp iExp;
+  input DAE.Type tp;
+  output Option<DAE.Exp> oExp;
+algorithm
+  oExp := match(iExp)
+          local DAE.Exp e, con, o;
 
+          case(DAE.CALL(path = Absyn.IDENT(name = "log"), expLst={e}))
+          equation
+            con =  DAE.RELATION(e, DAE.LESSEQ(tp), DAE.RCONST(0.0), -1, NONE());
+            o = DAE.IFEXP(con, DAE.RCONST(-1/0.000000001), iExp);
+          then SOME(o);
 
+          case(DAE.CALL(path = Absyn.IDENT(name = "log10"), expLst={e}))
+          equation
+            con =  DAE.RELATION(e, DAE.LESSEQ(tp), DAE.RCONST(0.0), -1, NONE());
+            o = DAE.IFEXP(con, DAE.RCONST(-1/0.000000001), iExp);
+          then SOME(o);
+
+          case(DAE.CALL(path = Absyn.IDENT(name = "sqrt"), expLst={e}))
+          equation
+            con =  DAE.RELATION(e, DAE.LESSEQ(tp), DAE.RCONST(0.0), -1, NONE());
+            o = DAE.IFEXP(con, DAE.RCONST(0.0), iExp);
+          then SOME(o);
+
+          case(DAE.BINARY(exp2=e))
+          equation
+            con =  DAE.RELATION(e, DAE.EQUAL(tp), DAE.RCONST(0.0), -1, NONE());
+            o = DAE.IFEXP(con, DAE.RCONST(1.0), iExp);
+          then SOME(o);
+
+          else NONE();
+
+         end match;
+
+end makeIntialGuess3;
 
 protected function helpInvCos
   input DAE.Exp acosy;
