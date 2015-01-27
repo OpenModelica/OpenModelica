@@ -2469,7 +2469,7 @@ algorithm
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, uniqueEqIndex, itempvars, tmpEqSccMapping, tmpEqBackendSimCodeMapping, tmpBackendMapping);
 
     // A single complex equation
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLECOMPLEXEQUATION(eqn=e), _, _, _, _, _, _, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings)
+    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(info = ei), BackendDAE.SINGLECOMPLEXEQUATION(eqn=e), _, _, _, _, _, _, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings)
       equation
         // block is dynamic, belong in dynamic section
         bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);
@@ -2479,7 +2479,7 @@ algorithm
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars);
+        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars, ei, true);
 
         tmpEqSccMapping = appendSccIdx(uniqueEqIndex-1, isccIndex, ieqSccMapping);
         tmpEqBackendSimCodeMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, e, ieqBackendSimCodeMapping);
@@ -2748,12 +2748,12 @@ algorithm
       then (equations1, equations1, uniqueEqIndex, itempvars);
 
       // A single complex equation
-    case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLECOMPLEXEQUATION(), _, _)
+    case (_, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(info = ei), BackendDAE.SINGLECOMPLEXEQUATION(), _, _)
       equation
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars);
+        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars, ei, genDiscrete);
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
     // A single when equation
@@ -5779,6 +5779,8 @@ protected function createSingleComplexEqnCode
   input list<BackendDAE.Var> inVars;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
+  input BackendDAE.ExtraInfo iextra;
+  input Boolean genDiscrete;
   output list<SimCode.SimEqSystem> equations_;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
@@ -5793,12 +5795,14 @@ algorithm
       list<SimCodeVar.SimVar> tempvars;
       String s, s1, s2, s3;
       Boolean homotopySupport;
+      BackendDAE.EquationAttributes attr;
+      
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source), _, _, _) equation
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
       e1 = Expression.replaceDerOpInExp(e1);
       e2 = Expression.replaceDerOpInExp(e2);
-      (equations_, uniqueEqIndex, tempvars) = createSingleComplexEqnCode2(crefs, e1, e2, iuniqueEqIndex, itempvars, source);
+      (equations_, uniqueEqIndex, tempvars) = createSingleComplexEqnCode2(crefs, e1, e2, iuniqueEqIndex, itempvars, source, attr, iextra, genDiscrete, inVars);
     then (equations_, uniqueEqIndex, tempvars);
 
     case (BackendDAE.COMPLEX_EQUATION(), _, _, _) equation
@@ -5856,6 +5860,10 @@ protected function createSingleComplexEqnCode2
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
   input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqKind;
+  input BackendDAE.ExtraInfo iextra;
+  input Boolean genDiscrete;
+  input list<BackendDAE.Var> inVars;
   output list<SimCode.SimEqSystem> equations_;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
@@ -5880,18 +5888,19 @@ algorithm
       HashSet.HashSet ht;
       list<Integer> positions;
       String s, s1, s2, s3;
+      list<BackendDAE.Equation> eqnLst;
 
     case (_, DAE.CAST(exp = e1), _, _, _, _)
       equation
         (equations_, ouniqueEqIndex, otempvars) =
-          createSingleComplexEqnCode2(crefs, e1, inExp4, iuniqueEqIndex, itempvars, source);
+          createSingleComplexEqnCode2(crefs, e1, inExp4, iuniqueEqIndex, itempvars, source, eqKind, iextra, genDiscrete, inVars);
       then
         (equations_, ouniqueEqIndex, otempvars);
 
     case (_, _, DAE.CAST(exp = e1), _, _, _)
       equation
         (equations_, ouniqueEqIndex, otempvars) =
-          createSingleComplexEqnCode2(crefs, inExp3, e1, iuniqueEqIndex, itempvars, source);
+          createSingleComplexEqnCode2(crefs, inExp3, e1, iuniqueEqIndex, itempvars, source, eqKind, iextra, genDiscrete, inVars);
       then
         (equations_, ouniqueEqIndex, otempvars);
 
@@ -5970,8 +5979,11 @@ algorithm
     /* Tuple() = f()  */
     case (_, e1 as DAE.TUPLE(expl), e2 as DAE.CALL(), _, _, _)
       equation
+        // debug
+        // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
+        // print(" = ExpList : " + ExpressionDump.printExpListStr(expl) + "\n");
         tp = Expression.typeof(e1);
-
+        
         //check that solved vars are on lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
@@ -5985,45 +5997,42 @@ algorithm
         (eqSystlst, uniqueEqIndex, itempvars);
 
     // Tuple(crefs) = Tuple(expl)
-    case (_, e1 as DAE.TUPLE(expl), DAE.TUPLE(expl1), _, _, _)
+    case (_, e1 as DAE.TUPLE(expl), e2 as DAE.TUPLE(expl1), _, _, _)
       equation
-        _ = Expression.typeof(e1);
-        //print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
+        // debug
+        // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
+        // print(" = ExpList : " + ExpressionDump.printExpListStr(expl1) + "\n");
+        
         //check that all crefs are on lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
         List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
+   
+        // create all equations
+        eqnLst = List.threadMap2(expl, expl1, BackendEquation.generateEquation, source, eqKind);
 
-        expLst = List.map(crefs, Expression.crefExp);
-        //print("ExpList : " + ExpressionDump.printExpListStr(expLst) + "\n");
-        positions = List.map1(expLst, List.position, expl);
-        //print("Positions : " + stringDelimitList(List.map(positions, intString), ", ") + "\n");
-        expLst = List.map1r(positions, listGet, expl1);
-        //print("ExpList rhs : " + ExpressionDump.printExpListStr(expLst) + "\n");
-        expl = List.map1r(positions, listGet, expl);
-        //print("ExpList lhs : " + ExpressionDump.printExpListStr(expl) + "\n");
-
-        exptl = List.threadTuple(expl, expLst);
-        (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
+        // generate SimCode equations therefore
+        (eqSystlst, uniqueEqIndex, tempvars) = createEquationsfromList(eqnLst, inVars, genDiscrete, iuniqueEqIndex, itempvars, iextra);
       then
-        (eqSystlst, uniqueEqIndex, itempvars);
+        (eqSystlst, uniqueEqIndex, tempvars);
 
     // Tuple(expl) = Tuple(crefs)
     case (_, e1 as DAE.TUPLE(expl1), DAE.TUPLE(expl), _, _, _)
       equation
-        _ = Expression.typeof(e1);
+        // debug
+        // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
+        // print(" = ExpList : " + ExpressionDump.printExpListStr(expl1) + "\n");
+        
         //check that all crefs are on rhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
         List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
 
-        expLst = List.map(crefs, Expression.crefExp);
-        positions = List.map1(expLst, List.position, expl);
-        expLst = List.map1r(positions, listGet, expl1);
-        expl = List.map1r(positions, listGet, expl);
+        // create all equations
+        eqnLst = List.threadMap2(expl, expl1, BackendEquation.generateEquation, source, eqKind);
 
-        exptl = List.threadTuple(expl, expLst);
-        (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
+        // generate SimCode equations therefore
+        (eqSystlst, uniqueEqIndex, tempvars) = createEquationsfromList(eqnLst, inVars, genDiscrete, iuniqueEqIndex, itempvars, iextra);
       then
         (eqSystlst, uniqueEqIndex, itempvars);
 
@@ -6075,6 +6084,10 @@ algorithm
     case (DAE.CREF(componentRef=DAE.WILD()), _) then (true, iht);
     /* Consider also record constructor */
     case (DAE.CALL(expLst=expLst),_) equation
+      List.foldAllValue(expLst, createSingleComplexEqnCode3, true, iht);
+    then (true, iht);
+    /* consider also array type */
+    case (DAE.ARRAY(array=expLst),_) equation
       List.foldAllValue(expLst, createSingleComplexEqnCode3, true, iht);
     then (true, iht);
     else
