@@ -498,9 +498,9 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
       }
 
 
-      <%generateInitAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,className)%>
+      <%generateInitAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,className)%>
 
-      <%generateDeleteAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,className)%>
+      <%generateDeleteAlgloopsolverVariables(jacobianMatrixes,listAppend(allEquations,initialEquations),simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace,className)%>
 
       <%Update(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
