@@ -8,15 +8,19 @@ builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib/omc
 builddir_inc=$(top_builddir)/build/include/omc
 
-ANALYZATION_MODE_COMMAND="-DANALYZATION_MODE=ON"
+RUNTIME_STATIC_LINKING_COMMAND="-DRUNTIME_STATIC_LINKING=ON"
+BOOST_STATIC_LINKING_COMMAND="-DBOOST_STATIC_LINKING=ON"
 PARALLEL_OUTPUT_COMMAND="-DUSE_PARALLEL_OUTPUT=ON"
 RUNTIME_PROFILING_COMMAND="-DRUNTIME_PROFILING=ON"
 SCOREP_COMMAND="-DUSE_SCOREP=ON"
 CMAKE_COMMANDS=CC="scorep --user --nocompiler --thread=pthread gcc" CXX="scorep --user --nocompiler --thread=pthread g++"
 
 runtimeCpp: clean
-ifneq ("$(ANALYZATION_MODE)","true")
-	$(eval ANALYZATION_MODE_COMMAND=)
+ifneq ("$(RUNTIME_STATIC_LINKING)","true")
+	$(eval RUNTIME_STATIC_LINKING_COMMAND=)
+endif
+ifneq ("$(BOOST_STATIC_LINKING)","true")
+	$(eval BOOST_STATIC_LINKING_COMMAND=)
 endif
 ifneq ("$(USE_PARALLEL_OUTPUT)","true")
 	$(eval PARALLEL_OUTPUT_COMMAND=)
@@ -28,9 +32,9 @@ ifneq ("$(USE_SCOREP)","true") #If ScoreP ist used, the analyzation mode is auto
 	$(eval CMAKE_COMMANDS=)
 	$(eval SCOREP_COMMAND=)
 else
-	$(eval ANALYZATION_MODE_COMMAND="-DANALYZATION_MODE=ON")
+	$(eval RUNTIME_STATIC_LINKING_COMMAND="-DRUNTIME_STATIC_LINKING=ON")
 endif
-	cd ./Build && echo "change to Build" && $(CMAKE_COMMANDS) cmake $(ANALYZATION_MODE_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(SCOREP_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
+	cd ./Build && echo "change to Build" && $(CMAKE_COMMANDS) cmake $(RUNTIME_STATIC_LINKING_COMMAND) $(BOOST_STATIC_LINKING_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(SCOREP_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
 	$(MAKE) -C Build 
 
 install: runtimeCpp

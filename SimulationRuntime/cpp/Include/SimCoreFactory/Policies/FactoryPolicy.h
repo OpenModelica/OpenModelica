@@ -48,7 +48,7 @@
     typedef SolverSettingsFactory<GenericFactory> SolverSettingsPolicy;
   typedef LinSolverFactory<GenericFactory> LinSolverPolicy;
 
-#elif defined(OMC_BUILD) && !defined(ANALYZATION_MODE)
+#elif defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
 
   /*Policy include*/
     #include <SimCoreFactory/Policies/SolverOMCFactory.h>
@@ -63,7 +63,7 @@
     typedef NonLinSolverOMCFactory<OMCFactory> NonLinSolverPolicy;
     typedef SolverSettingsOMCFactory<OMCFactory> SolverSettingsPolicy;
 
-#elif defined(OMC_BUILD) && defined(ANALYZATION_MODE)
+#elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
 
   class OMCFactory;
    /*Policy include*/

@@ -14,11 +14,12 @@
 #     if profiling for the simulation runtime should be enabled        -DRUNTIME_PROFILING
 #
 # Some of these options can be controlled by passing arguments to CMAKE 
-#     if all libraries should be linked statically                     -DANALYZATION_MODE=ON
-#     if write output should be handled in parallel                    -USE_PARALLEL_OUTPUT=ON
-#     if ScoreP should be used for performance analysis                -USE_SCOREP=ON
+#     if all runtime libraries should be built and linked statically   -DRUNTIME_STATIC_LINKING=ON
+#     if write output should be handled in parallel                    -DUSE_PARALLEL_OUTPUT=ON
+#     if ScoreP should be used for performance analysis                -DUSE_SCOREP=ON
+#     if the boost libraries should be linked statically               -DBOOST_STATIC_LINKING=ON
 #
-#     Example: "cmake -DANALYZATION_MODE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
+#     Example: "cmake -DRUNTIME_STATIC_LINKING=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo" to create statically linked libraries
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
@@ -28,9 +29,10 @@ PROJECT(CppSolverInterface)
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")
 
 #Set Options
-OPTION(ANALYZATION_MODE "ANALYZATION_MODE" OFF)
+OPTION(RUNTIME_STATIC_LINKING "RUNTIME_STATIC_LINKING" OFF)
 OPTION(USE_PARALLEL_OUTPUT "USE_PARALLEL_OUTPUT" OFF)
 OPTION(USE_SCOREP "USE_SCOREP" OFF)
+OPTION(BOOST_STATIC_LINKING "BOOST_STATIC_LINKING" OFF)
 OPTION(RUNTIME_PROFILING "RUNTIME_PROFILING" OFF)
 OPTION(SUNDIALS_ROOT "SUNDIALS ROOT" "")
 
@@ -73,19 +75,27 @@ SET(USE_SUNDIALS ON)
 SET(OMC_BUILD ON)
 SET(SIMSTER_BUILD OFF)
 
-SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
-SET(Boost_USE_STATIC_RUNTIME OFF)
 
 INCLUDE(${CMAKE_SOURCE_DIR}/PrecompiledHeader.cmake)
 
-# Handle Analyzation mode
-IF(NOT ANALYZATION_MODE)
-  MESSAGE(STATUS "Analyzation mode disabled")
-ELSE(NOT ANALYZATION_MODE)
-  MESSAGE(STATUS "Using analyzation mode")
-  ADD_DEFINITIONS(-DANALYZATION_MODE) 
-ENDIF(NOT ANALYZATION_MODE )
+#Handle static boost linking
+IF(NOT BOOST_STATIC_LINKING)
+  SET(Boost_USE_STATIC_LIBS OFF)
+  SET(Boost_USE_STATIC_RUNTIME OFF)
+ELSE(NOT BOOST_STATIC_LINKING)
+  SET(Boost_USE_STATIC_LIBS ON)
+  SET(Boost_USE_STATIC_RUNTIME ON)
+  ADD_DEFINITIONS(-DBOOST_STATIC_LINKING)
+ENDIF(NOT BOOST_STATIC_LINKING)
+
+# Handle static linking
+IF(NOT RUNTIME_STATIC_LINKING)
+  MESSAGE(STATUS "Static build and linking of runtime disabled")
+ELSE(NOT RUNTIME_STATIC_LINKING)
+  MESSAGE(STATUS "Build and linking runtime statically")
+  ADD_DEFINITIONS(-DRUNTIME_STATIC_LINKING)
+ENDIF(NOT RUNTIME_STATIC_LINKING )
 
 # Handle parallel output
 IF(USE_PARALLEL_OUTPUT)

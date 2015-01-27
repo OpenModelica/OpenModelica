@@ -4,7 +4,7 @@
 #include <SimCoreFactory/Policies/FactoryPolicy.h>
 #include <Core/SimController/ISimController.h>
 
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include <boost/function.hpp>
 #include <Core/SimController/ISimController.h>
 #endif

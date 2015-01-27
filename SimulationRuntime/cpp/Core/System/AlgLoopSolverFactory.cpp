@@ -3,7 +3,7 @@
 //#include <SimCoreFactory/OMCFactory/OMCFactory.h>
 #include <Core/System/AlgLoopSolverFactory.h>
 
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings* global_settings,PATH library_path,PATH modelicasystem_path)
   :ObjectFactory<OMCFactory>(library_path,modelicasystem_path,library_path)
   ,StaticNonLinSolverOMCFactory<OMCFactory>(library_path,modelicasystem_path,library_path)

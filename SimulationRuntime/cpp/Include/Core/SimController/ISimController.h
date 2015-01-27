@@ -2,7 +2,7 @@
 #include <Core/Modelica.h>
 #include <SimCoreFactory/Policies/FactoryConfig.h>
 
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimController/ISimData.h>
 #include <Core/System/IMixedSystem.h>
 #include <Core/System/IAlgLoopSolverFactory.h>

@@ -11,17 +11,17 @@ set(BASE_LIB "" CACHE INTERNAL "" )
 
 
 # add the system default implementation library
-IF(ANALYZATION_MODE)
-	add_library(${SystemName} STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp FactoryExport.cpp  )
+IF(RUNTIME_STATIC_LINKING)
+	add_library(${SystemName} STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp FactoryExport.cpp  )
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
 	target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} )
     if (UNIX)
         set_target_properties(${SystemName} PROPERTIES COMPILE_FLAGS -fPIC)
     endif(UNIX)
-ELSE(ANALYZATION_MODE)
+ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp FactoryExport.cpp)
 	target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} )
-ENDIF(ANALYZATION_MODE)
+ENDIF(RUNTIME_STATIC_LINKING)
 
 # add a static library with the system default implementation for generating c++ fmu targets
 add_library(${SystemName}_static STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp DiscreteEvents.cpp ContinuousEvents.cpp SystemDefaultImplementation.cpp )

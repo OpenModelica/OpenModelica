@@ -21,7 +21,7 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
         let()= textFile(simulationFunctionsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
         let()= textFile(simulationFunctionsFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, externalFunctionIncludes, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
         let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
-        let()= textFile(simulationMakefile(target,simCode , &extraFuncs , &extraFuncsDecl, "","","","","",false,false), '<%fileNamePrefix%>.makefile')
+        let()= textFile(simulationMakefile(target,simCode , &extraFuncs , &extraFuncsDecl, "","","","","",false), '<%fileNamePrefix%>.makefile')
 
         let &extraFuncsInit = buffer "" /*BUFD*/
         let &extraFuncsDeclInit = buffer "" /*BUFD*/
@@ -1692,42 +1692,59 @@ template simulationMainFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDe
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   <<
-  #ifndef BOOST_ALL_DYN_LINK
-    #define BOOST_ALL_DYN_LINK
-  #endif
   #include <Core/Modelica.h>
   #include <Core/ModelicaDefine.h>
   #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
+ 
+  #ifdef RUNTIME_STATIC_LINKING
+    #include <Core/DataExchange/SimData.h>
+    #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
+    #include "OMCpp<%dotPath(modelInfo.name)%>Extension.h"
+    boost::shared_ptr<ISimData> createSimData()
+    {
+      boost::shared_ptr<ISimData> sp( new SimData() );
+      return sp;
+    }
+
+    boost::shared_ptr<IMixedSystem> createSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, boost::shared_ptr<ISimData> simData)
+    {
+      boost::shared_ptr<IMixedSystem> sp( new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData) );
+      return sp;
+    }
+  #else
+    //namespace ublas = boost::numeric::ublas;
+  #endif //RUNTIME_STATIC_LINKING
+
   <%
-    match(getConfigString(PROFILING_LEVEL))
-        case("none") then ''
-        case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
-        else
-         <<
-         #ifdef USE_SCOREP
-           #include "Core/Utils/extension/measure_time_scorep.hpp"
-         #else
-           #include "Core/Utils/extension/measure_time_rdtsc.hpp"
-         #endif
-         >>
-    end match
+  match(getConfigString(PROFILING_LEVEL))
+     case("none") then ''
+     case("all_perf") then '#include <Core/Utils/extension/measure_time_papi.hpp>'
+     else
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_rdtsc.hpp>
+       #endif
+       >>
+  end match
   %>
 
   <%additionalIncludes%>
 
   #ifdef USE_BOOST_THREAD
-  #include <boost/thread.hpp>
-  static long unsigned int getThreadNumber()
-  {
-     boost::hash<std::string> string_hash;
-     return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
-  }
+    #include <boost/thread.hpp>
+    static long unsigned int getThreadNumber()
+    {
+       boost::hash<std::string> string_hash;
+       return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
+    }
   #else
-  static long unsigned int getThreadNumber()
-  {
-     return 0;
-  }
+    static long unsigned int getThreadNumber()
+    {
+       return 0;
+    }
   #endif
 
   #if defined(_MSC_VER) || defined(__MINGW32__)
@@ -1780,41 +1797,40 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
                 >>
             %>
             <%additionalPreRunCommands%>
-
-            boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
+            
+            #ifdef RUNTIME_STATIC_LINKING
+              boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new StaticOMCFactory());
+            #else
+              boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new OMCFactory());
+            #endif
             //SimController to start simulation
 
             std::pair<boost::shared_ptr<ISimController>,SimSettings> simulation =  _factory->createSimulation(argc,argv);
 
             //create Modelica system
-            std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
+            #ifdef RUNTIME_STATIC_LINKING
+              std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem(&createSimData, &createSystem, "<%lastIdentOfPath(modelInfo.name)%>");
+            #else
+              std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
+            #endif //RUNTIME_STATIC_LINKING
+            simulation.first->Start(system.first,simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
 
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-                <<
-                <%generateMeasureTimeEndCode("measuredSetupStartValues", "measuredSetupEndValues", "measureTimeArraySimulation[1]", "setup", "")%>
-                >>
-            %>
-
-            simulation.first->Start(system.first,simulation.second,"<%lastIdentOfPath(modelInfo.name)%>");
-
-            <%additionalPostRunCommands%>
-            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-                <<
-                <%generateMeasureTimeEndCode("measuredSimStartValues", "measuredSimEndValues", "measureTimeArraySimulation[0]", "all", "")%>
-                MeasureTime::getInstance()->writeToJson();
-                >>
+              <<
+              MeasureTime::getInstance()->writeToJson();
+              >>
             %>
             return 0;
 
       }
       catch(std::exception& ex)
       {
-          std::string error = ex.what();
-          std::cerr << "Simulation stopped: "<<  error ;
-          return 1;
+           std::string error = ex.what();
+           std::cerr << "Simulation stopped: "<<  error ;
+           return 1;
       }
   }
->>
+  >>
 end simulationMainFile;
 
 
@@ -2265,7 +2281,7 @@ end simulationMainDLLib2;
 
 template simulationMakefile(String target, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalLinkerFlags_GCC,
                             String additionalLinkerFlags_MSVC, String additionalCFlags_GCC,
-                            String additionalCFlags_MSVC, Boolean compileForMPI, Boolean createStaticBinary)
+                            String additionalCFlags_MSVC, Boolean compileForMPI)
  "Generates the contents of the makefile for the simulation case."
 ::=
 let &timeMeasureLink = buffer "" /*BUFD*/
@@ -2273,7 +2289,7 @@ match target
 case "msvc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
-   let dirExtra = if modelInfo.directory then '/LIBPATH:"<%modelInfo.directory%>"' //else ""
+  let dirExtra = if modelInfo.directory then '/LIBPATH:"<%modelInfo.directory%>"' //else ""
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
@@ -2312,8 +2328,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
   #LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib
-  #LDSYTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
-  LDSYTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib <%timeMeasureLink%>
+  #LDSYSTEMFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib
+  LDSYSTEMFLAGS=  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib   OMCppOMCFactory.lib <%timeMeasureLink%>
   #LDMAINFLAGS=/MD /Debug  /link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib  /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   LDMAINFLAGS=/link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" OMCppOMCFactory.lib <%timeMeasureLink%> /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)"
   # /MDd link with MSVCRTD.LIB debug lib
@@ -2344,7 +2360,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   GENERATEDFILES=$(MAINFILE) $(FUNCTIONFILE) $(ALGLOOPMAINFILE)
 
   $(MODELICA_SYSTEM_LIB)$(DLLEXT):
-  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(CALCHELPERMAINFILE) $(CALCHELPERMAINFILE2) $(CALCHELPERMAINFILE3) $(CALCHELPERMAINFILE4) $(CALCHELPERMAINFILE5) $(ALGLOOPMAINFILE) $(CFLAGS) $(LDSYTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
+  <%\t%>$(CXX)  /Fe$(SYSTEMOBJ) $(SYSTEMFILE) $(CALCHELPERMAINFILE) $(CALCHELPERMAINFILE2) $(CALCHELPERMAINFILE3) $(CALCHELPERMAINFILE4) $(CALCHELPERMAINFILE5) $(ALGLOOPMAINFILE) $(CFLAGS) $(LDSYSTEMFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%>
   <%\t%>$(CXX) $(CPPFLAGS) /Fe$(MAINOBJ)  $(MAINFILE)   $(CFLAGS) $(LDMAINFLAGS)
   >>
 end match
@@ -2355,6 +2371,8 @@ case "gcc" then
             let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
             let libsPos1 = if not dirExtra then libsStr //else ""
             let libsPos2 = if dirExtra then libsStr // else ""
+            let staticLibs = '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPUMFPACK) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) $(SUNDIALS_LIBS) $(UMFPACK_LIBS) $(LAPACK_LIBS)'
+            let staticIncludes = '-I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"'
             let _extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then ""
             let extraCflags = '<%_extraCflags%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g"%>'
             let omHome = makefileParams.omhome
@@ -2378,13 +2396,15 @@ case "gcc" then
             CXX=<%CXX%>
             <%MPIEnvVars%>
 
-            LINK=<%makefileParams.linker%>
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
             CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
             CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -Winvalid-pch $(SYSTEM_CFLAGS) -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(SUITESPARSE_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%>
-            LDSYTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath <%additionalLinkerFlags_GCC%> <%timeMeasureLink%> -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
+            CFLAGS_STATIC=$(CFLAGS) <%staticIncludes%>
+            LDSYSTEMFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" $(BASE_LIB)  -lOMCppOMCFactory -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath <%additionalLinkerFlags_GCC%> <%timeMeasureLink%> -L"$(BOOST_LIBS)"  $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(BOOST_LOG_LIB) $(BOOST_THREAD_LIB) $(LINUX_LIB_DL)
+            LDSYSTEMFLAGS_STATIC=<%staticLibs%> $(LDSYSTEMFLAGS)
             LDMAINFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L"<%makefileParams.omhome%>/bin" -lOMCppOMCFactory -L"$(BOOST_LIBS)" $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_PROGRAM_OPTIONS_LIB) $(LINUX_LIB_DL) <%additionalLinkerFlags_GCC%> <%timeMeasureLink%> $(BOOST_THREAD_LIB) $(BOOST_LOG_LIB)
+            LDMAINFLAGS_STATIC=<%staticLibs%> $(LDMAINFLAGS)
             CPPFLAGS = $(CFLAGS)
             SYSTEMFILE=OMCpp<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
             MAINFILE = OMCpp<%fileNamePrefix%>Main.cpp
@@ -2404,16 +2424,16 @@ case "gcc" then
             .PHONY: <%lastIdentOfPath(modelInfo.name)%> $(CPPFILES)
 
             <%fileNamePrefix%>: $(MAINFILE) $(OFILES)
-            <%if(createStaticBinary) then
-              <<
-              <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(OFILES) $(MAINFILE) $(LDMAINFLAGS)
-              >>
+            ifeq ($(RUNTIME_STATIC_LINKING),ON)
+            <%\t%>$(eval CFLAGS=$(CFLAGS_STATIC))
+            <%\t%>$(eval LDMAINFLAGS=$(LDMAINFLAGS_STATIC))
+            <%\t%>$(eval LDSYTEMFLAGS=$(LDSYSTEMFLAGS_STATIC))
+            <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(OFILES) $(MAINFILE) $(LDMAINFLAGS)
             else
-              <<
-              <%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>  $(LDSYTEMFLAGS)
-              <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
-              >>
-            %>
+            <%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>  $(LDSYSTEMFLAGS)
+            <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)            
+            endif
+
             <%if boolNot(stringEq(makefileParams.platform, "win32")) then
                 <<
                 <%\t%>chmod +x <%fileNamePrefix%>.sh
@@ -5175,7 +5195,6 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
 
   #include "System/SystemDefaultImplementation.h"
 
-
   #ifdef __GNUC__
     #define VAR_ALIGN_PRE
     #define VAR_ALIGN_POST __attribute__((aligned(0x40)))
@@ -5186,6 +5205,27 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
     #define VAR_ALIGN_PRE
     #define VAR_ALIGN_POST
   #endif
+
+  #ifdef RUNTIME_STATIC_LINKING
+    #include <boost/shared_ptr.hpp>
+    #include <boost/weak_ptr.hpp>
+    #include <boost/numeric/ublas/vector.hpp>
+    #include <boost/numeric/ublas/matrix.hpp>
+    #include <string>
+    #include <vector>
+    #include <map>
+
+    using std::string;
+    using std::vector;
+    using std::map;
+
+    #include <SimCoreFactory/Policies/FactoryConfig.h>
+    #include <SimController/ISimController.h>
+    #include <System/IMixedSystem.h>
+
+    #include <boost/numeric/ublas/matrix_sparse.hpp>
+    typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
+  #endif //RUNTIME_STATIC_LINKING
 
   //Forward declaration to speed-up the compilation process
   class Functions;

@@ -5,7 +5,7 @@
 Factory used by the system to create a solver for the solution of a (possibly
 non-linear) system of the Form F(x)=0.
 */
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include <SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h>
 #include <SimCoreFactory/Policies/StaticLinSolverOMCFactory.h>
 class AlgLoopSolverFactory : public IAlgLoopSolverFactory, public StaticNonLinSolverOMCFactory<OMCFactory>, public StaticLinSolverOMCFactory<OMCFactory>

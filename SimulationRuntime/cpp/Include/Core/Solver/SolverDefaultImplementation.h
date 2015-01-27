@@ -33,7 +33,7 @@ Provision of member variables used by all solvers.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-#if defined(ANALYZATION_MODE)
+#if defined(RUNTIME_STATIC_LINKING)
 #undef BOOST_EXTENSION_SOLVER_DECL
 #define BOOST_EXTENSION_SOLVER_DECL
 #endif

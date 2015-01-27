@@ -3,14 +3,21 @@ cmake_minimum_required (VERSION 2.6)
 project(${DataExchangeName})
 
 add_library(${DataExchangeName} SHARED SimData.cpp FactoryExport.cpp )
-target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES}  )
 
-IF(ANALYZATION_MODE)
+IF(NOT BOOST_STATIC_LINKING)
+	target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES})
+ENDIF(NOT BOOST_STATIC_LINKING)
+
+IF(RUNTIME_STATIC_LINKING)
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
-ENDIF(ANALYZATION_MODE)
+ENDIF(RUNTIME_STATIC_LINKING)
 
 add_library(${DataExchangeName}_static STATIC SimData.cpp  )
-target_link_libraries (${DataExchangeName}_static ${Boost_LIBRARIES})
+
+IF(NOT BOOST_STATIC_LINKING)
+	target_link_libraries (${DataExchangeName}_static ${Boost_LIBRARIES})
+ENDIF(NOT BOOST_STATIC_LINKING)
+
 if (UNIX)
 set_target_properties(${DataExchangeName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)

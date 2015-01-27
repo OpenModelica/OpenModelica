@@ -25,10 +25,12 @@
 using namespace std;
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #ifndef BOOST_THREAD_USE_DLL
-#define BOOST_THREAD_USE_DLL
+  #define BOOST_THREAD_USE_DLL
 #endif
-#ifndef BOOST_ALL_DYN_LINK
-#define BOOST_ALL_DYN_LINK
+#ifndef BOOST_STATIC_LINKING
+  #ifndef BOOST_ALL_DYN_LINK
+    #define BOOST_ALL_DYN_LINK
+  #endif
 #endif
 
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'

@@ -2,12 +2,12 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${ModelicaName})
 
-IF(ANALYZATION_MODE)
+IF(RUNTIME_STATIC_LINKING)
 	add_library(${ModelicaName} STATIC Modelica.cpp ModelicaSystem.cpp  )
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
-ELSE(ANALYZATION_MODE)
+ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${ModelicaName} SHARED Modelica.cpp ModelicaSystem.cpp   )
-ENDIF(ANALYZATION_MODE)
+ENDIF(RUNTIME_STATIC_LINKING)
 
 target_link_libraries (${ModelicaName} ${ModelicaExternalCName}  ${SystemName} ${BaseName}  )
 

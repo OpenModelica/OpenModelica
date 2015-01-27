@@ -1,7 +1,7 @@
 #pragma once
 #include <Core/DataExchange/ISimVar.h>
 
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include <string.h>
 #include <boost/numeric/ublas/fwd.hpp>
 #endif

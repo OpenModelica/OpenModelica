@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include <Core/Math/Functions.h>
 #include <Core/System/EventHandling.h>
 #include <boost/any.hpp>

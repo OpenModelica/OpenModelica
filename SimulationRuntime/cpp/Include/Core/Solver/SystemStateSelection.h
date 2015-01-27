@@ -7,7 +7,7 @@
 #include <Core/System/IStateSelection.h>
 #include <boost/shared_array.hpp>
 
-#if defined(ANALYZATION_MODE)
+#if defined(RUNTIME_STATIC_LINKING)
 #undef BOOST_EXTENSION_STATESELECT_DECL
 #define BOOST_EXTENSION_STATESELECT_DECL
 #endif

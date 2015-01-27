@@ -13,7 +13,7 @@ Encapsulation of global simulation settings.
 Copyright (c) 2008, OSMC
 *****************************************************************************/
 
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include <string.h>
 using std::string;
 #endif

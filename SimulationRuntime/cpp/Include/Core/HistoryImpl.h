@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimulationSettings//IGlobalSettings.h>
 #include <Core/DataExchange/IHistory.h>
 #include <map>

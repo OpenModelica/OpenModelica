@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${OMCFactoryName})
 
-IF(ANALYZATION_MODE)
+IF(RUNTIME_STATIC_LINKING)
 	message(STATUS "Building OMCFactory in analyzation mode")
 	# add the system default implementation library
 	add_library(${OMCFactoryName} STATIC OMCFactory.cpp StaticOMCFactory.cpp)
@@ -14,11 +14,11 @@ IF(ANALYZATION_MODE)
 	else (UNIX)
 		target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${KinsolName} ${CVodeName} ${UmfPackName} ${SimControllerName})
 	endif(UNIX)
-ELSE(ANALYZATION_MODE)
+ELSE(RUNTIME_STATIC_LINKING)
 	# add the system default implementation library
 	add_library(${OMCFactoryName} STATIC OMCFactory.cpp)
 	target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
-ENDIF(ANALYZATION_MODE)
+ENDIF(RUNTIME_STATIC_LINKING)
 
 if (UNIX)
 set_target_properties(${OMCFactoryName} PROPERTIES COMPILE_FLAGS -fPIC)
@@ -26,7 +26,7 @@ endif(UNIX)
 
 install (TARGETS ${OMCFactoryName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
-IF(ANALYZATION_MODE)
+IF(RUNTIME_STATIC_LINKING)
   install (FILES
         ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/FactoryConfig.h
         ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/FactoryPolicy.h
@@ -37,7 +37,7 @@ IF(ANALYZATION_MODE)
         ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h
   DESTINATION include/omc/cpp/SimCoreFactory/Policies)
   install (FILES ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/OMCFactory/StaticOMCFactory.h DESTINATION include/omc/cpp/SimCoreFactory/OMCFactory/)
-ENDIF(ANALYZATION_MODE)
+ENDIF(RUNTIME_STATIC_LINKING)
 
 install (FILES
         ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/FactoryConfig.h

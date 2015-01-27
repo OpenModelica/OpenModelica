@@ -2,12 +2,12 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${SimulationSettings})
 # add the solver default implementation library
-IF(ANALYZATION_MODE)
+IF(RUNTIME_STATIC_LINKING)
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
 	add_library(${SimulationSettings} STATIC GlobalSettings.cpp Factory.cpp FactoryExport.cpp )
-ELSE(ANALYZATION_MODE)
+ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${SimulationSettings} SHARED GlobalSettings.cpp Factory.cpp FactoryExport.cpp )
-ENDIF(ANALYZATION_MODE)
+ENDIF(RUNTIME_STATIC_LINKING)
 target_link_libraries( ${SimulationSettings} ${OMCFactoryName} ${Boost_LIBRARIES})
 
 
@@ -19,10 +19,10 @@ install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/IGlobalSettin
                ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/ISimControllerSettings.h
   DESTINATION include/omc/cpp/Core/SimulationSettings)
 
-IF(ANALYZATION_MODE)
+IF(RUNTIME_STATIC_LINKING)
   install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/Factory.h
   DESTINATION include/omc/cpp/Core/SimulationSettings)
-ENDIF(ANALYZATION_MODE)
+ENDIF(RUNTIME_STATIC_LINKING)
 
 
 

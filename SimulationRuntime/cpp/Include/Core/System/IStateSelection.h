@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include <boost/multi_array.hpp>
 #endif
 

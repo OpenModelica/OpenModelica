@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include <Core/SimulationSettings//ISettingsFactory.h>
 #include <SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h>
 class  SettingsFactory : public ISettingsFactory

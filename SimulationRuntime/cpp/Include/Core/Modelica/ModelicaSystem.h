@@ -1,6 +1,6 @@
 #pragma once
 /*
-#ifdef ANALYZATION_MODE
+#ifdef RUNTIME_STATIC_LINKING
 #include "FactoryExport.h"
 #include "System/SystemDefaultImplementation.h"
 #include "System/EventHandling.h"

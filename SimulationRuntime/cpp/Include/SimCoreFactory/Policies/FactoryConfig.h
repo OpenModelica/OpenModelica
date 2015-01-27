@@ -18,7 +18,7 @@
 
 #elif defined(OMC_BUILD)
 
-  #ifdef ANALYZATION_MODE
+  #ifdef RUNTIME_STATIC_LINKING
   #include <boost/unordered_map.hpp>
   /*Factory includes*/
   #include <Core/Utils/extension/extension.hpp>

@@ -13,7 +13,7 @@ public:
   {
     _use_modelica_compiler = false;
     _system_type_map = new type_map();
-#ifndef ANALYZATION_MODE
+#ifndef RUNTIME_STATIC_LINKING
     initializeLibraries(library_path, modelicasystem_path, config_path);
 #endif
   }

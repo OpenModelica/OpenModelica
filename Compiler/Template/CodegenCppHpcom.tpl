@@ -20,12 +20,7 @@ template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
   let stateDerVectorName = "__zDot"
-  let()= textFile(
-   (if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then
-        simulationMainFileAnalyzation(simCode ,&extraFuncs ,&extraFuncsDecl, "")
-    else
-        simulationMainFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else ""))
-   ), 'OMCpp<%fileNamePrefix%>Main.cpp')
+  let()= textFile(simulationMainFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else "")), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
   let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),
                     generateAdditionalPublicMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, ""),
@@ -88,26 +83,6 @@ template generateAdditionalIncludes(SimCode simCode ,Text& extraFuncs,Text& extr
 match simCode
 case SIMCODE(__) then
   <<
-  #ifdef ANALYZATION_MODE
-    #include <boost/shared_ptr.hpp>
-    #include <boost/weak_ptr.hpp>
-    #include <boost/numeric/ublas/vector.hpp>
-    #include <boost/numeric/ublas/matrix.hpp>
-    #include <string>
-    #include <vector>
-    #include <map>
-
-    using std::string;
-    using std::vector;
-    using std::map;
-
-    #include <SimCoreFactory/Policies/FactoryConfig.h>
-    #include <SimController/ISimController.h>
-    #include <System/IMixedSystem.h>
-
-    #include <boost/numeric/ublas/matrix_sparse.hpp>
-    typedef uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > SparseMatrix;
-  #endif
   <%generateHpcomSpecificIncludes(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>
   >>
 end generateAdditionalIncludes;
@@ -1529,144 +1504,6 @@ template releaseLockByLockName(String lockName, String lockPrefix, String iType)
 end releaseLockByLockName;
 
 
-template simulationMainFileAnalyzation(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
- "Generates code for header file for simulation target."
-::=
-match simCode
-case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
-  <<
-
-  #ifndef BOOST_ALL_DYN_LINK
-    #define BOOST_ALL_DYN_LINK
-  #endif
-  #include <Core/Modelica.h>
-  #include <Core/ModelicaDefine.h>
-  #include <SimCoreFactory/Policies/FactoryConfig.h>
-  #include <SimController/ISimController.h>
-
-  #ifdef ANALYZATION_MODE
-  #include "Solver/IAlgLoopSolver.h"
-  #include "DataExchange/SimData.h"
-  #include "System/IContinuous.h"
-  #include "System/IMixedSystem.h"
-  #include "System/IWriteOutput.h"
-  #include "System/IEvent.h"
-  #include "System/ITime.h"
-  #include "System/ISystemProperties.h"
-  #include "System/ISystemInitialization.h"
-  #include "System/IStateSelection.h"
-  #include "SimCoreFactory/OMCFactory/StaticOMCFactory.h"
-  #include "OMCpp<%dotPath(modelInfo.name)%>Extension.h"
-  //namespace ublas = boost::numeric::ublas;
-  boost::shared_ptr<ISimData> createSimData()
-  {
-    boost::shared_ptr<ISimData> sp( new SimData() );
-    return sp;
-  }
-
-  boost::shared_ptr<IMixedSystem> createSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, boost::shared_ptr<ISimData> simData)
-  {
-    boost::shared_ptr<IMixedSystem> sp( new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData) );
-    return sp;
-  }
-  #else
-  namespace ublas = boost::numeric::ublas;
-  #endif
-
-  #include <SimCoreFactory/Policies/FactoryConfig.h>
-  #include <SimController/ISimController.h>
-  <%
-    match(getConfigString(PROFILING_LEVEL))
-        case("none") then ''
-        case("all_perf") then '#include "Core/Utils/extension/measure_time_papi.hpp"'
-        else
-         <<
-         #ifdef USE_SCOREP
-           #include "Core/Utils/extension/measure_time_scorep.hpp"
-         #else
-           #include "Core/Utils/extension/measure_time_rdtsc.hpp"
-         #endif
-         >>
-    end match
-  %>
-
-  #ifdef USE_BOOST_THREAD
-  #include <boost/thread.hpp>
-  static long unsigned int getThreadNumber()
-  {
-     boost::hash<std::string> string_hash;
-     return (long unsigned int)string_hash(boost::lexical_cast<std::string>(boost::this_thread::get_id()));
-  }
-  #else
-  static long unsigned int getThreadNumber()
-  {
-     return 0;
-  }
-  #endif
-
-  #if defined(_MSC_VER) || defined(__MINGW32__)
-  #include <tchar.h>
-  int _tmain(int argc, const _TCHAR* argv[])
-  #else
-  int main(int argc, const char* argv[])
-  #endif
-  {
-      <%
-      match(getConfigString(PROFILING_LEVEL))
-          case("none") then '//no profiling used'
-          case("all_perf") then
-           <<
-           #ifdef USE_SCOREP
-             MeasureTimeScoreP::initialize();
-           #else
-             MeasureTimePAPI::initialize(getThreadNumber);
-           #endif
-           >>
-          else
-           <<
-           #ifdef USE_SCOREP
-             MeasureTimeScoreP::initialize();
-           #else
-             MeasureTimeRDTSC::initialize();
-           #endif
-           >>
-      end match
-      %>
-      try
-      {
-      boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new StaticOMCFactory());
-            //SimController to start simulation
-
-            std::pair<boost::shared_ptr<ISimController>,SimSettings> simulation =  _factory->createSimulation(argc,argv);
-
-
-        //create Modelica system
-         #ifdef ANALYZATION_MODE
-            std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem(&createSimData, &createSystem, "<%lastIdentOfPath(modelInfo.name)%>");
-         #else
-            std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
-         #endif
-            simulation.first->Start(system.first,simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
-
-            <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
-                <<
-                MeasureTime::getInstance()->writeToJson();
-                >>
-            %>
-            return 0;
-
-      }
-      catch(std::exception& ex)
-      {
-          std::string error = ex.what();
-          std::cerr << "Simulation stopped: "<<  error ;
-          return 1;
-      }
-  }
->>
-end simulationMainFileAnalyzation;
-
-
 template MPIFinalize()
  "Finalize the MPI environment in main function."
 ::=
@@ -1733,22 +1570,18 @@ template simulationMakefile(String target, SimCode simCode ,Text& extraFuncs,Tex
   let &additionalCFlags_GCC = buffer ""
   let &additionalCFlags_GCC += if stringEq(type,"openmp") then " -fopenmp" else ""
   let &additionalCFlags_GCC += if stringEq(type,"tbb") then ' -I"$(INTEL_TBB_INCLUDE)"' else ""
-  let &additionalCFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then ' -D ANALYZATION_MODE -I"$(SUNDIALS_INCLUDE)" -I"$(SUNDIALS_INCLUDE)/kinsol" -I"$(SUNDIALS_INCLUDE)/nvector"' else ""
 
   let &additionalCFlags_MSVC = buffer ""
   let &additionalCFlags_MSVC += if stringEq(type,"openmp") then "/openmp" else ""
-  let &additionalCFlags_MSVC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '/DANALYZATION_MODE /I"$(SUNDIALS_INCLUDE)" /I"$(SUNDIALS_INCLUDE)/kinsol" /I"$(SUNDIALS_INCLUDE)/nvector"' else ""
 
   let &additionalLinkerFlags_GCC = buffer ""
   let &additionalLinkerFlags_GCC += if stringEq(type,"tbb") then " $(INTEL_TBB_LIBS) " else ""
-  let &additionalLinkerFlags_GCC += if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then '$(LIBOMCPPOMCFACTORY) $(LIBOMCPPSIMCONTROLLER) $(LIBOMCPPSIMULATIONSETTINGS) $(LIBOMCPPSYSTEM) $(LIBOMCPPDATAEXCHANGE) $(LIBOMCPPNEWTON) $(LIBOMCPPUMFPACK) $(LIBOMCPPKINSOL) $(LIBOMCPPCVODE) $(LIBOMCPPSOLVER) $(LIBOMCPPMATH) $(LIBOMCPPMODELICAUTILITIES) $(SUNDIALS_LIBS) $(UMFPACK_LIBS) $(LAPACK_LIBS) $(BASE_LIB)' else '-lOMCppOMCFactory $(BASE_LIB)'
 
   let &additionalLinkerFlags_MSVC = buffer ""
 
   CodegenCpp.simulationMakefile(target, simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, additionalLinkerFlags_GCC,
                                 additionalCFlags_MSVC, additionalCFlags_GCC,
-                                additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI),
-                                Flags.isSet(Flags.HPCOM_ANALYZATION_MODE))
+                                additionalLinkerFlags_MSVC, Flags.isSet(Flags.USEMPI))
 end simulationMakefile;
 
 
