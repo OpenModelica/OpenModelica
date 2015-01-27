@@ -372,7 +372,6 @@ install: install-dirs install-python
 	cp -p COPYING ${INSTALL_DOCDIR}/omc/
 	# Documents
 	cp -p ${builddir_doc}/omc/*.pdf ${INSTALL_DOCDIR}/omc/
-	cp -p ${builddir_doc}/omc/*.txt ${INSTALL_DOCDIR}/omc/
 	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/omc/testmodels/
 	test ! -d ${builddir_doc}/omedit/ || cp -p ${builddir_doc}/omedit/* ${INSTALL_DOCDIR}/omedit/
 	# man pages
