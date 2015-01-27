@@ -224,7 +224,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     //workaround for jacobian variables
     <%variableDefinitionsJacobians(jacobianMatrixes,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
-   
+
 
     /*testmaessig aus der Cruntime*/
     <%functionAnalyticJacobiansHeader(jacobianMatrixes, modelNamePrefix(simCode))%>
@@ -610,7 +610,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    #include <Core/System/EventHandling.h>
    #include <Core/System/DiscreteEvents.h>
    <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-   
+
    <%lastIdentOfPath(modelInfo.name)%>Initialize::<%lastIdentOfPath(modelInfo.name)%>Initialize(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
    : <%lastIdentOfPath(modelInfo.name)%>(globalSettings, nonlinsolverfactory, sim_data)
    {
@@ -4314,12 +4314,12 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
    {
       _discrete_events = _event_handling->initialize(this);
-      //create and initialize Algloopsolvers 
+      //create and initialize Algloopsolvers
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
-     
+
       //initialize Algloop variables
       initializeAlgloopSolverVariables();
-     
+
       _simTime = 0.0;
       /*variable decls*/
       <%varDecls%>
@@ -5278,7 +5278,7 @@ let algloopsolver = generateAlgloopsolverVariables(listAppend(allEquations,initi
 let jacalgloopsolver =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) hasindex index0 =>
                         (mat |> (eqs,_,_) =>  generateAlgloopsolverVariables(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="\n")
                         ;separator="")
-      
+
 let memberfuncs = generateEquationMemberFuncDecls(allEquations,"evaluate")
 let conditionvariables =  conditionvariable(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
 
@@ -5454,7 +5454,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
 
   let systemname = match context case  ALGLOOP_CONTEXT(genInitialisation=false,genJacobian=true)  then '<%modelname%>Jacobian' else '<%modelname%>'
- 
+
   let algvars = MemberVariableAlgloop(modelInfo, useFlatArrayNotation)
   let constructorParams = ConstructorParamAlgloop(modelInfo, useFlatArrayNotation)
   match eq
@@ -8572,11 +8572,11 @@ template generateAlgloopsolverVariables(list<SimEqSystem> allEquationsPlusWhen,S
       generateAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace);separator="\n")
     ;separator="\n")
 
-  
-    
+
+
   <<
   <%algloopsolver%>
- 
+
   >>
 end generateAlgloopsolverVariables;
 
@@ -8620,7 +8620,7 @@ template generateInitAlgloopsolverVariables(list<JacobianMatrix> jacobianMatrixe
       generateInitAlgloopsolverVariables1(part, i0, &funcCalls ,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, className);separator="\n")
   let &varDecls = buffer "" /*BUFD*/
   let jacAlgloopsolverFuncs  =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) =>
-          ( mat |> (eqs,_,_)  => (eqs |> eq => generateInitAlgloopsolverVariables2(eq, contextOther, varDecls ,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) 
+          ( mat |> (eqs,_,_)  => (eqs |> eq => generateInitAlgloopsolverVariables2(eq, contextOther, varDecls ,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
           ) ;separator="\n")
          ;separator="")
   <<
@@ -8631,7 +8631,7 @@ template generateInitAlgloopsolverVariables(list<JacobianMatrix> jacobianMatrixe
     <%funcCalls%>
     initializeJacAlgloopSolverVariables();
   }
-  
+
 
   void <%className%>::initializeJacAlgloopSolverVariables()
   {
@@ -8645,7 +8645,7 @@ end generateInitAlgloopsolverVariables;
 template generateInitAlgloopsolverVariables1(list<SimEqSystem> allEquationsPlusWhen, Integer partIdx, Text &funcCalls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text className)
 ::=
   let &varDecls = buffer "" /*BUFD*/
- 
+
   let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
       generateInitAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace);separator="\n")
     ;separator="\n")
@@ -8689,10 +8689,10 @@ template generateDeleteAlgloopsolverVariables(list<JacobianMatrix> jacobianMatri
       generateDeleteAlgloopsolverVariables1(part, i0, &funcCalls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, className);separator="\n")
   let &varDecls = buffer "" /*BUFD*/
   let jacAlgloopsolverFuncs  =  (jacobianMatrixes |> (mat, _, _, _, _, _, _) =>
-          ( mat |> (eqs,_,_)  => (eqs |> eq => generateDeleteAlgloopsolverVariables2(eq, contextOther, varDecls ,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) 
+          ( mat |> (eqs,_,_)  => (eqs |> eq => generateDeleteAlgloopsolverVariables2(eq, contextOther, varDecls ,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
           ) ;separator="\n")
          ;separator="")
-  
+
   <<
   <%algloopsolverFuncs%>
 
@@ -8719,7 +8719,7 @@ template generateDeleteAlgloopsolverVariables1(list<SimEqSystem> allEquationsPlu
   void <%className%>::deleteAlgloopSolverVariables_<%partIdx%>()
   {
     <%algloopsolver%>
-    
+
   }
 
   >>
@@ -8812,10 +8812,10 @@ template initAlgloopVars(list<SimEqSystem> allEquationsPlusWhen,SimCode simCode 
    let algloopsolver = (allEquationsPlusWhen |> eqs => (eqs |> eq =>
       initAlgloopVars2(eq, contextOther, &varDecls /*BUFC*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace))
     ;separator="")
- 
+
   <<
   <%algloopsolver%>
-  
+
   >>
 end initAlgloopVars;
 
@@ -12719,14 +12719,14 @@ template functionAnalyticJacobians2(list<JacobianMatrix> JacobianMatrixes,String
   let &varDecls = buffer "" /*BUFD*/
   let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_,(_,_)), colorList, maxColor, indexJacobian) =>
     initialAnalyticJacobians2(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
- 
+
    /*
   let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
     generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
 */
   <<
   <%initialjacMats%>
-  
+
   >>
 
   //<%jacMats%>
@@ -13022,7 +13022,7 @@ void <%classname%>Jacobian::initialize()
        (mat |> (eqs,_,_) =>  generateAlgloopsolvers(eqs,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace) ;separator="")
       ;separator="")
       %>
-     
+
   <%initialJacMats%>
   <%initialStateSetJac%>
    //initialize Algloopsolver for analytical Jacobians
@@ -13035,7 +13035,7 @@ void <%classname%>Jacobian::initialize()
           ) ;separator="\n")
          ;separator="")
        %>
- 
+
 }
 >>
 end functionAnalyticJacobians;
