@@ -1722,18 +1722,19 @@ author: Vitalij Ruge
  output list<DAE.ComponentRef> newVarsCrefs;
 
 protected
-  DAE.Exp e_1, e, exP, q, p, e7, con, invExp, c, sgnp, sqrtExp, p2, x1, x2, x;
+  DAE.Exp e, e7, con, invExp, x1, x2, x, exP;
+  DAE.Exp a,b,c, n, sgnb, b2, ac, sExp1, sExp2;
   DAE.ComponentRef cr;
   DAE.Type tp;
   BackendDAE.Equation eqn;
-  Boolean b1,b2;
+  Boolean b1, b3;
 algorithm
     false := Expression.isZero(e1) and Expression.isZero(e2);
     true := Expression.expEqual(e2,e5);
     b1 := Expression.expEqual(e3, Expression.expMul(DAE.RCONST(2.0),e6));
-    b2 := Expression.expEqual(e6, Expression.expMul(DAE.RCONST(2.0),e3));
+    b3 := Expression.expEqual(e6, Expression.expMul(DAE.RCONST(2.0),e3));
 
-    true := b1 or b2;
+    true := b1 or b3;
     false := expHasCref(e1, inExp3);
     true := expHasCref(e2, inExp3);
     false := expHasCref(e3, inExp3);
@@ -1742,63 +1743,65 @@ algorithm
     false := expHasCref(e6, inExp3);
     false := expHasCref(inExp2, inExp3);
 
-    c := if b1 then e1 else e4;
-    p := if b1 then Expression.expDiv(e4,e1) else Expression.expDiv(e1,e4);
-    tp := Expression.typeof(p);
 
-    con := DAE.RELATION(c,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE());
-    con := Expression.makeNoEvent(con);
-    (con, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(con, tp, "CON$QE", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
+    a := if b1 then e1 else e4;
+    b := if b1 then e4 else e1;
+    c := Expression.negate(inExp2);
+    n := if b1 then e6 else e3;
 
-    // p
-    (p, _) :=  ExpressionSimplify.simplify1(p);
-    p := DAE.IFEXP(con, Expression.makeConstOne(tp), p);
-    (p, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(p, tp, "P$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+    tp := Expression.typeof(a);
+    (a, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(a, tp, "a$QE", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
+    con := DAE.RELATION(a,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE());
 
-    //q
-    q := Expression.expDiv(inExp2, c);
-    q := Expression.negate(q);
-    (q, _) :=  ExpressionSimplify.simplify1(q);
-    q := DAE.IFEXP(con, Expression.makeConstOne(tp), q);
-    (q, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(q, tp, "Q$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+    tp := Expression.typeof(b);
+    (b, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(b, tp, "b$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+    sgnb := Expression.makePureBuiltinCall("$_signNoNull",{b},tp);
+    b2 := Expression.expPow(b, DAE.RCONST(2.0));
+    (b2, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(b2, tp, "bPow2$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
-    //sign(p)
-    sgnp := Expression.makePureBuiltinCall("sign",{p},tp);
-    (sgnp, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(sgnp, tp, "SIGNP$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+    tp := Expression.typeof(c);
+    (c, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(c, tp, "c$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+    ac := Expression.expMul(a,c);
+    ac := Expression.expMul(DAE.RCONST(4.0),ac);
 
-    p2 := Expression.expMul(DAE.RCONST(0.5), p); //p/2
-    (p2, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(p2, tp, "P2$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+    sExp1 := Expression.expSub(b2,ac);
+    sExp2 := Expression.makePureBuiltinCall("sqrt",{sExp1},tp);
+    sExp2 := Expression.expMul(sgnb, sExp2);
 
-    // sqrt((p/2)^2-q)
-    sqrtExp := Expression.expPow(p2,DAE.RCONST(2.0)); // (p/2)^2
-    sqrtExp := Expression.expSub(sqrtExp, q); // (p/2)^2 -q
-    sqrtExp := Expression.makePureBuiltinCall("sqrt",{sqrtExp},tp);
 
-    x1 := Expression.expAdd(p2, Expression.expMul(sgnp,sqrtExp));
-    x1 := Expression.negate(x1);
+    a := DAE.IFEXP(con, Expression.makeConstOne(tp), a);
+    (a, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(a, tp, "a1$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+
+    x1 := Expression.expAdd(b, sExp2);
+    x1 := Expression.makeDiv(x1, a);
+    x1 := Expression.expMul(DAE.RCONST(-0.5), x1);
+    tp := Expression.typeof(x1);
+    x1 := DAE.IFEXP(con, Expression.makeConstOne(tp), x1);
     (x1, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(x1, tp, "x1$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
     //Vieta
-    x2 := Expression.makeDiv(q,x1);
+    x2 := Expression.expMul(a,x1);
+    x2 := Expression.makeDiv(c,x2);
+    x2 := DAE.IFEXP(con, Expression.makeConstOne(tp), x2);
     x2 := DAE.IFEXP(DAE.RELATION(x1,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()), DAE.RCONST(0.0), x2);
     (x2, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(x2, tp, "x2$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
+    tp := Expression.typeof(e2);
     exP := makeIntialGuess(e2,tp,inExp3,e2);
-    (exP, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(exP, tp, "X$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
+    (exP, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(exP, tp, "prex$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
     x := helpInvCos3(x1,x2,exP,tp);
+    (x, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(x, tp, "x$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
     // a = 0
-    e_1 := Expression.makePureBuiltinCall("$_signNoNull",{exP},tp);
-    e7 := if b1 then Expression.makeDiv(inExp2, e4) else Expression.makeDiv(inExp2, e1);
-    invExp := if b1 then Expression.inverseFactors(e6) else Expression.inverseFactors(e3);
+    e7 :=  Expression.makeDiv(inExp2,b);
+    invExp := Expression.inverseFactors(n);
     (invExp, _) :=  ExpressionSimplify.simplify1(invExp);
     e7 := Expression.expPow(e7, invExp);
-    e7 := Expression.expMul(e_1, e7);
 
     // if a==0
     rhs := DAE.IFEXP(con, e7 , x);
-    //
+    // lhs
     lhs := if b1 then Expression.expPow(e2, e6) else Expression.expPow(e2, e3);
 
 end solveQE;
@@ -2055,7 +2058,7 @@ protected
   BackendDAE.Equation eqn;
 algorithm
   (oExp,_) := ExpressionSimplify.simplify1(iExp);
-  if need or not Expression.isCref(oExp) or not Expression.isConstValue(oExp) then
+  if need or not (Expression.isCref(oExp) or Expression.isConstValue(oExp)) then
     eqn := BackendDAE.SOLVED_EQUATION(cr, oExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     oExp := Expression.crefExp(cr);
     oeqnForNewVars := eqn::ieqnForNewVars;
