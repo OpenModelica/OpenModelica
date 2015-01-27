@@ -883,7 +883,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
       String omdev,simflags,s1,s2,s3,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
-             outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
+             outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
@@ -1554,8 +1554,6 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
         (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
 
-        cit = winCitation();
-
         exeDir=compileDir;
          (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
         SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str)
@@ -1569,7 +1567,7 @@ algorithm
         if System.regularFileExists(logFile) then
           0 = System.removeFile(logFile);
         end if;
-        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags});
+        sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         resI = System.systemCall(sim_call,logFile);
@@ -1665,14 +1663,13 @@ algorithm
 
         (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
         Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
-        cit = winCitation();
         executableSuffixedExe = stringAppend(executable, System.getExeExt());
         logFile = stringAppend(executable,".log");
         if System.regularFileExists(logFile) then
           0 = System.removeFile(logFile);
         end if;
         strlinearizeTime = realString(linearizeTime);
-        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ","-l=",strlinearizeTime," ",simflags});
+        sim_call = stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ","-l=",strlinearizeTime," ",simflags});
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call,logFile);
@@ -1705,7 +1702,6 @@ algorithm
         Flags.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
         (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
-        cit = winCitation();
         exeDir=compileDir;
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
         SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
@@ -1718,7 +1714,7 @@ algorithm
         if System.regularFileExists(logFile) then
           0 = System.removeFile(logFile);
         end if;
-        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags});
+        sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         resI = System.systemCall(sim_call,logFile);
@@ -4193,7 +4189,7 @@ algorithm
         (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
 
         Error.clearMessages() "Clear messages";
-        compileDir = "\"" + System.pwd() + "\"" + System.pathDelimiter();
+        compileDir = System.pwd() + System.pathDelimiter();
         (cache,simSettings) = calculateSimulationSettings(cache, env, values, st, msg);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str)
            = simSettings;
@@ -4361,7 +4357,7 @@ algorithm
     local
       Absyn.Path p_class;
       Absyn.Class cdef;
-      String filename,pd,dir_1,omhome,omhome_1,cit;
+      String filename,pd,dir_1,omhome,omhome_1;
       String pd_1;
       list<String> filename_1,dir;
       Absyn.ComponentRef class_;
@@ -4383,8 +4379,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath() "model not yet saved! change to $OPENMODELICAHOME/work" ;
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
-        cit = winCitation();
-        dir_1 = stringAppendList({cit,omhome_1,pd,"work",cit});
+        dir_1 = stringAppendList({"\"",omhome_1,pd,"work","\""});
       then
         dir_1;
     else "";  /* this function should never fail */
@@ -4463,21 +4458,6 @@ algorithm
     Debug.trace("compileModel: successful!\n");
   end if;
 end compileModel;
-
-protected function winCitation "author: PA
-  Returns a citation mark if platform is windows, otherwise empty string.
-  Used by simulate to make whitespaces work in filepaths for WIN32"
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue ()
-    case ()
-      equation
-        "WIN32" = System.platform();
-      then "\"";
-    else "";
-  end matchcontinue;
-end winCitation;
 
 public function checkModel " checks a model and returns number of variables and equations"
   input FCore.Cache inCache;
