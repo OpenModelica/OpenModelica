@@ -4289,7 +4289,7 @@ algorithm
   exeCostsOut := List.map(compsInfos,calculateCosts);
 end estimateCosts0;
 
-public function calculateCosts "calculates the estimated costs for a compInfo
+public function calculateCosts "calculates the estimated costs for a compInfo. this has been benchmarked using the Cpp runtime
 author: Waurich TUD 2014-12"
   input BackendDAE.compInfo compInfo;
   output tuple<Integer,Real> exeCost;
@@ -4304,39 +4304,24 @@ algorithm
     case(BackendDAE.COUNTER(comp=comp,numAdds=numAdds,numMul=numMul,numDiv=numDiv,numTrig=numTrig,numRelations=numRel,numLog=numLog,numOth=numOth,funcCalls=numFuncs))
       equation
         ops = numAdds+numMul+numOth+numTrig+numRel+numLog;
-        if BackendDAEUtil.isSingleEquationComp(comp) then offset=30;
-        elseif BackendDAEUtil.isWhenComp(comp) then offset=800;
+        if BackendDAEUtil.isSingleEquationComp(comp) then offset=35;
+        elseif BackendDAEUtil.isWhenComp(comp) then offset=113;
+        elseif BackendDAEUtil.isArrayComp(comp) then offset=100;
         else offset = 0;
         end if;
-        costs = offset+ 5*numAdds+ 25*numMul+ 10*numDiv+ 150*numOth+250*numTrig+ 5*numRel+ 10*numLog+400*numFuncs;
+        costs = offset + 12*numAdds + 32*numMul + 37*numDiv + 236*numTrig + 2*numRel + 4*numLog + 110*numOth + 375*numFuncs;
      then (ops,intReal(costs));
 
-    case(BackendDAE.LES_ANALYSE(comp=comp,allOperations=allOps,size=size,density=dens))
+    case(BackendDAE.SYSTEM(comp=comp,allOperations=allOps,size=size,density=dens))// density is in procent
       equation
-        true = BackendDAEUtil.isLinearEqSystemComp(comp);
-        (ops,allOpCosts) = calculateCosts(allOps);
-        allOpCosts = 5000+allOpCosts+realMul(realPow(intReal(size),3)+realPow(intReal(size),2),dens);
-      then (ops,allOpCosts);
-
-    case(BackendDAE.LES_ANALYSE(comp=comp,allOperations=allOps,size=size,density=dens))
-      equation
-        (ops,allOpCosts) = calculateCosts(allOps);
-        allOpCosts = 5000+1000*size;
-      then (ops,allOpCosts);
-
-    case(BackendDAE.TORN_ANALYSE(comp=comp,tornEqs=torn,otherEqs=other,tornSize=size))
-      equation
-        true = BackendDAEUtil.isLinearTornSystem(comp);
-        (ops,tornCosts) = calculateCosts(torn);
-        (ops1,otherCosts) = calculateCosts(other);
-        allOpCosts = 7000;//*+realMul(realPow(intReal(size),3)+realPow(intReal(size),2)
-      then (ops+ops1,allOpCosts);
+        allOpCosts = realMul(0.049, realPow(realMul(intReal(size),(realAdd(1.0,realMul(dens,19.0)))),3.0));
+      then (1, allOpCosts);
 
     case(BackendDAE.TORN_ANALYSE(comp=comp,tornEqs=torn,otherEqs=other,tornSize=size))
       equation
         (ops,tornCosts) = calculateCosts(torn);
         (ops1,otherCosts) = calculateCosts(other);
-        allOpCosts = 4000+size*1000;//*+realMul(realPow(intReal(size),3)+realPow(intReal(size),2)
+        allOpCosts = realAdd(realAdd(3000.0,realMul(7.62,realPow(intReal(size),3.0))),realAdd(realMul(2.0,tornCosts),realMul(1.4,otherCosts)));
       then (ops+ops1,allOpCosts);
 
       else

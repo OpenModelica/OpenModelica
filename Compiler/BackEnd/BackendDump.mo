@@ -3819,19 +3819,24 @@ algorithm
           s = "";
           if BackendDAEUtil.isSingleEquationComp(comp) then s= "SE "+printComponent(comp);
           elseif BackendDAEUtil.isWhenComp(comp) then s= "WE "+printComponent(comp);
+          elseif BackendDAEUtil.isArrayComp(comp) then s= "AE "+printComponent(comp);
           end if;
           s = s+"\tadd|"+intString(numAdds)+"\tmul|"+intString(numMul)+"\tdiv|"+intString(numDiv)+"\ttrig|"+intString(numTrig)+"\trel|"+intString(numRel)+"\tlog|"+intString(numLog)+"\toth|"+intString(numOth)+"\tfuncs|"+intString(numFuncs)+"\n";
         then s;
-      case(BackendDAE.LES_ANALYSE(allOperations=allOps,comp=comp,size=size,density=dens))
+      case(BackendDAE.SYSTEM(allOperations=allOps,comp=comp,size=size,density=dens))
         equation
-          s = "LES_INFO "+printComponent(comp)+"\tsize|"+intString(size)+"\tdens|"+realString(dens)+"\n\t"+ printCompInfo(allOps)+"\n";
+          s = "";
+          if BackendDAEUtil.isLinearEqSystemComp(comp) then s= "LSYS";
+          else s = "NLSYS";
+          end if;
+          s = s+printComponent(comp)+"\tsize|"+intString(size)+"\tdens|"+intString(realInt(dens*100.0))+ printCompInfo(allOps);
         then s;
       case(BackendDAE.TORN_ANALYSE(tornEqs=tornEqs, otherEqs=otherEqs,comp=comp,tornSize=size))
         equation
-          if BackendDAEUtil.isLinearTornSystem(comp) then s = "linear"; else s = "nonlinear"; end if;
-          s = s +" TORN_INFO "+printComponent(comp)+"\tsize|"+intString(size)+"\n";
+          //if BackendDAEUtil.isLinearTornSystem(comp) then s = "linear"; else s = "nonlinear"; end if;
+          s = "TS "+printComponent(comp)+"\tsize|"+intString(size)+"\n";
           s = s + "\tthe torn eqs:\t"+ printCompInfo(tornEqs);
-          s = s + "\tthe other eqs:\t" + printCompInfo(otherEqs) +"\n";
+          s = s + "\tthe other eqs:\t" + printCompInfo(otherEqs);
         then s;
       else
         then "Dont know this compInfo\n";

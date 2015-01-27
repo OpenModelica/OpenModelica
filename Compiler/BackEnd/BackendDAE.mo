@@ -712,12 +712,12 @@ public uniontype compInfo"types to count operations for the components"
    Integer funcCalls;
   end COUNTER;
 
-  record LES_ANALYSE//linear system of equations
+  record SYSTEM//linear system of equations
    StrongComponent comp;
    compInfo allOperations;
    Integer size;
    Real density;
-  end LES_ANALYSE;
+  end SYSTEM;
 
   record TORN_ANALYSE//torn system of equations
    StrongComponent comp;

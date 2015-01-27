@@ -2831,6 +2831,12 @@ algorithm
       DAE.Exp exp1;
     case(BackendDAE.EQUATION(scalar = exp1))
       then exp1;
+    case(BackendDAE.ARRAY_EQUATION(right = exp1))
+      then exp1;
+    case(BackendDAE.SOLVED_EQUATION(exp = exp1))
+      then exp1;
+    case(BackendDAE.COMPLEX_EQUATION(right = exp1))
+      then exp1;
     else
       equation print("BackendEquation.getEquationRHS failed!\n!");
       then fail();
@@ -2845,7 +2851,14 @@ algorithm
   lhs := matchcontinue(eq)
     local
       DAE.Exp exp1;
+      DAE.ComponentRef cref;
     case(BackendDAE.EQUATION(exp = exp1))
+      then exp1;
+    case(BackendDAE.ARRAY_EQUATION(left = exp1))
+      then exp1;
+    case(BackendDAE.SOLVED_EQUATION(componentRef = cref))
+      then Expression.crefExp(cref);
+    case(BackendDAE.COMPLEX_EQUATION(left = exp1))
       then exp1;
     else
       equation print("BackendEquation.getEquationLHS failed!\n!");

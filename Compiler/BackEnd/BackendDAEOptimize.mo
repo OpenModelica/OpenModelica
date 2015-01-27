@@ -2088,7 +2088,7 @@ algorithm
         density = realDiv(intReal(getNumJacEntries(jac)),intReal(size*size ));
         allOps = BackendDAE.COUNTER(comp,0,0,0,0,0,0,0,0);
         allOps = countOperationsJac(jac,ishared,allOps);
-        compInfo = BackendDAE.LES_ANALYSE(comp,allOps,size,density);
+        compInfo = BackendDAE.SYSTEM(comp,allOps,size,density);
       then countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 
     case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac))::rest,_,_,_)
@@ -2098,7 +2098,7 @@ algorithm
         (numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),function countOperationsExp(shared=ishared),(0,0,0,0,0,0,0,0));
         allOps = BackendDAE.COUNTER(comp,numAdd,numMul,numDiv,numTrig,numRel,numLog,numOth,numFuncs);
         density = realDiv(intReal(getNumJacEntries(jac)),intReal(size*size ));
-        compInfo = BackendDAE.LES_ANALYSE(comp,allOps,size,density);
+        compInfo = BackendDAE.SYSTEM(comp,allOps,size,density);
       then
         countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
 

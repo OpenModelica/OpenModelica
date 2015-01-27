@@ -8046,7 +8046,18 @@ algorithm
   end matchcontinue;
 end getConditionList1;
 
-public function isWhenComp"outputs true if the strongComponent is a singleEquation"
+public function isArrayComp"outputs true if the strongComponent is an arrayEquation"
+  input BackendDAE.StrongComponent comp;
+  output Boolean isArray;
+algorithm
+  isArray := match(comp)
+    case(BackendDAE.SINGLEARRAY())
+      then true;
+  else false;
+  end match;
+end isArrayComp;
+
+public function isWhenComp"outputs true if the strongComponent is a whenEquation"
   input BackendDAE.StrongComponent comp;
   output Boolean isWhen;
 algorithm
