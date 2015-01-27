@@ -181,10 +181,6 @@ algorithm
       array<list<SimCodeVar.SimVar>> simVarMapping; //maps each backend variable to a list of simVars
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
 
-      if Flags.isSet(Flags.HPCOM_ANALYZATION_MODE) then
-        print("Using analyzation mode\n");
-      end if;
-
       //Initial System
       //--------------
       (initDAE, _, _) = Initialization.solveInitialSystem(inBackendDAE);
