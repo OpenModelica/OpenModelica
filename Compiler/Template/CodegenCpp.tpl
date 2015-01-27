@@ -1696,7 +1696,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   #include <Core/ModelicaDefine.h>
   #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
- 
+
   #ifdef RUNTIME_STATIC_LINKING
     #include <Core/DataExchange/SimData.h>
     #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
@@ -1797,7 +1797,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
                 >>
             %>
             <%additionalPreRunCommands%>
-            
+
             #ifdef RUNTIME_STATIC_LINKING
               boost::shared_ptr<OMCFactory>  _factory =  boost::shared_ptr<OMCFactory>(new StaticOMCFactory());
             #else
@@ -2431,7 +2431,7 @@ case "gcc" then
             <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(OFILES) $(MAINFILE) $(LDMAINFLAGS)
             else
             <%\t%>$(CXX) -shared -I. -o $(SYSTEMOBJ) $(OFILES) $(CPPFLAGS)  <%dirExtra%> <%libsPos1%> <%libsPos2%>  $(LDSYSTEMFLAGS)
-            <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)            
+            <%\t%>$(CXX) $(CPPFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
             endif
 
             <%if boolNot(stringEq(makefileParams.platform, "win32")) then
