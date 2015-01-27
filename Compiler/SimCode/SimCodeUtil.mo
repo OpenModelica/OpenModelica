@@ -5796,7 +5796,7 @@ algorithm
       String s, s1, s2, s3;
       Boolean homotopySupport;
       BackendDAE.EquationAttributes attr;
-      
+
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
@@ -5983,7 +5983,7 @@ algorithm
         // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
         // print(" = ExpList : " + ExpressionDump.printExpListStr(expl) + "\n");
         tp = Expression.typeof(e1);
-        
+
         //check that solved vars are on lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
@@ -6002,12 +6002,12 @@ algorithm
         // debug
         // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
         // print(" = ExpList : " + ExpressionDump.printExpListStr(expl1) + "\n");
-        
+
         //check that all crefs are on lhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
         List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
-   
+
         // create all equations
         eqnLst = List.threadMap2(expl, expl1, BackendEquation.generateEquation, source, eqKind);
 
@@ -6022,7 +6022,7 @@ algorithm
         // debug
         // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
         // print(" = ExpList : " + ExpressionDump.printExpListStr(expl1) + "\n");
-        
+
         //check that all crefs are on rhs
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
