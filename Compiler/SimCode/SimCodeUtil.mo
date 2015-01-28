@@ -7172,6 +7172,56 @@ algorithm
           numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints);
 end createVarInfo;
 
+protected function setAdditionalStartValues"sets the start value for parameters without start value if there is binding that has one"
+  input Integer varIdx;
+  input BackendDAE.Variables knownVarsIn;
+  output BackendDAE.Variables knownVarsOut;
+algorithm
+  knownVarsOut := matchcontinue(varIdx,knownVarsIn)
+    local
+      BackendDAE.Variables knownVars;
+      DAE.Exp bind;
+      DAE.ComponentRef bindCref;
+      BackendDAE.Var var;
+  case(_,_)
+    equation
+      var = BackendVariable.getVarAt(knownVarsIn,varIdx);
+      true =  BackendVariable.isParam(var) and not BackendVariable.varHasStartValue(var);
+      bind = BackendVariable.varBindExp(var);
+      (bind,_) = Expression.traverseExp(bind,evaluateParameter,knownVarsIn);
+      bind = ExpressionSimplify.simplify(bind);
+      true = Expression.isConst(bind);
+      var = BackendVariable.setVarStartValue(var,bind);
+      knownVars = BackendVariable.setVarAt(knownVarsIn,varIdx,var);
+    then knownVars;
+  else
+    knownVarsIn;
+  end matchcontinue;
+end setAdditionalStartValues;
+
+protected function evaluateParameter"evaluates the crefs in an expression and if there is a constant parameter, replace it.
+author:Waurich TUD 2014-06"
+  input DAE.Exp expIn;
+  input BackendDAE.Variables knownVarsIn;
+  output DAE.Exp expOut;
+  output BackendDAE.Variables knownVarsOut;
+algorithm
+  (expOut,knownVarsOut) := matchcontinue(expIn,knownVarsIn)
+    local
+      DAE.ComponentRef cref;
+      DAE.Exp bindNom;
+      BackendDAE.Var bindVar;
+   case(DAE.CREF(componentRef=cref),_)
+     equation
+      ({bindVar},_) = BackendVariable.getVar(cref,knownVarsIn);
+      bindNom = BackendVariable.varBindExp(bindVar);
+      true = Expression.isConst(bindNom);
+    then (bindNom,knownVarsIn);
+   else
+     then(expIn,knownVarsIn);
+  end matchcontinue;
+end evaluateParameter;
+
 protected function createVars
   input BackendDAE.BackendDAE dlow;
   output SimCodeVar.SimVars outVars;
@@ -7182,6 +7232,8 @@ protected
   BackendDAE.EqSystems systs;
 algorithm
   BackendDAE.DAE(eqs=systs, shared=BackendDAE.SHARED(knownVars=knvars, externalObjects=extvars, aliasVars=aliasVars)) := dlow;
+
+  knvars := List.fold(List.intRange(BackendVariable.varsSize(knvars)),setAdditionalStartValues,knvars);
 
   /* Extract from variable list */
   ((outVars, _, _)) := List.fold1(List.map(systs, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars, knvars));
@@ -7480,12 +7532,13 @@ algorithm
   local
     Integer i;
     DAE.ComponentRef name, name2;
+    Option<DAE.Exp> init;
     SimCodeVar.AliasVariable aliasvar;
     String s1, s2;
-    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NOALIAS(), index = i))
+    case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.NOALIAS(), index = i, initialValue=init))
     equation
         s1 = ComponentReference.printComponentRefStr(name);
-        print(" No Alias for var : " + s1 + " index: "+intString(i)+ "\n");
+        print(" No Alias for var : " + s1 + " index: "+intString(i)+" initial: "+ExpressionDump.printOptExpStr(init) +"\n");
      then ();
     case (SimCodeVar.SIMVAR(name= name, aliasvar = SimCodeVar.ALIAS(varName = name2)))
     equation
