@@ -621,7 +621,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
     "clockPartitioning",
-    "CSE",
+    //"CSE",
     "expandDerOperator",
     "findStateOrder",
     "introduceDerAlias",
@@ -634,7 +634,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "evalFunc"
     }),
   SOME(STRING_DESC_OPTION({
-    ("CSE", Util.gettext("Common SubExpression Elimination")),
+    //("CSE", Util.gettext("Common SubExpression Elimination")),
     ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeAllSimpleEquations", removeSimpleEquationDesc),
@@ -705,6 +705,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
 
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "CSE",
     "relaxSystem",
     "inlineArrayEqn",
     "constantLinearSystem",
@@ -760,7 +761,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("calculateStrongComponentJacobians", Util.gettext("Generates analytical jacobian for non-linear strong components.")),
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical jacobian for dynamic state selection sets.")),
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
-    ("reshufflePost", Util.gettext("Reshuffles algebraic loops."))
+    ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")),
+    ("CSE", Util.gettext("Common SubExpression Elimination"))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
 

@@ -127,7 +127,7 @@ algorithm
         BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List: #########");
         BackendDump.dumpVariables(orderedVars, "########### Updated Variable List: #########");
       end if;
-    then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind);
+    then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 
     else inSyst;
   end matchcontinue;
