@@ -15,26 +15,21 @@ package conservationLaws
   end pokusy;
 
   model advection
-    extends conservationLawLF(M = 1, N = 100, dt = 0.005);
+    extends conservationLawLF;
     Real u[N];
-    parameter Real a = 1, ul = 1, ur = 0;
+    parameter Real a = 1;
   initial equation
-    u = array(if i < N / 2 then ul else ur for i in 1:N);
     //cos BC
     //array(if x[i] < 0.25 then cos(Modelica.Constants.pi / 2 * 4 * x[i]) else 0 for i in 1:N);
     //step BC
-    //array(if i < N / 2 then ul else ur for i in 1:N);
+    //
   equation
-    //BCs
-    u[1] = ul;
-    u[N] = ur;
     //dummy BCs
     F_x[1, 1] = 0;
     F_x[1, N] = 0;
     //equations
     W[1, :] = u;
     F[1, :] = a * u;
-    annotation(experiment(StartTime = 0, StopTime = 0.2, Tolerance = 1e-06, Interval = 0.005));
   end advection;
 
   model conservationLawCentral
@@ -51,20 +46,22 @@ package conservationLaws
 
   model conservationLawLF
     parameter Real dt;
+    parameter Real alpha = 1;
     extends conservationLaw;
   equation
     for i in 2:N - 1 loop
       //discretization of spatial derivative:
       F_x[:, i] = (F[:, i + 1] - F[:, i - 1]) / (2 * dx);
       // the equation:
-      der(W[:, i]) - (W[:, i + 1] - 2 * W[:, i] + W[:, i - 1]) / (2 * dt) + F_x[:, i] = zeros(M);
+      der(W[:, i]) - alpha * (W[:, i + 1] - 2 * W[:, i] + W[:, i - 1]) / (2 * dt) + F_x[:, i] = zeros(M);
       /*- (W[:, i + 1] - 2 * W[:, i] + W[:, i - 1]) / (2 * dt)*/
     end for;
   end conservationLawLF;
 
   model eulerEq
-    extends conservationLawCentral(M = 3);
+    extends conservationLawLF(M = 3);
     Real[N] rho, u, p, E;
+    //	parameter Real u_s;
     parameter Real gamma = 1.4, x_0, T;
     parameter Real rho_l, u_l, p_l;
     parameter Real rho_r, u_r, p_r;
@@ -92,11 +89,38 @@ package conservationLaws
     F[3, :] = u .* (E + p);
     //state equation
     E = p ./ (gamma - 1.0) + rho .* u .^ 2 / 2.0;
+    //  u_s = sqrt(gamma * p ./ rho);
   end eulerEq;
 
   model Riemann1
-    extends eulerEq(rho_l = 1, u_l = 0.75, p_l = 1, rho_r = 0.125, u_r = 0, p_r = 0.1, x_0 = 0.3, N = 1000, dt = 0.0005);
-    annotation(experiment(StartTime = 0, StopTime = 0.2, Tolerance = 1e-06, Interval = 0.0005));
+    extends eulerEq(rho_l = 1, u_l = 0.75, p_l = 1, rho_r = 0.125, u_r = 0, p_r = 0.1, x_0 = 0.3, N = 1000, dt = 2e-4, alpha = 0.01);
+    //euler, N = 200 (dx = 0.005, dt = 0.0001, alpha = 0.01 - celkem maká, hodně difuse, trochu osciluje
+    //euler, N = 1000, dt = 2e-5, alpha = 0.01 - dobrý, malinko osciluje na čele první vlny
+    //radau1, N = 100, dt = 0.002, alpha = 0.01 - vypadá nejlíp
+    annotation(experiment(StartTime = 0, StopTime = 0.2, Tolerance = 1e-6, Interval = 2e-4));
   end Riemann1;
+
+  model advectionCos
+    extends advection(M = 1, N = 100, dt = 0.01, alpha = 1);
+  initial equation
+    u = array(if x[i] < 0.25 then cos(Modelica.Constants.pi / 2 * 4 * x[i]) else 0 for i in 1:N);
+  equation
+    //BC:
+    u[1] = 1;
+    u[N] = 0;
+    annotation(experiment(StartTime = 0, StopTime = 0.4, Tolerance = 1e-06, Interval = 0.01));
+  end advectionCos;
+
+  model advectionStep
+    extends advection(M = 1, N = 100, dt = 0.009, alpha = 1);
+    parameter Real ul = 1, ur = 0;
+  initial equation
+    u = array(if x[i] < 0.2 then ul else ur for i in 1:N);
+  equation
+    //BC:
+    u[1] = ul;
+    u[N] = ur;
+    annotation(experiment(StartTime = 0, StopTime = 0.4, Tolerance = 1e-06, Interval = 0.009));
+  end advectionStep;
   annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})));
 end conservationLaws;
