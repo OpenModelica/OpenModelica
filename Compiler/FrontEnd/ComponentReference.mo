@@ -1384,7 +1384,8 @@ public function crefIsRec"traverse function to check if one of the crefs is a re
   input Boolean isRecIn;
   output Boolean isRec;
 algorithm
-  isRec := isRecIn or Types.isRecord(crefType(cref));
+  // is this case the last ident needs a consideration
+  isRec := isRecIn or Types.isRecord(crefLastType(cref));
 end crefIsRec;
 
 protected function containWholeDim2 "
