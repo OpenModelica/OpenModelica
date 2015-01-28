@@ -44,7 +44,7 @@
 
 //IAEX Headers
 #include "omcinteractiveenvironment.h"
-#include "../../Compiler/runtime/config.h"
+#include "omc_config.h"
 
 using namespace std;
 
