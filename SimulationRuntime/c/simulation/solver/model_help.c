@@ -856,7 +856,11 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.samples = (modelica_boolean*) calloc(data->modelData.nSamples, sizeof(modelica_boolean));
 
   /* set default solvers for algebraic loops */
+#if !defined(OMC_MINIMAL_RUNTIME)
   data->simulationInfo.nlsMethod = NLS_HYBRID;
+#else
+  data->simulationInfo.nlsMethod = NLS_HOMOTOPY;
+#endif
   data->simulationInfo.lsMethod = LS_LAPACK;
   data->simulationInfo.mixedMethod = MIXED_SEARCH;
   data->simulationInfo.newtonStrategy = NEWTON_PURE;

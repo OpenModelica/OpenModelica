@@ -31,7 +31,9 @@ AC_SUBST(USE_PATOH)
 AC_SUBST(GRAPHLIB)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
 AC_SUBST(RT_LDFLAGS)
+AC_SUBST(RT_LDFLAGS_OPTIONAL)
 AC_SUBST(RT_LDFLAGS_SIM)
+AC_SUBST(RT_LDFLAGS_SIM_OPTIONAL)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SIM)
 AC_SUBST(SUNDIALS_LDFLAGS)
@@ -514,7 +516,7 @@ AC_TRY_LINK([
     #include <libintl.h>
   ], [
       gettext("");
-  ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS="$RT_LDFLAGS $LIBS"],
+  ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL $LIBS"],
       [AC_MSG_ERROR([no])])
 ])
 
@@ -768,8 +770,10 @@ if test "$DARWIN" = "1"; then
   FMILIB_SHARED=ON
   LIBCMINPACKLIB=libcminpack.dylib
   CMINPACKLIB_SHARED=ON
-  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack -lf2c -lexpat -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
-  RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -liconv -lgc -lpthread -lm $LIBDL -lstdc++"
+  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lexpat -lgc -lpthread -lm $LIBDL -lstdc++"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack -lf2c -liconv"
+  RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc -lm -lpthread $LIBDL -lstdc++"
+  RT_LDFLAGS_OPTIONAL="-liconv"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lgc"
@@ -795,8 +799,10 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   FMILIB_SHARED=OFF
   LIBCMINPACKLIB=libcminpack.a
   CMINPACKLIB_SHARED=OFF
-  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcminpack -lstdc++ -lf2c -lgc -lexpat -lm"
+  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lgc -lexpat -lm"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcminpack -lf2c"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc -lexpat -lpthread -lm"
+  RT_LDFLAGS_OPTIONAL=""
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
   LINK="cp -frl"
@@ -821,8 +827,10 @@ else
   CMINPACKLIB_SHARED=ON
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
-  RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS $LIBRT -llis -lcdaskr -lcminpack -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
+  RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $LIBRT -lexpat -lgc -lpthread -lm $LIBDL -lstdc++ -rdynamic"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack -Wl,-Bstatic -lf2c -Wl,-Bdynamic"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
+  RT_LDFLAGS_OPTIONAL=""
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -lpthread -rdynamic"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lgc -lpthread -rdynamic"

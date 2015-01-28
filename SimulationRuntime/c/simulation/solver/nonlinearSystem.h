@@ -49,8 +49,8 @@ enum NONLINEAR_SOLVER
 {
   NLS_NONE = 0,
 
-  NLS_HYBRID,
 #if !defined(OMC_MINIMAL_RUNTIME)
+  NLS_HYBRID,
   NLS_KINSOL,
 #endif
   NLS_NEWTON,

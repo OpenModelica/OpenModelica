@@ -51,28 +51,30 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
 const char *NLS_NAME[NLS_MAX+1] = {
   "NLS_UNKNOWN",
 
-  /* NLS_HYBRID */       "hybrid",
 #if !defined(OMC_MINIMAL_RUNTIME)
+  /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
-#endif
   /* NLS_NEWTON */       "newton",
+#endif
   /* NLS_HOMOTOPY */     "homotopy",
+#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_MIXED */        "mixed",
-
+#endif
   "NLS_MAX"
 };
 
 const char *NLS_DESC[NLS_MAX+1] = {
   "unknown",
 
-  /* NLS_HYBRID */       "default method",
 #if !defined(OMC_MINIMAL_RUNTIME)
+  /* NLS_HYBRID */       "default method",
   /* NLS_KINSOL */       "sundials/kinsol",
-#endif
   /* NLS_NEWTON */       "Newton Raphson",
+#endif
   /* NLS_HOMOTOPY */     "Homotopy Solver",
+#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_MIXED */        "Mixed strategy start with Newton and fallback to hybrid",
-
+#endif
   "NLS_MAX"
 };
 
@@ -151,20 +153,21 @@ int initializeNonlinearSystems(DATA *data)
     /* allocate solver data */
     switch(data->simulationInfo.nlsMethod)
     {
+#if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_HYBRID:
       allocateHybrdData(size, &nonlinsys[i].solverData);
       break;
-#if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_KINSOL:
       nls_kinsol_allocate(data, &nonlinsys[i]);
       break;
-#endif
     case NLS_NEWTON:
       allocateNewtonData(size, &nonlinsys[i].solverData);
       break;
+#endif
     case NLS_HOMOTOPY:
       allocateHomotopyData(size, &nonlinsys[i].solverData);
       break;
+#if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_MIXED:
       mixedSolverData = (struct dataNewtonAndHybrid*) malloc(sizeof(struct dataNewtonAndHybrid));
       allocateHomotopyData(size, &(mixedSolverData->newtonData));
@@ -174,6 +177,7 @@ int initializeNonlinearSystems(DATA *data)
       nonlinsys[i].solverData = (void*) mixedSolverData;
 
       break;
+#endif
     default:
       throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
     }
@@ -238,24 +242,26 @@ int freeNonlinearSystems(DATA *data)
     /* free solver data */
     switch(data->simulationInfo.nlsMethod)
     {
+#if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_HYBRID:
       freeHybrdData(&nonlinsys[i].solverData);
       break;
-#if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_KINSOL:
       nls_kinsol_free(&nonlinsys[i]);
       break;
-#endif
     case NLS_NEWTON:
       freeNewtonData(&nonlinsys[i].solverData);
       break;
+#endif
     case NLS_HOMOTOPY:
       freeHomotopyData(&nonlinsys[i].solverData);
       break;
+#if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_MIXED:
       freeHomotopyData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->newtonData);
       freeHybrdData(&((struct dataNewtonAndHybrid*) nonlinsys[i].solverData)->hybridData);
       break;
+#endif
     default:
       throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
     }
@@ -348,26 +354,27 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 
   switch(data->simulationInfo.nlsMethod)
   {
+#if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_HYBRID:
     saveJumpState = data->threadData->currentErrorStage;
     data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
     success = solveHybrd(data, sysNumber);
     data->threadData->currentErrorStage = saveJumpState;
     break;
-#if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_KINSOL:
     success = nonlinearSolve_kinsol(data, sysNumber);
     break;
-#endif
   case NLS_NEWTON:
     success = solveNewton(data, sysNumber);
     break;
+#endif
   case NLS_HOMOTOPY:
     saveJumpState = data->threadData->currentErrorStage;
     data->threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
     success = solveHomotopy(data, sysNumber);
     data->threadData->currentErrorStage = saveJumpState;
     break;
+#if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_MIXED:
     mixedSolverData = nonlinsys->solverData;
     nonlinsys->solverData = mixedSolverData->newtonData;
@@ -382,6 +389,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     data->threadData->currentErrorStage = saveJumpState;
     nonlinsys->solverData = mixedSolverData;
     break;
+#endif
   default:
     throwStreamPrint(data->threadData, "unrecognized nonlinear solver");
   }

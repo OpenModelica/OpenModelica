@@ -12,6 +12,7 @@ CPPFLAGS = -I. -I$(UTILPATH) -I. -I$(METAPATH) -I$(METAPATH)gc $(LIBF2CINC) -I$(
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
+OPTIONAL_LIBS=$(LIBF2C_BUILD) $(CDASKRDIR)/libcdaskr.a
 else
 override CFLAGS += -DOMC_MINIMAL_RUNTIME
 endif
@@ -117,42 +118,42 @@ libSimulationRuntimeC.a: $(ALL_OBJS) $(CDASKRDIR)/libcdaskr.a
 	$(AR) $@ $(ALL_OBJS)
 	ranlib $@
 
-libSimulationRuntimeC.so: $(ALL_OBJS) $(builddir_lib)/libf2c.a $(CDASKRDIR)/libcdaskr.a
+libSimulationRuntimeC.so: $(ALL_OBJS) $(OPTIONAL_LIBS) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM)
 
-libSimulationRuntimeC.dylib: $(ALL_OBJS) $(builddir_lib)/libf2c.a $(CDASKRDIR)/libcdaskr.a
+libSimulationRuntimeC.dylib: $(ALL_OBJS) $(OPTIONAL_LIBS) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
-libSimulationRuntimeC.bc: $(ALL_OBJS)
+libSimulationRuntimeC.bc: $(ALL_OBJS) Makefile.objs
 	@rm -f $@
 	$(CC) -o $@ $(ALL_OBJS)
 
-libOpenModelicaRuntimeC.a: $(BASE_OBJS)
+libOpenModelicaRuntimeC.a: $(BASE_OBJS) Makefile.objs
 	@# You have to remove the old archive first or it may contain old objects
 	@rm -f $@
 	$(AR) $@ $(BASE_OBJS)
 	ranlib $@
 
-libOpenModelicaRuntimeC.so: $(BASE_OBJS)
+libOpenModelicaRuntimeC.so: $(BASE_OBJS) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS)
 
-libOpenModelicaRuntimeC.dylib: $(BASE_OBJS)
+libOpenModelicaRuntimeC.dylib: $(BASE_OBJS) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
 
-libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH)
+libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH) Makefile.objs
 	@rm -f $@
 	$(AR) $@ $(FMILIB) $(FMIOBJSPATH)
 	ranlib $@
 
-libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH) $(builddir_lib)/libf2c.a
+libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH) $(LIBF2C_BUILD) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS)
 
-libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) $(builddir_lib)/libf2c.a
+libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) $(LIBF2C_BUILD) Makefile.objs
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
@@ -198,7 +199,7 @@ simulation/libf2c/libf2c.a:
 $(builddir_lib)/libf2c.a: simulation/libf2c/libf2c.a
 	cp $< $@
 
-install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS) $(builddir_lib)/libf2c.a
+install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) $(ALL_OBJS) $(LIBF2C_BUILD)
 	# copy libraries
 	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) $(builddir_lib)
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so

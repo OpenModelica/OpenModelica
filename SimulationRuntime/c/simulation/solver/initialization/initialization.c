@@ -314,6 +314,8 @@ void dumpInitialSolution(DATA *simData)
   messageClose(LOG_SOTI);
 }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
+
 /*! \fn static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int lambda_steps)
  *
  *  This is a helper function for initialize.
@@ -642,6 +644,8 @@ static int numeric_initialization(DATA *data, int optiMethod, int lambda_steps)
 
   return retVal;
 }
+
+#endif /* defined(OMC_MINIMAL_RUNTIME) */
 
 /*! \fn static int symbolic_initialization(DATA *data)
  *
@@ -1121,10 +1125,12 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   {
     retVal = 0;
   }
+#if !defined(OMC_MINIMAL_RUNTIME)
   else if(IIM_NUMERIC == initMethod)
   {
     retVal = numeric_initialization(data, optiMethod, lambda_steps);
   }
+#endif
   else if(IIM_SYMBOLIC == initMethod)
   {
     retVal = symbolic_initialization(data, lambda_steps);

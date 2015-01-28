@@ -20,18 +20,27 @@ IPOPT_CFLAGS=
 endif
 CONFIG_CFLAGS = @CFLAGS@ $(IPOPT_CFLAGS)
 FPMATHFORTRAN = @FPMATHFORTRAN@
+
+ifeq ($(OMC_MINIMAL_RUNTIME),)
+LDFLAGS=-L$(top_builddir)/build/lib/omc @RT_LDFLAGS@ @RT_LDFLAGS_OPTIONAL@
+LDFLAGS_SIM=-L$(top_builddir)/build/lib/omc -L$(CDASKRDIR) @RT_LDFLAGS_SIM@ @RT_LDFLAGS_SIM_OPTIONAL@
+else
 LDFLAGS=-L$(top_builddir)/build/lib/omc @RT_LDFLAGS@
-LDFLAGS_SIM=-L$(top_builddir)/build/lib/omc -L$(CDASKRDIR) @RT_LDFLAGS_SIM@
+LDFLAGS_SIM=-L$(top_builddir)/build/lib/omc @RT_LDFLAGS_SIM@
+endif
 
 LIBMAKEFILE = Makefile
 QMAKE=@QMAKE@
 CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
 # Use f2c from the OS itself... If so, don't include the f2c headers from OpenModelica
+#ifeq ($(LIBF2C),)
+#LIBF2C=@LIBF2C@
+#LIBF2CBUILD=
+ifeq ($(OMC_MINIMAL_RUNTIME),)
 LIBF2C=@LIBF2C@
-ifeq ($(LIBF2C),)
-else
 LIBF2CINC=-I./simulation/libf2c/
 LIBF2CHEADER=./simulation/libf2c/f2c.h
+LIBF2C_BUILD=$(builddir_lib)/libf2c.a
 endif
 LIBSIMULATION=@LIBSIMULATION@
 LIBRUNTIME=@LIBRUNTIME@
