@@ -77,11 +77,12 @@ static HANDLE thread    = 0; // thread handle
 void killProcessTreeWindows(DWORD myprocID)
 {
   PROCESSENTRY32 pe;
+  HANDLE hSnap = NULL, hProc = NULL;
 
   memset(&pe, 0, sizeof(PROCESSENTRY32));
   pe.dwSize = sizeof(PROCESSENTRY32);
 
-  HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+  hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
   if (Process32First(hSnap, &pe))
   {
@@ -111,7 +112,7 @@ void killProcessTreeWindows(DWORD myprocID)
       }
 
       // kill the main process
-      HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, myprocID);
+      hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, myprocID);
 
       if (hProc)
       {

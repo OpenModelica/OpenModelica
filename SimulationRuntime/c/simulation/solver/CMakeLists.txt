@@ -3,6 +3,8 @@
 
 ADD_SUBDIRECTORY(initialization)
 
+INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/Compiler/runtime/")
+
 # Quellen und Header
 SET(solver_sources  dassl.c
                     delay.c

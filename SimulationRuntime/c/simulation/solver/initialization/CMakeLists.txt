@@ -18,6 +18,8 @@ SET(initialization_headers  initialization.h
 							method_simplex.h
 							method_nelderMeadEx.h)
 
+INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/Compiler/runtime/")
+
 # Library util
 ADD_LIBRARY(initialization ${initialization_sources} ${initialization_headers})
 #TARGET_LINK_LIBRARIES(util)

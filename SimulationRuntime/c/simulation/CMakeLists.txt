@@ -7,7 +7,7 @@ ADD_SUBDIRECTORY(results)
 ADD_SUBDIRECTORY(solver)
 
 # Include Directory of expat
-INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/3rdParty/FMIL/ThirdParty/Expat/expat-2.0.1/lib")
+INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/3rdParty/FMIL/ThirdParty/Expat/expat-2.0.1/lib" "${OMCTRUNCHOME}/Compiler/runtime/")
 
 # Quellen und Header
 SET(simulation_sources  options.c simulation_input_xml.cpp simulation_runtime.cpp
