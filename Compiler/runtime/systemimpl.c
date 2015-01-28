@@ -2683,10 +2683,37 @@ int SystemImpl__stat(const char *filename, double *size, double *mtime)
   return 1;
 }
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+static int default_alarm_action_set = 0;
+static struct sigaction default_alarm_action;
+
+static void alarm_handler(int signo, siginfo_t *si, void *ptr)
+{
+  assert(signo==SIGALRM);
+  kill(-getpid(), SIGALRM);
+  sigaction(SIGALRM, &default_alarm_action, 0);
+}
+
+int SystemImpl__alarm(int seconds)
+{
+  if (default_alarm_action_set == 0) {
+    struct sigaction sa = {
+      .sa_sigaction = alarm_handler,
+      .sa_flags = SA_SIGINFO
+    };
+    sigaction(SIGALRM, &sa, NULL);
+    default_alarm_action_set = 1;
+  }
+  return alarm(seconds);
+}
+#else
+
 int SystemImpl__alarm(int seconds)
 {
   return alarm(seconds);
 }
+
+#endif
 
 int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFile)
 {

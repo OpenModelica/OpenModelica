@@ -1560,6 +1560,7 @@ impure function alarm
   output Integer previousSeconds;
 external "builtin" annotation(__OpenModelica_Impure=true,Library = {"omcruntime"},Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
+<p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
 </html>"));
 end alarm;
 
