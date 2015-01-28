@@ -61,7 +61,7 @@ package conservationLaws
   model eulerEq
     extends conservationLawLF(M = 3);
     Real[N] rho, u, p, E;
-    //	parameter Real u_s;
+    //  parameter Real u_s;
     parameter Real gamma = 1.4, x_0, T;
     parameter Real rho_l, u_l, p_l;
     parameter Real rho_r, u_r, p_r;
