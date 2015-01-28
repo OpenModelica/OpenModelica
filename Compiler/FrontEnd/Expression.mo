@@ -4175,6 +4175,51 @@ algorithm
   outExp := makeRealArray(l);
 end makeRealArrayOfZeros;
 
+public function createZeroExpression
+  input DAE.Type inType;
+  output DAE.Exp outExp;
+algorithm
+  (outExp) := match (inType)
+    local
+      DAE.Exp e;
+      list<DAE.Type> typeLst;
+      list<DAE.Exp> expLst;
+      DAE.Dimensions dims;
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crefs;
+      Absyn.Path path;
+      list<DAE.Var> varLst;
+      list<String> varNames;
+
+    // real and integer
+    case (_) guard(isIntegerOrReal(inType)) then makeConstZero(inType);
+
+    case DAE.T_TUPLE(types=typeLst) equation
+      expLst = List.map(typeLst, createZeroExpression);
+      e = DAE.TUPLE(expLst);
+    then e;
+
+    case DAE.T_ARRAY(dims=dims) equation
+      (e, _) = makeZeroExpression(dims);
+    then e;
+
+    // record type
+    case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)) equation  
+      cr = DAE.CREF_IDENT("$TMP", inType, {});
+      crefs = ComponentReference.expandCref(cr, true);
+      expLst = List.map(crefs, crefExp);
+      typeLst = List.map(expLst, typeof);
+      expLst = List.map(typeLst, createZeroExpression);
+      varNames = List.map(varLst, varName);
+      e = DAE.RECORD(path, expLst, varNames, inType);
+    then e;
+
+    // all other are failing cases
+    else fail();
+  end match;
+end createZeroExpression;
+
+
 public function makeZeroExpression
 " creates a Real or array<Real> zero expression with given dimensions, also returns its type"
   input DAE.Dimensions inDims;

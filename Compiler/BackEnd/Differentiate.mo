@@ -2033,7 +2033,7 @@ algorithm
          is last. Otherwise expressions is always traversed twice
          when differentiating.";
         tp = Expression.typeof(inExp);
-        (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        zero = Expression.createZeroExpression(tp);
       then
         (zero, inFunctionTree);
 
@@ -2045,7 +2045,6 @@ algorithm
       then fail();
   end matchcontinue;
 end differentiateFunctionCall;
-
 
 protected function differentiateFunctionCallPartial"
 Author: Frenkel TUD, wbraun
