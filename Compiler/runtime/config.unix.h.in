@@ -43,11 +43,14 @@
 #define CONFIG_WITH_OPENMP @CONFIG_WITH_OPENMP@
 
 /* Skip compiling against some stuff for the JavaScript runtime */
-#if !defined(OMC_EMCC)
+#if !defined(OMC_EMCC) && !defined(OMC_MINIMAL_RUNTIME)
 @WITH_SUNDIALS@
 @WITH_IPOPT@
 @WITH_UMFPACK@
 @WITH_HWLOC@
+#endif
+#if !defined(OMC_MINIMAL_RUNTIME)
+#define WITH_DASSL
 #endif
 
 #define CONFIG_SYSTEMLIBS mmc_mk_cons(mmc_mk_scon("-lomcruntime"),mmc_mk_cons(mmc_mk_scon("-lexpat"),mmc_mk_cons(mmc_mk_scon("-lsqlite3"),mmc_mk_cons(mmc_mk_scon(CONFIG_LPSOLVE55),mmc_mk_cons(mmc_mk_scon(CONFIG_CORBALIBS),mmc_mk_nil())))))

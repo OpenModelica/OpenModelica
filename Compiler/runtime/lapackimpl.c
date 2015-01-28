@@ -46,7 +46,7 @@ extern "C" {
 #include <math.h>
 
 #include "rtclock.h"
-#include "config.h"
+#include "omc_config.h"
 #include "errorext.h"
 #include "f2c.h"
 

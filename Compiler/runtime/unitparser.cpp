@@ -28,7 +28,7 @@
  *
  */
 
-#include "config.h"
+#include "omc_config.h"
 #include "unitparser.h"
 #include <iostream>
 #include <sstream>

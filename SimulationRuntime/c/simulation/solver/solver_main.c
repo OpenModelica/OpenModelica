@@ -31,7 +31,7 @@
  /*! \file solver_main.c
  */
 
-#include "../../../../Compiler/runtime/config.h"
+#include "omc_config.h"
 #include "solver_main.h"
 #include "simulation_runtime.h"
 #include "simulation_result.h"
@@ -104,10 +104,12 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     TRACE_POP
     return retVal;
 
+#if !defined(OMC_MINIMAL_RUNTIME)
   case S_DASSL:
     retVal = dassl_step(data, solverInfo);
     TRACE_POP
     return retVal;
+#endif
 
 #ifdef WITH_IPOPT
   case S_OPTIMIZATION:
@@ -171,7 +173,9 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   /* set tolerance for ZeroCrossings */
   setZCtol(min(simInfo->stepSize, simInfo->tolerance));
 
-  if(solverInfo->solverMethod == S_RUNGEKUTTA)
+  switch (solverInfo->solverMethod) {
+  case S_EULER: break;
+  case S_RUNGEKUTTA:
   {
     /* Allocate RK work arrays */
 
@@ -181,65 +185,80 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     for(i = 0; i < rungeData->work_states_ndims + 1; i++)
       rungeData->work_states[i] = (double*) calloc(data->modelData.nStates, sizeof(double));
     solverInfo->solverData = rungeData;
+    break;
   }
-  else if(solverInfo->solverMethod == S_DASSL)
+#if !defined(OMC_MINIMAL_RUNTIME)
+  case S_DASSL:
   {
     /* Initial DASSL solver */
     DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
     retValue = dassl_initial(data, solverInfo, dasslData);
     solverInfo->solverData = dasslData;
+    break;
   }
+#endif
 #ifdef WITH_IPOPT
-  else if(solverInfo->solverMethod == S_OPTIMIZATION)
+  case S_OPTIMIZATION:
   {
     infoStreamPrint(LOG_SOLVER, 0, "Initializing optimizer");
     /* solverInfo->solverData = malloc(sizeof(OptData)); */
+    break;
   }
 #endif
 #ifdef WITH_SUNDIALS
-  else if(solverInfo->solverMethod == S_RADAU5)
+  case S_RADAU5:
   {
     /* Allocate Radau5 IIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 5");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, solverInfo->solverMethod, 3);
+    break;
   }
-  else if(solverInfo->solverMethod == S_RADAU3)
+  case S_RADAU3:
   {
     /* Allocate Radau3 IIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 3");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, solverInfo->solverMethod, 2);
+    break;
   }
-  else if(solverInfo->solverMethod == S_RADAU1)
+  case S_RADAU1:
   {
     /* Allocate Radau1 IIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Radau IIA of order 1 (implicit euler) ");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, solverInfo->solverMethod, 1);
+    break;
   }
-  else if(solverInfo->solverMethod == S_LOBATTO6)
+  case S_LOBATTO6:
   {
     /* Allocate Lobatto2 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 6");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, solverInfo->solverMethod, 3);
+    break;
   }
-  else if(solverInfo->solverMethod == S_LOBATTO4)
+  case S_LOBATTO4:
   {
     /* Allocate Lobatto4 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 4");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, solverInfo->solverMethod, 2);
+    break;
   }
-  else if(solverInfo->solverMethod == S_LOBATTO2)
+  case S_LOBATTO2:
   {
     /* Allocate Lobatto6 IIIA work arrays */
     infoStreamPrint(LOG_SOLVER, 0, "Initializing Lobatto IIIA of order 2 (trapeze rule)");
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, solverInfo->solverMethod, 1);
+    break;
   }
 #endif
+  default:
+    errorStreamPrint(LOG_SOLVER, 0, "Solver %s disabled on this configuration", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
+    return 1;
+  }
 
   externalInputallocate(data);
   if(measure_time_flag)
@@ -273,11 +292,13 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     free(((RK4_DATA*)(solverInfo->solverData))->work_states);
     free((RK4_DATA*)solverInfo->solverData);
   }
+#if !defined(OMC_MINIMAL_RUNTIME)
   else if(solverInfo->solverMethod == S_DASSL)
   {
     /* De-Initial DASSL solver */
     dassl_deinitial(solverInfo->solverData);
   }
+#endif
 #ifdef WITH_IPOPT
   else if(solverInfo->solverMethod == S_OPTIMIZATION)
   {
@@ -475,6 +496,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     infoStreamPrint(LOG_STATS, 0, "%5ld time events", solverInfo->sampleEvents);
     messageClose(LOG_STATS);
 
+#if defined(WITH_DASSL)
     if(S_DASSL == solverInfo->solverMethod)
     {
       /* save dassl stats before print */
@@ -489,7 +511,9 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
       infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[4]);
       messageClose(LOG_STATS);
     }
-    else if(S_OPTIMIZATION == solverInfo->solverMethod)
+    else
+#endif
+    if(S_OPTIMIZATION == solverInfo->solverMethod)
     {
       /* skip solver statistics for optimization */
     }
@@ -703,20 +727,20 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 }
 
 /***************************************    Run Ipopt for optimization     ***********************************/
-#ifdef WITH_IPOPT
+#if defined(WITH_IPOPT)
 static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo)
 {
   int cJ, res;
 
   cJ = data->threadData->currentErrorStage;
   data->threadData->currentErrorStage = ERROR_OPTIMIZE;
-  res = runOptimizier(data, solverInfo);
+  res = runOptimizer(data, solverInfo);
   data->threadData->currentErrorStage = cJ;
   return res;
 }
 #endif
 
-#ifdef WITH_SUNDIALS
+#if defined(WITH_SUNDIALS) && !defined(OMC_MINIMAL_RUNTIME)
 /***************************************    Radau/Lobatto     ***********************************/
 int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo)
 {

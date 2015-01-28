@@ -34,7 +34,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "../../../../Compiler/runtime/config.h"
+#include "omc_config.h"
 #include "omc_error.h"
 #include "rtclock.h"
 #include "linearSystem.h"
@@ -44,13 +44,24 @@
 #include "linearSolverTotalPivot.h"
 #include "simulation_info_xml.h"
 
+static void setAElementLAPACK(int row, int col, double value, int nth, void *data);
+static void setAElementLis(int row, int col, double value, int nth, void *data);
+static void setAElementTotalPivot(int row, int col, double value, int nth, void *data);
+static void setAElementUmfpack(int row, int col, double value, int nth, void *data );
+static void setBElementLAPACK(int row, double value, void *data );
+static void setBElementLis(int row, double value, void *data );
+static void setBElementTotalPivot(int row, double value, void *data );
+static void setBElementUmfpack(int row, double value, void *data );
+
 int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
 const char *LS_NAME[LS_MAX+1] = {
   "LS_UNKNOWN",
 
   /* LS_LAPACK */       "lapack",
+#if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "lis",
+#endif
   /* LS_UMFPACK */      "umfpack",
   /* LS_TOTALPIVOT */   "totalpivot",
 
@@ -61,7 +72,9 @@ const char *LS_DESC[LS_MAX+1] = {
   "unknown",
 
   /* LS_LAPACK */       "method using lapack LU factorization",
+#if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterativ solver Lis",
+#endif
   /* LS_UMFPACK */      "method using umfpack sparse linear solver",
   /* LS_TOTALPIVOT */   "default method - using total pivoting LU factorization",
 
@@ -125,12 +138,13 @@ int initializeLinearSystems(DATA *data)
       allocateLapackData(size, &linsys[i].solverData);
       break;
 
+#if !defined(OMC_MINIMAL_RUNTIME)
     case LS_LIS:
       linsys[i].setAElement = setAElementLis;
       linsys[i].setBElement = setBElementLis;
       allocateLisData(size, size, nnz, &linsys[i].solverData);
       break;
-
+#endif
 #ifdef WITH_UMFPACK
     case LS_UMFPACK:
       linsys[i].setAElement = setAElementUmfpack;
@@ -233,9 +247,11 @@ int freeLinearSystems(DATA *data)
       free(linsys[i].A);
       break;
 
+#if !defined(OMC_MINIMAL_RUNTIME)
     case LS_LIS:
       freeLisData(&linsys[i].solverData);
       break;
+#endif
 
 #ifdef WITH_UMFPACK
     case LS_UMFPACK:
@@ -286,9 +302,11 @@ int solve_linear_system(DATA *data, int sysNumber)
     success = solveLapack(data, sysNumber);
     break;
 
+#if !defined(OMC_MINIMAL_RUNTIME)
   case LS_LIS:
     success = solveLis(data, sysNumber);
     break;
+#endif
 #ifdef WITH_UMFPACK
   case LS_UMFPACK:
     success = solveUmfPack(data, sysNumber);
@@ -414,22 +432,24 @@ void setBElementLAPACK(int row, double value, void *data )
   linsys->b[row] = value;
 }
 
-void setAElementLis(int row, int col, double value, int nth, void *data)
+#if !defined(OMC_MINIMAL_RUNTIME)
+static void setAElementLis(int row, int col, double value, int nth, void *data)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   DATA_LIS* sData = (DATA_LIS*) linsys->solverData;
   lis_matrix_set_value(LIS_INS_VALUE, row, col, value, sData->A);
 }
 
-void setBElementLis(int row, double value, void *data )
+static void setBElementLis(int row, double value, void *data )
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   DATA_LIS* sData = (DATA_LIS*) linsys->solverData;
   lis_vector_set_value(LIS_INS_VALUE, row, value, sData->b);
 }
+#endif
 
 #ifdef WITH_UMFPACK
-void setAElementUmfpack(int row, int col, double value, int nth, void *data)
+static void setAElementUmfpack(int row, int col, double value, int nth, void *data)
 {
   LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
   DATA_UMFPACK* sData = (DATA_UMFPACK*) linSys->solverData;
@@ -442,7 +462,7 @@ void setAElementUmfpack(int row, int col, double value, int nth, void *data)
    sData->Ax[nth] = value;
 }
 
-void setBElementUmfpack(int row, double value, void *data)
+static void setBElementUmfpack(int row, double value, void *data)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   linsys->b[row] = value;

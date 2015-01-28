@@ -52,7 +52,9 @@ const char *NLS_NAME[NLS_MAX+1] = {
   "NLS_UNKNOWN",
 
   /* NLS_HYBRID */       "hybrid",
+#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_KINSOL */       "kinsol",
+#endif
   /* NLS_NEWTON */       "newton",
   /* NLS_HOMOTOPY */     "homotopy",
   /* NLS_MIXED */        "mixed",
@@ -64,7 +66,9 @@ const char *NLS_DESC[NLS_MAX+1] = {
   "unknown",
 
   /* NLS_HYBRID */       "default method",
+#if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_KINSOL */       "sundials/kinsol",
+#endif
   /* NLS_NEWTON */       "Newton Raphson",
   /* NLS_HOMOTOPY */     "Homotopy Solver",
   /* NLS_MIXED */        "Mixed strategy start with Newton and fallback to hybrid",
@@ -150,9 +154,11 @@ int initializeNonlinearSystems(DATA *data)
     case NLS_HYBRID:
       allocateHybrdData(size, &nonlinsys[i].solverData);
       break;
+#if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_KINSOL:
       nls_kinsol_allocate(data, &nonlinsys[i]);
       break;
+#endif
     case NLS_NEWTON:
       allocateNewtonData(size, &nonlinsys[i].solverData);
       break;
@@ -235,9 +241,11 @@ int freeNonlinearSystems(DATA *data)
     case NLS_HYBRID:
       freeHybrdData(&nonlinsys[i].solverData);
       break;
+#if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_KINSOL:
       nls_kinsol_free(&nonlinsys[i]);
       break;
+#endif
     case NLS_NEWTON:
       freeNewtonData(&nonlinsys[i].solverData);
       break;
@@ -346,9 +354,11 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     success = solveHybrd(data, sysNumber);
     data->threadData->currentErrorStage = saveJumpState;
     break;
+#if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_KINSOL:
     success = nonlinearSolve_kinsol(data, sysNumber);
     break;
+#endif
   case NLS_NEWTON:
     success = solveNewton(data, sysNumber);
     break;

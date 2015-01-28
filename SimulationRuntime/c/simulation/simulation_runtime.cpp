@@ -81,7 +81,7 @@
 #include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "rtclock.h"
-#include "../../../Compiler/runtime/config.h"
+#include "omc_config.h"
 #include "initialization.h"
 
 #ifdef _OMC_QSS_LIB
@@ -593,6 +593,7 @@ int initializeResultData(DATA* simData, int cpuTime)
     sim_result.writeParameterData = mat4_writeParameterData;
     sim_result.free = mat4_free;
     resultFormatHasCheapAliasesAndParameters = 1;
+#if !defined(OMC_MINIMAL_RUNTIME)
   } else if(0 == strcmp("wall", MMC_STRINGDATA(simData->simulationInfo.outputFormat))) {
     sim_result.init = recon_wall_init;
     sim_result.emit = recon_wall_emit;
@@ -611,6 +612,7 @@ int initializeResultData(DATA* simData, int cpuTime)
     sim_result.emit = ia_emit;
     //sim_result.writeParameterData = ia_writeParameterData;
     sim_result.free = ia_free;
+#endif
   } else {
     cerr << "Unknown output format: " << MMC_STRINGDATA(simData->simulationInfo.outputFormat) << endl;
     return 1;
@@ -650,11 +652,16 @@ int callSolver(DATA* simData, string init_initMethod,
   }
 
   if(std::string("") == MMC_STRINGDATA(simData->simulationInfo.solverMethod)) {
+#if defined(WITH_DASSL)
     solverID = S_DASSL;
+#else
+    solverID = S_RUNGEKUTTA;
+#endif
   } else {
     for(i=1; i<S_MAX; ++i) {
-      if(std::string(SOLVER_METHOD_NAME[i]) == MMC_STRINGDATA(simData->simulationInfo.solverMethod))
+      if(std::string(SOLVER_METHOD_NAME[i]) == MMC_STRINGDATA(simData->simulationInfo.solverMethod)) {
         solverID = i;
+      }
     }
   }
   /* if no states are present, than we can

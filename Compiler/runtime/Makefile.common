@@ -44,10 +44,10 @@ Dynload_omc.o: systemimpl.h errorext.h ../OpenModelicaBootstrappingHeader.h $(Si
 Database_omc.o: Database.c Database_omc.c
 Print_omc.o : printimpl.c printimpl.h
 Error_omc.o : errorext.cpp ErrorMessage.hpp ../OpenModelicaBootstrappingHeader.h
-System_omc.o : System_omc.c systemimpl.c config.h errorext.h printimpl.h $(configUnix) $(RML_COMPAT)
-Lapack_omc.o : lapackimpl.c config.h $(configUnix) $(RML_COMPAT)
+System_omc.o : System_omc.c systemimpl.c omc_config.h errorext.h printimpl.h $(configUnix) $(RML_COMPAT)
+Lapack_omc.o : lapackimpl.c omc_config.h $(configUnix) $(RML_COMPAT)
 IOStreamExt_omc.o : IOStreamExt.c
-Settings_omc.o : settingsimpl.c config.h $(configUnix)
+Settings_omc.o : settingsimpl.c omc_config.h $(configUnix)
 UnitParserExt_omc.o : unitparserext.cpp unitparser.h
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT) matching.c matchmaker.h matching_cheap.c
 Socket_omc.o : socketimpl.c

@@ -50,7 +50,9 @@ enum LINEAR_SOLVER
   LS_NONE = 0,
 
   LS_LAPACK,
+#if !defined(OMC_MINIMAL_RUNTIME)
   LS_LIS,
+#endif
   LS_UMFPACK,
   LS_TOTALPIVOT,
 
@@ -68,15 +70,6 @@ int freeLinearSystems(DATA *data);
 int solve_linear_system(DATA *data, int sysNumber);
 int check_linear_solutions(DATA *data, int printFailingSystems);
 void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
-
-void setAElementLAPACK(int row, int col, double value, int nth, void *data);
-void setAElementLis(int row, int col, double value, int nth, void *data);
-void setAElementTotalPivot(int row, int col, double value, int nth, void *data);
-void setAElementUmfpack(int row, int col, double value, int nth, void *data );
-void setBElementLAPACK(int row, double value, void *data );
-void setBElementLis(int row, double value, void *data );
-void setBElementTotalPivot(int row, double value, void *data );
-void setBElementUmfpack(int row, double value, void *data );
 
 #ifdef __cplusplus
 }

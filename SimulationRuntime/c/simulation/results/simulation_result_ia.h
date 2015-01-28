@@ -38,10 +38,12 @@
 extern "C" {
 #endif
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 void ia_init(simulation_result *self, DATA *data);
 void ia_emit(simulation_result *self, DATA *data);
 void ia_writeParameterData(simulation_result *self, DATA *data);
 void ia_free(simulation_result *self, DATA *data);
+#endif
 
 #ifdef __cplusplus
 }

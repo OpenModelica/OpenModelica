@@ -1,5 +1,5 @@
 #include "TaskGraphResultsCmp.h"
-#include "config.h"
+#include "omc_config.h"
 #include <iostream>
 
 #if USE_PATOH

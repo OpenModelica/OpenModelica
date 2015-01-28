@@ -56,7 +56,7 @@ extern "C" {
 #include <unistd.h>
 
 #include "rtclock.h"
-#include "config.h"
+#include "omc_config.h"
 #include "errorext.h"
 #include "settingsimpl.h"
 #include "printimpl.h"

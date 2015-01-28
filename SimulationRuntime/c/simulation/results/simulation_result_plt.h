@@ -37,9 +37,11 @@
 extern "C" {
 #endif /* cplusplus */
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 void plt_init(simulation_result *self,DATA *data);
 void plt_emit(simulation_result *self,DATA *data);
 void plt_free(simulation_result *self,DATA *data);
+#endif
 
 #ifdef __cplusplus
 }

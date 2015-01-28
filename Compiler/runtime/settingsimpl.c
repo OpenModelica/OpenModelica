@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "config.h"
+#include "omc_config.h"
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #else
