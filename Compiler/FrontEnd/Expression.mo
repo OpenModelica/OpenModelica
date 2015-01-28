@@ -3274,6 +3274,11 @@ algorithm
       list<DAE.Exp> explst;
       Boolean b;
 
+    case (DAE.TUPLE(PR=explst), _)
+      equation
+        explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
+      then explst;
+
     case (DAE.ARRAY( array=explst), _)
       equation
         explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
@@ -8046,6 +8051,18 @@ algorithm
     else false;
   end match;
 end isTuple;
+
+public function isRecord
+  "Returns true if the given expression is a record,
+   otherwise false."
+  input DAE.Exp inExp;
+  output Boolean outIsRecord;
+algorithm
+  outIsRecord := match(inExp)
+    case DAE.RECORD() then true;
+    else false;
+  end match;
+end isRecord;
 
 public function isScalarConst
   "Returns true if the given expression is a scalar constant, otherwise false."

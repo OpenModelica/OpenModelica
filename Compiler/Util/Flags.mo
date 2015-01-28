@@ -621,6 +621,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
     "clockPartitioning",
+    "CSE",
     "expandDerOperator",
     "findStateOrder",
     "introduceDerAlias",
@@ -630,8 +631,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "comSubExp",
     // "addInitialStmtsToAlgorithms",
     "resolveLoops",
-    "evalFunc",
-    "CSE"
+    "evalFunc"
     }),
   SOME(STRING_DESC_OPTION({
     ("CSE", Util.gettext("Common SubExpression Elimination")),

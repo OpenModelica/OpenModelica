@@ -1583,13 +1583,32 @@ algorithm
 end createDummyVar;
 
 public function createCSEVar
-"Creates a cse variable with the name $DER_inCref for a der-call."
+"Creates a cse variable with the name of inCref."
   input DAE.ComponentRef inCref;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
-                           ComponentReference.crefLastType(inCref), NONE(), NONE(), {}, DAE.emptyElementSource,
+  outVar := match (inCref)
+  local
+    DAE.ElementSource source;
+    list<Absyn.Path> typeLst;
+    Absyn.Path path;
+  case (_) guard(ComponentReference.traverseCref(inCref,ComponentReference.crefIsRec,false)) equation
+    DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),source=typeLst) = ComponentReference.crefType(inCref);
+    source = DAE.SOURCE(Absyn.dummyInfo,{},NONE(),{},path::typeLst,{},{});
+    outVar = BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
+                           ComponentReference.crefLastType(inCref), NONE(), NONE(), {}, source,
                            NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
+  then outVar;  
+  case(_) equation
+    outVar = BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), 
+                            ComponentReference.crefLastType(inCref), NONE(), NONE(), {}, DAE.emptyElementSource,
+                            NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
+   then outVar;
+  else 
+    equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"BackendVariable.createCSEVar failed."});
+   then fail();
+  end match;
 end createCSEVar;
 
 public function copyVarNewName "author: Frenkel TUD 2012-5
