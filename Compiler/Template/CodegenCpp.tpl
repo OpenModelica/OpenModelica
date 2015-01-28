@@ -74,7 +74,7 @@ template translateFunctions(FunctionCode functionCode)
   "" // Return empty result since result written to files directly
 end translateFunctions;
 
-template simulationHeaderFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes, 
+template simulationHeaderFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes,
                               String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
@@ -5281,7 +5281,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   >>
 end generateAlgloopHeaderInlcudeString;
 
-template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, 
+template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,
                                       String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=

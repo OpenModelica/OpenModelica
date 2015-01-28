@@ -21,10 +21,10 @@ template translateModel(SimCode simCode) ::=
   let &extraFuncsDecl = buffer "" /*BUFD*/
   let stateDerVectorName = "__zDot"
   let useMemoryOptimization = HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)
-  
+
   let()= textFile(simulationMainFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else "")), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
-  let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", 
+  let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "",
                     generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", stringBool(useMemoryOptimization)), "",
                     generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", stringBool(useMemoryOptimization)),
                     MemberVariable(modelInfo, hpcOmMemory,stringBool(useMemoryOptimization),false), false),
