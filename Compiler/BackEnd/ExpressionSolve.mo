@@ -1627,6 +1627,7 @@ algorithm
     (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
     e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
     lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
+    lhs = Expression.makePureBuiltinCall("abs", {lhs}, tp);
     lhs = Expression.expMul(e_1,lhs);
 
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
