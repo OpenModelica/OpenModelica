@@ -67,13 +67,13 @@ const char *NLS_DESC[NLS_MAX+1] = {
   "unknown",
 
 #if !defined(OMC_MINIMAL_RUNTIME)
-  /* NLS_HYBRID */       "default method",
-  /* NLS_KINSOL */       "sundials/kinsol",
-  /* NLS_NEWTON */       "Newton Raphson",
+  /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver",
+  /* NLS_KINSOL */       "sundials/kinsol - prototype implementation",
+  /* NLS_NEWTON */       "Newton Raphson - prototype implementation",
 #endif
-  /* NLS_HOMOTOPY */     "Homotopy Solver",
+  /* NLS_HOMOTOPY */     "Damped Newton solver if failing case fixed-point and Newton homotopies are tried.",
 #if !defined(OMC_MINIMAL_RUNTIME)
-  /* NLS_MIXED */        "Mixed strategy start with Newton and fallback to hybrid",
+  /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
 #endif
   "NLS_MAX"
 };
