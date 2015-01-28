@@ -368,7 +368,7 @@ algorithm
     then (inExp, false, inTuple);
     case (DAE.CALL(path=Absyn.IDENT("semiLinear")), _)
     then (inExp, false, inTuple);
-      
+
 
     case (DAE.CALL(path=path, attr=DAE.CALL_ATTR(ty=tp)), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
