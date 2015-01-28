@@ -449,7 +449,7 @@ void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler
     if (textFormat) {
       output = QString("<message stream=\"stdout\" type=\"%1\" text=\"%2\" />")
           .arg(StringHandler::getSimulationMessageTypeString(type))
-          .arg(output);
+          .arg(Qt::escape(output));
     }
     if (!mpSimulationOutputHandler) {
       mpSimulationOutputHandler = new SimulationOutputHandler(this, output);
