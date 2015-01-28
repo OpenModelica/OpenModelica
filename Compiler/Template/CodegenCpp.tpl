@@ -467,6 +467,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   class <%lastIdentOfPath(modelInfo.name)%>PreVariables : public virtual PreVariables
   {
   public:
+    <%additionalPublicMembers%>
     <%lastIdentOfPath(modelInfo.name)%>PreVariables() ;
     virtual ~<%lastIdentOfPath(modelInfo.name)%>PreVariables() ;
     virtual void initPreVariables();
@@ -487,7 +488,6 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       <%initPreBoolVarFuncs%>
       >>
     %>
-    <%additionalPublicMembers%>
    protected:
      <%memberVariableDefinitions%>
   };

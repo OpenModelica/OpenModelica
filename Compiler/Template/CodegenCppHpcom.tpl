@@ -49,7 +49,7 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationWriteOutputHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
   let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo, hpcOmMemory, stringBool(useMemoryOptimization), false), generateAdditionalPublicMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, ""), false),'OMCpp<%fileNamePrefix%>PreVariables.h')
   let()= textFile(simulationWriteOutputCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
-  let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
+  let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
   let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
   let()= textFile(simulationWriteOutputParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
   let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
@@ -108,6 +108,10 @@ template generateAdditionalPublicMemberDeclaration(SimCode simCode ,Text& extraF
            p1 = malloc(size + offset);
            p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));
            p2[-1]=p1; //line 6
+           
+           if(((size_t)p2) % 64 != 0)
+              throw std::runtime_error("Memory was not alligned correctly!");
+           
            return p2;
         }
         void operator delete(void *p)
