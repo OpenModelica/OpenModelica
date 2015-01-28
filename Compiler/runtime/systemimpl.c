@@ -2684,6 +2684,14 @@ int SystemImpl__stat(const char *filename, double *size, double *mtime)
 }
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
+
+int SystemImpl__alarm(int seconds)
+{
+  return alarm(seconds);
+}
+
+#else
+
 static int default_alarm_action_set = 0;
 static struct sigaction default_alarm_action;
 
@@ -2704,12 +2712,6 @@ int SystemImpl__alarm(int seconds)
     sigaction(SIGALRM, &sa, NULL);
     default_alarm_action_set = 1;
   }
-  return alarm(seconds);
-}
-#else
-
-int SystemImpl__alarm(int seconds)
-{
   return alarm(seconds);
 }
 
