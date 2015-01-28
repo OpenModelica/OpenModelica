@@ -472,6 +472,7 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
         //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
 
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
+        <%hpcomConstructorExtension%>
       }
 
       /* Destructor */
