@@ -40,6 +40,7 @@ extern "C" {
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+#include <TlHelp32.h>
 #include <time.h>
 
 int asprintf(char **strp, const char *fmt, ...) {
@@ -69,11 +70,64 @@ int vasprintf(char **strp, const char *fmt, va_list ap) {
 
 static HANDLE thread    = 0; // thread handle
 
+/* adrpo: found this on http://stackoverflow.com/questions/1173342/terminate-a-process-tree-c-for-windows
+ * thanks go to: mjmarsh & Firas Assaad
+ * adapted to recurse on children ids
+ */
+void killProcessTreeWindows(DWORD myprocID)
+{
+  PROCESSENTRY32 pe;
+
+  memset(&pe, 0, sizeof(PROCESSENTRY32));
+  pe.dwSize = sizeof(PROCESSENTRY32);
+
+  HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+  if (Process32First(hSnap, &pe))
+  {
+      BOOL bContinue = TRUE;
+
+      // kill child processes
+      while (bContinue)
+      {
+          // only kill child processes
+          if (pe.th32ParentProcessID == myprocID)
+          {
+              HANDLE hChildProc = NULL;
+
+              // recurse
+              killProcessTreeWindows(pe.th32ProcessID);
+
+              hChildProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe.th32ProcessID);
+
+              if (hChildProc)
+              {
+                  TerminateProcess(hChildProc, 1);
+                  CloseHandle(hChildProc);
+              }
+          }
+
+          bContinue = Process32Next(hSnap, &pe);
+      }
+
+      // kill the main process
+      HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, myprocID);
+
+      if (hProc)
+      {
+          TerminateProcess(hProc, 1);
+          CloseHandle(hProc);
+      }
+  }
+}
+
+
 static DWORD WINAPI killProcess (LPVOID arg)
 {
   Sleep (1000 * ((unsigned int)arg));
-  fprintf(stdout, "Killed"); fflush(NULL);
-  TerminateProcess(GetCurrentProcess(), 1);
+  fprintf(stdout, "Alarm clock"); fflush(NULL);
+  killProcessTreeWindows(GetCurrentProcessId());
+
   return 0;
 }
 
