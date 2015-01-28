@@ -31,7 +31,7 @@
 /*! \file kinsolSolver.c
  */
 
-#include "../../../../Compiler/runtime/config.h"
+#include "omc_config.h"
 #include "nonlinearSystem.h"
 #include "kinsolSolver.h"
 #include "simulation_info_xml.h"

@@ -31,7 +31,7 @@
 /*! \file linearSolverUmfpack.c
  */
 
-#include "../../../../Compiler/runtime/config.h"
+#include "omc_config.h"
 
 #ifdef WITH_UMFPACK
 #include <math.h>
