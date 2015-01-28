@@ -689,8 +689,6 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-TSUB\nDifferentiate exp: " + se1);
-        //work-a-round, sicne otherwise AVM-model have issues with index reduction
-        failure(BackendDAE.DIFFERENTIATION_TIME() = inDiffType);
 
         (res1, functionTree) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
 
@@ -708,8 +706,6 @@ algorithm
       equation
         //se1 = ExpressionDump.printExpStr(e);
         //print("\nExp-TUPLE\nDifferentiate exp: " + se1);
-        //work-a-round, sicne otherwise AVM-model have issues with index reduction
-        failure(BackendDAE.DIFFERENTIATION_TIME() = inDiffType);
 
         (expl, functionTree) = List.map3Fold(expl, differentiateExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
 
