@@ -108,10 +108,10 @@ template generateAdditionalPublicMemberDeclaration(SimCode simCode ,Text& extraF
            p1 = malloc(size + offset);
            p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));
            p2[-1]=p1; //line 6
-           
+
            if(((size_t)p2) % 64 != 0)
               throw std::runtime_error("Memory was not alligned correctly!");
-           
+
            return p2;
         }
         void operator delete(void *p)
