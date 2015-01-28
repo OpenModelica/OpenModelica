@@ -961,13 +961,11 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
 
 static void omc_assert_warning_simulation(FILE_INFO info, const char *msg, ...)
 {
-  va_list ap;
-  va_start(ap,msg);
-  fputs("Warning: ",stderr);
-  vfprintf(stderr,msg,ap);
-  fputs("\n",stderr);
-  fflush(NULL);
-  va_end(ap);
+  threadData_t *threadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key);
+  va_list args;
+  va_start(args, msg);
+  warningStreamPrint(LOG_ASSERT, 0, msg, args);
+  va_end(args);
 }
 
 static void omc_terminate_simulation(FILE_INFO info, const char *msg, ...)
