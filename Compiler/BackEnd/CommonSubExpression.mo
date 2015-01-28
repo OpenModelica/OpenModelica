@@ -105,32 +105,28 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      list<BackendDAE.Var> varList, varList_mod;
-      list<BackendDAE.Equation> eqList, eqList_mod;
+      list<BackendDAE.Var> varList;
+      list<BackendDAE.Equation> eqList;
       HashTableExpToExp.HashTable HT;
       HashTableExpToIndex.HashTable HT2, HT3;
 
     case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) equation
-      varList = BackendVariable.varList(orderedVars);
-      eqList = BackendEquation.equationList(orderedEqs);
       // BackendDump.dumpEquationList(eqList, "############## Equation-Liste: ###########");
       // BackendDump.dumpVarList(varList, "############## Variablen-Liste: ###########");
       // TODO: merge HT and HT2
       HT = HashTableExpToExp.emptyHashTableSized(49999);  //2053    4013    25343   536870879
       HT2 = HashTableExpToIndex.emptyHashTableSized(49999);
       HT3 = HashTableExpToIndex.emptyHashTableSized(49999);
-      (_, (HT, HT2, outStartIndex))=List.mapFold(eqList, foldEq, (HT, HT2, inStartIndex));
+      (HT, HT2, outStartIndex) = BackendEquation.traverseEquationArray(orderedEqs, foldEq, (HT, HT2, inStartIndex));
       // BaseHashTable.dumpHashTable(HT);
       // BaseHashTable.dumpHashTable(HT2);
-      (eqList_mod, (HT, HT2, _, eqList, varList_mod))=List.mapFold(eqList, foldEq2, (HT, HT2, HT3, {}, {}));
-      eqList_mod = listAppend(eqList_mod, eqList);
-      varList_mod = listAppend(varList, varList_mod);
+      (orderedEqs, (HT, HT2, _, eqList, varList)) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, foldEq2, (HT, HT2, HT3, {}, {}));
+      orderedEqs = BackendEquation.addEquations(eqList, orderedEqs);
+      orderedVars = BackendVariable.addVars(varList, orderedVars);
       if Flags.isSet(Flags.DUMP_CSE) then
-        BackendDump.dumpEquationList(eqList_mod, "########### Updated Equation List: #########");
-        BackendDump.dumpVarList(varList_mod, "########### Updated Variable List: #########");
+        BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List: #########");
+        BackendDump.dumpVariables(orderedVars, "########### Updated Variable List: #########");
       end if;
-      orderedVars = BackendVariable.listVar(varList_mod);
-      orderedEqs = BackendEquation.listEquation(eqList_mod);
     then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind);
 
     else inSyst;
@@ -361,8 +357,18 @@ algorithm
       end if;
     then (inExp, true, (HT, HT2, i));
 
+    case (DAE.IFEXP(_), _)
+    then (inExp, false, inTuple);
+
     case (DAE.CALL(path=Absyn.IDENT("der")), _)
     then (inExp, false, inTuple);
+    case (DAE.CALL(path=Absyn.IDENT("smooth")), _)
+    then (inExp, false, inTuple);
+    case (DAE.CALL(path=Absyn.IDENT("noEvent")), _)
+    then (inExp, false, inTuple);
+    case (DAE.CALL(path=Absyn.IDENT("semiLinear")), _)
+    then (inExp, false, inTuple);
+      
 
     case (DAE.CALL(path=path, attr=DAE.CALL_ATTR(ty=tp)), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
@@ -468,7 +474,7 @@ algorithm
       value = DAE.CREF(cr, DAE.T_CLOCK_DEFAULT);
     then (value, inUniqueCSEIndex+1);
 
-    case DAE.T_TUPLE(typeLst) equation
+    case DAE.T_TUPLE(types=typeLst) equation
       (expLst, i) = List.mapFold(typeLst, createReturnExp, inUniqueCSEIndex);
       value = DAE.TUPLE(expLst);
     then (value, i+1);
