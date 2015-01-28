@@ -52,7 +52,7 @@ import CodegenUtil.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenFMU.*;
 
-template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
+template translateModel(SimCode simCode)
  "Generates C code and Makefile for compiling a FMU of a
   Modelica model."
 ::=
@@ -68,7 +68,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationCppFile(simCode, contextFMI,extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%name%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals, stateDerVectorName, false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, extraFuncs ,extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%lastIdentOfPath(modelInfo.name)%>Functions.cpp')
-  let()= textFile(simulationTypesHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
+  let()= textFile(simulationTypesHeaderFile(simCode, extraFuncs ,extraFuncsDecl, "",modelInfo.functions,literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
   let()= textFile(fmuModelWrapperFile(simCode, extraFuncs ,extraFuncsDecl, "",guid,name), 'OMCpp<%name%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFileCpp(simCode, extraFuncs ,extraFuncsDecl, "",guid), 'modelDescription.xml')
   let()= textFile(simulationInitHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
@@ -79,7 +79,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationJacobianHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
   let()= textFile(simulationJacobianCppFile(simCode, extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode, extraFuncs ,extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-  let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",false),'OMCpp<%fileNamePrefix%>PreVariables.h')
+  let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo,false), "", false),'OMCpp<%fileNamePrefix%>PreVariables.h')
   let()= textFile(simulationWriteOutputCppFile(simCode, extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
   let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
   let()= textFile(simulationStateSelectionCppFile(simCode, extraFuncs ,extraFuncsDecl, "", stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')

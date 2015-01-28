@@ -13,50 +13,52 @@ import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when
 
 
 
-template translateModel(SimCode simCode , Boolean useFlatArrayNotation) ::=
+template translateModel(SimCode simCode) ::=
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__), makefileParams= MAKEFILE_PARAMS(__)) then
   let target  = simulationCodeTarget()
   let &extraFuncs = buffer "" /*BUFD*/
   let &extraFuncsDecl = buffer "" /*BUFD*/
   let stateDerVectorName = "__zDot"
+  let useMemoryOptimization = HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)
+  
   let()= textFile(simulationMainFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", (if Flags.isSet(USEMPI) then "#include <mpi.h>" else ""), (if Flags.isSet(USEMPI) then MPIInit() else ""), (if Flags.isSet(USEMPI) then MPIFinalize() else "")), 'OMCpp<%fileNamePrefix%>Main.cpp')
 
-  let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),
-                    generateAdditionalPublicMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, ""),
-                    generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),
-                    false, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),
+  let()= textFile(simulationHeaderFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", 
+                    generateAdditionalIncludes(simCode ,&extraFuncs ,&extraFuncsDecl, "", stringBool(useMemoryOptimization)), "",
+                    generateAdditionalProtectedMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, "", stringBool(useMemoryOptimization)),
+                    MemberVariable(modelInfo, hpcOmMemory,stringBool(useMemoryOptimization),false), false),
                     'OMCpp<%fileNamePrefix%>.h')
-  let()= textFile(simulationCppFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>.cpp')
+  let()= textFile(simulationCppFile(simCode ,contextOther,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
   let()= textFile(simulationFunctionsFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", modelInfo.functions,literals,externalFunctionIncludes,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
-  let()= textFile(simulationTypesHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
+  let()= textFile(simulationTypesHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Types.h')
   let()= textFile(simulationMakefile(target,simCode ,&extraFuncs ,&extraFuncsDecl, ""), '<%fileNamePrefix%>.makefile')
   let()= textFile(simulationInitHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Initialize.h')
-  let()= textFile(simulationInitCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
-  let()= textFile(simulationInitParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
-  let()= textFile(simulationInitExtVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
-  let()= textFile(simulationInitAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
-  let()= textFile(simulationInitAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
+  let()= textFile(simulationInitCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+  let()= textFile(simulationInitParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+  let()= textFile(simulationInitExtVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>InitializeExtVars.cpp')
+  let()= textFile(simulationInitAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>InitializeAliasVars.cpp')
+  let()= textFile(simulationInitAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
   let()= textFile(simulationJacobianHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>Jacobian.h')
-  let()= textFile(simulationJacobianCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
-  let()= textFile(simulationStateSelectionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
+  let()= textFile(simulationJacobianCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>Jacobian.cpp')
+  let()= textFile(simulationStateSelectionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)), 'OMCpp<%fileNamePrefix%>StateSelection.cpp')
   let()= textFile(simulationStateSelectionHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>StateSelection.h')
   let()= textFile(simulationExtensionHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
   let()= textFile(simulationExtensionCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
   let()= textFile(simulationWriteOutputHeaderFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-  let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",false),'OMCpp<%fileNamePrefix%>PreVariables.h')
-  let()= textFile(simulationWriteOutputCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
+  let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo, hpcOmMemory, stringBool(useMemoryOptimization), false), generateAdditionalPublicMemberDeclaration(simCode ,&extraFuncs ,&extraFuncsDecl, ""), false),'OMCpp<%fileNamePrefix%>PreVariables.h')
+  let()= textFile(simulationWriteOutputCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
   let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
-  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
-  let()= textFile(simulationWriteOutputParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
-  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
+  let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
+  let()= textFile(simulationWriteOutputParameterCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>WriteOutputParameter.cpp')
+  let()= textFile(simulationWriteOutputAliasVarsCppFile(simCode ,&extraFuncs ,&extraFuncsDecl, "", stateDerVectorName, stringBool(useMemoryOptimization)),'OMCpp<%fileNamePrefix%>WriteOutputAliasVars.cpp')
   let()= textFile(simulationFactoryFile(simCode ,&extraFuncs ,&extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
   let()= textFile(simulationMainRunScript(simCode ,&extraFuncs ,&extraFuncsDecl, ""), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode ,&extraFuncs ,&extraFuncsDecl, "")%>')
   let jac =  (jacobianMatrixes |> (mat, _,_, _, _, _,_) =>
-          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)) ;separator="")
+          (mat |> (eqs,_,_) =>  algloopfiles(eqs,simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloopJacobian, stateDerVectorName, stringBool(useMemoryOptimization)) ;separator="")
          ;separator="")
-  let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloop, stateDerVectorName, HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory))
+  let alg = algloopfiles(listAppend(allEquations,initialEquations),simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloop, stateDerVectorName, stringBool(useMemoryOptimization))
   let()= textFile(algloopMainfile(listAppend(allEquations,initialEquations),simCode ,&extraFuncs ,&extraFuncsDecl, "",contextAlgloop), 'OMCpp<%fileNamePrefix%>AlgLoopMain.cpp')
   let()= textFile(calcHelperMainfile(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain.cpp')
   let()= textFile(calcHelperMainfile2(simCode ,&extraFuncs ,&extraFuncsDecl, ""), 'OMCpp<%fileNamePrefix%>CalcHelperMain2.cpp')
@@ -96,8 +98,23 @@ template generateAdditionalPublicMemberDeclaration(SimCode simCode ,Text& extraF
         <<
         <%addHpcomArrayHeaders%>
 
-        void* operator new(size_t);
-        void operator delete(void*);
+        void* operator new(size_t size)
+        {
+           //see: http://stackoverflow.com/questions/12504776/aligned-malloc-in-c
+           void *p1;
+           void **p2;
+           size_t alignment = 64;
+           int offset=alignment - 1 + sizeof(void*);
+           p1 = malloc(size + offset);
+           p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));
+           p2[-1]=p1; //line 6
+           return p2;
+        }
+        void operator delete(void *p)
+        {
+           void* p1 = ((void**)p)[-1];         // get the pointer to the buffer we allocated
+           free( p1 );
+        }
         >>
       else ''
    else ''
@@ -140,7 +157,6 @@ template generateAdditionalProtectedMemberDeclaration(SimCode simCode ,Text& ext
 
       <%addHpcomFunctionHeaders%>
       <%addHpcomVarHeaders%>
-      <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,false)%>
 
       <% if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
       <<
@@ -388,16 +404,15 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
       #endif
 
       /* Constructor */
-      <%className%>::<%className%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> sim_data)
-        :SystemDefaultImplementation(globalSettings)
+      <%className%>::<%className%>(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory, boost::shared_ptr<ISimData> sim_data)
+        : SystemDefaultImplementation(globalSettings)
         , <%className%>PreVariables()
-        ,_algLoopSolverFactory(nonlinsolverfactory)
-        ,_sim_data(sim_data)
+        , _algLoopSolverFactory(nonlinsolverfactory)
+        , _sim_data(sim_data)
         <%hpcomMemberVariableDefinition%>
         <%MemberVariable(modelInfo, hpcOmMemory,useFlatArrayNotation,true)%>
         <%simulationInitFile(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       {
-        _event_handling= boost::shared_ptr<EventHandling>(new EventHandling());
         //I don't know why this line is necessary if we link statically, but without it a segfault occurs
         _global_settings = globalSettings;
         //Number of equations
@@ -405,6 +420,7 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
         _dimZeroFunc= <%zerocrosslength(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>;
         _dimTimeEvent = <%timeeventlength(simCode ,extraFuncs ,extraFuncsDecl, extraFuncsNamespace)%>;
         //Number of residues
+        _event_handling= boost::shared_ptr<EventHandling>(new EventHandling());
         <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
           <<
           _dimResidues=<%numResidues(allEquations)%>;
@@ -457,30 +473,6 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
 
         _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
       }
-
-      <%if(HpcOmMemory.useHpcomMemoryOptimization(hpcOmMemory)) then
-        <<
-        void* <%lastIdentOfPath(modelInfo.name)%>::operator new(size_t size)
-        {
-           //see: http://stackoverflow.com/questions/12504776/aligned-malloc-in-c
-           void *p1;
-           void **p2;
-           size_t alignment = 64;
-           int offset=alignment - 1 + sizeof(void*);
-           p1 = malloc(size + offset);
-           p2=(void**)(((size_t)(p1)+offset)&~(alignment-1));
-           p2[-1]=p1; //line 6
-           return p2;
-        }
-
-        void <%lastIdentOfPath(modelInfo.name)%>::operator delete(void* p)
-        {
-           void* p1 = ((void**)p)[-1];         // get the pointer to the buffer we allocated
-           free( p1 );
-        }
-        >>
-        else ''
-      %>
 
       /* Destructor */
       <%className%>::~<%className%>()
@@ -1588,69 +1580,74 @@ end simulationMakefile;
 // --------------------------------------------------------------------------------------------------------------------------------------------
 // Member Variable Stuff
 // --------------------------------------------------------------------------------------------------------------------------------------------
-
 template MemberVariable(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
  "Define membervariable in simulation file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
+   //Using optimized variables
+   /*parameter real vars*/
+   <%vars.paramVars |> var =>
+    MemberVariableDefine2(var, "parameters", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+   ;separator="\n"%>
+   /*parameter int vars*/
+  <%vars.intParamVars |> var =>
+    MemberVariableDefine("int", var, "intVariables.parameters", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   /*parameter bool vars*/
+   <%vars.boolParamVars |> var =>
+    MemberVariableDefine("bool",var, "boolVariables.parameters", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.stringParamVars |> var =>
+    MemberVariableDefine("string",var, "stringVariables.parameters", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.stringAliasVars |> var =>
+    MemberVariableDefine("string",var, "stringVariables.AliasVars", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+   <%vars.extObjVars |> var =>
+    MemberVariableDefine("void*",var, "extObjVars", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+  ;separator="\n"%>
+
+  >>
+end MemberVariable;
+
+template MemberVariablePreVariables(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
+ "Define membervariable in simulation file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  //Variables saved for pre, edge and change operator
   <%vars.algVars |> var =>
     MemberVariableDefine2(var, "algebraics", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
   ;separator="\n"%>
   <%vars.discreteAlgVars |> var =>
     MemberVariableDefine2(var, "algebraics", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
   ;separator="\n"%>
-  <%vars.paramVars |> var =>
-    MemberVariableDefine2(var, "parameters", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.aliasVars |> var =>
-    MemberVariableDefine2(var, "aliasVars", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.intAlgVars |> var =>
-    MemberVariableDefine("int", var, "intVariables.algebraics",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.intParamVars |> var =>
-    MemberVariableDefine("int", var, "intVariables.parameters",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.intAliasVars |> var =>
-    MemberVariableDefine("int", var, "intVariables.AliasVars",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
   <%vars.boolAlgVars |> var =>
-    MemberVariableDefine("bool",var, "boolVariables.algebraics",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-  <%vars.boolParamVars |> var =>
-    MemberVariableDefine("bool",var, "boolVariables.parameters",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.boolAliasVars |> var =>
-    MemberVariableDefine("bool ",var, "boolVariables.AliasVars",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+    MemberVariableDefine("bool",var, "boolVariables.algebraics", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
   ;separator="\n"%>
   <%vars.stringAlgVars |> var =>
-    MemberVariableDefine("string",var, "stringVariables.algebraics",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+    MemberVariableDefine("string",var, "stringVariables.algebraics", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
   ;separator="\n"%>
-  <%vars.stringParamVars |> var =>
-    MemberVariableDefine("string",var, "stringVariables.parameters",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+   <%vars.intAlgVars |> var =>
+    MemberVariableDefine("int", var, "intVariables.algebraics", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
   ;separator="\n"%>
-  <%vars.stringAliasVars |> var =>
-    MemberVariableDefine("string",var, "stringVariables.AliasVars",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.constVars |> var =>
-    MemberVariableDefine2(var, "constvariables", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.intConstVars |> var =>
-    MemberVariableDefine("const int", var, "intConstvariables",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.boolConstVars |> var =>
-    MemberVariableDefine("const bool", var, "boolConstvariables",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.stringConstVars |> var =>
-    MemberVariableDefine("const string",var, "stringConstvariables",hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
-   <%vars.extObjVars |> var =>
-    MemberVariableDefine("void*",var, "extObjVars",hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
-  ;separator="\n"%>
+   /*alias real vars*/
+   <%vars.aliasVars |> var =>
+    MemberVariableDefine2(var, "aliasVars", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+   ;separator="\n"%>
+   /*alias int vars*/
+   <%vars.intAliasVars |> var =>
+    MemberVariableDefine("int", var, "intVariables.AliasVars", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+   ;separator="\n"%>
+    /*alias bool vars*/
+   <%vars.boolAliasVars |> var =>
+    MemberVariableDefine("bool ",var, "boolVariables.AliasVars", hpcOmMemory,useFlatArrayNotation, createConstructorDeclaration)
+   ;separator="\n"%>
   >>
-end MemberVariable;
+end MemberVariablePreVariables;
 
 template MemberVariableDefine(String type,SimVar simVar, String arrayName, Option<MemoryMap> hpcOmMemoryOpt, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
 ::=

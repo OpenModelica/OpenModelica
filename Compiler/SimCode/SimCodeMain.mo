@@ -552,11 +552,11 @@ algorithm
     case(_)
       equation
         true = Flags.isSet(Flags.HPCOM);
-        Tpl.tplNoret2(CodegenCppHpcom.translateModel, iSimCode, true);
+        Tpl.tplNoret(CodegenCppHpcom.translateModel, iSimCode);
       then ();
     else
       equation
-        Tpl.tplNoret2(CodegenCpp.translateModel, iSimCode, true);
+        Tpl.tplNoret(CodegenCpp.translateModel, iSimCode);
       then ();
    end matchcontinue;
 end callTargetTemplatesCPP;
@@ -583,7 +583,7 @@ algorithm
       then ();
     case (_,"Cpp")
       equation
-        Tpl.tplNoret2(CodegenFMUCpp.translateModel, simCode, true);
+        Tpl.tplNoret(CodegenFMUCpp.translateModel, simCode);
       then ();
     else
       equation

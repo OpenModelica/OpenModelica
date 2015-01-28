@@ -7,7 +7,7 @@ import CodegenUtil.*;
 
 
 
-template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
+template translateModel(SimCode simCode)
 ::=
   let stateDerVectorName = "__zDot"
   match simCode
@@ -17,10 +17,10 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
         let &extraFuncsDecl = buffer "" /*BUFD*/
         let()= textFile(simulationMainFile(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", ""), 'OMCpp<%fileNamePrefix%>Main.cpp')
         let()= textFile(simulationCppFile(simCode, contextOther, &extraFuncs, &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>.cpp')
-        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", "", true, false), 'OMCpp<%fileNamePrefix%>.h')
+        let()= textFile(simulationHeaderFile(simCode , contextOther,&extraFuncs , &extraFuncsDecl, '<%lastIdentOfPath(modelInfo.name)%>', "", "", "", MemberVariable(modelInfo, false), false), 'OMCpp<%fileNamePrefix%>.h')
         let()= textFile(simulationFunctionsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",modelInfo.functions,literals,stateDerVectorName,false), 'OMCpp<%fileNamePrefix%>Functions.h')
         let()= textFile(simulationFunctionsFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, externalFunctionIncludes, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Functions.cpp')
-        let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, stateDerVectorName, useFlatArrayNotation), 'OMCpp<%fileNamePrefix%>Types.h')
+        let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", modelInfo.functions, literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
         let()= textFile(simulationMakefile(target,simCode , &extraFuncs , &extraFuncsDecl, "","","","","",false), '<%fileNamePrefix%>.makefile')
 
         let &extraFuncsInit = buffer "" /*BUFD*/
@@ -39,7 +39,7 @@ template translateModel(SimCode simCode, Boolean useFlatArrayNotation)
         let()= textFile(simulationExtensionHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.h')
         let()= textFile(simulationExtensionCppFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>Extension.cpp')
         let()= textFile(simulationWriteOutputHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>WriteOutput.h')
-        let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "",false),'OMCpp<%fileNamePrefix%>PreVariables.h')
+        let()= textFile(simulationPreVarsHeaderFile(simCode , &extraFuncs , &extraFuncsDecl, "", MemberVariablePreVariables(modelInfo,false), "", false),'OMCpp<%fileNamePrefix%>PreVariables.h')
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
         let()= textFile(simulationPreVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>PreVariables.cpp')
         let()= textFile(simulationWriteOutputAlgVarsCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutputAlgVars.cpp')
@@ -74,7 +74,8 @@ template translateFunctions(FunctionCode functionCode)
   "" // Return empty result since result written to files directly
 end translateFunctions;
 
-template simulationHeaderFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes, String additionalPublicMembers, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
+template simulationHeaderFile(SimCode simCode ,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalIncludes, 
+                              String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -82,7 +83,7 @@ case SIMCODE(__) then
    <<
    <%generateHeaderIncludeString(simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace)%>
    <%additionalIncludes%>
-   <%generateClassDeclarationCode(simCode ,context, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, additionalPublicMembers, additionalProtectedMembers, useDefaultMemberVariables, useFlatArrayNotation)%>
+   <%generateClassDeclarationCode(simCode ,context, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, additionalPublicMembers, additionalProtectedMembers, memberVariableDefinitions, useFlatArrayNotation)%>
    >>
 end simulationHeaderFile;
 
@@ -446,9 +447,7 @@ case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SI
 end simulationWriteOutputHeaderFile;
 
 
-
-
-template simulationPreVarsHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Boolean useFlatArrayNotation)
+template simulationPreVarsHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String memberVariableDefinitions, String additionalPublicMembers, Boolean useFlatArrayNotation)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -488,9 +487,9 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       <%initPreBoolVarFuncs%>
       >>
     %>
+    <%additionalPublicMembers%>
    protected:
-     <%MemberVariablePreVariables(modelInfo,useFlatArrayNotation)%>
-
+     <%memberVariableDefinitions%>
   };
   >>
 end simulationPreVarsHeaderFile;
@@ -5185,12 +5184,27 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
   #pragma once
   #if defined(__TRICORE__) || defined(__vxworks)
-  #define BOOST_EXTENSION_SYSTEM_DECL
-  #define BOOST_EXTENSION_EVENTHANDLING_DECL
+    #define BOOST_EXTENSION_SYSTEM_DECL
+    #define BOOST_EXTENSION_EVENTHANDLING_DECL
   #else
-  #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_IMPORT_DECL
-  #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
+    #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_IMPORT_DECL
+    #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_IMPORT_DECL
   #endif
+
+  <%
+  match(getConfigString(PROFILING_LEVEL))
+     case("none") then ''
+     case("all_perf") then '#include <Core/Utils/extension/measure_time_papi.hpp>'
+     else
+       <<
+       #ifdef USE_SCOREP
+         #include <Core/Utils/extension/measure_time_scorep.hpp>
+       #else
+         #include <Core/Utils/extension/measure_time_rdtsc.hpp>
+       #endif
+       >>
+  end match
+  %>
 
   #include "System/SystemDefaultImplementation.h"
 
@@ -5267,7 +5281,8 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   >>
 end generateAlgloopHeaderInlcudeString;
 
-template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, String additionalPublicMembers, String additionalProtectedMembers, Boolean useDefaultMemberVariables, Boolean useFlatArrayNotation)
+template generateClassDeclarationCode(SimCode simCode,Context context,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, 
+                                      String additionalPublicMembers, String additionalProtectedMembers, String memberVariableDefinitions, Boolean useFlatArrayNotation)
  "Generates class declarations."
 ::=
 match simCode
@@ -5365,7 +5380,7 @@ match modelInfo
        boost::shared_ptr<EventHandling> _event_handling;
       boost::shared_ptr<DiscreteEvents> _discrete_events;
 
-      <%if(useDefaultMemberVariables) then '<%MemberVariable(modelInfo, useFlatArrayNotation)%>'%>
+      <%memberVariableDefinitions%>
       <%conditionvariables%>
       Functions* _functions;
 
