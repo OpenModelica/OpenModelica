@@ -62,7 +62,7 @@ void* omc_Main_readSettings(void *threadData, void *args);
 #include <iostream>
 
 #include "OMCProxy.h"
-#include "../../../Compiler/runtime/config.h"
+#include "../../../Compiler/runtime/omc_config.h"
 
 
 static QVariant parseExpression(QString result)
@@ -387,7 +387,7 @@ QString linuxOMHome(void) {
 
 /*!
   Starts the OpenModelica Compiler.\n
-  On Windows look for OPENMODELICAHOME environment variable. On Linux read the installation directory from config.h file.\n
+  On Windows look for OPENMODELICAHOME environment variable. On Linux read the installation directory from omc_config.h file.\n
   Runs the omc with +c and +d=interactiveCorba flags.\n
   +c flag creates a CORBA IOR file with name e.g openmodelica.objid.OMEdit{1ABB3DAA-C925-47E8-85F9-3DE6F3F7E79C}154302842\n
   +corbaObjectReferenceFilePath sets the path for CORBA object reference file.\n
