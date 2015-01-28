@@ -529,21 +529,18 @@ static inline void local_hessian_struct(DATA * data, OptDataDim * dim, OptDataSt
             break;
         }
      }else{
-       tmp = Hl[i][j];
-       if(tmp && !H0[i][j]){
+       if(Hl[i][j]){
          H0[i][j] = (modelica_boolean)1;
          ++dim->nH0;
          if(i <= j)
            ++dim->nH0_;
        }
-       if((tmp || Hm[i][j]) && !H1[i][j]){
+       if(H0[i][j] || Hm[i][j]){
          H1[i][j] = (modelica_boolean)1;
          ++dim->nH1;
          if(i <= j)
            ++dim->nH1_;
        }
-       if(H0[i][j] && H1[i][j])
-         break;
     }
    }
   }
