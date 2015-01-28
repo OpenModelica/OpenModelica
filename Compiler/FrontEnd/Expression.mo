@@ -4204,7 +4204,7 @@ algorithm
     then e;
 
     // record type
-    case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)) equation  
+    case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)) equation
       cr = DAE.CREF_IDENT("$TMP", inType, {});
       crefs = ComponentReference.expandCref(cr, true);
       expLst = List.map(crefs, crefExp);
