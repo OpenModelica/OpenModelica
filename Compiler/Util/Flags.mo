@@ -939,7 +939,7 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(53, "replaceHomotopy",
 
 constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(54, "generateSymbolicJacobian",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be used to simulate with dasslColorSymJac."));
+  Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be utilise by dassl with the runtime option: -dasslJacobian=coloredSymbolical|symbolical."));
 
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(55, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
