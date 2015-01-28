@@ -206,7 +206,7 @@ algorithm
       true = intGt(value2, 1);
       if not BaseHashTable.hasKey(value, HT3) then
         HT3 = BaseHashTable.add((value, 1), HT3);
-        varLst1 = createVarsForExp(value, {}); 
+        varLst1 = createVarsForExp(value, {});
         varLst = listAppend(varLst1, varLst);
         eq = BackendEquation.generateEquation(value, key, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
         eqLst = eq::eqLst;
@@ -222,7 +222,7 @@ algorithm
       if not Flags.getConfigBool(Flags.CSE_EACHCALL) then
         true = intGt(value2, 1);
       end if;
-      
+
       // debug
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("replace :\n " + ExpressionDump.printExpStr(key) + " \n");
@@ -240,12 +240,12 @@ algorithm
         // this need to run before any HashTable is updated
         expReplaced = prepareExpForReplace(value);
 
-		    // traverse all arguments of the function
-		    (expLst, (HT, HT2, HT3, eqLst1, varLst1)) = Expression.traverseExpList(expLst, traverseExpsEquation_2, (HT, HT2, HT3, {}, {}));
-		    exp1 = DAE.CALL(path, expLst, attr);
+        // traverse all arguments of the function
+        (expLst, (HT, HT2, HT3, eqLst1, varLst1)) = Expression.traverseExpList(expLst, traverseExpsEquation_2, (HT, HT2, HT3, {}, {}));
+        exp1 = DAE.CALL(path, expLst, attr);
         varLst = listAppend(varLst1, varLst);
         eqLst = listAppend(eqLst1, eqLst);
-        
+
         // debug
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           print("create equation from:\n  LHS: " + ExpressionDump.printExpStr(value) + " \n");
@@ -259,7 +259,7 @@ algorithm
         // update HashTable by value
         HT3 = BaseHashTable.add((value, 1), HT3);
 
-        // use replaced expression  
+        // use replaced expression
         value = expReplaced;
 
         // debug
@@ -363,7 +363,7 @@ algorithm
 
     case (DAE.CALL(path=Absyn.IDENT("der")), _)
     then (inExp, false, inTuple);
-      
+
     case (DAE.CALL(path=path, attr=DAE.CALL_ATTR(ty=tp)), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
       if BaseHashTable.hasKey(inExp, HT) then
@@ -515,10 +515,10 @@ algorithm
     then var::inAccumVarLst;
 
     /* consider also array and record crefs */
-    /* TODO: Acivate that case, now it produces wrong types 
+    /* TODO: Acivate that case, now it produces wrong types
              in the created variables, it seems that expandCref
              has an issue.
-    */ 
+    */
     /*
     case DAE.CREF(componentRef=cr) equation
       crefs = ComponentReference.expandCref(cr, true);
@@ -527,7 +527,7 @@ algorithm
       outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
     then outVarLst;
     */
-          
+
     case DAE.TUPLE(expLst) equation
       outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
     then outVarLst;
@@ -556,7 +556,7 @@ algorithm
       list<DAE.Exp> expLst;
       DAE.Type ty;
       Boolean scalar;
-        
+
     case DAE.TUPLE(PR=expLst) equation
       expLst = List.map(expLst, prepareExpForReplace);
     then DAE.TUPLE(expLst);
@@ -566,7 +566,7 @@ algorithm
       cr = ComponentReference.crefStripLastSubs(cr);
       cr = ComponentReference.crefSetType(cr, ty);
       e = Expression.crefExp(cr);
-    then e; 
+    then e;
 
     case DAE.RECORD(exps=e::_) equation
       cr = Expression.expCref(e);

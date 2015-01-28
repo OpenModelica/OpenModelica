@@ -1598,13 +1598,13 @@ algorithm
     outVar = BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
                            ComponentReference.crefLastType(inCref), NONE(), NONE(), {}, source,
                            NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
-  then outVar;  
+  then outVar;
   case(_) equation
-    outVar = BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), 
+    outVar = BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
                             ComponentReference.crefLastType(inCref), NONE(), NONE(), {}, DAE.emptyElementSource,
                             NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
    then outVar;
-  else 
+  else
     equation
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendVariable.createCSEVar failed."});
    then fail();
