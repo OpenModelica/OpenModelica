@@ -2697,7 +2697,7 @@ static struct sigaction default_alarm_action;
 
 static void alarm_handler(int signo, siginfo_t *si, void *ptr)
 {
-  assert(signo==SIGALRM);
+  assert(signo == SIGALRM);
   kill(-getpid(), SIGALRM);
   sigaction(SIGALRM, &default_alarm_action, 0);
 }
