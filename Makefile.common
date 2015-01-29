@@ -64,7 +64,7 @@ install-python:
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
+interactive: .testvariables mkbuilddirs boehm-gc fmil libraries/msl-external-libs lis Cdaskr CMinpack $(IPOPT_TARGET) $(UMFPACK_TARGET)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
 
 docs: mkbuilddirs
@@ -150,17 +150,17 @@ breakprocess:
 	(cd testsuite/openmodelica/bootstrapping && cp BreakProcess.exe ../../../$(builddir_bin)/)
 
 all-runtimeCPPinstall:
-	$(MAKE) msl-external-libs CMinpack
+	$(MAKE) libraries/msl-external-libs CMinpack
 	$(MAKE) all runtimeCPPinstall
 
 omc-and-runtimeCPPinstall: mkbuilddirs
-	$(MAKE) msl-external-libs CMinpack
+	$(MAKE) libraries/msl-external-libs CMinpack
 	$(MAKE) omc runtimeCPPinstall
 
-runtimeCPP: msl-external-libs CMinpack
+runtimeCPP: libraries/msl-external-libs CMinpack
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)"
 
-runtimeCPPinstall: msl-external-libs CMinpack
+runtimeCPPinstall: libraries/msl-external-libs CMinpack
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib build/lib/omc/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib build/lib/omc/cpp/libOMCppDataExchange.dylib
