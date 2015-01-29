@@ -56,6 +56,8 @@ encapsulated package Flags
   depending on which type it is.
   "
 
+public import Util;
+
 protected import Corba;
 protected import Error;
 protected import ErrorExt;
@@ -63,8 +65,8 @@ protected import Global;
 protected import List;
 protected import Print;
 protected import Settings;
+protected import StringUtil;
 protected import System;
-public import Util;
 
 public uniontype DebugFlag
   record DEBUG_FLAG
@@ -1926,16 +1928,16 @@ algorithm
     case {"optmodules"}
       equation
         str1 = System.gettext("The --preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a comma-separated list, where the valid modules are:");
-        str1 = stringAppendList(Util.stringWrap(str1,System.getTerminalWidth(),"\n"));
+        str1 = stringAppendList(StringUtil.wordWrap(str1,System.getTerminalWidth(),"\n"));
         str2 = printFlagValidOptionsDesc(PRE_OPT_MODULES);
         str3 = System.gettext("The --matchingAlgorithm sets the method that is used for the matching algorithm, after the pre optimization modules. Valid options are:");
-        str3 = stringAppendList(Util.stringWrap(str3,System.getTerminalWidth(),"\n"));
+        str3 = stringAppendList(StringUtil.wordWrap(str3,System.getTerminalWidth(),"\n"));
         str4 = printFlagValidOptionsDesc(MATCHING_ALGORITHM);
         str5 = System.gettext("The --indexReductionMethod sets the method that is used for the index reduction, after the pre optimization modules. Valid options are:");
-        str5 = stringAppendList(Util.stringWrap(str5,System.getTerminalWidth(),"\n"));
+        str5 = stringAppendList(StringUtil.wordWrap(str5,System.getTerminalWidth(),"\n"));
         str6 = printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD);
         str7 = System.gettext("The --postOptModules then sets the optimization modules which are used after the index reduction, specified as a comma-separated list. The valid modules are:");
-        str7 = stringAppendList(Util.stringWrap(str7,System.getTerminalWidth(),"\n"));
+        str7 = stringAppendList(StringUtil.wordWrap(str7,System.getTerminalWidth(),"\n"));
         str8 = printFlagValidOptionsDesc(POST_OPT_MODULES);
         help = stringAppendList({str1,"\n\n",str2,"\n",str3,"\n\n",str4,"\n",str5,"\n\n",str6,"\n",str7,"\n\n",str8,"\n"});
       then help;
@@ -1944,7 +1946,7 @@ algorithm
       equation
         (config_flag as CONFIG_FLAG(name=name,description=desc)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
         str1 = "-" + name;
-        str2 = stringAppendList(Util.stringWrap(Util.translateContent(desc), System.getTerminalWidth(), "\n"));
+        str2 = stringAppendList(StringUtil.wordWrap(Util.translateContent(desc), System.getTerminalWidth(), "\n"));
         str = printFlagValidOptionsDesc(config_flag);
         help = stringAppendList({str1,"\n",str2,"\n",str});
       then help;
@@ -2012,7 +2014,7 @@ protected
 algorithm
   (str1,str2) := topic;
   str1 := Util.stringPadRight(str1,13," ");
-  str := stringAppendList(Util.stringWrap(str1 + str2, System.getTerminalWidth(), "\n               "));
+  str := stringAppendList(StringUtil.wordWrap(str1 + str2, System.getTerminalWidth(), "\n               "));
 end makeTopicString;
 
 public function printUsage
@@ -2074,7 +2076,7 @@ algorithm
         name = Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
         flag_str = stringAppendList({name, " ", desc_str});
         delim_str = descriptionIndent + "  ";
-        wrapped_str = Util.stringWrap(flag_str, System.getTerminalWidth(), delim_str);
+        wrapped_str = StringUtil.wordWrap(flag_str, System.getTerminalWidth(), delim_str);
         opt_str = printValidOptions(inFlag);
         flag_str = stringDelimitList(wrapped_str, "\n") + opt_str + "\n";
       then
@@ -2120,7 +2122,7 @@ algorithm
       equation
         opt_str = descriptionIndent + "   " + System.gettext("Valid options:") + " " +
           stringDelimitList(strl, ", ");
-        strl = Util.stringWrap(opt_str, System.getTerminalWidth(), descriptionIndent + "     ");
+        strl = StringUtil.wordWrap(opt_str, System.getTerminalWidth(), descriptionIndent + "     ");
         opt_str = stringDelimitList(strl, "\n");
         opt_str = "\n" + opt_str;
       then
@@ -2169,7 +2171,7 @@ algorithm
   desc_str := Util.translateContent(desc);
   str := Util.stringPadRight(" * " + name + " ", 30, " ") + desc_str;
   outString := stringDelimitList(
-    Util.stringWrap(str, System.getTerminalWidth(), descriptionIndent + "    "), "\n") + "\n";
+    StringUtil.wordWrap(str, System.getTerminalWidth(), descriptionIndent + "    "), "\n") + "\n";
 end printFlagOptionDesc;
 
 protected function printDebugFlag
@@ -2184,7 +2186,7 @@ algorithm
   DEBUG_FLAG(default = default, name = name, description = desc) := inFlag;
   desc_str := Util.translateContent(desc);
   outString := Util.stringPadRight((if default then " + " else " - ") + name + " ", 26, " ") + desc_str;
-  outString := stringDelimitList(Util.stringWrap(outString, System.getTerminalWidth(),
+  outString := stringDelimitList(StringUtil.wordWrap(outString, System.getTerminalWidth(),
     descriptionIndent), "\n") + "\n";
 end printDebugFlag;
 
