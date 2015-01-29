@@ -1,6 +1,6 @@
 #pragma once
 
-#include "textfilewriter.h"
+#include "TextfileWriter.h"
 
 
 template <size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4>
