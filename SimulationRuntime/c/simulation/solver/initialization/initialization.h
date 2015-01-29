@@ -35,18 +35,17 @@
 #define _INITIALIZATION_H_
 
 #include "simulation_data.h"
-#include "initialization_data.h"
 
 #ifdef __cplusplus
 #include <cstdlib>
 extern "C"
 {
 #endif
+
   enum INIT_INIT_METHOD
   {
     IIM_UNKNOWN = 0,
     IIM_NONE,
-    IIM_NUMERIC,
     IIM_SYMBOLIC,
     IIM_MAX
   };
@@ -54,51 +53,15 @@ extern "C"
   static const char *INIT_METHOD_NAME[IIM_MAX] = {
     "unknown",
     "none",
-    "numeric",
     "symbolic"
   };
   static const char *INIT_METHOD_DESC[IIM_MAX] = {
     "unknown",
     "sets all variables to their start values and skips the initialization process",
-    "solves the initialization problem numerically",
     "solves the initialization problem symbolically - default"
   };
 
-  enum INIT_OPTI_METHOD
-  {
-    IOM_UNKNOWN = 0,
-    IOM_SIMPLEX,
-    IOM_NEWUOA,
-    IOM_NELDER_MEAD_EX,
-    IOM_KINSOL,
-    IOM_KINSOL_SCALED,
-    IOM_IPOPT,
-    IOM_MAX
-  };
-
-  static const char *OPTI_METHOD_NAME[IOM_MAX] = {
-    "unknown",
-    "simplex",
-    "newuoa",
-    "nelder_mead_ex",
-    "kinsol",
-    "kinsol_scaled",
-    "ipopt"
-  };
-  static const char *OPTI_METHOD_DESC[IOM_MAX] = {
-    "unknown",
-    "Nelder-Mead method",
-    "Brent's method",
-    "Extended Nelder-Mead method (see -ils for global homotopy) - default",
-    "sundials/kinsol",
-    "sundials/kinsol with scaling",
-    "Interior Point OPTimizer"
-  };
-
-  extern void dumpInitialization(DATA *data, INIT_DATA *initData);
-  extern int reportResidualValue(INIT_DATA *initData);
-  extern double leastSquareWithLambda(INIT_DATA *initData, double lambda);
-  extern int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime, int lambda_steps);
+  extern int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, double initTime, int lambda_steps);
 
 #ifdef __cplusplus
 }

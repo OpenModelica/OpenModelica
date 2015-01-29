@@ -501,7 +501,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   }
 
   string init_initMethod = "";
-  string init_optiMethod = "";
   string init_file = "";
   string init_time_string = "";
   double init_time = 0.0;
@@ -512,9 +511,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   if(omc_flag[FLAG_IIM]) {
     init_initMethod = omc_flagValue[FLAG_IIM];
-  }
-  if(omc_flag[FLAG_IOM]) {
-    init_optiMethod = omc_flagValue[FLAG_IOM];
   }
   if(omc_flag[FLAG_IIF]) {
     init_file = omc_flagValue[FLAG_IIF];
@@ -531,7 +527,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
   }
 
-  retVal = callSolver(data, init_initMethod, init_optiMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
+  retVal = callSolver(data, init_initMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
 
   if (omc_flag[FLAG_ALARM]) {
     alarm(0);
@@ -631,8 +627,8 @@ int initializeResultData(DATA* simData, int cpuTime)
  * "euler" calls an Euler solver
  * "rungekutta" calls a fourth-order Runge-Kutta Solver
  */
-int callSolver(DATA* simData, string init_initMethod,
-    string init_optiMethod, string init_file, double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
+int callSolver(DATA* simData, string init_initMethod, string init_file,
+      double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
 {
   int retVal = -1;
   long i;
@@ -689,7 +685,7 @@ int callSolver(DATA* simData, string init_initMethod,
                         simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
     } else /* standard solver interface */
 #endif
-      retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
+      retVal = solver_main(simData, init_initMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
   }
 
   MMC_CATCH_INTERNAL(mmc_jumper)
@@ -756,11 +752,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
         case FLAG_IIM:
           for(j=1; j<IIM_MAX; ++j)
             infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", INIT_METHOD_NAME[j], INIT_METHOD_DESC[j]);
-          break;
-
-        case FLAG_IOM:
-          for(j=1; j<IOM_MAX; ++j)
-            infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", OPTI_METHOD_NAME[j], OPTI_METHOD_DESC[j]);
           break;
 
         case FLAG_S:

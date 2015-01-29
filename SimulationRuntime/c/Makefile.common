@@ -92,12 +92,10 @@ RUNTIMEUTIL_HEADERS = \
 ./util/list.h
 
 RUNTIMEINITIALIZATION_HEADERS = \
-./simulation/solver/initialization/initialization.h \
-./simulation/solver/initialization/initialization_data.h
+./simulation/solver/initialization/initialization.h
 
 # RUNTIME_HEADERS_FMU = \
 # ./simulation/solver/initialization/initialization.h \
-# ./simulation/solver/initialization/initialization_data.h \
 # ./simulation/solver/events.h \
 # ./simulation/solver/solver_main.h \
 # ./util/list.h \

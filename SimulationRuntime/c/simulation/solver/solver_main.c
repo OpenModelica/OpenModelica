@@ -350,12 +350,10 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 
 
 /*! \fn initializeModel(DATA* data, const char* init_initMethod,
- *   const char* init_optiMethod, const char* init_file, double init_time,
- *   int lambda_steps)
+ *   const char* init_file, double init_time, int lambda_steps)
  *
  *  \param [ref] [data]
  *  \param [in]  [pInitMethod] user defined initialization method
- *  \param [in]  [pOptiMethod] user defined optimization method
  *  \param [in]  [pInitFile] extra argument for initialization-method "file"
  *  \param [in]  [initTime] extra argument for initialization-method "file"
  *  \param [in]  [lambda_steps] ???
@@ -363,8 +361,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
  *  This function starts the initialization process of the model .
  */
 int initializeModel(DATA* data, const char* init_initMethod,
-    const char* init_optiMethod, const char* init_file, double init_time,
-    int lambda_steps)
+    const char* init_file, double init_time, int lambda_steps)
 
 {
   int retValue = 0;
@@ -395,7 +392,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
   {
     int success = 0;
     MMC_TRY_INTERNAL(simulationJumpBuffer)
-    if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
+    if(initialization(data, init_initMethod, init_file, init_time, lambda_steps))
     {
       warningStreamPrint(LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
@@ -562,9 +559,8 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
  *
  *  This is the main function of the solver it perform the simulation.
  */
-int solver_main(DATA* data, const char* init_initMethod,
-    const char* init_optiMethod, const char* init_file, double init_time,
-    int lambda_steps, int solverID, const char* outputVariablesAtEnd)
+int solver_main(DATA* data, const char* init_initMethod, const char* init_file,
+    double init_time, int lambda_steps, int solverID, const char* outputVariablesAtEnd)
 {
   int i, retVal = 0;
   unsigned int ui;
@@ -604,8 +600,9 @@ int solver_main(DATA* data, const char* init_initMethod,
   omc_alloc_interface.collect_a_little();
 
   /* initialize all parts of the model */
-  if(0 == retVal) {
-    retVal = initializeModel(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps);
+  if(0 == retVal)
+  {
+    retVal = initializeModel(data, init_initMethod, init_file, init_time, lambda_steps);
   }
   omc_alloc_interface.collect_a_little();
 
