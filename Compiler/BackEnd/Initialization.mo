@@ -421,7 +421,7 @@ protected function inlineWhenForInitializationWhenEquation "author: lochel
   output list<BackendDAE.Equation> outEqns;
   output BackendDAE.Variables outVars;
 algorithm
-  (outEqns, outVars) := matchcontinue(inWEqn, inSource, inEqAttr, inEqns, inVars)
+  (outEqns, outVars) := matchcontinue(inWEqn)
     local
       DAE.ComponentRef left;
       DAE.Exp condition, right, crexp;
@@ -431,23 +431,17 @@ algorithm
       BackendDAE.Variables vars;
 
     // active when equation during initialization
-    case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), _, _, _, _) equation
+    case BackendDAE.WHEN_EQ(condition=condition, left=left, right=right) equation
       true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
       crexp = Expression.crefExp(left);
       eqn = BackendEquation.generateEquation(crexp, right, inSource, inEqAttr);
     then (eqn::inEqns, inVars);
 
     // inactive when equation during initialization
-    case (BackendDAE.WHEN_EQ(condition=condition, left=left,  elsewhenPart=NONE()), _, _, _, _) equation
+    case BackendDAE.WHEN_EQ(condition=condition, left=left) equation
       false = Expression.containsInitialCall(condition, false);
-      (eqns,_) = generateInactiveWhenEquationForInitialization({left}, inSource, inEqns, inVars);
+      (eqns,_) = generateInactiveWhenEquationForInitialization(ComponentReference.expandCref(left, true), inSource, inEqns, inVars);
     then (eqns, inVars);
-
-    // inactive when equation during initialization with else when part (no strict Modelica)
-    case (BackendDAE.WHEN_EQ(condition=condition, elsewhenPart=SOME(weqn)), _, _, _, _) equation
-      false = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
-      (eqns, vars) = inlineWhenForInitializationWhenEquation(weqn, inSource, inEqAttr, inEqns, inVars);
-    then (eqns, vars);
   end matchcontinue;
 end inlineWhenForInitializationWhenEquation;
 
@@ -1356,9 +1350,7 @@ algorithm
       system = BackendDAE.EQSYSTEM(vars, eqns2, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
     then (system, (inDAE, initVars, dumpVars, removedEqns));
 
-    else //equation
-      //Error.addInternalError("function analyzeInitialSystem2 failed", sourceInfo());
-    then fail();
+    else fail();
   end matchcontinue;
 end analyzeInitialSystem2;
 
