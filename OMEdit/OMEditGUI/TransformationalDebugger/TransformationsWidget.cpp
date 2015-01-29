@@ -438,12 +438,12 @@ EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWid
 TransformationsWidget::TransformationsWidget(QString infoXMLFullFileName, MainWindow *pMainWindow)
   : mpMainWindow(pMainWindow), mInfoXMLFullFileName(infoXMLFullFileName)
 {
-  if (!mInfoXMLFullFileName.endsWith("_info.xml")) {
+  if (!mInfoXMLFullFileName.endsWith("_info.json")) {
     mProfJSONFullFileName = "";
     mProfilingDataRealFileName = "";
   } else {
-    mProfJSONFullFileName = infoXMLFullFileName.left(infoXMLFullFileName.size() - 8) + "prof.json";
-    mProfilingDataRealFileName = infoXMLFullFileName.left(infoXMLFullFileName.size() - 8) + "prof.realdata";
+    mProfJSONFullFileName = infoXMLFullFileName.left(infoXMLFullFileName.size() - 9) + "prof.json";
+    mProfilingDataRealFileName = infoXMLFullFileName.left(infoXMLFullFileName.size() - 9) + "prof.realdata";
   }
   setWindowIcon(QIcon(":/Resources/icons/debugger.svg"));
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::transformationalDebugger));
