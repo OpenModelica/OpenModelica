@@ -1176,7 +1176,7 @@ algorithm
     case (e, BackendDAE.EQUATION_ARRAY(size=size, numberOfElement=numberOfElement, arrSize=arrSize, equOptArr=equOptArr)) equation
       (numberOfElement < arrSize) = true "Have space to add array elt.";
       n_1 = numberOfElement + 1;
-      index = findFirstUnusedEquOptEntry(1, arrSize, equOptArr);
+      index = findFirstUnusedEquOptEntry(n_1, arrSize, equOptArr);
       arr_1 = arrayUpdate(equOptArr, index, SOME(e));
       size = equationSize(e) + size;
     then BackendDAE.EQUATION_ARRAY(size, n_1, arrSize, arr_1);

@@ -5097,6 +5097,9 @@ end recordDeclarationHeader;
 template recordDefinition(String origName, String encName, String fieldNames, Integer numFields)
  "Generates the definition struct for a record declaration."
 ::=
+  match encName
+  case "SourceInfo_SOURCEINFO" then ''
+  else
   /* adrpo: 2011-03-14 make MSVC happy, no arrays of 0 size! */
   let fieldsDescription =
       match numFields
