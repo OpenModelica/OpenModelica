@@ -292,6 +292,9 @@ void OptionsDialog::readMessagesSettings()
   if (mpSettings->contains("messages/outputSize")) {
     mpMessagesPage->getOutputSizeSpinBox()->setValue(mpSettings->value("messages/outputSize").toInt());
   }
+  if (mpSettings->contains("messages/resetMessagesNumber")) {
+    mpMessagesPage->getResetMessagesNumberBeforeSimulationCheckBox()->setChecked(mpSettings->value("messages/resetMessagesNumber").toBool());
+  }
   // read font family
   if (mpSettings->contains("messages/fontFamily")) {
     int currentIndex;
@@ -627,6 +630,8 @@ void OptionsDialog::saveMessagesSettings()
 {
   // save output size
   mpSettings->setValue("messages/outputSize", mpMessagesPage->getOutputSizeSpinBox()->value());
+  // save reset messages number
+  mpSettings->setValue("messages/resetMessagesNumber", mpMessagesPage->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked());
   // save font
   mpSettings->setValue("messages/fontFamily", mpMessagesPage->getFontFamilyComboBox()->currentFont().family());
   mpSettings->setValue("messages/fontSize", mpMessagesPage->getFontSizeSpinBox()->value());
@@ -2575,11 +2580,15 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpOutputSizeSpinBox->setSingleStep(1000);
   mpOutputSizeSpinBox->setSuffix(" rows");
   mpOutputSizeSpinBox->setSpecialValueText(tr("unlimited"));
+  // reset messages number before simulation
+  mpResetMessagesNumberBeforeSimulationCheckBox = new QCheckBox(tr("Reset messages number before simulation"));
+  mpResetMessagesNumberBeforeSimulationCheckBox->setChecked(true);
   // set general groupbox layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setColumnStretch(1, 1);
   pGeneralGroupBoxLayout->addWidget(mpOutputSizeLabel, 0, 0);
   pGeneralGroupBoxLayout->addWidget(mpOutputSizeSpinBox, 0, 1);
+  pGeneralGroupBoxLayout->addWidget(mpResetMessagesNumberBeforeSimulationCheckBox, 1, 0, 1, 2);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   // Font and Colors
   mpFontColorsGroupBox = new QGroupBox(Helper::fontAndColors);

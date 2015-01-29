@@ -480,6 +480,7 @@ class MessagesPage : public QWidget
 public:
   MessagesPage(OptionsDialog *pOptionsDialog);
   QSpinBox* getOutputSizeSpinBox() {return mpOutputSizeSpinBox;}
+  QCheckBox* getResetMessagesNumberBeforeSimulationCheckBox() {return mpResetMessagesNumberBeforeSimulationCheckBox;}
   QFontComboBox* getFontFamilyComboBox() {return mpFontFamilyComboBox;}
   DoubleSpinBox* getFontSizeSpinBox() {return mpFontSizeSpinBox;}
   void setNotificationColor(QColor color) {mNotificaitonColor = color;}
@@ -496,6 +497,7 @@ private:
   QGroupBox *mpGeneralGroupBox;
   Label *mpOutputSizeLabel;
   QSpinBox *mpOutputSizeSpinBox;
+  QCheckBox *mpResetMessagesNumberBeforeSimulationCheckBox;
   QGroupBox *mpFontColorsGroupBox;
   Label *mpFontFamilyLabel;
   QFontComboBox *mpFontFamilyComboBox;

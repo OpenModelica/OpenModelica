@@ -79,12 +79,14 @@ class MessagesWidget : public QWidget
   Q_OBJECT
 private:
   MainWindow *mpMainWindow;
+  int mMessageNumber;
   QTextBrowser *mpMessagesTextBrowser;
   QAction *mpSelectAllAction;
   QAction *mpCopyAction;
   QAction *mpClearAllAction;
 public:
   MessagesWidget(MainWindow *pMainWindow);
+  void resetMessagesNumber() {mMessageNumber = 1;}
   QTextBrowser* getMessagesTextBrowser() {return mpMessagesTextBrowser;}
   void applyMessagesSettings();
   void addGUIMessage(MessageItem *pMessageItem);
@@ -93,6 +95,7 @@ signals:
 private slots:
   void openErrorMessageClass(QUrl url);
   void showContextMenu(QPoint point);
+  void clearMessages();
 };
 
 #endif // MESSAGESWIDGET_H

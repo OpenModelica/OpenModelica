@@ -96,6 +96,7 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   : QWidget(pMainWindow, Qt::WindowTitleHint)
 {
   mpMainWindow = pMainWindow;
+  mMessageNumber = 1;
   mpMessagesTextBrowser = new QTextBrowser;
   mpMessagesTextBrowser->setOpenLinks(false);
   mpMessagesTextBrowser->setOpenExternalLinks(false);
@@ -118,7 +119,7 @@ MessagesWidget::MessagesWidget(MainWindow *pMainWindow)
   connect(mpCopyAction, SIGNAL(triggered()), mpMessagesTextBrowser, SLOT(copy()));
   mpClearAllAction = new QAction(tr("Clear All"), this);
   mpClearAllAction->setStatusTip(tr("clears the Messages Browser"));
-  connect(mpClearAllAction, SIGNAL(triggered()), mpMessagesTextBrowser, SLOT(clear()));
+  connect(mpClearAllAction, SIGNAL(triggered()), SLOT(clearMessages()));
   // set layout for MessagesTextBrowser frame
   QVBoxLayout *pMessagesTextBrowserLayout = new QVBoxLayout;
   pMessagesTextBrowserLayout->setContentsMargins(0, 0, 0, 0);
@@ -184,8 +185,6 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
       messageCSSClass = "notification";
       break;
   }
-  // the error count number
-  static int errorCounter = 1;
   QString message;
   if (pMessageItem->getFileName().isEmpty()) { // if custom error message
     message = pMessageItem->getMessage();
@@ -208,13 +207,13 @@ void MessagesWidget::addGUIMessage(MessageItem *pMessageItem)
                                 "%6"
                                 "</div><br />")
       .arg(messageCSSClass)
-      .arg(QString::number(errorCounter))
+      .arg(QString::number(mMessageNumber))
       .arg(QTime::currentTime().toString())
       .arg(StringHandler::getErrorKindString(pMessageItem->getErrorKind()))
       .arg(StringHandler::getErrorTypeDisplayString(pMessageItem->getErrorType()))
       .arg(message);
   mpMessagesTextBrowser->insertHtml(errorString);
-  errorCounter++;
+  mMessageNumber++;
   // move the cursor down after adding message.
   textCursor.movePosition(QTextCursor::End);
   mpMessagesTextBrowser->setTextCursor(textCursor);
@@ -262,4 +261,14 @@ void MessagesWidget::showContextMenu(QPoint point)
   menu.addAction(mpCopyAction);
   menu.addAction(mpClearAllAction);
   menu.exec(mpMessagesTextBrowser->viewport()->mapToGlobal(point));
+}
+
+/*!
+  Clears the Messages Browser and resets the messages number.
+  Slot activated when mpClearAllAction triggered signal is raised.
+  */
+void MessagesWidget::clearMessages()
+{
+  resetMessagesNumber();
+  mpMessagesTextBrowser->clear();
 }

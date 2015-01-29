@@ -699,6 +699,10 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
   */
 bool SimulationDialog::translateModel(QString simulationParameters)
 {
+  // check reset messages number before simulation option
+  if (mpMainWindow->getOptionsDialog()->getMessagesPage()->getResetMessagesNumberBeforeSimulationCheckBox()->isChecked()) {
+    mpMainWindow->getMessagesWidget()->resetMessagesNumber();
+  }
   /* save the model before translating */
   if (mpMainWindow->getOptionsDialog()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox()->isChecked() &&
       !mpLibraryTreeNode->isSaved() &&
