@@ -46,7 +46,7 @@ extern "C" {
 #define DLLImport   __declspec( dllimport )
 #define DLLExport   __declspec( dllexport )
 #else
-#define DLLImport extern
+#define DLLImport /* extern */
 #define DLLExport /* nothing */
 #endif
 

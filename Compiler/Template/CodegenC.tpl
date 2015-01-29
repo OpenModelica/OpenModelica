@@ -11337,7 +11337,7 @@ extern "C" {
 #include <stdio.h>
 #include <openmodelica.h>
 
-DLLImport int __omc_main(int argc, char **argv);
+DLLImport extern int __omc_main(int argc, char **argv);
 
 int main(int argc, char **argv)
 {
