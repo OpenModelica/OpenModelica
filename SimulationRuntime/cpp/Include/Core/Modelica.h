@@ -183,11 +183,29 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/Utility.h>
 #include <Core/Math/SparseMatrix.h>
-#include <Core/HistoryImpl.h>
 #include <Core/DataExchange/Policies/TextfileWriter.h>
 #include <Core/DataExchange/Policies/MatfileWriter.h>
+#include <Core/DataExchange/Policies/BufferReaderWriter.h>
+#include <Core/HistoryImpl.h>
 #include <Core/SimulationSettings/ISettingsFactory.h>
 
 #if defined(__vxworks) || defined(__TRICORE__)
 #include <Core/DataExchange/SimDouble.h>
 #endif
+ /*
+ 
+ template class StatArrayDim1<double, 3>;
+ template class StatArrayDim1<double, 4> ;
+ template class StatArrayDim2<double, 3,3> ;
+ template class ublas::vector<double>;
+ template class vector<string>;
+ template class map<unsigned int,string>;
+ template class  uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > ;*/
+ /*
+ template class boost::unordered_map<int*, int>;
+ template class boost::unordered_map<double*, double>;
+ template class boost::unordered_map<bool*, bool>;
+ template class boost::circular_buffer<double>;
+ template class map<unsigned int, boost::circular_buffer<double> >;
+ template class map<unsigned int,string> 
+ */

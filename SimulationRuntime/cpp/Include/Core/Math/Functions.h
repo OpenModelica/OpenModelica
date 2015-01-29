@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include "ILapack.h"        ///< For the use of DGESV, etc.
 #include <limits>
-#include <iostream>
 #include <string>
 #include <exception>
 #include <Core/Math/OMAPI.h>    ///< For the use of DGESV, etc.

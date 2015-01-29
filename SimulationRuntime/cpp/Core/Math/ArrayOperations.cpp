@@ -382,3 +382,16 @@ template bool BOOST_EXTENSION_EXPORT_DECL dot_array(BaseArray<bool>&a, BaseArray
 template std::pair <double,double> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<double>& x);
 template std::pair <int,int> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<int>& x);
 template std::pair <bool,bool> BOOST_EXTENSION_EXPORT_DECL min_max (BaseArray<bool>& x);
+
+void BOOST_EXTENSION_EXPORT_DECL convertBoolToInt( BaseArray<bool> & a ,BaseArray<int> & b  );
+void BOOST_EXTENSION_EXPORT_DECL convertIntToBool( BaseArray<int> & a ,BaseArray<bool> & b  );
+
+/*
+ template   class  BOOST_EXTENSION_EXPORT_DECL  StatArrayDim1<double, 3>;
+ template   class  BOOST_EXTENSION_EXPORT_DECL  StatArrayDim1<double, 4> ;
+ template   class  BOOST_EXTENSION_EXPORT_DECL  StatArrayDim2<double, 3,3> ;
+ template   class  BOOST_EXTENSION_EXPORT_DECL  ublas::vector<double>;
+ template   class  BOOST_EXTENSION_EXPORT_DECL  vector<string>;
+ template   class  BOOST_EXTENSION_EXPORT_DECL  map<unsigned int,string>;
+ template   class  BOOST_EXTENSION_EXPORT_DECL   uBlas::compressed_matrix<double, uBlas::column_major, 0, uBlas::unbounded_array<int>, uBlas::unbounded_array<double> > ;
+ */

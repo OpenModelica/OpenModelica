@@ -62,7 +62,7 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
 
     }
 
-    void read(ublas::matrix<double>& R, std::vector<unsigned int>& indices)
+    void read(ublas::matrix<double>& R)
     {
         //not supported for file output
 
@@ -143,4 +143,5 @@ class TextFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
     unsigned int _curser_position;       ///< Controls current Curser-Position
     std::string _output_path;
     std::string _file_name;
+    vector<string> _var_outputs;
 };

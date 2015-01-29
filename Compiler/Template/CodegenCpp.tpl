@@ -357,7 +357,7 @@ template simulationWriteOutputHeaderFile(SimCode simCode ,Text& extraFuncs,Text&
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
   let n = numProtectedParamVars(modelInfo)
-  let outputtype = match   settings.outputFormat case "mat" then "MatFileWriter" else "TextFileWriter"
+  let outputtype = match   settings.outputFormat case "mat" then "MatFileWriter" case "buffer"  then "BufferReaderWriter" else "TextFileWriter" 
   let numparams = match   settings.outputFormat case "csv" then "1" else n
   <<
   #pragma once
@@ -820,16 +820,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
       _historyImpl->init();
 
-      map<unsigned int,string> var_ouputs_idx;
-      <%outputIndices(modelInfo)%>
-      _historyImpl->setOutputs(var_ouputs_idx);
+     
       _historyImpl->clear();
    }
    <%writeoutput(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
    >>
 end simulationWriteOutputCppFile;
-
-
+ /*
+ map<unsigned int,string> var_ouputs_idx;
+      <%outputIndices(modelInfo)%>
+      _historyImpl->setOutputs(var_ouputs_idx);
+*/
 template simulationPreVarsCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for simulation target."
 ::=
@@ -5745,11 +5746,7 @@ void  <%modelname%>Algloop<%index%>::setReal(const double* vars)
     AlgLoopDefaultImplementation::setReal(vars);
 };
 
-/// Set stream for output
-void  <%modelname%>Algloop<%index%>::setOutput(std::ostream* outputStream)
-{
-    AlgLoopDefaultImplementation::setOutput(outputStream);
-};
+
 >>
 end AlgloopDefaultImplementationCode;
 
@@ -5912,8 +5909,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool isLinear();
     virtual bool isLinearTearing();
     virtual bool isConsistent();
-    /// Set stream for output
-    virtual void setOutput(std::ostream* outputStream);
+   
 >>
 //void writeOutput(HistoryImplType::value_type_v& v ,vector<string>& head ,const IMixedSystem::OUTPUT command  = IMixedSystem::UNDEF_OUTPUT);
 end generateAlgloopMethodDeclarationCode;
@@ -13138,11 +13134,12 @@ case _ then
   let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
     indxColumn
     ;separator="\n")
-
+    
+      
     let jacvals = ( sparsepattern |> (cref,indexes) hasindex index0 =>
     let jaccol = ( indexes |> i_index hasindex index1 =>
-        (match indexColumn case "1" then '_<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0);'
-           else '_<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,<%crefWithoutIndexOperator(i_index)%>$pDER<%matrixName%>$indexdiffed) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(i_index)%>$pDER<%matrixName%>$indexdiffed);'
+        (match indexColumn case "1" then '_<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0);/*test1<%index0%>,<%index1%>*/'
+           else '_<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,<%crefWithoutIndexOperator(i_index)%>$pDER<%matrixName%>$indexdiffed) = _<%matrixName%>jac_y(<%crefWithoutIndexOperator(i_index)%>$pDER<%matrixName%>$indexdiffed);/*test2<%index0%>,<%index1%>*/'
            )
           ;separator="\n" )
     '_<%matrixName%>jac_x(<%index0%>) = 1;
@@ -13157,6 +13154,7 @@ _<%matrixName%>jac_x.clear();
 
   void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
   {
+    
     <%jacvals%>
     matrix = _<%matrixName%>jacobian;
   }

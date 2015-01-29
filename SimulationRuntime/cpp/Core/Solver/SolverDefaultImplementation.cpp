@@ -105,18 +105,7 @@ void SolverDefaultImplementation::initialize()
   // Set current start time to the system
   timeevent_system->setTime(_tCurrent);
 
-  //// Write out head line
-  //if (_outputStream)
-  //{
-  //    // Write head line (step time step size) into output stream
-  //    *_outputStream << "step\t time\t h";
-  //
-  //    // Prompt system to write out its results
-  //    _system->writeOutput(IMixedSystem::HEAD_LINE);
-
-  //    // Write a line break into output stream
-  //    *_outputStream << std::endl;
-  //}
+ 
   if(_settings->getGlobalSettings()->getOutputPointType() != EMPTY2 && _settings->getGlobalSettings()->getOutputFormat() != EMPTY)
     writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
 

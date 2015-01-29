@@ -20,11 +20,13 @@ public:
   {
   }
 
+  /*
   void setOutputs(map<unsigned int,string> var_outputs)
   {
     _var_outputs=var_outputs;
   }
-
+  */
+  
   void init()
   {
     ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::init(_globalSettings.getOutputPath(), _globalSettings.getResultsFileName());
@@ -32,7 +34,8 @@ public:
 
   virtual void getOutputNames(vector<string>& output_names)
   {
-    boost::copy(_var_outputs | boost::adaptors::map_values, std::back_inserter(output_names));
+    //boost::copy(_var_outputs | boost::adaptors::map_values, std::back_inserter(output_names));
+    output_names = ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::_var_outputs;
   }
 
   void getSimResults(const double time, ublas::vector<double>& v, ublas::vector<double>& dv)
@@ -52,9 +55,9 @@ public:
 
   virtual void getOutputResults(ublas::matrix<double>& Ro)
   {
-    vector<unsigned int> ids;
-    boost::copy(_var_outputs | boost::adaptors::map_keys, std::back_inserter(ids));
-    ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::read(Ro,ids);
+    //vector<unsigned int> ids;
+    //boost::copy(_var_outputs | boost::adaptors::map_keys, std::back_inserter(ids));
+    ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::read(Ro);
   }
 
   unsigned long getSize()
@@ -91,6 +94,7 @@ public:
 
 private:
   //map of indices of all output variables
-  map<unsigned int,string> _var_outputs;
+  //map<unsigned int,string> _var_outputs;
+ 
   IGlobalSettings& _globalSettings;
 };

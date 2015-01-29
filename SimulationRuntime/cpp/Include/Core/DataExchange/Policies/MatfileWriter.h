@@ -621,7 +621,7 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
         //not supported for file output
     }
 
-    void read(ublas::matrix<double>& R, std::vector<unsigned int>& indices)
+    void read(ublas::matrix<double>& R)
     {
         //not supported for file output
     }
@@ -656,4 +656,5 @@ class MatFileWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
     char *_stringMatrix;
     char *_pacString;
     int *_intMatrix;
+    vector<string> _var_outputs;
 };

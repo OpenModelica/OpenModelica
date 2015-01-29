@@ -41,7 +41,6 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _dimTimeEvent      (0)
   , _dimAE        (0)
   , _time_event_counter  (NULL)
-  , _outputStream      (NULL)
   , _callType        (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
   , _delay_max      (0.0)

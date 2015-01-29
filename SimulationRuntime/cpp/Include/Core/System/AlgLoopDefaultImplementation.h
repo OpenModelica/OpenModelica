@@ -62,7 +62,7 @@ public:
 
 
     /// Set stream for output
-    void setOutput(std::ostream* outputStream) ;
+    /*void setOutput(std::ostream* outputStream) ;*/
 
 
     // Member variables
@@ -88,6 +88,5 @@ protected:
 
     IAlgLoop::CONSTRTYPE
         _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
-    std::ostream
-        *_outputStream;                ///< Output stream for results
+    
 };

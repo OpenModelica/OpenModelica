@@ -3,19 +3,20 @@
 #include "textfilewriter.h"
 
 
-template <unsigned long dim_1,unsigned long dim_2,unsigned long dim_3>
-struct BufferReaderWriter
+template <size_t dim_1,size_t dim_2,size_t dim_3,size_t dim_4>
+class BufferReaderWriter : public Writer<dim_1, dim_2, dim_3, dim_4>
 {
     //typedef TextFileWriter<dim_1,dim_2> TextwriterType;
 public:
-    BufferReaderWriter(unsigned long size,string output_path,string file_name)
-        :_buffer_pos(0)
+    BufferReaderWriter(unsigned long size, string output_path, string file_name)
+        : Writer<dim_1, dim_2, dim_3, dim_4>(),
+            _buffer_pos(0)
     {
         try
         {
             _variables_buffer.set_capacity(size+size/10);
             _derivatives_buffer.set_capacity(size+size/10);
-            _residues_buffer.set_capacity(size+size/10);
+            //_residues_buffer.set_capacity(size+size/10);
             //textwriter = new TextwriterType(size,output_folder);
         }
         catch(std::exception& ex)
@@ -34,6 +35,7 @@ public:
     */
     void read(ublas::matrix<double>& R,ublas::matrix<double>& dR)
     {
+        /*
         try
         {
             ublas::matrix<double>::size_type  m = size();
@@ -49,12 +51,13 @@ public:
             cout<<"read  from  buffer faild" << std::endl;
             throw ex;
         }
-
+        */
 
     }
 
     void read(ublas::matrix<double>& R,ublas::matrix<double>& dR,ublas::matrix<double>& Re)
     {
+        /*
         try
         {
             ublas::matrix<double>::size_type  m = size();
@@ -73,14 +76,15 @@ public:
             cout<<"read  from  buffer faild" << std::endl;
             throw ex;
         }
-
+        */
 
     }
 
-    void read(ublas::matrix<double>& R,vector<unsigned int>& indices)
+    void read(ublas::matrix<double>& R)
     {
+        
         ublas::matrix<double>::size_type m = size();
-        ublas::matrix<double>::size_type n = indices.size();
+        ublas::matrix<double>::size_type n = _var_outputs.size();
         ublas::matrix<double>::size_type i,i2=0,j;
         try
         {
@@ -95,10 +99,11 @@ public:
         }
          try
         {
-            BOOST_FOREACH(i,indices)
+            /*BOOST_FOREACH(i,indices)*/
+            for(i=0;i<n;i++)
             {
                 for(j=0;j<m;++j)
-                    R(i2,j)=_variables_buffer[j][i];
+                    R(i2,j)=_variables_buffer(j,i);
                 i2++;
             }
         }
@@ -107,31 +112,33 @@ public:
             cout<<"read  from variables buffer faild" << std::endl;
             throw ex;
         }
-
+       
 
     }
 
     void read(const double& time,ublas::vector<double>& dv,ublas::vector<double>& v)
     {
-
+        /*
         std::map<double,unsigned long>::iterator iter;
         iter = find_if( _time_entries.begin(), _time_entries.end(), floatCompare<double>(time, 1e-10) );
         if(iter==_time_entries.end())
             throw std::runtime_error("getVariables: time parameters");
         v=_variables_buffer[iter->second];
         dv = _derivatives_buffer[iter->second];
+        */
     }
 
-        void read(const double& time,ublas::vector<double>& r,ublas::vector<double>& dv,ublas::vector<double>& v)
+    void read(const double& time,ublas::vector<double>& r,ublas::vector<double>& dv,ublas::vector<double>& v)
     {
-
+        /*
         std::map<double,unsigned long>::iterator iter;
         iter = find_if( _time_entries.begin(), _time_entries.end(), floatCompare<double>(time, 1e-10) );
         if(iter==_time_entries.end())
             throw std::runtime_error("getVariables: time parameters");
         v=_variables_buffer[iter->second];
         dv = _derivatives_buffer[iter->second];
-        r = _residues_buffer[iter->second];
+       // r = _residues_buffer[iter->second];
+       */
     }
 
     void write(const vector<string>& s)
@@ -143,14 +150,42 @@ public:
     {
 
     }
-
-    void write(const ublas::vector<double>& v,const ublas::vector<double>& v2,double time)
+    /*writes pramater values to results file
+     @v_list values of parameter
+     @start_time
+     @end_time
+     */
+    void write(const typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_p& v_list, double start_time, double end_time)
     {
+      //not supported for buffer
+    }
+     /*
+     writes header of results file with the variable names
+     @s_list name of variables
+     @s_desc_list description of variables
+     @s_parameter_list name of parameter
+     @s_desc_parameter_list description of parameter
+     */
+    void write(const std::vector<std::string>& s_list, const std::vector<std::string>& s_desc_list, const std::vector<std::string>& s_parameter_list, const std::vector<std::string>& s_desc_parameter_list)
+    {
+       _var_outputs =s_list;
+    }
+        
+     /*
+     writes simulation results for a time step
+     @v_list variables and state vars
+     @v2_list derivatives vars
+     @time
+     */
+    void write(typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_v& v_list, typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_dv& v2_list, double time)
+    {
+     
+      
         try
         {
             std::pair<std::map<double, unsigned long>::iterator,bool> p;
             p = _time_entries.insert(make_pair(time,_buffer_pos));
-            if(!p.second)//if variable and derivatives for time are already inserted, erease old values
+            if(!p.second)//if variable and derivatives for time are already inserted, erase old values
             {
                 _variables_buffer.pop_back();
                 _derivatives_buffer.pop_back();
@@ -159,8 +194,10 @@ public:
             {
                 _buffer_pos++;
             }
-            _variables_buffer.push_back(v);
-            _derivatives_buffer.push_back(v2);
+            
+                 
+            _variables_buffer.push_back(v_list);
+            _derivatives_buffer.push_back(v2_list);
         }
         catch(std::exception& ex)
         {
@@ -171,35 +208,7 @@ public:
         // textwriter->write(v,v2, time);
     }
 
-    void write(const ublas::vector<double>& v,const ublas::vector<double>& v2,const ublas::vector<double>& v3,double time)
-    {
-        try
-        {
-            std::pair<std::map<double, unsigned long>::iterator,bool> p;
-            p = _time_entries.insert(make_pair(time,_buffer_pos));
-            if(!p.second)//if variable and derivatives for time are already inserted, erease old values
-            {
-                _variables_buffer.pop_back();
-                _derivatives_buffer.pop_back();
-                _residues_buffer.pop_back();
-            }
-            else
-            {
-                _buffer_pos++;
-            }
-            _variables_buffer.push_back(v);
-            _derivatives_buffer.push_back(v2);
-            _residues_buffer.push_back(v3);
-        }
-        catch(std::exception& ex)
-        {
-            cout<<"write to buffer faild" << std::endl;
-            throw ex;
-        }
-
-        // textwriter->write(v,v2, time);
-    }
-
+    
     void getTime(vector<double>& time)
     {
         try
@@ -234,27 +243,23 @@ public:
 
         _variables_buffer.clear();
         _derivatives_buffer.clear();
-        _residues_buffer.clear();
+        //_residues_buffer.clear();
         _time_entries.clear();
         _buffer_pos=0;
         //textwriter->eraseAll();
     }
 
-    typedef ublas::vector<double, ublas::bounded_array<double,dim_1> > value_type_v;
-    typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv;
-    typedef ublas::vector<double, ublas::bounded_array<double,dim_3> > value_type_r;
+    
 protected:
-    typedef boost::circular_buffer<  value_type_v   > buffer_type_v;
-    typedef boost::circular_buffer<  value_type_dv   > buffer_type_d;
-    typedef boost::circular_buffer<  value_type_r   > buffer_type_r;
+    typedef boost::circular_buffer<  typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_v   > buffer_type_v;
+    typedef boost::circular_buffer<  typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_dv   > buffer_type_d;
+   
     typedef std::map<double,unsigned long> _time_entries_type;
     buffer_type_v _variables_buffer;
     buffer_type_d _derivatives_buffer;
-    buffer_type_r _residues_buffer;
+    //buffer_type_r _residues_buffer;
     _time_entries_type _time_entries;
     unsigned long  _buffer_pos;
-
-    //private:
-    //TextwriterType* textwriter;
+    vector<string> _var_outputs;
 
 };

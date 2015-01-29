@@ -92,42 +92,17 @@ void AlgLoopDefaultImplementation::initialize()
 /// Output routine (to be called by the solver after every successful integration step)
 void AlgLoopDefaultImplementation::writeOutput(const OUTPUT command )
 {
-  if (_outputStream)
-  {
-    // Write head line
-    if (command & HEAD_LINE)
-    {
-      for(int i=0; i<_dimAEq; ++i)
-        *_outputStream << "\tdoubleUnknowns[" << i << "]";
-      for(int i=0; i<_dimAEq; ++i)
-        *_outputStream << "\tintUnknowns[" << i << "]";
-      for(int i=0; i<_dimAEq; ++i)
-        *_outputStream << "\tboolUnknowns[" << i << "]";
-    }
-
-    // Write the current values
-    else
-    {
-      for(int i=0; i<_dimAEq; ++i)
-        *_outputStream << __xd[i];
-
-      for(int i=0; i<_dimAEq; ++i)
-        *_outputStream << __xi[i];
-
-      for(int i=0; i<_dimAEq; ++i)
-        *_outputStream << __xb[i];
-    }
-  }
+  
 };
 
-
+/*
 /// Set stream for output
 void AlgLoopDefaultImplementation::setOutput(ostream* outputStream)
 {
   _outputStream = outputStream;
 };
 
-
+*/
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::setReal(const double* lambda)
 {
