@@ -610,9 +610,9 @@ protected function collectPreVariables "author: lochel"
 protected
   BackendDAE.EqSystems systs;
   BackendDAE.EquationArray ieqns, removedEqs;
-  // list<DAE.ComponentRef> crefs;
+  //list<DAE.ComponentRef> crefs;
 algorithm
-  // BackendDump.dumpBackendDAE(inDAE, "inDAE");
+  //BackendDump.dumpBackendDAE(inDAE, "inDAE");
   BackendDAE.DAE(systs, BackendDAE.SHARED(removedEqs=removedEqs, initialEqs=ieqns)) := inDAE;
 
   outHS := HashSet.emptyHashSet();
@@ -620,9 +620,9 @@ algorithm
   ((_,outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(removedEqs, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, outHS)); // ???
   ((_,outHS)) := BackendDAEUtil.traverseBackendDAEExpsEqns(ieqns, Expression.traverseSubexpressionsHelper, (collectPreVariablesTraverseExp, outHS));
 
-  // print("collectPreVariables:\n");
-  // crefs := BaseHashSet.hashSetList(outHS);
-  // BackendDump.debuglst(crefs,ComponentReference.printComponentRefStr,"\n","\n");
+  //print("collectPreVariables:\n");
+  //crefs := BaseHashSet.hashSetList(outHS);
+  //BackendDump.debuglst(crefs, ComponentReference.printComponentRefStr, "\n", "\n");
 end collectPreVariables;
 
 public function collectPreVariablesEqSystem
@@ -2112,7 +2112,7 @@ protected function introducePreVarsForAliasVariables "author: lochel
   output BackendDAE.Var outVar;
   output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet> outTpl;
 algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
+  (outVar,outTpl) := matchcontinue(inVar, inTpl)
     local
       BackendDAE.Var var;
       DAE.ComponentRef cr;
@@ -2140,14 +2140,6 @@ algorithm
       preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue));
 
-      // preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      // preVar = BackendVariable.copyVarNewName(preCR, var);
-      // preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
-      // preVar = BackendVariable.setBindExp(preVar, NONE());
-      // preVar = BackendVariable.setBindValue(preVar, NONE());
-      // preVar = BackendVariable.setVarFixed(preVar, true);
-      // preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
-
       eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
 
       vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
@@ -2160,13 +2152,16 @@ algorithm
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
-      preVar = BackendVariable.setVarFixed(preVar, true);
+      preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
-      fixvars = if preUsed then BackendVariable.addVar(preVar, fixvars) else fixvars;
+      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), DAE.CREF(cr, ty), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      
+      vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
+      eqns = if preUsed then BackendEquation.addEquation(eqn, eqns) else eqns;
     then (var, (vars, fixvars, eqns, hs));
 
-    else (inVar,inTpl);
+    else (inVar, inTpl);
   end matchcontinue;
 end introducePreVarsForAliasVariables;
 
@@ -2440,10 +2435,13 @@ algorithm
       preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
+      
+      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), DAE.CREF(cr, ty), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
 
       vars = if not isInput then BackendVariable.addVar(var, vars) else vars;
       fixvars = if isInput then BackendVariable.addVar(var, fixvars) else fixvars;
       vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
+      eqns = if preUsed then BackendEquation.addEquation(eqn, eqns) else eqns;
 
       // Error.addCompilerNotification("VARIABLE (fixed=false); " + BackendDump.varString(var));
     then (var, (vars, fixvars, eqns, hs));
