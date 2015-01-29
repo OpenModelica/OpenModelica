@@ -36,6 +36,10 @@
  *
  */
 
+
+#include <OMC/Parser/OMCOutputLexer.h>
+#include <OMC/Parser/OMCOutputParser.h>
+
 #if USE_OMC_SHARED_OBJECT
 #include "meta/meta_modelica.h"
 
@@ -48,14 +52,11 @@ int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg,
 void* omc_Main_init(void *threadData, void *args);
 void* omc_Main_readSettings(void *threadData, void *args);
 }
-#endif
 
-#include <OMC/Parser/OMCOutputLexer.h>
-#include <OMC/Parser/OMCOutputParser.h>
-
-#if USE_OMC_SHARED_OBJECT
 #include "OMC_API.h"
+
 #endif
+
 
 #include <stdexcept>
 #include <stdlib.h>

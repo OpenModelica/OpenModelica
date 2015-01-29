@@ -69,14 +69,14 @@
   - Sonia Tariq
   */
 
-#if USE_OMC_SHARED_OBJECT
-#include "meta/meta_modelica.h"
-#endif
-
 #include "MainWindow.h"
 #include "Helper.h"
 #include "../../Compiler/runtime/omc_config.h"
 #include "CrashReportDialog.h"
+
+#if USE_OMC_SHARED_OBJECT
+#include "meta/meta_modelica.h"
+#endif
 
 #ifdef QT_NO_DEBUG
 #ifndef WIN32
