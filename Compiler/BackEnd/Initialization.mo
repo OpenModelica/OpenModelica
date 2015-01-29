@@ -1251,13 +1251,33 @@ end preBalanceInitialSystem2;
 protected function analyzeInitialSystem "author: lochel
   This function fixes discrete and state variables to balance the initial equation system."
   input BackendDAE.BackendDAE initDAE;
-  input BackendDAE.BackendDAE inDAE;      // original DAE
+  input BackendDAE.BackendDAE inDAE "original DAE";
   input BackendDAE.Variables inInitVars;
   output BackendDAE.BackendDAE outDAE;
   output list<BackendDAE.Var> outDumpVars;
   output list<BackendDAE.Equation> outRemovedEqns;
+protected
+  BackendDAE.BackendDAE dae;
+  BackendDAE.EqSystem syst;
+  list<BackendDAE.EqSystem> systs, systs2;
+  BackendDAE.Shared shared;
+  BackendDAE.EquationArray orderedEqs;
 algorithm
-  (outDAE, (_, _, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(initDAE, analyzeInitialSystem2, (inDAE, inInitVars, {}, {}));
+  // filter empty systems
+  BackendDAE.DAE(systs, shared) := initDAE;
+  systs2 := {};
+  outRemovedEqns := {};
+  for syst in systs loop
+    if BackendDAEUtil.nonEmptySystem(syst) then
+      systs2 := syst::systs2;
+    else
+      BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := syst;
+      outRemovedEqns := listAppend(outRemovedEqns, BackendEquation.equationList(orderedEqs));
+    end if;
+  end for;
+  dae := BackendDAE.DAE(systs2, shared);
+
+  (outDAE, (_, _, outDumpVars, outRemovedEqns)) := BackendDAEUtil.mapEqSystemAndFold(dae, analyzeInitialSystem2, (inDAE, inInitVars, {}, outRemovedEqns));
 end analyzeInitialSystem;
 
 protected function getInitEqIndex

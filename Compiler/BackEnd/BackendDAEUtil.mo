@@ -7879,7 +7879,7 @@ algorithm
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystem;
 
-protected function nonEmptySystem
+public function nonEmptySystem
   input BackendDAE.EqSystem syst;
   output Boolean nonEmpty;
 protected
