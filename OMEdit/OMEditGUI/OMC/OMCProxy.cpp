@@ -41,6 +41,7 @@
 #include <OMC/Parser/OMCOutputParser.h>
 
 #if USE_OMC_SHARED_OBJECT
+#define IMPORT_INTO 1
 #include "meta/meta_modelica.h"
 
 extern "C" {
