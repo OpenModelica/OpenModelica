@@ -36,7 +36,7 @@ char* _replace(const char* source_str,
                const char* search_str,
                const char* replace_str);
 
-typedef int (*function_t)(type_description*, type_description*);
+typedef int (*function_t)(threadData_t*, type_description*, type_description*);
 
 #if defined(_MSC_VER) /* no gettext for VS! */
 #define gettext(str) str

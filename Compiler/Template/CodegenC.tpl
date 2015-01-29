@@ -5156,7 +5156,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   let inFnStr = if boolAnd(boxed,inFunc) then
     <<
     DLLExport
-    int in_<%fname%>(type_description * inArgs, type_description * outVar);
+    int in_<%fname%>(threadData_t *threadData, type_description * inArgs, type_description * outVar);
     >>
   match visibility
     case PROTECTED(__) then
@@ -5663,13 +5663,13 @@ template generateInFunc(Text fname, list<Variable> functionArguments, list<Varia
 ::=
   <<
   DLLExport
-  int in_<%fname%>(type_description * inArgs, type_description * outVar)
+  int in_<%fname%>(threadData_t *threadData, type_description * inArgs, type_description * outVar)
   {
-    if (!mmc_GC_state) mmc_GC_init();
+    //if (!mmc_GC_state) mmc_GC_init();
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%outVars |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
-    MMC_TRY_TOP()
+    MMC_TRY_TOP_INTERNAL()
     <%match outVars
         case v::_ then '<%funArgName(v)%> = '
       %>omc_<%fname%>(threadData<%functionArguments |> var => (", " + funArgName(var) )%><%List.restOrEmpty(outVars) |> var => (", &" + funArgName(var) )%>);

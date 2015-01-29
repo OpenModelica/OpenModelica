@@ -43,8 +43,9 @@ extern "C" {
 
 static void *type_desc_to_value(type_description *desc);
 static int value_to_type_desc(void *value, type_description *desc);
-static int execute_function(void *in_arg, void **out_arg,
-                            int (* func)(type_description *,
+static int execute_function(threadData_t* threadData, void *in_arg, void **out_arg,
+                            int (* func)(threadData_t*,
+                                         type_description *,
                                          type_description *), int printDebug);
 static int parse_array(type_description *desc, void *arrdata, void *dimLst);
 static void *value_to_mmc(void* value);
@@ -158,8 +159,10 @@ static int value_to_type_desc(void *value, type_description *desc)
   return 0;
 }
 
-static int execute_function(void *in_arg, void **out_arg,
-                            int (* func)(type_description *,
+static int execute_function(threadData_t* threadData,
+                            void *in_arg, void **out_arg,
+                            int (* func)(threadData_t*,
+                                         type_description *,
                                          type_description *), int printDebug)
 {
   type_description arglst[MMC_NUM_ARGS + 1], crashbuf[50], *arg = NULL;
@@ -199,7 +202,7 @@ static int execute_function(void *in_arg, void **out_arg,
   fflush(stdout);
   /* call our function pointer! */
   try { /* Don't let external C functions throwing C++ exceptions kill OMC! */
-    retval = func(arglst, &retarg);
+    retval = func(threadData, arglst, &retarg);
   } catch (...) {
     retval = 1;
   }

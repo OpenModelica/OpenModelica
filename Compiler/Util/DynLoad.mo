@@ -47,7 +47,7 @@ of values."
   input Boolean inPrintDebug;
   output Values.Value outVal;
 
-  external "C" outVal=DynLoad_executeFunction(inFuncHandle,inValLst,inPrintDebug) annotation(Library = "omcruntime");
+  external "C" outVal=DynLoad_executeFunction(OpenModelica.threadData(),inFuncHandle,inValLst,inPrintDebug) annotation(Library = "omcruntime");
 end executeFunction;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -346,7 +346,7 @@ static int PrintImpl__writeBuf(threadData_t *threadData,const char* filename)
   if (buf == NULL || buf[0]=='\0') {
     /* nothing to write to file, just close it and return ! */
     fclose(file);
-    return 1;
+    return 0;
   }
 
   /*  write 1 element of size nfilled to file and check for errors */

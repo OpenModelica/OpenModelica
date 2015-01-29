@@ -43,7 +43,7 @@ extern "C" {
 #include "Dynload.cpp"
 #include "ModelicaUtilities.h"
 
-extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst, int _inPrintDebug)
+extern void* DynLoad_executeFunction(threadData_t*  threadData, int _inFuncHandle, void* _inValLst, int _inPrintDebug)
 {
   modelica_ptr_t func = NULL;
   int retval = -1;
@@ -51,12 +51,13 @@ extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst, int _in
   func = lookup_ptr(_inFuncHandle);
   if (func == NULL) MMC_THROW();
 
-  retval = execute_function(_inValLst, &retarg, func->data.func.handle, _inPrintDebug);
+  retval = execute_function(threadData, _inValLst, &retarg, func->data.func.handle, _inPrintDebug);
   if (retval) MMC_THROW();
   return retarg;
 }
 
 extern void* omc_Absyn_pathString2(threadData_t*,void*,void*);
+
 static const char* path_to_name(void* path, char del)
 {
   threadData_t *threadData = (threadData_t *) pthread_getspecific(mmc_thread_data_key);
