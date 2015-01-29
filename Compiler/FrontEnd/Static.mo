@@ -5569,6 +5569,10 @@ protected
   list<DAE.Dimension> dims;
   String exp_str, ty_str;
 algorithm
+  if FGraph.inFunctionScope(inEnv) then
+    Error.addSourceMessageAndFail(Error.DERIVATIVE_FUNCTION_CONTEXT, {}, inInfo);
+  end if;
+
   checkBuiltinCallArgs(inPosArgs, inNamedArgs, 1, "der", inInfo);
 
   (outCache, outExp, outProperties) := elabExpInExpression(inCache, inEnv,
