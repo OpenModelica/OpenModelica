@@ -408,17 +408,21 @@ void OptionsDialog::readCurveStyleSettings()
 //! Reads the Fiagro section settings from omedit.ini
 void OptionsDialog::readFigaroSettings()
 {
-  if (mpSettings->contains("figaro/databasefile"))
+  if (mpSettings->contains("figaro/databasefile")) {
     mpFigaroPage->getFigaroDatabaseFileTextBox()->setText(mpSettings->value("figaro/databasefile").toString());
-  if (mpSettings->contains("figaro/mode"))
-  {
-    int currentIndex = mpFigaroPage->getFigaroModeComboBox()->findData(mpSettings->value("figaro/mode").toString(), Qt::UserRole, Qt::MatchExactly);
-    if (currentIndex > -1) mpFigaroPage->getFigaroModeComboBox()->setCurrentIndex(currentIndex);
   }
-  if (mpSettings->contains("figaro/options"))
+  if (mpSettings->contains("figaro/mode")) {
+    int currentIndex = mpFigaroPage->getFigaroModeComboBox()->findData(mpSettings->value("figaro/mode").toString(), Qt::UserRole, Qt::MatchExactly);
+    if (currentIndex > -1) {
+      mpFigaroPage->getFigaroModeComboBox()->setCurrentIndex(currentIndex);
+    }
+  }
+  if (mpSettings->contains("figaro/options")) {
     mpFigaroPage->getFigaroOptionsTextBox()->setText(mpSettings->value("figaro/options").toString());
-  if (mpSettings->contains("figaro/process"))
+  }
+  if (mpSettings->contains("figaro/process") && !mpSettings->value("figaro/process").toString().isEmpty()) {
     mpFigaroPage->getFigaroProcessTextBox()->setText(mpSettings->value("figaro/process").toString());
+  }
 }
 
 /*!
@@ -3098,8 +3102,8 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
   // Figaro model
   mpFigaroModeLabel = new Label(tr("Figaro Mode:"));
   mpFigaroModeComboBox = new QComboBox;
-  mpFigaroModeComboBox->addItem(tr("figaro0"), "figaro0");
-  mpFigaroModeComboBox->addItem(tr("fault-tree"), "fault-tree");
+  mpFigaroModeComboBox->addItem("figaro0", "figaro0");
+  mpFigaroModeComboBox->addItem("fault-tree", "fault-tree");
   // Figaro options file
   mpFigaroOptionsFileLabel = new Label(tr("Figaro Options File:"));
   mpFigaroOptionsFileTextBox = new QLineEdit;
@@ -3108,7 +3112,7 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
   connect(mpBrowseFigaroOptionsFileButton, SIGNAL(clicked()), SLOT(browseFigaroOptionsFile()));
   // figaro process
   mpFigaroProcessLabel = new Label(tr("Figaro Process:"));
-  mpFigaroProcessTextBox = new QLineEdit;
+  mpFigaroProcessTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append("/share/VisualFigaro/jEdit4.5_VisualFigaro/VisualFigaro/figp.exe"));
   mpBrowseFigaroProcessButton = new QPushButton(Helper::browse);
   mpBrowseFigaroProcessButton->setAutoDefault(false);
   connect(mpBrowseFigaroProcessButton, SIGNAL(clicked()), SLOT(browseFigaroProcessFile()));
