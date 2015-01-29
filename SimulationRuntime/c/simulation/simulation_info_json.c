@@ -225,9 +225,14 @@ static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
   str=assertNumber(str,i);
   str=skipSpace(str);
   xml->id = i;
-  xml->profileBlockIndex = 0;
   str = skipFieldIfExist(str, "parent");
   str = skipFieldIfExist(str, "section");
+  if ((measure_time_flag & 1) && 0==strncmp(",\"tag\":\"container\"", str, 18)) {
+    xml->profileBlockIndex = -1;
+    str += 18;
+  } else {
+    xml->profileBlockIndex = 0;
+  }
   str = skipFieldIfExist(str, "tag");
   str = skipFieldIfExist(str, "display");
   if (strncmp(",\"defines\":[", str, 12)) {
@@ -282,6 +287,7 @@ static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
 static const char* readEquations(const char *str,MODEL_DATA_XML *xml)
 {
   int i;
+  xml->nProfileBlocks = measure_time_flag & 2 ? 1 : 0;
   str=assertChar(str,'[');
   str = readEquation(str,xml->equationInfo,0);
   for (i=1; i<xml->nEquations; i++) {
@@ -293,6 +299,9 @@ static const char* readEquations(const char *str,MODEL_DATA_XML *xml)
       str=assertChar(str,',');
     }
     */
+    if (measure_time_flag & 2 || ((measure_time_flag & 1) && xml->equationInfo[i].profileBlockIndex == -1)) {
+      xml->equationInfo[i].profileBlockIndex = xml->nProfileBlocks++;
+    }
   }
   str=assertChar(str,']');
   return str;
@@ -409,7 +418,23 @@ EQUATION_INFO modelInfoJsonGetEquation(MODEL_DATA_XML* xml, size_t ix)
 
 EQUATION_INFO modelInfoJsonGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix)
 {
-  abort();
+  int i;
+  if(xml->equationInfo == NULL)
+  {
+    modelInfoJsonInit(xml);
+  }
+  if(ix > xml->nProfileBlocks)
+  {
+    throwStreamPrint(NULL, "Requested equation with profiler index %ld, but we only have %ld such blocks", (long int)ix, xml->nProfileBlocks);
+  }
+  for(i=0; i<xml->nEquations; i++)
+  {
+    if(xml->equationInfo[i].profileBlockIndex == ix)
+    {
+      return xml->equationInfo[i];
+    }
+  }
+  throwStreamPrint(NULL, "Requested equation with profiler index %ld, but could not find it!", (long int)ix);
 }
 
 void freeModelInfoJson(MODEL_DATA_XML* xml)
