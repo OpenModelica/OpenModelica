@@ -2156,7 +2156,7 @@ algorithm
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
       eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), DAE.CREF(cr, ty), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
-      
+
       vars = if preUsed then BackendVariable.addVar(preVar, vars) else vars;
       eqns = if preUsed then BackendEquation.addEquation(eqn, eqns) else eqns;
     then (var, (vars, fixvars, eqns, hs));
@@ -2435,7 +2435,7 @@ algorithm
       preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
-      
+
       eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), DAE.CREF(cr, ty), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
 
       vars = if not isInput then BackendVariable.addVar(var, vars) else vars;
