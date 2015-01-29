@@ -2154,20 +2154,6 @@ algorithm
       eqns = if preUsed and isFixed then BackendEquation.addEquation(eqn, eqns) else eqns;
     then (var, (vars, fixvars, eqns, hs));
 
-    // discrete-time
-    case (var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs)) equation
-      isFixed = BackendVariable.varFixed(var);
-      startValueOpt = BackendVariable.varStartValueOption(var);
-
-      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
-      preVar = BackendVariable.setVarFixed(preVar, isFixed);
-      preVar = BackendVariable.setVarStartValueOption(preVar, startValueOpt);
-
-      vars = if not isFixed then BackendVariable.addVar(preVar, vars) else vars;
-      fixvars = if isFixed then BackendVariable.addVar(preVar, fixvars) else fixvars;
-    then (var, (vars, fixvars, eqns, hs));
-
     // continuous-time
     case (var as BackendDAE.VAR(varName=cr, varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs)) equation
       preUsed = BaseHashSet.has(cr, hs);
