@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-pthread_key_t mmc_thread_data_key;
+pthread_key_t mmc_thread_data_key = 0;
 
 /*
 void* mmc_mk_rcon(double d)

@@ -228,10 +228,10 @@ modelica_metatype mmc_mk_modelica_array(base_array_t);
 
 void mmc_catch_dummy_fn();
 
-DLLExport extern pthread_key_t mmc_thread_data_key;
-DLLExport extern pthread_once_t mmc_init_once;
-extern void mmc_init();
-extern void mmc_init_nogc();
+DLLDirection extern pthread_key_t mmc_thread_data_key;
+DLLDirection extern pthread_once_t mmc_init_once;
+DLLDirection extern void mmc_init();
+DLLDirection extern void mmc_init_nogc();
 #define MMC_INIT(X) pthread_once(&mmc_init_once,mmc_init)
 #define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
 #define MMC_TRY() { threadData_t *threadData = pthread_getspecific(mmc_thread_data_key); MMC_TRY_INTERNAL(mmc_jumper)

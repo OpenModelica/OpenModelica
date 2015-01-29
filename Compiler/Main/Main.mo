@@ -170,7 +170,7 @@ algorithm
   end matchcontinue;
 end parseCommand;
 
-protected function handleCommand
+public function handleCommand
   "This function handles the commands in form of strings send to the server.
    If the command is quit, the function returns false, otherwise it sends the
    string to the parse function and returns true."
