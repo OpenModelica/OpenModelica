@@ -193,7 +193,7 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Core/DataExchange/SimDouble.h>
 #endif
  /*
- 
+
  template class StatArrayDim1<double, 3>;
  template class StatArrayDim1<double, 4> ;
  template class StatArrayDim2<double, 3,3> ;
@@ -207,5 +207,5 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
  template class boost::unordered_map<bool*, bool>;
  template class boost::circular_buffer<double>;
  template class map<unsigned int, boost::circular_buffer<double> >;
- template class map<unsigned int,string> 
+ template class map<unsigned int,string>
  */

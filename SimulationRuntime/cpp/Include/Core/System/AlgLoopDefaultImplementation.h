@@ -88,5 +88,5 @@ protected:
 
     IAlgLoop::CONSTRTYPE
         _constraintType;                ///< Typ der Bindungsgleichungen (analog, digital, binär)
-    
+
 };

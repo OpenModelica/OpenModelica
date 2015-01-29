@@ -357,7 +357,7 @@ template simulationWriteOutputHeaderFile(SimCode simCode ,Text& extraFuncs,Text&
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
   let n = numProtectedParamVars(modelInfo)
-  let outputtype = match   settings.outputFormat case "mat" then "MatFileWriter" case "buffer"  then "BufferReaderWriter" else "TextFileWriter" 
+  let outputtype = match   settings.outputFormat case "mat" then "MatFileWriter" case "buffer"  then "BufferReaderWriter" else "TextFileWriter"
   let numparams = match   settings.outputFormat case "csv" then "1" else n
   <<
   #pragma once
@@ -820,7 +820,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
       _historyImpl->init();
 
-     
+
       _historyImpl->clear();
    }
    <%writeoutput(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -5909,7 +5909,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool isLinear();
     virtual bool isLinearTearing();
     virtual bool isConsistent();
-   
+
 >>
 //void writeOutput(HistoryImplType::value_type_v& v ,vector<string>& head ,const IMixedSystem::OUTPUT command  = IMixedSystem::UNDEF_OUTPUT);
 end generateAlgloopMethodDeclarationCode;
@@ -13134,8 +13134,8 @@ case _ then
   let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
     indxColumn
     ;separator="\n")
-    
-      
+
+
     let jacvals = ( sparsepattern |> (cref,indexes) hasindex index0 =>
     let jaccol = ( indexes |> i_index hasindex index1 =>
         (match indexColumn case "1" then '_<%matrixName%>jacobian(<%crefWithoutIndexOperator(cref)%>$pDER<%matrixName%>$indexdiff,0) = _<%matrixName%>jac_y(0);/*test1<%index0%>,<%index1%>*/'
@@ -13154,7 +13154,7 @@ _<%matrixName%>jac_x.clear();
 
   void <%classname%>Jacobian::get<%matrixName%>Jacobian(SparseMatrix& matrix)
   {
-    
+
     <%jacvals%>
     matrix = _<%matrixName%>jacobian;
   }

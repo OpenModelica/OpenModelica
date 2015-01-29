@@ -82,7 +82,7 @@ public:
 
     void read(ublas::matrix<double>& R)
     {
-        
+
         ublas::matrix<double>::size_type m = size();
         ublas::matrix<double>::size_type n = _var_outputs.size();
         ublas::matrix<double>::size_type i,i2=0,j;
@@ -112,7 +112,7 @@ public:
             cout<<"read  from variables buffer faild" << std::endl;
             throw ex;
         }
-       
+
 
     }
 
@@ -170,7 +170,7 @@ public:
     {
        _var_outputs =s_list;
     }
-        
+
      /*
      writes simulation results for a time step
      @v_list variables and state vars
@@ -179,8 +179,8 @@ public:
      */
     void write(typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_v& v_list, typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_dv& v2_list, double time)
     {
-     
-      
+
+
         try
         {
             std::pair<std::map<double, unsigned long>::iterator,bool> p;
@@ -194,8 +194,8 @@ public:
             {
                 _buffer_pos++;
             }
-            
-                 
+
+
             _variables_buffer.push_back(v_list);
             _derivatives_buffer.push_back(v2_list);
         }
@@ -208,7 +208,7 @@ public:
         // textwriter->write(v,v2, time);
     }
 
-    
+
     void getTime(vector<double>& time)
     {
         try
@@ -249,11 +249,11 @@ public:
         //textwriter->eraseAll();
     }
 
-    
+
 protected:
     typedef boost::circular_buffer<  typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_v   > buffer_type_v;
     typedef boost::circular_buffer<  typename Writer<dim_1, dim_2, dim_3, dim_4>::value_type_dv   > buffer_type_d;
-   
+
     typedef std::map<double,unsigned long> _time_entries_type;
     buffer_type_v _variables_buffer;
     buffer_type_d _derivatives_buffer;

@@ -163,21 +163,21 @@ public function wordWrap
    so that words are not split. It also wraps the string at any newline
    characters it finds. The function also takes two optional parameters to set
    the delimiter and raggedness.
-   
+
    inDelimiter sets the delimiter which is prefixed to all lines except for the
    first one. The length of this delimiter is taken into account when wrapping
    the string, so it must be shorter than the wrap length. Otherwise the string
    will be returned unwrapped. The default is an empty string.
-   
+
    inRaggedness determines the allowed raggedness of the lines, given as a ratio
    between 0 and 1. A raggedness of e.g. 0.2 means that each segment may be at
    most 20% smaller than the max line length. If a line would be shorter than
    this, due to a long word, then the function instead hyphenates the last word.
    This is not done according to any grammatical rules, the words are just
    broken so that the line is as long as allowed. The default is 0.3.
-   
+
    This function operates on ASCII strings, and does not handle UTF-8 strings
-   correctly." 
+   correctly."
   input String inString;
   input Integer inWrapLength;
   input String inDelimiter := "";
@@ -212,7 +212,7 @@ algorithm
       if next_char <> CHAR_SPACE and next_char <> CHAR_DASH then
         // If the next character isn't a space or dash, search backwards for a space.
         pos := rfindChar(line, CHAR_SPACE, end_pos, end_pos - gap_size);
-        
+
         if pos <> NO_POS then
           // A space was found, break the string here.
           str := substring(line, start_pos, pos - 1);
@@ -223,7 +223,7 @@ algorithm
 
           if pos > 1 then
             // A dash was found, check that the previous character is alphabetic.
-            char := stringGetNoBoundsChecking(line, pos - 1); 
+            char := stringGetNoBoundsChecking(line, pos - 1);
             pos := if isAlpha(char) and isAlpha(next_char) then pos else NO_POS;
           end if;
 
@@ -249,7 +249,7 @@ algorithm
       end_pos := start_pos + line_len;
       delim := inDelimiter;
     end while;
-           
+
     // Add any remainder of the line to the list.
     if start_pos < stringLength(line) then
       str := delim + substring(line, start_pos, stringLength(line));
@@ -260,7 +260,7 @@ algorithm
     start_pos := 1;
     end_pos := line_len;
     delim := inDelimiter;
-  end for; 
+  end for;
 
   outStrings := listReverseInPlace(outStrings);
 end wordWrap;

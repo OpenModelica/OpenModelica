@@ -92,7 +92,7 @@ void AlgLoopDefaultImplementation::initialize()
 /// Output routine (to be called by the solver after every successful integration step)
 void AlgLoopDefaultImplementation::writeOutput(const OUTPUT command )
 {
-  
+
 };
 
 /*

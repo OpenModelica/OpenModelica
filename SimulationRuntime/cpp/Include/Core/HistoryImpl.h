@@ -26,7 +26,7 @@ public:
     _var_outputs=var_outputs;
   }
   */
-  
+
   void init()
   {
     ResultsPolicy<dim_1,dim_2,dim_3,dim_4>::init(_globalSettings.getOutputPath(), _globalSettings.getResultsFileName());
@@ -95,6 +95,6 @@ public:
 private:
   //map of indices of all output variables
   //map<unsigned int,string> _var_outputs;
- 
+
   IGlobalSettings& _globalSettings;
 };

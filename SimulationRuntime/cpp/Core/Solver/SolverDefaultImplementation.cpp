@@ -105,7 +105,7 @@ void SolverDefaultImplementation::initialize()
   // Set current start time to the system
   timeevent_system->setTime(_tCurrent);
 
- 
+
   if(_settings->getGlobalSettings()->getOutputPointType() != EMPTY2 && _settings->getGlobalSettings()->getOutputFormat() != EMPTY)
     writeoutput_system->writeOutput(IWriteOutput::HEAD_LINE);
 
