@@ -482,6 +482,7 @@ template simulationCppFile(SimCode simCode,Context context,Text& extraFuncs,Text
       /* Destructor */
       <%className%>::~<%className%>()
       {
+        <%hpcomDestructorExtension%>
         deleteObjects();
       }
 
