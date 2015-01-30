@@ -32,16 +32,6 @@ endif
 LIBMAKEFILE = Makefile
 QMAKE=@QMAKE@
 CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
-# Use f2c from the OS itself... If so, don't include the f2c headers from OpenModelica
-#ifeq ($(LIBF2C),)
-#LIBF2C=@LIBF2C@
-#LIBF2CBUILD=
-ifeq ($(OMC_MINIMAL_RUNTIME),)
-LIBF2C=@LIBF2C@
-LIBF2CINC=-I./simulation/libf2c/
-LIBF2CHEADER=./simulation/libf2c/f2c.h
-LIBF2C_BUILD=$(builddir_lib)/libf2c.a
-endif
 LIBSIMULATION=@LIBSIMULATION@
 LIBRUNTIME=@LIBRUNTIME@
 LIBFMIRUNTIME=@LIBFMIRUNTIME@
@@ -60,20 +50,17 @@ Makefile: Makefile.in
 
 expat.h:
 	cp /usr/include/expat*.h .
-emcc: Makefile emcc/pre.js emcc/liblapack.so emcc/libblas.so emcc/libexpat.so emcc/libSimulationRuntimeC.so emcc/libf2c.so emcc/mdpad/mdpad.html
+emcc: Makefile emcc/pre.js emcc/liblapack.so emcc/libblas.so emcc/libexpat.so emcc/libSimulationRuntimeC.so emcc/mdpad/mdpad.html
 	cp -a emcc/pre.js emcc/*.so emcc/mdpad $(builddir_lib)/emcc/
-	@# emcc -Os --llvm-lto 2 -o $(builddir_lib)/emcc/libSimulationRuntimeC.js -s SIDE_MODULE=1 -s ASM_JS=1 -s TOTAL_MEMORY=536870912 -s OUTLINING_LIMIT=20000 libSimulationRuntimeC.bc simulation/libf2c/libf2c.bc emcc/liblapack.so emcc/libblas.so emcc/libexpat.so
+	@# emcc -Os --llvm-lto 2 -o $(builddir_lib)/emcc/libSimulationRuntimeC.js -s SIDE_MODULE=1 -s ASM_JS=1 -s TOTAL_MEMORY=536870912 -s OUTLINING_LIMIT=20000 libSimulationRuntimeC.bc emcc/liblapack.so emcc/libblas.so emcc/libexpat.so
 emcc/liblapack.so:
 	wget -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/liblapack.so?raw=true || (rm -f $@ ; false)
 emcc/libblas.so:
 	wget  -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/libblas.so?raw=true || (rm -f $@ ; false)
 emcc/libexpat.so:
 	wget  -O $@ https://github.com/tshort/openmodelica-javascript/blob/master/libexpat.so?raw=true || (rm -f $@ ; false)
-emcc/libf2c.so:
-	emmake $(MAKE) -C simulation/libf2c OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS="-Os" libf2c.bc
-	cp simulation/libf2c/libf2c.bc emcc/libf2c.so
 emcc/libSimulationRuntimeC.so: expat.h
-	emmake $(MAKE) OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS=" $(CPPFLAGS) -Os -DOMC_EMCC -DNO_INTERACTIVE_DEPENDENCY -I./simulation/libf2c/" libSimulationRuntimeC.bc
+	emmake $(MAKE) OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS=" $(CPPFLAGS) -Os -DOMC_EMCC -DNO_INTERACTIVE_DEPENDENCY" libSimulationRuntimeC.bc
 	cp libSimulationRuntimeC.bc emcc/libSimulationRuntimeC.so
 mdpad.tar.gz:
 	wget -O mdpad.tar.gz https://github.com/sjoelund/mdpad/tarball/484fe6bfd592a0f549ce7269cab34fc793d0c1cb

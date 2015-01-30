@@ -42,7 +42,6 @@ AC_SUBST(IPOPT_CFLAGS)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(SOURCE_REVISION)
-AC_SUBST(LIBF2C)
 AC_SUBST(OMSHELL_TERMINAL)
 AC_SUBST(MODELICA_SPEC_PLATFORM)
 AC_SUBST(OPENMODELICA_SPEC_PLATFORM)
@@ -84,7 +83,6 @@ AC_SUBST(CONFIG_WITH_OPENMP)
 AC_SUBST(OPENBLAS_EXTRA_ARGS)
 AC_SUBST(AR)
 AC_SUBST(AR_SH)
-AC_SUBST(CPPFLAGS_F2C)
 AC_SUBST(LDFLAGS_SOCKET)
 AC_SUBST(APP)
 AC_SUBST(OMC)
@@ -177,7 +175,7 @@ if echo $CFLAGS | grep -q -- -fPIC; then
 else
   CFLAGS_BEFORE="$CFLAGS"
   CFLAGS="$CFLAGS -fPIC -Werror"
-  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"; FPIC="-fPIC"], [AC_MSG_RESULT([don't need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
+  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"; FPIC="-fPIC"], [AC_MSG_RESULT([does not need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
 fi
 
 fi
@@ -237,10 +235,6 @@ AC_HEADER_STDC
 
 AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header files)])
 # AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
-
-# OSX and other systems might have different sizes in f2c headers. Let's always use our own...
-# AC_CHECK_HEADERS(f2c.h, [], [LIBF2C=libf2c/libf2c.a])
-LIBF2C=libf2c/libf2c.a
 
 AC_MSG_CHECKING([for antlr.Tool support])
 omc_antlr_jar=build/share/omc/java/antlr-3.1.3.jar
@@ -771,7 +765,7 @@ if test "$DARWIN" = "1"; then
   LIBCMINPACKLIB=libcminpack.dylib
   CMINPACKLIB_SHARED=ON
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lexpat -lgc -lpthread -lm $LIBDL -lstdc++"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack -lf2c -liconv"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc -lm -lpthread $LIBDL -lstdc++"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -liconv"
   # All libraries are dynamically linked; we don't need anything else
@@ -800,7 +794,7 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   LIBCMINPACKLIB=libcminpack.a
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lgc -lexpat -lm"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcminpack -lf2c"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc -lexpat -lpthread -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
@@ -810,7 +804,6 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   OS_TARGET="windows"
   AR_SH="$AR -ru"
-  CPPFLAGS_F2C=" -DUSE_CLOCK"
   LDFLAGS_SOCKET=" -lwsock32"
   BOOTSTRAP_STATIC="static"
 else
@@ -828,7 +821,7 @@ else
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
   RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $LIBRT -lexpat -lgc -lpthread -lm $LIBDL -lstdc++ -rdynamic"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack -Wl,-Bstatic -lf2c -Wl,-Bdynamic"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else
@@ -931,7 +924,6 @@ OMOptimBasis/build/Makefile.unix \
 OMOptimBasis/build/OMOptimBasis.config \
 OMVisualize/OMVisualizeGUI/OMVisualizeGUI.config \
 SimulationRuntime/c/Makefile \
-SimulationRuntime/c/simulation/libf2c/makefile.u \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \
 mosh/src/Makefile \
 Compiler/boot/Makefile \

@@ -67,7 +67,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR)
 
 # Defines for Visual Studio
 if(MSVC)
-	add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -D_COMPLEX_DEFINED)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -D_COMPLEX_DEFINED)
     # GC shall not use a dll
     add_definitions(-DGC_NOT_DLL)
 endif(MSVC)
@@ -82,7 +82,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/meta)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/meta/gc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/optimization)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/libf2c)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/results)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
@@ -130,7 +129,6 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta/gc)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
@@ -151,8 +149,8 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
   #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
-				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
-				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
+          ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
+          ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
 
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
@@ -164,7 +162,7 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization lapack_win32_MT)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta ModelicaExternalC libexpat initialization lapack_win32_MT)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -208,7 +206,6 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta/gc)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
@@ -273,8 +270,8 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
                  ${dir}/${model}_init.txt)
   SET(OMC_OUTPUT  ${dir}/${model}.c
   #                ${dir}/${model}_functions.cpp
-				  ${dir}/${model}_functions.h
-				  ${dir}/${model}_records.c)
+          ${dir}/${model}_functions.h
+          ${dir}/${model}_records.c)
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
                      COMMAND ${OMC_DEBUG} ${Flags} ${mos}
@@ -288,7 +285,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   ADD_DEFINITIONS(/TP)
   set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta f2c ModelicaExternalC libexpat initialization lapack_win32_MT ${SUNDIALS_LIBRARIES})
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta ModelicaExternalC libexpat initialization lapack_win32_MT ${SUNDIALS_LIBRARIES})
 
   # custom command to copy xml file
   SET(XML_CODE   ${dir}/${model}_init.xml)
@@ -341,7 +338,6 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta/gc)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
@@ -370,8 +366,8 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                   ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.c
   #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
-				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
-				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
+          ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
+          ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
                      COMMAND ${OMC_DEBUG} ${Flags} ${dir}/${model}_FMU.mos
@@ -382,10 +378,10 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
 
   SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
                    ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
-				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
+           ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
 
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization lapack_win32_MT)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta ModelicaExternalC libexpat initialization lapack_win32_MT)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -429,7 +425,6 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta/gc)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
@@ -455,8 +450,8 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}.c
                   ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_FMU.c
   #               ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_functions.cpp
-				  ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_functions.h
-				  ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_records.c)
+          ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_functions.h
+          ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_records.c)
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
                      COMMAND ${OMC_DEBUG} ${Flags} ${mos}
@@ -467,12 +462,12 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
 
   SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
                    ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
-				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
+           ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
 
   ADD_DEFINITIONS(/TP ${FMU_MODELNAME}.c)
   set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta f2c ModelicaExternalC libexpat initialization lapack_win32_MT ${SUNDIALS_LIBRARIES})
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta ModelicaExternalC libexpat initialization lapack_win32_MT ${SUNDIALS_LIBRARIES})
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
