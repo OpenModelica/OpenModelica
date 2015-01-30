@@ -265,10 +265,6 @@ end if;
 system(\"sed -i '300,$ d' '\" + simFile + \"'\"); // Only keep the top 300 lines
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 
-if (not simRes) and regularFileExists(resFile)  then
-  system(\"mv '\" + resFile + \"' '\" + resFile + \".failed\");
-end if;
-
 if simRes then
   system(\"touch "+s+".simsuccess\");
   prefix := \"files/"+s+".diff\";
