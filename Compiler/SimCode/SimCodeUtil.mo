@@ -1604,7 +1604,7 @@ algorithm
       ((uniqueEqIndex, minValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, maxValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
-      (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, useSymbolicInitialization, primaryParameters);
+      (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, primaryParameters);
 
       ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
       discreteModelVars = BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
@@ -6389,45 +6389,46 @@ protected function createInitialEquations "author: lochel"
   input List<BackendDAE.Equation> inRemovedEqnLst;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
-  output list<SimCode.SimEqSystem> outInitialEqns;
-  output list<SimCode.SimEqSystem> outRemovedInitialEqns;
-  output Integer ouniqueEqIndex;
-  output list<SimCodeVar.SimVar> otempvars;
-  output Boolean useSymbolicInitialization;
+  output list<SimCode.SimEqSystem> outInitialEqns := {};
+  output list<SimCode.SimEqSystem> outRemovedInitialEqns := {};
+  output Integer ouniqueEqIndex := iuniqueEqIndex;
+  output list<SimCodeVar.SimVar> otempvars := itempvars;
+  output Boolean useSymbolicInitialization := false;
+protected
+  BackendDAE.EquationArray  removedEqs;
+  list<SimCodeVar.SimVar> tempvars;
+  Integer uniqueEqIndex;
+  list<SimCode.SimEqSystem> allEquations, solvedEquations, removedEquations, aliasEquations, removedInitialEquations;
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
+  BackendDAE.Variables knvars, aliasVars;
 algorithm
-  (outInitialEqns, outRemovedInitialEqns, ouniqueEqIndex, otempvars, useSymbolicInitialization) := matchcontinue(inInitDAE)
-    local
-      BackendDAE.EquationArray  removedEqs;
-      list<SimCodeVar.SimVar> tempvars;
-      Integer uniqueEqIndex;
+  try
+    SOME(BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, aliasVars=aliasVars, removedEqs=removedEqs))) := inInitDAE;
+    // generate equations from the known unfixed variables
+    ((uniqueEqIndex, allEquations)) := BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
+    // generate equations from the solved systems
+    (uniqueEqIndex, _, _, solvedEquations, _, tempvars, _, _, _) := createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, {}, {}, itempvars, 0, {}, {}, SimCode.NO_MAPPING());
+    allEquations := listAppend(allEquations, solvedEquations);
+    // generate equations from the removed equations
+    ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+    allEquations := listAppend(allEquations, removedEquations);
+    // generate equations from the alias variables
+    ((uniqueEqIndex, aliasEquations)) := BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
+    allEquations := listAppend(allEquations, aliasEquations);
 
-      list<SimCode.SimEqSystem> allEquations, solvedEquations, removedEquations, aliasEquations, removedInitialEquations;
-      BackendDAE.EqSystems systs;
-      BackendDAE.Shared shared;
-      BackendDAE.Variables knvars, aliasVars;
+    // generate equations from removed initial equations
+    (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedEqnLst, uniqueEqIndex, tempvars);
 
-    // try to solve the inital system symbolical.
-    case SOME(BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, aliasVars=aliasVars, removedEqs=removedEqs))) equation
-      // generate equations from the known unfixed variables
-      ((uniqueEqIndex, allEquations)) = BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
-      // generate equations from the solved systems
-      (uniqueEqIndex, _, _, solvedEquations, _, tempvars, _, _, _) = createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, {}, {}, itempvars, 0, {}, {}, SimCode.NO_MAPPING());
-      allEquations = listAppend(allEquations, solvedEquations);
-      // generate equations from the removed equations
-      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
-      allEquations = listAppend(allEquations, removedEquations);
-      // generate equations from the alias variables
-      ((uniqueEqIndex, aliasEquations)) = BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
-      allEquations = listAppend(allEquations, aliasEquations);
-
-      // generate equations from removed initial equations
-      (removedInitialEquations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(inRemovedEqnLst, uniqueEqIndex, tempvars);
-    then (allEquations, removedInitialEquations, uniqueEqIndex, tempvars, true);
-
-    else equation
-      Error.addCompilerError("No system for the symbolic initialization was generated.");
-    then ({}, {}, iuniqueEqIndex, itempvars, false);
-  end matchcontinue;
+    // output
+    outInitialEqns := allEquations;
+    outRemovedInitialEqns := removedInitialEquations;
+    ouniqueEqIndex := uniqueEqIndex;
+    otempvars := tempvars;
+    useSymbolicInitialization := true;
+  else
+    Error.addCompilerError("No system for the symbolic initialization was generated.");
+  end try;
 end createInitialEquations;
 
 protected function traverseKnVarsToSimEqSystem
@@ -6682,94 +6683,34 @@ protected function createParameterEquations
   input BackendDAE.Shared inShared;
   input Integer inUniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
-  input Boolean inSymbolicInitialization;
   input list<BackendDAE.Var> inPrimaryParameters "already sorted";
   output Integer outUniqueEqIndex := inUniqueEqIndex;
   output list<SimCode.SimEqSystem> outParameterEquations := {};
 protected
-  list<BackendDAE.Equation> parameterEquationsTmp;
-  BackendDAE.Variables knvars, extobj, v, kn;
-  list<DAE.Constraint> constrs;
-  list<DAE.ClassAttributes> clsAttrs;
-  BackendDAE.EquationArray ie, pe, emptyeqns, remeqns;
-  list<SimCode.SimEqSystem> simvarasserts, inalgs := {};
-  list<DAE.Algorithm> varasserts, ialgs;
-  BackendDAE.BackendDAE paramdlow;
-  BackendDAE.ExternalObjectClasses extObjClasses;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrixT mT;
-  array<Integer> v1, v2;
-  list<Integer> lv1, lv2;
-  BackendDAE.StrongComponents comps;
-  list<BackendDAE.Var> lv, lkn;
-  BackendDAE.Shared shared;
-  BackendDAE.EqSystem syst;
-  BackendDAE.Variables aliasVars, alisvars;
-  FCore.Cache cache;
-  FCore.Graph graph;
-  DAE.FunctionTree funcs;
-  BackendDAE.EventInfo einfo;
-  BackendDAE.BackendDAEType btp;
-  BackendDAE.SymbolicJacobians symjacs;
-  BackendDAE.ExtraInfo ei;
+  BackendDAE.Variables knvars;
+  list<SimCode.SimEqSystem> simvarasserts;
+  list<DAE.Algorithm> varasserts;
   BackendDAE.Var p;
   SimCode.SimEqSystem simEq;
 algorithm
-  try
-    BackendDAE.SHARED(knownVars=knvars, externalObjects=extobj, initialEqs=ie,
-      constraints=constrs, classAttrs=clsAttrs, cache=cache, graph=graph,
-      extObjClasses=extObjClasses, functionTree=funcs, info=ei) := inShared;
+  BackendDAE.SHARED(knownVars=knvars) := inShared;
 
-    if inSymbolicInitialization then
-      if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
-        BackendDump.dumpVarList(inPrimaryParameters, "parameters in order");
-      end if;
+  if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
+    BackendDump.dumpVarList(inPrimaryParameters, "parameters in order");
+  end if;
 
-      for p in inPrimaryParameters loop
-        (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
-        outParameterEquations := simEq::outParameterEquations;
-      end for;
-      outParameterEquations := listReverse(outParameterEquations);
-    else
-      // kvars params
-      ((parameterEquationsTmp, lv, lkn, lv1, lv2, _)) := BackendVariable.traverseBackendDAEVars(knvars, createInitialParamAssignments, ({}, {}, {}, {}, {}, 1));
+  for p in inPrimaryParameters loop
+    (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
+    outParameterEquations := simEq::outParameterEquations;
+  end for;
+  outParameterEquations := listReverse(outParameterEquations);
 
-      // sort the equations
-      emptyeqns := BackendEquation.emptyEqns();
-      pe := BackendEquation.listEquation(parameterEquationsTmp);
-      alisvars := BackendVariable.emptyVars();
-      v := BackendVariable.listVar(lv);
-      kn := BackendVariable.listVar(lkn);
-      funcs := DAEUtil.avlTreeNew();
-      syst := BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {}, BackendDAE.UNKNOWN_PARTITION());
-      shared := BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, graph, funcs, BackendDAE.EVENT_INFO({}, {}, {}, {}, {}, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {}, ei);
-      (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
-      v1 := listArray(lv1);
-      v2 := listArray(lv2);
-      syst := BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(v1, v2, {}));
-      (syst, comps) := BackendDAETransform.strongComponents(syst, shared);
-      paramdlow := BackendDAE.DAE({syst}, shared);
-      if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
-        BackendDump.dumpEqnsSolved(paramdlow, "parameters: eqns in order");
-      end if;
-      (outParameterEquations, _, outUniqueEqIndex, _) := createEquations(false, false, true, false, syst, shared, comps, outUniqueEqIndex, {});
+  // get minmax and nominal asserts
+  varasserts := BackendVariable.traverseBackendDAEVars(knvars, createVarAsserts, {});
+  (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
 
-      // do not append the inital algorithms to the parameter equation if the system is solved symbolically
-      ialgs := BackendEquation.traverseEquationArray(ie, traverseAlgorithmFinder, {});
-      ialgs := listReverse(ialgs);
-      (inalgs, outUniqueEqIndex) := List.mapFold(ialgs, dlowAlgToSimEqSystem, outUniqueEqIndex);
-    end if;
-
-    // get minmax and nominal asserts
-    varasserts := BackendVariable.traverseBackendDAEVars(knvars, createVarAsserts, {});
-    (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
-
-    outParameterEquations := listAppend(outParameterEquations, listAppend(simvarasserts, inalgs));
-    outParameterEquations := listAppend(outParameterEquations, acc);
-  else
-    Error.addInternalError("function createParameterEquations failed", sourceInfo());
-    fail();
-  end try;
+  outParameterEquations := listAppend(outParameterEquations, simvarasserts);
+  outParameterEquations := listAppend(outParameterEquations, acc);
 end createParameterEquations;
 
 protected function traverseAlgorithmFinder "author: Frenkel TUD 2010-12
