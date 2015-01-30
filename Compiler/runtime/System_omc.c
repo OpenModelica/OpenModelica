@@ -780,7 +780,7 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
     commands[i] = MMC_CAR(dataLst);
     status[i] = 0; /* just in case */
   }
-  numThreads = numThreads > len ? numThreads: len;
+  numThreads = numThreads > len ? len : numThreads;
   for (i=0; i<numThreads; i++) {
     GC_pthread_create(&th[i],NULL,System_launchParallelTasksThread,&data);
   }
