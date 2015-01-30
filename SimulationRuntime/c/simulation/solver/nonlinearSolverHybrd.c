@@ -263,7 +263,7 @@ static int getNumericalJacobian(struct dataAndSys* dataAndSysNum, double* jac, c
   for(i = 0; i < solverData->n ; ++i)
   {
     delta_hhh = solverData->epsfcn * f[i];
-    delta_hh = fmax(delta_h * fmax(abs(x[i]), abs(delta_hhh)), delta_h);
+    delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(delta_hhh)), delta_h);
     delta_hh = ((f[i] >= 0) ? delta_hh : -delta_hh);
     delta_hh = x[i] + delta_hh - x[i];
     deltaInv = 1. / delta_hh;

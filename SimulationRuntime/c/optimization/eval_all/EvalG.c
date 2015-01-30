@@ -802,7 +802,7 @@ static inline void debugeJac(OptData * optData, Number* vopt){
            hh *= 0.9;
          else
            break;
-         if(fabs(hh) < 1e-32){
+         if(fabsl(hh) < 1e-32){
            printf("\nWarning: StepSize for FD became very small!\n");
            break;
          }

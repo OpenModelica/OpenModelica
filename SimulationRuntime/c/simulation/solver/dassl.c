@@ -1098,7 +1098,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   for(i=data->modelData.nStates-1; i >= 0; i--)
   {
     delta_hhh = *h * yprime[i];
-    delta_hh = delta_h * fmax(fmax(abs(y[i]),abs(delta_hhh)),abs(1. / wt[i]));
+    delta_hh = delta_h * fmax(fmax(fabs(y[i]),fabs(delta_hhh)),fabs(1. / wt[i]));
     delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
     delta_hh = y[i] + delta_hh - y[i];
     deltaInv = 1. / delta_hh;
@@ -1196,7 +1196,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
       {
         delta_hhh = *h * yprime[ii];
-        delta_hh[ii] = delta_h * fmax(fmax(abs(y[ii]),abs(delta_hhh)),abs(1./wt[ii]));
+        delta_hh[ii] = delta_h * fmax(fmax(fabs(y[ii]),fabs(delta_hhh)),fabs(1./wt[ii]));
         delta_hh[ii] = (delta_hhh >= 0 ? delta_hh[ii] : -delta_hh[ii]);
         delta_hh[ii] = y[ii] + delta_hh[ii] - y[ii];
 

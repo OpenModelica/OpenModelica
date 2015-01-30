@@ -47,6 +47,8 @@ typedef long int integer;
 typedef unsigned long int uinteger;
 #endif
 typedef double doublereal;
+#define maxmacro(X,Y) X > Y ? X : Y
+#define minmacro(X,Y) X > Y ? Y : X
 
 typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
 typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */

@@ -454,7 +454,7 @@ static int fdjac(int* n, int(*f)(int*, double*, double*, int*, void*, int), doub
     if(linear){
       delta_hh = 1;
     } else {
-      delta_hh = fmax(delta_h * fmax(abs(x[i]), abs(fvec[i])), delta_h);
+      delta_hh = fmax(delta_h * fmax(fabs(x[i]), fabs(fvec[i])), delta_h);
       delta_hh = ((fvec[i] >= 0) ? delta_hh : -delta_hh);
       delta_hh = x[i] + delta_hh - x[i];
     }
