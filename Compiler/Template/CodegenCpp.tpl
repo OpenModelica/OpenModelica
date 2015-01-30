@@ -4325,7 +4325,6 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       <%varDecls%>
       /*external vars decls*/
       initializeExternalVar();
-
       /*initialize parameter*/
       initializeParameterVars();
       initializeIntParameterVars();
@@ -4352,12 +4351,16 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
       //init alg loop vars
       <%initAlgloopvars%>
 
+	  #if defined(__TRICORE__) || defined(__vxworks)
+	  //init inputs
+	  stepStarted(0.0);
+	  #endif
       //init equations
       initEquations();
 
       //init alg loop solvers
       <%initAlgloopSolvers%>
-
+  
       for(int i=0;i<_dimZeroFunc;i++)
       {
          getCondition(i);
