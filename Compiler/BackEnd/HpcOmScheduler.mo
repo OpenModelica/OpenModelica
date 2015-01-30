@@ -3263,7 +3263,7 @@ protected
   list<String> externalFunctionIncludes;
   list<list<SimCode.SimEqSystem>> eqsTmp;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
-  list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
+  list<SimCode.SimEqSystem> allEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, jacobianEquations, equationsForZeroCrossings;
   list<SimCode.StateSet> stateSets;
   Boolean useSymbolicInitialization, useHomotopy;
   list<SimCode.SimEqSystem> initialEquations, removedInitialEquations, odes;
@@ -3299,10 +3299,10 @@ protected
   SimCodeVar.SimVars vars;
   list<SimCode.Function> functions;
   list<String> labels;
-  Integer  numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, numStringParamVars,
+  Integer  numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, numIntParams, numBoolParams, numOutVars, numInVars, numExternalObjects, numStringAlgVars, numStringParamVars,
   numStringAliasVars, numEquations, numLinearSystems, numNonLinearSystems, numMixedSystems, numStateSets, numJacobians, numOptimizeConstraints, numOptimizeFinalConstraints;
 algorithm
-  SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy,
+  SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy,
     initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, parameterEquations, removedEquations,
     algorithmAndEquationAsserts,equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses, discreteModelVars, extObjInfo,
     makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping):=simCodeIn;
@@ -3310,13 +3310,12 @@ algorithm
   SimCode.VARINFO(numZeroCrossings=numZeroCrossings, numTimeEvents=numTimeEvents, numRelations=numRelations, numMathEventFunctions=numMathEventFunctions, numStateVars=numStateVars,
     numAlgVars=numAlgVars, numDiscreteReal=numDiscreteReal, numIntAlgVars=numIntAlgVars, numBoolAlgVars=numBoolAlgVars, numAlgAliasVars=numAlgAliasVars, numIntAliasVars=numIntAliasVars,
     numBoolAliasVars=numBoolAliasVars, numParams=numParams, numIntParams=numIntParams, numBoolParams=numBoolParams, numOutVars=numOutVars, numInVars=numInVars,
-    numInitialEquations=numInitialEquations, numInitialAlgorithms=numInitialAlgorithms, numInitialResiduals=numInitialResiduals, numExternalObjects=numExternalObjects,
+    numExternalObjects=numExternalObjects,
     numStringAlgVars=numStringAlgVars, numStringParamVars=numStringParamVars, numStringAliasVars=numStringAliasVars, numEquations=numEquations, numLinearSystems=numLinearSystems,
     numNonLinearSystems=numNonLinearSystems, numMixedSystems=numMixedSystems, numStateSets=numStateSets, numJacobians=numJacobians, numOptimizeConstraints=numOptimizeConstraints, numOptimizeFinalConstraints = numOptimizeFinalConstraints) := varInfo;
 
   //reassign new indexes
   (initialEquations,(idx,ass)) := List.mapFold(initialEquations,TDS_replaceSimEqSysIndexWithUpdate,(1,idxAssIn));
-  (residualEquations,(idx,ass)) := List.mapFold(residualEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
   (allEquations,(idx,ass)) := List.mapFold(allEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
   (startValueEquations,(idx,ass)) := List.mapFold(startValueEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
   (nominalValueEquations,(idx,ass)) := List.mapFold(nominalValueEquations,TDS_replaceSimEqSysIndexWithUpdate,(idx,ass));
@@ -3336,10 +3335,10 @@ algorithm
 
   numEquations := idx;
 
-  varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, numStringParamVars,
+  varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, numStateVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, numIntParams, numBoolParams, numOutVars, numInVars, numExternalObjects, numStringAlgVars, numStringParamVars,
     numStringAliasVars, numEquations, numLinearSystems, numNonLinearSystems, numMixedSystems, numStateSets, numJacobians, numOptimizeConstraints, numOptimizeFinalConstraints);
   modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels);
-  simCodeOut := SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
+  simCodeOut := SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
     parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
     discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
   idxAssOut := ass;
@@ -3545,7 +3544,7 @@ protected function TDS_updateModelInfo"updated information in the SimCode.ModelI
   output SimCode.SimCode simCodeOut;
 protected
   Integer numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
-  numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
+  numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numExternalObjects,numStringAlgVars,
   numStringParamVars,numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numJacobians,numOptimizeConstraints,numOptimizeFinalConstraints;
   Integer threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx;
   SimCode.ModelInfo modelInfo;
@@ -3564,7 +3563,7 @@ algorithm
   SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels) := modelInfo;
   SimCodeVar.SIMVARS(stateVars=stateVars, algVars = algVars) := vars;
   SimCode.VARINFO(numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
-  numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,numStringParamVars,
+  numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numExternalObjects,numStringAlgVars,numStringParamVars,
   numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numJacobians,numOptimizeConstraints,numOptimizeFinalConstraints) := varInfo;
   // get new values
   numStateVars := listLength(stateVars);
@@ -3574,7 +3573,7 @@ algorithm
   //numMixedSystems := mIdx;
   //update objects
   varInfo := SimCode.VARINFO(numZeroCrossings,numTimeEvents,numRelations,numMathEventFunctions,numStateVars,numAlgVars,numDiscreteReal,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,
-  numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,numStringParamVars,
+  numBoolAliasVars,numParams,numIntParams,numBoolParams,numOutVars,numInVars,numExternalObjects,numStringAlgVars,numStringParamVars,
   numStringAliasVars,numEquations,numLinearSystems,numNonLinearSystems,numMixedSystems,numStateSets,numJacobians,numOptimizeConstraints,numOptimizeFinalConstraints);
   modelInfo := SimCode.MODELINFO(name,description,directory,varInfo,vars,functions,labels);
   simCodeOut := SimCodeUtil.replaceModelInfo(modelInfo,simCodeIn);

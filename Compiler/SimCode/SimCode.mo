@@ -87,7 +87,6 @@ uniontype SimCode
     list<SimEqSystem> allEquations;
     list<list<SimEqSystem>> odeEquations;
     list<list<SimEqSystem>> algebraicEquations;
-    list<SimEqSystem> residualEquations;
     Boolean useSymbolicInitialization "true if a system to solve the initial problem symbolically is generated, otherwise false";
     Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
@@ -209,9 +208,6 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numBoolParams;
     Integer numOutVars;
     Integer numInVars;
-    Integer numInitialEquations;
-    Integer numInitialAlgorithms;
-    Integer numInitialResiduals "numInitialEquations + numInitialAlgorithms";
     Integer numExternalObjects;
     Integer numStringAlgVars;
     Integer numStringParamVars;

@@ -1076,7 +1076,6 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       selectStateVars();
       calc_vars(NULL,true);
       // Calculate the new value of the objective function
-      <%initialResidualEqns(residualEquations)%>
       <%initialResidualFixedVars(vars.stateVars)%>
       <%initialResidualFixedVars(vars.derivativeVars)%>
       <%initialResidualFixedVars(vars.algVars)%>
@@ -1112,26 +1111,6 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   }
   >>
 end makeInitialResidueMethod;
-
-template initialResidualEqns(list<SimEqSystem> residualEquations)
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let body = (residualEquations |> SES_RESIDUAL(__) =>
-      match exp
-      case DAE.SCONST(__) then ''
-      else
-        let &preExp = buffer "" /*BUFD*/
-        let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/,
-                           &varDecls /*BUFD*/)
-        '<%preExp%> r = <%expPart%>; *f += r*r;'
-    ;separator="\n")
-  <<
-  double r = 0.0;
-  *f = 0.0;
-  <%varDecls%>
-  <%body%>
-  >>
-end initialResidualEqns;
 
 // Below here is from the Cpp template
 

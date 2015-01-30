@@ -98,8 +98,6 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
          <%functionNonlinearResiduals(allEquations, contextAlgloop, simCode)%>
 
          <%functionInitialNonLinearSystems(initialEquations, parameterEquations, allEquations, simCode)%>
-
-         <%functionInitialResidual(residualEquations, simCode)%>
          >>
        , "Residuals", simCode)
     %>
@@ -402,7 +400,6 @@ const int
   NP = <%varInfo.numParams%>,
   NO = <%varInfo.numOutVars%>,
   NI = <%varInfo.numInVars%>,
-  NR = <%varInfo.numInitialResiduals%>,
   NEXT = <%varInfo.numExternalObjects%>,
   //NFUNC = <%listLength(functions)%>, // number of functions used by the simulation
   NYSTR = <%varInfo.numStringAlgVars%>,
@@ -1106,30 +1103,6 @@ public override void UpdateBoundStartValues()
 }
 >>
 end functionUpdateBoundStartValues;
-
-template functionInitialResidual(list<SimEqSystem> residualEquations, SimCode simCode) ::=
-let()= System.tmpTickReset(1)
-<<
-public override void InitialResidual(double[] initialResiduals, double[][] startValues)
-{
-  <% localRepresentationArrayDefines %>
-//  var startX = startStates; var startY = startAlgebraics; var startYB = startAlgebraicsBool; var startYI = startAlgebraicsInt;
-  int _i = 0;
-//  const double _lambda = 1.0;
-  <%residualEquations |> SES_RESIDUAL(__)  =>
-    match exp case DAE.SCONST(__) then
-      'initialResiduals[_i++] = 0;'
-    else
-      let &preExp = buffer ""
-      let expPart = daeExpToReal(exp, contextOther, &preExp, simCode) // ??contextOther
-      <<
-      <%preExp%>
-      initialResiduals[_i++] = <%expPart%>;
-      >>
-  ;separator="\n"%>
-}
->>
-end functionInitialResidual;
 
 template functionNonlinearResiduals(list<SimEqSystem> allEquations, Context context, SimCode simCode) ::=
   let()= System.tmpTickReset(1)

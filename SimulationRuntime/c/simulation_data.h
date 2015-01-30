@@ -458,9 +458,6 @@ typedef struct MODEL_DATA
   long nRelations;
   long nMathEvents;                    /* number of math triggering functions e.g. cail, floor, integer */
   long nDelayExpressions;
-  long nInitEquations;                 /* number of initial equations */
-  long nInitAlgorithms;                /* number of initial algorithms */
-  long nInitResiduals;                 /* number of initial residuals */
   long nExtObjs;
   long nMixedSystems;
   long nLinearSystems;

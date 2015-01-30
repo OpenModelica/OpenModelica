@@ -265,7 +265,6 @@ package SimCode
       list<SimEqSystem> allEquations;
       list<list<SimEqSystem>> odeEquations;
       list<list<SimEqSystem>> algebraicEquations;
-      list<SimEqSystem> residualEquations;
       Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
       Boolean useHomotopy;                       // true if homotopy(...) is used during initialization
       list<SimEqSystem> initialEquations;
@@ -541,9 +540,6 @@ package SimCode
       Integer numBoolParams;
       Integer numOutVars;
       Integer numInVars;
-      Integer numInitialEquations;
-      Integer numInitialAlgorithms;
-      Integer numInitialResiduals;
       Integer numExternalObjects;
       Integer numStringAlgVars;
       Integer numStringParamVars;

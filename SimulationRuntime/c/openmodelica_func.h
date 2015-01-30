@@ -122,21 +122,6 @@ int (*function_storeDelayed)(DATA *data);
  */
 int (*updateBoundVariableAttributes)(DATA *data);
 
-/*! \var initialResidualDescription
- *
- * This variable contains a description string for each initial residual.
- */
-const char *(*initialResidualDescription)(int i);
-
-/*! \fn initial_residual
- *
- * function for calculate residual values for the initial equations and initial algorithms
- *
- *  \param [in]  [data]
- *  \param [ref] [initialResiduals]
- */
-int (*initial_residual)(DATA *data, double* initialResiduals);
-
 /*! \var useSymbolicInitialization
  *
  * is 1 if a system to solve the initial problem symbolically is generated, otherwise 0

@@ -85,7 +85,6 @@ algorithm
         File.write(file,"{\"eqIndex\":0,\"tag\":\"dummy\"}");
         min(serializeEquation(file,eq,"initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.initialEquations));
         min(serializeEquation(file,eq,"removed-initial",withOperations) for eq in SimCodeUtil.sortEqSystems(code.removedInitialEquations));
-        min(serializeEquation(file,eq,"residual",withOperations) for eq in SimCodeUtil.sortEqSystems(code.residualEquations));
         min(serializeEquation(file,eq,"regular",withOperations) for eq in SimCodeUtil.sortEqSystems(code.allEquations));
         min(serializeEquation(file,eq,"start",withOperations) for eq in SimCodeUtil.sortEqSystems(code.startValueEquations));
         min(serializeEquation(file,eq,"nominal",withOperations) for eq in SimCodeUtil.sortEqSystems(code.nominalValueEquations));

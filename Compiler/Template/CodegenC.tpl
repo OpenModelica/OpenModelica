@@ -321,7 +321,6 @@ template simulationFile_inz(SimCode simCode, String guid)
     extern "C" {
     #endif
 
-    <%functionInitialResidual(residualEquations, modelNamePrefix(simCode))%>
     <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>
     <%functionRemovedInitialEquations(useSymbolicInitialization, removedInitialEquations, modelNamePrefix(simCode))%>
 
@@ -626,8 +625,6 @@ template simulationFile(SimCode simCode, String guid)
     extern int <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>(DATA *data);
-    extern const char* <%symbolName(modelNamePrefixStr,"initialResidualDescription")%>(int);
-    extern int <%symbolName(modelNamePrefixStr,"initial_residual")%>(DATA *data, double* initialResiduals);
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>(DATA *data);
@@ -670,8 +667,6 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
-       <%symbolName(modelNamePrefixStr,"initialResidualDescription")%>,
-       <%symbolName(modelNamePrefixStr,"initial_residual")%>,
        <%if useSymbolicInitialization then '1' else '0'%> /* useSymbolicInitialization */,
        <%if useHomotopy then '1' else '0'%> /* useHomotopy */,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
@@ -864,9 +859,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nSamples = <%varInfo.numTimeEvents%>;
     data->modelData.nRelations = <%varInfo.numRelations%>;
     data->modelData.nMathEvents = <%varInfo.numMathEventFunctions%>;
-    data->modelData.nInitEquations = <%varInfo.numInitialEquations%>;
-    data->modelData.nInitAlgorithms = <%varInfo.numInitialAlgorithms%>;
-    data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;    /* data->modelData.nInitEquations + data->modelData.nInitAlgorithms */
     data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
     setupModelInfoFunctions(<%if Flags.isSet(Flags.MODEL_INFO_JSON) then 1 else 0%>);
     data->modelData.modelDataXml.fileName = "<%fileNamePrefix%>_info.<%if Flags.isSet(Flags.MODEL_INFO_JSON) then "json" else "xml"%>";
@@ -1871,7 +1863,6 @@ end functionInitialStateSets;
 // This section generates the followng c functions:
 //   - int updateBoundParameters(DATA *data)
 //   - int updateBoundVariableAttributes(DATA *data)
-//   - int initial_residual(DATA *data, double *initialResiduals)
 //   - int functionInitialEquations(DATA *data)
 //   - int functionRemovedInitialEquations(DATA *data)
 // =============================================================================
@@ -1982,82 +1973,6 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, Str
   }
   >>
 end functionUpdateBoundParameters;
-
-template functionInitialResidualBody(SimEqSystem eq, Text &varDecls, Text &eqs, String modelNamePrefix)
- "Generates an equation."
-::=
-  match eq
-  case e as SES_RESIDUAL(__) then
-    match exp
-    case DAE.SCONST(__) then
-      'initialResiduals[i++] = 0;'
-    else
-      let &preExp = buffer ""
-      let expPart = daeExp(exp, contextOther, &preExp, &varDecls, &eqs)
-      <<
-      <% if profileAll() then 'SIM_PROF_TICK_EQ(<%e.index%>);' %>
-      <%preExp%>initialResiduals[i++] = <%expPart%>;
-      <% if profileAll() then 'SIM_PROF_ACC_EQ(<%e.index%>);' %>
-      infoStreamPrint(LOG_RES_INIT, 0, "[%d]: %s = %g", i, <%symbolName(modelNamePrefix,"initialResidualDescription")%>(i-1), initialResiduals[i-1]);
-      >>
-    end match
-  else
-  equation_(eq, contextSimulationDiscrete, &varDecls, &eqs, modelNamePrefix)
-  end match
-end functionInitialResidualBody;
-
-template functionInitialResidual(list<SimEqSystem> residualEquations, String modelNamePrefix)
-  "Generates function in simulation file."
-::=
-  let &varDecls = buffer ""
-  let &tmp = buffer ""
-  let resDesc = (residualEquations |> SES_RESIDUAL(__) =>
-      match exp
-      case DAE.SCONST(__) then
-        '"0", '
-      else
-        '"<%ExpressionDump.printExpStr(exp)%>"'
-        ;separator=",\n")
-
-  let body = (residualEquations |> eq2 =>
-       functionInitialResidualBody(eq2, &varDecls, &tmp, modelNamePrefix)
-     ;separator="\n")
-  let desc = match residualEquations
-             case {} then
-               <<
-               const char *<%symbolName(modelNamePrefix,"initialResidualDescription")%>(int i)
-               {
-                 return "empty";
-               }
-               >>
-             else
-               <<
-               const char *<%symbolName(modelNamePrefix,"initialResidualDescription")%>(int i)
-               {
-                 const char *res[] = {<%resDesc%>};
-                 return res[i];
-               };
-               >>
-  <<
-  <%desc%>
-
-  <%tmp%>
-  int <%symbolName(modelNamePrefix,"initial_residual")%>(DATA *data, double *initialResiduals)
-  {
-    TRACE_PUSH
-    const int *equationIndexes = NULL;
-    int i = 0;
-    <%varDecls%>
-
-    infoStreamPrint(LOG_RES_INIT, 1, "updating initial residuals");
-    <%body%>
-    if (ACTIVE_STREAM(LOG_RES_INIT)) messageClose(LOG_RES_INIT);
-
-    TRACE_POP
-    return 0;
-  }
-  >>
-end functionInitialResidual;
 
 template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations, String modelNamePrefix)
   "Generates function in simulation file."
@@ -4563,7 +4478,6 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     numberOfInputVariables              = "<%vi.numInVars%>"  cmt_numberOfInputVariables              = "NI:       number of inputvar on topmodel,                     OMC"
     numberOfOutputVariables             = "<%vi.numOutVars%>"  cmt_numberOfOutputVariables             = "NO:       number of outputvar on topmodel,                    OMC"
 
-    numberOfResidualsForInitialization  = "<%vi.numInitialResiduals%>"  cmt_numberOfResidualsForInitialization  = "NR:       number of residuals for initialialization function, OMC"
     numberOfExternalObjects             = "<%vi.numExternalObjects%>"  cmt_numberOfExternalObjects             = "NEXT:     number of external objects,                         OMC"
     numberOfFunctions                   = "<%listLength(functions)%>"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
 
