@@ -42,15 +42,6 @@
 #include "util/omc_error.h"
 #include "util/rtclock.h"
 
-#if defined(__alpha__) || defined(__sparc64__) || defined(__x86_64__) || defined(__ia64__)
-typedef int integer;
-typedef unsigned int uinteger;
-#else
-typedef long int integer;
-typedef unsigned long int uinteger;
-#endif
-typedef double doublereal;
-
 #define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
 #define omc_dummyEquationInfo {-1,0,"",-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}

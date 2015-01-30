@@ -171,7 +171,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->sampleEvents = 0;
 
   /* set tolerance for ZeroCrossings */
-  setZCtol(min(simInfo->stepSize, simInfo->tolerance));
+  setZCtol(fmin(simInfo->stepSize, simInfo->tolerance));
 
   switch (solverInfo->solverMethod) {
   case S_EULER: break;
