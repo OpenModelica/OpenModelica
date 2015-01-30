@@ -5,7 +5,7 @@ ANTLRJAR = $(ANTLR)/../tool/antlr-3.2.jar
 ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
 
 COMPILERHOME=../Compiler/
-BUILDINC = -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util -I../SimulationRuntime/c/simulation/libf2c
+BUILDINC = -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util
 RMLINC	= -I$(RMLHOME)/include/plain
 
 

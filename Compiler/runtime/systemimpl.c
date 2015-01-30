@@ -542,6 +542,34 @@ const char* SystemImpl__basename(const char *str)
   return res;
 }
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+int runProcess(const char* cmd)
+{
+  STARTUPINFO si;
+  PROCESS_INFORMATION pi;
+  char *c = "cmd /c";
+  char *command = malloc(strlen(cmd) + strlen(c) + 2);
+
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  ZeroMemory(&pi, sizeof(pi));
+
+
+  sprintf(command, "%s %s", c, cmd);
+
+  if (CreateProcessA(NULL, command, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+  {
+      WaitForSingleObject(pi.hProcess, INFINITE);
+      CloseHandle(pi.hProcess);
+      CloseHandle(pi.hThread);
+      free(command);
+      return 0;
+  }
+  free(command);
+  return 1;
+}
+#endif
+
 int SystemImpl__systemCall(const char* str, const char* outFile)
 {
   int status = -1,ret_val = -1;
@@ -555,10 +583,10 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   if (*outFile) {
     char *command = malloc(strlen(str) + strlen(outFile) + 9);
     sprintf(command, "%s > %s 2>&1", str, outFile);
-    status = system(command);
+    status = runProcess(command);
     free((void*)command);
   } else {
-    status = system(str);
+    status = runProcess(str);
   }
 #else
   pid_t pID = vfork();
@@ -1306,7 +1334,7 @@ int SystemImpl__lookupFunction(int libIndex, const char *str)
   if (lib == NULL)
     return -1;
 
-  funcptr =  (int (*)(type_description*, type_description*)) getFunctionPointerFromDLL(lib->data.lib, str);
+  funcptr =  (int (*)(threadData_t*, type_description*, type_description*)) getFunctionPointerFromDLL(lib->data.lib, str);
 
   if (funcptr == NULL) {
     /*fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());*/

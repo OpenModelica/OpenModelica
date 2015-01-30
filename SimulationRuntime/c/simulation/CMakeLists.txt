@@ -2,7 +2,7 @@
 # CMakefile for compilation of OMC
 
 # Subdirectorys
-ADD_SUBDIRECTORY(libf2c)
+#ADD_SUBDIRECTORY(libf2c)
 ADD_SUBDIRECTORY(results)
 ADD_SUBDIRECTORY(solver)
 

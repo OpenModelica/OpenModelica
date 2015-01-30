@@ -385,7 +385,7 @@ void System_setClassnamesForSimulation(const char *class_names)
 
 extern double System_getVariableValue(double _timeStamp, void* _timeValues, void* _varValues)
 {
-  double res;
+  double res = 0;
   if (SystemImpl__getVariableValue(_timeStamp,_timeValues,_varValues,&res))
     MMC_THROW();
   return res;
@@ -849,12 +849,12 @@ extern void* System_strtokIncludingDelimiters(const char *str0, const char *deli
     /* in the list add only the end */
     if (pos == MMC_UNTAGFIXNUM(MMC_CAR(lst)))
     {
-      lst = mmc_mk_cons(mmc_mk_icon((void*)(pos+dlen)), lst);
+      lst = mmc_mk_cons(mmc_mk_icon((mmc_sint_t)(void*)(pos+dlen)), lst);
     }
     else /* not in the list, add both */
     {
       lst = mmc_mk_cons(mmc_mk_icon(pos), lst);
-      lst = mmc_mk_cons(mmc_mk_icon((void*)(pos+dlen)), lst);
+      lst = mmc_mk_cons(mmc_mk_icon((mmc_sint_t)(void*)(pos+dlen)), lst);
     }
   }
   /* this means it was not found in the entire string */
