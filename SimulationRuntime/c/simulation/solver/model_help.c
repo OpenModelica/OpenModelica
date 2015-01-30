@@ -1120,7 +1120,7 @@ void setZCtol(double relativeTol)
   TRACE_PUSH
 
   /* lochel: force tolZC > 0 */
-  tolZC = TOL_HYSTERESIS_ZEROCROSSINGS * max(relativeTol, MINIMAL_STEP_SIZE);
+  tolZC = TOL_HYSTERESIS_ZEROCROSSINGS * fmax(relativeTol, MINIMAL_STEP_SIZE);
   infoStreamPrint(LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 
   TRACE_POP

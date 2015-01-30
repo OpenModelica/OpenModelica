@@ -176,6 +176,11 @@ static const char *select_from_dir = NULL;
  * Common implementations
  */
 
+static inline int intMax(int a, int b)
+{
+  return a > b ? a : b;
+}
+
 static int str_contain_char(const char* chars, const char chr)
 {
   int i = 0;
@@ -666,15 +671,15 @@ int System_numProcessors(void)
   if(depth != HWLOC_TYPE_DEPTH_UNKNOWN) {
     int res = hwloc_get_nbobjs_by_depth(topology, depth);
     hwloc_topology_destroy(topology);
-    return max(res,1);
+    return intMax(res,1);
   }
 #endif
 #if defined(__MINGW32__) || defined(_MSC_VER)
   SYSTEM_INFO sysinfo;
   GetSystemInfo( &sysinfo );
-  return max(sysinfo.dwNumberOfProcessors, 1);
+  return intMax(sysinfo.dwNumberOfProcessors, 1);
 #else
-  return max(sysconf(_SC_NPROCESSORS_ONLN), 1);
+  return intMax(sysconf(_SC_NPROCESSORS_ONLN), 1);
 #endif
 }
 
@@ -2000,10 +2005,6 @@ int System_getLoadModelPath(const char *name, void *prios, void *mps, int exactV
 }
 
 #define MAX_TMP_TICK 50
-static inline int intMax(int a, int b)
-{
-  return a > b ? a : b;
-}
 
 typedef struct systemMoData {
   int tmp_tick_no[MAX_TMP_TICK];
