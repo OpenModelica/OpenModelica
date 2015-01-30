@@ -1604,7 +1604,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       numSteps++;
       if (bend < adaptBend/10.0)
       {
-        tau = min(tauMax, tau*2);
+        tau = fmin(tauMax, tau*2);
         debugDouble(LOG_NLS_HOMOTOPY, "+++ increasing step size, tau =", tau);
       }
       vecCopy(solverData->m, solverData->y1, solverData->y0);
