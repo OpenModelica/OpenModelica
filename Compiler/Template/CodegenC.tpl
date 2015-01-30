@@ -9839,7 +9839,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        let _ = (iterators |> iter as REDUCTIONITER(__) =>
          let loopVar = '<%iter.id%>_loopVar'
          let identType = expTypeFromExpModelica(iter.exp)
-         let &rangeExpPre += '<%length%> = max(<%length%>,<%match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
+         let &rangeExpPre += '<%length%> = modelica_integer_max(<%length%>,<%match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'%>);<%\n%>'
          "")
        <<
        <%arrIndex%> = 1;
