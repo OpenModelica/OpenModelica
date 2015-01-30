@@ -60,7 +60,6 @@ extern "C" {
 #include "errorext.h"
 #include "settingsimpl.h"
 #include "printimpl.h"
-#include "f2c.h"
 
 #if defined(_MSC_VER) /* no iconv for VS! */
 
