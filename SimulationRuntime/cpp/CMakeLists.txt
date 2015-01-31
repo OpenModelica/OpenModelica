@@ -13,7 +13,7 @@
 #     if the Pugi XML library was found                                -DUSE_PUGI_XML
 #     if profiling for the simulation runtime should be enabled        -DRUNTIME_PROFILING
 #
-# Some of these options can be controlled by passing arguments to CMAKE 
+# Some of these options can be controlled by passing arguments to CMAKE
 #     if all runtime libraries should be built and linked statically   -DRUNTIME_STATIC_LINKING=ON
 #     if write output should be handled in parallel                    -DUSE_PARALLEL_OUTPUT=ON
 #     if ScoreP should be used for performance analysis                -DUSE_SCOREP=ON
@@ -156,7 +156,7 @@ IF(WIN32)
   ELSEIF(MINGW)
     SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw/dlls)
   ENDIF(MSVC)
-  
+
   SET(INSTALL_OMDEV_LIBS ON)
 ENDIF(WIN32)
 
@@ -463,7 +463,7 @@ set (MATH_LIB ${libMathName})
 set (HYBRJ_LIB ${libHybrjName})
 set (SIMOBJFACTORY_LIB ${libSimObjFactoryName})
 set (DATAEXCHANGE_LIB ${libDataExchangeName})
-set (SIMCONRTOLLER_LIB ${libSimControllerName})
+set (SIMCONTROLLER_LIB ${libSimControllerName})
 set (EXTENSIONUTILITIES_LIB ${libExtensionUtilitiesName})
 set (MODELICACOMPILER_LIB ${libModelicaCompilerName})
 

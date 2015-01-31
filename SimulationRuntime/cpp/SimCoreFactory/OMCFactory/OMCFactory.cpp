@@ -178,7 +178,7 @@ std::pair<boost::shared_ptr<ISimController>,SimSettings> OMCFactory::createSimul
      SimSettings settings = ReadSimulationParameter(argc,argv);
      type_map simcontroller_type_map;
      PATH simcontroller_path = _library_path;
-     PATH simcontroller_name(SIMCONRTOLLER_LIB);
+     PATH simcontroller_name(SIMCONTROLLER_LIB);
      simcontroller_path/=simcontroller_name;
 
      LOADERRESULT result =  LoadLibrary(simcontroller_path.string(),simcontroller_type_map);
@@ -186,7 +186,7 @@ std::pair<boost::shared_ptr<ISimController>,SimSettings> OMCFactory::createSimul
      if (result != LOADER_SUCCESS)
      {
 
-          throw std::runtime_error("Failed loading SimConroller library!");
+          throw std::runtime_error(string("Failed loading SimController library from path: ") + simcontroller_path.string());
      }
      std::map<std::string, factory<ISimController,PATH,PATH> >::iterator iter;
      std::map<std::string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
