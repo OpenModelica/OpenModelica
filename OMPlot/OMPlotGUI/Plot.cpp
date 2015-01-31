@@ -106,8 +106,8 @@ void Plot::fillColorsList()
 {
   mColorsList.append(QColor(Qt::red));
   mColorsList.append(QColor(Qt::blue));
-  mColorsList.append(QColor(Qt::green));
-  mColorsList.append(QColor(Qt::cyan));
+  mColorsList.append(QColor(85,170,0));     // Ticket #3098
+  mColorsList.append(QColor(170,85,255));   // Ticket #3098
   mColorsList.append(QColor(Qt::magenta));
   mColorsList.append(QColor(Qt::yellow));
   mColorsList.append(QColor(Qt::darkRed));
