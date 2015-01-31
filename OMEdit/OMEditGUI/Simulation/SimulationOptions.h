@@ -73,7 +73,6 @@ public:
     setShowGeneratedFiles(false);
     setModelSetupFile("");
     setInitializationMethod("");
-    setOptimizationMethod("");
     setEquationSystemInitializationFile("");
     setEquationSystemInitializationTime("");
     setClock("");
@@ -164,8 +163,6 @@ public:
   QString getModelSetupFile() {return mModelSetupFile;}
   void setInitializationMethod(QString initializationMethod) {mInitializationMethod = initializationMethod;}
   QString getInitializationMethod() {return mInitializationMethod;}
-  void setOptimizationMethod(QString optimizationMethod) {mOptimizationMethod = optimizationMethod;}
-  QString getOptimizationMethod() {return mOptimizationMethod;}
   void setEquationSystemInitializationFile(QString equationSystemInitializationFile) {mEquationSystemInitializationFile = equationSystemInitializationFile;}
   QString getEquationSystemInitializationFile() {return mEquationSystemInitializationFile;}
   void setEquationSystemInitializationTime(QString equationSystemInitializationTime) {mEquationSystemInitializationTime = equationSystemInitializationTime;}
@@ -261,7 +258,6 @@ private:
   bool mShowGeneratedFiles;
   QString mModelSetupFile;
   QString mInitializationMethod;
-  QString mOptimizationMethod;
   QString mEquationSystemInitializationFile;
   QString mEquationSystemInitializationTime;
   QString mClock;

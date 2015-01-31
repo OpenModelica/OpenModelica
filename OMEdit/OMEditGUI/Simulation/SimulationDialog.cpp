@@ -326,11 +326,6 @@ void SimulationDialog::setUpForm()
   mpInitializationMethodLabel->setToolTip(tr("Specifies the initialization method."));
   mpInitializationMethodComboBox = new QComboBox;
   mpInitializationMethodComboBox->addItems(Helper::ModelicaInitializationMethods.toLower().split(","));
-  // Optimization Methods
-  mpOptimizationMethodLabel = new Label(tr("Optimization Method (Optional):"));
-  mpOptimizationMethodLabel->setToolTip(tr("Specifies the initialization optimization method."));
-  mpOptimizationMethodComboBox = new QComboBox;
-  mpOptimizationMethodComboBox->addItems(Helper::ModelicaOptimizationMethods.toLower().split(","));
   // Equation System Initialization File
   mpEquationSystemInitializationFileLabel = new Label(tr("Equation System Initialization File (Optional):"));
   mpEquationSystemInitializationFileLabel->setToolTip(tr("Specifies an external file for the initialization of the model."));
@@ -444,30 +439,28 @@ void SimulationDialog::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpModelSetupFileBrowseButton, 0, 2);
   pSimulationFlagsTabLayout->addWidget(mpInitializationMethodLabel, 1, 0);
   pSimulationFlagsTabLayout->addWidget(mpInitializationMethodComboBox, 1, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpOptimizationMethodLabel, 2, 0);
-  pSimulationFlagsTabLayout->addWidget(mpOptimizationMethodComboBox, 2, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileLabel, 3, 0);
-  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileTextBox, 3, 1);
-  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileBrowseButton, 3, 2);
-  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationTimeLabel, 4, 0);
-  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationTimeTextBox, 4, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpClockLabel, 5, 0);
-  pSimulationFlagsTabLayout->addWidget(mpClockComboBox, 5, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpLinearSolverLabel, 6, 0);
-  pSimulationFlagsTabLayout->addWidget(mpLinearSolverComboBox, 6, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverLabel, 7, 0);
-  pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverComboBox, 7, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeLabel, 8, 0);
-  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeTextBox, 8, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesLabel, 9, 0);
-  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesTextBox, 9, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpProfilingLabel, 10, 0);
-  pSimulationFlagsTabLayout->addWidget(mpProfilingComboBox, 10, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 11, 0);
-  pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 12, 0);
-  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 13, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 14, 0);
-  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsTextBox, 14, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileLabel, 2, 0);
+  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileTextBox, 2, 1);
+  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileBrowseButton, 2, 2);
+  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationTimeLabel, 3, 0);
+  pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationTimeTextBox, 3, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpClockLabel, 4, 0);
+  pSimulationFlagsTabLayout->addWidget(mpClockComboBox, 4, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpLinearSolverLabel, 5, 0);
+  pSimulationFlagsTabLayout->addWidget(mpLinearSolverComboBox, 5, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverLabel, 6, 0);
+  pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverComboBox, 6, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeLabel, 7, 0);
+  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeTextBox, 7, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesLabel, 8, 0);
+  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesTextBox, 8, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpProfilingLabel, 9, 0);
+  pSimulationFlagsTabLayout->addWidget(mpProfilingComboBox, 9, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 10, 0);
+  pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 11, 0);
+  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 12, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 13, 0);
+  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsTextBox, 13, 1, 1, 2);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
@@ -629,11 +622,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     if (currentIndex > -1) {
       mpInitializationMethodComboBox->setCurrentIndex(currentIndex);
     }
-    // Optimization Methods
-    currentIndex = mpOptimizationMethodComboBox->findText(simulationOptions.getOptimizationMethod(), Qt::MatchExactly);
-    if (currentIndex > -1) {
-      mpOptimizationMethodComboBox->setCurrentIndex(currentIndex);
-    }
     // Equation System Initialization File
     mpEquationSystemInitializationFileTextBox->setText(simulationOptions.getEquationSystemInitializationFile());
     // Equation System time
@@ -751,7 +739,6 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
   simulationOptions.setModelSetupFile(mpModelSetupFileTextBox->text());
   simulationOptions.setInitializationMethod(mpInitializationMethodComboBox->currentText());
-  simulationOptions.setOptimizationMethod(mpOptimizationMethodComboBox->currentText());
   simulationOptions.setEquationSystemInitializationFile(mpEquationSystemInitializationFileTextBox->text());
   simulationOptions.setEquationSystemInitializationTime(mpEquationSystemInitializationTimeTextBox->text());
   simulationOptions.setClock(mpClockComboBox->currentText());
@@ -835,10 +822,6 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   // setup initiaization method flag
   if (!mpInitializationMethodComboBox->currentText().isEmpty()) {
     simulationFlags.append(QString("-iim=").append(mpInitializationMethodComboBox->currentText()));
-  }
-  // setup Optimization Method flag
-  if (!mpOptimizationMethodComboBox->currentText().isEmpty()) {
-    simulationFlags.append(QString("-iom=").append(mpOptimizationMethodComboBox->currentText()));
   }
   // setup Equation System Initialization file flag
   if (!mpEquationSystemInitializationFileTextBox->text().isEmpty()) {
