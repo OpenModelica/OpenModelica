@@ -140,6 +140,7 @@ void SimManager::initialize()
         if (_timeeventcounter)
             delete[] _timeeventcounter;
         _timeeventcounter = new int[_dimtimeevent];
+		 memset(_timeeventcounter, 0, _dimtimeevent * sizeof(int));
         // compute sampleCycles for RT simulation
         if (_config->getGlobalSettings()->useEndlessSim())
         {
@@ -181,6 +182,9 @@ void SimManager::initialize()
         _resetCycle = _sampleCycles[0];
         for (int i = 1; i < _dimtimeevent; i++)
             _resetCycle *= _sampleCycles[i];
+		// All Events are updated every cycle. In order to have a change in timeEventCounter, the reset is set to two
+		if(_resetCycle == 1)
+			_resetCycle++;
         _solver->initialize();
     }
 //#endif
@@ -195,9 +199,10 @@ void SimManager::initialize()
 void SimManager::runSingleStep(double cycletime)
 {
     // Increase time event counter
-    if (_dimtimeevent)
+    if (_dimtimeevent && cycletime > 0.0)
     {
-        if (_lastCycleTime && cycletime != _lastCycleTime)
+        
+		if (_lastCycleTime && cycletime != _lastCycleTime)
             throw std::runtime_error("Cycle time can not be changed, if time events (samples) are present!");
         else
             _lastCycleTime = cycletime;
@@ -207,21 +212,20 @@ void SimManager::runSingleStep(double cycletime)
             if (_cycleCounter % _sampleCycles[i] == 0)
                 _timeeventcounter[i]++;
         }
-
+	}
         //Handle time event
         _timeevent_system->handleTimeEvent(_timeeventcounter);
         _cont_system->evaluateAll(IContinuous::CONTINUOUS);
         _event_system->saveAll();
         _timeevent_system->handleTimeEvent(_timeeventcounter);
-    }
-
+	
     // Solve
     _solver->setcycletime(cycletime);
     _solver->solve(_solverTask);
-
-    _cycleCounter++;
-    // Reset everything to prevent overflows
-    if (_cycleCounter == _resetCycle + 1)
+	
+	_cycleCounter++; 
+	// Reset everything to prevent overflows
+	if (_cycleCounter == _resetCycle + 1)
     {
         _cycleCounter = 1;
         for (int i = 0; i < _dimtimeevent; i++)
