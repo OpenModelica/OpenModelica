@@ -617,7 +617,6 @@ public constant Integer SymbolicJacobianAIndex = 1;
 public constant Integer SymbolicJacobianBIndex = 2;
 public constant Integer SymbolicJacobianCIndex = 3;
 public constant Integer SymbolicJacobianDIndex = 4;
-public constant Integer SymbolicJacobianGIndex = 5;
 
 public constant String derivativeNamePrefix = "$DERAlias";
 public constant String partialDerivativeNamePrefix = "$pDER";
