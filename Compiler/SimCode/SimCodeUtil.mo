@@ -6713,23 +6713,6 @@ algorithm
   outParameterEquations := listAppend(outParameterEquations, acc);
 end createParameterEquations;
 
-protected function traverseAlgorithmFinder "author: Frenkel TUD 2010-12
-  collect all used algorithms"
-  input BackendDAE.Equation inEq;
-  input list<DAE.Algorithm> inAlgs;
-  output BackendDAE.Equation outEqn := inEq;
-  output list<DAE.Algorithm> outAlgs;
-protected
-  DAE.Algorithm alg;
-algorithm
-  outAlgs := match (inEq)
-    case BackendDAE.ALGORITHM(alg=alg)
-    then alg::inAlgs;
-
-    else inAlgs;
-  end match;
-end traverseAlgorithmFinder;
-
 protected function createInitialAssignmentsFromStart
   input BackendDAE.Var inVar;
   input tuple<list<BackendDAE.Equation>, BackendDAE.Variables> inTpl;
@@ -6843,78 +6826,20 @@ algorithm
   end matchcontinue;
 end createInitialAssignmentsFromMax;
 
-protected function createInitialParamAssignments
-  input BackendDAE.Var inVar;
-  input tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>, list<BackendDAE.Var>, list<Integer>, list<Integer>, Integer> inTpl;
-  output BackendDAE.Var outVar;
-  output tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>, list<BackendDAE.Var>, list<Integer>, list<Integer>, Integer> outTpl;
-algorithm
-  (outVar,outTpl) := matchcontinue (inVar,inTpl)
-    local
-      BackendDAE.Var var, var1;
-      BackendDAE.Equation initialEquation;
-      list<BackendDAE.Equation> eqns;
-      DAE.ComponentRef cr;
-      DAE.Exp e, cre;
-      DAE.ElementSource source;
-      list<Integer> v1, v2;
-      Integer pos;
-      list<BackendDAE.Var> v, kn;
-      Boolean b1, b2;
-
-    // ignore constants
-    case (var as BackendDAE.VAR(varKind=BackendDAE.CONST()), (eqns, v, kn, v1, v2, pos))
-    then (var, (eqns, v, var::kn, v1, v2, pos));
-
-    case (var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source=source), (eqns, v, kn, v1, v2, pos)) equation
-      false = BackendVariable.isVarOnTopLevelAndInput(var);
-      b1 = BackendVariable.isParam(var);
-      b2 = Expression.isConstValue(e);
-      // if not parameter use it, else use it only if not constant
-      true = (not b1) or (b1 and not b2);
-      cre = Expression.crefExp(cr);
-      initialEquation = BackendDAE.EQUATION(cre, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-      var1 = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
-    then (var, (initialEquation::eqns, var1::v, kn, pos::v1, pos::v2, pos+1));
-
-    case (var as BackendDAE.VAR(varName=cr, bindExp=NONE(), source=source), (eqns, v, kn, v1, v2, pos)) equation
-      false = BackendVariable.isVarOnTopLevelAndInput(var);
-      e = BackendVariable.varStartValue(var);
-      b1 = BackendVariable.isParam(var);
-      b2 = Expression.isConstValue(e);
-      // if not parameter use it, else use it only if not constant
-      true = (not b1) or (b1 and not b2);
-      cre = Expression.crefExp(cr);
-      initialEquation = BackendDAE.EQUATION(cre, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-      var1 = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
-    then (var, (initialEquation::eqns, var1::v, kn, pos::v1, pos::v2, pos+1));
-
-    case (var, (eqns, v, kn, v1, v2, pos)) equation
-      var1 = BackendVariable.setVarKind(var, BackendDAE.PARAM());
-    then (var, (eqns, v, var1::kn, v1, v2, pos));
-  end matchcontinue;
-end createInitialParamAssignments;
-
 protected function createVarAsserts
   input BackendDAE.Var inVar;
   input list<DAE.Algorithm> inAlgs;
   output BackendDAE.Var outVar;
   output list<DAE.Algorithm> outAlgs;
 algorithm
-  (outVar,outAlgs) := matchcontinue (inVar,inAlgs)
+  (outVar, outAlgs) := matchcontinue(inVar)
     local
-      BackendDAE.Var var;
-      list<DAE.Algorithm> asserts, asserts1, asserts2;
-      DAE.ComponentRef name;
-      DAE.ElementSource source;
-      BackendDAE.VarKind kind;
-      Option<DAE.VariableAttributes> attr;
+      list<DAE.Algorithm> asserts1, asserts2;
 
-    case (var as BackendDAE.VAR(), asserts)
-      equation
-        (_, asserts1) = createVarMinMaxAssert(var, asserts);
-        (_, asserts2) = createVarNominalAssert(var, asserts1);
-      then (var, asserts2);
+    case BackendDAE.VAR() equation
+      (_, asserts1) = createVarMinMaxAssert(inVar, inAlgs);
+      (_, asserts2) = createVarNominalAssert(inVar, asserts1);
+    then (inVar, asserts2);
 
     else (inVar,inAlgs);
   end matchcontinue;
