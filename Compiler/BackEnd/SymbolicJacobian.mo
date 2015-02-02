@@ -1932,6 +1932,68 @@ algorithm
   end match;
 end calculateJacobiansComponents;
 
+
+protected function convertResidualsIntoSolvedEquations "author: lochel
+  This function converts residuals into solved equations of the following form:
+    e.g.: 0 = a+b -> $res1 = a+b"
+  input list<BackendDAE.Equation> inResidualList;
+  output list<BackendDAE.Equation> outEquationList;
+  output list<BackendDAE.Var> outVariableList;
+algorithm
+  (outEquationList, outVariableList) := convertResidualsIntoSolvedEquations2(inResidualList, 1, {}, {});
+end convertResidualsIntoSolvedEquations;
+
+protected function convertResidualsIntoSolvedEquations2 "author: lochel
+  This is a helper function of convertResidualsIntoSolvedEquations."
+  input list<BackendDAE.Equation> inEquationList;
+  input Integer inIndex;
+  input list<BackendDAE.Equation> iEquationList;
+  input list<BackendDAE.Var> iVariableList;
+  output list<BackendDAE.Equation> outEquationList;
+  output list<BackendDAE.Var> outVariableList;
+algorithm
+  (outEquationList, outVariableList) := matchcontinue(inEquationList, inIndex, iEquationList, iVariableList)
+    local
+      Integer index;
+      list<BackendDAE.Equation> restEquationList;
+      list<BackendDAE.Equation> equationList;
+      list<BackendDAE.Var> variableList;
+
+      DAE.Exp expVarName;
+      DAE.Exp exp;
+      DAE.ElementSource source "origin of equation";
+
+      String varName, errorMessage;
+      DAE.ComponentRef componentRef;
+      BackendDAE.Equation currEquation;
+      BackendDAE.Var currVariable;
+      BackendDAE.EquationAttributes eqAttr;
+
+    case({}, _, _ , _)
+    then (listReverse(iEquationList), listReverse(iVariableList));
+
+    case((BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source,attr=eqAttr))::restEquationList, index,_,_) equation
+      varName = "$res" + intString(index);
+      componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
+      expVarName = DAE.CREF(componentRef, DAE.T_REAL_DEFAULT);
+      currEquation = BackendDAE.EQUATION(expVarName, exp, source, eqAttr);
+
+      currVariable = BackendDAE.VAR(componentRef, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
+
+      (equationList, variableList) = convertResidualsIntoSolvedEquations2(restEquationList, index+1,currEquation::iEquationList,currVariable::iVariableList);
+    then (equationList, variableList);
+
+    case(currEquation::_, _,_,_) equation
+      errorMessage = "./Compiler/BackEnd/SymbolicJacobian.mo: function convertResidualsIntoSolvedEquations2 failed: " + BackendDump.equationString(currEquation);
+      Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+    then fail();
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SymbolicJacobian.mo: function convertResidualsIntoSolvedEquations2 failed"});
+    then fail();
+  end matchcontinue;
+end convertResidualsIntoSolvedEquations2;
+
 protected function calculateJacobianComponent
   input BackendDAE.StrongComponent inComp;
   input BackendDAE.Variables inVars;
@@ -1977,7 +2039,7 @@ algorithm
           // create  residual equations
           reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
-          (reqns, resVarsLst) = BackendDAEOptimize.convertResidualsIntoSolvedEquations(reqns);
+          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
           resVars = BackendVariable.listVar1(resVarsLst);
           eqns = BackendEquation.listEquation(reqns);
 
@@ -2022,7 +2084,7 @@ algorithm
           // create  residual equations
           reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
           reqns = listReverse(reqns);
-          (reqns, resVarsLst) = BackendDAEOptimize.convertResidualsIntoSolvedEquations(reqns);
+          (reqns, resVarsLst) = convertResidualsIntoSolvedEquations(reqns);
           resVars = BackendVariable.listVar1(resVarsLst);
           eqns = BackendEquation.listEquation(reqns);
 
