@@ -557,6 +557,8 @@ int runProcess(const char* cmd)
 
   sprintf(command, "%s %s", c, cmd);
 
+  /* fprintf(stderr, "%s\n", command); fflush(NULL); */
+
   if (CreateProcessA(NULL, command, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
   {
       WaitForSingleObject(pi.hProcess, INFINITE);
@@ -1182,6 +1184,7 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
   modelica_ptr_t lib = NULL;
   modelica_integer libIndex;
   HMODULE h;
+  const char* ctokens[2];
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
   /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
   GetCurrentDirectory(bufLen,currentDirectory);
@@ -1193,8 +1196,20 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
 
   h = LoadLibrary(libname);
   if (h == NULL) {
-    fprintf(stderr, "Unable to load '%s': %lu.\n", libname, GetLastError());
-    fflush(stderr);
+    LPVOID lpMsgBuf;
+    FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            GetLastError(),
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPTSTR) &lpMsgBuf,
+            0, NULL );
+    ctokens[0] = lpMsgBuf;
+    ctokens[1] = libname;
+    c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
+    LocalFree(lpMsgBuf);
     return -1;
   }
 
