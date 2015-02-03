@@ -49,11 +49,27 @@
 #include "application.h"
 #include "cellapplication.h"
 
+#ifdef Q_OS_MAC
+//need to increase stack size on OSX
+#include <sys/resource.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#endif
+
 using namespace std;
 using namespace IAEX;
 
 int main(int argc, char *argv[])
 {
+
+#ifdef Q_OS_MAC
+  //need to increase stack size on OSX
+  rlimit limits;
+  getrlimit(RLIMIT_STACK, &limits);
+  limits.rlim_cur = limits.rlim_max;
+  setrlimit(RLIMIT_STACK, &limits);
+#endif
+
   try
   {
     CellApplication a(argc, argv);
