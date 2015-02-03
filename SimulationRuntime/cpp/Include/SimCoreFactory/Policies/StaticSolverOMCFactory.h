@@ -8,7 +8,7 @@
 #include <Core/System/IMixedSystem.h>
 #include <Core/SimulationSettings/Factory.h>
 #include <Solver/CVode/CVode.h>
-
+#include <Solver/IDA/IDA.h>
 /*
 Policy class to create solver object
 */
@@ -40,8 +40,12 @@ public:
           Cvode *cvode = new Cvode(system,solver_settings.get());
           return boost::shared_ptr<ISolver>(cvode);
         }
-        else
-            throw std::invalid_argument("Selected Solver is not available");
+        elseif(solvername.compare("ida")==0)
+        {
+          Ida *ida = new Ida(system,solver_settings.get());
+          return boost::shared_ptr<ISolver>(ida);
+        } else
+           throw std::invalid_argument("Selected Solver is not available");
 
         return boost::shared_ptr<ISolver>();
     }

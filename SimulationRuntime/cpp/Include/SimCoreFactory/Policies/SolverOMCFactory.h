@@ -87,6 +87,15 @@ public:
         }
         else if(solvername.compare("ida")==0)
         {
+            solvername = "ida"; //workound for dassl, using cvode instead
+            PATH ida_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH ida_name(IDA_LIB);
+            ida_path/=ida_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(ida_path.string(),*_solver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw std::runtime_error("Failed loading IDA solver library!");
+            }
         }
         else if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
         {
