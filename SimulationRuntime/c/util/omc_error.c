@@ -314,6 +314,15 @@ void setStreamPrintXML(int isXML)
 }
 
 #define SIZE_LOG_BUFFER 2048
+void va_infoStreamPrint(int stream, int indentNext, const char *format, va_list args)
+{
+  if (useStream[stream]) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    messageFunction(LOG_TYPE_INFO, stream, indentNext, logBuffer, 0, NULL);
+  }
+}
+
 void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)
 {
   if (useStream[stream]) {
