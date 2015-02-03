@@ -84,7 +84,7 @@ const char *LS_DESC[LS_MAX+1] = {
 };
 
 /* Data structure for the default solver
- * where two different solverData for lapack and 
+ * where two different solverData for lapack and
  * totalpivot as fallback
  */
 struct dataLapackAndTotalPivot{
@@ -181,7 +181,7 @@ int initializeLinearSystems(DATA *data)
       linsys[i].A = (double*) malloc(size*size*sizeof(double));
       linsys[i].setAElement = setAElementLAPACK;
       linsys[i].setBElement = setBElementLAPACK;
-      
+
       allocateLapackData(size, &(defaultSolverData->lapackData));
       allocateTotalPivotData(size, &(defaultSolverData->totalpivotData));
 
