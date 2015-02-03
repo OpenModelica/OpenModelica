@@ -64,6 +64,7 @@ const char *LS_NAME[LS_MAX+1] = {
 #endif
   /* LS_UMFPACK */      "umfpack",
   /* LS_TOTALPIVOT */   "totalpivot",
+  /* LS_DEFAULT */      "default",
 
   "LS_MAX"
 };
@@ -76,9 +77,19 @@ const char *LS_DESC[LS_MAX+1] = {
   /* LS_LIS */          "method using iterativ solver Lis",
 #endif
   /* LS_UMFPACK */      "method using umfpack sparse linear solver",
-  /* LS_TOTALPIVOT */   "default method - using total pivoting LU factorization",
+  /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
+  /* LS_DEFAULT */      "default method - lapack with total pivoting as fallback",
 
   "LS_MAX"
+};
+
+/* Data structure for the default solver
+ * where two different solverData for lapack and 
+ * totalpivot as fallback
+ */
+struct dataLapackAndTotalPivot{
+  void* lapackData;
+  void* totalpivotData;
 };
 
 /*! \fn int initializeLinearSystems(DATA *data)
@@ -93,6 +104,7 @@ int initializeLinearSystems(DATA *data)
   int i, nnz;
   int size;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo.linearSystemData;
+  struct dataLapackAndTotalPivot *defaultSolverData;
 
   infoStreamPrint(LOG_LS_V, 1, "initialize linear system solvers");
 
@@ -162,6 +174,18 @@ int initializeLinearSystems(DATA *data)
       linsys[i].setAElement = setAElementTotalPivot;
       linsys[i].setBElement = setBElementTotalPivot;
       allocateTotalPivotData(size, &(linsys[i].solverData));
+      break;
+
+    case LS_DEFAULT:
+      defaultSolverData = (struct dataLapackAndTotalPivot*) malloc(sizeof(struct dataLapackAndTotalPivot));
+      linsys[i].A = (double*) malloc(size*size*sizeof(double));
+      linsys[i].setAElement = setAElementLAPACK;
+      linsys[i].setBElement = setBElementLAPACK;
+      
+      allocateLapackData(size, &(defaultSolverData->lapackData));
+      allocateTotalPivotData(size, &(defaultSolverData->totalpivotData));
+
+      linsys[i].solverData = (void*) defaultSolverData;
       break;
 
     default:
@@ -268,6 +292,12 @@ int freeLinearSystems(DATA *data)
       freeTotalPivotData(&(linsys[i].solverData));
       break;
 
+    case LS_DEFAULT:
+      free(linsys[i].A);
+      freeLapackData(&((struct dataLapackAndTotalPivot*) linsys[i].solverData)->lapackData);
+      freeTotalPivotData(&((struct dataLapackAndTotalPivot*) linsys[i].solverData)->totalpivotData);
+      break;
+
     default:
       throwStreamPrint(data->threadData, "unrecognized linear solver");
     }
@@ -293,9 +323,10 @@ int solve_linear_system(DATA *data, int sysNumber)
   TRACE_PUSH
   int success;
   int retVal;
-  LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
+  LINEAR_SYSTEM_DATA* linsys = &(data->simulationInfo.linearSystemData[sysNumber]);
+  struct dataLapackAndTotalPivot *defaultSolverData;
 
-  rt_ext_tp_tick(&(linsys[sysNumber].totalTimeClock));
+  rt_ext_tp_tick(&(linsys->totalTimeClock));
   switch(data->simulationInfo.lsMethod)
   {
   case LS_LAPACK:
@@ -321,13 +352,25 @@ int solve_linear_system(DATA *data, int sysNumber)
     success = solveTotalPivot(data, sysNumber);
     break;
 
+  case LS_DEFAULT:
+    defaultSolverData = linsys->solverData;
+    linsys->solverData = defaultSolverData->lapackData;
+
+    success = solveLapack(data, sysNumber);
+    if (!success){
+      warningStreamPrint(LOG_STDOUT, 0, "default linear solver fails, the fallback solver with total pivoting is started at time %f.", data->localData[0]->timeValue);
+      linsys->solverData = defaultSolverData->totalpivotData;
+      success = solveTotalPivot(data, sysNumber);
+    }
+    linsys->solverData = defaultSolverData;
+    break;
   default:
     throwStreamPrint(data->threadData, "unrecognized linear solver");
   }
-  linsys[sysNumber].solved = success;
+  linsys->solved = success;
 
-  linsys[sysNumber].totalTime += rt_ext_tp_tock(&(linsys[sysNumber].totalTimeClock));
-  linsys[sysNumber].numberOfCall++;
+  linsys->totalTime += rt_ext_tp_tock(&(linsys->totalTimeClock));
+  linsys->numberOfCall++;
 
   retVal = check_linear_solution(data, 1, sysNumber);
 

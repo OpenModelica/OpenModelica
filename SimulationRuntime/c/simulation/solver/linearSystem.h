@@ -55,6 +55,7 @@ enum LINEAR_SOLVER
 #endif
   LS_UMFPACK,
   LS_TOTALPIVOT,
+  LS_DEFAULT,
 
   LS_MAX
 };

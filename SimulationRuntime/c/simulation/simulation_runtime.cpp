@@ -267,7 +267,7 @@ int getlinearSolverMethod(int argc, char**argv)
   const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
-    return LS_TOTALPIVOT; /* default method */
+    return LS_DEFAULT; /* default method */
 
   for(i=1; i<LS_MAX; ++i)
     if(*method == LS_NAME[i])
