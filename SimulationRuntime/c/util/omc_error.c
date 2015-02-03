@@ -222,6 +222,7 @@ static void printEscapedXML(const char *msg)
 void messageText(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
 {
   int i;
+  int len;
 
   printf("%-17s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_NAME[stream]);
   printf("%-7s | ", (subline || (lastStream == stream && lastType[stream] == type && level[stream] > 0)) ? "|" : LOG_TYPE_DESC[type]);
@@ -237,12 +238,19 @@ void messageText(int type, int stream, int indentNext, char *msg, int subline, c
     {
       msg[i] = '\0';
       printf("%s\n", msg);
-      messageText(type, stream, 0, &msg[i+1], 1, indexes);
+      if (msg[i+1]) {
+        messageText(type, stream, 0, &msg[i+1], 1, indexes);
+      }
       return;
     }
   }
 
-  printf("%s\n", msg);
+  len = strlen(msg);
+  if (len>0 && msg[len-1]=='\n') {
+    printf("%s", msg);
+  } else {
+    printf("%s\n", msg);
+  }
   fflush(NULL);
   if (indentNext) level[stream]++;
 }

@@ -60,7 +60,7 @@ void OpenModelica_Simulation_ModelicaError(const char* string) {
 
 MODELICA_NORETURN void OpenModelica_Simulation_ModelicaVFormatError(const char*string, va_list args) MODELICA_NORETURNATTR;
 void OpenModelica_Simulation_ModelicaVFormatError(const char*string, va_list args) {
-  va_throwStreamPrint(LOG_STDOUT, string, args);
+  va_throwStreamPrint(NULL, string, args);
 }
 
 MODELICA_NORETURN void (*OpenModelica_ModelicaError)(const char*) MODELICA_NORETURNATTR = OpenModelica_Simulation_ModelicaError;
