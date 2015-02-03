@@ -11808,92 +11808,52 @@ end elabSubscripts;
 
 protected function elabSubscriptsDims
   "Elaborates a list of subscripts and checks that they are valid for the given dimensions."
-  input FCore.Cache cache;
-  input FCore.Graph env;
-  input list<Absyn.Subscript> subs;
-  input DAE.Dimensions dims;
-  input Boolean impl;
-  input Prefix.Prefix inPrefix;
-  input Absyn.ComponentRef inCref;
-  input SourceInfo info;
-  output FCore.Cache outCache;
-  output list<DAE.Subscript> outSubs;
-  output DAE.Const outConst;
-algorithm
-  (outCache, outSubs, outConst) := elabSubscriptsDims2(cache, env, subs, dims,
-    impl, inPrefix, inCref, info, DAE.C_CONST(), {});
-end elabSubscriptsDims;
-
-protected function elabSubscriptsDims2
-  "Helper function to elabSubscriptsDims."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input list<Absyn.Subscript> inSubscripts;
-  input DAE.Dimensions inDimensions;
+  input list<DAE.Dimension> inDimensions;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inCref;
   input SourceInfo inInfo;
-  input DAE.Const inConst;
-  input list<DAE.Subscript> inElabSubscripts;
-  output FCore.Cache outCache;
-  output list<DAE.Subscript> outSubscripts;
-  output DAE.Const outConst;
+  output FCore.Cache outCache := inCache;
+  output list<DAE.Subscript> outSubs := {};
+  output DAE.Const outConst := DAE.C_CONST();
+protected
+  list<DAE.Dimension> rest_dims := inDimensions;
+  DAE.Dimension dim;
+  DAE.Subscript dsub;
+  DAE.Const const;
+  Option<DAE.Properties> prop;
+  String subl_str, diml_str, cref_str;
 algorithm
-  (outCache, outSubscripts, outConst) :=
-  match(inCache, inEnv, inSubscripts, inDimensions, inImpl, inPrefix,
-      inCref, inInfo, inConst, inElabSubscripts)
-    local
-      Absyn.Subscript asub;
-      list<Absyn.Subscript> rest_asub;
-      DAE.Dimension dim;
-      DAE.Dimensions rest_dims;
-      DAE.Subscript dsub;
-      list<DAE.Subscript> elabed_subs;
-      DAE.Const const;
-      FCore.Cache cache;
-      Option<DAE.Properties> prop;
-      Integer subl, diml, esubl;
-      String subl_str, diml_str, cref_str;
+  for asub in inSubscripts loop
+    if listEmpty(rest_dims) then
+      // Check that we don't have more subscripts than there are dimensions.
+      cref_str := Dump.printComponentRefStr(inCref);
+      subl_str := intString(listLength(inSubscripts));
+      diml_str := intString(listLength(inDimensions));
 
-    case (_, _, asub :: rest_asub, dim :: rest_dims, _, _, _, _, _, _)
-      equation
-        (cache, dsub, const, prop) = elabSubscript(inCache, inEnv, asub, inImpl, inPrefix, inInfo);
-        const = Types.constAnd(const, inConst);
-        (cache, dsub) = elabSubscriptsDims3(cache, inEnv, dsub, dim, const, prop, inImpl, inCref, inInfo);
-        elabed_subs = dsub :: inElabSubscripts;
-        (cache, elabed_subs, const) = elabSubscriptsDims2(cache, inEnv, rest_asub, rest_dims, inImpl, inPrefix, inCref, inInfo, const, elabed_subs);
-      then
-        (cache, elabed_subs, const);
-
-    case (_, _, {}, {}, _, _, _, _, _, _)
-      then (inCache, listReverse(inElabSubscripts), inConst);
-
-    case (_, _, {}, _, _, _, _, _, _, {})
-      then (inCache, {}, inConst);
-
-    // Check for wrong number of subscripts. The number of subscripts must be
-    // either the same as the number of dimensions, or no subscripts at all.
+      Error.addSourceMessageAndFail(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
+        {cref_str, subl_str, diml_str}, inInfo);
     else
-      equation
-        subl = listLength(inSubscripts);
-        diml = listLength(inDimensions);
-        true = subl <> diml;
-        // Add the number of already elaborated subscripts to get the correct count.
-        esubl = listLength(inElabSubscripts);
-        subl_str = intString(subl + esubl);
-        diml_str = intString(diml + esubl);
-        cref_str = Dump.printComponentRefStr(inCref);
-        Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
-          {cref_str, subl_str, diml_str}, inInfo);
-      then
-        fail();
+      dim :: rest_dims := rest_dims;
+    end if;
 
-  end match;
-end elabSubscriptsDims2;
+    (outCache, dsub, const, prop) :=
+      elabSubscript(outCache, inEnv, asub, inImpl, inPrefix, inInfo);
+    outConst := Types.constAnd(const, outConst);
+    (outCache, dsub) := elabSubscriptsDims2(outCache, inEnv, dsub, dim,
+      outConst, prop, inImpl, inCref, inInfo);
 
-protected function elabSubscriptsDims3
-  "Helper function to elabSubscriptsDims2."
+    outSubs := dsub :: outSubs;
+  end for;
+
+  outSubs := listReverse(outSubs);
+end elabSubscriptsDims;
+
+protected function elabSubscriptsDims2
+  "Helper function to elabSubscriptsDims."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.Subscript inSubscript;
@@ -11906,8 +11866,7 @@ protected function elabSubscriptsDims3
   output FCore.Cache outCache;
   output DAE.Subscript outSubscript;
 algorithm
-  (outCache, outSubscript) := matchcontinue(inCache, inEnv,
-      inSubscript, inDimension, inConst, inProperties, inImpl, inCref, inInfo)
+  (outCache, outSubscript) := matchcontinue(inDimension, inProperties)
     local
       FCore.Cache cache;
       DAE.Subscript sub;
@@ -11922,7 +11881,7 @@ algorithm
     // available until expansion, which happens later on)
     // Note that for loops are expanded 'on the fly' and should therefore not be
     // treated in this way.
-    case (_, _, _, _, _, _, _, _, _)
+    case (_, _)
       equation
         true = FGraph.inForOrParforIterLoopScope(inEnv);
         true = Expression.dimensionKnown(inDimension);
@@ -11930,7 +11889,7 @@ algorithm
         (inCache, inSubscript);
 
     // Keep non-fixed parameters.
-    case (_, _, _, _, _, SOME(prop), _, _, _)
+    case (_, SOME(prop))
       equation
         true = Types.isParameter(inConst);
         ty = Types.getPropType(prop);
@@ -11949,7 +11908,7 @@ algorithm
 
     // If the subscript contains a const then it should be evaluated to
     // the value.
-    case (_, _, _, _, _, _, _, _, _)
+    case (_, _)
       equation
         int_dim = Expression.dimensionSize(inDimension);
         true = Types.isParameterOrConstant(inConst);
@@ -11957,7 +11916,7 @@ algorithm
       then
         (cache, sub);
 
-    case (_, _, _, DAE.DIM_EXP(exp=e), _, _, _, _, _)
+    case (DAE.DIM_EXP(exp=e), _)
       equation
         true = Types.isParameterOrConstant(inConst);
         (_, Values.INTEGER(integer=int_dim), _) = Ceval.ceval(inCache,inEnv,e,true,NONE(),Absyn.MSG(inInfo),0);
@@ -11967,7 +11926,7 @@ algorithm
 
     // If the previous case failed and we're just checking the model, try again
     // but skip the constant evaluation.
-    case (_, _, _, _, _, _, _, _, _)
+    case (_, _)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = Types.isParameterOrConstant(inConst);
@@ -11975,7 +11934,7 @@ algorithm
         (inCache, inSubscript);
 
     // If not constant, keep as is.
-    case (_, _, _, _, _, _, _, _, _)
+    case (_, _)
       equation
         true = Expression.dimensionKnown(inDimension);
         false = Types.isParameterOrConstant(inConst);
@@ -11983,12 +11942,12 @@ algorithm
         (inCache, inSubscript);
 
     // For unknown dimensions, ':', keep as is.
-    case (_, _, _, DAE.DIM_UNKNOWN(), _, _, _, _, _)
+    case (DAE.DIM_UNKNOWN(), _)
       then (inCache, inSubscript);
-    case (_, _, _, DAE.DIM_EXP(_), _, _, _, _, _)
+    case (DAE.DIM_EXP(_), _)
       then (inCache, inSubscript);
 
-    case (_, _, _, _, _, _, _, _, _)
+    else
       equation
         sub_str = ExpressionDump.printSubscriptStr(inSubscript);
         dim_str = ExpressionDump.dimensionString(inDimension);
@@ -11998,7 +11957,7 @@ algorithm
         fail();
 
   end matchcontinue;
-end elabSubscriptsDims3;
+end elabSubscriptsDims2;
 
 protected function elabSubscript "This function converts an Absyn.Subscript to an
   DAE.Subscript."
@@ -12014,7 +11973,7 @@ protected function elabSubscript "This function converts an Absyn.Subscript to a
   output Option<DAE.Properties> outProperties;
 algorithm
   (outCache, outSubscript, outConst, outProperties) :=
-  matchcontinue(inCache, inEnv, inSubscript, inBoolean, inPrefix, info)
+  matchcontinue(inCache, inEnv, inSubscript, inBoolean, inPrefix)
     local
       Boolean impl;
       DAE.Exp sub_1;
@@ -12028,11 +11987,11 @@ algorithm
       Prefix.Prefix pre;
 
     // no subscript
-    case (cache, _, Absyn.NOSUB(), _, _, _)
+    case (cache, _, Absyn.NOSUB(), _, _)
       then (cache, DAE.WHOLEDIM(), DAE.C_CONST(), NONE());
 
     // some subscript, try to elaborate it
-    case (cache, env, Absyn.SUBSCRIPT(subscript = sub), impl, pre, _)
+    case (cache, env, Absyn.SUBSCRIPT(subscript = sub), impl, pre)
       equation
         (cache, sub_1, prop as DAE.PROP(constFlag = const), _) =
           elabExpInExpression(cache, env, sub, impl, NONE(), true, pre, info);
@@ -12064,17 +12023,17 @@ protected function elabSubscriptType
   input SourceInfo inInfo;
   output DAE.Subscript outSubscript;
 algorithm
-  outSubscript := match(inType, inAbsynExp, inDaeExp, inInfo)
+  outSubscript := match(inType)
     local
       DAE.Exp sub;
       String e_str,t_str,p_str;
 
-    case (DAE.T_INTEGER(), _, _, _) then DAE.INDEX(inDaeExp);
-    case (DAE.T_ENUMERATION(), _, _, _) then DAE.INDEX(inDaeExp);
-    case (DAE.T_BOOL(), _, _, _) then DAE.INDEX(inDaeExp);
-    case (DAE.T_ARRAY(ty = DAE.T_INTEGER()), _, _, _) then DAE.SLICE(inDaeExp);
-    case (DAE.T_ARRAY(ty = DAE.T_ENUMERATION()), _, _, _) then DAE.SLICE(inDaeExp);
-    case (DAE.T_ARRAY(ty = DAE.T_BOOL()), _, _, _) then DAE.SLICE(inDaeExp);
+    case DAE.T_INTEGER() then DAE.INDEX(inDaeExp);
+    case DAE.T_ENUMERATION() then DAE.INDEX(inDaeExp);
+    case DAE.T_BOOL() then DAE.INDEX(inDaeExp);
+    case DAE.T_ARRAY(ty = DAE.T_INTEGER()) then DAE.SLICE(inDaeExp);
+    case DAE.T_ARRAY(ty = DAE.T_ENUMERATION()) then DAE.SLICE(inDaeExp);
+    case DAE.T_ARRAY(ty = DAE.T_BOOL()) then DAE.SLICE(inDaeExp);
 
     else
       equation
