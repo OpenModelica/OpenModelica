@@ -16615,6 +16615,7 @@ algorithm
         NONE() = getLoadedFileInfo(f, lf);
         // fall back to basis :)
         parsed = Parser.parse(f,encoding);
+        parsed = MetaUtil.createMetaClassesInProgram(parsed);
         newP = updateProgram(parsed, pAst);
         topNamesStr = getTopQualifiedClassnames(parsed);
         // fix the modification and topNames in the list<GlobalScript.LoadedFile> cache
@@ -16627,6 +16628,7 @@ algorithm
         NONE() = getLoadedFileInfo(f, lf);
         // fall back to basis :)
         parsed = Parser.parse(f,encoding);
+        parsed = MetaUtil.createMetaClassesInProgram(parsed);
         topNamesStr = getTopQualifiedClassnames(parsed);
         // fix the modification and topNames in the list<GlobalScript.LoadedFile> cache
         newLF = updateLoadedFiles(f, lf, topNamesStr, {});
