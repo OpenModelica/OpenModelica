@@ -349,6 +349,7 @@ typedef struct LINEAR_SYSTEM_DATA
   modelica_integer method;              /* not used yet*/
   modelica_real residualError;          /* not used yet*/
   modelica_boolean solved;              /* 1: solved in current step - else not */
+  modelica_boolean failed;              /* 1: failed while last try with lapack - else not */
 
   /* statistics */
   unsigned long numberOfCall;           /* number of solving calls of this system */

@@ -245,12 +245,12 @@ int solveLapack(DATA *data, int sysNumber)
 
   if(solverData->info < 0)
   {
-    warningStreamPrint(LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info);
+    warningStreamPrint(LOG_LS, 0, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info);
     success = 0;
   }
   else if(solverData->info > 0)
   {
-    warningStreamPrint(LOG_STDOUT, 0,
+    warningStreamPrint(LOG_LS, 0,
         "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].",
         (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info+1, (int)solverData->info+1);
 
@@ -276,7 +276,6 @@ int solveLapack(DATA *data, int sysNumber)
       /* take the solution */
       _omc_copyVector(solverData->x, solverData->b);
     }
-
 
     if (ACTIVE_STREAM(LOG_LS_V)){
       infoStreamPrint(LOG_LS_V, 1, "Residual Norm %f of solution x:", residualNorm);

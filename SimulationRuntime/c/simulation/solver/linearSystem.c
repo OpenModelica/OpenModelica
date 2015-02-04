@@ -44,14 +44,11 @@
 #include "linearSolverTotalPivot.h"
 #include "simulation_info_xml.h"
 
-static void setAElementLAPACK(int row, int col, double value, int nth, void *data);
+static void setAElement(int row, int col, double value, int nth, void *data);
 static void setAElementLis(int row, int col, double value, int nth, void *data);
-static void setAElementTotalPivot(int row, int col, double value, int nth, void *data);
 static void setAElementUmfpack(int row, int col, double value, int nth, void *data );
-static void setBElementLAPACK(int row, double value, void *data );
+static void setBElement(int row, double value, void *data );
 static void setBElementLis(int row, double value, void *data );
-static void setBElementTotalPivot(int row, double value, void *data );
-static void setBElementUmfpack(int row, double value, void *data );
 
 int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber);
 
@@ -114,6 +111,7 @@ int initializeLinearSystems(DATA *data)
     nnz = linsys[i].nnz;
 
     linsys[i].totalTime = 0;
+    linsys[i].failed = 0;
 
     /* allocate system data */
     linsys[i].x = (double*) malloc(size*sizeof(double));
@@ -145,8 +143,8 @@ int initializeLinearSystems(DATA *data)
     {
     case LS_LAPACK:
       linsys[i].A = (double*) malloc(size*size*sizeof(double));
-      linsys[i].setAElement = setAElementLAPACK;
-      linsys[i].setBElement = setBElementLAPACK;
+      linsys[i].setAElement = setAElement;
+      linsys[i].setBElement = setBElement;
       allocateLapackData(size, &linsys[i].solverData);
       break;
 
@@ -160,7 +158,7 @@ int initializeLinearSystems(DATA *data)
 #ifdef WITH_UMFPACK
     case LS_UMFPACK:
       linsys[i].setAElement = setAElementUmfpack;
-      linsys[i].setBElement = setBElementUmfpack;
+      linsys[i].setBElement = setBElement;
       allocateUmfPackData(size, size, nnz, &linsys[i].solverData);
       break;
 #else
@@ -171,16 +169,16 @@ int initializeLinearSystems(DATA *data)
 
     case LS_TOTALPIVOT:
       linsys[i].A = (double*) malloc(size*size*sizeof(double));
-      linsys[i].setAElement = setAElementTotalPivot;
-      linsys[i].setBElement = setBElementTotalPivot;
+      linsys[i].setAElement = setAElement;
+      linsys[i].setBElement = setBElement;
       allocateTotalPivotData(size, &(linsys[i].solverData));
       break;
 
     case LS_DEFAULT:
       defaultSolverData = (struct dataLapackAndTotalPivot*) malloc(sizeof(struct dataLapackAndTotalPivot));
       linsys[i].A = (double*) malloc(size*size*sizeof(double));
-      linsys[i].setAElement = setAElementLAPACK;
-      linsys[i].setBElement = setBElementLAPACK;
+      linsys[i].setAElement = setAElement;
+      linsys[i].setBElement = setBElement;
 
       allocateLapackData(size, &(defaultSolverData->lapackData));
       allocateTotalPivotData(size, &(defaultSolverData->totalpivotData));
@@ -323,6 +321,7 @@ int solve_linear_system(DATA *data, int sysNumber)
   TRACE_PUSH
   int success;
   int retVal;
+  int logLevel;
   LINEAR_SYSTEM_DATA* linsys = &(data->simulationInfo.linearSystemData[sysNumber]);
   struct dataLapackAndTotalPivot *defaultSolverData;
 
@@ -358,9 +357,17 @@ int solve_linear_system(DATA *data, int sysNumber)
 
     success = solveLapack(data, sysNumber);
     if (!success){
-      warningStreamPrint(LOG_STDOUT, 0, "default linear solver fails, the fallback solver with total pivoting is started at time %f.", data->localData[0]->timeValue);
+      if (linsys->failed){
+        logLevel = LOG_LS;
+      } else {
+        logLevel = LOG_STDOUT;
+      }
+      warningStreamPrint(logLevel, 0, "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
       linsys->solverData = defaultSolverData->totalpivotData;
       success = solveTotalPivot(data, sysNumber);
+      linsys->failed = 1;
+    }else{
+      linsys->failed = 0;
     }
     linsys->solverData = defaultSolverData;
     break;
@@ -432,7 +439,7 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       TRACE_POP
       return 1;
     }
-    warningStreamPrintWithEquationIndexes(LOG_LS, 1, indexes, "linear system %d fails: at t=%g", index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(LOG_STDOUT, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
 
     for(j=0; j<modelInfoGetEquation(&data->modelData.modelDataXml, (linsys[i]).equationIndex).numVar; ++j) {
       int done=0;
@@ -454,7 +461,7 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
         warningStreamPrint(LOG_LS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData.modelDataXml, (linsys[i]).equationIndex).vars[j]);
       }
     }
-    messageCloseWarning(LOG_LS);
+    messageCloseWarning(LOG_STDOUT);
 
     TRACE_POP
     return 1;
@@ -464,12 +471,31 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
   return 0;
 }
 
-void setAElementLAPACK(int row, int col, double value, int nth, void *data)
+/*! \fn setAElement
+ *  This function sets the (col, row)-value of linsys->A.
+ *
+ *  \param [in]  [row]
+ *  \param [in]  [col]
+ *  \param [in]  [value] 
+ *  \param [in]  [nth] number element in matrix, 
+ *                     is ingored here, used only for sparse
+ *  \param [ref] [data]
+ * 
+ */
+static void setAElement(int row, int col, double value, int nth, void *data)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   linsys->A[row + col * linsys->size] = value;
 }
-void setBElementLAPACK(int row, double value, void *data )
+
+/*! \fn setBElement
+ *  This function sets the row-th value of linsys->b[row] = value.
+ *
+ *  \param [in]  [row]
+ *  \param [in]  [value] 
+ *  \param [ref] [data]
+ */
+static void setBElement(int row, double value, void *data)
 {
   LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
   linsys->b[row] = value;
@@ -504,23 +530,4 @@ static void setAElementUmfpack(int row, int col, double value, int nth, void *da
    sData->Ai[nth] = col;
    sData->Ax[nth] = value;
 }
-
-static void setBElementUmfpack(int row, double value, void *data)
-{
-  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
-  linsys->b[row] = value;
-}
 #endif
-
-void setAElementTotalPivot(int row, int col, double value, int nth, void *data)
-{
-  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
-  linsys->A[row + col * linsys->size] = value;
-}
-
-void setBElementTotalPivot(int row, double value, void *data)
-{
-  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
-  linsys->b[row] = value;
-}
-
