@@ -960,6 +960,9 @@ algorithm
       String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str,description,prefix;
       list<String> interfaceType;
       list<tuple<String,list<String>>> interfaceTypeAssoc;
+      SCode.Encapsulated encflag;
+      SCode.Restriction restr;
+      list<list<Values.Value>> valsLst;
     case (cache,_,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
@@ -2564,6 +2567,24 @@ algorithm
     case (cache,_,"isExperiment",_,st as GlobalScript.SYMBOLTABLE(),_)
       then
         (cache,Values.BOOL(false),st);
+
+    case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(classpath, p);
+        (sp, st) = GlobalScriptUtil.symbolTableToSCode(st);
+        (cache, env) = Inst.makeEnvFromProgram(FCore.emptyCache(), sp, Absyn.IDENT(""));
+        (cache,(cl as SCode.CLASS(name=name,encapsulatedPrefix=encflag,restriction=restr)),env) = Lookup.lookupClass(cache, env, classpath, false);
+        env = FGraph.openScope(env, encflag, SOME(name), FGraph.restrictionToScopeType(restr));
+        (_, env) = Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+          ClassInf.start(restr, FGraph.getGraphName(env)), cl, SCode.PUBLIC(), {}, 0);
+        valsLst = list(getComponentInfo(c, env, isProtected=false) for c in Interactive.getPublicComponentsInClass(absynClass));
+        valsLst = listAppend(list(getComponentInfo(c, env, isProtected=true) for c in Interactive.getProtectedComponentsInClass(absynClass)), valsLst);
+      then (cache,ValuesUtil.makeArray(List.flatten(valsLst)),st);
+
+    case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      then
+        (cache,Values.ARRAY({},{}),st);
+
 
     case (cache,_,"getSimulationOptions",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance),Values.INTEGER(numberOfIntervals),Values.REAL(interval)},st as GlobalScript.SYMBOLTABLE(),_)
       equation
@@ -8010,6 +8031,161 @@ algorithm
     else false;
   end match;
 end isSimpleAPIFunctionArg;
+
+function getComponentInfo
+  input Absyn.Element comp;
+  input FCore.Graph inEnv;
+  input Boolean isProtected;
+  output list<Values.Value> vs;
+algorithm
+  vs := match comp
+    local
+      SCode.Element c;
+      Absyn.Path envpath, p_1, p;
+      String tpname, typename, inout_str, variability_str, dir_str, access, name, comment;
+      String typeAdStr;
+      Boolean r_1, b;
+      Option<Absyn.RedeclareKeywords> r;
+      Absyn.ElementAttributes attr;
+      Option<Absyn.ArrayDim> typeAd;
+      FCore.Graph env;
+      list<String> dims, dims1;
+      Absyn.ArrayDim subs;
+      Absyn.ElementSpec spec;
+
+    case Absyn.ELEMENT(specification = spec as Absyn.COMPONENTS(attributes = attr as Absyn.ATTR(),typeSpec = Absyn.TPATH(p, typeAd)))
+      algorithm
+        typename := matchcontinue ()
+          case ()
+            equation
+              (_,_,env) = Lookup.lookupClass(FCore.emptyCache(), inEnv, p, false);
+              SOME(envpath) = FGraph.getScopePath(env);
+              tpname = Absyn.pathLastIdent(p);
+              p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
+            then Absyn.pathString(p_1);
+          else Absyn.pathString(p);
+        end matchcontinue;
+        vs := {};
+
+        dims1 := list(Dump.printSubscriptStr(sub) for sub in attr.arrayDim);
+        r_1 := Interactive.keywordReplaceable(comp.redeclareKeywords);
+
+        inout_str := innerOuterStr(comp.innerOuter);
+
+        variability_str := attrVariabilityStr(attr);
+        dir_str := attrDirectionStr(attr);
+
+        for ci in spec.components loop
+          (name, comment) := getComponentitemsName(ci);
+
+          dims := match ci
+            case Absyn.COMPONENTITEM(component=Absyn.COMPONENT(arrayDim=subs))
+              then listAppend(list(Dump.printSubscriptStr(sub) for sub in subs), dims1);
+          end match;
+
+          vs := makeGetComponentsRecord(
+            className = typename, name = name, comment = comment,
+            isProtected=isProtected, isReplaceable=r_1, isFinal=comp.finalPrefix, innerOuter=inout_str, isFlow=attr.flowPrefix,
+            isStream=attr.streamPrefix, variability=variability_str, inputOutput=dir_str, dimensions=dims) :: vs;
+        end for;
+      then vs;
+  end match;
+end getComponentInfo;
+
+function makeGetComponentsRecord
+  input String className := "### FIXME ###";
+  input String name := "### FIXME ###";
+  input String comment := "### comment ###";
+  input Boolean isProtected;
+  input Boolean isFinal;
+  input Boolean isFlow;
+  input Boolean isStream;
+  input Boolean isReplaceable;
+  input String variability;
+  input String innerOuter;
+  input String inputOutput;
+  input list<String> dimensions := {};
+  output Values.Value v;
+algorithm
+  v := Values.RECORD(
+    Absyn.QUALIFIED("OpenModelica", Absyn.QUALIFIED("Scripting", Absyn.QUALIFIED("getComponentsTest", Absyn.IDENT("Component")))),
+    {
+      Values.STRING(className),
+      Values.STRING(name),
+      Values.STRING(comment),
+      Values.BOOL(isProtected),
+      Values.BOOL(isFinal),
+      Values.BOOL(isFlow),
+      Values.BOOL(isStream),
+      Values.BOOL(isReplaceable),
+      Values.STRING(variability),
+      Values.STRING(innerOuter),
+      Values.STRING(inputOutput),
+      ValuesUtil.makeArray(list(Values.STRING(s) for s in dimensions))
+    },
+    {"className","name","comment","isProtected","isFinal","isFlow","isStream","isReplaceable","variability","innerOuter","inputOutput","dimensions"},
+    -1
+  );
+end makeGetComponentsRecord;
+
+function innerOuterStr
+"Helper function to getComponentInfo, retrieve the inner outer string."
+  input Absyn.InnerOuter inInnerOuter;
+  output String outString;
+algorithm
+  outString:=
+  match (inInnerOuter)
+    case Absyn.INNER() then "inner";
+    case Absyn.OUTER() then "outer";
+    case Absyn.NOT_INNER_OUTER() then "";
+    case Absyn.INNER_OUTER() then "inner outer";
+  end match;
+end innerOuterStr;
+
+
+function attrVariabilityStr
+"Helper function to get_component_info,
+  retrieve variability as a string."
+  input Absyn.ElementAttributes inElementAttributes;
+  output String outString;
+algorithm
+  outString:=
+  match (inElementAttributes)
+    case (Absyn.ATTR(variability = Absyn.VAR())) then "";
+    case (Absyn.ATTR(variability = Absyn.DISCRETE())) then "discrete";
+    case (Absyn.ATTR(variability = Absyn.PARAM())) then "parameter";
+    case (Absyn.ATTR(variability = Absyn.CONST())) then "constant";
+  end match;
+end attrVariabilityStr;
+
+function attrDirectionStr
+"Helper function to get_component_info,
+  retrieve direction as a string."
+  input Absyn.ElementAttributes inElementAttributes;
+  output String outString;
+algorithm
+  outString:=
+  match (inElementAttributes)
+    case (Absyn.ATTR(direction = Absyn.INPUT())) then "input";
+    case (Absyn.ATTR(direction = Absyn.OUTPUT())) then "output";
+    case (Absyn.ATTR(direction = Absyn.BIDIR())) then "";
+  end match;
+end attrDirectionStr;
+
+function getComponentitemsName
+  " separated list of all component names and comments (if any)."
+  input Absyn.ComponentItem ci;
+  output String name, comment;
+algorithm
+  (name, comment) := match ci
+    local
+      String c1,s2;
+    case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2))))
+      then (c1, s2);
+    case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE())
+      then (c1, "");
+  end match;
+end getComponentitemsName;
 
 annotation(__OpenModelica_Interface="backend");
 end CevalScript;

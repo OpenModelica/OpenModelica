@@ -3090,6 +3090,29 @@ algorithm
 annotation(preferredView="text");
 end ngspicetoModelica;
 
+function getComponentsTest
+  input TypeName name;
+  output Component[:] components;
+  record Component
+    String className; // when building record the constructor. Records are allowed to contain only components of basic types, arrays of basic types or other records.
+    String name;
+    String comment;
+    Boolean isProtected;
+    Boolean isFinal;
+    Boolean isFlow;
+    Boolean isStream;
+    Boolean isReplaceable;
+    String variability "'constant', 'parameter', 'discrete', ''";
+    String innerOuter "'inner', 'outer', ''";
+    String inputOutput "'input', 'output', ''";
+    String dimensions[:];
+  end Component;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns the components found in the given class.</p>
+</html>"));
+end getComponentsTest;
+
 function isExperiment "An experiment is defined as having annotation Experiment(stopTime=...)"
   input TypeName name;
   output Boolean res;

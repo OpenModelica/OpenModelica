@@ -13356,7 +13356,7 @@ algorithm
   end matchcontinue;
 end getComponentsInClass;
 
-protected function getPublicComponentsInClass
+public function getPublicComponentsInClass
 " Public lists are searched."
   input Absyn.Class inClass;
   output list<Absyn.Element> outAbsynElementLst;
@@ -13414,7 +13414,7 @@ algorithm
   end matchcontinue;
 end getPublicComponentsInClass;
 
-protected function getProtectedComponentsInClass
+public function getProtectedComponentsInClass
 " Protected lists are searched."
   input Absyn.Class inClass;
   output list<Absyn.Element> outAbsynElementLst;
@@ -13703,8 +13703,7 @@ protected function getComponentInfo
   input FCore.Graph inEnv;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inElement,inBoolean,inString,inEnv)
+  outStringLst := match (inElement,inBoolean,inString,inEnv)
     local
       SCode.Element c;
       FCore.Graph env_1,env;
@@ -13723,11 +13722,16 @@ algorithm
                         specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),
           b,access,env)
       equation
-        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p, false);
-        SOME(envpath) = FGraph.getScopePath(env_1);
-        tpname = Absyn.pathLastIdent(p);
-        p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
-        typename = Absyn.pathString(p_1);
+        typename = matchcontinue ()
+          case ()
+            equation
+              (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p, false);
+              SOME(envpath) = FGraph.getScopePath(env_1);
+              tpname = Absyn.pathLastIdent(p);
+              p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
+            then Absyn.pathString(p_1);
+          else Absyn.pathString(p);
+        end matchcontinue;
         typename = if b then stringAppendList({"\"",typename,"\""}) else typename;
         names = getComponentitemsName(lst,b);
         dims = getComponentitemsDimension(lst);
@@ -13745,49 +13749,15 @@ algorithm
         // parallelism_str = attrParallelismStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
-        typeAdStr = arrayDimensionStr(typeAd);
-        typeAdStr =  attrDimensionStr(attr);
-        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,/*parallelism_str,*/variability_str,inout_str,dir_str}, ", ");
-        lst_1 = suffixInfos(strLst,dims,typeAdStr,str,b);
-      then
-        lst_1;
-
-    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,
-                        specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, _),components = lst)),
-          b,access,_)
-      equation
-        typename = Absyn.pathString(p);
-        typename = if b then stringAppendList({"\"",typename,"\""}) else typename;
-        names = getComponentitemsName(lst,b);
-        dims = getComponentitemsDimension(lst);
-        strLst = prefixTypename(typename, names);
-        finalPrefix = boolString(f);
-        finalPrefix = if b then stringAppendList({"\"",finalPrefix,"\""}) else finalPrefix;
-        r_1 = keywordReplaceable(r);
-        repl = boolString(r_1);
-        repl = if b then stringAppendList({"\"",repl,"\""}) else repl;
-        inout_str = innerOuterStr(inout);
-        flowPrefixstr = attrFlowStr(attr);
-        flowPrefixstr = if b then stringAppendList({"\"",flowPrefixstr,"\""}) else flowPrefixstr;
-        streamPrefixstr = attrStreamStr(attr);
-        streamPrefixstr = if b then stringAppendList({"\"",streamPrefixstr,"\""}) else streamPrefixstr;
-        //parallelism_str = attrParallelismStr(attr);
-        variability_str = attrVariabilityStr(attr);
-        dir_str = attrDirectionStr(attr);
         str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,/*parallelism_str,*/variability_str,inout_str,dir_str}, ", ");
         typeAdStr =  attrDimensionStr(attr);
         lst_1 = suffixInfos(strLst,dims,typeAdStr,str,b);
       then
         lst_1;
 
-    case (_,_,_,_) then {};
+    else {};
 
-    case (_,_,_,_)
-      equation
-        print("Interactive.getComponentInfo failed\n");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end getComponentInfo;
 
 protected function arrayDimensionStr
@@ -13873,7 +13843,7 @@ algorithm
   end match;
 end getComponentsInfo2;
 
-protected function keywordReplaceable
+public function keywordReplaceable
 "Returns true if RedeclareKeywords contains replaceable."
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption;
   output Boolean outBoolean;
