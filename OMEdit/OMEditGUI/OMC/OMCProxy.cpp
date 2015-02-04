@@ -55,6 +55,7 @@ void* omc_Main_readSettings(void *threadData, void *args);
 }
 
 #include "OMC_API.h"
+#include "OpenModelicaScriptingAPIQt.h"
 
 #endif
 
@@ -419,7 +420,8 @@ bool OMCProxy::startServer()
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, mmc_mk_nil());
   omc_SymbolTable = omc_Main_readSettings(threadData, mmc_mk_nil());
-  MMC_CATCH_TOP(return false;)
+  MMC_CATCH_TOP(return false;)      
+  mpOMCInterface = new OMCInterface(threadData, omc_SymbolTable);
 
   mHasInitialized = true;
 #else
@@ -928,6 +930,7 @@ int OMCProxy::getErrorId()
   */
 QString OMCProxy::getVersion()
 {
+  //return mpOMCInterface->getVersion("OpenModelica");
   sendCommand("getVersion()");
   return StringHandler::unparse(getResult());
 }
@@ -2342,6 +2345,20 @@ QStringList OMCProxy::getSimulationOptions(QString className, double defaultTole
   */
 bool OMCProxy::translateModelFMU(QString className, double version)
 {
+//  QFuture<QString> future = QtConcurrent::run(mpOMCInterface, &OMCInterface::translateModelFMU, className, QString::number(version), QString(""));
+//  QEventLoop eventLoop;
+//  QTimer timer;
+//  connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+//  connect(mpOMCInterface, SIGNAL(finished()), &eventLoop, SLOT(quit()));
+//  timer.start(10);
+//  while (future.isRunning()) {
+//    eventLoop.exec(QEventLoop::ExcludeUserInputEvents);
+//    qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+//  }
+//  timer.stop();
+//  future.waitForFinished();
+//  mResult = future.result();
+  //mResult = mpOMCInterface->translateModelFMU(className, QString::number(version), className);
   sendCommand("translateModelFMU(" + className + ", version=\"" + QString::number(version) + "\")");
   if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     return true;

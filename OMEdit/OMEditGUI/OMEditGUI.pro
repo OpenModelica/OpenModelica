@@ -59,6 +59,7 @@ SOURCES += main.cpp \
   Util/backtrace.c \
   Util/Helper.cpp \
   MainWindow.cpp \
+  ../../build/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Util/StringHandler.cpp \
   Modeling/MessagesWidget.cpp \
@@ -117,6 +118,7 @@ SOURCES += main.cpp \
 HEADERS  += Util/backtrace.h \
   Util/Helper.h \
   MainWindow.h \
+  ../../build/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
   Util/StringHandler.h \
   Modeling/MessagesWidget.h \
@@ -243,7 +245,8 @@ INCLUDEPATH += . \
   Plotting \
   Simulation \
   TransformationalDebugger \
-  Util
+  Util \
+  ../../build/include/omc/scripting-API
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Debugger/Parser/GDBMIOutput.g \

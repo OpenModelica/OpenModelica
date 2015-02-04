@@ -52,6 +52,7 @@ class MainWindow;
 class CustomExpressionBox;
 class ComponentInfo;
 class StringHandler;
+class OMCInterface;
 
 struct cachedOMCCommand
 {
@@ -85,6 +86,7 @@ private:
   MainWindow *mpMainWindow;
   int mAnnotationVersion;
   QMap<QString, QList<cachedOMCCommand> > mCachedOMCCommandsMap;
+  OMCInterface *mpOMCInterface;
 #ifdef USE_OMC_SHARED_OBJECT
   void *omc_SymbolTable;
   void *mpThreadData;
