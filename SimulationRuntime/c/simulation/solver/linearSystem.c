@@ -476,11 +476,11 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
  *
  *  \param [in]  [row]
  *  \param [in]  [col]
- *  \param [in]  [value] 
- *  \param [in]  [nth] number element in matrix, 
+ *  \param [in]  [value]
+ *  \param [in]  [nth] number element in matrix,
  *                     is ingored here, used only for sparse
  *  \param [ref] [data]
- * 
+ *
  */
 static void setAElement(int row, int col, double value, int nth, void *data)
 {
@@ -492,7 +492,7 @@ static void setAElement(int row, int col, double value, int nth, void *data)
  *  This function sets the row-th value of linsys->b[row] = value.
  *
  *  \param [in]  [row]
- *  \param [in]  [value] 
+ *  \param [in]  [value]
  *  \param [ref] [data]
  */
 static void setBElement(int row, double value, void *data)
