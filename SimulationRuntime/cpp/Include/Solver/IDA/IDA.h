@@ -4,10 +4,10 @@
 #include "FactoryExport.h"
 
 #include <Core/Solver/SolverDefaultImplementation.h>
-#include <ida/ida.h>
+#include <idas/idas.h>
 #include <nvector/nvector_serial.h>
 #include <sundials/sundials_direct.h>
-#include <ida/ida_dense.h>
+#include <idas/idas_dense.h>
 
 
 #ifdef RUNTIME_PROFILING
@@ -207,8 +207,9 @@ double
   N_Vector
     _CV_y0,                  ///< Temp      - Initial values in the ida Format
     _CV_y,                  ///< Temp      - State in ida Format
-  _CV_yp,    ///<Temp   - Stateders in ida Format
+	_CV_yp,		///<Temp   - Stateders in ida Format
     _CV_yWrite,        ///< Temp      - Vector for dense out
+    _CV_ypWrite,
     _CV_absTol;
 
   // Variables for Coloured Jacobians

@@ -77,6 +77,7 @@ Ida::~Ida()
   {
     N_VDestroy_Serial(_CV_y0);
     N_VDestroy_Serial(_CV_y);
+    N_VDestroy_Serial(_CV_yp);
     N_VDestroy_Serial(_CV_yWrite);
     N_VDestroy_Serial(_CV_absTol);
     IDAFree(&_idaMem);
@@ -524,8 +525,8 @@ void Ida::IDACore()
         // State variables were reinitialized, thus we have to give these values to the ida-solver
         // Take care about the memory regions, _z is the same like _CV_y
         _continuous_system->getContinuousStates(_z);
-  calcFunction(_tCurrent, NV_DATA_S(_CV_y), NV_DATA_S(_CV_yp));
-
+	calcFunction(_tCurrent, NV_DATA_S(_CV_y), NV_DATA_S(_CV_yp));
+	
       }
     }
 
@@ -698,12 +699,12 @@ int Ida::calcFunction(const double& time, const double* y, double* f)
 }
 
 int Ida::CV_fCallback(double t, N_Vector y, N_Vector ydot, N_Vector resval, void *user_data)
-{
-  double* ypval=NV_DATA_S(ydot);
-  double* rval=NV_DATA_S(resval);
-  ((Ida*) user_data)->calcFunction(t, NV_DATA_S(y), NV_DATA_S(resval));
-  for(size_t i(0); i<((Ida*) user_data)->_dimSys; ++i) rval[i]-=ypval[i];
-  return 0;
+{	
+	double* ypval=NV_DATA_S(ydot);
+	double* rval=NV_DATA_S(resval);
+	((Ida*) user_data)->calcFunction(t, NV_DATA_S(y), NV_DATA_S(resval));
+	for(size_t i(0); i<((Ida*) user_data)->_dimSys; ++i) rval[i]-=ypval[i];
+	return 0;
 }
 
 void Ida::giveZeroVal(const double &t, const double *y, double *zeroValue)
