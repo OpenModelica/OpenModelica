@@ -553,7 +553,11 @@ QString GUIMessages::getMessage(int type)
     case WRONG_MODIFIER:
       return tr("The Modifier <b>%1</b> format is invalid. The correct format is <b>phi(start=1)</b>");
     case SET_INFO_XML_FLAG:
-      return tr("The operations were not generated. You must set the +d=infoXmlOperations flag. Enable it via %1 and simulate again.");
+      return tr("The operations were not generated. Check Generate Operations in %1 OR you must set the +d=infoXmlOperations flag via %2 and simulate again.");
+    case GENERATE_OPERATIONS_MSG:
+      return tr("Tools->Options->Debugger->Transformational Debugger");
+    case GENERATE_OPERATIONS_MSG_MAC:
+      return tr("OMEdit->Preferences->Debugger->Transformational Debugger");
     case SET_INFO_XML_FLAG_MSG:
       return tr("Tools->Options->Simulation->OMC Flags");
     case SET_INFO_XML_FLAG_MSG_MAC:
