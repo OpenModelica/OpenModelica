@@ -167,7 +167,8 @@ algorithm
         els = updateElementListVisibility(els, vis);
 
         // build a ht with the constant elements from the extends scope
-        ht = getLocalIdentList(InstUtil.constantAndParameterEls(elsExtendsScope),HashTableStringToPath.emptyHashTable(),getLocalIdentElement);
+        ht = HashTableStringToPath.emptyHashTableSized(BaseHashTable.lowBucketSize);
+        ht = getLocalIdentList(InstUtil.constantAndParameterEls(elsExtendsScope),ht,getLocalIdentElement);
         ht = getLocalIdentList(InstUtil.constantAndParameterEls(els),ht,getLocalIdentElement);
         // fully qualify modifiers in extends in the extends environment!
         (cache, emod) = fixModifications(cache, env, emod, ht);
@@ -197,7 +198,8 @@ algorithm
 
         // print("Extended Elements Extends:\n" + InstUtil.printElementAndModList(List.map(compelts1, Util.tuple312)));
 
-        ht = getLocalIdentList(compelts1,HashTableStringToPath.emptyHashTable(),getLocalIdentElementTpl);
+        ht = HashTableStringToPath.emptyHashTableSized(BaseHashTable.lowBucketSize);
+        ht = getLocalIdentList(compelts1,ht,getLocalIdentElementTpl);
         ht = getLocalIdentList(cdefelts,ht,getLocalIdentElement);
         ht = getLocalIdentList(importelts,ht,getLocalIdentElement);
 

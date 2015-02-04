@@ -1645,25 +1645,19 @@ public function varlistLookup "Given a list of Var and a name, this function fin
   input list<DAE.Var> inVarLst;
   input String inIdent;
   output DAE.Var outVar;
+protected
+  String name;
 algorithm
-  outVar := matchcontinue (inVarLst,inIdent)
-    local
-      DAE.Var v;
-      String n,name;
-      list<DAE.Var> vs;
+  for var in inVarLst loop
+    DAE.TYPES_VAR(name = name) := var;
 
-    case (((v as DAE.TYPES_VAR(name = n)) :: _),name)
-      equation
-        true = stringEq(n, name);
-      then
-        v;
+    if name == inIdent then
+      outVar := var;
+      return;
+    end if;
+  end for;
 
-    case ((_ :: vs),name)
-      equation
-        v = varlistLookup(vs, name);
-      then
-        v;
-  end matchcontinue;
+  fail();
 end varlistLookup;
 
 public function lookupComponent "This function finds a subcomponent by name."

@@ -2070,25 +2070,14 @@ protected function isElementNamed
   input String inName;
   output Boolean isNamed;
 algorithm
-  isNamed := matchcontinue(inElement, inName)
+  isNamed := match inElement
     local
       String name;
 
-    case ((SCode.COMPONENT(name = name), _), _)
-      equation
-        true = stringEqual(name, inName);
-      then
-        true;
-
-    // we can also have packages!
-    case ((SCode.CLASS(name = name), _), _)
-      equation
-        true = stringEqual(name, inName);
-      then
-        true;
-
+    case (SCode.COMPONENT(name = name), _) then name == inName;
+    case (SCode.CLASS(name = name), _) then name == inName;
     else false;
-  end matchcontinue;
+  end match;
 end isElementNamed;
 
 protected function isElementEqual
@@ -2097,7 +2086,7 @@ protected function isElementEqual
   input tuple<SCode.Element, DAE.Mod> inElement2;
   output Boolean isEqual;
 algorithm
-  isEqual := matchcontinue(inElement1, inElement2)
+  isEqual := match(inElement1, inElement2)
     local
       String id1, id2;
 
@@ -2112,7 +2101,7 @@ algorithm
 
     else stringEq(elementName(inElement1), elementName(inElement2));
 
-  end matchcontinue;
+  end match;
 end isElementEqual;
 
 protected function checkCyclicalComponents

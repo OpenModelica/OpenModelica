@@ -2794,41 +2794,25 @@ public function avlTreeGet
   input AvlTree inAvlTree;
   input AvlKey inKey;
   output AvlValue outValue;
+protected
+  AvlKey key;
+  AvlTree branch;
+  Integer res;
 algorithm
-  outValue := match (inAvlTree,inKey)
-    local
-      AvlKey rkey,key;
-    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(key=rkey))),key)
-      then avlTreeGet2(inAvlTree,stringCompare(key,rkey),key);
-  end match;
+  FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(key = key))) := inAvlTree;
+  res := stringCompare(inKey, key);
+
+  if res == 0 then
+    FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(value = outValue))) := inAvlTree;
+    return;
+  elseif res == 1 then
+    FCore.CAVLTREENODE(right = SOME(branch)) := inAvlTree;
+  else
+    FCore.CAVLTREENODE(left = SOME(branch)) := inAvlTree;
+  end if;
+
+  outValue := avlTreeGet(branch, inKey);
 end avlTreeGet;
-
-protected function avlTreeGet2
-  "Get a value from the binary tree given a key."
-  input AvlTree inAvlTree;
-  input Integer keyComp "0=get value from current node, 1=search right subtree, -1=search left subtree";
-  input AvlKey inKey;
-  output AvlValue outValue;
-algorithm
-  outValue := match (inAvlTree,keyComp,inKey)
-    local
-      AvlKey key;
-      AvlValue rval;
-      AvlTree left,right;
-
-    // hash func Search to the right
-    case (FCore.CAVLTREENODE(value = SOME(FCore.CAVLTREEVALUE(value=rval))),0,_)
-      then rval;
-
-    // search to the right
-    case (FCore.CAVLTREENODE(right = SOME(right)),1,key)
-      then avlTreeGet(right, key);
-
-    // search to the left
-    case (FCore.CAVLTREENODE(left = SOME(left)),-1,key)
-      then avlTreeGet(left, key);
-  end match;
-end avlTreeGet2;
 
 protected function getOptionStr "Retrieve the string from a string option.
   If NONE() return empty string."

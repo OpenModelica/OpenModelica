@@ -1444,7 +1444,7 @@ algorithm
     case (cache, FCore.G(scope = r::_), id)
       equation
         ht = FNode.children(FNode.fromRef(r));
-        (cache,fv,c,m,i,componentEnv) = lookupVar2(cache, ht, id, inEnv);
+        (fv,c,m,i,componentEnv) = lookupVar2(ht, id, inEnv);
       then
         (cache,fv,c,m,i,componentEnv);
 
@@ -1515,7 +1515,7 @@ algorithm
     case (cache,FCore.G(scope = r::_),id)
       equation
         ht = FNode.children(FNode.fromRef(r));
-        (cache,fv,c,m,i,_) = lookupVar2(cache, ht, id, inEnv);
+        (fv,c,m,i,_) = lookupVar2(ht, id, inEnv);
       then
         (cache,fv,c,m,i,inEnv);
 
@@ -2530,55 +2530,36 @@ end reportSeveralNamesError;
 
 protected function lookupVar2
 "Helper function to lookupVarF and lookupIdent."
-  input FCore.Cache inCache;
   input FCore.Children inBinTree;
   input SCode.Ident inIdent;
   input FCore.Graph inGraph;
-  output FCore.Cache outCache;
   output DAE.Var outVar;
   output SCode.Element outElement;
   output DAE.Mod outMod;
   output FCore.Status instStatus;
   output FCore.Graph outEnv;
+protected
+  FCore.Ref r;
+  FCore.Scope s;
+  FCore.Node n;
+  String name;
 algorithm
-  (outCache,outVar,outElement,outMod,instStatus,outEnv):=
-  matchcontinue (inCache,inBinTree,inIdent,inGraph)
-    local
-      DAE.Var fv;
-      SCode.Element c;
-      DAE.Mod m;
-      FCore.Status i;
-      FCore.Kind k;
-      FCore.Graph env;
-      FCore.Children ht;
-      String id, name;
-      FCore.Cache cache;
-      SCode.Restriction restr;
-      FCore.Ref r;
-      FCore.Scope s;
+  r := FNode.avlTreeGet(inBinTree, inIdent);
+  outVar := FNode.refInstVar(r);
+  s := FNode.refRefTargetScope(r);
+  n := FNode.fromRef(r);
 
-    case (cache, ht, id, _)
-      equation
-        r = FNode.avlTreeGet(ht, id);
-        fv = FNode.refInstVar(r);
-        s = FNode.refRefTargetScope(r);
-        FCore.N(data = FCore.CO(c,m,_,i)) = FNode.fromRef(r);
-        env = FGraph.setScope(inGraph, s);
-      then
-        (cache,fv,c,m,i,env);
+  if not FNode.isComponent(n) and Flags.isSet(Flags.LOOKUP) then
+    // MetaModelica function references generate too much failtrace...
+    false := Config.acceptMetaModelicaGrammar();
+    FCore.N(data = FCore.CL(e = SCode.CLASS(name = name))) := n;
+    name := inIdent + " = " + FGraph.printGraphPathStr(inGraph) + "." + name;
+    Debug.traceln("- Lookup.lookupVar2 failed because we found a class instead of a variable: " + name);
+    fail();
+  end if;
 
-    case (_, ht, id, _)
-      equation
-        true = Flags.isSet(Flags.LOOKUP);
-        false = Config.acceptMetaModelicaGrammar(); // MetaModelica function references generate too much failtrace...
-        r = FNode.avlTreeGet(ht, id);
-        FCore.N(data = FCore.CL(e = SCode.CLASS(name = name))) = FNode.fromRef(r);
-        name = id + " = " + FGraph.printGraphPathStr(inGraph) + "." + name;
-        Debug.traceln("- Lookup.lookupVar2 failed because we find a class instead of a variable: " + name);
-      then
-        fail();
-
-  end matchcontinue;
+  FCore.N(data = FCore.CO(outElement, outMod, _, instStatus)) := n;
+  outEnv := FGraph.setScope(inGraph, s);
 end lookupVar2;
 
 protected function checkSubscripts "This function checks a list of subscripts agains type, and removes
@@ -2731,7 +2712,7 @@ algorithm
     // Simple identifier
     case (cache,ht,DAE.CREF_IDENT(ident = id,subscriptLst = ss),_)
       equation
-        (cache,DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id, inEnv);
+        (DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange),_,_,_,componentEnv) = lookupVar2(ht, id, inEnv);
         ty_1 = checkSubscripts(ty, ss);
         tty = Types.simplifyType(ty);
         ss = addArrayDimensions(tty,ss);
@@ -2744,7 +2725,7 @@ algorithm
     // Qualified variables looked up through component environment with or without spliced exp
     case (cache,ht,DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids), _)
       equation
-        (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache, ht, id, inEnv);
+        (DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,cnstForRange),_,_,_,componentEnv) = lookupVar2(ht, id, inEnv);
 
         // leave just the last scope from component env as it SHOULD BE ONLY THERE, i.e. don't go on searching the parents!
         componentEnv = FGraph.setScope(componentEnv, List.create(FGraph.lastScopeRef(componentEnv)));
@@ -2781,7 +2762,7 @@ algorithm
     case (cache,ht,(DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = DAE.CREF_IDENT(ident=id2,subscriptLst={}))), _)
       equation
         true = Config.acceptMetaModelicaGrammar();
-        (cache,DAE.TYPES_VAR(ty=DAE.T_METARECORD(fields=fields)),_,_,_,componentEnv) = lookupVar2(cache, ht, id, inEnv);
+        (DAE.TYPES_VAR(ty=DAE.T_METARECORD(fields=fields)),_,_,_,componentEnv) = lookupVar2(ht, id, inEnv);
         DAE.TYPES_VAR(name,attr,ty,binding,cnstForRange) = listGet(fields,Types.findVarIndex(id2,fields)+1);
       then
         (cache,attr,ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(NONE(),ty),componentEnv,name);
@@ -2921,34 +2902,39 @@ protected function makeDimensionSubscript
   input DAE.Dimension inDim;
   output DAE.Subscript outSub;
 algorithm
-  outSub := matchcontinue(inDim)
+  outSub := match(inDim)
     local
       Integer sz;
       list<DAE.Exp> expl;
       Absyn.Path enum_name;
       list<String> l;
+
     // Special case when addressing array[0].
     case DAE.DIM_INTEGER(integer = 0)
       then
         DAE.SLICE(DAE.ARRAY(DAE.T_INTEGER_DEFAULT, true, {DAE.ICONST(0)}));
+
     // Array with integer dimension.
     case DAE.DIM_INTEGER(integer = sz)
       equation
         expl = List.map(List.intRange(sz), Expression.makeIntegerExp);
       then
         DAE.SLICE(DAE.ARRAY(DAE.T_INTEGER_DEFAULT, true, expl));
+
+    // Array with boolean dimension.
     case DAE.DIM_BOOLEAN()
       equation
-        expl = DAE.BCONST(false)::DAE.BCONST(true)::{};
+        expl = {DAE.BCONST(false), DAE.BCONST(true)};
       then
         DAE.SLICE(DAE.ARRAY(DAE.T_BOOL_DEFAULT, true, expl));
+
     // Array with enumeration dimension.
     case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l)
       equation
         expl = makeEnumLiteralIndices(enum_name, l, 1);
       then
         DAE.SLICE(DAE.ARRAY(DAE.T_ENUMERATION(NONE(), enum_name, l, {}, {}, DAE.emptyTypeSource), true, expl));
-  end matchcontinue;
+  end match;
 end makeDimensionSubscript;
 
 protected function makeEnumLiteralIndices
@@ -3095,23 +3081,22 @@ algorithm
 
     // Look in the current scope.
     case (cache, FCore.G(scope = ref::_), _)
-      equation
-        ht = FNode.children(FNode.fromRef(ref));
+      algorithm
+        ht := FNode.children(FNode.fromRef(ref));
         // Only look up the first part of the cref, we're only interested in if
         // it exists and if it's an iterator or not.
-        id = ComponentReference.crefFirstIdent(inCref);
-        (cache, DAE.TYPES_VAR(constOfForIteratorRange = ic), _, _, _, _) =
-          lookupVar2(cache, ht, id, inEnv);
-        b = Util.isSome(ic);
+        id := ComponentReference.crefFirstIdent(inCref);
+        (DAE.TYPES_VAR(constOfForIteratorRange = ic),_,_,_,_) := lookupVar2(ht, id, inEnv);
+        b := Util.isSome(ic);
       then
         (SOME(b), cache);
 
     // If not found, look in the next scope only if the current scope is implicit.
     case (cache, FCore.G(scope = ref::_), _)
-      equation
-        true = frameIsImplAddedScope(FNode.fromRef(ref));
-        (env, _) = FGraph.stripLastScopeRef(inEnv);
-        (res, cache) = isIterator(cache, env, inCref);
+      algorithm
+        true := frameIsImplAddedScope(FNode.fromRef(ref));
+        (env, _) := FGraph.stripLastScopeRef(inEnv);
+        (res, cache) := isIterator(cache, env, inCref);
       then
         (res, cache);
 
