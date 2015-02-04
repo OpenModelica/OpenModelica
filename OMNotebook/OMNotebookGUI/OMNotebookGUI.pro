@@ -190,3 +190,6 @@ MOC_DIR = ../generatedfiles/moc
 RCC_DIR = ../generatedfiles/rcc
 
 CONFIG += warn_off
+
+ICON = Resources/OMNotebook_icon.icns
+
