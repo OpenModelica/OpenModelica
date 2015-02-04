@@ -21,8 +21,7 @@ public:
         }
         catch(std::exception& ex)
         {
-            cout<<"allocating   buffers faild" << std::endl;
-            throw ex;
+           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("allocating   buffers failed")+ex.what()));
         }
     }
     void  init(string output_path,string file_name)
@@ -94,8 +93,9 @@ public:
         }
         catch(std::exception& ex)
         {
-            cout<<"read  from variables buffer faild alloc R with sizes "<<m <<"," << n << std::endl;
-            throw ex;
+           // cout<<"read  from variables buffer faild alloc R with sizes "<<m <<"," << n << std::endl;
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("read  from variables buffer failed alloc R matrix")+ex.what()));
+            
         }
          try
         {
@@ -103,14 +103,15 @@ public:
             for(i=0;i<n;i++)
             {
                 for(j=0;j<m;++j)
-                    R(i2,j)=_variables_buffer(j,i);
+                    R(i2,j)=_variables_buffer[j](i);
                 i2++;
             }
         }
         catch(std::exception& ex)
         {
-            cout<<"read  from variables buffer faild" << std::endl;
-            throw ex;
+          
+          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("read  from variables buffer failed")+ex.what()));
+          
         }
 
 
@@ -122,7 +123,7 @@ public:
         std::map<double,unsigned long>::iterator iter;
         iter = find_if( _time_entries.begin(), _time_entries.end(), floatCompare<double>(time, 1e-10) );
         if(iter==_time_entries.end())
-            throw std::runtime_error("getVariables: time parameters");
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message(string("getVariables: time parameters"));
         v=_variables_buffer[iter->second];
         dv = _derivatives_buffer[iter->second];
         */
@@ -134,7 +135,7 @@ public:
         std::map<double,unsigned long>::iterator iter;
         iter = find_if( _time_entries.begin(), _time_entries.end(), floatCompare<double>(time, 1e-10) );
         if(iter==_time_entries.end())
-            throw std::runtime_error("getVariables: time parameters");
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message(string("getVariables: time parameters"));
         v=_variables_buffer[iter->second];
         dv = _derivatives_buffer[iter->second];
        // r = _residues_buffer[iter->second];
@@ -201,8 +202,9 @@ public:
         }
         catch(std::exception& ex)
         {
-            cout<<"write to buffer faild" << std::endl;
-            throw ex;
+            
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("write to buffer failed")+ex.what()));
+           
         }
 
         // textwriter->write(v,v2, time);
@@ -222,8 +224,9 @@ public:
         }
         catch(std::exception& ex)
         {
-            cout<<"read from time buffer faild" << std::endl;
-            throw ex;
+           
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("read from time buffer failed")+ex.what()));
+            
         }
     }
     unsigned long size()
@@ -234,8 +237,9 @@ public:
         }
         catch(std::exception& ex)
         {
-            cout<<"time entries size faild" << std::endl;
-            throw ex;
+            
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("time entries size failed")+ex.what()));
+            
         }
     }
     void eraseAll()

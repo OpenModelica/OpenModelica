@@ -124,10 +124,10 @@ void SimManager::initialize()
         // System zusammenbauen und einmal updaten
         _initialization->initializeSystem();
     }
-    catch (std::exception& ex)
+    catch (boost::exception&  ex)
     {
-        std::string msg = ex.what();
-        throw std::invalid_argument(msg);
+        ex << error_id(SIMMANAGER);
+        throw;
     }
 
     _totStps = 0;
@@ -203,7 +203,7 @@ void SimManager::runSingleStep(double cycletime)
     {
 
     if (_lastCycleTime && cycletime != _lastCycleTime)
-            throw std::runtime_error("Cycle time can not be changed, if time events (samples) are present!");
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SIMMANAGER) << error_message("Cycle time can not be changed, if time events (samples) are present!"));
         else
             _lastCycleTime = cycletime;
 
@@ -245,7 +245,7 @@ void SimManager::computeSampleCycles()
     {
         if (iter->first != 0.0 || iter->second == 0.0)
         {
-            throw std::runtime_error("Time event not starting at t=0.0 or not cyclic!");
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SIMMANAGER) << error_message("Time event not starting at t=0.0 or not cyclic!"));
         }
         else
         {
@@ -256,7 +256,7 @@ void SimManager::computeSampleCycles()
             }
             else
             {
-                throw std::runtime_error("Sample time is not a multiple of the cycle time!");
+                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SIMMANAGER) << error_message("Sample time is not a multiple of the cycle time!"));
             }
 
         }
@@ -291,18 +291,19 @@ void SimManager::runSimulation()
             writeProperties();
         }
     }
-    catch (std::exception& ex)
+    catch (boost::exception & ex)
     {
         /* Logs temporarily disabled
          BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulation finish with errors at t= " << _tEnd;
          BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<  "Number of steps: " << _totStps.at(0);
          */
         writeProperties();
-        std::string simmgr_error_simmgr_info = ex.what();
+        
         /* Logs temporarily disabled
          BOOST_LOG_SEV(simmgr_lg::get(), simmgr_critical) << "SimManger simmgr_error: " + simmgr_error_simmgr_info;
          */
-        throw;
+        ex << error_id(SIMMANAGER);
+       throw;
     }
     #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)

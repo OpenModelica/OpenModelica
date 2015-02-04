@@ -9,6 +9,5 @@ endif(UNIX)
 
 install (TARGETS ${ModelicaUtilitiesName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
-install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/ModelicaUtilities.h
-          DESTINATION include/omc/cpp/Core/Utils/Modelica)
+install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/ModelicaUtilities.h ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/ModelicaSimulationError.h  DESTINATION include/omc/cpp/Core/Utils/Modelica)
 

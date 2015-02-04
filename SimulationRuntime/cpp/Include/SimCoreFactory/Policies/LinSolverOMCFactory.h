@@ -33,12 +33,12 @@ public:
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(umfpack_path.string(),*_linsolver_type_map);
             if (result != LOADER_SUCCESS)
             {
-                throw std::runtime_error("Failed loading umfpack solver library!");
+                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading umfpack solver library!"));
             }
             lin_solver_key.assign("extension_export_umfpack");
         }
         else
-            throw std::invalid_argument("Selected linear solver is not available");
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Selected linear solver is not available"));
 
         _last_selected_solver = lin_solver;
         string linsolversettings = lin_solver.append("Settings");
@@ -47,7 +47,7 @@ public:
         iter = linSolversettingsfactory.find(linsolversettings);
         if (iter == linSolversettingsfactory.end())
         {
-            throw std::invalid_argument("No such linear solver Settings");
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No such linear solver Settings"));
         }
         boost::shared_ptr<ILinSolverSettings> linsolversetting = boost::shared_ptr<ILinSolverSettings>(iter->second.create());
         return linsolversetting;
@@ -62,14 +62,14 @@ public:
             iter = linSolverFactory.find(solver_name);
             if (iter == linSolverFactory.end())
             {
-                throw std::invalid_argument("No such linear Solver");
+                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No such linear Solver"));
             }
             boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
 
             return solver;
     }
     else
-           throw std::invalid_argument("Selected linear solver is not available");
+           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Selected linear solver is not available"));
   }
 
 protected:

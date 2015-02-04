@@ -1120,7 +1120,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        ;separator="\n")
        %>
        default:
-        throw std::invalid_argument("Not supported statset index");
+           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
       }
    }
 
@@ -1302,7 +1302,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        ;separator="\n")
        %>
        default:
-        throw std::invalid_argument("Not supported statset index");
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
       }
 
     }
@@ -1322,7 +1322,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        ;separator="\n")
        %>
        default:
-        throw std::invalid_argument("Not supported statset index");
+       BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
       }
 
     }
@@ -1342,7 +1342,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        ;separator="\n")
        %>
       default:
-        throw std::invalid_argument("Not supported statset index");
+       BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
       }
 
     }
@@ -1482,7 +1482,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        ;separator="\n")
        %>
          default:
-           throw std::invalid_argument("Not supported statset index");
+          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
       }
     }
 
@@ -1501,7 +1501,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
         ;separator="\n")
         %>
         default:
-          throw std::invalid_argument("Not supported statset index");
+         BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
         }
 
        }
@@ -1521,7 +1521,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
         ;separator="\n")
         %>
         default:
-          throw std::invalid_argument("Not supported statset index");
+         BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
         }
 
        }
@@ -1536,7 +1536,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
           {
             <%getAMatrix2%>
            default:
-            throw std::invalid_argument("Not supported statset index");
+           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
           }
        >>
        %>
@@ -1550,7 +1550,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
         {
            <%getAMatrix1%>
             default:
-            throw std::invalid_argument("Not supported statset index");
+           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
           }
        >>
        %>
@@ -1565,7 +1565,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
           {
             <%setAMatrix2%>
            default:
-            throw std::invalid_argument("Not supported statset index");
+           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
         }
        >>
        %>
@@ -1579,7 +1579,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
         {
           <%setAMatrix1%>
           default:
-            throw std::invalid_argument("Not supported statset index");
+           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Not supported statset index"));
         }
         >>
        %>
@@ -1817,19 +1817,24 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
               MeasureTime::getInstance()->writeToJson();
               >>
             %>
+        
             return 0;
 
       }
-      catch(std::exception& ex)
+      catch(boost::exception& ex)
       {
-           std::string error = ex.what();
-           std::cerr << "Simulation stopped: "<<  error ;
+           std::map<SIMULATION_ERROR,std::string> error_id_info= map_list_of(SOLVER,"solver")(ALGLOOP_SOLVER,"algloop solver")(MODEL_EQ_SYSTEM,"model equation system")(ALGLOOP_EQ_SYSTEM,"algloop equation system")
+                                                                    ( SOLVER,"csv")(MODEL_FACTORY,"model factory")(SIMMANAGER,"simulation manager")(EVENT_HANDLING,"event handling")
+                                                                    (TIME_EVENTS,"time event")( DATASTORAGE,"data storage")(UTILITY,"utility")(MODEL_ARRAY_FUNCTION,"array function")
+                                                                    (MATH_FUNCTION,"math function");
+           string const *   error = boost::get_error_info<error_message>(ex);
+           SIMULATION_ERROR*  const id  = boost::get_error_info<error_id>(ex);
+           std::cerr << "Simulation stopped with error in "<< error_id_info[*id] << ": " << *error ;
            return 1;
       }
   }
   >>
 end simulationMainFile;
-
 
 template calcHelperMainfile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
@@ -1999,7 +2004,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   void Functions::Assert(bool cond, string msg)
   {
     if(!cond)
-      throw std::runtime_error(msg);
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message(msg));
   }
 
   <%functionBodies(functions, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -5641,7 +5646,8 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
 
       bool <%lastIdentOfPath(modelInfo.name)%>::isStepEvent()
       {
-        throw std::runtime_error("isStepEvent is not yet implemented");
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("isStepEvent is not yet implemented"));
+        
       }
 
       void <%lastIdentOfPath(modelInfo.name)%>::setTerminal(bool terminal)
@@ -5661,7 +5667,7 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
 
       bool <%lastIdentOfPath(modelInfo.name)%>::provideSymbolicJacobian()
       {
-        throw std::runtime_error("provideSymbolicJacobian is not yet implemented");
+         BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("provideSymbolicJacobian is not yet implemented"));
       }
 
       void <%lastIdentOfPath(modelInfo.name)%>::handleEvent(const bool* events)
@@ -8124,9 +8130,11 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
       _algLoopSolver<%index%>->solve();
       _callType = calltype;
     }
-    catch(std::exception &ex)
+    catch(boost::exception& ex)
     {
-         throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+         string error = string("Nonlinear solver stopped at time ") + boost::lexical_cast<string>(_simTime) + string(" with error: ");
+         ex << error_id(ALGLOOP_EQ_SYSTEM) << error_message(error);
+         throw;
     }
     >>
     else
@@ -8158,7 +8166,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
           else
              _algLoopSolver<%index%>->solve();
       }
-      catch(std::exception &ex)
+      catch(boost::exception &ex)
       {
         restatDiscrete<%index%>=true;
       }
@@ -8173,10 +8181,12 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
                 _algLoopSolver<%index%>->solve();
                _callType = calltype;
              }
-             catch(std::exception &ex)
+             catch(boost::exception& ex)
              {
-
-                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+                 string error = string("Nonlinear solver stopped at time ") + boost::lexical_cast<string>(_simTime) + string(" with error: ");
+                 ex << error_id(ALGLOOP_EQ_SYSTEM) << error_message(error);
+                 throw;
+                
              }
       }
      >>
@@ -8187,7 +8197,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     /*<%equationMixed(e, context, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
     then
     <<
-      throw std::runtime_error("Mixed systems are not supported yet");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(ALGLOOP_EQ_SYSTEM) << error_message("Mixed systems are not supported yet"));
     >>
   else
     "NOT IMPLEMENTED EQUATION"
@@ -8248,8 +8258,8 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
       then
       /*<%equationMixed(e, context, &varDeclsLocal, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
       let &additionalFuncs += equation_function_create_single_func(e.cont, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, method, classnameext, stateDerVectorName, useFlatArrayNotation, createMeasureTime)
-      "throw std::runtime_error(\"Mixed systems are not supported yet\");"
-    else
+      "BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message(\"Mixed systems are not supported yet\"));"
+      else
       "NOT IMPLEMENTED EQUATION"
   end match
   let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
@@ -9375,11 +9385,11 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
              _algLoopSolver<%index%>->solve();
              _callType = calltype;
          }
-         catch(std::exception& ex)
+         catch(boost::exception&  ex)
          {
-
-
-             throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+             string error = string("Nonlinear solver stopped at time ") + boost::lexical_cast<string>(_simTime) + string(" with error: ") ;
+             ex << error_id(ALGLOOP_EQ_SYSTEM) << error_message(error);
+             throw;
          }
          >>
       else
@@ -9413,7 +9423,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
             _algLoopSolver<%index%>->solve();
 
         }
-        catch(std::exception &ex)
+        catch(boost::exception &ex)
         {
              restatDiscrete<%index%>=true;
         }
@@ -9427,13 +9437,15 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
                 _algLoopSolver<%index%>->solve();
                 _callType = calltype;
             }
-            catch(std::exception& ex)
+            catch(boost::exception& ex)
             {
-
-                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+             string error = string("Nonlinear solver stopped at time ") + boost::lexical_cast<string>(_simTime) + string(" with error: ") ;
+             ex << error_id(ALGLOOP_EQ_SYSTEM) << error_message(error);
+             throw;
             }
 
         }
+        
 
         >>
       end match
@@ -9723,7 +9735,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       else if (<%endLoop%> == <%listLength(iterators)%>) {
         break;
       } else {
-        throw std::runtime_error("Internal error");
+         BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Internal error"));
       }
       >> %>
     }
@@ -10807,7 +10819,8 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
        if(!<%condVar%>)
        {
          <%preExpMsg%>
-         throw std::runtime_error(<%msgVar%>);
+         BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message(<%msgVar%>));
+         
        }
       >>
       else
@@ -10816,7 +10829,7 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
       {
         <%preExpCond%>
         <%preExpMsg%>
-        throw std::runtime_error();
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM));
       }
       >>
    %>
@@ -12104,7 +12117,10 @@ else
       {
         <%zeroCrossingsCode%>
         default:
-          throw std::runtime_error("Wrong condition index " + boost::lexical_cast<string>(index));
+        {
+          string error =string("Wrong condition index ") + boost::lexical_cast<string>(index);
+          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(EVENT_HANDLING) << error_message(error));
+        }
       };
     }
     >>
@@ -12170,7 +12186,9 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     }
 
     if(iter>100 && restart ){
-     throw std::runtime_error("Number of event iteration steps exceeded at time: " + boost::lexical_cast<string>(_simTime) );}
+     string error = string("Number of event iteration steps exceeded at time: ") + boost::lexical_cast<string>(_simTime);
+     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(EVENT_HANDLING) << error_message(error));
+     }
      _callType = IContinuous::CONTINUOUS;
 
     return state_vars_reinitialized;
@@ -13873,39 +13891,46 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   void <%lastIdentOfPath(name)%>::getReal(double* z)
   {
-    throw std::invalid_argument("getReal is not implemented yet");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("getReal is not implemented yet"));
+    
   }
   void <%lastIdentOfPath(name)%>::getInteger(int* z)
   {
-    throw std::invalid_argument("getInteger is not implemented yet");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("getInteger is not implemented yet"));
   }
 
   void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
   {
-      throw std::invalid_argument("getBoolean is not implemented yet");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("getBoolean is not implemented yet"));
+      
   }
 
   void <%lastIdentOfPath(name)%>::getString(string* z)
   {
-        throw std::invalid_argument("getString is not implemented yet");
+     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("getString is not implemented yet"));
+     
   }
   void <%lastIdentOfPath(name)%>::setReal(const double* z)
   {
-    throw std::invalid_argument("setReal is not implemented yet");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("setReal is not implemented yet"));
+    
   }
   void <%lastIdentOfPath(name)%>::setInteger(const int* z)
   {
-    throw std::invalid_argument("setInteger is not implemented yet");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("setInteger is not implemented yet"));
+    
   }
 
   void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
   {
-      throw std::invalid_argument("setBoolean is not implemented yet");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("setBoolean is not implemented yet"));   
+    
   }
 
   void <%lastIdentOfPath(name)%>::setString(const string* z)
   {
-        throw std::invalid_argument("setString is not implemented yet");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("setString is not implemented yet"));
+    
   }
   >>
   /*

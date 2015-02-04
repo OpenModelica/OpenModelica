@@ -69,7 +69,7 @@ std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > SimCont
     return system;
   }
   else
-    throw std::invalid_argument("No Modelica Compiler configured");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SIMMANAGER) << error_message("No Modelica Compiler configured"));
 }
 
 boost::shared_ptr<ISimData> SimController::getSimData(string modelname)
@@ -108,13 +108,11 @@ void SimController::StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, Si
 
     _simMgr->initialize();
   }
-  catch(std::exception& ex)
+  catch(boost::exception & ex)
   {
-    std::string error =string("Simulation failed for ") + simsettings.outputfile_name + string(" with error ")+ ex.what();
-
-    printf("Fehler %s\n", ex.what());
-
-    throw std::runtime_error(error);
+    ex << error_id(SIMMANAGER) << error_message(string("Simulation failed for ") + simsettings.outputfile_name);
+    printf("Fehler %s\n",diagnostic_information(ex));
+    throw;
   }
 }
 
@@ -156,35 +154,37 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettin
     _simMgr->initialize();
 
     _simMgr->runSimulation();
-
-    /* if(boost::shared_ptr<IMixedSystem> history_system = mixedsystem.lock())
-    {
-    //get history object to query simulation results
-    IHistory* history = history_system->getHistory();
-    //simulation results (output variables)
-    ublas::matrix<double> Ro;
-    //query simulation result otuputs
-    history->getOutputResults(Ro);
-    vector<string> output_names;
-    history->getOutputNames(output_names);
-    string name;
-    int j=0;
-    BOOST_FOREACH(name,output_names)
-    {
-    ublas::vector<double> o_j;
-    o_j =ublas::row(Ro,j);
-    simData->addOutputResults(name,o_j);
-    j++;
-    }
-    vector<double> time_values = history->getTimeEntries();
-    simData->addTimeEntries(time_values);
-    }*/
+    
+    boost::shared_ptr<IWriteOutput> writeoutput_system = boost::dynamic_pointer_cast<IWriteOutput>(mixedsystem);
+    
+    if((global_settings->getOutputFormat()==BUFFER) && writeoutput_system)
+	{
+			//get history object to query simulation results
+			IHistory* history = writeoutput_system->getHistory();
+			//simulation results (output variables)
+			ublas::matrix<double> Ro;
+			//query simulation result otuputs
+			history->getOutputResults(Ro);
+			vector<string> output_names;
+			history->getOutputNames(output_names);
+			string name;
+			int j=0;
+			BOOST_FOREACH(name,output_names)
+			{
+				ublas::vector<double> o_j;
+				o_j =ublas::row(Ro,j);
+				_systems[modelKey].second->addOutputResults(name,o_j);
+				j++;
+			}
+			vector<double> time_values = history->getTimeEntries();
+			_systems[modelKey].second->addTimeEntries(time_values);
+	}
 
   }
-  catch(std::exception& ex)
+  catch(boost::exception & ex)
   {
-    std::string error = string("Simulation failed for ") + simsettings.outputfile_name + string(" with error ")+ ex.what();
-    throw std::runtime_error(error);
+    ex << error_id(SIMMANAGER) << error_message(string("Simulation failed for ") + simsettings.outputfile_name);
+    throw;
   }
 }
 

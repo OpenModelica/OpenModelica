@@ -26,7 +26,7 @@ ISimVar* SimData::Get(string key)
         return obj.get();
     }
     else
-        throw std::invalid_argument("There is no such sim variable " + key);
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message("There is no such sim variable " + key));
 }
 
 void  SimData::addOutputResults(string name,uBlas::vector<double> v)
@@ -72,7 +72,7 @@ void  SimData::getOutputResults(string name,uBlas::vector<double>& v)
         v = boost::ref(iter->second);
     }
     else
-        throw std::invalid_argument("There is no such output variable " + name);
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message("There is no such output variable " + name));
 }
 
 extern "C" ISimData* createSimDataAnalyzation()

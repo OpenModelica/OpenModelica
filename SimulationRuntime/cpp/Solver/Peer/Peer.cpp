@@ -89,7 +89,7 @@ void Peer::initialize()
   if (_dimSys <= 0)
   {
     _idid = -1;
-    throw std::invalid_argument("Peer::initialize()");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::initialize()"));
   }
   else
   {
@@ -136,7 +136,7 @@ void Peer::initialize()
     if (check_flag((void*) _cvodeMem, "CVodeCreate", 0))
     {
       _idid = -5;
-      throw std::invalid_argument("Peer::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::initialize()"));
     }
 
     //
@@ -161,7 +161,7 @@ void Peer::initialize()
     if (check_flag((void*) _CV_y0, "N_VMake_Serial", 0))
     {
       _idid = -5;
-      throw std::invalid_argument("Peer::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::initialize()"));
     }
 
     // Initialize Peer (Initial values are required)
@@ -169,63 +169,63 @@ void Peer::initialize()
     if (_idid < 0)
     {
       _idid = -5;
-      throw std::invalid_argument("Peer::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::initialize()"));
     }
 
     // Set Tolerances
     _idid = CVodeSVtolerances(_cvodeMem, dynamic_cast<ISolverSettings*>(_cvodesettings)->getRTol(), _CV_absTol);    // RTOL and ATOL
     if (_idid < 0)
-      throw std::invalid_argument("CVode::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::initialize()"));
 
     // Set the pointer to user-defined data
     _idid = CVodeSetUserData(_cvodeMem, _data);
     if (_idid < 0)
-      throw std::invalid_argument("Peer::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::initialize()"));
 
     _idid = CVodeSetInitStep(_cvodeMem, 1e-6);    // INITIAL STEPSIZE
     if (_idid < 0)
-      throw std::invalid_argument("Peer::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::initialize()"));
 
     _idid = CVodeSetMaxOrd(_cvodeMem, 5);       // Max Order
     if (_idid < 0)
-      throw std::invalid_argument("CVoder::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVoder::initialize()"));
 
     _idid = CVodeSetMaxConvFails(_cvodeMem, 100);       // Maximale Fehler im Konvergenztest
     if (_idid < 0)
-      throw std::invalid_argument("CVoder::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVoder::initialize()"));
 
     _idid = CVodeSetStabLimDet(_cvodeMem, TRUE);       // Stability Detection
     if (_idid < 0)
-      throw std::invalid_argument("CVoder::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVoder::initialize()"));
 
     _idid = CVodeSetMinStep(_cvodeMem, dynamic_cast<ISolverSettings*>(_cvodesettings)->getLowerLimit());       // MINIMUM STEPSIZE
     if (_idid < 0)
-      throw std::invalid_argument("CVode::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::initialize()"));
 
     _idid = CVodeSetMaxStep(_cvodeMem, global_settings->getEndTime() / 10.0);       // MAXIMUM STEPSIZE
     if (_idid < 0)
-      throw std::invalid_argument("CVode::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::initialize()"));
 
     _idid = CVodeSetMaxNonlinIters(_cvodeMem, 5);      // Max number of iterations
     if (_idid < 0)
-      throw std::invalid_argument("CVode::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::initialize()"));
     _idid = CVodeSetMaxErrTestFails(_cvodeMem, 100);
     if (_idid < 0)
-      throw std::invalid_argument("CVode::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::initialize()"));
 
     _idid = CVodeSetMaxNumSteps(_cvodeMem, 1e3);            // Max Number of steps
     if (_idid < 0)
-      throw std::invalid_argument("Peer::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::initialize()"));
 
     // Initialize linear solver
   _idid = CVDense(_cvodeMem, _dimSys);
     if (_idid < 0)
-      throw std::invalid_argument("Peer::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::initialize()"));
 
   // Use own jacobian matrix
   //_idid = CVDlsSetDenseJacFn(_cvodeMem, &CV_JCallback);
   if (_idid < 0)
-      throw std::invalid_argument("CVode::initialize()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::initialize()"));
 
     if (_dimZeroFunc)
     {
@@ -234,7 +234,7 @@ void Peer::initialize()
       memset(_zeroSign, 0, _dimZeroFunc * sizeof(int));
       _idid = CVodeSetRootDirection(_cvodeMem, _zeroSign);
       if (_idid < 0)
-        throw std::invalid_argument("CVode::initialize()");
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::initialize()"));
       memset(_zeroSign, -1, _dimZeroFunc * sizeof(int));
       memset(_zeroVal, -1, _dimZeroFunc * sizeof(int));
 
@@ -312,8 +312,8 @@ void Peer::solve(const SOLVERCALL action)
       if (_idid != 0 && _idid != 1)
       {
         _solverStatus = ISolver::SOLVERERROR;
-        //throw std::invalid_argument(_idid,_tCurrent,"CVode::solve()");
-        throw std::invalid_argument("CVode::solve()");
+        //BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message(_idid,_tCurrent,"CVode::solve()"));
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::solve()"));
       }
 
       // Abbruchkriterium (erreichen der Endzeit)
@@ -327,7 +327,7 @@ void Peer::solve(const SOLVERCALL action)
   else
   {
 
-    throw std::invalid_argument("CVode::solve()");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::solve()"));
   }
   */
 }
@@ -339,7 +339,7 @@ void Peer::PeerCore()
   _idid = CVodeSetStopTime(_cvodeMem, _tEnd);
   _idid = CVodeSetInitStep(_cvodeMem, 1e-12);
   if (_idid < 0)
-    throw std::runtime_error("CVode::ReInit");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::ReInit"));
 
   bool writeEventOutput = (_settings->getGlobalSettings()->getOutputPointType() == ALL);
   bool writeOutput = !(_settings->getGlobalSettings()->getOutputPointType() == EMPTY2);
@@ -350,11 +350,11 @@ void Peer::PeerCore()
 
     _idid = CVodeGetNumSteps(_cvodeMem, &_locStps);
     if (_idid != CV_SUCCESS)
-      throw std::runtime_error("CVodeGetNumSteps failed. The cvode mem pointer is NULL");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVodeGetNumSteps failed. The cvode mem pointer is NULL"));
 
     _idid = CVodeGetLastStep(_cvodeMem, &_h);
     if (_idid != CV_SUCCESS)
-      throw std::runtime_error("CVodeGetLastStep failed. The cvode mem pointer is NULL");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVodeGetLastStep failed. The cvode mem pointer is NULL"));
 
     //Check if there was at least one output-point within the last solver interval
     //  -> Write output if true
@@ -402,7 +402,7 @@ void Peer::PeerCore()
         _event_n = 0;
       }
       else
-        throw std::runtime_error("Number of events exceeded  in time interval " + boost::lexical_cast<string>(_abs) + " at time " + boost::lexical_cast<string>(_tCurrent));
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Number of events exceeded  in time interval " + boost::lexical_cast<string>(_abs) + " at time " + boost::lexical_cast<string>(_tCurrent)));
 
       // CVode has interpolated the states at time 'tCurrent'
       _time_system->setTime(_tCurrent);
@@ -449,7 +449,7 @@ void Peer::PeerCore()
 
       _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
       if (_idid < 0)
-        throw std::runtime_error("CVode::ReInit()");
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("CVode::ReInit()"));
 
       // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmeißt
       if (_tCurrent == _tEnd)
@@ -579,13 +579,13 @@ int Peer::calcFunction(const double& time, const double* y, double* f)
   if (_idid < 0)
     {
       _idid = -5;
-      throw std::invalid_argument("Peer::calcJacobian()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::calcJacobian()"));
   }
   _idid = CVodeGetCurrentStep(_cvodeMem, &h);
   if (_idid < 0)
     {
       _idid = -5;
-      throw std::invalid_argument("Peer::calcJacobian()");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Peer::calcJacobian()"));
   }
 
   srur = sqrt(UROUND);

@@ -71,7 +71,8 @@ class BOOST_EXTENSION_EXPORT_DECL MeasureTimePAPI : public MeasureTime
     if (PAPI_start(eventSet) != PAPI_OK)
     {
       std::cerr << "PAPI_start_counters - FAILED" << std::endl;
-      throw std::runtime_error("PAPI_start_counters - FAILED");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("PAPI_start_counters - FAILED"));
+      
     }
     #endif
     instance->benchOverhead();

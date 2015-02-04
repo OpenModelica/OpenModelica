@@ -81,7 +81,7 @@ unsigned long long MeasureTimeRDTSC::RDTSC()
 #else
 unsigned long long MeasureTimeRDTSC::RDTSC()
 {
-  throw std::runtime_error("No time measurement for this processor arch.");
+  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("No time measurement for this processor arch."));
   return 0;
 }
 #endif // defined(__i386__) || defined(__x86_64__)
@@ -103,7 +103,7 @@ unsigned long long MeasureTimeRDTSC::RDTSC()
 #else
 unsigned long long MeasureTimeRDTSC::RDTSC()
 {
-  throw std::runtime_error("No time measurement for this processor arch.");
+  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("No time measurement for this processor arch."));
   return 0;
 }
 

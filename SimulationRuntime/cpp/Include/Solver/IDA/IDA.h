@@ -53,13 +53,13 @@ enum idaseverity_level
 typedef src::severity_channel_logger_mt<
     idaseverity_level,     // the type of the severity level
     std::string         // the type of the channel name
-> my_logger_mt;
+> my_ida_logger_mt;
 
 
-BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(ida_lg, my_logger_mt)
+BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(ida_lg, my_ida_logger_mt)
 {
     // Specify the channel name on construction, similarly as with the channel_logger
-    return my_logger_mt(keywords::channel = "solver.IDA");
+    return my_ida_logger_mt(keywords::channel = "solver.IDA");
 }
 #endif
 

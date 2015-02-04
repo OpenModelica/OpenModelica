@@ -40,12 +40,14 @@ public:
           Cvode *cvode = new Cvode(system,solver_settings.get());
           return boost::shared_ptr<ISolver>(cvode);
         }
-        elseif(solvername.compare("ida")==0)
+        else if(solvername.compare("ida")==0)
         {
           Ida *ida = new Ida(system,solver_settings.get());
           return boost::shared_ptr<ISolver>(ida);
-        } else
-           throw std::invalid_argument("Selected Solver is not available");
+        } 
+        else
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Selected Solver is not available"));
+
 
         return boost::shared_ptr<ISolver>();
     }

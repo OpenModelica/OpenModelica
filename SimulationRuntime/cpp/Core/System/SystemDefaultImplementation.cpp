@@ -76,12 +76,12 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
 void SystemDefaultImplementation::Assert(bool cond,const string& msg)
 {
   if(!cond)
-    throw std::runtime_error(msg);
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message(msg));
 }
 
 void SystemDefaultImplementation::Terminate(string msg)
 {
-  throw std::runtime_error(msg);
+  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message(msg));
 }
 
 int SystemDefaultImplementation::getDimBoolean() const
@@ -346,7 +346,7 @@ void SystemDefaultImplementation::storeDelay(unsigned int expr_id, double expr_v
 
   }
   else
-    throw  std::invalid_argument("invalid delay expression id");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("invalid delay expression id"));
 }
 
 void SystemDefaultImplementation::storeTime(double time)
@@ -370,7 +370,7 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
   {
     if(delayTime < 0.0)
     {
-      throw std::invalid_argument("Negative delay requested");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("Negative delay requested"));
     }
     if(_time_buffer.size()==0) //occurs in the initialization phase
     {
@@ -423,7 +423,7 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
         else
         {
           double test = _time_buffer.back();
-          throw std::invalid_argument("time im delay buffer not found");
+          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("time im delay buffer not found"));
         }
       }
       if(t0==ts)//found exact time
@@ -442,7 +442,7 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
     }
   }
   else
-    throw  std::invalid_argument("invalid delay expression id");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("invalid delay expression id"));
 }
 
 double& SystemDefaultImplementation::getRealStartValue(double& key)

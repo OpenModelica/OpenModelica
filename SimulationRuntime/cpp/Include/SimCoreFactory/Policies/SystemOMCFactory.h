@@ -31,7 +31,7 @@ public:
     iter = algloopsolver_factory.find("AlgLoopSolverFactory");
     if (iter ==algloopsolver_factory.end())
     {
-      throw std::invalid_argument("No AlgLoopSolverFactory  found");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No AlgLoopSolverFactory  found"));
     }
     boost::shared_ptr<IAlgLoopSolverFactory>  algloopsolverfactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create(globalSettings,ObjectFactory<CreationPolicy>::_library_path,ObjectFactory<CreationPolicy>::_modelicasystem_path));
 
@@ -55,7 +55,7 @@ public:
     {
       std::stringstream tmp;
       tmp << "Failed loading System library!" << std::endl << modelica_path.string();
-      throw std::runtime_error(tmp.str());
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message(tmp.str()));
     }
 
     std::map<std::string, factory<IMixedSystem, IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData> > >::iterator system_iter;
@@ -63,7 +63,7 @@ public:
     system_iter = factories.find(modelKey);
     if (system_iter == factories.end())
     {
-      throw std::invalid_argument("No system found");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No system found"));
     }
 
 
@@ -73,7 +73,7 @@ public:
     simdata_iter = simdata_factory.find("SimData");
     if (simdata_iter == simdata_factory.end())
     {
-      throw std::invalid_argument("No simdata found");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No simdata found"));
     }
     boost::shared_ptr<ISimData> simData(simdata_iter->second.create());
     boost::shared_ptr<IMixedSystem> system(system_iter->second.create(globalSettings,algloopsolverfactory,simData));
@@ -82,7 +82,7 @@ public:
 
   std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > createModelicaSystem(PATH modelica_path, string modelKey, IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory)
   {
-    throw std::runtime_error("Modelica is not supported");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Modelica is not supported"));
   }
 
 protected:
@@ -97,7 +97,7 @@ protected:
     {
       std::stringstream tmp;
       tmp << "Failed loading System library!" << std::endl << systemfactory_path.string();
-      throw std::runtime_error(tmp.str());
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message(tmp.str()));
     }
 
     PATH dataexchange_path = ObjectFactory<CreationPolicy>::_library_path;
@@ -107,7 +107,7 @@ protected:
     result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(dataexchange_path.string(), *_system_type_map);
     if (result != LOADER_SUCCESS)
     {
-      throw std::runtime_error("Failed loading Dataexchange library!");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading Dataexchange library!"));
     }
   }
 

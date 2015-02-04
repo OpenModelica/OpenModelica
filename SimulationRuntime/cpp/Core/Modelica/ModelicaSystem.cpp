@@ -172,22 +172,22 @@ bool Modelica::checkForDiscreteEvents()
 
 bool Modelica::stepCompleted(double time)
 {
-  throw std::runtime_error("stepCompleted is not yet implemented");
+  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("stepCompleted is not yet implemented"));
 }
 
 bool Modelica::checkConditions()
 {
-  throw std::runtime_error("checkConditions is not yet implemented");
+  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("checkConditions is not yet implemented"));
 }
 
 void Modelica::getJacobian(SparseMatrix& matrix)
 {
-  throw std::runtime_error("giveJacobian is not yet implemented");
+  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("giveJacobian is not yet implemented"));
 }
 
 void Modelica::getStateSetJacobian(SparseMatrix& matrix)
 {
-  throw std::runtime_error("giveStateJacobian is not yet implemented");
+  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("giveStateJacobian is not yet implemented"));
 }
 
 bool Modelica::isODE()
@@ -207,7 +207,7 @@ int Modelica::getDimZeroFunc()
 
 bool Modelica::provideSymbolicJacobian()
 {
-  throw std::runtime_error("provideSymbolicJacobian is not yet implemented");
+  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("provideSymbolicJacobian is not yet implemented"));
 }
 
 void Modelica::saveAll()

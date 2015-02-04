@@ -68,6 +68,7 @@ using namespace std;
 #include <boost/multi_array.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/exception/all.hpp>
 #include <functional>
 #include <boost/range/irange.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
@@ -156,6 +157,7 @@ typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 typedef boost::function<bool (unsigned int)> getCondition_type;
 typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<string,unsigned int>&)> init_prevars_type;
+#include <Core/Utils/Modelica/ModelicaSimulationError.h>
 #include <Core/Math/Array.h>
 #include <Core/System/IStateSelection.h>
 #include <Core/System/ISystemProperties.h>
@@ -188,7 +190,6 @@ typedef boost::function<void (unordered_map<string,unsigned int>&,unordered_map<
 #include <Core/DataExchange/Policies/BufferReaderWriter.h>
 #include <Core/HistoryImpl.h>
 #include <Core/SimulationSettings/ISettingsFactory.h>
-
 #if defined(__vxworks) || defined(__TRICORE__)
 #include <Core/DataExchange/SimDouble.h>
 #endif

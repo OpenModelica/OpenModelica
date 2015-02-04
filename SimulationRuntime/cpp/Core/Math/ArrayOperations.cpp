@@ -25,26 +25,26 @@ void cat_array (int k,BaseArray<T>& a, vector<BaseArray<T>* >& x )
     unsigned int n = x.size();
     /* check dim sizes of all inputs */
     if(n<1)
-      throw std::invalid_argument("No input arrays");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("No input arrays"));
 
     if(x[0]->getDims().size() < k)
-     throw std::invalid_argument("Wrong dimension for input array");
+     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong dimension for input array"));
 
     new_k_dim_size = x[0]->getDims()[k-1];
     for(int i = 1; i < n; i++)
     {
         if(x[0]->getDims().size() != x[i]->getDims().size())
-           throw std::invalid_argument("Wrong dimension for input array");
+           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong dimension for input array"));
         for(int j = 0; j < (k - 1); j++)
         {
             if (x[0]->getDims()[j] != x[i]->getDims()[j])
-                throw std::invalid_argument("Wrong size for input array");
+                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong size for input array"));
         }
         new_k_dim_size += x[i]->getDims()[k-1];
         for(int j = k; j < x[0]->getDims().size(); j++)
         {
           if (x[0]->getDims()[j] != x[i]->getDims()[j])
-            throw std::invalid_argument("Wrong size for input array");
+            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong size for input array"));
         }
     }
     /* calculate size of sub and super structure in 1-dim data representation */
@@ -62,7 +62,7 @@ void cat_array (int k,BaseArray<T>& a, vector<BaseArray<T>* >& x )
     vector<size_t> ex = x[0]->getDims();
     ex[k-1] = new_k_dim_size;
     if(ex.size()<k)
-     throw std::invalid_argument("Error resizing concatenate array");
+     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Error resizing concatenate array"));
     a.setDims( ex );
 
   /* concatenation along k-th dimension */
@@ -106,7 +106,7 @@ void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d
 
      //Check if the dimension of passed indices match the dimension of target array
    if(sp.second.size()!=s.getNumDims())
-     throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
+     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Erro in create array from shape, number of dimensions does not match"));
 
    T* data = new T[d.getNumElems()];
 
@@ -135,7 +135,7 @@ void create_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d
     }
     if(index>(d.getNumElems()-1))
     {
-      throw std::invalid_argument("Erro in create array from shape, number of dimensions does not match");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Erro in create array from shape, number of dimensions does not match"));
     }
     data[index] = s(idx);
     idx.clear();
@@ -165,7 +165,7 @@ void transpose_array (BaseArray< T >& a, BaseArray< T >&  x )
 
 {
     if(a.getNumDims()!=2 || x.getNumDims()!=2)
-       throw std::invalid_argument("Erro in transpose_array, number of dimensions does not match");
+       BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Erro in transpose_array, number of dimensions does not match"));
 
     vector<size_t> ex = x.getDims();
     std::swap( ex[0], ex[1] );
@@ -257,7 +257,7 @@ template <typename T>
 T dot_array(BaseArray<T> & a, BaseArray<T> & b)
 {
   if(a.getNumDims()!=1  || b.getNumDims()!=1)
-    throw std::invalid_argument("error in dot array function. Wrong dimension");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("error in dot array function. Wrong dimension"));
 
   T* data1 = a.getData();
   unsigned int nelems = a.getNumElems();

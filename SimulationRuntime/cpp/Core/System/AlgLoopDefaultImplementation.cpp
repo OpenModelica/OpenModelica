@@ -79,12 +79,12 @@ void AlgLoopDefaultImplementation::initialize()
     }
   }
   else
-    throw std::invalid_argument("AlgLoopDefaultImplementation::initialize(): Unknown _constraintType.");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(ALGLOOP_EQ_SYSTEM) << error_message("AlgLoopDefaultImplementation::initialize(): Unknown _constraintType."));
 
   //nach default algloop verschieben
   // Prüfen ob min. eine Bindungsgleichung vorhanden
   if ( _dimAEq == 0 )
-    throw std::invalid_argument("AlgLoop::initialize(): No constraint defined.");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(ALGLOOP_EQ_SYSTEM) << error_message("AlgLoop::initialize(): No constraint defined."));
 
 };
 

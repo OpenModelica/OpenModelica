@@ -50,7 +50,7 @@ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlg
         _algsolvers.push_back(algsolver);
         return algsolver;
       }
-      catch(std::invalid_argument &arg)
+      catch(boost::exception &arg)
       {
         //the linear solver was not found -> take the nonlinear solver
       }
@@ -67,7 +67,7 @@ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlg
   else
   {
     // TODO: Throw an error message here.
-    throw   std::invalid_argument("AlgLoop solver is not available");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("AlgLoop solver is not available"));
   }
 }
 

@@ -27,32 +27,32 @@ public:
 
   virtual T& operator()(unsigned int i)
   {
-     throw std::invalid_argument("Wrong virtual Array operator call");
+     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
   };
 
   virtual const T& operator()(unsigned int i) const
   {
-     throw std::invalid_argument("Wrong virtual Array operator call");
+     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
   };
 
   virtual T& operator()(const unsigned int  i, const unsigned int j)
   {
-    throw std::invalid_argument("Wrong virtual Array operator call");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
   };
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
-    throw std::invalid_argument("Wrong virtual Array operator call");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
   };
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l)
   {
-    throw std::invalid_argument("Wrong virtual Array operator call");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
   };
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l, unsigned int m)
   {
-    throw std::invalid_argument("Wrong virtual Array operator call");
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
   };
 
   bool isStatic()
@@ -123,7 +123,7 @@ public:
       }
       catch(std::bad_exception & be)
       {
-        throw std::runtime_error("Wrong array type assign");
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong array type assign"));
 
       }
 
@@ -296,7 +296,7 @@ public:
       }
       catch(std::bad_exception & be)
       {
-        throw std::runtime_error("Wrong array type assign");
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong array type assign"));
 
       }
 
@@ -432,7 +432,7 @@ public:
       }
       catch(std::bad_exception & be)
       {
-        throw std::runtime_error("Wrong array type assign");
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong array type assign"));
       }
   }
   return *this;
@@ -931,7 +931,7 @@ public:
   {
     std::vector<size_t> v = otherArray.getDims();
      if(v.size()!=1)
-       throw std::runtime_error("Wrong number of dimensions in DynArrayDim1");
+       BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong number of dimensions in DynArrayDim1"));
     _multi_array.resize(v);
     _multi_array.reindex(1);
     const T* data_otherarray = otherArray.getData();
@@ -1081,7 +1081,7 @@ public:
    {
     std::vector<size_t> v = otherArray.getDims();
     if(v.size()!=2)
-      throw std::runtime_error("Wrong number of dimensions in DynArrayDim2");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong number of dimensions in DynArrayDim2"));
     _multi_array.resize(v);
     _multi_array.reindex(1);
     const T* data_otherarray = otherArray.getData();
@@ -1234,7 +1234,7 @@ public:
   {
     std::vector<size_t> v = otherArray.getDims();
     if(v.size()!=3)
-      throw std::runtime_error("Wrong number of dimensions in DynArrayDim3");
+      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong number of dimensions in DynArrayDim3"));
     _multi_array.resize(v);
     _multi_array.reindex(1);
     const T* data_otherarray = otherArray.getData();

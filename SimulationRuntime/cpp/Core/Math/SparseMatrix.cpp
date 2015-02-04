@@ -6,7 +6,7 @@ void sparse_matrix::build(sparse_inserter& ins) {
             n=ins.content.rbegin()->first.first+1;
         } else {
             if(n-1!=ins.content.rbegin()->first.first) {
-                throw std::runtime_error("size doesn't match");
+                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("size doesn't match"));
             }
         }
         size_t n=ins.content.size();
@@ -42,11 +42,11 @@ int sparse_matrix::solve(const double* b, double * x) {
 }
 #else
 void sparse_matrix::build(sparse_inserter& ins) {
-        throw std::runtime_error("no umfpack");
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("no umfpack"));
     }
 
 int sparse_matrix::solve(const double* b, double * x) {
-        throw std::runtime_error("no umfpack");
+        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("no umfpack"));
 }
 
 #endif
