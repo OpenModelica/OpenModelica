@@ -404,18 +404,6 @@ algorithm
   end matchcontinue;
 end relaxSystem1;
 
-protected function removeRootConnects
-  input Integer orphan;
-  input array<list<Integer>> orphansarray;
-  input Integer mark;
-  input array<Integer> rowmarks;
-protected
-  list<Integer> lst;
-algorithm
-  lst := List.select2(orphansarray[orphan], unmarked, rowmarks, mark);
-  _:= arrayUpdate(orphansarray,orphan,lst);
-end removeRootConnects;
-
 protected function removeRootConnections
   input Integer orphan;
   input array<list<Integer>> orphansarray;
@@ -437,18 +425,6 @@ algorithm
         ();
   end matchcontinue;
 end removeRootConnections;
-
-protected function transposeMatrix
-  input Integer index;
-  input array<list<Integer>> orphansarray;
-  input array<list<Integer>> orphansarrayT;
-  output array<list<Integer>> outOrphansarrayT;
-protected
-  list<Integer> lst;
-algorithm
-  lst := orphansarray[index];
-  outOrphansarrayT := List.fold1(lst,Array.consToElement,index,orphansarrayT);
-end transposeMatrix;
 
 protected function replaceFinalParameter "author: Frenkel TUD 2012-06"
   input tuple<DAE.Exp,BackendDAE.Variables> itpl;
@@ -1143,33 +1119,6 @@ algorithm
         hasOrphanEdvanced(rest,ass1,iAcc);
   end matchcontinue;
 end hasOrphanEdvanced;
-
-protected function hasOrphanEdvanced1 "author: Frenkel TUD 2012-07"
-  input Integer r;
-  input array<Integer> ass1;
-  input Integer preorphan;
-  input array<list<Integer>> orphans;
-  output list<Integer> Orphan;
-algorithm
-  Orphan := matchcontinue(r,ass1,preorphan,orphans)
-    local
-      list<Integer> rest,olst;
-      Integer o;
-    case (_,_,_,_)
-      equation
-        false = intEq(r,preorphan);
-        false = intGt(ass1[r],0);
-      then {r};
-    else
-      equation
-        false = intEq(r,preorphan);
-        true = intGt(ass1[r],0);
-        olst = orphans[r];
-        (olst as _::_) = List.removeOnTrue(preorphan, intEq, olst);
-      then
-        olst;
-  end matchcontinue;
-end hasOrphanEdvanced1;
 
 protected function addPreOrphan
   input Integer orphan;
@@ -2329,30 +2278,6 @@ algorithm
   end matchcontinue;
 end dumpJacMatrix;
 
-protected function dumpOrphansPairs
-  input tuple<Integer, list<tuple<Integer, Integer>>> orphanspairs;
-protected
-  Integer c;
-  list<tuple<Integer, Integer>> tpl;
-algorithm
-  (c, tpl) := orphanspairs;
-  print(intString(c) + ":\n");
-  BackendDump.debuglst(tpl, dumpOrphansPairs1, ",", "\n");
-end dumpOrphansPairs;
-
-protected function dumpOrphansPairs1
-  input tuple<Integer,Integer> orphanspair;
-  output String s;
-protected
-  Integer r,d;
-  String rs,ds;
-algorithm
-  (r,d) := orphanspair;
-  rs := intString(r);
-  ds := intString(d);
-  s := stringAppendList({rs,":",ds});
-end dumpOrphansPairs1;
-
 protected function getEqnsinOrder
   input Integer indx;
   input tuple<BackendDAE.EquationArray,BackendDAE.Variables,array<list<Integer>>,BackendDAE.EquationArray,BackendDAE.Variables> inTpl;
@@ -2947,16 +2872,6 @@ algorithm
         (ocolums,ob);
   end matchcontinue;
 end getIndexQueque1;
-
-protected function unmarkedmark
-  input Integer indx;
-  input array<Integer> markarray;
-  input Integer mark;
-  output Boolean b;
-algorithm
-  b := intNe(markarray[indx],mark);
-  _:= arrayUpdate(markarray,indx,mark);
-end unmarkedmark;
 
 protected function unmarked
   input Integer indx;
