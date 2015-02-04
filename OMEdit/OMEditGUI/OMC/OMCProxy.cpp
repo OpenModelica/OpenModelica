@@ -420,7 +420,7 @@ bool OMCProxy::startServer()
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, mmc_mk_nil());
   omc_SymbolTable = omc_Main_readSettings(threadData, mmc_mk_nil());
-  MMC_CATCH_TOP(return false;)      
+  MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData, omc_SymbolTable);
 
   mHasInitialized = true;
