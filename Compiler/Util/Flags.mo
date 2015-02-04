@@ -426,6 +426,8 @@ constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(129, "addDerAliases", false,
   Util.gettext("Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-round flag,
                 which helps im some cases to simulate the models e.g.
                 Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation."));
+constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(130, "disableComSubExp", false,
+  Util.gettext("deactivets module 'comSubExp'"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -561,7 +563,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_CSE,
   DUMP_CSE_VERBOSE,
   DUMP_SIMCODE,
-  ADD_DER_ALIASES
+  ADD_DER_ALIASES,
+  DISABLE_COMSUBEXP
 };
 
 public

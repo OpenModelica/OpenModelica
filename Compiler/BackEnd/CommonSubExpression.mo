@@ -600,7 +600,11 @@ protected
 algorithm
     //print("SYSTEM IN\n");
     //BackendDump.printBackendDAE(daeIn);
-    daeOut := BackendDAEUtil.mapEqSystem(daeIn,commonSubExpression);
+    if Flags.isSet(Flags.DISABLE_COMSUBEXP) then
+      daeOut := daeIn;
+    else
+      daeOut := BackendDAEUtil.mapEqSystem(daeIn,commonSubExpression);
+    end if;
     //print("SYSTEM OUT\n");
     //BackendDump.printBackendDAE(daeOut);
 end commonSubExpressionReplacement;
