@@ -152,7 +152,7 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
   };
   >>
 end getQtInterfaceHeaders;
-                     
+
 template getQtType(DAE.Type ty)
 ::=
   match ty
