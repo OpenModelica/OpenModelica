@@ -115,15 +115,18 @@ template getCevalScriptInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Ty
   >>
 end getCevalScriptInterfaceFunc;
 
-template getQtInterface(list<DAE.Type> tys, String className)
+template getQtInterface(list<DAE.Type> tys, String classNameWithColons, String className)
 ::=
-  let funcs = tys |> ty as T_FUNCTION(source=path::_) => '<%getQtInterfaceFunc(pathLastIdent(path), ty.funcArg, ty.funcResultType, className)%><%\n%>'
+  let funcs = tys |> ty as T_FUNCTION(source=path::_) => '<%getQtInterfaceFunc(pathLastIdent(path), ty.funcArg, ty.funcResultType, classNameWithColons)%><%\n%>'
   <<
   #include <Qt/QtCore>
-  #include "OpenModelicaScriptingAPI.h"
   #include <stdexcept>
   #include "OpenModelicaScriptingAPIQt.h"
 
+  <%classNameWithColons%><%className%>(threadData_t *td, void *symbolTable)
+    : threadData(td), st(symbolTable)
+  {
+  }
   <%funcs%>
   >>
 end getQtInterface;
@@ -133,15 +136,23 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
   let heads = tys |> ty as T_FUNCTION(source=path::_) => '<%getQtInterfaceHeader(pathLastIdent(path), "", ty.funcArg, ty.funcResultType, className, true)%>;<%\n%>'
   <<
   #include <Qt/QtCore>
+  #include "OpenModelicaScriptingAPI.h"
 
-  class <%className%> {
-  threadData_t *threadData;
-  void *st;
-  <%heads%>
+  class <%className%> : public QObject
+  {
+    Q_OBJECT
+  private:
+    threadData_t *threadData;
+    void *st;
+  public:
+    <%className%>(threadData_t *td, void *symbolTable);
+    <%heads%>
+  signals:
+    void finished();
   };
   >>
 end getQtInterfaceHeaders;
-
+                     
 template getQtType(DAE.Type ty)
 ::=
   match ty
@@ -277,9 +288,10 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
     MMC_TRY_TOP_INTERNAL()
 
     st = omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData, st<%inArgs%><%outArgs%>);
+    emit finished();
     <%postCall%>
 
-    MMC_CATCH_TOP(throw std::runtime_error("getClassInformation failed");)
+    MMC_CATCH_TOP(throw std::runtime_error("<%replaceDotAndUnderscore(name)%> failed");)
 
     <%if outArgs then "return result;"%>
   }

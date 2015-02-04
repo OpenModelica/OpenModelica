@@ -2185,8 +2185,8 @@ algorithm
           end matchcontinue;
         end for;
         s1 := Tpl.tplString(GenerateAPIFunctionsTpl.getCevalScriptInterface, tys);
-        s2 := Tpl.tplString2(GenerateAPIFunctionsTpl.getQtInterface, tys, "OMCProxy::");
-        s3 := Tpl.tplString2(GenerateAPIFunctionsTpl.getQtInterfaceHeaders, tys, "OMCProxy");
+        s2 := Tpl.tplString3(GenerateAPIFunctionsTpl.getQtInterface, tys, "OMCInterface::", "OMCInterface");
+        s3 := Tpl.tplString2(GenerateAPIFunctionsTpl.getQtInterfaceHeaders, tys, "OMCInterface");
       then (cache,Values.TUPLE({Values.BOOL(true),Values.STRING(s1),Values.STRING(s2),Values.STRING(s3)}),st);
 
     case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
