@@ -95,7 +95,7 @@ public:
         {
            // cout<<"read  from variables buffer faild alloc R with sizes "<<m <<"," << n << std::endl;
             BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("read  from variables buffer failed alloc R matrix")+ex.what()));
-            
+
         }
          try
         {
@@ -109,9 +109,9 @@ public:
         }
         catch(std::exception& ex)
         {
-          
+
           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("read  from variables buffer failed")+ex.what()));
-          
+
         }
 
 
@@ -202,9 +202,9 @@ public:
         }
         catch(std::exception& ex)
         {
-            
+
             BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("write to buffer failed")+ex.what()));
-           
+
         }
 
         // textwriter->write(v,v2, time);
@@ -224,9 +224,9 @@ public:
         }
         catch(std::exception& ex)
         {
-           
+
             BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("read from time buffer failed")+ex.what()));
-            
+
         }
     }
     unsigned long size()
@@ -237,9 +237,9 @@ public:
         }
         catch(std::exception& ex)
         {
-            
+
             BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(DATASTORAGE) << error_message(string("time entries size failed")+ex.what()));
-            
+
         }
     }
     void eraseAll()

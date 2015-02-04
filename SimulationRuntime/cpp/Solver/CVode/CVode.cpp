@@ -694,7 +694,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
   }      //workaround until exception can be catch from c- libraries
   catch (boost::exception & ex )
   {
-    
+
     cerr << "CVode integration error: " <<  diagnostic_information(ex);
     returnValue = 1;
   }
@@ -866,7 +866,7 @@ int Cvode::calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeig
  }      //workaround until exception can be catch from c- libraries
   catch (boost::exception & ex )
   {
-   
+
     cerr << "CVode integration error: " <<  diagnostic_information(ex);
     return 1;
   }

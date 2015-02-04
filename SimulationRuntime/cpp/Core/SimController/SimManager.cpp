@@ -298,7 +298,7 @@ void SimManager::runSimulation()
          BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<  "Number of steps: " << _totStps.at(0);
          */
         writeProperties();
-        
+
         /* Logs temporarily disabled
          BOOST_LOG_SEV(simmgr_lg::get(), simmgr_critical) << "SimManger simmgr_error: " + simmgr_error_simmgr_info;
          */

@@ -1817,7 +1817,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
               MeasureTime::getInstance()->writeToJson();
               >>
             %>
-        
+
             return 0;
 
       }
@@ -5647,7 +5647,7 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       bool <%lastIdentOfPath(modelInfo.name)%>::isStepEvent()
       {
         BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("isStepEvent is not yet implemented"));
-        
+
       }
 
       void <%lastIdentOfPath(modelInfo.name)%>::setTerminal(bool terminal)
@@ -8186,7 +8186,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
                  string error = string("Nonlinear solver stopped at time ") + boost::lexical_cast<string>(_simTime) + string(" with error: ");
                  ex << error_id(ALGLOOP_EQ_SYSTEM) << error_message(error);
                  throw;
-                
+
              }
       }
      >>
@@ -9445,7 +9445,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
             }
 
         }
-        
+
 
         >>
       end match
@@ -10820,7 +10820,7 @@ template assertCommon(Exp condition, Exp message, Context context, Text &varDecl
        {
          <%preExpMsg%>
          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message(<%msgVar%>));
-         
+
        }
       >>
       else
@@ -13892,7 +13892,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   void <%lastIdentOfPath(name)%>::getReal(double* z)
   {
     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("getReal is not implemented yet"));
-    
+
   }
   void <%lastIdentOfPath(name)%>::getInteger(int* z)
   {
@@ -13902,35 +13902,35 @@ case MODELINFO(vars=SIMVARS(__)) then
   void <%lastIdentOfPath(name)%>::getBoolean(bool* z)
   {
     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("getBoolean is not implemented yet"));
-      
+
   }
 
   void <%lastIdentOfPath(name)%>::getString(string* z)
   {
      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("getString is not implemented yet"));
-     
+
   }
   void <%lastIdentOfPath(name)%>::setReal(const double* z)
   {
     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("setReal is not implemented yet"));
-    
+
   }
   void <%lastIdentOfPath(name)%>::setInteger(const int* z)
   {
     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("setInteger is not implemented yet"));
-    
+
   }
 
   void <%lastIdentOfPath(name)%>::setBoolean(const bool* z)
   {
-    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("setBoolean is not implemented yet"));   
-    
+    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("setBoolean is not implemented yet"));
+
   }
 
   void <%lastIdentOfPath(name)%>::setString(const string* z)
   {
     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message("setString is not implemented yet"));
-    
+
   }
   >>
   /*

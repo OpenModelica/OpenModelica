@@ -154,31 +154,31 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettin
     _simMgr->initialize();
 
     _simMgr->runSimulation();
-    
+
     boost::shared_ptr<IWriteOutput> writeoutput_system = boost::dynamic_pointer_cast<IWriteOutput>(mixedsystem);
-    
+
     if((global_settings->getOutputFormat()==BUFFER) && writeoutput_system)
-	{
-			//get history object to query simulation results
-			IHistory* history = writeoutput_system->getHistory();
-			//simulation results (output variables)
-			ublas::matrix<double> Ro;
-			//query simulation result otuputs
-			history->getOutputResults(Ro);
-			vector<string> output_names;
-			history->getOutputNames(output_names);
-			string name;
-			int j=0;
-			BOOST_FOREACH(name,output_names)
-			{
-				ublas::vector<double> o_j;
-				o_j =ublas::row(Ro,j);
-				_systems[modelKey].second->addOutputResults(name,o_j);
-				j++;
-			}
-			vector<double> time_values = history->getTimeEntries();
-			_systems[modelKey].second->addTimeEntries(time_values);
-	}
+  {
+      //get history object to query simulation results
+      IHistory* history = writeoutput_system->getHistory();
+      //simulation results (output variables)
+      ublas::matrix<double> Ro;
+      //query simulation result otuputs
+      history->getOutputResults(Ro);
+      vector<string> output_names;
+      history->getOutputNames(output_names);
+      string name;
+      int j=0;
+      BOOST_FOREACH(name,output_names)
+      {
+        ublas::vector<double> o_j;
+        o_j =ublas::row(Ro,j);
+        _systems[modelKey].second->addOutputResults(name,o_j);
+        j++;
+      }
+      vector<double> time_values = history->getTimeEntries();
+      _systems[modelKey].second->addTimeEntries(time_values);
+  }
 
   }
   catch(boost::exception & ex)

@@ -12,13 +12,13 @@ enum SIMULATION_ERROR {
                       TIME_EVENTS, //all errors occur during handling time events
                       DATASTORAGE , //all errors occur during write data (TextfileWriter,MatfileWriter,BufferReaderWriter
                       UTILITY,//all errors occur in utility functions
-                      MODEL_ARRAY_FUNCTION,//all errors occur in array functions 
+                      MODEL_ARRAY_FUNCTION,//all errors occur in array functions
                       MATH_FUNCTION //all errors occur in math functions
                       };
-                      
+
 
 //typedefs for error information
 typedef boost::error_info<struct tag_error_code,SIMULATION_ERROR> error_id;
 typedef boost::error_info<struct tag_error_message,string> error_message;
 //Exception class for all exceptions that can occur
-struct ModelicaSimulationError: virtual boost::exception, virtual std::exception { }; 
+struct ModelicaSimulationError: virtual boost::exception, virtual std::exception { };
