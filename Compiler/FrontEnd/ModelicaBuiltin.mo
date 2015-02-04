@@ -3390,6 +3390,7 @@ end getClassInformation;
 
 function generateScriptingAPI
   input TypeName cl;
+  input String name;
   output Boolean success;
   output String moFile;
   output String qtFile;

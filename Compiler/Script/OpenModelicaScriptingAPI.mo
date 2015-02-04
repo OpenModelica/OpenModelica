@@ -16,13 +16,14 @@ public
 function generateScriptingAPI
   input GlobalScript.SymbolTable st;
   input String cl;
+  input String name;
   output GlobalScript.SymbolTable outSymTab;
   output Boolean res1;
   output String res2;
   output String res3;
   output String res4;
 algorithm
-  (_,Values.TUPLE({Values.BOOL(res1), Values.STRING(res2), Values.STRING(res3), Values.STRING(res4)}),outSymTab) := CevalScript.cevalInteractiveFunctions2(FCore.emptyCache(), FGraph.empty(), "generateScriptingAPI", {Values.CODE(Absyn.C_TYPENAME(Parser.stringPath(cl)))}, st, dummyMsg);
+  (_,Values.TUPLE({Values.BOOL(res1), Values.STRING(res2), Values.STRING(res3), Values.STRING(res4)}),outSymTab) := CevalScript.cevalInteractiveFunctions2(FCore.emptyCache(), FGraph.empty(), "generateScriptingAPI", {Values.CODE(Absyn.C_TYPENAME(Parser.stringPath(cl))), Values.STRING(name)}, st, dummyMsg);
 end generateScriptingAPI;
 
 function getClassInformation

@@ -2167,7 +2167,7 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+    case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className)), Values.STRING(name)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       algorithm
         (scodeP,st) := GlobalScriptUtil.symbolTableToSCode(st);
         elts := match SCodeUtil.getElementWithPathCheckBuiltin(scodeP, className)
@@ -2188,11 +2188,11 @@ algorithm
           end matchcontinue;
         end for;
         s1 := Tpl.tplString(GenerateAPIFunctionsTpl.getCevalScriptInterface, tys);
-        s2 := Tpl.tplString3(GenerateAPIFunctionsTpl.getQtInterface, tys, "OMCInterface::", "OMCInterface");
-        s3 := Tpl.tplString2(GenerateAPIFunctionsTpl.getQtInterfaceHeaders, tys, "OMCInterface");
+        s2 := Tpl.tplString3(GenerateAPIFunctionsTpl.getQtInterface, tys, name + "::", name);
+        s3 := Tpl.tplString2(GenerateAPIFunctionsTpl.getQtInterfaceHeaders, tys, name);
       then (cache,Values.TUPLE({Values.BOOL(true),Values.STRING(s1),Values.STRING(s2),Values.STRING(s3)}),st);
 
-    case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+    case (cache,env,"generateScriptingAPI",_,st,_)
       then (cache,Values.TUPLE({Values.BOOL(false),Values.STRING(""),Values.STRING("")}),st);
 
     case (cache,_,"generateEntryPoint",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as GlobalScript.SYMBOLTABLE(),_)
@@ -8093,9 +8093,9 @@ algorithm
 end getComponentInfo;
 
 function makeGetComponentsRecord
-  input String className := "### FIXME ###";
-  input String name := "### FIXME ###";
-  input String comment := "### comment ###";
+  input String className;
+  input String name;
+  input String comment;
   input Boolean isProtected;
   input Boolean isFinal;
   input Boolean isFlow;
@@ -8104,7 +8104,7 @@ function makeGetComponentsRecord
   input String variability;
   input String innerOuter;
   input String inputOutput;
-  input list<String> dimensions := {};
+  input list<String> dimensions;
   output Values.Value v;
 algorithm
   v := Values.RECORD(
