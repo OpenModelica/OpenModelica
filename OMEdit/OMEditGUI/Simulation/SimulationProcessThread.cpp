@@ -155,9 +155,9 @@ void SimulationProcessThread::readCompilationStandardError()
 void SimulationProcessThread::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsCompilationProcessRunning = false;
-  QString exitCodeStr = tr("Compilation process exited with code %1").arg(QString::number(exitCode));
+  QString exitCodeStr = tr("Compilation process failed. Exited with code %1.").arg(exitCode);
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    emit sendCompilationOutput(exitCodeStr, Qt::blue);
+    emit sendCompilationOutput(tr("Compilation process finished successfully."), Qt::blue);
     emit sendCompilationFinished(exitCode, exitStatus);
     // if not build only and launch the algorithmic debugger is false then run the simulation process.
     SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
@@ -208,9 +208,9 @@ void SimulationProcessThread::readSimulationStandardError()
 void SimulationProcessThread::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsSimulationProcessRunning = false;
-  QString exitCodeStr = tr("Simulation process exited with code %1").arg(QString::number(exitCode));
+  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    emit sendSimulationOutput(exitCodeStr, StringHandler::OMEditInfo, true);
+    emit sendSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
   } else if (mpSimulationProcess->error() == QProcess::UnknownError) {
     emit sendSimulationOutput(exitCodeStr, StringHandler::Error, true);
   } else {
