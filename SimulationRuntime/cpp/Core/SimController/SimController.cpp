@@ -111,7 +111,7 @@ void SimController::StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, Si
   catch(boost::exception & ex)
   {
     ex << error_id(SIMMANAGER) << error_message(string("Simulation failed for ") + simsettings.outputfile_name);
-    printf("Fehler %s\n",diagnostic_information(ex));
+    printf("Fehler %s\n",diagnostic_information(ex).c_str());
     throw;
   }
 }
