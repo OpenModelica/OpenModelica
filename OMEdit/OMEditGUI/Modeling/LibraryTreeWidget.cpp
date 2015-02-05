@@ -296,8 +296,7 @@ void SearchClassWidget::searchClasses()
 {
   // Remove the searched classes first
   int i = 0;
-  while(i < mpLibraryTreeWidget->topLevelItemCount())
-  {
+  while(i < mpLibraryTreeWidget->topLevelItemCount()) {
     qDeleteAll(mpLibraryTreeWidget->topLevelItem(i)->takeChildren());
     delete mpLibraryTreeWidget->topLevelItem(i);
     i = 0;   //Restart iteration
@@ -306,22 +305,18 @@ void SearchClassWidget::searchClasses()
     return;
   /* search classes in OMC */
   QStringList searchedClasses = mpMainWindow->getOMCProxy()->searchClassNames(mpSearchClassTextBox->text(),
-                                                                              mpFindInModelicaTextCheckBox->isChecked() ? "true" : "false");
-  if (searchedClasses.isEmpty())
-  {
+                                                                              mpFindInModelicaTextCheckBox->isChecked());
+  if (searchedClasses.isEmpty()) {
     mpNoModelicaClassFoundLabel->setVisible(true);
     return;
-  }
-  else
-  {
+  } else {
     mpNoModelicaClassFoundLabel->setVisible(false);
   }
   /* Load the searched classes */
   int progressValue = 0;
   mpMainWindow->getProgressBar()->setRange(0, searchedClasses.size());
   mpMainWindow->showProgressBar();
-  for (int j = 0 ; j < searchedClasses.size() ; j++)
-  {
+  for (int j = 0 ; j < searchedClasses.size() ; j++) {
     mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(searchedClasses[j]));
     LibraryTreeNode *pNewLibraryTreeNode;
     QVariantMap info = mpMainWindow->getOMCProxy()->getClassInformation(searchedClasses[j]);

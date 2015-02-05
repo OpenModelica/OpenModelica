@@ -127,7 +127,7 @@ public:
   void loadUserLibraries(QSplashScreen *pSplashScreen);
   QStringList getClassNames(QString className = QString("AllLoadedClasses"), bool recursive = false, bool qualified = "false",
                             bool sort = false, bool builtin = false, bool showProtected = "true");
-  QStringList searchClassNames(QString searchText, QString findInText = QString("false"));
+  QStringList searchClassNames(QString searchText, bool findInText = "false");
   QVariantMap getClassInformation(QString className);
   bool isPackage(QString className);
   bool isBuiltinType(QString typeName);

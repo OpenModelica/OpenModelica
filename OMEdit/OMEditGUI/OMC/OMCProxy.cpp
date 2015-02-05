@@ -53,11 +53,8 @@ void* omc_Main_init(void *threadData, void *args);
 void* omc_Main_readSettings(void *threadData, void *args);
 }
 
-#include "OMC_API.h"
 #include "OpenModelicaScriptingAPIQt.h"
-
 #endif
-
 
 #include <stdexcept>
 #include <stdlib.h>
@@ -1042,12 +1039,9 @@ QStringList OMCProxy::getClassNames(QString className, bool recursive, bool qual
   \param findInText - tells to look for the searchText inside Modelica Text also.
   \return the list of searched classes.
   */
-QStringList OMCProxy::searchClassNames(QString searchText, QString findInText)
+QStringList OMCProxy::searchClassNames(QString searchText, bool findInText)
 {
-  sendCommand("searchClassNames(\"" + searchText + "\", findInText=" + findInText + ")");
-  QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
-  QStringList list = result.split(",", QString::SkipEmptyParts);
-  return list;
+  return mpOMCInterface->searchClassNames(searchText, findInText);
 }
 
 /*!
@@ -1084,26 +1078,25 @@ QVariantMap OMCProxy::getClassInformation(QString className)
   res["dimensions"] = lst[11];
   return res;
 #else
-  /* TODO: Let this function return the struct directly; once we skip CORBA */
-  threadData_t *threadData = mpOMCInterface->threadData;
-  OMC::API::getClassInformation_result r = OMC::API::getClassInformation(threadData, mpOMCInterface->st, className);
+  OMCInterface::getClassInformation_res classInformation = mpOMCInterface->getClassInformation(className);
   QVariantMap res;
-  res["restriction"] = r.restriction;
-  res["comment"] = r.comment;
-  res["partialPrefix"] = r.partialPrefix;
-  res["finalPrefix"] = r.finalPrefix;
-  res["encapsulatedPrefix"] = r.encapsulatedPrefix;
+  res["restriction"] = classInformation.res1;
+  res["comment"] = classInformation.res2;
+  res["partialPrefix"] = classInformation.res3;
+  res["finalPrefix"] = classInformation.res4;
+  res["encapsulatedPrefix"] = classInformation.res5;
   /*
     Since now we set the fileName via loadString() & parseString() so this API might return us className/<interactive>.
     We only set the fileName field if returned value is really a file path.
     */
-  res["fileName"] = r.fileName.endsWith(".mo") ? r.fileName : "";
-  res["fileReadOnly"] = r.fileReadOnly;
-  res["lineNumberStart"] = (long long) r.lineNumberStart;
-  res["columnNumberStart"] = (long long) r.columnNumberStart;
-  res["lineNumberEnd"] = (long long) r.lineNumberEnd;
-  res["columnNumberEnd"] = (long long) r.columnNumberEnd;
-  res["dimensions"] = r.dimensions;
+  res["fileName"] = classInformation.res6.endsWith(".mo") ? classInformation.res6 : "";
+  res["fileReadOnly"] = classInformation.res7;
+  res["lineNumberStart"] = (long long) classInformation.res8;
+  res["columnNumberStart"] = (long long) classInformation.res9;
+  res["lineNumberEnd"] = (long long) classInformation.res10;
+  res["columnNumberEnd"] = (long long) classInformation.res11;
+  res["dimensions"] = "";
+  //res["dimensions"] = classInformation.res12;
   return res;
 #endif
 }

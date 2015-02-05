@@ -112,8 +112,7 @@ SOURCES += main.cpp \
   Debugger/Attach/ProcessListModel.cpp \
   CrashReport/CrashReportDialog.cpp \
   OMC/Parser/OMCOutputParser.cpp \
-  OMC/Parser/OMCOutputLexer.cpp \
-  OMC/OMC_API.cpp
+  OMC/Parser/OMCOutputLexer.cpp
 
 HEADERS  += Util/backtrace.h \
   Util/Helper.h \
@@ -172,8 +171,7 @@ HEADERS  += Util/backtrace.h \
   Debugger/Attach/ProcessListModel.h \
   CrashReport/CrashReportDialog.h \
   OMC/Parser/OMCOutputParser.h \
-  OMC/Parser/OMCOutputLexer.h \
-  OMC/OMC_API.h
+  OMC/Parser/OMCOutputLexer.h
 
 # Windows libraries and includes
 win32 {
