@@ -102,6 +102,9 @@ qwt: build/lib/omc/libomqwt@SHREXT@
 omplot: mkbuilddirs qwt
 	$(MAKE) -C OMPlot/OMPlotGUI -f Makefile.unix
 omedit: omc qwt omplot qjson
+	$(MAKE) -C Compiler/Script -f Makefile.unix
+	test -f build/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp
+	test -f build/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 endif
 
