@@ -2025,21 +2025,6 @@ algorithm
   (_,outTpl) := BackendEquation.traverseExpsOfEquation(Util.tuple33(inJac),function countOperationsExp(shared=shared),inTpl);
 end countOperationsJac1;
 
-protected function addJacSpecificOperations
-  input Integer n;
-  input tuple<Integer,Integer,Integer,Integer> inTpl;
-  output tuple<Integer,Integer,Integer,Integer> outTpl;
-protected
-  Integer i1,i2,i3,i4,i1_1,i2_1,n2,n3;
-algorithm
-  (i1,i2,i3,i4) := inTpl;
-  n2 := n*n;
-  n3 := n*n*n;
-  i1_1 := intDiv(2*n3+3*n2-5*n,6) + i1;
-  i2_1 := intDiv(2*n3+6*n2-2*n,6) + i2;
-  outTpl := (i1_1,i2_1,i3,i4);
-end addJacSpecificOperations;
-
 public function countOperationsExp
   input DAE.Exp inExp;
   input BackendDAE.Shared shared;
