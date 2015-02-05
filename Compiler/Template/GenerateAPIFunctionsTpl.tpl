@@ -141,10 +141,9 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
   class <%className%> : public QObject
   {
     Q_OBJECT
-  private:
+  public:
     threadData_t *threadData;
     void *st;
-  public:
     <%className%>(threadData_t *td, void *symbolTable);
     <%heads%>
   signals:
