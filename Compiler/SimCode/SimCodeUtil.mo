@@ -5452,33 +5452,6 @@ algorithm
   end matchcontinue;
 end createAlgorithmAndEquationAsserts;
 
-protected function createRemovedEquations
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input list<SimCode.SimEqSystem> acc;
-  output list<SimCode.SimEqSystem> removedEquations;
-algorithm
-  removedEquations := matchcontinue (syst, shared, acc)
-    local
-      BackendDAE.EquationArray r;
-      BackendDAE.Variables vars;
-      list<DAE.Algorithm> varasserts;
-      list<SimCode.SimEqSystem> simvarasserts;
-
-    case (BackendDAE.EQSYSTEM(orderedVars = vars), BackendDAE.SHARED(), _)
-      equation
-        // get minmax and nominal asserts
-        varasserts = BackendVariable.traverseBackendDAEVars(vars, createVarMinMaxAssert, {});
-        (simvarasserts, _) = List.mapFold(varasserts, dlowAlgToSimEqSystem, 0);
-        removedEquations = listAppend(simvarasserts, acc);
-      then removedEquations;
-    else
-      equation
-        Error.addInternalError("function createRemovedEquations failed", sourceInfo());
-      then fail();
-  end matchcontinue;
-end createRemovedEquations;
-
 protected function traversedlowEqToSimEqSystem
   input BackendDAE.Equation inEq;
   input tuple<Integer, list<SimCode.SimEqSystem>> inTpl;
