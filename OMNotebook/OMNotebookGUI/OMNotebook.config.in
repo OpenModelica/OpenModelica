@@ -12,3 +12,8 @@ PLOTINC = ../../3rdParty/qwt/src ../../OMPlot/OMPlotGUI
 QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
 QMAKE_CXXFLAGS = @CFLAGS@ @CPPFLAGS@
 QMAKE_LFLAGS += @LDFLAGS@
+
+# 64MB (0x4000000)
+mac {
+  QMAKE_LFLAGS += -Wl,-stack_size,4000000
+}
