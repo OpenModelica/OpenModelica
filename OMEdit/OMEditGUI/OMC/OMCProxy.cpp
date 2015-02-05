@@ -2344,21 +2344,7 @@ QStringList OMCProxy::getSimulationOptions(QString className, double defaultTole
   */
 bool OMCProxy::translateModelFMU(QString className, double version)
 {
-//  QFuture<QString> future = QtConcurrent::run(mpOMCInterface, &OMCInterface::translateModelFMU, className, QString::number(version), QString(""));
-//  QEventLoop eventLoop;
-//  QTimer timer;
-//  connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
-//  connect(mpOMCInterface, SIGNAL(finished()), &eventLoop, SLOT(quit()));
-//  timer.start(10);
-//  while (future.isRunning()) {
-//    eventLoop.exec(QEventLoop::ExcludeUserInputEvents);
-//    qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-//  }
-//  timer.stop();
-//  future.waitForFinished();
-//  mResult = future.result();
   QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), QString("<default>"));
-  // sendCommand("translateModelFMU(" + className + ", version=\"" + QString::number(version) + "\")");
   if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     return true;
   } else {
