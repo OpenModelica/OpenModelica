@@ -119,7 +119,7 @@ template getQtInterface(list<DAE.Type> tys, String classNameWithColons, String c
 ::=
   let funcs = tys |> ty as T_FUNCTION(source=path::_) => '<%getQtInterfaceFunc(pathLastIdent(path), ty.funcArg, ty.funcResultType, classNameWithColons)%><%\n%>'
   <<
-  #include <Qt/QtCore>
+  #include <QtCore>
   #include <stdexcept>
   #include "OpenModelicaScriptingAPIQt.h"
 
