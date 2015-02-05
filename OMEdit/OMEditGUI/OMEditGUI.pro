@@ -183,7 +183,8 @@ win32 {
     __NT__ \
     __OSVERSION__=4 \
     __WIN32__ \
-    USE_OMC_SHARED_OBJECT=1
+    USE_OMC_SHARED_OBJECT=1 \
+    IMPORT_INTO=1
 
   CONFIG(debug, debug|release) {
   LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 -lomniORB416_rtd -lomnithread34_rtd \
@@ -211,6 +212,7 @@ win32 {
     ../../  ../../3rdParty/antlr/3.2/libantlr3c-3.2/ ../../3rdParty/antlr/3.2/libantlr3c-3.2/include ../../build/include/omc/c
   SOURCES += omc_communication.cc
   HEADERS += omc_communication.h
+
 } else { # Unix libraries and includes
   include(OMEdit.config)
   # On unix we use backtrace of execinfo.h which requires -rdynamic

@@ -41,7 +41,6 @@
 #include <OMC/Parser/OMCOutputParser.h>
 
 #if USE_OMC_SHARED_OBJECT
-#define IMPORT_INTO 1
 #include "meta/meta_modelica.h"
 
 extern "C" {
@@ -2358,8 +2357,8 @@ bool OMCProxy::translateModelFMU(QString className, double version)
 //  timer.stop();
 //  future.waitForFinished();
 //  mResult = future.result();
-  //mResult = mpOMCInterface->translateModelFMU(className, QString::number(version), className);
-  sendCommand("translateModelFMU(" + className + ", version=\"" + QString::number(version) + "\")");
+  mResult = mpOMCInterface->translateModelFMU(className, QString::number(version), className);
+  // sendCommand("translateModelFMU(" + className + ", version=\"" + QString::number(version) + "\")");
   if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     return true;
   } else {
