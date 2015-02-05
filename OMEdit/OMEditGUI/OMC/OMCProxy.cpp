@@ -415,7 +415,7 @@ bool OMCProxy::startServer()
   }
 #if USE_OMC_SHARED_OBJECT
   threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
-  void *st;
+  void *st = 0;
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, mmc_mk_nil());
   st = omc_Main_readSettings(threadData, mmc_mk_nil());
