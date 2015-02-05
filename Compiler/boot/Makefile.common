@@ -28,6 +28,7 @@ bootstrap-from-tarball:
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=$(BOOTSTRAP_OMC)
 	@echo "Bootstrapping phase 2/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=$(BOOTSTRAP_OMC)
+	$(MAKE) $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Script OMC=$(BOOTSTRAP_OMC) clean
 	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=$(BOOTSTRAP_OMC)
 	@echo "Bootstrapping phase 3/3 completed"
