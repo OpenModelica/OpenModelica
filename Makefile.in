@@ -104,7 +104,7 @@ omplot: mkbuilddirs qwt
 omedit: omc qwt omplot qjson
 	$(MAKE) -C Compiler/Script
 	cp -a Compiler/Script/OpenModelicaScriptingAPIQt.cpp Compiler/Script/OpenModelicaScriptingAPIQt.h build/include/omc/scripting-API/
- 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
+	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 endif
 
 ifeq ($(QMAKE),)
