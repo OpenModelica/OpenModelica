@@ -131,4 +131,4 @@ install: $(GEN_DIR)omc$(EXE_EXT) install-interface
 endif
 
 install-interface:
-	-cp -a $(GEN_DIR)OpenModelicaScriptingAPI.h ../Script/OpenModelicaScriptingAPIQt.cpp ../Script/OpenModelicaScriptingAPIQt.h $(OMHOME)/include/omc/scripting-API
+	cp -a $(GEN_DIR)OpenModelicaScriptingAPI.h $(OMHOME)/include/omc/scripting-API
