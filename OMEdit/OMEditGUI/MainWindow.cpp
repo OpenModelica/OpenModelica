@@ -1146,7 +1146,7 @@ void MainWindow::loadSystemLibrary()
       if (mpOMCProxy->loadModel(pAction->text()))
       {
         /* since few libraries load dependent libraries automatically. So if the dependent library is not loaded then load it. */
-        QStringList systemLibs = mpOMCProxy->getClassNames("");
+        QStringList systemLibs = mpOMCProxy->getClassNames();
         foreach (QString systemLib, systemLibs)
         {
           LibraryTreeNode* pLoadedLibraryTreeNode = mpLibraryTreeWidget->getLibraryTreeNode(systemLib);

@@ -123,13 +123,10 @@ public:
   QString getErrorLevel();
   int getErrorId();
   QString getVersion(QString className = QString("OpenModelica"));
-  QString getAnnotationVersion();
-  bool setEnvironmentVar(QString name, QString value);
-  QString getEnvironmentVar(QString name);
   void loadSystemLibraries(QSplashScreen *pSplashScreen);
   void loadUserLibraries(QSplashScreen *pSplashScreen);
-  QStringList getClassNames(QString className = QString(), QString recursive = QString("false"), QString qualified = QString("false"),
-                            QString showProtected = QString("true"));
+  QStringList getClassNames(QString className = QString("AllLoadedClasses"), bool recursive = false, bool qualified = "false",
+                            bool sort = false, bool builtin = false, bool showProtected = "true");
   QStringList searchClassNames(QString searchText, QString findInText = QString("false"));
   QVariantMap getClassInformation(QString className);
   bool isPackage(QString className);

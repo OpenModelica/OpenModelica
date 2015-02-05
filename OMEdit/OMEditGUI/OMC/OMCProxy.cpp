@@ -927,42 +927,6 @@ QString OMCProxy::getVersion(QString className)
 }
 
 /*!
-  Gets the OMC annotation version
-  \return the annotation version
-  */
-QString OMCProxy::getAnnotationVersion()
-{
-  sendCommand("getAnnotationVersion()");
-  return getResult();
-}
-
-/*!
-  Sends OMC setEnvironmentVar command.
-  \param name - the variable name
-  \param value - the variable value
-  \return true on success
-  */
-bool OMCProxy::setEnvironmentVar(QString name, QString value)
-{
-  sendCommand("setEnvironmentVar(\"" + name + "\", \"" + value + "\")");
-  if (getResult().toLower().contains("ok"))
-    return true;
-  else
-    return false;
-}
-
-/*!
-  Gets OMC getEnvironmentVar command.
-  \param name - the variable name
-  \return the environment variable value.
-  */
-QString OMCProxy::getEnvironmentVar(QString name)
-{
-  sendCommand("getEnvironmentVar(\"" + name + "\")");
-  return getResult();
-}
-
-/*!
   Loads the Modelica System Libraries.\n
   Reads the omedit.ini file to get the libraries to load.
   */
@@ -970,8 +934,9 @@ void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
 {
   QSettings *pSettings = OpenModelica::getApplicationSettings();
   bool forceModelicaLoad = true;
-  if (pSettings->contains("forceModelicaLoad"))
+  if (pSettings->contains("forceModelicaLoad")) {
     forceModelicaLoad = pSettings->value("forceModelicaLoad").toBool();
+  }
   pSettings->beginGroup("libraries");
   QStringList libraries = pSettings->childKeys();
   pSettings->endGroup();
@@ -979,21 +944,17 @@ void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
     Only force loading of Modelica & ModelicaReference if user is using OMEdit for the first time.
     Later user must use the libraries options dialog.
     */
-  if (forceModelicaLoad)
-  {
-    if (!pSettings->contains("libraries/Modelica"))
-    {
+  if (forceModelicaLoad) {
+    if (!pSettings->contains("libraries/Modelica")) {
       pSettings->setValue("libraries/Modelica","default");
       libraries.prepend("Modelica");
     }
-    if (!pSettings->contains("libraries/ModelicaReference"))
-    {
+    if (!pSettings->contains("libraries/ModelicaReference")) {
       pSettings->setValue("libraries/ModelicaReference","default");
       libraries.prepend("ModelicaReference");
     }
   }
-  foreach (QString lib, libraries)
-  {
+  foreach (QString lib, libraries) {
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
     QString version = pSettings->value("libraries/" + lib).toString();
     loadModel(lib, version);
@@ -1011,13 +972,11 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
   pSettings->beginGroup("userlibraries");
   QStringList libraries = pSettings->childKeys();
   pSettings->endGroup();
-  foreach (QString lib, libraries)
-  {
+  foreach (QString lib, libraries) {
     QString encoding = pSettings->value("userlibraries/" + lib).toString();
     QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toStdString().c_str()));
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(fileName), Qt::AlignRight, Qt::white);
-    if (parseFile(fileName, encoding))
-    {
+    if (parseFile(fileName, encoding)) {
       QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
       QStringList modelsList = result.split(",", QString::SkipEmptyParts);
       /*
@@ -1026,8 +985,7 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
         "A nonstructured entity [e.g. the file A.mo] shall contain only a stored-definition that defines a class [A] with a name
          matching the name of the nonstructured entity."
         */
-      if (modelsList.size() > 1)
-      {
+      if (modelsList.size() > 1) {
         QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
         pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
         pMessageBox->setIcon(QMessageBox::Critical);
@@ -1041,17 +999,14 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
       QStringList existingmodelsList;
       bool existModel = false;
       // check if the model already exists
-      foreach(QString model, modelsList)
-      {
-        if (existClass(model))
-        {
+      foreach(QString model, modelsList) {
+        if (existClass(model)) {
           existingmodelsList.append(model);
           existModel = true;
         }
       }
       // if existModel is true, show user an error message
-      if (existModel)
-      {
+      if (existModel) {
         QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
         pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
         pMessageBox->setIcon(QMessageBox::Information);
@@ -1061,10 +1016,7 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
                                         .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(encoding)));
         pMessageBox->setStandardButtons(QMessageBox::Ok);
         pMessageBox->exec();
-      }
-      // if no conflicting model found then just load the file simply
-      else
-      {
+      } else { // if no conflicting model found then just load the file simply
         loadFile(fileName, encoding);
       }
     }
@@ -1079,15 +1031,9 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
   \param showProtected - returns the protected classes as well.
   \return the list of classes
   */
-QStringList OMCProxy::getClassNames(QString className, QString recursive, QString qualified, QString showProtected)
+QStringList OMCProxy::getClassNames(QString className, bool recursive, bool qualified, bool sort, bool builtin, bool showProtected)
 {
-  if (className.isEmpty())
-    sendCommand("getClassNames(recursive=" + recursive + ",qualified=" + qualified + ",showProtected=" + showProtected + ")");
-  else
-    sendCommand("getClassNames(" + className + ",recursive=" + recursive + ",qualified=" + qualified + ",showProtected=" + showProtected + ")");
-  QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
-  QStringList list = result.split(",", QString::SkipEmptyParts);
-  return list;
+  return mpOMCInterface->getClassNames(className, recursive, qualified, sort, builtin, showProtected);
 }
 
 /*!

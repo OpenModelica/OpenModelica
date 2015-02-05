@@ -677,7 +677,7 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
   // load Modelica System Libraries.
   mpMainWindow->getOMCProxy()->loadSystemLibraries(pSplashScreen);
   pSplashScreen->showMessage(tr("Creating Components"), Qt::AlignRight, Qt::white);
-  QStringList systemLibs = mpMainWindow->getOMCProxy()->getClassNames("");
+  QStringList systemLibs = mpMainWindow->getOMCProxy()->getClassNames();
   systemLibs.prepend("OpenModelica");
   systemLibs.sort();
   foreach (QString lib, systemLibs)
@@ -698,7 +698,7 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
   }
   // load Modelica User Libraries.
   mpMainWindow->getOMCProxy()->loadUserLibraries(pSplashScreen);
-  QStringList userLibs = mpMainWindow->getOMCProxy()->getClassNames("");
+  QStringList userLibs = mpMainWindow->getOMCProxy()->getClassNames();
   foreach (QString lib, userLibs)
   {
     if (systemLibs.contains(lib))
@@ -720,7 +720,7 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
 
 void LibraryTreeWidget::createLibraryTreeNodes(LibraryTreeNode *pLibraryTreeNode)
 {
-  QStringList libs = mpMainWindow->getOMCProxy()->getClassNames(pLibraryTreeNode->getNameStructure(), "true");
+  QStringList libs = mpMainWindow->getOMCProxy()->getClassNames(pLibraryTreeNode->getNameStructure(), true);
   if (!libs.isEmpty())
     libs.removeFirst();
   QList<LibraryTreeNode*> nodes;
