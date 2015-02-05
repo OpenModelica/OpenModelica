@@ -147,7 +147,8 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
     <%className%>(threadData_t *td, void *symbolTable);
     <%heads%>
   signals:
-    void finished();
+    void logCommand(QString command, QTime *commandTime);
+    void logResponse(QString response, QTime *responseTime);
   };
   >>
 end getQtInterfaceHeaders;
@@ -286,8 +287,11 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
 
     MMC_TRY_TOP_INTERNAL()
 
+    QTime commandTime;
+    commandTime.start();
+    emit logCommand("<%replaceDotAndUnderscore(name)%>(### create string of parameters ###)", &commandTime);
     st = omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData, st<%inArgs%><%outArgs%>);
-    emit finished();
+    emit logResponse("### create string of result ###", &commandTime);
     <%postCall%>
 
     MMC_CATCH_TOP(throw std::runtime_error("<%replaceDotAndUnderscore(name)%> failed");)
