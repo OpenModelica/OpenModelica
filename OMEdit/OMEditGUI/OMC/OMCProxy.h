@@ -87,10 +87,6 @@ private:
   int mAnnotationVersion;
   QMap<QString, QList<cachedOMCCommand> > mCachedOMCCommandsMap;
   OMCInterface *mpOMCInterface;
-#ifdef USE_OMC_SHARED_OBJECT
-  void *omc_SymbolTable;
-  void *mpThreadData;
-#endif
 public:
   OMCProxy(MainWindow *pMainWindow);
   ~OMCProxy();

@@ -414,13 +414,13 @@ bool OMCProxy::startServer()
     mCommandsLogFileTextStream.setGenerateByteOrderMark(false);
   }
 #if USE_OMC_SHARED_OBJECT
-  mpThreadData = calloc(1, sizeof(threadData_t));
-  threadData_t *threadData = (threadData_t*) mpThreadData;
+  threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
+  void *st;
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, mmc_mk_nil());
-  omc_SymbolTable = omc_Main_readSettings(threadData, mmc_mk_nil());
+  st = omc_Main_readSettings(threadData, mmc_mk_nil());
   MMC_CATCH_TOP(return false;)
-  mpOMCInterface = new OMCInterface(threadData, omc_SymbolTable);
+  mpOMCInterface = new OMCInterface(threadData, st);
 
   mHasInitialized = true;
 #else
@@ -582,13 +582,13 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
 #if USE_OMC_SHARED_OBJECT
   // TODO: Call this in a thread that loops over received messages? Avoid MMC_TRY_TOP all the time, etc
   void *reply_str = NULL;
-  threadData_t *threadData = (threadData_t*) mpThreadData;
+  threadData_t *threadData = mpOMCInterface->threadData;
 
   MMC_TRY_TOP_INTERNAL()
 
   MMC_TRY_STACK()
 
-  if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toStdString().c_str()), omc_SymbolTable, &reply_str, &omc_SymbolTable)) {
+  if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toStdString().c_str()), mpOMCInterface->st, &reply_str, &mpOMCInterface->st)) {
     if (expression == "quit()") {
       return;
     }
@@ -1147,8 +1147,8 @@ QVariantMap OMCProxy::getClassInformation(QString className)
   return res;
 #else
   /* TODO: Let this function return the struct directly; once we skip CORBA */
-  threadData_t *threadData = (threadData_t*) mpThreadData;
-  OMC::API::getClassInformation_result r = OMC::API::getClassInformation(threadData, omc_SymbolTable, className);
+  threadData_t *threadData = mpOMCInterface->threadData;
+  OMC::API::getClassInformation_result r = OMC::API::getClassInformation(threadData, mpOMCInterface->st, className);
   QVariantMap res;
   res["restriction"] = r.restriction;
   res["comment"] = r.comment;
@@ -2357,9 +2357,9 @@ bool OMCProxy::translateModelFMU(QString className, double version)
 //  timer.stop();
 //  future.waitForFinished();
 //  mResult = future.result();
-  mResult = mpOMCInterface->translateModelFMU(className, QString::number(version), className);
+  QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), QString("<default>"));
   // sendCommand("translateModelFMU(" + className + ", version=\"" + QString::number(version) + "\")");
-  if (StringHandler::unparse(getResult()).compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
+  if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     return true;
   } else {
     printMessagesStringInternal();
