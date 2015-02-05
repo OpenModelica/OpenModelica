@@ -1019,7 +1019,7 @@ algorithm
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      DAE.Exp bindExp, crefExp;
+      DAE.Exp bindExp, crefExp, startValue;
       BackendDAE.Equation eqn;
       DAE.ComponentRef cref;
 
@@ -1029,7 +1029,8 @@ algorithm
 
       cref = BackendVariable.varCref(inVar);
       crefExp = Expression.crefExp(cref);
-      eqn = BackendDAE.EQUATION(crefExp, DAE.RCONST(0.0), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      startValue = BackendVariable.varStartValue(inVar);
+      eqn = BackendDAE.EQUATION(crefExp, startValue, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
       eqns = BackendEquation.addEquation(eqn, eqns);
     then ((vars, eqns));
 

@@ -6368,29 +6368,29 @@ protected function createInitialEquations "author: lochel"
   output list<SimCodeVar.SimVar> otempvars := itempvars;
   output Boolean useSymbolicInitialization := false;
 protected
-  BackendDAE.EquationArray  removedEqs;
-  list<SimCodeVar.SimVar> tempvars;
-  Integer uniqueEqIndex;
+      BackendDAE.EquationArray  removedEqs;
+      list<SimCodeVar.SimVar> tempvars;
+      Integer uniqueEqIndex;
   list<SimCode.SimEqSystem> allEquations, solvedEquations, removedEquations, aliasEquations, removedInitialEquations;
-  BackendDAE.EqSystems systs;
-  BackendDAE.Shared shared;
-  BackendDAE.Variables knvars, aliasVars;
+      BackendDAE.EqSystems systs;
+      BackendDAE.Shared shared;
+      BackendDAE.Variables knvars, aliasVars;
 algorithm
   try
     SOME(BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, aliasVars=aliasVars, removedEqs=removedEqs))) := inInitDAE;
-    // generate equations from the known unfixed variables
+      // generate equations from the known unfixed variables
     ((uniqueEqIndex, allEquations)) := BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
-    // generate equations from the solved systems
+      // generate equations from the solved systems
     (uniqueEqIndex, _, _, solvedEquations, _, tempvars, _, _, _) := createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, {}, {}, itempvars, 0, {}, {}, SimCode.NO_MAPPING());
     allEquations := listAppend(allEquations, solvedEquations);
-    // generate equations from the removed equations
+      // generate equations from the removed equations
     ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     allEquations := listAppend(allEquations, removedEquations);
-    // generate equations from the alias variables
+      // generate equations from the alias variables
     ((uniqueEqIndex, aliasEquations)) := BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
     allEquations := listAppend(allEquations, aliasEquations);
 
-    // generate equations from removed initial equations
+      // generate equations from removed initial equations
     (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedEqnLst, uniqueEqIndex, tempvars);
 
     // output
@@ -6400,7 +6400,7 @@ algorithm
     otempvars := tempvars;
     useSymbolicInitialization := true;
   else
-    Error.addCompilerError("No system for the symbolic initialization was generated.");
+      Error.addCompilerError("No system for the symbolic initialization was generated.");
   end try;
 end createInitialEquations;
 
@@ -6981,56 +6981,6 @@ algorithm
           next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints);
 end createVarInfo;
 
-protected function setAdditionalStartValues"sets the start value for parameters without start value if there is binding that has one"
-  input Integer varIdx;
-  input BackendDAE.Variables knownVarsIn;
-  output BackendDAE.Variables knownVarsOut;
-algorithm
-  knownVarsOut := matchcontinue(varIdx,knownVarsIn)
-    local
-      BackendDAE.Variables knownVars;
-      DAE.Exp bind;
-      DAE.ComponentRef bindCref;
-      BackendDAE.Var var;
-  case(_,_)
-    equation
-      var = BackendVariable.getVarAt(knownVarsIn,varIdx);
-      true =  BackendVariable.isParam(var) and not BackendVariable.varHasStartValue(var);
-      bind = BackendVariable.varBindExp(var);
-      (bind,_) = Expression.traverseExp(bind,evaluateParameter,knownVarsIn);
-      bind = ExpressionSimplify.simplify(bind);
-      true = Expression.isConst(bind);
-      var = BackendVariable.setVarStartValue(var,bind);
-      knownVars = BackendVariable.setVarAt(knownVarsIn,varIdx,var);
-    then knownVars;
-  else
-    knownVarsIn;
-  end matchcontinue;
-end setAdditionalStartValues;
-
-protected function evaluateParameter"evaluates the crefs in an expression and if there is a constant parameter, replace it.
-author:Waurich TUD 2014-06"
-  input DAE.Exp expIn;
-  input BackendDAE.Variables knownVarsIn;
-  output DAE.Exp expOut;
-  output BackendDAE.Variables knownVarsOut;
-algorithm
-  (expOut,knownVarsOut) := matchcontinue(expIn,knownVarsIn)
-    local
-      DAE.ComponentRef cref;
-      DAE.Exp bindNom;
-      BackendDAE.Var bindVar;
-   case(DAE.CREF(componentRef=cref),_)
-     equation
-      ({bindVar},_) = BackendVariable.getVar(cref,knownVarsIn);
-      bindNom = BackendVariable.varBindExp(bindVar);
-      true = Expression.isConst(bindNom);
-    then (bindNom,knownVarsIn);
-   else
-     then(expIn,knownVarsIn);
-  end matchcontinue;
-end evaluateParameter;
-
 protected function createVars
   input BackendDAE.BackendDAE dlow;
   output SimCodeVar.SimVars outVars;
@@ -7041,8 +6991,6 @@ protected
   BackendDAE.EqSystems systs;
 algorithm
   BackendDAE.DAE(eqs=systs, shared=BackendDAE.SHARED(knownVars=knvars, externalObjects=extvars, aliasVars=aliasVars)) := dlow;
-
-  knvars := List.fold(List.intRange(BackendVariable.varsSize(knvars)),setAdditionalStartValues,knvars);
 
   /* Extract from variable list */
   ((outVars, _, _)) := List.fold1(List.map(systs, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars, knvars));
@@ -7579,9 +7527,14 @@ algorithm
         s = s+"\tdiscEqs:\n\t"+stringDelimitList(List.map(eqs,dumpSimEqSystem),"\t\n");
     then (s);
 
-    case(SimCode.SES_WHEN(index=idx))
+    case(SimCode.SES_WHEN(index=idx, conditions=crefs, left=left, right=right, elseWhen=elseWhen))
       equation
-        s = intString(idx) +": "+ " (WHEN)";
+        s = intString(idx) +": "+ " WHEN:( ";
+        s = s + stringDelimitList(List.map(crefs,ComponentReference.debugPrintComponentRefTypeStr),", ") + " ) then: ";
+        s = s + ComponentReference.debugPrintComponentRefTypeStr(left) + " = " + ExpressionDump.printExpStr(right);
+        if Util.isSome(elseWhen) then
+          s = s + " ELSEWHEN: " + dumpSimEqSystem(Util.getOption(elseWhen));
+        end if;
     then (s);
   end match;
 end dumpSimEqSystem;
