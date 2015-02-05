@@ -459,6 +459,9 @@ void OptionsDialog::readFMISettings()
   if (mpSettings->contains("FMIExport/Version")) {
     mpFMIPage->setFMIExportVersion(mpSettings->value("FMIExport/Version").toDouble());
   }
+  if (mpSettings->contains("FMI/FMUName")) {
+    mpFMIPage->getFMUNameTextBox()->setText(mpSettings->value("FMI/FMUName").toString());
+  }
 }
 
 //! Saves the General section settings to omedit.ini
@@ -718,6 +721,7 @@ void OptionsDialog::saveDebuggerSettings()
 void OptionsDialog::saveFMISettings()
 {
   mpSettings->setValue("FMIExport/Version", mpFMIPage->getFMIExportVersion());
+  mpSettings->setValue("FMI/FMUName", mpFMIPage->getFMUNameTextBox()->text());
 }
 
 //! Sets up the Options Widget dialog
@@ -1435,7 +1439,7 @@ AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage)
     mpNameComboBox->addItem(key,key);
   }
 
-  mpValueLabel = new Label(tr("Version:"));
+  mpValueLabel = new Label(Helper::version);
   mpVersionTextBox = new QLineEdit("default");
   mpOkButton = new QPushButton(Helper::ok);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addSystemLibrary()));
@@ -3278,8 +3282,8 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
   mpExportGroupBox = new QGroupBox(tr("Export"));
-  // version groupbox
-  mpVersionGroupBox = new QGroupBox("Version");
+  // FMI export version
+  mpVersionLabel = new Label(Helper::version);
   mpVersion1RadioButton = new QRadioButton("1.0");
   mpVersion2RadioButton = new QRadioButton("2.0");
   mpVersion2RadioButton->setChecked(true);
@@ -3288,12 +3292,17 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pVersionLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pVersionLayout->addWidget(mpVersion1RadioButton);
   pVersionLayout->addWidget(mpVersion2RadioButton);
-  mpVersionGroupBox->setLayout(pVersionLayout);
+  // FMU name prefix
+  mpFMUNameLabel = new Label(tr("FMU Name:"));
+  mpFMUNameTextBox = new QLineEdit;
+  mpFMUNameTextBox->setPlaceholderText("<default>");
   // set the export group box layout
   QGridLayout *pExportLayout = new QGridLayout;
   pExportLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pExportLayout->setColumnStretch(0, 1);
-  pExportLayout->addWidget(mpVersionGroupBox, 0, 0);
+  pExportLayout->addWidget(mpVersionLabel, 0, 0);
+  pExportLayout->addLayout(pVersionLayout, 0, 1);
+  pExportLayout->addWidget(mpFMUNameLabel, 1, 0);
+  pExportLayout->addWidget(mpFMUNameTextBox, 1, 1);
   mpExportGroupBox->setLayout(pExportLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;

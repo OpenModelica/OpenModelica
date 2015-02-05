@@ -288,6 +288,7 @@ QString Helper::crashReport;
 QString Helper::parsingFailedJson;
 QString Helper::expandAll;
 QString Helper::collapseAll;
+QString Helper::version;
 
 void Helper::initHelperVariables()
 {
@@ -462,6 +463,7 @@ void Helper::initHelperVariables()
   Helper::parsingFailedJson = tr("Parsing of JSON file failed");
   Helper::expandAll = tr("Expand All");
   Helper::collapseAll = tr("Collapse All");
+  Helper::version = tr("Version:");
 }
 
 QString GUIMessages::getMessage(int type)
@@ -541,7 +543,7 @@ QString GUIMessages::getMessage(int type)
     case INNER_MODEL_NAME_CHANGED:
       return tr("A component with the name <b>%1</b> already exists. The name is changed from <b>%1</b> to <b>%2</b>.<br /><br />This is probably wrong because the component is declared as <b>inner</b>.");
     case FMU_GENERATED:
-      return tr("The FMU is generated at %1/%2.fmu");
+      return tr("The FMU %1.fmu is generated at %2");
     case XML_GENERATED:
       return tr("The XML is generated at %1/%2.xml");
     case FIGARO_GENERATED:

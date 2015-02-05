@@ -2280,9 +2280,10 @@ QStringList OMCProxy::getSimulationOptions(QString className, double defaultTole
   \param className - the name of the class.
   \return the created FMU location
   */
-bool OMCProxy::translateModelFMU(QString className, double version)
+bool OMCProxy::translateModelFMU(QString className, double version, QString fileNamePrefix)
 {
-  QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), QString("<default>"));
+  fileNamePrefix = fileNamePrefix.isEmpty() ? "<default>" : fileNamePrefix;
+  QString res = mpOMCInterface->translateModelFMU(className, QString::number(version), fileNamePrefix);
   if (res.compare("SimCode: The model " + className + " has been translated to FMU") == 0) {
     return true;
   } else {

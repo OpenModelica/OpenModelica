@@ -831,10 +831,12 @@ void MainWindow::exportModelFMU(LibraryTreeNode *pLibraryTreeNode)
   mpProgressBar->setRange(0, 0);
   showProgressBar();
   double version = mpOptionsDialog->getFMIPage()->getFMIExportVersion();
-  if (mpOMCProxy->translateModelFMU(pLibraryTreeNode->getNameStructure(), version)) {
+  QString FMUName = mpOptionsDialog->getFMIPage()->getFMUNameTextBox()->text();
+  if (mpOMCProxy->translateModelFMU(pLibraryTreeNode->getNameStructure(), version, FMUName)) {
     mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
-                                                    .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
-                                                    Helper::scriptingKind, Helper::notificationLevel, 0));
+                                                    .arg(FMUName.isEmpty() ? pLibraryTreeNode->getNameStructure() : FMUName)
+                                                    .arg(mpOMCProxy->changeDirectory()), Helper::scriptingKind,
+                                                    Helper::notificationLevel, 0));
   }
   // hide progress bar
   hideProgressBar();

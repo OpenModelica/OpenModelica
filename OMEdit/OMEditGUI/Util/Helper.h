@@ -290,6 +290,7 @@ public:
   static QString parsingFailedJson;
   static QString expandAll;
   static QString collapseAll;
+  static QString version;
 };
 
 class GUIMessages : public QObject
