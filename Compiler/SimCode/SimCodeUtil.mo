@@ -6368,29 +6368,29 @@ protected function createInitialEquations "author: lochel"
   output list<SimCodeVar.SimVar> otempvars := itempvars;
   output Boolean useSymbolicInitialization := false;
 protected
-      BackendDAE.EquationArray  removedEqs;
-      list<SimCodeVar.SimVar> tempvars;
-      Integer uniqueEqIndex;
+  BackendDAE.EquationArray  removedEqs;
+  list<SimCodeVar.SimVar> tempvars;
+  Integer uniqueEqIndex;
   list<SimCode.SimEqSystem> allEquations, solvedEquations, removedEquations, aliasEquations, removedInitialEquations;
-      BackendDAE.EqSystems systs;
-      BackendDAE.Shared shared;
-      BackendDAE.Variables knvars, aliasVars;
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
+  BackendDAE.Variables knvars, aliasVars;
 algorithm
   try
     SOME(BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, aliasVars=aliasVars, removedEqs=removedEqs))) := inInitDAE;
-      // generate equations from the known unfixed variables
+    // generate equations from the known unfixed variables
     ((uniqueEqIndex, allEquations)) := BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (iuniqueEqIndex, {}));
-      // generate equations from the solved systems
+    // generate equations from the solved systems
     (uniqueEqIndex, _, _, solvedEquations, _, tempvars, _, _, _) := createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, {}, {}, itempvars, 0, {}, {}, SimCode.NO_MAPPING());
     allEquations := listAppend(allEquations, solvedEquations);
-      // generate equations from the removed equations
+    // generate equations from the removed equations
     ((uniqueEqIndex, removedEquations)) := BackendEquation.traverseEquationArray(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     allEquations := listAppend(allEquations, removedEquations);
-      // generate equations from the alias variables
+    // generate equations from the alias variables
     ((uniqueEqIndex, aliasEquations)) := BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
     allEquations := listAppend(allEquations, aliasEquations);
 
-      // generate equations from removed initial equations
+    // generate equations from removed initial equations
     (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedEqnLst, uniqueEqIndex, tempvars);
 
     // output
@@ -6400,7 +6400,7 @@ algorithm
     otempvars := tempvars;
     useSymbolicInitialization := true;
   else
-      Error.addCompilerError("No system for the symbolic initialization was generated.");
+    Error.addCompilerError("No system for the symbolic initialization was generated.");
   end try;
 end createInitialEquations;
 
