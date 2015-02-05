@@ -125,7 +125,7 @@ public function isInitializationDAE
   output Boolean res;
 algorithm
   res := match(inShared)
-   case (BackendDAE.SHARED(backendDAEType=BackendDAE.INITIALSYSTEM())) then true;
+    case (BackendDAE.SHARED(backendDAEType=BackendDAE.INITIALSYSTEM())) then true;
     else false;
   end match;
 end isInitializationDAE;
