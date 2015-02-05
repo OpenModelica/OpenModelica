@@ -7614,7 +7614,6 @@ algorithm
                         (BackendDAEOptimize.simplifysemiLinear, "simplifysemiLinear", false),
                         (BackendDAEOptimize.removeConstants, "removeConstants", false),
                         (ExpressionSolve.solveSimpleEquations, "solveSimpleEquations", false),
-                        (Initialization.optimizeInitialSystem, "optimizeInitialSystem", false),
                         (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern", false),
                         (Tearing.tearingSystem, "tearingSystem", false),
                         (HpcOmEqSystems.partitionLinearTornSystem, "partlintornsystem", false),
