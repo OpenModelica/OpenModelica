@@ -228,55 +228,6 @@ QString OMCProxy::getExpression()
 }
 
 /*!
-  Writes the commands to the omeditcommunication.log file.
-  \param expression - the command to write
-  \param commandTime - the command start time
-  */
-void OMCProxy::writeCommunicationCommandLog(QString expression, QTime* commandTime)
-{
-  if (mCommunicationLogFileTextStream.device())
-  {
-    mCommunicationLogFileTextStream << expression << " " << commandTime->currentTime().toString("hh:mm:ss:zzz");
-    mCommunicationLogFileTextStream << "\n";
-    mCommunicationLogFileTextStream.flush();
-  }
-}
-
-/*!
-  Writes the command response to the omeditcommunication.log file.
-  \param commandTime - the command end time
-  */
-void OMCProxy::writeCommunicationResponseLog(QTime* commandTime)
-{
-  if (mCommunicationLogFileTextStream.device())
-  {
-    mCommunicationLogFileTextStream << getResult() << " " << commandTime->currentTime().toString("hh:mm:ss:zzz");
-    mCommunicationLogFileTextStream << "\n";
-    mCommunicationLogFileTextStream << "Elapsed Time :: " << QString::number((double)commandTime->elapsed() / 1000).append(" secs");
-    mCommunicationLogFileTextStream << "\n\n";
-    mCommunicationLogFileTextStream.flush();
-  }
-}
-
-/*!
-  Writes the commands to the omeditcommands.mos file.
-  \param expression - the command to write
-  \param commandTime - the command start time
-  */
-void OMCProxy::writeCommandsMosFile(QString expression)
-{
-  if (mCommandsLogFileTextStream.device())
-  {
-    if (expression.compare("quit()") == 0) {
-      mCommandsLogFileTextStream << expression << ";\n";
-    } else {
-      mCommandsLogFileTextStream << expression << "; getErrorString();\n";
-    }
-    mCommandsLogFileTextStream.flush();
-  }
-}
-
-/*!
   Returns the cached OMC command from the hash.
   \param className - the name of the class to search for.
   \param command - the command to search for.
@@ -421,6 +372,8 @@ bool OMCProxy::startServer()
   st = omc_Main_readSettings(threadData, mmc_mk_nil());
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData, st);
+  connect(mpOMCInterface, SIGNAL(logCommand(QString,QTime*)), this, SLOT(logCommand(QString,QTime*)));
+  connect(mpOMCInterface, SIGNAL(logResponse(QString,QTime*)), this, SLOT(logResponse(QString,QTime*)));
 
   mHasInitialized = true;
 #else
@@ -568,17 +521,14 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
       QTime commandTime;
       commandTime.start();
       QString cacheString = QString("Using the cached OMC Command :: ");
-      writeCommunicationCommandLog(QString(cacheString).append(expression), &commandTime);
-      writeCommandsMosFile(expression);
-      logOMCMessages(QString(cacheString).append(expression));
+      logCommand(QString(cacheString).append(expression), &commandTime);
       return;
     }
   }
   // write command to the commands log.
   QTime commandTime;
   commandTime.start();
-  writeCommunicationCommandLog(expression, &commandTime);
-  writeCommandsMosFile(expression);
+  logCommand(expression, &commandTime);
 #if USE_OMC_SHARED_OBJECT
   // TODO: Call this in a thread that loops over received messages? Avoid MMC_TRY_TOP all the time, etc
   void *reply_str = NULL;
@@ -595,9 +545,7 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
     exitApplication();
   }
   mResult = MMC_STRINGDATA(reply_str);
-
-  writeCommunicationResponseLog(&commandTime);
-  logOMCMessages(expression);
+  logResponse(mResult.trimmed(), &commandTime);
 
   // cache the OMC command
   if (cacheCommand) {
@@ -689,33 +637,79 @@ QString OMCProxy::getResult()
 }
 
 /*!
-  Writes OMC messages in OMC Logger window.
+  Writes OMC command in OMC Logger window.
+  Writes the command to the omeditcommunication.log file.
+  Writes the command to the omeditcommands.mos file.
+  \param command - the command to write
+  \param commandTime - the command start time
   */
-void OMCProxy::logOMCMessages(QString expression)
+void OMCProxy::logCommand(QString command, QTime *commandTime)
 {
   // move the cursor down before adding to the logger.
   QTextCursor textCursor = mpOMCLoggerTextBox->textCursor();
   textCursor.movePosition(QTextCursor::End);
   mpOMCLoggerTextBox->setTextCursor(textCursor);
   // add the expression to commands list
-  mCommandsList.append(expression);
+  mCommandsList.append(command);
   // log expression
   QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
   QTextCharFormat charFormat = mpOMCLoggerTextBox->currentCharFormat();
   charFormat.setFont(font);
   mpOMCLoggerTextBox->setCurrentCharFormat(charFormat);
-  mpOMCLoggerTextBox->insertPlainText(expression + "\n");
-  // log result
-  font = QFont(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
-  charFormat.setFont(font);
-  mpOMCLoggerTextBox->setCurrentCharFormat(charFormat);
-  mpOMCLoggerTextBox->insertPlainText(getResult() + "\n\n");
+  mpOMCLoggerTextBox->insertPlainText(command + "\n");
   // move the cursor
   textCursor.movePosition(QTextCursor::End);
   mpOMCLoggerTextBox->setTextCursor(textCursor);
   // set the current command index.
   mCurrentCommandIndex = mCommandsList.count();
   mpExpressionTextBox->setText("");
+  // write the log to communication log file
+  if (mCommunicationLogFileTextStream.device()) {
+    mCommunicationLogFileTextStream << command << " " << commandTime->currentTime().toString("hh:mm:ss:zzz");
+    mCommunicationLogFileTextStream << "\n";
+    mCommunicationLogFileTextStream.flush();
+  }
+  // write commands mos file
+  if (mCommandsLogFileTextStream.device()) {
+    if (command.compare("quit()") == 0) {
+      mCommandsLogFileTextStream << command << ";\n";
+    } else {
+      mCommandsLogFileTextStream << command << "; getErrorString();\n";
+    }
+    mCommandsLogFileTextStream.flush();
+  }
+}
+
+/*!
+  Writes OMC response in OMC Logger window.
+  Writes the response to the omeditcommunication.log file.
+  Writes the response to the omeditcommands.mos file.
+  \param response - the response to write
+  \param commandTime - the command start time
+  */
+void OMCProxy::logResponse(QString response, QTime *responseTime)
+{
+  // move the cursor down before adding to the logger.
+  QTextCursor textCursor = mpOMCLoggerTextBox->textCursor();
+  textCursor.movePosition(QTextCursor::End);
+  mpOMCLoggerTextBox->setTextCursor(textCursor);
+  // log expression
+  QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
+  QTextCharFormat charFormat = mpOMCLoggerTextBox->currentCharFormat();
+  charFormat.setFont(font);
+  mpOMCLoggerTextBox->setCurrentCharFormat(charFormat);
+  mpOMCLoggerTextBox->insertPlainText(response + "\n\n");
+  // move the cursor
+  textCursor.movePosition(QTextCursor::End);
+  mpOMCLoggerTextBox->setTextCursor(textCursor);
+  // write the log to communication log file
+  if (mCommunicationLogFileTextStream.device()) {
+    mCommunicationLogFileTextStream << response << " " << responseTime->currentTime().toString("hh:mm:ss:zzz");
+    mCommunicationLogFileTextStream << "\n";
+    mCommunicationLogFileTextStream << "Elapsed Time :: " << QString::number((double)responseTime->elapsed() / 1000).append(" secs");
+    mCommunicationLogFileTextStream << "\n\n";
+    mCommunicationLogFileTextStream.flush();
+  }
 }
 
 /*!
@@ -927,11 +921,9 @@ int OMCProxy::getErrorId()
   Gets the OMC version. On Linux it also return the revision number as well.
   \return the version
   */
-QString OMCProxy::getVersion()
+QString OMCProxy::getVersion(QString className)
 {
-  //return mpOMCInterface->getVersion("OpenModelica");
-  sendCommand("getVersion()");
-  return StringHandler::unparse(getResult());
+  return mpOMCInterface->getVersion(className);
 }
 
 /*!

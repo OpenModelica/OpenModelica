@@ -98,9 +98,6 @@ public:
   void getNextCommand();
   void setExpression(QString expression);
   QString getExpression();
-  void writeCommunicationCommandLog(QString expression, QTime* commandTime);
-  void writeCommunicationResponseLog(QTime* commandTime);
-  void writeCommandsMosFile(QString expression);
   cachedOMCCommand getcachedOMCCommand(QString className, QString command);
   void cacheOMCCommand(QString className, QString command, QString commandResult);
   void removeCachedOMCCommand(QString className);
@@ -109,7 +106,6 @@ public:
   void sendCommand(const QString expression, bool cacheCommand = false, QString className = QString(), bool dontUseCachedCommand = false);
   void setResult(QString value);
   QString getResult();
-  void logOMCMessages(QString expression);
   void exitApplication();
   void removeObjectRefFile();
   QString getErrorString();
@@ -126,7 +122,7 @@ public:
   QString getErrorKind();
   QString getErrorLevel();
   int getErrorId();
-  QString getVersion();
+  QString getVersion(QString className = QString("OpenModelica"));
   QString getAnnotationVersion();
   bool setEnvironmentVar(QString name, QString value);
   QString getEnvironmentVar(QString name);
@@ -237,6 +233,8 @@ public slots:
 #if !USE_OMC_SHARED_OBJECT
   void sendCommand();
 #endif
+  void logCommand(QString command, QTime *commandTime);
+  void logResponse(QString response, QTime *responseTime);
   void openOMCLoggerWidget();
   void sendCustomExpression();
 };
