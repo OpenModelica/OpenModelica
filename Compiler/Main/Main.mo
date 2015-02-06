@@ -105,7 +105,6 @@ algorithm
           Debug.trace(str);
           Debug.trace("------- End recieved Data-----\n");
         end if;
-        Print.clearBuf();
         (b,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
         replystr = if b then replystr else "quit requested, shutting server down\n";
         Socket.sendreply(shandle, replystr);
@@ -181,6 +180,8 @@ public function handleCommand
   output GlobalScript.SymbolTable outSymbolTable;
 protected
 algorithm
+  Print.clearBuf();
+
   (outContinue, outResult, outSymbolTable) :=
   matchcontinue(inCommand, inSymbolTable)
     local
@@ -197,9 +198,6 @@ algorithm
 
     else
       equation
-        if Flags.isSet(Flags.DUMP) or Flags.isSet(Flags.DUMP_GRAPHVIZ) then
-          Print.clearBuf();
-        end if;
         (stmts, prog) = parseCommand(inCommand);
         (result, st) = handleCommand2(stmts, prog, inCommand, inSymbolTable);
         result = makeDebugResult(Flags.DUMP, result);
@@ -208,6 +206,7 @@ algorithm
         (true, result, st);
 
   end matchcontinue;
+
 end handleCommand;
 
 protected function handleCommand2

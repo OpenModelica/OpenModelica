@@ -24,7 +24,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release qtclients mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall CMinpack Cdaskr boehm-gc
+.PHONY : interactive omc release mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall CMinpack Cdaskr boehm-gc qtclients omshell omnotebook omedit omvisualize omoptim omoptimbasis 
 
 mkbuilddirs:
 	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -307,6 +307,7 @@ include Makefile.libraries
 
 cleancompiler:
 	cd Compiler/boot && rm -rf ./build
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/Script clean 
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)

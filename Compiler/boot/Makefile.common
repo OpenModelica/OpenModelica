@@ -8,7 +8,7 @@ all:
 endif
 
 generate-files-in-steps:
-	$(MAKE) -f $(defaultMakefileTarget) -s templates scripting
+	$(MAKE) -f $(defaultMakefileTarget) templates scripting
 	$(MAKE) -f $(defaultMakefileTarget) Makefile.sources
 	$(MAKE) -f $(defaultMakefileTarget) interfaces INCLUDESOURCES=1
 	$(MAKE) -f $(defaultMakefileTarget) Makefile.depends INCLUDESOURCES=1

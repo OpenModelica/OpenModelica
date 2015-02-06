@@ -7,7 +7,7 @@ include $(srcdir)/Makefile.common
 
 all : .testvariables .depend runtime parser
 
-SUBDIRS	= runtime parser
+SUBDIRS	= runtime parser Script
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
 .SUFFIXES: .o .mo .h .c
@@ -25,7 +25,7 @@ parser: $(SRCHSRCDIR)
 	$(MAKE) -C ../../Parser/ -f $(MAKETARGET)
 
 clean:
-	for d in ../runtime/ ../../Parser/; do \
+	for d in ../runtime/ ../../Parser/ Scripts; do \
 		(cd $$d && $(MAKE) -f $(MAKETARGET) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))
