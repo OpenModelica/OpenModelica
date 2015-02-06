@@ -691,7 +691,7 @@ QStringList StringHandler::getStrings(QString value, char start, char end)
   QStringList list;
   bool mask = false;
   bool inString = false;
-  char StringEnd;
+  char StringEnd = '\0';
   int begin = 0;
   int ele = 0;
 
