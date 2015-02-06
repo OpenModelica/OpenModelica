@@ -789,7 +789,7 @@ algorithm
     case (NFSCodeEnv.CLASS(cls=SCode.CLASS( info = info)), _)
       equation
         (item, env) = NFSCodeLookup.lookupRedeclaredClassByItem(inItem, inEnv, info);
-        markItemAsUsed(item, env);
+        analyseItem(item, env);
       then
         ();
 
