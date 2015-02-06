@@ -1740,6 +1740,7 @@ package DAE
 
     record T_TUPLE
       list<Type> types "For functions returning multiple values.";
+      Option<list<String>> names "For tuples elements that have names (function outputs)";
       TypeSource source;
     end T_TUPLE;
 

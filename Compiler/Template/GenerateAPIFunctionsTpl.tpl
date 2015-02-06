@@ -165,6 +165,20 @@ template getQtType(DAE.Type ty)
     else error(sourceInfo(), 'getQtType failed for <%unparseType(ty)%>')
 end getQtType;
 
+template getQtTupleTypeOutputNameHelper(Option<list<String>> names, Integer index)
+::=
+  match names
+    case SOME(lst) then listGet(lst, index)
+    else 'res<%index%>'
+end getQtTupleTypeOutputNameHelper;
+
+template getQtTupleTypeOutputName(DAE.Type ty, Integer index)
+::=
+  match ty
+    case T_TUPLE(__) then getQtTupleTypeOutputNameHelper(names, index)
+    else 'res<%index%>'
+end getQtTupleTypeOutputName;
+
 template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args, DAE.Type res, String className, Boolean addStructs)
 ::=
   let inTypes = args |> arg as FUNCARG(__) => '<%getQtType(arg.ty)%> <%arg.name%>' ; separator=", "
@@ -173,7 +187,7 @@ template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args
       if addStructs then
       <<
       typedef struct {
-        <%types |> ty hasindex i fromindex 1 => '<%getQtType(ty)%> res<%i%>;' ; separator="\n" %>
+        <%types |> ty hasindex i fromindex 1 => '<%getQtType(ty)%> <%getQtTupleTypeOutputName(res, i)%>;' ; separator="\n" %>
       } <%name%>_res;
       <%name%>_res
       >>
@@ -275,7 +289,7 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
     case T_NORETCALL(__) then ""
     case t as T_TUPLE(__) then
       let &varDecl += '<%name%>_res result;<%\n%>'
-      (types |> t hasindex i1 fromindex 1 => ', <%getQtOutArg('result.res<%i1%>', 'out<%i1%>', t, varDecl, postCall)%>')
+      (types |> t hasindex i1 fromindex 1 => ', <%getQtOutArg('result.<%getQtTupleTypeOutputName(res, i1)%>', 'out<%i1%>', t, varDecl, postCall)%>')
     else
       let &varDecl += '<%getQtType(res)%> result;<%\n%>'
       ', <%getQtOutArg('result', 'result', res, varDecl, postCall)%>'
