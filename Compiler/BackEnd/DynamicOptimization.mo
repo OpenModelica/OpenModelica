@@ -92,7 +92,7 @@ algorithm
                         else (NONE(), NONE(),NONE(),NONE());
                         end match;
 
-    inVarsAndknvars := BackendVariable.addVariables(inVars, knvars);
+    inVarsAndknvars := BackendVariable.addVariables(inVars, BackendVariable.copyVariables(knvars));
     varlst := BackendVariable.varList(inVarsAndknvars);
     (v, e, mayer) := joinObjectFun(makeObject("$OMC$objectMayerTerm", findMayerTerm, varlst, mayer), inVars, inEqns);
     (v, e, lagrange) := joinObjectFun(makeObject("$OMC$objectLagrangeTerm", findLagrangeTerm, varlst, lagrange), v, e);
