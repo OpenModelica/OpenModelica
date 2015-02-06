@@ -450,7 +450,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   /* open the .mat file */
   ModelicaMatReader matReader;
   matReader.file = 0;
-  matReader.fileName = "";
+  matReader.fileName = strdup("");
   const char *msg[] = {""};
   if (fileName.endsWith(".mat"))
   {
@@ -491,7 +491,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         findVariable = parentVariable.isEmpty() ? fileName + ".der(" + variable + ")" : fileName + "." + parentVariable + ".der(" + variable + ")";
       else
         findVariable = parentVariable.isEmpty() ? fileName + "." + variable : fileName + "." + parentVariable + "." + variable;
-      if (pParentVariablesTreeItem = findVariablesTreeItem(findVariable, pParentVariablesTreeItem))
+      if ((pParentVariablesTreeItem = findVariablesTreeItem(findVariable, pParentVariablesTreeItem)) != NULL)
       {
         if (count == 1)
           parentVariable = variable;
@@ -607,7 +607,7 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
     /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */
     else
     {
-      if (pMatReader->file && pMatReader->fileName != "")
+      if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, ""))
       {
         *value = "";
         if (variableToFind.compare("time") == 0)
@@ -633,7 +633,7 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
     *displayUnit = hash["displayUnit"];
     *description = hash["description"];
   }
-  else if ((variableToFind.compare("time") == 0) && pMatReader->file && pMatReader->fileName != "")
+  else if ((variableToFind.compare("time") == 0) && (pMatReader->file != NULL) && strcmp(pMatReader->fileName, ""))
   {
     *value = QString::number(omc_matlab4_stopTime(pMatReader));
   }

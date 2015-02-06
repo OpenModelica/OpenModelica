@@ -206,7 +206,7 @@ QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelInd
   /* Only calculate the height of the item based on the text for SimulationOutputTree items. Fix for multi line messages. */
   if (mDrawRichText && parent() && qobject_cast<SimulationOutputTree*>(parent())) {
     SimulationOutputTree *pSimulationOutputTree = qobject_cast<SimulationOutputTree*>(parent());
-    int width;
+    int width = 0;
     if (pSimulationOutputTree) {
       width = pSimulationOutputTree->columnWidth(index.column()) - (pSimulationOutputTree->indentation() * pSimulationOutputTree->getDepth(index));
     }
