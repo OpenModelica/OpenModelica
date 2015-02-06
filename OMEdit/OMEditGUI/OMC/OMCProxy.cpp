@@ -1642,11 +1642,10 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
   \param fileName - the file to load.
   \return true on success
   */
-bool OMCProxy::loadFile(QString fileName, QString encoding)
+bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses)
 {
   fileName = fileName.replace('\\', '/');
-  sendCommand("loadFile(\"" + fileName + "\",\"" + encoding + "\")");
-  bool result = StringHandler::unparseBool(getResult());
+  bool result = mpOMCInterface->loadFile(fileName, encoding, uses);
   printMessagesStringInternal();
   return result;
 }
@@ -1656,10 +1655,9 @@ bool OMCProxy::loadFile(QString fileName, QString encoding)
   \param value - the string to load.
   \return true on success
   */
-bool OMCProxy::loadString(QString value, QString fileName, bool checkError)
+bool OMCProxy::loadString(QString value, QString fileName, QString encoding, bool checkError)
 {
-  sendCommand("loadString(\"" + value.replace("\"", "\\\"") + "\", \"" + fileName + "\")");
-  bool result = StringHandler::unparseBool(getResult());
+  bool result = mpOMCInterface->loadString(value.replace("\"", "\\\""), fileName, encoding);
   if (checkError) {
     printMessagesStringInternal();
   }
@@ -1711,7 +1709,7 @@ bool OMCProxy::createClass(QString type, QString className, QString extendsClass
   } else {
     expression = type + " " + className + " extends " + extendsClass + "; end " + className + ";";
   }
-  return loadString(StringHandler::escapeString(expression), className, false);
+  return loadString(StringHandler::escapeString(expression), className, Helper::utf8, false);
 }
 
 /*!
@@ -1729,7 +1727,7 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
   } else {
     expression = "within " + parentClassName + "; " + type + " " + className + " extends " + extendsClass + "; end " + className + ";";
   }
-  return loadString(StringHandler::escapeString(expression), parentClassName + "." + className, false);
+  return loadString(StringHandler::escapeString(expression), parentClassName + "." + className, Helper::utf8, false);
 }
 
 /*!

@@ -161,8 +161,8 @@ public:
   QString changeDirectory(QString directory = QString(""));
   bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = false, QString languageStandard = QString(""),
                  bool requireExactVersion = false);
-  bool loadFile(QString fileName, QString encoding = Helper::utf8);
-  bool loadString(QString value, QString fileName, bool checkError = true);
+  bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true);
+  bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool checkError = true);
   bool parseFile(QString fileName, QString encoding = Helper::utf8);
   QStringList parseString(QString value, QString fileName);
   bool createClass(QString type, QString className, QString extendsClass);
