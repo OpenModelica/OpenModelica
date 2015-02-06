@@ -1552,22 +1552,21 @@ QStringList OMCProxy::getComponentAnnotations(QString className)
   */
 QString OMCProxy::getDocumentationAnnotation(QString className)
 {
-  QString expression = "getDocumentationAnnotation(" + className + ")";
-  sendCommand(expression, true, className);
-  QStringList docsList = StringHandler::unparseStrings(getResult());
+  QList<QString> docsList = mpOMCInterface->getDocumentationAnnotation(className);
   // get the class comment and show it as the first line on the documentation page.
   QString doc = getClassComment(className);
   if (!doc.isEmpty()) doc.prepend("<h4>").append("</h4>");
   doc.prepend(QString("<h2>").append(className).append("</h2>"));
-  for (int ele = 0 ; ele < docsList.size() ; ele++)
-  {
+  for (int ele = 0 ; ele < docsList.size() ; ele++) {
     QString docElement = docsList[ele];
-    if (docElement.isEmpty())
+    if (docElement.isEmpty()) {
       continue;
-    if (ele == 0)         // info section
+    }
+    if (ele == 0) {         // info section
       doc += "<p style=\"font-size:12px;\"><strong><u>Information</u></strong></p>";
-    else if (ele == 1)    // revisions section
+    } else if (ele == 1) {    // revisions section
       doc += "<p style=\"font-size:12px;\"><strong><u>Revisions</u></strong></p>";
+    }
     int i,j;
     /*
      * Documentation may have the form
@@ -1610,8 +1609,7 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
   */
 QString OMCProxy::getClassComment(QString className)
 {
-  sendCommand("getClassComment(" + className + ")", true, className);
-  return StringHandler::unparse(getResult());
+  return mpOMCInterface->getClassComment(className);
 }
 
 /*!
@@ -1621,18 +1619,7 @@ QString OMCProxy::getClassComment(QString className)
   */
 QString OMCProxy::changeDirectory(QString directory)
 {
-  if (directory.isEmpty())
-  {
-    sendCommand("cd()");
-  }
-  else
-  {
-    directory = directory.replace("\\", "/");
-    sendCommand("cd(\"" + directory + "\")");
-  }
-  QString result = StringHandler::unparse(getResult());
-  printMessagesStringInternal();
-  return result;
+  return mpOMCInterface->cd(directory);
 }
 
 /*!
@@ -1641,10 +1628,11 @@ QString OMCProxy::changeDirectory(QString directory)
   \param version -  the version of the library.
   \return true on success
   */
-bool OMCProxy::loadModel(QString library, QString version)
+bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify, QString languageStandard, bool requireExactVersion)
 {
-  sendCommand("loadModel(" + library + ",{\"" + version + "\"})");
-  bool result = StringHandler::unparseBool(getResult());
+  QList<QString> priorityVersionList;
+  priorityVersionList << priorityVersion;
+  bool result = mpOMCInterface->loadModel(className, priorityVersionList, notify, languageStandard, requireExactVersion);
   printMessagesStringInternal();
   return result;
 }

@@ -158,8 +158,9 @@ public:
   QStringList getComponentAnnotations(QString className);
   QString getDocumentationAnnotation(QString className);
   QString getClassComment(QString className);
-  QString changeDirectory(QString directory = QString());
-  bool loadModel(QString library, QString version = QString("default"));
+  QString changeDirectory(QString directory = QString(""));
+  bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = false, QString languageStandard = QString(""),
+                 bool requireExactVersion = false);
   bool loadFile(QString fileName, QString encoding = Helper::utf8);
   bool loadString(QString value, QString fileName, bool checkError = true);
   bool parseFile(QString fileName, QString encoding = Helper::utf8);
