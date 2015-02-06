@@ -1,7 +1,12 @@
 all: OpenModelicaScriptingAPI.mo OpenModelicaScriptingAPIQt.cpp OpenModelicaScriptingAPIQt.h
 
-OpenModelicaScriptingAPIQt.cpp OpenModelicaScriptingAPIQt.h OpenModelicaScriptingAPI.mo: OpenModelicaScriptingAPI.mos ../FrontEnd/ModelicaBuiltin.mo
-	- $(OMC) $<
+OpenModelicaScriptingAPI.mo: OpenModelicaScriptingAPI.mos ../FrontEnd/ModelicaBuiltin.mo
+	$(OMC) $<
+	test -f OpenModelicaScriptingAPI.mo
+	test -f OpenModelicaScriptingAPIQt.cpp
+	test -f OpenModelicaScriptingAPIQt.h
+OpenModelicaScriptingAPIQt.cpp: OpenModelicaScriptingAPI.mo
+OpenModelicaScriptingAPIQt.h: OpenModelicaScriptingAPIQt.cpp
 
 clean:
 	rm -f OpenModelicaScriptingAPIQt.cpp OpenModelicaScriptingAPIQt.h OpenModelicaScriptingAPI.mo

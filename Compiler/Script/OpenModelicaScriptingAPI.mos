@@ -6,6 +6,8 @@ if bool then
   bool := loadFile("OpenModelicaScriptingAPI.tmp.mo");
   if bool then
     bool := 0 == system("mv OpenModelicaScriptingAPI.tmp.mo OpenModelicaScriptingAPI.mo");
+  else
+    exit(1);
   end if;
   writeFile("OpenModelicaScriptingAPIQt.cpp", b);
   writeFile("OpenModelicaScriptingAPIQt.h", c);
