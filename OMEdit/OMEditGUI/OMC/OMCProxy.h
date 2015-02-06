@@ -108,7 +108,7 @@ public:
   QString getResult();
   void exitApplication();
   void removeObjectRefFile();
-  QString getErrorString();
+  QString getErrorString(bool warningsAsErrors = false);
   bool printMessagesStringInternal();
   int getMessagesStringInternal();
   void setCurrentError(int errorIndex);

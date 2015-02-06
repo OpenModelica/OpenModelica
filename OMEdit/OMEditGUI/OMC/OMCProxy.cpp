@@ -761,10 +761,9 @@ void OMCProxy::exitApplication()
   \return the error string.
   \deprecated Use printMessagesStringInternal(). Now used where we want to consume the error message without showing it to user.
   */
-QString OMCProxy::getErrorString()
+QString OMCProxy::getErrorString(bool warningsAsErrors)
 {
-  sendCommand("getErrorString()");
-  return StringHandler::unparse(getResult());
+  return mpOMCInterface->getErrorString(warningsAsErrors);
 }
 
 /*!
@@ -1080,23 +1079,23 @@ QVariantMap OMCProxy::getClassInformation(QString className)
 #else
   OMCInterface::getClassInformation_res classInformation = mpOMCInterface->getClassInformation(className);
   QVariantMap res;
-  res["restriction"] = classInformation.res1;
-  res["comment"] = classInformation.res2;
-  res["partialPrefix"] = classInformation.res3;
-  res["finalPrefix"] = classInformation.res4;
-  res["encapsulatedPrefix"] = classInformation.res5;
+  res["restriction"] = classInformation.restriction;
+  res["comment"] = classInformation.comment;
+  res["partialPrefix"] = classInformation.partialPrefix;
+  res["finalPrefix"] = classInformation.finalPrefix;
+  res["encapsulatedPrefix"] = classInformation.encapsulatedPrefix;
   /*
     Since now we set the fileName via loadString() & parseString() so this API might return us className/<interactive>.
     We only set the fileName field if returned value is really a file path.
     */
-  res["fileName"] = classInformation.res6.endsWith(".mo") ? classInformation.res6 : "";
-  res["fileReadOnly"] = classInformation.res7;
-  res["lineNumberStart"] = (long long) classInformation.res8;
-  res["columnNumberStart"] = (long long) classInformation.res9;
-  res["lineNumberEnd"] = (long long) classInformation.res10;
-  res["columnNumberEnd"] = (long long) classInformation.res11;
+  res["fileName"] = classInformation.fileName.endsWith(".mo") ? classInformation.fileName : "";
+  res["fileReadOnly"] = classInformation.fileReadOnly;
+  res["lineNumberStart"] = (long long) classInformation.lineNumberStart;
+  res["columnNumberStart"] = (long long) classInformation.columnNumberStart;
+  res["lineNumberEnd"] = (long long) classInformation.lineNumberEnd;
+  res["columnNumberEnd"] = (long long) classInformation.columnNumberEnd;
   res["dimensions"] = "";
-  //res["dimensions"] = classInformation.res12;
+  //res["dimensions"] = classInformation.dimensions;
   return res;
 #endif
 }
@@ -1108,15 +1107,7 @@ QVariantMap OMCProxy::getClassInformation(QString className)
   */
 bool OMCProxy::isPackage(QString className)
 {
-  sendCommand("isPackage(" + className + ")", true, className);
-  if (getResult().contains("true"))
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  return mpOMCInterface->isPackage(className);
 }
 
 /*!
@@ -1136,8 +1127,7 @@ bool OMCProxy::isBuiltinType(QString typeName)
   */
 QString OMCProxy::getBuiltinType(QString typeName)
 {
-  sendCommand("getBuiltinType(" + typeName + ")");
-  QString result = StringHandler::unparse(getResult());
+  QString result = mpOMCInterface->getBuiltinType(typeName);
   getErrorString();
   return result;
 }
@@ -1150,11 +1140,9 @@ QString OMCProxy::getBuiltinType(QString typeName)
   */
 bool OMCProxy::isWhat(StringHandler::ModelicaClasses type, QString className)
 {
-  switch (type)
-  {
+  switch (type) {
     case StringHandler::Model:
-      sendCommand("isModel(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isModel(className);
     case StringHandler::Class:
       sendCommand("isClass(" + className + ")", true, className);
       break;
@@ -1177,14 +1165,11 @@ bool OMCProxy::isWhat(StringHandler::ModelicaClasses type, QString className)
       sendCommand("isType(" + className + ")", true, className);
       break;
     case StringHandler::Operator:
-      sendCommand("isOperator(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isOperator(className);
     case StringHandler::OperatorRecord:
-      sendCommand("isOperatorRecord(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isOperatorRecord(className);
     case StringHandler::OperatorFunction:
-      sendCommand("isOperatorFunction(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isOperatorFunction(className);
     case StringHandler::Optimization:
       sendCommand("isOptimization(" + className + ")", true, className);
       break;
@@ -1217,8 +1202,7 @@ bool OMCProxy::isProtected(QString parameter, QString className)
   */
 bool OMCProxy::isProtectedClass(QString className, QString nestedClassName)
 {
-  sendCommand("isProtectedClass(" + className + ",\"" + nestedClassName + "\")", true, className);
-  return StringHandler::unparseBool(getResult());
+  return mpOMCInterface->isProtectedClass(className, nestedClassName);
 }
 
 /*!
@@ -1228,8 +1212,7 @@ bool OMCProxy::isProtectedClass(QString className, QString nestedClassName)
   */
 bool OMCProxy::isPartial(QString className)
 {
-  sendCommand("isPartial(" + className + ")", true, className);
-  return StringHandler::unparseBool(getResult());
+  return mpOMCInterface->isPartial(className);
 }
 
 /*!
