@@ -22,6 +22,6 @@ typedef boost::error_info<struct tag_error_code,SIMULATION_ERROR> error_id;
 typedef boost::error_info<struct tag_error_message,string> error_message;
 //Exception class for all exceptions that can occur
 struct ModelicaSimulationError: virtual boost::exception, virtual std::exception
-{ 
-	virtual ~ModelicaSimulationError() throw() {};
+{
+  virtual ~ModelicaSimulationError() throw() {};
 };
