@@ -304,6 +304,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   assert(xml->nEquations == userData.curIndex);
   xml->nProfileBlocks = measure_time_flag & 1 ? userData.curProfileIndex : measure_time_flag & 2 ? xml->nEquations : 0; /* Set the number of profile blocks to the number we read */
   assert(xml->nFunctions == userData.curFunctionIndex);
+  XML_ParserFree(parser);
 }
 
 EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix)
