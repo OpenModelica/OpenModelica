@@ -135,7 +135,7 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
 ::=
   let heads = tys |> ty as T_FUNCTION(source=path::_) => '<%getQtInterfaceHeader(pathLastIdent(path), "", ty.funcArg, ty.funcResultType, className, true)%>;<%\n%>'
   <<
-  #include <Qt/QtCore>
+  #include <QtCore>
   #include "OpenModelicaScriptingAPI.h"
 
   class <%className%> : public QObject
