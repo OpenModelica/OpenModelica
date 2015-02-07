@@ -1260,7 +1260,7 @@ algorithm
 
         // Differentiate the System w.r.t states&inputs for matrices B
 
-        optimizer_vars = BackendVariable.mergeVariables(statesarr, conVars);
+        optimizer_vars = BackendVariable.addVariables(statesarr, BackendVariable.copyVariables(conVars));
         object = checkObjectIsSet(outputvarsarr,"$OMC$objectLagrangeTerm");
         optimizer_vars = BackendVariable.addVars(object, optimizer_vars);
         //BackendDump.printVariables(optimizer_vars);
