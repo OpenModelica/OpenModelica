@@ -934,7 +934,7 @@ protected function selectSecondaryParameters
   input array<Integer> inSecondaryParams;
   output array<Integer> outSecondaryParams;
 algorithm
-  outSecondaryParams := matchcontinue(inOrdering)
+  outSecondaryParams := match inOrdering
     local
       Integer i;
       array<Integer> secondaryParams;
@@ -947,25 +947,13 @@ algorithm
     // fixed=false
     case i::rest equation
       param = BackendVariable.getVarAt(inParameters, i);
-      false = BackendVariable.varFixed(param);
-
-      secondaryParams = List.fold(inM[i], markIndex, inSecondaryParams);
+      secondaryParams = if (not BackendVariable.varFixed(param)) or 1 == inSecondaryParams[i]
+        then List.fold(inM[i], markIndex, inSecondaryParams)
+        else inSecondaryParams;
       secondaryParams = selectSecondaryParameters(rest, inParameters, inM, secondaryParams);
     then secondaryParams;
 
-    // fixed=true, but dependent
-    case i::rest equation
-      1 = inSecondaryParams[i];
-
-      secondaryParams = List.fold(inM[i], markIndex, inSecondaryParams);
-      secondaryParams = selectSecondaryParameters(rest, inParameters, inM, secondaryParams);
-    then secondaryParams;
-
-    // primary
-    case i::rest equation
-      secondaryParams = selectSecondaryParameters(rest, inParameters, inM, inSecondaryParams);
-    then secondaryParams;
-  end matchcontinue;
+  end match;
 end selectSecondaryParameters;
 
 protected function flattenParamComp
