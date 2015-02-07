@@ -1604,7 +1604,7 @@ algorithm
       ((uniqueEqIndex, minValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, maxValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
-      (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, primaryParameters);
+      (uniqueEqIndex, parameterEquations) = createParameterEquations(uniqueEqIndex, parameterEquations, primaryParameters);
 
       ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
       discreteModelVars = BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
@@ -6653,21 +6653,18 @@ algorithm
 end makeSolved_SES_SIMPLE_ASSIGN_fromStartValue;
 
 protected function createParameterEquations
-  input BackendDAE.Shared inShared;
   input Integer inUniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
   input list<BackendDAE.Var> inPrimaryParameters "already sorted";
   output Integer outUniqueEqIndex := inUniqueEqIndex;
   output list<SimCode.SimEqSystem> outParameterEquations := {};
 protected
-  BackendDAE.Variables knvars;
   list<SimCode.SimEqSystem> simvarasserts;
-  list<DAE.Algorithm> varasserts;
+  list<DAE.Algorithm> varasserts := {};
+  list<DAE.Algorithm> varasserts2;
   BackendDAE.Var p;
   SimCode.SimEqSystem simEq;
 algorithm
-  BackendDAE.SHARED(knownVars=knvars) := inShared;
-
   if Flags.isSet(Flags.PARAM_DLOW_DUMP) then
     BackendDump.dumpVarList(inPrimaryParameters, "parameters in order");
   end if;
@@ -6675,11 +6672,14 @@ algorithm
   for p in inPrimaryParameters loop
     (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
     outParameterEquations := simEq::outParameterEquations;
+
+    // get min/max and nominal asserts
+    varasserts2 := createVarAsserts(p);
+    varasserts := listAppend(varasserts, varasserts2);
   end for;
   outParameterEquations := listReverse(outParameterEquations);
 
-  // get minmax and nominal asserts
-  varasserts := BackendVariable.traverseBackendDAEVars(knvars, createVarAsserts, {});
+  // get min/max and nominal asserts
   (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
 
   outParameterEquations := listAppend(outParameterEquations, simvarasserts);
@@ -6801,21 +6801,10 @@ end createInitialAssignmentsFromMax;
 
 protected function createVarAsserts
   input BackendDAE.Var inVar;
-  input list<DAE.Algorithm> inAlgs;
-  output BackendDAE.Var outVar;
   output list<DAE.Algorithm> outAlgs;
 algorithm
-  (outVar, outAlgs) := matchcontinue(inVar)
-    local
-      list<DAE.Algorithm> asserts1, asserts2;
-
-    case BackendDAE.VAR() equation
-      (_, asserts1) = createVarMinMaxAssert(inVar, inAlgs);
-      (_, asserts2) = createVarNominalAssert(inVar, asserts1);
-    then (inVar, asserts2);
-
-    else (inVar,inAlgs);
-  end matchcontinue;
+  (_, outAlgs) := createVarMinMaxAssert(inVar, {});
+  (_, outAlgs) := createVarNominalAssert(inVar, outAlgs);
 end createVarAsserts;
 
 protected function createVarNominalAssert
