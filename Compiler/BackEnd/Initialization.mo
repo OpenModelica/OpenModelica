@@ -962,7 +962,9 @@ algorithm
     then secondaryParams;
 
     // primary
-    else inSecondaryParams;
+    case i::rest equation
+      secondaryParams = selectSecondaryParameters(rest, inParameters, inM, inSecondaryParams);
+    then secondaryParams;
   end matchcontinue;
 end selectSecondaryParameters;
 
