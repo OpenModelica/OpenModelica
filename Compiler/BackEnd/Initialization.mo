@@ -84,6 +84,7 @@ public function solveInitialSystem "author: lochel
   output Boolean outUseHomotopy;
   output list<BackendDAE.Equation> outRemovedInitialEquations;
   output list<BackendDAE.Var> outPrimaryParameters "already sorted";
+  output list<BackendDAE.Var> outAllPrimaryParameters "already sorted";
 protected
   BackendDAE.BackendDAE dae;
   BackendDAE.Variables initVars;
@@ -114,7 +115,7 @@ algorithm
     dae := inlineWhenForInitialization(inDAE);
     // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae, "inlineWhenForInitialization");
 
-    (initVars, outPrimaryParameters) := selectInitializationVariablesDAE(dae);
+    (initVars, outPrimaryParameters, outAllPrimaryParameters) := selectInitializationVariablesDAE(dae);
     // fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVariables, initVars, "selected initialization variables");
     hs := collectPreVariables(dae);
     BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars,
@@ -262,6 +263,7 @@ algorithm
     outUseHomotopy := false;
     outRemovedInitialEquations := {};
     outPrimaryParameters := {};
+    outAllPrimaryParameters := {};
   end try;
 end solveInitialSystem;
 
@@ -839,6 +841,7 @@ protected function selectInitializationVariablesDAE "author: lochel
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.Variables outVars;
   output list<BackendDAE.Var> outPrimaryParameters := {};
+  output list<BackendDAE.Var> outAllPrimaryParameters := {};
 protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Variables knownVars, alias, allParameters;
@@ -875,7 +878,7 @@ algorithm
     // BackendDump.dumpIncidenceMatrix(m);
     // BackendDump.dumpIncidenceMatrix(mT);
 
-    // match the system (nVars+nAddVars == nEqns+nAddEqs)
+    // match the system
     ass1 := arrayCreate(nParam, -1);
     ass2 := arrayCreate(nParam, -1);
     Matching.matchingExternalsetIncidenceMatrix(nParam, nParam, m);
@@ -905,6 +908,7 @@ algorithm
       if 1 == secondary[j] then
         outVars := BackendVariable.addVar(p, outVars);
       else
+        outAllPrimaryParameters := p::outAllPrimaryParameters;
         try
           bindExp := BackendVariable.varBindExpStartValue(p);
           if not Expression.isConst(bindExp) then
@@ -916,6 +920,7 @@ algorithm
     end for;
 
     outPrimaryParameters := listReverse(outPrimaryParameters);
+    outAllPrimaryParameters := listReverse(outAllPrimaryParameters);
   end if;
 end selectInitializationVariablesDAE;
 

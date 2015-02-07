@@ -1547,6 +1547,7 @@ algorithm
       Integer highestSimEqIndex;
       SimCode.BackendMapping backendMapping;
       list<BackendDAE.Var> primaryParameters "already sorted";
+      list<BackendDAE.Var> allPrimaryParameters "already sorted";
 
     case (dlow, class_, _, fileDir, _,_, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
@@ -1558,7 +1559,7 @@ algorithm
       // fcall(Flags.FAILTRACE, print, "is that Cpp? : " + Dump.printBoolStr(ifcpp) + "\n");
 
       // generate initDAE before replacing pre(alias)!
-      (initDAE, useHomotopy, removedInitialEquationLst, primaryParameters) = Initialization.solveInitialSystem(dlow);
+      (initDAE, useHomotopy, removedInitialEquationLst, primaryParameters, allPrimaryParameters) = Initialization.solveInitialSystem(dlow);
 
       if Flags.isSet(Flags.ITERATION_VARS) then
         BackendDAEOptimize.listAllIterationVariables(dlow);
@@ -1604,7 +1605,7 @@ algorithm
       ((uniqueEqIndex, minValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, maxValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
-      (uniqueEqIndex, parameterEquations) = createParameterEquations(uniqueEqIndex, parameterEquations, primaryParameters);
+      (uniqueEqIndex, parameterEquations) = createParameterEquations(uniqueEqIndex, parameterEquations, primaryParameters, allPrimaryParameters);
 
       ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
       discreteModelVars = BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
@@ -6656,11 +6657,12 @@ protected function createParameterEquations
   input Integer inUniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
   input list<BackendDAE.Var> inPrimaryParameters "already sorted";
+  input list<BackendDAE.Var> inAllPrimaryParameters "already sorted";
   output Integer outUniqueEqIndex := inUniqueEqIndex;
   output list<SimCode.SimEqSystem> outParameterEquations := {};
 protected
   list<SimCode.SimEqSystem> simvarasserts;
-  list<DAE.Algorithm> varasserts := {};
+  list<DAE.Algorithm> varasserts;
   list<DAE.Algorithm> varasserts2;
   BackendDAE.Var p;
   SimCode.SimEqSystem simEq;
@@ -6672,14 +6674,15 @@ algorithm
   for p in inPrimaryParameters loop
     (simEq, outUniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(p, outUniqueEqIndex);
     outParameterEquations := simEq::outParameterEquations;
-
-    // get min/max and nominal asserts
-    varasserts2 := createVarAsserts(p);
-    varasserts := listAppend(varasserts, varasserts2);
   end for;
   outParameterEquations := listReverse(outParameterEquations);
 
   // get min/max and nominal asserts
+  varasserts := {};
+  for p in inAllPrimaryParameters loop
+    varasserts2 := createVarAsserts(p);
+    varasserts := listAppend(varasserts, varasserts2);
+  end for;
   (simvarasserts, outUniqueEqIndex) := List.mapFold(varasserts, dlowAlgToSimEqSystem, outUniqueEqIndex);
 
   outParameterEquations := listAppend(outParameterEquations, simvarasserts);
