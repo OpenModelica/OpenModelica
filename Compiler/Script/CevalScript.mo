@@ -2556,7 +2556,7 @@ algorithm
         b = Interactive.isEnumeration(classpath, p);
       then
         (cache,Values.BOOL(b),st);
-    
+
     case (cache,_,"isOperator",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isOperator(classpath, p);
