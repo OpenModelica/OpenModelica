@@ -1143,26 +1143,19 @@ bool OMCProxy::isWhat(StringHandler::ModelicaClasses type, QString className)
     case StringHandler::Model:
       return mpOMCInterface->isModel(className);
     case StringHandler::Class:
-      sendCommand("isClass(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isClass(className);
     case StringHandler::Connector:
-      sendCommand("isConnector(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isConnector(className);
     case StringHandler::Record:
-      sendCommand("isRecord(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isRecord(className);
     case StringHandler::Block:
-      sendCommand("isBlock(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isBlock(className);
     case StringHandler::Function:
-      sendCommand("isFunction(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isFunction(className);
     case StringHandler::Package:
-      sendCommand("isPackage(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isPackage(className);
     case StringHandler::Type:
-      sendCommand("isType(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isType(className);
     case StringHandler::Operator:
       return mpOMCInterface->isOperator(className);
     case StringHandler::OperatorRecord:
@@ -1170,11 +1163,9 @@ bool OMCProxy::isWhat(StringHandler::ModelicaClasses type, QString className)
     case StringHandler::OperatorFunction:
       return mpOMCInterface->isOperatorFunction(className);
     case StringHandler::Optimization:
-      sendCommand("isOptimization(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isOptimization(className);
     case StringHandler::Enumeration:
-      sendCommand("isEnumeration(" + className + ")", true, className);
-      break;
+      return mpOMCInterface->isEnumeration(className);
     default:
       return false;
   }
