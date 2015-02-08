@@ -172,9 +172,9 @@ QStringList ModelicaTextEditor::getClassNames(QString *errorString)
     return QStringList();
   } else {
     if (pLibraryTreeNode->getParentName().isEmpty()) {
-      classNames = pOMCProxy->parseString(StringHandler::escapeString(toPlainText()), pLibraryTreeNode->getNameStructure());
+      classNames = pOMCProxy->parseString(toPlainText(), pLibraryTreeNode->getNameStructure());
     } else {
-      classNames = pOMCProxy->parseString("within " + pLibraryTreeNode->getParentName() + ";" + StringHandler::escapeString(toPlainText()), pLibraryTreeNode->getNameStructure());
+      classNames = pOMCProxy->parseString("within " + pLibraryTreeNode->getParentName() + ";" + toPlainText(), pLibraryTreeNode->getNameStructure());
     }
   }
   // if user is defining multiple top level classes.

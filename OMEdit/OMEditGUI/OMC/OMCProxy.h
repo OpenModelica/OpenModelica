@@ -163,8 +163,8 @@ public:
                  bool requireExactVersion = false);
   bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true);
   bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool checkError = true);
-  bool parseFile(QString fileName, QString encoding = Helper::utf8);
-  QStringList parseString(QString value, QString fileName);
+  QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);
+  QList<QString> parseString(QString value, QString fileName);
   bool createClass(QString type, QString className, QString extendsClass);
   bool createSubClass(QString type, QString className, QString parentClassName, QString extendsClass);
   bool existClass(QString className);

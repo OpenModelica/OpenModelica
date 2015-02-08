@@ -1841,41 +1841,35 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
   // get the class names now to check if they are already loaded or not
   QStringList existingmodelsList;
   if (showProgress) mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
-  if (mpMainWindow->getOMCProxy()->parseFile(fileName, encoding))
-  {
-    QString result = StringHandler::removeFirstLastCurlBrackets(mpMainWindow->getOMCProxy()->getResult());
-    QStringList modelsList = result.split(",", QString::SkipEmptyParts);
+  QStringList classesList = mpMainWindow->getOMCProxy()->parseFile(fileName, encoding);
+  if (!classesList.isEmpty()) {
     /*
       Only allow loading of files that has just one nonstructured entity.
       From Modelica specs section 13.2.2.2,
       "A nonstructured entity [e.g. the file A.mo] shall contain only a stored-definition that defines a class [A] with a name
        matching the name of the nonstructured entity."
       */
-    if (modelsList.size() > 1)
-    {
+    if (classesList.size() > 1) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
-                                      .arg(modelsList.join(",")));
+                                      .arg(classesList.join(",")));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
       return;
     }
     bool existModel = false;
     // check if the model already exists
-    foreach(QString model, modelsList)
-    {
-      if (mpMainWindow->getOMCProxy()->existClass(model))
-      {
+    foreach(QString model, classesList) {
+      if (mpMainWindow->getOMCProxy()->existClass(model)) {
         existingmodelsList.append(model);
         existModel = true;
       }
     }
     // if existModel is true, show user an error message
-    if (existModel)
-    {
+    if (existModel) {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
@@ -1885,22 +1879,16 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
                                       .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(fileName)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
-    }
-    // if no conflicting model found then just load the file simply
-    else
-    {
+    } else { // if no conflicting model found then just load the file simply
       // load the file in OMC
-      if (mpMainWindow->getOMCProxy()->loadFile(fileName, encoding))
-      {
+      if (mpMainWindow->getOMCProxy()->loadFile(fileName, encoding)) {
         // create library tree nodes for loaded models
         int progressvalue = 0;
-        if (showProgress)
-        {
-          mpMainWindow->getProgressBar()->setRange(0, modelsList.size());
+        if (showProgress) {
+          mpMainWindow->getProgressBar()->setRange(0, classesList.size());
           mpMainWindow->showProgressBar();
         }
-        foreach (QString model, modelsList)
-        {
+        foreach (QString model, classesList) {
           LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(model, mpMainWindow->getOMCProxy()->getClassRestriction(model), "");
           createLibraryTreeNodes(pLibraryTreeNode);
           if (showProgress) mpMainWindow->getProgressBar()->setValue(++progressvalue);
@@ -1915,7 +1903,7 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
 
 void LibraryTreeWidget::parseAndLoadModelicaText(QString modelText)
 {
-  QStringList classNames = mpMainWindow->getOMCProxy()->parseString(StringHandler::escapeString(modelText), "");
+  QStringList classNames = mpMainWindow->getOMCProxy()->parseString(modelText, "");
   if (classNames.size() == 0) {
     return;
   }

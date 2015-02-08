@@ -2723,10 +2723,10 @@ bool ModelWidget::modelicaEditorTextChanged()
   /* if no errors are found with the Modelica Text then load it in OMC */
   QString modelicaText = mpModelicaTextEditor->toPlainText();
   if (mpLibraryTreeNode->getParentName().isEmpty()) {
-    if (!pOMCProxy->loadString(StringHandler::escapeString(modelicaText), classNames.at(0)))
+    if (!pOMCProxy->loadString(modelicaText, classNames.at(0)))
       return false;
   } else {
-    if (!pOMCProxy->loadString("within " + mpLibraryTreeNode->getParentName() + ";" + StringHandler::escapeString(modelicaText), classNames.at(0))) {
+    if (!pOMCProxy->loadString("within " + mpLibraryTreeNode->getParentName() + ";" + modelicaText, classNames.at(0))) {
       return false;
     }
   }

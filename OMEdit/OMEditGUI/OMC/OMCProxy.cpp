@@ -972,22 +972,21 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
     QString encoding = pSettings->value("userlibraries/" + lib).toString();
     QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toStdString().c_str()));
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(fileName), Qt::AlignRight, Qt::white);
-    if (parseFile(fileName, encoding)) {
-      QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
-      QStringList modelsList = result.split(",", QString::SkipEmptyParts);
+    QStringList classesList = parseFile(fileName, encoding);
+    if (!classesList.isEmpty()) {
       /*
         Only allow loading of files that has just one nonstructured entity.
         From Modelica specs section 13.2.2.2,
         "A nonstructured entity [e.g. the file A.mo] shall contain only a stored-definition that defines a class [A] with a name
          matching the name of the nonstructured entity."
         */
-      if (modelsList.size() > 1) {
+      if (classesList.size() > 1) {
         QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
         pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
         pMessageBox->setIcon(QMessageBox::Critical);
         pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
         pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
-                                        .arg(modelsList.join(",")));
+                                        .arg(classesList.join(",")));
         pMessageBox->setStandardButtons(QMessageBox::Ok);
         pMessageBox->exec();
         return;
@@ -995,7 +994,7 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
       QStringList existingmodelsList;
       bool existModel = false;
       // check if the model already exists
-      foreach(QString model, modelsList) {
+      foreach(QString model, classesList) {
         if (existClass(model)) {
           existingmodelsList.append(model);
           existModel = true;
@@ -1657,7 +1656,7 @@ bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses)
   */
 bool OMCProxy::loadString(QString value, QString fileName, QString encoding, bool checkError)
 {
-  bool result = mpOMCInterface->loadString(value.replace("\"", "\\\""), fileName, encoding);
+  bool result = mpOMCInterface->loadString(StringHandler::escapeStringWithoutNewLine(value), fileName, encoding);
   if (checkError) {
     printMessagesStringInternal();
   }
@@ -1669,16 +1668,14 @@ bool OMCProxy::loadString(QString value, QString fileName, QString encoding, boo
   \param fileName - the file to parse.
   \return true on success
   */
-bool OMCProxy::parseFile(QString fileName, QString encoding)
+QList<QString> OMCProxy::parseFile(QString fileName, QString encoding)
 {
   fileName = fileName.replace('\\', '/');
-  sendCommand("parseFile(\"" + fileName + "\",\"" + encoding + "\")");
-  if (getResult() == "{}") {
+  QList<QString> resultList = mpOMCInterface->parseFile(fileName, encoding);
+  if (resultList.isEmpty()) {
     printMessagesStringInternal();
-    return false;
-  } else {
-    return true;
   }
+  return resultList;
 }
 
 /*!
@@ -1686,13 +1683,11 @@ bool OMCProxy::parseFile(QString fileName, QString encoding)
   \param value - the string to parse.
   \return the list of models inside the string.
   */
-QStringList OMCProxy::parseString(QString value, QString fileName)
+QList<QString> OMCProxy::parseString(QString value, QString fileName)
 {
-  sendCommand("parseString(\"" + value.replace("\"", "\\\"") + "\", \"" + fileName + "\")");
-  QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
-  QStringList list = result.split(",", QString::SkipEmptyParts);
+  QList<QString> resultList = mpOMCInterface->parseString(StringHandler::escapeStringWithoutNewLine(value), fileName);
   printMessagesStringInternal();
-  return list;
+  return resultList;
 }
 
 /*!
@@ -1709,7 +1704,7 @@ bool OMCProxy::createClass(QString type, QString className, QString extendsClass
   } else {
     expression = type + " " + className + " extends " + extendsClass + "; end " + className + ";";
   }
-  return loadString(StringHandler::escapeString(expression), className, Helper::utf8, false);
+  return loadString(expression, className, Helper::utf8, false);
 }
 
 /*!
@@ -1727,7 +1722,7 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
   } else {
     expression = "within " + parentClassName + "; " + type + " " + className + " extends " + extendsClass + "; end " + className + ";";
   }
-  return loadString(StringHandler::escapeString(expression), parentClassName + "." + className, Helper::utf8, false);
+  return loadString(expression, parentClassName + "." + className, Helper::utf8, false);
 }
 
 /*!
