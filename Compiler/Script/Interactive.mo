@@ -7682,7 +7682,7 @@ public function isEnumeration
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean:= match (path,inProgram)
+  outBoolean:= matchcontinue (path,inProgram)
     local
       Absyn.Program p;
     case (_,p)
@@ -7691,7 +7691,7 @@ algorithm
       then
         true;
     case (_,_) then false;
-  end match;
+  end matchcontinue;
 end isEnumeration;
 
 protected function isReplaceable
