@@ -2970,6 +2970,17 @@ annotation(
   preferredView="text");
 end basename;
 
+function isType
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction type.
+</html>"),
+  preferredView="text");
+end isType;
+
 function isPackage
   input TypeName cl;
   output Boolean b;
@@ -2980,6 +2991,50 @@ annotation(
 </html>"),
   preferredView="text");
 end isPackage;
+
+function isClass
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction class.
+</html>"),
+  preferredView="text");
+end isClass;
+
+function isRecord
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction record.
+</html>"),
+  preferredView="text");
+end isRecord;
+
+function isBlock
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction block.
+</html>"),
+  preferredView="text");
+end isBlock;
+
+function isFunction
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction function.
+</html>"),
+  preferredView="text");
+end isFunction;
 
 function isPartial
   input TypeName cl;
@@ -3002,6 +3057,39 @@ annotation(
 </html>"),
   preferredView="text");
 end isModel;
+
+function isConnector
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction connector or expandable connector.
+</html>"),
+  preferredView="text");
+end isConnector;
+
+function isOptimization
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction optimization.
+</html>"),
+  preferredView="text");
+end isOptimization;
+
+function isEnumeration
+  input TypeName cl;
+  output Boolean b;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns true if the given class has restriction enumeration.
+</html>"),
+  preferredView="text");
+end isEnumeration;
 
 function isOperator
   input TypeName cl;

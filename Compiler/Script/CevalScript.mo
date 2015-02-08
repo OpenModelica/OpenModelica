@@ -2491,9 +2491,39 @@ algorithm
       then
         (cache,Values.TUPLE({Values.REAL(0.0),Values.STRING("")}),st);
 
+    case (cache,_,"isType",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        b = Interactive.isType(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,_,"isPackage",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isPackage(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,_,"isClass",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        b = Interactive.isClass(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,_,"isRecord",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        b = Interactive.isRecord(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,_,"isBlock",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        b = Interactive.isBlock(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,_,"isFunction",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        b = Interactive.isFunction(classpath, p);
       then
         (cache,Values.BOOL(b),st);
 
@@ -2509,6 +2539,24 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
+    case (cache,_,"isConnector",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        b = Interactive.isConnector(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,_,"isOptimization",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        b = Interactive.isOptimization(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,_,"isEnumeration",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        b = Interactive.isEnumeration(classpath, p);
+      then
+        (cache,Values.BOOL(b),st);
+    
     case (cache,_,"isOperator",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isOperator(classpath, p);
@@ -5063,13 +5111,12 @@ algorithm
         c = Interactive.getPathedClassInProgram(className, p);
         // filter out partial classes
         // Absyn.CLASS(partialPrefix = false) = c; // do not filter partial classes
-        cr = Absyn.pathToCref(className);
         // filter out packages
         false = Interactive.isPackage(className, p);
         // filter out functions
         // false = Interactive.isFunction(cr, p);
         // filter out types
-        false = Interactive.isType(cr, p);
+        false = Interactive.isType(className, p);
         print("Checking: " + Dump.unparseClassAttributesStr(c) + " " + Absyn.pathString(className) + "... ");
         t1 = clock();
         Flags.setConfigBool(Flags.CHECK_MODEL, true);

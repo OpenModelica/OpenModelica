@@ -1381,48 +1381,6 @@ algorithm
       then
         boolString(isPrimitive(cr, p));
 
-    case "isType"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(isType(cr, p));
-
-    case "isConnector"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(isConnector(cr, p));
-
-    case "isRecord"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(isRecord(cr, p));
-
-    case "isBlock"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(isBlock(cr, p));
-
-    case "isOptimization"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(isOptimization(cr, p));
-
-    case "isFunction"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(isFunction(cr, p));
-
-    case "isClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(isClass(cr, p));
-
     case "isParameter"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
@@ -1440,14 +1398,6 @@ algorithm
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
       then
         boolString(isConstant(cr, class_, p));
-
-    case "isEnumeration"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        path := Absyn.crefToPath(cr);
-        cls := getPathedClassInProgram(path, p);
-      then
-        boolString(isEnumeration(cls));
 
     case "isReplaceable"
       algorithm
@@ -7329,19 +7279,16 @@ public function isType
 "This function takes a component reference and a program.
   It returns true if the refrenced class has the restriction
   \"type\", otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
       Absyn.Program p;
-    case (cr,p)
+    case (_,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_TYPE(),_,_) = getPathedClassInProgram(path, p);
       then
         true;
@@ -7349,29 +7296,25 @@ algorithm
   end matchcontinue;
 end isType;
 
-protected function isConnector
+public function isConnector
 " This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
-   \"connector\", otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+   \"connector\" or \"expandable connector\", otherwise it returns false."
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
       Absyn.Program p;
-    case (cr,p)
+    case (_,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_) = getPathedClassInProgram(path, p);
       then
         true;
-    case (cr,p)
+    case (_,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_) = getPathedClassInProgram(path, p);
       then
         true;
@@ -7455,23 +7398,20 @@ algorithm
   end matchcontinue;
 end isOperatorFunction;
 
-protected function isRecord
+public function isRecord
 " This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"record\", otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
       Absyn.Program p;
-    case (cr,p)
+    case (_,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_RECORD(),_,_) = getPathedClassInProgram(path, p);
       then
         true;
@@ -7479,23 +7419,20 @@ algorithm
   end matchcontinue;
 end isRecord;
 
-protected function isBlock
+public function isBlock
 " This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"block\", otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
       Absyn.Program p;
-    case (cr,p)
+    case (_,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_BLOCK(),_,_) = getPathedClassInProgram(path, p);
       then
         true;
@@ -7503,23 +7440,20 @@ algorithm
   end matchcontinue;
 end isBlock;
 
-protected function isOptimization
+public function isOptimization
 " This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"Optimization\", otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
       Absyn.Program p;
-    case (cr,p)
+    case (_,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_OPTIMIZATION(),_,_) = getPathedClassInProgram(path, p);
       then
         true;
@@ -7531,19 +7465,16 @@ public function isFunction
 " This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"function\", otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
       Absyn.Program p;
-    case (cr,p)
+    case (_,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(_)),_,_) = getPathedClassInProgram(path, p);
       then
         true;
@@ -7572,23 +7503,20 @@ algorithm
   end matchcontinue;
 end isPackage;
 
-protected function isClass
+public function isClass
 " This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"class\", otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
       Absyn.Program p;
-    case (cr,p)
+    case (_,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,Absyn.R_CLASS(),_,_) = getPathedClassInProgram(path, p);
       then
         true;
@@ -7747,18 +7675,22 @@ algorithm
   end matchcontinue;
 end isConstant;
 
-protected function isEnumeration
+public function isEnumeration
 " It returns true if the refrenced class has the restriction
    \"type\" and is an \"Enumeration\", otherwise it returns false."
-  input Absyn.Class inClass;
+  input Absyn.Path path;
+  input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean:= match (inClass)
+  outBoolean:= match (path,inProgram)
     local
-    case (Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.ENUMERATION(_,_)))
+      Absyn.Program p;
+    case (_,p)
+      equation
+        Absyn.CLASS(_,_,_,_,Absyn.R_TYPE(),Absyn.ENUMERATION(_,_),_) = getPathedClassInProgram(path, p);
       then
         true;
-    case (_) then false;
+    case (_,_) then false;
   end match;
 end isEnumeration;
 
