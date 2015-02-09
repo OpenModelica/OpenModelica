@@ -1249,10 +1249,7 @@ QString OMCProxy::getParameterValue(QString className, QString parameter)
   */
 QStringList OMCProxy::getComponentModifierNames(QString className, QString name)
 {
-  sendCommand("getComponentModifierNames(" + className + "," + name + ")", true, className);
-  QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
-  QStringList list = result.split(",", QString::SkipEmptyParts);
-  return list;
+  return mpOMCInterface->getComponentModifierNames(className, name);
 }
 
 /*!
