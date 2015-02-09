@@ -3197,6 +3197,12 @@ algorithm
       then
         (cache,v,st);
 
+    case (cache,_,"getParameterValue",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        str2 = Interactive.getComponentBinding(path, str1, p);
+      then
+        (cache,Values.STRING(str2),st);
+
     case (cache,_,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);

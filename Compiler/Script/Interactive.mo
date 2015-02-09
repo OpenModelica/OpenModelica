@@ -1034,12 +1034,6 @@ algorithm
       then
         outResult;
 
-    case "getParameterValue"
-      algorithm
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = crident)} := args;
-      then
-        getComponentBinding(class_, crident, p);
-
     case "setParameterValue"
       algorithm
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = crident), exp} := args;
@@ -1518,7 +1512,7 @@ algorithm
 
         if Absyn.crefIsIdent(cr) then
           Absyn.CREF_IDENT(name = name) := cr;
-          outResult := getComponentBinding(class_, Absyn.CREF_IDENT(name, {}), p);
+          outResult := getComponentBinding(Absyn.crefToPath(class_), name, p);
         else
           name := Absyn.crefFirstIdent(cr);
           subident := Absyn.crefStripFirst(cr);
@@ -6051,24 +6045,19 @@ algorithm
   end matchcontinue;
 end getModificationNames;
 
-protected function getComponentBinding
+public function getComponentBinding
 " Returns the value of a component in a class.
    For example, the component
      Real x=1;
      returns 1.
-   This can be used for both parameters, constants and variables.
-   inputs: (Absyn.ComponentRef, /* class */
-              Absyn.ComponentRef, /* variable name */
-              Absyn.Program)
-   outputs: string"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
+   This can be used for both parameters, constants and variables."
+  input Absyn.Path path;
+  input String parameterName;
   input Absyn.Program inProgram3;
   output String outString;
 algorithm
-  outString := matchcontinue (inComponentRef1,inComponentRef2,inProgram3)
+  outString := matchcontinue (path,parameterName,inProgram3)
     local
-      Absyn.Path p_class;
       String name,res;
       Absyn.Class cdef;
       list<Absyn.Element> comps;
@@ -6079,36 +6068,32 @@ algorithm
       Absyn.ComponentRef class_,crname;
       Absyn.Program p;
 
-    case (class_,crname,p)
+    case (_,_,p)
       equation
-        p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(name) = Absyn.crefToPath(crname);
-        cdef = getPathedClassInProgram(p_class, p);
+        cdef = getPathedClassInProgram(path, p);
         comps = getComponentsInClass(cdef);
         compelts = List.map(comps, getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
-        {compitem} = List.select1(compelts_1, componentitemNamed, name);
+        {compitem} = List.select1(compelts_1, componentitemNamed, parameterName);
         exp = getVariableBindingInComponentitem(compitem);
         res = Dump.printExpStr(exp);
       then
         res;
 
-    case (class_,crname,p)
+    case (_,_,p)
       equation
-        p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(name) = Absyn.crefToPath(crname);
-        cdef = getPathedClassInProgram(p_class, p);
+        cdef = getPathedClassInProgram(path, p);
         comps = getComponentsInClass(cdef);
         compelts = List.map(comps, getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
-        {compitem} = List.select1(compelts_1, componentitemNamed, name);
+        {compitem} = List.select1(compelts_1, componentitemNamed, parameterName);
         failure(_ = getVariableBindingInComponentitem(compitem));
       then
         "";
 
     case (_,_,_)
       then
-        "Error";
+        "";
   end matchcontinue;
 end getComponentBinding;
 

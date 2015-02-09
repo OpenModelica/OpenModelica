@@ -2727,6 +2727,18 @@ annotation(
   preferredView="text");
 end getParameterNames;
 
+function getParameterValue
+  input TypeName class_;
+  input String parameterName;
+  output String parameterValue;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the value of the parameter of the class.
+</html>"),
+  preferredView="text");
+end getParameterValue;
+
 function getAlgorithmCount "Counts the number of Algorithm sections in a class."
   input TypeName class_;
   output Integer count;
