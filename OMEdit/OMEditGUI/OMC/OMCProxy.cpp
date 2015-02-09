@@ -1173,18 +1173,6 @@ bool OMCProxy::isWhat(StringHandler::ModelicaClasses type, QString className)
 }
 
 /*!
-  Checks whether the class parameter is protected or not.
-  \param className - is the name of the class.
-  \param parameter - is the parameter to check.
-  \return true if the parameter is protected otherwise false
-  */
-bool OMCProxy::isProtected(QString parameter, QString className)
-{
-  sendCommand("isProtected(" + parameter + "," + className + ")", true, className);
-  return StringHandler::unparseBool(getResult());
-}
-
-/*!
   Checks whether the nested class is protected or not.
   \param className - is the name of the class.
   \param nestedClassName - is the nested class to check.
@@ -1212,55 +1200,35 @@ bool OMCProxy::isPartial(QString className)
   */
 StringHandler::ModelicaClasses OMCProxy::getClassRestriction(QString className)
 {
-  sendCommand("getClassRestriction(" + className + ")", true, className);
+  QString result = mpOMCInterface->getClassRestriction(className);
 
-  if (getResult().toLower().contains("model"))
+  if (result.toLower().contains("model"))
     return StringHandler::Model;
-  else if (getResult().toLower().contains("class"))
+  else if (result.toLower().contains("class"))
     return StringHandler::Class;
   //! @note Also handles the expandable connectors i.e we return StringHandler::CONNECTOR for expandable connectors.
-  else if (getResult().toLower().contains("connector"))
+  else if (result.toLower().contains("connector"))
     return StringHandler::Connector;
-  else if (getResult().toLower().contains("record"))
+  else if (result.toLower().contains("record"))
     return StringHandler::Record;
-  else if (getResult().toLower().contains("block"))
+  else if (result.toLower().contains("block"))
     return StringHandler::Block;
-  else if (getResult().toLower().contains("function"))
+  else if (result.toLower().contains("function"))
     return StringHandler::Function;
-  else if (getResult().toLower().contains("package"))
+  else if (result.toLower().contains("package"))
     return StringHandler::Package;
-  else if (getResult().toLower().contains("type"))
+  else if (result.toLower().contains("type"))
     return StringHandler::Type;
-  else if (getResult().toLower().contains("operator"))
+  else if (result.toLower().contains("operator"))
     return StringHandler::Operator;
-  else if (getResult().toLower().contains("operator record"))
+  else if (result.toLower().contains("operator record"))
     return StringHandler::OperatorRecord;
-  else if (getResult().toLower().contains("operator function"))
+  else if (result.toLower().contains("operator function"))
     return StringHandler::OperatorFunction;
-  else if (getResult().toLower().contains("optimization"))
+  else if (result.toLower().contains("optimization"))
     return StringHandler::Optimization;
   else
     return StringHandler::Model;
-}
-
-/*!
-  Gets the parameter names.
-  \param className - is the name of the class whose parameter names are retrieved.
-  \return the list of parameter names.
-  */
-QStringList OMCProxy::getParameterNames(QString className)
-{
-  QString result;
-  QString expression = "getParameterNames(" + className + ")";
-  sendCommand(expression, true, className);
-  result = StringHandler::removeFirstLastCurlBrackets(getResult());
-  if (result.isEmpty())
-    return QStringList();
-  else
-  {
-    QStringList list = result.split(",", QString::SkipEmptyParts);
-    return list;
-  }
 }
 
 /*!
@@ -1276,22 +1244,6 @@ QString OMCProxy::getParameterValue(QString className, QString parameter)
   } else {
     return getResult();
   }
-}
-
-/*!
-  Sets the parameter value.
-  \param className - is the name of the class whose parameter value is set.
-  \param parameter - is the name of the parameter whose value is set.
-  \param value - is the value to set.
-  \return true on success
-  */
-bool OMCProxy::setParameterValue(QString className, QString parameter, QString value)
-{
-  sendCommand("setParameterValue(" + className + "," + parameter + "," + value + ")");
-  if (getResult().contains("Ok"))
-    return true;
-  else
-    return false;
 }
 
 /*!

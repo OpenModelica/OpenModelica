@@ -133,13 +133,10 @@ public:
   bool isBuiltinType(QString typeName);
   QString getBuiltinType(QString typeName);
   bool isWhat(StringHandler::ModelicaClasses type, QString className);
-  bool isProtected(QString parameter, QString className);
   bool isProtectedClass(QString className, QString nestedClassName);
   bool isPartial(QString className);
   StringHandler::ModelicaClasses getClassRestriction(QString className);
-  QStringList getParameterNames(QString className);
   QString getParameterValue(QString className, QString parameter);
-  bool setParameterValue(QString className, QString parameter, QString value);
   QStringList getComponentModifierNames(QString className, QString name);
   QString getComponentModifierValue(QString className, QString name);
   bool setComponentModifierValue(QString className, QString name, QString modifierValue);
