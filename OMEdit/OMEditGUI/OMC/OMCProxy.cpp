@@ -1238,12 +1238,7 @@ StringHandler::ModelicaClasses OMCProxy::getClassRestriction(QString className)
   */
 QString OMCProxy::getParameterValue(QString className, QString parameter)
 {
-  sendCommand("getParameterValue(" + className + "," + parameter + ")", true, className);
-  if (getResult().toLower().contains("error")) {
-    return "";
-  } else {
-    return getResult();
-  }
+  return mpOMCInterface->getParameterValue(className, parameter);
 }
 
 /*!
