@@ -279,18 +279,35 @@ template getQtOutArgArray(Text name, Text shortName, Text mm, DAE.Type ty)
     else error(sourceInfo(), 'getOutValueArray failed for <%unparseType(ty)%>')
 end getQtOutArgArray;
 
+template getQtResponseLogText(Text name, DAE.Type ty)
+::=
+  match ty
+    case T_CODE(ty=C_TYPENAME(__))
+    case T_STRING(__) then '<%name%>'
+    case T_INTEGER(__)
+    case T_REAL(__) then 'QString::number(<%name%>)'
+    case T_BOOL(__) then '<%name%> ? "true" : "false"'
+    case aty as T_ARRAY(__) then '"Generate toString() method for structs"'
+    else error(sourceInfo(), 'getQtResponseLogText failed for <%unparseType(ty)%>')
+end getQtResponseLogText;
+
 template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, String className)
 ::=
   let &varDecl = buffer ""
+  let &responseLog = buffer ""
   let &postCall = buffer ""
   let inArgs = args |> arg as FUNCARG(__) => ', <%getQtInArg(arg.name, arg.ty, varDecl)%>'
   let outArgs = (match res
-    case T_NORETCALL(__) then ""
+    case T_NORETCALL(__) then
+      let &responseLog += '""'
+      ""
     case t as T_TUPLE(__) then
       let &varDecl += '<%name%>_res result;<%\n%>'
+      let &responseLog += '"Generate toString() method for structs"'
       (types |> t hasindex i1 fromindex 1 => ', <%getQtOutArg('result.<%getQtTupleTypeOutputName(res, i1)%>', 'out<%i1%>', t, varDecl, postCall)%>')
     else
       let &varDecl += '<%getQtType(res)%> result;<%\n%>'
+      let &responseLog += '<%getQtResponseLogText('result', res)%>'
       ', <%getQtOutArg('result', 'result', res, varDecl, postCall)%>'
     )
   <<
@@ -304,8 +321,8 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
     commandTime.start();
     emit logCommand("<%replaceDotAndUnderscore(name)%>(### create string of parameters ###)", &commandTime);
     st = omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData, st<%inArgs%><%outArgs%>);
-    emit logResponse("### create string of result ###", &commandTime);
     <%postCall%>
+    emit logResponse(<%responseLog%>, &commandTime);
 
     MMC_CATCH_TOP(throw std::runtime_error("<%replaceDotAndUnderscore(name)%> failed");)
 
