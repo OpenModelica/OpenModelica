@@ -1487,12 +1487,6 @@ algorithm
       then
         isExtendsModifierFinal(class_, crident, subident, p);
 
-    case "getComponentModifierNames"
-      algorithm
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} := args;
-      then
-        getComponentModifierNames(class_, cr, p);
-
     case "getDefaultComponentName"
       algorithm
         {Absyn.CREF(componentRef = class_)} := args;
@@ -3952,8 +3946,6 @@ algorithm
       list<list<Absyn.ComponentItem>> compelts;
       list<Absyn.ComponentItem> compelts_1;
       list<String> names;
-      String res,res_1;
-      Absyn.ComponentRef class_;
       Absyn.Program p;
     case (_,p)
       equation
@@ -5946,45 +5938,34 @@ algorithm
   end matchcontinue;
 end getModificationValue;
 
-protected function getComponentModifierNames
-" Return the modifiernames of a component, i.e. Foo f( )
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* variable name */
-               Absyn.Program)
-   outputs:  string"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
+public function getComponentModifierNames
+ "Return the modifiernames of a component"
+  input Absyn.Path path;
+  input String inComponentName;
   input Absyn.Program inProgram3;
-  output String outString;
+  output list<String> outList;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef1,inComponentRef2,inProgram3)
+  outList:=
+  matchcontinue (path,inComponentName,inProgram3)
     local
-      Absyn.Path p_class;
-      String name,res_1,res_2;
       Absyn.Class cdef;
       list<Absyn.Element> comps;
       list<list<Absyn.ComponentItem>> compelts;
       list<Absyn.ComponentItem> compelts_1;
       list<Absyn.ElementArg> mod;
       list<String> res;
-      Absyn.ComponentRef class_,ident;
       Absyn.Program p;
-    case (class_,ident,p)
+    case (_,_,p)
       equation
-        p_class = Absyn.crefToPath(class_);
-        Absyn.IDENT(name) = Absyn.crefToPath(ident);
-        cdef = getPathedClassInProgram(p_class, p);
+        cdef = getPathedClassInProgram(path, p);
         comps = getComponentsInClass(cdef);
         compelts = List.map(comps, getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
-        {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = List.select1(compelts_1, componentitemNamed, name);
+        {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = List.select1(compelts_1, componentitemNamed, inComponentName);
         res = getModificationNames(mod);
-        res_1 = stringDelimitList(res, ", ");
-        res_2 = stringAppendList({"{",res_1,"}"});
       then
-        res_2;
-    case (_,_,_) then "{}";
+        res;
+    case (_,_,_) then {};
   end matchcontinue;
 end getComponentModifierNames;
 
@@ -6058,14 +6039,13 @@ public function getComponentBinding
 algorithm
   outString := matchcontinue (path,parameterName,inProgram3)
     local
-      String name,res;
+      String res;
       Absyn.Class cdef;
       list<Absyn.Element> comps;
       list<list<Absyn.ComponentItem>> compelts;
       list<Absyn.ComponentItem> compelts_1;
       Absyn.ComponentItem compitem;
       Absyn.Exp exp;
-      Absyn.ComponentRef class_,crname;
       Absyn.Program p;
 
     case (_,_,p)

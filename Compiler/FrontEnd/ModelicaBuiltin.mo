@@ -2739,6 +2739,18 @@ annotation(
   preferredView="text");
 end getParameterValue;
 
+function getComponentModifierNames
+  input TypeName class_;
+  input String componentName;
+  output String[:] modifiers;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the list of class component modifiers.
+</html>"),
+  preferredView="text");
+end getComponentModifierNames;
+
 function getAlgorithmCount "Counts the number of Algorithm sections in a class."
   input TypeName class_;
   output Integer count;

@@ -3203,6 +3203,14 @@ algorithm
       then
         (cache,Values.STRING(str2),st);
 
+    case (cache,_,"getComponentModifierNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str1)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        strings = Interactive.getComponentModifierNames(path, str1, p);
+        vals = List.map(strings, ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(vals);
+      then
+        (cache,v,st);
+
     case (cache,_,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
