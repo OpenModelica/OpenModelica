@@ -281,13 +281,13 @@ protected function selectResultstr
   input Boolean inEcho "echo";
   output String outString;
 algorithm
-  outString := matchcontinue (inString,inSemicolon,inVerbose,inEcho)
+  outString := match (inString,inSemicolon,inVerbose,inEcho)
     local String str;
-    case (_,_,_,false) then "";  // echo off allways empty string
-    case (str,_,true,_) then str;  // .. verbose on allways return str
+    case (_,_,_,false) then "";  // echo off always empty string
+    case (str,_,true,_) then str;  // .. verbose on always return str
     case (_,true,_,_) then "";   // ... semicolon, no resultstr
     case (str,false,_,_) then str; // no semicolon
-  end matchcontinue;
+  end match;
 end selectResultstr;
 
 protected function getEcho
@@ -593,9 +593,7 @@ algorithm
       then
         st5;
 
-    case (_,_,_,_,_,st1)
-      then
-        st1;
+    else inSymbolTable;
 
   end matchcontinue;
 end evaluateForStmtRangeOpt;
@@ -846,7 +844,7 @@ algorithm
       then
         (str,st_1);
 
-    case (_,st,_) then ("",st);
+    else ("",inSymbolTable);
 
   end matchcontinue;
 end evaluateExprToStr;
@@ -1651,7 +1649,7 @@ algorithm
         comp_reps = getComponentreplacementsrules(comps, comp_repsrules, 0);
       then comp_reps;
 
-    case(_,_,_,_)
+    else
       equation
         // keep errors if we fail!
         ErrorExt.delCheckpoint("Interactive.extractAllComponentreplacements");
@@ -1714,13 +1712,13 @@ algorithm
       then
         (paths_2,p_1);
 
-    case (p,_,_,_)
+    else
       equation
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("rename_component failed\n");
         end if;
       then
-        ("Error",p);
+        ("Error",inProgram1);
   end matchcontinue;
 end renameComponent;
 
@@ -1765,13 +1763,13 @@ algorithm
       then
         (paths_2,p);
 
-    case (p,_,_,_)
+    else
       equation
         if Flags.isSet(Flags.FAILTRACE) then
           Debug.trace("renameComponentOnlyInClass failed\n");
         end if;
       then
-        ("Error",p);
+        ("Error",inProgram1);
   end matchcontinue;
 end renameComponentOnlyInClass;
 
@@ -1803,7 +1801,7 @@ algorithm
         res_2 = List.union({path_str}, res_1);
       then
         res_2;
-    case (_)
+    else
       equation
         print("-extract_renamed_classes_as_string_list failed\n");
       then
@@ -1838,7 +1836,7 @@ algorithm
         p_2 = renameComponentFromComponentreplacements(p_1, res);
       then
         p_2;
-    case (_,_)
+    else
       equation
         print("-rename_component_from_componentreplacements failed\n");
       then
@@ -1926,7 +1924,7 @@ algorithm
       then
         Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction, Absyn.CLASS_EXTENDS(baseClassName,b,c,parts_1,ann),file_info);
 
-    case (class_,_,_) then class_;
+    else inClass1;
   end matchcontinue;
 end renameComponentInClass;
 
@@ -2069,7 +2067,7 @@ algorithm
         comps_1 = renameComponentInComponentitems(comps, old_comp, new_comp);
       then
         Absyn.COMPONENTS(attr,path,comps_1);
-    case (elementspec,_,_) then elementspec;
+    else inElementSpec1;
   end matchcontinue;
 end renameComponentInElementSpec;
 
@@ -2111,7 +2109,7 @@ algorithm
         res_1 = renameComponentInComponentitems(res, old_comp, new_comp);
       then
         (comp :: res_1);
-    case (_,_,_)
+    else
       equation
         print("-Interactive.renameComponentInComponentitems failed\n");
       then
@@ -2172,7 +2170,7 @@ algorithm
         res_1 = renameComponentInExpEquationitemList(res, old_comp, new_comp);
       then
         ((exp1_1,eqn_item_1) :: res_1);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_exp_equationitem_list failed\n");
       then
@@ -2235,7 +2233,7 @@ algorithm
         print("-rename_component_in_equation EQ_NORETCALL not implemented yet\n");
       then
         Absyn.EQ_NORETCALL(cref,function_args);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_equation failed\n");
       then
@@ -2263,7 +2261,7 @@ algorithm
         res_1 = renameComponentInExpList(res, old_comp, new_comp);
       then
         (exp_1 :: res_1);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_exp_list failed\n");
       then
@@ -2291,7 +2289,7 @@ algorithm
         res_1 = renameComponentInExpListList(res, old_comp, new_comp);
       then
         (exp_1 :: res_1);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_exp_list_list failed\n");
       then
@@ -2320,7 +2318,7 @@ algorithm
         res_1 = renameComponentInExpTupleList(res, old_comp, new_comp);
       then
         ((exp1_1,exp2_1) :: res_1);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_exp_tuple_list failed\n");
       then
@@ -2348,7 +2346,7 @@ algorithm
         res_1 = renameComponentInElementArgList(res, old_comp, new_comp);
       then
         (element_arg_1 :: res_1);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_element_arg_list failed\n");
       then
@@ -2584,7 +2582,7 @@ algorithm
         code_1 = renameComponentInCode(code, old_comp, new_comp);
       then
         Absyn.CODE(code_1);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_exp failed\n");
       then
@@ -2704,7 +2702,7 @@ algorithm
         res_1 = renameComponentInExpAlgoritmsList(res, old_comp, new_comp);
       then
         ((exp_1,algs_1) :: res_1);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_exp_algoritms_list failed\n");
       then
@@ -2742,7 +2740,7 @@ algorithm
         iteratorsRenamed = renameComponentInIterators(iterators, old_comp, new_comp);
       then
         Absyn.FOR_ITER_FARG(exp1_1, iterType, iteratorsRenamed);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_function_args failed\n");
       then
@@ -2798,7 +2796,7 @@ algorithm
         res_1 = renameComponentInNamedArgs(res, old_comp, new_comp);
       then
         (Absyn.NAMEDARG(id,exp_1) :: res_1);
-    case (_,_,_)
+    else
       equation
         print("-rename_component_in_namedArgs failed\n");
       then
@@ -2877,7 +2875,7 @@ algorithm
         cr = replaceStartInComponentRef2(cr1, cr2, cr3);
       then
         Absyn.CREF_QUAL(id3,a,cr);
-    case (orig_cr,_,_) then orig_cr;
+    else inComponentRef1;
   end matchcontinue;
 end replaceStartInComponentRef2;
 
@@ -2910,7 +2908,7 @@ algorithm
         comp_reps_res = getComponentreplacementsrules(comps, comp_reps_2, old_len);
       then
         comp_reps_res;
-    case (_,_,_)
+    else
       equation
         print("-get_componentreplacementsrules failed\n");
       then
@@ -2949,7 +2947,7 @@ algorithm
         comp_reps_3 = joinComponentReplacementRules(comp_reps_1, comp_reps_2);
       then
         comp_reps_3;
-    case (_,_)
+    else
       equation
         print(
           "-get_new_componentreplacementsrules_for_each_rule failed\n");
@@ -3002,7 +3000,7 @@ algorithm
         comp_reps_res = joinComponentReplacementRules(comps_1, GlobalScript.COMPONENTREPLACEMENTRULES({comp_rep},1));
       then
         comp_reps_res;
-    case (_,_,_)
+    else
       equation
         print("-make_componentsReplacementRules_from_components failed\n");
       then
@@ -3017,10 +3015,10 @@ protected function emptyComponentReplacementRules
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponentReplacementRules)
+  match (inComponentReplacementRules)
     case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end emptyComponentReplacementRules;
 
 protected function joinComponentReplacementRules
@@ -3129,7 +3127,7 @@ algorithm
         comps2 = joinComponents(comps_types, comps_types2);
       then
         comps2;
-    case (_,_)
+    else
       equation
         print("-get_dependency_on_class failed\n");
       then
@@ -3166,7 +3164,7 @@ algorithm
         out_comps = getDependencyWithType(comps, comps_1, len);
       then
         out_comps;
-    case (_,_,_)
+    else
       equation
         print("-get_dependency_with_type failed\n");
       then
@@ -3212,7 +3210,7 @@ algorithm
         comps_2 = joinComponents(comp1, comps_1);
       then
         comps_2;
-    case (_,_)
+    else
       equation
         print("-get_components_with_components_class failed\n");
       then
@@ -3258,7 +3256,7 @@ algorithm
         comps_2 = joinComponents(comp1, comps_1);
       then
         comps_2;
-    case (_,_)
+    else
       equation
         print("-get_components_with_components_type failed\n");
       then
@@ -3308,7 +3306,7 @@ algorithm
         comps_1 = getComponentsFromClass(res, path);
       then
         comps_1;
-    case (_,_)
+    else
       equation
         print("-get_components_from_class failed\n");
       then
@@ -3358,7 +3356,7 @@ algorithm
         comps_1 = getComponentsWithType(res, path);
       then
         comps_1;
-    case (_,_)
+    else
       equation
         print("-get_components_with_type failed\n");
       then
@@ -3466,7 +3464,7 @@ algorithm
         comps_1 = extractComponentsFromClassdef(pa, classdef, comps, env);
       then
         comps_1;
-    case (_,_,_,_)
+    else
       equation
         print("-extract_components_from_class failed\n");
       then
@@ -3507,7 +3505,7 @@ algorithm
         comps_1 = extractComponentsFromClassparts(pa, parts, comps, env);
       then
         comps_1;
-    case (_,_,comps,_) then comps;
+    else inComponents;
   end matchcontinue;
 end extractComponentsFromClassdef;
 
@@ -3544,7 +3542,7 @@ algorithm
       then
         comps_2;
 
-    case (_,_,comps,_) then comps;
+    else inComponents;
 
   end matchcontinue;
 end extractComponentsFromClassparts;
@@ -3621,7 +3619,7 @@ algorithm
         comps_2 = extractComponentsFromElementargs(pa, elementargs, comps_1, env);
       then
         comps_2;
-    case (_,_,comps,_) then comps;
+    else inComponents;
       /* rule  extract_components_from_class(class,pa,comps,env) => comps\'
          -------------------------------
          extract_components_from_elementspec(pa,Absyn.CLASSDEF(_,class), comps,env) => comps\' */
@@ -3657,7 +3655,7 @@ algorithm
         comps_3 = extractComponentsFromModificationOption(pa, mod_opt, comps_2, env);
       then
         comps_3;
-    case (_,_,_,_,_)
+    else
       equation
         print("-extract_components_from_componentitems failed\n");
       then
@@ -3801,10 +3799,10 @@ protected function emptyComponents
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inComponents)
+  match (inComponents)
     case (GlobalScript.COMPONENTS(componentLst = {})) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end emptyComponents;
 
 protected function firstComponent
@@ -3926,10 +3924,10 @@ protected function isParameterElement
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inElement)
+  match (inElement)
     case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.PARAM())))) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isParameterElement;
 
 public function getParameterNames
@@ -3957,7 +3955,7 @@ algorithm
         names = List.map(compelts_1, getComponentitemName);
       then
         names;
-    case (_,_) then {};
+    else {};
   end matchcontinue;
 end getParameterNames;
 
@@ -4001,7 +3999,7 @@ algorithm
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {}, 0);
       then env_2;
-    case (_,_) then FGraph.empty();
+    else FGraph.empty();
   end matchcontinue;
 end getClassEnv;
 
@@ -4062,7 +4060,7 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         ("Ok",newp);
-    case (_,_,_,_,_,_,_,/*_,*/_,_,_,p) then ("Error",p);
+    else ("Error",inProgram10);
   end matchcontinue;
 end setComponentProperties;
 
@@ -4399,7 +4397,7 @@ algorithm
       then
         Absyn.COMPONENTS(attr_1,path,items);
 
-    case (spec,_,_,_,_,_,_) then spec;
+    else inElementSpec1;
   end matchcontinue;
 end setComponentPropertiesInElementspec;
 
@@ -4566,7 +4564,7 @@ algorithm
                "}"});
       then
         s;
-    case (_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getCrefInfo;
 
@@ -4710,7 +4708,7 @@ algorithm
       then
         str;
     case (Absyn.LEXER_COMMENT()) then "elementtype=comment";
-    case (_) then "elementtype=annotation";  /* for annotations we don\'t care */
+    else "elementtype=annotation";  /* for annotations we don\'t care */
   end matchcontinue;
 end getElementInfo;
 
@@ -4832,7 +4830,7 @@ algorithm
         maybe later we can give info about that also" ;
       then
         "{ }";
-    case (_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getElementsInfo;
 
@@ -4895,7 +4893,7 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (true,newp);
-    case (_,_,p) then (false,p);
+    else (false,inProgram);
   end matchcontinue;
 end setSourceFile;
 
@@ -4940,7 +4938,7 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (newp,"Ok");
-    case (_,_,_,_,p) then (p,"Error");
+    else (inProgram5,"Error");
   end matchcontinue;
 end setExtendsModifierValue;
 
@@ -5135,7 +5133,7 @@ algorithm
         eargs_1 = setSubmodifierInElementargs(eargs, Absyn.crefToPath(submod), mod);
       then
         Absyn.ELEMENT(f,r,i,Absyn.EXTENDS(path,eargs_1,annOpt),info,constr);
-    case (elt,_,_,_,_) then elt;
+    else inElement;
   end matchcontinue;
 end setExtendsSubmodifierInElement;
 
@@ -5180,7 +5178,7 @@ algorithm
         res = Dump.unparseModificationStr(mod);
       then
         res;
-    case (_,_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getExtendsModifierValue;
 
@@ -5226,7 +5224,7 @@ algorithm
         res = boolString(finalPrefix);
       then
         res;
-    case (_,_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end isExtendsModifierFinal;
 
@@ -5262,7 +5260,7 @@ algorithm
         f = isModifierfinal(rest, inPath);
       then
         f;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isModifierfinal;
 
@@ -5333,7 +5331,7 @@ algorithm
         res_2 = stringAppendList({"{",res_1,"}"});
       then
         res_2;
-    case (_,_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getExtendsModifierNames;
 
@@ -5398,7 +5396,7 @@ algorithm
         {Absyn.EXTENDS(tp,eltArg,NONE())};
         // Note: the array dimensions of DERIVED are lost. They must be
         // queried by another api-function
-    case (_) then {};
+    else {};
   end matchcontinue;
 end getExtendsElementspecInClass;
 
@@ -5898,7 +5896,7 @@ algorithm
         res = Dump.unparseModificationStr(mod);
       then
         res;
-    case (_,_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getComponentModifierValue;
 
@@ -5965,7 +5963,7 @@ algorithm
         res = getModificationNames(mod);
       then
         res;
-    case (_,_,_) then {};
+    else then {};
   end matchcontinue;
 end getComponentModifierNames;
 
@@ -6071,7 +6069,7 @@ algorithm
       then
         "";
 
-    case (_,_,_)
+    else
       then
         "";
   end matchcontinue;
@@ -6134,9 +6132,7 @@ algorithm
       then
         (p,str);
 
-    case (_,_,_,p)
-      then
-        (p,"Error");
+    else (inFullProgram,"Error");
   end matchcontinue;
 end setParameterValue;
 
@@ -6293,7 +6289,7 @@ algorithm
       then
         (Absyn.ELEMENT(f,r,i,Absyn.COMPONENTS(attr,tp,compitems_1),info,constr), b);
 
-    case (elt,_,_) then (elt, false);
+    else (inElement, false);
   end matchcontinue;
 end setVariableBindingInElement;
 
@@ -6373,7 +6369,7 @@ algorithm
         true = stringEq(id1, id2);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end componentitemNamed;
 
@@ -6394,11 +6390,11 @@ protected function getComponentitemsInElement
   input Absyn.Element inElement;
   output list<Absyn.ComponentItem> outAbsynComponentItemLst;
 algorithm
-  outAbsynComponentItemLst := matchcontinue (inElement)
+  outAbsynComponentItemLst := match (inElement)
     local list<Absyn.ComponentItem> l;
     case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = l))) then l;
-    case (_) then {};
-  end matchcontinue;
+    else {};
+  end match;
 end getComponentitemsInElement;
 
 protected function renameClass
@@ -6604,7 +6600,7 @@ algorithm
       then
         (Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.DERIVED(Absyn.TPATH(new_path,subscripts),attrs,elementarg,co),file_info),true);
     /* otherwise */
-    case (class_,_,_,_) then (class_,false);
+    else (inClass1,false);
 
   end matchcontinue;
 end renameClassInClass;
@@ -6796,7 +6792,7 @@ algorithm
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.UNQUAL_IMPORT(new_path),true);
-    case (import_,_,_,_) then (import_,false);
+    else (inImport1,false);
   end matchcontinue;
 end renameClassInImport;
 
@@ -6851,6 +6847,10 @@ algorithm
       Boolean res;
       Absyn.ComponentRef cr;
       Absyn.Program p;
+    case (Absyn.CREF_IDENT(name = "Real"),_) then true;  /* Instead of elaborating and lookup these in env, we optimize a bit and just return true for these */
+    case (Absyn.CREF_IDENT(name = "Integer"),_) then true;
+    case (Absyn.CREF_IDENT(name = "String"),_) then true;
+    case (Absyn.CREF_IDENT(name = "Boolean"),_) then true;
     case (cr,p)
       equation
         path = Absyn.crefToPath(cr);
@@ -6858,11 +6858,7 @@ algorithm
         res = isPrimitiveClass(class_, p);
       then
         res;
-    case (Absyn.CREF_IDENT(name = "Real"),_) then true;  /* Instead of elaborating and lookup these in env, we optimize a bit and just return true for these */
-    case (Absyn.CREF_IDENT(name = "Integer"),_) then true;
-    case (Absyn.CREF_IDENT(name = "String"),_) then true;
-    case (Absyn.CREF_IDENT(name = "Boolean"),_) then true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isPrimitive;
 
@@ -6935,8 +6931,7 @@ algorithm
         p.classes = deleteClassFromList(cdef, p.classes);
       then
         ("true",p);
-    case (_,p)
-      then ("false",p);
+    else ("false",inProgram);
   end matchcontinue;
 end deleteClass;
 
@@ -7001,7 +6996,7 @@ algorithm
       then
         (newp,true);
 
-    case (_,_,p) then (p,false);
+    else (inProgram,false);
   end matchcontinue;
 end setClassComment;
 
@@ -7071,7 +7066,7 @@ algorithm
         Absyn.OVERLOAD(plst,cmt_1);
     case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,ann = ann,parts = p),"") then Absyn.CLASS_EXTENDS(id,args,NONE(),p,ann);
     case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,ann = ann,parts = p),strcmt) then Absyn.CLASS_EXTENDS(id,args,SOME(strcmt),p,ann);
-    case (c,_) then c;
+    else inClassDef;
   end matchcontinue;
 end setClassCommentInClassdef;
 
@@ -7131,7 +7126,7 @@ algorithm
       then
         str;
 
-    case (_,_) then "{}";
+    else "{}";
 
   end matchcontinue;
 end getShortDefinitionBaseClassInformation;
@@ -7172,7 +7167,7 @@ algorithm
       then
         str;
 
-    case (_,_) then "{}";
+    else "{}";
 
   end matchcontinue;
 end getExternalFunctionSpecification;
@@ -7190,7 +7185,7 @@ algorithm
       str = "{"+ stringDelimitList(List.map(ad,Dump.printSubscriptStr),",")
       + "}";
     then str;
-    case(_) then "{}";
+    else "{}";
   end matchcontinue;
 end getClassDimensions;
 
@@ -7213,7 +7208,7 @@ algorithm
         res = Dump.unparseRestrictionStr(restr);
       then
         res;
-    case (_,_) then "";
+    else "";
   end matchcontinue;
 end getClassRestriction;
 
@@ -7226,15 +7221,13 @@ public function isType
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_TYPE(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_TYPE(),_,_) = getPathedClassInProgram(path, inProgram);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isType;
 
@@ -7247,20 +7240,18 @@ public function isConnector
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_) = getPathedClassInProgram(path, inProgram);
       then
         true;
-    case (_,p)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_) = getPathedClassInProgram(path, inProgram);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isConnector;
 
@@ -7272,12 +7263,10 @@ public function isModel
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  outBoolean := matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_MODEL(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_MODEL(),_,_) = getPathedClassInProgram(path, inProgram);
       then true;
     else false;
   end matchcontinue;
@@ -7291,12 +7280,10 @@ public function isOperator
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  outBoolean := matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_OPERATOR(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_OPERATOR(),_,_) = getPathedClassInProgram(path, inProgram);
       then true;
     else false;
   end matchcontinue;
@@ -7310,12 +7297,10 @@ public function isOperatorRecord
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  outBoolean := matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_OPERATOR_RECORD(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_OPERATOR_RECORD(),_,_) = getPathedClassInProgram(path, inProgram);
       then true;
     else false;
   end matchcontinue;
@@ -7329,12 +7314,10 @@ public function isOperatorFunction
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  outBoolean := matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()),_,_) = getPathedClassInProgram(path, inProgram);
       then true;
     else false;
   end matchcontinue;
@@ -7349,15 +7332,13 @@ public function isRecord
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_RECORD(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_RECORD(),_,_) = getPathedClassInProgram(path, inProgram);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isRecord;
 
@@ -7370,15 +7351,13 @@ public function isBlock
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_BLOCK(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_BLOCK(),_,_) = getPathedClassInProgram(path, inProgram);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isBlock;
 
@@ -7391,15 +7370,13 @@ public function isOptimization
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_OPTIMIZATION(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_OPTIMIZATION(),_,_) = getPathedClassInProgram(path, inProgram);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isOptimization;
 
@@ -7412,15 +7389,13 @@ public function isFunction
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(_)),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(_)),_,_) = getPathedClassInProgram(path, inProgram);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isFunction;
 
@@ -7433,12 +7408,10 @@ public function isPackage
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_PACKAGE(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_PACKAGE(),_,_) = getPathedClassInProgram(path, inProgram);
       then
         true;
     else false;
@@ -7454,15 +7427,13 @@ public function isClass
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_CLASS(),_,_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_CLASS(),_,_) = getPathedClassInProgram(path, inProgram);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isClass;
 
@@ -7470,15 +7441,15 @@ public function isPartial
 " This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"class\", otherwise it returns false."
-  input Absyn.Path p;
-  input Absyn.Program prog;
+  input Absyn.Path path;
+  input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (p,prog)
-    case (_,_)
+  matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(partialPrefix=true) = getPathedClassInProgram(p, prog);
+        Absyn.CLASS(partialPrefix=true) = getPathedClassInProgram(path, inProgram);
       then true;
     else false;
   end matchcontinue;
@@ -7521,7 +7492,7 @@ algorithm
       then
         true;
     /* otherwise */
-    case (_,_,_) then false;
+    else false;
   end matchcontinue;
 end isParameter;
 
@@ -7575,7 +7546,7 @@ algorithm
       then
         true;
     /* otherwise return false */
-    case (_,_,_) then false;
+    else false;
   end matchcontinue;
 end isProtected;
 
@@ -7613,7 +7584,7 @@ algorithm
       then
         true;
     /* otherwise return false */
-    case (_,_,_) then false;
+    else false;
   end matchcontinue;
 end isConstant;
 
@@ -7624,15 +7595,13 @@ public function isEnumeration
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean:= matchcontinue (path,inProgram)
-    local
-      Absyn.Program p;
-    case (_,p)
+  outBoolean:= matchcontinue (inProgram)
+    case (_)
       equation
-        Absyn.CLASS(_,_,_,_,Absyn.R_TYPE(),Absyn.ENUMERATION(_,_),_) = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,Absyn.R_TYPE(),Absyn.ENUMERATION(_,_),_) = getPathedClassInProgram(path, inProgram);
       then
         true;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isEnumeration;
 
@@ -7745,7 +7714,7 @@ algorithm
         protected_elementitem_list = getProtectedList(parts);
         res = isProtectedClassInElements(protected_elementitem_list, str);
       then res;
-    case (_,_,_) then false;
+    else false;
   end matchcontinue;
 end isProtectedClass;
 
@@ -7771,7 +7740,7 @@ algorithm
         res = isProtectedClassInElements(rest, str);
       then
         res;
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end isProtectedClassInElements;
 
@@ -7964,7 +7933,7 @@ algorithm
       then
         true;
 
-    case (_,_) then false;
+    else false;
   end matchcontinue;
 end existClass;
 
@@ -8016,7 +7985,7 @@ algorithm
         cfs_1 = removeCf(cfs, Absyn.IDENT(id));
       then
         cfs_1;
-    case (_,cfs) then cfs;
+    else inTplAbsynPathTypesTypeLst;
   end matchcontinue;
 end removeCompiledFunctions;
 
@@ -8050,7 +8019,7 @@ algorithm
         newCF = removeAnyPartsFunctions(p, parts, cf);
       then
         newCF;
-    case (_, _, cf) then cf;
+    else inCompiledFunctions;
   end matchcontinue;
 end removeAnySubFunctions;
 
@@ -8292,7 +8261,7 @@ algorithm
         newpath = Absyn.joinPaths(path, path2);
       then
         Absyn.PROGRAM(cls,Absyn.WITHIN(newpath));
-    case (p,_) then p;
+    else inProgram;
   end matchcontinue;
 end addScope;
 
@@ -8484,7 +8453,7 @@ algorithm
       then
         (newp,"true\n");
 
-    case (_,_,p) then (p,"false\n");
+    else (inProgram,"false\n");
 
   end matchcontinue;
 end deleteComponent;
@@ -8689,7 +8658,7 @@ algorithm
       then
         (newp,"Ok\n");
 
-    case (_,_,_,_,p) then (p,"Error");
+    else (inProgram5,"Error");
 
   end matchcontinue;
 end addComponent;
@@ -8801,7 +8770,7 @@ algorithm
     case(SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=e)))) equation
       docStr = Dump.printExpStr(e);
     then docStr;
-    case _ then "";
+    else "";
   end matchcontinue;
 end getDefaultComponentPrefixesModStr;
 
@@ -8934,10 +8903,7 @@ algorithm
         (newp,"true");
 
     // failure
-    case (_,_,_,_,p)
-      equation
-      then
-        (p,"false");
+    else (inProgram5,"false");
     /* adrpo: TODO!: handle also model extends M end M; i.e. CLASS_EXTENDS */
   end matchcontinue;
 end updateComponent;
@@ -8991,7 +8957,7 @@ algorithm
       list<Absyn.ElementItem> publst,publst2,protlst,protlst2;
       list<Absyn.EquationItem> equationlst,equationlst2;
       list<Absyn.AlgorithmItem> algorithmlst,algorithmlst2;
-      Absyn.Annotation annotation_,oldann,newann,newann_1;
+      Absyn.Annotation annotation_,newann,newann_1;
       Absyn.Class cdef_1,cdef;
       list<Absyn.ClassPart> parts,parts2;
       list<Absyn.NamedArg> nargs;
@@ -9046,7 +9012,7 @@ algorithm
         count = countBaseClasses(cdef);
       then
         count;
-    case (_,_) then 0;
+    else 0;
   end matchcontinue;
 end getInheritanceCount;
 
@@ -9140,7 +9106,7 @@ algorithm
       then
         (s, annOpt);
 
-    case (_,_,_,_) then ("Error", NONE());
+    else ("Error", NONE());
   end matchcontinue;
 end getNthInheritedClassAnnotationOpt;
 
@@ -9213,7 +9179,7 @@ algorithm
         s = "{" + s + ",{}}";
       then
         s;
-    case (_,_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getNthInheritedClassMapAnnotation;
 
@@ -9513,7 +9479,7 @@ algorithm
         str = getNthComponent2(c, cdef, n, env_1);
       then
         str;
-    case (_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getNthComponent;
 
@@ -9550,7 +9516,7 @@ algorithm
         str = stringAppendList({"{", s1, "}"});
       then
         str;
-    case (_,_,_,_)
+    else
       equation
         print("Interactive.getNthComponent2 failed\n");
       then
@@ -9654,7 +9620,7 @@ algorithm
         res = stringAppendList({"{",str,"}"});
       then
         (res,st);
-    case (_,_,st) then ("Error",st);
+    else ("Error",ist);
   end matchcontinue;
 end getComponents2;
 
@@ -9688,7 +9654,7 @@ algorithm
         str = stringAppendList({"{", s1, "}"});
       then
         str;
-    case (_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getComponentAnnotations;
 
@@ -9720,7 +9686,7 @@ algorithm
         str = stringAppendList({"{", s1, "}"});
       then
         str;
-    case (_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getNthComponentAnnotation;
 
@@ -9753,7 +9719,7 @@ algorithm
         str_1 = stringAppendList({"{",str,"}"});
       then
         str_1;
-    case (_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getNthComponentModification;
 
@@ -9785,7 +9751,7 @@ algorithm
         str_1 = stringAppendList({"\"",str,"\""});
       then
         str_1;
-    case (_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getNthComponentCondition;
 
@@ -9804,7 +9770,7 @@ algorithm
         str = getComponentitemsCondition(lst);
       then
         str;
-    case _ then "";
+    else "";
   end matchcontinue;
 end getComponentCondition;
 
@@ -9852,7 +9818,7 @@ algorithm
         res = intString(numconn);
       then
         res;
-    case (_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getConnectionCount;
 
@@ -9886,7 +9852,7 @@ algorithm
         res = stringAppendList({"{",str,", ",str2,"}"});
       then
         res;
-    case (_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getNthConnection;
 
@@ -9907,11 +9873,11 @@ public function getStringComment2
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inAbsynCommentOption)
+  match (inAbsynCommentOption)
     local String str;
     case (SOME(Absyn.COMMENT(_,SOME(str)))) then str;
-    case (_) then "";
-  end matchcontinue;
+    else "";
+  end match;
 end getStringComment2;
 
 protected function addConnection "
@@ -10324,9 +10290,7 @@ algorithm
       then
         ("Ok",newp);
 
-    case (_,_,_,p)
-      then
-        ("Error",p);
+    else ("Error",inProgram4);
   end matchcontinue;
 end setComponentComment;
 
@@ -10539,7 +10503,7 @@ algorithm
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
       then
         (newp,"Ok");
-    case (_,_,_,_,p) then (p,"Error");
+    else (inProgram5,"Error");
   end matchcontinue;
 end setConnectionComment;
 
@@ -10676,7 +10640,7 @@ algorithm
         str = stringAppendList({"{", s1, "}"});
       then
         str;
-    case (_,_,_) then "{}";
+    else "{}";
   end matchcontinue;
 end getNthConnectionAnnotation;
 
@@ -10712,7 +10676,7 @@ algorithm
         countstr = intString(count);
       then
         countstr;
-    case (_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getConnectorCount;
 
@@ -10741,7 +10705,7 @@ algorithm
         resstr = stringAppendList({str, ",", tpstr});
       then
         resstr;
-    case (_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getNthConnector;
 
@@ -10768,7 +10732,7 @@ algorithm
         resstr = getIconAnnotation(tp, p);
       then
         resstr;
-    case (_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getNthConnectorIconAnnotation;
 
@@ -10792,9 +10756,7 @@ algorithm
         str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION(), p, modelpath);
       then
         str;
-    case (_,_)
-      then
-        "{}";
+    else "{}";
   end matchcontinue;
 end getDiagramAnnotation;
 
@@ -10942,9 +10904,7 @@ algorithm
         str = getAnnotationInClass(cdef, ICON_ANNOTATION(), p, modelpath);
       then
         str;
-    case (_,_)
-      then
-        "{}";
+    else "{}";
   end matchcontinue;
 end getIconAnnotation;
 
@@ -11368,7 +11328,7 @@ algorithm
         cref = Absyn.pathToCref(tp);
         then {cref};
 
-    case (_,_) then {};
+    else {};
 
   end matchcontinue;
 end getBaseClasses;
@@ -11485,7 +11445,7 @@ algorithm
 
     case (Absyn.CLASS(body = Absyn.DERIVED())) then 1;
 
-    case (_) then 0;
+    else 0;
 
   end matchcontinue;
 end countBaseClasses;
@@ -11700,7 +11660,7 @@ algorithm
       then
         docStr;
 
-    case _ then "";
+    else "";
 
   end matchcontinue;
 end getDefaultComponentNameModStr;
@@ -11740,7 +11700,7 @@ algorithm
         s;
 
     // adrpo: empty if no value
-    case (_) then "{}";
+    else "{}";
   end matchcontinue;
 end getAnnotationValue;
 
@@ -12726,7 +12686,7 @@ algorithm
       then
         str;
 
-    case (_,_,_,_) then "";
+    else "";
   end matchcontinue;
 end getComponentAnnotation;
 
@@ -12823,7 +12783,7 @@ algorithm
         str = getComponentitemsModification(lst);
       then
         str;
-    case _ then "";
+    else "";
   end matchcontinue;
 end getComponentModification;
 
@@ -13109,7 +13069,7 @@ algorithm
       then
         str;
 
-    case (_, _, _, _)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Interactive.getAnnotationString failed on annotation: " + Dump.unparseAnnotation(inAnnotation));
@@ -13225,7 +13185,7 @@ algorithm
       then
         res;
 
-    case (_) then {};
+    else {};
 
   end matchcontinue;
 end getComponentsInClass;
@@ -13284,7 +13244,7 @@ algorithm
       then
         res;
 
-    case (_) then {};
+    else {};
   end matchcontinue;
 end getPublicComponentsInClass;
 
@@ -13348,7 +13308,7 @@ algorithm
       then
         res;
 
-    case (_) then {};
+    else {};
 
   end matchcontinue;
 end getProtectedComponentsInClass;
@@ -13644,7 +13604,7 @@ algorithm
     case(SOME(adim)) equation
       str = stringDelimitList(List.map(adim,Dump.printSubscriptStr),",");
     then str;
-    case(_) then "";
+    else "";
   end matchcontinue;
 end arrayDimensionStr;
 
@@ -13686,7 +13646,7 @@ algorithm
         res = stringAppendList({"{",lst_1,"}"});
       then
         res;
-    case (_,_,_,_) then "";
+    else "";
   end matchcontinue;
 end getComponentsInfo;
 
@@ -13723,11 +13683,11 @@ public function keywordReplaceable
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inAbsynRedeclareKeywordsOption)
+  match (inAbsynRedeclareKeywordsOption)
     case (SOME(Absyn.REPLACEABLE())) then true;
     case (SOME(Absyn.REDECLARE_REPLACEABLE())) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end keywordReplaceable;
 
 protected function getComponentInfoOld
@@ -13780,7 +13740,7 @@ algorithm
 
     case (_,_) then {};
 
-    case (_,_)
+    else
       equation
         print("Interactive.getComponentInfoOld failed\n");
       then
@@ -14232,8 +14192,7 @@ algorithm
       then
         Absyn.CLASS(i,p,f,e,r,Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,newparts,ann),file_info);
 
-    case (Absyn.CLASS(
-                      body = Absyn.DERIVED()),_)
+    case (Absyn.CLASS(body = Absyn.DERIVED()),_)
       then fail();
 
   end matchcontinue;
@@ -14372,7 +14331,7 @@ algorithm
       then
         cnew_1;
 
-    case (_,_,_)
+    else
       equation
         Print.printBuf("insert_class_in_class failed\n");
       then
@@ -14584,7 +14543,7 @@ algorithm
       then
         Absyn.CLASS(a,b,c,d,e,Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann),file_info);
 
-    case (_,_)
+    else
       equation
         Print.printBuf("Failed in replaceInnerClass\n");
       then
@@ -14986,7 +14945,7 @@ algorithm
         ys = getEquationList(xs);
       then
         ys;
-    case (_) then fail();
+    else fail();
   end matchcontinue;
 end getEquationList;
 
@@ -15006,7 +14965,7 @@ algorithm
         ys = getInitialEquationList(xs);
       then
         ys;
-    case (_) then fail();
+    else fail();
   end matchcontinue;
 end getInitialEquationList;
 
@@ -15026,7 +14985,7 @@ algorithm
         ys = getAlgorithmList(xs);
       then
         ys;
-    case (_) then fail();
+    else fail();
   end matchcontinue;
 end getAlgorithmList;
 
@@ -15046,7 +15005,7 @@ algorithm
         ys = getInitialAlgorithmList(xs);
       then
         ys;
-    case (_) then fail();
+    else fail();
   end matchcontinue;
 end getInitialAlgorithmList;
 
@@ -15355,7 +15314,6 @@ algorithm
     local
       Absyn.Comment ann;
       list<Absyn.NamedArg> nargs;
-      Option<Absyn.Comment> oldann;
       String oldcmt,newcmt;
       Option<String> cmtOpt;
       Option<Absyn.Annotation> annOptOld, annOptNew, annOpt;
@@ -15392,9 +15350,7 @@ algorithm
         SOME(Absyn.COMMENT(annOpt, SOME(newcmt)));
 
     // no annotations from nargs
-    case (_,oldann)
-      then
-        oldann;
+    else inAbsynCommentOption;
   end matchcontinue;
 end annotationListToAbsynComment;
 
@@ -15511,10 +15467,10 @@ algorithm
         res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),p,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE(),Absyn.dummyInfo);
       then
         res;
-    case (e)
+    else
       equation
         Print.printBuf("Interactive.recordConstructorToModification failed, exp=");
-        Dump.printExp(e);
+        Dump.printExp(inExp);
         Print.printBuf("\n");
       then
         fail();
@@ -15546,7 +15502,7 @@ algorithm
         res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.IDENT(id),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(e,Absyn.dummyInfo /*Bad*/))),NONE(),Absyn.dummyInfo);
       then
         res;
-    case (_)
+    else
       equation
         Print.printBuf("- Interactive.namedargToModification failed\n");
       then
@@ -15797,7 +15753,7 @@ algorithm
         cdef1 = transformFlatClassDef(cdef);
       then ((Absyn.CLASS(id,a,b,c,d,cdef1,file_info),pa,i));
 
-    case((_,_,_))
+    else
       equation
         print("Interactive.transformFlatClass failed\n");
       then fail();
@@ -15841,7 +15797,7 @@ algorithm
         partsTransformed = List.map(parts,transformFlatPart);
       then
         Absyn.CLASS_EXTENDS(baseClassName, modifications, cmt, partsTransformed, ann);
-    case(_) equation print("Interactive.transformFlatClassDef failed\n");
+    else equation print("Interactive.transformFlatClassDef failed\n");
       then fail();
   end matchcontinue;
 end transformFlatClassDef;
@@ -15881,7 +15837,7 @@ algorithm
         algitems1 = List.map(algitems,transformFlatAlgorithmItem);
       then Absyn.INITIALALGORITHMS(algitems1);
     case(Absyn.EXTERNAL(_,_)) then part;
-    case(_)
+    else
       equation print("Interactive.transformFlatPart failed\n");
       then fail();
   end matchcontinue;
@@ -16758,7 +16714,7 @@ algorithm
     //case Absyn.CLASS(name = ident, body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(el))) equation
     //  enumList = List.map(el, getEnumerationLiterals);
     //then "enumeration " + ident + "(" + stringDelimitList(enumList, ",") + ")";
-    case (_,_) then "";
+    else "";
   end matchcontinue;
 end getDefinitionsClass;
 
@@ -16827,7 +16783,7 @@ algorithm
     case (Absyn.TCOMPLEX(arrayDim = SOME(l1)), Absyn.ATTR(arrayDim = l2)) then listLength(l1)+listLength(l2);
     case (Absyn.TPATH(arrayDim = NONE()), Absyn.ATTR(arrayDim = l2)) then listLength(l2);
     case (Absyn.TCOMPLEX(arrayDim = NONE()), Absyn.ATTR(arrayDim = l2)) then listLength(l2);
-    case (_, _) then 0;
+    else 0;
   end matchcontinue;
 end getDefinitionDimensions;
 
@@ -17291,7 +17247,7 @@ algorithm
         {compitem} = List.select1(compelts_1, componentitemNamed, name);
         failure(_ = getVariableBindingInComponentitem(compitem));
       then "";
-    case (_,_,_) then "Error";
+    else "Error";
   end matchcontinue;
 end getComponentBindingMapable;
 
@@ -17518,7 +17474,7 @@ algorithm
       list<Absyn.ClassPart> classParts;
     case Absyn.CLASS(body = Absyn.PARTS(classParts = classParts))
       then getClassesInParts(classParts);
-    case (_) then {};
+    else {};
   end matchcontinue;
 end getAllClassesInClass;
 
@@ -17581,7 +17537,7 @@ algorithm
         paths = List.map(exts, getBaseClassNameFromExtends);
       then
         paths;
-    case (_,_) then {};
+    else {};
   end matchcontinue;
 end getAllInheritedClasses;
 
