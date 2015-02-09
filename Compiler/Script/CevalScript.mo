@@ -2491,6 +2491,12 @@ algorithm
       then
         (cache,Values.TUPLE({Values.REAL(0.0),Values.STRING("")}),st);
 
+    case (cache,_,"getClassRestriction",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      equation
+        str = Interactive.getClassRestriction(classpath, p);
+      then
+        (cache,Values.STRING(str),st);
+
     case (cache,_,"isType",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isType(classpath, p);
@@ -3182,6 +3188,14 @@ algorithm
         SimulationResults.close();
       then
         (cache,Values.BOOL(true),st);
+
+    case (cache,_,"getParameterNames",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      equation
+        strings = Interactive.getParameterNames(path, p);
+        vals = List.map(strings, ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(vals);
+      then
+        (cache,v,st);
 
     case (cache,_,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation

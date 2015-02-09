@@ -2716,6 +2716,17 @@ and the annotation to set.</p>
 </html>"));
 end addClassAnnotation;
 
+function getParameterNames
+  input TypeName class_;
+  output String[:] parameters;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the list of parameters of the class.
+</html>"),
+  preferredView="text");
+end getParameterNames;
+
 function getAlgorithmCount "Counts the number of Algorithm sections in a class."
   input TypeName class_;
   output Integer count;
@@ -2969,6 +2980,17 @@ annotation(
 </html>"),
   preferredView="text");
 end basename;
+
+function getClassRestriction
+  input TypeName cl;
+  output String restriction;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the restriction of the given class.
+</html>"),
+  preferredView="text");
+end getClassRestriction;
 
 function isType
   input TypeName cl;

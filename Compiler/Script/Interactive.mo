@@ -1047,12 +1047,6 @@ algorithm
       then
         outResult;
 
-    case "getParameterNames"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getParameterNames(cr, p);
-
     case "createModel"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
@@ -1368,12 +1362,6 @@ algorithm
         {Absyn.CREF(componentRef = cr)} := args;
       then
         getExternalFunctionSpecification(cr, p);
-
-    case "getClassRestriction"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getClassRestriction(cr, p);
 
     case "isPrimitive"
       algorithm
@@ -3956,19 +3944,15 @@ algorithm
   end matchcontinue;
 end isParameterElement;
 
-protected function getParameterNames
-" Retrieves the names of all parameters in the class
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.Program)
-   outputs:  string"
-  input Absyn.ComponentRef inComponentRef;
+public function getParameterNames
+ "Retrieves the names of all parameters in the class"
+  input Absyn.Path path;
   input Absyn.Program inProgram;
-  output String outString;
+  output list<String> outList;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
+  outList:=
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path p_class;
       Absyn.Class cdef;
       list<Absyn.Element> comps,comps_1;
       list<list<Absyn.ComponentItem>> compelts;
@@ -3977,20 +3961,17 @@ algorithm
       String res,res_1;
       Absyn.ComponentRef class_;
       Absyn.Program p;
-    case (class_,p)
+    case (_,p)
       equation
-        p_class = Absyn.crefToPath(class_);
-        cdef = getPathedClassInProgram(p_class, p);
+        cdef = getPathedClassInProgram(path, p);
         comps = getComponentsInClass(cdef);
         comps_1 = List.select(comps, isParameterElement);
         compelts = List.map(comps_1, getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         names = List.map(compelts_1, getComponentitemName);
-        res = stringDelimitList(names, ", ");
-        res_1 = stringAppendList({"{",res,"}"});
       then
-        res_1;
-    case (_,_) then "Error";
+        names;
+    case (_,_) then {};
   end matchcontinue;
 end getParameterNames;
 
@@ -7251,26 +7232,22 @@ end getClassDimensions;
 public function getClassRestriction
 "author: PA
   Returns the class restriction of a class as a string."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input Absyn.Program inProgram;
   output String outRestriction;
 algorithm
   outRestriction:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (path,inProgram)
     local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
       Absyn.Program p;
       Absyn.Restriction restr;
-      String res, res_1;
-    case (cr,p)
+      String res;
+    case (_,p)
       equation
-        path = Absyn.crefToPath(cr);
         Absyn.CLASS(_,_,_,_,restr,_,_) = getPathedClassInProgram(path, p);
         res = Dump.unparseRestrictionStr(restr);
-        res_1 = stringAppendList({"\"",res,"\""});
       then
-        res_1;
+        res;
     case (_,_) then "";
   end matchcontinue;
 end getClassRestriction;
