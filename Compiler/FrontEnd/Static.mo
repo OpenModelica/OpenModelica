@@ -1391,7 +1391,7 @@ algorithm
     // We need to evaluate the iterator because the rest of the compiler is stupid.
     c := if FGraph.inFunctionScope(inEnv) then iter_const else DAE.C_CONST();
     (outCache, iter_exp) :=
-      Ceval.cevalIfConstant(outCache, inEnv, iter_exp, DAE.PROP(full_iter_ty, c), inImpl, inInfo); 
+      Ceval.cevalIfConstant(outCache, inEnv, iter_exp, DAE.PROP(full_iter_ty, c), inImpl, inInfo);
 
     (iter_ty, dim) := Types.unliftArrayOrList(full_iter_ty);
     // The iterator needs to be added to two different environments, to hide the
@@ -1448,7 +1448,7 @@ protected
 algorithm
   // Collect all crefs that are subscripted with the given iterator.
   (_, crefs) := Absyn.traverseExp(inReductionExp,
-    function deduceReductionIterationRange_traverser(inIterator = inIterator), {}); 
+    function deduceReductionIterationRange_traverser(inIterator = inIterator), {});
   crefs := List.uniqueOnTrue(crefs, iteratorIndexedCrefsEqual);
 
   // Check that we found some crefs, otherwise we print an error and fail.
@@ -1482,7 +1482,7 @@ algorithm
       // The indexed dimension doesn't exist, i.e. we have too many subscripts.
       // Return some dummy variables, and let elabCallReduction handle the error
       // reporting since we don't know how many subscripts were used here.
-      range := DAE.ICONST(0); 
+      range := DAE.ICONST(0);
       outType := DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(0)},
         DAE.emptyTypeSource);
     end if;
@@ -1591,7 +1591,7 @@ algorithm
     case Absyn.CREF_QUAL(name = id, subscripts = subs, componentRef = cref)
       algorithm
         crefs := getIteratorIndexedCrefs(cref, inIterator, {});
-        
+
         // Append the prefix from the qualified cref to any matches, and add
         // them to the result list.
         for cr in crefs loop
@@ -1680,7 +1680,7 @@ protected function makeReductionFoldExp
   input String resultId;
   output FCore.Graph outEnv;
   output Option<Absyn.Exp> afoldExp;
-protected 
+protected
   String func_name;
 algorithm
   (outEnv, afoldExp) := match path
