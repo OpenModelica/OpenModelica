@@ -2,7 +2,7 @@
  provides a simple function to do a full pivot search while doing an LU factorization
 */
 
-#include "modelica.h"
+#include "util/modelica.h"
 
 #include <math.h>
 #include <assert.h>

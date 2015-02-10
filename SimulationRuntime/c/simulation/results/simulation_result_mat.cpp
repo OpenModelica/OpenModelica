@@ -28,9 +28,9 @@
  *
  */
 
-#include "omc_error.h"
+#include "util/omc_error.h"
 #include "simulation_result_mat.h"
-#include "rtclock.h"
+#include "util/rtclock.h"
 
 #include <fstream>
 #include <iostream>

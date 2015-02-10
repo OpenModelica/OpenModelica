@@ -35,7 +35,7 @@
 #include "OptimizerData.h"
 #include "OptimizerLocalFunction.h"
 #include "simulation_data.h"
-#include "../../simulation/options.h"
+#include "simulation/options.h"
 
 static inline void optimizationWithIpopt(OptData*optData);
 static inline void freeOptimizerData(OptData*optData);

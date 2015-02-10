@@ -41,9 +41,9 @@
  * A message with ID=6 indicates that the simulation is completed.
  */
 
-#include "omc_error.h"
+#include "util/omc_error.h"
 #include "simulation_result_ia.h"
-#include "rtclock.h"
+#include "util/rtclock.h"
 
 #include <fstream>
 #include <iostream>

@@ -28,7 +28,7 @@
  *
  */
 
-#include "omc_msvc.h"
+#include "util/omc_msvc.h"
 
 #include <setjmp.h>
 #include <string>
@@ -59,30 +59,30 @@
   extern Socket sim_communication_port;
 #endif
 
-#include "omc_error.h"
+#include "util/omc_error.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
 #include "linearize.h"
 #include "options.h"
 #include "simulation_runtime.h"
 #include "simulation_input_xml.h"
-#include "simulation_result_plt.h"
-#include "simulation_result_csv.h"
-#include "simulation_result_mat.h"
-#include "simulation_result_wall.h"
-#include "simulation_result_ia.h"
-#include "solver_main.h"
+#include "simulation/results/simulation_result_plt.h"
+#include "simulation/results/simulation_result_csv.h"
+#include "simulation/results/simulation_result_mat.h"
+#include "simulation/results/simulation_result_wall.h"
+#include "simulation/results/simulation_result_ia.h"
+#include "simulation/solver/solver_main.h"
 #include "simulation_info_xml.h"
 #include "modelinfo.h"
-#include "model_help.h"
-#include "mixedSystem.h"
-#include "linearSystem.h"
-#include "nonlinearSystem.h"
-#include "rtclock.h"
+#include "simulation/solver/model_help.h"
+#include "simulation/solver/mixedSystem.h"
+#include "simulation/solver/linearSystem.h"
+#include "simulation/solver/nonlinearSystem.h"
+#include "util/rtclock.h"
 #include "omc_config.h"
-#include "initialization.h"
+#include "simulation/solver/initialization/initialization.h"
 
 #ifdef _OMC_QSS_LIB
   #include "solver_qss/solver_qss.h"

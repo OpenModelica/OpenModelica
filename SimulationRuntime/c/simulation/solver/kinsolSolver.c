@@ -34,8 +34,8 @@
 #include "omc_config.h"
 #include "nonlinearSystem.h"
 #include "kinsolSolver.h"
-#include "simulation_info_xml.h"
-#include "omc_error.h"
+#include "simulation/simulation_info_xml.h"
+#include "util/omc_error.h"
 
 #ifdef WITH_SUNDIALS
 
@@ -43,11 +43,11 @@
   #include <stdlib.h>
   #include <string.h> /* memcpy */
 
-  #include "varinfo.h"
+  #include "util/varinfo.h"
   #include "openmodelica.h"
   #include "openmodelica_func.h"
   #include "model_help.h"
-  #include "read_matlab4.h"
+  #include "util/read_matlab4.h"
   #include "events.h"
 
   #include <string.h>

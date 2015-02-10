@@ -37,7 +37,7 @@
 #define META_MODELICA_BUILTIN_H_
 
 #include "openmodelica.h"
-#include "omc_msvc.h"
+#include "util/omc_msvc.h"
 
 #if defined(__cplusplus)
 extern "C" {

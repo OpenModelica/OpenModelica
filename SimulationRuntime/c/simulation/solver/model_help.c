@@ -36,11 +36,11 @@
 
 #include "simulation_data.h"
 #include "openmodelica_func.h"
-#include "omc_error.h"
-#include "varinfo.h"
+#include "util/omc_error.h"
+#include "util/varinfo.h"
 #include "model_help.h"
-#include "simulation_info_xml.h"
-#include "omc_msvc.h" /* for freaking round! */
+#include "simulation/simulation_info_xml.h"
+#include "util/omc_msvc.h" /* for freaking round! */
 #include "nonlinearSystem.h"
 #include "linearSystem.h"
 #include "mixedSystem.h"

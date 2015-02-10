@@ -47,7 +47,7 @@
 #include "simulation/solver/epsilon.h"
 
 #include "simulation/solver/dassl.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
 
 static const char *dasslJacobianMethodStr[DASSL_JAC_MAX] = {"unknown",

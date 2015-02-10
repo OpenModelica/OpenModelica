@@ -35,12 +35,12 @@
 #include <stdlib.h>
 #include <string.h> /* memcpy */
 
-#include "simulation_info_xml.h"
-#include "omc_error.h"
-#include "varinfo.h"
+#include "simulation/simulation_info_xml.h"
+#include "util/omc_error.h"
+#include "util/varinfo.h"
 #include "model_help.h"
-#include "memory_pool.h"
-#include "meta_modelica.h"
+#include "util/memory_pool.h"
+#include "meta/meta_modelica.h"
 
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHybrd.h"

@@ -36,11 +36,11 @@
 #include "simulation_info_json.h"
 
 #include "simulation_runtime.h"
-#include "omc_msvc.h" /* for asprintf */
+#include "util/omc_msvc.h" /* for asprintf */
 #include <expat.h>
 #include <errno.h>
 #include <string.h>
-#include "uthash.h"
+#include "util/uthash.h"
 #include <stdio.h>
 #include "util/rtclock.h"
 

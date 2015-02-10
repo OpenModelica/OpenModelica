@@ -29,7 +29,7 @@
  */
 
 #include "options.h"
-#include "omc_error.h"
+#include "util/omc_error.h"
 
 #include <string.h>
 #include <stdio.h>

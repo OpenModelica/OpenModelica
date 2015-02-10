@@ -33,31 +33,31 @@
 
 #include "omc_config.h"
 #include "solver_main.h"
-#include "simulation_runtime.h"
-#include "simulation_result.h"
+#include "simulation/simulation_runtime.h"
+#include "simulation/results/simulation_result.h"
 #include "openmodelica_func.h"
-#include "initialization.h"
+#include "initialization/initialization.h"
 #include "nonlinearSystem.h"
 #include "dassl.h"
 #include "delay.h"
 #include "events.h"
 #include "external_input.h"
-#include "varinfo.h"
+#include "util/varinfo.h"
 #include "stateset.h"
 #include "radau.h"
 #include "model_help.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
 #include "linearSystem.h"
 
-#include "OptimizerInterface.h"
+#include "optimization/OptimizerInterface.h"
 
 /*
  * #include "dopri45.h"
  */
-#include "rtclock.h"
-#include "omc_error.h"
-#include "options.h"
+#include "util/rtclock.h"
+#include "util/omc_error.h"
+#include "simulation/options.h"
 #include <math.h>
 #include <string.h>
 #include <errno.h>

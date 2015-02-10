@@ -41,7 +41,6 @@
 
 #ifdef WITH_SUNDIALS
   #include <math.h>
-  #include "omc_error.h"
   #include <nvector/nvector_serial.h>
 
   #ifdef __cplusplus

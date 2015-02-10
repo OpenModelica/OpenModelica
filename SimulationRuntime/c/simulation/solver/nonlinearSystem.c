@@ -34,17 +34,17 @@
 #include <math.h>
 #include <string.h>
 
-#include "omc_error.h"
+#include "util/omc_error.h"
 #include "nonlinearSystem.h"
 #include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
 #include "nonlinearSolverHomotopy.h"
-#include "simulation_info_xml.h"
-#include "simulation_runtime.h"
+#include "simulation/simulation_info_xml.h"
+#include "simulation/simulation_runtime.h"
 
 /* for try and catch simulationJumpBuffer */
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
 int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber);
 

@@ -34,9 +34,9 @@
 #include "../OptimizerData.h"
 #include "../OptimizerLocalFunction.h"
 
-#include "../simulation/solver/dassl.h"
-#include "../../simulation/options.h"
-#include "../../simulation/results/simulation_result.h"
+#include "simulation/solver/dassl.h"
+#include "simulation/options.h"
+#include "simulation/results/simulation_result.h"
 #include "simulation/solver/external_input.h"
 #include "simulation/solver/model_help.h"
 

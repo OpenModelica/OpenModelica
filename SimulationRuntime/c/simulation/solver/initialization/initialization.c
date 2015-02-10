@@ -37,16 +37,16 @@
 #include "util/omc_error.h"
 #include "openmodelica.h"
 #include "openmodelica_func.h"
-#include "model_help.h"
-#include "read_matlab4.h"
-#include "events.h"
-#include "stateset.h"
+#include "simulation/solver/model_help.h"
+#include "util/read_matlab4.h"
+#include "simulation/solver/events.h"
+#include "simulation/solver/stateset.h"
 #include "meta/meta_modelica.h"
 
-#include "mixedSystem.h"
-#include "linearSystem.h"
-#include "nonlinearSystem.h"
-#include "delay.h"
+#include "simulation/solver/mixedSystem.h"
+#include "simulation/solver/linearSystem.h"
+#include "simulation/solver/nonlinearSystem.h"
+#include "simulation/solver/delay.h"
 
 #include <stdio.h>
 #include <stdlib.h>

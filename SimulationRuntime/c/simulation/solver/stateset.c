@@ -29,7 +29,7 @@
  */
 
 #include "stateset.h"
-#include "omc_error.h"
+#include "util/omc_error.h"
 
 #include <memory.h>
 

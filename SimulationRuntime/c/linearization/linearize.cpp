@@ -28,7 +28,7 @@
  *
  */
 
-#include "omc_error.h"
+#include "util/omc_error.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
 #include "linearize.h"

@@ -34,7 +34,7 @@
 #include <string.h> /* memcpy */
 #include <math.h>
 
-#include "omc_error.h"
+#include "util/omc_error.h"
 #include "omc_math.h"
 
 /*! \fn _omc_vector* _omc_allocateVectorData(_omc_size size)

@@ -35,14 +35,14 @@
 #include <string.h>
 
 #include "omc_config.h"
-#include "omc_error.h"
-#include "rtclock.h"
+#include "util/omc_error.h"
+#include "util/rtclock.h"
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
 #include "linearSolverLis.h"
 #include "linearSolverUmfpack.h"
 #include "linearSolverTotalPivot.h"
-#include "simulation_info_xml.h"
+#include "simulation/simulation_info_xml.h"
 
 static void setAElement(int row, int col, double value, int nth, void *data);
 static void setAElementLis(int row, int col, double value, int nth, void *data);

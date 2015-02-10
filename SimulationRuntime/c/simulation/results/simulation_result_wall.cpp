@@ -30,9 +30,9 @@
 
 /* The recon wall format is optimized for writing */
 
-#include "omc_error.h"
+#include "util/omc_error.h"
 #include "simulation_result_wall.h"
-#include "rtclock.h"
+#include "util/rtclock.h"
 #include "meta/meta_modelica.h"
 
 #include <fstream>

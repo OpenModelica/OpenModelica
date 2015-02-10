@@ -38,9 +38,9 @@
  *
  */
 
-#include "omc_error.h"
+#include "util/omc_error.h"
 #include "simulation_result_csv.h"
-#include "rtclock.h"
+#include "util/rtclock.h"
 
 #include <stdio.h>
 #include <errno.h>
