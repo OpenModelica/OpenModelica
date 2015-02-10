@@ -315,7 +315,6 @@ static const char* stripbinpath(char *omhome)
 #include <linux/limits.h>
 #include <unistd.h>
 QString linuxOMHome(void) {
-  struct stat sb;
   char omhome[PATH_MAX];
   ssize_t r;
   /* This is bad code using hard-coded limits; but we cannot query the size of symlinks on /proc
@@ -326,7 +325,7 @@ QString linuxOMHome(void) {
     perror("readlink");
     exit(EXIT_FAILURE);
   }
-  if (r < sizeof(omhome)-1) {
+  if (r < (long) sizeof(omhome) - 1) {
     return CONFIG_DEFAULT_OPENMODELICAHOME;
   }
   omhome[r] = '\0';
