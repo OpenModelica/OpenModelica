@@ -37,6 +37,7 @@
 #define META_MODELICA_BUILTIN_H_
 
 #include "openmodelica.h"
+#include "omc_msvc.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -145,10 +146,7 @@ static inline modelica_metatype arrayCreate(modelica_integer nelts, modelica_met
   }
 }
 
-static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modelica_metatype dummy
-#if !defined(_MSC_VER)
-__attribute__((unused))
-#endif
+static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modelica_metatype dummy __attribute__((unused))
 )
 {
   if (nelts < 0) {
