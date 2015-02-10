@@ -122,6 +122,7 @@ extern modelica_metatype arrayList(modelica_metatype);
 extern modelica_metatype listArray(modelica_metatype);
 extern modelica_metatype arrayCopy(modelica_metatype);
 #define arrayGet(X,Y) nobox_arrayGet(threadData,X,Y)
+
 static inline modelica_metatype nobox_arrayGet(threadData_t *threadData,modelica_metatype arr,modelica_integer ix)
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
@@ -129,6 +130,7 @@ static inline modelica_metatype nobox_arrayGet(threadData_t *threadData,modelica
     MMC_THROW_INTERNAL();
   return MMC_STRUCTDATA(arr)[ix-1];
 }
+
 static inline modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
 {
   if (nelts < 0) {
@@ -142,7 +144,12 @@ static inline modelica_metatype arrayCreate(modelica_integer nelts, modelica_met
     return arr;
   }
 }
-static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modelica_metatype dummy __attribute__((unused)))
+
+static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modelica_metatype dummy
+#if !defined(_MSC_VER)
+__attribute__((unused))
+#endif
+)
 {
   if (nelts < 0) {
     MMC_THROW();
