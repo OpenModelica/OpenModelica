@@ -185,10 +185,10 @@ static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, con
 void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 #else
-static OMC_INLINE void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
-static OMC_INLINE void debugStreamPrint(int stream, int indentNext, const char *format, ...) {/* Do nothing */}
-static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
-static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)  {/* Do nothing */}
+static OMC_INLINE void debugStreamPrint(int stream __attribute__((unused)), int indentNext __attribute__((unused)), const char *format __attribute__((unused)), ...) __attribute__ ((format (printf, 3, 4)));
+static OMC_INLINE void debugStreamPrint(int stream __attribute__((unused)), int indentNext __attribute__((unused)), const char *format __attribute__((unused)), ...) {/* Do nothing */}
+static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream __attribute__((unused)), int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...) __attribute__ ((format (printf, 4, 5)));
+static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream  __attribute__((unused)), int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...)  {/* Do nothing */}
 #endif
 
 #ifdef __cplusplus

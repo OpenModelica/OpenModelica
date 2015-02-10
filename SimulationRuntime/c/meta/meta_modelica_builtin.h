@@ -142,7 +142,7 @@ static inline modelica_metatype arrayCreate(modelica_integer nelts, modelica_met
     return arr;
   }
 }
-static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modelica_metatype dummy)
+static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modelica_metatype dummy __attribute__((unused)))
 {
   if (nelts < 0) {
     MMC_THROW();

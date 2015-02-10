@@ -233,7 +233,7 @@ DLLDirection extern pthread_once_t mmc_init_once;
 DLLDirection extern void mmc_init();
 DLLDirection extern void mmc_init_nogc();
 #define MMC_INIT(X) pthread_once(&mmc_init_once,mmc_init)
-#define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+#define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper __attribute__((unused)) = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
 #define MMC_TRY() { threadData_t *threadData = pthread_getspecific(mmc_thread_data_key); MMC_TRY_INTERNAL(mmc_jumper)
 
 #if !defined(_MSC_VER)
@@ -248,7 +248,7 @@ DLLDirection extern void mmc_init_nogc();
 #define MMC_ELSE() } else {
 
 #define MMC_TRY_TOP() { threadData_t threadDataOnStack = {0}, *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key),*threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); MMC_TRY_INTERNAL(mmc_jumper)
-#define MMC_TRY_TOP_INTERNAL() { threadData_t threadDataOnStack = {0}, *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key); pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); MMC_TRY_INTERNAL(mmc_jumper)
+#define MMC_TRY_TOP_INTERNAL() { threadData_t *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key); pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); MMC_TRY_INTERNAL(mmc_jumper)
 #define MMC_CATCH_TOP(X) pthread_setspecific(mmc_thread_data_key,oldThreadData); } else {pthread_setspecific(mmc_thread_data_key,oldThreadData);X;}}}
 
 /* adrpo: assume MMC_DBL_PAD always! */
