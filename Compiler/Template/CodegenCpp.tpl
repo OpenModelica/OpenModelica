@@ -1823,7 +1823,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
       }
       catch(ModelicaSimulationError& ex)
       {
-           
+
            std::cerr << "Simulation stopped with error in " << error_id_string(ex.getErrorID()) << ": "  << ex.what();
            return 1;
       }
@@ -8127,8 +8127,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     }
     catch(ModelicaSimulationError& ex)
     {
-         
-         string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime); 
+
+         string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
           throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
     }
     >>
@@ -8178,7 +8178,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
              }
              catch(ModelicaSimulationError& ex)
              {
-                 string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime); 
+                 string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
                  throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
 
              }
@@ -9381,7 +9381,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
          }
          catch(ModelicaSimulationError&  ex)
          {
-              string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime); 
+              string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
               throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
          }
          >>
@@ -9432,7 +9432,7 @@ template equationLinearOrNonLinear(SimEqSystem eq, Context context,Text &varDecl
             }
             catch(ModelicaSimulationError& ex)
             {
-              string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime); 
+              string error = add_error_info("Nonlinear solver stopped",ex.what(),ex.getErrorID(),_simTime);
               throw ModelicaSimulationError(ALGLOOP_EQ_SYSTEM,error);
             }
 

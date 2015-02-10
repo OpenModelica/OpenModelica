@@ -183,7 +183,7 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettin
   }
   catch(ModelicaSimulationError & ex)
   {
-    
+
     string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
     throw ModelicaSimulationError(SIMMANAGER,error);
   }
