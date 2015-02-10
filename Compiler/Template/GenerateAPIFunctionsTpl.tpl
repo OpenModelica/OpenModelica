@@ -239,6 +239,18 @@ template getQtInArgBoxed(Text name, DAE.Type ty)
     else error(sourceInfo(), 'getQtInArgBoxed failed for <%unparseType(ty)%>')
 end getQtInArgBoxed;
 
+template getQtCommandLogText(Text name, DAE.Type ty)
+::=
+  match ty
+    case T_CODE(ty=C_TYPENAME(__))
+    case T_STRING(__) then '<%name%>'
+    case T_INTEGER(__)
+    case T_REAL(__) then 'QString::number(<%name%>)'
+    case T_BOOL(__) then 'QString(<%name%> ? "true" : "false")'
+    case aty as T_ARRAY(__) then 'QString("### Handle array arguments ###")'
+    else error(sourceInfo(), 'getQtCommandLogText failed for <%unparseType(ty)%>')
+end getQtCommandLogText;
+
 template getQtOutArg(Text name, Text shortName, DAE.Type ty, Text &varDecl, Text &postCall)
 ::=
   match ty
@@ -297,6 +309,7 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
   let &responseLog = buffer ""
   let &postCall = buffer ""
   let inArgs = args |> arg as FUNCARG(__) => ', <%getQtInArg(arg.name, arg.ty, varDecl)%>'
+  let commandArgs = args |> arg as FUNCARG(__) => getQtCommandLogText(arg.name, arg.ty) ; separator='+"," +'
   let outArgs = (match res
     case T_NORETCALL(__) then
       let &responseLog += '""'
@@ -319,7 +332,7 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
 
     QTime commandTime;
     commandTime.start();
-    emit logCommand("<%replaceDotAndUnderscore(name)%>(### create string of parameters ###)", &commandTime);
+    emit logCommand("<%replaceDotAndUnderscore(name)%>("+<%if intGt(listLength(args), 0) then commandArgs else 'QString("")'%>+")", &commandTime);
     st = omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData, st<%inArgs%><%outArgs%>);
     <%postCall%>
     emit logResponse(<%responseLog%>, &commandTime);
