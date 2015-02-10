@@ -1292,7 +1292,7 @@ algorithm
     // Elaborate the iterators.
     (outCache, env, reduction_iters, dims, iter_const, has_guard_exp, outST) :=
       elabCallReductionIterators(inCache, env, listReverse(inIterators),
-          inImplicit, inST, inDoVect, inPrefix, inInfo);
+        inReductionExp, inImplicit, inST, inDoVect, inPrefix, inInfo);
     dims := fixDimsIterType(inIterType, listReverse(dims));
 
     // Elaborate the expression.
@@ -1347,63 +1347,329 @@ protected function elabCallReductionIterators
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.ForIterators inIterators;
-  input Boolean impl;
-  input Option<GlobalScript.SymbolTable> inSt;
-  input Boolean doVect;
-  input Prefix.Prefix pre;
-  input SourceInfo info;
-  output FCore.Cache outCache;
-  output FCore.Graph envWithIterators;
-  output list<DAE.ReductionIterator> outIterators;
-  output DAE.Dimensions outDims;
-  output DAE.Const const;
-  output Boolean hasGuardExp;
-  output Option<GlobalScript.SymbolTable> outST;
+  input Absyn.Exp inReductionExp;
+  input Boolean inImpl;
+  input Option<GlobalScript.SymbolTable> inST;
+  input Boolean inDoVect;
+  input Prefix.Prefix inPrefix;
+  input SourceInfo inInfo;
+  output FCore.Cache outCache := inCache;
+  output FCore.Graph outIteratorsEnv := inEnv;
+  output list<DAE.ReductionIterator> outIterators := {};
+  output list<DAE.Dimension> outDims := {};
+  output DAE.Const outConst := DAE.C_CONST();
+  output Boolean outHasGuard := false;
+  output Option<GlobalScript.SymbolTable> outST := inST;
+protected
+  String iter_name;
+  Absyn.Exp aiter_exp;
+  Option<Absyn.Exp> oaguard_exp, oaiter_exp;
+  DAE.Exp iter_exp;
+  Option<DAE.Exp> guard_exp;
+  DAE.Type full_iter_ty, iter_ty;
+  DAE.Const iter_const, guard_const, c;
+  DAE.Dimension dim;
+  FCore.Graph env;
 algorithm
-  (outCache,envWithIterators,outIterators,outDims,const,hasGuardExp,outST) :=
-  match (inCache,inEnv,inIterators,impl,inSt,doVect,pre,info)
-    local
-      String iter;
-      Option<Absyn.Exp> aguardExp;
-      Absyn.Exp aiterExp;
-      Option<DAE.Exp> guardExp;
-      DAE.Exp iterExp;
-      DAE.ReductionIterator diter;
-      DAE.Dimension dim;
-      list<DAE.ReductionIterator> diters;
-      DAE.Dimensions dims;
-      FCore.Cache cache;
-      FCore.Graph env;
-      DAE.Const iterconst,guardconst, c;
-      DAE.Type fulliterty,iterty;
-      Option<GlobalScript.SymbolTable> st;
-      Absyn.ForIterators iterators;
+  for iter in inIterators loop
+    Absyn.ITERATOR(iter_name, oaguard_exp, oaiter_exp) := iter;
 
-    case (cache,env,{},_,st,_,_,_) then (cache,env,{},{},DAE.C_CONST(),false,st);
-    case (cache,env,Absyn.ITERATOR(iter,aguardExp,SOME(aiterExp))::iterators,_,st,_,_,_)
-      equation
-        (cache,iterExp,DAE.PROP(fulliterty,iterconst),st) = elabExpInExpression(cache, env, aiterExp, impl, st, doVect,pre,info);
-        // We need to evaluate the iterator because the rest of the compiler is stupid
-        c = if FGraph.inFunctionScope(inEnv) then iterconst else DAE.C_CONST();
-        (cache,iterExp,_) = Ceval.cevalIfConstant(cache,env,iterExp,DAE.PROP(fulliterty,c),impl, info);
-        (iterty,dim) = Types.unliftArrayOrList(fulliterty);
+    if isSome(oaiter_exp) then
+      // An explicit iteration range, elaborate it.
+      SOME(aiter_exp) := oaiter_exp;
 
-        // print("iterator type: " + Types.unparseType(iterty) + "\n");
-        envWithIterators = FGraph.addForIterator(env, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
-        // print("exp_1 has type: " + Types.unparseType(expty) + "\n");
-        (cache,guardExp,DAE.PROP(_, guardconst),st) = elabExpOptAndMatchType(cache, envWithIterators, aguardExp, DAE.T_BOOL_DEFAULT, impl, st, doVect,pre,info);
+      (outCache, iter_exp, DAE.PROP(full_iter_ty, iter_const), outST) :=
+        elabExpInExpression(outCache, inEnv, aiter_exp, inImpl, outST, inDoVect, inPrefix, inInfo);
+    else
+      // An implicit iteration range, try to deduce the range based on how the
+      // iterator is used..
+      (iter_exp, full_iter_ty, outCache) :=
+        deduceReductionIterationRange(iter_name, inReductionExp, inEnv, outCache, inInfo);
+      iter_const := DAE.C_CONST();
+    end if;
 
-        diter = DAE.REDUCTIONITER(iter,iterExp,guardExp,iterty);
+    // We need to evaluate the iterator because the rest of the compiler is stupid.
+    c := if FGraph.inFunctionScope(inEnv) then iter_const else DAE.C_CONST();
+    (outCache, iter_exp) :=
+      Ceval.cevalIfConstant(outCache, inEnv, iter_exp, DAE.PROP(full_iter_ty, c), inImpl, inInfo); 
 
-        (cache,envWithIterators,diters,dims,const,hasGuardExp,st) = elabCallReductionIterators(cache,env,iterators,impl,st,doVect,pre,info);
-        // Yes, we do this twice to hide the iterators from the different guard-expressions...
-        envWithIterators = FGraph.addForIterator(envWithIterators, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
-        const = Types.constAnd(guardconst, iterconst);
-        hasGuardExp = hasGuardExp or Util.isSome(guardExp);
-        dim = if Util.isSome(guardExp) then DAE.DIM_UNKNOWN() else dim;
-      then (cache,envWithIterators,diter::diters,dim::dims,const,hasGuardExp,st);
-  end match;
+    (iter_ty, dim) := Types.unliftArrayOrList(full_iter_ty);
+    // The iterator needs to be added to two different environments, to hide the
+    // iterators from the different guard-expressions.
+    env := FGraph.addForIterator(inEnv, iter_name, iter_ty, DAE.UNBOUND(),
+      SCode.CONST(), SOME(iter_const));
+    outIteratorsEnv := FGraph.addForIterator(outIteratorsEnv, iter_name, iter_ty, DAE.UNBOUND(),
+      SCode.CONST(), SOME(iter_const));
+
+    // Elaborate the guard expression.
+    (outCache, guard_exp, DAE.PROP(_, guard_const), outST) := elabExpOptAndMatchType(
+      outCache, env, oaguard_exp, DAE.T_BOOL_DEFAULT, inImpl, inST, inDoVect, inPrefix, inInfo);
+
+    // If we have a guard expression we don't determine the dimension, since the
+    // number of elements depend on the guard.
+    if Util.isSome(guard_exp) then
+      outHasGuard := true;
+      dim := DAE.DIM_UNKNOWN();
+    end if;
+
+    outConst := Types.constAnd(guard_const, iter_const);
+    outIterators := DAE.REDUCTIONITER(iter_name, iter_exp, guard_exp, iter_ty) :: outIterators;
+    outDims := dim :: outDims;
+  end for;
+
+  outIterators := listReverse(outIterators);
+  outDims := listReverse(outDims);
 end elabCallReductionIterators;
+
+protected function deduceReductionIterationRange
+  "This function tries to deduce the size of an iteration range for a reduction
+   based on how an iterator is used. It does this by analysing the reduction
+   expression to find out where the iterator is used as a subscript, and uses
+   the subscripted components' dimensions to determine the size of the range."
+  input String inIterator;
+  input Absyn.Exp inReductionExp;
+  input FCore.Graph inEnv;
+  input FCore.Cache inCache;
+  input Absyn.Info inInfo;
+  output DAE.Exp outRange;
+  output DAE.Type outType;
+  output FCore.Cache outCache := inCache;
+protected
+  list<tuple<Absyn.ComponentRef, Integer>> crefs;
+  Absyn.ComponentRef acref;
+  DAE.ComponentRef cref;
+  Integer idx, i1, i2;
+  DAE.Type ty;
+  list<DAE.Dimension> dims;
+  DAE.Dimension dim;
+  DAE.Exp range;
+  list<DAE.Exp> ranges := {};
+  String cr_str1, cr_str2;
+algorithm
+  // Collect all crefs that are subscripted with the given iterator.
+  (_, crefs) := Absyn.traverseExp(inReductionExp,
+    function deduceReductionIterationRange_traverser(inIterator = inIterator), {}); 
+  crefs := List.uniqueOnTrue(crefs, iteratorIndexedCrefsEqual);
+
+  // Check that we found some crefs, otherwise we print an error and fail.
+  if listLength(crefs) < 1 then
+    Error.addSourceMessageAndFail(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,
+      {inIterator}, inInfo);
+  end if;
+
+  // For each cref-index pair, figure out the range of the subscripted dimension.
+  for cr in crefs loop
+    (acref, idx) := cr;
+    cref := ComponentReference.toExpCref(acref);
+
+    // Look the cref up to get its type.
+    try
+      (outCache, _, ty) := Lookup.lookupVar(outCache, inEnv, cref);
+    else
+      Error.addSourceMessageAndFail(Error.LOOKUP_VARIABLE_ERROR,
+        {Dump.printComponentRefStr(acref), ""}, inInfo);
+    end try;
+
+    // Get the cref's dimensions.
+    dims := Types.getDimensions(ty);
+
+    // Check that the indexed dimension actually exists.
+    if idx <= listLength(dims) then
+      // Get the indexed dimension and construct a range from it.
+      dim := listGet(dims, idx);
+      (range, outType) := deduceReductionIterationRange2(dim, cref, ty, idx);
+    else
+      // The indexed dimension doesn't exist, i.e. we have too many subscripts.
+      // Return some dummy variables, and let elabCallReduction handle the error
+      // reporting since we don't know how many subscripts were used here.
+      range := DAE.ICONST(0); 
+      outType := DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(0)},
+        DAE.emptyTypeSource);
+    end if;
+
+    ranges := range :: ranges;
+  end for;
+
+  // If we have more than one range we must check that they are all equal,
+  // otherwise it's not possible to determine the actual iteration range.
+  // If they are equal we can just return anyone of them.
+  outRange :: ranges := ranges;
+  idx := 2;
+
+  for r in ranges loop
+    if not Expression.expEqual(r, outRange) then
+      (acref, i1) := listHead(crefs);
+      cr_str1 := Dump.printComponentRefStr(acref);
+      (acref, i2) := listGet(crefs, idx);
+      cr_str2 := Dump.printComponentRefStr(acref);
+      Error.addSourceMessageAndFail(Error.INCOMPATIBLE_IMPLICIT_RANGES,
+        {intString(i2), cr_str2, intString(i1), cr_str1}, inInfo);
+    end if;
+    idx := idx + 1;
+  end for;
+end deduceReductionIterationRange;
+
+protected function iteratorIndexedCrefsEqual
+  "Checks whether two cref-index pairs are equal."
+  input tuple<Absyn.ComponentRef, Integer> inCref1;
+  input tuple<Absyn.ComponentRef, Integer> inCref2;
+  output Boolean outEqual;
+protected
+  Absyn.ComponentRef cr1, cr2;
+  Integer idx1, idx2;
+algorithm
+  (cr1, idx1) := inCref1;
+  (cr2, idx2) := inCref2;
+  outEqual := idx1 == idx2 and Absyn.crefEqual(cr1, cr2);
+end iteratorIndexedCrefsEqual;
+
+protected function deduceReductionIterationRange_traverser
+  "Traversal function used by deduceReductionIterationRange. Used to find crefs
+   which are subscripted by a given iterator."
+  input Absyn.Exp inExp;
+  input list<tuple<Absyn.ComponentRef, Integer>> inCrefs;
+  input String inIterator;
+  output Absyn.Exp outExp := inExp;
+  output list<tuple<Absyn.ComponentRef, Integer>> outCrefs;
+algorithm
+  outCrefs := match inExp
+    local
+      Absyn.ComponentRef cref;
+
+    case Absyn.CREF(componentRef = cref)
+      then getIteratorIndexedCrefs(cref, inIterator, inCrefs);
+
+    else inCrefs;
+  end match;
+end deduceReductionIterationRange_traverser;
+
+protected function getIteratorIndexedCrefs
+  "Checks if the given component reference is subscripted by the given iterator.
+   Only cases where a subscript consists of only the iterator is considered.
+   If so it adds a cref-index pair to the list, where the cref is the subscripted
+   cref without subscripts, and the index is the subscripted dimension. E.g. for
+   iterator i:
+     a[i] => (a, 1), b[1, i] => (b, 2), c[i+1] => (), d[2].e[i] => (d[2].e, 1)"
+  input Absyn.ComponentRef inCref;
+  input String inIterator;
+  input list<tuple<Absyn.ComponentRef, Integer>> inCrefs;
+  output list<tuple<Absyn.ComponentRef, Integer>> outCrefs := inCrefs;
+protected
+  list<tuple<Absyn.ComponentRef, Integer>> crefs;
+algorithm
+  outCrefs := match inCref
+    local
+      list<Absyn.Subscript> subs;
+      Integer idx;
+      String name, id;
+      Absyn.ComponentRef cref;
+
+    case Absyn.CREF_IDENT(name = id, subscripts = subs)
+      algorithm
+        // For each subscript, check if the subscript consists of only the
+        // iterator we're looking for.
+        idx := 1;
+        for sub in subs loop
+          _ := match sub
+            case Absyn.SUBSCRIPT(subscript = Absyn.CREF(componentRef =
+                Absyn.CREF_IDENT(name = name, subscripts = {})))
+              algorithm
+                if name == inIterator then
+                  outCrefs := (Absyn.CREF_IDENT(id, {}), idx) :: outCrefs;
+                end if;
+              then
+                ();
+
+            else ();
+          end match;
+
+          idx := idx + 1;
+        end for;
+      then
+        outCrefs;
+
+    case Absyn.CREF_QUAL(name = id, subscripts = subs, componentRef = cref)
+      algorithm
+        crefs := getIteratorIndexedCrefs(cref, inIterator, {});
+        
+        // Append the prefix from the qualified cref to any matches, and add
+        // them to the result list.
+        for cr in crefs loop
+          (cref, idx) := cr;
+          outCrefs := (Absyn.CREF_QUAL(id, subs, cref), idx) :: outCrefs;
+        end for;
+      then
+        getIteratorIndexedCrefs(Absyn.CREF_IDENT(id, subs), inIterator, outCrefs);
+
+    case Absyn.CREF_FULLYQUALIFIED(componentRef = cref)
+      algorithm
+        crefs := getIteratorIndexedCrefs(cref, inIterator, {});
+
+        // Make any matches fully qualified, and add the to the result list.
+        for cr in crefs loop
+          (cref, idx) := cr;
+          outCrefs := (Absyn.CREF_FULLYQUALIFIED(cref), idx) :: outCrefs;
+        end for;
+      then
+        outCrefs;
+
+    else inCrefs;
+  end match;
+end getIteratorIndexedCrefs;
+
+protected function deduceReductionIterationRange2
+  "Helper function to deduceReductionIterationRange. Constructs a range based on
+   the given dimension."
+  input DAE.Dimension inDimension;
+  input DAE.ComponentRef inCref "The subscripted component without subscripts.";
+  input DAE.Type inType "The type of the subscripted component.";
+  input Integer inIndex "The index of the dimension.";
+  output DAE.Exp outRange "The range expression.";
+  output DAE.Type outType "The type of the range expression.";
+protected
+  DAE.Type range_ty;
+  Absyn.Path enum_path, enum_start, enum_end;
+  list<String> enum_lits;
+  Integer sz;
+algorithm
+  outRange := match inDimension
+    // Boolean dimension => false:true
+    case DAE.DIM_BOOLEAN()
+      algorithm
+        range_ty := DAE.T_BOOL_DEFAULT;
+      then
+        DAE.RANGE(range_ty, DAE.BCONST(false), NONE(), DAE.BCONST(true));
+
+    // Enumeration dimension => Enum.first:Enum.last
+    case DAE.DIM_ENUM(enumTypeName = enum_path, literals = enum_lits)
+      algorithm
+        enum_start := Absyn.suffixPath(enum_path, listHead(enum_lits));
+        enum_end := Absyn.suffixPath(enum_path, List.last(enum_lits));
+        range_ty := DAE.T_ENUMERATION(NONE(), enum_path, enum_lits, {}, {}, DAE.emptyTypeSource);
+      then
+        DAE.RANGE(range_ty, DAE.ENUM_LITERAL(enum_start, 1), NONE(),
+          DAE.ENUM_LITERAL(enum_end, listLength(enum_lits)));
+
+    // Integer dimension => 1:size
+    case DAE.DIM_INTEGER(integer = sz)
+      algorithm
+        range_ty := DAE.T_INTEGER_DEFAULT;
+      then
+        DAE.RANGE(range_ty, DAE.ICONST(1), NONE(), DAE.ICONST(sz));
+
+    // Any other kind of dimension => 1:size(cref, index)
+    else
+      algorithm
+        range_ty := DAE.T_INTEGER_DEFAULT;
+      then
+        DAE.RANGE(range_ty, DAE.ICONST(1), NONE(),
+          DAE.SIZE(DAE.CREF(inCref, inType), SOME(DAE.ICONST(inIndex))));
+
+  end match;
+
+  // The type of the range expression.
+  outType := DAE.T_ARRAY(range_ty, {inDimension}, DAE.emptyTypeSource);
+end deduceReductionIterationRange2;
 
 protected function makeReductionFoldExp
   input FCore.Graph inEnv;
@@ -1414,6 +1680,8 @@ protected function makeReductionFoldExp
   input String resultId;
   output FCore.Graph outEnv;
   output Option<Absyn.Exp> afoldExp;
+protected 
+  String func_name;
 algorithm
   (outEnv, afoldExp) := match path
     local

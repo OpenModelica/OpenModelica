@@ -397,6 +397,8 @@ public constant Message COMPONENT_NAME_SAME_AS_TYPE_NAME = MESSAGE(136, TRANSLAT
   Util.gettext("Component %s has the same name as its type %s.\n\tThis is forbidden by Modelica specification and may lead to lookup errors."));
 public constant Message CONDITIONAL_EXP_WITHOUT_VALUE = MESSAGE(137, TRANSLATION(), ERROR(),
   Util.gettext("The conditional expression %s could not be evaluated."));
+public constant Message INCOMPATIBLE_IMPLICIT_RANGES = MESSAGE(138, TRANSLATION(), ERROR(),
+  Util.gettext("Dimension %s of %s and %s of %s differs when trying to deduce implicit iteration range."));
 public constant Message MODIFICATION_INDEX_NOT_FOUND = MESSAGE(140, TRANSLATION(), ERROR(),
   Util.gettext("Instantiation of array component: %s failed because index modification: %s is invalid.\n\tArray component: %s has more dimensions than binding %s."));
 public constant Message DUPLICATE_MODIFICATIONS_WARNING = MESSAGE(141, TRANSLATION(), WARNING(),
