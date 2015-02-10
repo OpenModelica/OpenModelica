@@ -891,27 +891,6 @@ QString StringHandler::escapeString(QString value)
   return res;
 }
 
-QString StringHandler::escapeStringWithoutNewLine(QString value)
-{
-  QString res;
-  value = value.trimmed();
-  for (int i = 0; i < value.length(); i++) {
-    switch (value[i].toAscii()) {
-      case '"':  res.append('\"');     break;
-      case '\\': res.append("\\\\");   break;
-      case '\a': res.append("\\a");    break;
-      case '\b': res.append("\\b");    break;
-      case '\f': res.append("\\f");    break;
-      case '\n': res.append("");       break;
-      case '\r': res.append("\\r");    break;
-      case '\t': res.append("\\t");    break;
-      case '\v': res.append("\\v");    break;
-      default:   res.append(value[i]); break;
-    }
-  }
-  return res;
-}
-
 #define CONSUME_CHAR(value,res,i) \
   if (value.at(i) == '\\') { \
   i++; \

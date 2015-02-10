@@ -1590,7 +1590,7 @@ bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses)
   */
 bool OMCProxy::loadString(QString value, QString fileName, QString encoding, bool checkError)
 {
-  bool result = mpOMCInterface->loadString(StringHandler::escapeStringWithoutNewLine(value), fileName, encoding);
+  bool result = mpOMCInterface->loadString(value, fileName, encoding);
   if (checkError) {
     printMessagesStringInternal();
   }
@@ -1619,7 +1619,7 @@ QList<QString> OMCProxy::parseFile(QString fileName, QString encoding)
   */
 QList<QString> OMCProxy::parseString(QString value, QString fileName)
 {
-  QList<QString> resultList = mpOMCInterface->parseString(StringHandler::escapeStringWithoutNewLine(value), fileName);
+  QList<QString> resultList = mpOMCInterface->parseString(value, fileName);
   printMessagesStringInternal();
   return resultList;
 }

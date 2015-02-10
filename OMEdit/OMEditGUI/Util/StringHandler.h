@@ -116,7 +116,6 @@ public:
   static QString removeComment(QString value);
   static QString getModifierValue(QString value);
   static QString escapeString(QString value);
-  static QString escapeStringWithoutNewLine(QString value);
   // Returns "" if the string is not a standard Modelica string. Else it unparses it into normal form.
   static QString unparse(QString value);
   // Returns empty list if the string is not a standard Modelica string-array. Else it unparses it into normal form.
