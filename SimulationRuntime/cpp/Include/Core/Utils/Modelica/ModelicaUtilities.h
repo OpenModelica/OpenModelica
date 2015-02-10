@@ -17,7 +17,7 @@ extern "C" {
  *
  * @param string The message.
  */
-void ModelicaMessage(const char* string);
+void BOOST_EXTENSION_EXPORT_DECL ModelicaMessage(const char* string);
 
 /**
  * \brief Output the message under the same format control as the C-function
@@ -25,7 +25,7 @@ void ModelicaMessage(const char* string);
  *
  * @param string The formatted message.
  */
-void ModelicaFormatMessage(const char* string,...);
+void BOOST_EXTENSION_EXPORT_DECL ModelicaFormatMessage(const char* string,...);
 
 /**
  * \brief Output the message under the same format control as the C-function
@@ -34,7 +34,7 @@ void ModelicaFormatMessage(const char* string,...);
  * @param string The formatted message.
  * @param arg_ptr Pointer to list of arguments.
  */
-void ModelicaVFormatMessage(const char* string, va_list arg_ptr);
+void BOOST_EXTENSION_EXPORT_DECL ModelicaVFormatMessage(const char* string, va_list arg_ptr);
 
 /**
  * \brief Output the error message string (no format control). This function
@@ -43,7 +43,7 @@ void ModelicaVFormatMessage(const char* string, va_list arg_ptr);
  *
  * @param string The error message.
  */
-void ModelicaError(const char* string);
+void BOOST_EXTENSION_EXPORT_DECL ModelicaError(const char* string);
 
 /**
  * \brief Output the error message under the same format control as the
@@ -52,7 +52,7 @@ void ModelicaError(const char* string);
  *
  * @param string The formatted error message.
  */
-void ModelicaFormatError(const char* string,...);
+void BOOST_EXTENSION_EXPORT_DECL ModelicaFormatError(const char* string,...);
 
 /**
  * \brief Output the error message under the same format control as the
@@ -62,7 +62,7 @@ void ModelicaFormatError(const char* string,...);
  * @param string The formatted error message.
  * @param arg_ptr Pointer to list of arguments.
  */
-void ModelicaVFormatError(const char* string, va_list arg_ptr);
+void BOOST_EXTENSION_EXPORT_DECL ModelicaVFormatError(const char* string, va_list arg_ptr);
 
 /**
  * \brief Allocate memory for a Modelica string which is used as return argument
@@ -73,7 +73,7 @@ void ModelicaVFormatError(const char* string, va_list arg_ptr);
  *
  * @param len Length of string to allocate.
  */
-char* ModelicaAllocateString(size_t len);
+char* BOOST_EXTENSION_EXPORT_DECL  ModelicaAllocateString(size_t len);
 
 /**
  * \brief Same as ModelicaAllocateString, except that in case of error, the
@@ -83,7 +83,7 @@ char* ModelicaAllocateString(size_t len);
  *
  * @param len Length of string to allocate.
  */
-char* ModelicaAllocateStringWithErrorReturn(size_t len);
+char* BOOST_EXTENSION_EXPORT_DECL ModelicaAllocateStringWithErrorReturn(size_t len);
 
 
 #ifdef __cplusplus

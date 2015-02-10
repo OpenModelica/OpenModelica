@@ -6,7 +6,7 @@ void sparse_matrix::build(sparse_inserter& ins) {
             n=ins.content.rbegin()->first.first+1;
         } else {
             if(n-1!=ins.content.rbegin()->first.first) {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("size doesn't match"));
+                throw ModelicaSimulationError(MATH_FUNCTION,"size doesn't match");
             }
         }
         size_t n=ins.content.size();
@@ -42,11 +42,11 @@ int sparse_matrix::solve(const double* b, double * x) {
 }
 #else
 void sparse_matrix::build(sparse_inserter& ins) {
-        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("no umfpack"));
+        throw ModelicaSimulationError(MATH_FUNCTION,"no umfpack");
     }
 
 int sparse_matrix::solve(const double* b, double * x) {
-        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("no umfpack"));
+        throw ModelicaSimulationError(MATH_FUNCTION,"no umfpack");
 }
 
 #endif

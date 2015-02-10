@@ -14,7 +14,7 @@ SystemStateSelection::SystemStateSelection(IMixedSystem* system)
 
   _state_selection = dynamic_cast<IStateSelection*>(system);
   if ( !_state_selection)
-    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("No state selection system"));
+    throw ModelicaSimulationError(MATH_FUNCTION,"No state selection system");
 
 }
 
@@ -93,7 +93,7 @@ return true;
 
     if((pivot(jac, _dimDummyStates[i], _dimStateCanditates[i], _rowPivot[i].get(), _colPivot[i].get()) != 0))
     {
-      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("Error, singular Jacobian for dynamic state selection at time"));
+      throw ModelicaSimulationError(MATH_FUNCTION,"Error, singular Jacobian for dynamic state selection at time");
     }
 
     /* if we have a new set throw event for reinitialization
@@ -167,7 +167,7 @@ void SystemStateSelection::setAMatrix(int* newEnable, unsigned int index)
     _state_selection->setAMatrix(index,A1);
   }
   else
-    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MATH_FUNCTION) << error_message("No A matrix availibale for state selection"));
+    throw ModelicaSimulationError(MATH_FUNCTION,"No A matrix availibale for state selection");
   _state_selection->setStates(index,states);
   delete [] states ;
   delete [] states2 ;

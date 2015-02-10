@@ -352,7 +352,7 @@ void Hybrj::solve()
                     _algLoop->setReal(_x_restart);
             }
             else
-                 BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(ALGLOOP_SOLVER) << error_message("Unsuccessful termination of HYBRJ, iteration is making no progress "));
+                 throw ModelicaSimulationError(ALGLOOP_SOLVER,"Unsuccessful termination of HYBRJ, iteration is making no progress ");
             
 
         }

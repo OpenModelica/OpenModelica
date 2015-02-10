@@ -38,7 +38,7 @@ public:
             if (result != LOADER_SUCCESS)
             {
             
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading Newton solver library!"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Newton solver library!");
             }
             nonlin_solver_key.assign("extension_export_newton");
         }
@@ -51,7 +51,7 @@ public:
             if (result != LOADER_SUCCESS)
             {
             
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading Kinsol solver library!"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Kinsol solver library!");
             }
             nonlin_solver_key.assign("extension_export_kinsol");
         }
@@ -64,12 +64,12 @@ public:
             if (result != LOADER_SUCCESS)
             {
             
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading Hybrj solver library!"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Hybrj solver library!");
             }
             nonlin_solver_key.assign("extension_export_hybrj");
         }
         else
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Selected nonlinear solver is not available"));
+            throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlinear solver is not available");
         _last_selected_solver =  nonlin_solver;
         string nonlinsolversettings = nonlin_solver.append("Settings");
         std::map<std::string, factory<INonLinSolverSettings> >::iterator iter;
@@ -77,7 +77,7 @@ public:
         iter = nonLinSolversettingsfactory.find(nonlinsolversettings);
         if (iter ==nonLinSolversettingsfactory.end()) 
         {
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No such nonlinear solver Settings"));
+            throw ModelicaSimulationError(MODEL_FACTORY,"No such nonlinear solver Settings");
         }
         boost::shared_ptr<INonLinSolverSettings> nonlinsolversetting= boost::shared_ptr<INonLinSolverSettings>(iter->second.create());
         return nonlinsolversetting;
@@ -93,13 +93,13 @@ public:
             iter = nonlinSolverFactory.find(solver_name);
             if (iter ==nonlinSolverFactory.end()) 
             {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No such non linear Solver"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"No such non linear Solver");
             }
             boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
             return solver;
        }
        else
-           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Selected nonlinear solver is not available"));
+           throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlinear solver is not available");
    }
 protected:
      string _last_selected_solver;

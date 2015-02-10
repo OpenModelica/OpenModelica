@@ -80,7 +80,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      }
      else
      {
-          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("runtime libraries path is not set"));
+          throw ModelicaSimulationError(MODEL_FACTORY,"runtime libraries path is not set");
 
      }
 
@@ -91,7 +91,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      }
      else
      {
-          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Modelica library path is not set"));
+          throw ModelicaSimulationError(MODEL_FACTORY,"Modelica library path is not set");
 
      }
 
@@ -104,7 +104,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      }
      else
      {
-          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("results-filename is not set"));
+          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename is not set");
 
      }
      string outputFormat_str;
@@ -117,12 +117,12 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
           if(!((outputFomat==CSV) || (outputFomat==EMPTY)||(outputFomat==BUFFER)||(outputFomat==MAT)))
           {
             std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" or  outputFormat=\"empty\" or  outputFormat=\"matlab\"in simulate command ";
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message(eception_msg.c_str()));
+            throw ModelicaSimulationError(MODEL_FACTORY,eception_msg.c_str());
           }
      }
      else
      {
-          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("results-filename  is not set"));
+          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename  is not set");
      }
 
      string outputPointType_str;
@@ -135,7 +135,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
      }
      else
      {
-          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("results-filename  is not set"));
+          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename  is not set");
      }
 
      string logType_str;
@@ -150,7 +150,7 @@ SimSettings OMCFactory::ReadSimulationParameter(int argc,  const char* argv[])
     if(!(results_file_path.extension().string() == ".csv"))
     {
             std::string eception_msg = "The output format is not supported yet. Please use outputFormat=\"csv\" in simulate command ";
-          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message(eception_msg.c_str());
+          throw ModelicaSimulationError(MODEL_FACTORY,eception_msg.c_str();
 
     }*/
      fs::path libraries_path = fs::path( runtime_lib_path) ;
@@ -186,14 +186,14 @@ std::pair<boost::shared_ptr<ISimController>,SimSettings> OMCFactory::createSimul
      if (result != LOADER_SUCCESS)
      {
 
-        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message(string("Failed loading SimConroller library!") + simcontroller_path.string()));
+        throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading SimConroller library!") + simcontroller_path.string());
      }
      std::map<std::string, factory<ISimController,PATH,PATH> >::iterator iter;
      std::map<std::string, factory<ISimController,PATH,PATH> >& factories(simcontroller_type_map.get());
      iter = factories.find("SimController");
      if (iter ==factories.end())
      {
-          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No such SimController library"));
+          throw ModelicaSimulationError(MODEL_FACTORY,"No such SimController library");
      }
      boost::shared_ptr<ISimController>  simcontroller = boost::shared_ptr<ISimController>(iter->second.create(_library_path,_modelicasystem_path));
      return std::make_pair(simcontroller,settings);

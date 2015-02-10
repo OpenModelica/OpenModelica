@@ -30,6 +30,6 @@ public:
           return _solver_settings;
         }
         else
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Selected Solver is not available"));
+            throw ModelicaSimulationError(MODEL_FACTORY,"Selected Solver is not available");
     }
 };

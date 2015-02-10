@@ -69,7 +69,7 @@ std::pair<boost::shared_ptr<IMixedSystem>, boost::shared_ptr<ISimData> > SimCont
     return system;
   }
   else
-    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SIMMANAGER) << error_message("No Modelica Compiler configured"));
+    throw ModelicaSimulationError(SIMMANAGER,"No Modelica Compiler configured");
 }
 
 boost::shared_ptr<ISimData> SimController::getSimData(string modelname)
@@ -108,11 +108,11 @@ void SimController::StartVxWorks(boost::shared_ptr<IMixedSystem> mixedsystem, Si
 
     _simMgr->initialize();
   }
-  catch(boost::exception & ex)
+  catch( ModelicaSimulationError& ex)
   {
-    ex << error_id(SIMMANAGER) << error_message(string("Simulation failed for ") + simsettings.outputfile_name);
-    printf("Fehler %s\n",diagnostic_information(ex).c_str());
-    throw;
+    string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
+    printf("Fehler %s\n",error.c_str());
+    throw ModelicaSimulationError(SIMMANAGER,error);
   }
 }
 
@@ -181,10 +181,11 @@ void SimController::Start(boost::shared_ptr<IMixedSystem> mixedsystem, SimSettin
   }
 
   }
-  catch(boost::exception & ex)
+  catch(ModelicaSimulationError & ex)
   {
-    ex << error_id(SIMMANAGER) << error_message(string("Simulation failed for ") + simsettings.outputfile_name);
-    throw;
+    
+    string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
+    throw ModelicaSimulationError(SIMMANAGER,error);
   }
 }
 

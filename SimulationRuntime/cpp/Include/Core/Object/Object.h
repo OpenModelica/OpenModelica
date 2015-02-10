@@ -41,12 +41,12 @@ public:
     PtrMap::const_iterator iter = map.find(id);
     if (iter== map.end())
       //throw SimModelException(SimModelException::WRONG_OBJECT_ID, "  ID: " + id);
-      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message(string("WRONG_OBJECT_ID") +id ));
+      throw ModelicaSimulationError(MODEL_EQ_SYSTEM,string("WRONG_OBJECT_ID") +id );
     if (pType = boost::dynamic_pointer_cast<T>(iter->second))
       return *pType.get();
     else
       //throw SimModelException(SimModelException::WRONG_OBJECT_TYPE, "  ID: " + id + "  type: " + typeid(pType).name() + " ; instead of: " + typeid(iter->second).name());
-      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM) << error_message(string("WRONG_OBJECT_ID") +id ));
+      throw ModelicaSimulationError(MODEL_EQ_SYSTEM,string("WRONG_OBJECT_ID") +id );
   };
 
 protected:

@@ -30,7 +30,7 @@ double  division (const double &a,const double &b, const char* text)
     else
     {
         std::string error_msg = "Division by zeror: ";
-      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message(error_msg+string(text)));
+      throw ModelicaSimulationError(UTILITY,error_msg+string(text));
    }
 }
 
@@ -117,7 +117,7 @@ int pivot(double *A, int n_rows, int n_cols, int *rowInd, int *colInd)
     pivot = get_pivot_matrix_elt(A,row,row);
     /* internal error, pivot element should never be zero if maxsearch succeeded */
       if(pivot == 0)
-      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("pivot element is zero "));
+      throw ModelicaSimulationError(UTILITY,"pivot element is zero ");
 
     /* perform one step of Gaussian Elimination */
     for(i=row+1;i<n_rows;i++)

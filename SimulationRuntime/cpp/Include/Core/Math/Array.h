@@ -27,32 +27,32 @@ public:
 
   virtual T& operator()(unsigned int i)
   {
-     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
+     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
 
   virtual const T& operator()(unsigned int i) const
   {
-     BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
+     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
 
   virtual T& operator()(const unsigned int  i, const unsigned int j)
   {
-    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k)
   {
-    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l)
   {
-    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
 
   virtual T& operator()(unsigned int i, unsigned int j, unsigned int k, unsigned int l, unsigned int m)
   {
-    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong virtual Array operator call"));
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
   };
 
   bool isStatic()
@@ -123,7 +123,7 @@ public:
       }
       catch(std::bad_exception & be)
       {
-        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong array type assign"));
+        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
 
       }
 
@@ -296,7 +296,7 @@ public:
       }
       catch(std::bad_exception & be)
       {
-        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong array type assign"));
+        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
 
       }
 
@@ -432,7 +432,7 @@ public:
       }
       catch(std::bad_exception & be)
       {
-        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong array type assign"));
+        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong array type assign");
       }
   }
   return *this;
@@ -931,7 +931,7 @@ public:
   {
     std::vector<size_t> v = otherArray.getDims();
      if(v.size()!=1)
-       BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong number of dimensions in DynArrayDim1"));
+       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim1");
     _multi_array.resize(v);
     _multi_array.reindex(1);
     const T* data_otherarray = otherArray.getData();
@@ -1081,7 +1081,7 @@ public:
    {
     std::vector<size_t> v = otherArray.getDims();
     if(v.size()!=2)
-      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong number of dimensions in DynArrayDim2"));
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim2");
     _multi_array.resize(v);
     _multi_array.reindex(1);
     const T* data_otherarray = otherArray.getData();
@@ -1234,7 +1234,7 @@ public:
   {
     std::vector<size_t> v = otherArray.getDims();
     if(v.size()!=3)
-      BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_ARRAY_FUNCTION) << error_message("Wrong number of dimensions in DynArrayDim3"));
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong number of dimensions in DynArrayDim3");
     _multi_array.resize(v);
     _multi_array.reindex(1);
     const T* data_otherarray = otherArray.getData();

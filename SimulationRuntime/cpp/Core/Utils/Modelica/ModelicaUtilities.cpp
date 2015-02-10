@@ -1,5 +1,5 @@
-#include <Core/Utils/Modelica/ModelicaUtilities.h>
 #include <Core/Modelica.h>
+#include <Core/Utils/Modelica/ModelicaUtilities.h>
 #include <stdexcept>
 #include <exception>
 #include <string>
@@ -12,7 +12,7 @@ extern "C" {
 
 void ModelicaMessage(const char* string)
 {
-  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("ModelicaMessage not implemented yet"));
+  throw  ModelicaSimulationError(UTILITY,"ModelicaMessage not implemented yet");
 }
 
 void ModelicaVFormatMessage(const char*string, va_list args)
@@ -31,12 +31,12 @@ void ModelicaFormatMessage(const char* string,...)
 
 void ModelicaError(const char* string)
 {
-  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message(string));
+  throw  ModelicaSimulationError(UTILITY,string);
 }
 
 void ModelicaVFormatError(const char*string, va_list args)
 {
- BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("ModelicaVFormatError not implemented yet"));
+ throw  ModelicaSimulationError(UTILITY,"ModelicaVFormatError not implemented yet");
 }
 
 void ModelicaFormatError(const char* text, ...)

@@ -78,7 +78,7 @@ void Euler::initialize()
     if(_dimSys <= 0 || !(_properties->isODE()))
     {
         _idid = -1;
-        BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Euler::assemble() error"));
+        throw ModelicaSimulationError(SOLVER,"Euler::assemble() error");
     }
     else
     {
@@ -224,7 +224,7 @@ void Euler::solve(const SOLVERCALL command)
 
         _firstCall = false;
         if(_interrupt)
-           BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Euler::solve() time out reached"));
+           throw ModelicaSimulationError(SOLVER,"Euler::solve() time out reached");
 
     }
     else
@@ -467,7 +467,7 @@ void Euler::doEulerBackward()
         //}
 
         if (_idid != 0)
-             BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Euler::doEulerBackward() error" ));
+             throw ModelicaSimulationError(SOLVER,"Euler::doEulerBackward() error" );
 
         ++_totStps;
         ++_accStps;
@@ -651,7 +651,7 @@ void Euler::doMidpoint()
         }
 
         if (_idid != 0)
-             BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SOLVER) << error_message("Euler::doMidpoint() error"));
+             throw ModelicaSimulationError(SOLVER,"Euler::doMidpoint() error");
 
 
         ++ _totStps;

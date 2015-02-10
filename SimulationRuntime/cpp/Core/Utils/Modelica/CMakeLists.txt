@@ -2,11 +2,17 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${ModelicaUtilitiesName})
 # add the solver default implementation library
-add_library(${ModelicaUtilitiesName} STATIC ModelicaUtilities.cpp)
+
+IF(RUNTIME_STATIC_LINKING)
+	add_library(${ModelicaUtilitiesName} STATIC ModelicaUtilities.cpp ModelicaSimulationError.cpp)
+ELSE(RUNTIME_STATIC_LINKING)
+	add_library(${ModelicaUtilitiesName} SHARED ModelicaUtilities.cpp ModelicaSimulationError.cpp)
+ENDIF(RUNTIME_STATIC_LINKING)
+
 if (UNIX)
 set_target_properties(${ModelicaUtilitiesName} PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
-
+target_link_libraries (${ModelicaUtilitiesName} ${Boost_LIBRARIES})
 install (TARGETS ${ModelicaUtilitiesName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
 install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/ModelicaUtilities.h ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/ModelicaSimulationError.h  DESTINATION include/omc/cpp/Core/Utils/Modelica)

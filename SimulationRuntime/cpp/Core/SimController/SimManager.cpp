@@ -124,9 +124,9 @@ void SimManager::initialize()
         // System zusammenbauen und einmal updaten
         _initialization->initializeSystem();
     }
-    catch (boost::exception&  ex)
+    catch (std::exception&  ex)
     {
-        ex << error_id(SIMMANAGER);
+        //ex << error_id(SIMMANAGER);
         throw;
     }
 
@@ -203,7 +203,7 @@ void SimManager::runSingleStep(double cycletime)
     {
 
     if (_lastCycleTime && cycletime != _lastCycleTime)
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SIMMANAGER) << error_message("Cycle time can not be changed, if time events (samples) are present!"));
+            throw ModelicaSimulationError(SIMMANAGER,"Cycle time can not be changed, if time events (samples) are present!");
         else
             _lastCycleTime = cycletime;
 
@@ -245,7 +245,7 @@ void SimManager::computeSampleCycles()
     {
         if (iter->first != 0.0 || iter->second == 0.0)
         {
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SIMMANAGER) << error_message("Time event not starting at t=0.0 or not cyclic!"));
+            throw ModelicaSimulationError(SIMMANAGER,"Time event not starting at t=0.0 or not cyclic!");
         }
         else
         {
@@ -256,7 +256,7 @@ void SimManager::computeSampleCycles()
             }
             else
             {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(SIMMANAGER) << error_message("Sample time is not a multiple of the cycle time!"));
+                throw ModelicaSimulationError(SIMMANAGER,"Sample time is not a multiple of the cycle time!");
             }
 
         }
@@ -291,7 +291,7 @@ void SimManager::runSimulation()
             writeProperties();
         }
     }
-    catch (boost::exception & ex)
+    catch (std::exception & ex)
     {
         /* Logs temporarily disabled
          BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) << "Simulation finish with errors at t= " << _tEnd;
@@ -302,7 +302,7 @@ void SimManager::runSimulation()
         /* Logs temporarily disabled
          BOOST_LOG_SEV(simmgr_lg::get(), simmgr_critical) << "SimManger simmgr_error: " + simmgr_error_simmgr_info;
          */
-        ex << error_id(SIMMANAGER);
+        //ex << error_id(SIMMANAGER);
        throw;
     }
     #ifdef RUNTIME_PROFILING

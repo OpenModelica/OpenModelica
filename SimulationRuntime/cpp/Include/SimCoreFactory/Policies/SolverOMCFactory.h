@@ -37,7 +37,7 @@ public:
           iter = factories.find("SettingsFactory");
           if (iter ==factories.end())
           {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No such settings library"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"No such settings library");
             }
          boost::shared_ptr<ISettingsFactory>  settings_factory = boost::shared_ptr<ISettingsFactory>(iter->second.create(ObjectFactory<CreationPolicy>::_library_path,ObjectFactory<CreationPolicy>::_modelicasystem_path,ObjectFactory<CreationPolicy>::_config_path));
 
@@ -55,7 +55,7 @@ public:
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(euler_path.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
             {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading Euler solver library!"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Euler solver library!");
             }
             
         }
@@ -67,7 +67,7 @@ public:
            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(peer_path.string(),*_solver_type_map);
            if (result != LOADER_SUCCESS)
            {
-               BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading Peer solver library!"));
+               throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Peer solver library!");
            }
         }
      else if(solvername.compare("rtrk")==0)
@@ -78,7 +78,7 @@ public:
            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(rtrk_path.string(),*_solver_type_map);
            if (result != LOADER_SUCCESS)
            {
-               BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading RTRK solver library!"));
+               throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading RTRK solver library!");
            }
         }
         else if(solvername.compare("idas")==0)
@@ -106,11 +106,11 @@ public:
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cvode_path.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
             {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading CVode solver library!"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading CVode solver library!");
             }
         }
         else
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Selected Solver is not available"));
+            throw ModelicaSimulationError(MODEL_FACTORY,"Selected Solver is not available");
         
         std::map<std::string, factory<ISolver,IMixedSystem*, ISolverSettings*> >::iterator iter;
         std::map<std::string, factory<ISolver,IMixedSystem*, ISolverSettings*> >& factories(_solver_type_map->get());
@@ -118,7 +118,7 @@ public:
        iter = factories.find(solver_key);
         if (iter ==factories.end())
         {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No such Solver " + solver_key));
+                throw ModelicaSimulationError(MODEL_FACTORY,"No such Solver " + solver_key);
         }
         
         boost::shared_ptr<ISolver> solver = boost::shared_ptr<ISolver>(iter->second.create(system,solver_settings.get()));
@@ -140,7 +140,7 @@ protected:
         if (result != LOADER_SUCCESS)
         {
 
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message(string("Failed loading Math library: ") + math_path.string()));
+            throw ModelicaSimulationError(MODEL_FACTORY,string("Failed loading Math library: ") + math_path.string());
         }
 
         
@@ -154,7 +154,7 @@ protected:
         if (result != LOADER_SUCCESS)
         {
 
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading SimulationSettings library!"));
+            throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading SimulationSettings library!");
         }
 
         PATH solver_path = ObjectFactory<CreationPolicy>::_library_path;
@@ -165,7 +165,7 @@ protected:
 
         if (result != LOADER_SUCCESS)
         {
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading Solver default implementation library!"));
+            throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Solver default implementation library!");
         }
     }
 

@@ -138,10 +138,10 @@ void Kinsol::initialize()
             //idid = KINSetNumMaxIters(_kinMem, _kinsolSettings->getNewtMax());
             idid = KINInit(_kinMem, kin_fCallback, _Kin_y);
             if (check_flag(&idid, (char *)"KINInit", 1))
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(ALGLOOP_SOLVER) << error_message("Kinsol::initialize()"));
+                throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
             idid = KINSetUserData(_kinMem, _data);
             if (check_flag(&idid, (char *)"KINSetUserData", 1))
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(ALGLOOP_SOLVER) << error_message("Kinsol::initialize()"));
+                throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
 
             idid = KINSetErrFile(_kinMem, NULL);
             idid = KINSetNumMaxIters(_kinMem, 1000);
@@ -201,7 +201,7 @@ void Kinsol::solve()
         _algLoop->setReal(_y);
         //_algLoop->evaluate();
         if(irtrn != 0)
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(ALGLOOP_SOLVER) << error_message("error solving linear tearing system"));
+            throw ModelicaSimulationError(ALGLOOP_SOLVER,"error solving linear tearing system");
         else
           _iterationStatus = DONE;
     }
@@ -313,7 +313,7 @@ void Kinsol::solve()
 
 
         if(_iterationStatus == SOLVERERROR && !_eventRetry)
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(ALGLOOP_SOLVER) << error_message("Nonlinear solver failed!"));
+            throw ModelicaSimulationError(ALGLOOP_SOLVER,"Nonlinear solver failed!");
 
     }
 
@@ -332,7 +332,7 @@ void Kinsol::calcFunction(const double *y, double *residual)
     try
     {
         _algLoop->evaluate();
-    } catch (boost::exception & ex)
+    } catch (std::exception & ex)
     {
         _fValid = false;
     }

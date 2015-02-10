@@ -42,7 +42,7 @@ public:
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(euler_path.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
             {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading Euler solver library!"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Euler solver library!");
             }
             solver_settings_key.assign("createEulerSettings");
         }
@@ -54,7 +54,7 @@ public:
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(peer_name.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
             {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading Peer solver library!"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading Peer solver library!");
             }
             solver_settings_key.assign("createPeerSettings");
         }
@@ -66,7 +66,7 @@ public:
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(rtrk_path.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
             {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading RTRK solver library!"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading RTRK solver library!");
             }
             solver_settings_key.assign("createRTRKSettings");
         }
@@ -95,12 +95,12 @@ public:
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cvode_path.string(),*_solver_type_map);
             if (result != LOADER_SUCCESS)
             {
-                BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Failed loading CVode solver library!"));
+                throw ModelicaSimulationError(MODEL_FACTORY,"Failed loading CVode solver library!");
             }
             solver_settings_key.assign("extension_export_cvode");
         }
         else
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("Selected Solver is not available"));
+            throw ModelicaSimulationError(MODEL_FACTORY,"Selected Solver is not available");
 
       
         string settings = solvername.append("Settings");
@@ -115,7 +115,7 @@ public:
                 factoryStr += iter->first + " ";
             }
 
-            BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(MODEL_FACTORY) << error_message("No such Solver " + solvername + ". Available solver factories:" + factoryStr ));
+            throw ModelicaSimulationError(MODEL_FACTORY,"No such Solver " + solvername + ". Available solver factories:" + factoryStr );
         }
         boost::shared_ptr<ISolverSettings> solver_settings  = boost::shared_ptr<ISolverSettings>(iter->second.create(globalSettings.get()));
     

@@ -16,12 +16,35 @@ enum SIMULATION_ERROR {
                       MATH_FUNCTION //all errors occur in math functions
                       };
 
+/*
+Exception class for all simulation errors
+*/
+class ModelicaSimulationError: public std::runtime_error
+ {
+   public:
+   ModelicaSimulationError(SIMULATION_ERROR error_id,const std::string& error_info)
+   :runtime_error(error_info)
+   ,_error_id(error_id)
+   {
+   }
+   const char* what()
+   {
+      std::stringstream ss;
+      ss << "simulation error message : " << std::runtime_error::what();
+      return ss.str().c_str();
+   }
+  SIMULATION_ERROR getErrorID()
+  {
+     return _error_id;
+  }
+  private:
+  SIMULATION_ERROR _error_id;
 
-//typedefs for error information
-typedef boost::error_info<struct tag_error_code,SIMULATION_ERROR> error_id;
-typedef boost::error_info<struct tag_error_message,string> error_message;
-//Exception class for all exceptions that can occur
-struct ModelicaSimulationError: virtual boost::exception, virtual std::exception
-{
-  virtual ~ModelicaSimulationError() throw() {};
-};
+ };
+
+ //Helper functions to convert the error id to a readable format
+ string BOOST_EXTENSION_EXPORT_DECL error_id_string(SIMULATION_ERROR id);
+ //Helper functions to extend an error information for new additional string and time stamp
+ string BOOST_EXTENSION_EXPORT_DECL add_error_info(string new_info,string info,SIMULATION_ERROR id,double& time);
+ //Helper functions to extend an error information for new additional string
+ string BOOST_EXTENSION_EXPORT_DECL add_error_info(string new_info,string info,SIMULATION_ERROR id);

@@ -54,11 +54,11 @@ MeasureTimePAPI::MeasureTimePAPI(unsigned long int (*threadHandle)()) : MeasureT
   if (PAPI_start(eventSet) != PAPI_OK)
   {
     std::cerr << "PAPI_start_counters - FAILED" << std::endl;
-    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("PAPI_start_counters - FAILED"));
+    throw ModelicaSimulationError(UTILITY,"PAPI_start_counters - FAILED");
   }
 #else
   eventSet = 0;
-  BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("Papi not supported!"));
+  throw ModelicaSimulationError(UTILITY,"Papi not supported!");
 #endif
 }
 
@@ -90,13 +90,13 @@ void MeasureTimePAPI::getTimeValuesStartP(MeasureTimeValues *res)
 //  if (PAPI_reset(eventSet) != PAPI_OK)
 //  {
 //    std::cerr << "PAPI_reset - FAILED" << std::endl;
-//    BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("PAPI_reset_counters - FAILED"));
+//    throw ModelicaSimulationError(UTILITY,"PAPI_reset_counters - FAILED");
 //  }
   long long values[NUM_PAPI_EVENTS];
   if (PAPI_read(eventSet, values) != PAPI_OK)
   {
           std::cerr << "PAPI_read_counters - FAILED" << std::endl;
-          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("PAPI_read_counters - FAILED"));
+          throw ModelicaSimulationError(UTILITY,"PAPI_read_counters - FAILED");
   }
 
 //  val->time = 0;
@@ -115,7 +115,7 @@ void MeasureTimePAPI::getTimeValuesEndP(MeasureTimeValues *res)
   if (PAPI_read(eventSet, values) != PAPI_OK)
   {
           std::cerr << "PAPI_read_counters - FAILED" << std::endl;
-          BOOST_THROW_EXCEPTION(ModelicaSimulationError() << error_id(UTILITY) << error_message("PAPI_read_counters - FAILED"));
+          throw ModelicaSimulationError(UTILITY,"PAPI_read_counters - FAILED");
   }
 
   MeasureTimeValuesPAPI *val = static_cast<MeasureTimeValuesPAPI*>(res);
