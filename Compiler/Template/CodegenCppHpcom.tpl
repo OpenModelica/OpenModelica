@@ -1620,7 +1620,7 @@ template MemberVariable(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Bool
       MemberVariableDefine("void*",var, "extObjVars", hpcOmMemory, useFlatArrayNotation, createConstructorDeclaration)
       ;separator="\n"%>
     >>
-  end match  
+  end match
 end MemberVariable;
 
 template MemberVariablePreVariables(ModelInfo modelInfo, Option<MemoryMap> hpcOmMemory, Boolean useFlatArrayNotation, Boolean createConstructorDeclaration)
