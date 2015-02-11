@@ -191,8 +191,22 @@ template structToString(DAE.Type res, DAE.Type ty, Integer index, Text name)
     case T_BOOL(__) then
       '<%name%>.append(<%getQtTupleTypeOutputName(res, index)%> ? "true" : "false");'
     case aty as T_ARRAY(__) then
-      '<%name%>.append(join(<%getQtTupleTypeOutputName(res, index)%>));'
-    else '<%name%>.append(" + <%index%> + ");'
+    let varName = '<%getQtTupleTypeOutputName(res, index)%>' 
+    let elt = '<%varName%>_elt'
+    let counter = '<%varName%>_i'
+    <<
+    <%name%>.append("{");
+    int <%counter%> = 0;
+    foreach(<%getQtType(aty.ty)%> <%elt%>, <%varName%>) {
+      if (<%counter%>) {
+        <%name%>.append(",");
+      }
+      <%getQtResponseLogText(elt, aty.ty, name)%>
+      <%counter%>++;
+    }
+    <%name%>.append("}");
+    >>
+    else error(sourceInfo(), 'structToString failed for <%unparseType(ty)%>')
 end structToString;
 
 template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args, DAE.Type res, String className, Boolean addStructs)
@@ -210,16 +224,6 @@ template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args
           <%types |> ty hasindex i fromindex 1 => '<%structToString(res, ty, i, 'resultBuffer')%>' ; separator="\n" + 'resultBuffer.append(",");' + "\n" %>
           resultBuffer.append(")");
           return resultBuffer;
-        }
-        QString join(QList<QString> list, const QString &sep = ",") {
-          QString res;
-          for (int i = 0; i < list.size(); ++i) {
-            if (i) {
-              res += sep;
-            }
-            res += "\"" + list.at(i) + "\"";
-          }
-          return "{" + res + "}";
         }
       } <%name%>_res;
       <%name%>_res
@@ -325,16 +329,30 @@ template getQtOutArgArray(Text name, Text shortName, Text mm, DAE.Type ty)
     else error(sourceInfo(), 'getOutValueArray failed for <%unparseType(ty)%>')
 end getQtOutArgArray;
 
-template getQtResponseLogText(Text name, DAE.Type ty)
+template getQtResponseLogText(Text name, DAE.Type ty, Text responseLog)
 ::=
   match ty
-    case T_CODE(ty=C_TYPENAME(__)) then '<%name%>'
-    case T_STRING(__) then '"\"" + <%name%> + "\""'
+    case T_CODE(ty=C_TYPENAME(__)) then '<%responseLog%>.append(<%name%>);' + "\n"
+    case T_STRING(__) then '<%responseLog%>.append("\"" + <%name%> + "\"");' + "\n"
     case T_INTEGER(__)
-    case T_REAL(__) then 'QString::number(<%name%>)'
-    case T_BOOL(__) then '<%name%> ? "true" : "false"'
-    case T_TUPLE(__) then '<%name%>.toString()'
-    case aty as T_ARRAY(__) then '"### Handle array output for logging"'
+    case T_REAL(__) then '<%responseLog%>.append(QString::number(<%name%>));' + "\n"
+    case T_BOOL(__) then '<%responseLog%>.append(<%name%> ? "true" : "false");' + "\n"
+    case T_TUPLE(__) then '<%responseLog%>.append(<%name%>.toString());' + "\n"
+    case aty as T_ARRAY(__) then
+    let elt = '<%name%>_elt'
+    let counter = '<%name%>_i'
+    <<
+    <%responseLog%>.append("{");
+    int <%counter%> = 0;
+    foreach(<%getQtType(aty.ty)%> <%elt%>, <%name%>) {
+      if (<%counter%>) {
+        responseLog.append(",");
+      }
+      <%getQtResponseLogText(elt, aty.ty, responseLog)%>
+      <%counter%>++;
+    }
+    <%responseLog%>.append("}");
+    >>
     else error(sourceInfo(), 'getQtResponseLogText failed for <%unparseType(ty)%>')
 end getQtResponseLogText;
 
@@ -347,15 +365,14 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
   let commandArgs = args |> arg as FUNCARG(__) => getQtCommandLogText(arg.name, arg.ty) ; separator='+"," +'
   let outArgs = (match res
     case T_NORETCALL(__) then
-      let &responseLog += '""'
       ""
     case t as T_TUPLE(__) then
       let &varDecl += '<%name%>_res result;<%\n%>'
-      let &responseLog += '<%getQtResponseLogText('result', res)%>'
+      let &responseLog += '<%getQtResponseLogText('result', res, 'responseLog')%>'
       (types |> t hasindex i1 fromindex 1 => ', <%getQtOutArg('result.<%getQtTupleTypeOutputName(res, i1)%>', 'out<%i1%>', t, varDecl, postCall)%>')
     else
       let &varDecl += '<%getQtType(res)%> result;<%\n%>'
-      let &responseLog += '<%getQtResponseLogText('result', res)%>'
+      let &responseLog += '<%getQtResponseLogText('result', res, 'responseLog')%>'
       ', <%getQtOutArg('result', 'result', res, varDecl, postCall)%>'
     )
   <<
@@ -370,7 +387,9 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
     emit logCommand("<%replaceDotAndUnderscore(name)%>("+<%if intGt(listLength(args), 0) then commandArgs else 'QString("")'%>+")", &commandTime);
     st = omc_OpenModelicaScriptingAPI_<%replaceDotAndUnderscore(name)%>(threadData, st<%inArgs%><%outArgs%>);
     <%postCall%>
-    emit logResponse(<%responseLog%>, &commandTime);
+    QString responseLog;
+    <%responseLog%>
+    emit logResponse(responseLog, &commandTime);
 
     MMC_CATCH_TOP(throw std::runtime_error("<%replaceDotAndUnderscore(name)%> failed");)
 
