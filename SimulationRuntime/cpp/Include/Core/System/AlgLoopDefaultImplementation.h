@@ -29,7 +29,11 @@ enum OUTPUT
     SIMINFO      =  0x00000040      ///< Write out simulation info (e.g. number of steps)
   };
 
+#ifdef RUNTIME_STATIC_LINKING
+class AlgLoopDefaultImplementation
+#else
 class BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL AlgLoopDefaultImplementation
+#endif
 {
 public:
     AlgLoopDefaultImplementation();

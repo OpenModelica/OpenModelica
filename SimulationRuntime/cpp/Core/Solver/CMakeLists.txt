@@ -4,14 +4,15 @@ project(${SolverName})
 
 # add the solver default implementation library
 IF(RUNTIME_STATIC_LINKING)
-	message(STATUS "Building Solver for analyzation")
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
-	add_library(${SolverName} STATIC SolverDefaultImplementation.cpp SolverSettings.cpp SystemStateSelection.cpp FactoryExport.cpp SimulationMonitor.cpp )
+	add_library(${SolverName}_static STATIC SolverDefaultImplementation.cpp SolverSettings.cpp SystemStateSelection.cpp FactoryExport.cpp SimulationMonitor.cpp )
+	install (TARGETS ${SolverName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${SolverName} SHARED SolverDefaultImplementation.cpp SolverSettings.cpp SystemStateSelection.cpp FactoryExport.cpp SimulationMonitor.cpp )
+	target_link_libraries (${SolverName} ${MathName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
+	install (TARGETS ${SolverName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
-target_link_libraries (${SolverName} ${MathName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
-install (TARGETS ${SolverName} DESTINATION lib/omc/${LIBINSTALLEXT})
+
 install (FILES
          ${CMAKE_SOURCE_DIR}/Include/Core/Solver/IAlgLoopSolver.h 
          ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ILinSolverSettings.h

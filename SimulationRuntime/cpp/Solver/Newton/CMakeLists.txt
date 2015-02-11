@@ -5,17 +5,15 @@ project(${NewtonName})
 # add the solver default implementation library
 
 IF(RUNTIME_STATIC_LINKING)
-	message(STATUS "Building Newton for analyzation")
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
-	add_library(${NewtonName} STATIC Newton.cpp NewtonSettings.cpp FactoryExport )
-	target_link_libraries( ${NewtonName} ${MathName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+	add_library(${NewtonName}_static STATIC Newton.cpp NewtonSettings.cpp FactoryExport )
+	install (TARGETS ${NewtonName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${NewtonName} SHARED Newton.cpp NewtonSettings.cpp FactoryExport )
 	target_link_libraries( ${NewtonName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
+	install (TARGETS ${NewtonName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
-
-install (TARGETS ${NewtonName} DESTINATION lib/omc/${LIBINSTALLEXT})
 #install (FILES "../Interfaces/NewtonSettings.xml"
 #  DESTINATION bin/config)
 

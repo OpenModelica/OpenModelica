@@ -4,15 +4,14 @@ project(${SimControllerName})
 
 IF(RUNTIME_STATIC_LINKING)
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
-	add_library(${SimControllerName} STATIC Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp)
-	target_link_libraries( ${SimControllerName} ${SystemName} ${OMCFactoryName} ${ExtensionUtilitiesName}${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
+	add_library(${SimControllerName}_static STATIC Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp)
+	install (TARGETS ${SimControllerName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${SimControllerName} SHARED Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp)
 	target_link_libraries( ${SimControllerName} ${OMCFactoryName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
+	install (TARGETS ${SimControllerName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
-
-install (TARGETS ${SimControllerName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimData.h
                 ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimController.h

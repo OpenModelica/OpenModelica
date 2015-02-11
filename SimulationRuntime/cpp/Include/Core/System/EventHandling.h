@@ -9,7 +9,12 @@ Holds an event queue to handle all events occured at the same time
 
 class ContinuousEvents;
 class DiscreteEvents;
-class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
+
+#ifdef RUNTIME_STATIC_LINKING
+class EventHandling
+#else
+class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling	
+#endif
 {
 public:
   EventHandling();

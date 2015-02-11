@@ -2,20 +2,27 @@ CMAKE_MINIMUM_REQUIRED (VERSION 2.6)
 
 project(${ExtensionUtilitiesName})
 IF(RUNTIME_STATIC_LINKING)
-	add_library(${ExtensionUtilitiesName} STATIC measure_time.cpp measure_time_rdtsc.cpp measure_time_scorep.cpp)
+	add_library(${ExtensionUtilitiesName}_static STATIC measure_time.cpp measure_time_rdtsc.cpp measure_time_scorep.cpp)
+	IF(NOT BOOST_STATIC_LINKING)
+		target_link_libraries (${ExtensionUtilitiesName}_static ${Boost_LIBRARIES})
+	ENDIF(NOT BOOST_STATIC_LINKING)
+	IF(UNIX)
+		set_target_properties(${ExtensionUtilitiesName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	ENDIF(UNIX)
+
+	install (TARGETS ${ExtensionUtilitiesName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${ExtensionUtilitiesName} SHARED measure_time.cpp measure_time_rdtsc.cpp measure_time_scorep.cpp)
+	IF(NOT BOOST_STATIC_LINKING)
+		target_link_libraries (${ExtensionUtilitiesName} ${Boost_LIBRARIES})
+	ENDIF(NOT BOOST_STATIC_LINKING)
+	IF(UNIX)
+		set_target_properties(${ExtensionUtilitiesName} PROPERTIES COMPILE_FLAGS -fPIC)
+	ENDIF(UNIX)
+
+	install (TARGETS ${ExtensionUtilitiesName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
 
-IF(NOT BOOST_STATIC_LINKING)
-	target_link_libraries (${ExtensionUtilitiesName} ${Boost_LIBRARIES})
-ENDIF(NOT BOOST_STATIC_LINKING)
-
-IF(UNIX)
-	set_target_properties(${ExtensionUtilitiesName} PROPERTIES COMPILE_FLAGS -fPIC)
-ENDIF(UNIX)
-
-install (TARGETS ${ExtensionUtilitiesName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time.hpp
                 ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time_rdtsc.hpp

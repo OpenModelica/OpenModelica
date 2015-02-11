@@ -19,7 +19,7 @@ IF(NOT BOOST_STATIC_LINKING)
 ENDIF(NOT BOOST_STATIC_LINKING)
 
 if (UNIX)
-set_target_properties(${DataExchangeName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	set_target_properties(${DataExchangeName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 endif(UNIX)
 
 install (TARGETS ${DataExchangeName} DESTINATION lib/omc/${LIBINSTALLEXT})

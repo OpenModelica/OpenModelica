@@ -45,7 +45,11 @@ private:
   boost::unordered_map<T*, T> _start_values;
 };
 
+#ifdef RUNTIME_STATIC_LINKING
+class SystemDefaultImplementation: public virtual PreVariables
+#else
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation: public virtual PreVariables
+#endif
 {
 public:
   SystemDefaultImplementation(IGlobalSettings* globalSettings);

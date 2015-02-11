@@ -5,26 +5,22 @@ project(${OMCFactoryName})
 IF(RUNTIME_STATIC_LINKING)
 	message(STATUS "Building OMCFactory in analyzation mode")
 	# add the system default implementation library
-	add_library(${OMCFactoryName} STATIC OMCFactory.cpp StaticOMCFactory.cpp)
+	add_library(${OMCFactoryName}_static STATIC OMCFactory.cpp StaticOMCFactory.cpp)
 	#LINK_DIRECTORIES(${CMAKE_SOURCE_DIR}/../../../../build/lib/omc/${LIBINSTALLEXT})
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR}/kinsol ${SUNDIALS_INCLUDE_DIR})
-	
+	install (TARGETS ${OMCFactoryName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
 	if (UNIX)
-		target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${KinsolName} ${CVodeName} ${UmfPackName} ${SimControllerName} ${CMAKE_DL_LIBS})
-	else (UNIX)
-		target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${NewtonName} ${KinsolName} ${CVodeName} ${UmfPackName} ${SimControllerName})
+		set_target_properties(${OMCFactoryName}_static PROPERTIES COMPILE_FLAGS -fPIC)
 	endif(UNIX)
 ELSE(RUNTIME_STATIC_LINKING)
 	# add the system default implementation library
 	add_library(${OMCFactoryName} STATIC OMCFactory.cpp)
 	target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
+	install (TARGETS ${OMCFactoryName} DESTINATION lib/omc/${LIBINSTALLEXT})
+	if (UNIX)
+		set_target_properties(${OMCFactoryName} PROPERTIES COMPILE_FLAGS -fPIC)
+	endif(UNIX)
 ENDIF(RUNTIME_STATIC_LINKING)
-
-if (UNIX)
-set_target_properties(${OMCFactoryName} PROPERTIES COMPILE_FLAGS -fPIC)
-endif(UNIX)
-
-install (TARGETS ${OMCFactoryName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
 IF(RUNTIME_STATIC_LINKING)
   install (FILES

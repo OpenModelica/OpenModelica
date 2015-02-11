@@ -3,17 +3,19 @@ cmake_minimum_required (VERSION 2.6)
 project(${MathName})
 # add the solver default implementation library
 IF(RUNTIME_STATIC_LINKING)
-	add_library(${MathName} STATIC ArrayOperations.cpp Functions.cpp SparseMatrix.cpp FactoryExport.cpp)
+	add_library(${MathName}_static STATIC ArrayOperations.cpp Functions.cpp SparseMatrix.cpp FactoryExport.cpp)
+	IF(UNIX)
+		set_target_properties(${MathName}_static PROPERTIES COMPILE_FLAGS -fPIC)
+	ENDIF(UNIX)
+	install (TARGETS ${MathName}_static DESTINATION lib/omc/${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
 	add_library(${MathName} SHARED ArrayOperations.cpp Functions.cpp SparseMatrix.cpp FactoryExport.cpp)
+	target_link_libraries (${MathName} ${Boost_LIBRARIES} ${SUITESPARSE_LIBRARIES} ${LAPACK_LIBRARIES})
+	IF(UNIX)
+		set_target_properties(${MathName} PROPERTIES COMPILE_FLAGS -fPIC)
+	ENDIF(UNIX)
+	install (TARGETS ${MathName} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
-
-target_link_libraries (${MathName} ${Boost_LIBRARIES} ${SUITESPARSE_LIBRARIES} ${LAPACK_LIBRARIES})
-IF(UNIX)
-	set_target_properties(${MathName} PROPERTIES COMPILE_FLAGS -fPIC)
-ENDIF(UNIX)
-
-install (TARGETS ${MathName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
 install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/Math/Functions.h
           ${CMAKE_SOURCE_DIR}/Include/Core/Math/ArrayOperations.h

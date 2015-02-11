@@ -4,14 +4,14 @@ project(${SimulationSettings})
 # add the solver default implementation library
 IF(RUNTIME_STATIC_LINKING)
 	include_directories(${SUNDIALS_INCLUDE_DIR}/cvodes ${SUNDIALS_INCLUDE_DIR}/nvector  ${SUNDIALS_INCLUDE_DIR}/sundials ${SUNDIALS_INCLUDE_DIR})
-	add_library(${SimulationSettings} STATIC GlobalSettings.cpp Factory.cpp FactoryExport.cpp )
+	add_library(${SimulationSettings}_static STATIC GlobalSettings.cpp Factory.cpp FactoryExport.cpp)
+	install (TARGETS ${SimulationSettings}_static DESTINATION lib/omc/${LIBINSTALLEXT})
 ELSE(RUNTIME_STATIC_LINKING)
-	add_library(${SimulationSettings} SHARED GlobalSettings.cpp Factory.cpp FactoryExport.cpp )
+	add_library(${SimulationSettings} SHARED GlobalSettings.cpp Factory.cpp FactoryExport.cpp)
+	target_link_libraries( ${SimulationSettings} ${OMCFactoryName} ${Boost_LIBRARIES})
+	install (TARGETS ${SimulationSettings} DESTINATION lib/omc/${LIBINSTALLEXT})
 ENDIF(RUNTIME_STATIC_LINKING)
-target_link_libraries( ${SimulationSettings} ${OMCFactoryName} ${Boost_LIBRARIES})
 
-
-install (TARGETS ${SimulationSettings} DESTINATION lib/omc/${LIBINSTALLEXT})
 install (FILES "config/GlobalSettings.xml"
   DESTINATION share/omc/runtime/cpp/config)
 install (FILES ${CMAKE_SOURCE_DIR}/Include/Core/SimulationSettings/IGlobalSettings.h
