@@ -328,7 +328,7 @@ end getQtOutArgArray;
 template getQtResponseLogText(Text name, DAE.Type ty)
 ::=
   match ty
-    case T_CODE(ty=C_TYPENAME(__)) then '<%name%>' 
+    case T_CODE(ty=C_TYPENAME(__)) then '<%name%>'
     case T_STRING(__) then '"\"" + <%name%> + "\""'
     case T_INTEGER(__)
     case T_REAL(__) then 'QString::number(<%name%>)'
