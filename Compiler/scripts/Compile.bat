@@ -35,6 +35,8 @@ REM Clear all environment variables that may interfere during compile and link p
 set MAKE=
 set MAKEFLAGS=
 nmake /a /f %1.makefile >> %1.log 2>&1
+set RESULT=%ERRORLEVEL%
+echo RESULT: %RESULT% >> %1.log 2>&1
 goto :Final
 
 
@@ -42,11 +44,12 @@ goto :Final
 REM echo "MINGW"
 if "%3"=="parallel" set ADDITIONAL_ARGS=-j%NUMBER_OF_PROCESSORS%
 %MinGW%\bin\mingw32-make -f %1.makefile %ADDITIONAL_ARGS% >> %1.log 2>&1
+set RESULT=%ERRORLEVEL%
+echo RESULT: %RESULT% >> %1.log 2>&1
 goto :Final
 
 
 :Final
-set RESULT=%ERRORLEVEL%
 set PATH=%OLD_PATH%
 set OLD_PATH=
-exit %RESULT%
+@%COMSPEC% /C exit %RESULT%

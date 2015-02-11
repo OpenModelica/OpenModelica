@@ -549,6 +549,7 @@ int runProcess(const char* cmd)
   PROCESS_INFORMATION pi;
   char *c = "cmd /c";
   char *command = malloc(strlen(cmd) + strlen(c) + 2);
+  DWORD exitCode = 1;
 
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
@@ -562,13 +563,15 @@ int runProcess(const char* cmd)
   if (CreateProcessA(NULL, command, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
   {
       WaitForSingleObject(pi.hProcess, INFINITE);
+      // Get the exit code.
+      GetExitCodeProcess(pi.hProcess, &exitCode);
       CloseHandle(pi.hProcess);
       CloseHandle(pi.hThread);
       free(command);
-      return 0;
+      return (int)exitCode;
   }
   free(command);
-  return 1;
+  return (int)exitCode;
 }
 #endif
 
