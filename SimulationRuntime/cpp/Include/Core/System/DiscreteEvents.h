@@ -4,7 +4,7 @@
 #ifdef RUNTIME_STATIC_LINKING
 class DiscreteEvents
 #else
-class BOOST_EXTENSION_EVENTHANDLING_DECL DiscreteEvents	
+class BOOST_EXTENSION_EVENTHANDLING_DECL DiscreteEvents
 #endif
 {
 public:
