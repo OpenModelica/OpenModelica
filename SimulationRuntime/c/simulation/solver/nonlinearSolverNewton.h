@@ -36,9 +36,17 @@
 
 #include "simulation_data.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int allocateNewtonData(int size, void** data);
 int freeNewtonData(void** data);
 
 int solveNewton(DATA *data, int sysNumber);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

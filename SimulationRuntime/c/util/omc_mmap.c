@@ -33,6 +33,10 @@
 #include <string.h>
 #include <errno.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if HAVE_MMAP
 
 omc_mmap_read_unix omc_mmap_open_read_unix(const char *fileName)
@@ -148,3 +152,8 @@ void omc_mmap_close_write_inmemory(omc_mmap_write_inmemory map)
   }
   free((void*)map.data);
 }
+
+
+#ifdef __cplusplus
+}
+#endif

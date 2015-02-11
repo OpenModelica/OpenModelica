@@ -49,6 +49,9 @@
 #include "simulation/solver/dassl.h"
 #include "meta/meta_modelica.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static const char *dasslJacobianMethodStr[DASSL_JAC_MAX] = {"unknown",
                                                 "coloredNumerical",
@@ -1281,3 +1284,6 @@ static int JacobianOwnNumColored(double *t, double *y, double *yprime, double *d
   return 0;
 }
 
+#ifdef __cplusplus
+}
+#endif

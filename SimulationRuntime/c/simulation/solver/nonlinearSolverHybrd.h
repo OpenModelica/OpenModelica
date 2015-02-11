@@ -51,14 +51,13 @@ int hybrj_( int(*) (const integer*, const double*, double*, double *, const inte
   double *r, integer *lr, double *qtf, double *wa1, double *wa2,
   double *wa3, double *wa4, void* user_data);
 
-#ifdef __cplusplus
-}
-#endif
-
-
 extern int allocateHybrdData(int size, void **data);
 extern int freeHybrdData(void **data);
 extern int solveHybrd(DATA *data, int sysNumber);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

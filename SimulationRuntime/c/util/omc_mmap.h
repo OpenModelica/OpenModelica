@@ -31,6 +31,10 @@
 #ifndef OMC_MMAP_H_
 #define OMC_MMAP_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 
 #if !defined(HAVE_MMAP)
@@ -101,6 +105,10 @@ typedef omc_mmap_write_inmemory omc_mmap_write;
 #define omc_mmap_close_read(X) omc_mmap_close_read_inmemory(X);
 #define omc_mmap_close_write(X) omc_mmap_close_write_inmemory(X);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

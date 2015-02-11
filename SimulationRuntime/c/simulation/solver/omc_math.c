@@ -44,12 +44,15 @@
  *  \param [in]  [size] Number of elements
  */
 _omc_vector* _omc_allocateVectorData(const _omc_size size) {
+  _omc_vector* vec = NULL;
+  _omc_scalar* data = NULL;
+
   assertStreamPrint(NULL, size > 0, "size needs to be greater zero");
 
-  _omc_vector* vec = (_omc_vector*) malloc(sizeof(_omc_vector));
+  vec = (_omc_vector*) malloc(sizeof(_omc_vector));
   assertStreamPrint(NULL, NULL != vec, "out of memory");
 
-  _omc_scalar* data = (_omc_scalar*) malloc(size * sizeof(_omc_scalar));
+  data = (_omc_scalar*) malloc(size * sizeof(_omc_scalar));
   assertStreamPrint(NULL, NULL != data, "out of memory");
 
   vec->size = size;
@@ -77,9 +80,10 @@ void _omc_deallocateVectorData(_omc_vector* vec) {
  *  \param [ref] [data] !TODO: DESCRIBE ME!
  */
 _omc_vector* _omc_createVector(const _omc_size size, _omc_scalar* data) {
+  _omc_vector* vec = NULL;
   assertStreamPrint(NULL, size > 0, "size needs to be greater zero");
 
-  _omc_vector* vec = (_omc_vector*) malloc(sizeof(_omc_vector));
+  vec = (_omc_vector*) malloc(sizeof(_omc_vector));
   assertStreamPrint(NULL, NULL != vec, "out of memory");
 
   vec->size = size;
@@ -120,13 +124,15 @@ void _omc_copyVector(_omc_vector* dest, const _omc_vector* src)
  */
 _omc_matrix* _omc_allocateMatrixData(const _omc_size rows, const _omc_size cols)
 {
+  _omc_matrix* mat = NULL;
+  _omc_scalar* data = NULL;
   assertStreamPrint(NULL, rows > 0, "size of rows need greater zero");
   assertStreamPrint(NULL, cols > 0, "size of cols need greater zero");
 
-  _omc_matrix* mat = (_omc_matrix*) malloc(sizeof(_omc_matrix));
+  mat = (_omc_matrix*) malloc(sizeof(_omc_matrix));
   assertStreamPrint(NULL, NULL != mat, "out of memory");
 
-  _omc_scalar* data = (_omc_scalar*) malloc(rows * cols * sizeof(_omc_scalar));
+  data = (_omc_scalar*) malloc(rows * cols * sizeof(_omc_scalar));
   assertStreamPrint(NULL, NULL != mat, "data out of memory");
 
   mat->rows = rows;
@@ -158,10 +164,11 @@ void _omc_deallocateMatrixData(_omc_matrix* mat)
  */
 _omc_matrix* _omc_createMatrix(const _omc_size rows, const _omc_size cols, _omc_scalar* data)
 {
+  _omc_matrix* mat = NULL;
   assertStreamPrint(NULL, rows > 0, "size of rows need greater zero");
   assertStreamPrint(NULL, cols > 0, "size of cols need greater zero");
 
-  _omc_matrix* mat = (_omc_matrix*) malloc(sizeof(_omc_matrix));
+  mat = (_omc_matrix*) malloc(sizeof(_omc_matrix));
   assertStreamPrint(NULL, NULL != mat, "out of memory");
 
   mat->rows = rows;

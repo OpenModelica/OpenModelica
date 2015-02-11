@@ -31,6 +31,10 @@
 /*! \file nonlinear_solver.c
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h> /* memcpy */
@@ -920,3 +924,8 @@ void LineSearch(void* userdata, int sysNumber, double* x, int(*f)(int*, double*,
         solverData->x_new[i]=x[i]-lambda_minimum*solverData->x_increment[i];
 
 }
+
+
+#ifdef __cplusplus
+}
+#endif

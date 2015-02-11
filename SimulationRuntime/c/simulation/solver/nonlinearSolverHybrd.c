@@ -31,6 +31,10 @@
 /*! \file nonlinear_solver.c
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h> /* memcpy */
@@ -1085,3 +1089,7 @@ int solveHybrd(DATA *data, int sysNumber)
 
   return success;
 }
+
+#ifdef __cplusplus
+}
+#endif
