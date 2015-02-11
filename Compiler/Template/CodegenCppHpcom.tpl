@@ -1809,7 +1809,6 @@ template MemberVariableDefine3(Option<tuple<Integer,Integer>> optVarArrayAssignm
             <%if createConstructorDeclaration then '/* no varIdx found for variable <%cref(name,useFlatArrayNotation)%> */' else '<%variableType(type_)%> <%cref(name, useFlatArrayNotation)%>; //not optimized' %>
             >>
         end match
-      end match
   end match
 end MemberVariableDefine3;
 
