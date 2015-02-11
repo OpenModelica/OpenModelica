@@ -160,8 +160,11 @@ omc-and-runtimeCPPinstall: mkbuilddirs
 runtimeCPP: libraries/msl-external-libs CMinpack
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)"
 
+CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
+
+
 runtimeCPPinstall: libraries/msl-external-libs CMinpack
-	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)"
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib build/lib/omc/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib build/lib/omc/cpp/libOMCppDataExchange.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppEuler.dylib build/lib/omc/cpp/libOMCppEuler.dylib

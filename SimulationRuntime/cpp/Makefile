@@ -14,6 +14,7 @@ PARALLEL_OUTPUT_COMMAND="-DUSE_PARALLEL_OUTPUT=ON"
 RUNTIME_PROFILING_COMMAND="-DRUNTIME_PROFILING=ON"
 SCOREP_COMMAND="-DUSE_SCOREP=ON"
 CMAKE_COMMANDS=CC="scorep --user --nocompiler --thread=pthread gcc" CXX="scorep --user --nocompiler --thread=pthread g++"
+CMAKE_ARGS=$(patsubst CMAKE_%, -D%, $(filter CMAKE_%, $(MAKEFLAGS)))
 
 runtimeCpp: clean
 ifneq ("$(RUNTIME_STATIC_LINKING)","true")
@@ -34,7 +35,7 @@ ifneq ("$(USE_SCOREP)","true") #If ScoreP ist used, the analyzation mode is auto
 else
 	$(eval RUNTIME_STATIC_LINKING_COMMAND="-DRUNTIME_STATIC_LINKING=ON")
 endif
-	cd ./Build && echo "change to Build" && $(CMAKE_COMMANDS) cmake $(RUNTIME_STATIC_LINKING_COMMAND) $(BOOST_STATIC_LINKING_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(SCOREP_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../
+	cd ./Build && echo "change to Build" && $(CMAKE_COMMANDS) cmake $(RUNTIME_STATIC_LINKING_COMMAND) $(BOOST_STATIC_LINKING_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(SCOREP_COMMAND) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX:PATH="$(builddir_build)" $(CMAKE_ARGS)  ../
 	$(MAKE) -C Build 
 
 install: runtimeCpp
