@@ -178,8 +178,26 @@ template getQtTupleTypeOutputName(DAE.Type ty, Integer index)
     else 'res<%index%>'
 end getQtTupleTypeOutputName;
 
+template structToString(DAE.Type res, DAE.Type ty, Integer index, Text name)
+::=
+  match ty
+    case T_CODE(ty=C_TYPENAME(__)) then
+      '<%name%>.append(<%getQtTupleTypeOutputName(res, index)%>);'
+    case T_STRING(__) then
+      '<%name%>.append("\"" + <%getQtTupleTypeOutputName(res, index)%> + "\"");'
+    case T_INTEGER(__)
+    case T_REAL(__) then
+      '<%name%>.append(QString::number(<%getQtTupleTypeOutputName(res, index)%>));'
+    case T_BOOL(__) then
+      '<%name%>.append(<%getQtTupleTypeOutputName(res, index)%> ? "true" : "false");'
+    case aty as T_ARRAY(__) then
+      '<%name%>.append(join(<%getQtTupleTypeOutputName(res, index)%>));'
+    else '<%name%>.append(" + <%index%> + ");'
+end structToString;
+
 template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args, DAE.Type res, String className, Boolean addStructs)
 ::=
+  let &toStringBuffer = buffer ""
   let inTypes = args |> arg as FUNCARG(__) => '<%getQtType(arg.ty)%> <%arg.name%>' ; separator=", "
   let outType = match res
     case T_TUPLE(__) then
@@ -187,6 +205,22 @@ template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args
       <<
       typedef struct {
         <%types |> ty hasindex i fromindex 1 => '<%getQtType(ty)%> <%getQtTupleTypeOutputName(res, i)%>;' ; separator="\n" %>
+        QString toString() {
+          QString resultBuffer = "(";
+          <%types |> ty hasindex i fromindex 1 => '<%structToString(res, ty, i, 'resultBuffer')%>' ; separator="\n" + 'resultBuffer.append(",");' + "\n" %>
+          resultBuffer.append(")");
+          return resultBuffer;
+        }
+        QString join(QList<QString> list, const QString &sep = ",") {
+          QString res;
+          for (int i = 0; i < list.size(); ++i) {
+            if (i) {
+              res += sep;
+            }
+            res += "\"" + list.at(i) + "\"";
+          }
+          return "{" + res + "}";
+        }
       } <%name%>_res;
       <%name%>_res
       >>
@@ -294,12 +328,13 @@ end getQtOutArgArray;
 template getQtResponseLogText(Text name, DAE.Type ty)
 ::=
   match ty
-    case T_CODE(ty=C_TYPENAME(__))
-    case T_STRING(__) then '<%name%>'
+    case T_CODE(ty=C_TYPENAME(__)) then '<%name%>' 
+    case T_STRING(__) then '"\"" + <%name%> + "\""'
     case T_INTEGER(__)
     case T_REAL(__) then 'QString::number(<%name%>)'
     case T_BOOL(__) then '<%name%> ? "true" : "false"'
-    case aty as T_ARRAY(__) then '"Generate toString() method for structs"'
+    case T_TUPLE(__) then '<%name%>.toString()'
+    case aty as T_ARRAY(__) then '"### Handle array output for logging"'
     else error(sourceInfo(), 'getQtResponseLogText failed for <%unparseType(ty)%>')
 end getQtResponseLogText;
 
@@ -316,7 +351,7 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
       ""
     case t as T_TUPLE(__) then
       let &varDecl += '<%name%>_res result;<%\n%>'
-      let &responseLog += '"Generate toString() method for structs"'
+      let &responseLog += '<%getQtResponseLogText('result', res)%>'
       (types |> t hasindex i1 fromindex 1 => ', <%getQtOutArg('result.<%getQtTupleTypeOutputName(res, i1)%>', 'out<%i1%>', t, varDecl, postCall)%>')
     else
       let &varDecl += '<%getQtType(res)%> result;<%\n%>'
