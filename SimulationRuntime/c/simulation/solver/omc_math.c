@@ -190,9 +190,8 @@ void _omc_destroyMatrix(_omc_matrix* mat)
  */
 _omc_matrix* _omc_copyMatrix(_omc_matrix* mat1)
 {
-  _omc_allocateMatrixData(mat1->rows, mat1->cols);
-  memcpy(mat->data, mat1->data, sizeof(_omc_scalar) * _omc_getMatrixSize(mat));
-
+  _omc_matrix* mat = _omc_allocateMatrixData(mat1->rows, mat1->cols);
+  memcpy(mat->data, mat1->data, sizeof(_omc_scalar) * _omc_getMatrixSize(mat1));
   return mat;
 }
 
