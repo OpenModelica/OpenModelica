@@ -1301,7 +1301,7 @@ algorithm
         inDoVect, inPrefix, inInfo);
 
     // Figure out the type of the reduction.
-    c := Types.constAnd(exp_const, iter_const);
+    c := exp_const; // Types.constAnd(exp_const, iter_const);
     fn := Absyn.crefToPath(inReductionFn);
     (outCache, exp, exp_ty, res_ty, v, fn) := reductionType(outCache, inEnv, fn,
       exp, exp_ty, Types.unboxedType(exp_ty), dims, has_guard_exp, inInfo);
