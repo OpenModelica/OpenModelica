@@ -336,9 +336,9 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       {
         variablesPlotted.append(csvReader->variables[i]);
         double *vals = (double*) malloc(csvReader->numsteps*sizeof(double));
-        memcpy(vals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
         if (vals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
+        memcpy(vals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
         if (!editCase) {
           pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], getUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
@@ -545,17 +545,17 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       {
         variablesPlotted.append(csvReader->variables[i]);
         xVals = (double*) malloc(csvReader->numsteps*sizeof(double));
-        memcpy(xVals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
         if (xVals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
+        memcpy(xVals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
       }
       if ((yVariable.compare(csvReader->variables[i]) == 0))
       {
         variablesPlotted.append(csvReader->variables[i]);
         yVals = (double*) malloc(csvReader->numsteps*sizeof(double));
-        memcpy(yVals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
         if (yVals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
+        memcpy(yVals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
       }
     }
 
