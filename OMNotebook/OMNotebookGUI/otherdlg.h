@@ -51,7 +51,7 @@ namespace IAEX
    * \author Anders Fernström
    * \date 2005-11-04
    *
-   * \breif Class of opening a dialog window for entering av value...
+   * \brief Class of opening a dialog window for entering av value...
    */
   class OtherDlg : public QDialog
   {

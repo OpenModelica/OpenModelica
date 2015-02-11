@@ -2815,7 +2815,7 @@ void NotebookWindow::helpText()
   * \author Anders FernstrÃ¶m and Ingemar Axelsson
   * \date 2005-09-30 (update)
   *
-  * \breif Save As function
+  * \brief Save As function
   *
   * 2005-09-22 AF, added code for updating window title
   * 2005-09-30 AF, add check for fileend when saving.

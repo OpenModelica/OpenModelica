@@ -1112,7 +1112,7 @@ namespace IAEX {
   * \date 2005-11-01
   * \date 2006-03-02 (update)
   *
-  * \breif Set readonly value on the texteditor
+  * \brief Set readonly value on the texteditor
   *
   * \param readonly The boolean value of readonly property
   *
@@ -1150,7 +1150,7 @@ namespace IAEX {
   * \author Anders Fernström
   * \date 2006-01-16
   *
-  * \breif Set evaluated value on the texteditor
+  * \brief Set evaluated value on the texteditor
   *
   * \param evaluated The boolean value of evaluated property
   */
@@ -1163,7 +1163,7 @@ namespace IAEX {
   * \author Ingemar Axelsson (and Anders Fernström)
   * \date 2005-11-01 (update)
   *
-  * \breif Set if the output part of the cell shoud be
+  * \brief Set if the output part of the cell shoud be
   * closed(hidden) or not.
   *
   * 2005-11-01 AF, Made some small changes to how the function
@@ -1226,7 +1226,7 @@ namespace IAEX {
   * \author Anders Fernström and Ingemar Axelsson
   * \date 2006-04-10 (update)
   *
-  * \breif Recalculates height.
+  * \brief Recalculates height.
   *
   * 2005-10-31 AF, Large part of this function was changes due to
   * porting to QT4 (changes from Q3TextBrowser to QTextBrowser).
@@ -1681,7 +1681,7 @@ namespace IAEX {
   * \date 2005-12-29
   * \date 2006-01-16 (update)
   *
-  * \breif adds the input text editor to the highlighter thread
+  * \brief adds the input text editor to the highlighter thread
   * when text have changed.
   *
   * 2006-01-16 AF, don't add text editor if MyTextEdit2 says NO
@@ -1709,7 +1709,7 @@ namespace IAEX {
   * \author Anders Fernström
   * \date 2006-01-17
   *
-  * \breif set the correct style if the charFormat is changed and the
+  * \brief set the correct style if the charFormat is changed and the
   * cell is empty. This is done because otherwise the style is lost if
   * all text is removed inside a cell.
   */

@@ -255,7 +255,7 @@ namespace IAEX
   * \author Anders Fernström
   * \date 2005-12-01
   *
-  * \breif Opens an old file, using the specified filename.
+  * \brief Opens an old file, using the specified filename.
   *
   * \param filename The file that should be open
   * \param readmode The mode that the xmlpaser should use
@@ -289,7 +289,7 @@ namespace IAEX
   * \author Anders Fernström
   * \date 2005-12-19
   *
-  * \breif print a document
+  * \brief print a document
   *
   * \param filename The file that should be open
   * \param readmode The mode that the xmlpaser should use

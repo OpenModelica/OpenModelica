@@ -364,7 +364,7 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson
    *
-   * \breif returns a vector with all content of the pasteboard.
+   * \brief returns a vector with all content of the pasteboard.
    */
   vector<Cell*> CellApplication::pasteboard()
   {

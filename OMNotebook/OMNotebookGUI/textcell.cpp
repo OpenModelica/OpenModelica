@@ -649,7 +649,7 @@ namespace IAEX
    * \author Ingemar Axelsson and Anders Fernström
    * \date 2006-03-02 (update)
    *
-   * \breif Set readonly value on the texteditor
+   * \brief Set readonly value on the texteditor
    *
    * 2005-10-31 AF, removed the change in framstyle, looks better now
    * 2005-11-01 AF, clear text selection when text edit is set to readonly
@@ -693,7 +693,7 @@ namespace IAEX
   /*!
    * \author Ingemar Axelsson and Anders Fernström
    *
-   * \breif send a clicked signal if the user clicks on the cell
+   * \brief send a clicked signal if the user clicks on the cell
    */
   void TextCell::clickEvent()
   {
@@ -719,7 +719,7 @@ namespace IAEX
    * \author Anders Fernström and Ingemar Axelsson
    * \date 2006-04-10 (update)
    *
-   * \breif Recalculates height.
+   * \brief Recalculates height.
    *
    * 2005-10-31 AF, Large part of this function was changes due to
    * porting to QT4 (changes from Q3TextBrowser to QTextBrowser).
@@ -789,7 +789,7 @@ namespace IAEX
    * \author Anders Fernström
    * \date 2006-01-17
    *
-   * \breif set the correct style if the charFormat is changed and the
+   * \brief set the correct style if the charFormat is changed and the
    * cell is empty. This is done because otherwise the style is lost if
    * all text is removed inside a cell.
    */
@@ -827,7 +827,7 @@ namespace IAEX
    * \author Ingemar Axelsson and Anders Fernström
    * \date 2005-11-01 (update)
    *
-   * \breif toggle between showing the html code in the cell and
+   * \brief toggle between showing the html code in the cell and
    * normal plain text.
    *
    * 2005-11-01 AF, Remade the function to reflect the new

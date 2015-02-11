@@ -52,7 +52,7 @@
 namespace IAEX
 {
   /*!
-   * \breif Interface for all cellfactories.
+   * \brief Interface for all cellfactories.
    */
   class CellFactory : public Factory
   {

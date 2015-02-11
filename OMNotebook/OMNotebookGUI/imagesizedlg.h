@@ -51,7 +51,7 @@ namespace IAEX
    * \author Anders Fernström
    * \date 2005-11-20
    *
-   * \breif Class of opening a dialog window for selecting image size...
+   * \brief Class of opening a dialog window for selecting image size...
    */
   class ImageSizeDlg : public QDialog
   {
