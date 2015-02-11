@@ -81,6 +81,8 @@ typedef void* iconv_t;
 
 #else /* *nix / Mac */
 
+#include <signal.h>
+
 #define getFunctionPointerFromDLL dlsym
 #define FreeLibraryFromHandle dlclose
 #define GetLastError(X) 1L
@@ -548,7 +550,7 @@ int runProcess(const char* cmd)
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   char *c = "cmd /c";
-  char *command = malloc(strlen(cmd) + strlen(c) + 2);
+  char *command = (char *)GC_malloc_atomic(strlen(cmd) + strlen(c) + 2);
   DWORD exitCode = 1;
 
   ZeroMemory(&si, sizeof(si));
@@ -567,10 +569,8 @@ int runProcess(const char* cmd)
       GetExitCodeProcess(pi.hProcess, &exitCode);
       CloseHandle(pi.hProcess);
       CloseHandle(pi.hThread);
-      free(command);
-      return (int)exitCode;
   }
-  free(command);
+  GC_free(command);
   return (int)exitCode;
 }
 #endif
@@ -586,10 +586,10 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
   if (*outFile) {
-    char *command = malloc(strlen(str) + strlen(outFile) + 10);
+    char *command = (char *)GC_malloc_atomic(strlen(str) + strlen(outFile) + 10);
     sprintf(command, "%s >> %s 2>&1", str, outFile);
     status = runProcess(command);
-    free((void*)command);
+    GC_free((void*)command);
   } else {
     status = runProcess(str);
   }
