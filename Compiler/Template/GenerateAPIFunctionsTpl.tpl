@@ -191,7 +191,7 @@ template structToString(DAE.Type res, DAE.Type ty, Integer index, Text name)
     case T_BOOL(__) then
       '<%name%>.append(<%getQtTupleTypeOutputName(res, index)%> ? "true" : "false");'
     case aty as T_ARRAY(__) then
-    let varName = '<%getQtTupleTypeOutputName(res, index)%>' 
+    let varName = '<%getQtTupleTypeOutputName(res, index)%>'
     let elt = '<%varName%>_elt'
     let counter = '<%varName%>_i'
     <<
