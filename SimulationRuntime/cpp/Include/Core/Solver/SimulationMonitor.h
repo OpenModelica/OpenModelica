@@ -7,7 +7,7 @@
 #ifdef RUNTIME_STATIC_LINKING
 class SimulationMonitor
 #else
-class BOOST_EXTENSION_MONITOR_DECL SimulationMonitor	
+class BOOST_EXTENSION_MONITOR_DECL SimulationMonitor
 #endif
 {
 public:
