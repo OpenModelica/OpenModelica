@@ -17,7 +17,7 @@ extern "C" {
  *
  * @param string The message.
  */
-void BOOST_EXTENSION_EXPORT_DECL ModelicaMessage(const char* string);
+BOOST_EXTENSION_EXPORT_DECL void ModelicaMessage(const char* string);
 
 /**
  * \brief Output the message under the same format control as the C-function
@@ -25,7 +25,7 @@ void BOOST_EXTENSION_EXPORT_DECL ModelicaMessage(const char* string);
  *
  * @param string The formatted message.
  */
-void BOOST_EXTENSION_EXPORT_DECL ModelicaFormatMessage(const char* string,...);
+BOOST_EXTENSION_EXPORT_DECL void ModelicaFormatMessage(const char* string,...);
 
 /**
  * \brief Output the message under the same format control as the C-function
@@ -34,7 +34,7 @@ void BOOST_EXTENSION_EXPORT_DECL ModelicaFormatMessage(const char* string,...);
  * @param string The formatted message.
  * @param arg_ptr Pointer to list of arguments.
  */
-void BOOST_EXTENSION_EXPORT_DECL ModelicaVFormatMessage(const char* string, va_list arg_ptr);
+BOOST_EXTENSION_EXPORT_DECL void ModelicaVFormatMessage(const char* string, va_list arg_ptr);
 
 /**
  * \brief Output the error message string (no format control). This function
@@ -43,7 +43,7 @@ void BOOST_EXTENSION_EXPORT_DECL ModelicaVFormatMessage(const char* string, va_l
  *
  * @param string The error message.
  */
-void BOOST_EXTENSION_EXPORT_DECL ModelicaError(const char* string);
+BOOST_EXTENSION_EXPORT_DECL void ModelicaError(const char* string);
 
 /**
  * \brief Output the error message under the same format control as the
@@ -52,7 +52,7 @@ void BOOST_EXTENSION_EXPORT_DECL ModelicaError(const char* string);
  *
  * @param string The formatted error message.
  */
-void BOOST_EXTENSION_EXPORT_DECL ModelicaFormatError(const char* string,...);
+BOOST_EXTENSION_EXPORT_DECL void ModelicaFormatError(const char* string,...);
 
 /**
  * \brief Output the error message under the same format control as the
@@ -62,7 +62,7 @@ void BOOST_EXTENSION_EXPORT_DECL ModelicaFormatError(const char* string,...);
  * @param string The formatted error message.
  * @param arg_ptr Pointer to list of arguments.
  */
-void BOOST_EXTENSION_EXPORT_DECL ModelicaVFormatError(const char* string, va_list arg_ptr);
+BOOST_EXTENSION_EXPORT_DECL void ModelicaVFormatError(const char* string, va_list arg_ptr);
 
 /**
  * \brief Allocate memory for a Modelica string which is used as return argument
@@ -73,7 +73,7 @@ void BOOST_EXTENSION_EXPORT_DECL ModelicaVFormatError(const char* string, va_lis
  *
  * @param len Length of string to allocate.
  */
-char* BOOST_EXTENSION_EXPORT_DECL  ModelicaAllocateString(size_t len);
+BOOST_EXTENSION_EXPORT_DECL  char* ModelicaAllocateString(size_t len);
 
 /**
  * \brief Same as ModelicaAllocateString, except that in case of error, the
@@ -83,7 +83,7 @@ char* BOOST_EXTENSION_EXPORT_DECL  ModelicaAllocateString(size_t len);
  *
  * @param len Length of string to allocate.
  */
-char* BOOST_EXTENSION_EXPORT_DECL ModelicaAllocateStringWithErrorReturn(size_t len);
+BOOST_EXTENSION_EXPORT_DECL char* ModelicaAllocateStringWithErrorReturn(size_t len);
 
 
 #ifdef __cplusplus

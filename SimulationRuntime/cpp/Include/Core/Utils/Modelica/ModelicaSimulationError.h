@@ -43,8 +43,8 @@ class ModelicaSimulationError: public std::runtime_error
  };
 
  //Helper functions to convert the error id to a readable format
- string BOOST_EXTENSION_EXPORT_DECL error_id_string(SIMULATION_ERROR id);
+ BOOST_EXTENSION_EXPORT_DECL string error_id_string(SIMULATION_ERROR id);
  //Helper functions to extend an error information for new additional string and time stamp
- string BOOST_EXTENSION_EXPORT_DECL add_error_info(string new_info,string info,SIMULATION_ERROR id,double& time);
+ BOOST_EXTENSION_EXPORT_DECL string add_error_info(string new_info,string info,SIMULATION_ERROR id,double& time);
  //Helper functions to extend an error information for new additional string
- string BOOST_EXTENSION_EXPORT_DECL add_error_info(string new_info,string info,SIMULATION_ERROR id);
+ BOOST_EXTENSION_EXPORT_DECL string add_error_info(string new_info,string info,SIMULATION_ERROR id);
