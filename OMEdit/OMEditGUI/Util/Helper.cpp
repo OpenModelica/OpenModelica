@@ -290,6 +290,7 @@ QString Helper::parsingFailedJson;
 QString Helper::expandAll;
 QString Helper::collapseAll;
 QString Helper::version;
+QString Helper::unlimited;
 
 void Helper::initHelperVariables()
 {
@@ -465,6 +466,7 @@ void Helper::initHelperVariables()
   Helper::expandAll = tr("Expand All");
   Helper::collapseAll = tr("Collapse All");
   Helper::version = tr("Version:");
+  Helper::unlimited = tr("unlimited");
 }
 
 QString GUIMessages::getMessage(int type)

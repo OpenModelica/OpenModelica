@@ -433,22 +433,33 @@ void OptionsDialog::readFigaroSettings()
   */
 void OptionsDialog::readDebuggerSettings()
 {
-  if (mpSettings->contains("algorithmicDebugger/GDBPath"))
+  if (mpSettings->contains("algorithmicDebugger/GDBPath")) {
     mpDebuggerPage->setGDBPath(mpSettings->value("algorithmicDebugger/GDBPath").toString());
-  if (mpSettings->contains("algorithmicDebugger/GDBCommandTimeout"))
+  }
+  if (mpSettings->contains("algorithmicDebugger/GDBCommandTimeout")) {
     mpDebuggerPage->getGDBCommandTimeoutSpinBox()->setValue(mpSettings->value("algorithmicDebugger/GDBCommandTimeout").toInt());
-  if (mpSettings->contains("algorithmicDebugger/displayCFrames"))
+  }
+  if (mpSettings->contains("algorithmicDebugger/GDBOutputLimit")) {
+    mpDebuggerPage->getGDBOutputLimitSpinBox()->setValue(mpSettings->value("algorithmicDebugger/GDBOutputLimit").toInt());
+  }
+  if (mpSettings->contains("algorithmicDebugger/displayCFrames")) {
     mpDebuggerPage->getDisplayCFramesCheckBox()->setChecked(mpSettings->value("algorithmicDebugger/displayCFrames").toBool());
-  if (mpSettings->contains("algorithmicDebugger/displayUnknownFrames"))
+  }
+  if (mpSettings->contains("algorithmicDebugger/displayUnknownFrames")) {
     mpDebuggerPage->getDisplayUnknownFramesCheckBox()->setChecked(mpSettings->value("algorithmicDebugger/displayUnknownFrames").toBool());
-  if (mpSettings->contains("algorithmicDebugger/clearOutputOnNewRun"))
+  }
+  if (mpSettings->contains("algorithmicDebugger/clearOutputOnNewRun")) {
     mpDebuggerPage->getClearOutputOnNewRunCheckBox()->setChecked(mpSettings->value("algorithmicDebugger/clearOutputOnNewRun").toBool());
-  if (mpSettings->contains("algorithmicDebugger/clearLogOnNewRun"))
+  }
+  if (mpSettings->contains("algorithmicDebugger/clearLogOnNewRun")) {
     mpDebuggerPage->getClearLogOnNewRunCheckBox()->setChecked(mpSettings->value("algorithmicDebugger/clearLogOnNewRun").toBool());
-  if (mpSettings->contains("transformationalDebugger/alwaysShowTransformationalDebugger"))
+  }
+  if (mpSettings->contains("transformationalDebugger/alwaysShowTransformationalDebugger")) {
     mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->setChecked(mpSettings->value("transformationalDebugger/alwaysShowTransformationalDebugger").toBool());
-  if (mpSettings->contains("transformationalDebugger/generateOperations"))
+  }
+  if (mpSettings->contains("transformationalDebugger/generateOperations")) {
     mpDebuggerPage->getGenerateOperationsCheckBox()->setChecked(mpSettings->value("transformationalDebugger/generateOperations").toBool());
+  }
 }
 
 /*!
@@ -700,7 +711,8 @@ void OptionsDialog::saveDebuggerSettings()
 {
   mpSettings->beginGroup("algorithmicDebugger");
   mpSettings->setValue("GDBPath", mpDebuggerPage->getGDBPath());
-  mpSettings->value("GDBCommandTimeout", mpDebuggerPage->getGDBCommandTimeoutSpinBox()->value());
+  mpSettings->setValue("GDBCommandTimeout", mpDebuggerPage->getGDBCommandTimeoutSpinBox()->value());
+  mpSettings->setValue("GDBOutputLimit", mpDebuggerPage->getGDBOutputLimitSpinBox()->value());
   mpSettings->setValue("displayCFrames", mpDebuggerPage->getDisplayCFramesCheckBox()->isChecked());
   mpSettings->setValue("displayUnknownFrames", mpDebuggerPage->getDisplayUnknownFramesCheckBox()->isChecked());
   mpMainWindow->getDebuggerMainWindow()->getStackFramesWidget()->getStackFramesTreeWidget()->updateStackFrames();
@@ -710,8 +722,9 @@ void OptionsDialog::saveDebuggerSettings()
   mpSettings->beginGroup("transformationalDebugger");
   mpSettings->setValue("alwaysShowTransformationalDebugger", mpDebuggerPage->getAlwaysShowTransformationsCheckBox()->isChecked());
   mpSettings->setValue("generateOperations", mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked());
-  if (mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked())
+  if (mpDebuggerPage->getGenerateOperationsCheckBox()->isChecked()) {
     mpMainWindow->getOMCProxy()->setCommandLineOptions("+d=infoXmlOperations");
+  }
   mpSettings->endGroup();
 }
 
@@ -2583,7 +2596,7 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpOutputSizeSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpOutputSizeSpinBox->setSingleStep(1000);
   mpOutputSizeSpinBox->setSuffix(" rows");
-  mpOutputSizeSpinBox->setSpecialValueText(tr("unlimited"));
+  mpOutputSizeSpinBox->setSpecialValueText(Helper::unlimited);
   // reset messages number before simulation
   mpResetMessagesNumberBeforeSimulationCheckBox = new QCheckBox(tr("Reset messages number before simulation"));
   mpResetMessagesNumberBeforeSimulationCheckBox->setChecked(true);
@@ -3197,13 +3210,20 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   mpGDBPathBrowseButton = new QPushButton(Helper::browse);
   mpGDBPathBrowseButton->setAutoDefault(false);
   connect(mpGDBPathBrowseButton, SIGNAL(clicked()), SLOT(browseGDBPath()));
-  /* GDB Commanf Timeout */
+  /* GDB Command Timeout */
   mpGDBCommandTimeoutLabel = new Label(tr("GDB Command Timeout:"));
   mpGDBCommandTimeoutSpinBox = new QSpinBox;
   mpGDBCommandTimeoutSpinBox->setSuffix(tr(" seconds"));
   mpGDBCommandTimeoutSpinBox->setRange(30, std::numeric_limits<int>::max());
   mpGDBCommandTimeoutSpinBox->setSingleStep(10);
   mpGDBCommandTimeoutSpinBox->setValue(40);
+  /* GDB Output limit */
+  mpGDBOutputLimitLabel = new Label(tr("GDB Output Limit:"));
+  mpGDBOutputLimitSpinBox = new QSpinBox;
+  mpGDBOutputLimitSpinBox->setSuffix(tr(" characters"));
+  mpGDBOutputLimitSpinBox->setSpecialValueText(Helper::unlimited);
+  mpGDBOutputLimitSpinBox->setRange(0, std::numeric_limits<int>::max());
+  mpGDBOutputLimitSpinBox->setSingleStep(10);
   // Display C Frames
   mpDisplayCFramesCheckBox = new QCheckBox(tr("Display C frames"));
   mpDisplayCFramesCheckBox->setChecked(true);
@@ -3224,10 +3244,12 @@ DebuggerPage::DebuggerPage(OptionsDialog *pOptionsDialog)
   pDebuggerLayout->addWidget(mpGDBPathBrowseButton, 0, 2);
   pDebuggerLayout->addWidget(mpGDBCommandTimeoutLabel, 1, 0);
   pDebuggerLayout->addWidget(mpGDBCommandTimeoutSpinBox, 1, 1, 1, 2);
-  pDebuggerLayout->addWidget(mpDisplayCFramesCheckBox, 2, 0, 1, 2);
-  pDebuggerLayout->addWidget(mpDisplayUnknownFramesCheckBox, 3, 0, 1, 2);
-  pDebuggerLayout->addWidget(mpClearOutputOnNewRunCheckBox, 4, 0, 1, 2);
-  pDebuggerLayout->addWidget(mpClearLogOnNewRunCheckBox, 5, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpGDBOutputLimitLabel, 2, 0);
+  pDebuggerLayout->addWidget(mpGDBOutputLimitSpinBox, 2, 1, 1, 2);
+  pDebuggerLayout->addWidget(mpDisplayCFramesCheckBox, 3, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpDisplayUnknownFramesCheckBox, 4, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpClearOutputOnNewRunCheckBox, 5, 0, 1, 2);
+  pDebuggerLayout->addWidget(mpClearLogOnNewRunCheckBox, 6, 0, 1, 2);
   mpAlgorithmicDebuggerGroupBox->setLayout(pDebuggerLayout);
   /* Transformational Debugger */
   mpTransformationalDebuggerGroupBox = new QGroupBox(Helper::transformationalDebugger);

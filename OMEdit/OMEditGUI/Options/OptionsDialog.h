@@ -657,6 +657,7 @@ public:
   void setGDBPath(QString path);
   QString getGDBPath();
   QSpinBox* getGDBCommandTimeoutSpinBox() {return mpGDBCommandTimeoutSpinBox;}
+  QSpinBox* getGDBOutputLimitSpinBox() {return mpGDBOutputLimitSpinBox;}
   QCheckBox* getDisplayCFramesCheckBox() {return mpDisplayCFramesCheckBox;}
   QCheckBox* getDisplayUnknownFramesCheckBox() {return mpDisplayUnknownFramesCheckBox;}
   QCheckBox* getClearOutputOnNewRunCheckBox() {return mpClearOutputOnNewRunCheckBox;}
@@ -671,6 +672,8 @@ private:
   QPushButton *mpGDBPathBrowseButton;
   Label *mpGDBCommandTimeoutLabel;
   QSpinBox *mpGDBCommandTimeoutSpinBox;
+  Label *mpGDBOutputLimitLabel;
+  QSpinBox *mpGDBOutputLimitSpinBox;
   QCheckBox *mpDisplayCFramesCheckBox;
   QCheckBox *mpDisplayUnknownFramesCheckBox;
   QCheckBox *mpClearOutputOnNewRunCheckBox;

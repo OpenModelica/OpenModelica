@@ -292,6 +292,7 @@ public:
   static QString expandAll;
   static QString collapseAll;
   static QString version;
+  static QString unlimited;
 };
 
 class GUIMessages : public QObject
