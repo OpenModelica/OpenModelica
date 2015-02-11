@@ -1872,6 +1872,7 @@ int solveHomotopy(DATA *data, int sysNumber)
   {
     debugString(LOG_NLS_V,"Homotopy solver did not converge!");
   }
+  free(relationsPreBackup);
 
   /* write statistics */
   systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;

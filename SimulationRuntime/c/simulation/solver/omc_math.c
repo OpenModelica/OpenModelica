@@ -127,7 +127,7 @@ _omc_matrix* _omc_allocateMatrixData(const _omc_size rows, const _omc_size cols)
   assertStreamPrint(NULL, NULL != mat, "out of memory");
 
   _omc_scalar* data = (_omc_scalar*) malloc(rows * cols * sizeof(_omc_scalar));
-  assertStreamPrint(NULL, NULL != mat, "data of memory");
+  assertStreamPrint(NULL, NULL != mat, "data out of memory");
 
   mat->rows = rows;
   mat->cols = cols;
@@ -190,13 +190,7 @@ void _omc_destroyMatrix(_omc_matrix* mat)
  */
 _omc_matrix* _omc_copyMatrix(_omc_matrix* mat1)
 {
-  assertStreamPrint(NULL, mat1->cols * mat1->rows > 0, "size needs to be greater zero");
-
-  _omc_matrix* mat = (_omc_matrix*) malloc(sizeof(_omc_matrix));
-  assertStreamPrint(NULL, NULL != mat, "out of memory");
-
-  mat->cols = mat1->cols;
-  mat->rows = mat1->rows;
+  _omc_allocateMatrixData(mat1->rows, mat1->cols);
   memcpy(mat->data, mat1->data, sizeof(_omc_scalar) * _omc_getMatrixSize(mat));
 
   return mat;

@@ -423,6 +423,8 @@ int solveNewton(DATA *data, int sysNumber)
   if(ACTIVE_STREAM(LOG_NLS))
       messageClose(LOG_NLS);
 
+  free(relationsPreBackup);
+
   /* write statistics */
   systemData->numberOfFEval = solverData->numberOfFunctionEvaluations;
   systemData->numberOfIterations = solverData->numberOfIterations;

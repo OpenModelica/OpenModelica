@@ -226,8 +226,6 @@ void free_type_description(type_description *desc)
     break;
   case TYPE_DESC_STRING_ARRAY:
     if(desc->retval) {
-      size_t i, cnt;
-      cnt = base_array_nr_of_elements(desc->data.string_array);
       free(desc->data.string_array.dim_size);
       free(desc->data.string_array.data);
     }
