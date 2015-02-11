@@ -103,6 +103,7 @@ QString Helper::errorComponentAnnotationString = QString("{-100.0,-100.0,100.0,1
                                                          "Line(true, {0.0, 0.0}, 0, {{100, 100}, {-100, -100}}, {255, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None)}}");
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
+QString Helper::MODELICA_STRING = QString("modelica_string");
 QString Helper::MODELICA_BOOLEAN = QString("modelica_boolean");
 QString Helper::MODELICA_INETGER = QString("modelica_integer");
 QString Helper::MODELICA_REAL = QString("modelica_real");

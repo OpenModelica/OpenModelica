@@ -105,6 +105,7 @@ public:
   static QString errorComponentAnnotationString;
   /* Meta Modelica Types */
   static QString MODELICA_METATYPE;
+  static QString MODELICA_STRING;
   static QString MODELICA_BOOLEAN;
   static QString MODELICA_INETGER;
   static QString MODELICA_REAL;
