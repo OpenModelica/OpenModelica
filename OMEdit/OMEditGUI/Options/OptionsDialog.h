@@ -109,6 +109,8 @@ public:
   FigaroPage* getFigaroPage() {return mpFigaroPage;}
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
+  void saveDialogGeometry();
+  void show();
 signals:
   void modelicaTextSettingsChanged();
   void updateLineWrapping();

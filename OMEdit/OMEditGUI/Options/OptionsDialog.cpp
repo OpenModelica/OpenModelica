@@ -771,7 +771,9 @@ void OptionsDialog::setUpDialog()
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   QHBoxLayout *horizontalLayout = new QHBoxLayout;
   horizontalLayout->addWidget(mpOptionsList);
-  horizontalLayout->addWidget(mpPagesWidget, 1);
+  QScrollArea *pPagesWidgetScrollArea = new QScrollArea;
+  pPagesWidgetScrollArea->setWidget(mpPagesWidget);
+  horizontalLayout->addWidget(pPagesWidgetScrollArea, 1);
   // Create a layout
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->addLayout(horizontalLayout, 0, 0, 1, 2);
@@ -842,6 +844,7 @@ void OptionsDialog::addListItems()
 void OptionsDialog::createPages()
 {
   mpPagesWidget = new QStackedWidget;
+  mpPagesWidget->setContentsMargins(5, 2, 5, 2);
   mpPagesWidget->addWidget(mpGeneralSettingsPage);
   mpPagesWidget->addWidget(mpLibrariesPage);
   mpPagesWidget->addWidget(mpModelicaTextEditorPage);
@@ -855,6 +858,29 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpFigaroPage);
   mpPagesWidget->addWidget(mpDebuggerPage);
   mpPagesWidget->addWidget(mpFMIPage);
+}
+
+/*!
+  Saves the OptionsDialog geometry to omedit.ini file.
+  */
+void OptionsDialog::saveDialogGeometry()
+{
+  /* save the window geometry. */
+  if (mpGeneralSettingsPage->getPreserveUserCustomizations()) {
+    mpSettings->setValue("OptionsDialog/geometry", saveGeometry());
+  }
+}
+
+/*!
+  Reimplementation of QDialog::show method.
+  */
+void OptionsDialog::show()
+{
+  /* restore the window geometry. */
+  if (mpGeneralSettingsPage->getPreserveUserCustomizations()) {
+    restoreGeometry(mpSettings->value("OptionsDialog/geometry").toByteArray());
+  }
+  setVisible(true);
 }
 
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
@@ -871,6 +897,7 @@ void OptionsDialog::reject()
 {
   // read the old settings from the file
   readSettings();
+  saveDialogGeometry();
   QDialog::reject();
 }
 
@@ -895,6 +922,7 @@ void OptionsDialog::saveSettings()
   saveDebuggerSettings();
   saveFMISettings();
   mpSettings->sync();
+  saveDialogGeometry();
   accept();
 }
 
