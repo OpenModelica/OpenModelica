@@ -42,6 +42,8 @@ extern "C" {
 void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_directory, char* instanceName, int debugLogging)
 {
   FMI1ModelExchange* FMI1ME = malloc(sizeof(FMI1ModelExchange));
+  jm_status_enu_t status, instantiateModelStatus;
+  fmi1_status_t debugLoggingStatus;
   FMI1ME->FMILogLevel = fmi_log_level;
   /* JM callbacks */
   FMI1ME->JMCallbacks.malloc = malloc;
@@ -65,7 +67,7 @@ void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
     return 0;
   }
   /* Load the binary (dll/so) */
-  jm_status_enu_t status = fmi1_import_create_dllfmu(FMI1ME->FMIImportInstance, FMI1ME->FMICallbackFunctions, 0);
+  status = fmi1_import_create_dllfmu(FMI1ME->FMIImportInstance, FMI1ME->FMICallbackFunctions, 0);
   if (status == jm_status_error) {
     ModelicaFormatError("Loading of FMU dynamic link library failed with status : %s\n", jm_log_level_to_string(status));
     return 0;
@@ -73,12 +75,12 @@ void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI1ME->FMIInstanceName = (char*) malloc(strlen(instanceName)+1);
   strcpy(FMI1ME->FMIInstanceName, instanceName);
   FMI1ME->FMIDebugLogging = debugLogging;
-  jm_status_enu_t instantiateModelStatus = fmi1_import_instantiate_model(FMI1ME->FMIImportInstance, FMI1ME->FMIInstanceName);
+  instantiateModelStatus = fmi1_import_instantiate_model(FMI1ME->FMIImportInstance, FMI1ME->FMIInstanceName);
   if (instantiateModelStatus == jm_status_error) {
     ModelicaFormatError("fmiInstantiateModel failed with status : %s\n", jm_log_level_to_string(instantiateModelStatus));
     return 0;
   }
-  fmi1_status_t debugLoggingStatus = fmi1_import_set_debug_logging(FMI1ME->FMIImportInstance, FMI1ME->FMIDebugLogging);
+  debugLoggingStatus = fmi1_import_set_debug_logging(FMI1ME->FMIImportInstance, FMI1ME->FMIDebugLogging);
   if (debugLoggingStatus != fmi1_status_ok && debugLoggingStatus != fmi1_status_warning) {
     ModelicaFormatMessage("fmiSetDebugLogging failed with status : %s\n", fmi1_status_to_string(debugLoggingStatus));
   }

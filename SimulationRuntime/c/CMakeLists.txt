@@ -92,6 +92,7 @@ ADD_SUBDIRECTORY(math-support)
 ADD_SUBDIRECTORY(meta)
 ADD_SUBDIRECTORY(simulation)
 ADD_SUBDIRECTORY(util)
+ADD_SUBDIRECTORY(fmi)
 
 # -------------------------------------------------------------
 # MACRO definitions

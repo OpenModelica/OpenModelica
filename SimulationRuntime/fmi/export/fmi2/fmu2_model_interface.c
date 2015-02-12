@@ -42,15 +42,17 @@
 pthread_key_t fmu2_thread_data_key;
 */
 
+fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex);
+
+static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems", "logNonlinearSystems", "logDynamicStateSelection",
+    "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logStatusPending", "logAll", "logFmi2Call"};
+
 // macro to be used to log messages. The macro check if current
 // log category is valid and, if true, call the logger provided by simulator.
 #define FILTERED_LOG(instance, status, categoryIndex, message, ...) if (isCategoryLogged(instance, categoryIndex)) \
     instance->functions->logger(instance->functions->componentEnvironment, instance->instanceName, status, \
         logCategoriesNames[categoryIndex], message, ##__VA_ARGS__);
-
-static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems", "logNonlinearSystems", "logDynamicStateSelection",
-    "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logStatusPending", "logAll", "logFmi2Call"};
-
+	
 // array of value references of states
 #if NUMBER_OF_REALS>0
 fmi2ValueReference vrStates[NUMBER_OF_STATES] = STATES;
@@ -297,8 +299,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   }
   comp = (ModelInstance *)functions->allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
-    comp->instanceName = functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
-    comp->GUID = functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
+    comp->instanceName = (fmi2String)functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
+    comp->GUID = (fmi2String)functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
     /* Cannot use functions->allocateMemory */
     DATA* fmudata = (DATA *)GC_malloc_uncollectable(sizeof(DATA));
 
@@ -325,9 +327,9 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Out of memory.");
     return NULL;
   }
-  strcpy(comp->instanceName, instanceName);
+  strcpy((char*)comp->instanceName, (const char*)instanceName);
   comp->type = fmuType;
-  strcpy(comp->GUID, fmuGUID);
+  strcpy((char*)comp->GUID, (const char*)fmuGUID);
   comp->functions = functions;
   comp->componentEnvironment = functions->componentEnvironment;
   comp->loggingOn = loggingOn;
@@ -356,8 +358,8 @@ void fmi2FreeInstance(fmi2Component c) {
   comp->functions->freeMemory(comp->fmuData->threadData);
   GC_free(comp->fmuData);
   /* free instanceName & GUID */
-  if (comp->instanceName) comp->functions->freeMemory(comp->instanceName);
-  if (comp->GUID) comp->functions->freeMemory(comp->GUID);
+  if (comp->instanceName) comp->functions->freeMemory((void*)comp->instanceName);
+  if (comp->GUID) comp->functions->freeMemory((void*)comp->GUID);
   /* free comp */
   comp->functions->freeMemory(comp);
 }

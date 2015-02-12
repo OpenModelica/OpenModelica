@@ -42,6 +42,7 @@ extern "C" {
 void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_directory, char* instanceName, int debugLogging)
 {
   FMI2ModelExchange* FMI2ME = malloc(sizeof(FMI2ModelExchange));
+  jm_status_enu_t status, instantiateModelStatus;
   FMI2ME->FMILogLevel = fmi_log_level;
   /* JM callbacks */
   FMI2ME->JMCallbacks.malloc = malloc;
@@ -66,7 +67,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ME->FMICallbackFunctions.freeMemory = free;
   FMI2ME->FMICallbackFunctions.componentEnvironment = FMI2ME->FMIImportInstance;
   /* Load the binary (dll/so) */
-  jm_status_enu_t status = fmi2_import_create_dllfmu(FMI2ME->FMIImportInstance, fmi2_import_get_fmu_kind(FMI2ME->FMIImportInstance), &FMI2ME->FMICallbackFunctions);
+  status = fmi2_import_create_dllfmu(FMI2ME->FMIImportInstance, fmi2_import_get_fmu_kind(FMI2ME->FMIImportInstance), &FMI2ME->FMICallbackFunctions);
   if (status == jm_status_error) {
     ModelicaFormatError("Loading of FMU dynamic link library failed with status : %s\n", jm_log_level_to_string(status));
     return 0;
@@ -74,7 +75,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ME->FMIInstanceName = (char*) malloc(strlen(instanceName)+1);
   strcpy(FMI2ME->FMIInstanceName, instanceName);
   FMI2ME->FMIDebugLogging = debugLogging;
-  jm_status_enu_t instantiateModelStatus = fmi2_import_instantiate(FMI2ME->FMIImportInstance, FMI2ME->FMIInstanceName, fmi2_model_exchange, NULL, fmi2_false);
+  instantiateModelStatus = fmi2_import_instantiate(FMI2ME->FMIImportInstance, FMI2ME->FMIInstanceName, fmi2_model_exchange, NULL, fmi2_false);
   if (instantiateModelStatus == jm_status_error) {
     ModelicaFormatError("fmi2InstantiateModel failed with status : %s\n", jm_log_level_to_string(instantiateModelStatus));
     return 0;
@@ -83,13 +84,15 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   if (FMI2ME->FMIDebugLogging) {
     int i;
     size_t categoriesSize = 0;
+	fmi2_status_t debugLoggingStatus;
+	fmi2_string_t *categories;
     /* Read the log categories size */
     categoriesSize = fmi2_import_get_log_categories_num(FMI2ME->FMIImportInstance);
-    fmi2_string_t categories[categoriesSize];
+    categories = (fmi2_string_t*)malloc(categoriesSize*sizeof(fmi2_string_t));
     for (i = 0 ; i < categoriesSize ; i++) {
       categories[i] = fmi2_import_get_log_category(FMI2ME->FMIImportInstance, i);
     }
-    fmi2_status_t debugLoggingStatus = fmi2_import_set_debug_logging(FMI2ME->FMIImportInstance, FMI2ME->FMIDebugLogging, categoriesSize, categories);
+    debugLoggingStatus = fmi2_import_set_debug_logging(FMI2ME->FMIImportInstance, FMI2ME->FMIDebugLogging, categoriesSize, categories);
     if (debugLoggingStatus != fmi2_status_ok && debugLoggingStatus != fmi2_status_warning) {
       ModelicaFormatMessage("fmi2SetDebugLogging failed with status : %s\n", fmi1_status_to_string(debugLoggingStatus));
     }

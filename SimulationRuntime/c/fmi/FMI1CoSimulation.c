@@ -43,6 +43,8 @@ void* FMI1CoSimulationConstructor_OMC(int fmi_log_level, char* working_directory
     double timeout, int visible, int interactive, double tStart, int stopTimeDefined, double tStop)
 {
   FMI1CoSimulation* FMI1CS = malloc(sizeof(FMI1CoSimulation));
+  jm_status_enu_t status, instantiateSlaveStatus;
+  fmi1_status_t debugLoggingStatus;
   FMI1CS->FMILogLevel = fmi_log_level;
   /* JM callbacks */
   FMI1CS->JMCallbacks.malloc = malloc;
@@ -67,7 +69,7 @@ void* FMI1CoSimulationConstructor_OMC(int fmi_log_level, char* working_directory
     return 0;
   }
   /* Load the binary (dll/so) */
-  jm_status_enu_t status = fmi1_import_create_dllfmu(FMI1CS->FMIImportInstance, FMI1CS->FMICallbackFunctions, 0);
+  status = fmi1_import_create_dllfmu(FMI1CS->FMIImportInstance, FMI1CS->FMICallbackFunctions, 0);
   if (status == jm_status_error) {
     ModelicaFormatError("Loading of FMU dynamic link library failed with status : %s\n", jm_log_level_to_string(status));
     return 0;
@@ -81,13 +83,13 @@ void* FMI1CoSimulationConstructor_OMC(int fmi_log_level, char* working_directory
   FMI1CS->FMITimeOut = timeout;
   FMI1CS->FMIVisible = visible;
   FMI1CS->FMIInteractive = interactive;
-  jm_status_enu_t instantiateSlaveStatus = fmi1_import_instantiate_slave(FMI1CS->FMIImportInstance, FMI1CS->FMIInstanceName, FMI1CS->FMIFmuLocation, FMI1CS->FMIMimeType, FMI1CS->FMITimeOut, FMI1CS->FMIVisible, FMI1CS->FMIInteractive);
+  instantiateSlaveStatus = fmi1_import_instantiate_slave(FMI1CS->FMIImportInstance, FMI1CS->FMIInstanceName, FMI1CS->FMIFmuLocation, FMI1CS->FMIMimeType, FMI1CS->FMITimeOut, FMI1CS->FMIVisible, FMI1CS->FMIInteractive);
   if (instantiateSlaveStatus == jm_status_error) {
     ModelicaFormatError("fmiInstantiateSlave failed with status : %s\n", jm_log_level_to_string(instantiateSlaveStatus));
     return 0;
   }
   FMI1CS->FMIDebugLogging = debugLogging;
-  fmi1_status_t debugLoggingStatus = fmi1_import_set_debug_logging(FMI1CS->FMIImportInstance, FMI1CS->FMIDebugLogging);
+  debugLoggingStatus = fmi1_import_set_debug_logging(FMI1CS->FMIImportInstance, FMI1CS->FMIDebugLogging);
   if (debugLoggingStatus != fmi1_status_ok && debugLoggingStatus != fmi1_status_warning) {
     ModelicaFormatMessage("fmiSetDebugLogging failed with status : %s\n", fmi1_status_to_string(debugLoggingStatus));
   }

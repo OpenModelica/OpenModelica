@@ -3052,6 +3052,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   let eqs = (equationsForZeroCrossings |> eq =>
        equation_(eq, contextSimulationNonDiscrete, &varDecls, &tmp, modelNamePrefix)
       ;separator="\n")
+  let forwardEqs = equationsForZeroCrossings |> eq => equationForward_(eq,contextSimulationNonDiscrete,modelNamePrefix); separator="\n"
 
   let &varDecls2 = buffer ""
   let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls2, &auxFunction)
@@ -3083,6 +3084,9 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
 
   <<
   <%desc%>
+
+  /* forwarded equations */
+  <%forwardEqs%>
 
   int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data)
   {
