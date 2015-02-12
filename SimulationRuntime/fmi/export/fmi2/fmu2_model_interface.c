@@ -52,7 +52,7 @@ static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems
 #define FILTERED_LOG(instance, status, categoryIndex, message, ...) if (isCategoryLogged(instance, categoryIndex)) \
     instance->functions->logger(instance->functions->componentEnvironment, instance->instanceName, status, \
         logCategoriesNames[categoryIndex], message, ##__VA_ARGS__);
-	
+
 // array of value references of states
 #if NUMBER_OF_REALS>0
 fmi2ValueReference vrStates[NUMBER_OF_STATES] = STATES;

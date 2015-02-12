@@ -84,8 +84,8 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   if (FMI2ME->FMIDebugLogging) {
     int i;
     size_t categoriesSize = 0;
-	fmi2_status_t debugLoggingStatus;
-	fmi2_string_t *categories;
+  fmi2_status_t debugLoggingStatus;
+  fmi2_string_t *categories;
     /* Read the log categories size */
     categoriesSize = fmi2_import_get_log_categories_num(FMI2ME->FMIImportInstance);
     categories = (fmi2_string_t*)malloc(categoriesSize*sizeof(fmi2_string_t));

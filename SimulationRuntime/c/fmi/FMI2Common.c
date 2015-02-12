@@ -200,7 +200,7 @@ void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* bool
     FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
     int* fmiBoolean = malloc(sizeof(int)*numberOfValueReferences);
-	fmi2_status_t status;
+  fmi2_status_t status;
     signedchar_to_int(booleanValues, fmiBoolean, numberOfValueReferences);
     status = fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, fmiBoolean);
     free(fmiBoolean);
