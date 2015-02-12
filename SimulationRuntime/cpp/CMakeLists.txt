@@ -166,7 +166,7 @@ ENDIF(WIN32)
 # Find CMinpack
 # Note: Visual Studio libs are located in install/msvc, libs for gcc are directly in install
 IF(MSVC)
-    SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install/msvc")
+    SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install_msvc")
 ELSE(MSVC)
     SET(CMinpack_Path "${CMAKE_SOURCE_DIR}/../../3rdParty/CMinpack/install")
 ENDIF(MSVC)
