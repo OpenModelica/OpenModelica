@@ -83,14 +83,14 @@ package conservationLaws2D
                                                         F_x[:, i] = (F[:, i + 1] - F[:, i - 1]) / (2 * dx);
                                                         // the equation:
                                                         der(W[:, i]) - alpha * (W[:, i + 1] - 2 * W[:, i] + W[:, i - 1]) / (2 * dt) + F_x[:, i] = zeros(M);
-                                                    
+
                                                       end for;
                                                     end conservationLawLF;
 
                                                     model eulerEq
                                                       extends conservationLawLF(M = 3);
                                                       Real[Nx] rho, u, p, E;
-                                                      //	parameter Real u_s;
+                                                      //  parameter Real u_s;
                                                       parameter Real gamma = 1.4, x_0, T;
                                                       parameter Real rho_l, u_l, p_l;
                                                       parameter Real rho_r, u_r, p_r;
@@ -129,7 +129,7 @@ package conservationLaws2D
                                                       annotation(experiment(StartTime = 0, StopTime = 0.2, Tolerance = 1, Interval = 0.0002));
                                                     end Riemann1;
 
-                                               
+
 
                                                     model advectionStep
                                                       extends advection(M = 1, Nx = 400, dt = 0.0005);
