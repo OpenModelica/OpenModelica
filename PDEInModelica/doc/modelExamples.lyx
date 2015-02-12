@@ -1855,6 +1855,10 @@ key "Horacek"
 \end_layout
 
 \begin_layout Subsection
+Signals in axons
+\end_layout
+
+\begin_layout Subsection
 Vibrating membrane (drum) in air
 \begin_inset CommandInset label
 LatexCommand label
@@ -2097,6 +2101,51 @@ lstparams "breaklines=true,caption={Vibrating membrane in air},captionpos=b,fram
 \end_layout
 
 \begin_layout Subsection
+Conservation laws in general
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\partial w}{\partial t}+\nabla\cdot F(w)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+i.e.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\partial w}{\partial t}+\left(F(w)\right)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Shallow water equations
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial\eta}{\partial t}+\nabla\cdot(\eta\cdot\bar{u}) & = & 0\\
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
 Euler equations
 \end_layout
 
@@ -2312,6 +2361,66 @@ p_{e} & =\varepsilon_{e}\varrho(\gamma-1) & p_{i} & =\varepsilon_{i}\varrho(\gam
 
 
 \end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+2D examples
+\end_layout
+
+\begin_layout Subsection
+Advection
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\partial\psi}{\partial t}+\nabla\cdot\left(\mathbf{u}\text{\psi}\right)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+i.e.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\partial\psi}{\partial t}+u_{x}\frac{\partial\psi}{\partial x}+u_{y}\frac{\partial\psi}{\partial y}=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Conservation laws
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\partial w}{\partial t}+\nabla\cdot F(w)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\partial w}{\partial t}+\frac{\partial}{\partial x}\left(F_{1}(w)\right)+\frac{\partial}{\partial y}\left(F_{2}(w)\right)=0
+\]
 
 \end_inset
 

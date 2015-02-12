@@ -1,4 +1,4 @@
-package conservationLaws
+package conservationLaws1D
   model conservationLaw
     constant Integer M;
     constant Integer N;
@@ -15,7 +15,7 @@ package conservationLaws
   end pokusy;
 
   model advection
-    extends conservationLawLF;
+    extends conservationLawCentral;
     Real u[N];
     parameter Real a = 1;
   initial equation
@@ -93,26 +93,26 @@ package conservationLaws
   end eulerEq;
 
   model Riemann1
-    extends eulerEq(rho_l = 1, u_l = 0.75, p_l = 1, rho_r = 0.125, u_r = 0, p_r = 0.1, x_0 = 0.3, N = 1000, dt = 2e-4, alpha = 0.01);
+    extends eulerEq(rho_l = 1, u_l = 0.75, p_l = 1, rho_r = 0.125, u_r = 0, p_r = 0.1, x_0 = 0.3, N = 1000, dt = 0.0002, alpha = 0.4);
     //euler, N = 200 (dx = 0.005, dt = 0.0001, alpha = 0.01 - celkem maká, hodně difuse, trochu osciluje
     //euler, N = 1000, dt = 2e-5, alpha = 0.01 - dobrý, malinko osciluje na čele první vlny
     //radau1, N = 100, dt = 0.002, alpha = 0.01 - vypadá nejlíp
-    annotation(experiment(StartTime = 0, StopTime = 0.2, Tolerance = 1e-6, Interval = 2e-4));
+    annotation(experiment(StartTime = 0, StopTime = 0.2, Tolerance = 1, Interval = 0.0002));
   end Riemann1;
 
   model advectionCos
-    extends advection(M = 1, N = 100, dt = 0.01, alpha = 1);
+    extends advection(M = 1, N = 1600, dt = 0.0003125);
   initial equation
     u = array(if x[i] < 0.25 then cos(Modelica.Constants.pi / 2 * 4 * x[i]) else 0 for i in 1:N);
   equation
     //BC:
     u[1] = 1;
     u[N] = 0;
-    annotation(experiment(StartTime = 0, StopTime = 0.4, Tolerance = 1e-06, Interval = 0.01));
+    annotation(experiment(StartTime = 0, StopTime = 0.4, Tolerance = 1, Interval = 0.0003125));
   end advectionCos;
 
   model advectionStep
-    extends advection(M = 1, N = 100, dt = 0.009, alpha = 1);
+    extends advection(M = 1, N = 400, dt = 0.0005);
     parameter Real ul = 1, ur = 0;
   initial equation
     u = array(if x[i] < 0.2 then ul else ur for i in 1:N);
@@ -120,7 +120,7 @@ package conservationLaws
     //BC:
     u[1] = ul;
     u[N] = ur;
-    annotation(experiment(StartTime = 0, StopTime = 0.4, Tolerance = 1e-06, Interval = 0.009));
+    annotation(experiment(StartTime = 0, StopTime = 0.4, Tolerance = 1, Interval = 0.0005));
   end advectionStep;
   annotation(Icon(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})), Diagram(coordinateSystem(extent = {{-100, -100}, {100, 100}}, preserveAspectRatio = true, initialScale = 0.1, grid = {2, 2})));
-end conservationLaws;
+end conservationLaws1D;
