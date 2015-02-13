@@ -324,14 +324,11 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
 
     //Read in timevector
-    double *inVals = read_csv_dataset(csvReader, "time");
-    if (inVals == NULL)
+    double *timeVals = read_csv_dataset(csvReader, "time");
+    if (timeVals == NULL)
     {
       throw NoVariableException(tr("Variable doesnt exist: %1").arg("time").toStdString().c_str());
     }
-
-    double *timeVals = (double*) malloc(csvReader->numsteps*sizeof(double));
-    memcpy(timeVals, inVals, csvReader->numsteps*sizeof(double));
 
     // read in all values
     for (int i = 0; i < csvReader->numvars; i++)
@@ -339,13 +336,11 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       if (mVariablesList.contains(csvReader->variables[i]) or getPlotType() == PlotWindow::PLOTALL)
       {
         variablesPlotted.append(csvReader->variables[i]);
-        inVals = read_csv_dataset(csvReader, csvReader->variables[i]);
-        if (inVals == NULL)
+        double *vals = read_csv_dataset(csvReader, csvReader->variables[i]);
+        if (vals == NULL)
         {
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
         }
-        double *vals = (double*) malloc(csvReader->numsteps*sizeof(double));
-        memcpy(vals, inVals, csvReader->numsteps*sizeof(double));
 
         if (!editCase) {
           pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], getUnit(), mpPlot);
@@ -359,7 +354,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
           pPlotCurve->addXAxisValue(timeVals[i]);
           pPlotCurve->addYAxisValue(vals[i]);
         }
-        pPlotCurve->setData(timeVals, vals, csvReader->numsteps);
+        pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
         pPlotCurve->attach(mpPlot);
         mpPlot->replot();
       }
@@ -387,8 +382,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     double stopTime =  omc_matlab4_stopTime(&reader);
     if (reader.nvar < 1)
       throw NoVariableException("Variable doesnt exist: time");
-    double *timeVals = (double*) malloc(reader.nrows*sizeof(double));
-    memcpy(timeVals, omc_matlab4_read_vals(&reader,1), reader.nrows*sizeof(double));
+    double *timeVals = omc_matlab4_read_vals(&reader,1);
 
     // read in all values
     for (int i = 0; i < reader.nall; i++)
@@ -409,15 +403,14 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         // if variable is not a parameter then
         if (!var->isParam)
         {
-          double *vals = (double*) malloc(reader.nrows*sizeof(double));
-          memcpy(vals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
+          double *vals = omc_matlab4_read_vals(&reader,var->index);
           // set plot curve data and attach it to plot
           for (int i = 0 ; i < reader.nrows ; i++)
+          {
             pPlotCurve->addXAxisValue(timeVals[i]);
-          for (int i = 0 ; i < reader.nrows ; i++)
             pPlotCurve->addYAxisValue(vals[i]);
-          free(vals);
-          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), reader.nrows);
+          }
+          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
           pPlotCurve->attach(mpPlot);
           mpPlot->replot();
         }
@@ -439,7 +432,6 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         }
       }
     }
-    free(timeVals);
     // if plottype is PLOT then check which requested variables are not found in the file
     if (getPlotType() == PlotWindow::PLOT)
       checkForErrors(mVariablesList, variablesPlotted);
@@ -552,20 +544,16 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       if ((xVariable.compare(csvReader->variables[i]) == 0))
       {
         variablesPlotted.append(csvReader->variables[i]);
-        double *inVals = read_csv_dataset(csvReader, csvReader->variables[i]);
-        if (inVals == NULL)
+        xVals = read_csv_dataset(csvReader, csvReader->variables[i]);
+        if (xVals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
-        xVals = (double*) malloc(csvReader->numsteps*sizeof(double));
-        memcpy(xVals, inVals, csvReader->numsteps*sizeof(double));
       }
       if ((yVariable.compare(csvReader->variables[i]) == 0))
       {
         variablesPlotted.append(csvReader->variables[i]);
-        double *inVals = read_csv_dataset(csvReader, csvReader->variables[i]);
-        if (inVals == NULL)
+        yVals = read_csv_dataset(csvReader, csvReader->variables[i]);
+        if (yVals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
-        yVals = (double*) malloc(csvReader->numsteps*sizeof(double));
-        memcpy(yVals, inVals, csvReader->numsteps*sizeof(double));
       }
     }
 
@@ -583,7 +571,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       pPlotCurve->addXAxisValue(xVals[i]);
       pPlotCurve->addYAxisValue(yVals[i]);
     }
-    pPlotCurve->setData(xVals, yVals, csvReader->numsteps);
+    pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
     pPlotCurve->attach(mpPlot);
     mpPlot->replot();
     // check which requested variables are not found in the file
@@ -619,11 +607,9 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
     // if variable is not a parameter then
     if (!var->isParam)
     {
-      double *xVals = (double*) malloc(reader.nrows*sizeof(double));
-      memcpy(xVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
+      double *xVals = omc_matlab4_read_vals(&reader,var->index);
       for (int i = 0 ; i < reader.nrows ; i++)
         pPlotCurve->addXAxisValue(xVals[i]);
-      free(xVals);
     }
     // if variable is a parameter then
     else
@@ -640,11 +626,9 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
     // if variable is not a parameter then
     if (!var->isParam)
     {
-      double *yVals = (double*) malloc(reader.nrows*sizeof(double));
-      memcpy(yVals, omc_matlab4_read_vals(&reader,var->index), reader.nrows*sizeof(double));
+      double *yVals = omc_matlab4_read_vals(&reader,var->index);
       for (int i = 0 ; i < reader.nrows ; i++)
         pPlotCurve->addYAxisValue(yVals[i]);
-      free(yVals);
     }
     // if variable is a parameter then
     else
@@ -896,7 +880,6 @@ void PlotWindow::enablePanMode(bool on)
 {
   mpPlot->getPlotPanner()->setEnabled(on);
   if(on)
-
   {
     mpPlot->canvas()->setCursor(Qt::OpenHandCursor);
   }
@@ -1029,19 +1012,15 @@ void PlotWindow::setLogX(bool on)
 #else
     mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);
 #endif
-    mpPlot->setAxisAutoScale(QwtPlot::xBottom);
-    mpLogXCheckBox->blockSignals(true);
-    mpLogXCheckBox->setChecked(true);
-    mpLogXCheckBox->blockSignals(false);
   }
   else
   {
     mpPlot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
-    mpPlot->setAxisAutoScale(QwtPlot::xBottom);
-    mpLogXCheckBox->blockSignals(true);
-    mpLogXCheckBox->setChecked(false);
-    mpLogXCheckBox->blockSignals(false);
   }
+  mpPlot->setAxisAutoScale(QwtPlot::xBottom);
+  mpLogXCheckBox->blockSignals(true);
+  mpLogXCheckBox->setChecked(on);
+  mpLogXCheckBox->blockSignals(false);
   mpPlot->replot();
 }
 
@@ -1054,19 +1033,15 @@ void PlotWindow::setLogY(bool on)
 #else
     mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);
 #endif
-    mpPlot->setAxisAutoScale(QwtPlot::yLeft);
-    mpLogYCheckBox->blockSignals(true);
-    mpLogYCheckBox->setChecked(true);
-    mpLogYCheckBox->blockSignals(false);
   }
   else
   {
     mpPlot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
-    mpPlot->setAxisAutoScale(QwtPlot::yLeft);
-    mpLogYCheckBox->blockSignals(true);
-    mpLogYCheckBox->setChecked(false);
-    mpLogYCheckBox->blockSignals(false);
   }
+  mpPlot->setAxisAutoScale(QwtPlot::yLeft);
+  mpLogYCheckBox->blockSignals(true);
+  mpLogYCheckBox->setChecked(on);
+  mpLogYCheckBox->blockSignals(false);
   mpPlot->replot();
 }
 
@@ -1333,18 +1308,16 @@ void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
   pPlotCurve->setCurveWidth(pVariablePageWidget->getThicknessSpinBox()->value());
   /* set the curve visibility */
   pPlotCurve->setVisible(!pVariablePageWidget->getHideCheckBox()->isChecked());
+  QwtText text = pPlotCurve->title();
   if (pPlotCurve->isVisible())
   {
-    QwtText text = pPlotCurve->title();
     text.setColor(QColor(Qt::black));
-    pPlotCurve->setTitle(text);
   }
   else
   {
-    QwtText text = pPlotCurve->title();
     text.setColor(QColor(Qt::gray));
-    pPlotCurve->setTitle(text);
   }
+  pPlotCurve->setTitle(text);
 }
 
 void SetupDialog::variableSelected(QListWidgetItem *current, QListWidgetItem *previous)
