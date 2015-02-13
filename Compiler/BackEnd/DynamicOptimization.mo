@@ -94,8 +94,8 @@ algorithm
 
     inVarsAndknvars := BackendVariable.addVariables(inVars, BackendVariable.copyVariables(knvars));
     varlst := BackendVariable.varList(inVarsAndknvars);
-    (v, e, mayer) := joinObjectFun(makeObject("$OMC$objectMayerTerm", findMayerTerm, varlst, mayer), inVars, inEqns);
-    (v, e, lagrange) := joinObjectFun(makeObject("$OMC$objectLagrangeTerm", findLagrangeTerm, varlst, lagrange), v, e);
+    (v, e, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), inVars, inEqns);
+    (v, e, lagrange) := joinObjectFun(makeObject(BackendDAE.optimizationLagrangeTermName, findLagrangeTerm, varlst, lagrange), v, e);
     (v, e) := joinConstraints(inConstraint, "$OMC$constarintTerm", BackendDAE.OPT_CONSTR(), knvars, varlst ,v, e, BackendVariable.hasConTermAnno);
     (outVars, outEqns) := joinConstraints({}, "$OMC$finalConstarintTerm", BackendDAE.OPT_FCONSTR(), knvars, varlst, v, e, BackendVariable.hasFinalConTermAnno);
     Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, true);

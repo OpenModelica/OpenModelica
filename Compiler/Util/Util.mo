@@ -163,6 +163,36 @@ algorithm
   outResult := "";
 end selectFirstNonEmptyString;
 
+public function compareTupleIntGt<T>
+"  Function could used with List.sort to sort a
+  List as list< tuple<Integer, Type_a> > by first argument.
+  "
+  input tuple<Integer, T> inTplA;
+  input tuple<Integer, T> inTplB;
+  output Boolean res;
+protected
+  Integer a,b;
+algorithm
+  (a, _) := inTplA;
+  (b, _) := inTplB;
+  res := intGt(a,b);
+end compareTupleIntGt;
+
+public function compareTupleIntLt<T>
+"  Function could used with List.sort to sort a
+  List as list< tuple<Integer, Type_a> > by first argument.
+  "
+  input tuple<Integer, T> inTplA;
+  input tuple<Integer, T> inTplB;
+  output Boolean res;
+protected
+  Integer a,b;
+algorithm
+  (a, _) := inTplA;
+  (b, _) := inTplB;
+  res := intLt(a,b);
+end compareTupleIntLt;
+
 public function compareTuple2IntGt<T>
 "  Function could used with List.sort to sort a
   List as list< tuple<Type_a,Integer> > by second argument.

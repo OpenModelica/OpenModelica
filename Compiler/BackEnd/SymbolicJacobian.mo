@@ -1876,6 +1876,26 @@ algorithm
   end try;
 end checkObjectIsSet;
 
+public function getJacobianMatrixbyName
+  input BackendDAE.SymbolicJacobians injacobianMatrixes;
+  input String inJacobianName;
+  output Option<tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring>> outMatrix;
+algorithm
+  outMatrix := matchcontinue(injacobianMatrixes, inJacobianName)
+    local
+      tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> matrix;
+      BackendDAE.SymbolicJacobians rest;
+      String name;
+      case ( (matrix as (SOME((_,name,_,_,_)), _, _))::_, _)
+        equation
+          true = stringEq(name, inJacobianName);
+       then SOME(matrix);
+       case ( _::rest, _)
+        then getJacobianMatrixbyName(rest, inJacobianName);
+       else NONE();
+  end matchcontinue;
+end getJacobianMatrixbyName;
+
 // =============================================================================
 // Module for to calculate strong component Jacobains
 //

@@ -123,6 +123,7 @@ typedef struct SPARSE_PATTERN
     unsigned int* index;
     unsigned int sizeofIndex;
     unsigned int* colorCols;
+    unsigned int numberOfNoneZeros;
     unsigned int maxColors;
 }SPARSE_PATTERN;
 

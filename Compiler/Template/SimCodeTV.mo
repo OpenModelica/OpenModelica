@@ -251,8 +251,8 @@ package SimCode
   type JacobianMatrix = tuple<list<JacobianColumn>, // column
                             list<SimCodeVar.SimVar>,           // seed vars
                             String,                 // matrix name
-                            tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCodeVar.SimVar>,list<SimCodeVar.SimVar>>>,    // sparse pattern
-                            list<list<DAE.ComponentRef>>,    // colored cols
+                            tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>>,    // sparse pattern
+                            list<list<Integer>>,    // colored cols
                             Integer,                         // max color used
                             Integer>;                        // jacobian index
 
@@ -296,6 +296,7 @@ package SimCode
       Option<HpcOmSimCode.Schedule> hpcOmSchedule;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimEqSystem> equationsForConditions;
+      Option<FmiModelStructure> modelStructure;
     end SIMCODE;
 
   end SimCode;
@@ -974,6 +975,9 @@ package BackendDAE
       Option<WhenEquation> elsewhenPart;
     end WHEN_EQ;
   end WhenEquation;
+
+  constant String optimizationMayerTermName;
+  constant String optimizationLagrangeTermName;
 
 end BackendDAE;
 

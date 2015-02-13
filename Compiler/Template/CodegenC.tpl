@@ -1124,9 +1124,8 @@ end globalDataAliasVarArray;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, String modelNamePrefix) "template variableDefinitionsJacobians
   Generates defines for jacobian vars."
 ::=
-  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,_,(diffVars,diffedVars)), _, _, indexJacobian)  =>
+  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,_), _, _, indexJacobian)  =>
     let varsDef = variableDefinitionsJacobians2(indexJacobian, jacColumn, seedVars, name)
-    let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
     <<
     #if defined(__cplusplus)
     extern "C" {
@@ -1138,7 +1137,6 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, Str
     }
     #endif
     <%varsDef%>
-    <%sparseDef%>
     >>
     ;separator="\n";empty)
 
@@ -1173,30 +1171,26 @@ template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Intege
   case "jacobianVars" then
     match simVar
     case SIMVAR(aliasvar=NOALIAS(),name=name) then
-      match index
-      case -1 then
+      let crefName = cref(name)
+      let arrayName = match index case -1 then 'tmpVars[<%index0%>]' else 'resultVars[<%index%>]'
+      let optDefineMayer = if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationMayerTermName%>$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>' else ''
+      let optDefineLangrangeB = if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$pDERB$PdummyVarB') then "\n"+'#define <%crefName%>$indexdiffed <%index%>' else ''
+      let optDefineLangrangeC = if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>' else ''
         <<
-        #define _<%cref(name)%>(i) data->simulationInfo.analyticJacobians[<%indexJac%>].tmpVars[<%index0%>]
-        #define <%cref(name)%> _<%cref(name)%>(0)
-        #define <%cref(name)%>__varInfo dummyVAR_INFO
-        #define $P$ATTRIBUTE<%cref(name)%> dummyREAL_ATTRIBUTE
+        #define _<%crefName%>(i) data->simulationInfo.analyticJacobians[<%indexJac%>].<%arrayName%>
+        #define <%crefName%> _<%crefName%>(0)
+        #define <%crefName%>__varInfo dummyVAR_INFO
+        #define $P$ATTRIBUTE<%crefName%> dummyREAL_ATTRIBUTE<%optDefineMayer%><%optDefineLangrangeB%><%optDefineLangrangeC%>
         >>
-      case _ then
-        <<
-        #define _<%cref(name)%>(i) data->simulationInfo.analyticJacobians[<%indexJac%>].resultVars[<%index%>]
-        #define <%cref(name)%> _<%cref(name)%>(0)
-        #define <%cref(name)%>__varInfo dummyVAR_INFO
-        #define $P$ATTRIBUTE<%cref(name)%> dummyREAL_ATTRIBUTE
-        >>
-      end match
     end match
   case "jacobianVarsSeed" then
     match simVar
     case SIMVAR(aliasvar=NOALIAS()) then
       let tmp = System.tmpTick()
+      let crefName = cref(name)
       <<
-      #define <%cref(name)%>$pDER<%matrixName%><%cref(name)%> data->simulationInfo.analyticJacobians[<%indexJac%>].seedVars[<%index0%>]
-      #define <%cref(name)%>$pDER<%matrixName%><%cref(name)%>__varInfo dummyVAR_INFO
+      #define <%crefName%>$pDER<%matrixName%><%crefName%> data->simulationInfo.analyticJacobians[<%indexJac%>].seedVars[<%index0%>]
+      #define <%crefName%>$pDER<%matrixName%><%crefName%>__varInfo dummyVAR_INFO
       >>
     end match
   end match
@@ -3456,7 +3450,7 @@ end genVector;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_,(_,_)), colorList, maxColor, indexJacobian) =>
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,_), colorList, maxColor, indexJacobian) =>
     initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
   let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor, indexJacobian) =>
     generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
@@ -3469,15 +3463,15 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes,String 
 end functionAnalyticJacobians;
 
 
-template mkSparseFunction(String matrixname, String matrixIndex, DAE.ComponentRef cref, list<DAE.ComponentRef> indexes, String modelNamePrefix)
+template mkSparseFunction(String matrixname, String matrixIndex, Integer i, list<Integer> indexes, String modelNamePrefix)
 "generate "
 ::=
 match matrixname
  case _ then
     let indexrows = ( indexes |> indexrow hasindex index0 =>
       <<
-      i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%cref(cref)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
-      data->simulationInfo.analyticJacobians[index].sparsePattern.index[i+<%index0%>] = <%cref(indexrow)%>$pDER<%matrixname%>$indexdiffed;
+      i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%i%>] - <%listLength(indexes)%>;
+      data->simulationInfo.analyticJacobians[index].sparsePattern.index[i+<%index0%>] = <%indexrow%>;
       >>
       ;separator="\n")
 
@@ -3485,7 +3479,7 @@ match matrixname
     static void <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>_<%matrixIndex%>(DATA* data, int index)
     {
       int i;
-      /* write index for cref: <%cref(cref)%> */
+      /* write index for cref: <%i%> */
       <%indexrows%>
     }
     <%\n%>
@@ -3493,7 +3487,7 @@ match matrixname
 end match
 end mkSparseFunction;
 
-template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList, Integer maxColor, String modelNamePrefix)
+template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
@@ -3523,20 +3517,20 @@ case _ then
       let &eachCrefParts = buffer ""
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
       let sizeleadindex = listLength(sparsepattern)
-      let leadindex = (sparsepattern |> (cref,indexes) hasindex index0 =>
+      let leadindex = (sparsepattern |> (i, indexes) =>
       <<
-      data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%cref(cref)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
+      data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%i%>] = <%listLength(indexes)%>;
       >>
       ;separator="\n")
-      let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
-        let &eachCrefParts += mkSparseFunction(matrixname, index0, cref, indexes, modelNamePrefix)
+      let indexElems = ( sparsepattern |> (i, indexes) hasindex index0 =>
+        let &eachCrefParts += mkSparseFunction(matrixname, index0, i, indexes, modelNamePrefix)
         <<
         <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>_<%index0%>(data, index);
         >>
       ;separator="\n")
       let colorArray = (colorList |> (indexes) hasindex index0 =>
         let colorCol = ( indexes |> i_index =>
-        'data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%cref(i_index)%>$pDER<%matrixname%>$indexdiff] = <%intAdd(index0,1)%>;'
+        'data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%i_index%>] = <%intAdd(index0,1)%>;'
         ;separator="\n")
       '<%colorCol%>'
       ;separator="\n")
@@ -3563,6 +3557,7 @@ case _ then
         data->simulationInfo.analyticJacobians[index].tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
         data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
         data->simulationInfo.analyticJacobians[index].sparsePattern.index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
+        data->simulationInfo.analyticJacobians[index].sparsePattern.numberOfNoneZeros = <%sp_size_index%>;
         data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols = (unsigned int*) malloc(<%index_%>*sizeof(int));
         data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors = <%maxColor%>;
         data->simulationInfo.analyticJacobians[index].jacobian = NULL;
@@ -11187,8 +11182,8 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         case SOME(exp) then
           <<
           *res =  &$P$OMC$objectMayerTerm;
-          #ifdef $P$OMC$objectMayerTerm$pDERC$indexdiffed
-          *index_Dres = $P$OMC$objectMayerTerm$pDERC$indexdiffed;
+          #ifdef $P$OMC$objectMayerTerm$pDERC$PdummyVarC$indexdiffed
+          *index_Dres = $P$OMC$objectMayerTerm$pDERC$PdummyVarC$indexdiffed;
           return 0;
           #endif
           >>
@@ -11204,9 +11199,9 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         case SOME(exp) then
           <<
           *res =  &$P$OMC$objectLagrangeTerm;
-          #ifdef $P$OMC$objectLagrangeTerm$pDERB$indexdiffed
-          *index_DresB = $P$OMC$objectLagrangeTerm$pDERB$indexdiffed;
-          *index_DresC = $P$OMC$objectLagrangeTerm$pDERC$indexdiffed;
+          #ifdef $P$OMC$objectLagrangeTerm$pDERB$PdummyVarB$indexdiffed
+          *index_DresB = $P$OMC$objectLagrangeTerm$pDERB$PdummyVarB$indexdiffed;
+          *index_DresC = $P$OMC$objectLagrangeTerm$pDERC$PdummyVarC$indexdiffed;
           return 0;
           #endif
           >>

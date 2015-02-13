@@ -119,7 +119,7 @@ case SIMCODE(__) then
     </LogCategories>
     <%DefaultExperiment(simulationSettingsOpt)%>
     <%ModelVariables(modelInfo, "2.0")%>
-    <%ModelStructure(simCode, jacobianMatrixes)%>
+    <%ModelStructureHelper(modelStructure)%>
   </fmiModelDescription>
   >>
 end fmi2ModelDescription;
@@ -667,21 +667,28 @@ template ModelStructure(SimCode simCode, list<JacobianMatrix> jacobianMatrixes)
 ::=
   <<
   <ModelStructure>
-    <%ModelStructureHelper(getFMIModelStructure(simCode, jacobianMatrixes))%>
+    //ModelStructureHelper(getFMIModelStructure(simCode, jacobianMatrixes))
   </ModelStructure>
   >>
 end ModelStructure;
 
-template ModelStructureHelper(FmiModelStructure fmiModelStructure)
+template ModelStructureHelper(Option<FmiModelStructure> fmiModelStructure)
  "Helper function to ModelStructure."
 ::=
 match fmiModelStructure
-case FMIMODELSTRUCTURE(__) then
+case SOME(fmistruct as FMIMODELSTRUCTURE(__)) then
   <<
-  <%ModelStructureOutputs(fmiOutputs)%>
-  <%ModelStructureDerivatives(fmiDerivatives)%>
-  <%ModelStructureInitialUnknowns(fmiInitialUnknowns)%>
+  <ModelStructure>
+    <%ModelStructureOutputs(fmistruct.fmiOutputs)%>
+    <%ModelStructureDerivatives(fmistruct.fmiDerivatives)%>
+    <%ModelStructureInitialUnknowns(fmistruct.fmiInitialUnknowns)%>
+  </ModelStructure>
   >>
+else
+  <<
+  <ModelStructure>
+  </ModelStructure>
+  >> 
 end ModelStructureHelper;
 
 template ModelStructureOutputs(FmiOutputs fmiOutputs)

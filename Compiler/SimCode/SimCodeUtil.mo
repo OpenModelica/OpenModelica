@@ -46,6 +46,7 @@ import Ceval;
 import DAE;
 import FCore;
 import FGraph;
+import HashTable;
 import HashTableExpToIndex;
 import HashTableStringToPath;
 import SCode;
@@ -1548,6 +1549,8 @@ algorithm
       SimCode.BackendMapping backendMapping;
       list<BackendDAE.Var> primaryParameters "already sorted";
       list<BackendDAE.Var> allPrimaryParameters "already sorted";
+     
+      Option<SimCode.FmiModelStructure> modelStruct;
 
     case (dlow, class_, _, fileDir, _,_, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
@@ -1698,6 +1701,8 @@ algorithm
       backendMapping = setBackendVarMapping(inBackendDAE,crefToSimVarHT,modelInfo,backendMapping);
       //dumpBackendMapping(backendMapping);
 
+      modelStruct = createFMIModelStructure(symJacs, modelInfo);
+
       simCode = SimCode.SIMCODE(modelInfo,
                                 {}, // Set by the traversal below...
                                 recordDecls,
@@ -1736,7 +1741,8 @@ algorithm
                                 NONE(),
                                 {},
                                 crefToSimVarHT,
-                                SOME(backendMapping));
+                                SOME(backendMapping),
+                                modelStruct);
       (simCode, (_, _, lits)) = traverseExpsSimCode(simCode, findLiteralsHelper, literals);
       simCode = setSimCodeLiterals(simCode, listReverse(lits));
 
@@ -2154,8 +2160,8 @@ protected
   list<SimCode.JacobianColumn> columns;
   list<SimCodeVar.SimVar> vars;
   String str;
-  tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCodeVar.SimVar>,list<SimCodeVar.SimVar>>> tpl;
-  list<list<DAE.ComponentRef>> colors;
+  tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>> tpl;    // sparse pattern
+  list<list<Integer>> colors;
   Integer maxcolor, index;
 algorithm
   (columns, vars, str, tpl, colors, maxcolor, index) := inSymjac;
@@ -4573,12 +4579,14 @@ algorithm
 
     BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars,  residualVars;
     BackendDAE.EquationArray emptyEqns, eqns;
-    list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst, residualVarsLst;
+    list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst, residualVarsLst, allVars;
     list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs;
 
     DAE.ComponentRef x;
     BackendDAE.SparseColoring sparseColoring;
-    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepatternComRefs;
+    list<list<Integer>> coloring;
+    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepatternComRefs, sparsepatternComRefsT;
+    list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
 
     BackendDAE.EqSystem syst;
     BackendDAE.Shared shared;
@@ -4590,11 +4598,13 @@ algorithm
 
     list<SimCode.SimEqSystem> columnEquations;
     list<SimCodeVar.SimVar> columnVars;
-    list<SimCodeVar.SimVar> seedVars, indexVars;
+    list<SimCodeVar.SimVar> varsSeedIndex, seedVars, indexVars;
 
     String errorMessage;
 
     DAE.FunctionTree funcs;
+    
+    SimCode.HashTableCrefToSimVar crefSimVarHT;
 
     case (BackendDAE.EMPTY_JACOBIAN(), _, _) then (NONE(), iuniqueEqIndex, itempvars);
 
@@ -4603,10 +4613,9 @@ algorithm
     case (BackendDAE.GENERIC_JACOBIAN((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
                                     independentVarsLst, residualVarsLst, dependentVarsLst),
-                                      (sparsepatternComRefs, _, (_, _)),
+                                      (sparsepatternComRefs, sparsepatternComRefsT, (_, _)),
                                       sparseColoring), _, _)
       equation
-        // createSymbolicJacobianssSimCode
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> creating SimCode equations for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
@@ -4621,18 +4630,9 @@ algorithm
 
         residualVars = BackendVariable.listVar1(residualVarsLst);
         columnVars = createAllDiffedSimVars(dependentVarsLst, x, residualVars, 0, (name, false), {});
-
-        if Flags.isSet(Flags.JAC_DUMP2) then
-          print("\n---+++ diffed column variables +++---\n");
-          print(Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
-        end if;
-
-        // all differentiated vars
-        // ((columnVarsKn, _)) =  BackendVariable.traverseBackendDAEVars(allvars, traversingdlowvarToSimvar, ({}, emptyVars));
-        // columnVars = listAppend(columnVars, columnVarsKn);
         columnVars = listReverse(columnVars);
 
-        if Flags.isSet(Flags.JAC_DUMP2) then
+       if Flags.isSet(Flags.JAC_DUMP2) then
           print("\n---+++ all column variables +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
           print("analytical Jacobians -> create all SimCode vars for Matrix " + name + " time: " + realString(clock()) + "\n");
@@ -4642,16 +4642,21 @@ algorithm
         emptyVars =  BackendVariable.emptyVars();
         ((seedVars, _)) =  BackendVariable.traverseBackendDAEVars(independentVars, traversingdlowvarToSimvar, ({}, emptyVars));
         ((indexVars, _)) =  BackendVariable.traverseBackendDAEVars(residualVars, traversingdlowvarToSimvar, ({}, emptyVars));
-        seedVars = listReverse(seedVars);
-        indexVars = listReverse(indexVars);
+        seedVars = rewriteIndex(listReverse(seedVars), 0);
+        indexVars = rewriteIndex(listReverse(indexVars), 0);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("\n---+++ seedVars variables +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
           print("\n---+++ indexVars variables +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
         end if;
+        //sort sparse pattern
+        varsSeedIndex = listAppend(seedVars, indexVars);
+        sparseInts = sortSparsePattern(varsSeedIndex, sparsepatternComRefs, false);
+        sparseIntsT = sortSparsePattern(varsSeedIndex, sparsepatternComRefsT, false);
 
         // set sparse pattern
+        coloring = sortColoring(varsSeedIndex, sparseColoring);
         maxColor = listLength(sparseColoring);
         s =  intString(listLength(residualVarsLst));
 
@@ -4659,7 +4664,7 @@ algorithm
           print("analytical Jacobians -> transformed to SimCode for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
 
-        then (SOME(({(columnEquations, columnVars, s)}, seedVars, name, (sparsepatternComRefs, {}, (seedVars, indexVars)), sparseColoring, maxColor, -1)), uniqueEqIndex, tempvars);
+        then (SOME(({(columnEquations, columnVars, s)}, seedVars, name, (sparseInts, sparseIntsT), coloring, maxColor, -1)), uniqueEqIndex, tempvars);
 
     case(_, _, _)
       equation
@@ -4682,12 +4687,14 @@ protected function createJacobianLinearCode
 algorithm
   (res,ouniqueEqIndex) := matchcontinue (inSymjacs, inModelInfo, iuniqueEqIndex)
     local
+      SimCode.HashTableCrefToSimVar crefSimVarHT; 
     case (_, _, _)
       equation
         // b = Flags.disableDebug(Flags.EXEC_STAT);
+        crefSimVarHT = createCrefToSimVarHT(inModelInfo);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
-        (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, inModelInfo, iuniqueEqIndex, {"A", "B", "C", "D"});
+        (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, {"A", "B", "C", "D"});
         // if optModule is not activated add dummy matrices
         res = addLinearizationMatrixes(res);
         // _ = Flags.set(Flags.EXEC_STAT, b);
@@ -4695,7 +4702,7 @@ algorithm
       then (res,ouniqueEqIndex);
     else
       equation
-        res = {({}, {}, "A", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "B", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "C", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "D", ({}, {}, ({}, {})), {}, 0, -1)};
+        res = {({}, {}, "A", ({}, {}), {}, 0, -1), ({}, {}, "B", ({}, {}), {}, 0, -1), ({}, {}, "C", ({}, {}), {}, 0, -1), ({}, {}, "D", ({}, {}), {}, 0, -1)};
       then (res,iuniqueEqIndex);
   end matchcontinue;
 end createJacobianLinearCode;
@@ -4704,14 +4711,14 @@ protected function createSymbolicJacobianssSimCode
 "fuction creates the linear model matrices column-wise
  author: wbraun"
   input BackendDAE.SymbolicJacobians inSymJacobians;
-  input SimCode.ModelInfo inModelInfo;
+  input SimCode.HashTableCrefToSimVar inSimVarHT;
   input Integer iuniqueEqIndex;
   input list<String> inNames;
   output list<SimCode.JacobianMatrix> outJacobianMatrixes;
   output Integer ouniqueEqIndex;
 algorithm
   (outJacobianMatrixes, ouniqueEqIndex) :=
-  matchcontinue (inSymJacobians, inModelInfo, iuniqueEqIndex, inNames)
+  matchcontinue (inSymJacobians, inSimVarHT, iuniqueEqIndex, inNames)
     local
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -4720,7 +4727,7 @@ algorithm
 
       DAE.ComponentRef x;
       list<BackendDAE.Var>  diffVars, diffedVars, alldiffedVars;
-      list<DAE.ComponentRef> diffCompRefs, diffedCompRefs;
+      list<DAE.ComponentRef> diffCompRefs, diffedCompRefs, allCrefs;
 
       Integer uniqueEqIndex;
 
@@ -4731,7 +4738,7 @@ algorithm
       list<SimCode.SimEqSystem> columnEquations;
       list<SimCodeVar.SimVar> columnVars;
       list<SimCodeVar.SimVar> columnVarsKn;
-      list<SimCodeVar.SimVar> seedVars, indexVars;
+      list<SimCodeVar.SimVar> seedVars, indexVars, seedIndexVars;
 
       list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsepattern, sparsepatternT;
       list<list<DAE.ComponentRef>> colsColors;
@@ -4739,47 +4746,74 @@ algorithm
 
       BackendDAE.SymbolicJacobians rest;
       list<SimCode.JacobianMatrix> linearModelMatrices;
+      list<tuple<Integer, list<Integer>>> sparseInts, sparseIntsT;
+      list<list<Integer>> coloring;
 
     case ({}, _, _, _) then ({}, iuniqueEqIndex);
     // if nothing is generated
     case (((NONE(), ({}, {}, ({}, {})), {}))::rest, _, _, name::restnames)
       equation
-        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inModelInfo, iuniqueEqIndex, restnames);
-        linearModelMatrices = (({}, {}, name, ({}, {}, ({}, {})), {}, 0, -1))::linearModelMatrices;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames);
+        linearModelMatrices = (({}, {}, name, ({}, {}), {}, 0, -1))::linearModelMatrices;
      then
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated
-    case (((NONE(), (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs)), colsColors))::rest, SimCode.MODELINFO(vars=simvars), _, name::restnames)
+    case (((NONE(), (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs)), colsColors))::rest, _, _, name::restnames)
       equation
+        if Flags.isSet(Flags.JAC_DUMP2) then
+          print("Start sparse pattern without analytical Jacobians\n");
+        end if;
 
-        (_, (_, seedVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffCompRefs, {}));
+        seedVars = getSimVars2Crefs(diffCompRefs, inSimVarHT);
+        seedVars = List.sort(seedVars, compareVarIndexGt);
+
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("diffCrefs: " + ComponentReference.printComponentRefListStr(diffCompRefs) + "\n");
           print("\n---+++  seedVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
         end if;
 
+        indexVars = getSimVars2Crefs(diffedCompRefs, inSimVarHT);
+        indexVars = List.sort(indexVars, compareVarIndexGt);
 
-        (_, (_, indexVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffedCompRefs, {}));
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("diffedCrefs: " + ComponentReference.printComponentRefListStr(diffedCompRefs) + "\n");
           print("\n---+++  indexVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
+          print("\n---+++  sparse pattern vars +++---\n");
+          dumpSparsePattern(sparsepattern);
+          print("\n---+++  sparse pattern transpose +++---\n");
+          dumpSparsePattern(sparsepatternT);
         end if;
+        seedVars = rewriteIndex(seedVars, 0);
+        indexVars = rewriteIndex(indexVars, 0);
+        seedIndexVars = listAppend(seedVars, indexVars);
+        
+        sparseInts = sortSparsePattern(seedIndexVars, sparsepattern, false);
+        sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
 
         maxColor = listLength(colsColors);
         s = intString(listLength(diffedCompRefs));
+        coloring = sortColoring(seedVars, colsColors);
 
-        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inModelInfo, iuniqueEqIndex, restnames);
-        linearModelMatrices = (({(({}, {}, s))}, seedVars, name, (sparsepattern, sparsepatternT, (seedVars, indexVars)), colsColors, maxColor, -1))::linearModelMatrices;
+        if Flags.isSet(Flags.JAC_DUMP2) then
+          print("analytical Jacobians -> transformed to SimCode for Matrix " + name + " time: " + realString(clock()) + "\n");
+          print("\n---+++  sparse pattern vars +++---\n");
+          dumpSparsePatternInt(sparseInts);
+          print("\n---+++  sparse pattern transpose +++---\n");
+          dumpSparsePatternInt(sparseIntsT);
+        end if;
+
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames);
+        linearModelMatrices = (({(({}, {}, s))}, seedVars, name, (sparseInts, sparseIntsT), coloring, maxColor, -1))::linearModelMatrices;
      then
         (linearModelMatrices, uniqueEqIndex);
 
     case (((SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
                                     _, diffedVars, alldiffedVars)), (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs)), colsColors))::rest,
-                                    SimCode.MODELINFO(vars=simvars), _, _::restnames)
+                                    _, _, _::restnames)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> creating SimCode equations for Matrix " + name + " time: " + realString(clock()) + "\n");
@@ -4792,49 +4826,63 @@ algorithm
         // create SimCodeVar.SimVars from jacobian vars
         dummyVar = ("dummyVar" + name);
         x = DAE.CREF_IDENT(dummyVar, DAE.T_REAL_DEFAULT, {});
-        vars = BackendVariable.listVar1(diffedVars);
 
         //sort variable for index
-        empty = BackendVariable.listVar(alldiffedVars);
-        (_, (_, alldiffedVars)) = traveseSimVars(simvars, findSimVarsinAllVar, (empty, {}));
+        empty = BackendVariable.listVar1(alldiffedVars);
+        allCrefs = List.map(alldiffedVars, BackendVariable.varCref); 
+        columnVars = getSimVars2Crefs(allCrefs, inSimVarHT);
+        columnVars = List.sort(columnVars, compareVarIndexGt);
+        (_, (_, alldiffedVars)) = List.mapFoldTuple(columnVars, sortBackVarWithSimVarsOrder, (empty, {}));
         alldiffedVars = listReverse(alldiffedVars);
+        vars = BackendVariable.listVar1(diffedVars);
         columnVars = createAllDiffedSimVars(alldiffedVars, x, vars, 0, (name, false), {});
-
-        /*
-        knvars = BackendVariable.daeKnVars(shared);
-        empty = BackendVariable.emptyVars();
-        ((columnVarsKn, _)) =  BackendVariable.traverseBackendDAEVars(knvars, traversingdlowvarToSimvar, ({}, empty));
-        columnVars = List.unique(columnVars, columnVarsKn);
-        columnVars = listReverse(columnVars);
-        */
 
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> create all SimCode vars for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
 
-        (_, (_, seedVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffCompRefs, {}));
+        seedVars = getSimVars2Crefs(diffCompRefs, inSimVarHT);
+        seedVars = List.sort(seedVars, compareVarIndexGt);
+
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("diffCrefs: " + ComponentReference.printComponentRefListStr(diffCompRefs) + "\n");
           print("\n---+++  seedVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
         end if;
 
-        (_, (_, indexVars)) = traveseSimVars(simvars, findSimVarsCompare, (diffedCompRefs, {}));
+        indexVars = getSimVars2Crefs(diffedCompRefs, inSimVarHT);
+        indexVars = List.sort(indexVars, compareVarIndexGt);
+        
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("diffedCrefs: " + ComponentReference.printComponentRefListStr(diffedCompRefs) + "\n");
           print("\n---+++  indexVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
+          
+          print("\n---+++  sparse pattern vars +++---\n");
+          dumpSparsePattern(sparsepattern);
+          print("\n---+++  sparse pattern transpose +++---\n");
+          dumpSparsePattern(sparsepatternT);
         end if;
+        seedVars = rewriteIndex(seedVars, 0);
+        indexVars = rewriteIndex(indexVars, 0);
+        seedIndexVars = listAppend(seedVars, indexVars);
+        sparseInts = sortSparsePattern(seedIndexVars, sparsepattern, false);
+        sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
 
         maxColor = listLength(colsColors);
         s =  intString(listLength(diffedVars));
+        coloring = sortColoring(seedVars, colsColors);
 
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> transformed to SimCode for Matrix " + name + " time: " + realString(clock()) + "\n");
+          print("\n---+++  sparse pattern vars +++---\n");
+          dumpSparsePatternInt(sparseInts);
+          print("\n---+++  sparse pattern transpose +++---\n");
+          dumpSparsePatternInt(sparseIntsT);
         end if;
 
-        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inModelInfo, uniqueEqIndex, restnames);
-        linearModelMatrices = (({((columnEquations, columnVars, s))}, seedVars, name, (sparsepattern, sparsepatternT, (seedVars, indexVars)), colsColors, maxColor, -1))::linearModelMatrices;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames);
+        linearModelMatrices = (({((columnEquations, columnVars, s))}, seedVars, name, (sparseInts, sparseIntsT), coloring, maxColor, -1))::linearModelMatrices;
      then
         (linearModelMatrices, uniqueEqIndex);
     else
@@ -4845,63 +4893,34 @@ algorithm
   end matchcontinue;
 end createSymbolicJacobianssSimCode;
 
-protected function findSimVarsCompare
-   input tuple<SimCodeVar.SimVar, tuple<list<DAE.ComponentRef>, list<SimCodeVar.SimVar>>> inTuple;
-    output tuple<SimCodeVar.SimVar, tuple<list<DAE.ComponentRef>, list<SimCodeVar.SimVar>>> outTuple;
-   algorithm
-       outTuple := matchcontinue(inTuple)
-       local
-         DAE.ComponentRef cref;
-         list<DAE.ComponentRef> crefs;
-         list<SimCodeVar.SimVar> simvars;
-         SimCodeVar.SimVar var;
-       case((var as (SimCodeVar.SIMVAR(name=cref)), (crefs, simvars)))
-         equation
-           true = listMember(cref, crefs);
-           true = not List.isMemberOnTrue(var, simvars, compareSimVarName);
-         then ((var, (crefs,  listAppend(simvars, {var}))));
-       case(_) then inTuple;
-       end matchcontinue;
-end findSimVarsCompare;
+protected function getSimVars2Crefs
+  input list<DAE.ComponentRef> inCrefs;
+  input SimCode.HashTableCrefToSimVar inSimVarHT;
+  output list<SimCodeVar.SimVar> outSimVars := {};
+algorithm
+  for cref in inCrefs loop
+    try 
+      outSimVars := get(cref, inSimVarHT)::outSimVars;
+    else
+    end try;
+  end for;
+end getSimVars2Crefs;
 
-
-protected function findSimVarsinAllVar
-   input tuple<SimCodeVar.SimVar, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> inTuple;
-    output tuple<SimCodeVar.SimVar, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> outTuple;
-   algorithm
-       outTuple := matchcontinue(inTuple)
-       local
-         DAE.ComponentRef cref;
-         list<BackendDAE.Var> resvars;
-         BackendDAE.Variables vars;
-         BackendDAE.Var v;
-         SimCodeVar.SimVar var;
-       case((var as (SimCodeVar.SIMVAR(name=cref)), (vars, resvars)))
-         equation
-           ({v},_) = BackendVariable.getVar(cref, vars);
-           true = not List.isMemberOnTrue(v, resvars, BackendVariable.varEqual);
-         then ((var, (vars, v::resvars)));
-       case(_) then inTuple;
-       end matchcontinue;
-end findSimVarsinAllVar;
-
-
-protected function compareSimVarName
-  input SimCodeVar.SimVar var;
-  input SimCodeVar.SimVar var1;
-  output Boolean b;
-   algorithm
-       b := matchcontinue(var, var1)
-         local
-           DAE.ComponentRef name, name1;
-         case (SimCodeVar.SIMVAR(name = name), SimCodeVar.SIMVAR(name = name1))
-           equation
-             true = ComponentReference.crefEqual(name, name1);
-           then true;
-
-         else false;
-       end matchcontinue;
-end compareSimVarName;
+protected function sortBackVarWithSimVarsOrder
+  input tuple<SimCodeVar.SimVar, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> inTuple;
+  output tuple<SimCodeVar.SimVar, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> outTuple;
+protected
+  SimCodeVar.SimVar var;
+  BackendDAE.Variables vars;
+  list<BackendDAE.Var> varLst, resvars;
+  BackendDAE.Var v;
+  DAE.ComponentRef cref;
+algorithm
+  ((var, (vars, varLst))) := inTuple;
+  SimCodeVar.SIMVAR(name=cref) := var;
+  ({v},_) := BackendVariable.getVar(cref, vars);
+  outTuple := ((var, (vars, v::varLst)));
+end sortBackVarWithSimVarsOrder;
 
 protected function createAllDiffedSimVars "author: wbraun"
   input list<BackendDAE.Var> inVars;
@@ -4920,6 +4939,7 @@ algorithm
     list<BackendDAE.Var> restVar;
     Option<DAE.VariableAttributes> dae_var_attr;
     Boolean isProtected;
+    Integer index;
 
     case({}, _, _, _, _, _)
     then listReverse(iVars);
@@ -4979,7 +4999,7 @@ algorithm
       SimCode.JacobianMatrix inSymJacs;
     case (inSymJacs::{})
       equation
-        outjacobianMatrixes = {inSymJacs, ({}, {}, "B", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "C", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "D", ({}, {}, ({}, {})), {}, 0, -1)};
+        outjacobianMatrixes = {inSymJacs, ({}, {}, "B", ({}, {}), {}, 0, -1), ({}, {}, "C", ({}, {}), {}, 0, -1), ({}, {}, "D", ({}, {}), {}, 0, -1)};
       then
         outjacobianMatrixes;
     case _
@@ -4987,7 +5007,7 @@ algorithm
         true = (4 == listLength(injacobianMatrixes));
       then
         injacobianMatrixes;
-    else {({}, {}, "A", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "B", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "C", ({}, {}, ({}, {})), {}, 0, -1), ({}, {}, "D", ({}, {}, ({}, {})), {}, 0, -1)};
+    else {({}, {}, "A", ({}, {}), {}, 0, -1), ({}, {}, "B", ({}, {}), {}, 0, -1), ({}, {}, "C", ({}, {}), {}, 0, -1), ({}, {}, "D", ({}, {}), {}, 0, -1)};
   end matchcontinue;
 end addLinearizationMatrixes;
 
@@ -5074,6 +5094,108 @@ algorithm
       then tmp1;
 end match;
 end appendAllVars;
+
+protected function sortSparsePattern
+  input list<SimCodeVar.SimVar> inSimVars;
+  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inSparsePattern;
+  input Boolean useFMIIndex;
+  output list<tuple<Integer, list<Integer>>> outSparse = {};
+protected 
+  HashTable.HashTable ht;
+  DAE.ComponentRef cref;
+  Integer size, i, j;
+  list<Integer> intLst;
+  list<DAE.ComponentRef> crefs;
+algorithm
+  //create HT
+  size := listLength(inSimVars);
+  if size>0 then
+    ht := HashTable.emptyHashTableSized(size);
+    for var in inSimVars loop
+      if not useFMIIndex then 
+        SimCodeVar.SIMVAR(name = cref, index=i) := var;
+      else 
+        SimCodeVar.SIMVAR(name = cref) := var;
+        i := getVariableIndex(var);
+      end if;
+      //print("Setup HashTable with cref: " + ComponentReference.printComponentRefStr(cref) + " index: "+ intString(i) + "\n");
+      ht := BaseHashTable.add((cref, i), ht);
+    end for;
+  
+    //translate
+    for tpl in inSparsePattern loop
+       (cref, crefs) := tpl;
+       i := BaseHashTable.get(cref, ht);
+       intLst := {};
+       for cr in crefs loop
+         j := BaseHashTable.get(cr, ht);
+         intLst := j :: intLst;
+       end for;
+       intLst := List.sort(intLst, intGt);
+       outSparse := (i, intLst) :: outSparse;
+    end for;
+    outSparse := List.sort(outSparse, Util.compareTupleIntGt);
+  end if;
+end sortSparsePattern;
+
+protected function sortColoring
+  input list<SimCodeVar.SimVar> inSimVars;
+  input list<list<DAE.ComponentRef>> inColoring;
+  output list<list<Integer>> outColoring = {};
+protected 
+  HashTable.HashTable ht;
+  Integer size, i, j;
+  list<Integer> intLst;
+  DAE.ComponentRef cref;
+algorithm
+  //create HT
+  size := listLength(inSimVars);
+  if size>0 then
+  ht := HashTable.emptyHashTableSized(size);
+  for var in inSimVars loop
+    SimCodeVar.SIMVAR(name = cref, index=i) := var;
+    //print("Setup HashTable with cref: " + ComponentReference.printComponentRefStr(cref) + " index: "+ intString(i) + "\n");
+    ht := BaseHashTable.add((cref, i), ht);
+  end for;
+
+  //translate
+  for crefs in inColoring loop
+     intLst := {};
+     for cr in crefs loop
+       j := BaseHashTable.get(cr, ht);
+       intLst := j :: intLst;
+     end for;
+     intLst := List.sort(intLst, intGt);
+     outColoring := intLst :: outColoring;
+  end for;
+  end if;
+end sortColoring;
+
+protected function dumpSparsePatternInt
+  input list<tuple<Integer, list<Integer>>> sparsePattern;
+protected
+  Integer i;
+  list<Integer> lst;
+algorithm
+  for tpl in sparsePattern loop
+    (i, lst) := tpl;
+    print("Row   " + intString(i) + "\n");
+    print("Cols: " + stringDelimitList(List.map(lst, intString)," ") + "\n");
+  end for;
+end dumpSparsePatternInt;
+
+protected function dumpSparsePattern
+  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
+protected
+  DAE.ComponentRef cr;
+  list<DAE.ComponentRef> crefs;
+algorithm
+  for tpl in sparsePattern loop
+    (cr, crefs) := tpl;
+    print("Row   " + ComponentReference.printComponentRefStr(cr) + "\n");
+    print("Cols: " + stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr)," ") + "\n");
+  end for;
+end dumpSparsePattern;
 
 // =============================================================================
 // section with unsorted function
@@ -7985,11 +8107,12 @@ algorithm
       SimCodeVar.Causality causality;
       list<String> numArrayElement;
       Integer index;
+      Option<Integer> variable_index;
       SimCodeVar.SimVar var;
 
     case ({}, _, _) then listReverse(inAcc);
-    case (SimCodeVar.SIMVAR(name, kind, comment, unit, displayUnit, _, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable, isProtected)::rest, index_, _)
-      then rewriteIndexWork(rest, index_ + 1, SimCodeVar.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable, isProtected)::inAcc);
+    case (SimCodeVar.SIMVAR(name, kind, comment, unit, displayUnit, _, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable, isProtected)::rest, index_, _)
+      then rewriteIndexWork(rest, index_ + 1, SimCodeVar.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable, isProtected)::inAcc);
   end match;
 end rewriteIndexWork;
 
@@ -10767,6 +10890,30 @@ end dimensions;
 /******************/
 /******************/
 
+protected function compareSimVarName
+  input SimCodeVar.SimVar var1;
+  input SimCodeVar.SimVar var2;
+  output Boolean result;
+protected
+  DAE.ComponentRef name1, name2;
+algorithm
+  SimCodeVar.SIMVAR(name = name1) := var1;
+  SimCodeVar.SIMVAR(name = name2) := var2;
+  result := ComponentReference.crefEqual(name1, name2);
+end compareSimVarName;
+
+public function compareVarIndexGt
+  input SimCodeVar.SimVar var1;
+  input SimCodeVar.SimVar var2;
+  output Boolean result;
+protected
+  Integer index1, index2; 
+algorithm
+  SimCodeVar.SIMVAR(variable_index=SOME(index1)) := var1;
+  SimCodeVar.SIMVAR(variable_index=SOME(index2)) := var2;
+  result := index1 > index2;
+end compareVarIndexGt;
+
 public function varIndex
   input SimCodeVar.SimVar var;
   output Integer index;
@@ -11325,6 +11472,7 @@ algorithm
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
+      Option<SimCode.FmiModelStructure> modelStruct;
     case _
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -11332,7 +11480,7 @@ algorithm
 
     case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping)
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct)
       equation
         SimCode.MODELINFO(name, description, directory, varInfo, vars, functions, labels) = modelInfo;
         files = {};
@@ -11348,7 +11496,7 @@ algorithm
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
 
     else
       equation
@@ -11644,6 +11792,7 @@ algorithm
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
+      Option<SimCode.FmiModelStructure> modelStruct;
 
     case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations,
@@ -11652,7 +11801,7 @@ algorithm
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
-                          hpcOmSchedule,hpcOmMemory,equationsForConditions,crefToSimVarHT,backendMapping), _, a)
+                          hpcOmSchedule,hpcOmMemory,equationsForConditions,crefToSimVarHT,backendMapping,modelStruct), _, a)
       equation
         (literals, a) = List.mapFold(literals, func, a);
         (allEquations, a) = traverseExpsEqSystems(allEquations, func, a, {});
@@ -11680,7 +11829,7 @@ algorithm
                             jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                             relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                             delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
-                             hpcOmSchedule,hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping), a);
+                             hpcOmSchedule,hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping,modelStruct), a);
   end match;
 end traverseExpsSimCode;
 
@@ -11865,6 +12014,7 @@ algorithm
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
+      Option<SimCode.FmiModelStructure> modelStruct;
 
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations,
@@ -11872,14 +12022,14 @@ algorithm
                           parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings,
                           jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                           relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
-                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping), _)
+                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct), _)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                            allEquations, odeEquations, algebraicEquations,
                            useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                            parameterEquations, removedEquations, algorithmAndEquationAsserts,equationsForZeroCrossings,
                            jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings,
                            relations, timeEvents, whenClauses, discreteModelVars, extObjInfo, makefileParams,
-                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping);
+                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct);
   end match;
 end setSimCodeLiterals;
 
@@ -13000,11 +13150,12 @@ protected
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
       list<SimCodeVar.SimVar> stateVars,derivativeVars,algVars,discreteAlgVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars,jacobianVars,realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars;
+      Option<SimCode.FmiModelStructure> modelStruct;
 algorithm
   simCodeOut := match(simVar,simCodeIn)
     case (_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
       equation
         SimCode.MODELINFO(name=name, description=description, directory=directory, varInfo=varInfo, vars=vars, functions=functions, labels=labels) = modelInfo;
         SimCodeVar.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,algVars=algVars,discreteAlgVars=discreteAlgVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars,stringAlgVars=stringAlgVars,
@@ -13016,7 +13167,7 @@ algorithm
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
   end match;
 end addSimVarToAlgVars;
 
@@ -13060,11 +13211,12 @@ protected
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
+      Option<SimCode.FmiModelStructure> modelStruct;
 algorithm
   simCodeOut := match(simEqSys,sysIdx,simCodeIn)
     case (_,_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
       equation
         odes = listGet(odeEquations,sysIdx);
         odes = listAppend({simEqSys},odes);
@@ -13073,7 +13225,7 @@ algorithm
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
   end match;
 end addSimEqSysToODEquations;
 
@@ -13116,17 +13268,18 @@ protected
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
+      Option<SimCode.FmiModelStructure> modelStruct;
 algorithm
   simCodeOut := match(simEqSys,simCodeIn)
     case (_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
       equation
         initialEquations = listAppend(initialEquations,{simEqSys});
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
   end match;
 end addSimEqSysToInitialEquations;
 
@@ -13170,15 +13323,16 @@ protected
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
+      Option<SimCode.FmiModelStructure> modelStruct;
 algorithm
   simCodeOut := match(allEqs,odeEqs,simCodeIn)
     case (_,_,SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEqs, odeEqs, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
   end match;
 end replaceODEandALLequations;
 
@@ -13223,13 +13377,14 @@ algorithm
       Option<SimCode.BackendMapping> backendMapping;
       Option<HpcOmSimCode.MemoryMap> hpcOmMemory;
       list<SimCode.SimEqSystem> equationsForConditions;
+      Option<SimCode.FmiModelStructure> modelStruct;
     case (_,SimCode.SIMCODE(_, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                  parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping))
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT, backendMapping, modelStruct))
       then
         SimCode.SIMCODE(modelInfoIn, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, useSymbolicInitialization, useHomotopy, initialEquations, removedInitialEquations, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations,
                   parameterEquations, removedEquations, algorithmAndEquationAsserts, equationsForZeroCrossings, jacobianEquations, stateSets, constraints, classAttributes, zeroCrossings, relations, timeEvents, whenClauses,
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, hpcOmSchedule, hpcOmMemory, equationsForConditions, crefToSimVarHT,backendMapping, modelStruct);
   end match;
 end replaceModelInfo;
 
@@ -13595,49 +13750,78 @@ algorithm
    noOut := noIn+1;
 end dumpVarMappingTuple;
 
-public function getFMIModelStructure
+public function createFMIModelStructure
 " function detectes the model stucture for FMI 2.0
   by analyzing the symbolic jacobian matrixes and sparsity pattern"
-  input SimCode.SimCode simCode;
-  input list<SimCode.JacobianMatrix> jacobianMatrixes; // Matrixes A,B,C,D
-  output SimCode.FmiModelStructure outFmiModelStructure;
+  input BackendDAE.SymbolicJacobians inSymjacs;
+  input SimCode.ModelInfo inModelInfo;
+  output Option<SimCode.FmiModelStructure> outFmiModelStructure;
 protected
-   SimCode.JacobianMatrix A,B,C,D;
    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spTA, spTB;
-   list<tuple<Integer, list<Integer>>> spTInts;
+   list<tuple<Integer, list<Integer>>> sparseInts;
    list<SimCode.FmiUnknown> derivatives, outputs;
+   list<SimCodeVar.SimVar> varsA, varsB; 
+   SimCode.HashTableCrefToSimVar crefSimVarHT;
+   list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
+   list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
 algorithm
-  // combine the transposed sparse pattern of matrix A and B
-  // to obtain dependencies for the derivatives
+  try
+    //print("Start creating createFMIModelStructure\n");
+    crefSimVarHT := createCrefToSimVarHT(inModelInfo);
+    // combine the transposed sparse pattern of matrix A and B
+    // to obtain dependencies for the derivatives
+    SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA)), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "A");
+    SOME((_, (_, spTB, (diffCrefsB, diffedCrefsB)), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "B");
 
-  SOME(A as (_, _, _, (_,spTA,_), _, _, _)) := getJacobianMatrix(jacobianMatrixes, "A");
-  SOME(B as (_, _, _, (_,spTB,_), _, _, _)) := getJacobianMatrix(jacobianMatrixes, "B");
+    //print("-- Got matrixes\n");
+    spTA  := mergeSparsePatter(spTA, spTB, {});
+    (spTA, derdiffCrefsA) := translateSparsePatterCref2DerCref(spTA, {}, {});
+    //print("-- translateSparsePatterCref2DerCref matrixes AB\n");
 
-  spTA  := mergeSparsePatter(spTA, spTB, {});
-  // expand cref to der(cref), since diffed crefs are states
-  // but mean der(crefs)
-  spTA := translateSparsePatterCref2DerCref(spTA, {});
+    // collect all variable 
+    varsA := getSimVars2Crefs(diffCrefsA, crefSimVarHT);
+    varsB := getSimVars2Crefs(derdiffCrefsA, crefSimVarHT);
+    varsA := listAppend(varsA, varsB);
+    varsB := getSimVars2Crefs(diffedCrefsA, crefSimVarHT);
+    varsA := listAppend(varsA, varsB);
+    varsB := getSimVars2Crefs(diffCrefsB, crefSimVarHT);
+    varsA := listAppend(varsA, varsB);
+    varsB := getSimVars2Crefs(diffedCrefsB, crefSimVarHT);
+    varsA := listAppend(varsA, varsB);
+    //print("-- created vars for AB\n");
+    sparseInts := sortSparsePattern(varsA, spTA, true);
+    //print("-- sorted vars for AB\n");
 
-  // translate crefs -> simvars integers via cref2simvars
-  spTInts := translateSparsePatterSimVarInts(spTA, simCode);
-  spTInts := List.sort(spTInts, compareSparsePatterInt);
-  derivatives := translateSparsePatterInts2FMIUnknown(spTInts, {});
+    derivatives := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 
-  // combine the transposed sparse pattern of matrix C and D
-  // to obtain dependencies for the outputs
-  SOME(C as (_, _, _, (_,spTA,_), _, _, _)) := getJacobianMatrix(jacobianMatrixes, "C");
-  SOME(D as (_, _, _, (_,spTB,_), _, _, _)) := getJacobianMatrix(jacobianMatrixes, "D");
+    //print("-- created derivatives \n");
+    // combine the transposed sparse pattern of matrix C and D
+    // to obtain dependencies for the outputs
+    SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA)), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "C");
+    SOME((_, (_, spTB, (diffCrefsB, diffedCrefsB)), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "D");
+    //print("-- Got matrixes CD\n");
+    spTA  := mergeSparsePatter(spTA, spTB, {});
+    //print("-- merged matrixes CD\n");
 
-  spTA  := mergeSparsePatter(spTA, spTB, {});
+    varsA := getSimVars2Crefs(diffCrefsA, crefSimVarHT);
+    varsB := getSimVars2Crefs(diffedCrefsA, crefSimVarHT);
+    varsA := listAppend(varsA, varsB);
+    varsB := getSimVars2Crefs(diffCrefsB, crefSimVarHT);
+    varsA := listAppend(varsA, varsB);
+    varsB := getSimVars2Crefs(diffedCrefsB, crefSimVarHT);
+    varsA := listAppend(varsA, varsB);
+    //print("-- created vars for CD\n");
 
-  // translate crefs -> simvars integers via cref2simvars
-  spTInts := translateSparsePatterSimVarInts(spTA, simCode);
-  spTInts := List.sort(spTInts, compareSparsePatterInt);
-  outputs := translateSparsePatterInts2FMIUnknown(spTInts, {});
+    sparseInts := sortSparsePattern(varsA, spTA, true);
+    //print("-- sorted vars for CD\n");
 
-  //output results
-  outFmiModelStructure := SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS(outputs), SimCode.FMIDERIVATIVES(derivatives), SimCode.FMIINITIALUNKNOWNS({}));
-end getFMIModelStructure;
+    outputs := translateSparsePatterInts2FMIUnknown(sparseInts, {});
+    //print("-- finished createFMIModelStructure\n");
+    outFmiModelStructure := SOME(SimCode.FMIMODELSTRUCTURE(SimCode.FMIOUTPUTS(outputs), SimCode.FMIDERIVATIVES(derivatives), SimCode.FMIINITIALUNKNOWNS({})));
+else
+  outFmiModelStructure := NONE();
+end try;
+end createFMIModelStructure;
 
 protected function translateSparsePatterInts2FMIUnknown
 "function translates simVar integers to fmi unknowns."
@@ -13668,128 +13852,26 @@ protected function translateSparsePatterCref2DerCref
 "function translates the first cref of sparse pattern to der(cref)"
   input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
   input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inAccum;
+  input list<DAE.ComponentRef> inAccum2;
   output list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> outSparsePattern;
+  output list<DAE.ComponentRef> outDerCrefs;
 algorithm
-  outSparsePattern := match(sparsePattern, inAccum)
+  (outSparsePattern, outDerCrefs) := match(sparsePattern, inAccum, inAccum2)
     local
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> rest;
 
-    case ({}, _) then listReverse(inAccum);
-
-    case ( ((cref, crefs))::rest, _)
+    case ({}, _, _) then (listReverse(inAccum), listReverse(inAccum2));
+      
+    case ( ((cref, crefs))::rest, _, _)
       equation
         cref = ComponentReference.crefPrefixDer(cref);
       then
-        translateSparsePatterCref2DerCref(rest, (cref, crefs)::inAccum);
+        translateSparsePatterCref2DerCref(rest, (cref, crefs)::inAccum, cref::inAccum2);
 
      end match;
 end translateSparsePatterCref2DerCref;
-
-public function translateSparsePatterSimVarInts
-"function translates sparse pattern to simVar index"
-  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
-  input SimCode.SimCode simCode;
-  output list<tuple<Integer, list<Integer>>> outSparsePattern;
-algorithm
-  outSparsePattern := match(sparsePattern, simCode)
-    local
-      list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> all;
-
-    case ({}, _) then {};
-
-    case (_, _)
-     then translateSparsePatterSimVarIntsWork(sparsePattern, simCode, {});
-
-     end match;
-end translateSparsePatterSimVarInts;
-
-protected function translateSparsePatterSimVarIntsWork
-"function translates sparse pattern to simVar index"
-  input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
-  input SimCode.SimCode simCode;
-  input list<tuple<Integer, list<Integer>>> inAccum;
-  output list<tuple<Integer, list<Integer>>> outSparsePattern;
-algorithm
-  outSparsePattern := match(sparsePattern, simCode, inAccum)
-    local
-      DAE.ComponentRef cref;
-      list<DAE.ComponentRef> crefs;
-      list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> rest;
-      Integer unknown;
-      list<Integer> dependencies;
-
-    case ({}, _, _) then listReverse(inAccum);
-
-    case ( ((cref, crefs))::rest, _, _)
-      equation
-        unknown = translateCref2SimVarIndex(cref, simCode);
-        dependencies = List.map1(crefs, translateCref2SimVarIndex, simCode);
-      then
-        translateSparsePatterSimVarIntsWork(rest, simCode, (unknown, dependencies)::inAccum);
-
-     end match;
-end translateSparsePatterSimVarIntsWork;
-
-public function translateColorsSimVarInts
-"function translates sparse pattern to simVar index"
-  input list<list<DAE.ComponentRef>> inColors;
-  input SimCode.SimCode simCode;
-  output list<list<Integer>> outColors;
-algorithm
-  outColors := match(inColors, simCode)
-    local
-      list<list<DAE.ComponentRef>> all;
-
-    case ({}, _) then {};
-
-    case (all, _)
-     then List.mapList1_1(all, translateCref2SimVarIndex, simCode);
-
-     end match;
-end translateColorsSimVarInts;
-
-protected function compareSparsePatterInt
-"function translates the first cref of sparse pattern to der(cref)"
-  input tuple<Integer, list<Integer>> elementA;
-  input tuple<Integer, list<Integer>> elementB;
-  output Boolean out;
-protected
-  Integer a,b;
-algorithm
-  (a, _) := elementA;
-  (b, _) := elementB;
-  out := intGt(a, b);
-end compareSparsePatterInt;
-
-protected function translateCref2SimVarIndex
-  input DAE.ComponentRef inCref;
-  input SimCode.SimCode simCode;
-  output Integer out;
-algorithm
-  SimCodeVar.SIMVAR(variable_index = SOME(out)) := cref2simvar(inCref, simCode);
-end translateCref2SimVarIndex;
-
-protected function getJacobianMatrix
-  input list<SimCode.JacobianMatrix> injacobianMatrixes;
-  input String inJacobianName;
-  output Option<SimCode.JacobianMatrix> outMatrix;
-algorithm
-  outMatrix := matchcontinue(injacobianMatrixes, inJacobianName)
-    local
-      SimCode.JacobianMatrix matrix;
-      list<SimCode.JacobianMatrix> rest;
-      String name;
-      case ( (matrix as (_, _, name, _, _, _, _))::_, _)
-        equation
-          true = stringEq(name, inJacobianName);
-       then SOME(matrix);
-       case ( _::rest, _)
-        then getJacobianMatrix(rest, inJacobianName);
-       else NONE();
-  end matchcontinue;
-end getJacobianMatrix;
 
 protected function mergeSparsePatter
   input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inA;

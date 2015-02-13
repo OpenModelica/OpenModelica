@@ -65,10 +65,10 @@ type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type JacobianColumn = tuple<list<SimEqSystem>, list<SimCodeVar.SimVar>, String>;     // column equations, column vars, column length
 type JacobianMatrix = tuple<list<JacobianColumn>,                         // column
-                            list<SimCodeVar.SimVar>,                                 // seed vars
+                            list<SimCodeVar.SimVar>,                      // seed vars
                             String,                                       // matrix name
-                            tuple<list< tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,list< tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCodeVar.SimVar>,list<SimCodeVar.SimVar>>>,    // sparse pattern
-                            list<list<DAE.ComponentRef>>,                 // colored cols
+                            tuple<list< tuple<Integer, list<Integer>>>,list< tuple<Integer, list<Integer>>>>,    // sparse pattern
+                            list<list<Integer>>,                          // colored cols
                             Integer,                                      // max color used
                             Integer>;                                     // jacobian index
 
@@ -121,6 +121,8 @@ uniontype SimCode
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
     Option<BackendMapping> backendMapping;
+    //FMI 2.0 data for model structure
+    Option<FmiModelStructure> modelStructure;
   end SIMCODE;
 end SimCode;
 

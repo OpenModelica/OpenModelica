@@ -890,8 +890,8 @@ template makeStateSelectHeader(list<StateSet> stateSets)
 ::=
   (stateSets |> stateSet as SES_STATESET(__) hasindex i0 =>
      let jacDecl =
-       (stateSet.jacobianMatrix |> (_,_,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
-           '<%declareJacobians2(name,diffVars,diffedVars)%>'
+       (stateSet.jacobianMatrix |> (_,seedVars,name,(_,_),_,_,_) =>
+           '<%declareJacobians2(name,seedVars)%>'
            ;separator="\n")
      <<
      <%jacDecl%>
@@ -1623,12 +1623,12 @@ template jacobianColumnEqn(list<SimEqSystem> eqnSys, list<SimVar> eqnVars, Strin
   >>
 end jacobianColumnEqn;
 
-template makeJacobianFunc(String matrixName, list<JacobianColumn> cols, list<SimVar> seedVars, list<SimVar> diffVars, list<SimVar> diffedVars, String modelName)
+template makeJacobianFunc(String matrixName, list<JacobianColumn> cols, list<SimVar> seedVars, list<tuple<Integer, list<Integer>>> sparsePattern, String modelName)
 ::=
-  if diffVars then
+  if seedVars then
     let varDecls = (seedVars |> var as SIMVAR(__) hasindex i0 =>
       'double &_<%jacobianVarsSeedDefine(name)%>$pDER<%matrixName%>$P<%jacobianVarsSeedDefine(name)%> = _S_[<%i0%>];';separator="\n")
-    let eqs = (cols |> (eqnSys,colVars,_) => '<%jacobianColumnEqn(eqnSys,colVars,matrixName,listLength(diffedVars),listLength(diffVars))%>';separator="\n")
+    let eqs = (cols |> (eqnSys,colVars,_) => '<%jacobianColumnEqn(eqnSys,colVars,matrixName,listLength(sparsePattern),listLength(seedVars))%>';separator="\n")
     <<
     void <%modelName%>::calc_Jacobian_<%matrixName%>()
     {
@@ -1653,8 +1653,8 @@ end jacobianVarsSeedDefine;
 
 template makeJacobianFuncs(list<JacobianMatrix> jacobians, String modelName)
 ::=
-  let jacDecls = (jacobians |> (jacColumn,seedVars,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
-    '<%makeJacobianFunc(name,jacColumn,seedVars,diffVars,diffedVars,modelName)%>'
+  let jacDecls = (jacobians |> (jacColumn,seedVars,name,(_,sparsePattern),_,_,_) =>
+    '<%makeJacobianFunc(name,jacColumn,seedVars,sparsePattern,modelName)%>'
    ;separator="\n")
   <<
   <%jacDecls%>
@@ -1664,33 +1664,29 @@ end makeJacobianFuncs;
 template makeJacobianStateSetFuncs(list<StateSet> stateSets, String modelName)
 ::=
   (stateSets |> SES_STATESET(__) =>
-    let jacDecls = (jacobianMatrix |> (jacColumn,seedVars,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
-    '<%makeJacobianFunc(name,jacColumn,seedVars,diffVars,diffedVars,modelName)%>')
+    let jacDecls = makeJacobianFuncs(fill(jacobianMatrix,1), modelName)
     <<
     <%jacDecls%>
     >>
     ; separator="\n")
 end makeJacobianStateSetFuncs;
 
-template declareJacobians2(String name, list<SimVar> diffVars, list<SimVar> diffedVars)
+template declareJacobians2(String name, list<SimVar> seedVars)
 ::=
-  if diffVars then
-    let diffNames = (diffVars |> v as SIMVAR(__) =>
-      '<%cref(name)%>';separator=",")
-    let diffedNames = (diffedVars |> v as SIMVAR(__) =>
+  if seedVars then
+    let seedNames = (seedVars |> v as SIMVAR(__) =>
       '<%cref(name)%>';separator=",")
     <<
-    // Diff vars: <%diffNames%>
-    // Diffed vars: <%diffedNames%>
-    double _Jacobian_<%name%>[<%listLength(diffedVars)%>*<%listLength(diffVars)%>];
+    // Seed vars: <%seedNames%>
+    double _Jacobian_<%name%>[<%listLength(seedVars)%>*<%listLength(seedVars)%>];
     void calc_Jacobian_<%name%>();
     >>
 end declareJacobians2;
 
 template declareJacobians(list<JacobianMatrix> jacobians)
 ::=
-  let jacDecls = (jacobians |> (_,_,name,(_,_,(diffVars,diffedVars)),_,_,_) =>
-    '<%declareJacobians2(name,diffVars,diffedVars)%>'
+  let jacDecls = (jacobians |> (_,seedVars,name,_,_,_,_) =>
+    '<%declareJacobians2(name,seedVars)%>'
    ;separator="\n")
   <<
   <%jacDecls%>

@@ -622,6 +622,8 @@ public constant String derivativeNamePrefix = "$DERAlias";
 public constant String partialDerivativeNamePrefix = "$pDER";
 public constant String functionDerivativeNamePrefix = "$funDER";
 
+public constant String optimizationMayerTermName = "$OMC$objectMayerTerm";
+public constant String optimizationLagrangeTermName = "$OMC$objectLagrangeTerm";
 
 type FullJacobian = Option<list<tuple<Integer, Integer, Equation>>>;
 
