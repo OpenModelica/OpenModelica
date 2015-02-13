@@ -28,7 +28,7 @@ if numMessages > 0 or not status then
     exit(1);
   end if;
 else
-  system("rm -f " + messageFile);
+  remove(messageFile);
 end if;
 files:={typeNameString(mainClass) + ext for ext in {".c",".h","_includes.h","_records.c",".deps"}};getErrorString();
 {compareFilesAndMove(file,"../" + file) for file in files};
