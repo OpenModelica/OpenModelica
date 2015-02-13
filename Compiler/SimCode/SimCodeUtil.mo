@@ -1549,7 +1549,7 @@ algorithm
       SimCode.BackendMapping backendMapping;
       list<BackendDAE.Var> primaryParameters "already sorted";
       list<BackendDAE.Var> allPrimaryParameters "already sorted";
-     
+
       Option<SimCode.FmiModelStructure> modelStruct;
 
     case (dlow, class_, _, fileDir, _,_, _, _, _, _, _, _, _) equation
@@ -4603,7 +4603,7 @@ algorithm
     String errorMessage;
 
     DAE.FunctionTree funcs;
-    
+
     SimCode.HashTableCrefToSimVar crefSimVarHT;
 
     case (BackendDAE.EMPTY_JACOBIAN(), _, _) then (NONE(), iuniqueEqIndex, itempvars);
@@ -4687,7 +4687,7 @@ protected function createJacobianLinearCode
 algorithm
   (res,ouniqueEqIndex) := matchcontinue (inSymjacs, inModelInfo, iuniqueEqIndex)
     local
-      SimCode.HashTableCrefToSimVar crefSimVarHT; 
+      SimCode.HashTableCrefToSimVar crefSimVarHT;
     case (_, _, _)
       equation
         // b = Flags.disableDebug(Flags.EXEC_STAT);
@@ -4789,7 +4789,7 @@ algorithm
         seedVars = rewriteIndex(seedVars, 0);
         indexVars = rewriteIndex(indexVars, 0);
         seedIndexVars = listAppend(seedVars, indexVars);
-        
+
         sparseInts = sortSparsePattern(seedIndexVars, sparsepattern, false);
         sparseIntsT = sortSparsePattern(seedIndexVars, sparsepatternT, false);
 
@@ -4829,7 +4829,7 @@ algorithm
 
         //sort variable for index
         empty = BackendVariable.listVar1(alldiffedVars);
-        allCrefs = List.map(alldiffedVars, BackendVariable.varCref); 
+        allCrefs = List.map(alldiffedVars, BackendVariable.varCref);
         columnVars = getSimVars2Crefs(allCrefs, inSimVarHT);
         columnVars = List.sort(columnVars, compareVarIndexGt);
         (_, (_, alldiffedVars)) = List.mapFoldTuple(columnVars, sortBackVarWithSimVarsOrder, (empty, {}));
@@ -4852,12 +4852,12 @@ algorithm
 
         indexVars = getSimVars2Crefs(diffedCompRefs, inSimVarHT);
         indexVars = List.sort(indexVars, compareVarIndexGt);
-        
+
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("diffedCrefs: " + ComponentReference.printComponentRefListStr(diffedCompRefs) + "\n");
           print("\n---+++  indexVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
-          
+
           print("\n---+++  sparse pattern vars +++---\n");
           dumpSparsePattern(sparsepattern);
           print("\n---+++  sparse pattern transpose +++---\n");
@@ -4899,7 +4899,7 @@ protected function getSimVars2Crefs
   output list<SimCodeVar.SimVar> outSimVars := {};
 algorithm
   for cref in inCrefs loop
-    try 
+    try
       outSimVars := get(cref, inSimVarHT)::outSimVars;
     else
     end try;
@@ -5100,7 +5100,7 @@ protected function sortSparsePattern
   input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inSparsePattern;
   input Boolean useFMIIndex;
   output list<tuple<Integer, list<Integer>>> outSparse = {};
-protected 
+protected
   HashTable.HashTable ht;
   DAE.ComponentRef cref;
   Integer size, i, j;
@@ -5112,16 +5112,16 @@ algorithm
   if size>0 then
     ht := HashTable.emptyHashTableSized(size);
     for var in inSimVars loop
-      if not useFMIIndex then 
+      if not useFMIIndex then
         SimCodeVar.SIMVAR(name = cref, index=i) := var;
-      else 
+      else
         SimCodeVar.SIMVAR(name = cref) := var;
         i := getVariableIndex(var);
       end if;
       //print("Setup HashTable with cref: " + ComponentReference.printComponentRefStr(cref) + " index: "+ intString(i) + "\n");
       ht := BaseHashTable.add((cref, i), ht);
     end for;
-  
+
     //translate
     for tpl in inSparsePattern loop
        (cref, crefs) := tpl;
@@ -5142,7 +5142,7 @@ protected function sortColoring
   input list<SimCodeVar.SimVar> inSimVars;
   input list<list<DAE.ComponentRef>> inColoring;
   output list<list<Integer>> outColoring = {};
-protected 
+protected
   HashTable.HashTable ht;
   Integer size, i, j;
   list<Integer> intLst;
@@ -10907,7 +10907,7 @@ public function compareVarIndexGt
   input SimCodeVar.SimVar var2;
   output Boolean result;
 protected
-  Integer index1, index2; 
+  Integer index1, index2;
 algorithm
   SimCodeVar.SIMVAR(variable_index=SOME(index1)) := var1;
   SimCodeVar.SIMVAR(variable_index=SOME(index2)) := var2;
@@ -13760,7 +13760,7 @@ protected
    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
    list<SimCode.FmiUnknown> derivatives, outputs;
-   list<SimCodeVar.SimVar> varsA, varsB; 
+   list<SimCodeVar.SimVar> varsA, varsB;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
@@ -13778,7 +13778,7 @@ algorithm
     (spTA, derdiffCrefsA) := translateSparsePatterCref2DerCref(spTA, {}, {});
     //print("-- translateSparsePatterCref2DerCref matrixes AB\n");
 
-    // collect all variable 
+    // collect all variable
     varsA := getSimVars2Crefs(diffCrefsA, crefSimVarHT);
     varsB := getSimVars2Crefs(derdiffCrefsA, crefSimVarHT);
     varsA := listAppend(varsA, varsB);
@@ -13863,7 +13863,7 @@ algorithm
       list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> rest;
 
     case ({}, _, _) then (listReverse(inAccum), listReverse(inAccum2));
-      
+
     case ( ((cref, crefs))::rest, _, _)
       equation
         cref = ComponentReference.crefPrefixDer(cref);

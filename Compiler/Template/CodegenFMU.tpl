@@ -688,7 +688,7 @@ else
   <<
   <ModelStructure>
   </ModelStructure>
-  >> 
+  >>
 end ModelStructureHelper;
 
 template ModelStructureOutputs(FmiOutputs fmiOutputs)
