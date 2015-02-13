@@ -12201,11 +12201,12 @@ algorithm
       then
         (inCache, inSubscript);
 
-    // If not constant, keep as is.
+    // Keep variables and parameters inside of for-loops as they are.
     case (_, _)
       equation
         true = Expression.dimensionKnown(inDimension);
-        false = Types.isParameterOrConstant(inConst);
+        false = Types.isConstant(inConst) or
+               (Types.isParameter(inConst) and not FGraph.inForLoopScope(inEnv));
       then
         (inCache, inSubscript);
 
