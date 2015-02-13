@@ -324,21 +324,29 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
 
     //Read in timevector
-    double *timeVals = (double*) malloc(csvReader->numsteps*sizeof(double));
-    memcpy(timeVals, read_csv_dataset(csvReader, "time"), csvReader->numsteps*sizeof(double));
+    double *inVals = read_csv_dataset(csvReader, "time");
+    if (inVals == NULL)
+    {
+      throw NoVariableException(tr("Variable doesnt exist: %1").arg("time").toStdString().c_str());
+    }
 
-    if (timeVals == NULL)
-      throw NoVariableException("Variable doesnt exist: time");
+    double *timeVals = (double*) malloc(csvReader->numsteps*sizeof(double));
+    memcpy(timeVals, inVals, csvReader->numsteps*sizeof(double));
+
     // read in all values
     for (int i = 0; i < csvReader->numvars; i++)
     {
       if (mVariablesList.contains(csvReader->variables[i]) or getPlotType() == PlotWindow::PLOTALL)
       {
         variablesPlotted.append(csvReader->variables[i]);
-        double *vals = (double*) malloc(csvReader->numsteps*sizeof(double));
-        if (vals == NULL)
+        inVals = read_csv_dataset(csvReader, csvReader->variables[i]);
+        if (inVals == NULL)
+        {
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
-        memcpy(vals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
+        }
+        double *vals = (double*) malloc(csvReader->numsteps*sizeof(double));
+        memcpy(vals, inVals, csvReader->numsteps*sizeof(double));
+
         if (!editCase) {
           pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), csvReader->variables[i], getUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
@@ -537,25 +545,27 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
     if (csvReader == NULL)
       throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
 
-    double *xVals, *yVals;
+    double *xVals = NULL, *yVals = NULL;
     // read in all values
     for (int i = 0; i < csvReader->numvars; i++)
     {
       if ((xVariable.compare(csvReader->variables[i]) == 0))
       {
         variablesPlotted.append(csvReader->variables[i]);
-        xVals = (double*) malloc(csvReader->numsteps*sizeof(double));
-        if (xVals == NULL)
+        double *inVals = read_csv_dataset(csvReader, csvReader->variables[i]);
+        if (inVals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
-        memcpy(xVals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
+        xVals = (double*) malloc(csvReader->numsteps*sizeof(double));
+        memcpy(xVals, inVals, csvReader->numsteps*sizeof(double));
       }
       if ((yVariable.compare(csvReader->variables[i]) == 0))
       {
         variablesPlotted.append(csvReader->variables[i]);
-        yVals = (double*) malloc(csvReader->numsteps*sizeof(double));
-        if (yVals == NULL)
+        double *inVals = read_csv_dataset(csvReader, csvReader->variables[i]);
+        if (inVals == NULL)
           throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
-        memcpy(yVals, read_csv_dataset(csvReader, csvReader->variables[i]), csvReader->numsteps*sizeof(double));
+        yVals = (double*) malloc(csvReader->numsteps*sizeof(double));
+        memcpy(yVals, inVals, csvReader->numsteps*sizeof(double));
       }
     }
 
