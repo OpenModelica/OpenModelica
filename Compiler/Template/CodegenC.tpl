@@ -6262,7 +6262,9 @@ match var
 case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   let varName = contextCref(var.name,contextFunction,&auxFunction)
   let typ = varType(var)
-  let initVar = match typ case "modelica_metatype" then ' = NULL' else ''
+  let initVar = match typ case "modelica_metatype"
+                          case "modelica_string" then ' = NULL'
+                          else ''
   let &varDecls += if not outStruct then '<%typ%> <%varName%><%initVar%>;<%\n%>' //else ""
   let varName = contextCref(var.name,contextFunction,&auxFunction)
   let &varInits += initRecordMembers(var, &auxFunction)
