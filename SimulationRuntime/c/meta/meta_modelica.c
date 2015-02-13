@@ -542,7 +542,7 @@ void printTypeOfAny(void* any) /* for debugging */
   unsigned int ctor;
   void *data;
 
-  if ((0 == ((mmc_sint_t)any & 1))) {
+  if (MMC_IS_INTEGER(any)) {
     fprintf(stderr, "Integer");
     return;
   }
@@ -643,7 +643,7 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
     return ix;
   }
 
-  if ((0 == ((mmc_sint_t)any & 1))) {
+  if (MMC_IS_INTEGER(any)) {
     checkAnyStringBufSize(ix,8);
     ix += sprintf(anyStringBuf+ix, "%s", "Integer");
     return ix;
