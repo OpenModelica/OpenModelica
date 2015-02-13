@@ -126,7 +126,7 @@ public:
    virtual void setTimeOut(unsigned int time_out);
     virtual void stop();
 
-  virtual const int reportErrorMessage(std::ostream& messageStream);
+  virtual int reportErrorMessage(std::ostream& messageStream);
   virtual bool stateSelection();
 private:
 

@@ -71,5 +71,5 @@ public:
   virtual void setcycletime(double cycletime) = 0;
 
   /// Indicates whether a solver error occurred during integration, returns type of error and provides error message
-  /*virtual const int reportErrorMessage(ostream& messageStream) = 0;*/
+  /*virtual int reportErrorMessage(ostream& messageStream) = 0;*/
 };

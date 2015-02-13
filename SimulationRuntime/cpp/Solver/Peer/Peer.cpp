@@ -704,7 +704,7 @@ void Peer::initializeColoredJac()
   */
 }
 
-const int Peer::reportErrorMessage(ostream& messageStream)
+int Peer::reportErrorMessage(ostream& messageStream)
 {
   /*
   if (_solverStatus == ISolver::SOLVERERROR)

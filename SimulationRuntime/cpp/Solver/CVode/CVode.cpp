@@ -894,7 +894,7 @@ void Cvode::initializeColoredJac()
   _sparsePattern_maxColors = _system->getA_sparsePattern_maxColors();
 }
 
-const int Cvode::reportErrorMessage(ostream& messageStream)
+int Cvode::reportErrorMessage(ostream& messageStream)
 {
   if (_solverStatus == ISolver::SOLVERERROR)
   {

@@ -1273,7 +1273,7 @@ void Euler::writeSimulationInfo()
 
     //outputStream << std::endl;
 }
-const int Euler::reportErrorMessage(ostream& messageStream)
+int Euler::reportErrorMessage(ostream& messageStream)
 {
     if(_solverStatus == ISolver::SOLVERERROR)
     {

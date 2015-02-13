@@ -887,7 +887,7 @@ void Ida::initializeColoredJac()
   _sparsePattern_maxColors = _system->getA_sparsePattern_maxColors();
 }
 
-const int Ida::reportErrorMessage(ostream& messageStream)
+int Ida::reportErrorMessage(ostream& messageStream)
 {
   if (_solverStatus == ISolver::SOLVERERROR)
   {
