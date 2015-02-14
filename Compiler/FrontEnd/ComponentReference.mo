@@ -1334,24 +1334,24 @@ algorithm
       list<DAE.Dimension> dims;
       list<DAE.ComponentRef> tempcrefs;
       Integer ndim, nsub;
-    
+
     case _ equation {} = crefSubs(inCref); then true;
 
-    case _ 
+    case _
       equation
         (subs as (_::_))= crefSubs(inCref);
         dims = crefDims(inCref);
         // Dimensions may be removed when a component is instantiated if it has
         // constant subscripts though, so it may have more subscripts than
-        // dimensions. 
+        // dimensions.
         // mahge: TODO: Does this still happen?
         true = listLength(dims) <= listLength(subs);
         true = Expression.subscriptConstants(subs);
       then
         true;
-        
+
     else false;
-    
+
   end matchcontinue;
 end crefIsScalarWithAllConstSubs;
 
@@ -1367,22 +1367,22 @@ algorithm
       list<DAE.Dimension> dims;
       list<DAE.ComponentRef> tempcrefs;
       Integer ndim, nsub;
-    
-    case _ 
+
+    case _
       equation
         (subs as (_::_))= crefSubs(inCref);
         dims = crefDims(inCref);
         // Dimensions may be removed when a component is instantiated if it has
         // constant subscripts though, so it may have more subscripts than
-        // dimensions. 
+        // dimensions.
         // mahge: TODO: Does this still happen?
         true = listLength(dims) <= listLength(subs);
         false = Expression.subscriptConstants(subs);
       then
         true;
-        
+
     else false;
-    
+
   end matchcontinue;
 end crefIsScalarWithVariableSubs;
 

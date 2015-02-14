@@ -310,10 +310,10 @@ size_t calc_base_index_dims_subs(int ndims,...)
 
     int i;
     size_t index;
-    
-    _index_t *dims = (_index_t*)malloc(sizeof(_index_t)*ndims); 
-    _index_t *subs = (_index_t*)malloc(sizeof(_index_t)*ndims); 
-    
+
+    _index_t *dims = (_index_t*)malloc(sizeof(_index_t)*ndims);
+    _index_t *subs = (_index_t*)malloc(sizeof(_index_t)*ndims);
+
     va_list ap;
     va_start(ap,ndims);
     for(i = 0; i < ndims; ++i) {
@@ -323,7 +323,7 @@ size_t calc_base_index_dims_subs(int ndims,...)
         subs[i] = va_arg(ap, _index_t) - 1;
     }
     va_end(ap);
-    
+
     index = 0;
     for(i = 0; i < ndims; ++i) {
         if (subs[i] < 0 || subs[i] >= dims[i]) {
@@ -332,8 +332,8 @@ size_t calc_base_index_dims_subs(int ndims,...)
         }
         index = (index * dims[i]) + subs[i];
     }
-    
-  
+
+
     return index;
 }
 

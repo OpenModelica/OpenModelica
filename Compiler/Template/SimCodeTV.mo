@@ -889,7 +889,7 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output list<list<Integer>> outColors;
   end translateColorsSimVarInts;
-  
+
   function generateSubPalceholders
     input DAE.ComponentRef cr;
     output String outdef;
@@ -2779,12 +2779,12 @@ package ComponentReference
     input Boolean expandRecord;
     output list<DAE.ComponentRef> outCref;
   end expandCref;
-  
+
   function crefIsScalarWithAllConstSubs
     input DAE.ComponentRef inCref;
     output Boolean isScalar;
   end crefIsScalarWithAllConstSubs;
-  
+
   function crefIsScalarWithVariableSubs
     input DAE.ComponentRef inCref;
     output Boolean isScalar;

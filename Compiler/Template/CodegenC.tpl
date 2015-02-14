@@ -1043,7 +1043,7 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     <<
     /* <%crefStrNoUnderscore(c)%> */
     #define <%cref(c)%> data->simulationInfo.<%arrayName%>[<%index%>]
-    
+
     <%crefMacroSubsAtEndParNew(name)%>
 
     /* <%crefStrNoUnderscore(name)%> */
@@ -1078,7 +1078,7 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     #define _<%cref(c)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(c)%> _<%cref(c)%>(0)
     #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
-    
+
     <%crefMacroSubsAtEndVarNew(name)%>
 
     /* <%crefStrNoUnderscore(name)%> */
@@ -7189,31 +7189,31 @@ template algStmtTupleAssign(DAE.Statement stmt, Context context, Text &varDecls,
 match stmt
   case STMT_TUPLE_ASSIGN(expExpLst={_}) then
     error(sourceInfo(), "A tuple assignment of only one variable is a regular assignment")
-    
+
   case STMT_TUPLE_ASSIGN(expExpLst = firstexp::_, exp = CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
     let &preExp = buffer ""
     let &postExp = buffer ""
-    let lhsCrefs = (List.rest(expExpLst) |> e => 
+    let lhsCrefs = (List.rest(expExpLst) |> e =>
       match e
         case CREF(componentRef=WILD(__)) then ", NULL"
         else ", &" + tupleReturnVariableUpdates(e, context, varDecls, postExp, &auxFunction)
       end match)
-      
+
     // The tuple expressions might take fewer variables than the number of outputs. No worries.
     let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expExpLst))))
     let call = daeExpCallTuple(exp, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
-    let &preExp += 
+    let &preExp +=
       match firstexp
         case CREF(componentRef=WILD(__)) then '<%call%>;<%\n%>'
         else '<%tupleReturnVariableUpdates(firstexp, context, varDecls, postExp, auxFunction)%> = <%call%>;<%\n%>'
       end match
-  
+
     <<
     /* tuple assignment <%expExpLst |> e => Util.escapeModelicaStringToCString(printExpStr(e)) ; separator=", "%>*/
     <%preExp%>
     <%postExp%>
     >>
-    
+
   case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
     let &preExp = buffer ""
     let prefix = 'tmp<%System.tmpTick()%>'
@@ -7237,7 +7237,7 @@ match stmt
     <%lhsCrefs%>
     >>
   else error(sourceInfo(), 'algStmtTupleAssign failed')
-  
+
 end algStmtTupleAssign;
 
 template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, Text &varCopy, Text &auxFunction)
@@ -7249,7 +7249,7 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
     let &preExp = buffer ""
     let rhsStr = tempDecl("base_array_t", &varDecls)
     let lhsStr = contextCref(cr, context, &auxFunction)
-    let &varCopy += 
+    let &varCopy +=
       match context
       case SIMULATION_CONTEXT(__) then
         <<
@@ -7270,7 +7270,7 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
     let rhsStr = tempDecl(expTypeArrayIf(ty), &varDecls)
     let lhsStr = contextCref(cr, context, &auxFunction)
     let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-    let &varCopy += 
+    let &varCopy +=
       /*TODO handle array record memebers. see algStmtAssign*/
       <<
       <%preExp%>
@@ -7281,14 +7281,14 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
       %>
       >> /*varCopy end*/
     rhsStr
-    
+
   /*This CALL case shouldn't have been created by the compiler. It only comes because of alias eliminations. On top of that
-  at least it should have been a record_constractor not a normal call. sigh. */  
+  at least it should have been a record_constractor not a normal call. sigh. */
   case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty=ty as T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
     let &preExp = buffer ""
     let rhsStr = tempDecl(expTypeArrayIf(ty), &varDecls)
     let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-    let &varCopy += 
+    let &varCopy +=
       /*TODO handle array record memebers. see algStmtAssign*/
       <<
       <%preExp%>
@@ -7300,7 +7300,7 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
       %>
       >> /*varCopy end*/
     rhsStr
-    
+
   case CREF(componentRef=WILD(__)) then
     ''
   case CREF(__) then
@@ -7898,11 +7898,11 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp,
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
     'boxvar_<%crefFunctionName(cr)%>'
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
-    '((modelica_fnptr) _<%crefStr(cr)%>)'  
+    '((modelica_fnptr) _<%crefStr(cr)%>)'
   case CREF(componentRef = cr as CREF_QUAL(subscriptLst={}, identType = T_METATYPE(ty=ty as T_METARECORD(__)), componentRef=cri as CREF_IDENT(__))) then
     let offset = intAdd(findVarIndex(cri.ident,ty.fields),2)
     '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%cr.ident%>), <%offset%>)))'
-  else 
+  else
     match context
     case FUNCTION_CONTEXT(__) then daeExpCrefRhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
     case PARALLEL_FUNCTION_CONTEXT(__) then daeExpCrefRhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
@@ -7916,12 +7916,12 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
   match ecr
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = EXTERNAL_OBJ(__))) then
     contextCref(cr, context, &auxFunction)
-  
+
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = record_state, varLst = var_lst)) then
     let vars = var_lst |> v => (", " + daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls, &auxFunction))
     let record_type_name = underscorePath(ClassInf.getStateName(record_state))
     'omc_<%record_type_name%>(threadData<%vars%>)'
-    
+
   case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
     let tmpArr = tempDecl(expTypeArray(aty), &varDecls)
     let dimsLenStr = listLength(dims)
@@ -7929,7 +7929,7 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     let type = expTypeShort(aty)
     let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
     tmpArr
-  
+
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithAllConstSubs(cr) then
       let cast = match ty case T_INTEGER(__) then "(modelica_integer)"
@@ -8022,7 +8022,7 @@ template daeExpCrefLhs(Exp exp, Context context, Text &preExp,
     '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
     '_<%crefStr(cr)%>'
-  else 
+  else
     match context
     case FUNCTION_CONTEXT(__) then daeExpCrefLhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
     case PARALLEL_FUNCTION_CONTEXT(__) then daeExpCrefLhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
@@ -8036,13 +8036,13 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
   match ecr
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = EXTERNAL_OBJ(__))) then
     contextCref(cr, context, &auxFunction)
-    
+
   case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = record_state, varLst = var_lst)) then
     let vars = var_lst |> v => (", " + daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls, &auxFunction))
     let record_type_name = underscorePath(ClassInf.getStateName(record_state))
     // 'omc_<%record_type_name%>(threadData<%vars%>)'
     error(sourceInfo(), 'daeExpCrefLhsSimContext got record <%crefStr(cr)%>. This does not make sense. Assigning to records is handled in a different way in the code generator, and reaching here is probably an error...') // '<%ret_var%>.c1'
-    
+
   case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
     let tmpArr = tempDecl(expTypeArray(aty), &varDecls)
     let dimsLenStr = listLength(dims)
@@ -8050,7 +8050,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
     let type = expTypeShort(aty)
     let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
     tmpArr
-  
+
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithAllConstSubs(cr) then
         '<%contextCref(cr,context, &auxFunction)%>'
@@ -8092,7 +8092,7 @@ template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
                >>
            else
              error(sourceInfo(),'This should have been handled in the new daeExpCrefLhsSimContext function. <%printExpStr(ecr)%>')
-    
+
       else
         // The array subscript denotes a slice
         let arrName = contextArrayCref(cr, context)
@@ -8101,7 +8101,7 @@ template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
         let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
         let &preExp += 'indexed_assign_<%arrayType%>(<%tmp%>, &<%arrName%>, &<%spec1%>);<%\n%>'
         tmp
-    
+
   case ecr then
     error(sourceInfo(), 'SimCodeC.tpl template: daeExpCrefLhsFunContext: UNHANDLED EXPRESSION:  <%ExpressionDump.printExpStr(ecr)%>')
 end daeExpCrefLhsFunContext;
