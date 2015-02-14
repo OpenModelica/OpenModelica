@@ -1114,7 +1114,7 @@ template crefMacroSubsAtEndParNew(ComponentRef cr)
   let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
   let totnrdims = listLength(crefDims(cr))
   let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
-  let substr = SimCodeUtil.generatesubpalceholders(cr)
+  let substr = SimCodeUtil.generateSubPalceholders(cr)
   let &subsDimThread = buffer "" /*BUFD*/
   <<
   #define <%nosubfullpath%>_index(<%substr%>)    (&<%nosubfullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
@@ -1127,7 +1127,7 @@ template crefMacroSubsAtEndVarNew(ComponentRef cr)
   let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
   let totnrdims = listLength(crefDims(cr))
   let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
-  let substr = SimCodeUtil.generatesubpalceholders(cr)
+  let substr = SimCodeUtil.generateSubPalceholders(cr)
   let &subsDimThread = buffer "" /*BUFD*/
   <<
   #define <%nosubfullpath%>_index(<%substr%>)    (&<%nosubfullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
