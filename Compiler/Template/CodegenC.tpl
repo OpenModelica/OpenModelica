@@ -1043,6 +1043,8 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     <<
     /* <%crefStrNoUnderscore(c)%> */
     #define <%cref(c)%> data->simulationInfo.<%arrayName%>[<%index%>]
+    
+    <%crefMacroSubsAtEndParNew(name)%>
 
     /* <%crefStrNoUnderscore(name)%> */
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
@@ -1076,6 +1078,8 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     #define _<%cref(c)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(c)%> _<%cref(c)%>(0)
     #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
+    
+    <%crefMacroSubsAtEndVarNew(name)%>
 
     /* <%crefStrNoUnderscore(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
@@ -1103,6 +1107,33 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     >>
   end match
 end globalDataVarDefine;
+
+template crefMacroSubsAtEndParNew(ComponentRef cr)
+::=
+  let &auxFunction = buffer ""
+  let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
+  let totnrdims = listLength(crefDims(cr))
+  let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
+  let substr = SimCodeUtil.generatesubpalceholders(cr)
+  let &subsDimThread = buffer "" /*BUFD*/
+  <<
+  #define <%nosubfullpath%>_index(<%substr%>)    (&<%nosubfullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
+  >>
+end crefMacroSubsAtEndParNew;
+
+template crefMacroSubsAtEndVarNew(ComponentRef cr)
+::=
+  let &auxFunction = buffer ""
+  let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
+  let totnrdims = listLength(crefDims(cr))
+  let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
+  let substr = SimCodeUtil.generatesubpalceholders(cr)
+  let &subsDimThread = buffer "" /*BUFD*/
+  <<
+  #define <%nosubfullpath%>_index(<%substr%>)    (&<%nosubfullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
+  #define $P$PRE<%nosubfullpath%>_index(<%substr%>)    (&$P$PRE<%nosubfullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
+  >>
+end crefMacroSubsAtEndVarNew;
 
 template globalDataAliasVarArray(String _type, String _name, list<SimVar> items)
   "Generates array with variable names in global data section."
@@ -4796,30 +4827,6 @@ template subscriptToMStr(Subscript subscript)
   else error(sourceInfo(), "UNKNOWN_SUBSCRIPT")
 end subscriptToMStr;
 
-template contextArrayReferenceCrefAndCopy(ComponentRef cr, Exp e, Type ty, Context context, Text &varDecls, Text &varCopy, Text &auxFunction)
- "Generates code for an array component reference depending on the context."
-::=
-  match ty
-    case T_ARRAY(__) then
-      let &varCopyAfter = buffer ""
-      let var = tempDecl("base_array_t", &varDecls)
-      let lhs = writeLhsCref(e, var, context, &varCopyAfter, &varDecls, &auxFunction)
-      let &varCopy += if lhs then '<%lhs%><%\n%>' else error(sourceInfo(), 'Got empty statement from writeLhsCref(<%printExpStr(e)%>)')
-      let &varCopy += varCopyAfter
-      // let &varCopy += 'copy_<%expType(ty, true)%>_data_mem(<%var%>,&<%contextCref(cr,context,&auxFunction)%>);<%\n%>'
-      var
-    case T_COMPLEX(complexClassType=RECORD(__)) then
-      let &varCopyAfter = buffer ""
-      let var = tempDecl(expTypeArrayIf(ty), &varDecls)
-      let lhs = writeLhsCref(e, var, context, &varCopyAfter, &varDecls, &auxFunction)
-      let &varCopy += if lhs then '<%lhs%><%\n%>' else error(sourceInfo(), 'Got empty statement from writeLhsCref(<%printExpStr(e)%>)')
-      let &varCopy += varCopyAfter
-      var
-    else
-      let &preExp = buffer ""
-      scalarLhsCref(e, context, &preExp, &varDecls, &auxFunction)
-end contextArrayReferenceCrefAndCopy;
-
 template contextArrayCref(ComponentRef cr, Context context)
  "Generates code for an array component reference depending on the context."
 ::=
@@ -6983,7 +6990,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_VAR(__)))
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_FUNC(__))) then
     let &preExp = buffer ""
-    let varPart = scalarLhsCref(exp1, context, &preExp, &varDecls, &auxFunction)
+    let varPart = daeExpCrefLhs(exp1, context, &preExp, &varDecls, &auxFunction)
     let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
@@ -7020,7 +7027,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
     >>
   case STMT_ASSIGN(exp1=CREF(__)) then
     let &preExp = buffer ""
-    let varPart = scalarLhsCref(exp1, context, &preExp, &varDecls, &auxFunction)
+    let varPart = daeExpCrefLhs(exp1, context, &preExp, &varDecls, &auxFunction)
     let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
@@ -7180,160 +7187,128 @@ template algStmtTupleAssign(DAE.Statement stmt, Context context, Text &varDecls,
  "Generates a tuple assigment algorithm statement."
 ::=
 match stmt
-case STMT_TUPLE_ASSIGN(expExpLst={_}) then
-  error(sourceInfo(), "A tuple assignment of only one variable is a regular assignment")
-case STMT_TUPLE_ASSIGN(exp=CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
-  let &preExp = buffer ""
-  let &postExp = buffer ""
-  let lhsCrefs = (List.rest(expExpLst) |> e => match e
-    case ARRAY(array={})
-    case CREF(componentRef=WILD(__)) then ", NULL"
-    case CREF(componentRef=cr,ty=ty) then (", &" + contextArrayReferenceCrefAndCopy(cr, e, ty, context, varDecls, postExp, &auxFunction))
-    // Crazy DAE.CALL on lhs? Yup, we apparently generate those. TODO: Don't generate those crazy things!
-    case CALL(attr=CALL_ATTR(ty=ty)) then (", &" + contextArrayReferenceCrefAndCopy(makeUntypedCrefIdent("#error"), e, ty, context, varDecls, postExp, auxFunction))
-    else error(sourceInfo(), 'Unknown expression to assign to: <%printExpStr(e)%>'))
-  // The tuple expressions might take fewer variables than the number of outputs. No worries.
-  let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expExpLst))))
-  let ret = daeExpCallTuple(exp, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
-  let &preExp += match expExpLst
-    case ARRAY(array={})::_
-    case CREF(componentRef=WILD(__))::_ then '<%ret%>;<%\n%>'
-    case (e as CREF(componentRef=cr,ty=ty))::_ then '<%contextArrayReferenceCrefAndCopy(cr, e, ty, context, varDecls, postExp, auxFunction)%> = <%ret%>;<%\n%>'
-    // Crazy DAE.CALL on lhs? Yup, we apparently generate those. TODO: Don't generate those crazy things!
-    case (e as CALL(attr=CALL_ATTR(ty=ty)))::_ then '<%contextArrayReferenceCrefAndCopy(makeUntypedCrefIdent("#error"), e, ty, context, varDecls, postExp, auxFunction)%> = <%ret%>;<%\n%>'
-    case e::_ then error(sourceInfo(), 'Unknown expression to assign to: <%printExpStr(e)%>')
-  ('/* tuple assignment <%expExpLst |> e => Util.escapeModelicaStringToCString(printExpStr(e)) ; separator=", "%>*/<%\n%>' + preExp + postExp)
-case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
-  let &preExp = buffer ""
-  let &afterExp = buffer ""
-  let prefix = 'tmp<%System.tmpTick()%>'
-  // get the current index of tmpMeta and reserve N=listLength(inputs) values in it!
-  let startIndexOutputs = '<%System.tmpTickIndexReserve(1, listLength(expExpLst))%>'
-  let _ = daeExpMatch2(exp, expExpLst, prefix, startIndexOutputs, context, &preExp, &varDecls, &auxFunction)
-  let lhsCrefs = (expExpLst |> cr hasindex i0 fromindex 1 =>
-                    let rhsStr = getTempDeclMatchOutputName(expExpLst, prefix, startIndexOutputs, i0)
-                    writeLhsCref(cr, rhsStr, context, &afterExp, &varDecls, &auxFunction)
-                  ;separator="\n"; empty)
-  <<
-  <%expExpLst |> cr hasindex i0 =>
-    let typ = expTypeFromExpModelica(cr)
-    let decl = tempDeclMatchOutput(typ, prefix, startIndexOutputs, i0, &varDecls)
-    ""
-  ;separator="\n";empty%>
-  <%preExp%>
-  <%lhsCrefs%>
-  <%afterExp%>
-  >>
-else error(sourceInfo(), 'algStmtTupleAssign failed')
+  case STMT_TUPLE_ASSIGN(expExpLst={_}) then
+    error(sourceInfo(), "A tuple assignment of only one variable is a regular assignment")
+    
+  case STMT_TUPLE_ASSIGN(expExpLst = firstexp::_, exp = CALL(attr=CALL_ATTR(ty=T_TUPLE(types=ntys)))) then
+    let &preExp = buffer ""
+    let &postExp = buffer ""
+    let lhsCrefs = (List.rest(expExpLst) |> e => 
+      match e
+        case CREF(componentRef=WILD(__)) then ", NULL"
+        else ", &" + tupleReturnVariableUpdates(e, context, varDecls, postExp, &auxFunction)
+      end match)
+      
+    // The tuple expressions might take fewer variables than the number of outputs. No worries.
+    let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expExpLst))))
+    let call = daeExpCallTuple(exp, lhsCrefs2, context, &preExp, &varDecls, &auxFunction)
+    let &preExp += 
+      match firstexp
+        case CREF(componentRef=WILD(__)) then '<%call%>;<%\n%>'
+        else '<%tupleReturnVariableUpdates(firstexp, context, varDecls, postExp, auxFunction)%> = <%call%>;<%\n%>'
+      end match
+  
+    <<
+    /* tuple assignment <%expExpLst |> e => Util.escapeModelicaStringToCString(printExpStr(e)) ; separator=", "%>*/
+    <%preExp%>
+    <%postExp%>
+    >>
+    
+  case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
+    let &preExp = buffer ""
+    let prefix = 'tmp<%System.tmpTick()%>'
+    // get the current index of tmpMeta and reserve N=listLength(inputs) values in it!
+    let startIndexOutputs = '<%System.tmpTickIndexReserve(1, listLength(expExpLst))%>'
+    let _ = daeExpMatch2(exp, expExpLst, prefix, startIndexOutputs, context, &preExp, &varDecls, &auxFunction)
+    let lhsCrefs = (expExpLst |> crefexp as CREF(componentRef = cr) hasindex i0 fromindex 1 =>
+                      let rhsStr = getTempDeclMatchOutputName(expExpLst, prefix, startIndexOutputs, i0)
+                      let lhsStr = contextCref(cr, context, &auxFunction)
+                      <<
+                      <%lhsStr%> = <%rhsStr%>;
+                      >>
+                    ;separator="\n"; empty)
+    <<
+    <%expExpLst |> crefexp hasindex i0 =>
+      let typ = expTypeFromExpModelica(crefexp)
+      let decl = tempDeclMatchOutput(typ, prefix, startIndexOutputs, i0, &varDecls)
+      ""
+    ;separator="\n";empty%>
+    <%preExp%>
+    <%lhsCrefs%>
+    >>
+  else error(sourceInfo(), 'algStmtTupleAssign failed')
+  
 end algStmtTupleAssign;
 
-template writeLhsCref(Exp inExp, String rhsStr, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
- "Generates code for writing a returnStructur to var."
+template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, Text &varCopy, Text &auxFunction)
+ "Generates code for updating variables  returned from fuctions that return tuples.
+  Generates copies depending on what kind of variable is returned."
 ::=
-match inExp
-case ecr as CREF(componentRef=WILD(__)) then
-  ""
-case CREF(ty= t as DAE.T_ARRAY(__)) then
-  let lhsStr = scalarLhsCref(inExp, context, &preExp, &varDecls, &auxFunction)
-  match context
-  case SIMULATION_CONTEXT(__) then
-    <<
-    copy_<%expTypeShort(t)%>_array_data_mem(<%rhsStr%>, &<%lhsStr%>);
-    >>
+  match inExp
+  case CREF(componentRef = cr,  ty = t as DAE.T_ARRAY(__)) then
+    let &preExp = buffer ""
+    let rhsStr = tempDecl("base_array_t", &varDecls)
+    let lhsStr = contextCref(cr, context, &auxFunction)
+    let &varCopy += 
+      match context
+      case SIMULATION_CONTEXT(__) then
+        <<
+        <%preExp%>
+        copy_<%expTypeShort(t)%>_array_data_mem(<%rhsStr%>, &<%lhsStr%>);
+        >>
+      else
+        /*TODO make this copy*/
+        <<
+        <%preExp%>
+        <%lhsStr%> = <%rhsStr%>;
+        >>
+        // let &varCopy += 'copy_<%expType(ty, true)%>_data_mem(<%lhsStr%>,&<%contextCref(cr,context,&auxFunction)%>);<%\n%>'
+      end match
+    rhsStr
+  case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
+    let &preExp = buffer ""
+    let rhsStr = tempDecl(expTypeArrayIf(ty), &varDecls)
+    let lhsStr = contextCref(cr, context, &auxFunction)
+    let tmp = tempDecl(expTypeModelica(ty),&varDecls)
+    let &varCopy += 
+      /*TODO handle array record memebers. see algStmtAssign*/
+      <<
+      <%preExp%>
+      <%tmp%> = <%rhsStr%>;
+      <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
+        '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "._" else "$P"%><%var.name%> = <%tmp%>._<%var.name%>;'
+      ; separator="\n"
+      %>
+      >> /*varCopy end*/
+    rhsStr
+    
+  /*This CALL case shouldn't have been created by the compiler. It only comes because of alias eliminations. On top of that
+  at least it should have been a record_constractor not a normal call. sigh. */  
+  case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty=ty as T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
+    let &preExp = buffer ""
+    let rhsStr = tempDecl(expTypeArrayIf(ty), &varDecls)
+    let tmp = tempDecl(expTypeModelica(ty),&varDecls)
+    let &varCopy += 
+      /*TODO handle array record memebers. see algStmtAssign*/
+      <<
+      <%preExp%>
+      <%tmp%> = <%rhsStr%>;
+      <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
+        let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction)
+        '<%re%> = <%tmp%>._<%var.name%>;'
+      ; separator="\n"
+      %>
+      >> /*varCopy end*/
+    rhsStr
+    
+  case CREF(componentRef=WILD(__)) then
+    ''
+  case CREF(__) then
+    let &preExp = buffer ""
+    daeExpCrefLhs(inExp, context, &preExp, &varDecls, &auxFunction)
   else
-    '<%lhsStr%> = <%rhsStr%>;'
-case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
-  let lhsStr = scalarLhsCref(e, context, &preExp, &varDecls, &auxFunction)
-  match context
-  case SIMULATION_CONTEXT(__) then
-    <<
-    usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
-    copy_<%expTypeShort(t)%>_array_data_mem(<%rhsStr%>, &<%lhsStr%>);
-    >>
-  else
-    '<%lhsStr%> = -<%rhsStr%>;'
-case CREF(ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
-  let lhsStr = scalarLhsCref(inExp, context, &preExp, &varDecls, &auxFunction)
-  let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-  <<
-  <%preExp%>
-  <%tmp%> = <%rhsStr%>;
-  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-    '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "._" else "$P"%><%var.name%> = <%tmp%>._<%var.name%>;'
-  ; separator="\n"
-  %>
-  >>
-case UNARY(exp = e as CREF(ty=ty as DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
-  let lhsStr = scalarLhsCref(e, context, &preExp, &varDecls, &auxFunction)
-  let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-  <<
-  <%preExp%>
-  <%tmp%> = <%rhsStr%>;
-  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-    '<%lhsStr%>$P<%var.name%> = -<%tmp%>._<%var.name%>;'
-  ; separator="\n"
-  %>
-  >>
-case LUNARY(operator=NOT(__),exp = e as CREF(ty=ty as DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
-  let lhsStr = scalarLhsCref(e, context, &preExp, &varDecls, &auxFunction)
-  let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-  <<
-  <%preExp%>
-  <%tmp%> = <%rhsStr%>;
-  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-    '<%lhsStr%>$P<%var.name%> = !<%tmp%>._<%var.name%>;'
-  ; separator="\n"
-  %>
-  >>
-case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty=ty as T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
-  let &preExp = buffer ""
-  let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-  <<
-  <%preExp%>
-  <%tmp%> = <%rhsStr%>;
-  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
-    let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction)
-    '<%re%> = <%tmp%>._<%var.name%>;'
-  ; separator="\n"
-  %>
-  >>
-case CREF(__) then
-  let lhsStr = scalarLhsCref(inExp, context, &preExp, &varDecls, &auxFunction)
-  <<
-  <%lhsStr%> = <%rhsStr%>;
-  >>
-case UNARY(operator=UMINUS(__),exp = e as CREF(__)) then
-  let lhsStr = scalarLhsCref(e, context, &preExp, &varDecls, &auxFunction)
-  <<
-  <%lhsStr%> = -<%rhsStr%>;
-  >>
-case LUNARY(operator=NOT(__),exp = e as CREF(__)) then
-  let lhsStr = scalarLhsCref(e, context, &preExp, &varDecls, &auxFunction)
-  <<
-  <%lhsStr%> = !<%rhsStr%>;
-  >>
-case ARRAY(array = {}) then
-  <<
-  >>
-case RCONST(__) then
-  <<
-  >>
-case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
-  let typeShort = expTypeFromExpShort(inExp)
-  let fcallsuf = match listLength(dims) case 1 then "" case i then '_<%i%>D'
-  let body = (threadTuple(expl,dimsToAllIndexes(dims)) |>  (lhs,indxs) =>
-                 let lhsstr = scalarLhsCref(lhs, context, &preExp, &varDecls, &auxFunction)
-                 let indxstr = (indxs |> i => '<%i%>' ;separator=",")
-                 '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);'
-              ;separator="\n")
-  <<
-  <%body%>
-  >>
-case ASUB(__) then
-  error(sourceInfo(), 'writeLhsCref UNHANDLED ASUB (should never be part of a lhs expression): <%ExpressionDump.printExpStr(inExp)%> = <%rhsStr%>')
-else
-  error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(inExp)%> = <%rhsStr%>')
-end writeLhsCref;
+    error(sourceInfo(), 'tupleReturnVariableUpdates: Unhandled expression. <%ExpressionDump.printExpStr(inExp)%>')
+end tupleReturnVariableUpdates;
 
 template algStmtIf(DAE.Statement stmt, Context context, Text &varDecls, Text &auxFunction)
  "Generates an if algorithm statement."
@@ -7761,7 +7736,7 @@ template indexSpecFromCref(ComponentRef cr, Context context, Text &preExp,
 ::=
 match cr
 case CREF_IDENT(subscriptLst=subs as (_ :: _)) then
-  daeExpCrefRhsIndexSpec(subs, context, &preExp, &varDecls, &auxFunction)
+  daeExpCrefIndexSpec(subs, context, &preExp, &varDecls, &auxFunction)
 end indexSpecFromCref;
 
 template elseExpr(DAE.Else else_, Context context, Text &varDecls, Text &auxFunction)
@@ -7797,32 +7772,6 @@ template elseExpr(DAE.Else else_, Context context, Text &varDecls, Text &auxFunc
     }
     >>
 end elseExpr;
-
-template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
- "Generates the left hand side (for use on left hand side) of a component
-  reference."
-::=
-  match ecr
-  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
-    '_<%crefStr(cr)%>'
-  case ecr as CREF(componentRef=CREF_IDENT(__)) then
-    if crefNoSub(ecr.componentRef) then
-      contextCref(ecr.componentRef, context, &auxFunction)
-    else
-      daeExpCrefLhs(ecr, context, &preExp, &varDecls, &auxFunction)
-  case ecr as CREF(componentRef=cr as CREF_QUAL(__)) then
-    if crefIsScalar(cr, context) then
-      contextCref(cr, context, &auxFunction)
-    else
-      let arrName = contextCref(crefStripSubs(cr), context, &auxFunction)
-      <<
-      (&<%arrName%>)[<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,&auxFunction)%> - 1]
-      >>
-  case ecr as CREF(componentRef=WILD(__)) then
-    ''
-  else
-    error(sourceInfo(), 'scalarLhsCref:ONLY_IDENT_OR_QUAL_CREF_SUPPORTED_SLHS')
-end scalarLhsCref;
 
 template rhsCref(ComponentRef cr, Type ty)
  "Like cref but with cast if type is integer."
@@ -7946,153 +7895,220 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp,
  expression."
 ::=
   match exp
-  // A record cref without subscripts (i.e. a record instance) is handled
-  // by daeExpRecordCrefRhs only in a simulation context, not in a function.
-  case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
-    (match context
-    case FUNCTION_CONTEXT(__)
-    case PARALLEL_FUNCTION_CONTEXT(__) then
-      (match cr
-      case cr as CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
-        let &preExp = buffer ""
-        let &varDecls = buffer ""
-        let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-        let recPtr = tempDecl(rec_name + "*", &varDecls)
-        let dimsLenStr = listLength(crefSubs(cr))
-        let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-                      daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-                      ;separator=", ")
-          <<
-          ((<%rec_name%>*)(generic_array_element_addr(&_<%cr.ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(cr.componentRef, context, &auxFunction)%>
-          >>
-        else
-          daeExpCrefRhs2(exp, context, &preExp, &varDecls, &auxFunction)
-      )
-    else
-      daeExpRecordCrefRhs(t, cr, context, &preExp, &varDecls, &auxFunction)
-    )
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
     'boxvar_<%crefFunctionName(cr)%>'
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
-    '((modelica_fnptr) _<%crefStr(cr)%>)'
+    '((modelica_fnptr) _<%crefStr(cr)%>)'  
   case CREF(componentRef = cr as CREF_QUAL(subscriptLst={}, identType = T_METATYPE(ty=ty as T_METARECORD(__)), componentRef=cri as CREF_IDENT(__))) then
     let offset = intAdd(findVarIndex(cri.ident,ty.fields),2)
     '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%cr.ident%>), <%offset%>)))'
-  else daeExpCrefRhs2(exp, context, &preExp, &varDecls, &auxFunction)
+  else 
+    match context
+    case FUNCTION_CONTEXT(__) then daeExpCrefRhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
+    case PARALLEL_FUNCTION_CONTEXT(__) then daeExpCrefRhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
+    else daeExpCrefRhsSimContext(exp, context, &preExp, &varDecls, &auxFunction)
 end daeExpCrefRhs;
 
-template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp,
+template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
+                        Text &varDecls, Text &auxFunction)
+ "Generates code for a component reference in simulation context."
+::=
+  match ecr
+  case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = EXTERNAL_OBJ(__))) then
+    contextCref(cr, context, &auxFunction)
+  
+  case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = record_state, varLst = var_lst)) then
+    let vars = var_lst |> v => (", " + daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls, &auxFunction))
+    let record_type_name = underscorePath(ClassInf.getStateName(record_state))
+    'omc_<%record_type_name%>(threadData<%vars%>)'
+    
+  case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
+    let tmpArr = tempDecl(expTypeArray(aty), &varDecls)
+    let dimsLenStr = listLength(dims)
+    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
+    let type = expTypeShort(aty)
+    let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+    tmpArr
+  
+  case ecr as CREF(componentRef=cr, ty=ty) then
+    if crefIsScalarWithAllConstSubs(cr) then
+      let cast = match ty case T_INTEGER(__) then "(modelica_integer)"
+                          case T_ENUMERATION(__) then "(modelica_integer)" //else ""
+        '<%cast%><%contextCref(cr,context, &auxFunction)%>'
+    else if crefIsScalarWithVariableSubs(cr) then
+      let nosubname = contextCref(crefStripSubs(cr),context, &auxFunction)
+      let substring = (crefSubs(cr) |> INDEX(__) =>
+                 daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
+                 ;separator=", ")
+      let cast = match ty case T_INTEGER(__) then "(modelica_integer)"
+                          case T_ENUMERATION(__) then "(modelica_integer)" //else ""
+        '<%cast%><%nosubname%>_index(<%substring%>)'
+    else
+      error(sourceInfo(),'daeExpCrefRhsSimContext: UNHANDLED CREF: <%ExpressionDump.printExpStr(ecr)%>')
+end daeExpCrefRhsSimContext;
+
+template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
                         Text &varDecls, Text &auxFunction)
  "Generates code for a component reference."
 ::=
   match ecr
   case ecr as CREF(componentRef=cr, ty=ty) then
-    // let &preExp += '/* daeExpCrefRhs2 begin preExp (<%ExpressionDump.printExpStr(ecr)%>) */<%\n%>'
-    let box = daeExpCrefRhsArrayBox(ecr, context, &preExp, &varDecls)
-    if box then
-      box
+    if crefIsScalar(cr, context) then
+      let cast = match ty case T_INTEGER(__) then "(modelica_integer)"
+                        case T_ENUMERATION(__) then "(modelica_integer)" //else ""
+      '<%cast%><%contextCref(cr,context, &auxFunction)%>'
     else
-      if crefIsScalar(cr, context)
-      then
-        let cast = match ty case T_INTEGER(__) then "(modelica_integer)"
-                          case T_ENUMERATION(__) then "(modelica_integer)" //else ""
-        '<%cast%><%contextCref(cr,context, &auxFunction)%>'
-      else
-        if crefSubIsScalar(cr)
-        then
-          // The array subscript results in a scalar
-          // let &preExp += '/* daeExpCrefRhs2 SCALAR(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
-          let arrName = contextCref(crefStripLastSubs(cr), context, &auxFunction)
-          let arrayType = expTypeArray(ty)
-          let dimsLenStr = listLength(crefSubs(cr))
-          match arrayType
-            case "metatype_array" then
-              let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-                 daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-                 ;separator=", ")
-              'arrayGet(<%arrName%>,<%dimsValuesStr%>) /* DAE.CREF */'
-            else
-              match context
-              case FUNCTION_CONTEXT(__) then
-                let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-                  daeDimensionExp(exp, context, &preExp, &varDecls, &auxFunction)
-                  ;separator=", ")
-                match ty
-                  case (T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
-                  let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-                  <<
-                   (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
-                  >>
-                  case (T_COMPLEX(complexClassType = record_state)) then
-                  let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-                  <<
-                   (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
-                  >>
-                  else
-                  <<
-                  (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-                  >>
-              case PARALLEL_FUNCTION_CONTEXT(__) then
-                let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-                  daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-                  ;separator=", ")
-                <<
-                (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-                >>
+      if crefSubIsScalar(cr) then
+        // The array subscript results in a scalar
+        let arrName = contextCref(crefStripLastSubs(cr), context, &auxFunction)
+        let arrayType = expTypeArray(ty)
+        let dimsLenStr = listLength(crefSubs(cr))
+        let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+            daeDimensionExp(exp, context, &preExp, &varDecls, &auxFunction)
+            ;separator=", ")
+        match context
+          case FUNCTION_CONTEXT(__) then
+            match ty
+              case (T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
+              let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+              <<
+               (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
+              >>
+              case (T_COMPLEX(complexClassType = record_state)) then
+              let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+              <<
+               (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
+              >>
               else
-                match crefLastType(cr)
-                case et as T_ARRAY(__) then
-                /* subtract one for indexing a C-array*/
-                <<
-                (&<%arrName%>)[<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,&auxFunction)%> - 1]
-                >>
-                else error(sourceInfo(),'Indexing non-array <%printExpStr(ecr)%>')
-        else
+              <<
+              (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+              >>
+          case PARALLEL_FUNCTION_CONTEXT(__) then
+            <<
+            (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+            >>
+          else
+            error(sourceInfo(),'This should have been handled in the new daeExpCrefRhsSimContext function. <%printExpStr(ecr)%>')
+      else
+        match context
+        case FUNCTION_CONTEXT(__)
+        case PARALLEL_FUNCTION_CONTEXT(__) then
           // The array subscript denotes a slice
-          // let &preExp += '/* daeExpCrefRhs2 SLICE(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
+          // let &preExp += '/* daeExpCrefRhsFunContext SLICE(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
           let arrName = contextArrayCref(cr, context)
           let arrayType = expTypeArray(ty)
           let tmp = tempDecl(arrayType, &varDecls)
-          let spec1 = daeExpCrefRhsIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
+          let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
           let &preExp += 'index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
           tmp
+        else error(sourceInfo(),'daeExpCrefRhsFunContext: Slice in simulation context: <%ExpressionDump.printExpStr(ecr)%>')
   case ecr then
-    error(sourceInfo(),'daeExpCrefRhs2: UNHANDLED EXPRESSION: <%ExpressionDump.printExpStr(ecr)%>')
-end daeExpCrefRhs2;
+    error(sourceInfo(),'daeExpCrefRhsFunContext: UNHANDLED EXPRESSION: <%ExpressionDump.printExpStr(ecr)%>')
+end daeExpCrefRhsFunContext;
 
-template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
-  "Do direct indexing since sizes are known during compile-time"
+
+/*********************************************************************
+ *********************************************************************
+ *                       LEFT HAND SIDE
+ *********************************************************************
+ *********************************************************************/
+
+template daeExpCrefLhs(Exp exp, Context context, Text &preExp,
+                       Text &varDecls, Text &auxFunction)
+ "Generates code for a component reference on the left hand side of an expression."
 ::=
-  match subs
-  case {} then error(sourceInfo(),"Empty dimensions in indexing cref?")
+  match exp
+  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
+    '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
+  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
+    '_<%crefStr(cr)%>'
+  else 
+    match context
+    case FUNCTION_CONTEXT(__) then daeExpCrefLhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
+    case PARALLEL_FUNCTION_CONTEXT(__) then daeExpCrefLhsFunContext(exp, context, &preExp, &varDecls, &auxFunction)
+    else daeExpCrefLhsSimContext(exp, context, &preExp, &varDecls, &auxFunction)
+end daeExpCrefLhs;
 
-  case {sub as INDEX(__)} then
-    match dims
-    case {dim} then
-      let estr = daeExp(sub.exp, context, &preExp, &varDecls, &auxFunction)
-      '<%estr%>'
-    else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
+template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
+                        Text &varDecls, Text &auxFunction)
+ "Generates code for a component reference in simulation context."
+::=
+  match ecr
+  case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = EXTERNAL_OBJ(__))) then
+    contextCref(cr, context, &auxFunction)
+    
+  case ecr as CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = record_state, varLst = var_lst)) then
+    let vars = var_lst |> v => (", " + daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls, &auxFunction))
+    let record_type_name = underscorePath(ClassInf.getStateName(record_state))
+    // 'omc_<%record_type_name%>(threadData<%vars%>)'
+    error(sourceInfo(), 'daeExpCrefLhsSimContext got record <%crefStr(cr)%>. This does not make sense. Assigning to records is handled in a different way in the code generator, and reaching here is probably an error...') // '<%ret_var%>.c1'
+    
+  case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
+    let tmpArr = tempDecl(expTypeArray(aty), &varDecls)
+    let dimsLenStr = listLength(dims)
+    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
+    let type = expTypeShort(aty)
+    let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+    tmpArr
+  
+  case ecr as CREF(componentRef=cr, ty=ty) then
+    if crefIsScalarWithAllConstSubs(cr) then
+        '<%contextCref(cr,context, &auxFunction)%>'
+    else if crefIsScalarWithVariableSubs(cr) then
+      let nosubname = contextCref(crefStripSubs(cr),context, &auxFunction)
+      let substring = (crefSubs(cr) |> INDEX(__) =>
+                 daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
+                 ;separator=", ")
+        '<%nosubname%>_index(<%substring%>)'
+    else
+      error(sourceInfo(),'daeExpCrefLhsSimContext: UNHANDLED CREF: <%ExpressionDump.printExpStr(ecr)%>')
+end daeExpCrefLhsSimContext;
 
-  case (sub as INDEX(__))::subrest then
-    match dims
-      case _::dimrest
-      then
-        let estr = daeExp(sub.exp, context, &preExp, &varDecls, &auxFunction)
-        '((<%estr%><%
-          dimrest |> dim =>
-          match dim
-          case DIM_INTEGER(__) then '-1)*<%integer%>'
-          case DIM_BOOLEAN(__) then '*2'
-          case DIM_ENUM(__) then '*<%size%>'
-          else error(sourceInfo(),"Non-constant dimension in simulation context")
-        %>)<%match subrest case {} then "" else '+<%threadDimSubList(dimrest, subrest, context, &preExp, &varDecls, &auxFunction)%>'%>'
-      else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
-  else error(sourceInfo(),"Non-index subscript in indexing cref? That's odd!")
-end threadDimSubList;
+template daeExpCrefLhsFunContext(Exp ecr, Context context, Text &preExp,
+                        Text &varDecls, Text &auxFunction)
+ "Generates code for a component reference on the left hand side!"
+::=
+  match ecr
+  case ecr as CREF(componentRef=cr, ty=ty) then
+    if crefIsScalar(cr, context) then
+      '<%contextCref(cr,context,&auxFunction)%>'
+    else
+      if crefSubIsScalar(cr) then
+        // The array subscript results in a scalar
+        let arrName = contextCref(crefStripLastSubs(cr), context, &auxFunction)
+        let arrayType = expTypeArray(ty)
+        let dimsLenStr = listLength(crefSubs(cr))
+        let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+            daeDimensionExp(exp, context, &preExp, &varDecls, &auxFunction)
+          ;separator=", ")
+        match context
+          case PARALLEL_FUNCTION_CONTEXT(__) then
+               <<
+               (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+               >>
+           case FUNCTION_CONTEXT(__) then
+               <<
+               (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+               >>
+           else
+             error(sourceInfo(),'This should have been handled in the new daeExpCrefLhsSimContext function. <%printExpStr(ecr)%>')
+    
+      else
+        // The array subscript denotes a slice
+        let arrName = contextArrayCref(cr, context)
+        let arrayType = expTypeArray(ty)
+        let tmp = tempDecl(arrayType, &varDecls)
+        let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
+        let &preExp += 'indexed_assign_<%arrayType%>(<%tmp%>, &<%arrName%>, &<%spec1%>);<%\n%>'
+        tmp
+    
+  case ecr then
+    error(sourceInfo(), 'SimCodeC.tpl template: daeExpCrefLhsFunContext: UNHANDLED EXPRESSION:  <%ExpressionDump.printExpStr(ecr)%>')
+end daeExpCrefLhsFunContext;
 
-template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
+template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
                                 Text &preExp, Text &varDecls, Text &auxFunction)
- "Helper to daeExpCrefRhs."
+ "Generates index lists for crefs involving slices"
 ::=
   let nridx_str = listLength(subs)
   let idx_str = (subs |> sub =>
@@ -8114,200 +8130,8 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
   let tmp = tempDecl("index_spec_t", &varDecls)
   let &preExp += 'create_index_spec(&<%tmp%>, <%nridx_str%>, <%idx_str%>);<%\n%>'
   tmp
-end daeExpCrefRhsIndexSpec;
+end daeExpCrefIndexSpec;
 
-
-template daeExpCrefRhsArrayBox(Exp ecr, Context context, Text &preExp,
-                               Text &varDecls)
- "Helper to daeExpCrefRhs."
-::=
-match ecr
-case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
-  match context
-  case FUNCTION_CONTEXT(__) then ''
-  case PARALLEL_FUNCTION_CONTEXT(__) then ''
-  else
-    // For context simulation and other array variables must be boxed into a real_array
-    // object since they are represented only in a double array.
-    let tmpArr = tempDecl(expTypeArray(aty), &varDecls)
-    let dimsLenStr = listLength(dims)
-    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
-    let type = expTypeShort(aty)
-    let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-    tmpArr
-end daeExpCrefRhsArrayBox;
-
-
-template daeExpRecordCrefRhs(DAE.Type ty, ComponentRef cr, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
-::=
-match ty
-case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
-  let vars = var_lst |> v => (", " + daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls, &auxFunction))
-  let record_type_name = underscorePath(ClassInf.getStateName(record_state))
-  'omc_<%record_type_name%>(threadData<%vars%>)'
-end daeExpRecordCrefRhs;
-
-
-
-/*********************************************************************
- *********************************************************************
- *                       LEFT HAND SIDE
- *********************************************************************
- *********************************************************************/
-
- /*
-  * adrpo:2011-06-25: NOTE that Lhs generates afterExp not preExp!
-  *                   Also, all the causality is REVERSED, meaning
-  *                   that if for RHS x = y for LHS y = x;
-  */
-
-
-template daeExpCrefLhs(Exp exp, Context context, Text &afterExp,
-                       Text &varDecls, Text &auxFunction)
- "Generates code for a component reference on the left hand side of an expression."
-::=
-  match exp
-  // A record cref without subscripts (i.e. a record instance) is handled
-  // by daeExpRecordCrefLhs only in a simulation context, not in a function.
-  case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
-    match context
-    case FUNCTION_CONTEXT(__) then
-        daeExpCrefLhs2(exp, context, &afterExp, &varDecls, &auxFunction)
-    case PARALLEL_FUNCTION_CONTEXT(__) then
-        daeExpCrefLhs2(exp, context, &afterExp, &varDecls, &auxFunction)
-      else
-        daeExpRecordCrefLhs(t, cr, context, &afterExp, &varDecls, &auxFunction)
-  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
-    '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
-  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
-    '((modelica_fnptr) omc_<%crefStr(cr)%>)'
-  else daeExpCrefLhs2(exp, context, &afterExp, &varDecls, &auxFunction)
-end daeExpCrefLhs;
-
-template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp,
-                        Text &varDecls, Text &auxFunction)
- "Generates code for a component reference on the left hand side!"
-::=
-  match ecr
-  case ecr as CREF(componentRef=cr, ty=ty) then
-    let box = daeExpCrefLhsArrayBox(ecr, context, &afterExp, &varDecls)
-    if box then
-      box
-    else
-      if crefIsScalar(cr, context)
-      then
-        /* LHS doesn't need any cast: lvalue required as left operand of assignment.
-        let cast = match ty case T_INTEGER(__) then "(modelica_integer)"
-                          case T_ENUMERATION(__) then "(modelica_integer)" //else ""
-        '<%cast%><%contextCref(cr,context,&auxFunction)%>'
-        */
-        '<%contextCref(cr,context,&auxFunction)%>'
-      else
-        if crefSubIsScalar(cr)
-        then
-          // The array subscript results in a scalar
-          let arrName = contextCref(crefStripLastSubs(cr), context, &auxFunction)
-          let arrayType = expTypeArray(ty)
-          let dimsLenStr = listLength(crefSubs(cr))
-          let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-              daeDimensionExp(exp, context, &afterExp, &varDecls, &auxFunction)
-            ;separator=", ")
-          match arrayType
-            case "metatype_array" then
-              'arrayGet(<%arrName%>,<%dimsValuesStr%>) /* DAE.CREF */'
-            else
-            match context
-              case PARALLEL_FUNCTION_CONTEXT(__) then
-                  <<
-                  (*<%arrayType%>_element_addr_c99_<%dimsLenStr%>(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-                  >>
-              case FUNCTION_CONTEXT(__) then
-                  <<
-                  (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-                  >>
-              else
-                match crefLastType(cr)
-                  case et as T_ARRAY(__) then
-                  /* subtract one for indexing a C-array*/
-                  /*FIXME: preExp should come from outside. generation for indeices might need it*/
-                  let &preExp = buffer ""
-                  <<
-                  (&<%arrName%>)[<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,&auxFunction)%> - 1]
-                  >>
-                  else error(sourceInfo(),'Indexing non-array <%printExpStr(ecr)%>')
-
-        else
-          // The array subscript denotes a slice
-          let arrName = contextArrayCref(cr, context)
-          let arrayType = expTypeArray(ty)
-          let tmp = tempDecl(arrayType, &varDecls)
-          let spec1 = daeExpCrefLhsIndexSpec(crefSubs(cr), context, &afterExp, &varDecls, &auxFunction)
-          let &afterExp += 'indexed_assign_<%arrayType%>(<%tmp%>, &<%arrName%>, &<%spec1%>);<%\n%>'
-          tmp
-
-  case ecr then
-    error(sourceInfo(), 'SimCodeC.tpl template: daeExpCrefLhs2: UNHANDLED EXPRESSION:  <%ExpressionDump.printExpStr(ecr)%>')
-end daeExpCrefLhs2;
-
-template daeExpCrefLhsIndexSpec(list<Subscript> subs, Context context,
-                                Text &afterExp, Text &varDecls, Text &auxFunction)
- "Helper to daeExpCrefLhs."
-::=
-  let nridx_str = listLength(subs)
-  let idx_str = (subs |> sub =>
-      match sub
-      case INDEX(__) then
-        let expPart = daeExp(exp, context, &afterExp, &varDecls, &auxFunction)
-        let str = <<(0), make_index_array(1, (int) <%expPart%>), 'S'>>
-        str
-      case WHOLEDIM(__) then
-        let str = <<(1), (int*)0, 'W'>>
-        str
-      case SLICE(__) then
-        let expPart = daeExp(exp, context, &afterExp, &varDecls, &auxFunction)
-        let tmp = tempDecl("modelica_integer", &varDecls)
-        let &afterExp += '<%tmp%> = size_of_dimension_base_array(<%expPart%>, 1);<%\n%>'
-        let str = <<(int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'>>
-        str
-    ;separator=", ")
-  let tmp = tempDecl("index_spec_t", &varDecls)
-  let &afterExp += 'create_index_spec(&<%tmp%>, <%nridx_str%>, <%idx_str%>);<%\n%>'
-  tmp
-end daeExpCrefLhsIndexSpec;
-
-template daeExpCrefLhsArrayBox(Exp ecr, Context context, Text &afterExp,
-                               Text &varDecls)
- "Helper to daeExpCrefLhs."
-::=
-match ecr
-case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
-  match context
-  case FUNCTION_CONTEXT(__) then ''
-  case PARALLEL_FUNCTION_CONTEXT(__) then ''
-  else
-    // For context simulation and other array variables must be boxed into a real_array
-    // object since they are represented only in a double array.
-    let tmpArr = tempDecl(expTypeArray(aty), &varDecls)
-    let dimsLenStr = listLength(dims)
-    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
-    let type = expTypeShort(aty)
-    let &afterExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-    tmpArr
-end daeExpCrefLhsArrayBox;
-
-template daeExpRecordCrefLhs(DAE.Type ty, ComponentRef cr, Context context, Text &afterExp,
-                             Text &varDecls, Text &auxFunction)
-::=
-match ty
-case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
-  let vars = var_lst |> v => daeExp(makeCrefRecordExp(cr,v), context, &afterExp, &varDecls, &auxFunction)
-             ;separator=", "
-  let record_type_name = underscorePath(ClassInf.getStateName(record_state))
-  let ret_type = '<%record_type_name%>_rettype'
-  let ret_var = tempDecl(ret_type, &varDecls)
-  let &afterExp += '<%ret_var%> = _<%record_type_name%>(<%vars%>);<%\n%>'
-  error(sourceInfo(), 'daeExpRecordCrefLhs <%crefStr(cr)%> does not make sense. Assigning to records is handled in a different way in the code generator, and reaching here is probably an error...') // '<%ret_var%>.c1'
-end daeExpRecordCrefLhs;
 
 /*********************************************************************
  *********************************************************************
@@ -11332,6 +11156,14 @@ template daeDimensionExp(Exp exp, Context context, Text &preExp, Text &varDecls,
   case "modelica_boolean" then '(<%res%>+1)'
   else '/* <%expTypeFromExpModelica(exp)%> */ <%res%>'
 end daeDimensionExp;
+
+template daeSubscriptExp(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+::=
+  let res = daeExp(exp,context,&preExp,&varDecls,&auxFunction)
+  match expTypeFromExpModelica(exp)
+  case "modelica_boolean" then '(<%res%>+1)'
+  else '/* <%expTypeFromExpModelica(exp)%> */ <%res%>'
+end daeSubscriptExp;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenC;

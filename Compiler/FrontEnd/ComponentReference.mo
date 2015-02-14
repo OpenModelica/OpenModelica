@@ -1322,6 +1322,70 @@ algorithm
   end matchcontinue;
 end crefHasScalarSubscripts;
 
+public function crefIsScalarWithAllConstSubs
+  ""
+  input DAE.ComponentRef inCref;
+  output Boolean isScalar;
+algorithm
+  isScalar := matchcontinue(inCref)
+    local
+      Boolean res;
+      list<DAE.Subscript> subs;
+      list<DAE.Dimension> dims;
+      list<DAE.ComponentRef> tempcrefs;
+      Integer ndim, nsub;
+    
+    case _ equation {} = crefSubs(inCref); then true;
+
+    case _ 
+      equation
+        (subs as (_::_))= crefSubs(inCref);
+        dims = crefDims(inCref);
+        // Dimensions may be removed when a component is instantiated if it has
+        // constant subscripts though, so it may have more subscripts than
+        // dimensions. 
+        // mahge: TODO: Does this still happen?
+        true = listLength(dims) <= listLength(subs);
+        true = Expression.subscriptConstants(subs);
+      then
+        true;
+        
+    else false;
+    
+  end matchcontinue;
+end crefIsScalarWithAllConstSubs;
+
+public function crefIsScalarWithVariableSubs
+  ""
+  input DAE.ComponentRef inCref;
+  output Boolean isScalar;
+algorithm
+  isScalar := matchcontinue(inCref)
+    local
+      Boolean res;
+      list<DAE.Subscript> subs;
+      list<DAE.Dimension> dims;
+      list<DAE.ComponentRef> tempcrefs;
+      Integer ndim, nsub;
+    
+    case _ 
+      equation
+        (subs as (_::_))= crefSubs(inCref);
+        dims = crefDims(inCref);
+        // Dimensions may be removed when a component is instantiated if it has
+        // constant subscripts though, so it may have more subscripts than
+        // dimensions. 
+        // mahge: TODO: Does this still happen?
+        true = listLength(dims) <= listLength(subs);
+        false = Expression.subscriptConstants(subs);
+      then
+        true;
+        
+    else false;
+    
+  end matchcontinue;
+end crefIsScalarWithVariableSubs;
+
 public function containWholeDim " A function to check if a cref contains a [:] wholedim element in the subscriptlist.
 "
   input DAE.ComponentRef inRef;

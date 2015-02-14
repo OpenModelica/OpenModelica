@@ -13924,6 +13924,20 @@ algorithm
   end match;
 end getVariableIndex;
 
+public function generateSubPalceholders
+  input DAE.ComponentRef cr;
+  output String outdef;
+protected 
+  list<DAE.Dimension> dims;
+  Integer nrdims;  
+  list<String> idxstrlst;
+algorithm
+  dims := ComponentReference.crefDims(cr);
+  nrdims := listLength(dims);
+  idxstrlst := List.map(List.intRange(nrdims),intString);
+  outdef := stringDelimitList(List.threadMap(List.fill("i_", nrdims), idxstrlst, stringAppend), ","); 
+end generateSubPalceholders;
+
 public function execStat
   "Prints an execution stat on the format:
   *** %name% -> time: %time%, memory %memory%

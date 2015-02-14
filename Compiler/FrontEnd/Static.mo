@@ -11972,7 +11972,7 @@ algorithm
         (cache,ss_1,const) = elabSubscriptsDims(cache, crefSubs, ss, sl, impl,
             topPrefix, inComponentRef, info);
       then
-        (cache,ComponentReference.makeCrefIdent(id,ty,ss_1),const,hasZeroSizeDim);
+        (cache,ComponentReference.makeCrefIdent(id,id_ty,ss_1),const,hasZeroSizeDim);
 
     // QUAL,with no subscripts => looking for var in the top env!
     case (cache,crefEnv,crefSubs,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = restCref),topPrefix,crefPrefix,impl,hasZeroSizeDim,_)
