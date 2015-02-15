@@ -147,7 +147,7 @@ fi
 fi
 
 # GCC 4.8 generates bad code with some optimisation flags. Let's try to disable them.
-for flag in -fno-stack-protector; do
+for flag in -fno-tree-ch -fno-tree-vrp -fno-tree-pre -fno-stack-protector; do
   OLD_CFLAGS="$CFLAGS"
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
   AC_TRY_LINK([], [return 0;], [CFLAGS="$OLD_CFLAGS $flag"],[CFLAGS="$OLD_CFLAGS"])
