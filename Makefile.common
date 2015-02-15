@@ -431,3 +431,6 @@ build/share/omc/java/org.omc.graphstream.jar: mkbuilddirs
 
 graphstream-clean:
 	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) -C 3rdParty/graphstream/ clean; fi
+
+sanity-check: omc
+	build/bin/omc Examples/SanityCheck.mos
