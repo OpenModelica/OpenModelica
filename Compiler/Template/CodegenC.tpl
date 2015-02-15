@@ -3879,7 +3879,7 @@ template equationSimpleAssign(SimEqSystem eq, Context context,
 ::=
 match eq
 case SES_SIMPLE_ASSIGN(exp=CALL(path=IDENT(name="fail"))) then
-  'MMC_THROW_INTERNAL()<%\n%>'
+  '<%generateThrow()%><%\n%>'
 case SES_SIMPLE_ASSIGN(__) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
@@ -5542,6 +5542,7 @@ template functionBodyRegularFunction(Function fn, Boolean inFunc, Boolean isSimu
 match fn
 case FUNCTION(__) then
   let &auxFunction = buffer ""
+  let()= codegenResetTryThrowIndex()
   let()= System.tmpTickReset(1)
   let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
   let fname = underscorePath(name)
@@ -6686,7 +6687,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction)
         let &varDecls += 'modelica_fnptr <%extVarName(c)%>;<%\n%>'
         <<
         if (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%ident%>), 2))) {
-          MMC_THROW_INTERNAL(); /* The FFI does not allow closures */
+          <%generateThrow()%> /* The FFI does not allow closures */
         }
         <%extVarName(c)%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%ident%>), 1));
         >>
@@ -6966,7 +6967,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
 ::=
   match stmt
   case STMT_ASSIGN(exp=CALL(path=IDENT(name="fail"))) then
-    'MMC_THROW_INTERNAL()<%\n%>'
+    '<%generateThrow()%><%\n%>'
   case STMT_ASSIGN(exp1=CREF(componentRef=WILD(__)), exp=e) then
     let &preExp = buffer ""
     let expPart = daeExp(e, context, &preExp, &varDecls, &auxFunction)
@@ -7627,6 +7628,8 @@ template algStmtFailure(DAE.Statement stmt, Context context, Text &varDecls, Tex
 match stmt
 case STMT_FAILURE(__) then
   let tmp = tempDecl("modelica_boolean", &varDecls)
+  let () = codegenPushTryThrowIndex(System.tmpTick())
+  let goto = 'goto_<%codegenPeekTryThrowIndex()%>'
   let stmtBody = (body |> stmt =>
       algStatement(stmt, context, &varDecls, &auxFunction)
     ;separator="\n")
@@ -7635,8 +7638,10 @@ case STMT_FAILURE(__) then
   MMC_TRY_INTERNAL(mmc_jumper)
     <%stmtBody%>
     <%tmp%> = 1;
-  MMC_CATCH_INTERNAL(mmc_jumper)
-  if (<%tmp%>) MMC_THROW_INTERNAL(); /* end failure */
+  goto <%goto%>;
+  <%goto%>:;
+  MMC_CATCH_INTERNAL(mmc_jumper)<%let()=codegenPopTryThrowIndex() ""%>
+  if (<%tmp%>) {<%generateThrow()%>;} /* end failure */
   >>
 end algStmtFailure;
 
@@ -8162,7 +8167,7 @@ case BINARY(__) then
     let &preExp += '<%tvar%> = <%e2%>;<%\n%>'
     let &preExp +=
       if acceptMetaModelicaGrammar()
-        then 'if (<%tvar%> == 0) {MMC_THROW_INTERNAL();}<%\n%>'
+        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(exp))%>");}<%\n%>'
     '(<%e1%> / <%e2%>)'
   case POW(__) then
@@ -8836,7 +8841,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
     let &preExp +=
       if acceptMetaModelicaGrammar()
-        then 'if (<%tvar%> == 0) {MMC_THROW_INTERNAL();}<%\n%>'
+        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
     'ldiv(<%var1%>,<%tvar%>).quot'
 
@@ -8847,7 +8852,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let &preExp += '<%tvar%> = <%var2%>;<%\n%>'
     let &preExp +=
       if acceptMetaModelicaGrammar()
-        then 'if (<%tvar%> == 0.0) {MMC_THROW_INTERNAL();}<%\n%>'
+        then 'if (<%tvar%> == 0.0) {<%generateThrow()%>;}<%\n%>'
         else 'if (<%tvar%> == 0.0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(printExpStr(call))%>");}<%\n%>'
     'trunc(<%var1%>/<%var2%>)'
 
@@ -8994,7 +8999,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls, &auxFunction)%>)'
 
   case CALL(path=IDENT(name="fail"), attr = CALL_ATTR(builtin = true)) then
-    'MMC_THROW_INTERNAL()'
+    '<%generateThrow()%>'
 
   case CALL(path=IDENT(name="mmc_get_field"), expLst={s1, ICONST(integer=i)}) then
     let tvar = tempDecl("modelica_metatype", &varDecls)
@@ -9628,7 +9633,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       else if (<%endLoop%> == <%listLength(iterators)%>) {
         break;
       } else {
-        MMC_THROW_INTERNAL();
+        <%generateThrow()%>;
       }
       >> %>
     }
@@ -9640,7 +9645,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     <%firstValue%>
     <% if resTail then '<%resTail%> = &<%res%>;' %>
     <%loop%>
-    <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW_INTERNAL();' %>
+    <% if not ri.defaultValue then 'if (!<%foundFirst%>) <%generateThrow()%>;' %>
     <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
     <% resTmp %> = <% res %>;
   }<%\n%>
@@ -9667,6 +9672,8 @@ template daeExpMatch2(Exp exp, list<Exp> tupleAssignExps, Text res, Text startIn
 ::=
 match exp
 case exp as MATCHEXPRESSION(__) then
+  let () = codegenPushTryThrowIndex(System.tmpTick())
+  let goto = 'goto_<%codegenPeekTryThrowIndex()%>'
   let &preExpInner = buffer ""
   let &preExpRes = buffer ""
   let &varDeclsInput = buffer ""
@@ -9736,7 +9743,9 @@ case exp as MATCHEXPRESSION(__) then
             }
             goto <%prefix%>_end;
             <%prefix%>_end: ;
-          }
+          }<%let() = codegenPopTryThrowIndex() ""%>
+          goto <%goto%>;
+          <%goto%>:;
           <% match exp.matchType case MATCHCONTINUE(__) then
           <<
           MMC_CATCH_INTERNAL(mmc_jumper);
@@ -9745,7 +9754,7 @@ case exp as MATCHEXPRESSION(__) then
           }
           >>
           %>
-          if (!<%done%>) MMC_THROW_INTERNAL();
+          if (!<%done%>) <%generateThrow()%>;
         }
       }
       >>
@@ -9824,7 +9833,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     %>
     <%stmts%>
     <%modelicaLine(c.resultInfo)%>
-    <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW_INTERNAL();<%\n%>' %>
+    <% if c.result then '<%preRes%><%caseRes%>' else '<%generateThrow()%>;<%\n%>' %>
     <%endModelicaLine()%>
     <%done%> = 1;
     break;
@@ -10450,14 +10459,14 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
       else
         let v = tempDecl(expTypeArrayIf(ty), &varDecls)
         let &additionalOutputs += ', &<%v%>'
-        let &matchPhase += patternMatch(pat,v,"MMC_THROW_INTERNAL()",&varDecls,&assignments)
+        let &matchPhase += patternMatch(pat,v,generateThrow(),&varDecls,&assignments)
         ""
     let expPart = daeExpCallTuple(s.exp,additionalOutputs,context, &preExp, &varDecls, &auxFunction)
     match pat
       case PAT_WILD(__) then '/* Pattern-matching tuple assignment, wild first pattern */<%\n%><%preExp%><%expPart%>;<%\n%><%matchPhase%><%assignments%>'
       else
         let v = tempDecl(expTypeArrayIf(ty), &varDecls)
-        let res = patternMatch(pat,v,"MMC_THROW_INTERNAL()",&varDecls,&assignments1)
+        let res = patternMatch(pat,v,generateThrow(),&varDecls,&assignments1)
         <<
         /* Pattern-matching tuple assignment */
         <%preExp%>
@@ -10475,7 +10484,7 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
     /* Pattern-matching assignment */
     <%preExp%>
     <%v%> = <%expPart%>;
-    <%patternMatch(lhs.pattern,v,"MMC_THROW_INTERNAL()",&varDecls,&assignments)%><%assignments%>
+    <%patternMatch(lhs.pattern,v,generateThrow(),&varDecls,&assignments)%><%assignments%>
     >>
 end algStmtAssignPattern;
 
@@ -11164,6 +11173,13 @@ template daeSubscriptExp(Exp exp, Context context, Text &preExp, Text &varDecls,
   case "modelica_boolean" then '(<%res%>+1)'
   else '/* <%expTypeFromExpModelica(exp)%> */ <%res%>'
 end daeSubscriptExp;
+
+template generateThrow()
+::=
+  match codegenPeekTryThrowIndex()
+  case -1 then "MMC_THROW_INTERNAL()"
+  case i then 'goto goto_<%i%>'
+end generateThrow;
 
 annotation(__OpenModelica_Interface="backend");
 end CodegenC;

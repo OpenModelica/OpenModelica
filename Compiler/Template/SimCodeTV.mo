@@ -899,6 +899,21 @@ package SimCodeUtil
     input SimCode.SimCode iSimCode;
     output list<SimCode.SimEqSystem> oEqs;
   end getDaeEqsNotPartOfOdeSystem;
+
+  function codegenResetTryThrowIndex
+  end codegenResetTryThrowIndex;
+
+  function codegenPushTryThrowIndex
+    input Integer i;
+  end codegenPushTryThrowIndex;
+
+  function codegenPopTryThrowIndex
+  end codegenPopTryThrowIndex;
+
+  function codegenPeekTryThrowIndex
+    output Integer i;
+  end codegenPeekTryThrowIndex;
+
 end SimCodeUtil;
 
 

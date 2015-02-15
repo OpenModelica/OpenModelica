@@ -13972,5 +13972,42 @@ algorithm
   end match;
 end execStat2;
 
+public
+
+function codegenResetTryThrowIndex
+algorithm
+  setGlobalRoot(Global.codegenTryThrowIndex, {});
+end codegenResetTryThrowIndex;
+
+function codegenPushTryThrowIndex
+  input Integer i;
+protected
+  list<Integer> lst;
+algorithm
+  lst := getGlobalRoot(Global.codegenTryThrowIndex);
+  setGlobalRoot(Global.codegenTryThrowIndex, i::lst);
+end codegenPushTryThrowIndex;
+
+function codegenPopTryThrowIndex
+protected
+  list<Integer> lst;
+algorithm
+  lst := getGlobalRoot(Global.codegenTryThrowIndex);
+  _::lst := lst;
+  setGlobalRoot(Global.codegenTryThrowIndex, lst);
+end codegenPopTryThrowIndex;
+
+function codegenPeekTryThrowIndex
+  output Integer i;
+protected
+  list<Integer> lst;
+algorithm
+  lst := getGlobalRoot(Global.codegenTryThrowIndex);
+  i := match lst
+    case i::_ then i;
+    else -1;
+  end match;
+end codegenPeekTryThrowIndex;
+
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

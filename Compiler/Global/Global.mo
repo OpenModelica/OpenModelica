@@ -44,6 +44,7 @@ constant Integer maxFunctionFileLength = 50;
 
 // Thread-local roots
 constant Integer instOnlyForcedFunctions = 0;
+constant Integer codegenTryThrowIndex = 1;
 // Global roots start at index=9
 constant Integer instHashIndex = 9;
 constant Integer typesIndex = 10;
