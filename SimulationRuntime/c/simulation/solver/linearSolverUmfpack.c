@@ -186,8 +186,8 @@ solveUmfPack(DATA *data, int sysNumber)
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
 
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with UMFPACK Solver",
-	 eqSystemNumber, (int) systemData->size,
-	 data->localData[0]->timeValue);
+   eqSystemNumber, (int) systemData->size,
+   data->localData[0]->timeValue);
 
 
   rt_ext_tp_tick(&(solverData->timeClock));
@@ -253,8 +253,8 @@ solveUmfPack(DATA *data, int sysNumber)
   /* symbolic pre-ordering of A to reduce fill-in of L and U */
   if (0 == solverData->numberSolving)
   {
-	  status = umfpack_di_symbolic(solverData->n_col, solverData->n_row, solverData->Ap, solverData->Ai, solverData->Ax, &(solverData->symbolic), solverData->control, solverData->info);
-	}
+    status = umfpack_di_symbolic(solverData->n_col, solverData->n_row, solverData->Ap, solverData->Ai, solverData->Ax, &(solverData->symbolic), solverData->control, solverData->info);
+  }
 
   /* compute the LU factorization of A */
   if (0 == status){

@@ -100,7 +100,7 @@ freeLisData(void **voiddata)
   lis_vector_destroy(data->b);
   lis_vector_destroy(data->x);
   lis_solver_destroy(data->solver);
-  
+
   free(data->work);
 
   return 0;
@@ -226,7 +226,7 @@ solveLis(DATA *data, int sysNumber)
     systemData->setb(data, systemData);
 
   } else {
-    
+
     lis_matrix_set_size(solverData->A, solverData->n_row, 0);
     /* calculate jacobian -> matrix A*/
     if(systemData->jacobianIndex != -1){
