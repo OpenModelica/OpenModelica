@@ -9411,9 +9411,9 @@ template daeExpCallPre(Exp exp, Context context, Text &preExp, Text &varDecls, T
   "Generates code for an asub of a cref, which becomes cref + offset."
 ::=
   match exp
-  /*we use daeExpCrefLhs because daeExpCrefRhs returns with a cast. 
-   will reslut in '$P$PRE(modelica_integer)$A$B... 
-   pre() functions should actaully be eliminated in backend and $PRE prepened as ident 
+  /*we use daeExpCrefLhs because daeExpCrefRhs returns with a cast.
+   will reslut in '$P$PRE(modelica_integer)$A$B...
+   pre() functions should actaully be eliminated in backend and $PRE prepened as ident
    in all cases. (now it's done some places but not in others.)*/
   case cr as CREF(__) then
     '$P$PRE<%daeExpCrefLhs(exp, context, &preExp, &varDecls, &auxFunction)%>'

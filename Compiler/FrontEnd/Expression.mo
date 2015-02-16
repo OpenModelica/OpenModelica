@@ -8835,7 +8835,7 @@ algorithm
     case ((DAE.CREF(componentRef = cr1)), cref as (DAE.CREF(componentRef = cr2)))
       equation
         res = ComponentReference.crefEqual(cr1, cr2);
-        if not res then 
+        if not res then
           explist = List.map(ComponentReference.crefSubs(cr1), getSubscriptExp);
           reslist = List.map1(explist, expContains, cref);
           res = Util.boolOrList(reslist);
