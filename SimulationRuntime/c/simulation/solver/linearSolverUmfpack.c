@@ -529,8 +529,7 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
 {
   int i, j, k, l;
 
-  char buffer[400][4096] =
-  { };
+  char buffer[400][4096] = {0};
 
   k = 0;
   for (i = 0; i < n; i++)
@@ -558,8 +557,7 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
 void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n)
 {
   int i, j, k;
-  char buffer[1024] =
-  { };
+  char buffer[1024] = {0};
   k = 0;
   for (i = 0; i < n; i++)
   {
