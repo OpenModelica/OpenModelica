@@ -151,18 +151,19 @@ algorithm
     //case BackendDAE.ARRAY_EQUATION() then (inEq, inTuple);
     case BackendDAE.IF_EQUATION() then (inEq, inTuple);
 
-    else equation
-      (eq,tpl) = BackendEquation.traverseExpsOfEquation(inEq, traverseExpsEquation_2, inTuple);
-    then (eq,tpl);
+    else
+      equation
+        (eq,(tpl,_)) = BackendEquation.traverseExpsOfEquation(inEq, traverseExpsEquation_2, (inTuple,BackendEquation.equationSource(inEq)));
+      then (eq,tpl);
   end match;
 end foldEq2;
 
 //
 protected function traverseExpsEquation_2
   input DAE.Exp inExp;
-  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> inTuple;
+  input tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>,DAE.ElementSource> inTuple;
   output DAE.Exp outExp;
-  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> outTuple;
+  output tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>,DAE.ElementSource> outTuple;
 algorithm
   (outExp, outTuple) := Expression.traverseExpTopDown(inExp, traverseSubExp_2, inTuple);
 end traverseExpsEquation_2;
@@ -170,10 +171,10 @@ end traverseExpsEquation_2;
 //
 protected function traverseSubExp_2
   input DAE.Exp inExp;
-  input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> inTuple;
+  input tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>,DAE.ElementSource> inTuple;
   output DAE.Exp outExp;
   output Boolean cont;
-  output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> outTuple;
+  output tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>,DAE.ElementSource> outTuple;
 algorithm
   (outExp, cont, outTuple) := matchcontinue(inExp, inTuple)
     local
@@ -194,8 +195,9 @@ algorithm
       DAE.Type tp;
       DAE.Exp expReplaced;
       list<DAE.Exp> expLst;
+      DAE.ElementSource source;
 
-    case (key as DAE.BINARY(exp1, op, exp2), (HT, HT2, HT3, eqLst, varLst)) equation
+    case (key as DAE.BINARY(exp1, op, exp2), ((HT, HT2, HT3, eqLst, varLst), source)) equation
       true = Flags.getConfigBool(Flags.CSE_BINARY);
       value = BaseHashTable.get(key, HT);
       value2 = BaseHashTable.get(value, HT2);
@@ -204,12 +206,12 @@ algorithm
         HT3 = BaseHashTable.add((value, 1), HT3);
         varLst1 = createVarsForExp(value, {});
         varLst = listAppend(varLst1, varLst);
-        eq = BackendEquation.generateEquation(value, key, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+        eq = BackendEquation.generateEquation(value, key, source /* TODO: Add CSE? */, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
         eqLst = eq::eqLst;
       end if;
-    then (value, true, (HT, HT2, HT3, eqLst, varLst));
+    then (value, true, ((HT, HT2, HT3, eqLst, varLst), source));
 
-    case (key as DAE.CALL(path, expLst, attr), (HT, HT2, HT3, eqLst, varLst)) equation
+    case (key as DAE.CALL(path, expLst, attr), ((HT, HT2, HT3, eqLst, varLst),source)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
 
       value = BaseHashTable.get(key, HT);
@@ -237,7 +239,7 @@ algorithm
         expReplaced = prepareExpForReplace(value);
 
         // traverse all arguments of the function
-        (expLst, (HT, HT2, HT3, eqLst1, varLst1)) = Expression.traverseExpList(expLst, traverseExpsEquation_2, (HT, HT2, HT3, {}, {}));
+        (expLst, ((HT, HT2, HT3, eqLst1, varLst1), source)) = Expression.traverseExpList(expLst, traverseExpsEquation_2, ((HT, HT2, HT3, {}, {}), source));
         exp1 = DAE.CALL(path, expLst, attr);
         varLst = listAppend(varLst1, varLst);
         eqLst = listAppend(eqLst1, eqLst);
@@ -249,7 +251,7 @@ algorithm
         end if;
 
         // generate equation
-        eq = BackendEquation.generateEquation(expReplaced, exp1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+        eq = BackendEquation.generateEquation(expReplaced, exp1, source /* TODO: Add CSE? */, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
         eqLst = eq::eqLst;
 
         // update HashTable by value
@@ -267,7 +269,7 @@ algorithm
         // use replaced expression
         value = prepareExpForReplace(value);
       end if;
-    then (value, false, (HT, HT2, HT3, eqLst, varLst));
+    then (value, false, ((HT, HT2, HT3, eqLst, varLst), source));
 
     else (inExp, true, inTuple);
   end matchcontinue;
