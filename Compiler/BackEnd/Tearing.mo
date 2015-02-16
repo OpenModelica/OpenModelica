@@ -248,7 +248,7 @@ algorithm
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nCase linear in traverseComponents\nUse Flag '+d=tearingdumpV' for more details\n\n");
       end if;
-      true = Flags.isSet(Flags.LINEAR_TEARING);
+      false = Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING);
       // TODO: Remove when cpp runtime ready for doLinearTearing
       false = stringEqual(Config.simCodeTarget(), "Cpp");
       if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then

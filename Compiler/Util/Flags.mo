@@ -318,8 +318,8 @@ constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(75, "uncertainties", false,
   Util.gettext("Enables dumping of status when calling modelEquationsUC."));
 constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(76, "showStartOrigin", false,
   Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables."));
-constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(77, "doLinearTearing", true,
-  Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));
+constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(77, "dumpSimCode", false,
+  Util.gettext("Dumps the simCode model used for code generation."));
 constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(78, "dumpinitialsystem", false,
   Util.gettext("Dumps the initial equation system."));
 constant DebugFlag GRAPH_INST = DEBUG_FLAG(79, "graphInst", false,
@@ -416,13 +416,11 @@ constant DebugFlag DUMP_CSE = DEBUG_FLAG(124, "dumpCSE", false,
   Util.gettext("Additional ouput for CSE module."));
 constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(125, "dumpCSE_verbose", false,
   Util.gettext("Additional ouput for CSE module."));
-constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(126, "dumpSimCode", false,
-  Util.gettext("Dumps the simCode model used for code generation."));
-constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(127, "addDerAliases", false,
+constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(126, "addDerAliases", false,
   Util.gettext("Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-round flag,
                 which helps im some cases to simulate the models e.g.
                 Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation."));
-constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(128, "disableComSubExp", false,
+constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(127, "disableComSubExp", false,
   Util.gettext("deactivets module 'comSubExp'"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -507,7 +505,7 @@ constant list<DebugFlag> allDebugFlags = {
   SEMILINEAR,
   UNCERTAINTIES,
   SHOW_START_ORIGIN,
-  LINEAR_TEARING,
+  DUMP_SIMCODE,
   DUMP_INITIAL_SYSTEM,
   GRAPH_INST,
   GRAPH_INST_RUN_DEP,
@@ -556,7 +554,6 @@ constant list<DebugFlag> allDebugFlags = {
   USEMPI,
   DUMP_CSE,
   DUMP_CSE_VERBOSE,
-  DUMP_SIMCODE,
   ADD_DER_ALIASES,
   DISABLE_COMSUBEXP
 };
@@ -882,27 +879,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
     ("cellier", Util.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
     Util.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 
-constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(45, "scalarizeMinMax",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Scalarizes the builtin min/max reduction operators if true."));
-
-constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(46, "wsm-testsuite",
-  NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Used when running the WSM testsuite."));
-
-constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(47, "scalarizeBindings",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Always scalarizes bindings if set."));
-
-constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(48, "corbaObjectReferenceFilePath",
-  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets the path for corba object reference file if -d=interactiveCorba is used."));
-
-constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(49, "hpcomScheduler",
-  NONE(), EXTERNAL(), STRING_FLAG("level"), NONE(),
-  Util.gettext("Sets123 the scheduler for task graph scheduling (list | listr | level | levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: level."));
-
-constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(50, "tearingHeuristic",
+constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(45, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("MC3"),
   SOME(STRING_DESC_OPTION({
     ("MC1", Util.gettext("Original cellier with consideration of impossible assignments and discrete Vars.")),
@@ -918,15 +895,39 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(50, "tearingHeuristic",
     ("MC4", Util.gettext("Modified cellier, use all heuristics, choose var that occurs most in potential sets"))})),
     Util.gettext("Sets the tearing heuristic to use for Cellier-tearing."));
 
-constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(51, "hpcomCode",
+constant ConfigFlag DISABLE_LINEAR_TEARING = CONFIG_FLAG(46, "disableLinearTearing",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Disables the tearing of linear systems. That might improve the performance of large linear systems(N>1000) in combination with a sparse solver (e.g. umfpack) at runtime (usage with: -ls umfpack)."));
+
+constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(47, "scalarizeMinMax",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Scalarizes the builtin min/max reduction operators if true."));
+
+constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(48, "wsm-testsuite",
+  NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Used when running the WSM testsuite."));
+
+constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(49, "scalarizeBindings",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Always scalarizes bindings if set."));
+
+constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(50, "corbaObjectReferenceFilePath",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Util.gettext("Sets the path for corba object reference file if -d=interactiveCorba is used."));
+
+constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(51, "hpcomScheduler",
+  NONE(), EXTERNAL(), STRING_FLAG("level"), NONE(),
+  Util.gettext("Sets123 the scheduler for task graph scheduling (list | listr | level | levelfix | ext | mcp | taskdep | tds | bls | rand | none). Default: level."));
+
+constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
   Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin | tbb | mpi). Default: openmp."));
 
-constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(52, "rewriteRulesFile", NONE(), EXTERNAL(),
+constant ConfigFlag REWRITE_RULES_FILE = CONFIG_FLAG(53, "rewriteRulesFile", NONE(), EXTERNAL(),
   STRING_FLAG(""), NONE(),
   Util.gettext("Activates user given rewrite rules for Absyn expressions. The rules are read from the given file and are of the form rewrite(fromExp, toExp);"));
 
-constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(53, "replaceHomotopy",
+constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(54, "replaceHomotopy",
   NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Util.gettext("Default, do not replace homotopy.")),
@@ -935,19 +936,19 @@ constant ConfigFlag REPLACE_HOMOTOPY = CONFIG_FLAG(53, "replaceHomotopy",
     })),
     Util.gettext("Replaces homotopy(actual, simplified) with the actual expression or the simplified expression. Good for debugging models which use homotopy. The default is to not replace homotopy."));
 
-constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(54, "generateSymbolicJacobian",
+constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN = CONFIG_FLAG(55, "generateSymbolicJacobian",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generates symbolic jacobian matrix, where der(x) is differentiated w.r.t. x. This matrix can be utilise by dassl with the runtime option: -dasslJacobian=coloredSymbolical|symbolical."));
 
-constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(55, "generateSymbolicLinearization",
+constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(56, "generateSymbolicLinearization",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generates symbolic linearization matrixes A,B,C,D for linear model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du"));
 
-constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(56, "intEnumConversion",
+constant ConfigFlag INT_ENUM_CONVERSION = CONFIG_FLAG(57, "intEnumConversion",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Allow Integer to enumeration conversion."));
 
-constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(57, "profiling",
+constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(58, "profiling",
   NONE(), EXTERNAL(), STRING_FLAG("none"), SOME(STRING_DESC_OPTION({
     ("none",Util.gettext("Generate code without profiling")),
     ("blocks",Util.gettext("Generate code for profiling function calls as well as linear and non-linear systems of equations")),
@@ -957,31 +958,31 @@ constant ConfigFlag PROFILING_LEVEL = CONFIG_FLAG(57, "profiling",
     })),
   Util.gettext("Sets the profiling level to use. Profiled equations and functions record execution time and count for each time step taken by the integrator."));
 
-constant ConfigFlag RESHUFFLE = CONFIG_FLAG(58, "reshuffle",
+constant ConfigFlag RESHUFFLE = CONFIG_FLAG(59, "reshuffle",
   NONE(), EXTERNAL(), INT_FLAG(1), NONE(),
   Util.gettext("sets tolerance of reshuffling algorithm: 1: conservative, 2: more tolerant, 3 resolve all"));
 
-constant ConfigFlag NEW_UNIT_CHECKING = CONFIG_FLAG(59,
+constant ConfigFlag NEW_UNIT_CHECKING = CONFIG_FLAG(60,
   "newUnitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.notrans(""));
 
-constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(60, "gDynOpt",
+constant ConfigFlag GENERATE_DYN_OPTIMIZATION_PROBLEM = CONFIG_FLAG(61, "gDynOpt",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Generate dynamic optimization problem based on annotation approach."));
 
-constant ConfigFlag CSE_CALL = CONFIG_FLAG(61,
+constant ConfigFlag CSE_CALL = CONFIG_FLAG(62,
   "cseCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: cse of duplicate call expressions (this deactivates module removeEqualFunctionCalls)"));
 
-constant ConfigFlag CSE_BINARY = CONFIG_FLAG(62,
+constant ConfigFlag CSE_BINARY = CONFIG_FLAG(63,
   "cseBinary", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: cse of duplicate binary expressions"));
 
-constant ConfigFlag CSE_EACHCALL = CONFIG_FLAG(63,
+constant ConfigFlag CSE_EACHCALL = CONFIG_FLAG(64,
   "cseEachCall", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental feature: cse of each call expression (this deactivates module removeEqualFunctionCalls)"));
 
-constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(64, "maxSizeSolveLinearSystem",
+constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(65, "maxSizeSolveLinearSystem",
   NONE(), EXTERNAL(), INT_FLAG(-1), NONE(),
   Util.gettext("Max size for solveLinearSystem."));
 
@@ -1035,12 +1036,13 @@ constant list<ConfigFlag> allConfigFlags = {
   DUMP_TARGET,
   DELAY_BREAK_LOOP,
   TEARING_METHOD,
+  TEARING_HEURISTIC,
+  DISABLE_LINEAR_TEARING,
   SCALARIZE_MINMAX,
   RUNNING_WSM_TESTSUITE,
   SCALARIZE_BINDINGS,
   CORBA_OBJECT_REFERENCE_FILE_PATH,
   HPCOM_SCHEDULER,
-  TEARING_HEURISTIC,
   HPCOM_CODE,
   REWRITE_RULES_FILE,
   REPLACE_HOMOTOPY,
