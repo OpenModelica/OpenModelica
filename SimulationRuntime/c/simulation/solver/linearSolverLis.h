@@ -47,6 +47,8 @@ typedef struct DATA_LIS
   int n_row;
   int nnz;
 
+  double* work;
+
   rtclock_t timeClock;             /* time clock */
 
 } DATA_LIS;

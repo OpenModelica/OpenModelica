@@ -40,6 +40,7 @@
 #include "simulation_data.h"
 
 #include "../../../../build/include/omc/c/suitesparse/Include/umfpack.h"
+#include "../../../../build/include/omc/c/suitesparse/Include/umfpack_get_numeric.h"
 
 typedef struct DATA_UMFPACK
 {

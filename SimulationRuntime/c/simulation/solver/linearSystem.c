@@ -128,6 +128,8 @@ int initializeLinearSystems(DATA *data)
       {
         linsys[i].jacobianIndex = -1;
       }
+      nnz = data->simulationInfo.analyticJacobians[linsys[i].jacobianIndex].sparsePattern.numberOfNoneZeros;
+      linsys[i].nnz = nnz;
     }
 
     /* allocate more system data */
@@ -233,7 +235,9 @@ int updateStaticDataOfLinearSystems(DATA *data)
 void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
 {
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
-  infoStreamPrint(logLevel, 1, "Linear system %d of size %d solver statistics:", (int)linsys[sysNumber].equationIndex, (int)linsys[sysNumber].size);
+  infoStreamPrint(logLevel, 1, "Linear system %d with (size = %d, nonZeroElements = %d, density = %.2f \%) solver statistics:",
+                               (int)linsys[sysNumber].equationIndex, (int)linsys[sysNumber].size, (int)linsys[sysNumber].nnz,
+                               (((double) linsys[sysNumber].nnz) / ((double)(linsys[sysNumber].size*linsys[sysNumber].size)))*100 );
   infoStreamPrint(logLevel, 0, " number of calls                : %ld", linsys[sysNumber].numberOfCall);
   infoStreamPrint(logLevel, 0, " average time per call          : %f", linsys[sysNumber].totalTime/linsys[sysNumber].numberOfCall);
   infoStreamPrint(logLevel, 0, " total time                     : %f", linsys[sysNumber].totalTime);
@@ -523,11 +527,14 @@ static void setAElementUmfpack(int row, int col, double value, int nth, void *da
   LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
   DATA_UMFPACK* sData = (DATA_UMFPACK*) linSys->solverData;
 
-  if (row > 0)
-     if (sData->Ap[row] == 0)
-       sData->Ap[row] = nth;
+  infoStreamPrint(LOG_LS_V, 0, " set %d. -> (%d,%d) = %f", nth, row, col, value);
+  if (row > 0){
+    if (sData->Ap[row] == 0){
+      sData->Ap[row] = nth;
+    }
+  }
 
-   sData->Ai[nth] = col;
-   sData->Ax[nth] = value;
+  sData->Ai[nth] = col;
+  sData->Ax[nth] = value;
 }
 #endif

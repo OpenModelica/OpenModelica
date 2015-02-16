@@ -135,19 +135,6 @@ int getAnalyticalJacobianLapack(DATA* data, double* jac, int sysNumber)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[j]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[j] = 0;
     }
-
-  }
-
-  /* debug output */
-  if(ACTIVE_STREAM(LOG_LS))
-  {
-    printf("Print analytical jac:\n");
-    for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
-    {
-      for(k=0;  k < data->simulationInfo.analyticJacobians[index].sizeRows;k++)
-        printf("% .5e ",jac[l+k*data->simulationInfo.analyticJacobians[index].sizeRows]);
-      printf("\n");
-    }
   }
 
   return 0;
@@ -270,6 +257,7 @@ int solveLapack(DATA *data, int sysNumber)
       /* take the solution */
       solverData->x = _omc_addVectorVector(solverData->x, solverData->work, solverData->b);
 
+      /* update inner equations */
       wrapper_fvec_lapack(solverData->x, solverData->work, &iflag, data, sysNumber);
       residualNorm = _omc_euclideanVectorNorm(solverData->work);
     } else {

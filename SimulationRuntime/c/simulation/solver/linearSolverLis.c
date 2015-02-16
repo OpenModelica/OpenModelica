@@ -70,14 +70,15 @@ allocateLisData(int n_row, int n_col, int nz, void** voiddata)
 
   lis_solver_create(&(data->solver));
 
-  lis_solver_set_option("-print none",data->solver);
+  lis_solver_set_option("-print none", data->solver);
   sprintf(buffer,"-maxiter %d", n_row*100);
-  lis_solver_set_option(buffer,data->solver);
-  lis_solver_set_option("-scale none",data->solver);
-  lis_solver_set_option("-p none",data->solver);
-  lis_solver_set_option("-initx_zeros 0",data->solver);
-  lis_solver_set_option("-tol 1.0e-12",data->solver);
+  lis_solver_set_option(buffer, data->solver);
+  lis_solver_set_option("-scale none", data->solver);
+  lis_solver_set_option("-p none", data->solver);
+  lis_solver_set_option("-initx_zeros 0", data->solver);
+  lis_solver_set_option("-tol 1.0e-12", data->solver);
 
+  data->work = (double*) calloc(n_col,sizeof(double));
 
   rt_ext_tp_tick(&(data->timeClock));
 
@@ -99,6 +100,8 @@ freeLisData(void **voiddata)
   lis_vector_destroy(data->b);
   lis_vector_destroy(data->x);
   lis_solver_destroy(data->solver);
+  
+  free(data->work);
 
   return 0;
 }
@@ -123,6 +126,65 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
 
 }
 
+/*! \fn getAnalyticalJacobian
+ *
+ *  function calculates analytical jacobian
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [sysNumber]
+ *
+ *  \author wbraun
+ *
+ */
+int getAnalyticalJacobianLis(DATA* data, int sysNumber)
+{
+  int i,j,k,l,ii;
+  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.linearSystemData[sysNumber]);
+
+  const int index = systemData->jacobianIndex;
+  int nth = 0;
+  int nnz = data->simulationInfo.analyticJacobians[index].sparsePattern.numberOfNoneZeros;
+
+  for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeRows; i++)
+  {
+    data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
+
+    ((systemData->analyticalJacobianColumn))(data);
+
+    for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
+    {
+      if(data->simulationInfo.analyticJacobians[index].seedVars[j] == 1)
+      {
+        if(j==0)
+          ii = 0;
+        else
+          ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
+        while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
+        {
+          l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
+          /*infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -data->simulationInfo.analyticJacobians[index].resultVars[l]); */
+          systemData->setAElement(i, l, -data->simulationInfo.analyticJacobians[index].resultVars[l], nth, (void*) systemData);
+          nth++;
+          ii++;
+        };
+      }
+    }
+    data->simulationInfo.analyticJacobians[index].seedVars[i] = 0;
+  }
+
+  return 0;
+}
+
+/*! \fn wrapper_fvec_umfpack for the residual function
+ *
+ */
+static int wrapper_fvec_lis(double* x, double* f, void* data, int sysNumber)
+{
+  int iflag = 0;
+
+  (*((DATA*)data)->simulationInfo.linearSystemData[sysNumber].residualFunc)(data, x, f, &iflag);
+  return 0;
+}
 
 
 /*! \fn solve linear system with Lis method
@@ -164,8 +226,23 @@ solveLis(DATA *data, int sysNumber)
     systemData->setb(data, systemData);
 
   } else {
-    assertStreamPrint(data->threadData, 0, "Tearing system not implemented yet!");
+    
+    lis_matrix_set_size(solverData->A, solverData->n_row, 0);
+    /* calculate jacobian -> matrix A*/
+    if(systemData->jacobianIndex != -1){
+      getAnalyticalJacobianLis(data, sysNumber);
+    } else {
+      assertStreamPrint(data->threadData, 1, "jacobian function pointer is invalid" );
+    }
+    lis_matrix_assemble(solverData->A);
 
+    /* calculate vector b (rhs) */
+    memcpy(solverData->work, systemData->x, sizeof(double)*solverData->n_row);
+    wrapper_fvec_lis(solverData->work, systemData->b, data, sysNumber);
+    /* set b vector */
+    for(i=0; i<n; i++){
+      err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->b[i], solverData->b);
+    }
   }
   infoStreamPrint(LOG_LS, 0, "###  %f  time to set Matrix A and vector b.", rt_ext_tp_tock(&(solverData->timeClock)));
 
@@ -175,7 +252,7 @@ solveLis(DATA *data, int sysNumber)
   infoStreamPrint(LOG_LS, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if (err){
-    warningStreamPrint(LOG_LS_V, 0, "lis_solve : %s(code=%lld)\n\n ", lis_returncode[err], err);
+    warningStreamPrint(LOG_LS_V, 0, "lis_solve : %s(code=%d)\n\n ", lis_returncode[err], err);
     printLisMatrixCSR(solverData->A, solverData->n_row);
     success = 0;
   }
@@ -197,22 +274,40 @@ solveLis(DATA *data, int sysNumber)
       infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
     }
     messageClose(LOG_LS_V);
-
-    messageClose(LOG_LS_V);
   }
 
+  /* print solution */
+  if (1 == success){
 
-  /* write solution */
-  lis_vector_get_values(solverData->x, 0, solverData->n_col, systemData->x);
+    if (1 == systemData->method){
+      /* take the solution */
+      lis_vector_get_values(solverData->x, 0, solverData->n_row, systemData->x);
+      for(i = 0; i < solverData->n_row; ++i)
+        systemData->x[i] += solverData->work[i];
 
-  if (ACTIVE_STREAM(LOG_LS_V)){
-    infoStreamPrint(LOG_LS_V, 1, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).numVar);
-
-    for(i = 0; i < systemData->size; ++i) {
-      infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+      /* update inner equations */
+      wrapper_fvec_lis(systemData->x, solverData->work, data, sysNumber);
+    } else {
+      /* write solution */
+      lis_vector_get_values(solverData->x, 0, solverData->n_row, systemData->x);
     }
 
-    messageClose(LOG_LS);
+    if (ACTIVE_STREAM(LOG_LS_V))
+    {
+      infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).numVar);
+
+      for(i = 0; i < systemData->size; ++i)
+        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+
+      messageClose(LOG_LS_V);
+    }
+  }
+  else
+  {
+    warningStreamPrint(LOG_STDOUT, 0,
+      "Failed to solve linear system of equations (no. %d) at time %f, system status %d.",
+        (int)systemData->equationIndex, data->localData[0]->timeValue, err);
   }
 
   return success;
