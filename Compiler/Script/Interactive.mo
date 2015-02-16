@@ -12608,6 +12608,26 @@ algorithm
       then
         (gexpstr_1 :: res);
 
+    // handle annotation(Dialog);
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(annName),
+        modification = NONE(), info = info) :: rest,env,_,_,_)
+      equation
+        (cache, env_2, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, {}, annName);
+
+        (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName), false);
+        mod_2 = DAE.NOMOD();
+        c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
+        (_,_,_,_,dae,_,_,_,_,_) =
+          Inst.instClass(cache, env_1, InnerOuter.emptyInstHierarchy,
+            UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), c_1, {}, false,
+            InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+        gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+
+        gexpstr_1 = stringAppendList({annName,"(",gexpstr,")"});
+        res = getComponentitemsAnnotationsElArgs(rest, env, inClass,inFullProgram,inModelPath);
+      then
+        (gexpstr_1 :: res);
+
   end matchcontinue;
 end getComponentitemsAnnotationsElArgs;
 
