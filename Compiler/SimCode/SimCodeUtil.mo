@@ -6632,7 +6632,7 @@ algorithm
       list<SimCode.SimEqSystem> simeqns;
     case (BackendDAE.EQSYSTEM(orderedVars=vars), _, (uniqueEqIndex, simeqns))
       equation
-        asserts1 = BackendVariable.traverseBackendDAEVars(vars, createVarNominalAssert, {});
+        asserts1 = BackendVariable.traverseBackendDAEVars(vars, BackendVariable.getNominalAssert, {});
         (asserts2, uniqueEqIndex) = List.mapFold(asserts1, dlowAlgToSimEqSystem, uniqueEqIndex);
       then ((uniqueEqIndex, listAppend(asserts2, simeqns)));
   end match;
@@ -6929,32 +6929,8 @@ protected function createVarAsserts
   output list<DAE.Algorithm> outAlgs;
 algorithm
   (_, outAlgs) := BackendVariable.getMinMaxAsserts(inVar, {});
-  (_, outAlgs) := createVarNominalAssert(inVar, outAlgs);
+  (_, outAlgs) := BackendVariable.getNominalAssert(inVar, outAlgs);
 end createVarAsserts;
-
-protected function createVarNominalAssert
-  input BackendDAE.Var inVar;
-  input list<DAE.Algorithm> inAsserts;
-  output BackendDAE.Var outVar;
-  output list<DAE.Algorithm> asserts;
-algorithm
-  (outVar,asserts) := matchcontinue (inVar,inAsserts)
-    local
-      BackendDAE.Var var;
-      DAE.ComponentRef name;
-      DAE.ElementSource source;
-      BackendDAE.VarKind kind;
-      Option<DAE.VariableAttributes> attr;
-      BackendDAE.Type varType;
-
-    case (var as BackendDAE.VAR(varName=name, varKind=kind, values = attr, varType=varType, source = source), asserts)
-      equation
-        asserts = BackendVariable.getNominalAssert(attr, name, source, kind, varType, asserts);
-      then (var, asserts);
-
-    else (inVar,inAsserts);
-  end matchcontinue;
-end createVarNominalAssert;
 
 public function createModelInfo
   input Absyn.Path class_;

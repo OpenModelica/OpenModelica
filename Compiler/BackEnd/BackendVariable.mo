@@ -2023,45 +2023,43 @@ algorithm
 end getMinMaxAsserts1;
 
 public function getNominalAssert "author: Frenkel TUD 2011-03"
-  input Option<DAE.VariableAttributes> attr;
-  input DAE.ComponentRef name;
-  input DAE.ElementSource source;
-  input BackendDAE.VarKind kind;
-  input BackendDAE.Type vartype;
-  input list<DAE.Algorithm> iNominal;
-  output list<DAE.Algorithm> oNominal;
+  input BackendDAE.Var inVar;
+  input list<DAE.Algorithm> inAsserts;
+  output BackendDAE.Var outVar := inVar;
+  output list<DAE.Algorithm> outAsserts;
 algorithm
-  oNominal :=
-  matchcontinue (attr,name,source,kind,vartype,iNominal)
+  outAsserts := matchcontinue(inVar)
     local
-      DAE.Exp e,cond,msg;
-      list<Option<DAE.Exp>> ominmax;
+      DAE.Exp e, cond, msg;
+      list<Option<DAE.Exp>> minmax;
       String str, format;
       DAE.Type tp;
+      DAE.ComponentRef name;
+      Option<DAE.VariableAttributes> attr;
+      BackendDAE.Type varType;
+      DAE.ElementSource source;
 
-    case(_,_,_,BackendDAE.CONST(),_,_) then iNominal;
-    case (SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),_,_,_,_,_)
-      equation
-        ominmax = DAEUtil.getMinMax(attr);
-        str = ComponentReference.printComponentRefStr(name);
-        str = stringAppendList({"Nominal ",str," out of [min, max] interval: "});
-        tp = BackendDAEUtil.makeExpType(vartype);
-        cond = getMinMaxAsserts1(ominmax,e,tp);
-        (cond,_) = ExpressionSimplify.simplify(cond);
-        // do not add if const true
-        false = Expression.isConstTrue(cond);
-        str = str + ExpressionDump.printExpStr(cond) + " has value: ";
-        // if is real use %g otherwise use %d (ints and enums)
-        format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
-        msg = DAE.BINARY(
-              DAE.SCONST(str),
-              DAE.ADD(DAE.T_STRING_DEFAULT),
-              DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString)
-              );
-        BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
-      then
-        DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})::iNominal;
-    else iNominal;
+    case BackendDAE.VAR(varKind=BackendDAE.CONST())
+    then inAsserts;
+
+    case BackendDAE.VAR(varName=name,  values=attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))), varType=varType,  source=source) equation
+      minmax = DAEUtil.getMinMax(attr);
+      tp = BackendDAEUtil.makeExpType(varType);
+
+      // do not add if const true
+      cond = getMinMaxAsserts1(minmax, e, tp);
+      (cond, _) = ExpressionSimplify.simplify(cond);
+      false = Expression.isConstTrue(cond);
+
+      str = "Nominal " + ComponentReference.printComponentRefStr(name) + " out of [min,  max] interval: ";
+      str = str + ExpressionDump.printExpStr(cond) + " has value: ";
+      // if is real use %g otherwise use %d (ints and enums)
+      format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
+      msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e,  DAE.SCONST(format)}, DAE.callAttrBuiltinString));
+      BackendDAEUtil.checkAssertCondition(cond, msg, DAE.ASSERTIONLEVEL_WARNING, DAEUtil.getElementSourceFileInfo(source));
+    then DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, DAE.ASSERTIONLEVEL_WARNING, source)})::inAsserts;
+
+    else inAsserts;
   end matchcontinue;
 end getNominalAssert;
 
