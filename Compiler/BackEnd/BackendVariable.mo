@@ -840,6 +840,8 @@ algorithm
     case (BackendDAE.VAR(varKind=BackendDAE.STATE_DER())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_CONSTR())) then ();
     case (BackendDAE.VAR(varKind=BackendDAE.OPT_FCONSTR())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_WITH_DER())) then ();
+    case (BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER())) then ();
   end match;
 end failIfNonState;
 
@@ -948,6 +950,8 @@ algorithm
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_CONSTR()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.OPT_FCONSTR()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_WITH_DER()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.OPT_INPUT_DER()) :: _)) then true;
     case ((_ :: vs)) then hasContinousVar(vs);
     case ({}) then false;
   end match;
@@ -965,7 +969,7 @@ algorithm
 
     /* Real non discrete variable */
     case (BackendDAE.VAR(varKind = kind, varType = DAE.T_REAL(_,_))) equation
-      kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE()};
+      kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DUMMY_DER(), BackendDAE.DUMMY_STATE(), BackendDAE.OPT_INPUT_WITH_DER(), BackendDAE.OPT_INPUT_DER()};
     then listMember(kind, kind_lst);
 
     else false;
@@ -1354,7 +1358,7 @@ public function isRealOptimizeConstraintsVars
 algorithm
   outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.OPT_CONSTR())) then true;
-    case (_) then false;
+    else false;
   end match;
 end isRealOptimizeConstraintsVars;
 
@@ -1365,9 +1369,20 @@ public function isRealOptimizeFinalConstraintsVars
 algorithm
   outBoolean := match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.OPT_FCONSTR())) then true;
-    case (_) then false;
+    else false;
   end match;
 end isRealOptimizeFinalConstraintsVars;
+
+public function isRealOptimizeDerInput
+"Return true if variable replaced der(Input)"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind =  BackendDAE.OPT_INPUT_DER())) then true;
+    else false;
+  end match;
+end isRealOptimizeDerInput;
 
 public function hasMayerTermAnno
 "author: Vitalij Ruge
@@ -1862,6 +1877,11 @@ algorithm
       then topLevelInput(cr, dir, ct);
   end match;
 end isVarOnTopLevelAndInput;
+
+public function isVarOnTopLevelAndInputNoDerInput
+    input BackendDAE.Var inVar;
+    output Boolean outBoolean := isVarOnTopLevelAndInput(inVar) and not isRealOptimizeDerInput(inVar); 
+end isVarOnTopLevelAndInputNoDerInput;
 
 public function topLevelInput "author: PA
   Succeds if variable is input declared at the top level of the model,

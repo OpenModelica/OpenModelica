@@ -2117,6 +2117,7 @@ algorithm
       dummyVar := BackendDAE.VAR(lhs, conKind, DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR());
       dummyVar := BackendVariable.mergeAliasVars(dummyVar, v, false, knvars);
       eqn := BackendDAE.SOLVED_EQUATION(lhs, e1, Source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+
     then ({eqn}, dummyVar);
     else fail();
   end match;

@@ -734,6 +734,14 @@ algorithm
       equation
         File.write(file,"final constraint");
       then ();
+    case BackendDAE.OPT_INPUT_WITH_DER()
+      equation
+        File.write(file,"use derivation of input");
+      then ();
+    case BackendDAE.OPT_INPUT_DER()
+      equation
+        File.write(file,"derivation of input");
+      then ();
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed"});

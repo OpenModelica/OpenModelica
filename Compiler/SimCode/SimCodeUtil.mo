@@ -7272,7 +7272,7 @@ algorithm
         boolAlgVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAlgVars);
         inputVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarOnTopLevelAndInput(dlowVar), simvar, inputVars);
+          BackendVariable.isVarOnTopLevelAndInputNoDerInput(dlowVar), simvar, inputVars);
         outputVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarOnTopLevelAndOutput(dlowVar), simvar, outputVars);
         paramVars = List.consOnTrue((not isalias) and
@@ -7307,6 +7307,7 @@ algorithm
           BackendVariable.isRealOptimizeConstraintsVars(dlowVar), simvar, realOptimizeConstraintsVars);
         realOptimizeFinalConstraintsVars = List.consOnTrue((not isalias) and
           BackendVariable.isRealOptimizeFinalConstraintsVars(dlowVar), simvar, realOptimizeFinalConstraintsVars);
+
       then
         SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars,
           aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,

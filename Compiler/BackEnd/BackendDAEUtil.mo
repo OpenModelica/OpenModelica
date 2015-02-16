@@ -76,6 +76,7 @@ protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import Differentiate;
+protected import DynamicOptimization;
 protected import Error;
 protected import EvaluateFunctions;
 protected import EvaluateParameter;
@@ -7563,6 +7564,8 @@ algorithm
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
                        (BackendDAEOptimize.residualForm, "residualForm", false),
                        (ResolveLoops.resolveLoops, "resolveLoops", false),
+                       (ResolveLoops.resolveLoops, "resolveLoops", false),
+                       (DynamicOptimization.inputDerivativesForDynOpt, "inputDerivativesForDynOpt", false),
                        (EvaluateFunctions.evalFunctions, "evalFunc", false),
                        (UnitCheck.unitChecking, "unitChecking", true),
                        (CommonSubExpression.commonSubExpressionReplacement, "comSubExp", false),

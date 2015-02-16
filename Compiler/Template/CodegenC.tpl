@@ -912,7 +912,7 @@ template variableDefinitions(ModelInfo modelInfo, list<BackendDAE.TimeEvent> tim
 ::=
   let () = System.tmpTickReset(1000)
   match modelInfo
-    case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal, numOptimizeConstraints=numOptimizeConstraints), vars=SIMVARS(__)) then
+    case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars, numAlgVars= numAlgVars, numDiscreteReal=numDiscreteReal, numOptimizeConstraints=numOptimizeConstraints, numOptimizeFinalConstraints=numOptimizeFinalConstraints), vars=SIMVARS(__)) then
       <<
       #define time data->localData[0]->timeValue
 

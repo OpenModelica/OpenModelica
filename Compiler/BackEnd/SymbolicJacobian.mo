@@ -1228,7 +1228,7 @@ algorithm
         states = BackendVariable.getAllStateVarFromVariables(v);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
-        inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
+        inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInputNoDerInput); // without der(u)
         outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
         conVarsList = List.select(varlst, BackendVariable.isRealOptimizeConstraintsVars);
         fconVarsList = List.select(varlst, BackendVariable.isRealOptimizeFinalConstraintsVars); // ToDo: FinalCon

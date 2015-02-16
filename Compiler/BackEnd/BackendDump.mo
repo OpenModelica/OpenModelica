@@ -2480,6 +2480,8 @@ algorithm
     case BackendDAE.JAC_DIFF_VAR()then "JACOBIAN_DIFF_VAR";
     case BackendDAE.OPT_CONSTR()  then "OPT_CONSTR";
     case BackendDAE.OPT_FCONSTR()  then "OPT_FCONSTR";
+    case BackendDAE.OPT_INPUT_WITH_DER()  then "OPT_INPUT_WITH_DER";
+    case BackendDAE.OPT_INPUT_DER()  then "OPT_INPUT_DER";
   end match;
 end kindString;
 

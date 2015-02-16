@@ -936,6 +936,8 @@ package BackendDAE
     record JAC_DIFF_VAR end JAC_DIFF_VAR;
     record OPT_CONSTR end OPT_CONSTR;
     record OPT_FCONSTR end OPT_FCONSTR;
+    record OPT_INPUT_WITH_DER end OPT_INPUT_WITH_DER;
+    record OPT_INPUT_DER end OPT_INPUT_DER;
   end VarKind;
 
   uniontype ZeroCrossing

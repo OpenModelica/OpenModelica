@@ -40,15 +40,16 @@
 public import DAE;
 public import BackendDAE;
 
-/*
 protected import BackendDump;
 protected import ExpressionDump;
-*/
 
 protected import BackendEquation;
+protected import BackendDAEUtil;
+
 
 protected import BackendVariable;
 protected import ComponentReference;
+protected import Config;
 
 protected import Expression;
 protected import Flags;
@@ -341,6 +342,116 @@ algorithm
   end for;
 
 end addConstraints2;
+
+// =============================================================================
+// section for preOptModule >>inputDerivativesForDynOpt<<
+//
+// check for derivatives of inputs and replace (only for dyn. optimization)
+// =============================================================================
+
+public function inputDerivativesForDynOpt "
+  checks if der(input) is used and replace for dyn. optimization"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  if Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
+    (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, inputDerivativesForDynOptWork, false);
+  else
+    outDAE := inDAE;
+  end if;
+end inputDerivativesForDynOpt;
+
+protected function inputDerivativesForDynOptWork "author: "
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared inShared;
+  input Boolean inChanged;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared outShared := inShared;
+  output Boolean outChanged;
+
+algorithm
+
+  (osyst, outChanged) := matchcontinue(isyst)
+    local
+      BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+      BackendDAE.EquationArray orderedEqs "ordered Equations";
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.Matching matching;
+      list<DAE.ComponentRef> idercr:={}, icr:={};
+      DAE.ComponentRef cr;
+      String s;
+      BackendDAE.StateSets stateSets;
+      BackendDAE.BaseClockPartitionKind partitionKind;
+      list<BackendDAE.Var> varLst:={};
+      BackendDAE.Variables vars;
+
+    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) algorithm
+      vars := BackendVariable.daeKnVars(outShared);
+
+      ((_, idercr, icr, varLst)) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
+      if List.isEmpty(idercr) then
+        fail();
+      end if;
+      // der(u) -> u has der
+      varLst := BackendVariable.setVarsKind(varLst, BackendDAE.OPT_INPUT_WITH_DER());
+      for v in varLst loop
+        outShared := BackendVariable.addKnVarDAE(v, outShared);
+      end for;
+      //  der(u) -> new input var
+      varLst := List.map(idercr, BackendVariable.makeVar);
+      varLst := List.map1(varLst, BackendVariable.setVarDirection, DAE.INPUT());
+      for v in varLst loop
+        v := BackendVariable.setVarKind(v,BackendDAE.OPT_INPUT_DER());
+        outShared := BackendVariable.addKnVarDAE(v, outShared);
+      end for;
+      vars := BackendVariable.daeKnVars(outShared);
+       //BackendDump.printVariables(vars);
+    then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(),NONE(),BackendDAE.NO_MATCHING(), stateSets, partitionKind), true);
+
+    else (isyst, inChanged);
+  end matchcontinue;
+end inputDerivativesForDynOptWork;
+
+protected function traverserinputDerivativesForDynOpt "author:"
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables, list<DAE.ComponentRef>,list<DAE.ComponentRef> ,list<BackendDAE.Var>> itpl;
+  output DAE.Exp e;
+  output tuple<BackendDAE.Variables,list<DAE.ComponentRef>,list<DAE.ComponentRef>,list<BackendDAE.Var>> tpl;
+algorithm
+  (e,tpl) := Expression.traverseExpTopDown(inExp,traverserExpinputDerivativesForDynOpt,itpl);
+end traverserinputDerivativesForDynOpt;
+
+protected function traverserExpinputDerivativesForDynOpt
+  input DAE.Exp inExp;
+  input tuple<BackendDAE.Variables,list<DAE.ComponentRef>,list<DAE.ComponentRef>,list<BackendDAE.Var>> tpl;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output tuple<BackendDAE.Variables,list<DAE.ComponentRef>,list<DAE.ComponentRef>,list<BackendDAE.Var>> outTpl;
+algorithm
+  (outExp,cont,outTpl) := matchcontinue (inExp,tpl)
+    local
+      BackendDAE.Variables vars;
+      DAE.Type tp;
+      DAE.Exp e;
+      DAE.ComponentRef cr, cr1;
+      BackendDAE.Var var;
+      list<DAE.ComponentRef> lst, lst1;
+      list<BackendDAE.Var> varLst;
+
+    case (DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,lst,lst1,varLst))
+      equation
+        (var::{},_) = BackendVariable.getVar(cr, vars);
+        true = BackendVariable.isVarOnTopLevelAndInput(var);
+        cr1 = ComponentReference.prependStringCref("$TMP$DER$P", cr);
+        //cr1 = ComponentReference.crefPrefixDer(cr);
+        e = Expression.crefExp(cr1);
+      then (e,true,(vars, List.unionElt(cr1,lst), List.unionElt(cr,lst1),  List.unionElt(var,varLst)));
+
+    else (inExp,true,tpl);
+  end matchcontinue;
+end traverserExpinputDerivativesForDynOpt;
+
 
 annotation(__OpenModelica_Interface="backend");
 end DynamicOptimization;
