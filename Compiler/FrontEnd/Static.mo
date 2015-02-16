@@ -10428,7 +10428,6 @@ algorithm
         // get the binding if is a constant
         (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, evalCref, info);
         const = constCref; // Types.constAnd(constCref, constSubs);
-        exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
         (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
       then
@@ -10445,7 +10444,6 @@ algorithm
         // get the binding if is a constant
         (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, evalCref, info);
         const = constCref; // Types.constAnd(constCref, constSubs);
-        exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
         (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
       then
@@ -10674,138 +10672,6 @@ algorithm
   enumArray := DAE.ARRAY(ety, true, enum_lit_expl);
   enumArrayType := ety;
 end makeEnumerationArray;
-
-protected function makeASUBArrayAdressing
-"This function remakes CREF subscripts to ASUB's of ASUB's
-  a[1,index,y[z]] (CREF_IDENT(a,{1,DAE.INDEX(CREF_IDENT('index',{})),DAE.INDEX(CREF_IDENT('y',{DAE.INDEX(CREF_IDENT('z))})) ))
-  to
-  ASUB( exp = CREF_IDENT(a,{}),
-   sub = {1,CREF_IDENT('index',{}), ASUB( exp = CREF_IDENT('y',{}), sub = {CREF_IDENT('z',{})})})
-  will create nestled asubs for subscripts conaining crefs with subs."
-  input Absyn.ComponentRef inRef;
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Boolean inBoolean "implicit instantiation";
-  input DAE.Exp inExp;
-  input InstTypes.SplicedExpData splicedExpData;
-  input Boolean doVect "if doVect is false, no vectorization and thus no ASUB addressing is performed";
-  input Prefix.Prefix inPrefix;
-  input SourceInfo info;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,splicedExpData,doVect,inPrefix,info)
-    local
-      DAE.Exp exp1,crefExp;
-      list<Absyn.Subscript> assl;
-      list<DAE.Subscript> essl;
-      String id2;
-      DAE.Type ty,ty2,tty2;
-      DAE.ComponentRef cr,cref_;
-      FCore.Graph env;
-      Boolean impl;
-      FCore.Cache cache;
-      Prefix.Prefix pre;
-      list<DAE.Exp> exps;
-
-    // return inExp if no vectorization is to be done
-    case(_, _, _, _, _, _, false, _, _) then inExp;
-
-    case(Absyn.CREF_IDENT(subscripts = assl), cache, env, impl,
-        DAE.CREF(componentRef = DAE.CREF_IDENT(ident = id2, subscriptLst = essl)),
-        _, _, pre, _)
-      equation
-        (_, _, DAE.C_VAR()) = elabSubscripts(cache, env, assl, impl, pre, info);
-        exps = List.map(essl, Expression.subscriptIndexExp);
-        (ty, ty2) = getSplicedCrefTypes(inExp, splicedExpData);
-        cref_ = ComponentReference.makeCrefIdent(id2, ty2, {});
-        crefExp = Expression.makeCrefExp(cref_, ty);
-        exp1 = Expression.makeASUB(crefExp, exps);
-      then
-        exp1;
-
-    case(_, _, _, _, DAE.CREF(componentRef =
-          DAE.CREF_IDENT(ident = id2, subscriptLst = essl), ty = ty),
-        InstTypes.SPLICEDEXPDATA(splicedExp = SOME(DAE.CREF(componentRef = cr))),
-        _, _, _)
-      equation
-        tty2 = ComponentReference.crefLastType(cr);
-        cref_ = ComponentReference.makeCrefIdent(id2, tty2, essl);
-        exp1 = Expression.makeCrefExp(cref_, ty);
-      then
-        exp1;
-
-    // Qualified cref, might be a package constant.
-    case(_, _, _, _, DAE.CREF(componentRef = cr), _, _, _, _)
-      equation
-        (essl as _ :: _) = ComponentReference.crefLastSubs(cr);
-        cr = ComponentReference.crefStripLastSubs(cr);
-        exps = List.map(essl, Expression.subscriptIndexExp);
-        crefExp = Expression.crefExp(cr);
-        exp1 = Expression.makeASUB(crefExp, exps);
-      then
-        exp1;
-
-    else inExp;
-  end matchcontinue;
-end makeASUBArrayAdressing;
-
-protected function getSplicedCrefTypes
-  "This function was refactored from makeASUBArrayAdressing to avoid
-  elabSubscripts being called twice. If you understand what this function does,
-  please update this comment."
-  input DAE.Exp inCref;
-  input InstTypes.SplicedExpData inSplicedExpData;
-  output DAE.Type outType1;
-  output DAE.Type outType2;
-algorithm
-  (outType1, outType2) := match(inCref, inSplicedExpData)
-    local
-      DAE.Type ty1, ty2;
-      DAE.ComponentRef cr;
-
-    case (_, InstTypes.SPLICEDEXPDATA(splicedExp = SOME(DAE.CREF(componentRef = cr))))
-      equation
-        ty2 = ComponentReference.crefLastType(cr);
-      then
-        (ty2, ty2);
-
-    case (DAE.CREF(componentRef = DAE.CREF_IDENT(identType = ty2), ty = ty1), _)
-      then (ty1, ty2);
-
-  end match;
-end getSplicedCrefTypes;
-
-/* This function will be usefull when we implement Qualified subs such as:
-a.b[1,j] or a[1].b[1,j]. As of now, a[j].b[i] will not be possible since
-we can't know where b is located in a. but if a is non_array or a fully
-adressed array(without variables), this is doable and this funtion can be used.
-protected function allowQualSubscript ""
-  input list<DAE.Subscript> subs;
-  input DAE.Type ty;
-  output Boolean bool;
-algorithm bool := matchcontinue( subs, ty )
-  local
-    list<Option<Integer>> ad;
-    list<list<Integer>> ill;
-    list<Integer> il;
-    Integer x,y;
-  case({},ty as DAE.T_ARRAY(ty=_))
-  then false;
-  case({},_)
-  then true;
-  case(subs, ty as DAE.T_ARRAY(dims=ad))
-    equation
-      x = listLength(subs);
-      ill = List.map(ad,Util.optionList);
-      il = List.flatten(ill);
-      y = listLength(il);
-      true = intEq(x, y );
-    then
-      true;
-  else equation print(" not allowed qual_asub\n"); then false;
-end matchcontinue;
-end allowQualSubscript;
-*/
 
 protected function fillCrefSubscripts
 "This is a helper function to elab_cref2.

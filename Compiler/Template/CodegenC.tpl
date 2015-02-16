@@ -9411,18 +9411,12 @@ template daeExpCallPre(Exp exp, Context context, Text &preExp, Text &varDecls, T
   "Generates code for an asub of a cref, which becomes cref + offset."
 ::=
   match exp
+  /*we use daeExpCrefLhs because daeExpCrefRhs returns with a cast. 
+   will reslut in '$P$PRE(modelica_integer)$A$B... 
+   pre() functions should actaully be eliminated in backend and $PRE prepened as ident 
+   in all cases. (now it's done some places but not in others.)*/
   case cr as CREF(__) then
-    '$P$PRE<%cref(cr.componentRef)%>'
-  case LUNARY(operator=NOT,exp=cr as CREF(__)) then
-    '(!$P$PRE<%cref(cr.componentRef)%>)'
-  case ASUB(exp = cr as CREF(ty=T_ARRAY(ty=aty,dims=dims)), sub=subs) then
-    let cref = '<%cref(cr.componentRef)%>'
-    let tmpArr = tempDecl(expTypeArray(aty), &varDecls)
-    let dimsLenStr = listLength(dims)
-    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
-    let type = expTypeShort(aty)
-    let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&($P$PRE<%arrayCrefCStr(cr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-    <<<%arrayScalarRhs(aty,subs, tmpArr, context, preExp, varDecls, &auxFunction)%>>>
+    '$P$PRE<%daeExpCrefLhs(exp, context, &preExp, &varDecls, &auxFunction)%>'
   else
     error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
 end daeExpCallPre;
@@ -11171,7 +11165,7 @@ template daeSubscriptExp(Exp exp, Context context, Text &preExp, Text &varDecls,
   let res = daeExp(exp,context,&preExp,&varDecls,&auxFunction)
   match expTypeFromExpModelica(exp)
   case "modelica_boolean" then '(<%res%>+1)'
-  else '/* <%expTypeFromExpModelica(exp)%> */ <%res%>'
+  else '<%res%>' /* <%expTypeFromExpModelica(exp)%> */
 end daeSubscriptExp;
 
 template generateThrow()
