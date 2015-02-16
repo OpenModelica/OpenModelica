@@ -379,6 +379,15 @@ void warningStreamPrint(int stream, int indentNext, const char *format, ...)
   }
 }
 
+void va_warningStreamPrint(int stream, int indentNext, const char *format, va_list args)
+{
+  if (ACTIVE_WARNING_STREAM(stream)) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, NULL);
+  }
+}
+
 void errorStreamPrint(int stream, int indentNext, const char *format, ...)
 {
   char logBuffer[SIZE_LOG_BUFFER];
@@ -386,6 +395,13 @@ void errorStreamPrint(int stream, int indentNext, const char *format, ...)
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   va_end(args);
+  messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, NULL);
+}
+
+void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list args)
+{
+  char logBuffer[SIZE_LOG_BUFFER];
+  vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, NULL);
 }
 

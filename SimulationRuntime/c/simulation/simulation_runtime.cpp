@@ -917,22 +917,16 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
   {
   case ERROR_EVENTSEARCH:
   case ERROR_SIMULATION:
-    va_start(ap,msg);
-    fputs("Error: ",stderr);
-    vfprintf(stderr,msg,ap);
-    fputs("\n",stderr);
+    va_start(ap, msg);
+    va_errorStreamPrint(LOG_ASSERT, 0, msg, ap);
     va_end(ap);
-    fflush(NULL);
     longjmp(*threadData->simulationJumpBuffer,1);
     break;
   case ERROR_NONLINEARSOLVER:
     if(ACTIVE_STREAM(LOG_NLS))
     {
-      va_start(ap,msg);
-      fputs("Error: ",stderr);
-      vfprintf(stderr,msg,ap);
-      fputs("\n",stderr);
-      fflush(NULL);
+      va_start(ap, msg);
+      va_errorStreamPrint(LOG_ASSERT, 0, msg, ap);
       va_end(ap);
     }
 #ifndef OMC_EMCC
@@ -942,11 +936,8 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
   case ERROR_INTEGRATOR:
     if(ACTIVE_STREAM(LOG_SOLVER))
     {
-      va_start(ap,msg);
-      fputs("Error: ",stderr);
-      vfprintf(stderr,msg,ap);
-      fputs("\n",stderr);
-      fflush(NULL);
+      va_start(ap, msg);
+      va_errorStreamPrint(LOG_ASSERT, 0, msg, ap);
       va_end(ap);
     }
     longjmp(*threadData->simulationJumpBuffer,1);
@@ -961,7 +952,7 @@ static void omc_assert_warning_simulation(FILE_INFO info, const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
-  warningStreamPrint(LOG_ASSERT, 0, msg, args);
+  va_warningStreamPrint(LOG_ASSERT, 0, msg, args);
   va_end(args);
 }
 
