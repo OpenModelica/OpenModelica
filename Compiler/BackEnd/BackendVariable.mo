@@ -1880,7 +1880,7 @@ end isVarOnTopLevelAndInput;
 
 public function isVarOnTopLevelAndInputNoDerInput
     input BackendDAE.Var inVar;
-    output Boolean outBoolean := isVarOnTopLevelAndInput(inVar) and not isRealOptimizeDerInput(inVar); 
+    output Boolean outBoolean := isVarOnTopLevelAndInput(inVar) and not isRealOptimizeDerInput(inVar);
 end isVarOnTopLevelAndInputNoDerInput;
 
 public function topLevelInput "author: PA
