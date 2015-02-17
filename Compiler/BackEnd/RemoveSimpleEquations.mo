@@ -1337,18 +1337,22 @@ algorithm
         (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, knvars, true, false, {}));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
+        ty = Expression.typeof(exp);
+        e2 = Expression.makeConstZero(ty);
       then
         // shoulde be ok since solve checks only for iszero
-        solveTimeIndependentAcausal(vlst, ilst, exp, DAE.RCONST(0.0), eqnAttributes, inTpl);
+        solveTimeIndependentAcausal(vlst, ilst, exp, e2, eqnAttributes, inTpl);
     case (_, _, _, (vars, BackendDAE.SHARED(knownVars=knvars), _, _, _, _, _))
       equation
         // collect vars and check if variable time not there
         (_, (false, _, _, _, _, ilst)) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false, vars, knvars, false, false, {}));
         ilst = List.uniqueIntN(ilst, BackendVariable.varsSize(vars));
         vlst = List.map1r(ilst, BackendVariable.getVarAt, vars);
+        ty = Expression.typeof(exp);
+        e2 = Expression.makeConstZero(ty);
       then
         // shoulde be ok since solve checks only for iszero
-        solveTimeIndependentAcausal(vlst, ilst, exp, DAE.RCONST(0.0), eqnAttributes, inTpl);
+        solveTimeIndependentAcausal(vlst, ilst, exp, e2, eqnAttributes, inTpl);
     // in all other case keep the equation
     case (_, _, true, _)
       equation
