@@ -4459,6 +4459,126 @@ algorithm
 end computeFavouritePred1;
 
 //---------------------------------
+// Partition Scheduler
+//---------------------------------
+
+public function createPartSchedule"puts every independent partition into one thread with respect to the number of available processors.
+author: Waurich TUD 2015-02"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input Integer numProc;
+  input array<list<Integer>> iSccSimEqMapping;
+  input array<list<SimCodeVar.SimVar>> iSimVarMapping; //Maps each backend var to a list of simVars
+  output HpcOmSimCode.Schedule oSchedule;
+protected
+  Integer nProc,nTasks;
+  list<Integer> rootNodes;
+  array<Integer> threadMap;
+  array<Real> partitionCosts;
+  array<list<Integer>> partitions;
+  HpcOmTaskGraph.TaskGraph graphT;
+
+  array<HpcOmTaskGraph.Communications> commCosts;
+  array<list<Integer>> inComps;
+  array<list<HpcOmSimCode.Task>> threadTask;
+  array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
+  HpcOmSimCode.Schedule schedule;
+  list<Integer> order;
+algorithm
+  HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
+  nProc := Flags.getConfigInt(Flags.NUM_PROC);
+  nTasks := arrayLength(iTaskGraph);
+  rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
+  partitions := arrayCreate(nProc,{});
+  threadMap := arrayCreate(nTasks,-1);
+  partitionCosts := arrayCreate(nProc,0.0);
+  graphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+  ((partitions,threadMap,partitionCosts)) := List.fold(List.map(rootNodes,List.create),function assignTasksToPartitions(graph = iTaskGraph, graphT = graphT, meta = iTaskGraphMeta),(partitions,threadMap,partitionCosts));
+
+  threadTask := arrayCreate(numProc,{});
+  allCalcTasks := convertTaskGraphToTasks(graphT,iTaskGraphMeta,convertNodeToTask);
+  schedule := HpcOmSimCode.THREADSCHEDULE(threadTask,{},{},allCalcTasks);
+  order := List.intRange(nTasks);
+  (oSchedule,_) := createScheduleFromAssignments(threadMap,partitions,SOME(order),iTaskGraph,graphT,iTaskGraphMeta,iSccSimEqMapping,{},order,commCosts,inComps,iSimVarMapping,schedule);
+end createPartSchedule;
+
+protected function assignTasksToPartitions"assigns all rootNodes and their partitions to the partition with the least total execution costs"
+  input list<Integer> rootNodes;
+  input HpcOmTaskGraph.TaskGraph graph;
+  input HpcOmTaskGraph.TaskGraph graphT;
+  input HpcOmTaskGraph.TaskGraphMeta meta;
+  input tuple<array<list<Integer>>,array<Integer>,array<Real>> tplIn;
+  output tuple<array<list<Integer>>,array<Integer>,array<Real>> tplOut;
+algorithm
+  tplOut := matchcontinue(rootNodes,graph,graphT,meta,tplIn)
+    local
+      Integer rootNode, partitionIdx;
+      Real minCosts,costs;
+      list<Integer> rest, partition, assThreads;
+      list<Real> costLst;
+      array<Integer> threadMap;
+      array<Real> partitionCosts;
+      array<list<Integer>> partitions;
+  case({},_,_,_,(partitions,threadMap,partitionCosts))
+    equation
+  then
+    tplIn;
+  case(rootNode::rest,_,_,_,(partitions,threadMap,partitionCosts))
+    equation
+    true = intEq(-1,arrayGet(threadMap,rootNode));
+    minCosts = Array.fold(partitionCosts,realMin,arrayGet(partitionCosts,1));
+    partitionIdx = Array.position(partitionCosts,minCosts);
+    partition = getPartition({rootNode},graph,graphT,threadMap,partitionIdx,{});
+    partitions = Array.appendToElement(partitionIdx,partition,partitions);
+    costLst = List.map(arrayGet(partitions,partitionIdx),function HpcOmTaskGraph.getExeCostReqCycles(iGraphData=meta));
+    costs = List.fold(costLst,realAdd,0.0);
+    partitionCosts = arrayUpdate(partitionCosts,partitionIdx,costs);
+    (partitions,threadMap,partitionCosts) = assignTasksToPartitions(rest,graph,graphT,meta,(partitions,threadMap,partitionCosts));
+  then
+    (partitions,threadMap,partitionCosts);
+  case(rootNode::rest,_,_,_,(partitions,threadMap,partitionCosts))
+    equation
+    true = intNe(-1,arrayGet(threadMap,rootNode));
+    (partitions,threadMap,partitionCosts) = assignTasksToPartitions(rest,graph,graphT,meta,(partitions,threadMap,partitionCosts));
+  then
+    (partitions,threadMap,partitionCosts);
+
+  end matchcontinue;
+end assignTasksToPartitions;
+
+protected function getPartition"get all tasks that are somehow connected to the checkNodes"
+  input list<Integer> checkNodes;
+  input HpcOmTaskGraph.TaskGraph graph;
+  input HpcOmTaskGraph.TaskGraph graphT;
+  input array<Integer> assNodes;
+  input Integer partitionIdx;
+  input list<Integer> partitionIn;
+  output list<Integer> partitionOut;
+algorithm
+  partitionOut := matchcontinue(checkNodes,graph,graphT,assNodes,partitionIdx,partitionIn)
+    local
+      Integer node;
+      list<Integer> children,parents,rest,partition;
+    case({},_,_,_,_,_)
+      then
+        partitionIn;
+    case(node::rest,_,_,_,_,_)
+      equation
+      children = arrayGet(graph,node);
+      (_,children) = List.filter1OnTrueSync(List.map(children,function Array.getIndexFirst(inArray = assNodes)),intEq,-1,children);
+      parents = arrayGet(graphT,node);
+      (_,parents) = List.filter1OnTrueSync(List.map(parents,function Array.getIndexFirst(inArray = assNodes)),intEq,-1,parents);
+      partition = listAppend(children, parents);
+      List.map2_0(node::partition,Array.updateIndexFirst, partitionIdx, assNodes);
+      rest = listAppend(partition,rest);
+      partition = listAppend(partitionIn,node::partition);
+      partition = getPartition(rest,graph,graphT,assNodes,partitionIdx,partition);
+    then partition;
+  end matchcontinue;
+end getPartition;
+
+
+//---------------------------------
 // Modified Critical Path scheduler
 //---------------------------------
 

@@ -818,6 +818,13 @@ algorithm
     case(_,_,_,_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "part");
+        print("Using partition Scheduler\n");
+        schedule = HpcOmScheduler.createPartSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping,iSimVarMapping);
+      then (schedule,iSimCode,iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_,_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "taskdep");
         print("Using dynamic task dependencies\n");
         schedule = HpcOmScheduler.createTaskDepSchedule(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping);
