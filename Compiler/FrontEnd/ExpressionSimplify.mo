@@ -384,8 +384,8 @@ algorithm
         matrix = list(DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),true,list(if i==j then DAE.ICONST(1) else DAE.ICONST(0) for i in 1:n)) for j in 1:n);
       then DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),false,matrix);
 
-    /* Dont "simplify" diagonal. We just end up having to reconstrct the matrix from the simplifed form back to runtime arrays. 
-      that is expenisve.*/   
+    /* Dont "simplify" diagonal. We just end up having to reconstrct the matrix from the simplifed form back to runtime arrays.
+      that is expenisve.*/
     // case DAE.CALL(path = Absyn.IDENT(name = "diagonal"), expLst = {DAE.ARRAY(array=expl,ty=tp)})
       // equation
         // n = listLength(expl);

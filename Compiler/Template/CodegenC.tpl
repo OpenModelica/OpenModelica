@@ -8939,7 +8939,7 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
-  
+
   case CALL(path=IDENT(name="diagonal"), expLst={A as ARRAY(__)}) then
     let arr_tp_str = expTypeFromExpArray(A)
     let tvar = tempDecl(arr_tp_str, &varDecls)
