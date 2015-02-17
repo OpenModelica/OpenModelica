@@ -29,7 +29,7 @@ double  division (const double &a,const double &b, const char* text)
     return a/b ;
     else
     {
-        std::string error_msg = "Division by zeror: ";
+        std::string error_msg = "Division by zero: ";
       throw ModelicaSimulationError(UTILITY,error_msg+string(text));
    }
 }
