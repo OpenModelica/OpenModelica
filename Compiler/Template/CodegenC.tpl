@@ -8939,6 +8939,15 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let tvar = tempDecl(arr_tp_str, &varDecls)
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
+  
+  case CALL(path=IDENT(name="diagonal"), expLst={A as ARRAY(__)}) then
+    let arr_tp_str = expTypeFromExpArray(A)
+    let tvar = tempDecl(arr_tp_str, &varDecls)
+    let params = (A.array |> e =>
+      '<%daeExp(e, context, &preExp, &varDecls, &auxFunction)%>'
+    ;separator=", ")
+    let &preExp += 'diagonal_alloc_<%arr_tp_str%>(&<%tvar%>, <%listLength(A.array)%>, <%params%>);<%\n%>'
+    '<%tvar%>'
 
   case CALL(path=IDENT(name="String"), expLst={s, format}) then
     let tvar = tempDecl("modelica_string", &varDecls)

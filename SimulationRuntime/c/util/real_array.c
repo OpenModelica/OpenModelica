@@ -1487,6 +1487,26 @@ void diagonal_real_array(const real_array_t * v,real_array_t* dest)
     }
 }
 
+void diagonal_alloc_real_array(real_array_t* dest, int ndims, ...)
+{
+    size_t i;
+    size_t j;
+    alloc_real_array(dest,2,ndims,ndims);
+    
+    for(i = 0; i < (ndims * ndims); ++i) {
+        real_set(dest, i, 0);
+    }
+    
+    va_list ap;
+    va_start(ap,ndims);
+    j = 0;
+    for(i = 0; i < ndims; ++i) {
+        real_set(dest, j, va_arg(ap, modelica_real));
+        j += ndims+1;
+    }
+    va_end(ap);
+}
+
 void fill_real_array(real_array_t* dest,modelica_real s)
 {
     size_t nr_of_elements;

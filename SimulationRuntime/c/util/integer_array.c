@@ -1482,6 +1482,26 @@ void diagonal_integer_array(const integer_array_t * v,integer_array_t* dest)
     }
 }
 
+void diagonal_alloc_integer_array(integer_array_t* dest, int ndims, ...)
+{
+    size_t i;
+    size_t j;
+    alloc_integer_array(dest,2,ndims,ndims);
+    
+    for(i = 0; i < (ndims * ndims); ++i) {
+        integer_set(dest, i, 0);
+    }
+    
+    va_list ap;
+    va_start(ap,ndims);
+    j = 0;
+    for(i = 0; i < ndims; ++i) {
+        integer_set(dest, j, va_arg(ap, modelica_integer));
+        j += ndims+1;
+    }
+    va_end(ap);
+}
+
 void fill_integer_array(integer_array_t* dest,modelica_integer s)
 {
     size_t nr_of_elements;
