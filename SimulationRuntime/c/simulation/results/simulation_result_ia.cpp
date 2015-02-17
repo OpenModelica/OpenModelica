@@ -278,13 +278,13 @@ void ia_emit(simulation_result *self, DATA *data)
   for(i=0; i<data->modelData.nVariablesString; i++) if(!data->modelData.stringVarsData[i].filterOutput)
   {
     strLength = MMC_STRLEN((data->localData[0])->stringVars[i]) + 1;
-    memcpy(msgDATA+offset, (data->localData[0])->stringVars[i], strLength); offset += strLength;
+    memcpy(msgDATA+offset, MMC_STRINGDATA((data->localData[0])->stringVars[i]), strLength); offset += strLength;
   }
 
   for(i=0; i<data->modelData.nAliasString; i++) if(!data->modelData.stringAlias[i].filterOutput && data->modelData.stringAlias[i].aliasType != 1)
   {
     strLength = MMC_STRLEN((data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]) + 1;
-    memcpy(msgDATA+offset, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID], strLength); offset += strLength;
+    memcpy(msgDATA+offset, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]), strLength); offset += strLength;
   }
 
   communicateMsg(4, msgSIZE, msgDATA);
