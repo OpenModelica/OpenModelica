@@ -1491,13 +1491,14 @@ void diagonal_alloc_real_array(real_array_t* dest, int ndims, ...)
 {
     size_t i;
     size_t j;
+    va_list ap;
+
     alloc_real_array(dest,2,ndims,ndims);
 
     for(i = 0; i < (ndims * ndims); ++i) {
         real_set(dest, i, 0);
     }
 
-    va_list ap;
     va_start(ap,ndims);
     j = 0;
     for(i = 0; i < ndims; ++i) {
