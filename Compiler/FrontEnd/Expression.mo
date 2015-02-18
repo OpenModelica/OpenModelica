@@ -11632,6 +11632,14 @@ algorithm
     // An index subscript from range.
     case (DAE.INDEX(exp = exp as DAE.RANGE()), _)
       then getRangeContents(exp);
+      
+    // An index subscript from array.
+    // This really shouldn't be happening. But the backend creats things like this.
+    // e.g. When finding Incidence Matrix entry for for-loops in Algorithm sections.
+    // That whole creating IM should be done the way checkModel works. but it's not. :( so
+    // we have this.
+    case (DAE.INDEX(exp = exp as DAE.ARRAY()), _)
+      then expandSlice(exp);
 
     // An index subscript, return it as an array.
     case (DAE.INDEX(), _) then {inSubscript};
