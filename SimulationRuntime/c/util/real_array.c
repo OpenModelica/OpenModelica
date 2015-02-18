@@ -530,8 +530,8 @@ void simple_index_real_array1(const real_array_t * source,
     size_t nr_of_elements = base_array_nr_of_elements(*dest);
     size_t off = nr_of_elements * i1;
 
-    for(i = 0 ; i < nr_of_elements ; i++) {
-        real_set(dest, i, real_get(*source, off + i));
+    for(i = 0 ; i < nr_of_elements ; off++,i++) {
+        real_set(dest, i, real_get(*source, off));
     }
 }
 
@@ -544,8 +544,8 @@ void simple_index_real_array2(const real_array_t * source,
     size_t nr_of_elements = base_array_nr_of_elements(*dest);
     size_t off = nr_of_elements * ((source->dim_size[1] * i1) + i2);
 
-    for(i = 0 ; i < nr_of_elements ; i++) {
-        real_set(dest, i, real_get(*source, off + i));
+    for(i = 0 ; i < nr_of_elements ; i++,off++) {
+        real_set(dest, i, real_get(*source, off));
     }
 }
 
@@ -813,9 +813,10 @@ void range_alloc_real_array(modelica_real start, modelica_real stop, modelica_re
 void range_real_array(modelica_real start, modelica_real stop, modelica_real inc, real_array_t* dest)
 {
     int i;
+    modelica_real v = start;
     /* Assert that dest has correct size */
-    for(i = 0; i < dest->dim_size[0]; ++i) {
-        real_set(dest, i, start + (i * inc));
+    for(i = 0; i < dest->dim_size[0]; ++i, v+=inc) {
+        real_set(dest, i, v);
     }
 }
 
