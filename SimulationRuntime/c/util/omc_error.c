@@ -156,7 +156,7 @@ void printInfo(FILE *stream, FILE_INFO info)
   fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
 
-void omc_assert_function(threadData_t* threadData,FILE_INFO info, const char *msg, ...)
+void omc_assert_function(threadData_t* threadData, FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
   va_start(ap,msg);
@@ -379,6 +379,15 @@ void warningStreamPrint(int stream, int indentNext, const char *format, ...)
   }
 }
 
+void va_warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, va_list args)
+{
+  if (ACTIVE_WARNING_STREAM(stream)) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, indexes);
+  }
+}
+
 void va_warningStreamPrint(int stream, int indentNext, const char *format, va_list args)
 {
   if (ACTIVE_WARNING_STREAM(stream)) {
@@ -403,6 +412,14 @@ void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list
   char logBuffer[SIZE_LOG_BUFFER];
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
   messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, NULL);
+}
+
+void va_errorStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, va_list args)
+{
+
+  char logBuffer[SIZE_LOG_BUFFER];
+  vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+  messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, indexes);
 }
 
 #ifdef USE_DEBUG_OUTPUT

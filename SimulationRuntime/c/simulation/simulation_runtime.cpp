@@ -906,28 +906,24 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   return retVal;
 }
 
-static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
+static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...);
+static void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, ...);
 static void omc_throw_simulation(threadData_t* threadData) __attribute__ ((noreturn));
 
-static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
+static void va_omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, va_list args)
 {
-  va_list ap;
   threadData = threadData ? threadData : (threadData_t*)pthread_getspecific(mmc_thread_data_key);
   switch (threadData->currentErrorStage)
   {
   case ERROR_EVENTSEARCH:
   case ERROR_SIMULATION:
-    va_start(ap, msg);
-    va_errorStreamPrint(LOG_ASSERT, 0, msg, ap);
-    va_end(ap);
+    va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, 0, indexes, msg, args);
     longjmp(*threadData->simulationJumpBuffer,1);
     break;
   case ERROR_NONLINEARSOLVER:
     if(ACTIVE_STREAM(LOG_NLS))
     {
-      va_start(ap, msg);
-      va_errorStreamPrint(LOG_ASSERT, 0, msg, ap);
-      va_end(ap);
+      va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, 0, indexes, msg, args);
     }
 #ifndef OMC_EMCC
     longjmp(*threadData->simulationJumpBuffer,1);
@@ -936,9 +932,7 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
   case ERROR_INTEGRATOR:
     if(ACTIVE_STREAM(LOG_SOLVER))
     {
-      va_start(ap, msg);
-      va_errorStreamPrint(LOG_ASSERT, 0, msg, ap);
-      va_end(ap);
+      va_errorStreamPrintWithEquationIndexes(LOG_ASSERT, 0, indexes, msg, args);
     }
     longjmp(*threadData->simulationJumpBuffer,1);
     break;
@@ -948,11 +942,41 @@ static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, cons
   }
 }
 
+static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  va_omc_assert_simulation_withEquationIndexes(threadData, info, NULL, msg, args);
+  va_end(args);
+}
+
+static void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  va_omc_assert_simulation_withEquationIndexes(threadData, info, indexes, msg, args);
+  va_end(args);
+}
+
+
+static void va_omc_assert_warning_simulation(FILE_INFO info, const int *indexes, const char *msg, va_list args)
+{
+  va_warningStreamPrintWithEquationIndexes(LOG_ASSERT, 0, indexes, msg, args);
+}
+
 static void omc_assert_warning_simulation(FILE_INFO info, const char *msg, ...)
 {
   va_list args;
   va_start(args, msg);
-  va_warningStreamPrint(LOG_ASSERT, 0, msg, args);
+  va_omc_assert_warning_simulation(info, NULL, msg, args);
+  va_end(args);
+}
+
+static void omc_assert_warning_simulation_withEquationIndexes(FILE_INFO info, const int *indexes, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  va_omc_assert_warning_simulation(info, indexes, msg, args);
   va_end(args);
 }
 
@@ -985,7 +1009,10 @@ static void omc_throw_simulation(threadData_t* threadData)
   longjmp(*threadData->globalJumpBuffer, 1);
 }
 
-void (*omc_assert)(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn)) = omc_assert_simulation;
+void (*omc_assert)(threadData_t*, FILE_INFO info, const char *msg, ...) = omc_assert_simulation;
+void (*omc_assert_withEquationIndexes)(threadData_t*, FILE_INFO info, const int *indexes, const char *msg, ...) = omc_assert_simulation_withEquationIndexes;
+
+void (*omc_assert_warning_withEquationIndexes)(FILE_INFO info, const int *indexes, const char *msg, ...) = omc_assert_warning_simulation_withEquationIndexes;
 void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_warning_simulation;
 void (*omc_terminate)(FILE_INFO info, const char *msg, ...) = omc_terminate_simulation;
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_simulation;

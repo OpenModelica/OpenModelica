@@ -56,13 +56,17 @@ typedef struct _FILE_INFO
 #define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
 
 DLLExport extern void printInfo(FILE *stream, FILE_INFO info);
-DLLExport extern void (*omc_assert)(threadData_t*,FILE_INFO,const char*, ...) __attribute__ ((noreturn));
-DLLExport extern void (*omc_assert_warning)(FILE_INFO,const char*, ...);
-DLLExport extern void (*omc_terminate)(FILE_INFO,const char*, ...);
+DLLExport extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...);
+DLLExport extern void (*omc_assert_warning)(FILE_INFO, const char*, ...);
+DLLExport extern void (*omc_terminate)(FILE_INFO, const char*, ...);
 DLLExport extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
+
+DLLExport extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...);
+DLLExport extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const int*, const char*, ...);
+
 void initDumpSystem();
-void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
-void omc_assert_warning_function(FILE_INFO info, const char *msg, ...);
+void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...);
+void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
 
@@ -164,8 +168,10 @@ extern void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const
 extern void warningStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void va_warningStreamPrint(int stream, int indentNext, const char *format,va_list ap);
 extern void warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
+extern void va_warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format,va_list ap);
 extern void errorStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
 extern void va_errorStreamPrint(int stream, int indentNext, const char *format, va_list ap);
+extern void va_errorStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format,va_list ap);
 extern void va_throwStreamPrint(threadData_t *threadData, const char *format, va_list ap) __attribute__ ((noreturn));
 extern void throwStreamPrint(threadData_t *threadData, const char *format, ...) __attribute__ ((format (printf, 2, 3), noreturn));
 extern void throwStreamPrintWithEquationIndexes(threadData_t *threadData, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 3, 4), noreturn));

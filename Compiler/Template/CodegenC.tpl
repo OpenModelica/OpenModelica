@@ -7494,13 +7494,15 @@ case RANGE(__) then
       daeExp(eo, context, &preExp, &varDecls, &auxFunction)
     else "1"
   let stopValue = daeExp(stop, context, &preExp, &varDecls, &auxFunction)
+  let eqnsindx = match context case FUNCTION_CONTEXT(__) then '' else 'equationIndexes, '
+  let AddionalFuncName = match context case FUNCTION_CONTEXT(__) then '' else '_withEquationIndexes'
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>;
   if(!<%stepVar%>)
   {
     FILE_INFO info = omc_dummyFileInfo;
-    omc_assert(threadData, info, "assertion range step != 0 failed");
+    omc_assert<%AddionalFuncName%>(threadData, info, <%eqnsindx%>"assertion range step != 0 failed");
   }
   else if(!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>))))
   {
@@ -10599,8 +10601,10 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let condVar = daeExp(condition, context, &preExpCond, &varDecls, &auxFunction)
   let &preExpMsg = buffer ""
   let msgVar = messages |> message => expToFormatString(message,context,&preExpMsg,&varDecls,&auxFunction) ; separator = ", "
-  let omcAssertFunc = match level case ENUM_LITERAL(index=2) then 'omc_assert_warning(' else 'omc_assert(threadData,'
-  let addInfoTextContext = match context case FUNCTION_CONTEXT(__) then '' else 'omc_assert_warning(info, "The following assertion has been violated at time %f\n<%Util.escapeModelicaStringToCString(printExpStr(condition))%>\n", time);'
+  let eqnsindx = match context case FUNCTION_CONTEXT(__) then '' else 'equationIndexes, '
+  let AddionalFuncName = match context case FUNCTION_CONTEXT(__) then '' else '_withEquationIndexes'
+  let addInfoTextContext = match context case FUNCTION_CONTEXT(__) then '' else '<%\n%>omc_assert_warning(info, "The following assertion has been violated at time %f\n<%Util.escapeModelicaStringToCString(printExpStr(condition))%>", time);'
+  let omcAssertFunc = match level case ENUM_LITERAL(index=2) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let warningTriggered = tempDeclZero("static int", &varDecls)
   let TriggerIf = match level case ENUM_LITERAL(index=2) then 'if(!<%warningTriggered%>)<%\n%>' else ''
   let TriggerVarSet = match level case ENUM_LITERAL(index=2) then '<%warningTriggered%> = 1;<%\n%>' else ''
@@ -10611,9 +10615,8 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     if(!<%condVar%>)
     {
       <%preExpMsg%>
-      FILE_INFO info = {<%infoArgs(info)%>};
-      <%addInfoTextContext%>
-      <%omcAssertFunc%>info, <%msgVar%>);
+      FILE_INFO info = {<%infoArgs(info)%>};<%addInfoTextContext%>
+      <%omcAssertFunc%>info, <%eqnsindx%><%msgVar%>);
       <%TriggerVarSet%>
     }
   }<%\n%>
@@ -10643,7 +10646,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &preEx
     {
         <%preExpMsg%>
         FILE_INFO info = {<%infoArgs(info)%>};
-        omc_assert_warning(info, "The following assertion has been violated at time: %f\n", time);
+        omc_assert_warning(info, "The following assertion has been violated at time %f", time);
         throwStreamPrintWithEquationIndexes(threadData, equationIndexes, <%msgVar%>);
     }<%\n%>
     >>
