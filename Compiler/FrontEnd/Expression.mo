@@ -11632,7 +11632,7 @@ algorithm
     // An index subscript from range.
     case (DAE.INDEX(exp = exp as DAE.RANGE()), _)
       then getRangeContents(exp);
-      
+
     // An index subscript from array.
     // This really shouldn't be happening. But the backend creats things like this.
     // e.g. When finding Incidence Matrix entry for for-loops in Algorithm sections.
