@@ -367,6 +367,13 @@ algorithm
   outHasStartValue := DAEUtil.hasStartAttr(attr);
 end varHasStartValue;
 
+public function varHasNoStartValue
+  input BackendDAE.Var inVar;
+  output Boolean outHasNoStartValue;
+algorithm
+  outHasNoStartValue := not varHasStartValue(inVar);
+end varHasNoStartValue;
+
 public function varStartOrigin "author: Frenkel TUD
   Returns the StartOrigin of a variable."
   input BackendDAE.Var v;
@@ -1659,6 +1666,20 @@ algorithm
                  connectorType = ct) := inVar;
   outVar := BackendDAE.VAR(cr, kind, dir, prl, tp, bind, v, dim, source, attr, ts, comment, ct);
 end copyVarNewName;
+
+public function setVarKindForVar"updates the varkind for an indexed var inside the variable-array.
+author:Waurich TUD 2015-02"
+  input Integer idx;
+  input BackendDAE.VarKind kind;
+  input BackendDAE.Variables varsIn;
+  output BackendDAE.Variables varsOut;
+protected
+  BackendDAE.Var var;
+algorithm
+  var := getVarAt(varsIn,idx);
+  var := setVarKind(var,kind);
+  varsOut := setVarAt(varsIn,idx,var);
+end setVarKindForVar;
 
 public function setVarsKind "author: lochel
   This function sets the BackendDAE.VarKind of a variable-list."

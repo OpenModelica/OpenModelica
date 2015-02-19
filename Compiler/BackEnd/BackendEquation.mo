@@ -2838,6 +2838,8 @@ algorithm
       then exp1;
     case(BackendDAE.COMPLEX_EQUATION(right = exp1))
       then exp1;
+    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=DAE.BCONST(bool=true),right=exp1)))
+      then exp1;
     else
       equation print("BackendEquation.getEquationRHS failed!\n!");
       then fail();
@@ -2861,8 +2863,10 @@ algorithm
       then Expression.crefExp(cref);
     case(BackendDAE.COMPLEX_EQUATION(left = exp1))
       then exp1;
+    case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=DAE.BCONST(bool=true),left=cref)))
+      then Expression.crefExp(cref);
     else
-      equation print("BackendEquation.getEquationLHS failed!\n!");
+      equation print("BackendEquation.getEquationLHS failed!\n");
       then fail();
   end matchcontinue;
 end getEquationLHS;
