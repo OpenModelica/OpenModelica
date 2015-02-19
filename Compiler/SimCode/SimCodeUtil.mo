@@ -7047,6 +7047,258 @@ algorithm
           next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints);
 end createVarInfo;
 
+
+protected function preCalculateStartValues"calculates start values of variables which have none. The calculation is based on the start values of the vars in the assigned equation.
+This is a possible solution to equip vars with proper start values (would be computed anyway).
+In initial systems are nonlinear systems that use function calls that fail if the input has no proper start value.
+If the var is a torn var, there is no way to compute the proper start value before evaluating these function calls. The tearing method could consider this.
+author:Waurich TUD 2015-01"
+  input BackendDAE.EqSystem systIn;
+  input BackendDAE.Variables knownVars;
+  output BackendDAE.EqSystem systOut;
+protected
+  list<Integer> varMap;
+  array<Integer> varMapArr;
+  BackendDAE.Variables vars,allVars,vars1;
+  BackendDAE.EquationArray eqs,eqs1;
+  BackendDAE.Matching matching;
+  BackendDAE.IncidenceMatrix mStart;
+  BackendDAE.IncidenceMatrixT mTStart;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.StrongComponents comps;
+  BackendDAE.StateSets stateSets;
+  BackendDAE.BaseClockPartitionKind partitionKind;
+  BackendDAE.EqSystem syst;
+  list<BackendDAE.Equation> eqLst;
+  list<BackendDAE.Var> varLst,noStartVarLst;
+
+  list<tuple<Integer,BackendDAE.VarKind>> stateInfo;
+  list<Integer> stateIdcs;
+  list<BackendDAE.VarKind> stateKinds;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=m, mT=mT, stateSets=stateSets, partitionKind=partitionKind, matching=matching) := systIn;
+  // set the varkInd for states to variable, reverse this later with the help of the stateinfo
+  stateInfo := List.fold1(List.intRange(BackendVariable.varsSize(vars)),getStateInfo,vars,{});// which var is a state and save the kind
+  (vars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKindForStates,BackendDAE.VARIABLE());
+
+  // replace every var or param by its startvalue or binding, make a system of variables withput startvalues
+  allVars := BackendVariable.mergeVariables(vars,knownVars);
+  varLst := BackendVariable.varList(vars);
+  eqLst := BackendEquation.equationList(eqs);
+  varMap := List.intRange(BackendVariable.varsSize(vars));
+  (noStartVarLst,varMap) := List.filterOnTrueSync(varLst, BackendVariable.varHasNoStartValue, varMap);
+
+  // insert start values for crefs and build incidence matrix
+    //BackendDump.dumpVariables(vars,"VAR BEFORE");
+    //BackendDump.dumpEquationList(eqLst,"EQS BEFORE");
+  (eqLst,_) := BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,allVars);
+    //BackendDump.dumpEquationList(eqLst,"EQS AFTER");
+  eqs1 := BackendEquation.listEquation(eqLst);
+  vars1 := BackendVariable.listVar1(noStartVarLst);
+  syst := BackendDAE.EQSYSTEM(vars1,eqs1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets,partitionKind);
+  (syst,mStart,mTStart) := BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
+    //BackendDump.dumpIncidenceMatrix(mStart);
+    //BackendDump.dumpIncidenceMatrixT(mTStart);
+  // solve equations for new start values and assign start values to variables
+  varMapArr := listArray(varMap);
+  vars := preCalculateStartValues1(List.intRange(arrayLength(mStart)),mStart,mTStart,varMapArr,eqs1,vars);
+
+  // reset the varKinds for the states
+  stateIdcs := List.map(stateInfo,Util.tuple21);
+  stateKinds := List.map(stateInfo,Util.tuple22);
+  vars := List.threadFold(stateIdcs,stateKinds,BackendVariable.setVarKindForVar,vars);
+    //BackendDump.dumpVariables(vars,"VAR AFTER");
+  systOut := BackendDAE.EQSYSTEM(vars, eqs,m, mT, matching, stateSets, partitionKind);
+end preCalculateStartValues;
+
+protected function preCalculateStartValues1"try to solve the start equation for a var and set the resulting start value for it."
+  input list<Integer> eqIdcs; // to be analyzed
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrix mT;
+  input array<Integer> varMap;
+  input BackendDAE.EquationArray eqs;
+  input BackendDAE.Variables varsIn;
+  output BackendDAE.Variables varsOut;
+algorithm
+  varsOut := matchcontinue(eqIdcs,m,mT,varMap,eqs,varsIn)
+  local
+    Integer eqIdx,varIdx, varIdx0;
+    list<Integer> rest, newEqIdcs, newVarIdcs;
+    list<list<Integer>> mEntries;
+    BackendDAE.Equation eq;
+    BackendDAE.EquationArray eqArr;
+    BackendDAE.Var var;
+    BackendDAE.Variables varArr;
+    list<BackendDAE.Equation> eqLst;
+    DAE.ComponentRef cref;
+    DAE.Exp lhs,rhs;
+  case({},_,_,_,_,_)
+    equation
+   then varsIn;
+  case(eqIdx::rest,_,_,_,_,_)
+    equation
+      {varIdx0} = arrayGet(m,eqIdx);
+      varIdx = arrayGet(varMap,intAbs(varIdx0));
+      var = BackendVariable.getVarAt(varsIn,varIdx);
+      cref = BackendVariable.varCref(var);
+      eq = BackendEquation.equationNth1(eqs,eqIdx);
+        //print("solve eq("+intString(eqIdx)+"): ");
+        //BackendDump.printEquationList({eq});
+        //print(" for var("+intString(varIdx0)+"): "+ComponentReference.printComponentRefStr(cref)+"\n");
+      rhs = BackendEquation.getEquationRHS(eq);
+      lhs = BackendEquation.getEquationLHS(eq);
+      (rhs,{}) = ExpressionSolve.solve(lhs,rhs,Expression.crefExp(cref));
+      true = Expression.isConst(rhs); // if this equation solves a variable, set this as a start value
+      var = BackendVariable.setVarStartValue(var,rhs);
+      varArr = BackendVariable.setVarAt(varsIn,varIdx,var);
+
+      //check these equations again
+      newEqIdcs = arrayGet(mT,varIdx0);
+      newEqIdcs = List.deleteMember(newEqIdcs,eqIdx);
+      rest = listAppend(rest,newEqIdcs);
+        //print("check these equations again: "+stringDelimitList(List.map(newEqIdcs,intString),", ")+"\n");
+      // replace the var with the new start value in these equations
+      eqLst = List.map1r(newEqIdcs,BackendEquation.equationNth1,eqs);
+      (eqLst,_) = BackendEquation.traverseExpsOfEquationList(eqLst,replaceCrefWithStartValue,varArr);
+      eqArr = List.threadFold(newEqIdcs,eqLst,BackendEquation.setAtIndexFirst,eqs);
+      // update the incidenceMatrix m and remove the idcs for the calculated var
+      mEntries = List.map1(newEqIdcs,Array.getIndexFirst,m);
+      mEntries = List.map1(mEntries,List.deleteMember,varIdx0);
+      List.threadMap1_0(newEqIdcs,mEntries,Array.updateIndexFirst,m);
+      varArr = preCalculateStartValues1(rest,m,mT,varMap,eqArr,varArr);
+    then
+      varArr;
+  case(_::rest,_,_,_,_,_)
+    equation
+       varArr = preCalculateStartValues1(rest,m,mT,varMap,eqs,varsIn);
+      then
+        varArr;
+  end matchcontinue;
+end preCalculateStartValues1;
+
+protected function replaceCrefWithStartValue"replaces a cref with its constant start value.
+Waurich 2015-01"
+  input DAE.Exp expIn;
+  input BackendDAE.Variables varsIn;
+  output DAE.Exp expOut;
+  output BackendDAE.Variables varsOut;
+algorithm
+  (expOut,varsOut) := matchcontinue(expIn,varsIn)
+   local
+     Integer idx;
+     Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
+     BackendDAE.Var var;
+     DAE.ComponentRef cref;
+     DAE.Exp exp, exp1, exp2, exp3, startTime;
+     DAE.Operator op;
+     list<DAE.Exp> expLst;
+
+   case(DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),_)
+     equation
+     then (DAE.RCONST(0.0),varsIn);
+
+   case(DAE.CREF(componentRef=cref),_)
+     equation
+       ({var},_) = BackendVariable.getVar(cref,varsIn);
+      // print("VAR: "+BackendDump.varString(var)+" -->");
+       if BackendVariable.varHasBindExp(var) /*and Expression.isConst(BackendVariable.varBindExp(var))*/ then
+         exp = BackendVariable.varBindExp(var);
+         exp = replaceCrefWithStartValue(exp,varsIn);
+       elseif BackendVariable.varHasStartValue(var) then
+         exp = BackendVariable.varStartValue(var);
+       else
+         exp = expIn;
+       end if;
+       //print(" has START:"+ ExpressionDump.printExpStr(exp)+"\n");
+       true = Expression.isConst(exp);
+     then (exp,varsIn);
+
+   case(DAE.CALL(path=Absyn.IDENT("sample"), expLst=expLst),_)
+       equation
+       startTime = listGet(expLst,2);
+       startTime = replaceCrefWithStartValue(startTime,varsIn);
+       if Expression.isZero(startTime) then
+         exp = DAE.BCONST(true);
+       else
+         exp = expIn;
+       end if;
+     then (exp,varsIn);
+
+   case(DAE.BINARY(exp1=exp1,operator=op,exp2=exp2),_)
+     equation
+       exp1 = replaceCrefWithStartValue(exp1,varsIn);
+       exp2 = replaceCrefWithStartValue(exp2,varsIn);
+     then (DAE.BINARY(exp1,op,exp2),varsIn);
+
+     case(DAE.LBINARY(exp1=exp1,operator=op,exp2=exp2),_)
+     equation
+       exp1 = replaceCrefWithStartValue(exp1,varsIn);
+       exp2 = replaceCrefWithStartValue(exp2,varsIn);
+     then (DAE.LBINARY(exp1,op,exp2),varsIn);
+
+    case(DAE.RELATION(exp1=exp1,operator=op,exp2=exp2,index=idx,optionExpisASUB=optionExpisASUB),_)
+     equation
+       exp1 = replaceCrefWithStartValue(exp1,varsIn);
+       exp2 = replaceCrefWithStartValue(exp2,varsIn);
+     then (DAE.RELATION(exp1,op,exp2,idx,optionExpisASUB),varsIn);
+
+    case(DAE.IFEXP(expCond=exp1,expThen=exp2,expElse=exp3),_)
+     equation
+       //print("IFEXP: "+ExpressionDump.dumpExpStr(expIn,0)+"\n");
+       exp1 = replaceCrefWithStartValue(exp1,varsIn);
+       exp2 = replaceCrefWithStartValue(exp2,varsIn);
+       exp3 = replaceCrefWithStartValue(exp3,varsIn);
+     then (DAE.IFEXP(exp1,exp2,exp3),varsIn);
+
+   else
+     equation
+       //print("Without START:"+ ExpressionDump.printExpStr(expIn)+"\n");
+     then (expIn,varsIn);
+
+  end matchcontinue;
+end replaceCrefWithStartValue;
+
+protected function setVarKindForStates
+    input BackendDAE.Var inVar;
+    input BackendDAE.VarKind kindIn;
+    output BackendDAE.Var outVar;
+    output BackendDAE.VarKind kindOut;
+algorithm
+  (outVar,kindOut) := match(inVar,kindIn)
+    local
+      BackendDAE.Var var;
+  case(BackendDAE.VAR(varKind=BackendDAE.STATE(index=1)),_)
+    equation
+      var = BackendVariable.setVarKind(inVar,kindIn);
+    then (var,kindIn);
+  else
+    then
+      (inVar,kindIn);
+  end match;
+end setVarKindForStates;
+
+protected function getStateInfo
+  input Integer idx;
+  input BackendDAE.Variables vars;
+  input list<tuple<Integer,BackendDAE.VarKind>> stateInfoIn;
+  output list<tuple<Integer,BackendDAE.VarKind>> stateInfoOut;
+algorithm
+  stateInfoOut := matchcontinue(idx,vars,stateInfoIn)
+    local
+      BackendDAE.Var var;
+      BackendDAE.VarKind kind;
+    case(_,_,_)
+      equation
+        var = BackendVariable.getVarAt(vars,idx);
+        true = BackendVariable.isStateVar(var);
+        kind = BackendVariable.varKind(var);
+      then ((idx,kind)::stateInfoIn);
+    else
+      then (stateInfoIn);
+  end matchcontinue;
+end getStateInfo;
+
 protected function createVars
   input BackendDAE.BackendDAE dlow;
   output SimCodeVar.SimVars outVars;
@@ -7057,6 +7309,7 @@ protected
   BackendDAE.EqSystems systs;
 algorithm
   BackendDAE.DAE(eqs=systs, shared=BackendDAE.SHARED(knownVars=knvars, externalObjects=extvars, aliasVars=aliasVars)) := dlow;
+  //systs := List.map1(systs,preCalculateStartValues,knvars);
 
   /* Extract from variable list */
   ((outVars, _, _)) := List.fold1(List.map(systs, BackendVariable.daeVars), BackendVariable.traverseBackendDAEVars, extractVarsFromList, (SimCodeVar.emptySimVars, aliasVars, knvars));
