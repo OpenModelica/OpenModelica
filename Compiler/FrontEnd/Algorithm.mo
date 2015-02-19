@@ -320,10 +320,9 @@ public function makeSimpleAssingment
   output DAE.Statement outStmt;
 protected
   DAE.Exp e1, e2;
-  DAE.ComponentRef cr;
   DAE.Type tp;
 algorithm
-  (e1 as DAE.CREF(cr, tp), e2) := inTpl;
+  (e1 as DAE.CREF(ty=tp), e2) := inTpl;
   outStmt := DAE.STMT_ASSIGN(tp, e1, e2, source);
 end makeSimpleAssingment;
 

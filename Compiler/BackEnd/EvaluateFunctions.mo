@@ -152,9 +152,7 @@ algorithm
         ExpressionDump.dumpExp(bindExp);
       then
         varIn;
-    else
-      equation
-        then varIn;
+    else varIn;
   end matchcontinue;
 end evaluateParameter;
 
@@ -256,8 +254,6 @@ algorithm
       then
         (eq,(shared,addEqs,idx+1,changed));
     else
-      equation
-      then
         (eqIn,tplIn);
   end matchcontinue;
 end evalFunctions_findFuncs;
@@ -452,8 +448,6 @@ algorithm
       then
         ((exp,outputExp,constEqs,funcs,idx,changed));
     else
-      equation
-      then
         ((rhsExpIn,lhsExpIn,{},funcsIn,eqIdx,false));
   end matchcontinue;
 end evaluateConstantFunction;
@@ -610,8 +604,6 @@ algorithm
       then
         expLst;
     else
-    equation
-    then
       {};
   end match;
 end getCrefsForRecord;
@@ -639,8 +631,7 @@ algorithm
         exp = Expression.crefExp(cref);
       then exp;
     else
-      equation
-      then expIn;
+      expIn;
   end matchcontinue;
 end scalarRecExpForOneDimRec;
 
@@ -699,8 +690,7 @@ algorithm
         funcProts = List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         varOutputs = listAppend(funcOutputs,funcProts);
       then (varOutputs,outputExp,varScalarCrefsInFunc);
-    case(_,_,_,_,_,_,DAE.LBINARY(exp1=exp1,exp2=exp2))
-      equation
+    case(_,_,_,_,_,_,DAE.LBINARY())
       then
         ({},lhsExpIn,{});
     case(_,_,_,_,_,_,DAE.TUPLE(PR=expLst))
@@ -727,10 +717,6 @@ algorithm
         varScalarExps = List.map(varScalarExps,scalarRecExpForOneDimRec);
         outputExp = if List.hasOneElement(varScalarExps) then List.first(varScalarExps) else DAE.TUPLE(varScalarExps);
       then (varOutputs,outputExp,varScalarCrefsInFunc);
-    case(_,_,_,_,_,_,DAE.LBINARY(exp1=exp1,exp2=exp2))
-      equation
-      then
-        ({},lhsExpIn,{});
     case(_,_,_,_,_,_,DAE.TUPLE(PR=expLst))
       equation
         true = List.isEmpty(List.flatten(scalarOutputs));
@@ -745,10 +731,6 @@ algorithm
         funcProts = List.map2(protCrefs,generateProtectedElements,allOutputs,lhsExpIn);
         varOutputs = listAppend(funcOutputs,funcProts);
       then (varOutputs,outputExp,varScalarCrefsInFunc);
-    case(_,_,_,_,_,_,DAE.LBINARY(exp1=exp1,exp2=exp2))
-      equation
-      then
-        ({},lhsExpIn,{});
     case(_,{},{},_,{},_,_)
       equation
         // only constant scalarOutputs
@@ -818,9 +800,7 @@ algorithm
        constCrefs = List.map(constExps,Expression.expCref);
        then
          ({},constCrefs);
-    case(_,_,_,_)
-      equation
-     then
+    else
        (constScalarCrefs,constComplCrefs);
   end matchcontinue;
 end buildConstFunctionCrefs;
@@ -846,7 +826,6 @@ algorithm
       list<DAE.Element> rest;
       list<DAE.ComponentRef> constCompl, varCompl, varScalar, constScalar, constScalarCrefs;
     case({},_,_,_,_,_)
-      equation
         then(constComplexLstIn,varComplexLstIn,constScalarLstIn,varScalarLstIn);
     case(elem::rest,_,_,_,_,_)
       equation
@@ -1209,7 +1188,6 @@ algorithm
       then
         b1;
     case({})
-      equation
       then
         false;
     case(exp::rest)
@@ -1274,12 +1252,10 @@ algorithm
       then
         cref2;
     case(cref1 as DAE.CREF_IDENT(),_)
-      equation
-       then
-         cref1;
-    else
       then
-        crefIn;
+        cref1;
+    else
+      crefIn;
   end matchcontinue;
 end makeIdentCref2;
 
@@ -1327,9 +1303,7 @@ algorithm
       then
         not b;
     else
-      equation
-        then
-          true;
+        true;
   end match;
 end statementRHSIsNotConst;
 
@@ -1829,7 +1803,6 @@ algorithm
       then
         (stmts,true);
     case(DAE.NOELSE(),FUNCINFO())
-      equation
       then
         ({},true);
   end match;
@@ -1856,8 +1829,7 @@ algorithm
       then
         repl;
    else
-     then
-       replIn;
+     replIn;
   end matchcontinue;
 end addTplReplacements;
 
@@ -1908,7 +1880,6 @@ algorithm
     list<DAE.Statement> stmtLst1,stmtLst2;
     list<list<DAE.Statement>> stmtLstLst;
   case(DAE.STMT_ASSIGN(exp1=exp),_)
-    equation
     then
       exp::expsIn;
   case(DAE.STMT_TUPLE_ASSIGN(expExpLst=expLst),_)
@@ -1970,7 +1941,6 @@ algorithm
       end if;
     then fail();
   case(DAE.STMT_NORETCALL(),_)
-    equation
     then expsIn;
   case(DAE.STMT_RETURN(),_)
     equation
@@ -2072,9 +2042,7 @@ algorithm
       then
         stmtsLst;
     else
-      equation
-      then
-        stmtLstsIn;
+      stmtLstsIn;
   end match;
 end getDAEelseStatemntLsts;
 
@@ -2149,7 +2117,6 @@ algorithm
     local
       DAE.Type t;
     case(DAE.CREF(ty=t))
-      equation
       then
         t;
     else
@@ -2289,8 +2256,6 @@ algorithm
       then
         {};
     else
-      equation
-      then
         {};
   end matchcontinue;
 end getScalarsForComplexVar;
@@ -2537,8 +2502,7 @@ algorithm
        then
          (({stmtNew},addStmts),FUNCINFO(repl,funcTree,idx));
    else
-     equation
-       then(({stmtIn},{}),infoIn);
+       (({stmtIn},{}),infoIn);
   end matchcontinue;
 end predictIfOutput;
 
@@ -2569,7 +2533,6 @@ algorithm
       list<DAE.Exp> lhsLst,rhsLst,constExps,varExps;
       list<DAE.Statement> rest;
     case({},_)
-      equation
       then
         replIn;
     case(DAE.STMT_ASSIGN(exp1=lhs,exp=rhs)::rest,_)
@@ -2666,11 +2629,9 @@ algorithm
       then
         DAE.ELSEIF(exp,stmts,els);
     case(stmts::_,DAE.ELSE())
-      equation
       then
         DAE.ELSE(stmts);
     case(_::_,DAE.NOELSE())
-      equation
       then
         DAE.NOELSE();
   end match;

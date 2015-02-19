@@ -403,6 +403,18 @@ algorithm
       then e;
     case (DAE.CALL(path=Absyn.IDENT("atan"),expLst={DAE.CALL(path=Absyn.IDENT("tan"),expLst={e})}))
       then e;
+    // sin(acos(e)) = sqrt(1-e^2) 
+    case (DAE.CALL(path=Absyn.IDENT("sin"),expLst={DAE.CALL(path=Absyn.IDENT("acos"),expLst={e})}))
+      then Expression.makePureBuiltinCall("sqrt",{DAE.BINARY(DAE.RCONST(1),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e))},DAE.T_REAL_DEFAULT);
+    // cos(asin(e)) = sqrt(1-e^2) 
+    case (DAE.CALL(path=Absyn.IDENT("cos"),expLst={DAE.CALL(path=Absyn.IDENT("asin"),expLst={e})}))
+      then Expression.makePureBuiltinCall("sqrt",{DAE.BINARY(DAE.RCONST(1),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e))},DAE.T_REAL_DEFAULT);
+    // sin(atan(e)) = e/sqrt(1+e^2) 
+    case (DAE.CALL(path=Absyn.IDENT("sin"),expLst={DAE.CALL(path=Absyn.IDENT("atan"),expLst={e})}))
+      then DAE.BINARY(e,DAE.DIV(DAE.T_REAL_DEFAULT),Expression.makePureBuiltinCall("sqrt",{DAE.BINARY(DAE.RCONST(1),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e))},DAE.T_REAL_DEFAULT));
+    // cos(atan(e)) = 1/sqrt(1+e^2) 
+    case (DAE.CALL(path=Absyn.IDENT("cos"),expLst={DAE.CALL(path=Absyn.IDENT("atan"),expLst={e})}))
+      then DAE.BINARY(DAE.RCONST(1),DAE.DIV(DAE.T_REAL_DEFAULT),Expression.makePureBuiltinCall("sqrt",{DAE.BINARY(DAE.RCONST(1),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e))},DAE.T_REAL_DEFAULT));
     // atan2(y,0) = sign(y)*pi/2
     case (DAE.CALL(path=Absyn.IDENT("atan2"),expLst={e1,e2}))
      equation
@@ -1739,7 +1751,7 @@ algorithm
       then
         DAE.UNARY(op,e1);
 
-    case (e) then e;
+    else inExp;
 
   end matchcontinue;
 end simplify2;
@@ -2348,7 +2360,7 @@ algorithm
         res;
 
     // return e
-    case(e) then e;
+    else inExp;
 
   end matchcontinue;
 end simplifyBinarySortConstants;
@@ -2404,7 +2416,7 @@ algorithm
       then
         res;
 
-    case (e) then e;
+    else inExp;
 
   end matchcontinue;
 end simplifyBinaryCoeff;
@@ -2798,7 +2810,7 @@ algorithm
       then
         ((e1,2.0));
 
-    case (e) then ((e,1.0));
+    else ((inExp,1.0));
 
   end matchcontinue;
 end simplifyBinaryMulCoeff2;
@@ -3230,13 +3242,12 @@ protected function simplifyAsubOperator
   output Operator outOperator;
 algorithm
   outOperator:=
-  matchcontinue (inExp1,inOperator2,inOperator3)
-    local Operator sop,aop;
-    case (DAE.ARRAY(),_,aop) then aop;
-    case (DAE.MATRIX(),_,aop) then aop;
-    case (DAE.RANGE(),_,aop) then aop;
-    case (_,sop,_) then sop;
-  end matchcontinue;
+  match (inExp1)
+    case (DAE.ARRAY()) then inOperator3;
+    case (DAE.MATRIX()) then inOperator3;
+    case (DAE.RANGE()) then inOperator3;
+    else inOperator2;
+  end match;
 end simplifyAsubOperator;
 
 protected function simplifyAsubSlicing

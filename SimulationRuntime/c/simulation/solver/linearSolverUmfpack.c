@@ -425,6 +425,17 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData)
     else
     {
       infoStreamPrint(LOG_LS_V, 0, "error: system is not solvable*");
+      /* free all used memory */
+      free(Up);
+      free(Ui);
+      free(Ux);
+
+      free(Q);
+      free(Rs);
+
+      free(b);
+      free(y);
+      free(z);
       return -1;
     }
   }
@@ -466,6 +477,17 @@ int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData)
         else
         {
           infoStreamPrint(LOG_LS_V, 0, "error: system is not solvable");
+          /* free all used memory */
+          free(Up);
+          free(Ui);
+          free(Ux);
+
+          free(Q);
+          free(Rs);
+
+          free(b);
+          free(y);
+          free(z);
           return -1;
         }
 

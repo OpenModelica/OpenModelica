@@ -211,7 +211,6 @@ end structToString;
 
 template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args, DAE.Type res, String className, Boolean addStructs)
 ::=
-  let &toStringBuffer = buffer ""
   let inTypes = args |> arg as FUNCARG(__) => '<%getQtType(arg.ty)%> <%arg.name%>' ; separator=", "
   let outType = match res
     case T_TUPLE(__) then

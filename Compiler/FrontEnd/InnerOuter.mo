@@ -679,7 +679,7 @@ algorithm
     case(_,_,_,_,_,true,_,_,_,_,_,_,_) then inSets;
 
     // if it was not added, add it (first component found: cr1)
-    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
+    case(cache,env,ih,_, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
       equation
         (cache,DAE.ATTR(connectorType = ct,variability=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         pre = Prefix.NOPRE();
@@ -697,7 +697,7 @@ algorithm
         Connect.SETS(sets, sc, cl, oc);
 
     // if it was not added, add it (first component found: cr2)
-    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
+    case(cache,env,ih,_, Connect.SETS(sets, sc, cl, oc),false,_,io1,_,_,io2,_,_)
       equation
         pre = Prefix.NOPRE();
         (cache,DAE.ATTR(connectorType = ct,variability=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
