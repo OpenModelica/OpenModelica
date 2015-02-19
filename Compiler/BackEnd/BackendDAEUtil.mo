@@ -3204,6 +3204,13 @@ algorithm
         b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
       then (inExp,not b,inTpl);
 
+    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub={DAE.ICONST(i)}), (vars, pa))
+      equation
+        cr = ComponentReference.subscriptCrefWithInt(cr, i);
+        (varslst, p) = BackendVariable.getVar(cr, vars);
+        pa = incidenceRowExp1(varslst, p, pa, 0);
+    then (inExp, false, (vars, pa));
+
     case (DAE.ASUB(exp = e1, sub={DAE.ICONST(i)}),(vars,pa))
       equation
         e1 = Expression.nthArrayExp(e1, i);
