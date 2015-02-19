@@ -21,11 +21,11 @@ public:
 #else
     virtual std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > LoadSystem(boost::shared_ptr<ISimData> (*createSimDataCallback)(), boost::shared_ptr<IMixedSystem> (*createSystemCallback)(IGlobalSettings*, boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData>), string modelKey);
 #endif
-  */ 
+  */
    virtual boost::weak_ptr<IMixedSystem> LoadSystem(string modelLib,string modelKey);
    virtual boost::weak_ptr<IMixedSystem> LoadModelicaSystem(PATH modelica_path,string modelKey);
    virtual boost::weak_ptr<ISimData> LoadSimData(string modelKey);
-   
+
    /// Stops the simulation
    virtual void Stop();
    virtual void Start(SimSettings simsettings, string modelKey);

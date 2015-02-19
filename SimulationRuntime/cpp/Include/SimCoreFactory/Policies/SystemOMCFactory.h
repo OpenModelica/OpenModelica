@@ -56,7 +56,7 @@ public:
     }
     boost::shared_ptr<ISimData> simData(simdata_iter->second.create());
     return simData;
-  
+
   }
   boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData)
   {

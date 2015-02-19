@@ -589,7 +589,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       boost::shared_ptr<ISimData> sp( new SimData() );
       return sp;
     }
-   
+
     boost::shared_ptr<IMixedSystem> createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, boost::shared_ptr<ISimData> simData)
     {
       boost::shared_ptr<IMixedSystem> sp( new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData) );
@@ -1818,10 +1818,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 
             std::pair<boost::shared_ptr<ISimController>,SimSettings> simulation =  _factory->createSimulation(argc,argv);
 
-            
+
             //create Modelica system
             /*#ifdef RUNTIME_STATIC_LINKING
-              
+
               boost::weak_ptr<IMixedSystem> system = simulation.first->LoadSystem(&createSimData, &createSystem, "<%lastIdentOfPath(modelInfo.name)%>");
             #else
             */
