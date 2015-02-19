@@ -5,6 +5,7 @@
 #include <Core/System/AlgLoopSolverFactory.h>
 #include <Core/SimController/ISimData.h>
 
+boost::shared_ptr<IMixedSystem>  createModelicaSystem(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData);
 /*
 Policy class to create a OMC-,  Modelica- system or AlgLoopSolver
 */
@@ -26,7 +27,12 @@ public:
     boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory = boost::shared_ptr<IAlgLoopSolverFactory>(new AlgLoopSolverFactory(globalSettings, ObjectFactory<CreationPolicy>::_library_path, ObjectFactory<CreationPolicy>::_modelicasystem_path));
     return algloopsolverfactory;
   }
-
+  
+  boost::shared_ptr<IMixedSystem> createSystem(string modelLib,string modelKey,IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> algloopsolverfactory,boost::shared_ptr<ISimData> simData)
+  {
+     return createModelicaSystem(globalSettings,algloopsolverfactory,simData);
+  }
+  
 protected:
   virtual void initializeLibraries(PATH library_path, PATH modelicasystem_path, PATH config_path)
   {

@@ -580,7 +580,21 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   {
      return new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, nonlinsolverfactor, sim_data);
   }
-
+  #elif  defined (RUNTIME_STATIC_LINKING)
+    #include <Core/DataExchange/SimData.h>
+    #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
+    #include "OMCpp<%dotPath(modelInfo.name)%>Extension.h"
+    boost::shared_ptr<ISimData> createSimData()
+    {
+      boost::shared_ptr<ISimData> sp( new SimData() );
+      return sp;
+    }
+   
+    boost::shared_ptr<IMixedSystem> createModelicaSystem(IGlobalSettings* globalSettings, boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory, boost::shared_ptr<ISimData> simData)
+    {
+      boost::shared_ptr<IMixedSystem> sp( new <%lastIdentOfPath(modelInfo.name)%>Extension(globalSettings, algLoopSolverFactory, simData) );
+      return sp;
+    }
   #else
 
   using boost::extensions::factory;
@@ -1693,7 +1707,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   #include <Core/ModelicaDefine.h>
   #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
-
+  /*
   #ifdef RUNTIME_STATIC_LINKING
     #include <Core/DataExchange/SimData.h>
     #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
@@ -1712,7 +1726,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   #else
     //namespace ublas = boost::numeric::ublas;
   #endif //RUNTIME_STATIC_LINKING
-
+  */
   <%
   match(getConfigString(PROFILING_LEVEL))
      case("none") then ''
@@ -1804,13 +1818,17 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
 
             std::pair<boost::shared_ptr<ISimController>,SimSettings> simulation =  _factory->createSimulation(argc,argv);
 
+            
             //create Modelica system
-            #ifdef RUNTIME_STATIC_LINKING
-              std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem(&createSimData, &createSystem, "<%lastIdentOfPath(modelInfo.name)%>");
+            /*#ifdef RUNTIME_STATIC_LINKING
+              
+              boost::weak_ptr<IMixedSystem> system = simulation.first->LoadSystem(&createSimData, &createSystem, "<%lastIdentOfPath(modelInfo.name)%>");
             #else
-              std::pair<boost::shared_ptr<IMixedSystem>,boost::shared_ptr<ISimData> > system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
-            #endif //RUNTIME_STATIC_LINKING
-            simulation.first->Start(system.first,simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
+            */
+              boost::weak_ptr<ISimData> simData = simulation.first->LoadSimData("<%lastIdentOfPath(modelInfo.name)%>");
+              boost::weak_ptr<IMixedSystem> system = simulation.first->LoadSystem("OMCpp<%fileNamePrefix%><%makefileParams.dllext%>","<%lastIdentOfPath(modelInfo.name)%>");
+            /*#endif //RUNTIME_STATIC_LINKING*/
+            simulation.first->Start(simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
 
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
               <<
