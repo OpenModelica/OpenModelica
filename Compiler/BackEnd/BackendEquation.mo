@@ -679,7 +679,12 @@ algorithm
     case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=NONE()), source=source, attr=attr) equation
       tp = Expression.typeof(e2);
       e1 = Expression.makeCrefExp(cr, tp);
-      (DAE.CREF(cr1, _), extArg) = inFunc(e1, inTypeA);
+      (e1, extArg) = inFunc(e1, inTypeA);
+      if Expression.isCref(e1) then
+        DAE.CREF(cr1, _) = e1;
+      else
+        cr1=cr;
+      end if;
       (e_2, extArg) = inFunc(e2, extArg);
       (cond, extArg) = inFunc(cond, extArg);
     then (BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_EQ(cond, cr1, e_2, NONE()), source, attr), extArg);
@@ -687,7 +692,12 @@ algorithm
     case BackendDAE.WHEN_EQUATION(size=size, whenEquation=BackendDAE.WHEN_EQ(condition=cond, left=cr, right=e2, elsewhenPart=SOME(elsePart)), source=source, attr=attr) equation
       tp = Expression.typeof(e2);
       e1 = Expression.makeCrefExp(cr, tp);
-      (DAE.CREF(cr1, _), extArg) = inFunc(e1, inTypeA);
+      (e1, extArg) = inFunc(e1, inTypeA);
+      if Expression.isCref(e1) then
+        DAE.CREF(cr1, _) = e1;
+      else
+        cr1=cr;
+      end if;
       (e_2, extArg) = inFunc(e2, extArg);
       (cond, extArg) = inFunc(cond, extArg);
       (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1), extArg) = traverseExpsOfEquation(BackendDAE.WHEN_EQUATION(size, elsePart, source, attr), inFunc, extArg);
@@ -2841,7 +2851,7 @@ algorithm
     case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=DAE.BCONST(bool=true),right=exp1)))
       then exp1;
     else
-      equation print("BackendEquation.getEquationRHS failed!\n!");
+      //equation print("BackendEquation.getEquationRHS failed!\n!");
       then fail();
   end matchcontinue;
 end getEquationRHS;
@@ -2866,7 +2876,7 @@ algorithm
     case(BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=DAE.BCONST(bool=true),left=cref)))
       then Expression.crefExp(cref);
     else
-      equation print("BackendEquation.getEquationLHS failed!\n");
+      //equation print("BackendEquation.getEquationLHS failed!\n");
       then fail();
   end matchcontinue;
 end getEquationLHS;
