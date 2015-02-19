@@ -235,7 +235,7 @@ int updateStaticDataOfLinearSystems(DATA *data)
 void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
 {
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
-  infoStreamPrint(logLevel, 1, "Linear system %d with (size = %d, nonZeroElements = %d, density = %.2f \%) solver statistics:",
+  infoStreamPrint(logLevel, 1, "Linear system %d with (size = %d, nonZeroElements = %d, density = %.2f %%) solver statistics:",
                                (int)linsys[sysNumber].equationIndex, (int)linsys[sysNumber].size, (int)linsys[sysNumber].nnz,
                                (((double) linsys[sysNumber].nnz) / ((double)(linsys[sysNumber].size*linsys[sysNumber].size)))*100 );
   infoStreamPrint(logLevel, 0, " number of calls                : %ld", linsys[sysNumber].numberOfCall);
