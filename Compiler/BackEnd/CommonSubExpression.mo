@@ -879,8 +879,8 @@ algorithm
 
      var1 = BackendVariable.getVarAt(vars,varIdxAlias);
      var2 = BackendVariable.getVarAt(vars,varIdxRepl);
-     false = BackendVariable.isStateVar(var1);
-
+     false = BackendVariable.isStateVar(var1) or BackendDAEUtil.isVarDiscrete(var1);
+     
      cref = BackendVariable.varCref(var2);
      varExp = BackendVariable.varExp(var1);
      repl = BackendVarTransform.addReplacement(repl,cref,varExp,NONE());
