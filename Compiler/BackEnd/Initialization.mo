@@ -200,7 +200,7 @@ algorithm
     end if;
 
     // now let's solve the system!
-    (initdae, _) := BackendDAEUtil.mapEqSystemAndFold(initdae, solveInitialSystemEqSystem, dae);
+    initdae := BackendDAEUtil.mapEqSystem(initdae, solveInitialSystemEqSystem);
 
     // transform and optimize DAE
     pastOptModules := BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", /* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem","calculateStrongComponentJacobians", "solveSimpleEquations"}));
@@ -276,44 +276,33 @@ protected function solveInitialSystemEqSystem "author: lochel
   This is a helper function of solveInitialSystem and solves the generated system."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem osyst := isyst;
   output BackendDAE.Shared outShared := inShared "unused";
-  output BackendDAE.BackendDAE outDAE := inDAE "unused";
+protected
+  Integer nVars, nEqns;
 algorithm
-  osyst := matchcontinue(isyst)
-    local
-      Integer nVars, nEqns;
+  nEqns := BackendDAEUtil.systemSize(isyst);
+  nVars := BackendVariable.varsSize(BackendVariable.daeVars(isyst));
 
-    // over-determined system: nEqns > nVars
-    case (_) equation
-      nVars = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
-      nEqns = BackendDAEUtil.systemSize(isyst);
-      true = intGt(nEqns, nVars);
+  // over-determined system: nEqns > nVars
+  if intGt(nEqns, nVars) then
+    if Flags.isSet(Flags.INITIALIZATION) then
+      Error.addCompilerWarning("It was not possible to solve the over-determined initial system (" + intString(nEqns) + " equations and " + intString(nVars) + " variables)");
+      BackendDump.dumpEqSystem(isyst, "It was not possible to solve the over-determined initial system (" + intString(nEqns) + " equations and " + intString(nVars) + " variables)");
+    end if;
 
-      if Flags.isSet(Flags.INITIALIZATION) then
-        Error.addCompilerWarning("It was not possible to solve the over-determined initial system (" + intString(nEqns) + " equations and " + intString(nVars) + " variables)");
-      end if;
-    then fail();
+    fail();
+  end if;
 
-    // determined system: nEqns = nVars
-    case (_) equation
-      nVars = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
-      nEqns = BackendDAEUtil.systemSize(isyst);
-      true = intEq(nEqns, nVars);
-    then (isyst);
+  // under-determined system: nEqns < nVars
+  if intLt(nEqns, nVars) then
+    if Flags.isSet(Flags.INITIALIZATION) then
+      Error.addCompilerWarning("It was not possible to solve the under-determined initial system (" + intString(nEqns) + " equations and " + intString(nVars) + " variables)");
+      BackendDump.dumpEqSystem(isyst, "It was not possible to solve the under-determined initial system (" + intString(nEqns) + " equations and " + intString(nVars) + " variables)");
+    end if;
 
-    // under-determined system: nEqns < nVars
-    case (_) equation
-      nVars = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
-      nEqns = BackendDAEUtil.systemSize(isyst);
-      true = intLt(nEqns, nVars);
-
-      if Flags.isSet(Flags.INITIALIZATION) then
-        Error.addCompilerWarning("It was not possible to solve the under-determined initial system (" + intString(nEqns) + " equations and " + intString(nVars) + " variables)");
-      end if;
-    then fail();
-  end matchcontinue;
+    fail();
+  end if;
 end solveInitialSystemEqSystem;
 
 // =============================================================================
