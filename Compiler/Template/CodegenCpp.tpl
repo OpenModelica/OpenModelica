@@ -1707,11 +1707,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   #include <Core/ModelicaDefine.h>
   #include <SimCoreFactory/Policies/FactoryConfig.h>
   #include <SimController/ISimController.h>
-  
+
   #ifdef RUNTIME_STATIC_LINKING
     #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
   #endif //RUNTIME_STATIC_LINKING
-  
+
   <%
   match(getConfigString(PROFILING_LEVEL))
      case("none") then ''
