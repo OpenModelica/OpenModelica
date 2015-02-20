@@ -430,7 +430,7 @@ void index_alloc_integer_array(const integer_array_t * source,
     assert(base_array_ok(source));
     assert(index_spec_ok(source_spec));
     assert(index_spec_fit_base_array(source_spec,source));
-    
+
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
          if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
@@ -451,7 +451,7 @@ void index_alloc_integer_array(const integer_array_t * source,
             ++j;
         }
     }
-    
+
     alloc_integer_array_data(dest);
     index_integer_array(source, source_spec, dest);
 }

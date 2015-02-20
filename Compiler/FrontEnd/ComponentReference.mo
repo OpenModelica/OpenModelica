@@ -1522,14 +1522,14 @@ end containWholeDim3;
 /***************************************************/
 
 public function crefArrayGetFirstCref
-"mahge: This function is used to get the first element in 
+"mahge: This function is used to get the first element in
 an array cref if the cref was to be expanded. e.g.
      (a->nonarray, b->array) given a.b[1]   return a.b[1].
-     (a->nonarray, b->array) given a.b      return a.b[1]. 
+     (a->nonarray, b->array) given a.b      return a.b[1].
      (a->array, b->array) given a[1].b   return a[1].b[1]
      (a->array, b->array) given a[2].b   return a[2].b[1]
   i.e essentially filling the missing subs with 1.
-" 
+"
   input DAE.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm
@@ -1541,8 +1541,8 @@ algorithm
       Integer diff;
       DAE.Type ty;
       DAE.Ident i;
-      
-    case DAE.CREF_IDENT(i, ty, subs) 
+
+    case DAE.CREF_IDENT(i, ty, subs)
       algorithm
         dims := Types.getDimensions(ty);
         diff := listLength(dims) - listLength(subs);
@@ -1550,8 +1550,8 @@ algorithm
         subs := List.appendNoCopy(subs,newsubs);
       then
         DAE.CREF_IDENT(i, ty, subs);
-        
-    case DAE.CREF_QUAL(i, ty, subs, cr) 
+
+    case DAE.CREF_QUAL(i, ty, subs, cr)
       algorithm
         dims := Types.getDimensions(ty);
         diff := listLength(dims) - listLength(subs);

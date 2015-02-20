@@ -1899,7 +1899,7 @@ algorithm
 end liftArrayListDims;
 
 public function liftTypeWithDims "
-  mahge: This function turns a type into an array of that type 
+  mahge: This function turns a type into an array of that type
   by appening the new dimension at the end. "
   input DAE.Type inType;
   input DAE.Dimensions inDims;
@@ -1920,10 +1920,10 @@ algorithm
       algorithm
         dims := List.appendNoCopy(dims, inDims);
       then DAE.T_ARRAY(ty, dims, src);
-            
+
     else
       DAE.T_ARRAY(inType, inDims, DAE.emptyTypeSource);
-    
+
   end match;
 end liftTypeWithDims;
 

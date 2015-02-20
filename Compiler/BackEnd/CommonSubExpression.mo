@@ -480,8 +480,8 @@ algorithm
       (expLst, i) = List.mapFold(typeLst, createReturnExp, inUniqueCSEIndex);
       value = DAE.TUPLE(expLst);
     then (value, i+1);
-     
-    // Expanding.     
+
+    // Expanding.
     case DAE.T_ARRAY(ty=tp, dims=dims) equation
       str = "$CSE" + intString(inUniqueCSEIndex);
       cr = DAE.CREF_IDENT(str, inType, {});
@@ -489,14 +489,14 @@ algorithm
       expLst = List.map(crefs, Expression.crefExp);
       value = DAE.ARRAY(inType, true, expLst);
     then (value, inUniqueCSEIndex + 1);
-    
-    // // Not expanding Arrays 
+
+    // // Not expanding Arrays
     // case DAE.T_ARRAY(ty=tp, dims=dims) equation
       // str = "$CSE" + intString(inUniqueCSEIndex);
       // cr = DAE.CREF_IDENT(str, inType,{});
       // value = DAE.CREF(cr, inType);
     // then (value, inUniqueCSEIndex + 1);
-    
+
 
     // record types
     case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path),source=tpSource) equation
