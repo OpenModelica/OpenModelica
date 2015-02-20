@@ -456,7 +456,7 @@ public function insertListSorted<T>
   input list<T> inList2;
   input CompareFunc inCompFunc;
   output list<T> outList;
-  
+
   partial function CompareFunc
     input T inElement1;
     input T inElement2;
@@ -474,7 +474,7 @@ protected function insertListSorted1<T>
   input CompareFunc inCompFunc;
   input list<T> inResultList;
   output list<T> outResultList;
-  
+
   partial function CompareFunc
     input T inElement1;
     input T inElement2;

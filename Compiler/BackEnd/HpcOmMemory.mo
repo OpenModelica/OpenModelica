@@ -267,7 +267,7 @@ encapsulated package HpcOmMemory
 
           //printNodeSimCodeVarMapping(nodeSimCodeVarMapping);
           //print("-------------------------------------\n");
-          
+
           eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
           //printEqSimCodeVarMapping(eqSimCodeVarMapping);
           if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
@@ -275,7 +275,7 @@ encapsulated package HpcOmMemory
           else
             (cacheMap,scVarCLMapping,numCL) = createCacheMapDefault(allVarsMapping, CACHELINE_SIZE, simCodeVars, scVarTaskMapping, iSchedulerInfo, simCodeVarTypes);
           end if;
-          
+
           (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(iTaskGraphMeta,iEqSystems,hashTable,numCL,scVarCLMapping);
 
           //Get not optimized variables
@@ -2531,7 +2531,7 @@ encapsulated package HpcOmMemory
     print("Tasks that are writing to cacheline " + intString(iCacheLineIdx) + ": " + stringDelimitList(List.map(iTasks, intString), ",") + "\n");
     oCacheLineIdx := iCacheLineIdx + 1;
   end printCacheLineTaskMapping0;
-  
+
   protected function printEqSimCodeVarMapping
     input array<array<list<Integer>>> iMapping; //eqSysIdx -> eqIdx -> list<scVarIdx>
   protected

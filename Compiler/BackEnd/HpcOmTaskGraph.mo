@@ -137,7 +137,7 @@ protected
   TaskGraphMeta tmpGraphData;
   TaskGraph iGraph;
   TaskGraph tmpGraph;
-  
+
   array<Communications> commCosts;
   array<list<Integer>> inComps;
   array<list<Integer>> compParamMapping;
@@ -148,17 +148,17 @@ protected
   array<String> compDescs;
   list<Integer> eventEqLst, eventVarLst, rootNodes, rootVars;
   Integer numberOfVars, numberOfEqs;
-  
+
   Integer eqSysIdx;
   tuple<TaskGraph,TaskGraphMeta,Integer> tplOut;
-      
+
   BackendDAE.EqSystem syst;
   BackendDAE.IncidenceMatrix incidenceMatrix;
 algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=vars, orderedEqs=BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfEqs)) := iSyst;
   BackendDAE.SHARED(functionTree=sharedFuncs) := iShared;
   (iGraph,iGraphData,eqSysIdx) := iGraphInfo;
-  
+
   (_,incidenceMatrix,_) := BackendDAEUtil.getIncidenceMatrix(iSyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
   numberOfVars := BackendVariable.varsSize(vars);
   (tmpGraph,tmpGraphData) := getEmptyTaskGraph(listLength(comps), numberOfVars, numberOfEqs);
@@ -336,7 +336,7 @@ protected
   array<tuple<Integer,Integer,Integer>> eqCompMapping1, eqCompMapping2;
   array<tuple<Integer,Real>> exeCosts1, exeCosts2;
   array<Integer> nodeMark1, nodeMark2;
-  array<list<Integer>> compParamMapping1, compParamMapping2; 
+  array<list<Integer>> compParamMapping1, compParamMapping2;
   array<tuple<Integer,Integer,Integer>> varCompMapping1, varCompMapping2; //Map each variable to the scc which solves her
   array<String> nodeNames1, nodeNames2;
   array<String> compDescs1, compDescs2;
@@ -1289,14 +1289,14 @@ algorithm
     eqs := BackendEquation.equationNth1(iOrderedEquations, eqIdx)::eqs;
   end for;
   oIncidenceVars := List.map(incidenceVars, getVarTuple);
-  
+
   if(iAnalyzeParameters) then
     (paramVars,oParamVars) := BackendEquation.equationsParams(eqs,iKnownVars);
-    //print("Found parameters: " + stringDelimitList(List.map(paramVars, BackendDump.varString), ",") + "\n"); 
+    //print("Found parameters: " + stringDelimitList(List.map(paramVars, BackendDump.varString), ",") + "\n");
   else
     oParamVars := {};
   end if;
-  
+
 end getVarsByEqns;
 
 protected function getVarTuple "author: marcusw
@@ -1736,7 +1736,7 @@ protected
   array<Communications> commCosts;
   array<Integer>nodeMark;
   list<Integer> rangeLst;
-  array<list<Integer>> compParamMapping; 
+  array<list<Integer>> compParamMapping;
 algorithm
   TASKGRAPHMETA(inComps = inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, rootNodes = rootNodes, nodeNames =nodeNames, compDescs=compDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   inComps := listArray(List.deletePositions(arrayList(inComps),List.map1(cutNodes,intSub,1)));
@@ -2676,7 +2676,7 @@ algorithm
     (criticalPath,criticalPathWoC,schedulerInfo,annotationInfo) := iSchedulerInfoCritPath;
     GRAPHDUMPOPTIONS(visualizeTaskStartAndFinishTime=visualizeTaskStartAndFinishTime, visualizeTaskCalcTime=visualizeTaskCalcTime) := iGraphDumpOptions;
     components := arrayGet(inComps,nodeIdx);
-    
+
     if(intNe(listLength(components), 1)) then
       primalComp := List.last(components);
       simCodeEqs := List.flatten(List.map1(components, Array.getIndexFirst, sccSimEqMapping));
@@ -2689,7 +2689,7 @@ algorithm
       ((_,calcTime)) := arrayGet(exeCosts,primalComp);
       ((opCount,calcTime)) := arrayGet(exeCosts,primalComp);
     end if;
-  
+
     compText := arrayGet(nodeNames,primalComp);
     compsText := "{" + stringDelimitList(List.map(components, intString), ",") + "}";
     annotationString := arrayGet(annotationInfo,nodeIdx);
@@ -2780,14 +2780,14 @@ algorithm
   (commCostAttIdx, commVarsAttIdx, commVarsAttIntIdx, commVarsAttFloatIdx, commVarsAttBoolIdx) := iCommAttIdc;
   (criticalPathEdges, criticalPathEdgesWoC) := iCriticalPathEdges;
   GRAPHDUMPOPTIONS(visualizeCriticalPath=visualizeCriticalPath,visualizeCommTime=visualizeCommTime) := iGraphDumpOptions;
-  
+
   if(List.exist1(criticalPathEdges, compareIntTuple2, (parentIdx, childIdx))) then
     lineWidth := GraphML.LINEWIDTH_BOLD;
     edgeColor := if visualizeCriticalPath then GraphML.COLOR_GRAY else edgeColor;
   else
     lineWidth := GraphML.LINEWIDTH_STANDARD;
   end if;
-  
+
   COMMUNICATION(numberOfVars=numOfCommVars,integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars,requiredTime=commCost) := getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
   numOfCommVarsString := intString(numOfCommVars);
   numOfCommVarsIntString := intString(listLength(integerVars));
@@ -3641,10 +3641,10 @@ author: marcusw"
   list<Integer> parentNodes; //all nodes that have at least one node of the merged cluster as children
 algorithm
   TASKGRAPHMETA(inComps=inComps) := iTaskGraphMeta;
-  
+
   nodeMarks := arrayCreate(arrayLength(iTaskGraph), 0);
   nodeMarksT := arrayCreate(arrayLength(iTaskGraph), 0);
-  
+
   //print("contractNodesInGraph: Merging " + intString(listLength(iContractNodes)) + " groups of nodes at once\n");
   for iNodeList in iContractNodes loop
     //print("contractNodesInGraph: Merging nodes in " + stringDelimitList(List.map(iNodeList,intString),",") + "\n");
@@ -3662,46 +3662,46 @@ algorithm
         nodeList := nodeIdx::nodeList;
       end if;
     end for;
-  
+
     //print("contractNodesInGraph: Merging nodes " + stringDelimitList(List.map(nodeList,intString),",") + "\n");
-  
+
     //Get the index of the merged node
     nodeListHeadIdx::nodeListRestIdc := nodeList; //O(1)
     nodeListHeadIdx := getRealTaskIdxOfTask(nodeListHeadIdx, tmpContractedTasks);
-    
+
     negNodeListHeadIdx := intMul(-1, nodeListHeadIdx);
-    
+
     //Set the nodeMark-value of all 'nodeListRestIdc' to nodeListHeadIdx and set the contracted value O(n)
     for nodeIdx in nodeListRestIdc loop
       nodeMarks := arrayUpdate(nodeMarks, nodeIdx, nodeListHeadIdx);
       nodeMarksT := arrayUpdate(nodeMarksT, nodeIdx, nodeListHeadIdx);
       tmpContractedTasks := arrayUpdate(tmpContractedTasks, nodeIdx, negNodeListHeadIdx);
     end for;
-    
+
     //Set the mark of all nodeList-nodes to 'nodeListHeadIdx'
     nodeMarks := arrayUpdate(nodeMarks, nodeListHeadIdx, nodeListHeadIdx);
     nodeMarksT := arrayUpdate(nodeMarksT, nodeListHeadIdx, nodeListHeadIdx);
     //print("contractNodesInGraph: Node marks " + stringDelimitList(arrayList(Array.map(nodeMarks,intString)),",") + "\n");
     //print("contractNodesInGraph: Contracted nodes " + stringDelimitList(arrayList(Array.map(tmpContractedTasks,intString)),",") + "\n");
-    
+
     //Set the mark of all nodes connected with 'nodeListHeadIdx' to 'nodeListHeadIdx'
     outgoingEdges := arrayGet(tmpTaskGraph, nodeListHeadIdx);
     outgoingEdges := List.deleteMemberOnTrue(negNodeListHeadIdx,outgoingEdges,function checkIfNodeBelongsToCluster(iContractedTasks=tmpContractedTasks)); //O(n)
-    
+
     incomingEdges := arrayGet(tmpTaskGraphT, nodeListHeadIdx);
-    
+
     List.map_0(outgoingEdges, function Array.updateIndexFirst(inValue=nodeListHeadIdx, inArray=nodeMarks)); //O(n)
     List.map_0(incomingEdges, function Array.updateIndexFirst(inValue=nodeListHeadIdx, inArray=nodeMarksT)); //O(n)
 
     //print("contractNodesInGraph: Node marks " + stringDelimitList(arrayList(Array.map(nodeMarks,intString)),",") + "\n");
-    
+
     //Get all child-nodes (parent-nodes) of the nodes in the node-list and remove the nodes that are part of the node-list itself or connected to 'nodeListHeadIdx'
     childNodes := List.flatten(List.map(nodeListRestIdc,function getContractedNodeChildren(iRefValue=nodeListHeadIdx,iTaskGraph=tmpTaskGraph,iContractedTasks=tmpContractedTasks,iNodeMarks=nodeMarks))); //O(e)
     parentNodes := List.flatten(List.map(nodeList,function getContractedNodeChildren(iRefValue=nodeListHeadIdx,iTaskGraph=iTaskGraphT,iContractedTasks=tmpContractedTasks,iNodeMarks=nodeMarks))); //O(e)
-    
+
     //print("contractNodesInGraph: Child nodes " + stringDelimitList(List.map(childNodes,intString),",") + "\n");
     //print("contractNodesInGraph: Parent nodes " + stringDelimitList(List.map(parentNodes,intString),",") + "\n");
-    
+
     headCompIdc := arrayGet(inComps, nodeListHeadIdx);
     //Delete all outgoing edges of 'nodeListRestIdc' O(n)
     for nodeIdx in nodeListRestIdc loop
@@ -3711,10 +3711,10 @@ algorithm
       inComps := arrayUpdate(inComps, nodeIdx, {});
       headCompIdc := List.insertListSorted(headCompIdc, nodeCompIdc, intLt);
     end for;
-  
+
     //print("contractNodesInGraph: Components for head-node '" + intString(nodeListHeadIdx) + "' are '{" + stringDelimitList(List.map(headCompIdc, intString), ",") + "}'\n");
     arrayUpdate(inComps, nodeListHeadIdx, headCompIdc);
-    
+
     // Update transposed Task Graph
     //  Handle all parent nodes first
     for nodeIdx in parentNodes loop
@@ -3724,7 +3724,7 @@ algorithm
     end for;
     //print("contractNodesInGraph: Set incomming edges to '" + stringDelimitList(List.map(incomingEdges, intString), ",") + "'\n");
     tmpTaskGraphT := arrayUpdate(tmpTaskGraphT, nodeListHeadIdx, incomingEdges);
-    
+
     for nodeIdx in childNodes loop
       parentNodeChildList := arrayGet(tmpTaskGraphT, nodeIdx);
       //print("contractNodesInGraph: Handle parents of node '" + intString(nodeIdx) + "' = '{" + stringDelimitList(List.map(parentNodeChildList, intString), ",") + "}'\n");
@@ -3733,7 +3733,7 @@ algorithm
       for parentChild in parentNodeChildList loop
         parentChildContractionValue := arrayGet(tmpContractedTasks, parentChild);
         parentChild := getRealTaskIdxOfTask(parentChild, tmpContractedTasks);
-      
+
         //print("contractNodesInGraph: Children '" + intString(parentChild) + "' has mark '" + intString(arrayGet(nodeMarksT, parentChild)) + "'\n");
         if(intEq(parentChild, nodeListHeadIdx) or intEq(parentChildContractionValue, negNodeListHeadIdx)) then //Check if child belongs to cluster
           //print("contractNodesInGraph: Node '" + intString(nodeIdx) + "' has mark '" + intString(arrayGet(nodeMarksT, nodeIdx)) + "'\n");
@@ -3748,9 +3748,9 @@ algorithm
       //print("contractNodesInGraph: Handle parents of node '" + intString(nodeIdx) + "' = '{" + stringDelimitList(List.map(parentNodeChildListNew, intString), ",") + "}'\n");
       tmpTaskGraphT := arrayUpdate(tmpTaskGraphT, nodeIdx, parentNodeChildListNew);
     end for;
-  
+
     outgoingEdges := listAppend(outgoingEdges, childNodes);
-    
+
     nodeMarks := arrayUpdate(nodeMarks, nodeListHeadIdx, 0);
     // Update Task Graph
     for nodeIdx in parentNodes loop
@@ -3761,7 +3761,7 @@ algorithm
       for parentChild in parentNodeChildList loop
         parentChildContractionValue := arrayGet(tmpContractedTasks, parentChild);
         parentChild := getRealTaskIdxOfTask(parentChild, tmpContractedTasks);
-      
+
         //print("contractNodesInGraph: Children '" + intString(parentChild) + "' has mark '" + intString(arrayGet(nodeMarks, parentChild)) + "'\n");
         if(intEq(parentChild, nodeListHeadIdx) or intEq(parentChildContractionValue, negNodeListHeadIdx)) then //Check if child belongs to cluster
           //print("contractNodesInGraph: Node '" + intString(nodeIdx) + "' has mark '" + intString(arrayGet(nodeMarks, nodeIdx)) + "'\n");
@@ -3778,7 +3778,7 @@ algorithm
     end for;
     //print("contractNodesInGraph: finished cluster\n");
     //print("contractNodesInGraph: Outgoing edges " + stringDelimitList(List.map(outgoingEdges,intString),",") + "\n");
-    tmpTaskGraph := arrayUpdate(tmpTaskGraph, nodeListHeadIdx, outgoingEdges);  
+    tmpTaskGraph := arrayUpdate(tmpTaskGraph, nodeListHeadIdx, outgoingEdges);
   end for;
   oTaskGraph := tmpTaskGraph;
   oTaskGraphT := tmpTaskGraphT; //;BackendDAEUtil.transposeMatrix(tmpTaskGraph,arrayLength(tmpTaskGraph));
@@ -3814,7 +3814,7 @@ algorithm
   //print("getContractedNodeChildren: iParentTask '" + intString(iParentTask) + "' with children " + stringDelimitList(List.map(resultTasks, intString), ",") + "\n");
   for task in childTasks loop
     task := getRealTaskIdxOfTask(task, iContractedTasks);
-  
+
     taskMark := arrayGet(iNodeMarks, task);
     if(boolAnd(intNe(taskMark, iRefValue), intNe(task, iRefValue))) then
       resultTasks:=task::resultTasks;
@@ -3884,7 +3884,7 @@ algorithm
       parents = List.deleteMember(parents,contrNode);
       print("parents : " + stringDelimitList(List.map(parents,intString),",") + "\n");
       print("children : " + stringDelimitList(List.map(children,intString),",") + "\n");
-      
+
       _ = List.map(parents, function addEdgeToGraph(child=contrNode, graphIn=graphIn));
       _ = List.map(children,function addEdgeToGraph(parent=contrNode, graphIn=graphIn));
       _ = List.map(children, function addEdgeToGraph(child=contrNode, graphIn=graphTIn));

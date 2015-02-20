@@ -429,7 +429,7 @@ algorithm
       vars := List.unionEltOnTrue(var, vars, BackendVariable.varEqual);
       varIdc := List.unionEltOnTrue(varIdx, varIdc, intEq);
     end if;
-  end for;  
+  end for;
   oParamVarsList := vars;
   oParamVarIdc := varIdc;
 end traversingParamRefFinder0;
