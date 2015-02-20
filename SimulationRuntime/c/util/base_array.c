@@ -311,8 +311,8 @@ size_t calc_base_index_dims_subs(int ndims,...)
     int i;
     size_t index;
 
-    _index_t *dims = (_index_t*)malloc(sizeof(_index_t)*ndims);
-    _index_t *subs = (_index_t*)malloc(sizeof(_index_t)*ndims);
+    _index_t *dims = (_index_t*)omc_alloc_interface.malloc(sizeof(_index_t)*ndims);
+    _index_t *subs = (_index_t*)omc_alloc_interface.malloc(sizeof(_index_t)*ndims);
 
     va_list ap;
     va_start(ap,ndims);
