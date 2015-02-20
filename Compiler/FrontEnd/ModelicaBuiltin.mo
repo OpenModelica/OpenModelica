@@ -1108,8 +1108,7 @@ impure function system "Similar to system(3). Executes the given command in the 
   input String callStr "String to call: sh -c $callStr";
   input String outputFile := "" "The output is redirected to this file (unless already done by callStr)";
   output Integer retval "Return value of the system call; usually 0 on success";
-external "builtin";
-annotation(__OpenModelica_Impure=true);
+external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end system;
 
@@ -1117,8 +1116,7 @@ impure function system_parallel "Similar to system(3). Executes the given comman
   input String callStr[:] "String to call: sh -c $callStr";
   input Integer numThreads := numProcessors();
   output Integer retval[:] "Return value of the system call; usually 0 on success";
-external "builtin";
-annotation(__OpenModelica_Impure=true);
+external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end system_parallel;
 
@@ -1526,8 +1524,7 @@ impure function readFile
   Note that if the function fails, the error message is returned as a string instead of multiple output or similar."
   input String fileName;
   output String contents;
-external "builtin"; annotation(__OpenModelica_Impure=true);
-annotation(preferredView="text");
+external "builtin" annotation(__OpenModelica_Impure=true, preferredView="text");
 end readFile;
 
 impure function writeFile
@@ -1536,8 +1533,7 @@ impure function writeFile
   input String data;
   input Boolean append := false;
   output Boolean success;
-external "builtin"; annotation(__OpenModelica_Impure=true);
-annotation(preferredView="text");
+external "builtin"; annotation(__OpenModelica_Impure=true, preferredView="text");
 end writeFile;
 
 impure function compareFilesAndMove
@@ -2130,7 +2126,7 @@ end rewriteBlockCall;
 function realpath "Get full path name of file or directory name"
   input String name "Absolute or relative file or directory name";
   output String fullName "Full path of 'name'";
-external "C" fullName = ModelicaInternal_fullPathName(name); annotation(Library="ModelicaExternalC");
+external "C" fullName = ModelicaInternal_fullPathName(name) annotation(Library="ModelicaExternalC");
   annotation (Documentation(info="<html>
 Return the canonicalized absolute pathname.
 Similar to <a href=\"http://linux.die.net/man/3/realpath\">realpath(3)</a>, but with the safety of Modelica strings.
