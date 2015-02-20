@@ -329,16 +329,16 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
     {
       if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
       {
-        warningStreamPrint(LOG_SOLVER, 1, "unrecognized jacobain calculation method %s, current options are:", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
+        warningStreamPrint(LOG_SOLVER, 1, "unrecognized jacobian calculation method %s, current options are:", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
         for(i=1; i < DASSL_JAC_MAX; ++i)
         {
           warningStreamPrint(LOG_SOLVER, 0, "  %-15s [%s]", dasslJacobianMethodStr[i], dasslJacobianMethodDescStr[i]);
         }
         messageClose(LOG_SOLVER);
       }
-      throwStreamPrint(data->threadData,"unrecognized jacobain calculation method %s", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
+      throwStreamPrint(data->threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
     }
-  /* default case colored numerical jacobain */
+  /* default case colored numerical jacobian */
   }
   else{
     dasslData->dasslJacobian = DASSL_COLOREDNUMJAC;
@@ -387,7 +387,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
       dasslData->jacobianFunction =  dummy_Jacobian;
       break;
     default:
-      throwStreamPrint(data->threadData,"unrecognized jacobain calculation method %s", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
+      throwStreamPrint(data->threadData,"unrecognized jacobian calculation method %s", (const char*)omc_flagValue[FLAG_DASSL_JACOBIAN]);
       break;
   }
   infoStreamPrint(LOG_SOLVER, 0, " - jacobian is calculated by %s", dasslJacobianMethodDescStr[dasslData->dasslJacobian]);

@@ -395,7 +395,7 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
     if(ACTIVE_STREAM(LOG_NLS_RES))
       infoStreamPrint(LOG_NLS_RES, 0, "-- begin calculating jacobian --");
 
-    /* call apropreated jacobain function */
+    /* call apropreated jacobian function */
     if(systemData->jacobianIndex != -1){
       integer iflagtmp = 1;
       wrapper_fvec_hybrj(n, x, f, fjac, ldjac, &iflagtmp, dataSys);

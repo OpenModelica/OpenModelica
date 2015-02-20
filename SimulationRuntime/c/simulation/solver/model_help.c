@@ -914,7 +914,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.stateSetData = (STATE_SET_DATA*) GC_malloc_uncollectable(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
   data->callback->initializeStateSets(data->modelData.nStateSets, data->simulationInfo.stateSetData, data);
 
-  /* buffer for analytical jacobains */
+  /* buffer for analytical jacobians */
   data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) GC_malloc_uncollectable(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
 
   data->modelData.modelDataXml.functionNames = NULL;
