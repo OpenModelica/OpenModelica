@@ -1607,6 +1607,7 @@ end createDummyVar;
 public function createCSEVar
 "Creates a cse variable with the name of inCref."
   input DAE.ComponentRef inCref;
+  input DAE.Type varType;
   output BackendDAE.Var outVar;
 algorithm
   outVar := match (inCref)
@@ -1615,15 +1616,15 @@ algorithm
     list<Absyn.Path> typeLst;
     Absyn.Path path;
   case (_) guard(ComponentReference.traverseCref(inCref,ComponentReference.crefIsRec,false)) equation
-    DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),source=typeLst) = ComponentReference.crefType(inCref);
+    DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),source=typeLst) = varType;
     source = DAE.SOURCE(Absyn.dummyInfo,{},NONE(),{},path::typeLst,{},{});
     outVar = BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
-                           ComponentReference.crefLastType(inCref), NONE(), NONE(), {}, source,
+                           varType, NONE(), NONE(), {}, source,
                            NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
   then outVar;
   case(_) equation
     outVar = BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
-                            ComponentReference.crefLastType(inCref), NONE(), NONE(), {}, DAE.emptyElementSource,
+                            varType, NONE(), NONE(), {}, DAE.emptyElementSource,
                             NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR());
    then outVar;
   else

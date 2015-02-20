@@ -1898,6 +1898,35 @@ algorithm
   end for;
 end liftArrayListDims;
 
+public function liftTypeWithDims "
+  mahge: This function turns a type into an array of that type 
+  by appening the new dimension at the end. "
+  input DAE.Type inType;
+  input DAE.Dimensions inDims;
+  output DAE.Type outType;
+algorithm
+  outType := match inType
+    local
+      list<DAE.Dimension> dims;
+      DAE.Type ty;
+      DAE.TypeSource src;
+
+    case DAE.T_ARRAY(DAE.T_ARRAY(_,_,_), dims, src)
+      algorithm
+        print("Can not handle this yet!!");
+      then fail();
+
+    case DAE.T_ARRAY(ty, dims, src)
+      algorithm
+        dims := List.appendNoCopy(dims, inDims);
+      then DAE.T_ARRAY(ty, dims, src);
+            
+    else
+      DAE.T_ARRAY(inType, inDims, DAE.emptyTypeSource);
+    
+  end match;
+end liftTypeWithDims;
+
 public function liftArrayListExp "
   This function turns a type into an array of that type."
   input DAE.Type inType;

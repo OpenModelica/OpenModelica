@@ -1044,7 +1044,7 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     /* <%crefStrNoUnderscore(c)%> */
     #define <%cref(c)%> data->simulationInfo.<%arrayName%>[<%index%>]
 
-    <%crefMacroSubsAtEndParNew(name)%>
+    <%crefMacroSubsAtEndParNew(c)%>
 
     /* <%crefStrNoUnderscore(name)%> */
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
@@ -1079,7 +1079,7 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     #define <%cref(c)%> _<%cref(c)%>(0)
     #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
 
-    <%crefMacroSubsAtEndVarNew(name)%>
+    <%crefMacroSubsAtEndVarNew(c)%>
 
     /* <%crefStrNoUnderscore(name)%> */
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
@@ -1111,27 +1111,29 @@ end globalDataVarDefine;
 template crefMacroSubsAtEndParNew(ComponentRef cr)
 ::=
   let &auxFunction = buffer ""
+  let fullpath = contextCref(cr,contextSimulationNonDiscrete, &auxFunction)
   let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
   let totnrdims = listLength(crefDims(cr))
   let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
   let substr = SimCodeUtil.generateSubPalceholders(cr)
   let &subsDimThread = buffer "" /*BUFD*/
   <<
-  #define <%nosubfullpath%>_index(<%substr%>)    (&<%nosubfullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
+  #define <%nosubfullpath%>_index(<%substr%>)    (&<%fullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
   >>
 end crefMacroSubsAtEndParNew;
 
 template crefMacroSubsAtEndVarNew(ComponentRef cr)
 ::=
   let &auxFunction = buffer ""
+  let fullpath = contextCref(cr,contextSimulationNonDiscrete, &auxFunction)
   let nosubfullpath = contextCref(crefStripSubs(cr),contextSimulationNonDiscrete, &auxFunction)
   let totnrdims = listLength(crefDims(cr))
   let dimstr = crefDims(cr) |> dim => dimension(dim) ;separator=", "
   let substr = SimCodeUtil.generateSubPalceholders(cr)
   let &subsDimThread = buffer "" /*BUFD*/
   <<
-  #define <%nosubfullpath%>_index(<%substr%>)    (&<%nosubfullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
-  #define $P$PRE<%nosubfullpath%>_index(<%substr%>)    (&$P$PRE<%nosubfullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
+  #define <%nosubfullpath%>_index(<%substr%>)    (&<%fullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
+  #define $P$PRE<%nosubfullpath%>_index(<%substr%>)    (&$P$PRE<%fullpath%>)[calc_base_index_dims_subs(<%totnrdims%>, <%dimstr%>, <%substr%>)]
   >>
 end crefMacroSubsAtEndVarNew;
 
@@ -7929,13 +7931,27 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     let record_type_name = underscorePath(ClassInf.getStateName(record_state))
     'omc_<%record_type_name%>(threadData<%vars%>)'
 
-  case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
-    let tmpArr = tempDecl(expTypeArray(aty), &varDecls)
-    let dimsLenStr = listLength(dims)
-    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
+  case ecr as CREF(componentRef=cr, ty=T_ARRAY(ty=aty, dims=dims)) then
+    let wrapperArray = tempDecl(expTypeArray(aty), &varDecls)
     let type = expTypeShort(aty)
-    let &preExp += '<%type%>_array_create(&<%tmpArr%>, ((modelica_<%type%>*)&(<%arrayCrefCStr(ecr.componentRef)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
-    tmpArr
+    if crefSubIsScalar(cr) then
+      let dimsLenStr = listLength(dims)
+      let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
+      let nosubname = contextCref(crefStripSubs(cr),context, &auxFunction)
+      let substring = (crefSubs(crefArrayGetFirstCref(cr)) |> INDEX(__) =>
+                   daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)
+                   ;separator=", ")
+      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&(<%nosubname%>_index(<%substring%>))), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+    wrapperArray
+    else
+      let dimsLenStr = listLength(crefDims(cr))
+      let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim) ;separator=", ")      let arrName = contextCref(crefStripSubs(cr), context,&auxFunction)
+      let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+      let arrayType = expTypeArray(ty)
+      let slicedArray = tempDecl(arrayType, &varDecls)
+      let spec1 = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp, &varDecls, &auxFunction)
+      let &preExp += 'index_alloc_<%arrayType%>(&<%wrapperArray%>, &<%spec1%>, &<%slicedArray%>);<%\n%>'
+    slicedArray
 
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithAllConstSubs(cr) then

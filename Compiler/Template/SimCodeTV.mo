@@ -2806,6 +2806,11 @@ package ComponentReference
     input DAE.ComponentRef inCref;
     output Boolean isScalar;
   end crefIsScalarWithVariableSubs;
+  
+  function crefArrayGetFirstCref
+    input DAE.ComponentRef inComponentRef;
+    output DAE.ComponentRef outComponentRef;
+  end crefArrayGetFirstCref;
 end ComponentReference;
 
 package Expression

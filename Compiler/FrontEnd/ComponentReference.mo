@@ -1253,7 +1253,7 @@ algorithm
       DAE.ComponentRef cr;
     case (cr)
       equation
-        ((subs as (_ :: _))) = crefLastSubs(cr);
+        ((subs as (_ :: _))) = crefSubs(cr);
         // fails if any mapped functions returns false
       then List.mapAllValueBool(subs, Expression.subscriptIsFirst, true);
     else false;
@@ -1520,6 +1520,50 @@ end containWholeDim3;
 /***************************************************/
 /* Getter  */
 /***************************************************/
+
+public function crefArrayGetFirstCref
+"mahge: This function is used to get the first element in 
+an array cref if the cref was to be expanded. e.g.
+     (a->nonarray, b->array) given a.b[1]   return a.b[1].
+     (a->nonarray, b->array) given a.b      return a.b[1]. 
+     (a->array, b->array) given a[1].b   return a[1].b[1]
+     (a->array, b->array) given a[2].b   return a[2].b[1]
+  i.e essentially filling the missing subs with 1.
+" 
+  input DAE.ComponentRef inComponentRef;
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef := match(inComponentRef)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.Dimension> dims;
+      list<DAE.Subscript> subs, newsubs;
+      Integer diff;
+      DAE.Type ty;
+      DAE.Ident i;
+      
+    case DAE.CREF_IDENT(i, ty, subs) 
+      algorithm
+        dims := Types.getDimensions(ty);
+        diff := listLength(dims) - listLength(subs);
+        newsubs := List.fill(DAE.INDEX(DAE.ICONST(1)), diff);
+        subs := List.appendNoCopy(subs,newsubs);
+      then
+        DAE.CREF_IDENT(i, ty, subs);
+        
+    case DAE.CREF_QUAL(i, ty, subs, cr) 
+      algorithm
+        dims := Types.getDimensions(ty);
+        diff := listLength(dims) - listLength(subs);
+        newsubs := List.fill(DAE.INDEX(DAE.ICONST(1)), diff);
+        subs := List.appendNoCopy(subs,newsubs);
+        cr := crefArrayGetFirstCref(cr);
+      then
+        DAE.CREF_QUAL(i, ty, subs, cr);
+  end match;
+end crefArrayGetFirstCref;
+
+
 public function crefLastPath
   "Returns the last identifier of a cref as an Absyn.IDENT."
   input DAE.ComponentRef inComponentRef;
@@ -1765,7 +1809,7 @@ algorithm
 
     case (_) equation
       true = crefIsFirstArrayElt(name);
-      arrayCrefInner = crefStripLastSubs(name);
+      arrayCrefInner = crefStripSubs(name);
     then SOME(arrayCrefInner);
 
     else
@@ -3067,19 +3111,18 @@ algorithm
 end replaceLast;
 
 public function expandArrayCref
+"deprecated. use expandArray"
   input DAE.ComponentRef inCr;
-  input DAE.Dimensions dims;
+  input list<DAE.Dimension> inDims;
   output list<DAE.ComponentRef> outCrefs;
 protected
-  list<DAE.Subscript> subs;
-  list<list<DAE.Subscript>> subslst;
+  DAE.Type lasttype;
+  DAE.ComponentRef tmpcref;
 algorithm
-  subs := List.fill(DAE.WHOLEDIM(), listLength(dims));
-  // Expand each subscript into a list of subscripts.
-  subslst := List.threadMap(subs, dims, Expression.expandSubscript);
-  subslst := listReverse(subslst);
-  // Use expandCref3 to construct a cref for each combination of subscripts.
-  outCrefs := expandArrayCref1(inCr, subslst, {}, {});
+  lasttype := crefLastType(inCr);
+  lasttype := Types.liftTypeWithDims(lasttype, inDims);
+  tmpcref := crefSetLastType(inCr, lasttype);
+  outCrefs := expandCref(tmpcref, false);
 end expandArrayCref;
 
 protected function expandArrayCref1
