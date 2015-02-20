@@ -134,15 +134,7 @@ public function dimensionIsZero
   input DAE.Dimension inDimension;
   output Boolean outIsZero;
 algorithm
-  outIsZero := matchcontinue(inDimension)
-    case _
-      equation
-        true = 0 == dimensionSize(inDimension);
-      then
-        true;
-
-    else false;
-  end matchcontinue;
+  outIsZero := 0 == dimensionSize(inDimension);
 end dimensionIsZero;
 
 public function unelabExp

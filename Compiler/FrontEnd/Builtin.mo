@@ -754,7 +754,7 @@ algorithm
       then
         graph;
 
-    case graph then graph;
+    else inEnv;
 
   end matchcontinue;
 end initialGraphMetaModelica;
@@ -785,7 +785,7 @@ algorithm
       then
         graph;
 
-    case graph then graph;
+    else inEnv;
 
   end matchcontinue;
 end initialGraphOptimica;

@@ -551,7 +551,7 @@ algorithm
         res = stringSplitAtChar2(rest, chr, (firstChar :: chr_rest));
       then
         res;
-    case (_,_,_)
+    else
       equation
         print("- Util.stringSplitAtChar2 failed\n");
       then
@@ -633,9 +633,9 @@ algorithm
         res_str = System.stringReplace(str_1, from, to);
       then
         res_str;
-    case (str,_)
+    else
       equation
-        print("- Util.modelicaStringToCStr1 failed for str:"+str+"\n");
+        print("- Util.modelicaStringToCStr1 failed for str:"+inString+"\n");
       then
         fail();
   end matchcontinue;

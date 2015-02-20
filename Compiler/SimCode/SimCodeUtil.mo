@@ -444,7 +444,7 @@ algorithm
       then
         lib;
 
-    case(_) then "NO_LIB";
+    else "NO_LIB";
 
   end matchcontinue;
 end hackGetFirstExternalFunctionLib;
@@ -977,7 +977,7 @@ algorithm
         daeType = Types.simplifyType(daeType);
         inst_dims_exp = List.map(inst_dims, Expression.dimensionSizeExpHandleUnkown);
       then SimCode.VARIABLE(id, daeType, binding, inst_dims_exp, prl, kind);
-    case (_)
+    else
       equation
         // TODO: ArrayEqn fails here
         Error.addInternalError("function daeInOutSimVar failed\n", sourceInfo());
@@ -1077,9 +1077,8 @@ algorithm
       then
         SimCode.SIMEXTARGSIZE(cref, isInput, newOutputIndex, type_, exp);
 
-    case (_, _)
-      then
-        simExtArgIn;
+    else
+      simExtArgIn;
   end matchcontinue;
 end assignOutputIndex;
 
@@ -1122,7 +1121,7 @@ algorithm
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)))
     then
       SimCode.ALGORITHM(stmts);
-    case (_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("# SimCode.elaborateStatement failed\n");
@@ -1149,7 +1148,7 @@ algorithm
       equation
         failure(_ = List.selectFirst(inVars, isFunctionPtr));
       then ();
-    case (_, _)
+    else
       equation
         Error.addMessage(Error.GENERATECODE_INVARS_HAS_FUNCTION_PTR, {name});
       then fail();
@@ -8524,7 +8523,7 @@ algorithm
         outHT = add((acr, sv), inHT);
         outHT = add((cr, sv), outHT);
       then outHT;
-    case (_, _)
+    else
       equation
         Error.addInternalError("function addSimVarToHashTable failed", sourceInfo());
       then

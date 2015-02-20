@@ -514,7 +514,7 @@ algorithm
       then
         ((n, newsize, arr));
 
-    case (_, _)
+    else
       equation
         print("-HashTable.valueArrayAdd failed\n");
       then

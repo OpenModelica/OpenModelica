@@ -737,14 +737,14 @@ protected function removeFirstIfText
   input list<Token> inTokenList;
   output list<Token> outTokenList;
 algorithm
-  outTokenList := matchcontinue inTokenList
+  outTokenList := match inTokenList
     local
       list<Token> rest;
     case TEXT() :: rest
       then rest;
-    case _
-      then inTokenList;
-  end matchcontinue;
+    else
+      inTokenList;
+  end match;
 end removeFirstIfText;
 
 protected function removeUnknown "Removes tokens until the closing tag is found."

@@ -655,7 +655,7 @@ algorithm
 
     case (e,fns,source)
       equation
-        (e_1,(fns,true,assrtLst)) = Expression.traverseExp(e,inlineCall,(fns,false,{}));
+        (e_1,(_,true,assrtLst)) = Expression.traverseExp(e,inlineCall,(fns,false,{}));
         source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
         (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
@@ -690,7 +690,7 @@ algorithm
       then (e_1,source,true);
     case (e,fns,source)
       equation
-        (e_1,(fns,true,_)) = Expression.traverseExp(e,forceInlineCall,(fns,false,{}));
+        (e_1,(_,true,_)) = Expression.traverseExp(e,forceInlineCall,(fns,false,{}));
         source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
         (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
@@ -1592,14 +1592,14 @@ algorithm
       list<DAE.Statement> assrtLst;
     case (DAE.PARTIAL_EQUATION(e),_,fns,_)
       equation
-        (e_1,(fns,changed,_)) = Expression.traverseExp(e,fn,(fns,false,{}));
+        (e_1,(_,changed,_)) = Expression.traverseExp(e,fn,(fns,false,{}));
         eq2 = DAE.PARTIAL_EQUATION(e_1);
         source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
         (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
       then (eq2,source);
     case (DAE.RESIDUAL_EXP(e),_,fns,_)
       equation
-        (e_1,(fns,changed,_)) = Expression.traverseExp(e,fn,(fns,false,{}));
+        (e_1,(_,changed,_)) = Expression.traverseExp(e,fn,(fns,false,{}));
         eq2 = DAE.RESIDUAL_EXP(e_1);
         source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
         (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);
@@ -1607,7 +1607,7 @@ algorithm
     case (DAE.EQUALITY_EXPS(e1,e2),_,fns,_)
       equation
         (e1_1,(fns,changed,_)) = Expression.traverseExp(e1,fn,(fns,false,{}));
-        (e2_1,(fns,changed,_)) = Expression.traverseExp(e2,fn,(fns,changed,{}));
+        (e2_1,(_,changed,_)) = Expression.traverseExp(e2,fn,(fns,changed,{}));
         eq2 = DAE.EQUALITY_EXPS(e1_1,e2_1);
         source = DAEUtil.condAddSymbolicTransformation(changed,inSource,DAE.OP_INLINE(inExp,eq2));
         (eq2,source) = ExpressionSimplify.condSimplifyAddSymbolicOperation(changed, eq2, source);

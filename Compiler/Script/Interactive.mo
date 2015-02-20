@@ -4322,7 +4322,7 @@ algorithm
         spec_1 = setComponentPropertiesInElementspec(spec, cr, flowPrefix, streamPrefix, prl, va, cau);
       then
         Absyn.ELEMENT(finalPrefix,redeclkw_1,inout_1,spec_1,info,constr);
-    case (elt,_,_,_,_,_,_,_,_,_) then elt;
+    else inElement1;
   end matchcontinue;
 end setComponentPropertiesInElement;
 
@@ -6069,9 +6069,7 @@ algorithm
       then
         "";
 
-    else
-      then
-        "";
+    else "";
   end matchcontinue;
 end getComponentBinding;
 
@@ -6745,7 +6743,7 @@ algorithm
         (import_1,changed) = renameClassInImport(import_, old_comp, new_comp, env);
       then
         (Absyn.IMPORT(import_1,cmt,info),changed);
-    case (spec,_,_,_) then (spec,false);
+    else (inElementSpec1,false);
   end matchcontinue;
 end renameClassInElementSpec;
 
@@ -15285,7 +15283,7 @@ algorithm
         SOME(mod) = modificationToAbsyn2(nargs);
       then
         SOME(mod);
-    case (_,oldmod) then oldmod;
+    else inAbsynModificationOption;
   end matchcontinue;
 end modificationToAbsyn;
 

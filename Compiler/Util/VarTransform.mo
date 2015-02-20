@@ -1103,7 +1103,7 @@ algorithm
     case(_) equation
       true = intMod(listLength(inCrefs),7)==0; // Experiments performed on different values: {{5, 102}, {6, 99}, {7, 98.8}, {8, 101}, {10, 101}, 20, 104}}
       then List.union({},inCrefs);
-    case(crefs) then crefs;
+    else inCrefs;
   end matchcontinue;
 end amortizeUnion;
 
@@ -1245,7 +1245,7 @@ algorithm
       then
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
-    case (_,_,_) then (repl,src,dst);  /* dst has no own replacement, return */
+    else (repl,src,dst);  /* dst has no own replacement, return */
   end matchcontinue;
 end makeTransitive2;
 
@@ -1888,7 +1888,7 @@ algorithm
         left_1 = treeAdd(TREENODE(NONE(),NONE(),NONE()), key, value);
       then
         TREENODE(SOME(TREEVALUE(rkey,rval)),SOME(left_1),right);
-    case (_,_,_)
+    else
       equation
         print("tree_add failed\n");
       then
@@ -2003,7 +2003,7 @@ algorithm
         left_1 = treeAdd2(TREENODE2(NONE(),NONE(),NONE()), key, value);
       then
         TREENODE2(SOME(TREEVALUE2(rkey,rval)),SOME(left_1),right);
-    case (_,_,_)
+    else
       equation
         print("tree_add2 failed\n");
       then

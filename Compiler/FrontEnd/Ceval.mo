@@ -622,7 +622,7 @@ algorithm
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(), exp2 = rh),
         impl, stOpt, msg as Absyn.MSG(info = info),_)
       equation
-        (cache,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
+        (_,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         true = ValuesUtil.isZero(lhvVal);
         lhvStr = ExpressionDump.printExpStr(lh);
         rhvStr = ExpressionDump.printExpStr(rh);
@@ -1009,7 +1009,7 @@ algorithm
     case (_, _, DAE.RANGE(ty = ty, start = e1, stop = e2, step = e3), _, _, _)
       equation
         (cache, e1, _) = cevalIfConstant(inCache, inEnv, e1, inProp, impl, inInfo);
-        (cache, e2, _) = cevalIfConstant(cache, inEnv, e2, inProp, impl, inInfo);
+        (_, e2, _) = cevalIfConstant(cache, inEnv, e2, inProp, impl, inInfo);
       then
         (inCache, DAE.RANGE(ty, e1, e3, e2));
     else (inCache, inExp);
@@ -1213,7 +1213,7 @@ algorithm
   (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath, false);
   SCode.CLASS(name=fid,restriction = SCode.R_FUNCTION(funcRest), classDef=SCode.PARTS(externalDecl=extdecl)) := cdef;
   SCode.FR_EXTERNAL_FUNCTION(_) := funcRest;
-  SOME(SCode.EXTERNALDECL(oid,lan,out,args,_)) := extdecl;
+  SOME(SCode.EXTERNALDECL(oid,_,_,_,_)) := extdecl;
   // oid=NONE() is more safe, but most of the functions are declared is a certain way =/
   id := Util.getOptionOrDefault(oid,fid);
   isKnownExternalFunc(id);
@@ -1537,7 +1537,7 @@ algorithm
 
     case (cache,env,DAE.CREF(componentRef = cr),dimExp,false,_,Absyn.MSG(info = info),_)
       equation
-        (cache,_,tp,binding,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=false, error message";
+        (_,_,tp,binding,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=false, error message";
         if not Types.dimensionsKnown(tp)
         then
           cr_str = ComponentReference.printComponentRefStr(cr);
@@ -3441,7 +3441,7 @@ algorithm
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
+        (_,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (rv2 == 0.0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
@@ -3450,13 +3450,13 @@ algorithm
         fail();
     case (cache,env,{_,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
+        (_,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
         (rv2 == 0.0) = true;
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
+        (_,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (ri2 == 0) = true;
         lh_str = ExpressionDump.printExpStr(exp1);
         rh_str = ExpressionDump.printExpStr(exp2);
@@ -3465,7 +3465,7 @@ algorithm
         fail();
     case (cache,env,{_,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
+        (_,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
         (ri2 == 0) = true;
       then
         fail();
@@ -3546,7 +3546,7 @@ algorithm
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
+        (_,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (rv2 == 0.0) = true;
         lhs_str = ExpressionDump.printExpStr(exp1);
         rhs_str = ExpressionDump.printExpStr(exp2);
@@ -3555,13 +3555,13 @@ algorithm
         fail();
     case (cache,env,{_,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
+        (_,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
         (rv2 == 0.0) = true;
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
+        (_,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (ri2 == 0) = true;
         lhs_str = ExpressionDump.printExpStr(exp1);
         rhs_str = ExpressionDump.printExpStr(exp2);
@@ -3570,7 +3570,7 @@ algorithm
         fail();
     case (cache,env,{_,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
+        (_,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
         (ri2 == 0) = true;
       then
         fail();
@@ -3832,7 +3832,7 @@ algorithm
         (cache,Values.INTEGER(ri_1),st);
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env,exp2,impl,st,inMsg,numIter+1);
+        (_,Values.REAL(rv2),_) = ceval(cache,env,exp2,impl,st,inMsg,numIter+1);
         (rv2 == 0.0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
@@ -3841,7 +3841,7 @@ algorithm
         fail();
     case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,inMsg,numIter+1);
+        (_,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,inMsg,numIter+1);
         (ri2 == 0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
@@ -4297,7 +4297,7 @@ protected function cevalRelationLess
   input Values.Value inValue2;
   output Boolean result;
 algorithm
-  result := matchcontinue(inValue1, inValue2)
+  result := match(inValue1, inValue2)
     local
       String s1, s2;
       Integer i1, i2;
@@ -4318,7 +4318,7 @@ algorithm
       then (i1 < i2);
     case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 < i2);
-  end matchcontinue;
+  end match;
 end cevalRelationLess;
 
 protected function cevalRelationLessEq
@@ -4327,7 +4327,7 @@ protected function cevalRelationLessEq
   input Values.Value inValue2;
   output Boolean result;
 algorithm
-  result := matchcontinue(inValue1, inValue2)
+  result := match(inValue1, inValue2)
     local
       String s1, s2;
       Integer i1, i2;
@@ -4348,7 +4348,7 @@ algorithm
       then (i1 <= i2);
     case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 <= i2);
-  end matchcontinue;
+  end match;
 end cevalRelationLessEq;
 
 protected function cevalRelationGreaterEq
@@ -4357,7 +4357,7 @@ protected function cevalRelationGreaterEq
   input Values.Value inValue2;
   output Boolean result;
 algorithm
-  result := matchcontinue(inValue1, inValue2)
+  result := match(inValue1, inValue2)
     local
       String s1, s2;
       Integer i1, i2;
@@ -4378,7 +4378,7 @@ algorithm
       then (i1 >= i2);
     case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 >= i2);
-  end matchcontinue;
+  end match;
 end cevalRelationGreaterEq;
 
 protected function cevalRelationEqual
@@ -5420,7 +5420,7 @@ algorithm
   structuralParameters := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
   functionTree := arrayCreate(1,functions);
   cache := FCore.CACHE(NONE(), functionTree, structuralParameters, Absyn.IDENT(""), Absyn.dummyProgram);
-  (cache,val,_) := ceval(cache, FGraph.empty(), exp, false, NONE(), Absyn.NO_MSG(),0);
+  (_,val,_) := ceval(cache, FGraph.empty(), exp, false, NONE(), Absyn.NO_MSG(),0);
   oexp := ValuesUtil.valueExp(val);
 end cevalSimpleWithFunctionTreeReturnExp;
 

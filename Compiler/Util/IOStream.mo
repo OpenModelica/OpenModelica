@@ -169,7 +169,7 @@ algorithm
         fStream;
 
     // close does nothing for list or buffer streams
-    case (lStream) then lStream;
+    else inStream;
   end matchcontinue;
 end close;
 

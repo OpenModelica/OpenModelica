@@ -348,13 +348,13 @@ protected function isCrefNamed
   input DAE.ComponentRef inCref;
   output Boolean outIsNamed;
 algorithm
-  outIsNamed := matchcontinue(inName, inCref)
+  outIsNamed := match(inName, inCref)
     local
       String name;
 
     case (_, DAE.CREF_IDENT(ident = name)) then stringEq(inName, name);
     else false;
-  end matchcontinue;
+  end match;
 end isCrefNamed;
 
 protected function evaluateExtInputArg
@@ -2603,14 +2603,14 @@ protected function boxReturnValue
   input list<Values.Value> inReturnValues;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue(inReturnValues)
+  outValue := match(inReturnValues)
     local
       Values.Value val;
 
     case ({}) then Values.NORETCALL();
     case ({val}) then val;
     case (_ :: _) then Values.TUPLE(inReturnValues);
-  end matchcontinue;
+  end match;
 end boxReturnValue;
 
 // [DEPS]  Function variable dependency handling.

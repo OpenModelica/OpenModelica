@@ -200,7 +200,7 @@ algorithm
         n_1 = valueArrayLength(varr_1);
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
 
-    case (_,_)
+    else
       equation
         print("- BaseHashSet.addNoUpdCheck failed\n");
       then
@@ -264,7 +264,7 @@ algorithm
         (_,indx) = get1(key, hashSet);
         varr_1 = valueArrayClearnth(varr, indx);
       then ((hashvec,varr_1,bsize,n,fntpl));
-    case (_,_)
+    else
       equation
         print("-HashSet.delete failed\n");
       then
@@ -289,7 +289,7 @@ algorithm
       then
         true;
     else
-      then false;
+      false;
   end matchcontinue;
 end has;
 
@@ -462,7 +462,7 @@ algorithm
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
       then
         ((n_1,newsize,arr_2));
-    case (_,_)
+    else
       equation
         print("-HashSet.valueArrayAdd failed\n");
       then
@@ -488,7 +488,7 @@ algorithm
         arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
       then
         ((n,size,arr_1));
-    case (_,_,_)
+    else
       equation
         print("-HashSet.valueArraySetnth failed\n");
       then
@@ -512,7 +512,7 @@ algorithm
         arr_1 = arrayUpdate(arr, pos + 1,NONE());
       then
         ((n,size,arr_1));
-    case (_,_)
+    else
       equation
         print("-HashSet.valueArrayClearnth failed\n");
       then

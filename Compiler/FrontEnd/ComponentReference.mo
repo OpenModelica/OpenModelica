@@ -935,11 +935,11 @@ public function crefNotPrefixOf "negation of crefPrefixOf"
   input DAE.ComponentRef cr2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue(cr1, cr2)
+  outBoolean := match(cr1, cr2)
     // first is qualified, second is an unqualified ident, return false!
     case (DAE.CREF_QUAL(), DAE.CREF_IDENT()) then true;
     else not crefPrefixOf(cr1, cr2);
-  end matchcontinue;
+  end match;
 end crefNotPrefixOf;
 
 public function crefEqual

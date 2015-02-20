@@ -227,7 +227,7 @@ algorithm
       d = differenceInHeight(bt);
       bt = doBalance(d,bt);
     then bt;
-    case(_) equation
+    else equation
       print("balance failed\n");
     then fail();
   end matchcontinue;
@@ -247,7 +247,7 @@ algorithm
     case(_,bt) equation
       bt = doBalance2(difference,bt);
     then bt;
-    case (_,bt) then bt;
+    else inBt;
   end  matchcontinue;
 end doBalance;
 
@@ -282,7 +282,7 @@ algorithm
       rr = rotateRight(getOption(rightNode(bt)));
       bt = setRight(bt,SOME(rr));
     then bt;
-    case(bt) then bt;
+    else inBt;
   end matchcontinue;
 end doBalance3;
 

@@ -314,7 +314,7 @@ algorithm
   end matchcontinue;
 end makeAssignment2;
 
-public function makeSimpleAssingment
+public function makeSimpleAssignment
   input tuple<DAE.Exp, DAE.Exp> inTpl;
   input DAE.ElementSource source;
   output DAE.Statement outStmt;
@@ -324,7 +324,7 @@ protected
 algorithm
   (e1 as DAE.CREF(ty=tp), e2) := inTpl;
   outStmt := DAE.STMT_ASSIGN(tp, e1, e2, source);
-end makeSimpleAssingment;
+end makeSimpleAssignment;
 
 public function makeAssignmentsList
   input list<DAE.Exp> lhsExps;

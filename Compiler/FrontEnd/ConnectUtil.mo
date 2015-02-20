@@ -3476,14 +3476,14 @@ public function componentFaceType
   input DAE.ComponentRef inComponentRef;
   output Connect.Face outFace;
 algorithm
-  outFace := matchcontinue (inComponentRef)
+  outFace := match (inComponentRef)
     // is a non-qualified cref => OUTSIDE
     case (DAE.CREF_IDENT()) then Connect.OUTSIDE();
     // is a qualified cref and is a connector => OUTSIDE
     case (DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTSIDE();
     // is a qualified cref and is NOT a connector => INSIDE
     case (DAE.CREF_QUAL()) then Connect.INSIDE();
-  end matchcontinue;
+  end match;
 end componentFaceType;
 
 public function checkConnectorBalance
@@ -3663,7 +3663,7 @@ protected function sizeOfVariable2
   input DAE.Type inType;
   output Integer outSize;
 algorithm
-  outSize := matchcontinue(inType)
+  outSize := match(inType)
     local
       Integer n;
       DAE.Type t;
@@ -3696,7 +3696,7 @@ algorithm
         Debug.traceln("- Inst.sizeOfVariable failed on " + Types.printTypeStr(t));
       then
         fail();
-  end matchcontinue;
+  end match;
 end sizeOfVariable2;
 
 public function checkShortConnectorDef

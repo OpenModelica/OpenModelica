@@ -1724,24 +1724,22 @@ protected function isLineColorModifier
   input Absyn.ElementArg arg;
   output Boolean res;
 algorithm
-  res := matchcontinue(arg)
-  local
-    list<Absyn.ElementArg> eltargs;
+  res := match(arg)
     case(Absyn.MODIFICATION(path = Absyn.IDENT("color"),
         modification = SOME(Absyn.CLASSMOD(_,_))))
       then true;
     else false;
-  end matchcontinue;
+  end match;
 end isLineColorModifier;
 
 protected function isStyleModifier
   input Absyn.ElementArg arg;
   output Boolean res;
 algorithm
-  res := matchcontinue(arg)
+  res := match(arg)
     case(Absyn.MODIFICATION(path = Absyn.IDENT("style"))) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isStyleModifier;
 
 protected function isLinebasedGraphic "Returns true if context string is a line based graphic"
@@ -2196,29 +2194,29 @@ protected function getValueFromIntExp
   input Absyn.Exp intExpr;
   output Integer value;
 algorithm
-  value := matchcontinue(intExpr)
+  value := match(intExpr)
     local
       Integer val;
     case(Absyn.INTEGER(value = val))
-    then val;
+      then val;
 
     case(Absyn.UNARY(exp = Absyn.INTEGER(value = val)))
-    then (-val);
-  end matchcontinue;
+      then (-val);
+  end match;
 end getValueFromIntExp;
 
 protected function getValueFromRealExp
   input Absyn.Exp realExpr;
   output Real value;
 algorithm
-  value := matchcontinue(realExpr)
+  value := match(realExpr)
     local
-      Real val,val2;
+      Real val;
     case(Absyn.REAL(value = val))
       then val;
     case(Absyn.UNARY(exp = Absyn.REAL(value = val)))
-      then - val;
-  end matchcontinue;
+      then -val;
+  end match;
 end getValueFromRealExp;  */
 
 protected function getValueFromExp

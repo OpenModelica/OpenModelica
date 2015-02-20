@@ -673,11 +673,11 @@ protected function removeInnerAttribute "Help function to removeInnerAttr"
    input Absyn.InnerOuter io;
    output Absyn.InnerOuter ioOut;
 algorithm
-  ioOut := matchcontinue(io)
+  ioOut := match(io)
     case(Absyn.INNER()) then Absyn.NOT_INNER_OUTER();
     case(Absyn.INNER_OUTER()) then Absyn.OUTER();
     else io;
-  end matchcontinue;
+  end match;
 end removeInnerAttribute;
 
 public function varCref " returns the component reference of a variable"
@@ -697,12 +697,12 @@ public function getUnitAttr "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output DAE.Exp start;
 algorithm
-  start := matchcontinue (inVariableAttributesOption)
+  start := match (inVariableAttributesOption)
     local
       DAE.Exp u;
     case (SOME(DAE.VAR_ATTR_REAL(unit=SOME(u)))) then u;
     else DAE.SCONST("");
-  end matchcontinue;
+  end match;
 end getUnitAttr;
 
 public function getStartAttrEmpty "
@@ -711,7 +711,7 @@ public function getStartAttrEmpty "
   input DAE.Exp optExp;
   output DAE.Exp start;
 algorithm
-  start := matchcontinue (inVariableAttributesOption,optExp)
+  start := match (inVariableAttributesOption,optExp)
     local
       DAE.Exp r;
     case (SOME(DAE.VAR_ATTR_REAL(start = SOME(r))),_) then r;
@@ -720,7 +720,7 @@ algorithm
     case (SOME(DAE.VAR_ATTR_STRING(start = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r))),_) then r;
     else optExp;
-  end matchcontinue;
+  end match;
 end getStartAttrEmpty;
 
 public function getMinMax "
@@ -1360,10 +1360,10 @@ Author BZ
 input DAE.Function inElem;
 output Boolean b;
 algorithm
-  b := matchcontinue(inElem)
+  b := match(inElem)
     case(DAE.FUNCTION(inlineType=DAE.AFTER_INDEX_RED_INLINE())) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isAfterIndexInlineFunc;
 
 public function isParameter "author: LS
@@ -3007,7 +3007,7 @@ algorithm
         (elts2,_) = traverseDAE2(elts, Expression.traverseSubexpressionsHelper, (evaluateAnnotationTraverse, (ht1,0,0)));
       then
         DAE.DAE(elts2);
-    case (_,_,dae) then dae;
+    else inDAElist;
   end matchcontinue;
 end evaluateAnnotation;
 
@@ -3543,10 +3543,10 @@ protected function isInvalidFunctionEntry
   input tuple<DAE.AvlKey,DAE.AvlValue> tpl;
   output Boolean b;
 algorithm
-  b := matchcontinue tpl
+  b := match tpl
     case ((_,NONE())) then true;
     case ((_,_)) then false;
-  end matchcontinue;
+  end match;
 end isInvalidFunctionEntry;
 
 protected function isValidFunctionEntry
@@ -4899,7 +4899,7 @@ public function addElementSourceConnectOpt
   input Option<tuple<DAE.ComponentRef,DAE.ComponentRef>> connectEquationOpt;
   output DAE.ElementSource outSource;
 algorithm
-  outSource := matchcontinue(inSource, connectEquationOpt)
+  outSource := match(inSource, connectEquationOpt)
     local
       SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
@@ -4913,7 +4913,7 @@ algorithm
     case (_, NONE()) then inSource;
     case (DAE.SOURCE(info,partOfLst,instanceOpt,connectEquationOptLst,typeLst,operations,comment), _)
       then DAE.SOURCE(info,partOfLst,instanceOpt,connectEquationOpt::connectEquationOptLst,typeLst,operations,comment);
-  end matchcontinue;
+  end match;
 end addElementSourceConnectOpt;
 
 public function isExtFunction "returns true if element matches an external function"
@@ -5271,8 +5271,8 @@ algorithm
     case(_,bt) equation
       bt = doBalance2(difference,bt);
     then bt;
-    case (_,bt) then bt;
-  end  matchcontinue;
+    else inBt;
+  end matchcontinue;
 end doBalance;
 
 protected function doBalance2 "help function to doBalance"
@@ -5306,7 +5306,7 @@ algorithm
       rr = rotateRight(getOption(rightNode(bt)));
       bt = setRight(bt,SOME(rr));
     then bt;
-    case(bt) then bt;
+    else inBt;
   end matchcontinue;
 end doBalance3;
 
