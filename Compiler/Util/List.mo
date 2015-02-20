@@ -449,6 +449,62 @@ algorithm
   outList := listAppend(listAppend(lst1,{inElement}),lst2);
 end insert;
 
+public function insertListSorted<T>
+ "Inserts an sorted list into another sorted list. O(n)
+  example: insertListSorted({1,2,4,5},{3,4,8},intGt) => {1,2,3,4,4,5,8}"
+  input list<T> inList;
+  input list<T> inList2;
+  input CompareFunc inCompFunc;
+  output list<T> outList;
+  
+  partial function CompareFunc
+    input T inElement1;
+    input T inElement2;
+    output Boolean inRes;
+  end CompareFunc;
+algorithm
+  outList := listReverse(insertListSorted1(inList, inList2, inCompFunc, {}));
+end insertListSorted;
+
+protected function insertListSorted1<T>
+ "Iterate over the first given list and add it to the result list if the comparison function with the head of the second list returns true.
+  The result is a sorted list in reverse order."
+  input list<T> inList;
+  input list<T> inList2;
+  input CompareFunc inCompFunc;
+  input list<T> inResultList;
+  output list<T> outResultList;
+  
+  partial function CompareFunc
+    input T inElement1;
+    input T inElement2;
+    output Boolean inRes;
+  end CompareFunc;
+protected
+  list<T> listRest, listRest2, tmpResultList;
+  T listHead, listHead2;
+  T elem;
+algorithm
+  outResultList := match(inList, inList2, inCompFunc, inResultList)
+    case({},{},_,_)
+      then inResultList;
+    case({},_,_,_)
+      then listAppend(listReverse(inList2), inResultList);
+    case(_,{},_,_)
+      then listAppend(listReverse(inList), inResultList);
+    case(listHead::listRest, listHead2::listRest2,_,_)
+      equation
+        if(inCompFunc(listHead, listHead2)) then
+          tmpResultList = listHead::inResultList;
+          tmpResultList = insertListSorted1(listRest, inList2, inCompFunc, tmpResultList);
+        else
+          tmpResultList = listHead2::inResultList;
+          tmpResultList = insertListSorted1(inList, listRest2, inCompFunc, tmpResultList);
+        end if;
+      then tmpResultList;
+  end match;
+end insertListSorted1;
+
 public function set<T>
  "set an element at a position
   example: set({2,1,4,2},2,3) => {2,3,4,2} "

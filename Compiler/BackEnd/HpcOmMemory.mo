@@ -267,12 +267,15 @@ encapsulated package HpcOmMemory
 
           //printNodeSimCodeVarMapping(nodeSimCodeVarMapping);
           //print("-------------------------------------\n");
+          
+          eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
+          //printEqSimCodeVarMapping(eqSimCodeVarMapping);
           if(Flags.isSet(Flags.HPCOM_MEMORY_OPT)) then
             (cacheMap,scVarCLMapping,numCL) = createCacheMapOptimized(iTaskGraph, iTaskGraphMeta, simCodeVars, allVarsMapping,simCodeVarTypes,scVarTaskMapping,CACHELINE_SIZE,iAllComponents,iSchedule,iSchedulerInfo,iNumberOfThreads,nodeSimCodeVarMapping);
           else
             (cacheMap,scVarCLMapping,numCL) = createCacheMapDefault(allVarsMapping, CACHELINE_SIZE, simCodeVars, scVarTaskMapping, iSchedulerInfo, simCodeVarTypes);
           end if;
-          eqSimCodeVarMapping = getEqSCVarMapping(iEqSystems,hashTable);
+          
           (clTaskMapping,scVarTaskMapping) = getCacheLineTaskMapping(iTaskGraphMeta,iEqSystems,hashTable,numCL,scVarCLMapping);
 
           //Get not optimized variables
@@ -299,7 +302,7 @@ encapsulated package HpcOmMemory
           end if;
           //print cache map
           if Flags.isSet(Flags.HPCOM_DUMP) then
-            //printCacheMap(cacheMap);
+            printCacheMap(cacheMap);
             print("\n");
             //evaluateCacheBehaviour(cacheMap, iTaskGraphT, nodeSimCodeVarMapping, scVarCLMapping, iNumberOfThreads, numCL, iSchedulerInfo);
           end if;
@@ -596,7 +599,7 @@ encapsulated package HpcOmMemory
   end createCacheMapLevelFixedOptimizedForTask;
 
   protected function createCacheMapThreadOptimized "author: marcusw
-    Create the optimized cache map for the levelfixed-scheduler."
+    Create the optimized cache map for the thread-scheduler."
     input HpcOmTaskGraph.TaskGraph iTaskGraph;
     input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
     input array<Option<SimCodeVar.SimVar>> iAllSCVarsMapping;
@@ -665,7 +668,7 @@ encapsulated package HpcOmMemory
     input array<tuple<Integer,Integer,Real>> iSchedulerInfo;
     input Integer iNumberOfThreads;
     input array<tuple<HpcOmSimCode.Task,Integer>> iAllCalcTasks; //mapping task idx -> (calc task, reference counter)
-    input array<list<Integer>> iNodeSimCodeVarMapping;
+    input array<list<Integer>> iNodeSimCodeVarMapping; //All solved simCode-Variables for the tasks
     input array<tuple<list<CacheLineMap>, list<CacheLineMap>, list<CacheLineMap>>> iThreadCacheLines; //Thread exclusive CacheLines for float, int and bool
     input array<tuple<list<CacheLineMap>, list<CacheLineMap>, list<CacheLineMap>>> iSharedCacheLines; //Thread shared CacheLines for float, int and bool
     input tuple<CacheMap,CacheMapMeta,Integer> iInfo; //<CacheMap,CacheMapMeta,numNewCL>
@@ -1956,7 +1959,7 @@ encapsulated package HpcOmMemory
   end transposeScVarTaskMapping;
 
   protected function getEqSCVarMapping "author: marcusw
-    Create a mapping for all eqSystems to the solved equations to a list of variables that are solved inside the equation."
+    Create a mapping for all eqSystems to the solved equations to a list of variables that are part of the equation."
     input BackendDAE.EqSystems iEqSystems;
     input HashTableCrILst.HashTable iHt; //Mapping varName -> varIdx
     output array<array<list<Integer>>> oMapping; //eqSysIdx -> eqIdx -> list<scVarIdx>
@@ -2528,6 +2531,23 @@ encapsulated package HpcOmMemory
     print("Tasks that are writing to cacheline " + intString(iCacheLineIdx) + ": " + stringDelimitList(List.map(iTasks, intString), ",") + "\n");
     oCacheLineIdx := iCacheLineIdx + 1;
   end printCacheLineTaskMapping0;
+  
+  protected function printEqSimCodeVarMapping
+    input array<array<list<Integer>>> iMapping; //eqSysIdx -> eqIdx -> list<scVarIdx>
+  protected
+    array<list<Integer>> sysInformations;
+    Integer sysIdx;
+    list<Integer> vars;
+  algorithm
+    for sysIdx in 1:arrayLength(iMapping) loop
+      print("System " + intString(sysIdx) + "\n");
+      sysInformations := arrayGet(iMapping, sysIdx);
+      for eqIdx in 1:arrayLength(sysInformations) loop
+        vars := arrayGet(sysInformations, eqIdx);
+        print(" Equation " + intString(eqIdx) + " needs variables " + stringDelimitList(List.map(vars, intString), ",") + "\n");
+      end for;
+    end for;
+  end printEqSimCodeVarMapping;
 
   protected function printSccNodeMapping
     input array<Integer> iMapping;

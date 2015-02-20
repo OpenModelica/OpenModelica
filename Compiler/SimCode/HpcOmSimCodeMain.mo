@@ -180,7 +180,6 @@ algorithm
       array<list<SimCodeVar.SimVar>> simVarMapping; //maps each backend variable to a list of simVars
       Option<SimCode.FmiModelStructure> modelStruct;
     case (BackendDAE.DAE(eqs=eqs), _, _, _, _,_, _, _, _, _, _, _, _) equation
-
       //Initial System
       //--------------
       (initDAE, _, _) = Initialization.solveInitialSystem(inBackendDAE);
@@ -476,6 +475,7 @@ protected
    //(taskGraph1,taskGraphT,taskGraphMeta1) := applyGRSForScheduler(taskGraph1, taskGraphT, taskGraphMeta1, contractedTasks); //not working at the moment
    // build new taskGraph
    (oTaskGraph,oTaskGraphMeta) := GRS_newGraph(taskGraph1,taskGraphMeta1,contractedTasks);
+   //(oTaskGraph,oTaskGraphMeta) := (taskGraph1,taskGraphMeta1);
 end applyGRS;
 
 
@@ -490,7 +490,7 @@ author:Waurich 2014-11"
   output HpcOmTaskGraph.TaskGraph oTaskGraphT;
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 algorithm
-  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,again)
+  (oTaskGraph,oTaskGraphT,oTaskGraphMeta) := match(iTaskGraph,iTaskGraphT,iTaskGraphMeta,contractedTasksIn,again)
     local
       Boolean changed,changed2;
       HpcOmTaskGraph.TaskGraph tmpTaskGraph, tmpTaskGraphT;
@@ -505,7 +505,7 @@ algorithm
         //Repeat if something has changed
       then applyGRS1(tmpTaskGraph,tmpTaskGraphT,tmpTaskGraphMeta,tmpContractedTasks,changed);
     else (iTaskGraph, iTaskGraphT, iTaskGraphMeta);
-  end matchcontinue;
+  end match;
 end applyGRS1;
 
 public function applyGRSForScheduler "applies graph rewriting rules that are specific for the scheduler.
@@ -706,7 +706,7 @@ algorithm
       comps = arrayGet(origInComps,node);
       //print("comps1 "+stringDelimitList(List.map(comps,intString),", ")+"\n");
       arrayUpdate(newGraph,newNode,row);
-      comps = List.sort(comps,intGt);
+      //comps = List.sort(comps,intGt);
       arrayUpdate(newInComps,newNode,comps);
     then GRS_newGraph2(rest,removedNodes,contrTasks,origGraph,origInComps,newGraph,newInComps,newNode+1);
   end matchcontinue;

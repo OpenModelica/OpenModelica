@@ -373,6 +373,67 @@ algorithm
   end matchcontinue;
 end traversingStateRefFinder;
 
+public function equationsParams "author: marcusw
+  From a list of equations return all occurring parameter variables. Duplicates are removed."
+  input list<BackendDAE.Equation> inEquationLst;
+  input BackendDAE.Variables inVars;
+  output list<BackendDAE.Var> outParamVars;
+  output list<Integer> outParamVarsIdc;
+algorithm
+  (_, (_,(outParamVars,outParamVarsIdc,_))) := traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (traversingParamRefFinder, ({}, {}, inVars)));
+end equationsParams;
+
+protected function traversingParamRefFinder "author: marcusw
+  Checks if the given expression is a parameter variable and adds it to the result list on true. Duplicates are removed."
+  input DAE.Exp inExp;
+  input tuple<list<BackendDAE.Var>, list<Integer>, BackendDAE.Variables> inTpl; //<result list, result idc, all variables>
+  output DAE.Exp outExp;
+  output tuple<list<BackendDAE.Var>, list<Integer>, BackendDAE.Variables> outTpl;
+algorithm
+  (outExp,outTpl) := matchcontinue(inExp,inTpl)
+    local
+      BackendDAE.Variables allVars;
+      list<BackendDAE.Var> vars, foundVars;
+      list<Integer> varIdc, foundVarsIdc;
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+
+    case (e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")), (vars, varIdc, allVars))
+      then (e, (vars, varIdc, allVars));
+    case (e as DAE.CREF(componentRef=cr), (vars, varIdc, allVars)) equation
+      //print("traversingParamRefFinder: try to get Variable " + ComponentReference.crefStr(cr) + "\n");
+      (foundVars, foundVarsIdc) = BackendVariable.getVar(cr, allVars);
+      (vars, varIdc) = traversingParamRefFinder0(foundVars, foundVarsIdc, vars, varIdc);
+      then (e, (vars, varIdc, allVars));
+    else (inExp,inTpl);
+  end matchcontinue;
+end traversingParamRefFinder;
+
+protected function traversingParamRefFinder0
+  input list<BackendDAE.Var> iVars;
+  input list<Integer> iVarIdc;
+  input list<BackendDAE.Var> iParamVarsList;
+  input list<Integer> iParamVarsIdc;
+  output list<BackendDAE.Var> oParamVarsList;
+  output list<Integer> oParamVarIdc;
+protected
+  BackendDAE.Var var;
+  list<BackendDAE.Var> vars = iParamVarsList;
+  list<Integer> varIdc = iParamVarsIdc;
+  Integer varIdx;
+  list<Integer> rest := iVarIdc;
+algorithm
+  for var in iVars loop
+    varIdx::rest := rest;
+    if(BackendVariable.isParam(var)) then
+      vars := List.unionEltOnTrue(var, vars, BackendVariable.varEqual);
+      varIdc := List.unionEltOnTrue(varIdx, varIdc, intEq);
+    end if;
+  end for;  
+  oParamVarsList := vars;
+  oParamVarIdc := varIdc;
+end traversingParamRefFinder0;
+
 public function iterationVarsinRelations
  "From a list of equations return all variables, which used inside
   a relation, then this equation system is marked as mixed and also

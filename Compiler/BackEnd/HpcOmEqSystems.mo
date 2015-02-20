@@ -2775,9 +2775,10 @@ protected
   array<String> compDescs, nodeNames;
   array<list<Integer>> inComps;
   array<tuple<Integer,Real>> exeCosts;
+  array<list<Integer>> compParamMapping;
   array<HpcOmTaskGraph.Communications> commCosts;
 algorithm
-  HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, nodeMark=nodeMark) := metaIn;
+  HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, nodeMark=nodeMark) := metaIn;
   numNodes := arrayLength(graph);
   // get the inComps
   inComps := listArray(List.map(List.intRange(numNodes),List.create));
@@ -2793,7 +2794,7 @@ algorithm
   descLst := List.map1(eqStrings,stringAppend," FOR ");
   descLst := List.threadMap(descLst,varStrings,stringAppend);
   compDescs := listArray(descLst);
-  metaOut := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,{},nodeNames,compDescs,exeCosts,commCosts,nodeMark);
+  metaOut := HpcOmTaskGraph.TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,{},nodeNames,compDescs,exeCosts,commCosts,nodeMark);
 end buildTaskgraphMetaForTornSystem;
 
 protected function buildDummyCommCosts "generates preliminary commCosts for a children list.
