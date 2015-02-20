@@ -708,7 +708,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "inlineArrayEqn",
     "constantLinearSystem",
     "simplifysemiLinear",
-    //"solveLinearSystem",
+    "solveLinearSystem",
     "removeSimpleEquations",
     "encapsulateWhenConditions",  // must called after remove simple equations
     "reshufflePost",
@@ -985,7 +985,7 @@ constant ConfigFlag CSE_EACHCALL = CONFIG_FLAG(64,
   Util.gettext("Experimental feature: cse of each call expression (this deactivates module removeEqualFunctionCalls)"));
 
 constant ConfigFlag MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM = CONFIG_FLAG(65, "maxSizeSolveLinearSystem",
-  NONE(), EXTERNAL(), INT_FLAG(-1), NONE(),
+  NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Max size for solveLinearSystem."));
 
 

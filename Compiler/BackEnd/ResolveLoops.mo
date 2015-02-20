@@ -2072,17 +2072,26 @@ end resolveEquations;
 public function solveLinearSystem
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  Integer maxSize :=  Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM);
+  Boolean b := 1 < maxSize;
 algorithm
-  (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, solveLinearSystem0, (false,1));
+
+  if b then
+    (outDAE, _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, solveLinearSystem0, (false,1,maxSize));
+  else
+    outDAE := inDAE;
+  end if;
+
 end solveLinearSystem;
 
 protected function solveLinearSystem0
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
-  input tuple<Boolean,Integer> inTpl;
+  input tuple<Boolean,Integer,Integer> inTpl;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared outShared;
-  output tuple<Boolean,Integer> outTpl;
+  output tuple<Boolean,Integer,Integer> outTpl;
 protected
   BackendDAE.StrongComponents comps;
 algorithm
@@ -2094,23 +2103,22 @@ protected function solveLinearSystem1
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.StrongComponents inComps;
-  input tuple<Boolean,Integer> inTpl;
+  input tuple<Boolean,Integer,Integer> inTpl;
   output BackendDAE.EqSystem osyst := isyst;
   output BackendDAE.Shared oshared := ishared;
-  output tuple<Boolean,Integer> outTpl;
+  output tuple<Boolean,Integer,Integer> outTpl;
 protected
   Boolean b;
   Boolean runMatching;
   list<Integer> ii := {};
-  Integer offset;
+  Integer offset, maxSize;
 algorithm
-  (runMatching, offset) := inTpl;
+  (runMatching, offset, maxSize) := inTpl;
   for comp in inComps loop
-     (osyst,oshared,b,ii,offset) := solveLinearSystem2(osyst,oshared,comp,ii, offset);
+     (osyst,oshared,b,ii,offset) := solveLinearSystem2(osyst,oshared,comp,ii, offset, maxSize);
      runMatching := runMatching or b;
   end for;
-  outTpl := (runMatching, offset);
-
+  outTpl := (runMatching, offset,maxSize);
 
   if runMatching then
   osyst := match(osyst)
@@ -2137,6 +2145,7 @@ protected function solveLinearSystem2
   input BackendDAE.StrongComponent comp;
   input list<Integer> ii;
   input Integer offset;
+  input Integer maxSize;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output Boolean outRunMatching;
@@ -2150,7 +2159,6 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp1;
-      Boolean b,b1;
       list<BackendDAE.Equation> eqn_lst;
       list<BackendDAE.Var> var_lst;
       list<Integer> eindex,vindx;
@@ -2163,7 +2171,7 @@ algorithm
       equation
         eqn_lst = BackendEquation.getEqns(eindex,eqns);
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
-        true = listLength(var_lst) <= Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM) or Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM) < 0;
+        true = listLength(var_lst) <= maxSize;
         ({},_) = List.splitOnTrue(var_lst, BackendVariable.isStateVar) "TODO: fix BackendDAEUtil.getEqnSysRhs for x and der(x)";
         (syst,shared, toffset) = solveLinearSystem3(syst,shared,eqn_lst,eindex,var_lst,vindx,jac,offset);
       then (syst,shared,true, List.appendNoCopy(eindex, ii), toffset);
@@ -2257,7 +2265,6 @@ algorithm
     (a, oeqns, ovars) := BackendEquation.makeTmpEqnForExp(a, "QR$A$" + intString(m), offset, oeqns, ovars);
     arrayUpdate(A,m,a);
   end for;
-
 
   // b
   m := 1;

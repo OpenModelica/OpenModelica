@@ -2211,15 +2211,15 @@ protected
   DAE.ComponentRef cr;
   BackendDAE.Var tmpvar;
   String name_ := "$TMP$" + intString(offset) + "$" + name;
-  DAE.Exp x;
+  DAE.Exp x, y;
 algorithm
   if not (Expression.isCref(iExp) or Expression.isConst(iExp)) then
     cr  := ComponentReference.makeCrefIdent(name_, DAE.T_REAL_DEFAULT , {});
     tmpvar := BackendVariable.makeVar(cr);
     ovars := BackendVariable.addVar(tmpvar, ivars);
     x := Expression.crefExp(cr);
-    (x, _) := ExpressionSimplify.simplify(x);
-    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(x, iExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), ieqns);
+    (y, _) := ExpressionSimplify.simplify(iExp);
+    oeqns := BackendEquation.addEquation(BackendDAE.EQUATION(x, y, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), ieqns);
     oExp := x;
   else
     oExp := iExp;
@@ -2246,6 +2246,9 @@ protected
   DAE.Exp len := Expression.lenVec(vec);
 algorithm
   (len,oeqns,ovars) := makeTmpEqnForExp(len, name, offset, ieqns, ivars);
+  if Expression.isZero(len) then
+    fail();
+  end if;
   nvec := Array.map1(vec, Expression.makeDiv, len);
 end normalizationVec;
 
