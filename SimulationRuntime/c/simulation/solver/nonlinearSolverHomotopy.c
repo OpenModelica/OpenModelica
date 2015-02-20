@@ -762,7 +762,7 @@ int getAnalyticalJacobianHomotopy(DATA_HOMOTOPY* solverData, double* jac)
 */
 static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, double *fJac)
 {
-  const double delta_h = sqrt(DBL_EPSILON);
+  const double delta_h = sqrt(DBL_EPSILON*2e1);
   double delta_hh;
   double xsave;
 
@@ -1237,7 +1237,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     vecDivScaling(solverData->n, solverData->f1, solverData->resScaling, solverData->fvecScaled);
     debugVectorDouble(LOG_NLS_V,"function values:",solverData->f1, n);
     debugVectorDouble(LOG_NLS_V,"scaled function values:",solverData->fvecScaled, n);
-    vecDivScaling(solverData->n, solverData->dy0, x, solverData->dxScaled);
+    vecDivScaling(solverData->n, solverData->dy0, solverData->xScaling, solverData->dxScaled);
     delta_x        = vecNorm2(solverData->n, solverData->dy0);
     delta_x_scaled = vecNorm2(solverData->n, solverData->dxScaled);
     error_f        = vecNorm2(solverData->n, solverData->f1);
