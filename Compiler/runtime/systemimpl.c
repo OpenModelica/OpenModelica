@@ -2784,16 +2784,24 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
 
     j = 0;
     for (i=0; i<n; i++) {
-      if (buffer[i] == '\n') {
+      switch (buffer[i]) {
+      case '\n':
         obuffer[j++] = '\\';
         obuffer[j++] = 'n';
-      } else if (buffer[i] == '\\') {
+        break;
+      case '\r':
+        obuffer[j++] = '\\';
+        obuffer[j++] = 'r';
+        break;
+      case '\\':
         obuffer[j++] = '\\';
         obuffer[j++] = '\\';
-      } else if (buffer[i] == '"') {
+        break;
+      case '"':
         obuffer[j++] = '\\';
         obuffer[j++] = '"';
-      } else {
+        break;
+      default:
         obuffer[j++] = buffer[i];
       }
     }
