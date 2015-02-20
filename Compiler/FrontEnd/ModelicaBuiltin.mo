@@ -286,7 +286,7 @@ function homotopy
   input Real actual;
   input Real simplified;
   output Real outValue;
-external "builtin"
+external "builtin";
 annotation(version="Modelica 3.2",Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'homotopy()'\">homotopy()</a> (experimental implementation)
 </html>"));
@@ -489,8 +489,8 @@ function pre "Refer to left limit"
 end pre;
 
 function sample "Overloaded operator to either trigger time events or to convert between continuous-time and clocked-time representation"
-external "builtin";
-annotation(Documentation(info="<html>
+  external "builtin";
+  annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
 </html>"));
 end sample;
@@ -752,8 +752,8 @@ end Subtask;
 
 impure function print "Prints to stdout, useful for debugging."
   input String str;
-external "builtin";
-annotation(__OpenModelica_Impure=true, version="OpenModelica extension");
+  external "builtin";
+  annotation(__OpenModelica_Impure=true, version="OpenModelica extension");
 end print;
 
 function classDirectory "Non-standard operator"
@@ -767,7 +767,7 @@ end classDirectory;
 
 function getInstanceName
   output String instanceName;
-external "builtin";
+  external "builtin";
   annotation(Documentation(info="<html>
 <h4>
 Modelica definition:
@@ -839,7 +839,8 @@ function threadData
 protected
   record ThreadData
   end ThreadData;
-external "builtin" annotation(Documentation(info="<html>
+external "builtin";
+annotation(Documentation(info="<html>
 <p>Used to access thread-specific data in external functions.</p>
 </html>"));
 end threadData;
@@ -1008,7 +1009,8 @@ type FileType = enumeration(NoFile, RegularFile, Directory, SpecialFile);
 function stat
   input String name;
   output FileType fileType;
-external "C" fileType = ModelicaInternal_stat(name) annotation(Library="ModelicaExternalC");
+  external "C" fileType = ModelicaInternal_stat(name);
+  annotation(Library="ModelicaExternalC");
 end stat;
 
 end Internal;
@@ -1106,7 +1108,8 @@ impure function system "Similar to system(3). Executes the given command in the 
   input String callStr "String to call: sh -c $callStr";
   input String outputFile := "" "The output is redirected to this file (unless already done by callStr)";
   output Integer retval "Return value of the system call; usually 0 on success";
-external "builtin" annotation(__OpenModelica_Impure=true);
+external "builtin";
+annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end system;
 
@@ -1114,7 +1117,8 @@ impure function system_parallel "Similar to system(3). Executes the given comman
   input String callStr[:] "String to call: sh -c $callStr";
   input Integer numThreads := numProcessors();
   output Integer retval[:] "Return value of the system call; usually 0 on success";
-external "builtin" annotation(__OpenModelica_Impure=true);
+external "builtin";
+annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end system_parallel;
 
@@ -1522,7 +1526,7 @@ impure function readFile
   Note that if the function fails, the error message is returned as a string instead of multiple output or similar."
   input String fileName;
   output String contents;
-external "builtin" annotation(__OpenModelica_Impure=true);
+external "builtin"; annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end readFile;
 
@@ -1532,7 +1536,7 @@ impure function writeFile
   input String data;
   input Boolean append := false;
   output Boolean success;
-external "builtin" annotation(__OpenModelica_Impure=true);
+external "builtin"; annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end writeFile;
 
@@ -1540,7 +1544,7 @@ impure function compareFilesAndMove
   input String newFile;
   input String oldFile;
   output Boolean success;
-external "builtin" annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+external "builtin"; annotation(__OpenModelica_Impure=true,Documentation(info="<html>
 <p>Compares <i>newFile</i> and <i>oldFile</i>. If they differ, overwrite <i>oldFile</i> with <i>newFile</i></p>
 <p>Basically: test -f ../oldFile && cmp newFile oldFile || mv newFile oldFile</p>
 </html>"));
@@ -1550,7 +1554,7 @@ impure function compareFiles
   input String file1;
   input String file2;
   output Boolean isEqual;
-external "builtin" annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+external "builtin"; annotation(__OpenModelica_Impure=true,Documentation(info="<html>
 <p>Compares <i>file1</i> and <i>file2</i> and returns true if their content is equal, otherwise false.</p>
 </html>"));
 end compareFiles;
@@ -1558,7 +1562,7 @@ end compareFiles;
 impure function alarm
   input Integer seconds;
   output Integer previousSeconds;
-external "builtin" annotation(__OpenModelica_Impure=true,Library = {"omcruntime"},Documentation(info="<html>
+external "builtin"; annotation(__OpenModelica_Impure=true,Library = {"omcruntime"},Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
 <p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
 </html>"));
@@ -1679,7 +1683,7 @@ function countMessages
   output Integer numMessages;
   output Integer numErrors;
   output Integer numWarnings;
-external "builtin"
+external "builtin";
 annotation(Documentation(info="<html>
 <p>Returns the total number of messages in the error buffer, as well as the number of errors and warnings.</p>
 </html>"));
@@ -2126,7 +2130,7 @@ end rewriteBlockCall;
 function realpath "Get full path name of file or directory name"
   input String name "Absolute or relative file or directory name";
   output String fullName "Full path of 'name'";
-external "C" fullName = ModelicaInternal_fullPathName(name) annotation(Library="ModelicaExternalC");
+external "C" fullName = ModelicaInternal_fullPathName(name); annotation(Library="ModelicaExternalC");
   annotation (Documentation(info="<html>
 Return the canonicalized absolute pathname.
 Similar to <a href=\"http://linux.die.net/man/3/realpath\">realpath(3)</a>, but with the safety of Modelica strings.
@@ -2926,7 +2930,7 @@ function setDocumentationAnnotation
   input String revisions = "";
   output Boolean bool;
 
-  external "builtin" ;
+  external "builtin";
 annotation(preferredView = "text", Documentation(info = "<html>
 <p>Used to set the Documentation annotation of a class. An empty argument (e.g. for revisions) means no annotation is added.</p>
 </html>"));
