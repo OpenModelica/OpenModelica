@@ -11,7 +11,10 @@ namespace uBlas = boost::numeric::ublas;
 class ISimData
 {
 public:
-  virtual ~ISimData() {};
+  virtual ~ISimData()
+  {
+
+  };
 
   virtual void Add(std::string key, boost::shared_ptr<ISimVar> var) = 0;
   //Returns SimVar for a key
