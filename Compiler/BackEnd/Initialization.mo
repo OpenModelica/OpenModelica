@@ -382,7 +382,7 @@ algorithm
       crintLst = BaseHashTable.hashTableList(leftCrs);
       crefLst = List.fold(crintLst, selectSecondZero, {});
       (eqns, vars) = generateInactiveWhenEquationForInitialization(crefLst, source, eqns, vars);
-      eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+      eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC), eqns);
     then (eqn, (vars, eqns));
 
     case (eqn, (vars, eqns))
@@ -583,7 +583,7 @@ algorithm
       identType = ComponentReference.crefTypeConsiderSubs(cr);
       crefExp = DAE.CREF(cr, identType);
       crefPreExp = Expression.makePureBuiltinCall("pre", {crefExp}, DAE.T_BOOL_DEFAULT);
-      eqn = BackendDAE.EQUATION(crefExp, crefPreExp, inSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
+      eqn = BackendDAE.EQUATION(crefExp, crefPreExp, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
       (eqns, vars) = generateInactiveWhenEquationForInitialization(rest, inSource, eqn::inEqns, iVars);
     then (eqns, vars);
  end match;
@@ -1426,6 +1426,7 @@ algorithm
   unassigned := Matching.getUnassigned(nVars+nAddVars, vec1, {});
   if 0 < listLength(unassigned) then
     Error.addCompilerNotification("The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
+    //BackendDump.dumpEqSystem(syst, "The given system is mixed-determined.   [index > " + intString(inIndex) + "]");
   end if;
   0 := listLength(unassigned); // if this fails, the system is singular (mixed-determined)
 
