@@ -6009,7 +6009,7 @@ public function expHasCrefsNoPreOrStart "
  returns true if the expression contains one cref from the list, but not in pre(),change(),edge(),start(), delay()"
   input DAE.Exp inExp;
   input list<DAE.ComponentRef> inCr;
-  output Boolean hasCref;
+  output Boolean hasCref := false;
 algorithm
   for cr in inCr loop
     (_,(_,hasCref)) := traverseExpTopDown(inExp, traversingexpHasCrefNoPreOrStart, (cr,false));
