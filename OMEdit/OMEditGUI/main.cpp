@@ -73,10 +73,7 @@
 #include "Helper.h"
 #include "../../Compiler/runtime/omc_config.h"
 #include "CrashReportDialog.h"
-
-#if USE_OMC_SHARED_OBJECT
 #include "meta/meta_modelica.h"
-#endif
 
 #ifdef QT_NO_DEBUG
 #ifndef WIN32
@@ -204,9 +201,7 @@ void printOMEditUsage()
 int main(int argc, char *argv[])
 {
   /* Do not use the signal handler OR exception filter if user is building a debug version. Perhaps the user wants to use gdb. */
-#if USE_OMC_SHARED_OBJECT
   MMC_INIT();
-#endif
 
 #ifdef QT_NO_DEBUG
 #ifdef WIN32

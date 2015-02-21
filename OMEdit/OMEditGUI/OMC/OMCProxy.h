@@ -44,10 +44,6 @@
 #include "StringHandler.h"
 #include "Utilities.h"
 
-#if !USE_OMC_SHARED_OBJECT
-#include "omc_communication.h"
-#endif
-
 class MainWindow;
 class CustomExpressionBox;
 class ComponentInfo;
@@ -64,14 +60,8 @@ class OMCProxy : public QObject
 {
   Q_OBJECT
 private:
-#if !USE_OMC_SHARED_OBJECT
-  OmcCommunication_var mOMC;
-#endif
   bool mHasInitialized;
-  qint64 mOMCProcessId;
-  bool mCanUseEventLoop;
   QString mResult;
-  QString mExpression;
   QWidget *mpOMCLoggerWidget;
   CustomExpressionBox *mpExpressionTextBox;
   QPushButton *mpOMCLoggerSendButton;
@@ -90,19 +80,14 @@ private:
 public:
   OMCProxy(MainWindow *pMainWindow);
   ~OMCProxy();
-  qint64 getOMCProcessId() {return mOMCProcessId;}
-  bool canUseEventLoop();
-  void enableCanUseEventLoop(bool enable);
   void enableCustomExpression(bool enable);
   void getPreviousCommand();
   void getNextCommand();
-  void setExpression(QString expression);
-  QString getExpression();
   cachedOMCCommand getcachedOMCCommand(QString className, QString command);
   void cacheOMCCommand(QString className, QString command, QString commandResult);
   void removeCachedOMCCommand(QString className);
-  bool startServer();
-  void stopServer();
+  bool initializeOMC();
+  void quitOMC();
   void sendCommand(const QString expression, bool cacheCommand = false, QString className = QString(), bool dontUseCachedCommand = false);
   void setResult(QString value);
   QString getResult();
@@ -225,9 +210,6 @@ public:
 signals:
   void commandFinished();
 public slots:
-#if !USE_OMC_SHARED_OBJECT
-  void sendCommand();
-#endif
   void logCommand(QString command, QTime *commandTime);
   void logResponse(QString response, QTime *responseTime);
   void openOMCLoggerWidget();

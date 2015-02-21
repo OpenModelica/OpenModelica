@@ -59,7 +59,6 @@ private:
   Label *mpFilesDescriptionLabel;
   QCheckBox *mpOMEditCommunicationLogFileCheckBox;
   QCheckBox *mpOMEditCommandsMosFileCheckBox;
-  QCheckBox *mpOMCOutputFileCheckBox;
   QCheckBox *mpOMStackTraceFileCheckBox;
   QPushButton *mpSendReportButton;
   QPushButton *mpCancelButton;

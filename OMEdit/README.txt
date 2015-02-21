@@ -7,7 +7,7 @@ Windows
 
   Prerequisites
   ------------------------------
-  - Compile OMPlot.
+  - Compile OMC, OMPlot & qjson.
 
   Qt 4.8.0
   ------------------------------
@@ -21,12 +21,13 @@ Windows
   - Run the OMEditGUI/Makefile.omdev.mingw via Qt Command Prompt.
   - Start OMEdit from ../build/bin/OMEdit.exe.
   OR
-  - Load the file OMEditGUI/OMEditGUI.pro in Qt Creator IDE. Qt Creator is included in Qt SDK.
-  - You must run the makefile once so that the omc_communication.h and omc_communication.cc file is generated.
+  - Load the file OMEditGUI/OMEditGUI.pro in Qt Creator. Qt Creator is included in Qt SDK.
+  - You must run the makefile once so that the parser files are generated.
   - Build the project.
-  - Copy omniORB416_rt.dll, omniORB416_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/lib/omniORB-4.1.6-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
-  - Copy libqjson.dll, libqjson.dll.a, libintl-8.dll and libiconv-2.dll from ../build/bin to /location-where-OMEdit.exe-is-created.
+  - Copy the dependent dlls from c:/OMDev/ to /location-where-OMEdit.exe-is-created. Use dependency walker (http://www.dependencywalker.com/) to find dependent dlls.
   - Run the project.
+  
+  Note: We recommend using the makefile. If you choose to use Qt Creator then you should take care of dependent dlls.
 
 Linux
 ------------------------------

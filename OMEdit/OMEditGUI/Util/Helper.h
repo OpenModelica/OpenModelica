@@ -179,6 +179,7 @@ public:
   static QString exportAsImageTip;
   static QString exportFigaro;
   static QString exportFigaroTip;
+  static QString OpenModelicaCompilerCLI;
   static QString deleteStr;
   static QString copy;
   static QString paste;

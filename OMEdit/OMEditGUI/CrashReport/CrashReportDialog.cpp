@@ -79,14 +79,6 @@ CrashReportDialog::CrashReportDialog()
   } else {
     mpOMEditCommandsMosFileCheckBox->setChecked(false);
   }
-  // openmodelica.omc.output.OMEdit file checkbox
-  QFileInfo OMCOutputFileInfo(QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName));
-  mpOMCOutputFileCheckBox = new QCheckBox(OMCOutputFileInfo.absoluteFilePath());
-  if (OMCOutputFileInfo.exists()) {
-    mpOMCOutputFileCheckBox->setChecked(true);
-  } else {
-    mpOMCOutputFileCheckBox->setChecked(false);
-  }
   // openmodelica.stacktrace.OMEdit file checkbox
   QFileInfo OMStackTraceFileInfo(QString("%1openmodelica.stacktrace.%2").arg(tmpPath).arg(Helper::OMCServerName));
   mpOMStackTraceFileCheckBox = new QCheckBox(OMStackTraceFileInfo.absoluteFilePath());
@@ -115,7 +107,7 @@ CrashReportDialog::CrashReportDialog()
   pMainLayout->addWidget(mpBugDescriptionLabel, 4, 0);
   pMainLayout->addWidget(mpBugDescriptionTextBox, 5, 0);
   int index = 6;
-  if (OMEditCommunicationLogFileInfo.exists() || OMEditCommandsMosFileInfo.exists() || OMCOutputFileInfo.exists() || OMStackTraceFileInfo.exists()) {
+  if (OMEditCommunicationLogFileInfo.exists() || OMEditCommandsMosFileInfo.exists() || OMStackTraceFileInfo.exists()) {
     pMainLayout->addWidget(mpFilesDescriptionLabel, index, 0);
     index++;
   }
@@ -125,10 +117,6 @@ CrashReportDialog::CrashReportDialog()
   }
   if (OMEditCommandsMosFileInfo.exists()) {
     pMainLayout->addWidget(mpOMEditCommandsMosFileCheckBox, index, 0);
-    index++;
-  }
-  if (OMCOutputFileInfo.exists()) {
-    pMainLayout->addWidget(mpOMCOutputFileCheckBox, index, 0);
     index++;
   }
   if (OMStackTraceFileInfo.exists()) {
@@ -177,17 +165,6 @@ void CrashReportDialog::sendReport()
     OMEditCommandsMosFileHttpPart.setBodyDevice(pOMEditCommandsMosFile);
     pOMEditCommandsMosFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
     pHttpMultiPart->append(OMEditCommandsMosFileHttpPart);
-  }
-  // OMCOutputFile
-  if (mpOMCOutputFileCheckBox->isChecked()) {
-    QHttpPart OMCOutputFileCheckBoxHttpPart;
-    OMCOutputFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("text/plain"));
-    OMCOutputFileCheckBoxHttpPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"openmodelica.omc.output.OMEdit\"; filename=\"openmodelica.omc.output.OMEdit\""));
-    QFile *pOMCOutputFileCheckBoxFile = new QFile(mpOMCOutputFileCheckBox->text());
-    pOMCOutputFileCheckBoxFile->open(QIODevice::ReadOnly);
-    OMCOutputFileCheckBoxHttpPart.setBodyDevice(pOMCOutputFileCheckBoxFile);
-    pOMCOutputFileCheckBoxFile->setParent(pHttpMultiPart); // file will be deleted when we delete pHttpMultiPart
-    pHttpMultiPart->append(OMCOutputFileCheckBoxHttpPart);
   }
   // OMStackTraceFile
   if (mpOMStackTraceFileCheckBox->isChecked()) {

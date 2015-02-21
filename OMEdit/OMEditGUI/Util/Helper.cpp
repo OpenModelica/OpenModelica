@@ -177,6 +177,7 @@ QString Helper::exportAsImage;
 QString Helper::exportAsImageTip;
 QString Helper::exportFigaro;
 QString Helper::exportFigaroTip;
+QString Helper::OpenModelicaCompilerCLI;
 QString Helper::deleteStr;
 QString Helper::copy;
 QString Helper::paste;
@@ -353,6 +354,7 @@ void Helper::initHelperVariables()
   Helper::exportAsImageTip = tr("Exports the current model to Image");
   Helper::exportFigaro = tr("Export Figaro");
   Helper::exportFigaroTip = tr("Exports the current model to Figaro");
+  Helper::OpenModelicaCompilerCLI = tr("OpenModelica Compiler CLI");
   Helper::deleteStr = tr("Delete");
   Helper::copy = tr("Copy");
   Helper::paste = tr("Paste");

@@ -28,19 +28,13 @@ Resources/nls/qm.stamp: OMEditGUI.pro Resources/nls/*.ts
 
 always:
 
-omc_communication.cpp: omc_communication.cc
-	ln -s $< $@
-omc_communication.cc: $(runtimedir)/omc_communication.idl
-	@IDLCMD@ $<
-omc_communication.h: omc_communication.cc
-
 $(NAME): parsergen Makefile OMEdit.config
 	$(MAKE) -f Makefile
 
 clean:
 	$(MAKE) -C Debugger/Parser -f Makefile.lib.unix clean
 	test ! -f Makefile || $(MAKE) -f Makefile clean
-	rm -f ../bin/*.o omc_communication.*
+	rm -f ../bin/*.o
 
 parsergen:
 	$(MAKE) -C Debugger/Parser -f Makefile.lib.unix

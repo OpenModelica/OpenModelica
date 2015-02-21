@@ -70,7 +70,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   resize(800, 600);
   setContentsMargins(1, 1, 1, 1);
   // Create the OMCProxy object.
-  pSplashScreen->showMessage(tr("Connecting to OpenModelica Compiler"), Qt::AlignRight, Qt::white);
   mpOMCProxy = new OMCProxy(this);
   if (getExitApplicationStatus()) {
     return;
@@ -592,7 +591,7 @@ int MainWindow::askForExit()
 
 void MainWindow::beforeClosingMainWindow()
 {
-  mpOMCProxy->stopServer();
+  mpOMCProxy->quitOMC();
   delete mpOMCProxy;
   delete mpModelWidgetContainer;
   delete mpDebuggerMainWindow;
@@ -2130,8 +2129,8 @@ void MainWindow::createActions()
   connect(mpExportFigaroAction, SIGNAL(triggered()), SLOT(exportModelFigaro()));
   // Tools Menu
   // show OMC Logger widget action
-  mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OMC Logger"), this);
-  mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OMC Logger Window"));
+  mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
+  mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler CLI"));
   connect(mpShowOMCLoggerWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLoggerWidget()));
   // export to OMNotebook action
   mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.svg"), Helper::exportToOMNotebook, this);

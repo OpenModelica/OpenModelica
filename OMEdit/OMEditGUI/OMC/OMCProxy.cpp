@@ -39,8 +39,6 @@
 
 #include <OMC/Parser/OMCOutputLexer.h>
 #include <OMC/Parser/OMCOutputParser.h>
-
-#if USE_OMC_SHARED_OBJECT
 #include "meta/meta_modelica.h"
 
 extern "C" {
@@ -54,7 +52,6 @@ void* omc_Main_readSettings(void *threadData, void *args);
 }
 
 #include "OpenModelicaScriptingAPIQt.h"
-#endif
 
 #include <stdexcept>
 #include <stdlib.h>
@@ -95,13 +92,7 @@ static QVariant parseExpression(QString result)
   \param pMainWindow - pointer to MainWindow
   */
 OMCProxy::OMCProxy(MainWindow *pMainWindow)
-  : QObject(pMainWindow),
-#if !USE_OMC_SHARED_OBJECT
-    mOMC(0),
-#endif
-    mHasInitialized(false),
-    mCanUseEventLoop(true),
-    mResult("")
+  : QObject(pMainWindow), mHasInitialized(false), mResult("")
 {
   mpMainWindow = pMainWindow;
   mCurrentCommandIndex = -1;
@@ -109,7 +100,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   mpOMCLoggerWidget = new QWidget;
   mpOMCLoggerWidget->resize(640, 480);
   mpOMCLoggerWidget->setWindowIcon(QIcon(":/Resources/icons/console.svg"));
-  mpOMCLoggerWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("OMC Messages Log")));
+  mpOMCLoggerWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::OpenModelicaCompilerCLI));
   // OMC Logger textbox
   mpOMCLoggerTextBox = new QPlainTextEdit();
   mpOMCLoggerTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
@@ -131,7 +122,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   pVerticalalLayout->addLayout(pHorizontalLayout);
   mpOMCLoggerWidget->setLayout(pVerticalalLayout);
   //start the server
-  if(!startServer())      // if we are unable to start OMC. Exit the application.
+  if(!initializeOMC())      // if we are unable to start OMC. Exit the application.
   {
     mpMainWindow->setExitApplicationStatus(true);
     return;
@@ -143,24 +134,13 @@ OMCProxy::~OMCProxy()
   delete mpOMCLoggerWidget;
 }
 
-bool OMCProxy::canUseEventLoop()
-{
-  return mCanUseEventLoop;
-}
-
-void OMCProxy::enableCanUseEventLoop(bool enable)
-{
-  mCanUseEventLoop = enable;
-}
-
 /*!
   Show/Hide the custom command expression box.
   \param enable - enables/disables the expression text box.
   */
 void OMCProxy::enableCustomExpression(bool enable)
 {
-  if (!enable)
-  {
+  if (!enable) {
     mpExpressionTextBox->hide();
     mpOMCLoggerSendButton->hide();
   }
@@ -172,16 +152,14 @@ void OMCProxy::enableCustomExpression(bool enable)
   */
 void OMCProxy::getPreviousCommand()
 {
-  if (mCommandsList.isEmpty())
+  if (mCommandsList.isEmpty()) {
     return;
+  }
 
   mCurrentCommandIndex -= 1;
-  if (mCurrentCommandIndex > -1)
-  {
+  if (mCurrentCommandIndex > -1) {
     mpExpressionTextBox->setText(mCommandsList.at(mCurrentCommandIndex));
-  }
-  else
-  {
+  } else {
     mCurrentCommandIndex += 1;
   }
 }
@@ -192,36 +170,16 @@ void OMCProxy::getPreviousCommand()
   */
 void OMCProxy::getNextCommand()
 {
-  if (mCommandsList.isEmpty())
+  if (mCommandsList.isEmpty()) {
     return;
+  }
 
   mCurrentCommandIndex += 1;
-  if (mCurrentCommandIndex < mCommandsList.count())
-  {
+  if (mCurrentCommandIndex < mCommandsList.count()) {
     mpExpressionTextBox->setText(mCommandsList.at(mCurrentCommandIndex));
-  }
-  else
-  {
+  } else {
     mCurrentCommandIndex -= 1;
   }
-}
-
-/*!
-  Sets the OMC command expression.
-  \param expression
-  */
-void OMCProxy::setExpression(QString expression)
-{
-  mExpression = expression;
-}
-
-/*!
-  Returns the OMC command expression.
-  \return expression
-  */
-QString OMCProxy::getExpression()
-{
-  return mExpression;
 }
 
 /*!
@@ -295,54 +253,12 @@ void OMCProxy::removeCachedOMCCommand(QString className)
   mCachedOMCCommandsMap.remove(className);
 }
 
-#if defined(linux)
-/* Helper function to strip /bin/... from the executable path of omc */
-static const char* stripbinpath(char *omhome)
-{
-  char *tmp;
-  if (!(tmp = strrchr(omhome,'/'))) {
-    return CONFIG_DEFAULT_OPENMODELICAHOME;
-  }
-  *tmp = '\0';
-  if (!(tmp = strrchr(omhome,'/'))) {
-    return CONFIG_DEFAULT_OPENMODELICAHOME;
-  }
-  *tmp = '\0';
-  return omhome;
-}
-
-#include <sys/stat.h>
-#include <linux/limits.h>
-#include <unistd.h>
-QString linuxOMHome(void) {
-  char omhome[PATH_MAX];
-  ssize_t r;
-  /* This is bad code using hard-coded limits; but we cannot query the size of symlinks on /proc
-   * because that FS is not POSIX-compliant.
-   */
-  r = readlink("/proc/self/exe", omhome, sizeof(omhome)-1);
-  if (r < 0) {
-    perror("readlink");
-    exit(EXIT_FAILURE);
-  }
-  if (r < (long) sizeof(omhome) - 1) {
-    return CONFIG_DEFAULT_OPENMODELICAHOME;
-  }
-  omhome[r] = '\0';
-  stripbinpath(omhome);
-  return omhome;
-}
-#endif
-
 /*!
-  Starts the OpenModelica Compiler.\n
-  On Windows look for OPENMODELICAHOME environment variable. On Linux read the installation directory from omc_config.h file.\n
-  Runs the omc with +c and +d=interactiveCorba flags.\n
-  +c flag creates a CORBA IOR file with name e.g openmodelica.objid.OMEdit{1ABB3DAA-C925-47E8-85F9-3DE6F3F7E79C}154302842\n
-  +corbaObjectReferenceFilePath sets the path for CORBA object reference file.\n
-  For each instance of OMEdit a new omc is run.
+  Initializes the OpenModelica Compiler binary.\n
+  Creates the omeditcommunication.log & omeditcommands.mos files.
+  \return status - returns true if initialization is successful otherwise false.
   */
-bool OMCProxy::startServer()
+bool OMCProxy::initializeOMC()
 {
   /* create the tmp path */
   QString& tmpPath = OpenModelica::tempDirectory();
@@ -360,7 +276,6 @@ bool OMCProxy::startServer()
     mCommandsLogFileTextStream.setCodec(Helper::utf8.toStdString().data());
     mCommandsLogFileTextStream.setGenerateByteOrderMark(false);
   }
-#if USE_OMC_SHARED_OBJECT
   threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
   void *st = 0;
   MMC_TRY_TOP_INTERNAL()
@@ -370,102 +285,12 @@ bool OMCProxy::startServer()
   mpOMCInterface = new OMCInterface(threadData, st);
   connect(mpOMCInterface, SIGNAL(logCommand(QString,QTime*)), this, SLOT(logCommand(QString,QTime*)));
   connect(mpOMCInterface, SIGNAL(logResponse(QString,QTime*)), this, SLOT(logResponse(QString,QTime*)));
-
   mHasInitialized = true;
-#else
-  try
-  {
-    QString msg;
-    const char *omhome = getenv("OPENMODELICAHOME");
-    QString omcPath;
-#ifdef WIN32
-    if (!omhome)
-      throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPENMODELICAHOME_NOT_FOUND).toStdString());
-    omcPath = QString( omhome ) + "/bin/omc.exe";
-#elif defined(linux)
-    omcPath = (omhome ? QString(omhome)+"/bin/omc" : linuxOMHome() + "/bin/omc");
-#else /* unix */
-    omcPath = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
-#endif
-    // Check the IOR file created by omc.exe
-    QFile objectRefFile;
-    QString fileIdentifier;
-    fileIdentifier = qApp->sessionId().append(QTime::currentTime().toString("hh:mm:ss:zzz").remove(":"));
-#ifdef WIN32 // Win32
-    objectRefFile.setFileName(QString("%1openmodelica.objid.%3%4").arg(tmpPath).arg(Helper::OMCServerName).arg(fileIdentifier));
-#else // UNIX environment
-    char *user = getenv("USER");
-    objectRefFile.setFileName(QString("%1openmodelica.%3.objid.%4%5").arg(tmpPath).arg(QString(user ? user : "nobody")).arg(Helper::OMCServerName).arg(fileIdentifier));
-#endif
-    if (objectRefFile.exists())
-      objectRefFile.remove();
-    mObjectRefFile = objectRefFile.fileName();
-    // read the locale
-    QSettings *pSettings = OpenModelica::getApplicationSettings();
-    QLocale settingsLocale = QLocale(pSettings->value("language").toString());
-    settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
-    // Start the omc.exe
-    QStringList parameters;
-    QDir corbaObjectReferenceFilePath(tmpPath);
-    parameters << QString("+c=").append(Helper::OMCServerName).append(fileIdentifier)
-               << QString("+d=interactiveCorba")
-               << QString("+corbaObjectReferenceFilePath=").append(corbaObjectReferenceFilePath.canonicalPath())
-               << QString("+locale=").append(settingsLocale.name());
-    QProcess *omcProcess = new QProcess;
-    connect(omcProcess, SIGNAL(finished(int)), omcProcess, SLOT(deleteLater()));
-    QFile omcOutputFile;
-    omcOutputFile.setFileName(QString("%1openmodelica.omc.output.%2").arg(tmpPath).arg(Helper::OMCServerName));
-    omcProcess->setProcessChannelMode(QProcess::MergedChannels);
-    omcProcess->setStandardOutputFile(omcOutputFile.fileName());
-    omcProcess->start(omcPath, parameters);
-    // wait for the server to start.
-    int ticks = 0;
-    while (!objectRefFile.exists())
-    {
-      Sleep::sleep(1);
-      ticks++;
-      if (ticks > 20)
-      {
-        msg = "Unable to find " + Helper::applicationName + " server, Object reference file " + mObjectRefFile + " not created.";
-        throw std::runtime_error(msg.toStdString());
-      }
-    }
-    // ORB initialization.
-    int argc = 2;
-    static const char *argv[] = {"-ORBgiopMaxMsgSize", "2147483647"};
-    CORBA::ORB_var orb = CORBA::ORB_init(argc, (char **)argv);
-    objectRefFile.open(QIODevice::ReadOnly);
-    char buf[1024];
-    objectRefFile.readLine( buf, sizeof(buf) );
-    QString uri( (const char*)buf );
-    CORBA::Object_var obj = orb->string_to_object(uri.trimmed().toLocal8Bit());
-    mOMC = OmcCommunication::_narrow(obj);
-    mHasInitialized = true;
-    // get the process id
-#ifdef WIN32
-    struct _PROCESS_INFORMATION *pProcinfo = omcProcess->pid();
-    mOMCProcessId = pProcinfo->dwProcessId;
-#else
-    mOMCProcessId = omcProcess->pid();
-#endif
-  }
-  catch (std::exception &e)
-  {
-    QString msg = e.what();
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),msg.append("\n\n")
-                          .append(Helper::applicationName).append(tr(" will close.")), Helper::ok);
-    mHasInitialized = false;
-    return false;
-  }
-  catch (CORBA::Exception&)
-  {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          QString(tr("Unable to communicate with OpenModelica Compiler.")).append("\n\n").append(Helper::applicationName)
-                          .append(" will close."), Helper::ok);
-    mHasInitialized = false;
-    return false;
-  }
-#endif /* USE_OMC_SHARED_OBJECT */
+  // set the locale
+  QSettings *pSettings = OpenModelica::getApplicationSettings();
+  QLocale settingsLocale = QLocale(pSettings->value("language").toString());
+  settingsLocale = settingsLocale.name() == "C" ? pSettings->value("language").toLocale() : settingsLocale;
+  setCommandLineOptions("+locale=" + settingsLocale.name());
   // get OpenModelica version
   Helper::OpenModelicaVersion = getVersion();
   // set OpenModelicaHome variable
@@ -482,7 +307,7 @@ bool OMCProxy::startServer()
   Stops the OpenModelica Compiler. Kill the process omc and also deletes the CORBA reference file.
   \see startServer
   */
-void OMCProxy::stopServer()
+void OMCProxy::quitOMC()
 {
   sendCommand("quit()");
   mCommunicationLogFile.close();
@@ -500,7 +325,7 @@ void OMCProxy::stopServer()
 void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString className, bool dontUseCachedCommand)
 {
   if (!mHasInitialized) {
-    if(!startServer())      // if we are unable to start OMC. Exit the application.
+    if(!initializeOMC())      // if we are unable to start OMC. Exit the application.
     {
       mpMainWindow->setExitApplicationStatus(true);
       return;
@@ -525,7 +350,6 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
   QTime commandTime;
   commandTime.start();
   logCommand(expression, &commandTime);
-#if USE_OMC_SHARED_OBJECT
   // TODO: Call this in a thread that loops over received messages? Avoid MMC_TRY_TOP all the time, etc
   void *reply_str = NULL;
   threadData_t *threadData = mpOMCInterface->threadData;
@@ -556,63 +380,7 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
   MMC_CATCH_STACK()
 
   MMC_CATCH_TOP(mResult = "");
-
-#else
-  // Send command to server
-  try
-  {
-    setExpression(expression);
-    QFuture<void> future = QtConcurrent::run(this, &OMCProxy::sendCommand);
-    if (canUseEventLoop())
-    {
-      QEventLoop eventLoop;
-      QTimer timer;
-      connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
-      connect(this, SIGNAL(commandFinished()), &eventLoop, SLOT(quit()));
-      timer.start(10);
-      while (future.isRunning())
-      {
-        eventLoop.exec(QEventLoop::ExcludeUserInputEvents);
-        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-      }
-      timer.stop();
-    }
-    future.waitForFinished();
-    writeCommunicationResponseLog(&commandTime);
-    logOMCMessages(expression);
-    // cache the OMC command
-    if (cacheCommand) {
-      cacheOMCCommand(className, expression, getResult());
-    }
-  }
-  catch (QtConcurrent::Exception&)
-  {
-    // if the command is quit() and we get exception just simply quit
-    if (expression == "quit()")
-      return;
-    exitApplication();
-  }
-  catch (CORBA::Exception&)
-  {
-    // if the command is quit() and we get exception just simply quit
-    if (expression == "quit()")
-      return;
-    exitApplication();
-  }
-#endif /* USE_OMC_SHARED_OBJECT */
 }
-
-#if !USE_OMC_SHARED_OBJECT
-/*!
-  Sends the user commands to OMC by using the Qt::concurrent feature.
-  \see sendCommand(const QString expression)
-  */
-void OMCProxy::sendCommand()
-{
-  mResult = QString::fromUtf8(mOMC->sendExpression(getExpression().toUtf8()));
-  emit commandFinished();
-}
-#endif
 
 /*!
   Sets the command result.
@@ -1048,33 +816,6 @@ QStringList OMCProxy::searchClassNames(QString searchText, bool findInText)
   */
 QVariantMap OMCProxy::getClassInformation(QString className)
 {
-#if !USE_OMC_SHARED_OBJECT
-  sendCommand("getClassInformation(" + className + ")", true, className);
-  QString str = getResult();
-  if (str == "") {
-    return QVariantMap();
-  }
-  QVariantList lst = parseExpression(str).toList();
-  QVariantMap res;
-  res["restriction"] = StringHandler::unparse(lst[0].toString());
-  res["comment"] = StringHandler::unparse(lst[1].toString());
-  res["partialPrefix"] = lst[2];
-  res["finalPrefix"] = lst[3];
-  res["encapsulatedPrefix"] = lst[4];
-  /*
-    Since now we set the fileName via loadString() & parseString() so this API might return us className/<interactive>.
-    We only set the fileName field if returned value is really a file path.
-    */
-  QString fileName = StringHandler::unparse(lst[5].toString());
-  res["fileName"] = fileName.endsWith(".mo") ? fileName : "";
-  res["fileReadOnly"] = lst[6];
-  res["lineNumberStart"] = lst[7];
-  res["columnNumberStart"] = lst[8];
-  res["lineNumberEnd"] = lst[9];
-  res["columnNumberEnd"] = lst[10];
-  res["dimensions"] = lst[11];
-  return res;
-#else
   OMCInterface::getClassInformation_res classInformation = mpOMCInterface->getClassInformation(className);
   QVariantMap res;
   res["restriction"] = classInformation.restriction;
@@ -1095,7 +836,6 @@ QVariantMap OMCProxy::getClassInformation(QString className)
   res["dimensions"] = "";
   //res["dimensions"] = classInformation.dimensions;
   return res;
-#endif
 }
 
 /*!

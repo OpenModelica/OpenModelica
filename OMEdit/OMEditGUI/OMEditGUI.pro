@@ -181,7 +181,6 @@ win32 {
     __NT__ \
     __OSVERSION__=4 \
     __WIN32__ \
-    USE_OMC_SHARED_OBJECT=1 \
     IMPORT_INTO=1
 
   CONFIG(debug, debug|release) {
@@ -208,8 +207,6 @@ win32 {
     ../../3rdParty/qwt/build/include \
     ../../OMPlot/OMPlotGUI \
     ../../  ../../3rdParty/antlr/3.2/libantlr3c-3.2/ ../../3rdParty/antlr/3.2/libantlr3c-3.2/include ../../build/include/omc/c
-  SOURCES += omc_communication.cc
-  HEADERS += omc_communication.h
 
 } else { # Unix libraries and includes
   include(OMEdit.config)
