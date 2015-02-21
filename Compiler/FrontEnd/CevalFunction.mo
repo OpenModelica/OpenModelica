@@ -700,7 +700,7 @@ algorithm
         (cache, env, st);
 
     case("dgelsx", {arg_M, arg_N, arg_NRHS, arg_A, arg_LDA, arg_B, arg_LDB,
-                    arg_JPVT, arg_RCOND, arg_RANK, arg_WORK, arg_LWORK, arg_INFO},
+                    arg_JPVT, arg_RCOND, arg_RANK, arg_WORK, arg_INFO},
         cache, env, st)
       equation
         (M, cache, st) = evaluateExtIntArg(arg_M, cache, env, st);
@@ -713,9 +713,8 @@ algorithm
         (JPVT, cache, st) = evaluateExtIntArrayArg(arg_JPVT, cache, env, st);
         (RCOND, cache, st) = evaluateExtRealArg(arg_RCOND, cache, env, st);
         (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
-        (LWORK, cache, st) = evaluateExtIntArg(arg_LWORK, cache, env, st);
         (A, B, JPVT, RANK, INFO) =
-          Lapack.dgelsx(M, N, NRHS, A, LDA, B, LDB, JPVT, RCOND, WORK, LWORK);
+          Lapack.dgelsx(M, N, NRHS, A, LDA, B, LDB, JPVT, RCOND, WORK);
         val_A = ValuesUtil.makeRealMatrix(A);
         val_B = ValuesUtil.makeRealMatrix(B);
         val_JPVT = ValuesUtil.makeIntArray(JPVT);

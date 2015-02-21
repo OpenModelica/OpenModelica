@@ -119,14 +119,13 @@ public function dgelsx
   input list<Integer> inJPVT;
   input Real inRCOND;
   input list<Real> inWORK;
-  input Integer inLWORK;
   output list<list<Real>> outA;
   output list<list<Real>> outB;
   output list<Integer> outJPVT;
   output Integer outRANK;
   output Integer outINFO;
   external "C" LapackImpl__dgelsx(inM, inN, inNRHS, inA, inLDA, inB, inLDB,
-      inJPVT, inRCOND, inWORK, inLWORK, outA, outB, outJPVT, outRANK, outINFO)
+      inJPVT, inRCOND, inWORK, outA, outB, outJPVT, outRANK, outINFO)
     annotation(Library = {"omcruntime", "Lapack"});
 end dgelsx;
 

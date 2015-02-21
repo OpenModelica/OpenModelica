@@ -414,7 +414,7 @@ void LapackImpl__dgels(const char *trans, int M, int N, int NRHS, void *inA,
 }
 
 void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
-    void *inB, int LDB, void *inJPVT, double rcond, void *WORK, int LWORK,
+    void *inB, int LDB, void *inJPVT, double rcond, void *WORK,
     void **outA, void **outB, void **outJPVT, int *RANK, int *INFO)
 {
   integer m, n, nrhs, lda, ldb, rank = 0, info = 0, lwork;
@@ -426,7 +426,7 @@ void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
   nrhs = NRHS;
   lda = LDA;
   ldb = LDB;
-  lwork = LWORK;
+  lwork = max(min(M, N) + 3*N, 2*min(M, N) + nrhs);
 
   a = alloc_real_matrix(lda, n, inA);
   b = alloc_real_matrix(ldb, nrhs, inB);
