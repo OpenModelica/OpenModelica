@@ -886,7 +886,7 @@ AC_MSG_RESULT([$OPENMODELICA_SPEC_PLATFORM])
 AC_MSG_CHECKING([for Modelica platform name])
 if test "$OPENMODELICA_SPEC_PLATFORM" = "x86_64-linux" -o "$OPENMODELICA_SPEC_PLATFORM" = "i386-linux"; then
   MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/linux-x86_64/linux64/" | sed "s/linux-i.86/linux32/"`
-elif test "$OPENMODELICA_SPEC_PLATFORM" = "x86_64-darwin" -o "$OPENMODELICA_SPEC_PLATFORM" = "i386-darwin"; then
+elif echo "$OPENMODELICA_SPEC_PLATFORM" | grep -q darwin; then
   MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/x86_64-apple-darwin.*/darwin64/" | sed "s/i.86-apple-darwin.*/darwin32/"`
 else
   MODELICA_SPEC_PLATFORM=$OPENMODELICA_SPEC_PLATFORM
