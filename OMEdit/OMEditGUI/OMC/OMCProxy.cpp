@@ -58,8 +58,6 @@ void* omc_Main_readSettings(void *threadData, void *args);
 #include <iostream>
 
 #include "OMCProxy.h"
-#include "../../../Compiler/runtime/omc_config.h"
-
 
 static QVariant parseExpression(QString result)
 {
