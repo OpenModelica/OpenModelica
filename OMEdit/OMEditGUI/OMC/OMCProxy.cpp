@@ -100,11 +100,13 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   mpOMCLoggerWidget->setWindowIcon(QIcon(":/Resources/icons/console.svg"));
   mpOMCLoggerWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::OpenModelicaCompilerCLI));
   // OMC Logger textbox
-  mpOMCLoggerTextBox = new QPlainTextEdit();
+  mpOMCLoggerTextBox = new QPlainTextEdit;
   mpOMCLoggerTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpOMCLoggerTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpOMCLoggerTextBox->setReadOnly(true);
   mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  mpOMCLoggerEnableHintLabel = new Label(tr("* To enable OpenModelica Compiler CLI start OMEdit with argument --OMCLogger=true"));
+  mpOMCLoggerEnableHintLabel->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpExpressionTextBox = new CustomExpressionBox(this);
   connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
   mpOMCLoggerSendButton = new QPushButton(tr("Send"));
@@ -118,6 +120,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   pVerticalalLayout->setContentsMargins(1, 1, 1, 1);
   pVerticalalLayout->addWidget(mpOMCLoggerTextBox);
   pVerticalalLayout->addLayout(pHorizontalLayout);
+  pVerticalalLayout->addWidget(mpOMCLoggerEnableHintLabel);
   mpOMCLoggerWidget->setLayout(pVerticalalLayout);
   //start the server
   if(!initializeOMC())      // if we are unable to start OMC. Exit the application.
@@ -141,6 +144,11 @@ void OMCProxy::enableCustomExpression(bool enable)
   if (!enable) {
     mpExpressionTextBox->hide();
     mpOMCLoggerSendButton->hide();
+    mpOMCLoggerEnableHintLabel->show();
+  } else {
+    mpExpressionTextBox->show();
+    mpOMCLoggerSendButton->show();
+    mpOMCLoggerEnableHintLabel->hide();
   }
 }
 

@@ -66,6 +66,7 @@ private:
   CustomExpressionBox *mpExpressionTextBox;
   QPushButton *mpOMCLoggerSendButton;
   QPlainTextEdit *mpOMCLoggerTextBox;
+  Label *mpOMCLoggerEnableHintLabel;
   QString mObjectRefFile;
   QList<QString> mCommandsList;
   int mCurrentCommandIndex;
