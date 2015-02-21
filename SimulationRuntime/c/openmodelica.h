@@ -62,6 +62,10 @@ extern "C" {
 #define DLLDirection DLLExport
 #endif
 
+#if __STDC_VERSION__ >= 199901L || __cplusplus >= 201103L
+#define HAVE_VA_MACROS 1
+#endif
+
 #include "openmodelica_types.h"
 #if defined(__MINGW32__) || defined(_MSC_VER)
  #define WIN32_LEAN_AND_MEAN
@@ -81,10 +85,6 @@ extern "C" {
 #endif
 
 #include "omc_inline.h"
-
-#if __STDC_VERSION__ >= 199901L
-#define HAVE_VA_MACROS 1
-#endif
 
 /* BEFORE: fortran_types */
 #if defined(__alpha__) || defined(__sparc64__) || defined(__x86_64__) || defined(__ia64__)
