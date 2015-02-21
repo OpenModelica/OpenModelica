@@ -426,7 +426,7 @@ void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
   nrhs = NRHS;
   lda = LDA;
   ldb = LDB;
-  lwork = max(min(M, N) + 3*N, 2*min(M, N) + nrhs);
+  lwork = (integer)fmax(fmin(M, N) + 3*N, 2*fmin(M, N) + nrhs);
 
   a = alloc_real_matrix(lda, n, inA);
   b = alloc_real_matrix(ldb, nrhs, inB);
