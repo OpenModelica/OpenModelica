@@ -23,7 +23,7 @@ class ModelicaSimulationError: public std::runtime_error
  {
    public:
    ModelicaSimulationError(SIMULATION_ERROR error_id,const std::string& error_info)
-   :runtime_error(error_info)
+   :runtime_error(strdup(error_info.c_str()))
    ,_error_id(error_id)
    {
    }
@@ -31,7 +31,7 @@ class ModelicaSimulationError: public std::runtime_error
    {
       std::stringstream ss;
       ss << "simulation error message : " << std::runtime_error::what();
-      return ss.str().c_str();
+      return strdup(ss.str().c_str());
    }
   SIMULATION_ERROR getErrorID()
   {
