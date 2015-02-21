@@ -6195,12 +6195,47 @@ case MODELINFO(vars=SIMVARS(__)) then
   ;separator=","%><%if vars.stringAliasVars then "," else "" %>
  >>
  end InitAlgloopParams;
+ 
+ // template MemberVariableDefine(String type,SimVar simVar, String arrayName, Boolean useFlatArrayNotation)
+// ::=
+// match simVar
+
+    // case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
+
+    // case SIMVAR(numArrayElement={},arrayCref=NONE()) then
+      // <<
+      // <%type%> <%cref(name,useFlatArrayNotation)%>;
+      // >>
+    // case v as SIMVAR(name=name, type_ = T_ARRAY(__), arrayCref=SOME(_),numArrayElement=num) then
+      // let &dims = buffer "" /*BUFD*/
+      // let arrayName = arraycref2(name,dims)
+      // let arraysize = arrayextentDims(name,v.numArrayElement)
+      // let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
+      // <<
+      // StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> >  <%arrayName%>  /*testarray3 <%test%> */;
+      // >> 
+    
+    // case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
+      // <<
+      // <%type%> <%cref(name,useFlatArrayNotation)%>;
+      // >>
+    // case SIMVAR(numArrayElement=_::_) then
+      // let& dims = buffer "" /*BUFD*/
+      // let varName = arraycref2(name,dims)
+      // let varType = variableType(type_)
+      // match dims
+        // case "0" then  '<%varType%> <%varName%>;'
+        // else ''
+// end MemberVariableDefine;
 
 template MemberVariableDefine(String type,SimVar simVar, String arrayName, Boolean useFlatArrayNotation)
 ::=
 match simVar
 
-     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then ''
+    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then 
+      <<
+      /*<%type%> <%cref(name,useFlatArrayNotation)%>;*/
+      >>
 
     case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
@@ -6210,29 +6245,47 @@ match simVar
     then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
-    let arraysize = arrayextentDims(name,v.numArrayElement)
-      <<
-      StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> >  <%arrayName%>;
-      >>
+      let arraysize = arrayextentDims(name,v.numArrayElement)
+      let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
+      let varType = variableType(type_)
+
+      match dims
+        case "0" then  
+          <<
+          <%varType%> <%arrayName%>; /*testarray1 <%test%> */;
+          >>
+        else
+          <<
+          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>; /*testarray2 <%test%> */;
+          >>
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
-    let arraysize = arrayextentDims(name,v.numArrayElement)
-    /*previous multiarray
-    <<
-      multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>;
-      >>*/
-    //
-    let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
+      let arraysize = arrayextentDims(name,v.numArrayElement)
+      let varType = variableType(type_)
+      
+      /*previous multiarray
       <<
-      StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> >  <%arrayName%>  /*testarray3 <%test%> */;
-      >>
+        multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>;
+        >>*/
+      //
+      let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
+      match dims
+        case "0" then  
+          <<
+          <%varType%> <%arrayName%>; /*testarray3 <%test%> */;
+          >>
+        else
+          <<
+          StatArrayDim<%dims%><<%varType%>, <%arraysize%> >  <%arrayName%>  /*testarray4 <%test%> */;
+          >>
     case SIMVAR(numArrayElement=_::_) then
+      let test = numArrayElement |> index =>  '<%index%>'; separator=","
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
       match dims
-        case "0" then  '<%varType%> <%varName%>;'
+        case "0" then  '/*this*/<%varType%> <%varName%>; /*testscalar <%test%> */;'
         else ''
 end MemberVariableDefine;
 
@@ -6283,26 +6336,31 @@ match simVar
      then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
-    let typeString = variableType(type_)
-    let arraysize = arrayextentDims(name,v.numArrayElement)
-    <<
-    StatArrayDim<%dims%><<%typeString%>,<%arraysize%>>  <%arrayName%>/*testarray2*/;
-    >>
+      let typeString = variableType(type_)
+      let arraysize = arrayextentDims(name,v.numArrayElement)
+      match dims
+        case "0" then  
+          <<
+          <%typeString%> <%arrayName%>; /*testarray1*/;
+          >>
+        else
+          <<
+          StatArrayDim<%dims%><<%typeString%>,<%arraysize%>>  <%arrayName%>/*testarray2*/;
+          >>
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
-
-    //ComponentRef cr, Text& dims
-    let array_dimensions =  arrayextentDims(name, v.numArrayElement)
-    //numArrayElement
-
-    /*previous multi_array<<
-      multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>;
-      >>
-    */
-      <<
-      StatArrayDim<%dims%><<%variableType(type_)%>, <%array_dimensions%>> <%arrayName%> /*testarray*/;
-      >>
+      let typeString = variableType(type_)
+      let array_dimensions =  arrayextentDims(name, v.numArrayElement)      
+      match dims
+        case "0" then  
+          <<
+          <%typeString%> <%arrayName%>; /*testarray3*/;
+          >>
+        else
+          <<
+          StatArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%> /*testarray4*/;
+          >>
    /*special case for varibales that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
