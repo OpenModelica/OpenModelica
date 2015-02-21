@@ -6195,7 +6195,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   ;separator=","%><%if vars.stringAliasVars then "," else "" %>
  >>
  end InitAlgloopParams;
- 
+
  // template MemberVariableDefine(String type,SimVar simVar, String arrayName, Boolean useFlatArrayNotation)
 // ::=
 // match simVar
@@ -6213,8 +6213,8 @@ case MODELINFO(vars=SIMVARS(__)) then
       // let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
       // <<
       // StatArrayDim<%dims%><<%variableType(type_)%>, <%arraysize%> >  <%arrayName%>  /*testarray3 <%test%> */;
-      // >> 
-    
+      // >>
+
     // case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
       // <<
       // <%type%> <%cref(name,useFlatArrayNotation)%>;
@@ -6232,7 +6232,7 @@ template MemberVariableDefine(String type,SimVar simVar, String arrayName, Boole
 ::=
 match simVar
 
-    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then 
+    case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then
       <<
       /*<%type%> <%cref(name,useFlatArrayNotation)%>;*/
       >>
@@ -6250,7 +6250,7 @@ match simVar
       let varType = variableType(type_)
 
       match dims
-        case "0" then  
+        case "0" then
           <<
           <%varType%> <%arrayName%>; /*testarray1 <%test%> */;
           >>
@@ -6263,7 +6263,7 @@ match simVar
       let arrayName = arraycref2(name,dims)
       let arraysize = arrayextentDims(name,v.numArrayElement)
       let varType = variableType(type_)
-      
+
       /*previous multiarray
       <<
         multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>;
@@ -6271,7 +6271,7 @@ match simVar
       //
       let test = v.numArrayElement |> index =>  '<%index%>'; separator=","
       match dims
-        case "0" then  
+        case "0" then
           <<
           <%varType%> <%arrayName%>; /*testarray3 <%test%> */;
           >>
@@ -6339,7 +6339,7 @@ match simVar
       let typeString = variableType(type_)
       let arraysize = arrayextentDims(name,v.numArrayElement)
       match dims
-        case "0" then  
+        case "0" then
           <<
           <%typeString%> <%arrayName%>; /*testarray1*/;
           >>
@@ -6351,9 +6351,9 @@ match simVar
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
       let typeString = variableType(type_)
-      let array_dimensions =  arrayextentDims(name, v.numArrayElement)      
+      let array_dimensions =  arrayextentDims(name, v.numArrayElement)
       match dims
-        case "0" then  
+        case "0" then
           <<
           <%typeString%> <%arrayName%>; /*testarray3*/;
           >>
