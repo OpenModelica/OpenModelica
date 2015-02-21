@@ -91,12 +91,12 @@ public function findFirstOnTrue<T>
     output Boolean outMatch;
   end FuncType;
 algorithm
+  outElement := NONE();
   for e in inArray loop
     if inPredicate(e) then
       outElement := SOME(e);
     end if;
   end for;
-  outElement := NONE();
 end findFirstOnTrue;
 
 public function select<T>
