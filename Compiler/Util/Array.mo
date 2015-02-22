@@ -95,6 +95,7 @@ algorithm
   for e in inArray loop
     if inPredicate(e) then
       outElement := SOME(e);
+      break;
     end if;
   end for;
 end findFirstOnTrue;
