@@ -2212,7 +2212,7 @@ algorithm
       equation
         v = BackendVariable.listVar1(var_lst);
         eqns1 = BackendEquation.listEquation(eqn_lst);
-        (beqs,sources) = BackendDAEUtil.getEqnSysRhs(eqns1,v,SOME(funcs));
+        (beqs,_) = BackendDAEUtil.getEqnSysRhs(eqns1,v,SOME(funcs));
         beqs = listReverse(beqs);
         n = listLength(beqs);
         names = List.map(var_lst,BackendVariable.varCref);

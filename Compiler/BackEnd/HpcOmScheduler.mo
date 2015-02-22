@@ -4523,7 +4523,7 @@ algorithm
       array<Integer> threadMap;
       array<Real> partitionCosts;
       array<list<Integer>> partitions;
-  case({},_,_,_,(partitions,threadMap,partitionCosts))
+  case({},_,_,_,(_,_,_))
     equation
   then
     tplIn;
@@ -4559,7 +4559,7 @@ protected function getPartition"get all tasks that are somehow connected to the 
   input list<Integer> partitionIn;
   output list<Integer> partitionOut;
 algorithm
-  partitionOut := matchcontinue(checkNodes,graph,graphT,assNodes,partitionIdx,partitionIn)
+  partitionOut := match(checkNodes,graph,graphT,assNodes,partitionIdx,partitionIn)
     local
       Integer node;
       list<Integer> children,parents,rest,partition;
@@ -4578,7 +4578,7 @@ algorithm
       partition = listAppend(partitionIn,node::partition);
       partition = getPartition(rest,graph,graphT,assNodes,partitionIdx,partition);
     then partition;
-  end matchcontinue;
+  end match;
 end getPartition;
 
 

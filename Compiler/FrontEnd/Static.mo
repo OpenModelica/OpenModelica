@@ -2346,7 +2346,7 @@ algorithm
           e1_str := ExpressionDump.printExpStr(inStartExp);
           e2_str := ExpressionDump.printExpStr(inStopExp);
           t1_str := Types.unparseTypeNoAttr(inStartType);
-          t2_str := Types.unparseTypeNoAttr(inStopType);
+          _ := Types.unparseTypeNoAttr(inStopType);
           Error.addSourceMessageAndFail(Error.UNRESOLVABLE_TYPE,
             {e1_str + ":" + e2_str, t1_str + ", " + t1_str, ""}, inInfo);
         end if;
@@ -7510,7 +7510,7 @@ algorithm
         slots = makeEmptySlots(fargs);
         (cache,_,newslots,constInputArgs,_) = elabInputArgs(cache, env, args, nargs, slots, true, false /*checkTypes*/ ,impl,NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), st,pre,info,DAE.T_UNKNOWN_DEFAULT,fn);
         (cache,newslots2,constDefaultArgs,_) = fillGraphicsDefaultSlots(cache, newslots, cl, env_2, impl, pre, info);
-        constlist = listAppend(constInputArgs, constDefaultArgs);
+        _ = listAppend(constInputArgs, constDefaultArgs);
         // _ = List.fold(constlist, Types.constAnd, DAE.C_CONST());
         args_2 = slotListArgs(newslots2);
 
@@ -8261,7 +8261,7 @@ algorithm
     // class already available
     case (_, SOME(cl), _, _)
       algorithm
-        (outCache, name) := Inst.makeFullyQualified(inCache, inEnv, inName);
+        (outCache,_) := Inst.makeFullyQualified(inCache, inEnv, inName);
         outCache := InstFunction.implicitFunctionInstantiation(outCache, inEnv,
           InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), cl, {});
       then
@@ -11348,7 +11348,7 @@ algorithm
       equation
         expl1 = List.map1(expl1,mergeQualWithRest2,exp2);
         exp1 = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl1);
-        (iLst, scalar) = extractDimensionOfChild(exp1);
+        (_, scalar) = extractDimensionOfChild(exp1);
       then DAE.ARRAY(ety, scalar, expl1);
   end match;
 end mergeQualWithRest2;
@@ -11830,7 +11830,7 @@ algorithm
         // false = Types.isUnknownType(t);
         // print("elabCrefSubs type of: " + id + " is " + Types.printTypeStr(t) + "\n");
         // Debug.traceln("    elabSucscriptsDims " + id + " got var");
-        ty = Types.simplifyType(t);
+        _ = Types.simplifyType(t);
         id_ty = Types.simplifyType(id_ty);
         hasZeroSizeDim = Types.isZeroLengthArray(id_ty);
         sl = Types.getDimensions(id_ty);

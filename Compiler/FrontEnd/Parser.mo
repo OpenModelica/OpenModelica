@@ -188,7 +188,7 @@ algorithm
     local
       String filename,encoding;
     case (filename,encoding) then PARSERRESULT(filename,SOME(Parser.parse(filename, encoding)));
-    case (filename,encoding) then PARSERRESULT(filename,NONE());
+    case (filename,_) then PARSERRESULT(filename,NONE());
   end matchcontinue;
   if ErrorExt.getNumMessages() > 0 then
     ErrorExt.moveMessagesToParentThread();

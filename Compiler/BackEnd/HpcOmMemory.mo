@@ -1597,7 +1597,7 @@ encapsulated package HpcOmMemory
           boolArraySize = listLength(cacheLinesBool)*intDiv(cacheLineSize, varSizeBool);
           tmpMemoryMap = HpcOmSimCode.MEMORYMAP_ARRAY(positionMappingArray, floatArraySize, intArraySize, boolArraySize, iScVarNameIdxMapping, {});
         then tmpMemoryMap;
-      case(UNIFORM_CACHEMAP(_,_,_),_,_,_)
+      case(UNIFORM_CACHEMAP(),_,_,_)
         then HpcOmSimCode.MEMORYMAP_UNIFORM();
       else
         equation

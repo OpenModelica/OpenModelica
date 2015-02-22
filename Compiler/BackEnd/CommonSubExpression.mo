@@ -110,7 +110,7 @@ algorithm
       HashTableExpToExp.HashTable HT;
       HashTableExpToIndex.HashTable HT2, HT3;
 
-    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) equation
+    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets, partitionKind) equation
       // BackendDump.dumpEquationList(eqList, "############## Equation-Liste: ###########");
       // BackendDump.dumpVarList(varList, "############## Variablen-Liste: ###########");
       // TODO: merge HT and HT2
@@ -197,7 +197,7 @@ algorithm
       list<DAE.Exp> expLst;
       DAE.ElementSource source;
 
-    case (key as DAE.BINARY(exp1, op, exp2), ((HT, HT2, HT3, eqLst, varLst), source)) equation
+    case (key as DAE.BINARY(_, _, _), ((HT, HT2, HT3, eqLst, varLst), source)) equation
       true = Flags.getConfigBool(Flags.CSE_BINARY);
       value = BaseHashTable.get(key, HT);
       value2 = BaseHashTable.get(value, HT2);
@@ -372,7 +372,7 @@ algorithm
     then (inExp, false, inTuple);
 
 
-    case (DAE.CALL(path=path, attr=DAE.CALL_ATTR(ty=tp)), (HT, HT2, i)) equation
+    case (DAE.CALL( attr=DAE.CALL_ATTR(ty=tp)), (HT, HT2, i)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
       if BaseHashTable.hasKey(inExp, HT) then
         value = BaseHashTable.get(inExp, HT);
@@ -482,7 +482,7 @@ algorithm
     then (value, i+1);
 
     // Expanding.
-    case DAE.T_ARRAY(ty=tp, dims=dims) equation
+    case DAE.T_ARRAY(dims=_) equation
       str = "$CSE" + intString(inUniqueCSEIndex);
       cr = DAE.CREF_IDENT(str, inType, {});
       crefs = ComponentReference.expandCref(cr, false);
@@ -499,7 +499,7 @@ algorithm
 
 
     // record types
-    case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path),source=tpSource) equation
+    case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)) equation
       str = "$CSE" + intString(inUniqueCSEIndex);
       cr = DAE.CREF_IDENT(str, inType, {});
       crefs = ComponentReference.expandCref(cr, true);
@@ -579,7 +579,7 @@ algorithm
       expLst = List.map(expLst, prepareExpForReplace);
     then DAE.TUPLE(expLst);
 
-    case DAE.ARRAY(array=e::_, ty=ty, scalar=scalar) equation
+    case DAE.ARRAY(array=e::_, ty=ty) equation
       cr = Expression.expCref(e);
       cr = ComponentReference.crefStripLastSubs(cr);
       cr = ComponentReference.crefSetType(cr, ty);
@@ -750,7 +750,7 @@ algorithm
       {varIdx2} = varIdcs2;
       {sharedVarIdx} = sharedVarIdcs;
       {eq1,eq2} = BackendEquation.getEqns(partition,eqs);
-      sharedVar = BackendVariable.getVarAt(vars,sharedVarIdx);
+      _ = BackendVariable.getVarAt(vars,sharedVarIdx);
       var1 = BackendVariable.getVarAt(vars,varIdx1);
       var2 = BackendVariable.getVarAt(vars,varIdx2);
 
@@ -885,7 +885,7 @@ algorithm
            //print("eqs2 "+stringDelimitList(List.map(eqs2,intString),", ")+"\n");
      //true = intEq(listLength(eqs1),1) or intEq(listLength(eqs2),1);  // choose the variable to be removed, that does not influence the causalization
      if intLe(listLength(eqs2),listLength(eqs1)) then varIdxAlias = varIdx2; varIdxRepl = varIdx1; else varIdxAlias = varIdx1; varIdxRepl = varIdx2; end if;
-     if intLe(listLength(eqs2),listLength(eqs1)) then eqIdxDel = eqIdx2; eqIdxLeft = eqIdx1; else eqIdxDel = eqIdx1; eqIdxLeft = eqIdx2; end if;
+     if intLe(listLength(eqs2),listLength(eqs1)) then eqIdxDel = eqIdx2; _ = eqIdx1; else eqIdxDel = eqIdx1; _ = eqIdx2; end if;
 
      var1 = BackendVariable.getVarAt(vars,varIdxAlias);
      var2 = BackendVariable.getVarAt(vars,varIdxRepl);
@@ -946,14 +946,14 @@ author:Waurich TUD 2014-11"
   input CommonSubExp cse;
   output String s;
 algorithm
-  s := matchcontinue(cse)
+  s := match(cse)
 local
   list<Integer> eqIdcs;
   list<Integer> sharedVars;
   list<Integer> aliasVars;
     case(ASSIGNMENT_CSE(eqIdcs=eqIdcs,sharedVars=sharedVars,aliasVars=aliasVars))
   then "ASSIGN_CSE: eqs{"+stringDelimitList(List.map(eqIdcs,intString),", ")+"}"+"   sharedVars{"+stringDelimitList(List.map(sharedVars,intString),", ")+"}"+"   aliasVars{"+stringDelimitList(List.map(aliasVars,intString),", ")+"}";
-    end matchcontinue;
+    end match;
 end printCSE;
 annotation(__OpenModelica_Interface="backend");
 

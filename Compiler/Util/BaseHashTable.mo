@@ -563,7 +563,7 @@ algorithm
       array<Option<HashEntry>> arr;
       Integer n, size;
 
-    case (n, size, arr)
+    case (_, size, arr)
       equation
         true = pos < size;
         arr = arrayUpdate(arr, pos + 1,NONE());

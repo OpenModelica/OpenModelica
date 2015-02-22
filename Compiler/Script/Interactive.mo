@@ -12608,9 +12608,9 @@ algorithm
 
     // handle annotation(Dialog);
     case (Absyn.MODIFICATION(path = Absyn.IDENT(annName),
-        modification = NONE(), info = info) :: rest,env,_,_,_)
+        modification = NONE()) :: rest,env,_,_,_)
       equation
-        (cache, env_2, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, {}, annName);
+        (cache,_, _) = buildEnvForGraphicProgram(inFullProgram, inModelPath, {}, annName);
 
         (cache,c,env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(annName), false);
         mod_2 = DAE.NOMOD();
@@ -13571,7 +13571,7 @@ algorithm
       Option<Absyn.ArrayDim> typeAd;
 
     case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,
-                        specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),
+                        specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, _),components = lst)),
           b,access,env)
       equation
         typename = matchcontinue ()
@@ -17129,7 +17129,7 @@ algorithm
       equation
         typename_str = getElementTypeName(elementSpec);
         varname_str = getElementName(elementSpec);
-        (tmp as _::_) = Util.stringSplitAtChar(varname_str, ",");
+        (_::_) = Util.stringSplitAtChar(varname_str, ",");
         str = getDescIfVis(typename_str, inElementItem,prog);
       then
         str;
@@ -17153,7 +17153,6 @@ algorithm
       Absyn.Program p;
     case ({}, _)
       equation
-        s1 = "";
       then
         {};
     case ((current :: {}),p) /* deal with the last element */

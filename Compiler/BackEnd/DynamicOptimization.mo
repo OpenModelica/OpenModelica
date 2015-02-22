@@ -386,7 +386,7 @@ algorithm
       list<BackendDAE.Var> varLst:={};
       BackendDAE.Variables vars;
 
-    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, m, mT, matching, stateSets, partitionKind) algorithm
+    case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets, partitionKind) algorithm
       vars := BackendVariable.daeKnVars(outShared);
 
       ((_, idercr, icr, varLst)) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
@@ -405,7 +405,7 @@ algorithm
         v := BackendVariable.setVarKind(v,BackendDAE.OPT_INPUT_DER());
         outShared := BackendVariable.addKnVarDAE(v, outShared);
       end for;
-      vars := BackendVariable.daeKnVars(outShared);
+      _ := BackendVariable.daeKnVars(outShared);
        //BackendDump.printVariables(vars);
     then (BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(),NONE(),BackendDAE.NO_MATCHING(), stateSets, partitionKind), true);
 

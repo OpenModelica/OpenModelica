@@ -1873,7 +1873,7 @@ algorithm
 
     case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eqs,jac=jac,jacType=BackendDAE.JAC_LINEAR()))::rest,_,_,_)
       equation
-        (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
+        (_,_,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.getEqnsFromEqSystem(isyst), BackendVariable.daeVars(isyst));
         size = listLength(eqs);
         density = realDiv(intReal(getNumJacEntries(jac)),intReal(size*size ));
         allOps = BackendDAE.COUNTER(comp,0,0,0,0,0,0,0,0);
@@ -1946,11 +1946,11 @@ algorithm
         compInfo = BackendDAE.TORN_ANALYSE(comp,torn,other,listLength(tornEqs));
       then
          countOperationstraverseComps(rest,isyst,ishared,compInfo::compInfosIn);
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst, linear = false)::rest,_,BackendDAE.SHARED(functionTree=funcs),_)
+    case (BackendDAE.TORNSYSTEM(residualequations=tornEqs, otherEqnVarTpl= eqnvartpllst, linear = false)::rest,_,BackendDAE.SHARED(),_)
       equation
         comp = List.first(inComps);
         eqns = BackendEquation.getEqnsFromEqSystem(isyst);
-        vars = BackendVariable.daeVars(isyst);
+        _ = BackendVariable.daeVars(isyst);
         // the torn equations
         eqnlst = BackendEquation.getEqns(tornEqs,eqns);
         explst = List.map(eqnlst,BackendEquation.getEquationRHS);
@@ -2204,7 +2204,7 @@ algorithm
     case (DAE.DIV_ARR(ty=tp),(i1,i2,i3,i4,i5,i6,i7,i8)) equation
       i = Expression.sizeOf(tp);
       then (i1,i2,i3+i,i4,i5,i6,i7,i8);
-    case (DAE.MUL_ARRAY_SCALAR(ty=tp),(i1,i2,i3,i4,i5,i6,i7,i8)) equation
+    case (DAE.MUL_ARRAY_SCALAR(),(i1,i2,i3,i4,i5,i6,i7,i8)) equation
       then (i1,i2+1,i3,i4,i5,i6,i7,i8);
     case (DAE.ADD_ARRAY_SCALAR(),(i1,i2,i3,i4,i5,i6,i7,i8))
       then (i1+1,i2,i3,i4,i5,i6,i7,i8);
@@ -4112,7 +4112,7 @@ algorithm
       end if;
     then (outExp, (vars, eqnLst, shared, addVar, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst=expLst), (vars, eqnLst, shared, addVar, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="der")), (_, _, _, _, _)) equation
       str = "BackendDAEOptimize.introduceDerAlias failed for: " + ExpressionDump.printExpStr(inExp) + "\n";
       Error.addMessage(Error.INTERNAL_ERROR, {str});
     then fail();

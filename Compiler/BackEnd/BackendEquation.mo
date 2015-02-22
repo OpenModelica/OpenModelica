@@ -2901,7 +2901,7 @@ author:Waurich TUD 2014-10"
   input BackendDAE.Equation eq;
   output DAE.Exp rhs;
 algorithm
-  rhs := matchcontinue(eq)
+  rhs := match(eq)
     local
       DAE.Exp exp1;
     case(BackendDAE.EQUATION(scalar = exp1))
@@ -2917,7 +2917,7 @@ algorithm
     else
       //equation print("BackendEquation.getEquationRHS failed!\n!");
       then fail();
-  end matchcontinue;
+  end match;
 end getEquationRHS;
 
 public function getEquationLHS"gets the left hand side expression of an equation.
@@ -2925,7 +2925,7 @@ author:Waurich TUD 2014-10"
   input BackendDAE.Equation eq;
   output DAE.Exp lhs;
 algorithm
-  lhs := matchcontinue(eq)
+  lhs := match(eq)
     local
       DAE.Exp exp1;
       DAE.ComponentRef cref;
@@ -2942,7 +2942,7 @@ algorithm
     else
       //equation print("BackendEquation.getEquationLHS failed!\n");
       then fail();
-  end matchcontinue;
+  end match;
 end getEquationLHS;
 
 annotation(__OpenModelica_Interface="backend");

@@ -1911,7 +1911,7 @@ algorithm
       DAE.Type ty;
       DAE.TypeSource src;
 
-    case DAE.T_ARRAY(DAE.T_ARRAY(_,_,_), dims, src)
+    case DAE.T_ARRAY(DAE.T_ARRAY(_,_,_), _, _)
       algorithm
         print("Can not handle this yet!!");
       then fail();

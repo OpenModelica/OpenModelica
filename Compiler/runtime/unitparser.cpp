@@ -369,7 +369,6 @@ void UnitParser::accumulateWeight(const string unitSymbol, double weight) {
 
 UnitRes UnitParser::commit() {
   list<DerivedInfo> tmp;
-  int initSize = _tempDerived.size();
   while (!_tempDerived.empty()) {
     unsigned int startSize = _tempDerived.size();
     while (!_tempDerived.empty()) {
@@ -658,7 +657,6 @@ Unit UnitParser::minimizeDerivedUnits(Unit unit,Unit origUnit, double factor) {
   for (map<string, Unit>::iterator it = _units.begin(); it != _units.end(); it++)
     if (!it->second.isBaseUnit())
       numDerivedUnits++;
-  int NU = numBaseUnits + numDerivedUnits;
 
   stack<int> stack; // stack of indices for derived units =! 0
   if (actualNumDerived(unit) > 1) {

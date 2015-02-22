@@ -7002,7 +7002,7 @@ algorithm
     // -(x)
     case DAE.UNARY(DAE.UMINUS(), e1) then isPositiveOrZero(e1);
     /* Integer power we can say something good about */
-    case DAE.BINARY(e1,DAE.POW(),e2) guard(isOdd(e2)) then isNegativeOrZero(e2);
+    case DAE.BINARY(_,DAE.POW(),e2) guard(isOdd(e2)) then isNegativeOrZero(e2);
 
     else isZero(inExp);
 

@@ -1119,7 +1119,7 @@ algorithm
         (cache,env_1,ih) = InstUtil.addComponentsToEnv(cache,env,ih, mods, pre, ci_state_1, comp, comp, {}, inst_dims, impl);
 
         // we should instantiate with no modifications, they don't belong to the class, they belong to the component!
-        (cache,env_2,ih,store,dae1,csets,ci_state_1,tys1,graph) =
+        (cache,env_2,ih,store,_,csets,ci_state_1,tys1,graph) =
           instElementList(cache,env_1,ih,store, /* DAE.NOMOD() */ mods, pre,
             ci_state_1, comp, inst_dims, impl,callscope,graph, inSets, true);
 

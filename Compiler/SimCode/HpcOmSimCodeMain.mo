@@ -297,7 +297,7 @@ algorithm
 
       // Analyse Systems of Equations
       //-----------------------------
-      (scheduledTasks,scheduledDAENodes) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,simVarMapping,inBackendDAE);
+      (scheduledTasks,_) = HpcOmEqSystems.parallelizeTornSystems(taskGraphOde,taskGraphDataOde,sccSimEqMapping,simVarMapping,inBackendDAE);
 
       //Apply filters
       //-------------
@@ -689,7 +689,7 @@ author: Waurich TUD 2014-11"
   output HpcOmTaskGraph.TaskGraph graphOut;
   output array<list<Integer>> inCompsOut;
 algorithm
-  (graphOut,inCompsOut) := matchcontinue(origNodes,removedNodes,contrTasks,origGraph,origInComps,newGraph,newInComps,newNode)
+  (graphOut,inCompsOut) := match(origNodes,removedNodes,contrTasks,origGraph,origInComps,newGraph,newInComps,newNode)
     local
       Integer node;
       list<Integer> rest,row,comps;
@@ -709,7 +709,7 @@ algorithm
       //comps = List.sort(comps,intGt);
       arrayUpdate(newInComps,newNode,comps);
     then GRS_newGraph2(rest,removedNodes,contrTasks,origGraph,origInComps,newGraph,newInComps,newNode+1);
-  end matchcontinue;
+  end match;
 end GRS_newGraph2;
 
 
@@ -1363,10 +1363,10 @@ algorithm
       BackendDAE.StrongComponent comp;
       list<BackendDAE.EqSystem> eqSysRest;
       list<BackendDAE.StrongComponent> comps;
-   case({},_,{eqSys},_,_)
+   case({},_,{_},_,_)
      equation
      then();
-   case({},_,eqSys::eqSysRest,_,_)
+   case({},_,_::eqSysRest,_,_)
      equation
         comps = BackendDAEUtil.getStrongComponents(List.first(eqSysRest));
        outputTimeBenchmark2(comps,numCycles,eqSysRest,shared,compIdx);

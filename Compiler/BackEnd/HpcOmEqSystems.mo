@@ -245,7 +245,7 @@ algorithm
         // strongComponent is a system of equations
         true = listLength(compsIn) >= compIdx;
         comp = listGet(compsIn,compIdx);
-        BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs, jac=jac, jacType=jacType) = comp;
+        BackendDAE.EQUATIONSYSTEM(vars = varIdcs, eqns = eqIdcs) = comp;
         true = intLe(listLength(varIdcs),3);
         false = compHasDummyState(comp,systIn);
 
@@ -332,7 +332,7 @@ algorithm
       list<tuple<Integer,list<Integer>>> otherEqnVarTpl;
   case(BackendDAE.TORNSYSTEM(tearingvars=varIdcs,otherEqnVarTpl=otherEqnVarTpl),BackendDAE.EQSYSTEM(orderedVars=vars))
     equation
-      otherVars = List.flatten(List.map(otherEqnVarTpl,Util.tuple22));
+      _ = List.flatten(List.map(otherEqnVarTpl,Util.tuple22));
       //varIdcs = listAppend(varIdcs,otherVars);
       varLst = List.map1(varIdcs,BackendVariable.getVarAtIndexFirst,vars);
       b = List.fold(List.map(varLst,BackendVariable.isDummyStateVar),boolOr,false);
@@ -1635,7 +1635,7 @@ algorithm
       array<BackendDAE.Var> vectorX;
       list<BackendDAE.Equation> addEqs;
       list<BackendDAE.Var> addVars;
-  case(LINSYS(dim=dim, matrixA=matrixA, vectorX=vectorX),_,_,_)
+  case(LINSYS(dim=dim,  vectorX=vectorX),_,_,_)
     equation
       true = intGt(dim,1);
       //condense the matrix
@@ -1651,7 +1651,7 @@ algorithm
 
       syst = LINSYS(dim=dim-1, matrixA=matrixB, vectorB= vecAi,vectorX=vectorX);
     then ChiosCondensation2(syst,iterIdx+1,addEqs,addVars);
-  case(LINSYS(dim=dim, matrixA=matrixA, vectorB=vecAi, vectorX=vectorX),_,_,_)
+  case(LINSYS(dim=dim, matrixA=matrixA, vectorB=vecAi),_,_,_)
     equation
 
           print("end matrixB"+intString(dim)+"\n");
@@ -1846,7 +1846,7 @@ protected function applyCramerRule
   output list<BackendDAE.Equation> addEqsOut;
   output list<BackendDAE.Var> addVarsOut;
 algorithm
-  (resEqsOut,tvarsOut,addEqsOut,addVarsOut) := matchcontinue(jacValuesIn,varsIn)
+  (resEqsOut,tvarsOut,addEqsOut,addVarsOut) := match(jacValuesIn,varsIn)
   local
     EqSys syst;
     list<BackendDAE.Equation> addEqs,resEqs;
@@ -1857,7 +1857,7 @@ algorithm
           //dumpEqSys(syst);
       (resEqs,addEqs,addVars) = CramerRule(syst);
    then (resEqs,varsIn,addEqs,addVars);
-  end matchcontinue;
+  end match;
 end applyCramerRule;
 
 protected function CramerRule
@@ -1876,7 +1876,7 @@ algorithm
       list<DAE.Exp> detLst, varExp;
       list<BackendDAE.Equation> eqLst,addEqLst;
       list<BackendDAE.Var> addVarLst;
-  case(LINSYS(dim=dim,matrixA=matrixA, vectorB=vectorB,vectorX=vectorX))
+  case(LINSYS(dim=dim,matrixA=matrixA, vectorX=vectorX))
     equation
       // 2x2 matrix
       true = intEq(dim,2);
@@ -1892,7 +1892,7 @@ algorithm
       eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEQUATION, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
           //BackendDump.dumpEquationList(eqLst,"new residual eqs");
     then (eqLst,{},{});
-  case(LINSYS(dim=dim,matrixA=matrixA, vectorB=vectorB,vectorX=vectorX))
+  case(LINSYS(dim=dim,matrixA=matrixA, vectorX=vectorX))
     equation
       // 3x3 matrix
       true = intEq(dim,3);
@@ -1908,7 +1908,7 @@ algorithm
       eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEQUATION, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
           //BackendDump.dumpEquationList(eqLst,"new residual eqs");
     then (eqLst,{},{});
-  case(LINSYS(dim=dim,matrixA=matrixA, vectorB=vectorB,vectorX=vectorX))
+  case(LINSYS(dim=dim))
     equation
       // higher index, apply Chios condensation
       true = intGt(dim,3);
@@ -1925,19 +1925,19 @@ protected function CramerRule1
   input array<list<DAE.Exp>> matrixAT;
   output DAE.Exp det;
 algorithm
-  det := matchcontinue(idx,syst,matrixAT)
+  det := match(idx,syst,matrixAT)
     local
       Integer dim;
       array<list<DAE.Exp>> matrixA;
       array<DAE.Exp> vectorB;
-  case(_,LINSYS(dim=dim, vectorB=vectorB),_)
+  case(_,LINSYS( vectorB=vectorB),_)
     equation
         //print("Cramer for "+intString(idx)+"\n");
       matrixA = arrayCopy(matrixAT);
       matrixA = replaceColumnInMatrix(matrixA,idx,arrayList(vectorB));
         //dumpMatrix(matrixA);
     then determinant(matrixA);
-  end matchcontinue;
+  end match;
 end CramerRule1;
 
 protected function determinant"calculates the determinant of a matrix"

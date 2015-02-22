@@ -3277,7 +3277,7 @@ algorithm
         (cluster,_) = distributeToClusters(singleNodes,exeCosts,numProc);
         //print("cluster "+stringDelimitList(List.map(arrayList(cluster),intLstString),"\n")+"\n");
         //update taskgraph and taskgraphMeta
-        clusterLst = arrayList(cluster);
+        _ = arrayList(cluster);
         //(oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
         changed = intGt(listLength(singleNodes),numProc);
   then (iTaskGraph,iTaskGraphMeta,changed);
@@ -4297,7 +4297,7 @@ algorithm
         //print("findOneChildParents case 4 for task " + intString(head) + ". Node children: " + stringDelimitList(List.map(nodeChildren, intString), ",") + "\n");
       then
         lstTmp;
-    case((head::rest),_,_,_,_,_)
+    case((_::_),_,_,_,_,_)
       // dont follow because the path contains excluded nodes
       equation
         false = intEq(inPath,0);
@@ -4306,7 +4306,7 @@ algorithm
         lstTmp = findOneChildParents(allNodes,graphIn,doNotMerge,lstIn,0,contrNodes);
       then
         lstTmp;
-    case((head::rest),_,_,_,_,_)
+    case((_::rest),_,_,_,_,_)
       // follow path and check that there is still only one child with just one parent
       equation
         false = intEq(inPath,0);
@@ -4324,7 +4324,7 @@ algorithm
         lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child,contrNodes);
       then
         lstTmp;
-    case((head::rest),_,_,_,_,_)
+    case((_::rest),_,_,_,_,_)
       // follow path and check that there is an endnode without successor that will be added to the path
       equation
         false = intEq(inPath,0);
@@ -4534,12 +4534,12 @@ algorithm
         costs = offset + 12*numAdds + 32*numMul + 37*numDiv + 236*numTrig + 2*numRel + 4*numLog + 110*numOth + 375*numFuncs;
      then (ops,intReal(costs));
 
-    case(BackendDAE.SYSTEM(comp=comp,allOperations=allOps,size=size,density=dens))// density is in procent
+    case(BackendDAE.SYSTEM(allOperations=_,size=size,density=dens))// density is in procent
       equation
         allOpCosts = realMul(0.049, realPow(realMul(intReal(size),(realAdd(1.0,realMul(dens,19.0)))),3.0));
       then (1, allOpCosts);
 
-    case(BackendDAE.TORN_ANALYSE(comp=comp,tornEqs=torn,otherEqs=other,tornSize=size))
+    case(BackendDAE.TORN_ANALYSE(tornEqs=torn,otherEqs=other,tornSize=size))
       equation
         (ops,tornCosts) = calculateCosts(torn);
         (ops1,otherCosts) = calculateCosts(other);

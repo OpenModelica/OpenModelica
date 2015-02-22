@@ -2167,7 +2167,7 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className)), Values.STRING(name)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+    case (cache,env,"generateScriptingAPI",{Values.CODE(Absyn.C_TYPENAME(className)), Values.STRING(name)},st as GlobalScript.SYMBOLTABLE(),_)
       algorithm
         (scodeP,st) := GlobalScriptUtil.symbolTableToSCode(st);
         elts := match SCodeUtil.getElementWithPathCheckBuiltin(scodeP, className)
@@ -2192,7 +2192,7 @@ algorithm
         s3 := Tpl.tplString2(GenerateAPIFunctionsTpl.getQtInterfaceHeaders, tys, name);
       then (cache,Values.TUPLE({Values.BOOL(true),Values.STRING(s1),Values.STRING(s2),Values.STRING(s3)}),st);
 
-    case (cache,env,"generateScriptingAPI",_,st,_)
+    case (cache,_,"generateScriptingAPI",_,st,_)
       then (cache,Values.TUPLE({Values.BOOL(false),Values.STRING(""),Values.STRING("")}),st);
 
     case (cache,_,"generateEntryPoint",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as GlobalScript.SYMBOLTABLE(),_)
@@ -2587,7 +2587,7 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+    case (cache,env,"getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(),_)
       equation
         (_, tp, _) = Lookup.lookupType(cache, env, classpath, SOME(Absyn.dummyInfo));
         str = Types.unparseType(tp);
@@ -2595,7 +2595,7 @@ algorithm
         (cache,Values.STRING(str),st);
 
     // if the lookup fails
-    case (cache,env,"getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+    case (cache,_,"getBuiltinType",{Values.CODE(Absyn.C_TYPENAME(_))},st as GlobalScript.SYMBOLTABLE(ast=_),_)
       then
         (cache,Values.STRING(""),st);
 
@@ -2635,7 +2635,7 @@ algorithm
         valsLst = listAppend(list(getComponentInfo(c, env, isProtected=true) for c in Interactive.getProtectedComponentsInClass(absynClass)), valsLst);
       then (cache,ValuesUtil.makeArray(List.flatten(valsLst)),st);
 
-    case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+    case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(_))},st as GlobalScript.SYMBOLTABLE(),_)
       then
         (cache,Values.ARRAY({},{}),st);
 
@@ -8128,7 +8128,7 @@ algorithm
       Absyn.ArrayDim subs;
       Absyn.ElementSpec spec;
 
-    case Absyn.ELEMENT(specification = spec as Absyn.COMPONENTS(attributes = attr as Absyn.ATTR(),typeSpec = Absyn.TPATH(p, typeAd)))
+    case Absyn.ELEMENT(specification = spec as Absyn.COMPONENTS(attributes = attr as Absyn.ATTR(),typeSpec = Absyn.TPATH(p, _)))
       algorithm
         typename := matchcontinue ()
           case ()

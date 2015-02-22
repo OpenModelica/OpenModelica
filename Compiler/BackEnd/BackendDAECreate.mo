@@ -521,7 +521,7 @@ algorithm
         ();
 
     // variables: states and algebraic variables without binding equation
-    case DAE.VAR(componentRef = cr, binding = NONE()) guard(isStateOrAlgvar(inElement))
+    case DAE.VAR(binding = NONE()) guard(isStateOrAlgvar(inElement))
       algorithm
         outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
       then
@@ -2170,7 +2170,7 @@ algorithm
         rest = listAppend(rest2, rest);
       then (wheneq, rest);
 
-    case (cr1, (eq as BackendDAE.WHEN_EQUATION(whenEquation=wheneq as BackendDAE.WHEN_EQ(left=cr2)))::rest, rest2)
+    case (cr1, (eq as BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ()))::rest, rest2)
       equation
         (wheneq, rest) = getWhenEquationFromVariable(cr1, rest, eq::rest2);
       then (wheneq, rest);

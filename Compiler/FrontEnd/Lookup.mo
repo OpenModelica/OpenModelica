@@ -226,28 +226,28 @@ algorithm
         (cache,t,env_3);
 
     // Real Type
-    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Real")))))
+    case (cache,env_1,_,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Real")))))
       equation
         t = DAE.T_REAL({}, DAE.emptyTypeSource);
       then
         (cache,t,env_1);
 
     // Integer Type
-    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Integer")))))
+    case (cache,env_1,_,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Integer")))))
       equation
         t = DAE.T_INTEGER({}, DAE.emptyTypeSource);
       then
         (cache,t,env_1);
 
     // Boolean Type
-    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Boolean")))))
+    case (cache,env_1,_,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="Boolean")))))
       equation
         t = DAE.T_BOOL({}, DAE.emptyTypeSource);
       then
         (cache,t,env_1);
 
     // String Type
-    case (cache,env_1,_,c as SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="String")))))
+    case (cache,env_1,_,SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=Absyn.IDENT(name="String")))))
       equation
         t = DAE.T_STRING({}, DAE.emptyTypeSource);
       then

@@ -3868,7 +3868,7 @@ algorithm
       then res;
 
     // (a*b op1 c)/b => a op1 c/b
-    case (_,DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, DAE.MUL(_), e2), op1,e3),e4,_,_)
+    case (_,DAE.DIV(_),DAE.BINARY(DAE.BINARY(e1, DAE.MUL(_), e2), op1,e3),e4,_,_)
       equation
         true = Expression.expEqual(e2,e4);
         true = Expression.isAddOrSub(op1);
@@ -3877,7 +3877,7 @@ algorithm
       then res;
 
     // (c op1 a*b)/b =>  c/b  op1 a
-    case (_,DAE.DIV(ty),DAE.BINARY(e3, op1,DAE.BINARY(e1, DAE.MUL(_), e2)),e4,_,_)
+    case (_,DAE.DIV(_),DAE.BINARY(e3, op1,DAE.BINARY(e1, DAE.MUL(_), e2)),e4,_,_)
       equation
         true = Expression.expEqual(e2,e4);
         true = Expression.isAddOrSub(op1);
@@ -3886,7 +3886,7 @@ algorithm
       then res;
 
     // (e1 * e2*e3 op1 e4)/e3 => e1 * e2 op1 e4/e3
-    case (_,DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, op2 as DAE.MUL(), DAE.BINARY(e2, DAE.MUL(_), e3)), op1,e4),e5,_,_)
+    case (_,DAE.DIV(_),DAE.BINARY(DAE.BINARY(e1, op2 as DAE.MUL(), DAE.BINARY(e2, DAE.MUL(_), e3)), op1,e4),e5,_,_)
       equation
         true = Expression.expEqual(e3,e5);
         true = Expression.isAddOrSub(op1);
@@ -4219,7 +4219,7 @@ algorithm
 
     // a*(x op2 b) op1 c*(x op3 d)
     // x *(a op2 b op1 c op3 d)
-    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(_),DAE.BINARY(e5,op3,e6)),false,false)
+    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(_),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(_),DAE.BINARY(e5,op3,e6)),false,false)
      equation
        true = Expression.isAddOrSub(op1);
        true = Expression.isMulOrDiv(op2);
@@ -4229,7 +4229,7 @@ algorithm
 
     // a*x op1 c*x op3 d
     // x *(a op1 c op3 d)
-    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),e2), DAE.BINARY(e4,DAE.MUL(_),DAE.BINARY(e5,op3,e6)),false,false)
+    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(_),e2), DAE.BINARY(e4,DAE.MUL(_),DAE.BINARY(e5,op3,e6)),false,false)
      equation
        true = Expression.isAddOrSub(op1);
        true = Expression.isMulOrDiv(op3);
@@ -4241,7 +4241,7 @@ algorithm
     // or
     // a*(x op2 b) op1 x*c
     // x*(a op2 b op1 c)
-    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(ty),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(),e5),false,false)
+    case (_,op1,DAE.BINARY(e1,oper as DAE.MUL(_),DAE.BINARY(e2,op2,e3)), DAE.BINARY(e4,DAE.MUL(),e5),false,false)
      equation
        true = Expression.isAddOrSub(op1);
        true = Expression.isMulOrDiv(op2);
@@ -4263,7 +4263,7 @@ algorithm
     // or
     // a*(x op2 b) op1 x*c
     // x*(a op2 b op1 c)
-    case (_,op1, DAE.BINARY(DAE.BINARY(e1,oper as DAE.MUL(ty),e2),op2,e3), DAE.BINARY(e4,DAE.MUL(),e5),false,false)
+    case (_,op1, DAE.BINARY(DAE.BINARY(e1,oper as DAE.MUL(_),e2),op2,e3), DAE.BINARY(e4,DAE.MUL(),e5),false,false)
      equation
        true = Expression.isAddOrSub(op1);
        true = Expression.isMulOrDiv(op2);

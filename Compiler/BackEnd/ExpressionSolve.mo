@@ -482,7 +482,7 @@ algorithm
         (Expression.negate(inExp2),{});
 
     // !cr = exp
-    case (DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
+    case (DAE.LUNARY(operator = DAE.NOT(), exp = DAE.CREF(componentRef = cr1)),_,DAE.CREF(componentRef = cr))
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
@@ -861,7 +861,7 @@ algorithm
          (e1, res, true);
 
       // sqrt(f(a)) = f(a)^n = c => f(a) = c^(1/n)
-      case (DAE.BINARY(e1,DAE.POW(_),e2 as DAE.RCONST(0.5)), _, _)
+      case (DAE.BINARY(e1,DAE.POW(_),DAE.RCONST(0.5)), _, _)
         equation
           false = expHasCref(inExp2, inExp3);
           true = expHasCref(e1, inExp3);
@@ -915,37 +915,37 @@ algorithm
           DAE.Type tp;
 
           // exp(f(x)) - exp(g(x)) = 0
-          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("exp"), expLst={e1}), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("exp"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("exp"), expLst={e2})),DAE.RCONST(0.0),_)
           then (e1, e2, true);
           // log(f(x)) - log(g(x)) = 0
-          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("log"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("log"), expLst={e2})),DAE.RCONST(0.0),_)
           then (e1, e2, true);
           // log10(f(x)) - log10(g(x)) = 0
-          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("log10"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("log10"), expLst={e2})),DAE.RCONST(0.0),_)
           then (e1, e2, true);
           // sinh(f(x)) - sinh(g(x)) = 0
-          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e2})),DAE.RCONST(0.0),_)
           then (e1, e2, true);
           // tanh(f(x)) - tanh(g(x)) = 0
-          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("tanh"), expLst={e1}), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("tanh"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("tanh"), expLst={e2})),DAE.RCONST(0.0),_)
           then (e1, e2, true);
           // sqrt(f(x)) - sqrt(g(x)) = 0
-          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e2})),DAE.RCONST(0.0),_)
           then (e1, e2, true);
 
           // sinh(f(x)) - cosh(g(x)) = 0
-          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2})),DAE.RCONST(0.0),_)
           equation
           true = Expression.expEqual(e1,e2);
           then (e1, inExp2, true);
-          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e1}), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e1}), DAE.SUB(_),
                           DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e2})),DAE.RCONST(0.0),_)
           equation
           true = Expression.expEqual(e1,e2);
@@ -954,13 +954,13 @@ algorithm
 
 
          // y*sinh(x) - z*cosh(x) = 0
-          case(DAE.BINARY(DAE.BINARY(e3,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1})), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.BINARY(e3,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1})), DAE.SUB(tp),
                           DAE.BINARY(e4,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2}))),DAE.RCONST(0.0),_)
           equation
           true = Expression.expEqual(e1,e2);
           e = Expression.makePureBuiltinCall("tanh",{e1},tp);
           then (Expression.expMul(e3,e), e4, true);
-          case(DAE.BINARY(DAE.BINARY(e4,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2})), op as DAE.SUB(tp),
+          case(DAE.BINARY(DAE.BINARY(e4,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("cosh"), expLst={e2})), DAE.SUB(tp),
                           DAE.BINARY(e3,DAE.MUL(),DAE.CALL(path = Absyn.IDENT("sinh"), expLst={e1}))),DAE.RCONST(0.0),_)
           equation
           true = Expression.expEqual(e1,e2);
@@ -970,9 +970,9 @@ algorithm
 
 
           // sqrt(x) - x = 0 -> x = x^2
-          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), op as DAE.SUB(tp),e2), DAE.RCONST(0.0),_)
+          case(DAE.BINARY(DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1}), DAE.SUB(_),e2), DAE.RCONST(0.0),_)
           then (e1, Expression.expPow(e2, DAE.RCONST(2.0)), true);
-          case(DAE.BINARY(e2, op as DAE.SUB(tp),DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1})), DAE.RCONST(0.0),_)
+          case(DAE.BINARY(e2, DAE.SUB(_),DAE.CALL(path = Absyn.IDENT("sqrt"), expLst={e1})), DAE.RCONST(0.0),_)
           equation
           then (e1, Expression.expPow(e2, DAE.RCONST(2.0)), true);
 
@@ -1225,7 +1225,7 @@ protected function unifyFunCallsWork
        true = expHasCref(e, X);
      then (e, true, iT);
 
-   case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1, e2, e3}),X)
+   case(DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {e1, e2, e3}),_)
      equation
        false = Expression.isZero(e1);
        tp = Expression.typeof(e1);
@@ -1363,7 +1363,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "semiLinear"),expLst = {DAE.RCONST(real = 0.0), e1, e2}),DAE.RCONST(real = 0.0),_)
        then (e1,e2,true);
     // smooth(i,f(a)) = rhs -> f(a) = rhs
-    case (DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {e1, e2}),_,_)
+    case (DAE.CALL(path = Absyn.IDENT(name = "smooth"),expLst = {_, e2}),_,_)
        then (e2, inExp2, true);
     // noEvent(f(a)) = rhs -> f(a) = rhs
     case (DAE.CALL(path = Absyn.IDENT(name = "noEvent"),expLst = {e2}),_,_)
@@ -1392,7 +1392,7 @@ author: vitalij
      Option<DAE.FunctionTree> functions;
      Boolean b;
 
-   case(DAE.CALL(path =_),(X, functions))
+   case(DAE.CALL(),(X, functions))
      equation
        //print("\nIn: ");print(ExpressionDump.printExpStr(inExp));
        true = expHasCref(inExp, X);
@@ -1842,7 +1842,7 @@ algorithm
           false = expHasCref(e1, inExp3);
 
           (lhs, asserts1, eqns, var, depth) = solveWork(e2, inExp2, inExp3, functions, uniqueEqIndex, idepth);
-          (rhs, asserts2, eqns1, var1, depth) = solveWork(e3, inExp2, inExp3, functions, uniqueEqIndex, depth);
+          (rhs,_, eqns1, var1, depth) = solveWork(e3, inExp2, inExp3, functions, uniqueEqIndex, depth);
 
           res = DAE.IFEXP(e1,lhs,rhs);
           asserts = listAppend(asserts1,asserts1);

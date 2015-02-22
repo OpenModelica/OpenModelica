@@ -267,7 +267,7 @@ algorithm
         sv = get(cref, crefToSimVarHT);
       then sv;
 
-    case (cref, _)
+    case (_, _)
       equation
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.T_REAL_DEFAULT, {});
         /* Todo: This also generates an error for example itearation variables, so i commented  out
@@ -4381,7 +4381,7 @@ algorithm
     case (BackendDAE.COMPLEX_EQUATION(), _, _)
       then
         BackendDAE.SINGLECOMPLEXEQUATION(eqnindx, varindx);
-    case (BackendDAE.WHEN_EQUATION(size=_), _, _)
+    case (BackendDAE.WHEN_EQUATION(), _, _)
       then
         BackendDAE.SINGLEWHENEQUATION(eqnindx, varindx);
 
@@ -6089,7 +6089,7 @@ algorithm
         (eqSystlst, uniqueEqIndex, itempvars);
 
     // Tuple(crefs) = Tuple(expl)
-    case (_, e1 as DAE.TUPLE(expl), e2 as DAE.TUPLE(expl1), _, _, _)
+    case (_, DAE.TUPLE(expl), DAE.TUPLE(expl1), _, _, _)
       equation
         // debug
         // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
@@ -6109,7 +6109,7 @@ algorithm
         (eqSystlst, uniqueEqIndex, tempvars);
 
     // Tuple(expl) = Tuple(crefs)
-    case (_, e1 as DAE.TUPLE(expl1), DAE.TUPLE(expl), _, _, _)
+    case (_, DAE.TUPLE(expl1), DAE.TUPLE(expl), _, _, _)
       equation
         // debug
         // print("Tuple crefs Strings: "+ ComponentReference.printComponentRefListStr(crefs) + "\n");
@@ -6124,7 +6124,7 @@ algorithm
         eqnLst = List.threadMap2(expl, expl1, BackendEquation.generateEquation, source, eqKind);
 
         // generate SimCode equations therefore
-        (eqSystlst, uniqueEqIndex, tempvars) = createEquationsfromList(eqnLst, inVars, genDiscrete, iuniqueEqIndex, itempvars, iextra);
+        (eqSystlst, uniqueEqIndex,_) = createEquationsfromList(eqnLst, inVars, genDiscrete, iuniqueEqIndex, itempvars, iextra);
       then
         (eqSystlst, uniqueEqIndex, itempvars);
 
@@ -6231,7 +6231,7 @@ algorithm
       DAE.Type ty;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
 
-    case (_, (eq1 as BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source))::_, BackendDAE.VAR(varName = cr)::_, _, _, _) equation
       // We need to strip subs from the name since they are removed in cr.
       cr_1 = ComponentReference.crefStripLastSubs(cr);
       e1 = Expression.replaceDerOpInExp(e1);
@@ -6245,8 +6245,8 @@ algorithm
     // An array equation
     // {z1,z2,..} = f(...) -> solved for {z1,z2,..}
     // => tmp = f(x); {z1,z2} = tmp;
-    case (_, (eq1 as BackendDAE.ARRAY_EQUATION(dimSize=ds, left=(e1 as DAE.ARRAY()), right=(e2 as DAE.CALL()), source=source))::{}, vars, _, _, _) equation
-      (e1_1 as DAE.ARRAY(array=expLst)) = Expression.replaceDerOpInExp(e1);
+    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=(e1 as DAE.ARRAY()), right=(e2 as DAE.CALL()), source=source))::{}, _, _, _, _) equation
+      (DAE.ARRAY(array=expLst)) = Expression.replaceDerOpInExp(e1);
       e2_1 = Expression.replaceDerOpInExp(e2);
       //check that {z1,z2,...} are in e1
       crefs = List.map(inVars, BackendVariable.varCref);
@@ -6267,7 +6267,7 @@ algorithm
       eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, left, e2_1, source)::eqSystlst;
     then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
 
-    case (_, (eq1 as BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind)))::_, vars, _, _, _) equation
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=eqKind)))::_, vars, _, _, _) equation
       true = Expression.isArray(e1) or Expression.isMatrix(e1);
       true = Expression.isArray(e2) or Expression.isMatrix(e2);
       e1 = Expression.replaceDerOpInExp(e1);

@@ -2374,7 +2374,7 @@ algorithm
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
 
-    case (cache,env,ld,_,_,_)
+    case (cache,_,ld,_,_,_)
       equation
         // Tranform declarations such as Real x,y; to Real x; Real y;
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());

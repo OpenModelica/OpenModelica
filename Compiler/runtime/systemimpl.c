@@ -678,8 +678,7 @@ char* System_popen(threadData_t *threadData, const char* command, int *status)
     fprintf(stderr, "System.pipe: returned\n"); fflush(NULL);
   }
 
-  ret_val = pclose(pipe);
-  char *res = GC_strdup(Print_getString(threadData));
+  char *res = GC_strdup(-1 == pclose(pipe) ? strerror(errno) : Print_getString(threadData));
   Print_restoreBuf(threadData, handle);
 
   if (debug) {
@@ -804,8 +803,8 @@ int SystemImpl__spawnCall(const char* path, const char* str)
 #else
   pid_t pid;
   int status;
-  const char *argv[4] = {"/bin/sh","-c",str,NULL};
-  ret_val = (0 == posix_spawn(&pid, "/bin/sh", NULL, NULL, argv, environ));
+  const char * argv[4] = {"/bin/sh","-c",str,NULL};
+  ret_val = (0 == posix_spawn(&pid, "/bin/sh", NULL, NULL, (char * const *) argv, environ));
 #endif
   fflush(NULL); /* flush output so the testsuite is deterministic */
 
