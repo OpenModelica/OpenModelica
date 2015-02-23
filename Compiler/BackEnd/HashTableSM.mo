@@ -60,10 +60,10 @@ public function emptyHashTableSized
   input Integer size;
   output HashTable hashTable;
 algorithm
-  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,modeToString));
+  hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentReference.hashComponentRefMod,ComponentReference.crefEqual,ComponentReference.printComponentRefStr,modeStr));
 end emptyHashTableSized;
 
-public function modeToString
+public function modeStr
   input StateMachineFeatures.Mode mode;
   output String s;
 protected
@@ -71,23 +71,30 @@ protected
   Boolean isInitial;
   HashSet.HashSet edges;
   BackendDAE.EquationArray eqs, outgoing;
-  list<DAE.ComponentRef> crefs;
+  list<BackendDAE.Var> outShared, outLocal;
+  list<DAE.ComponentRef> crefs, crefPrevious;
   list<BackendDAE.Equation> eqsList, outgoingList;
   list<String> paths;
-  list<String> eqsDump, outgoingDump;
+  list<String> eqsDump, outgoingDump, outSharedDump, outLocalDump, crefPreviousDump;
 algorithm
-  StateMachineFeatures.MODE(name=name, isInitial=isInitial, edges=edges, eqs=eqs, outgoing=outgoing) := mode;
+  StateMachineFeatures.MODE(name=name, isInitial=isInitial, edges=edges, eqs=eqs, outgoing=outgoing, outShared=outShared, outLocal=outLocal, crefPrevious=crefPrevious) := mode;
   crefs := BaseHashSet.hashSetList(edges);
   paths := List.map(crefs, ComponentReference.printComponentRefStr);
   eqsList := BackendEquation.equationList(eqs);
   outgoingList := BackendEquation.equationList(outgoing);
   eqsDump := List.map(eqsList, BackendDump.equationString);
   outgoingDump := List.map(outgoingList, BackendDump.equationString);
+  outSharedDump := List.map(outShared, StateMachineFeatures.dumpVarStr);
+  outLocalDump := List.map(outLocal, StateMachineFeatures.dumpVarStr);
+  crefPreviousDump := List.map(crefPrevious, ComponentReference.printComponentRefStr);
   s := "MODE(" + stringDelimitList({name,boolString(isInitial)}, ",") + "), "
      + "EDGES(" + stringDelimitList(paths, ", ") +"), "
      + "Equations( "+ stringDelimitList(eqsDump, ";\n\t") +"), "
-     + "OutgoingTransitions( "+ stringDelimitList(outgoingDump, ";\n\t") +")\n";
-end modeToString;
+     + "OutgoingTransitions( "+ stringDelimitList(outgoingDump, ";\n\t") +"), "
+     + "outShared( " + stringDelimitList(outSharedDump, ",\n\t") + "), "
+     + "outLocal( " + stringDelimitList(outLocalDump, ",\n\t") + "), "
+     + "crefPrevious(" + stringDelimitList(crefPreviousDump, ",\n\t") + ")\n";
+end modeStr;
 
 annotation(__OpenModelica_Interface="backend");
 end HashTableSM;

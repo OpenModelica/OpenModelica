@@ -202,6 +202,7 @@ uniontype Var "variables"
     Option<TearingSelect> tearingSelectOption "value for TearingSelect";
     Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
+    .DAE.VarInnerOuter innerOuter "inner, outer,  inner outer or unspecified";
   end VAR;
 end Var;
 

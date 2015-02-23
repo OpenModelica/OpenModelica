@@ -510,12 +510,13 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.Exp> bind;
       Boolean b1,b2;
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,ts,comment,ct),fns)
+      DAE.VarInnerOuter io;
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,ts,comment,ct,io),fns)
       equation
         (bind,source,b1) = Inline.inlineExpOpt(bind,fns,source);
         (values1,source,b2) = Inline.inlineStartAttribute(values,source,fns);
       then
-        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,ts,comment,ct),b1 or b2);
+        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,ts,comment,ct,io),b1 or b2);
     case(var,_) then (var,false);
   end match;
 end inlineVar;

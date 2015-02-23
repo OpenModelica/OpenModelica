@@ -260,6 +260,7 @@ if true then /* Suppress output */
     "../Util/HashTableCrILst.mo",
     "../Util/HashTableExpToExp.mo",
     "../Util/HashTableCrIntToExp.mo",
+    "../Util/HashTableExpToIndexExp.mo",
     "../Util/HashTableCrToExpSourceTpl.mo",
     "../Util/HashTable.mo",
     "../Util/HashTableExpToIndex.mo",

@@ -452,10 +452,9 @@ algorithm
                   {},
                   NONE()));
 
-        // now instantiate it as an outer with no modifications
-        pf = SCode.prefixesSetInnerOuter(pf, Absyn.OUTER());
+        // now call it normally
         (cache,compenv,ih,store,dae,_,ty,graph) =
-          instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets,componentDefinitionParentEnv);
+           instVar_dispatch(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
       then
         (cache,compenv,ih,store,dae,csetsInner,ty,graph);
 
@@ -1137,7 +1136,7 @@ algorithm
         // Propagate the final prefix from the modifier.
         //fin = InstUtil.propagateModFinal(mod, fin);
 
-        attr = stripVarAttrDirection(cr, attr, inState);
+        attr = stripVarAttrDirection(cr, ih, inState, inPrefix, attr);
 
         // Propagate prefixes to any elements inside this components if it's a
         // structured component.
@@ -1165,23 +1164,36 @@ end instScalar;
 
 protected function stripVarAttrDirection
   "This function strips the input/output prefixes from components which are not
-   top-level or inside a top-level connector."
+   top-level or inside a top-level connector or part of a state machine component."
   input DAE.ComponentRef inCref;
-  input SCode.Attributes inAttributes;
+  input InstanceHierarchy ih;
   input ClassInf.State inState;
+  input Prefix.Prefix inPrefix;
+  input SCode.Attributes inAttributes;
   output SCode.Attributes outAttributes;
 algorithm
-  outAttributes := match(inCref, inAttributes, inState)
+  outAttributes := matchcontinue(inCref, ih, inState, inPrefix, inAttributes)
+    local
+      DAE.ComponentRef cref;
+      InnerOuter.TopInstance topInstance;
+      HashSet.HashSet sm;
     // Component without input/output.
-    case (_, SCode.ATTR(direction = Absyn.BIDIR()), _) then inAttributes;
+    case (_, _, _, _, SCode.ATTR(direction = Absyn.BIDIR())) then inAttributes;
     // Non-qualified identifier = top-level component.
-    case (DAE.CREF_IDENT(), _, _) then inAttributes;
+    case (DAE.CREF_IDENT(), _, _, _, _) then inAttributes;
     // Single-qualified identifier in connector = component in top-level connector.
-    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), _,
-      ClassInf.CONNECTOR()) then inAttributes;
+    case (DAE.CREF_QUAL(componentRef = DAE.CREF_IDENT()), _, ClassInf.CONNECTOR(), _, _) then inAttributes;
+    // Component with input/output that is part of a state machine
+    case (_, _, _, _, _)
+      equation
+        cref = PrefixUtil.prefixToCref(inPrefix);
+        topInstance = List.first(ih);
+        InnerOuter.TOP_INSTANCE(sm=sm) = topInstance;
+        true = BaseHashSet.has(cref, sm);
+      then inAttributes;
     // Everything else, strip the input/output prefix.
     else SCode.setAttributesDirection(inAttributes, Absyn.BIDIR());
-  end match;
+  end matchcontinue;
 end stripVarAttrDirection;
 
 protected function instScalar2
@@ -1298,7 +1310,7 @@ protected function stripRecordDefaultBindingsFromElement
   output DAE.Element outVar;
   output list<DAE.Element> outEqs;
 algorithm
-  (outVar, outEqs) := matchcontinue(inVar, inEqs)
+  (outVar, outEqs) := match(inVar, inEqs)
     local
       DAE.ComponentRef var_cr, eq_cr;
       list<DAE.Element> rest_eqs;
@@ -1313,7 +1325,7 @@ algorithm
         (DAEUtil.setElementVarBinding(inVar, NONE()), rest_eqs);
 
     else (inVar, inEqs);
-  end matchcontinue;
+  end match;
 end stripRecordDefaultBindingsFromElement;
 
 protected function instArray

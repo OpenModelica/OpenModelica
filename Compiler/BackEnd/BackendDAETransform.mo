@@ -544,6 +544,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       DAE.ElementSource source;
+      DAE.VarInnerOuter io;
 
     case (BackendDAE.VAR(varName = cr,
       varKind = BackendDAE.STATE(),
@@ -557,11 +558,12 @@ algorithm
       values = attr,
       tearingSelectOption = ts,
       comment = comment,
-      connectorType = ct))
+      connectorType = ct,
+      innerOuter = io))
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
-        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,source,attr,ts,comment,ct);
+        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,source,attr,ts,comment,ct, io);
 
     else inVar;
   end match;

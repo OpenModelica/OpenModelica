@@ -91,6 +91,13 @@ public uniontype VarVisibility
   record PROTECTED "protected variables" end PROTECTED;
 end VarVisibility;
 
+public uniontype VarInnerOuter
+  record INNER           "an inner prefix"       end INNER;
+  record OUTER           "an outer prefix"       end OUTER;
+  record INNER_OUTER     "an inner outer prefix" end INNER_OUTER;
+  record NOT_INNER_OUTER "no inner outer prefix" end NOT_INNER_OUTER;
+end VarInnerOuter;
+
 uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
     SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
@@ -1465,6 +1472,9 @@ public constant CallAttributes callAttrBuiltinInteger = CALL_ATTR(T_INTEGER_DEFA
 public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
 public constant CallAttributes callAttrBuiltinString = CALL_ATTR(T_STRING_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
 public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,false,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinImpureBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinImpureInteger = CALL_ATTR(T_INTEGER_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinImpureReal = CALL_ATTR(T_REAL_DEFAULT,false,true,true,false,NO_INLINE(),NO_TAIL());
 
 public
 uniontype CallAttributes

@@ -56,38 +56,26 @@ protected import HashSet;
 protected import BaseHashSet;
 protected import HashTableSM;
 protected import Array;
+protected import ExpressionDump;
+protected import ValuesUtil;
+protected import DAEDump;
+protected import HashTableExpToIndexExp;
+protected import MathematicaDump;
 
-/*
-public
-uniontype Transition "
-Tbd"
-  record TRANSITION
-    DAE.ComponentRef to;
-  end TRANSITION;
-end Transition;
-*/
-
-/*
-public
-uniontype Automaton
-  record AUTOMATON
-    DAE.ComponentRef initialState;
-    list<Mode> modes;
-    //Transition t[:] "Array of transition data sorted in priority";
-    //Modes q;
-  end AUTOMATON;
-end Automaton;
-*/
 
 public
 uniontype Mode "
-Tbd"
+Collecting information about a mode/state"
   record MODE
     String name;
     Boolean isInitial;
     HashSet.HashSet edges "relations to other modes due to in- and out-going transitions";
     BackendDAE.EquationArray eqs "equations defined in the mode instance"; // Better use list<BackendDAE.Equation> eqs;?
     BackendDAE.EquationArray outgoing "outgoing transitions";
+    list<BackendDAE.Var> outShared "outer output variables of state";
+    list<BackendDAE.Var> outLocal "output variables and (non-input) local variables of state";
+    //list<BackendDAE.Var> outStateInnerOuters "inner outer output variables of state";
+    list<DAE.ComponentRef> crefPrevious "crefs for which a rhs 'previous(cref)' exists in state";
   end MODE;
 end Mode;
 
@@ -106,27 +94,84 @@ public
 uniontype FlatAutomaton
   record FLAT_AUTOMATON
     DAE.ComponentRef initialState;
-    HashSet.HashSet states;
-    list<BackendDAE.Equation> transitions;
+    //HashSet.HashSet states;
+    array<DAE.ComponentRef> states;
+    SMSemantics sms;
   end FLAT_AUTOMATON;
 end FlatAutomaton;
 
+
 public
-uniontype Composition
-  record COMPOSITION
-    DAE.ComponentRef refined;
-    list<Composition> refining;
-  end COMPOSITION;
+uniontype Composition "Hierarchical composition of mode automaton"
+  record R
+    DAE.ComponentRef initialState;
+    array<tuple<DAE.ComponentRef,list<Composition>>> refining;
+  end R;
 end Composition;
+/* The MLS example as Composition
+{R("state1", {
+  ("state1", {
+    R("state1.stateA", {
+      ("state1.stateA", {}),
+      ("state1.stateB", {}),
+      ("state1.stateC", {}),
+      ("state1.stateD", {})
+    }),
+    R("state1.stateX", {
+      ("state1.stateX", {}),
+      ("state1.stateY", {})
+    })
+  }),
+  ("state2", {})
+})}
+*/
+
+
+public
+uniontype Transition "
+Properties of a transition"
+  record TRANSITION
+    Integer from;
+    Integer to;
+    Boolean immediate = true;
+    Boolean reset = true;
+    Boolean synchronize = false;
+    Integer priority = 1;
+  end TRANSITION;
+end Transition;
+
+public
+uniontype SMSemantics
+  record SMS
+    list<DAE.ComponentRef> q "States";
+    list<Transition> t "List/Array of transition data sorted in priority";
+    list<DAE.Exp> c "Transition conditions sorted in priority";
+    list<BackendDAE.Var> vars "SMS veriables";
+    list<BackendDAE.Var> knowns "SMS constants/parameters";
+    list<BackendDAE.Equation> eqs "SMS equations";
+  end SMS;
+end SMSemantics;
+
+public
+uniontype AutomataEqs "
+Synthesized equations for (hierarchic/parallel) Automata/State Machines"
+  record AUTOMATA_EQS
+    list<BackendDAE.Var> vars "synthesized veriables";
+    list<BackendDAE.Var> knowns "synthesized constants/parameters";
+    list<BackendDAE.Equation> eqs "synthesized equations";
+  end AUTOMATA_EQS;
+end AutomataEqs;
 
 public
 uniontype TransitionType
-  record TRANSITION "transtion(..) statement"
-  end TRANSITION;
-  record INITIAL_STATE "initialState(..) statement"
-  end INITIAL_STATE;
+  record T_TRANSITION "transtion(..) statement"
+  end T_TRANSITION;
+  record T_INITIAL_STATE "initialState(..) statement"
+  end T_INITIAL_STATE;
 end TransitionType;
 
+constant String SMS_PRE = "smOf" "prefix for crefs of fresh State Machine Semantics variables/knowns";
+constant Boolean DEBUG_SMDUMP = false "enable verbose stdout debug information during elaboration";
 
 public function stateMachineElab
   "Elaborate state machines and transform them in data-flow equations."
@@ -140,13 +185,17 @@ protected
   IncidenceTable transClosure;
   list<DAE.ComponentRef> initialStates;
   list<FlatAutomaton> flatAutomata;
-  list<Composition> compositions;
+  list<Composition> comps;
   list<String> ss;
+  AutomataEqs automataEqs;
   BackendDAE.EqSystem syst, systNew;
   BackendDAE.Shared shared, sharedNew;
 algorithm
 
-  //BackendDump.printBackendDAE(inDAE);
+  if DEBUG_SMDUMP then
+    print("***** SMF-stateMachineElab BackendDAE INPUT: ***** \n");
+    BackendDump.printBackendDAE(inDAE);
+  end if;
 
   (syst, shared) := match inDAE
     local
@@ -158,50 +207,1244 @@ algorithm
     then (syst1, shared1);
   end match;
 
+  if DEBUG_SMDUMP then
+    print("***** SMF-stateMachineElab Vars: ***** \n");
+    print(dumpVarsStr(syst));
+  end if;
+
   // Identify modes in the system
   modes := identifyModes(shared);
   names := List.map(BaseHashTable.hashTableKeyList(modes), ComponentReference.crefLastIdent);
-  print("***** SMF-stateMachineElab States: ***** \n" + stringDelimitList(names, ",")  + "\n");
-  print("***** SMF-stateMachineElab ModeTable: ***** \n");
-  BaseHashTable.dumpHashTable(modes);
-  nModes := BaseHashTable.hashTableCurrentSize(modes);
+  if (listLength(names) > 0) then
+    if DEBUG_SMDUMP then
+		  print("***** SMF-stateMachineElab States: ***** \n" + stringDelimitList(names, ",")  + "\n");
+		  print("***** SMF-stateMachineElab ModeTable: ***** \n");
+		  BaseHashTable.dumpHashTable(modes);
+	  end if;
+	  nModes := BaseHashTable.hashTableCurrentSize(modes);
 
-  print("***** SMF-stateMachineElab: Incidence matrix: ***** \n");
-  iTable := createIncidenceTable(modes, nModes);
-  printIncidenceTable(iTable, nModes);
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Incidence matrix: ***** \n"); end if;
+	  iTable := createIncidenceTable(modes, nModes);
+	  if DEBUG_SMDUMP then printIncidenceTable(iTable, nModes); end if;
 
-  print("***** SMF-stateMachineElab: Transitive closure: ***** \n");
-  transClosure := transitiveClosure(iTable, nModes);
-  printIncidenceTable(transClosure, nModes);
+	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Transitive closure: ***** \n"); end if;
+	  transClosure := transitiveClosure(iTable, nModes);
+	  if DEBUG_SMDUMP then printIncidenceTable(transClosure, nModes); end if;
 
-  print("***** SMF-stateMachineElab: Initial States: ***** \n");
-  initialStates := extractInitialStates(modes);
-  print( stringDelimitList(List.map(initialStates, ComponentReference.printComponentRefStr), ", ") + "\n");
+	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Initial States: ***** \n"); end if;
+	  initialStates := extractInitialStates(modes);
+	  if DEBUG_SMDUMP then print( stringDelimitList(List.map(initialStates, ComponentReference.printComponentRefStr), ", ") + "\n"); end if;
 
-  print("***** SMF-stateMachineElab: Flat Automata: ***** \n");
-  flatAutomata := extractFlatAutomata(initialStates, transClosure, nModes);
-  printFlatAutomata(flatAutomata);
+	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Flat Automata: ***** \n"); end if;
+	  flatAutomata := extractFlatAutomata(initialStates, transClosure, nModes);
+	  if DEBUG_SMDUMP then print(stringDelimitList(List.map(flatAutomata,dumpFlatAutomatonStr), "\n") + "\n"); end if;
 
-  print("***** SMF-stateMachineElab: Composition: ***** \n");
-  //compositions := getComposition(flatAutomata, {});
-  compositions := getComposition(flatAutomata);
-  ss := List.map(compositions, dumpCompositionStr);
-  print(stringDelimitList(ss, ",\n") + "\n");
+	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Composition: ***** \n"); end if;
+	  comps := getComposition(flatAutomata);
+	  ss := List.map(comps, dumpCompositionStr);
+	  if DEBUG_SMDUMP then print(stringDelimitList(ss, ",\n") + "\n"); end if;
 
-  print("***** SMF-stateMachineElab: annotate modes with additional information ***** \n");
-  (modes, systNew, sharedNew) := annotateModes(modes, syst, shared);
-  BaseHashTable.dumpHashTable(modes);
+	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: annotate modes with additional information ***** \n"); end if;
+	  (modes, systNew, sharedNew) := annotateModes(modes, syst, shared);
+	  if DEBUG_SMDUMP then BaseHashTable.dumpHashTable(modes); end if;
 
-  //outDAE := BackendDAE.DAE({systNew}, sharedNew);
-  //BackendDump.printBackendDAE(outDAE);
-  outDAE := BackendDAE.DAE({syst}, shared); // dummy assignment as long as elabortion is not implemented
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Replace all outer variables by their coressponding inner variables ***** \n"); end if;
+    // FIXME: The current approach has deficiencies since the variable replacement needs to be done on the global equation level and not only on the mode level
+    // BackendVariable.varStartValue
+    (modes, systNew) := List.fold(BaseHashTable.hashTableList(modes), elaborateMode, (modes, systNew));
+    if DEBUG_SMDUMP then BaseHashTable.dumpHashTable(modes); end if;
+
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: annotate Flat Automata with semantic equations  ***** \n"); end if;
+    flatAutomata := List.map1(flatAutomata, annotateFlatAutomaton, modes);
+
+	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Synthesize automata equations  ***** \n"); end if;
+	  (automataEqs, systNew) := synthesizeAutomataEqs(modes, comps, flatAutomata, true, AUTOMATA_EQS({},{},{}), systNew);
+
+	  //print("***** SMF-stateMachineElab: Update backend DAE (Don't use yet)  ***** \n");
+	  //(systNew, sharedNew) := updateBackendDAE_DontUseYet(systNew, sharedNew, automataEqs);
+	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Wrap equations in when clauses hack  ***** \n"); end if;
+	  (systNew, sharedNew) := wrapHack(systNew, sharedNew, automataEqs, 1.0);
+
+	  outDAE := BackendDAE.DAE({systNew}, sharedNew);
+  else
+    outDAE := inDAE;
+  end if;
+
+  if DEBUG_SMDUMP then
+    print("***** SMF-stateMachineElab BackendDAE OUTPUT: ***** \n");
+    BackendDump.printBackendDAE(outDAE);
+	  //BackendDump.dumpBackendDAEToModelica(outDAE, "AFTERSMELAB");
+	  //BackendDump.printShared(shared);
+	  //debugPrintKnownVars(shared);
+	  //BackendDump.dumpEqSystems({syst}, "Ordered");
+	  //BackendDump.printShared(shared);
+  end if;
 
 end stateMachineElab;
 
+protected function synthesizeAutomataEqs "
+Author: BTH
+Synthesize Automata/state machines relevant data-flow equations.
+"
+  input ModeTable modes;
+  input list<Composition> comps;
+  input list<FlatAutomaton> flatAs;
+  input Boolean isTopLevel "true if comps are the toplevel Automata";
+  input AutomataEqs synEqsAcc;
+  input BackendDAE.EqSystem systIn;
+  output AutomataEqs synEqsOut;
+  output BackendDAE.EqSystem systOut;
+algorithm
+  systOut := systIn;
+  synEqsOut := synEqsAcc;
+  for comp in comps loop
+    (synEqsOut, systOut) := synthesizeAutomatonEqs(modes, comp, flatAs, isTopLevel, synEqsOut, systOut);
+  end for;
+end synthesizeAutomataEqs;
+
+protected function synthesizeAutomatonEqs "
+Author: BTH
+Synthesize Automaton/state machine relevant data-flow equations.
+"
+  input ModeTable modes;
+  input Composition comp;
+  input list<FlatAutomaton> flatAs;
+  input Boolean isTopLevel "true if comp is a toplevel Automata";
+  input AutomataEqs synEqsAcc;
+  input BackendDAE.EqSystem systIn;
+  output AutomataEqs synEqsOut;
+  output BackendDAE.EqSystem systOut;
+protected
+  DAE.ComponentRef initRef, resetRef, stateRef, activeResetStateRef, activeStateRef, activeResetRef, activeRef;
+  BackendDAE.Var initVar, resetVar, activePlotIndicatorVar;
+  DAE.ComponentRef preRef, refiningRef, refiningResetRef, refiningActiveRef;
+  Composition refiningComp;
+  list<Composition> stateRefiningComps, refiningComps;
+  FlatAutomaton flatA;
+  DAE.Exp rhs, andExp, eqExp, activeResetStateRefExp, activeStateRefExp, activeResetRefExp;
+  BackendDAE.EquationAttributes bindingKind;
+  BackendDAE.Equation activePlotIndicatorEqn;
+  DAE.Type tArrayBool;
+  Integer n,i,nStates;
+  AutomataEqs synEqs;
+  // FLAT_AUTOMATON
+  DAE.ComponentRef initialState;
+  array<DAE.ComponentRef> states;
+  SMSemantics sms;
+  // AUTOMATA_EQS
+  list<BackendDAE.Var> vars, varsAdd "synthesized veriables";
+  list<BackendDAE.Var> knowns, knownsAdd "synthesized constants/parameters";
+  list<BackendDAE.Equation> eqs, eqsAdd "synthesized equations";
+  // COMPOSITION
+  DAE.ComponentRef initialState, refiningRefined;
+  array<tuple<DAE.ComponentRef,list<Composition>>> refining;
+  list<tuple<DAE.ComponentRef,list<Composition>>> refiningFiltered;
+algorithm
+  AUTOMATA_EQS(vars, knowns, eqs) := synEqsAcc;
+  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
+
+  R(initialState, refining) := comp;
+  flatA := List.find(flatAs, function findInitialState(crefCmp=initialState));
+  FLAT_AUTOMATON(initialState, states, sms) := flatA;
+  preRef := ComponentReference.crefPrefixString(SMS_PRE, initialState);
+  nStates := arrayLength(states);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource);
+
+  SMS(vars=varsAdd, knowns=knownsAdd, eqs=eqsAdd) := sms;
+  // Add var, knowns, eqs of flat automaton to equation system
+  vars := listAppend(vars, varsAdd);
+  knowns := listAppend(knowns, knownsAdd);
+  eqs := listAppend(eqs, eqsAdd);
+
+  // toplevel Automata need to "self-reset" at their first clock tick. After that reset is always false
+  // FIXME: Except if we have self transitions or other reset transitions back on the initial state??
+  if isTopLevel then
+    // Boolean preRef.init(start=true) = false
+    initRef := qCref("init", DAE.T_BOOL_DEFAULT, {}, preRef);
+    initVar := createVarWithDefaults(initRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+    initVar := BackendVariable.setVarStartValue(initVar, DAE.BCONST(true));
+    initVar := BackendVariable.setVarFixed(initVar, true);
+    vars := initVar :: vars;
+    eqs := BackendDAE.EQUATION(DAE.CREF(initRef, DAE.T_BOOL_DEFAULT), DAE.BCONST(false), DAE.emptyElementSource, bindingKind) :: eqs;
+    // preRef.reset = previous(preRef.init)
+    resetRef := qCref("reset", DAE.T_BOOL_DEFAULT, {}, preRef);
+    rhs := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(initRef, DAE.T_BOOL_DEFAULT)}, DAE.callAttrBuiltinImpureBool);
+    eqs := BackendDAE.EQUATION(DAE.CREF(resetRef, DAE.T_BOOL_DEFAULT), rhs, DAE.emptyElementSource, bindingKind) :: eqs;
+
+	  // input Boolean active "true if the state machine is active";
+	  // set to "true", since toplevel state machines is always active
+	  activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
+	  eqs := BackendDAE.EQUATION(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), DAE.BCONST(true), DAE.emptyElementSource, bindingKind) :: eqs;
+  end if;
+
+
+  n := arrayLength(refining);
+  refiningComps := {};
+  for i in 1:n loop
+    (stateRef,stateRefiningComps) := arrayGet(refining,i);
+    // propagate reset handling and activation handling to state machine refinements
+    if not listEmpty(stateRefiningComps) then
+      for refiningComp in stateRefiningComps loop
+		    // Add equation for reset handling
+		    //  SMS_PRE.refiningComp.reset = SMS_PRE.initialState.activeResetStates[i] or (SMS_PRE.initialState.activeReset and SMS_PRE.initialState.activeState==i)
+		    activeResetStateRef := qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef);
+		    activeResetStateRefExp := DAE.CREF(activeResetStateRef, DAE.T_BOOL_DEFAULT);
+		    activeStateRef :=  qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, preRef);
+		    activeStateRefExp :=  DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT);
+		    activeResetRef := qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef);
+		    activeResetRefExp :=  DAE.CREF(activeResetRef, DAE.T_BOOL_DEFAULT);
+		    // SMS_PRE.initialState.activeState==i
+		    eqExp := DAE.RELATION(activeStateRefExp, DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+		    // SMS_PRE.initialState.activeReset and SMS_PRE.initialState.activeState==i
+		    andExp := DAE.LBINARY(activeResetRefExp, DAE.AND(DAE.T_BOOL_DEFAULT), eqExp);
+        rhs := DAE.LBINARY(activeResetStateRefExp, DAE.OR(DAE.T_BOOL_DEFAULT), andExp);
+		    R(initialState=refiningRefined) := refiningComp;
+		    refiningRef := ComponentReference.crefPrefixString(SMS_PRE, refiningRefined);
+		    refiningResetRef := qCref("reset", DAE.T_BOOL_DEFAULT, {}, refiningRef);
+		    eqs := BackendDAE.EQUATION(DAE.CREF(refiningResetRef, DAE.T_BOOL_DEFAULT), rhs, DAE.emptyElementSource, bindingKind) :: eqs;
+		    // Add equation for activation handling
+		    // SMS_PRE.refiningComp.active = (SMS_PRE.initialState.activeReset.activeState == i)
+		    refiningActiveRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, refiningRef);
+		    eqs := BackendDAE.EQUATION(DAE.CREF(refiningActiveRef, DAE.T_BOOL_DEFAULT), eqExp, DAE.emptyElementSource, bindingKind) :: eqs;
+      end for;
+    end if;
+    refiningComps := listAppend(refiningComps, stateRefiningComps);
+
+    // Add indication for plotting whether a state is active or not
+    (activePlotIndicatorVar, activePlotIndicatorEqn) :=  synthesizeAutomatonEqsCreateActiveIndication(stateRef, preRef, i);
+    vars := activePlotIndicatorVar :: vars;
+    eqs :=  activePlotIndicatorEqn :: eqs;
+
+  end for;
+
+  // Transform equations within a mode to conditional data-flow equations
+  (synEqs, systOut) := synthesizeAutomatonEqsModeToDataflow(modes, flatA, AUTOMATA_EQS(vars,knowns,eqs), systIn);
+
+  // recursion into refined substates
+  synEqsOut := synthesizeAutomataEqs(modes, refiningComps, flatAs, false, synEqs, systOut);
+
+end synthesizeAutomatonEqs;
+
+
+protected function synthesizeAutomatonEqsModeToDataflow "
+Author: BTH
+Helper function to synthesizeAutomatonEqs.
+Transform equations within a mode to conditional data-flow equations
+"
+  input ModeTable modes;
+  input FlatAutomaton flatA;
+  input AutomataEqs synEqsIn;
+  input BackendDAE.EqSystem systIn;
+  output AutomataEqs synEqsOut;
+  output BackendDAE.EqSystem systOut := systIn;
+protected
+  Integer n,i;
+  DAE.ComponentRef cref, preRef, activeRef, activeStateRef;
+  DAE.Exp activeRefExp, activeStateRefExp, relExp, andExp, rhs, previousExp;
+  BackendDAE.Var var;
+  list<tuple<Integer,BackendDAE.Var>> outStateInnerOuters;
+  BackendDAE.Type varType;
+  DAE.CallAttributes callAttributes;
+  list<BackendDAE.Equation> outLocalEqns;
+  HashSet.HashSet crefLocalsSet, crefSharedSet;
+  HashTableExpToIndexExp.HashTable sharedCrefToStateExps;
+  HashTableExpToIndexExp.Value sharedStateExps;
+  BackendDAE.EquationAttributes attrDynamic, bindingKind;
+  // CREF
+  DAE.ComponentRef componentRef;
+  DAE.Type ty;
+  // EQUATION
+  DAE.Exp exp;
+  DAE.Exp scalar;
+  DAE.ElementSource source "origin of equation";
+  BackendDAE.EquationAttributes attr;
+  // AUTOMATA_EQS
+  list<BackendDAE.Var> vars2 "synthesized veriables";
+  list<BackendDAE.Var> knowns2 "synthesized constants/parameters";
+  list<BackendDAE.Equation> eqs2 "synthesized equations";
+  // FLAT_AUTOMATON
+  DAE.ComponentRef initialState;
+  array<DAE.ComponentRef> states;
+  SMSemantics sms;
+  // MODE
+  String name;
+  Boolean isInitial;
+  HashSet.HashSet edges "relations to other modes due to in- and out-going transitions";
+  BackendDAE.EquationArray eqs "equations defined in the mode instance";
+  BackendDAE.EquationArray outgoing "outgoing transitions";
+  list<BackendDAE.Var> outShared "outer output variables of state";
+  list<BackendDAE.Var> outLocal "output variables and (non-input) local variables of state";
+  list<DAE.ComponentRef> crefPrevious "crefs for which a rhs 'previous(cref)' exists in state";
+algorithm
+  FLAT_AUTOMATON(initialState, states, sms) := flatA;
+  AUTOMATA_EQS(vars2,knowns2,eqs2) := synEqsIn;
+
+  outStateInnerOuters := {};
+  outLocalEqns := {};
+  sharedCrefToStateExps := HashTableExpToIndexExp.emptyHashTable();
+  attrDynamic := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.DYNAMIC_EQUATION(), 0);
+
+  preRef := ComponentReference.crefPrefixString(SMS_PRE, initialState);
+  activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
+  activeRefExp := DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT);
+  activeStateRef :=  qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, preRef);
+  activeStateRefExp :=  DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT);
+  n := arrayLength(states);
+  for i in 1:n loop
+    cref := arrayGet(states, i);
+    MODE(name, isInitial, edges, eqs, outgoing, outShared, outLocal, crefPrevious) := BaseHashTable.get(cref, modes);
+    crefLocalsSet := List.fold(List.map(outLocal, BackendVariable.varCref), BaseHashSet.add, HashSet.emptyHashSet());
+    crefSharedSet := List.fold(List.map(outShared, BackendVariable.varCref), BaseHashSet.add, HashSet.emptyHashSet());
+    // collect all inner outer outputs together with the index of the state they occur in
+    outStateInnerOuters := listAppend(outStateInnerOuters, List.map(List.filter(outLocal,filterInnerOuters), function Util.makeTuple(inValue1=i)));
+
+    // SMS_PRE.initialState.activeState == i
+    relExp := DAE.RELATION(activeStateRefExp, DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+    // SMS_PRE.initialState.activeState==i and SMS_PRE.initialState.active
+    andExp := DAE.LBINARY(relExp, DAE.AND(DAE.T_BOOL_DEFAULT), activeRefExp);
+    for eqn in BackendEquation.equationList(eqs) loop
+      BackendDAE.EQUATION(exp,scalar,source,attr) := eqn;
+      DAE.CREF(componentRef=componentRef,ty=ty) := exp;
+
+      // If lhs x is a local variable add equation "x := if stateActive then exp else previous(x)"
+      if BaseHashSet.has(componentRef, crefLocalsSet) then
+        callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+	      previousExp := DAE.CALL(Absyn.IDENT("previous"), {exp}, callAttributes);
+	      rhs := DAE.IFEXP(andExp, scalar, previousExp);
+	      outLocalEqns :=  BackendDAE.EQUATION(exp, rhs, source, attr) :: outLocalEqns;
+
+        // Find variable corresponding to componentRef
+        var := List.selectFirst1(outLocal,cmpVarCref,componentRef);
+
+        // If lhs "x" is a state variable, i.e., "x" appears somewhere in the global equation system as "previous(x)",
+        // than substitute all "previous(x)" by a fresh variable "x_previous" which is defined by an equation "x_previous = if resetOfState than initialValueOfX else previous(x)"
+        // FIXME this substitution logic isn't sufficient since it is possible that a another mode (whose equations are not yet in synthesized to systOut) contains equations with "previous(x)" that would be missed by the current algorithm
+        (vars2, outLocalEqns, systOut) := handleResets(exp, var, n, i, andExp, preRef, vars2, outLocalEqns, systOut);
+
+      // If lhs x is an outer variable accumulate rhs in hash entry for x for later merging of variable definitions
+      elseif BaseHashSet.has(componentRef, crefSharedSet) then
+        if BaseHashTable.hasKey(exp,sharedCrefToStateExps) then
+          sharedStateExps := (i,scalar) :: BaseHashTable.get(exp,sharedCrefToStateExps);
+          sharedCrefToStateExps := BaseHashTable.update((exp,sharedStateExps),sharedCrefToStateExps);
+        else
+          sharedCrefToStateExps := BaseHashTable.addNoUpdCheck((exp,{(i,scalar)}),sharedCrefToStateExps);
+        end if;
+      end if;
+    end for;
+  end for;
+
+  // Add equations for connecting inner outer output crefs to outer outputs that are one level deeper in the instance hierarchy
+  sharedCrefToStateExps := List.fold(outStateInnerOuters, addInnerOuterConnection, sharedCrefToStateExps);
+
+  // merge variable definitions
+  for entry in BaseHashTable.hashTableList(sharedCrefToStateExps) loop
+    (exp,sharedStateExps) := entry;
+    // assume the shared variable is "x" and the if-condition "expIf(i) = SMS_PRE.initialState.activeState==i and SMS_PRE.initialState.active",
+    // the aim is to merge the shared variable definitions into an equation with the structure
+    // x = if expIf(1) then rhsOfState_1 else (if expIf(2) then rhsOfState_2 else (... else (if expIf(n) then rhsOfState_n else previous(x))))
+    rhs := mergeVariableDefinitions(sharedStateExps,exp,activeStateRefExp,activeRefExp,systOut);
+    outLocalEqns :=  BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, attr) :: outLocalEqns;
+  end for;
+
+  synEqsOut := AUTOMATA_EQS(vars2,knowns2,listAppend(eqs2,listReverse(outLocalEqns)));
+end synthesizeAutomatonEqsModeToDataflow;
+
+protected function addInnerOuterConnection "
+Author: BTH
+Helper function to synthesizeAutomatonEqsModeToDataflow.
+Constructs (hopefully) a relation betwenn an inner outer cref and its corresponding inner cref.
+Probably rather fragile approach...
+"
+  input tuple<Integer,BackendDAE.Var> inStateVar;
+  input HashTableExpToIndexExp.HashTable inTable;
+  output HashTableExpToIndexExp.HashTable outTable := inTable;
+protected
+  DAE.Exp key, exp;
+  Integer i;
+  BackendDAE.Var var;
+  DAE.ComponentRef varName, strippedName, crefLast, crefInner;
+  DAE.Type varType;
+  HashTableExpToIndexExp.Value sharedStateExps;
+algorithm
+  (i,var) := inStateVar;
+  BackendDAE.VAR(varName=varName,varType=varType) := var;
+
+  // with some luck this cref construction gives the corresponding inner...
+  crefLast := ComponentReference.crefLastCref(varName);
+  if (ComponentReference.crefDepth(varName) > 2) then
+    strippedName := ComponentReference.crefStripLastIdent(ComponentReference.crefStripLastIdent(varName));
+    crefInner := ComponentReference.joinCrefs(strippedName,crefLast);
+  else
+    crefInner := crefLast;
+  end if;
+
+  key := DAE.CREF(crefInner,varType);
+  exp := DAE.CREF(varName,varType);
+
+  if BaseHashTable.hasKey(key,outTable) then
+    sharedStateExps := (i,exp) :: BaseHashTable.get(key,outTable);
+    outTable := BaseHashTable.update((key,sharedStateExps),outTable);
+  else
+    outTable := BaseHashTable.addNoUpdCheck((key,{(i,exp)}),outTable);
+  end if;
+end addInnerOuterConnection;
+
+protected function filterInnerOuters "
+Helper function to synthesizeAutomatonEqsModeToDataflow"
+  input BackendDAE.Var inElement;
+algorithm
+  BackendDAE.VAR(innerOuter=DAE.INNER_OUTER()) := inElement;
+end filterInnerOuters;
+
+protected function handleResets "
+Author: BTH
+Handle state machine resets for discrete 'state' variables.
+Ugly helper function to synthesizeAutomatonEqsModeToDataflow"
+  input DAE.Exp varCRefToCheck;
+  input BackendDAE.Var varToCheck "variable that corresponds to varCRefToCheck";
+  input Integer n "number of modes in flat automaton";
+  input Integer i "number of mode that we are currently in";
+  input DAE.Exp stateActivationExp;
+  input DAE.ComponentRef preRef;
+  input list<BackendDAE.Var> inLocalVars;
+  input list<BackendDAE.Equation> inLocalEqns;
+  input BackendDAE.EqSystem systIn;
+  output list<BackendDAE.Var> outLocalVars := inLocalVars "possibly one fresh substitution variable is added to this list";
+  output list<BackendDAE.Equation> outLocalEqns := inLocalEqns "possibly fresh equations are added to this list";
+  output BackendDAE.EqSystem systOut := systIn "possibly instances of 'previous(x)' are substituted by 'x_previous'";
+protected
+  DAE.ComponentRef substituteRef, activeResetRef, activeResetStatesRef;
+  DAE.Exp orExp, andExp, activeResetRefExp, ifExp, startValueExp, previousExp, substituteExp;
+  Boolean gotHits;
+  BackendDAE.Var var, substituteVar;
+  DAE.Type tArrayBool;
+  BackendDAE.EquationAttributes attrDynamic;
+  DAE.CallAttributes callAttributes;
+  // CREF
+  DAE.ComponentRef componentRef;
+  DAE.Type ty;
+algorithm
+  DAE.CREF(componentRef=componentRef, ty=ty) := varCRefToCheck;
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(n)}, DAE.emptyTypeSource);
+  callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+  attrDynamic := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.DYNAMIC_EQUATION(), 0);
+
+  activeResetRef := qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef);
+  activeResetRefExp := DAE.CREF(activeResetRef, DAE.T_BOOL_DEFAULT);
+  substituteRef := ComponentReference.appendStringLastIdent("_previous", componentRef);
+  gotHits := false;
+  substituteExp := DAE.CREF(substituteRef, ty);
+  previousExp := DAE.CALL(Absyn.IDENT("previous"), {varCRefToCheck}, callAttributes);
+
+  (outLocalEqns,(_,(_,_,gotHits))) := BackendEquation.traverseExpsOfEquationList(outLocalEqns, Expression.traverseSubexpressionsHelper, (traversingPreviousExpByVariableSubsHelper, (previousExp, substituteExp, false)));
+  (_,(_,_,gotHits)) := BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(systOut, Expression.traverseSubexpressionsHelper, (traversingPreviousExpByVariableSubsHelper, (previousExp, substituteExp, gotHits)));
+  if gotHits then
+    // Add substitute variable "x_previous"
+    substituteVar := createVarWithDefaults(substituteRef, BackendDAE.VARIABLE(), ty);
+    outLocalVars := substituteVar :: outLocalVars;
+
+    // Find start value for the variable that is to be substituted, i.e., "x.start" of "previous(x)"
+    startValueExp := BackendVariable.varStartValue(varToCheck);
+
+    // Add defining equation for substitute variable "x_previous = if (activeState==i and active and (activeReset or activeResetStates[i])) than startValueOfX else previous(x)"
+    activeResetStatesRef := qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef);
+    // activeReset or activeResetStates[i]
+    orExp := DAE.LBINARY(activeResetRefExp, DAE.OR(DAE.T_BOOL_DEFAULT), DAE.CREF(activeResetStatesRef, DAE.T_BOOL_DEFAULT));
+    // activeState==i and active and (activeReset or activeResetStates[i])
+    andExp := DAE.LBINARY(stateActivationExp, DAE.AND(DAE.T_BOOL_DEFAULT), orExp);
+    // if (activeState==i and active and (activeReset or activeResetStates[i])) than startValueOfX else previous(x)
+    ifExp := DAE.IFEXP(andExp, startValueExp, previousExp);
+    outLocalEqns :=  BackendDAE.EQUATION(DAE.CREF(substituteRef, ty), ifExp, DAE.emptyElementSource, attrDynamic) :: outLocalEqns;
+  end if;
+end handleResets;
+
+
+protected function cmpVarCref
+  input BackendDAE.Var inElement;
+  input DAE.ComponentRef arg;
+  output Boolean outSelect;
+protected
+  DAE.ComponentRef varName;
+algorithm
+  BackendDAE.VAR(varName=varName) := inElement;
+  outSelect := ComponentReference.crefEqual(varName,arg);
+end cmpVarCref;
+
+protected function traversingPreviousExpByVariableSubsHelper "
+Author: BTH
+Helper function to synthesizeAutomatonEqsModeToDataflow for traversing the BackendDAE.EqSystem
+Searches for previous(x), replaces occurances by 'x_previous' and indicates whether substitution were performed"
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp,DAE.Exp,Boolean> inPatternSubstituteHit;
+  output DAE.Exp outExp;
+  output tuple<DAE.Exp,DAE.Exp,Boolean> outPatternSubstituteHit;
+protected
+  DAE.Exp patternExp, substituteExp;
+  Boolean gotHit;
+algorithm
+  (patternExp,substituteExp,gotHit) := inPatternSubstituteHit;
+  (outExp,outPatternSubstituteHit) := match inExp
+    local
+      DAE.Exp e;
+    case e guard Expression.expEqual(e,patternExp) then (substituteExp,(patternExp,substituteExp,true));
+    else (inExp,inPatternSubstituteHit);
+  end match;
+end traversingPreviousExpByVariableSubsHelper;
+
+protected function replaceInnerOuterByInner "
+Author: BTH
+Helper function to mergeVariableDefinitions
+Fragile hack. Check if sharedCrefExp is 'inner outer', if so replace all previous(sharedCrefExp) by previous(inner cref that corresponds to sharedCrefExp)"
+  input list<tuple<Integer,DAE.Exp>> inStateExpLst;
+  input DAE.Exp SharedCrefExp;
+  input BackendDAE.EqSystem systIn;
+  output list<tuple<Integer,DAE.Exp>> outStateExpLst := inStateExpLst;
+protected
+  BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+  BackendDAE.Var sharedVar;
+  DAE.ComponentRef sharedCref,crefLast,strippedName,crefInner;
+  DAE.Type ty;
+  DAE.VarInnerOuter innerOuter;
+  Boolean isInnerOuter;
+algorithm
+  DAE.CREF(componentRef=sharedCref,ty=ty) := SharedCrefExp;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars) := systIn;
+  ({sharedVar},_) := BackendVariable.getVar(sharedCref, orderedVars);
+  isInnerOuter := match sharedVar
+    case BackendDAE.VAR(innerOuter=DAE.INNER_OUTER()) then true;
+    else then false;
+  end match;
+
+  // if sharedCref is "inner outer" try the replacements
+  if isInnerOuter then
+    // with some luck this cref construction gives the corresponding inner...
+    crefLast := ComponentReference.crefLastCref(sharedCref);
+    if (ComponentReference.crefDepth(sharedCref) > 2) then
+      strippedName := ComponentReference.crefStripLastIdent(ComponentReference.crefStripLastIdent(sharedCref));
+      crefInner := ComponentReference.joinCrefs(strippedName,crefLast);
+    else
+      crefInner := crefLast;
+    end if;
+
+    outStateExpLst := List.map2(outStateExpLst,mapReplaceInnerOuterByInner,SharedCrefExp,DAE.CREF(crefInner,ty));
+
+  end if;
+end replaceInnerOuterByInner;
+
+protected function mapReplaceInnerOuterByInner "
+Helper function to replaceInnerOuterByInner."
+  input tuple<Integer,DAE.Exp> inElement;
+  input DAE.Exp inFindExp;
+  input DAE.Exp inReplaceExp;
+  output tuple<Integer,DAE.Exp> outElement;
+protected
+  Integer i;
+  DAE.Exp exp;
+algorithm
+  (i,exp) := inElement;
+  exp := Expression.traverseExp(exp,traversingInnerOuterByOuterSubs,(inFindExp,inReplaceExp));
+  outElement := (i,exp);
+end mapReplaceInnerOuterByInner;
+
+protected function traversingInnerOuterByOuterSubs "
+Author: BTH
+Helper function to mapReplaceInnerOuterByInner
+Searches for an expression and replaces it be the other"
+  input DAE.Exp inExp;
+  input tuple<DAE.Exp,DAE.Exp> inPatternSubstitute;
+  output DAE.Exp outExp;
+  output tuple<DAE.Exp,DAE.Exp> outPatternSubstitute;
+protected
+  DAE.Exp patternExp, substituteExp;
+algorithm
+  (patternExp,substituteExp) := inPatternSubstitute;
+  (outExp,outPatternSubstitute) := match inExp
+    local
+      DAE.Exp e;
+    case e guard Expression.expEqual(e,patternExp) then (substituteExp,(patternExp,substituteExp));
+    else (inExp,inPatternSubstitute);
+  end match;
+end traversingInnerOuterByOuterSubs;
+
+
+protected function mergeVariableDefinitions "
+Author: BTH
+Merge variable definitions for outer (shared) variables into an if-expression"
+  input list<tuple<Integer,DAE.Exp>> inStateExpLst;
+  input DAE.Exp SharedCrefExp;
+  input DAE.Exp activeStateRefExp "SMS_PRE.initialState.activeState";
+  input DAE.Exp activeRefExp "SMS_PRE.initialState.active";
+  input BackendDAE.EqSystem systIn;
+  output DAE.Exp res;
+protected
+  list<tuple<Integer,DAE.Exp>> stateExpLst;
+algorithm
+  // Fragile hack. Check if sharedCref is "inner outer", if so replace all previous(sharedCref) by previous(inner cref that corresponds to sharedCref)
+  stateExpLst := replaceInnerOuterByInner(inStateExpLst, SharedCrefExp, systIn);
+
+  res := match (stateExpLst,SharedCrefExp)
+    local
+      Integer i;
+      DAE.Exp ifExp,relExp;
+      list<tuple<Integer,DAE.Exp>> rest;
+      DAE.CallAttributes callAttributes;
+      // IFEXP
+      DAE.Exp expCond;
+      DAE.Exp expThen;
+      DAE.Exp expElse;
+      // CREF
+      DAE.ComponentRef cref;
+      DAE.Type ty;
+    case ((i, expThen)::{}, DAE.CREF(componentRef=cref,ty=ty))
+      equation
+        callAttributes = DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+        // SMS_PRE.initialState.activeState == i
+        relExp = DAE.RELATION(activeStateRefExp, DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+        // SMS_PRE.initialState.activeState==i and SMS_PRE.initialState.active
+        expCond = DAE.LBINARY(relExp, DAE.AND(DAE.T_BOOL_DEFAULT), activeRefExp);
+        expElse = DAE.CALL(Absyn.IDENT("previous"), {SharedCrefExp}, callAttributes);
+        ifExp = DAE.IFEXP(expCond, expThen, expElse);
+      then ifExp;
+    case ((i, expThen)::rest,_)
+      equation
+        // SMS_PRE.initialState.activeState == i
+        relExp = DAE.RELATION(activeStateRefExp, DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+        // SMS_PRE.initialState.activeState==i and SMS_PRE.initialState.active
+        expCond = DAE.LBINARY(relExp, DAE.AND(DAE.T_BOOL_DEFAULT), activeRefExp);
+        expElse = mergeVariableDefinitions(rest,SharedCrefExp,activeStateRefExp,activeRefExp,systIn);
+      then DAE.IFEXP(expCond, expThen, expElse);
+  end match;
+end mergeVariableDefinitions;
+
+
+protected function synthesizeAutomatonEqsCreateActiveIndication "
+Author: BTH
+Helper function to synthesizeAutomatonEqs.
+Create indication for plotting whether a state is active or not"
+  input DAE.ComponentRef stateRef "cref of state to which activation indication shall be added";
+  input DAE.ComponentRef preRef "cref of prefix where variables of governing semantic equations for stateRef are located";
+  input Integer i "index of state within flat automaton state array";
+  output BackendDAE.Var activePlotIndicatorVar;
+  output BackendDAE.Equation eqn;
+protected
+  DAE.ComponentRef activeRef, activePlotIndicatorRef, activeStateRef;
+  DAE.Exp  andExp, eqExp;
+  BackendDAE.EquationAttributes bindingKind;
+algorithm
+	// Create Variable stateRef.active
+	// FIXME Use name that cannot possible conflict with user variable (or is .active reserved for state machines?)
+	activePlotIndicatorRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, stateRef);
+	activePlotIndicatorVar := createVarWithDefaults(activePlotIndicatorRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+
+	// stateRef.active := SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
+	activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
+	activeStateRef :=  qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, preRef);
+	// SMS_PRE.initialState.activeState==i
+	eqExp := DAE.RELATION(DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+	// SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
+	andExp := DAE.LBINARY(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), DAE.AND(DAE.T_BOOL_DEFAULT), eqExp);
+	bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
+	eqn := BackendDAE.EQUATION(DAE.CREF(activePlotIndicatorRef, DAE.T_BOOL_DEFAULT), andExp, DAE.emptyElementSource, bindingKind);
+end synthesizeAutomatonEqsCreateActiveIndication;
+
+protected function filterRs "
+Only elements with refined states pass."
+  input tuple<DAE.ComponentRef,list<Composition>> inElement;
+algorithm
+  (_,R()::_) := inElement;
+end filterRs;
+
+
+protected function wrapHack "
+Author: BTH
+Wrap equations in when-clauses as long as Synchronous Features are not supported"
+  input BackendDAE.EqSystem systIn;
+  input BackendDAE.Shared sharedIn;
+  input AutomataEqs automataEqs;
+  input Real samplingTime;
+  output BackendDAE.EqSystem systOut;
+  output BackendDAE.Shared sharedOut;
+protected
+  list<BackendDAE.Equation> wrappedEqs;
+  BackendDAE.TimeEvent timeEvent;
+
+  // AUTOMATA_EQS
+  list<BackendDAE.Var> vars;
+  list<BackendDAE.Var> knowns;
+  list<BackendDAE.Equation> eqs;
+  // Fields of EQUATION_ARRAY
+  Integer orderedSize, removedSize;
+  Integer orderedNumberOfElement, removedNumberOfElement;
+  Integer orderedArrSize, removedArrSize;
+  array<Option<BackendDAE.Equation>> orderedEquOptArr, removedEquOptArr;
+algorithm
+  AUTOMATA_EQS(vars, knowns, eqs) := automataEqs;
+
+  // Hack: Wrap everything in when equations
+  // FIXME: Guess there is a reference mechanism and maybe I shouldn't hardcode "1" as index? (needs also adaption in wrapInWhenhack)
+  timeEvent := BackendDAE.SAMPLE_TIME_EVENT(1, DAE.RCONST(0), DAE.RCONST(samplingTime));
+  wrappedEqs := List.map1(eqs, wrapInWhenHack, samplingTime);
+
+  systOut := List.fold(vars, BackendVariable.addVarDAE, systIn);
+  systOut := BackendEquation.equationsAddDAE(wrappedEqs, systOut);
+  sharedOut := List.fold(knowns, BackendVariable.addNewKnVarDAE, sharedIn);
+  if (listLength(wrappedEqs) > 0) then
+    sharedOut := wrapAddTimeEventHack({timeEvent}, sharedOut);
+  end if;
+end wrapHack;
+
+
+protected function updateBackendDAE_DontUseYet "
+Author: BTH
+Update backend DAE. Don't use as long as synchronous elements support is missing in the backend"
+  input BackendDAE.EqSystem systIn;
+  input BackendDAE.Shared sharedIn;
+  input AutomataEqs automataEqs;
+  output BackendDAE.EqSystem systOut;
+  output BackendDAE.Shared sharedOut;
+protected
+  // AUTOMATA_EQS
+  list<BackendDAE.Var> vars;
+  list<BackendDAE.Var> knowns;
+  list<BackendDAE.Equation> eqs;
+  // Fields of EQUATION_ARRAY
+  Integer orderedSize, removedSize;
+  Integer orderedNumberOfElement, removedNumberOfElement;
+  Integer orderedArrSize, removedArrSize;
+  array<Option<BackendDAE.Equation>> orderedEquOptArr, removedEquOptArr;
+algorithm
+  AUTOMATA_EQS(vars, knowns, eqs) := automataEqs;
+  systOut := List.fold(vars, BackendVariable.addVarDAE, systIn);
+  systOut := BackendEquation.equationsAddDAE(eqs, systOut);
+  sharedOut := List.fold(knowns, BackendVariable.addNewKnVarDAE, sharedIn);
+end updateBackendDAE_DontUseYet;
+
+protected function findInitialState "
+Author: BTH
+Succeeds if initialState in flatAIn equals the crefCmp, otherwise fails.
+Helper function to find flat automaton within a list of flat automata"
+  input FlatAutomaton flatAIn;
+  input DAE.ComponentRef crefCmp;
+  output FlatAutomaton flatAOut;
+algorithm
+  flatAOut := match flatAIn
+    local
+      DAE.ComponentRef cref;
+    case FLAT_AUTOMATON(initialState=cref) guard ComponentReference.crefEqual(cref,crefCmp) then flatAIn;
+    else fail();
+  end match;
+end findInitialState;
+
+
+protected function annotateFlatAutomaton "
+Author: BTH
+annotate Flat Automata with semantic equations"
+  input FlatAutomaton flatAIn;
+  input ModeTable modesIn;
+  output FlatAutomaton flatAOut;
+algorithm
+  flatAOut := addSMSemantics(flatAIn, modesIn);
+end annotateFlatAutomaton;
+
+protected function addSMSemantics "
+Author: BTH
+Add semantic equations governing a flat automaton"
+  input FlatAutomaton flatAIn;
+  input ModeTable modesIn;
+  output FlatAutomaton flatAOut;
+protected
+  list<String> s1,s2;
+  Integer i, nStates, nTransitions;
+  Transition t1;
+  DAE.Exp exp, rhs, expCond, expThen, expElse, exp1, exp2, expIf;
+  list<DAE.Exp> expLst;
+  Option<DAE.Exp> bindExp;
+  BackendDAE.EquationAttributes bindingKind;
+  DAE.Type tArrayInteger, tArrayBool;
+
+  DAE.ComponentRef preRef, cref, nStatesRef, activeRef, resetRef, selectedStateRef, selectedResetRef, firedRef, activeStateRef, activeResetRef, nextStateRef, nextResetRef, stateMachineInFinalStateRef;
+  BackendDAE.Var var, nStatesVar, activeVar, resetVar, selectedStateVar, selectedResetVar, firedVar, activeStateVar, activeResetVar, nextStateVar, nextResetVar, stateMachineInFinalStateVar;
+
+  BackendDAE.Var defaultIntVar, defaultBoolVar;
+  // Modeling Transitions "t":
+  array<DAE.ComponentRef> tFromRefs, tToRefs, tImmediateRefs, tResetRefs, tSynchronizeRefs, tPriorityRefs, activeResetStatesRefs, nextResetStatesRefs, finalStatesRefs;
+  array<BackendDAE.Var> tFromVars, tToVars, tImmediateVars, tResetVars, tSynchronizeVars, tPriorityVars, activeResetStatesVars, nextResetStatesVars, finalStatesVars;
+  // // Modeling Conditions "c":
+  array<DAE.ComponentRef> cRefs, cImmediateRefs;
+  array<BackendDAE.Var> cVars, cImmediateVars;
+
+  BackendDAE.Equation selectedStateEqn, selectedResetEqn, firedEqn, activeStateEqn, activeResetEqn, nextStateEqn, nextResetEqn;
+
+  // FLAT_AUTOMATON
+  DAE.ComponentRef initialState;
+  array<DAE.ComponentRef> states;
+  SMSemantics sms;
+  // SMS
+  list<DAE.ComponentRef> q "States";
+  list<Transition> t;
+  list<DAE.Exp> cExps;
+  list<BackendDAE.Var> vars;
+  list<BackendDAE.Var> knowns;
+  list<BackendDAE.Equation> eqs;
+  // TRANSITION
+  Integer from;
+  Integer to;
+  Boolean immediate;
+  Boolean reset;
+  Boolean synchronize;
+  Integer priority;
+algorithm
+
+  FLAT_AUTOMATON(initialState, states, sms) := flatAIn;
+  q := arrayList(states);
+
+  // make sure that created vars won't clutter up the variable space
+  preRef := ComponentReference.crefPrefixString(SMS_PRE, initialState);
+
+  (t, cExps) := createTandC(q, modesIn);
+  //s1 := List.map(t, dumpTransitionStr);
+  //print("==TRANSITIONS:===\n"+ stringDelimitList(s1, "\n"));
+  //print("\n==CONDITIONS:===\n");
+  //List.map_0(c,ExpressionDump.dumpExp);
+
+  defaultIntVar := createVarWithDefaults(ComponentReference.makeDummyCref(), BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
+  defaultBoolVar := createVarWithDefaults(ComponentReference.makeDummyCref(), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  knowns := {};
+  vars := {};
+  // ***** Create new variable declarations needed for semantic equations *****
+  nStates := listLength(q);
+  nStatesRef := qCref("nState", DAE.T_INTEGER_DEFAULT, {}, preRef);
+  nStatesVar := createVarWithDefaults(nStatesRef, BackendDAE.PARAM(), DAE.T_INTEGER_DEFAULT);
+  //nStatesVar := BackendVariable.setBindValue(nStatesVar, SOME(Values.INTEGER(nStates)));
+  nStatesVar := BackendVariable.setBindExp(nStatesVar, SOME(DAE.ICONST(nStates)));
+  knowns := nStatesVar :: knowns;
+
+
+  // parameter Transition t[:] "Array of transition data sorted in priority";
+  nTransitions := listLength(t);
+  tArrayInteger := DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nTransitions)}, DAE.emptyTypeSource);
+  tArrayBool := DAE.T_ARRAY(DAE.T_BOOL_DEFAULT,{DAE.DIM_INTEGER(nTransitions)}, DAE.emptyTypeSource);
+  tFromRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
+  tToRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
+  tImmediateRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
+  tResetRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
+  tSynchronizeRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
+  tPriorityRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
+  tFromVars := arrayCreate(nTransitions, defaultIntVar);
+  tToVars := arrayCreate(nTransitions, defaultIntVar);
+  tImmediateVars := arrayCreate(nTransitions, defaultBoolVar);
+  tResetVars := arrayCreate(nTransitions, defaultBoolVar);
+  tSynchronizeVars := arrayCreate(nTransitions, defaultBoolVar);
+  tPriorityVars := arrayCreate(nTransitions, defaultIntVar);
+  i := 0;
+  for t1 in t loop
+    i := i+1;
+    TRANSITION(from,to,immediate,reset,synchronize,priority) := t1;
+    tFromRefs := arrayUpdate(tFromRefs, i, qCref("tFrom", tArrayInteger, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    tFromVars := arrayUpdate(tFromVars, i, createVarWithDefaults(arrayGet(tFromRefs,i), BackendDAE.PARAM(), DAE.T_INTEGER_DEFAULT));
+    tFromVars := arrayUpdate(tFromVars, i, BackendVariable.setBindExp(arrayGet(tFromVars,i), SOME(DAE.ICONST(from))));
+    knowns := arrayGet(tFromVars,i) :: knowns;
+
+    tToRefs := arrayUpdate(tToRefs, i, qCref("tTo", tArrayInteger, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    tToVars := arrayUpdate(tToVars, i, createVarWithDefaults(arrayGet(tToRefs,i), BackendDAE.PARAM(), DAE.T_INTEGER_DEFAULT));
+    tToVars := arrayUpdate(tToVars, i, BackendVariable.setBindExp(arrayGet(tToVars,i), SOME(DAE.ICONST(to))));
+    knowns := arrayGet(tToVars,i) :: knowns;
+
+    tImmediateRefs := arrayUpdate(tImmediateRefs, i, qCref("tImmediate", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    tImmediateVars := arrayUpdate(tImmediateVars, i, createVarWithDefaults(arrayGet(tImmediateRefs,i), BackendDAE.PARAM(), DAE.T_BOOL_DEFAULT));
+    tImmediateVars := arrayUpdate(tImmediateVars, i, BackendVariable.setBindExp(arrayGet(tImmediateVars,i), SOME(DAE.BCONST(immediate))));
+    knowns := arrayGet(tImmediateVars,i) :: knowns;
+
+    tResetRefs := arrayUpdate(tResetRefs, i, qCref("tReset", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    tResetVars := arrayUpdate(tResetVars, i, createVarWithDefaults(arrayGet(tResetRefs,i), BackendDAE.PARAM(), DAE.T_BOOL_DEFAULT));
+    tResetVars := arrayUpdate(tResetVars, i, BackendVariable.setBindExp(arrayGet(tResetVars,i), SOME(DAE.BCONST(reset))));
+    knowns := arrayGet(tResetVars,i) :: knowns;
+
+    tSynchronizeRefs := arrayUpdate(tSynchronizeRefs, i, qCref("tSynchronize", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    tSynchronizeVars := arrayUpdate(tSynchronizeVars, i, createVarWithDefaults(arrayGet(tSynchronizeRefs,i), BackendDAE.PARAM(), DAE.T_BOOL_DEFAULT));
+    tSynchronizeVars := arrayUpdate(tSynchronizeVars, i, BackendVariable.setBindExp(arrayGet(tSynchronizeVars,i), SOME(DAE.BCONST(synchronize))));
+    knowns := arrayGet(tSynchronizeVars,i) :: knowns;
+
+    tPriorityRefs := arrayUpdate(tPriorityRefs, i, qCref("tPriority", tArrayInteger, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    tPriorityVars := arrayUpdate(tPriorityVars, i, createVarWithDefaults(arrayGet(tPriorityRefs,i), BackendDAE.PARAM(), DAE.T_INTEGER_DEFAULT));
+    tPriorityVars := arrayUpdate(tPriorityVars, i, BackendVariable.setBindExp(arrayGet(tPriorityVars,i), SOME(DAE.ICONST(priority))));
+    knowns := arrayGet(tPriorityVars,i) :: knowns;
+  end for;
+  //input Boolean c[size(t,1)] "Transition conditions sorted in priority";
+  //input Boolean cImmediate[size(t,1)];
+  /* IMPLEMENTATION NOTE in respect to MLS: cImmediate is introduced in order to delay transitions by simply doing c[i] = previous(cImmediate[i]) for delayed transitons.
+     Now, all c[i] can be treated as immediate transitions. Hence, different to MLS 17.3.4 there are no distinguished equations for 'immediate' or 'delayed' transitions needed.
+     This avoids seemingly algebraic dependency loops for delayed transitions that are introduced if MLS 17.3.4 equations are implemented directly
+     (this is because in MLS 17.3.4 delayed transitions c[i] appear in a non-delayed form in the equation for 'immediate';
+     actually, MLS 17.3.4 doesn't introduce 'real' algebraic loops for delayed transitions since if-conditions "exclude" the paths that would lead to algebraic loops during execution;
+     however, it requires sophisticated analysis for a tool to statically deduce that fact)
+  */
+  cRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
+  cImmediateRefs := arrayCreate(nTransitions, ComponentReference.makeDummyCref());
+  cVars := arrayCreate(nTransitions, defaultBoolVar);
+  cImmediateVars := arrayCreate(nTransitions, defaultBoolVar);
+  i := 0;
+  for exp in cExps loop
+    i := i+1;
+    cRefs := arrayUpdate(cRefs, i, qCref("c", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    cImmediateRefs := arrayUpdate(cImmediateRefs, i, qCref("cImmediate", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    cVars := arrayUpdate(cVars, i, createVarWithDefaults(arrayGet(cRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
+    cImmediateVars := arrayUpdate(cImmediateVars, i, createVarWithDefaults(arrayGet(cImmediateRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
+    // TODO Binding probably needs to be turned into a proper equation. Done below
+    // cVars := arrayUpdate(cVars, i, BackendVariable.setBindExp(arrayGet(cVars,i), SOME(exp)));
+    vars := arrayGet(cVars, i) :: vars;
+    vars := arrayGet(cImmediateVars, i) :: vars;
+  end for;
+  //input Boolean active "true if the state machine is active";
+  activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
+  activeVar := createVarWithDefaults(activeRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  vars := activeVar :: vars;
+  //input Boolean reset "true when the state machine should be reset";
+  resetRef := qCref("reset", DAE.T_BOOL_DEFAULT, {}, preRef);
+  resetVar := createVarWithDefaults(resetRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  vars := resetVar :: vars;
+  //Integer selectedState
+  selectedStateRef := qCref("selectedState", DAE.T_INTEGER_DEFAULT, {}, preRef);
+  selectedStateVar := createVarWithDefaults(selectedStateRef, BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
+  vars := selectedStateVar :: vars;
+  //Boolean selectedReset
+  selectedResetRef := qCref("selectedReset", DAE.T_BOOL_DEFAULT, {}, preRef);
+  selectedResetVar := createVarWithDefaults(selectedResetRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  vars := selectedResetVar :: vars;
+  // Integer fired
+  firedRef := qCref("fired", DAE.T_INTEGER_DEFAULT, {}, preRef);
+  firedVar := createVarWithDefaults(firedRef, BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
+  vars := firedVar :: vars;
+  // output Integer activeState
+  activeStateRef := qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, preRef);
+  activeStateVar := createVarWithDefaults(activeStateRef, BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
+  vars := activeStateVar :: vars;
+  // output Boolean activeReset
+  activeResetRef := qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef);
+  activeResetVar := createVarWithDefaults(activeResetRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  vars := activeResetVar :: vars;
+  // Integer nextState
+  nextStateRef := qCref("nextState", DAE.T_INTEGER_DEFAULT, {}, preRef);
+  nextStateVar := createVarWithDefaults(nextStateRef, BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
+  vars := nextStateVar :: vars;
+  // Boolean nextReset
+  nextResetRef := qCref("nextReset", DAE.T_BOOL_DEFAULT, {}, preRef);
+  nextResetVar := createVarWithDefaults(nextResetRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  vars := nextResetVar :: vars;
+  //output Boolean activeResetStates[nStates]
+  activeResetStatesRefs := arrayCreate(nStates, ComponentReference.makeDummyCref());
+  activeResetStatesVars := arrayCreate(nStates, defaultBoolVar);
+  for i in 1:nStates loop
+    activeResetStatesRefs := arrayUpdate(activeResetStatesRefs, i, qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    activeResetStatesVars := arrayUpdate(activeResetStatesVars, i, createVarWithDefaults(arrayGet(activeResetStatesRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
+    vars := arrayGet(activeResetStatesVars, i) :: vars;
+  end for;
+  // Boolean nextResetStates[nStates]
+  nextResetStatesRefs := arrayCreate(nStates, ComponentReference.makeDummyCref());
+  nextResetStatesVars := arrayCreate(nStates, defaultBoolVar);
+  for i in 1:nStates loop
+    nextResetStatesRefs := arrayUpdate(nextResetStatesRefs, i, qCref("nextResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    nextResetStatesVars := arrayUpdate(nextResetStatesVars, i, createVarWithDefaults(arrayGet(nextResetStatesRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
+    vars := arrayGet(nextResetStatesVars, i) :: vars;
+  end for;
+  // Boolean finalStates[nStates]
+  finalStatesRefs := arrayCreate(nStates, ComponentReference.makeDummyCref());
+  finalStatesVars := arrayCreate(nStates, defaultBoolVar);
+  for i in 1:nStates loop
+    finalStatesRefs := arrayUpdate(finalStatesRefs, i, qCref("finalStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
+    finalStatesVars := arrayUpdate(finalStatesVars, i, createVarWithDefaults(arrayGet(finalStatesRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
+    vars := arrayGet(finalStatesVars, i) :: vars;
+  end for;
+  // Boolean stateMachineInFinalState
+  stateMachineInFinalStateRef := qCref("stateMachineInFinalState", DAE.T_BOOL_DEFAULT, {}, preRef);
+  stateMachineInFinalStateVar := createVarWithDefaults(stateMachineInFinalStateRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  vars := stateMachineInFinalStateVar :: vars;
+
+  // ***** Create new governing equations *****
+  eqs := {};
+  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
+
+  //input Boolean c[size(t,1)] "Transition conditions sorted in priority";
+  // Delayed transitions are realized by "c[i] = previous(cImmediate[i])"
+  i := 0;
+  for cExp in cExps loop
+    i := i+1;
+    exp := DAE.CREF(arrayGet(cImmediateRefs,i), DAE.T_BOOL_DEFAULT);
+    eqs := BackendDAE.EQUATION(exp, cExp, DAE.emptyElementSource, bindingKind) :: eqs;
+    exp1 := DAE.CREF(arrayGet(cRefs,i), DAE.T_BOOL_DEFAULT);
+    BackendDAE.VAR(bindExp=bindExp) := arrayGet(tImmediateVars,i);
+    // Check whether it is an immediate or an delayed transition
+    rhs := if Util.applyOptionOrDefault(bindExp, function Expression.expEqual(inExp1=DAE.BCONST(true)), false) then
+      // immediate transition
+      exp else
+      // delayed transition
+      DAE.CALL(Absyn.IDENT("previous"), {exp}, DAE.callAttrBuiltinImpureBool);
+    eqs := BackendDAE.EQUATION(exp1, rhs, DAE.emptyElementSource, bindingKind) :: eqs;
+  end for;
+
+  // Integer selectedState = if reset then 1 else previous(nextState);
+  exp := DAE.CREF(selectedStateRef, DAE.T_INTEGER_DEFAULT);
+  expCond := DAE.CREF(resetRef, DAE.T_BOOL_DEFAULT);
+  expThen := DAE.ICONST(1);
+  expElse := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(nextStateRef, DAE.T_INTEGER_DEFAULT)}, DAE.callAttrBuiltinImpureInteger);
+  rhs := DAE.IFEXP(expCond, expThen, expElse);
+  selectedStateEqn := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind);
+  eqs := selectedStateEqn :: eqs;
+
+  // Boolean selectedReset = if reset then true else previous(nextReset);
+  exp := DAE.CREF(selectedResetRef, DAE.T_BOOL_DEFAULT);
+  expCond := DAE.CREF(resetRef, DAE.T_BOOL_DEFAULT);
+  expThen := DAE.BCONST(true);
+  expElse := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(nextResetRef, DAE.T_BOOL_DEFAULT)}, DAE.callAttrBuiltinImpureBool);
+  rhs := DAE.IFEXP(expCond, expThen, expElse);
+  selectedResetEqn := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind);
+  eqs := selectedResetEqn :: eqs;
+
+  /*  Following semantic activation equations are specified in MLS 17.3.4:
+        Integer delayed= max(if (if not t[i].immediate and t[i].from == nextState then c[i] else false) then i else 0 for i in 1:size(t,1));
+        Integer immediate = max(if (if t[i].immediate and t[i].from == selectedState then c[i] else false) then i else 0 for i in 1:size(t,1));
+        Integer fired = max(previous(delayed), immediate);
+      This implementation doesn't implement them directly.
+      Recall that delayed transitions have been previously modeled as c[i] = previous(cImmediate[i]), so that the firing conditions is simplified to:
+        Integer fired = max(if (if t[i].from == selectedState then c[i] else false) then i else 0 for i in 1: size(t ,1)); */
+  exp := DAE.CREF(firedRef, DAE.T_INTEGER_DEFAULT);
+  expLst := {};
+  for i in 1:nTransitions loop
+    // t[i].from == selectedState:
+    expCond := DAE.RELATION(DAE.CREF(arrayGet(tFromRefs,i), DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.CREF(selectedStateRef, DAE.T_INTEGER_DEFAULT),-1, NONE());
+    expThen := DAE.CREF(arrayGet(cRefs,i), DAE.T_BOOL_DEFAULT);
+    expElse := DAE.BCONST(false);
+    // if (t[i].from == selectedState) then (c[i]) else (false)
+    expIf := DAE.IFEXP(expCond, expThen, expElse);
+    // if (if t[i].from == selectedState then c[i] else false) then i else 0
+    expLst := DAE.IFEXP(expIf, DAE.ICONST(i), DAE.ICONST(0)) :: expLst;
+  end for;
+  rhs := DAE.CALL(Absyn.IDENT("max"), expLst, DAE.callAttrBuiltinInteger);
+  firedEqn := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind);
+  eqs := firedEqn :: eqs;
+
+  // output Integer activeState = if reset then 1 elseif fired > 0 then t[fired].to else selectedState;
+  exp := DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT);
+  expCond := DAE.CREF(resetRef, DAE.T_BOOL_DEFAULT);
+  expThen := DAE.ICONST(1);
+  // fired > 0:
+  exp1 := DAE.RELATION(DAE.CREF(firedRef, DAE.T_INTEGER_DEFAULT), DAE.GREATER(DAE.T_INTEGER_DEFAULT), DAE.ICONST(0), -1, NONE());
+  // t[fired].to:
+  exp2 := DAE.CREF(qCref("tTo", tArrayInteger, {DAE.INDEX(DAE.CREF(firedRef,DAE.T_INTEGER_DEFAULT))}, preRef), DAE.T_INTEGER_DEFAULT);
+  // elsif fired > 0 then t[fired].to else selectedState:
+  expElse := DAE.IFEXP(exp1, exp2, DAE.CREF(selectedStateRef, DAE.T_INTEGER_DEFAULT));
+  rhs := DAE.IFEXP(expCond, expThen, expElse);
+  activeStateEqn := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind);
+  eqs := activeStateEqn :: eqs;
+
+  // output Boolean activeReset = if reset then true elseif fired > 0 then t[fired].reset else selectedReset;
+  exp := DAE.CREF(activeResetRef, DAE.T_BOOL_DEFAULT);
+  expCond := DAE.CREF(resetRef, DAE.T_BOOL_DEFAULT);
+  expThen := DAE.BCONST(true);
+  // fired > 0:
+  exp1 := DAE.RELATION(DAE.CREF(firedRef, DAE.T_INTEGER_DEFAULT), DAE.GREATER(DAE.T_INTEGER_DEFAULT), DAE.ICONST(0), -1, NONE());
+  // t[fired].reset:
+  exp2 := DAE.CREF(qCref("tReset", tArrayBool, {DAE.INDEX(DAE.CREF(firedRef,DAE.T_INTEGER_DEFAULT))}, preRef), DAE.T_INTEGER_DEFAULT);
+  // elseif fired > 0 then t[fired].reset else selectedReset:
+  expElse := DAE.IFEXP(exp1, exp2, DAE.CREF(selectedResetRef, DAE.T_BOOL_DEFAULT));
+  rhs := DAE.IFEXP(expCond, expThen, expElse);
+  activeResetEqn := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind);
+  eqs := activeResetEqn :: eqs;
+
+  // Integer nextState = if active then activeState else previous(nextState);
+  exp := DAE.CREF(nextStateRef, DAE.T_INTEGER_DEFAULT);
+  expCond := DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT);
+  expThen := DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT);
+  expElse := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(nextStateRef, DAE.T_INTEGER_DEFAULT)}, DAE.callAttrBuiltinImpureInteger);
+  rhs := DAE.IFEXP(expCond, expThen, expElse);
+  nextStateEqn := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind);
+  eqs := nextStateEqn :: eqs;
+
+  // Boolean nextReset = if active then false else previous(nextReset);
+  exp := DAE.CREF(nextResetRef, DAE.T_BOOL_DEFAULT);
+  expCond := DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT);
+  expThen := DAE.BCONST(false);
+  expElse := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(nextResetRef, DAE.T_BOOL_DEFAULT)}, DAE.callAttrBuiltinImpureBool);
+  rhs := DAE.IFEXP(expCond, expThen, expElse);
+  nextResetEqn := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind);
+  eqs := nextResetEqn :: eqs;
+
+  // output Boolean activeResetStates[nStates] = {if reset then true else previous(nextResetStates[i]) for i in 1:nStates};
+  for i in 1:nStates loop
+    exp := DAE.CREF(arrayGet(activeResetStatesRefs,i), DAE.T_BOOL_DEFAULT);
+    expCond := DAE.CREF(resetRef, DAE.T_BOOL_DEFAULT);
+    expThen := DAE.BCONST(true);
+    expElse := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(arrayGet(nextResetStatesRefs,i), DAE.T_BOOL_DEFAULT)}, DAE.callAttrBuiltinImpureBool);
+    rhs := DAE.IFEXP(expCond, expThen, expElse);
+    eqs := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind) :: eqs;
+  end for;
+
+  // Boolean nextResetStates[nStates] = if active then {if selectedState == i then false else activeResetStates[i] for i in 1:nStates} else previous(nextResetStates);
+  for i in 1:nStates loop
+    exp := DAE.CREF(arrayGet(nextResetStatesRefs,i), DAE.T_BOOL_DEFAULT);
+    expCond := DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT);
+    // selectedState == i:
+    exp1 := DAE.RELATION(DAE.CREF(selectedStateRef, DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+    /*===== specification semantics (probably wrong!): ===== */
+    // if (selectedState == i) then false else activeResetStates[i]
+    expThen := DAE.IFEXP(exp1, DAE.BCONST(false), DAE.CREF(arrayGet(activeResetStatesRefs,i), DAE.T_BOOL_DEFAULT));
+    /*===== ??FIXED?? semantics: ===== */
+    // if (selectedState == i) then false else activeReset
+    //expThen := DAE.IFEXP(exp1, DAE.BCONST(false), DAE.CREF(activeResetRef, DAE.T_BOOL_DEFAULT));
+
+    // previous(nextResetStates[i])
+    expElse := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(arrayGet(nextResetStatesRefs,i), DAE.T_BOOL_DEFAULT)}, DAE.callAttrBuiltinImpureBool);
+    // if active then (if selectedState == i then false else activeResetStates[i]) else previous(nextResetStates[i])
+    rhs := DAE.IFEXP(expCond, expThen, expElse);
+    // Ignore:
+    //rhs := DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT), DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(arrayGet(nextResetStatesRefs,i), DAE.T_BOOL_DEFAULT)}, DAE.callAttrBuiltinImpureBool));
+    eqs := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind) :: eqs;
+  end for;
+
+  // Boolean finalStates[nStates] = {max(if t[j].from == i then 1 else 0 for j in 1:size(t,1)) == 0 for i in 1:nStates};
+  for i in 1:nStates loop
+    exp := DAE.CREF(arrayGet(finalStatesRefs,i), DAE.T_BOOL_DEFAULT);
+    expLst := {};
+    for j in 1:nTransitions loop
+      // t[j].from == i:
+      expCond := DAE.RELATION(DAE.CREF(arrayGet(tFromRefs,j), DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+      // if t[j].from == i then 1 else 0:
+      expLst := DAE.IFEXP(expCond, DAE.ICONST(1), DAE.ICONST(0)) :: expLst;
+    end for;
+    // max(if t[j].from == i then 1 else 0 for j in 1:size(t,1))
+    exp1 := DAE.CALL(Absyn.IDENT("max"), expLst, DAE.callAttrBuiltinInteger);
+    // max(if t[j].from == i then 1 else 0 for j in 1:size(t,1)) == 0
+    rhs := DAE.RELATION(exp1, DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(0),-1, NONE());
+    eqs := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind) :: eqs;
+  end for;
+
+  // Boolean stateMachineInFinalState = finalStates[activeState];
+  exp := DAE.CREF(stateMachineInFinalStateRef, DAE.T_BOOL_DEFAULT);
+  rhs := DAE.CREF(qCref("finalStates", tArrayBool, {DAE.INDEX(DAE.CREF(activeStateRef,DAE.T_INTEGER_DEFAULT))}, preRef), DAE.T_BOOL_DEFAULT);
+  eqs := BackendDAE.EQUATION(exp, rhs, DAE.emptyElementSource, bindingKind) :: eqs;
+
+  flatAOut := FLAT_AUTOMATON(initialState, states, SMS(q, t, cExps, vars, knowns, eqs));
+end addSMSemantics;
+
+protected function qCref "
+Author: BTH
+Helper function to addSMSemantics"
+  input DAE.Ident ident;
+  input DAE.Type identType "type of the identifier, without considering the subscripts";
+  input list<DAE.Subscript> subscriptLst;
+  input DAE.ComponentRef componentRef;
+  output DAE.ComponentRef outQual;
+algorithm
+  outQual := ComponentReference.joinCrefs(componentRef,DAE.CREF_IDENT(ident,identType,subscriptLst));
+end qCref;
+
+
+public function dumpTransitionStr "
+Author: BTH
+Dump transition to string."
+  input Transition transition;
+  output String transitionStr;
+protected
+  Integer from;
+  Integer to;
+  Boolean immediate;
+  Boolean reset;
+  Boolean synchronize;
+  Integer priority;
+algorithm
+  TRANSITION(from, to, immediate, reset, synchronize, priority) := transition;
+  transitionStr := "TRANSITION(from="+intString(from)+", to="+intString(to)+
+    ", immediate="+boolString(immediate)+", reset+"+boolString(reset)+
+    ", synchronize="+boolString(synchronize)+", priority="+intString(priority)+")";
+end dumpTransitionStr;
+
+protected function createTandC "
+Author: BTH"
+  input list<DAE.ComponentRef> q;
+  input ModeTable modes;
+  output list<Transition> t;
+  output list<DAE.Exp> c;
+protected
+  DAE.ComponentRef cref, cFrom, cTo;
+  Boolean bImmediate, bReset, bSynchronize;
+  Integer iPriority, iFrom, iTo;
+  BackendDAE.EquationArray outgoing "outgoing transitions";
+  list<BackendDAE.Equation> eqsLst;
+  BackendDAE.Equation eqs;
+  Mode mode;
+  DAE.Exp from, to, condition, immediate, reset, synchronize, priority;
+  list<tuple<Transition, DAE.Exp>> tc, tcSorted;
+algorithm
+  tc := {};
+  for cref in q loop
+    mode := BaseHashTable.get(cref, modes);
+    MODE(outgoing=outgoing) := mode;
+    eqsLst := BackendEquation.equationList(outgoing);
+
+    for eqs in eqsLst loop
+	    BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(
+	      statementLst = {
+	        DAE.STMT_NORETCALL(
+	          exp = DAE.CALL(
+	            path = Absyn.IDENT(name = "transition"),
+	            expLst = {from, to, condition, immediate, reset, synchronize, priority}
+	          )
+	        )
+	      }
+	    )) := eqs;
+	    DAE.CREF(componentRef=cFrom) := from;
+	    DAE.CREF(componentRef=cTo) := to;
+	    DAE.BCONST(bool=bImmediate) := immediate;
+	    DAE.BCONST(bool=bReset) := reset;
+	    DAE.BCONST(bool=bSynchronize) := synchronize;
+	    DAE.ICONST(integer=iPriority) := priority;
+	    iFrom := List.position(cFrom, q);
+	    iTo := List.position(cTo, q);
+	    tc := (TRANSITION(iFrom, iTo, bImmediate, bReset, bSynchronize, iPriority), condition) :: tc;
+    end for;
+  end for;
+  tcSorted := List.sort(tc, priorityLt);
+  (t, c) := List.unzip(tcSorted);
+end createTandC;
+
+protected function priorityLt "
+Author: BTH
+Helper function to sort transitions and corresponding transition condition according to the priority of the transition."
+  input tuple<Transition, DAE.Exp> in1;
+  input tuple<Transition, DAE.Exp> in2;
+  output Boolean inRes;
+protected
+  Integer priority1, priority2;
+algorithm
+  (TRANSITION(priority=priority1),_) := in1;
+  (TRANSITION(priority=priority2),_) := in2;
+  inRes := intLt(priority1, priority2);
+end priorityLt;
+
+
+protected function createVarWithDefaults "
+Author: BTH
+Create a BackendDAE.Var with some defaults"
+  input DAE.ComponentRef cref;
+  input BackendDAE.VarKind varKind;
+  input BackendDAE.Type varType;
+  output BackendDAE.Var var;
+algorithm
+  var := BackendDAE.VAR(cref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), varType, NONE(), NONE(), {},
+    DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+end createVarWithDefaults;
+
+public function emptySMS "
+Author: BTH
+Create empty SMS record."
+  output SMSemantics sms;
+algorithm
+  sms := SMS({},{},{},{},{},{});
+end emptySMS;
+
 protected function annotateModes "
 Author: BTH
-Collect mode relevant information, e.g., equations declared in that mode.
-Tbd."
+Collect mode relevant information, e.g., equations declared in that mode."
   input ModeTable modesIn;
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
@@ -210,6 +1453,7 @@ Tbd."
   output BackendDAE.Shared outShared;
 protected
   BackendDAE.EquationArray orderedEqsNew, removedEqsNew;
+  array<Option<BackendDAE.Var>> varOptArr;
   // Fields EQSYSTEM:
   BackendDAE.Variables orderedVars;
   BackendDAE.EquationArray orderedEqs;
@@ -250,26 +1494,126 @@ algorithm
   (removedEquOptArr, modesOut) := Array.mapNoCopy_1(removedEquOptArr, annotateMode, modesOut);
 
   // New equation arrays (equations assigned to modes are replaced by NONE())
+  orderedSize := Array.fold(orderedEquOptArr, incIfSome, 0); // FIXME: Correct to assume that any non-NONE equation has to be counted?
+  orderedNumberOfElement := orderedSize; // FIXME: Correct to assume that orderedNumberOfElement = orderedSize?
   orderedEqsNew := BackendDAE.EQUATION_ARRAY(orderedSize, orderedNumberOfElement, orderedArrSize, orderedEquOptArr);
   removedEqsNew := BackendDAE.EQUATION_ARRAY(removedSize, removedNumberOfElement, removedArrSize, removedEquOptArr);
+
+  BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)) := orderedVars;
+  // add outer output variables to modes that declared them
+  (_, modesOut) := Array.mapNoCopy_1(varOptArr, annotateModeOutShared, modesOut);
+  // add output variables and (non-input) local variables to modes that declared them
+  (_, modesOut) := Array.mapNoCopy_1(varOptArr, annotateModeOutLocal, modesOut);
 
   // A lot of code bloat just for updating fields "orderedEqs" and "removedEqs" in "EQSYSTEM" and "SHARED" ...
   outSyst := BackendDAE.EQSYSTEM(orderedVars, orderedEqsNew, m, mT, matching, stateSets, partitionKind);
   outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars, initialEqs, removedEqsNew, constraints,
     classAttrs, cache, graph, functionTree, eventInfo, extObjClasses,backendDAEType, symjacs, info);
 
-  // TODO Could use new features https://trac.openmodelica.org/OpenModelica/changeset/23138 for updating...
-  // What syntax would be even nicer to fight the code bloat?
-  //outShared := inShared(removedEqs=removedEqsNew);
-  //outShared := BackendDAE.SHARED(removedEqs=removedEqsNew) <- inShared
-  //outShared := inShared -> BackendDAE.SHARED(removedEqs=removedEqsNew)
-  //outShared := inShared /. BackendDAE.SHARED(removedEqs=removedEqsNew)
 end annotateModes;
 
-function annotateMode "
+protected function incIfSome
+  input Option<BackendDAE.Equation> optEq;
+  input Integer seed;
+  output Integer yield;
+algorithm
+  yield := seed + (if isSome(optEq) then 1 else 0);
+end incIfSome;
+
+protected function annotateModeOutLocal "
+Author: BTH
+Collect output variables and (non-input) local variables."
+  input tuple<Option<BackendDAE.Var>, ModeTable> inVarModeTable;
+  output tuple<Option<BackendDAE.Var>, ModeTable> outVarModeTable;
+protected
+  BackendDAE.Var var;
+  ModeTable mt;
+  Mode mode;
+  DAE.ComponentRef cref;
+  DAE.ElementSource source "origin of variable";
+algorithm
+  try
+    (SOME(var), mt) := inVarModeTable;
+
+    // Check that we are neither having an "outer output" nor an "input"
+    _ := match var
+      case BackendDAE.VAR(varDirection=DAE.OUTPUT(), innerOuter = DAE.OUTER()) then fail();
+      case BackendDAE.VAR(varDirection=DAE.INPUT()) then fail();
+      else then ();
+    end match;
+
+    BackendDAE.VAR(source=source) := var;
+    DAE.SOURCE(instanceOpt=SOME(cref)) := source;
+    mode := BaseHashTable.get(cref, mt);
+    mode := match mode
+      case MODE()
+        equation
+          mode.outLocal = var :: mode.outLocal;
+      then mode;
+    end match;
+    mt := BaseHashTable.update((cref, mode), mt);
+    outVarModeTable := (SOME(var), mt);
+  else
+    outVarModeTable := inVarModeTable;
+  end try;
+end annotateModeOutLocal;
+
+
+
+protected function annotateModeOutShared "
+Author: BTH
+Collect outer output variables in the mode/state to that they correspond."
+  input tuple<Option<BackendDAE.Var>, ModeTable> inVarModeTable;
+  output tuple<Option<BackendDAE.Var>, ModeTable> outVarModeTable;
+protected
+  BackendDAE.Var var;
+  ModeTable mt;
+  Mode mode;
+  DAE.ComponentRef cref;
+  // BackendDAE.Var
+  DAE.ComponentRef varName "variable name";
+  BackendDAE.VarKind varKind "Kind of variable";
+  DAE.VarDirection varDirection "input, output or bidirectional";
+  DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
+  BackendDAE.Type varType "built-in type or enumeration";
+  Option<DAE.Exp> bindExp "Binding expression e.g. for parameters";
+  Option<Values.Value> bindValue "binding value for parameters";
+  DAE.InstDims arryDim "array dimensions of non-expanded var";
+  DAE.ElementSource source "origin of variable";
+  Option<DAE.VariableAttributes> values "values on built-in attributes";
+  Option<BackendDAE.TearingSelect> tearingSelectOption "value for TearingSelect";
+  Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
+  DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
+  DAE.VarInnerOuter io;
+algorithm
+  try
+    (SOME(var), mt) := inVarModeTable;
+    BackendDAE.VAR(varName, varKind, DAE.OUTPUT(), varParallelism, varType, bindExp,
+      bindValue, arryDim, source, values, tearingSelectOption, comment, connectorType, DAE.OUTER()) := var;
+
+    DAE.SOURCE(instanceOpt=SOME(cref)) := source;
+    mode := BaseHashTable.get(cref, mt);
+    mode := match mode
+      case MODE()
+        equation
+          mode.outShared = var :: mode.outShared;
+      then mode;
+    end match;
+    mt := BaseHashTable.update((cref, mode), mt);
+    outVarModeTable := (SOME(var), mt);
+  else
+    outVarModeTable := inVarModeTable;
+  end try;
+end annotateModeOutShared;
+
+protected function annotateMode "
 Author: BTH
 Helper function to annotateModes
-Tbd"
+- Move equation to corresponding mode
+  - Collect variables 'x' that appear as 'previous(x)' in field 'crefPrevious'
+- Remove initialState(..) statement
+- Move transition statements to the mode there it is the outgoing transition (field outgoing)
+"
   input tuple<Option<BackendDAE.Equation>, ModeTable> inEqModeTable;
   output tuple<Option<BackendDAE.Equation>, ModeTable> outEqModeTable;
 protected
@@ -317,7 +1661,7 @@ algorithm
         ))
       )) guard (name == "transition" or name == "initialState")
       equation
-        transition = if (name == "transition") then (cref, TRANSITION()) else (cref, INITIAL_STATE());
+        transition = if (name == "transition") then (cref, T_TRANSITION()) else (cref, T_INITIAL_STATE());
       then
         SOME(transition);
     else NONE();
@@ -355,24 +1699,28 @@ algorithm
       Boolean isInitial;
       HashSet.HashSet edges;
       BackendDAE.EquationArray eqs, outgoing;
+      list<BackendDAE.Var> os, ol;
+      list<DAE.ComponentRef> ps;
       //Option<tuple<DAE.ComponentRef,TransitionType>> transOpt;
 
-    // Move equation to "parent" mode/state instance
-    case (SOME(MODE(name,isInitial,edges,eqs,outgoing)), SOME(cref), NONE(), SOME(eq))
+    // Move equation to "parent" mode/state instance and
+    // search for "x" that occur as "previous(x)" in rhs of equation
+    case (SOME(MODE(name,isInitial,edges,eqs,outgoing,os,ol,ps)), SOME(cref), NONE(), SOME(eq))
       equation
         eqs = BackendEquation.addEquation(eq, eqs);
-        modeTableNew = BaseHashTable.update((cref, MODE(name,isInitial,edges,eqs,outgoing)), modeTable);
+        ps = listAppend(ps, equationsPreviousCrefs({eq}));
+        modeTableNew = BaseHashTable.update((cref, MODE(name,isInitial,edges,eqs,outgoing,os,ol,ps)), modeTable);
       then (NONE(), modeTableNew);
 
     // Move transtion(..) statement to mode/state where it is the outgoing transition
-    case (SOME(MODE(name,isInitial,edges,eqs,outgoing)), SOME(cref), SOME((_,TRANSITION())), SOME(eq))
+    case (SOME(MODE(name,isInitial,edges,eqs,outgoing,os,ol,ps)), SOME(cref), SOME((_,T_TRANSITION())), SOME(eq))
       equation
         outgoing = BackendEquation.addEquation(eq, outgoing);
-        modeTableNew = BaseHashTable.update((cref, MODE(name,isInitial,edges,eqs,outgoing)), modeTable);
+        modeTableNew = BaseHashTable.update((cref, MODE(name,isInitial,edges,eqs,outgoing,os,ol,ps)), modeTable);
       then (NONE(), modeTableNew);
 
     // Remove initialState(..) statement
-    case (SOME(MODE()), _, SOME((_,INITIAL_STATE())), SOME(_))
+    case (SOME(MODE()), _, SOME((_,T_INITIAL_STATE())), SOME(_))
       then (NONE(), modeTable);
 
     // return structures without any modifications
@@ -381,56 +1729,233 @@ algorithm
 
 end annotateMode;
 
-
-
-protected function dumpCompositionStr "
+public function equationsPreviousCrefs "
 Author: BTH
-"
-  input Composition composition;
-  output String str;
+From a list of equations return all component references x that occur as previous(x)."
+  input list<BackendDAE.Equation> inEquationLst;
+  output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
-  str := match (composition)
+  (_, (_,outExpComponentRefLst)) := BackendEquation.traverseExpsOfEquationList(inEquationLst, Expression.traverseSubexpressionsHelper, (traversingPreviousCRefFinder, {}));
+end equationsPreviousCrefs;
+
+public function traversingPreviousCRefFinder "
+Author: BTH
+Exp traverser that matches on previous(x) and returns a list of a union of all componentRefs x."
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inCrefs;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> crefs;
+algorithm
+  (outExp,crefs) := match (inExp,inCrefs)
     local
-      DAE.ComponentRef cref;
-      list<Composition> cs;
-      Composition c;
-      String s;
-      list<String> ss;
-    case COMPOSITION(refined=cref, refining={})
-      then ComponentReference.printComponentRefStr(cref);
-    case COMPOSITION(refined=cref, refining=cs)
+      DAE.ComponentRef cr;
+    case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(componentRef=cr)}, _), crefs)
       equation
-        s = ComponentReference.printComponentRefStr(cref) + "(";
-        ss = List.map(cs, dumpCompositionStr);
-      then s + stringDelimitList(ss, ", ") + ")";
-    end match;
-end dumpCompositionStr;
+        crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+      then (inExp,crefs);
+    else (inExp,inCrefs);
+  end match;
+end traversingPreviousCRefFinder;
+
+protected function elaborateMode "
+Author: BTH
+Replace all outer variables by their corresponding inner variables and remove the outer variables declarations"
+  input tuple<DAE.ComponentRef,Mode> inCrefMode;
+  input tuple<ModeTable,BackendDAE.EqSystem> inModesSyst;
+  output tuple<ModeTable,BackendDAE.EqSystem>  outModesSyst;
+protected
+  ModeTable modes;
+  BackendDAE.EqSystem syst;
+  list<DAE.ComponentRef> outLastCrefs, outStrippedCrefs, innerCrefs;
+  list<DAE.Exp> rhsExps;
+  Option<BackendDAE.Equation> optEqn;
+  DAE.ComponentRef outCref, keyCref;
+  Option<DAE.ComponentRef> innerOptCref;
+  Boolean success, isInnerOuter;
+  Mode mode;
+  list<BackendDAE.Var> outSharedNew, varLst;
+  BackendDAE.Var innerVar;
+  // MODE
+  String name;
+  Boolean isInitial;
+  HashSet.HashSet edges "relations to other modes due to in- and out-going transitions";
+  BackendDAE.EquationArray eqs "equations defined in the mode instance";
+  BackendDAE.EquationArray outgoing "outgoing transitions";
+  list<BackendDAE.Var> outShared "outer output variables of state";
+  list<BackendDAE.Var> outLocal "output variables and (non-input) local variables of state";
+  list<DAE.ComponentRef> crefPrevious "crefs for which a rhs 'previous(cref)' exists in state";
+  // EQUATION_ARRAY
+  Integer size "size of the Equations in scalar form";
+  Integer numberOfElement "no. elements";
+  Integer arrSize "array size";
+  array<Option<BackendDAE.Equation>> equOptArr;
+  DAE.VarInnerOuter io1, io2;
+  // EQSYSTEM
+  BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+  BackendDAE.EquationArray orderedEqs "ordered Equations";
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets "the statesets of the system";
+  BackendDAE.BaseClockPartitionKind partitionKind;
+algorithm
+  (modes,syst) := inModesSyst;
+  (keyCref,mode) := inCrefMode;
+  MODE(name,isInitial,edges,eqs,outgoing,outShared,outLocal,crefPrevious) := mode;
+  BackendDAE.EQUATION_ARRAY(size,numberOfElement,arrSize,equOptArr) := eqs;
+  BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind) := syst;
+  outSharedNew := {};
+
+  for outVar in outShared loop
+    success := false;
+    outCref := BackendVariable.varCref(outVar);
+    for i in 1:arrayLength(equOptArr) loop
+      optEqn := arrayGet(equOptArr,i);
+
+      // Try if this equation relates the "outer" variable to the corresponding "inner" variable
+      innerOptCref := getOptInner(optEqn,outCref);
+
+      if isSome(innerOptCref) then
+        // Remove the equation relating inner and outer
+        arrayUpdate(equOptArr,i,NONE());
+        size := size - 1;
+        //numberOfElement := numberOfElement - 1;
+        eqs := BackendDAE.EQUATION_ARRAY(size,numberOfElement,arrSize,equOptArr);
+        // replace all outer crefs by their corresponding inner cref
+        (eqs,_) := BackendEquation.traverseEquationArray_WithUpdate(eqs,subsOuterByInnerEq,(outCref,Util.getOption(innerOptCref)));
+        // update outSharedNew and use that later to construct MODE
+        ({innerVar},_) := BackendVariable.getVar(Util.getOption(innerOptCref),orderedVars);
+        outSharedNew := innerVar :: outSharedNew;
+        // replace possible outer crefs in "crefPrevious" by their corresponding inner
+        crefPrevious := List.replaceOnTrue(Util.getOption(innerOptCref),crefPrevious,function ComponentReference.crefEqual(inComponentRef1=outCref));
+
+        // Remove variable from BackendDAE variables (the corresponding element in the variable array is set to NONE())
+        orderedVars := BackendVariable.removeCref(outCref,orderedVars);
+        success := true;
+        break;
+      end if;
+    end for;
+
+    assert(success, "Expect to find inner variable corresponding to outer variable "+ComponentReference.crefStr(outCref));
+  end for;
+
+  // Rebuild "orderedVars" in order to eliminate intermediate "NONE()" entries in variable array.
+  // "BackendVariable.removeCref" only sets the corresponding entry to NONE() which is not sufficient
+  // FIXME: This seems to be a rather poor way to do it. Maybe there is a better way to "really" remove a variable.
+  varLst := BackendVariable.varList(orderedVars);
+  orderedVars := BackendVariable.listVar(varLst);
+
+  mode := MODE(name,isInitial,edges,eqs,outgoing,listReverse(outSharedNew),outLocal,crefPrevious);
+  modes := BaseHashTable.update((keyCref, mode), modes);
+  syst := BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets,partitionKind);
+  outModesSyst := (modes,syst);
+end elaborateMode;
+
+protected function subsOuterByInnerEq "
+Author: BTH
+Substitute outer variables in equation by corresponding 'inner'.
+Helper function to elaborateMode"
+  input BackendDAE.Equation inEq;
+  input tuple<DAE.ComponentRef,DAE.ComponentRef> inOuterInner "<outer variable, inner variable>";
+  output BackendDAE.Equation outEq;
+  output tuple<DAE.ComponentRef,DAE.ComponentRef> outOuterInner;
+algorithm
+  (outEq,outOuterInner) := BackendEquation.traverseExpsOfEquation(inEq,subsOuterByInnerExp,inOuterInner);
+end subsOuterByInnerEq;
+
+protected function subsOuterByInnerExp "
+Author: BTH
+Substitute outer variables in expression by corresponding 'inner'.
+Helper function to subsOuterByInnerEq"
+  input DAE.Exp inExp;
+  input tuple<DAE.ComponentRef,DAE.ComponentRef> inOuterInner "<outer variable, inner variable>";
+  output DAE.Exp outExp;
+  output tuple<DAE.ComponentRef,DAE.ComponentRef> outOuterInner;
+algorithm
+  (outExp, outOuterInner) := Expression.traverseExp(inExp, subsOuterByInner, inOuterInner);
+end subsOuterByInnerExp;
+
+protected function subsOuterByInner "
+Author: BTH
+Helper function to subsOuterByInnerExp"
+  input DAE.Exp inExp;
+  input tuple<DAE.ComponentRef,DAE.ComponentRef> inOuterInner "<outer variable, inner variable>";
+  output DAE.Exp outExp;
+  output tuple<DAE.ComponentRef,DAE.ComponentRef> outOuterInner;
+algorithm
+  (outExp,outOuterInner) := match (inExp,inOuterInner)
+    local
+      DAE.ComponentRef outerCref, innerCref;
+      DAE.ComponentRef componentRef;
+      DAE.Type ty;
+    case (DAE.CREF(componentRef,ty),(outerCref,innerCref)) guard ComponentReference.crefEqual(componentRef,outerCref)
+      then (DAE.CREF(innerCref,ty),inOuterInner);
+    else (inExp,inOuterInner);
+  end match;
+end subsOuterByInner;
+
+
+protected function getOptInner "
+Author: BTH
+Check if equation relates the 'outer' with the corresponding 'inner'
+and optionally return the 'inner'
+Helper function for elaborateMode"
+  input Option<BackendDAE.Equation> inEq;
+  input DAE.ComponentRef crefOuter;
+  output Option<DAE.ComponentRef> outOptInner;
+protected
+  Option<DAE.Exp> rhsExp;
+  Boolean equal;
+algorithm
+  rhsExp := Util.applyOption(inEq,BackendEquation.getEquationRHS);
+  //print("In getOptInner: rhsExp: "+ (if Util.isSome(rhsExp) then ExpressionDump.printExpStr(Util.getOption(rhsExp)) else "NONE()") + "\n");
+  outOptInner := match rhsExp
+    local
+      DAE.ComponentRef crefInner;
+    case SOME(DAE.CREF(componentRef=crefInner)) guard  ComponentReference.crefLastIdentEqual(crefOuter, crefInner)
+      then SOME(crefInner);
+    else then NONE();
+  end match;
+end getOptInner;
+
 
 protected function getComposition "
 Author: BTH
 Infer the hierachical structure from the input list of flat automata."
   input list<FlatAutomaton> flatAutomata;
-  output list<Composition> compositions;
+  output list<Composition> comps;
 protected
-  list<Composition> cs;
-  Composition c;
   FlatAutomaton fa;
-  DAE.ComponentRef cref;
+  list<Composition> cs;
+  array<DAE.ComponentRef> states;
+  DAE.ComponentRef state, cref;
+  Composition comp;
+  tuple<DAE.ComponentRef, list<Composition>> entry;
+  array<tuple<DAE.ComponentRef,list<Composition>>> refining;
+  Integer i,n;
   list<Boolean> refineds;
   Boolean refined;
 algorithm
   cs := {};
   for fa in flatAutomata loop
-   FLAT_AUTOMATON(initialState=cref) := fa;
-   c := COMPOSITION(cref, {});
-   (cs, c) := collectSubmodes(cs, c);
+   FLAT_AUTOMATON(initialState=cref, states=states) := fa;
+   n := arrayLength(states);
+   refining := arrayCreate(n, (ComponentReference.makeDummyCref(),{}));
+   for i in 1:n loop
+    //print("In getComposition: cs: "+anyString(cs)+"\n");
+    (cs, entry) := collectSubmodes(cs, arrayGet(states, i));
+    refining := arrayUpdate(refining, i, entry);
+   end for;
+   comp := R(cref, refining);
+
+   // Need to traverse and update cs
    refined := false;
-   (cs, refineds) := List.map1_2(cs, refineSupermode, c);
+   (cs, refineds) := List.map1_2(cs, refineSupermode, comp);
    refined := List.exist(refineds, function boolEq(b2=true));
    // If no refinement of existing mode was possible, add the mode as (tentatative) root mode
-   cs := if (refined) then cs else c::cs;
+   cs := if (refined) then cs else comp::cs;
   end for;
-compositions := cs;
+  comps := cs;
 end getComposition;
 
 protected function refineSupermode "
@@ -442,99 +1967,188 @@ If so, add cSub as a refinement to the known refinements of cSuper and return th
   input Composition cSub;
   output Composition cOut;
   output Boolean wasRefined;
-
+protected
+  array<tuple<DAE.ComponentRef,list<Composition>>> refiningSuper;
+  tuple<DAE.ComponentRef,list<Composition>> entry;
+  list<Composition> refining, refiningNew;
+  Composition c1, c2;
+  DAE.ComponentRef crefIS, crefState, crefSub, crefStripped;
+  Boolean isSub, wasRefinedDeeperInHierarchy;
+  Integer i,n;
 algorithm
-  (cOut, wasRefined) := match (cSuper, cSub)
-    local
-      Composition c, crefined;
-      DAE.ComponentRef refined;
-      list<Composition> refining, refiningNew;
-      list<Boolean> refineds;
-      Boolean isRefined;
-    case (COMPOSITION(refined=refined, refining=refining), c) guard isSubMode(cSub, cSuper)
-      equation
-        crefined = COMPOSITION(refined, c::refining);
-      then (crefined, true);
-    case (COMPOSITION(refining={}), _)
-      then (cSuper, false);
-    case (COMPOSITION(refined=refined, refining=refining), c)
-      equation
-        (refiningNew, refineds) = List.map1_2(refining, refineSupermode, c);
-        isRefined = List.exist(refineds, function boolEq(b2=true));
-        crefined = COMPOSITION(refined, refiningNew);
-      then (crefined, isRefined);
-    end match;
+  R(crefIS, refiningSuper) := cSuper;
+  R(initialState=crefSub) := cSub;
+  n := arrayLength(refiningSuper);
+  wasRefined := false;
+  // Check if a state can be refined at this hierarchy level, if so, return refined composition
+  for i in 1:n loop
+    (crefState,refining) := arrayGet(refiningSuper, i);
+    crefStripped := if ComponentReference.crefDepth(crefSub) > 1 then ComponentReference.crefStripLastIdent(crefSub) else DAE.WILD();
+    isSub := ComponentReference.crefEqual(crefState, crefStripped);
+    //print("refineSupermode: crefState: "+ComponentReference.printComponentRefStr(crefState)+", crefSub: "+ComponentReference.printComponentRefStr(crefSub)+", isSub: "+boolString(isSub)+"\n");
+    if isSub then
+      refining := cSub :: refining;
+      refiningSuper := arrayUpdate(refiningSuper, i, (crefState,refining));
+      cOut := R(crefIS, refiningSuper);
+      wasRefined := true;
+      return;
+    end if;
+  end for;
+  // No refinement possible at this level. Try to traverse deeper into hierarchy
+  for i in 1:n loop
+    (crefState,refining) := arrayGet(refiningSuper, i);
+    refiningNew := {};
+    for c1 in refining loop
+      (c2, wasRefinedDeeperInHierarchy) := refineSupermode(c1, cSub);
+      refiningNew := c2 :: refiningNew;
+      wasRefined := wasRefined or wasRefinedDeeperInHierarchy;
+    end for;
+    // If refinement was possible, update hierarchy level and return refined composition
+    if wasRefined then
+      refiningNew := listReverse(refiningNew);
+      refiningSuper := arrayUpdate(refiningSuper, i, (crefState,refiningNew));
+      cOut := R(crefIS, refiningSuper);
+      return;
+    end if;
+  end for;
+  // Got until here: No refinement was possible, return unchanged composition
+  assert(wasRefined == false, "Can't get here if wasRefined is true");
+  cOut := cSuper;
 end refineSupermode;
-
 
 protected function collectSubmodes "
 Author: BTH
-Find sub-modes of cIn in list csIn. If a sub-mode is found, it is added to the
-known sub-modes of cIn (cIn->cOut) and deleted from the list csIn (csIn->csOut)."
+Find sub-modes of state 'cRefIn' in list 'csIn'. If a sub-mode 'csub' is found,
+a tuple ('crefIn',{'csub'}) is returned, and a list 'csOut'=='csIn' - 'csub' is returned.
+Otherwise, ('crefIn', {}) is returned, and 'csOut' == 'csIn' is returned.
+In case of parallel states ('crefIn',{'csub1','csub2'}) is returned.
+"
   input list<Composition> csIn;
-  input Composition cIn;
+  input DAE.ComponentRef crefIn;
   output list<Composition> csOut;
-  output Composition cOut;
+  output tuple<DAE.ComponentRef, list<Composition>> refinedOut;
 protected
-  DAE.ComponentRef crefIn,cref2;
-  Composition c, cInUpdated;
-  list<Composition> refiningIn;
+  DAE.ComponentRef cref, crefStripped;
+  Composition c;
+  list<Composition> refiningAcc;
+  Boolean isSub;
 algorithm
   csOut := {};
-  cInUpdated := cIn;
+  refiningAcc := {};
   for c in csIn loop
-    COMPOSITION(refined=crefIn, refining=refiningIn) := cInUpdated;
-    if isSubMode(c, cIn) then
-      cInUpdated := COMPOSITION(crefIn, c::refiningIn);
+    R(initialState=cref) := c;
+    //print("collectSubmodes cref:"+ComponentReference.printComponentRefStr(cref)+"\n");
+    crefStripped := ComponentReference.crefStripLastIdent(cref);
+    isSub := ComponentReference.crefEqual(crefStripped, crefIn);
+    //print("collectSubmodes crefStripped: "+ComponentReference.printComponentRefStr(crefStripped)+", crefIn: "+ComponentReference.printComponentRefStr(crefIn)+", isSub: "+boolString(isSub)+"\n");
+    if isSub then
+      refiningAcc := c :: refiningAcc;
     else
       csOut := c::csOut;
     end if;
   end for;
-  cOut := cInUpdated;
+  refinedOut := (crefIn, refiningAcc);
 end collectSubmodes;
 
-
-
-protected function isSubMode "
+protected function dumpCompositionStr "
 Author: BTH
-Check whether first argument is a sub-mode of the second argument.
 "
-  input Composition sub;
-  input Composition super;
-  output Boolean isSub;
-protected
-  DAE.ComponentRef cref, subCref, subCrefStripped;
+  input Composition composition;
+  output String str;
 algorithm
-  COMPOSITION(refined=subCref) := sub;
-  subCrefStripped := ComponentReference.crefStripLastIdent(subCref);
-  // print("SMF-isSuperModeOf: Unstripped: " + ComponentReference.printComponentRefStr(subCref) + "\n");
-  // print("SMF-isSuperModeOf: Stripped: " + ComponentReference.printComponentRefStr(subCrefStripped) + "\n");
-  COMPOSITION(refined=cref) := super;
-  isSub := ComponentReference.crefEqual(cref, subCrefStripped);
-end isSubMode;
+  str := match (composition)
+    local
+      DAE.ComponentRef cref;
+      array<tuple<DAE.ComponentRef, list<Composition>>> cs;
+      String s;
+      list<String> ss;
+    case R(initialState=cref, refining=cs) guard arrayLength(cs) == 0
+      then "R["+ComponentReference.printComponentRefStr(cref) + ", {}]";
+    case R(initialState=cref, refining=cs)
+      equation
+        s = "R["+ComponentReference.printComponentRefStr(cref) + ", {";
+        ss = arrayList(Array.map(cs, dumpCompositionEntryStr));
+      then s + stringDelimitList(ss, ", ") + "}]";
+    end match;
+end dumpCompositionStr;
+
+protected function dumpCompositionEntryStr
+  input tuple<DAE.ComponentRef,list<Composition>> entry;
+  output String str;
+protected
+  DAE.ComponentRef cref;
+  list<Composition> comps;
+  list<String> s;
+algorithm
+  (cref, comps) := entry;
+  str := match comps
+    case {} then "("+ComponentReference.printComponentRefStr(cref)+", {})";
+    else
+      equation
+        s = List.map(comps, dumpCompositionStr);
+      then "("+ComponentReference.printComponentRefStr(cref)+", {"+stringDelimitList(s, ", ") + "})";
+  end match;
+end dumpCompositionEntryStr;
 
 
-protected function printFlatAutomata "
+public function dumpFlatAutomatonStr "
 Author: BTH
-Print flat automata (for debugging purposes)"
-  input list<FlatAutomaton> flatAutomata;
+Dump flat automata to string"
+  input FlatAutomaton flatA;
+  output String flatStr;
 protected
-  DAE.ComponentRef initialState;
-  HashSet.HashSet states;
-  FlatAutomaton flatA;
-  String s;
   list<DAE.ComponentRef> crefs;
-  list<String> ss;
+  String initialStateStr, statesStr, smsStr;
+  list<String> statesStrs;
+  // FLAT_AUTOMATON fields
+  DAE.ComponentRef initialState;
+  array<DAE.ComponentRef> states;
+  SMSemantics sms;
 algorithm
-  for flatA in flatAutomata loop
-    FLAT_AUTOMATON(initialState=initialState, states=states) := flatA;
-    s := ComponentReference.printComponentRefStr(initialState);
-    print("Initial State \""+s+"\" cluster consists of: ");
-    crefs := BaseHashSet.hashSetList(states);
-    ss := List.map(crefs, ComponentReference.printComponentRefStr);
-    print(stringDelimitList(ss, ", ") + "\n");
-  end for;
-end printFlatAutomata;
+  FLAT_AUTOMATON(initialState=initialState, states=states, sms=sms) := flatA;
+  initialStateStr := ComponentReference.printComponentRefStr(initialState);
+  crefs := arrayList(states);
+  statesStrs := List.map(crefs, ComponentReference.printComponentRefStr);
+  statesStr := stringDelimitList(statesStrs, ", ");
+  smsStr := dumpSMSemanticsStr(sms);
+
+  flatStr := initialStateStr+"( states("+statesStr+"), "+smsStr+" )";
+end dumpFlatAutomatonStr;
+
+public function dumpSMSemanticsStr "
+Author: BTH
+Dump SMSemantics to string"
+  input SMSemantics sms;
+  output String smsStr;
+protected
+  String qStr, tStr, varsStr, knownsStr, eqsStr;
+  list<String> qStrs, tStrs, varsStrs, knownsStrs, eqsStrs;
+  // SMS fields
+  list<DAE.ComponentRef> q;
+  list<Transition> t;
+  list<DAE.Exp> c;
+  list<BackendDAE.Var> vars;
+  list<BackendDAE.Var> knowns;
+  list<BackendDAE.Equation> eqs;
+algorithm
+  SMS(q=q, t=t, c=c,
+    vars=vars, knowns=knowns, eqs=eqs) := sms;
+  qStrs := List.map(q, ComponentReference.printComponentRefStr);
+  qStr := stringDelimitList(qStrs, ", ");
+  // TODO dump for transitons
+  tStrs := {}; // List.map(transitions, BackendDump.equationString);
+  tStr := ""; // stringDelimitList(transitionsStrs, "\n");
+  // TODO dump for c
+  varsStrs := List.map(vars, dumpVarStr);
+  varsStr := stringDelimitList(varsStrs, "; ");
+  knownsStrs := List.map(knowns, dumpVarStr);
+  knownsStr := stringDelimitList(knownsStrs, "; ");
+  eqsStrs :=  List.map(eqs, BackendDump.equationString);
+  eqsStr := stringDelimitList(eqsStrs, "\n");
+
+  smsStr := "SMS( q("+qStr+"), transitions("+tStr+"), "
+    +"vars("+varsStr+"), knowns("+knownsStr+"), eqs("+eqsStr+") );";
+end dumpSMSemanticsStr;
 
 protected function extractFlatAutomata "
 Author: BTH
@@ -551,6 +2165,7 @@ protected
   array<DAE.ComponentRef> i2cref;
   DAE.ComponentRef cref;
   list<DAE.ComponentRef> members;
+  array<DAE.ComponentRef> membersArr;
   HashSet.HashSet memberSet;
   Integer n,i,j;
 algorithm
@@ -573,9 +2188,16 @@ algorithm
         members := i2cref[j]::members;
       end if;
     end for;
+
+    // Enusre uniquenes of entries
     memberSet := HashSet.emptyHashSetSized(listLength(members));
     memberSet := List.fold(members, BaseHashSet.add, memberSet);
-    flatAutomata := FLAT_AUTOMATON(cref, memberSet, {})::flatAutomata;
+
+    // Ensure that initialState comes first in array
+    memberSet := BaseHashSet.delete(cref, memberSet);
+    membersArr := listArray(cref :: BaseHashSet.hashSetList(memberSet));
+
+    flatAutomata := FLAT_AUTOMATON(cref, membersArr, emptySMS())::flatAutomata;
   end for;
 
 end extractFlatAutomata;
@@ -823,6 +2445,8 @@ algorithm
       Boolean isInitial1,isInitial2;
       HashSet.HashSet edges1,edges2;
       BackendDAE.EquationArray eqs1,eqs2,outgoing1,outgoing2;
+      list<BackendDAE.Var> os1,os2,ol1,ol2;
+      list<DAE.ComponentRef> ps1,ps2;
       //array<Option<BackendDAE.Equation>> equOptArr;
     case ("initialState", {DAE.CREF(componentRef=cstate1)})
       equation
@@ -830,148 +2454,263 @@ algorithm
         mode1 = if BaseHashTable.hasKey(cstate1, inA)
           then BaseHashTable.get(cstate1, inA)
             else MODE(ComponentReference.crefLastIdent(cstate1), true, HashSet.emptyHashSet(),
-                      BackendEquation.emptyEqns(), BackendEquation.emptyEqns());
-        MODE(name1,_,edges1,eqs1,outgoing1) = mode1;
-        mode1 = MODE(name1,true,edges1,eqs1,outgoing1);
+                      BackendEquation.emptyEqns(), BackendEquation.emptyEqns(), {}, {}, {});
+        MODE(name1,isInitial1,edges1,eqs1,outgoing1,os1,ol1,ps1) = mode1;
+        mode1 = MODE(name1,true,edges1,eqs1,outgoing1,os1,ol1,ps1);
         modes = BaseHashTable.add((cstate1, mode1), inA);
       then modes;
     case ("transition", DAE.CREF(componentRef=cstate1)::DAE.CREF(componentRef=cstate2)::_)
       equation
         //print("SMF-printEq2: "+anyString(cstate1)+"\n");
         _ = ComponentReference.crefDepth(cstate1);
-        //printArgs(expLst);
         mode1 = if BaseHashTable.hasKey(cstate1, inA)
           then BaseHashTable.get(cstate1, inA)
             else MODE(ComponentReference.crefLastIdent(cstate1), false, HashSet.emptyHashSet(),
-                      BackendEquation.emptyEqns(), BackendEquation.emptyEqns());
-        MODE(name1, isInitial1, edges1, eqs1,outgoing1) = mode1;
+                      BackendEquation.emptyEqns(), BackendEquation.emptyEqns(),{},{},{});
+        MODE(name1, isInitial1, edges1, eqs1,outgoing1,os1,ol1,ps1) = mode1;
         isInitial1 = isInitial1 or false;
         edges1 = BaseHashSet.add(cstate2, edges1);
-        mode1 = MODE(name1, isInitial1, edges1, eqs1, outgoing1);
+        mode1 = MODE(name1, isInitial1, edges1, eqs1, outgoing1,os1,ol1,ps1);
         modes = BaseHashTable.add((cstate1, mode1), inA);
 
         mode2 = if BaseHashTable.hasKey(cstate2, modes)
           then BaseHashTable.get(cstate2, modes)
             else MODE(ComponentReference.crefLastIdent(cstate1), false, HashSet.emptyHashSet(),
-                      BackendEquation.emptyEqns(), BackendEquation.emptyEqns());
-        MODE(name2, isInitial2, edges2, eqs2, outgoing2) = mode2;
+                      BackendEquation.emptyEqns(), BackendEquation.emptyEqns(), {}, {}, {});
+        MODE(name2, isInitial2, edges2, eqs2, outgoing2, os2, ol2, ps2) = mode2;
         isInitial2 = isInitial2 or false;
         edges2 = BaseHashSet.add(cstate1, edges2);
-        mode2 = MODE(name2, isInitial2, edges2, eqs2, outgoing2);
+        mode2 = MODE(name2, isInitial2, edges2, eqs2, outgoing2, os2, ol2, ps2);
         modes = BaseHashTable.add((cstate2, mode2), modes);
       then modes;
   end match;
 end extractState;
 
 
-protected function printArgs "BTH: DELETE me"
-  input list<DAE.Exp> expLst;
-  output Boolean dummy;
+protected function wrapAddTimeEventHack "
+Author: BTH
+Just a workaround as long as no support of synchronous features."
+  input list<BackendDAE.TimeEvent> timeEventsIn;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Shared oshared;
 algorithm
-  dummy := match (expLst)
+  oshared := match (timeEventsIn,shared)
     local
-      DAE.Exp x;
-      list<DAE.Exp> xs;
-    case ({})
-      then true;
-    case (x::xs)
+      BackendDAE.Variables knvars,exobj,aliasVars;
+      BackendDAE.EquationArray remeqns,inieqns;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
+      FCore.Cache cache;
+      FCore.Graph graph;
+      DAE.FunctionTree funcs;
+      list<BackendDAE.WhenClause> wclst,wclst1;
+      list<BackendDAE.ZeroCrossing> zc, rellst, smplLst;
+      Integer numberOfMathEventFunctions;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.BackendDAEType btp;
+      list<BackendDAE.TimeEvent> timeEvents;
+      BackendDAE.ExtraInfo ei;
+
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst,zc,smplLst,rellst,numberOfMathEventFunctions),eoc,btp,symjacs,ei))
       equation
-        print("SMF-printArgs: "+anyString(x)+"\n");
-      then printArgs(xs);
+        timeEvents = listAppend(timeEvents,timeEventsIn);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,graph,funcs,BackendDAE.EVENT_INFO(timeEvents,wclst,zc,smplLst,rellst,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
+
   end match;
-end printArgs;
-
-
-/*
-protected function addModeCref "
-Autor: BTH
-Sort of superfluous. Different from BaseHashTable.add(..) this function will not overwrite an existing entry.
-"
-  input DAE.ComponentRef stateCref;
-  input ModeTable inTable;
-  output ModeTable outTable;
-protected
-  Boolean exists;
-  Mode controlMode;
-algorithm
-  exists := BaseHashTable.hasKey(stateCref, inTable);
-
-  outTable := if (exists) then inTable
-              else BaseHashTable.add((stateCref, MODE(ComponentReference.crefFirstIdent(stateCref), {})), inTable);
-
-end addModeCref;
-*/
-
-/*
-protected function getControllingModeCref "
-Autor: BTH
-Get the component reference of the mode-automaton that controls/embeds the
-respective state.
-Can fail if controlling mode doesn't exist in modeTable."
-  input DAE.ComponentRef stateCref;
-  input ModeTable modeTable;
-  output Mode controlMode;
-protected
-  Integer depth;
-  DAE.ComponentRef cref;
-algorithm
-  depth := ComponentReference.crefDepth(stateCref);
-  cref := if (depth > 1) then ComponentReference.crefStripFirstIdent(stateCref)
-          else CROOTMA;
-  controlMode := BaseHashTable.get(cref, modeTable);
-end getControllingModeCref;
-*/
+end wrapAddTimeEventHack;
 
 
 
-/*
-protected function createModeTable "
-Autor: BTH
-Create a ModeTable with one root automaton."
-  output ModeTable modeTable;
-algorithm
-  modeTable := HashTableSM.emptyHashTable();
-  modeTable := BaseHashTable.add((CROOTMA, MODE(ROOTMA, {})), modeTable);
-end createModeTable;
-*/
-
-
-/*
-public function printEq
+protected function wrapInWhenHack "
+Author: BTH
+Just a workaround as long as no support of synchronous features."
   input BackendDAE.Equation inEq;
-  input list<String> inA;
+  input Real samplingTime;
   output BackendDAE.Equation outEq;
-  output list<String> outA;
+protected
+  DAE.Exp expCond;
+  Integer size;
+  BackendDAE.WhenEquation whenEquation;
+  DAE.ComponentRef left;
+
+  // EQUATION
+  DAE.Exp exp;
+  DAE.Exp scalar;
+  DAE.ElementSource source "origin of equation";
+  BackendDAE.EquationAttributes attr;
+  // EQUATION_ATTRIBUTES
+  Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+  BackendDAE.EquationKind kind;
+  Integer subPartitionIndex;
 algorithm
-  (outEq, outA) := match (inEq, inA)
+  try
+    BackendDAE.EQUATION(exp,scalar,source,attr) := inEq;
+    DAE.CREF(componentRef=left) := exp;
+    BackendDAE.EQUATION_ATTRIBUTES(differentiated, kind, subPartitionIndex) := attr;
+    // walk through scalar, replace previous(x) by pre(x)
+    scalar := Expression.traverseExp(scalar, subsPreForPrevious, NONE());
+    // sample(0, samplingTime)
+    expCond := DAE.CALL(Absyn.IDENT("sample"), {DAE.ICONST(1), DAE.RCONST(0), DAE.RCONST(samplingTime)}, DAE.callAttrBuiltinImpureBool);
+    whenEquation := BackendDAE.WHEN_EQ(expCond, left, scalar, NONE());
+    size := 1; // Fixme what is "size" for? does it reference the "sample index" of a corresponding (time)event BackendDAE.Shared.eventInfo.timeEvents
+    outEq := BackendDAE.WHEN_EQUATION(size, whenEquation, source,
+      BackendDAE.EQUATION_ATTRIBUTES(differentiated, BackendDAE.DYNAMIC_EQUATION(), subPartitionIndex));
+  else
+    print("wrapInWhenHack: I FAILED MISERABLY FOR: " + anyString(inEq) + "\n");
+    fail();
+    //outEq := inEq;
+  end try;
+end wrapInWhenHack;
+
+protected function subsPreForPrevious "
+Author: BTH
+Helper function to wrapInWhenHack"
+  input DAE.Exp inExp;
+  input Option<Boolean> inA;
+  output DAE.Exp outExp;
+  output Option<Boolean> outA;
+algorithm
+  outExp := match inExp
     local
-      String name;
+      Absyn.Path path;
       list<DAE.Exp> expLst;
-    case (
-        BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(
-          statementLst = {
-            DAE.STMT_NORETCALL(
-              exp = DAE.CALL(
-                path = Absyn.IDENT(name = name),
-                expLst = expLst
-              )
-            )
-          }
-        )),
-      _)
-      equation
-        print("BTH: "+ name +"\n");
-        printEq2(name, expLst);
-      then
-        (inEq, {});
+      DAE.CallAttributes attr;
+    case DAE.CALL(Absyn.IDENT("previous"), expLst, attr)
+      then DAE.CALL(Absyn.IDENT("pre"), expLst, attr);
     else
-      equation
-        print("BTH: NO MATCH\n");
-      then
-        (inEq, {});
+      inExp;
   end match;
-end printEq;
-*/
+  outA := NONE();
+end subsPreForPrevious;
+
+protected function debugPrintKnownVars
+  input BackendDAE.Shared shared;
+protected
+  BackendDAE.Variables knownVars;
+  BackendDAE.VariableArray varArr "Array of variables";
+  array<Option<BackendDAE.Var>> varOptArr;
+  list<Option<BackendDAE.Var>> varOptLst;
+  list<Option<String>> varStrLst;
+  list<String> strLst;
+  String varStrs;
+algorithm
+  BackendDAE.SHARED(knownVars=knownVars) := shared;
+  BackendDAE.VARIABLES(varArr=varArr) := knownVars;
+  BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr) := varArr;
+  varOptLst := arrayList(varOptArr);
+  varOptLst := List.filterOnTrue(varOptLst, isSome);
+  varStrLst := List.map(varOptLst, dumpSomeVarStr);
+  strLst := List.map(varStrLst, function Util.getOptionOrDefault(inDefault="NONE"));
+  varStrs := stringDelimitList(strLst, ";\n");
+  print("Shared knownVars:\n"+varStrs+"\n");
+end debugPrintKnownVars;
+
+
+protected function dumpVarsStr
+  input BackendDAE.EqSystem inEqSystem;
+  output String outStr;
+protected
+  BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
+  // Variables
+  array<list<BackendDAE.CrefIndex>> crefIdxLstArr "HashTB, cref->indx";
+  BackendDAE.VariableArray varArr "Array of variables";
+  Integer bucketSize "bucket size";
+  Integer numberOfVars "no. of vars";
+  // VariableArray
+  Integer numberOfElements "no. elements";
+  Integer arrSize "array size";
+  array<Option<BackendDAE.Var>> varOptArr;
+  list<Option<String>> sVarOptLst;
+  list<String> sVarLst;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars) := inEqSystem;
+  BackendDAE.VARIABLES(crefIdxLstArr, varArr, bucketSize, numberOfVars) := orderedVars;
+  BackendDAE.VARIABLE_ARRAY(numberOfElements, arrSize, varOptArr) := varArr;
+  sVarOptLst := arrayList(Array.map(varOptArr, dumpSomeVarStr));
+  sVarLst := List.map(List.filterOnTrue(sVarOptLst, isSome), Util.getOption);
+  outStr := stringDelimitList(sVarLst, "\n");
+end dumpVarsStr;
+
+protected function dumpSomeVarStr
+  input Option<BackendDAE.Var> inVar;
+  output Option<String> outStr;
+algorithm
+  outStr := match inVar
+    local
+      BackendDAE.Var var;
+    case SOME(var) then SOME(dumpVarStr(var));
+    else NONE();
+  end match;
+end dumpSomeVarStr;
+
+public function dumpVarStr
+  input BackendDAE.Var inVar;
+  output String outStr;
+protected
+  Option<String> s1,s2,s3;
+  String sVarName,sVarKind,sVarDirection,sVarType,sBindExp,sBindValue,sInstanceOpt,sIo;
+  Option<DAE.ComponentRef> crefOpt;
+  // BackendDAE.Var
+  DAE.ComponentRef varName "variable name";
+  BackendDAE.VarKind varKind "Kind of variable";
+  DAE.VarDirection varDirection "input, output or bidirectional";
+  DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
+  BackendDAE.Type varType "built-in type or enumeration";
+  Option<DAE.Exp> bindExp "Binding expression e.g. for parameters";
+  Option<Values.Value> bindValue "binding value for parameters";
+  DAE.InstDims arryDim "array dimensions of non-expanded var";
+  DAE.ElementSource source "origin of variable";
+  Option<DAE.VariableAttributes> values "values on built-in attributes";
+  Option<BackendDAE.TearingSelect> tearingSelectOption "value for TearingSelect";
+  Option<SCode.Comment> comment "this contains the comment and annotation from Absyn";
+  DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
+  DAE.VarInnerOuter io;
+algorithm
+  BackendDAE.VAR(varName, varKind, varDirection, varParallelism, varType,
+   bindExp, bindValue, arryDim, source, values, tearingSelectOption, comment, connectorType, io) := inVar;
+   sVarName := ComponentReference.crefStr(varName);
+   sVarKind := BackendDump.kindString(varKind);
+   sVarDirection := DAEDump.dumpDirectionStr(varDirection);
+   sVarType := BackendDump.dumpTypeStr(varType);
+   s1 := Util.applyOption(bindExp, function ExpressionDump.dumpExpStr(inInteger=0));
+   sBindExp := Util.getOptionOrDefault(s1, "");
+   s2 := Util.applyOption(bindValue, ValuesUtil.valString);
+   sBindValue := Util.getOptionOrDefault(s2, "");
+   DAE.SOURCE(instanceOpt=crefOpt) := source;
+   s3 := Util.applyOption(crefOpt, ComponentReference.crefStr);
+   sInstanceOpt := Util.getOptionOrDefault(s3, "NONE()");
+   sIo := match io
+     case DAE.INNER() then "inner";
+     case DAE.OUTER() then "outer";
+     case DAE.INNER_OUTER() then "inner outer";
+     case DAE.NOT_INNER_OUTER() then "";
+   end match;
+
+  outStr := sVarName + ": " + sIo + " " + sVarDirection + " " + sVarType + "=" +
+            sBindExp + ":" + sBindValue + "; in " + sInstanceOpt;
+end dumpVarStr;
+
+protected function debugDumpMathematicaStr
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output String str;
+protected
+  BackendDAE.Variables orderedVars, knownVars;
+  BackendDAE.EquationArray orderedEqs, initialEqs;
+  list<BackendDAE.Equation> orderedEqsLst;
+  list<BackendDAE.Equation> initialEqsLst;
+algorithm
+
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := syst;
+  orderedEqsLst := BackendEquation.equationList(orderedEqs);
+
+  BackendDAE.SHARED(knownVars=knownVars, initialEqs=initialEqs) := shared;
+  initialEqsLst := BackendEquation.equationList(initialEqs);
+
+  str := MathematicaDump.dumpMmaDAEStr((knownVars, orderedVars,initialEqsLst,orderedEqsLst));
+end debugDumpMathematicaStr;
+
 
 annotation(__OpenModelica_Interface="backend");
 end StateMachineFeatures;

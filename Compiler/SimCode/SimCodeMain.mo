@@ -87,6 +87,7 @@ import TaskSystemDump;
 import SimCodeUtil;
 import System;
 import Util;
+import BackendDump;
 
 public function createSimulationSettings
   input Real startTime;
@@ -648,6 +649,7 @@ algorithm
       SimCodeUtil.execStat("Transformations before backend");
       description = DAEUtil.daeDescription(dae);
       dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
+      //BackendDump.printBackendDAE(dlow);
       dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
       timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 

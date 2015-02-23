@@ -379,7 +379,7 @@ algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
   backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_INTEGER_DEFAULT,NONE(),NONE(),{},
-                     DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR());
+                     DAE.emptyElementSource,NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),  DAE.NOT_INNER_OUTER());
 end makeIterVariable;
 
 protected function checkEquationSize"author: Frenkel TUD 2010-12
@@ -930,6 +930,7 @@ algorithm
       Option<SCode.Comment> c;
       DAE.ConnectorType ct;
       Values.Value v;
+      DAE.VarInnerOuter io;
     case BackendDAE.VAR(bindValue = SOME(_))
       equation
         print("*** Not Ceval.eval var: ");
@@ -939,7 +940,7 @@ algorithm
         inVar;
     case BackendDAE.VAR(varName = cr, varKind = vk, varDirection = vd, varParallelism = prl,
           varType = ty, bindExp = SOME(e), arryDim = dims, source = src,
-          values = va, tearingSelectOption = ts, comment = c, connectorType = ct)
+          values = va, tearingSelectOption = ts, comment = c, connectorType = ct, innerOuter = io)
       equation
         // wbraun: Evaluate parameter expressions only if they are
         //         constant at compile time otherwise we solve them
@@ -948,7 +949,7 @@ algorithm
         true = Expression.isConst(e);
         (_, v, _) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
       then
-        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, src, va, ts, c, ct);
+        BackendDAE.VAR(cr, vk, vd, prl, ty, SOME(e), SOME(v), dims, src, va, ts, c, ct, io);
     else inVar;
   end matchcontinue;
 end calculateValue;
@@ -6421,21 +6422,22 @@ algorithm
       DAE.ElementSource source;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
+      DAE.VarInnerOuter io;
 
     case (NONE(),_,_) then (NONE(),inTypeA);
 
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,ts,comment,ct)),_,_)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,ts,comment,ct,io)),_,_)
       equation
         (e1,ext_arg_1) = func(e1,inTypeA);
         (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,ext_arg_1);
       then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,ts,comment,ct)),ext_arg_2);
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,SOME(e1),bindValue,instdims,source,attr,ts,comment,ct,io)),ext_arg_2);
 
-    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,ts,comment,ct)),_,_)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,ts,comment,ct,io)),_,_)
       equation
         (attr,ext_arg_2) = traverseBackendDAEVarAttr(attr,func,inTypeA);
       then
-        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,ts,comment,ct)),ext_arg_2);
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varParallelism,varType,NONE(),bindValue,instdims,source,attr,ts,comment,ct,io)),ext_arg_2);
 
     else
       equation

@@ -2241,9 +2241,10 @@ protected
   Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> cmt;
   DAE.ConnectorType ct;
+  DAE.VarInnerOuter io;
 algorithm
-  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct) := inVar;
-  outVar := BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct);
+  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct,io) := inVar;
+  outVar := BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct,io);
 end setVarCref;
 
 public function setVarBindingOpt "author: PA
@@ -2265,9 +2266,10 @@ protected
   Option<BackendDAE.TearingSelect> ts;
   Option<SCode.Comment> cmt;
   DAE.ConnectorType ct;
+  DAE.VarInnerOuter innerOuter;
 algorithm
-  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct) := inVar;
-  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,source,attr,ts,cmt,ct);
+  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,ts,cmt,ct,innerOuter) := inVar;
+  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,source,attr,ts,cmt,ct,innerOuter);
 end setVarBindingOpt;
 
 public function moveVariables "

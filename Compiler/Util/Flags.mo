@@ -616,7 +616,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "unitChecking",
     "evaluateReplaceProtectedFinalEvaluateParameters",
-    //"stateMachineElab", // Not yet ready
+    "stateMachineElab",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
     "clockPartitioning",

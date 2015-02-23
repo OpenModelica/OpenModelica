@@ -587,6 +587,7 @@ algorithm
       DAE.Type t;
       DAE.VarVisibility protection;
       Boolean b;
+      Absyn.InnerOuter io;
 
     case DAE.VAR(componentRef = name,
                   kind = kind,
@@ -598,7 +599,8 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  comment = comment)
+                  comment = comment,
+                  innerOuter = io)
       equation
         (kind_1) = lowerVarkind(kind, t, name, dir, ct, dae_var_attr);
         tp = lowerType(t);
@@ -608,7 +610,7 @@ algorithm
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, (SOME(functionTree), {DAE.NORM_INLINE()}));
     ts = BackendDAEUtil.setTearingSelectAttribute(comment);
       then
-        (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, comment, ct));
+        (BackendDAE.VAR(name, kind_1, dir, prl, tp, NONE(), NONE(), dims, source, dae_var_attr, ts, comment, ct, DAEUtil.toDAEInnerOuter(io)));
   end match;
 end lowerDynamicVar;
 
@@ -645,7 +647,8 @@ algorithm
       HashTableExpToExp.HashTable inlineHT;
       list<DAE.Statement> assrtLst;
       list<BackendDAE.Equation> eqLst;
-    case DAE.VAR(componentRef = name,
+      Absyn.InnerOuter io;
+     case DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
                   parallelism = prl,
@@ -656,7 +659,8 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  comment = comment)
+                  comment = comment,
+                  innerOuter = io)
       equation
         kind_1 = lowerKnownVarkind(kind, name, dir, ct);
         // bind = fixParameterStartBinding(bind, t, dae_var_attr, kind_1);
@@ -672,7 +676,7 @@ algorithm
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, fnstpl);
     ts = NONE();
       then
-        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind1, NONE(), dims, source, dae_var_attr, ts, comment, ct), inlineHT,eqLst);
+        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind1, NONE(), dims, source, dae_var_attr, ts, comment, ct, DAEUtil.toDAEInnerOuter(io)), inlineHT,eqLst);
 
     else
       equation
@@ -971,6 +975,7 @@ algorithm
     Option<BackendDAE.TearingSelect> ts;
       Option<SCode.Comment> comment;
       DAE.Type t;
+      Absyn.InnerOuter io;
 
     case DAE.VAR(componentRef = name,
                   direction = dir,
@@ -981,7 +986,8 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  comment = comment)
+                  comment = comment,
+                  innerOuter=io)
       equation
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
@@ -989,7 +995,7 @@ algorithm
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, (SOME(functionTree), {DAE.NORM_INLINE()}));
     ts = NONE();
       then
-        BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, comment, ct);
+        BackendDAE.VAR(name, kind_1, dir, prl, tp, bind, NONE(), dims, source, dae_var_attr, ts, comment, ct, DAEUtil.toDAEInnerOuter(io));
   end match;
 end lowerExtObjVar;
 

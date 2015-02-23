@@ -6971,5 +6971,17 @@ algorithm
   end match;
 end funcArgDim;
 
+public function toDAEInnerOuter
+  input Absyn.InnerOuter ioIn;
+  output DAE.VarInnerOuter ioOut;
+algorithm
+  ioOut := match ioIn
+    case Absyn.INNER() then DAE.INNER();
+    case Absyn.OUTER() then DAE.OUTER();
+    case Absyn.INNER_OUTER() then DAE.INNER_OUTER();
+    case Absyn.NOT_INNER_OUTER() then DAE.NOT_INNER_OUTER();
+  end match;
+end toDAEInnerOuter;
+
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;
