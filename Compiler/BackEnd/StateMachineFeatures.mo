@@ -217,36 +217,36 @@ algorithm
   names := List.map(BaseHashTable.hashTableKeyList(modes), ComponentReference.crefLastIdent);
   if (listLength(names) > 0) then
     if DEBUG_SMDUMP then
-		  print("***** SMF-stateMachineElab States: ***** \n" + stringDelimitList(names, ",")  + "\n");
-		  print("***** SMF-stateMachineElab ModeTable: ***** \n");
-		  BaseHashTable.dumpHashTable(modes);
-	  end if;
-	  nModes := BaseHashTable.hashTableCurrentSize(modes);
+      print("***** SMF-stateMachineElab States: ***** \n" + stringDelimitList(names, ",")  + "\n");
+      print("***** SMF-stateMachineElab ModeTable: ***** \n");
+      BaseHashTable.dumpHashTable(modes);
+    end if;
+    nModes := BaseHashTable.hashTableCurrentSize(modes);
 
     if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Incidence matrix: ***** \n"); end if;
-	  iTable := createIncidenceTable(modes, nModes);
-	  if DEBUG_SMDUMP then printIncidenceTable(iTable, nModes); end if;
+    iTable := createIncidenceTable(modes, nModes);
+    if DEBUG_SMDUMP then printIncidenceTable(iTable, nModes); end if;
 
-	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Transitive closure: ***** \n"); end if;
-	  transClosure := transitiveClosure(iTable, nModes);
-	  if DEBUG_SMDUMP then printIncidenceTable(transClosure, nModes); end if;
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Transitive closure: ***** \n"); end if;
+    transClosure := transitiveClosure(iTable, nModes);
+    if DEBUG_SMDUMP then printIncidenceTable(transClosure, nModes); end if;
 
-	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Initial States: ***** \n"); end if;
-	  initialStates := extractInitialStates(modes);
-	  if DEBUG_SMDUMP then print( stringDelimitList(List.map(initialStates, ComponentReference.printComponentRefStr), ", ") + "\n"); end if;
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Initial States: ***** \n"); end if;
+    initialStates := extractInitialStates(modes);
+    if DEBUG_SMDUMP then print( stringDelimitList(List.map(initialStates, ComponentReference.printComponentRefStr), ", ") + "\n"); end if;
 
-	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Flat Automata: ***** \n"); end if;
-	  flatAutomata := extractFlatAutomata(initialStates, transClosure, nModes);
-	  if DEBUG_SMDUMP then print(stringDelimitList(List.map(flatAutomata,dumpFlatAutomatonStr), "\n") + "\n"); end if;
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Flat Automata: ***** \n"); end if;
+    flatAutomata := extractFlatAutomata(initialStates, transClosure, nModes);
+    if DEBUG_SMDUMP then print(stringDelimitList(List.map(flatAutomata,dumpFlatAutomatonStr), "\n") + "\n"); end if;
 
-	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Composition: ***** \n"); end if;
-	  comps := getComposition(flatAutomata);
-	  ss := List.map(comps, dumpCompositionStr);
-	  if DEBUG_SMDUMP then print(stringDelimitList(ss, ",\n") + "\n"); end if;
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Composition: ***** \n"); end if;
+    comps := getComposition(flatAutomata);
+    ss := List.map(comps, dumpCompositionStr);
+    if DEBUG_SMDUMP then print(stringDelimitList(ss, ",\n") + "\n"); end if;
 
-	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: annotate modes with additional information ***** \n"); end if;
-	  (modes, systNew, sharedNew) := annotateModes(modes, syst, shared);
-	  if DEBUG_SMDUMP then BaseHashTable.dumpHashTable(modes); end if;
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: annotate modes with additional information ***** \n"); end if;
+    (modes, systNew, sharedNew) := annotateModes(modes, syst, shared);
+    if DEBUG_SMDUMP then BaseHashTable.dumpHashTable(modes); end if;
 
     if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Replace all outer variables by their coressponding inner variables ***** \n"); end if;
     // FIXME: The current approach has deficiencies since the variable replacement needs to be done on the global equation level and not only on the mode level
@@ -257,15 +257,15 @@ algorithm
     if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: annotate Flat Automata with semantic equations  ***** \n"); end if;
     flatAutomata := List.map1(flatAutomata, annotateFlatAutomaton, modes);
 
-	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Synthesize automata equations  ***** \n"); end if;
-	  (automataEqs, systNew) := synthesizeAutomataEqs(modes, comps, flatAutomata, true, AUTOMATA_EQS({},{},{}), systNew);
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Synthesize automata equations  ***** \n"); end if;
+    (automataEqs, systNew) := synthesizeAutomataEqs(modes, comps, flatAutomata, true, AUTOMATA_EQS({},{},{}), systNew);
 
-	  //print("***** SMF-stateMachineElab: Update backend DAE (Don't use yet)  ***** \n");
-	  //(systNew, sharedNew) := updateBackendDAE_DontUseYet(systNew, sharedNew, automataEqs);
-	  if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Wrap equations in when clauses hack  ***** \n"); end if;
-	  (systNew, sharedNew) := wrapHack(systNew, sharedNew, automataEqs, 1.0);
+    //print("***** SMF-stateMachineElab: Update backend DAE (Don't use yet)  ***** \n");
+    //(systNew, sharedNew) := updateBackendDAE_DontUseYet(systNew, sharedNew, automataEqs);
+    if DEBUG_SMDUMP then print("***** SMF-stateMachineElab: Wrap equations in when clauses hack  ***** \n"); end if;
+    (systNew, sharedNew) := wrapHack(systNew, sharedNew, automataEqs, 1.0);
 
-	  outDAE := BackendDAE.DAE({systNew}, sharedNew);
+    outDAE := BackendDAE.DAE({systNew}, sharedNew);
   else
     outDAE := inDAE;
   end if;
@@ -273,11 +273,11 @@ algorithm
   if DEBUG_SMDUMP then
     print("***** SMF-stateMachineElab BackendDAE OUTPUT: ***** \n");
     BackendDump.printBackendDAE(outDAE);
-	  //BackendDump.dumpBackendDAEToModelica(outDAE, "AFTERSMELAB");
-	  //BackendDump.printShared(shared);
-	  //debugPrintKnownVars(shared);
-	  //BackendDump.dumpEqSystems({syst}, "Ordered");
-	  //BackendDump.printShared(shared);
+    //BackendDump.dumpBackendDAEToModelica(outDAE, "AFTERSMELAB");
+    //BackendDump.printShared(shared);
+    //debugPrintKnownVars(shared);
+    //BackendDump.dumpEqSystems({syst}, "Ordered");
+    //BackendDump.printShared(shared);
   end if;
 
 end stateMachineElab;
@@ -371,10 +371,10 @@ algorithm
     rhs := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(initRef, DAE.T_BOOL_DEFAULT)}, DAE.callAttrBuiltinImpureBool);
     eqs := BackendDAE.EQUATION(DAE.CREF(resetRef, DAE.T_BOOL_DEFAULT), rhs, DAE.emptyElementSource, bindingKind) :: eqs;
 
-	  // input Boolean active "true if the state machine is active";
-	  // set to "true", since toplevel state machines is always active
-	  activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
-	  eqs := BackendDAE.EQUATION(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), DAE.BCONST(true), DAE.emptyElementSource, bindingKind) :: eqs;
+    // input Boolean active "true if the state machine is active";
+    // set to "true", since toplevel state machines is always active
+    activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
+    eqs := BackendDAE.EQUATION(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), DAE.BCONST(true), DAE.emptyElementSource, bindingKind) :: eqs;
   end if;
 
 
@@ -385,27 +385,27 @@ algorithm
     // propagate reset handling and activation handling to state machine refinements
     if not listEmpty(stateRefiningComps) then
       for refiningComp in stateRefiningComps loop
-		    // Add equation for reset handling
-		    //  SMS_PRE.refiningComp.reset = SMS_PRE.initialState.activeResetStates[i] or (SMS_PRE.initialState.activeReset and SMS_PRE.initialState.activeState==i)
-		    activeResetStateRef := qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef);
-		    activeResetStateRefExp := DAE.CREF(activeResetStateRef, DAE.T_BOOL_DEFAULT);
-		    activeStateRef :=  qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, preRef);
-		    activeStateRefExp :=  DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT);
-		    activeResetRef := qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef);
-		    activeResetRefExp :=  DAE.CREF(activeResetRef, DAE.T_BOOL_DEFAULT);
-		    // SMS_PRE.initialState.activeState==i
-		    eqExp := DAE.RELATION(activeStateRefExp, DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
-		    // SMS_PRE.initialState.activeReset and SMS_PRE.initialState.activeState==i
-		    andExp := DAE.LBINARY(activeResetRefExp, DAE.AND(DAE.T_BOOL_DEFAULT), eqExp);
+        // Add equation for reset handling
+        //  SMS_PRE.refiningComp.reset = SMS_PRE.initialState.activeResetStates[i] or (SMS_PRE.initialState.activeReset and SMS_PRE.initialState.activeState==i)
+        activeResetStateRef := qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef);
+        activeResetStateRefExp := DAE.CREF(activeResetStateRef, DAE.T_BOOL_DEFAULT);
+        activeStateRef :=  qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, preRef);
+        activeStateRefExp :=  DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT);
+        activeResetRef := qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef);
+        activeResetRefExp :=  DAE.CREF(activeResetRef, DAE.T_BOOL_DEFAULT);
+        // SMS_PRE.initialState.activeState==i
+        eqExp := DAE.RELATION(activeStateRefExp, DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+        // SMS_PRE.initialState.activeReset and SMS_PRE.initialState.activeState==i
+        andExp := DAE.LBINARY(activeResetRefExp, DAE.AND(DAE.T_BOOL_DEFAULT), eqExp);
         rhs := DAE.LBINARY(activeResetStateRefExp, DAE.OR(DAE.T_BOOL_DEFAULT), andExp);
-		    R(initialState=refiningRefined) := refiningComp;
-		    refiningRef := ComponentReference.crefPrefixString(SMS_PRE, refiningRefined);
-		    refiningResetRef := qCref("reset", DAE.T_BOOL_DEFAULT, {}, refiningRef);
-		    eqs := BackendDAE.EQUATION(DAE.CREF(refiningResetRef, DAE.T_BOOL_DEFAULT), rhs, DAE.emptyElementSource, bindingKind) :: eqs;
-		    // Add equation for activation handling
-		    // SMS_PRE.refiningComp.active = (SMS_PRE.initialState.activeReset.activeState == i)
-		    refiningActiveRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, refiningRef);
-		    eqs := BackendDAE.EQUATION(DAE.CREF(refiningActiveRef, DAE.T_BOOL_DEFAULT), eqExp, DAE.emptyElementSource, bindingKind) :: eqs;
+        R(initialState=refiningRefined) := refiningComp;
+        refiningRef := ComponentReference.crefPrefixString(SMS_PRE, refiningRefined);
+        refiningResetRef := qCref("reset", DAE.T_BOOL_DEFAULT, {}, refiningRef);
+        eqs := BackendDAE.EQUATION(DAE.CREF(refiningResetRef, DAE.T_BOOL_DEFAULT), rhs, DAE.emptyElementSource, bindingKind) :: eqs;
+        // Add equation for activation handling
+        // SMS_PRE.refiningComp.active = (SMS_PRE.initialState.activeReset.activeState == i)
+        refiningActiveRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, refiningRef);
+        eqs := BackendDAE.EQUATION(DAE.CREF(refiningActiveRef, DAE.T_BOOL_DEFAULT), eqExp, DAE.emptyElementSource, bindingKind) :: eqs;
       end for;
     end if;
     refiningComps := listAppend(refiningComps, stateRefiningComps);
@@ -509,9 +509,9 @@ algorithm
       // If lhs x is a local variable add equation "x := if stateActive then exp else previous(x)"
       if BaseHashSet.has(componentRef, crefLocalsSet) then
         callAttributes := DAE.CALL_ATTR(ty,false,true,false,false,DAE.NO_INLINE(),DAE.NO_TAIL());
-	      previousExp := DAE.CALL(Absyn.IDENT("previous"), {exp}, callAttributes);
-	      rhs := DAE.IFEXP(andExp, scalar, previousExp);
-	      outLocalEqns :=  BackendDAE.EQUATION(exp, rhs, source, attr) :: outLocalEqns;
+        previousExp := DAE.CALL(Absyn.IDENT("previous"), {exp}, callAttributes);
+        rhs := DAE.IFEXP(andExp, scalar, previousExp);
+        outLocalEqns :=  BackendDAE.EQUATION(exp, rhs, source, attr) :: outLocalEqns;
 
         // Find variable corresponding to componentRef
         var := List.selectFirst1(outLocal,cmpVarCref,componentRef);
@@ -831,20 +831,20 @@ protected
   DAE.Exp  andExp, eqExp;
   BackendDAE.EquationAttributes bindingKind;
 algorithm
-	// Create Variable stateRef.active
-	// FIXME Use name that cannot possible conflict with user variable (or is .active reserved for state machines?)
-	activePlotIndicatorRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, stateRef);
-	activePlotIndicatorVar := createVarWithDefaults(activePlotIndicatorRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  // Create Variable stateRef.active
+  // FIXME Use name that cannot possible conflict with user variable (or is .active reserved for state machines?)
+  activePlotIndicatorRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, stateRef);
+  activePlotIndicatorVar := createVarWithDefaults(activePlotIndicatorRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
 
-	// stateRef.active := SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
-	activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
-	activeStateRef :=  qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, preRef);
-	// SMS_PRE.initialState.activeState==i
-	eqExp := DAE.RELATION(DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
-	// SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
-	andExp := DAE.LBINARY(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), DAE.AND(DAE.T_BOOL_DEFAULT), eqExp);
-	bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
-	eqn := BackendDAE.EQUATION(DAE.CREF(activePlotIndicatorRef, DAE.T_BOOL_DEFAULT), andExp, DAE.emptyElementSource, bindingKind);
+  // stateRef.active := SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
+  activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
+  activeStateRef :=  qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, preRef);
+  // SMS_PRE.initialState.activeState==i
+  eqExp := DAE.RELATION(DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+  // SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
+  andExp := DAE.LBINARY(DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT), DAE.AND(DAE.T_BOOL_DEFAULT), eqExp);
+  bindingKind := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION(), 0);
+  eqn := BackendDAE.EQUATION(DAE.CREF(activePlotIndicatorRef, DAE.T_BOOL_DEFAULT), andExp, DAE.emptyElementSource, bindingKind);
 end synthesizeAutomatonEqsCreateActiveIndication;
 
 protected function filterRs "
@@ -1382,25 +1382,25 @@ algorithm
     eqsLst := BackendEquation.equationList(outgoing);
 
     for eqs in eqsLst loop
-	    BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(
-	      statementLst = {
-	        DAE.STMT_NORETCALL(
-	          exp = DAE.CALL(
-	            path = Absyn.IDENT(name = "transition"),
-	            expLst = {from, to, condition, immediate, reset, synchronize, priority}
-	          )
-	        )
-	      }
-	    )) := eqs;
-	    DAE.CREF(componentRef=cFrom) := from;
-	    DAE.CREF(componentRef=cTo) := to;
-	    DAE.BCONST(bool=bImmediate) := immediate;
-	    DAE.BCONST(bool=bReset) := reset;
-	    DAE.BCONST(bool=bSynchronize) := synchronize;
-	    DAE.ICONST(integer=iPriority) := priority;
-	    iFrom := List.position(cFrom, q);
-	    iTo := List.position(cTo, q);
-	    tc := (TRANSITION(iFrom, iTo, bImmediate, bReset, bSynchronize, iPriority), condition) :: tc;
+      BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(
+        statementLst = {
+          DAE.STMT_NORETCALL(
+            exp = DAE.CALL(
+              path = Absyn.IDENT(name = "transition"),
+              expLst = {from, to, condition, immediate, reset, synchronize, priority}
+            )
+          )
+        }
+      )) := eqs;
+      DAE.CREF(componentRef=cFrom) := from;
+      DAE.CREF(componentRef=cTo) := to;
+      DAE.BCONST(bool=bImmediate) := immediate;
+      DAE.BCONST(bool=bReset) := reset;
+      DAE.BCONST(bool=bSynchronize) := synchronize;
+      DAE.ICONST(integer=iPriority) := priority;
+      iFrom := List.position(cFrom, q);
+      iTo := List.position(cTo, q);
+      tc := (TRANSITION(iFrom, iTo, bImmediate, bReset, bSynchronize, iPriority), condition) :: tc;
     end for;
   end for;
   tcSorted := List.sort(tc, priorityLt);
