@@ -710,7 +710,7 @@ void SimManager::runSingleProcess()
 
     }  // end while continue
     _step_event_system->setTerminal(true);
-    _cont_system->evaluateAll(IContinuous::CONTINUOUS);
+    _cont_system->evaluateAll(IContinuous::CONTINUOUS); //Is this really necessary? The solver should have already calculated the "final time point"
 
     if (zeroVal_new)
         delete[] zeroVal_new;

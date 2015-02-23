@@ -212,7 +212,12 @@ void SystemDefaultImplementation::getContinuousStates(double* z)
   z[i] = __z[i];
   }*/
 
-};
+}
+
+IGlobalSettings* SystemDefaultImplementation::getGlobalSettings()
+{
+    return _global_settings;
+}
 
 bool SystemDefaultImplementation::isConsistent()
 {

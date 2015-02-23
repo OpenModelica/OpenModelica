@@ -116,6 +116,8 @@ public:
   /// Set current integration time
   void setTime(const double& t);
 
+  IGlobalSettings* getGlobalSettings();
+
 protected:
     void Assert(bool cond, const string& msg);
     void Terminate(string msg);

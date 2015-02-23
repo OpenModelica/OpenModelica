@@ -556,8 +556,8 @@ void Ida::IDACore()
     if (_cv_rt == IDA_TSTOP_RETURN)
     {
       _time_system->setTime(_tEnd);
-//      _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-//      _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+      _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
+      _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
       if(writeOutput)
          writeToFile(0, _tEnd, _h);
 
