@@ -7186,6 +7186,7 @@ algorithm
   (expOut,varsOut) := matchcontinue(expIn,varsIn)
    local
      Integer idx;
+     Real r;
      Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
      BackendDAE.Var var;
      DAE.ComponentRef cref;
@@ -7236,6 +7237,30 @@ algorithm
        exp2 = replaceCrefWithStartValue(exp2,varsIn);
      then (DAE.LBINARY(exp1,op,exp2),varsIn);
 
+     // time > -1.0 or similar
+    case(DAE.RELATION(exp1=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),operator=DAE.GREATER(),exp2=DAE.RCONST(real=r),index=idx,optionExpisASUB=optionExpisASUB),_)
+     equation
+       true = realLe(r,0.0);
+     then (expIn,varsIn);
+       
+     // time >= -1.0 or similar
+    case(DAE.RELATION(exp1=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),operator=DAE.GREATEREQ(),exp2=DAE.RCONST(real=r),index=idx,optionExpisASUB=optionExpisASUB),_)
+     equation
+       true = realLe(r,0.0);
+     then (expIn,varsIn);
+     
+    // -1.0 < time or similar
+    case(DAE.RELATION(exp1=DAE.RCONST(real=r),operator=DAE.LESS(),exp2=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),index=idx,optionExpisASUB=optionExpisASUB),_)
+     equation
+       true = realLe(r,0.0);
+     then (expIn,varsIn);  
+       
+     // -1.0 <= time or similar
+    case(DAE.RELATION(exp1=DAE.RCONST(real=r),operator=DAE.LESSEQ(),exp2=DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")),index=idx,optionExpisASUB=optionExpisASUB),_)
+     equation
+       true = realLe(r,0.0);
+     then (expIn,varsIn);
+       
     case(DAE.RELATION(exp1=exp1,operator=op,exp2=exp2,index=idx,optionExpisASUB=optionExpisASUB),_)
      equation
        exp1 = replaceCrefWithStartValue(exp1,varsIn);
