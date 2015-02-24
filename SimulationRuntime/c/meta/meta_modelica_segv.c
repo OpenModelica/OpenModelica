@@ -98,7 +98,7 @@ static sigset_t segvset;
 
 static void handler(int signo, siginfo_t *si, void *ptr)
 {
-  int isStackOverflow,unused;
+  int unused __attribute__((unused)), isStackOverflow;
   isStackOverflow = si->si_addr < stackBottom && (si->si_addr > stackBottom - LIMIT_FOR_STACK_OVERFLOW);
   if (isStackOverflow) {
     setTrace(1,0);

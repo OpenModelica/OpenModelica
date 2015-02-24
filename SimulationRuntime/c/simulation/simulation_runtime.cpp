@@ -411,7 +411,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   TRACE_PUSH
 
   int retVal = -1;
-  int measureSimTime = 0;
 
   /* linear model option is set : <-l lintime> */
   int create_linearmodel = omc_flag[FLAG_L];
@@ -422,7 +421,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   if (!measure_time_flag && (ACTIVE_STREAM(LOG_STATS) || omc_flag[FLAG_CPU]))
   {
     measure_time_flag = 1;
-    measureSimTime = 1;
   }
   errno = 0;
   if (omc_flag[FLAG_ALARM]) {

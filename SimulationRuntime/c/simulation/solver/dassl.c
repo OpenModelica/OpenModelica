@@ -166,7 +166,6 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 {
   /* work arrays for DASSL */
   unsigned int i;
-  SIMULATION_INFO *simInfo = &(data->simulationInfo);
   SIMULATION_DATA tmpSimData = {0};
 
   TRACE_PUSH

@@ -135,7 +135,7 @@ static const char* skipValue(const char* str)
   case '9':
   {
     char *endptr = NULL;
-    double d = strtod(str,&endptr);
+    strtod(str,&endptr);
     if (str == endptr) {
       fprintf(stderr, "Not a number, got %.20s\n", str);
        abort();
@@ -253,7 +253,7 @@ static const char* readEquation(const char *str,EQUATION_INFO *xml,int i)
     }
     str++;
   };
-  str = assertChar(str, ']');
+  assertChar(str, ']');
   xml->numVar = n;
   xml->vars = malloc(sizeof(const char*)*n);
   str = str2;
@@ -363,7 +363,7 @@ static void readInfoJson(const char *str,MODEL_DATA_XML *xml)
   str=assertStringValue(str,"functions");
   str=assertChar(str,':');
   str=readFunctions(str,xml);
-  str=assertChar(str,'}');
+  assertChar(str,'}');
 }
 
 void modelInfoJsonInit(MODEL_DATA_XML* xml)

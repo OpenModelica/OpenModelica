@@ -37,6 +37,7 @@ extern "C" {
 #include "modelica.h"
 #include "systemimpl.h"
 #include "errorext.h"
+#include "meta_modelica_builtin.h"
 
 #define MMC_NUM_ARGS 32
 #define UNBOX_OFFSET 1
@@ -78,7 +79,6 @@ static int value_to_type_desc(void *value, type_description *desc)
   }; break;
   case Values__STRING_3dBOX1: {
     void *data = MMC_STRUCTDATA(value)[UNBOX_OFFSET];
-    int len = MMC_HDRSTRLEN(MMC_GETHDR(data));
     desc->type = TYPE_DESC_STRING;
     desc->data.string = data;
   }; break;
@@ -524,15 +524,14 @@ static void *value_to_mmc(void* value)
     while (MMC_GETHDR(tmp) != MMC_NILHDR) {
       len++; tmp = MMC_CDR(tmp);
     }
-    data_mmc = (void**) malloc(len*sizeof(void*));
+    res = mmc_mk_box_no_assign(len, 0);
     len = 0;
     tmp = data;
     while (MMC_GETHDR(tmp) != MMC_NILHDR) {
-      data_mmc[len++] = value_to_mmc(MMC_CAR(tmp));
+      threadData_t *threadData = NULL;
+      arrayUpdate(res, ++len, value_to_mmc(MMC_CAR(tmp)));
       tmp = MMC_CDR(tmp);
     }
-    res = mmc_mk_box_arr(len, 0, (void**) data_mmc);
-    free(data_mmc);
     return res;
   };
   case Values__ENUM_5fLITERAL_3dBOX2:
@@ -720,12 +719,10 @@ static int get_array_data(int curdim, int dims, const _index_t *dim_size,
       }; break;
       case TYPE_DESC_STRING: {
         modelica_string *ptr = *((modelica_string**)data);
-        int len;
         void *str;
         if (MMC_HDRCTOR(MMC_GETHDR(item)) != Values__STRING_3dBOX1)
           return -1;
         str = MMC_STRUCTDATA(item)[UNBOX_OFFSET+0];
-        len = MMC_HDRSTRLEN(MMC_GETHDR(str));
         *ptr = str;
         *data = ++ptr;
       }; break;

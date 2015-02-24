@@ -865,7 +865,6 @@ static inline unsigned long djb2_hash_iter(const unsigned char *str /* data; not
 
 unsigned long mmc_prim_hash(void *p,unsigned long hash /* start at 5381 */)
 {
-  void **pp = NULL;
   mmc_uint_t phdr = 0;
 
   mmc_prim_hash_tail_recur:
@@ -893,8 +892,6 @@ unsigned long mmc_prim_hash(void *p,unsigned long hash /* start at 5381 */)
     int i;
     int slots = MMC_HDRSLOTS(phdr);
     int ctor = MMC_HDRCTOR(phdr);
-    int is_record = slots>0 && ctor > 1 ? 1 : 0;
-    pp = MMC_STRUCTDATA(p);
     hash = djb2_hash_iter((unsigned char*)&ctor, sizeof(int), hash);
     if (slots == 0)
       return hash;
