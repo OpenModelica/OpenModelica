@@ -1023,8 +1023,8 @@ end checkSettings;
 
 function loadFile "load file (*.mo) and merge it with the loaded AST."
   input String fileName;
-  input String encoding := "UTF-8";
-  input Boolean uses := true;
+  input String encoding = "UTF-8";
+  input Boolean uses = true;
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -1039,8 +1039,8 @@ end loadFile;
 
 function loadFiles "load files (*.mo) and merges them with the loaded AST."
   input String[:] fileNames;
-  input String encoding := "UTF-8";
-  input Integer numThreads := OpenModelica.Scripting.numProcessors();
+  input String encoding = "UTF-8";
+  input Integer numThreads = OpenModelica.Scripting.numProcessors();
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
@@ -1048,7 +1048,7 @@ end loadFiles;
 
 function reloadClass "reloads the file associated with the given (loaded class)"
   input TypeName name;
-  input String encoding := "UTF-8";
+  input String encoding = "UTF-8";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -1065,8 +1065,8 @@ was read in binary format from a file with the same name.
   NOTE: Encoding is deprecated as *ALL* strings are now UTF-8 encoded.
   "
   input String data;
-  input String filename := "<interactive>";
-  input String encoding := "UTF-8";
+  input String filename = "<interactive>";
+  input String encoding = "UTF-8";
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
@@ -1074,7 +1074,7 @@ end loadString;
 
 function parseString
   input String data;
-  input String filename := "<interactive>";
+  input String filename = "<interactive>";
   output TypeName names[:];
 external "builtin";
 annotation(preferredView="text");
@@ -1082,7 +1082,7 @@ end parseString;
 
 function parseFile
   input String filename;
-  input String encoding := "UTF-8";
+  input String encoding = "UTF-8";
   output TypeName names[:];
 external "builtin";
 annotation(preferredView="text");
@@ -1090,7 +1090,7 @@ end parseFile;
 
 function loadFileInteractiveQualified
   input String filename;
-  input String encoding := "UTF-8";
+  input String encoding = "UTF-8";
   output TypeName names[:];
 external "builtin";
 annotation(preferredView="text");
@@ -1098,7 +1098,7 @@ end loadFileInteractiveQualified;
 
 function loadFileInteractive
   input String filename;
-  input String encoding := "UTF-8";
+  input String encoding = "UTF-8";
   output TypeName names[:];
 external "builtin";
 annotation(preferredView="text");
@@ -1106,7 +1106,7 @@ end loadFileInteractive;
 
 impure function system "Similar to system(3). Executes the given command in the system shell."
   input String callStr "String to call: sh -c $callStr";
-  input String outputFile := "" "The output is redirected to this file (unless already done by callStr)";
+  input String outputFile = "" "The output is redirected to this file (unless already done by callStr)";
   output Integer retval "Return value of the system call; usually 0 on success";
 external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
@@ -1114,7 +1114,7 @@ end system;
 
 impure function system_parallel "Similar to system(3). Executes the given commands in the system shell, in parallel if omc was compiled using OpenMP."
   input String callStr[:] "String to call: sh -c $callStr";
-  input Integer numThreads := numProcessors();
+  input Integer numThreads = numProcessors();
   output Integer retval[:] "Return value of the system call; usually 0 on success";
 external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
@@ -1128,7 +1128,7 @@ annotation(preferredView="text");
 end saveAll;
 
 function help "display the OpenModelica help text."
-  input String topic := "topics";
+  input String topic = "topics";
   output String helpText;
 external "builtin";
 end help;
@@ -1160,7 +1160,7 @@ end generateHeader;
 
 function generateSeparateCode
   input TypeName className;
-  input Boolean cleanCache := false "If true, the cache is reset between each generated package. This conserves memory at the cost of speed.";
+  input Boolean cleanCache = false "If true, the cache is reset between each generated package. This conserves memory at the cost of speed.";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html><p>Under construction.</p>
@@ -1168,7 +1168,7 @@ annotation(Documentation(info="<html><p>Under construction.</p>
 end generateSeparateCode;
 
 function generateSeparateCodeDependencies
-  input String stampSuffix := ".c" "Suffix to add to dependencies (often .c.stamp)";
+  input String stampSuffix = ".c" "Suffix to add to dependencies (often .c.stamp)";
   output String [:] dependencies;
 external "builtin";
 annotation(Documentation(info="<html><p>Under construction.</p>
@@ -1177,8 +1177,8 @@ end generateSeparateCodeDependencies;
 
 function generateSeparateCodeDependenciesMakefile
   input String filename "The file to write the makefile to";
-  input String directory := "" "The relative path of the generated files";
-  input String suffix := ".c" "Often .stamp since we do not update all the files";
+  input String directory = "" "The relative path of the generated files";
+  input String suffix = ".c" "Often .stamp since we do not update all the files";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html><p>Under construction.</p>
@@ -1499,7 +1499,7 @@ annotation(preferredView="text");
 end clearCommandLineOptions;
 
 function getVersion "Returns the version of the Modelica compiler."
-  input TypeName cl := $TypeName(OpenModelica);
+  input TypeName cl = $TypeName(OpenModelica);
   output String version;
 external "builtin";
 annotation(preferredView="text");
@@ -1531,7 +1531,7 @@ impure function writeFile
   "Write the data to file. Returns true on success."
   input String fileName;
   input String data;
-  input Boolean append := false;
+  input Boolean append = false;
   output Boolean success;
 external "builtin"; annotation(__OpenModelica_Impure=true, preferredView="text");
 end writeFile;
@@ -1576,9 +1576,9 @@ function regex  "Sets the error buffer and returns -1 if the regex does not comp
 "
   input String str;
   input String re;
-  input Integer maxMatches := 1 "The maximum number of matches that will be returned";
-  input Boolean extended := true "Use POSIX extended or regular syntax";
-  input Boolean caseInsensitive := false;
+  input Integer maxMatches = 1 "The maximum number of matches that will be returned";
+  input Boolean extended = true "Use POSIX extended or regular syntax";
+  input Boolean caseInsensitive = false;
   output Integer numMatches "-1 is an error, 0 means no match, else returns a number 1..maxMatches";
   output String matchedSubstrings[maxMatches] "unmatched strings are returned as empty";
 external "C" numMatches = OpenModelica_regex(str,re,maxMatches,extended,caseInsensitive,matchedSubstrings);
@@ -1588,8 +1588,8 @@ end regex;
 function regexBool "Returns true if the string matches the regular expression."
   input String str;
   input String re;
-  input Boolean extended := true "Use POSIX extended or regular syntax";
-  input Boolean caseInsensitive := false;
+  input Boolean extended = true "Use POSIX extended or regular syntax";
+  input Boolean caseInsensitive = false;
   output Boolean matches;
 protected
   Integer numMatches;
@@ -1622,7 +1622,7 @@ annotation(preferredView="text");
 end readFileNoNumeric;
 
 function getErrorString "Returns the current error message. [file.mo:n:n-n:n:b] Error: message"
-  input Boolean warningsAsErrors := false;
+  input Boolean warningsAsErrors = false;
   output String errorString;
 external "builtin";
 annotation(preferredView="text", Documentation(info="<html>
@@ -1669,7 +1669,7 @@ end ErrorMessage;
 function getMessagesStringInternal
   "{{[file.mo:n:n-n:n:b] Error: message, TRANSLATION, Error, code}}
   if unique = true (the default) only unique messages will be shown"
-  input Boolean unique := true;
+  input Boolean unique = true;
   output ErrorMessage[:] messagesString;
 external "builtin";
 annotation(preferredView="text");
@@ -1828,7 +1828,7 @@ function getAstAsCorbaString "Print the whole AST on the CORBA format for record
     within_ = ...,
     globalBuildTimes = ...
   end Absyn.PROGRAM;"
-  input String fileName := "<interactive>";
+  input String fileName = "<interactive>";
   output String result "returns the string if fileName is interactive; else it returns ok or error depending on if writing the file succeeded";
 external "builtin";
 annotation(preferredView="text");
@@ -1837,7 +1837,7 @@ end getAstAsCorbaString;
 function cd "change directory to the given path (which may be either relative or absolute)
   returns the new working directory on success or a message on failure
   if the given path is the empty string, the function simply returns the current working directory."
-  input String newWorkingDirectory := "";
+  input String newWorkingDirectory = "";
   output String workingDirectory;
 external "builtin";
 annotation(preferredView="text");
@@ -1868,7 +1868,7 @@ end checkModel;
 
 function checkAllModelsRecursive "Checks all models recursively and returns number of variables and equations."
   input TypeName className;
-  input Boolean checkProtected := false "Checks also protected classes if true";
+  input Boolean checkProtected = false "Checks also protected classes if true";
   output String result;
 external "builtin";
 annotation(preferredView="text");
@@ -1891,7 +1891,7 @@ end instantiateModel;
 function buildOpenTURNSInterface "generates wrapper code for OpenTURNS"
   input TypeName className;
   input String pythonTemplateFile;
-  input Boolean showFlatModelica := false;
+  input Boolean showFlatModelica = false;
   output String outPythonScript;
   external "builtin";
 end buildOpenTURNSInterface;
@@ -1911,10 +1911,10 @@ end generateCode;
 
 function loadModel "Loads the Modelica Standard Library."
   input TypeName className;
-  input String[:] priorityVersion := {"default"};
-  input Boolean notify := false "Give a notification of the libraries and versions that were loaded";
-  input String languageStandard := "" "Override the set language standard. Parse with the given setting, but do not change it permanently.";
-  input Boolean requireExactVersion := false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
+  input String[:] priorityVersion = {"default"};
+  input Boolean notify = false "Give a notification of the libraries and versions that were loaded";
+  input String languageStandard = "" "Override the set language standard. Parse with the given setting, but do not change it permanently.";
+  input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -1999,13 +1999,13 @@ end codeToString;
 
 function dumpXMLDAE "Outputs the DAE system corresponding to a specific model."
   input TypeName className;
-  input String translationLevel := "flat" "flat, optimiser, backEnd, or stateSpace";
-  input Boolean addOriginalIncidenceMatrix := false;
-  input Boolean addSolvingInfo := false;
-  input Boolean addMathMLCode := false;
-  input Boolean dumpResiduals := false;
-  input String fileNamePrefix := "<default>" "this is the className in string form by default";
-  input String rewriteRulesFile := "" "the file from where the rewiteRules are read, default is empty which means no rewrite rules";
+  input String translationLevel = "flat" "flat, optimiser, backEnd, or stateSpace";
+  input Boolean addOriginalIncidenceMatrix = false;
+  input Boolean addSolvingInfo = false;
+  input Boolean addMathMLCode = false;
+  input Boolean dumpResiduals = false;
+  input String fileNamePrefix = "<default>" "this is the className in string form by default";
+  input String rewriteRulesFile = "" "the file from where the rewiteRules are read, default is empty which means no rewrite rules";
   output Boolean success "if the function succeeded true/false";
   output String xmlfileName "the Xml file";
 external "builtin";
@@ -2070,10 +2070,10 @@ end escapeXML;
 type ExportKind = enumeration(Absyn "Normal Absyn",SCode "Normal SCode",MetaModelicaInterface "A restricted MetaModelica package interface (protected parts are stripped)",Internal "True unparsing of the Absyn");
 
 function list "Lists the contents of the given class, or all loaded classes."
-  input TypeName class_ := $TypeName(AllLoadedClasses);
-  input Boolean interfaceOnly := false;
-  input Boolean shortOnly := false "only short class definitions";
-  input ExportKind exportKind := ExportKind.Absyn;
+  input TypeName class_ = $TypeName(AllLoadedClasses);
+  input Boolean interfaceOnly = false;
+  input Boolean shortOnly = false "only short class definitions";
+  input ExportKind exportKind = ExportKind.Absyn;
   output String contents;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -2135,14 +2135,14 @@ end realpath;
 
 function uriToFilename
   input String uri;
-  output String filename := "";
-  output String message := "";
+  output String filename = "";
+  output String message = "";
 protected
   String [:,2] libraries;
   Integer numMatches;
   String [:] matches,matches2;
   String path, schema, str;
-  Boolean isUri,isMatch:=false,isModelicaUri,isFileUri,isFileUriAbsolute;
+  Boolean isUri,isMatch=false,isModelicaUri,isFileUri,isFileUriAbsolute;
 algorithm
   isUri := regexBool(uri, "^[A-Za-z]*://");
   if isUri then
@@ -2231,8 +2231,8 @@ function solveLinearSystem
   For solver lp_solve: ???"
   input Real[size(B,1),size(B,1)] A;
   input Real[:] B;
-  input LinearSystemSolver solver := LinearSystemSolver.dgesv;
-  input Integer[:] isInt := {-1} "list of indices that are integers";
+  input LinearSystemSolver solver = LinearSystemSolver.dgesv;
+  input Integer[:] isInt = {-1} "list of indices that are integers";
   output Real[size(B,1)] X;
   output Integer info;
 external "builtin";
@@ -2252,12 +2252,12 @@ function importFMU "Imports the Functional Mockup Unit
   Example command:
   importFMU(\"A.fmu\");"
   input String filename "the fmu file name";
-  input String workdir := "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
-  input Integer loglevel := 3 "loglevel_nothing=0;loglevel_fatal=1;loglevel_error=2;loglevel_warning=3;loglevel_info=4;loglevel_verbose=5;loglevel_debug=6";
-  input Boolean fullPath := false "When true the full output path is returned otherwise only the file name.";
-  input Boolean debugLogging := false "When true the FMU's debug output is printed.";
-  input Boolean generateInputConnectors := true "When true creates the input connector pins.";
-  input Boolean generateOutputConnectors := true "When true creates the output connector pins.";
+  input String workdir = "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
+  input Integer loglevel = 3 "loglevel_nothing=0;loglevel_fatal=1;loglevel_error=2;loglevel_warning=3;loglevel_info=4;loglevel_verbose=5;loglevel_debug=6";
+  input Boolean fullPath = false "When true the full output path is returned otherwise only the file name.";
+  input Boolean debugLogging = false "When true the FMU's debug output is printed.";
+  input Boolean generateInputConnectors = true "When true creates the input connector pins.";
+  input Boolean generateOutputConnectors = true "When true creates the output connector pins.";
   output String generatedFileName "Returns the full path of the generated file.";
 external "builtin";
 annotation(preferredView="text");
@@ -2269,8 +2269,8 @@ The only required argument is the className, while all others have some default 
   Example command:
   translateModelFMU(className, version=\"2.0\");"
   input TypeName className "the class that should translated";
-  input String version := "1.0" "The output directory for imported FMU files. <default> will put the files to current working directory.";
-  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"className\"";
+  input String version = "1.0" "The output directory for imported FMU files. <default> will put the files to current working directory.";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(preferredView="text");
@@ -2283,17 +2283,17 @@ function simulate "simulates a modelica model by generating c code, build it and
   simulate(A);
 "
   input TypeName className "the class that should simulated";
-  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
-  input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method := "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options := "<default>" "options. <default> = \"\"";
-  input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
-  input String cflags := "<default>" "cflags. <default> = \"\"";
-  input String simflags := "<default>" "simflags. <default> = \"\"";
+  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Real numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
   output String simulationResults;
 external "builtin";
 annotation(preferredView="text");
@@ -2307,17 +2307,17 @@ function buildModel "builds a modelica model by generating c code and build it.
   simulate(A);
 "
   input TypeName className "the class that should be built";
-  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
-  input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method := "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
-  input String options := "<default>" "options. <default> = \"\"";
-  input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
-  input String cflags := "<default>" "cflags. <default> = \"\"";
-  input String simflags := "<default>" "simflags. <default> = \"\"";
+  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Real numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
   output String[2] buildModelResults;
 external "builtin";
 annotation(preferredView="text");
@@ -2338,7 +2338,7 @@ function copyClass
 "Copies a class within the same level"
  input TypeName className "the class that should be copied";
  input String newClassName "the name for new class";
- input TypeName withIn := $TypeName(TopLevel) "the with in path for new class";
+ input TypeName withIn = $TypeName(TopLevel) "the with in path for new class";
  output Boolean result;
 external "builtin";
 annotation(preferredView="text");
@@ -2346,20 +2346,20 @@ end copyClass;
 
 function linearize "creates a model with symbolic linearization matrixes"
   input TypeName className "the class that should simulated";
-  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
-  input Real stepSize := 0.002 "step size that is used for the result file. <default> = 0.002";
-  input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method := "<default>" "integration method used for simulation. <default> = dassl";
-  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
-  input Boolean storeInTemp := false "storeInTemp. <default> = false";
-  input Boolean noClean := false "noClean. <default> = false";
-  input String options := "<default>" "options. <default> = \"\"";
-  input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
-  input String cflags := "<default>" "cflags. <default> = \"\"";
-  input String simflags := "<default>" "simflags. <default> = \"\"";
+  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Real numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real stepSize = 0.002 "step size that is used for the result file. <default> = 0.002";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input Boolean storeInTemp = false "storeInTemp. <default> = false";
+  input Boolean noClean = false "noClean. <default> = false";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
   output String linearizationResult;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -2383,20 +2383,20 @@ function optimize "optimize a modelica/optimica model by generating c code, buil
  Example command:
   simulate(A);"
   input TypeName className "the class that should simulated";
-  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
-  input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
-  input Real stepSize := 0.002 "step size that is used for the result file. <default> = 0.002";
-  input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
-  input String method := DAE.SCONST("optimization") "optimize a modelica/optimica model.";
-  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
-  input Boolean storeInTemp := false "storeInTemp. <default> = false";
-  input Boolean noClean := false "noClean. <default> = false";
-  input String options := "<default>" "options. <default> = \"\"";
-  input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
-  input String cflags := "<default>" "cflags. <default> = \"\"";
-  input String simflags := "<default>" "simflags. <default> = \"\"";
+  input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Real numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real stepSize = 0.002 "step size that is used for the result file. <default> = 0.002";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = DAE.SCONST("optimization") "optimize a modelica/optimica model.";
+  input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
+  input Boolean storeInTemp = false "storeInTemp. <default> = false";
+  input Boolean noClean = false "noClean. <default> = false";
+  input String options = "<default>" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String cflags = "<default>" "cflags. <default> = \"\"";
+  input String simflags = "<default>" "simflags. <default> = \"\"";
   output String optimizationResults;
 external "builtin";
 annotation(preferredView="text");
@@ -2433,12 +2433,12 @@ annotation(preferredView="text");
 end setClassComment;
 
 function getClassNames "Returns the list of class names defined in the class."
-  input TypeName class_ := $TypeName(AllLoadedClasses);
-  input Boolean recursive := false;
-  input Boolean qualified := false;
-  input Boolean sort := false;
-  input Boolean builtin := false "List also builtin classes if true";
-  input Boolean showProtected := false "List also protected classes if true";
+  input TypeName class_ = $TypeName(AllLoadedClasses);
+  input Boolean recursive = false;
+  input Boolean qualified = false;
+  input Boolean sort = false;
+  input Boolean builtin = false "List also builtin classes if true";
+  input Boolean showProtected = false "List also protected classes if true";
   output TypeName classNames[:];
 external "builtin";
 annotation(preferredView="text");
@@ -2452,7 +2452,7 @@ annotation(preferredView="text");
 end getUsedClassNames;
 
 function getPackages "Returns the list of packages defined in the class."
-  input TypeName class_ := $TypeName(AllLoadedClasses);
+  input TypeName class_ = $TypeName(AllLoadedClasses);
   output TypeName classNames[:];
 external "builtin";
 annotation(preferredView="text");
@@ -2473,42 +2473,42 @@ annotation(preferredView="text");
 end getPlotSilent;
 
 partial function basePlotFunction "Extending this does not seem to work at the moment. A real shame; functions below are copy-paste and all need to be updated if the interface changes."
-  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String interpolation := "linear" "
+  input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String interpolation = "linear" "
     Determines if the simulation data should be interpolated to allow drawing of continuous lines in the diagram.
     \"linear\" results in linear interpolation between data points, \"constant\" keeps the value of the last known
     data point until a new one is found and \"none\" results in a diagram where only known data points are plotted."
   ;
-  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
-  input Boolean legend := true "Determines whether or not the variable legend is shown.";
-  input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
-  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
-  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
-  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
-  input Boolean points := false "Determines whether or not the data points should be indicated by a dot in the diagram.";
-  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input String title = "Plot by OpenModelica" "This text will be used as the diagram title.";
+  input Boolean legend = true "Determines whether or not the variable legend is shown.";
+  input Boolean grid = true "Determines whether or not a grid is shown in the diagram.";
+  input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input Boolean points = false "Determines whether or not the data points should be indicated by a dot in the diagram.";
+  input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   output Boolean success "Returns true on success";
 annotation(preferredView="text");
 end basePlotFunction;
 
 function plot "Launches a plot window using OMPlot."
   input VariableNames vars "The variables you want to plot";
-  input Boolean externalWindow := false "Opens the plot in a new plot window";
-  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String title := "" "This text will be used as the diagram title.";
-  input String grid := "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
-  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
-  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
-  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
-  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real curveWidth := 1.0 "Sets the width of the curve.";
-  input Integer curveStyle := 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition := "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
-  input String footer := "" "This text will be used as the diagram footer.";
+  input Boolean externalWindow = false "Opens the plot in a new plot window";
+  input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String title = "" "This text will be used as the diagram title.";
+  input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
+  input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real curveWidth = 1.0 "Sets the width of the curve.";
+  input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
+  input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
+  input String footer = "" "This text will be used as the diagram footer.";
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<PlotVariables>\"}";
 external "builtin";
@@ -2532,20 +2532,20 @@ function plotAll "Works in the same way as plot(), but does not accept any
   simulate(A);plotAll(externalWindow=true);
   simulate(A,fileNamePrefix=\"B\");simulate(C);plotAll(x,\"B.mat\");"
 
-  input Boolean externalWindow := false "Opens the plot in a new plot window";
-  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String title := "" "This text will be used as the diagram title.";
-  input String grid := "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
-  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
-  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
-  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
-  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real curveWidth := 1.0 "Sets the width of the curve.";
-  input Integer curveStyle := 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition := "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
-  input String footer := "" "This text will be used as the diagram footer.";
+  input Boolean externalWindow = false "Opens the plot in a new plot window";
+  input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String title = "" "This text will be used as the diagram title.";
+  input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
+  input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real curveWidth = 1.0 "Sets the width of the curve.";
+  input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
+  input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
+  input String footer = "" "This text will be used as the diagram footer.";
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<PlotVariables>\"}";
 external "builtin";
@@ -2561,8 +2561,8 @@ function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   simulate(A,outputFormat=\"mat\");visualize(A);visualize(A,\"B.mat\");visualize(A,\"B.mat\", true);
   "
   input TypeName className;
-  input Boolean externalWindow := false "Opens the visualize in a new window";
-  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input Boolean externalWindow = false "Opens the visualize in a new window";
+  input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   output Boolean success "Returns true on success";
   external "builtin";
 annotation(preferredView="text");
@@ -2576,20 +2576,20 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   "
   input VariableName xVariable;
   input VariableName yVariable;
-  input Boolean externalWindow := false "Opens the plot in a new plot window";
-  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String title := "" "This text will be used as the diagram title.";
-  input String grid := "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
-  input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
-  input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
-  input String xLabel := "time" "This text will be used as the horizontal label in the diagram.";
-  input String yLabel := "" "This text will be used as the vertical label in the diagram.";
-  input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
-  input Real curveWidth := 1.0 "Sets the width of the curve.";
-  input Integer curveStyle := 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition := "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
-  input String footer := "" "This text will be used as the diagram footer.";
+  input Boolean externalWindow = false "Opens the plot in a new plot window";
+  input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  input String title = "" "This text will be used as the diagram title.";
+  input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
+  input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
+  input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
+  input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
+  input String yLabel = "" "This text will be used as the vertical label in the diagram.";
+  input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real curveWidth = 1.0 "Sets the width of the curve.";
+  input Integer curveStyle = 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
+  input String legendPosition = "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
+  input String footer = "" "This text will be used as the diagram footer.";
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<PlotVariables>\"}";
 external "builtin";
@@ -2599,7 +2599,7 @@ end plotParametric;
 function readSimulationResult "Reads a result file, returning a matrix corresponding to the variables and size given."
   input String filename;
   input VariableNames variables;
-  input Integer size := 0 "0=read any size... If the size is not the same as the result-file, this function fails";
+  input Integer size = 0 "0=read any size... If the size is not the same as the result-file, this function fails";
   output Real result[:,:];
 external "builtin";
 annotation(preferredView="text");
@@ -2624,9 +2624,9 @@ public function compareSimulationResults "compares simulation results."
   input String filename;
   input String reffilename;
   input String logfilename;
-  input Real relTol := 0.01;
-  input Real absTol := 0.0001;
-  input String[:] vars := fill("",0);
+  input Real relTol = 0.01;
+  input Real absTol = 0.0001;
+  input String[:] vars = fill("",0);
   output String[:] result;
 external "builtin";
 annotation(preferredView="text");
@@ -2636,11 +2636,11 @@ public function diffSimulationResults "compares simulation results."
   input String actualFile;
   input String expectedFile;
   input String diffPrefix;
-  input Real relTol := 1e-3 "y tolerance";
-  input Real relTolDiffMinMax := 1e-4 "y tolerance based on the difference between the maximum and minimum of the signal";
-  input Real rangeDelta := 0.002 "x tolerance";
-  input String[:] vars := fill("",0);
-  input Boolean keepEqualResults := false;
+  input Real relTol = 1e-3 "y tolerance";
+  input Real relTolDiffMinMax = 1e-4 "y tolerance based on the difference between the maximum and minimum of the signal";
+  input Real rangeDelta = 0.002 "x tolerance";
+  input String[:] vars = fill("",0);
+  input Boolean keepEqualResults = false;
   output Boolean success /* On success, resultFiles is empty. But it might be empty on failure anyway (for example if an input file does not exist) */;
   output String[:] resultFiles;
 external "builtin";
@@ -2654,9 +2654,9 @@ public function diffSimulationResultsHtml
   input String var;
   input String actualFile;
   input String expectedFile;
-  input Real relTol := 1e-3 "y tolerance";
-  input Real relTolDiffMinMax := 1e-4 "y tolerance based on the difference between the maximum and minimum of the signal";
-  input Real rangeDelta := 0.002 "x tolerance";
+  input Real relTol = 1e-3 "y tolerance";
+  input Real relTolDiffMinMax = 1e-4 "y tolerance based on the difference between the maximum and minimum of the signal";
+  input Real rangeDelta = 0.002 "x tolerance";
   output String html;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -2684,7 +2684,7 @@ end checkCodeGraph;
 function val "Return the value of a variable at a given time in the simulation results"
   input VariableName var;
   input Real time;
-  input String fileName := "<default>" "The contents of the currentSimulationResult variable";
+  input String fileName = "<default>" "The contents of the currentSimulationResult variable";
   output Real valAtTime;
 external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
@@ -2907,7 +2907,7 @@ function iconv "The iconv() function converts one multibyte characters from one 
 "
   input String string;
   input String from;
-  input String to := "UTF-8";
+  input String to = "UTF-8";
   output String result;
 external "builtin";
 annotation(preferredView="text");
@@ -3198,7 +3198,7 @@ function setInitXmlStartValue
   input String variableName;
   input String startValue;
   input String outputFile;
-  output Boolean success := false;
+  output Boolean success = false;
 protected
   String xsltproc;
   String command;
@@ -3215,7 +3215,7 @@ end setInitXmlStartValue;
 
 function ngspicetoModelica "Converts ngspice netlist to Modelica code. Modelica file is created in the same directory as netlist file."
   input String netlistfileName;
-  output Boolean success := false;
+  output Boolean success = false;
 protected
   String command;
 algorithm
@@ -3255,11 +3255,11 @@ end isExperiment;
 
 function getSimulationOptions
   input TypeName name;
-  input Real defaultStartTime := 0.0;
-  input Real defaultStopTime := 1.0;
-  input Real defaultTolerance := 1e-6;
-  input Integer defaultNumberOfIntervals := 500 "May be overridden by defining defaultInterval instead";
-  input Real defaultInterval := 0.0 "If = 0.0, then numberOfIntervals is used to calculate the step size";
+  input Real defaultStartTime = 0.0;
+  input Real defaultStopTime = 1.0;
+  input Real defaultTolerance = 1e-6;
+  input Integer defaultNumberOfIntervals = 500 "May be overridden by defining defaultInterval instead";
+  input Real defaultInterval = 0.0 "If = 0.0, then numberOfIntervals is used to calculate the step size";
   output Real startTime;
   output Real stopTime;
   output Real tolerance;
@@ -3309,7 +3309,7 @@ external "builtin";
 end extendsFrom;
 
 function loadModelica3D
-  input String version := "3.2.1";
+  input String version = "3.2.1";
   output Boolean status;
 protected
   String m3d;
@@ -3345,7 +3345,7 @@ function searchClassNames "Searches for the class name in the all the loaded cla
   searchClassNames(\"ground\");
   searchClassNames(\"ground\", true);"
   input String searchText;
-  input Boolean findInText := false;
+  input Boolean findInText = false;
   output TypeName classNames[:];
 external "builtin";
 annotation(
@@ -3428,8 +3428,8 @@ end numProcessors;
 
 function runScriptParallel
   input String scripts[:];
-  input Integer numThreads := numProcessors();
-  input Boolean useThreads := false;
+  input Integer numThreads = numProcessors();
+  input Boolean useThreads = false;
   output Boolean results[:];
 external "builtin";
 annotation(
