@@ -123,7 +123,6 @@ function parallelParseFiles
   input Integer numThreads := Config.noProc();
   output HashTableStringToProgram.HashTable ht;
 protected
-  list<tuple<String,String>> workList := list((file,encoding) for file in filenames);
   list<ParserResult> partialResults;
 algorithm
   partialResults := parallelParseFilesWork(filenames, encoding, numThreads);

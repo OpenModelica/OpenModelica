@@ -536,10 +536,10 @@ dotted names and replaces '.' with ','"
   input String str;
   output String outStr;
   protected
-    String s1,s2,s3; Boolean b;
+    String s1,s2,s3;// Boolean b;
 algorithm
   //b := Util.stringContainsChar(str,".");
-  b := true; // always wrap the names
+  //b := true; // always wrap the names
   //s1 := if_(b,"Member[","");
   //s2 := if_(b,"]","");
   s3 := System.stringReplace(str,".","\\[UpPointer]");

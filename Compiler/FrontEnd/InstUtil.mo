@@ -210,7 +210,7 @@ algorithm
     case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb),cache,_)
       equation
         //print(" (Initial if)To ceval: " + stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") + "\n");
-        (cache,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Absyn.NO_MSG(),0);
+        (_,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Absyn.NO_MSG(),0);
         //print(" Ceval res: ("+stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+")\n");
 
         blist = List.map(valList,ValuesUtil.valueBool);
@@ -398,7 +398,7 @@ algorithm
       DAE.Binding binding;
       Option<DAE.Const> cnstOpt;
 
-    case (cache,env,name,nn::names,(DAE.TYPES_VAR(ty = ty))::vars,p)
+    case (cache,env,_,nn::names,(DAE.TYPES_VAR(ty = ty))::vars,p)
       equation
         // get Var
         (cache,DAE.TYPES_VAR(name,attributes,_,binding,cnstOpt),
@@ -2240,7 +2240,7 @@ algorithm
 
     case (((cdef as SCode.CLASS()) :: xs))
       equation
-        (cdefElts,restElts) = classdefAndImpElts(xs);
+        (_,restElts) = classdefAndImpElts(xs);
       then
         (cdef :: restElts,restElts);
 
@@ -3883,7 +3883,7 @@ algorithm
     case (cache, _, _, _, cl as SCode.CLASS(), _, _)
       then (cache,{},cl,DAE.NOMOD());
 
-    case (_, _, _, _, SCode.CLASS(name = id), _, _)
+    case (_, _, _, _, SCode.CLASS(), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         id = SCodeDump.unparseElementStr(inClass,SCodeDump.defaultOptions);
@@ -4615,7 +4615,7 @@ algorithm
         // adrpo: do not display error when running checkModel
         //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
         false = Flags.getConfigBool(Flags.CHECK_MODEL);
-        (cache,dim1) = Static.elabArrayDims(cache, env, cref, ad, impl, st,doVect,pre,info);
+        (_,dim1) = Static.elabArrayDims(cache, env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         failure(_ = List.threadMap(dim1, dim2, compatibleArraydim));
         e_str = ExpressionDump.printExpStr(e);
@@ -8528,7 +8528,7 @@ algorithm
       equation
         unbound = checkFunctionDefUse2(rest,alg,unbound,inOutputs,inInfo);
       then unbound;
-    case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=vars),dims=dims,binding=NONE())::rest,_,unbound,outputs,_)
+    case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=vars),dims=dims,binding=NONE())::rest,_,unbound,_,_)
       equation
         vars = List.filterOnTrue(vars, Types.varIsVariable);
         // TODO: We filter out parameters at the moment. I'm unsure if this is correct. Might be that this is an automatic error...
@@ -8541,7 +8541,7 @@ algorithm
         outputs = listAppend(outNames,inOutputs);
         unbound = checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);
       then unbound;
-    case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),dims=dims,binding=NONE())::rest,_,unbound,outputs,_)
+    case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),dims=dims,binding=NONE())::rest,_,unbound,_,_)
       equation
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
         unbound = List.consOnTrue(Expression.dimensionsKnownAndNonZero(dims),name,unbound);
@@ -8857,7 +8857,7 @@ algorithm
       Option<DAE.Exp> patternGuard,result;
       list<DAE.Pattern> patterns;
       list<DAE.Statement> body;
-    case (DAE.CASE(patterns=patterns,patternGuard=patternGuard,body=body,result=result,info=info,resultInfo=resultInfo),unbound)
+    case (DAE.CASE(patterns=patterns,patternGuard=patternGuard,body=body,result=result,resultInfo=resultInfo),unbound)
       equation
         ((_,unbound)) = Patternm.traversePattern((DAE.PAT_META_TUPLE(patterns),unbound),patternFiltering);
         (_,(unbound,info)) = Expression.traverseExpTopDown(DAE.META_OPTION(patternGuard),findUnboundVariableUse,(unbound,info));

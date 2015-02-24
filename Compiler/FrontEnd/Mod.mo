@@ -321,7 +321,7 @@ algorithm
         // merge modifers from the component to the modifers from the constrained by
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,inModScope,info);
-        (cache,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,cn,tp);
+        (_,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,cn,tp);
         // unelab mod so we get constant evaluation of parameters
         mod = unelabMod(emod);
       then
@@ -340,7 +340,7 @@ algorithm
         // merge modifers from the component to the modifers from the constrained by
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,inModScope,info);
-        (cache,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,compname,tp);
+        (_,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,compname,tp);
         // unelab mod so we get constant evaluation of parameters
         mod = unelabMod(emod);
       then
@@ -836,11 +836,9 @@ protected function compactSubMod
   input list<SCode.SubMod> inAccumMods;
   output list<SCode.SubMod> outSubMods;
 protected
-  String name;
   list<SCode.SubMod> submods;
   Boolean found;
 algorithm
-  SCode.NAMEMOD(name, _) := inSubMod;
   (submods, found) := List.findMap3(inAccumMods, compactSubMod2, inSubMod, inModScope, inName);
   outSubMods := List.consOnTrue(not found, inSubMod, submods);
 end compactSubMod;
@@ -1764,8 +1762,7 @@ algorithm
             {(SCode.COMPONENT(
                 name = id2,
                 prefixes = pf2,
-                attributes = attr2,
-                modifications = m2),
+                attributes = attr2),
                 emod2)}),env,pre)
       equation
         true = stringEq(id1, id2);

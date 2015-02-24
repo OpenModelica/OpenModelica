@@ -646,7 +646,7 @@ algorithm
     // Already found a match
     case (_,_,{_},_,_,_,_,_,_,_,_,_,_) then (inCache,inExps);
     // No match in Step 3; look for array expansions
-    case (cache,_,{},true,_,_,_,_,_,_,_,_,_)
+    case (_,_,{},true,_,_,_,_,_,_,_,_,_)
       equation
         isRelation = listMember(inOper,{Absyn.LESS(),Absyn.LESSEQ(),Absyn.GREATER(),Absyn.GREATEREQ(),Absyn.EQUAL(),Absyn.NEQUAL()});
         Error.assertionOrAddSourceMessage(not isRelation,Error.COMPILER_ERROR,{"Not supporting overloading of relation array operations"},info);

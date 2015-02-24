@@ -421,7 +421,7 @@ constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(126, "addDerAliases", false,
                 which helps im some cases to simulate the models e.g.
                 Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation."));
 constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(127, "disableComSubExp", false,
-  Util.gettext("Deactivets module 'comSubExp'"));
+  Util.gettext("Deactivates module 'comSubExp'"));
 constant DebugFlag NO_START_CALC = DEBUG_FLAG(128, "disableStartCalc", false,
   Util.gettext("Deactivates the pre-calculation of start values during compile-time."));
 

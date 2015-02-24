@@ -1628,7 +1628,7 @@ algorithm
       then
         (cache,res);
 
-    case (cache,env,id,info)
+    case (cache,env,id,_)
       equation
         (cache,SCode.CLASS(classDef=SCode.OVERLOAD(pathLst=names),info=info),env_1) = lookupClass(cache,env,id,false);
         (cache,res) = lookupFunctionsListInEnv(cache,env_1,names,info,{});
@@ -1718,7 +1718,7 @@ algorithm
         (cache,res);
 
     // Simple name, if class with restriction function found in frame instantiate to get type.
-    case (cache, FCore.G(scope = r::_), id as Absyn.IDENT(name = str),_,_)
+    case (cache, FCore.G(scope = r::_), id as Absyn.IDENT(),_,_)
       equation
         // adrpo: do not search in the entire environment as we anyway recurse with the fs argument!
         //        just search in {f} not f::fs as otherwise we might get us in an infinite loop
@@ -2228,8 +2228,8 @@ algorithm
     // final becomes protected, Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case (cache, env, (((      SCode.COMPONENT(
         id,
-        SCode.PREFIXES(vis, redecl, f as SCode.FINAL(), io, repl),
-        SCode.ATTR(d,ct,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest), _)
+        SCode.PREFIXES(_, redecl, f as SCode.FINAL(), io, repl),
+        SCode.ATTR(d,ct,prl,var,_),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2256,8 +2256,8 @@ algorithm
     // mahge: 2013-01-15 : only if they have bindings. otherwise they are still modifiable.
     case (cache, env, (((      SCode.COMPONENT(
         id,
-        SCode.PREFIXES(vis, redecl, f, io, repl),
-        SCode.ATTR(d,ct,prl,SCode.CONST(),dir),tp,mod as SCode.NOMOD(),comment,cond,info)), cmod) :: rest),_)
+        SCode.PREFIXES(vis, redecl, _, io, repl),
+        SCode.ATTR(d,ct,prl,SCode.CONST(),_),tp,mod as SCode.NOMOD(),comment,cond,info)), cmod) :: rest),_)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2283,8 +2283,8 @@ algorithm
 
     case (cache, env, (((      SCode.COMPONENT(
         id,
-        SCode.PREFIXES(vis, redecl, f, io, repl),
-        SCode.ATTR(d,ct,prl,var as SCode.CONST(),dir),tp,mod,comment,cond,info)),cmod) :: rest), _)
+        SCode.PREFIXES(_, redecl, f, io, repl),
+        SCode.ATTR(d,ct,prl,var as SCode.CONST(),_),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2310,8 +2310,8 @@ algorithm
     // all others, add input see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
     case (cache, env, (((      SCode.COMPONENT(
         id,
-        SCode.PREFIXES(vis, redecl, f, io, repl),
-        SCode.ATTR(d,ct,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest), _)
+        SCode.PREFIXES(_, redecl, _, io, repl),
+        SCode.ATTR(d,ct,prl,_,_),tp,mod,comment,cond,info)),cmod) :: rest), _)
       equation
         (cache,mod_1) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, Mod.COMPONENT(id), info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2725,7 +2725,7 @@ algorithm
     // Qualified variables looked up through component environment with or without spliced exp
     case (cache,ht,DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids), _)
       equation
-        (DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,cnstForRange),_,_,_,componentEnv) = lookupVar2(ht, id, inEnv);
+        (DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),tyParent,parentBinding,_),_,_,_,componentEnv) = lookupVar2(ht, id, inEnv);
 
         // leave just the last scope from component env as it SHOULD BE ONLY THERE, i.e. don't go on searching the parents!
         componentEnv = FGraph.setScope(componentEnv, List.create(FGraph.lastScopeRef(componentEnv)));
