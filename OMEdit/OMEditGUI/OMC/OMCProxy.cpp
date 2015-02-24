@@ -42,7 +42,7 @@
 #include "meta/meta_modelica.h"
 
 extern "C" {
-void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) = omc_assert_function;
+void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
