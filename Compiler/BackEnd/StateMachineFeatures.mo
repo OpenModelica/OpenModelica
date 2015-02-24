@@ -171,7 +171,7 @@ uniontype TransitionType
 end TransitionType;
 
 constant String SMS_PRE = "smOf" "prefix for crefs of fresh State Machine Semantics variables/knowns";
-constant Boolean DEBUG_SMDUMP = false "enable verbose stdout debug information during elaboration";
+constant Boolean DEBUG_SMDUMP = true "enable verbose stdout debug information during elaboration";
 
 public function stateMachineElab
   "Elaborate state machines and transform them in data-flow equations."
@@ -882,7 +882,7 @@ algorithm
 
   // Hack: Wrap everything in when equations
   // FIXME: Guess there is a reference mechanism and maybe I shouldn't hardcode "1" as index? (needs also adaption in wrapInWhenhack)
-  timeEvent := BackendDAE.SAMPLE_TIME_EVENT(1, DAE.RCONST(0), DAE.RCONST(samplingTime));
+  timeEvent := BackendDAE.SAMPLE_TIME_EVENT(1, DAE.RCONST(samplingTime), DAE.RCONST(samplingTime));
   wrappedEqs := List.map1(eqs, wrapInWhenHack, samplingTime);
 
   systOut := List.fold(vars, BackendVariable.addVarDAE, systIn);
