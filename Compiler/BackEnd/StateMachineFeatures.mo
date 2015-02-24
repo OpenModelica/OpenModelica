@@ -361,7 +361,7 @@ algorithm
   if isTopLevel then
     // Boolean preRef.init(start=true) = false
     initRef := qCref("init", DAE.T_BOOL_DEFAULT, {}, preRef);
-    initVar := createVarWithDefaults(initRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+    initVar := createVarWithDefaults(initRef, BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
     initVar := BackendVariable.setVarStartValue(initVar, DAE.BCONST(true));
     initVar := BackendVariable.setVarFixed(initVar, true);
     vars := initVar :: vars;
@@ -834,7 +834,7 @@ algorithm
   // Create Variable stateRef.active
   // FIXME Use name that cannot possible conflict with user variable (or is .active reserved for state machines?)
   activePlotIndicatorRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, stateRef);
-  activePlotIndicatorVar := createVarWithDefaults(activePlotIndicatorRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  activePlotIndicatorVar := createVarWithDefaults(activePlotIndicatorRef, BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
 
   // stateRef.active := SMS_PRE.initialState.active and (SMS_PRE.initialState.activeState==i)
   activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
@@ -1007,8 +1007,8 @@ algorithm
   //print("\n==CONDITIONS:===\n");
   //List.map_0(c,ExpressionDump.dumpExp);
 
-  defaultIntVar := createVarWithDefaults(ComponentReference.makeDummyCref(), BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
-  defaultBoolVar := createVarWithDefaults(ComponentReference.makeDummyCref(), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  defaultIntVar := createVarWithDefaults(ComponentReference.makeDummyCref(), BackendDAE.DISCRETE(), DAE.T_INTEGER_DEFAULT);
+  defaultBoolVar := createVarWithDefaults(ComponentReference.makeDummyCref(), BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
   knowns := {};
   vars := {};
   // ***** Create new variable declarations needed for semantic equations *****
@@ -1088,8 +1088,8 @@ algorithm
     i := i+1;
     cRefs := arrayUpdate(cRefs, i, qCref("c", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
     cImmediateRefs := arrayUpdate(cImmediateRefs, i, qCref("cImmediate", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
-    cVars := arrayUpdate(cVars, i, createVarWithDefaults(arrayGet(cRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
-    cImmediateVars := arrayUpdate(cImmediateVars, i, createVarWithDefaults(arrayGet(cImmediateRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
+    cVars := arrayUpdate(cVars, i, createVarWithDefaults(arrayGet(cRefs,i), BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
+    cImmediateVars := arrayUpdate(cImmediateVars, i, createVarWithDefaults(arrayGet(cImmediateRefs,i), BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
     // TODO Binding probably needs to be turned into a proper equation. Done below
     // cVars := arrayUpdate(cVars, i, BackendVariable.setBindExp(arrayGet(cVars,i), SOME(exp)));
     vars := arrayGet(cVars, i) :: vars;
@@ -1097,46 +1097,46 @@ algorithm
   end for;
   //input Boolean active "true if the state machine is active";
   activeRef := qCref("active", DAE.T_BOOL_DEFAULT, {}, preRef);
-  activeVar := createVarWithDefaults(activeRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  activeVar := createVarWithDefaults(activeRef, BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
   vars := activeVar :: vars;
   //input Boolean reset "true when the state machine should be reset";
   resetRef := qCref("reset", DAE.T_BOOL_DEFAULT, {}, preRef);
-  resetVar := createVarWithDefaults(resetRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  resetVar := createVarWithDefaults(resetRef, BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
   vars := resetVar :: vars;
   //Integer selectedState
   selectedStateRef := qCref("selectedState", DAE.T_INTEGER_DEFAULT, {}, preRef);
-  selectedStateVar := createVarWithDefaults(selectedStateRef, BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
+  selectedStateVar := createVarWithDefaults(selectedStateRef, BackendDAE.DISCRETE(), DAE.T_INTEGER_DEFAULT);
   vars := selectedStateVar :: vars;
   //Boolean selectedReset
   selectedResetRef := qCref("selectedReset", DAE.T_BOOL_DEFAULT, {}, preRef);
-  selectedResetVar := createVarWithDefaults(selectedResetRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  selectedResetVar := createVarWithDefaults(selectedResetRef, BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
   vars := selectedResetVar :: vars;
   // Integer fired
   firedRef := qCref("fired", DAE.T_INTEGER_DEFAULT, {}, preRef);
-  firedVar := createVarWithDefaults(firedRef, BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
+  firedVar := createVarWithDefaults(firedRef, BackendDAE.DISCRETE(), DAE.T_INTEGER_DEFAULT);
   vars := firedVar :: vars;
   // output Integer activeState
   activeStateRef := qCref("activeState", DAE.T_INTEGER_DEFAULT, {}, preRef);
-  activeStateVar := createVarWithDefaults(activeStateRef, BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
+  activeStateVar := createVarWithDefaults(activeStateRef, BackendDAE.DISCRETE(), DAE.T_INTEGER_DEFAULT);
   vars := activeStateVar :: vars;
   // output Boolean activeReset
   activeResetRef := qCref("activeReset", DAE.T_BOOL_DEFAULT, {}, preRef);
-  activeResetVar := createVarWithDefaults(activeResetRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  activeResetVar := createVarWithDefaults(activeResetRef, BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
   vars := activeResetVar :: vars;
   // Integer nextState
   nextStateRef := qCref("nextState", DAE.T_INTEGER_DEFAULT, {}, preRef);
-  nextStateVar := createVarWithDefaults(nextStateRef, BackendDAE.VARIABLE(), DAE.T_INTEGER_DEFAULT);
+  nextStateVar := createVarWithDefaults(nextStateRef, BackendDAE.DISCRETE(), DAE.T_INTEGER_DEFAULT);
   vars := nextStateVar :: vars;
   // Boolean nextReset
   nextResetRef := qCref("nextReset", DAE.T_BOOL_DEFAULT, {}, preRef);
-  nextResetVar := createVarWithDefaults(nextResetRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  nextResetVar := createVarWithDefaults(nextResetRef, BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
   vars := nextResetVar :: vars;
   //output Boolean activeResetStates[nStates]
   activeResetStatesRefs := arrayCreate(nStates, ComponentReference.makeDummyCref());
   activeResetStatesVars := arrayCreate(nStates, defaultBoolVar);
   for i in 1:nStates loop
     activeResetStatesRefs := arrayUpdate(activeResetStatesRefs, i, qCref("activeResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
-    activeResetStatesVars := arrayUpdate(activeResetStatesVars, i, createVarWithDefaults(arrayGet(activeResetStatesRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
+    activeResetStatesVars := arrayUpdate(activeResetStatesVars, i, createVarWithDefaults(arrayGet(activeResetStatesRefs,i), BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
     vars := arrayGet(activeResetStatesVars, i) :: vars;
   end for;
   // Boolean nextResetStates[nStates]
@@ -1144,7 +1144,7 @@ algorithm
   nextResetStatesVars := arrayCreate(nStates, defaultBoolVar);
   for i in 1:nStates loop
     nextResetStatesRefs := arrayUpdate(nextResetStatesRefs, i, qCref("nextResetStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
-    nextResetStatesVars := arrayUpdate(nextResetStatesVars, i, createVarWithDefaults(arrayGet(nextResetStatesRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
+    nextResetStatesVars := arrayUpdate(nextResetStatesVars, i, createVarWithDefaults(arrayGet(nextResetStatesRefs,i), BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
     vars := arrayGet(nextResetStatesVars, i) :: vars;
   end for;
   // Boolean finalStates[nStates]
@@ -1152,12 +1152,12 @@ algorithm
   finalStatesVars := arrayCreate(nStates, defaultBoolVar);
   for i in 1:nStates loop
     finalStatesRefs := arrayUpdate(finalStatesRefs, i, qCref("finalStates", tArrayBool, {DAE.INDEX(DAE.ICONST(i))}, preRef));
-    finalStatesVars := arrayUpdate(finalStatesVars, i, createVarWithDefaults(arrayGet(finalStatesRefs,i), BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT));
+    finalStatesVars := arrayUpdate(finalStatesVars, i, createVarWithDefaults(arrayGet(finalStatesRefs,i), BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT));
     vars := arrayGet(finalStatesVars, i) :: vars;
   end for;
   // Boolean stateMachineInFinalState
   stateMachineInFinalStateRef := qCref("stateMachineInFinalState", DAE.T_BOOL_DEFAULT, {}, preRef);
-  stateMachineInFinalStateVar := createVarWithDefaults(stateMachineInFinalStateRef, BackendDAE.VARIABLE(), DAE.T_BOOL_DEFAULT);
+  stateMachineInFinalStateVar := createVarWithDefaults(stateMachineInFinalStateRef, BackendDAE.DISCRETE(), DAE.T_BOOL_DEFAULT);
   vars := stateMachineInFinalStateVar :: vars;
 
   // ***** Create new governing equations *****
@@ -2551,7 +2551,7 @@ algorithm
     // walk through scalar, replace previous(x) by pre(x)
     scalar := Expression.traverseExp(scalar, subsPreForPrevious, NONE());
     // sample(0, samplingTime)
-    expCond := DAE.CALL(Absyn.IDENT("sample"), {DAE.ICONST(1), DAE.RCONST(0), DAE.RCONST(samplingTime)}, DAE.callAttrBuiltinImpureBool);
+    expCond := DAE.ARRAY(DAE.T_ARRAY_BOOL_NODIM, true, {DAE.CALL(Absyn.IDENT("sample"), {DAE.ICONST(1), DAE.RCONST(0), DAE.RCONST(samplingTime)}, DAE.callAttrBuiltinImpureBool),DAE.CALL(Absyn.IDENT("initial"), {}, DAE.callAttrBuiltinImpureBool)});
     whenEquation := BackendDAE.WHEN_EQ(expCond, left, scalar, NONE());
     size := 1; // Fixme what is "size" for? does it reference the "sample index" of a corresponding (time)event BackendDAE.Shared.eventInfo.timeEvents
     outEq := BackendDAE.WHEN_EQUATION(size, whenEquation, source,
