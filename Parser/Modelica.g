@@ -582,7 +582,7 @@ modification returns [void* ast]
 @init { e.ast = 0; eq = 0; cm = 0; } :
   ( cm=class_modification ( eq=EQUALS e=expression[metamodelica_enabled()] )?
   | eq=EQUALS e=expression[metamodelica_enabled()]
-  | eq=ASSIGN e=expression[metamodelica_enabled()]
+  // | eq=ASSIGN e=expression[metamodelica_enabled()]
   )
     {
       ast = Absyn__CLASSMOD(or_nil(cm), e.ast ? Absyn__EQMOD(e.ast,PARSER_INFO($eq)) : Absyn__NOMOD);
