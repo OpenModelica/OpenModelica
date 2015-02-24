@@ -18,15 +18,19 @@ generate-files-in-steps:
 
 GEN_DIR=build/
 
+PATCH_SOURCES=sed -i 's/ = omc_assert_function/__attribute__((noreturn)) = omc_assert_function/' build/_main.c
+
 bootstrap-from-tarball:
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=.omc
 	tar xJf bootstrap-sources.tar.xz
 	# Patch _main.c to avoid a new tarball
-	sed -i "s/ = omc_assert_function/__attribute__((noreturn)) = omc_assert_function/" build/_main.c
+	$(PATCH_SOURCES)
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc
 	@echo "Bootstrapping phase 1/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=$(BOOTSTRAP_OMC)
 	$(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC=$(BOOTSTRAP_OMC)
+	# Patch _main.c to avoid a new tarball
+	$(PATCH_SOURCES)
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=$(BOOTSTRAP_OMC)
 	@echo "Bootstrapping phase 2/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=$(BOOTSTRAP_OMC)
