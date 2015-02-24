@@ -15,6 +15,13 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
 2. Make sure you place the OMDev package into:
    c:\OMDev\
    + Follow the instructions in the INSTALL file
+   *** other location for OMDev ***
+   If you want to place OMDev package into a different location, then you have just to update some references:
+   * $OMDEV environment variable
+   * $OMDEV\tools\msys\etc\fstab
+   * $OMDEV\tools\rml\bin\rmlc (line 3)
+   If you want to build omc with eclipse, then you have to update eclipse launcher in the OpenModelica repository as well:
+   * OpenModelica\.externalToolBuilders\OMDev-MINGW-OpenModelicaBuilder.launch-sample (line 8)
 
 3. You should have an OpenModelica directory you got
    from OpenModelica Subversion repository:
@@ -31,7 +38,7 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
    $ cd \path\to\OpenModelica
    $ ren ".project-sample" ".project" 
 
-5. rename the file the OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch-sample
+5. rename the file OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch-sample
    to OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch and do whatever
    modifications are needed on it to reflect your paths.
 
