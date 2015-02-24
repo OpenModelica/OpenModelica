@@ -52,7 +52,7 @@ modelica_string modelica_string_format_to_c_string_format(modelica_string format
 {
   char buf[FMT_BUFSIZE];
   const char *str = MMC_STRINGDATA(format), *tmp = str;
-  int len = MMC_STRLEN(format), cont=1, n=0;
+  int cont=1, n=0;
   buf[n++] = '%';
   while (cont) { /* Parse flag characters */
     switch (*tmp) {

@@ -56,16 +56,16 @@ typedef struct _FILE_INFO
 #define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
 
 DLLExport extern void printInfo(FILE *stream, FILE_INFO info);
-DLLExport extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...);
+DLLExport extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...) __attribute__ ((noreturn));
 DLLExport extern void (*omc_assert_warning)(FILE_INFO, const char*, ...);
 DLLExport extern void (*omc_terminate)(FILE_INFO, const char*, ...);
 DLLExport extern void (*omc_throw)(threadData_t*) __attribute__ ((noreturn));
 
-DLLExport extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...);
+DLLExport extern void (*omc_assert_withEquationIndexes)(threadData_t*,FILE_INFO, const int*, const char*, ...) __attribute__ ((noreturn));
 DLLExport extern void (*omc_assert_warning_withEquationIndexes)(FILE_INFO, const int*, const char*, ...);
 
 void initDumpSystem();
-void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...);
+void omc_assert_function(threadData_t*,FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
 void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));

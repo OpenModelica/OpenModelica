@@ -906,9 +906,10 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   return retVal;
 }
 
-static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...);
-static void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, ...);
+static void omc_assert_simulation(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
+static void omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, ...) __attribute__ ((noreturn));
 static void omc_throw_simulation(threadData_t* threadData) __attribute__ ((noreturn));
+ static void va_omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, va_list args) __attribute__ ((noreturn));
 
 static void va_omc_assert_simulation_withEquationIndexes(threadData_t *threadData, FILE_INFO info, const int *indexes, const char *msg, va_list args)
 {
@@ -1009,8 +1010,8 @@ static void omc_throw_simulation(threadData_t* threadData)
   longjmp(*threadData->globalJumpBuffer, 1);
 }
 
-void (*omc_assert)(threadData_t*, FILE_INFO info, const char *msg, ...) = omc_assert_simulation;
-void (*omc_assert_withEquationIndexes)(threadData_t*, FILE_INFO info, const int *indexes, const char *msg, ...) = omc_assert_simulation_withEquationIndexes;
+void (*omc_assert)(threadData_t*, FILE_INFO info, const char *msg, ...)  __attribute__ ((noreturn)) = omc_assert_simulation;
+void (*omc_assert_withEquationIndexes)(threadData_t*, FILE_INFO info, const int *indexes, const char *msg, ...)  __attribute__ ((noreturn)) = omc_assert_simulation_withEquationIndexes;
 
 void (*omc_assert_warning_withEquationIndexes)(FILE_INFO info, const int *indexes, const char *msg, ...) = omc_assert_warning_simulation_withEquationIndexes;
 void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_warning_simulation;
