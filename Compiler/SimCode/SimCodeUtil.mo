@@ -9314,7 +9314,7 @@ algorithm
                 else
                   fullLibNames := {"lib" + name + ".a", "lib" + name + System.getDllExt()};
                 end if;
-                lookForExtFunctionLibrary(fullLibNames, {dir,Settings.getInstallationDirectoryPath() + "/lib/omc"}, name, info);
+                // lookForExtFunctionLibrary(fullLibNames, {dir,Settings.getInstallationDirectoryPath() + "/lib/omc"}, name, info);
               end for;
             then ();
           else ();
