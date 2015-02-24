@@ -860,7 +860,8 @@ algorithm
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = List.map(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann);
+        info = DAEUtil.getElementSourceFileInfo(source);
+        (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann, info);
         includes = List.union(fn_includes, includes);
         includeDirs = List.union(fn_includeDirs, includeDirs);
         libs = List.union(fn_libs, libs);
@@ -868,7 +869,6 @@ algorithm
         simextargs = List.map(extargs, extArgsToSimExtArgs);
         extReturn = extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) = fixOutputIndex(outVars, simextargs, extReturn);
-        info = DAEUtil.getElementSourceFileInfo(source);
         // make lang to-upper as we have FORTRAN 77 and Fortran 77 in the Modelica Library!
         lang = System.toupper(lang);
       then
@@ -9280,6 +9280,7 @@ protected function generateExtFunctionIncludes "by investigating the annotation 
   input Absyn.Program program;
   input Absyn.Path path;
   input Option<SCode.Annotation> inAbsynAnnotationOption;
+  input SourceInfo info;
   output list<String> includes;
   output list<String> includeDirs;
   output list<String> libs;
@@ -9292,14 +9293,32 @@ algorithm
       SCode.Mod mod;
       Boolean b;
       String target;
+      Option<String> odir;
+      list<String> libNames, fullLibNames;
 
     case (_, _, SOME(SCode.ANNOTATION(mod)))
       equation
         b = generateExtFunctionDynamicLoad(mod);
         target = Flags.getConfigString(Flags.TARGET);
-        libs = generateExtFunctionIncludesLibstr(target,mod);
+        (libs,libNames) = generateExtFunctionIncludesLibstr(target,mod);
         includes = generateExtFunctionIncludesIncludestr(mod);
-        libs = generateExtFunctionLibraryDirectoryFlags(program, path, mod, libs);
+        (libs,odir) = generateExtFunctionLibraryDirectoryFlags(program, path, mod, libs);
+        _ = match odir
+          local
+            String dir;
+          case SOME(dir)
+            algorithm
+              for name in libNames loop
+                if target=="msvc" or System.os()=="Windows_NT" then
+                  fullLibNames := {name + System.getDllExt(), "lib" + name + ".a", "lib" + name + ".lib"};
+                else
+                  fullLibNames := {"lib" + name + ".a", "lib" + name + System.getDllExt()};
+                end if;
+                lookForExtFunctionLibrary(fullLibNames, {dir,Settings.getInstallationDirectoryPath() + "/lib/omc"}, name, info);
+              end for;
+            then ();
+          else ();
+        end match;
         paths = generateExtFunctionLibraryDirectoryPaths(program, path, mod);
         includeDirs = generateExtFunctionIncludeDirectoryFlags(program, path, mod, includes);
       then
@@ -9307,6 +9326,17 @@ algorithm
     case (_, _, NONE()) then ({}, {}, {},{}, false);
   end match;
 end generateExtFunctionIncludes;
+
+protected function lookForExtFunctionLibrary
+  input list<String> names;
+  input list<String> dirs;
+  input String name;
+  input SourceInfo info;
+algorithm
+  if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
+    Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d+"/"+n for d in dirs, n in names)}, info);
+  end if;
+end lookForExtFunctionLibrary;
 
 protected function generateExtFunctionIncludeDirectoryFlags
   "Process LibraryDirectory and IncludeDirectory"
@@ -9345,69 +9375,51 @@ protected function generateExtFunctionLibraryDirectoryFlags
   input SCode.Mod inMod;
   input list<String> inLibs;
   output list<String> outLibs;
+  output Option<String> outDirectory;
 algorithm
-  outLibs := matchcontinue (program, path, inMod, inLibs)
+  (outLibs, outDirectory) := matchcontinue (program, path, inMod, inLibs)
     local
-      String str, str1, str2, str3, platform1, platform2,target;
+      String str, str1, str2, str3, platform1, platform2, target, dir;
       list<String> libs;
       Boolean isLinux;
-    case (_, _, _, {}) then {};
+    case (_, _, _, {}) then ({}, NONE());
     case (_, _, _, libs)
       equation
-        SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
-          Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
+        str = matchcontinue inMod
+          case _
+            equation
+              SCode.MOD(binding = SOME((Absyn.STRING(str), _))) = Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
+            then str;
+          else "modelica://" + Absyn.pathFirstIdent(path) + "/Resources/Library";
+        end matchcontinue;
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         isLinux = stringEq("linux",System.os());
         target = Flags.getConfigString(Flags.TARGET);
-        // please, take care about ordering these libraries, the most specific should go first (in reverse here)
-        libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs,target);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs,target);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs,target);
-      then libs;
-    case (_, _, _, libs)
-      equation
-        str = "modelica://" + Absyn.pathFirstIdent(path) + "/Resources/Library";
-        str = CevalScript.getFullPathFromUri(program, str, false);
-        platform1 = System.openModelicaPlatform();
-        platform2 = System.modelicaPlatform();
-        isLinux = stringEq("linux",System.os());
-        target = Flags.getConfigString(Flags.TARGET);
-        // please, take care about ordering these libraries, the most specific should go first (in reverse here)
-        libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs,target);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs,target);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs,target);
-      then libs;
-    else inLibs;
+        // please, take care about ordering these libraries, the most specific should have the highest priority
+        if platform1 <> "" and System.directoryExists(platform1) then
+          dir = platform1;
+        elseif platform2 <> "" and System.directoryExists(platform2) then
+          dir = platform2;
+        else
+          dir = str;
+        end if;
+        libs = generateExtFunctionLibraryDirectoryFlags2(dir, isLinux, libs, target);
+      then (libs, SOME(dir));
+    else (inLibs, NONE());
   end matchcontinue;
 end generateExtFunctionLibraryDirectoryFlags;
 
 protected function generateExtFunctionLibraryDirectoryFlags2
-  input Boolean add;
   input String dir;
   input Boolean isLinux;
   input list<String> inLibs;
-   input String target;
+  input String target;
   output list<String> libs;
 algorithm
-  libs := match (add,dir,isLinux,inLibs,target)
-    local
-      Boolean b;
-    case (true,_,_,libs,"msvc")
-      equation
-        b = System.directoryExists(dir);
-        libs = List.consOnTrue(b, "/LIBPATH:\"" + dir + "\"", libs);
-        libs = List.consOnTrue(b and isLinux, "-Wl,-rpath=\"" + dir + "\"", libs);
-      then libs;
-    case (true,_,_,libs,_)
-      equation
-        b = System.directoryExists(dir);
-        libs = List.consOnTrue(b, "\"-L" + dir + "\"", libs);
-        libs = List.consOnTrue(b and isLinux, "-Wl,-rpath=\"" + dir + "\"", libs);
-      then libs;
-    else inLibs;
-  end match;
+  libs := if isLinux then "-Wl,-rpath=\"" + dir + "\""::inLibs else inLibs;
+  libs := (if target=="msvc" then "/LIBPATH:\"" + dir + "\"" else "\"-L" + dir + "\"")::libs;
 end generateExtFunctionLibraryDirectoryFlags2;
 
 
@@ -9479,18 +9491,16 @@ of strings corresponding to it.
 Note: Normally only outputs a single string, but Lapack on MinGW is special."
   input Absyn.Exp exp;
   output list<String> strs;
+  output list<String> names;
 algorithm
-  strs := matchcontinue exp
+  (strs,names) := matchcontinue exp
     local
       String str;
 
     // seems lapack can show on Lapack form or lapack (different case) (MLS revision 6155)
-    case Absyn.STRING("lapack")
-      then getLibraryStringInMSVCFormat(Absyn.STRING("Lapack"));
-
     // Lapack on MinGW/Windows is linked against f2c
-    case Absyn.STRING("Lapack")
-      then {"lapack_win32_MT.lib", "f2c.lib"};
+    case Absyn.STRING(str) guard str=="Lapack" or str=="lapack"
+      then ({"lapack_win32_MT.lib", "f2c.lib"}, {});
 
     // omcruntime on windows needs linking with mico2313 and wsock and then some :)
     case Absyn.STRING("omcruntime")
@@ -9498,7 +9508,7 @@ algorithm
         true = "Windows_NT" == System.os();
         strs = {"f2c.lib", "initialization.lib", "libexpat.lib", "math-support.lib", "meta.lib", "ModelicaExternalC.lib", "results.lib", "simulation.lib", "solver.lib", "sundials_kinsol.lib", "sundials_nvecserial.lib", "util.lib", "lapack_win32_MT.lib"};
       then
-        strs;
+        (strs, {});
 
     // Wonder if there may be issues if we have duplicates in the Corba libs
     // and the other libs. Some other developer will probably swear over this
@@ -9506,18 +9516,18 @@ algorithm
     case Absyn.STRING("OpenModelicaCorba")
       equation
         str = System.getCorbaLibs();
-      then {str};
+      then ({str},{});
 
     // If the string starts with a -, it's probably -l or -L gcc flags
     case Absyn.STRING(str)
       equation
         true = "-" == stringGetStringChar(str, 1);
-      then {str};
+      then ({str},{});
 
     case Absyn.STRING(str)
       equation
         str = str + ".lib";
-      then {str};
+      then ({str},{str});
 
     else
       equation
@@ -9532,22 +9542,26 @@ of strings corresponding to it.
 Note: Normally only outputs a single string, but Lapack on MinGW is special."
   input Absyn.Exp exp;
   output list<String> strs;
+  output list<String> names;
 algorithm
-  strs := matchcontinue exp
+  (strs,names) := matchcontinue exp
     local
       String str, fopenmp;
 
     // Lapack is always included
-    case Absyn.STRING("lapack") then {};
-    case Absyn.STRING("Lapack") then {};
+    case Absyn.STRING("lapack") then ({},{});
+    case Absyn.STRING("Lapack") then ({},{});
 
-    // omcruntime on windows needs linking with mico2313 and wsock and then some :)
     case Absyn.STRING(str as "omcruntime")
       equation
-        true = "Windows_NT" == System.os();
-        str = "-l" + str;
-        strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: {};
-      then  strs;
+        if "Windows_NT" == System.os() then
+          // omcruntime on windows needs linking with mico2313 and wsock and then some :)
+          str = "-l" + str;
+          strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: {};
+        else
+          strs = System.getRuntimeLibs();
+        end if;
+      then  (strs,{});
 
     // Wonder if there may be issues if we have duplicates in the Corba libs
     // and the other libs. Some other developer will probably swear over this
@@ -9555,31 +9569,21 @@ algorithm
     case Absyn.STRING("OpenModelicaCorba")
       equation
         str = System.getCorbaLibs();
-      then {str};
-
-    // If omcruntime is linked statically against omniORB, we need to include those here as well
-    case Absyn.STRING("omcruntime")
-      equation
-        false = "Windows_NT" == System.os();
-      then
-        System.getRuntimeLibs();
-
-    // If the string is a file, return it as it is
-    case Absyn.STRING(str)
-      equation
-        true = System.regularFileExists(str);
-      then {str};
-
-    // If the string starts with a -, it's probably -l or -L gcc flags
-    case Absyn.STRING(str)
-      equation
-        true = "-" == stringGetStringChar(str, 1);
-      then {str};
+      then ({str},{});
 
     case Absyn.STRING(str)
       equation
-        str = "-l" + str;
-      then {str};
+        // If the string is a file, return it as it is
+        // If the string starts with a -, it's probably -l or -L gcc flags
+        if System.regularFileExists(str) or "-" == stringGetStringChar(str, 1) then
+          strs = {str};
+          names = {};
+        else
+          strs = {"-l" + str};
+          names = {str};
+        end if;
+
+      then (strs,names);
 
     else
       equation
@@ -9592,42 +9596,43 @@ protected function generateExtFunctionIncludesLibstr
   input String target;
   input SCode.Mod inMod;
   output list<String> outStringLst;
+  output list<String> names;
 algorithm
-  outStringLst:= matchcontinue (target,inMod)
+  (outStringLst, names) := matchcontinue (target,inMod)
     local
       list<Absyn.Exp> arr;
       list<String> libs;
-      list<list<String>> libsList;
+      list<list<String>> libsList, namesList;
       Absyn.Exp exp;
     case ("msvc",_)
       equation
         SCode.MOD(binding = SOME((Absyn.ARRAY(arr), _))) =
           Mod.getUnelabedSubMod(inMod, "Library");
-        libsList = List.map(arr, getLibraryStringInMSVCFormat);
+        (libsList, namesList) = List.map_2(arr, getLibraryStringInMSVCFormat);
       then
-        List.flatten(libsList);
+        (List.flatten(libsList), List.flatten(namesList));
     case ("msvc",_)
       equation
         SCode.MOD(binding = SOME((exp, _))) =
           Mod.getUnelabedSubMod(inMod, "Library");
-        libs = getLibraryStringInMSVCFormat(exp);
+        (libs,names) = getLibraryStringInMSVCFormat(exp);
       then
-        libs;
+        (libs,names);
     case (_,_)
       equation
         SCode.MOD(binding = SOME((Absyn.ARRAY(arr), _))) =
           Mod.getUnelabedSubMod(inMod, "Library");
-        libsList = List.map(arr, getLibraryStringInGccFormat);
+        (libsList, namesList) = List.map_2(arr, getLibraryStringInGccFormat);
       then
-        List.flatten(libsList);
+        (List.flatten(libsList), List.flatten(namesList));
     case (_,_)
       equation
         SCode.MOD(binding = SOME((exp, _))) =
           Mod.getUnelabedSubMod(inMod, "Library");
-        libs = getLibraryStringInGccFormat(exp);
+        (libs,names) = getLibraryStringInGccFormat(exp);
       then
-        libs;
-    else {};
+        (libs,names);
+    else ({},{});
   end matchcontinue;
 end generateExtFunctionIncludesLibstr;
 

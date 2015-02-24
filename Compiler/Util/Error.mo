@@ -679,6 +679,8 @@ public constant Message NOTIFY_IMPACT_FOUND = MESSAGE(255, SCRIPTING(), NOTIFICA
   Util.gettext("The impact package manager downloaded package %s%s to directory %s."));
 public constant Message DERIVATIVE_FUNCTION_CONTEXT = MESSAGE(256, SCRIPTING(), ERROR(),
   Util.gettext("The der() operator is not allowed in function context (possible solutions: pass the derivative as an explicit input; use a block instead of function)."));
+public constant Message EXT_LIBRARY_NOT_FOUND = MESSAGE(257, TRANSLATION(), ERROR(),
+  Util.gettext("Could not find library %s in either of:%s"));
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value."));
