@@ -8857,10 +8857,10 @@ algorithm
       Option<DAE.Exp> patternGuard,result;
       list<DAE.Pattern> patterns;
       list<DAE.Statement> body;
-    case (DAE.CASE(patterns=patterns,patternGuard=patternGuard,body=body,result=result,resultInfo=resultInfo),unbound)
+    case (DAE.CASE(patterns=patterns,patternGuard=patternGuard,body=body,result=result,info=info,resultInfo=resultInfo),unbound)
       equation
         ((_,unbound)) = Patternm.traversePattern((DAE.PAT_META_TUPLE(patterns),unbound),patternFiltering);
-        (_,(unbound,info)) = Expression.traverseExpTopDown(DAE.META_OPTION(patternGuard),findUnboundVariableUse,(unbound,info));
+        (_,(unbound,_)) = Expression.traverseExpTopDown(DAE.META_OPTION(patternGuard),findUnboundVariableUse,(unbound,info));
         ((_,_,unbound)) = List.fold1(body, checkFunctionDefUseStmt, true, (false,false,unbound));
         (_,(unbound,_)) = Expression.traverseExpTopDown(DAE.META_OPTION(result),findUnboundVariableUse,(unbound,resultInfo));
       then unbound;
