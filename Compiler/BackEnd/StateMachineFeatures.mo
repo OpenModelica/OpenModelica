@@ -171,7 +171,7 @@ uniontype TransitionType
 end TransitionType;
 
 constant String SMS_PRE = "smOf" "prefix for crefs of fresh State Machine Semantics variables/knowns";
-constant Boolean DEBUG_SMDUMP = true "enable verbose stdout debug information during elaboration";
+constant Boolean DEBUG_SMDUMP = false "enable verbose stdout debug information during elaboration";
 
 public function stateMachineElab
   "Elaborate state machines and transform them in data-flow equations."
