@@ -149,7 +149,7 @@ protected function loadClassFromMps
   input list<String> prios;
   input list<String> mps;
   input Option<String> encoding;
-  input Boolean requireExactVersion := false;
+  input Boolean requireExactVersion = false;
   output Absyn.Program outProgram;
 protected
   String mp, name, pwd, cmd, version, userLibraries;
@@ -231,11 +231,11 @@ end loadClassFromMp;
 
 protected function getAllFilesFromDirectory
   input String dir;
-  input list<String> acc := {};
+  input list<String> acc = {};
   output list<String> files;
 protected
   list<String> subdirs;
-  String pd := System.pathDelimiter();
+  String pd = System.pathDelimiter();
 algorithm
   files := (dir + pd + "package.mo") :: listAppend(list(dir + pd + f for f in System.moFiles(dir)), acc);
   subdirs := list(dir + pd + d for d in List.filter1OnTrue(System.subDirectories(dir), existPackage, dir));

@@ -4426,7 +4426,7 @@ protected function createStateSetsSystem "author: Frenkel TUD 2012-12
   input BackendDAE.Shared inShared;
   input tuple<list<SimCode.StateSet>, Integer, list<SimCodeVar.SimVar>, Integer> inTpl;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared outShared := inShared;
+  output BackendDAE.Shared outShared = inShared;
   output tuple<list<SimCode.StateSet>, Integer, list<SimCodeVar.SimVar>, Integer> outTpl;
 algorithm
   (osyst, outTpl):= match (isyst, inTpl)
@@ -4895,7 +4895,7 @@ end createSymbolicJacobianssSimCode;
 protected function getSimVars2Crefs
   input list<DAE.ComponentRef> inCrefs;
   input SimCode.HashTableCrefToSimVar inSimVarHT;
-  output list<SimCodeVar.SimVar> outSimVars := {};
+  output list<SimCodeVar.SimVar> outSimVars = {};
 algorithm
   for cref in inCrefs loop
     try
@@ -6484,11 +6484,11 @@ protected function createInitialEquations "author: lochel"
   input List<BackendDAE.Equation> inRemovedEqnLst;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
-  output list<SimCode.SimEqSystem> outInitialEqns := {};
-  output list<SimCode.SimEqSystem> outRemovedInitialEqns := {};
-  output Integer ouniqueEqIndex := iuniqueEqIndex;
-  output list<SimCodeVar.SimVar> otempvars := itempvars;
-  output Boolean useSymbolicInitialization := false;
+  output list<SimCode.SimEqSystem> outInitialEqns = {};
+  output list<SimCode.SimEqSystem> outRemovedInitialEqns = {};
+  output Integer ouniqueEqIndex = iuniqueEqIndex;
+  output list<SimCodeVar.SimVar> otempvars = itempvars;
+  output Boolean useSymbolicInitialization = false;
 protected
   BackendDAE.EquationArray  removedEqs;
   list<SimCodeVar.SimVar> tempvars;
@@ -6779,8 +6779,8 @@ protected function createParameterEquations
   input list<SimCode.SimEqSystem> acc;
   input list<BackendDAE.Var> inPrimaryParameters "already sorted";
   input list<BackendDAE.Var> inAllPrimaryParameters "already sorted";
-  output Integer outUniqueEqIndex := inUniqueEqIndex;
-  output list<SimCode.SimEqSystem> outParameterEquations := {};
+  output Integer outUniqueEqIndex = inUniqueEqIndex;
+  output list<SimCode.SimEqSystem> outParameterEquations = {};
 protected
   list<SimCode.SimEqSystem> simvarasserts;
   list<DAE.Algorithm> varasserts;
@@ -8831,7 +8831,7 @@ protected function addDestructor2
   input Absyn.Path path;
   input String pathstr;
   input HashTableStringToPath.HashTable inHt;
-  output HashTableStringToPath.HashTable ht := inHt;
+  output HashTableStringToPath.HashTable ht = inHt;
 algorithm
   if not BaseHashTable.hasKey(pathstr, ht) then
     BaseHashTable.add((pathstr, path), ht);

@@ -436,7 +436,7 @@ Transform equations within a mode to conditional data-flow equations
   input AutomataEqs synEqsIn;
   input BackendDAE.EqSystem systIn;
   output AutomataEqs synEqsOut;
-  output BackendDAE.EqSystem systOut := systIn;
+  output BackendDAE.EqSystem systOut = systIn;
 protected
   Integer n,i;
   DAE.ComponentRef cref, preRef, activeRef, activeStateRef;
@@ -557,7 +557,7 @@ Probably rather fragile approach...
 "
   input tuple<Integer,BackendDAE.Var> inStateVar;
   input HashTableExpToIndexExp.HashTable inTable;
-  output HashTableExpToIndexExp.HashTable outTable := inTable;
+  output HashTableExpToIndexExp.HashTable outTable = inTable;
 protected
   DAE.Exp key, exp;
   Integer i;
@@ -609,9 +609,9 @@ Ugly helper function to synthesizeAutomatonEqsModeToDataflow"
   input list<BackendDAE.Var> inLocalVars;
   input list<BackendDAE.Equation> inLocalEqns;
   input BackendDAE.EqSystem systIn;
-  output list<BackendDAE.Var> outLocalVars := inLocalVars "possibly one fresh substitution variable is added to this list";
-  output list<BackendDAE.Equation> outLocalEqns := inLocalEqns "possibly fresh equations are added to this list";
-  output BackendDAE.EqSystem systOut := systIn "possibly instances of 'previous(x)' are substituted by 'x_previous'";
+  output list<BackendDAE.Var> outLocalVars = inLocalVars "possibly one fresh substitution variable is added to this list";
+  output list<BackendDAE.Equation> outLocalEqns = inLocalEqns "possibly fresh equations are added to this list";
+  output BackendDAE.EqSystem systOut = systIn "possibly instances of 'previous(x)' are substituted by 'x_previous'";
 protected
   DAE.ComponentRef substituteRef, activeResetRef, activeResetStatesRef;
   DAE.Exp orExp, andExp, activeResetRefExp, ifExp, startValueExp, previousExp, substituteExp;
@@ -698,7 +698,7 @@ Fragile hack. Check if sharedCrefExp is 'inner outer', if so replace all previou
   input list<tuple<Integer,DAE.Exp>> inStateExpLst;
   input DAE.Exp SharedCrefExp;
   input BackendDAE.EqSystem systIn;
-  output list<tuple<Integer,DAE.Exp>> outStateExpLst := inStateExpLst;
+  output list<tuple<Integer,DAE.Exp>> outStateExpLst = inStateExpLst;
 protected
   BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars";
   BackendDAE.Var sharedVar;

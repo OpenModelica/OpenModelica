@@ -100,7 +100,7 @@ end dump;
 public function unparseStr
 "Prettyprints the Program, i.e. the whole AST, to a string."
   input Absyn.Program inProgram;
-  input Boolean markup := false "
+  input Boolean markup = false "
     Used by MathCore, and dependencies to other modules requires this to also be in OpenModelica.
     Contact peter.aronsson@mathcore.com for an explanation.
 

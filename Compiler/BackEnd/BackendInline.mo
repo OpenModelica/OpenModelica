@@ -173,7 +173,7 @@ protected function inlineEquationOptArray
   input array<Option<BackendDAE.Equation>> inEqnArray;
   input Integer arraysize;
   input Inline.Functiontuple fns;
-  output Boolean oInlined := false;
+  output Boolean oInlined = false;
 protected
   Option<BackendDAE.Equation> eqn;
   Boolean inlined;

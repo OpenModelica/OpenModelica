@@ -102,14 +102,14 @@ import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking};
 public function create<T>
   "Creates a list from an element."
   input T inElement;
-  output list<T> outList := {inElement};
+  output list<T> outList = {inElement};
 end create;
 
 public function create2<T>
   "Creates a list from two elements."
   input T inElement1;
   input T inElement2;
-  output list<T> outList := {inElement1, inElement2};
+  output list<T> outList = {inElement1, inElement2};
 end create2;
 
 public function fill<T>
@@ -191,13 +191,13 @@ public function isEmpty<T>
   "DEPRECATED: Replace with builtin listEmpty when bootstrapping is used!
    Returns true if the given list is empty, otherwise false."
   input list<T> inList;
-  output Boolean outIsEmpty := listEmpty(inList);
+  output Boolean outIsEmpty = listEmpty(inList);
 end isEmpty;
 
 public function isNotEmpty<T>
   "Returns true if the given list is not empty, otherwise false."
   input list<T> inList;
-  output Boolean outIsNotEmpty := not listEmpty(inList);
+  output Boolean outIsNotEmpty = not listEmpty(inList);
 end isNotEmpty;
 
 public function assertIsEmpty<T>
@@ -370,7 +370,7 @@ public function consN<T>
   input Integer size;
   input T inElement;
   input list<T> inList;
-  output list<T> outList := inList;
+  output list<T> outList = inList;
 algorithm
   for i in 1:size loop
     outList := inElement :: outList;
@@ -689,7 +689,7 @@ public function stripN<T>
    N elements, or if N is negative."
   input list<T> inList;
   input Integer inN;
-  output list<T> outList := inList;
+  output list<T> outList = inList;
 algorithm
   true := inN >= 0;
 
@@ -738,7 +738,7 @@ public function sortedDuplicates<T>
    function to check for equality."
   input list<T> inList;
   input CompareFunc inCompFunc "Equality comparator";
-  output list<T> outDuplicates := {};
+  output list<T> outDuplicates = {};
 
   partial function CompareFunc
     input T inElement1;
@@ -747,7 +747,7 @@ public function sortedDuplicates<T>
   end CompareFunc;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) loop
     e :: rest := rest;
@@ -764,7 +764,7 @@ public function sortedListAllUnique<T>
   "The input is a sorted list. The functions checks if all elements are unique."
   input list<T> lst;
   input CompareFunc compare;
-  output Boolean allUnique := false;
+  output Boolean allUnique = false;
 
   partial function CompareFunc
     input T inElement1;
@@ -773,7 +773,7 @@ public function sortedListAllUnique<T>
   end CompareFunc;
 protected
   T e;
-  list<T> rest := lst;
+  list<T> rest = lst;
 algorithm
   while not listEmpty(rest) loop
     rest := match rest
@@ -797,7 +797,7 @@ public function sortedUnique<T>
    comparison function to check for equality."
   input list<T> inList;
   input CompareFunc inCompFunc;
-  output list<T> outUniqueElements := {};
+  output list<T> outUniqueElements = {};
 
   partial function CompareFunc
     input T inElement1;
@@ -806,7 +806,7 @@ public function sortedUnique<T>
   end CompareFunc;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) loop
     e :: rest := rest;
@@ -824,8 +824,8 @@ public function sortedUniqueAndDuplicates<T>
    removed elements, using the given comparison function to check for equality."
   input list<T> inList;
   input CompareFunc inCompFunc;
-  output list<T> outUniqueElements := {};
-  output list<T> outDuplicateElements := {};
+  output list<T> outUniqueElements = {};
+  output list<T> outDuplicateElements = {};
 
   partial function CompareFunc
     input T inElement1;
@@ -834,7 +834,7 @@ public function sortedUniqueAndDuplicates<T>
   end CompareFunc;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) loop
     e :: rest := rest;
@@ -855,7 +855,7 @@ public function sortedUniqueOnlyDuplicates<T>
    removed elements, using the given comparison function to check for equality."
   input list<T> inList;
   input CompareFunc inCompFunc;
-  output list<T> outDuplicateElements := {};
+  output list<T> outDuplicateElements = {};
 
   partial function CompareFunc
     input T inElement1;
@@ -864,7 +864,7 @@ public function sortedUniqueOnlyDuplicates<T>
   end CompareFunc;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) loop
     e :: rest := rest;
@@ -964,7 +964,7 @@ public function sortIntN
    and N. The complexity in this case is O(n)"
   input list<Integer> inList;
   input Integer inN;
-  output list<Integer> outSorted := {};
+  output list<Integer> outSorted = {};
 protected
   array<Boolean> a1;
 algorithm
@@ -982,7 +982,7 @@ public function unique<T>
   "Takes a list of elements and returns a list with duplicates removed, so that
    each element in the new list is unique."
   input list<T> inList;
-  output list<T> outList := {};
+  output list<T> outList = {};
 algorithm
   for e in inList loop
     if not listMember(e, outList) then
@@ -997,7 +997,7 @@ public function uniqueIntN
    each element in the new list is unique. O(listLength(inList))"
   input list<Integer> inList;
   input Integer inN;
-  output list<Integer> outList := {};
+  output list<Integer> outList = {};
 protected
   array<Boolean> arr;
 algorithm
@@ -1042,7 +1042,7 @@ protected function uniqueIntNArr1
   input Integer inMark;
   input array<Integer> inMarkArray;
   input list<Integer> inAccum;
-  output list<Integer> outAccum := inAccum;
+  output list<Integer> outAccum = inAccum;
 algorithm
   for i in inList loop
     if i >= inLength then
@@ -1062,7 +1062,7 @@ public function uniqueOnTrue<T>
    new list is unique."
   input list<T> inList;
   input CompFunc inCompFunc;
-  output list<T> outList := {};
+  output list<T> outList = {};
 
   partial function CompFunc
     input T inElement1;
@@ -1209,8 +1209,8 @@ public function splitOnFirstMatch<T>
      Example: splitOnFirstMatch({1, 2, 3, 4, 5}, isThree) => ({1, 2}, {3, 4, 5})"
   input list<T> inList;
   input CompFunc inFunc;
-  output list<T> outList1 := {};
-  output list<T> outList2 := inList;
+  output list<T> outList1 = {};
+  output list<T> outList2 = inList;
 
   partial function CompFunc
     input T inElement;
@@ -1350,7 +1350,7 @@ public function sublist<T>
   input list<T> inList;
   input Integer inOffset;
   input Integer inLength;
-  output list<T> outList := {};
+  output list<T> outList = {};
 protected
   T e;
   list<T> rest = inList, res;
@@ -1379,7 +1379,7 @@ public function productMap<T1, T2, TO>
   input list<T1> inList1;
   input list<T2> inList2;
   input MapFunc inMapFunc;
-  output list<TO> outResult := {};
+  output list<TO> outResult = {};
 
   partial function MapFunc
     input T1 inElement1;
@@ -1399,7 +1399,7 @@ public function product<T>
        result = {{1, 1}, {1, 3}, {1, 4}, {2, 1}, {2, 3}, {2, 4}}"
   input list<list<T>> inList1;
   input list<list<T>> inList2;
-  output list<list<T>> outProduct := {};
+  output list<list<T>> outProduct = {};
 algorithm
   for e1 in inList1, e2 in inList2 loop
     outProduct := listAppend(e1, e2) :: outProduct;
@@ -1410,7 +1410,7 @@ public function transposeList<T>
   "Transposes a list of lists. Example:
      transposeList({{1, 2, 3}, {4, 5, 6}}) => {{1, 4}, {2, 5}, {3, 6}}"
   input list<list<T>> inList;
-  output list<list<T>> outList := {};
+  output list<list<T>> outList = {};
 protected
   array<array<T>> arr;
   array<T> arr_row;
@@ -1612,7 +1612,7 @@ public function setDifferenceOnTrue<T>
   input list<T> inList1;
   input list<T> inList2;
   input CompFunc inCompFunc;
-  output list<T> outDifference := inList1;
+  output list<T> outDifference = inList1;
 
   partial function CompFunc
     input T inElement1;
@@ -1636,7 +1636,7 @@ public function setDifference<T>
        setDifferenceOnTrue({1, 2, 3}, {1, 3}, intEq) => {2}"
   input list<T> inList1;
   input list<T> inList2;
-  output list<T> outDifference := inList1;
+  output list<T> outDifference = inList1;
 algorithm
   if listEmpty(inList1) then
     return;
@@ -1653,7 +1653,7 @@ public function unionIntN
   input list<Integer> inList1;
   input list<Integer> inList2;
   input Integer inN;
-  output list<Integer> outUnion := {};
+  output list<Integer> outUnion = {};
 protected
   array<Integer> a;
 algorithm
@@ -1706,7 +1706,7 @@ public function union<T>
      union({0, 1}, {2, 1}) => {0, 1, 2}"
   input list<T> inList1;
   input list<T> inList2;
-  output list<T> outUnion := {};
+  output list<T> outUnion = {};
 algorithm
   for e in inList1 loop
     outUnion := unionElt(e, outUnion);
@@ -1745,7 +1745,7 @@ public function unionOnTrue<T>
   input list<T> inList1;
   input list<T> inList2;
   input CompFunc inCompFunc;
-  output list<T> outUnion := {};
+  output list<T> outUnion = {};
 
   partial function CompFunc
     input T inList1;
@@ -1829,8 +1829,8 @@ public function map_2<TI, TO1, TO2>
    function to each element of the list."
   input list<TI> inList;
   input MapFunc inFunc;
-  output list<TO1> outList1 := {};
-  output list<TO2> outList2 := {};
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
 
   partial function MapFunc
     input TI inElement;
@@ -1856,9 +1856,9 @@ public function map_3<TI, TO1, TO2, TO3>
    function to each element of the list."
   input list<TI> inList;
   input MapFunc inFunc;
-  output list<TO1> outList1 := {};
-  output list<TO2> outList2 := {};
-  output list<TO3> outList3 := {};
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
+  output list<TO3> outList3 = {};
 
   partial function MapFunc
     input TI inElement;
@@ -1888,7 +1888,7 @@ public function mapOption<TI, TO>
    it strips out NONE() instead of failing on them."
   input list<Option<TI>> inList;
   input MapFunc inFunc;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function MapFunc
     input TI inElement;
@@ -1915,7 +1915,7 @@ public function map1Option<TI, TO, ArgT>
   input list<Option<TI>> inList;
   input MapFunc inFunc;
   input ArgT inArg1;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function MapFunc
     input TI inElement;
@@ -1944,7 +1944,7 @@ public function map2Option<TI, TO, ArgT1, ArgT2>
   input MapFunc inFunc;
   input ArgT1 inArg1;
   input ArgT2 inArg2;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2058,8 +2058,8 @@ public function map1_2<TI, TO1, TO2, ArgT1>
   input list<TI> inList;
   input MapFunc inFunc;
   input ArgT1 inArg1;
-  output list<TO1> outList1 := {};
-  output list<TO2> outList2 := {};
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2087,9 +2087,9 @@ public function map1_3<TI, TO1, TO2, TO3, ArgT1>
   input list<TI> inList;
   input MapFunc inFunc;
   input ArgT1 inArg1;
-  output list<TO1> outList1 := {};
-  output list<TO2> outList2 := {};
-  output list<TO3> outList3 := {};
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
+  output list<TO3> outList3 = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2220,8 +2220,8 @@ public function map2_2<TI, TO1, TO2, ArgT1, ArgT2>
   input MapFunc inFunc;
   input ArgT1 inArg1;
   input ArgT2 inArg2;
-  output list<TO1> outList1 := {};
-  output list<TO2> outList2 := {};
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2251,9 +2251,9 @@ public function map2_3<TI, TO1, TO2, TO3, ArgT1, ArgT2>
   input MapFunc inFunc;
   input ArgT1 inArg1;
   input ArgT2 inArg2;
-  output list<TO1> outList1 := {};
-  output list<TO2> outList2 := {};
-  output list<TO3> outList3 := {};
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
+  output list<TO3> outList3 = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2352,8 +2352,8 @@ public function map3_2<TI, TO1, TO2, ArgT1, ArgT2, ArgT3>
   input ArgT1 inArg1;
   input ArgT2 inArg2;
   input ArgT3 inArg3;
-  output list<TO1> outList1 := {};
-  output list<TO2> outList2 := {};
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2432,8 +2432,8 @@ public function map4_2<TI, TO1, TO2, ArgT1, ArgT2, ArgT3, ArgT4>
   input ArgT2 inArg2;
   input ArgT3 inArg3;
   input ArgT4 inArg4;
-  output list<TO1> outList1 := {};
-  output list<TO2> outList2 := {};
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2629,7 +2629,7 @@ public function mapFlatReverse<TI, TO>
        mapFlat({1, 2, 3}, fill2) => {3, 3, 2, 2, 1, 1}"
   input list<TI> inList;
   input MapFunc inMapFunc;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2648,7 +2648,7 @@ public function map1Flat<TI, TO, ArgT1>
   input list<TI> inList;
   input MapFunc inMapFunc;
   input ArgT1 inArg1;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2670,7 +2670,7 @@ public function map2Flat<TI, TO, ArgT1, ArgT2>
   input MapFunc inMapFunc;
   input ArgT1 inArg1;
   input ArgT2 inArg2;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function MapFunc
     input TI inElement;
@@ -2843,7 +2843,7 @@ public function mapListAllValueBool<TI, TO, VT>
   input list<list<TI>> inList;
   input MapFunc inMapFunc;
   input VT inValue;
-  output Boolean outAllValue := true;
+  output Boolean outAllValue = true;
 
   partial function MapFunc
     input TI inElement;
@@ -2890,7 +2890,7 @@ public function applyAndFold<TI, TO, FT>
   input FoldFunc inFoldFunc;
   input ApplyFunc inApplyFunc;
   input FT inFoldArg;
-  output FT outResult := inFoldArg;
+  output FT outResult = inFoldArg;
 
   partial function ApplyFunc
     input TI inElement;
@@ -2916,7 +2916,7 @@ public function applyAndFold1<TI, TO, FT, ArgT1>
   input ApplyFunc inApplyFunc;
   input ArgT1 inExtraArg;
   input FT inFoldArg;
-  output FT outResult := inFoldArg;
+  output FT outResult = inFoldArg;
 
   partial function ApplyFunc
     input TI inElement1;
@@ -3083,7 +3083,7 @@ public function fold<T, FT>
   input list<T> inList;
   input FoldFunc inFoldFunc;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -3101,7 +3101,7 @@ public function foldr<T, FT>
   input list<T> inList;
   input FoldFunc inFoldFunc;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input FT inFoldArg;
@@ -3123,7 +3123,7 @@ public function fold1<T, FT, ArgT1>
   input FoldFunc inFoldFunc;
   input ArgT1 inExtraArg;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -3146,7 +3146,7 @@ public function fold1r<T, FT, ArgT1>
   input FoldFunc inFoldFunc;
   input ArgT1 inExtraArg;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input FT inFoldArg;
@@ -3170,7 +3170,7 @@ public function fold2<T, FT, ArgT1, ArgT2>
   input ArgT1 inExtraArg1;
   input ArgT2 inExtraArg2;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -3195,7 +3195,7 @@ public function foldList2<T, FT, ArgT1, ArgT2>
   input ArgT1 inExtraArg1;
   input ArgT2 inExtraArg2;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -3219,7 +3219,7 @@ public function fold2r<T, FT, ArgT1, ArgT2>
   input ArgT1 inExtraArg1;
   input ArgT2 inExtraArg2;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input FT inFoldArg;
@@ -3245,7 +3245,7 @@ public function fold3<T, FT, ArgT1, ArgT2, ArgT3>
   input ArgT2 inExtraArg2;
   input ArgT3 inExtraArg3;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -3269,7 +3269,7 @@ public function fold3r<T, FT, ArgT1, ArgT2, ArgT3>
   input ArgT2 inExtraArg2;
   input ArgT3 inExtraArg3;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input FT inFoldArg;
@@ -3297,7 +3297,7 @@ public function fold4<T, FT, ArgT1, ArgT2, ArgT3, ArgT4>
   input ArgT3 inExtraArg3;
   input ArgT4 inExtraArg4;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -3329,9 +3329,9 @@ public function fold43<T, FT1, FT2, FT3, ArgT1, ArgT2, ArgT3, ArgT4>
   input FT1 inStartValue1;
   input FT2 inStartValue2;
   input FT3 inStartValue3;
-  output FT1 outResult1 := inStartValue1;
-  output FT2 outResult2 := inStartValue2;
-  output FT3 outResult3 := inStartValue3;
+  output FT1 outResult1 = inStartValue1;
+  output FT2 outResult2 = inStartValue2;
+  output FT3 outResult3 = inStartValue3;
 
   partial function FoldFunc
     input T inElement;
@@ -3366,7 +3366,7 @@ public function fold5<T, FT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
   input ArgT4 inExtraArg4;
   input ArgT5 inExtraArg5;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -3392,8 +3392,8 @@ public function mapFold<TI, TO, FT>
   input list<TI> inList;
   input FuncType inFunc;
   input FT inArg;
-  output list<TO> outList := {};
-  output FT outArg := inArg;
+  output list<TO> outList = {};
+  output FT outArg = inArg;
 
   partial function FuncType
     input TI inElem;
@@ -3419,9 +3419,9 @@ public function mapFold2<TI, TO, FT1, FT2>
   input FuncType inFunc;
   input FT1 inArg1;
   input FT2 inArg2;
-  output list<TO> outList := {};
-  output FT1 outArg1 := inArg1;
-  output FT2 outArg2 := inArg2;
+  output list<TO> outList = {};
+  output FT1 outArg1 = inArg1;
+  output FT2 outArg2 = inArg2;
 
   partial function FuncType
     input TI inElem;
@@ -3449,8 +3449,8 @@ public function map1Fold<TI, TO, FT, ArgT1>
   input FuncType inFunc;
   input ArgT1 inConstArg;
   input FT inArg;
-  output list<TO> outList := {};
-  output FT outArg := inArg;
+  output list<TO> outList = {};
+  output FT outArg = inArg;
 
   partial function FuncType
     input TI inElem;
@@ -3478,9 +3478,9 @@ public function map2Fold<TI, TO, FT, ArgT1, ArgT2>
   input ArgT1 inConstArg;
   input ArgT2 inConstArg2;
   input FT inArg;
-  input list<TO> inAccum := {};
-  output list<TO> outList := inAccum;
-  output FT outArg := inArg;
+  input list<TO> inAccum = {};
+  output list<TO> outList = inAccum;
+  output FT outArg = inArg;
 
   partial function FuncType
     input TI inElem;
@@ -3510,8 +3510,8 @@ public function map3Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3>
   input ArgT2 inConstArg2;
   input ArgT3 inConstArg3;
   input FT inArg;
-  output list<TO> outList := {};
-  output FT outArg := inArg;
+  output list<TO> outList = {};
+  output FT outArg = inArg;
 
   partial function FuncType
     input TI inElem;
@@ -3543,8 +3543,8 @@ public function map4Fold<TI, TO, FT, ArgT1, ArgT2, ArgT3, ArgT4>
   input ArgT3 inConstArg3;
   input ArgT4 inConstArg4;
   input FT inArg;
-  output list<TO> outList := {};
-  output FT outArg := inArg;
+  output list<TO> outList = {};
+  output FT outArg = inArg;
 
   partial function FuncType
     input TI inElem;
@@ -3575,8 +3575,8 @@ public function mapFoldTuple<TI, TO, FT>
   input list<TI> inList;
   input FuncType inFunc;
   input FT inArg;
-  output list<TO> outList := {};
-  output FT outArg := inArg;
+  output list<TO> outList = {};
+  output FT outArg = inArg;
 
   partial function FuncType
     input tuple<TI, FT> inTuple;
@@ -3599,8 +3599,8 @@ public function mapFoldList<TI, TO, FT>
   input list<list<TI>> inListList;
   input FuncType inFunc;
   input FT inArg;
-  output list<list<TO>> outListList := {};
-  output FT outArg := inArg;
+  output list<list<TO>> outListList = {};
+  output FT outArg = inArg;
 
   partial function FuncType
     input TI inElem;
@@ -3628,8 +3628,8 @@ public function map3FoldList<TI, TO, FT, ArgT1, ArgT2, ArgT3>
   input ArgT2 inConstArg2;
   input ArgT3 inConstArg3;
   input FT inArg;
-  output list<list<TO>> outListList := {};
-  output FT outArg := inArg;
+  output list<list<TO>> outListList = {};
+  output FT outArg = inArg;
 
   partial function FuncType
     input TI inElem;
@@ -3658,8 +3658,8 @@ public function mapFoldListTuple<TI, TO, FT>
   input list<list<TI>> inListList;
   input FuncType inFunc;
   input TO inFoldArg;
-  output list<list<TO>> outListList := {};
-  output TO outFoldArg := inFoldArg;
+  output list<list<TO>> outListList = {};
+  output TO outFoldArg = inFoldArg;
 
   partial function FuncType
     input tuple<TI, FT> inTuple;
@@ -3681,7 +3681,7 @@ public function foldcallN<FT>
   input Integer n;
   input FoldFunc inFoldFunc;
   input FT inStartValue;
-  output FT outResult := inStartValue;
+  output FT outResult = inStartValue;
 
   partial function FoldFunc
     input FT inFoldArg;
@@ -3746,12 +3746,12 @@ public function flatten<T>
    of the sublists. O(len(outList))
      Example: flatten({{1, 2}, {3, 4, 5}, {6}, {}}) => {1, 2, 3, 4, 5, 6}"
   input list<list<T>> inList;
-  output list<T> outList := listAppend(lst for lst in listReverse(inList));
+  output list<T> outList = listAppend(lst for lst in listReverse(inList));
 end flatten;
 
 public function flattenReverse<T>
   input list<list<T>> inList;
-  output list<T> outList := listAppend(lst for lst in inList);
+  output list<T> outList = listAppend(lst for lst in inList);
 end flattenReverse;
 
 public function thread<T>
@@ -3759,11 +3759,11 @@ public function thread<T>
      Example: thread({1, 2, 3}, {4, 5, 6}) => {4, 1, 5, 2, 6, 3}"
   input list<T> inList1;
   input list<T> inList2;
-  input list<T> inAccum := {};
-  output list<T> outList := {};
+  input list<T> inAccum = {};
+  output list<T> outList = {};
 protected
   T e2;
-  list<T> rest_e2 := inList2;
+  list<T> rest_e2 = inList2;
 algorithm
   for e1 in inList1 loop
     e2 :: rest_e2 := rest_e2;
@@ -3782,10 +3782,10 @@ public function thread3<T>
   input list<T> inList1;
   input list<T> inList2;
   input list<T> inList3;
-  output list<T> outList := {};
+  output list<T> outList = {};
 protected
   T e2, e3;
-  list<T> rest_e2 := inList2, rest_e3 := inList3;
+  list<T> rest_e2 = inList2, rest_e3 = inList3;
 algorithm
   for e1 in inList1 loop
     e2 :: rest_e2 := rest_e2;
@@ -3815,8 +3815,8 @@ public function unzip<T1, T2>
   "Takes a list of two-element tuples and splits the tuples into two separate
    lists. Example: unzip({(1, 2), (3, 4)}) => ({1, 3}, {2, 4})"
   input list<tuple<T1, T2>> inTuples;
-  output list<T1> outList1 := {};
-  output list<T2> outList2 := {};
+  output list<T1> outList1 = {};
+  output list<T2> outList2 = {};
 protected
   T1 e1;
   T2 e2;
@@ -3834,7 +3834,7 @@ public function unzipFirst<T1, T2>
   "Takes a list of two-element tuples and creates a list from the first element
    of each tuple. Example: unzipFirst({(1, 2), (3, 4)}) => {1, 3}"
   input list<tuple<T1, T2>> inTuples;
-  output list<T1> outList := {};
+  output list<T1> outList = {};
 protected
   T1 e;
 algorithm
@@ -3849,7 +3849,7 @@ public function unzipSecond<T1, T2>
   "Takes a list of two-element tuples and creates a list from the second element
    of each tuple. Example: unzipFirst({(1, 2), (3, 4)}) => {2, 4}"
   input list<tuple<T1, T2>> inTuples;
-  output list<T2> outList := {};
+  output list<T2> outList = {};
 protected
   T2 e;
 algorithm
@@ -4248,7 +4248,7 @@ public function threadMap3ReverseFold<T1, T2, TO, FT, ArgT1, ArgT2, ArgT3>
   input ArgT2 inArg2;
   input ArgT3 inArg3;
   input FT inFoldArg;
-  input list<TO> inAccum := {};
+  input list<TO> inAccum = {};
   output list<TO> outList;
   output FT outFoldArg;
 
@@ -4293,8 +4293,8 @@ public function thread3Map_2<T1, T2, T3, TO1, TO2>
   input list<T2> inList2;
   input list<T3> inList3;
   input MapFunc inFunc;
-  output list<TO1> outList1 := {};
-  output list<TO2> outList2 := {};
+  output list<TO1> outList1 = {};
+  output list<TO2> outList2 = {};
 
   partial function MapFunc
     input T1 inElement1;
@@ -4305,9 +4305,9 @@ public function thread3Map_2<T1, T2, T3, TO1, TO2>
   end MapFunc;
 protected
   T2 e2;
-  list<T2> rest_e2 := inList2;
+  list<T2> rest_e2 = inList2;
   T3 e3;
-  list<T3> rest_e3 := inList3;
+  list<T3> rest_e3 = inList3;
   TO1 res1;
   TO2 res2;
 algorithm
@@ -4334,8 +4334,8 @@ public function thread3MapFold<T1, T2, T3, TO, ArgT1>
   input list<T3> inList3;
   input MapFunc inFunc;
   input ArgT1 inArg;
-  output list<TO> outList := {};
-  output ArgT1 outArg := inArg;
+  output list<TO> outList = {};
+  output ArgT1 outArg = inArg;
 
   partial function MapFunc
     input T1 inElement1;
@@ -4347,9 +4347,9 @@ public function thread3MapFold<T1, T2, T3, TO, ArgT1>
   end MapFunc;
 protected
   T2 e2;
-  list<T2> rest_e2 := inList2;
+  list<T2> rest_e2 = inList2;
   T3 e3;
-  list<T3> rest_e3 := inList3;
+  list<T3> rest_e3 = inList3;
   TO res;
 algorithm
   for e1 in inList1 loop
@@ -4598,8 +4598,8 @@ public function threadMapFold<T1, T2, TO, FT>
   input list<T2> inList2;
   input FuncType inFunc;
   input FT inArg;
-  output list<TO> outList := {};
-  output FT outArg := inArg;
+  output list<TO> outList = {};
+  output FT outArg = inArg;
 
   partial function FuncType
     input T1 inElem1;
@@ -4610,7 +4610,7 @@ public function threadMapFold<T1, T2, TO, FT>
   end FuncType;
 protected
   T2 e2;
-  list<T2> rest_e2 := inList2;
+  list<T2> rest_e2 = inList2;
   TO res;
 algorithm
   for e1 in inList1 loop
@@ -4629,7 +4629,7 @@ public function position<T>
     Example: position(2, {0, 1, 2, 3}) => 3"
   input T inElement;
   input list<T> inList;
-  output Integer outPosition := 1 "one-based index";
+  output Integer outPosition = 1 "one-based index";
 algorithm
   for e in inList loop
     if valueEq(e, inElement) then
@@ -4647,7 +4647,7 @@ public function positionOnTrue<T, VT>
   input VT inValue;
   input list<T> inList;
   input CompFunc inCompFunc;
-  output Integer outPosition := 1 "one-based index";
+  output Integer outPosition = 1 "one-based index";
 
   partial function CompFunc
     input VT inValue;
@@ -4671,7 +4671,7 @@ public function positionList<T>
      Example: positionList(3, {{4, 2}, {6, 4, 3, 1}}) => (2, 3)"
   input T inElement;
   input list<list<T>> inList;
-  output Integer outListIndex := 1 "one-based index";
+  output Integer outListIndex = 1 "one-based index";
   output Integer outPosition "one-based index";
 algorithm
   for lst in inList loop
@@ -4855,8 +4855,8 @@ public function extractOnTrue<T>
        extractOnTrue({1, 2, 3, 4, 5}, isEven) => {2, 4}, {1, 3, 5}"
   input list<T> inList;
   input FilterFunc inFilterFunc;
-  output list<T> outExtractedList := {};
-  output list<T> outRemainingList := {};
+  output list<T> outExtractedList = {};
+  output list<T> outRemainingList = {};
 
   partial function FilterFunc
     input T inElement;
@@ -4882,8 +4882,8 @@ public function extract1OnTrue<T, ArgT1>
   input list<T> inList;
   input FilterFunc inFilterFunc;
   input ArgT1 inArg;
-  output list<T> outExtractedList := {};
-  output list<T> outRemainingList := {};
+  output list<T> outExtractedList = {};
+  output list<T> outRemainingList = {};
 
   partial function FilterFunc
     input T inElement;
@@ -4910,7 +4910,7 @@ public function filter<T>
        filter({1, 2, 3, 4, 5}, isEven) => {2, 4}"
   input list<T> inList;
   input FilterFunc inFilterFunc;
-  output list<T> outList := {};
+  output list<T> outList = {};
 
   partial function FilterFunc
     input T inElement;
@@ -4932,7 +4932,7 @@ public function filterMap<TI, TO>
    all elements for which the function fails."
   input list<TI> inList;
   input FilterMapFunc inFilterMapFunc;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function FilterMapFunc
     input TI inElement;
@@ -4958,7 +4958,7 @@ public function filterMap1<TI, TO, ArgT1>
   input list<TI> inList;
   input FilterMapFunc inFilterMapFunc;
   input ArgT1 inExtraArg;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function FilterMapFunc
     input TI inElement;
@@ -5023,8 +5023,8 @@ public function filter1OnTrueSync<T1, T2, ArgT1>
   input FilterFunc inFilterFunc;
   input ArgT1 inArg1;
   input list<T2> inSyncList;
-  output list<T1> outList_a := {};
-  output list<T2> outList_b := {};
+  output list<T1> outList_a = {};
+  output list<T2> outList_b = {};
 
   partial function FilterFunc
     input T1 inElement;
@@ -5033,7 +5033,7 @@ public function filter1OnTrueSync<T1, T2, ArgT1>
   end FilterFunc;
 protected
   T2 e2;
-  list<T2> rest2 := inSyncList;
+  list<T2> rest2 = inSyncList;
 algorithm
   for e1 in inList loop
     e2 :: rest2 := rest2;
@@ -5056,8 +5056,8 @@ public function filterOnTrueSync<T1, T2>
   input list<T1> inList;
   input FilterFunc inFilterFunc;
   input list<T2> inSyncList;
-  output list<T1> outList_a := {};
-  output list<T2> outList_b := {};
+  output list<T1> outList_a = {};
+  output list<T2> outList_b = {};
 
   partial function FilterFunc
     input T1 inElement;
@@ -5065,7 +5065,7 @@ public function filterOnTrueSync<T1, T2>
   end FilterFunc;
 protected
   T2 e2;
-  list<T2> rest2 := inSyncList;
+  list<T2> rest2 = inSyncList;
 algorithm
   true := listLength(inList) == listLength(inSyncList);
 
@@ -5108,7 +5108,7 @@ public function filter1<T, ArgT1>
   input list<T> inList;
   input FilterFunc inFilterFunc;
   input ArgT1 inArg1;
-  output list<T> outList := {};
+  output list<T> outList = {};
 
   partial function FilterFunc
     input T inElement;
@@ -5235,7 +5235,7 @@ public function selectFirstBoolList<T>
   output T outElement;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   for b in inBooleans loop
     e :: rest := rest;
@@ -5276,10 +5276,10 @@ public function deleteMember<T>
    list. Example: deleteMember({1, 2, 3, 2}, 2) => {1, 3, 2}"
   input list<T> inList;
   input T inElement;
-  output list<T> outList := {};
+  output list<T> outList = {};
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) loop
     e :: rest := rest;
@@ -5313,8 +5313,8 @@ public function deleteMemberOnTrue<T, VT>
   input VT inValue;
   input list<T> inList;
   input CompareFunc inCompareFunc;
-  output list<T> outList := inList;
-  output Option<T> outDeletedElement := NONE();
+  output list<T> outList = inList;
+  output Option<T> outDeletedElement = NONE();
 
   partial function CompareFunc
     input VT inValue;
@@ -5323,7 +5323,7 @@ public function deleteMemberOnTrue<T, VT>
   end CompareFunc;
 protected
   T e;
-  list<T> rest := inList, acc := {};
+  list<T> rest = inList, acc = {};
 algorithm
   while not listEmpty(rest) loop
     e :: rest := rest;
@@ -5358,11 +5358,11 @@ public function deletePositionsSorted<T>
      Example: deletePositionsSorted({1, 2, 3, 4, 5}, {0, 2, 3}) => {2, 5}"
   input list<T> inList;
   input list<Integer> inPositions;
-  output list<T> outList := {};
+  output list<T> outList = {};
 protected
-  Integer i := 0;
+  Integer i = 0;
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   for pos in inPositions loop
     while i <> pos loop
@@ -5383,7 +5383,7 @@ public function removeMatchesFirst
    element doesn't match it returns the list."
   input list<Integer> inList;
   input Integer inN;
-  output list<Integer> outList := inList;
+  output list<Integer> outList = inList;
 algorithm
   for e in inList loop
     if e <> inN then
@@ -5402,10 +5402,10 @@ public function replaceAt<T>
   input T inElement;
   input Integer inPosition "one-based index" ;
   input list<T> inList;
-  output list<T> outList := {};
+  output list<T> outList = {};
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   true := inPosition >= 1;
 
@@ -5428,8 +5428,8 @@ public function replaceOnTrue<T>
   input T inReplacement;
   input list<T> inList;
   input FuncType inFunc;
-  output list<T> outList := {};
-  output Boolean outReplaced := false;
+  output list<T> outList = {};
+  output Boolean outReplaced = false;
 
   partial function FuncType
     input T inElement;
@@ -5437,7 +5437,7 @@ public function replaceOnTrue<T>
   end FuncType;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) loop
     e :: rest := rest;
@@ -5475,10 +5475,10 @@ public function replaceAtWithList<T>
   input list<T> inReplacementList;
   input Integer inPosition;
   input list<T> inList;
-  output list<T> outList := {};
+  output list<T> outList = {};
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   true := inPosition >= 0;
 
@@ -5630,7 +5630,7 @@ public function generateReverse<T, ArgT1>
    returns the generated list reversed."
   input ArgT1 inArg;
   input GenerateFunc inFunc;
-  output list<T> outList := {};
+  output list<T> outList = {};
 
   partial function GenerateFunc
     input ArgT1 inArg;
@@ -5640,7 +5640,7 @@ public function generateReverse<T, ArgT1>
   end GenerateFunc;
 protected
   Boolean cont;
-  ArgT1 arg := inArg;
+  ArgT1 arg = inArg;
   T e;
 algorithm
   while true loop
@@ -5656,8 +5656,8 @@ public function mapFoldSplit<TI, TO, FT>
   input MapFunc inMapFunc;
   input FoldFunc inFoldFunc;
   input FT inStartValue;
-  output list<TO> outList := {};
-  output FT outResult := inStartValue;
+  output list<TO> outList = {};
+  output FT outResult = inStartValue;
 
   partial function MapFunc
     input TI inElem;
@@ -5689,8 +5689,8 @@ public function map1FoldSplit<TI, TO, FT, ArgT1>
   input FoldFunc inFoldFunc;
   input ArgT1 inConstArg;
   input FT inStartValue;
-  output list<TO> outList := {};
-  output FT outResult := inStartValue;
+  output list<TO> outList = {};
+  output FT outResult = inStartValue;
 
   partial function MapFunc
     input TI inElem;
@@ -5724,7 +5724,7 @@ public function accumulateMapReverse<TI, TO>
    result list."
   input list<TI> inList;
   input MapFunc inMapFunc;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function MapFunc
     input TI inElement;
@@ -5743,7 +5743,7 @@ public function accumulateMapAccum<TI, TO>
    elements to the result list."
   input list<TI> inList;
   input MapFunc inMapFunc;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function MapFunc
     input TI inElement;
@@ -5764,7 +5764,7 @@ public function accumulateMapAccum1<TI, TO, ArgT1>
   input list<TI> inList;
   input MapFunc inMapFunc;
   input ArgT1 inArg;
-  output list<TO> outList := {};
+  output list<TO> outList = {};
 
   partial function MapFunc
     input TI inElement;
@@ -5785,8 +5785,8 @@ public function accumulateMapFoldAccum<TI, TO, FT>
   input list<TI> inList;
   input FuncType inFunc;
   input FT inFoldArg;
-  output list<TO> outList := {};
-  output FT outFoldArg := inFoldArg;
+  output list<TO> outList = {};
+  output FT outFoldArg = inFoldArg;
 
   partial function FuncType
     input TI inElement;
@@ -5840,8 +5840,8 @@ public function findMap<T>
    not."
   input list<T> inList;
   input FuncType inFunc;
-  output list<T> outList := {};
-  output Boolean outFound := false;
+  output list<T> outList = {};
+  output Boolean outFound = false;
 
   partial function FuncType
     input T inElement;
@@ -5850,7 +5850,7 @@ public function findMap<T>
   end FuncType;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) and not outFound loop
     e :: rest := rest;
@@ -5871,8 +5871,8 @@ public function findMap1<T, ArgT1>
   input list<T> inList;
   input FuncType inFunc;
   input ArgT1 inArg1;
-  output list<T> outList := {};
-  output Boolean outFound := false;
+  output list<T> outList = {};
+  output Boolean outFound = false;
 
   partial function FuncType
     input T inElement;
@@ -5882,7 +5882,7 @@ public function findMap1<T, ArgT1>
   end FuncType;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) and not outFound loop
     e :: rest := rest;
@@ -5904,8 +5904,8 @@ public function findMap2<T, ArgT1, ArgT2>
   input FuncType inFunc;
   input ArgT1 inArg1;
   input ArgT2 inArg2;
-  output list<T> outList := {};
-  output Boolean outFound := false;
+  output list<T> outList = {};
+  output Boolean outFound = false;
 
   partial function FuncType
     input T inElement;
@@ -5916,7 +5916,7 @@ public function findMap2<T, ArgT1, ArgT2>
   end FuncType;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) and not outFound loop
     e :: rest := rest;
@@ -5939,8 +5939,8 @@ public function findMap3<T, ArgT1, ArgT2, ArgT3>
   input ArgT1 inArg1;
   input ArgT2 inArg2;
   input ArgT3 inArg3;
-  output list<T> outList := {};
-  output Boolean outFound := false;
+  output list<T> outList = {};
+  output Boolean outFound = false;
 
   partial function FuncType
     input T inElement;
@@ -5952,7 +5952,7 @@ public function findMap3<T, ArgT1, ArgT2, ArgT3>
   end FuncType;
 protected
   T e;
-  list<T> rest := inList;
+  list<T> rest = inList;
 algorithm
   while not listEmpty(rest) and not outFound loop
     e :: rest := rest;
@@ -5970,8 +5970,8 @@ public function splitEqualPrefix<T1, T2>
   input list<T1> inFullList;
   input list<T2> inPrefixList;
   input EqFunc inEqFunc;
-  input list<T1> inAccum := {};
-  output list<T1> outPrefix := {};
+  input list<T1> inAccum = {};
+  output list<T1> outPrefix = {};
   output list<T1> outRest;
 
   partial function EqFunc
@@ -5982,8 +5982,8 @@ public function splitEqualPrefix<T1, T2>
 protected
   T1 e1;
   T2 e2;
-  list<T1> rest_e1 := inFullList;
-  list<T2> rest_e2 := inPrefixList;
+  list<T1> rest_e1 = inFullList;
+  list<T2> rest_e2 = inPrefixList;
 algorithm
   while true loop
     if listEmpty(rest_e1) or listEmpty(rest_e2) then
@@ -6013,7 +6013,7 @@ public function combinationMap<TI, TO>
   "
   input list<list<TI>> inElements;
   input MapFunc inMapFunc;
-  output list<TO> outElements := {};
+  output list<TO> outElements = {};
 
   partial function MapFunc
     input list<TI> inElements;
@@ -6168,8 +6168,8 @@ public function removeEqualPrefix<T1, T2>
   input list<T1> inList1;
   input list<T2> inList2;
   input CompFunc inCompFunc;
-  output list<T1> outList1 := inList1;
-  output list<T2> outList2 := inList2;
+  output list<T1> outList1 = inList1;
+  output list<T2> outList2 = inList2;
 
   partial function CompFunc
     input T1 inElement1;
@@ -6200,9 +6200,9 @@ end listIsLonger;
 
 public function toListWithPositions<T>
   input list<T> inList;
-  output list<tuple<T, Integer>> outList := {};
+  output list<tuple<T, Integer>> outList = {};
 protected
-  Integer pos := 1;
+  Integer pos = 1;
 algorithm
   for e in inList loop
     outList := (e, pos) :: outList;

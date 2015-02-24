@@ -1024,7 +1024,7 @@ does not make transitive replacement rules.
   input VariableReplacements repl;
   input DAE.ComponentRef src;
   input DAE.Exp dst;
-  output VariableReplacements outRepl := repl;
+  output VariableReplacements outRepl = repl;
 protected
   HashTable2.HashTable ht;
   HashTable3.HashTable invHt;

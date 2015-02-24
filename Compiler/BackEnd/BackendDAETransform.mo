@@ -123,7 +123,7 @@ public function eqnAssignmentNonScalar
   output array<list<Integer>> outAcc;
 protected
   list<Integer> elst, vlst;
-  list<list<Integer>> acc := {};
+  list<list<Integer>> acc = {};
 algorithm
   for i in 1:arrayLength(mapEqnIncRow) loop
     elst := mapEqnIncRow[i];
@@ -139,7 +139,7 @@ public function varAssignmentNonScalar
   output array<Integer> outAcc;
 protected
   Integer e;
-  list<Integer> acc := {};
+  list<Integer> acc = {};
 algorithm
   for i in 1:arrayLength(ass1) loop
     e := ass1[i];
@@ -1370,8 +1370,8 @@ protected function traverseBackendDAEExpsWhenOperator<ArgT>
   input list<BackendDAE.WhenOperator> inReinitStmtLst;
   input FuncExpType func;
   input ArgT inArg;
-  output list<BackendDAE.WhenOperator> outReinitStmtLst := {};
-  output ArgT outArg := inArg;
+  output list<BackendDAE.WhenOperator> outReinitStmtLst = {};
+  output ArgT outArg = inArg;
   partial function FuncExpType
     input DAE.Exp inExp;
     input ArgT inArg;
@@ -1420,8 +1420,8 @@ public function traverseBackendDAEExpsWhenClauseLst<ArgT>
   input list<BackendDAE.WhenClause> inWhenClauseLst;
   input FuncExpType func;
   input ArgT inArg;
-  output list<BackendDAE.WhenClause> outWhenClauseLst := {};
-  output ArgT outArg := inArg;
+  output list<BackendDAE.WhenClause> outWhenClauseLst = {};
+  output ArgT outArg = inArg;
   partial function FuncExpType
     input DAE.Exp inExp;
     input ArgT inArg;
@@ -1462,8 +1462,8 @@ public function traverseExpsOfEquationList<ArgT> "author: Frenkel TUD 2010-11
   input list<BackendDAE.Equation> inEquations;
   input FuncExpType func;
   input ArgT inArg;
-  output list<BackendDAE.Equation> outEquations := {};
-  output ArgT outArg := inArg;
+  output list<BackendDAE.Equation> outEquations = {};
+  output ArgT outArg = inArg;
 
   partial function FuncExpType
     input DAE.Exp inExp;

@@ -288,7 +288,7 @@ protected function inputDerivativesUsedWork "author: Frenkel TUD 2012-10"
   input BackendDAE.Shared inShared;
   input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared outShared := inShared "unused";
+  output BackendDAE.Shared outShared = inShared "unused";
   output Boolean outChanged;
 algorithm
   (osyst, outChanged) := matchcontinue(isyst)

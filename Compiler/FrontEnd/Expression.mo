@@ -2899,7 +2899,7 @@ protected function expandFactorsWork2
   input list<DAE.Exp> inAcc;
   input Boolean noFactors "Decides if the default is the empty list or not";
   input Boolean doInverseFactors "Decides if a factor e should be 1/e instead";
-  output list<DAE.Exp> outExpLst := {};
+  output list<DAE.Exp> outExpLst = {};
 protected
   list<DAE.Exp> tmpExpLst;
 algorithm
@@ -3809,7 +3809,7 @@ public function expPowLst
 author: vitalij"
   input list<DAE.Exp> expLst;
   input DAE.Exp n;
-  output list<DAE.Exp> outExp := List.map1(expLst, expPow, n);
+  output list<DAE.Exp> outExp = List.map1(expLst, expPow, n);
 end expPowLst;
 
 public function expMaxScalar "author: Frenkel TUD 2011-04
@@ -3850,9 +3850,9 @@ public function makeScalarProduct
 "calculate a scalr product <v,w>"
   input array<DAE.Exp> v;
   input array<DAE.Exp> w;
-  output DAE.Exp s := DAE.RCONST(0.0);
+  output DAE.Exp s = DAE.RCONST(0.0);
 protected
-  Integer size1:=arrayLength(v), size2:= arrayLength(w);
+  Integer size1=arrayLength(v), size2= arrayLength(w);
 algorithm
   if size1 <> size2 then
     print("makeScalarProduct faili.\n");
@@ -3866,7 +3866,7 @@ end makeScalarProduct;
 
 public function lenVec
   input array<DAE.Exp> v;
-  output DAE.Exp len := makeScalarProduct(v,v);
+  output DAE.Exp len = makeScalarProduct(v,v);
   algorithm
   len := Expression.makePureBuiltinCall("sqrt",{len},DAE.T_REAL_DEFAULT);
 end lenVec;
@@ -3877,7 +3877,7 @@ public function addVec
   output array<DAE.Exp> y;
 
 protected
-  Integer size1:=arrayLength(v), size2:= arrayLength(w);
+  Integer size1=arrayLength(v), size2= arrayLength(w);
 algorithm
   if size1 <> size2 then
     print("addVec fail.\n");
@@ -3895,7 +3895,7 @@ public function subVec
   output array<DAE.Exp> y;
 
 protected
-  Integer size1:=arrayLength(v), size2:= arrayLength(w);
+  Integer size1=arrayLength(v), size2= arrayLength(w);
 algorithm
   if size1 <> size2 then
     print("addVec fail.\n");
@@ -5131,8 +5131,8 @@ public function traverseExpList<ArgT> "Calls traverseExp for each element of lis
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
   input ArgT iext_arg;
-  output list<DAE.Exp> expl := {};
-  output ArgT ext_arg := iext_arg;
+  output list<DAE.Exp> expl = {};
+  output ArgT ext_arg = iext_arg;
   partial function FuncExpType
     input DAE.Exp inExp;
     input ArgT inTypeA;
@@ -5141,7 +5141,7 @@ public function traverseExpList<ArgT> "Calls traverseExp for each element of lis
   end FuncExpType;
 protected
   DAE.Exp e1;
-  Boolean same := true;
+  Boolean same = true;
 algorithm
   for e in inExpl loop
     (e1, ext_arg) := traverseExp(e, rel, ext_arg);
@@ -5626,9 +5626,9 @@ protected function traverseExpTypeDims2<ArgT>
   input list<DAE.Dimension> inDims;
   input FuncType inFunc;
   input ArgT inArg;
-  output list<DAE.Dimension> outDims := {};
-  output ArgT outArg := inArg;
-  output Boolean outChanged := false;
+  output list<DAE.Dimension> outDims = {};
+  output ArgT outArg = inArg;
+  output Boolean outChanged = false;
 
   partial function FuncType
     input DAE.Exp inExp;
@@ -5637,7 +5637,7 @@ protected function traverseExpTypeDims2<ArgT>
     output ArgT outArg;
   end FuncType;
 protected
-  Boolean changed := false;
+  Boolean changed = false;
   DAE.Exp exp, new_exp;
 algorithm
   for dim in inDims loop
@@ -6009,7 +6009,7 @@ public function expHasCrefsNoPreOrStart "
  returns true if the expression contains one cref from the list, but not in pre(),change(),edge(),start(), delay()"
   input DAE.Exp inExp;
   input list<DAE.ComponentRef> inCr;
-  output Boolean hasCref := false;
+  output Boolean hasCref = false;
 algorithm
   for cr in inCr loop
     (_,(_,hasCref)) := traverseExpTopDown(inExp, traversingexpHasCrefNoPreOrStart, (cr,false));
@@ -7325,7 +7325,7 @@ end isSub;
 
 public function isMulOrDiv "returns true if operator is MUL or DIV"
   input DAE.Operator op;
-  output Boolean res := isMul(op) or isDiv(op);
+  output Boolean res = isMul(op) or isDiv(op);
 end isMulOrDiv;
 
 public function isMul "returns true if operator is MUL"
@@ -8436,7 +8436,7 @@ protected function expEqualList
   output Boolean outEqual;
 protected
   DAE.Exp e2;
-  list<DAE.Exp> rest_expl2 := inExpl2;
+  list<DAE.Exp> rest_expl2 = inExpl2;
 algorithm
   // Check that the lists have the same length, otherwise they can't be equal.
   if listLength(inExpl1) <> listLength(inExpl2) then
@@ -8463,7 +8463,7 @@ protected function expEqualListList
   output Boolean outEqual;
 protected
   list<DAE.Exp> expl2;
-  list<list<DAE.Exp>> rest_expl2 := inExpl2;
+  list<list<DAE.Exp>> rest_expl2 = inExpl2;
 algorithm
   // Check that the lists have the same length, otherwise they can't be equal.
   if listLength(inExpl1) <> listLength(inExpl2) then
@@ -11823,7 +11823,7 @@ author: Vitalij Ruge
   output DAE.Exp d "denominator";
 protected
   list<DAE.Exp> N, D, T;
-  DAE.Type tp := typeof(iExp);
+  DAE.Type tp = typeof(iExp);
 algorithm
   T := terms(iExp);
   T := ExpressionSimplify.simplifyList(T, {});
@@ -11896,11 +11896,11 @@ protected function createResidualExp2
   sqrt(f()) - sqrt(g(.)) = 0 -> f(.) - g(.)"
   input DAE.Exp iExp1;
   input DAE.Exp iExp2;
-  output DAE.Exp oExp1 := iExp1;
-  output DAE.Exp oExp2 := iExp2;
+  output DAE.Exp oExp1 = iExp1;
+  output DAE.Exp oExp2 = iExp2;
 protected
-  Boolean con := true, con1;
-  Integer ii := 1;
+  Boolean con = true, con1;
+  Integer ii = 1;
 algorithm
 
 while con and ii < 15 loop

@@ -974,7 +974,7 @@ protected function evaluateGraphicalApi
 protected
   String fn_name;
   SourceInfo info;
-  Boolean failed := false;
+  Boolean failed = false;
 algorithm
   try
     (outResult, outSymbolTable) :=
@@ -997,7 +997,7 @@ protected function evaluateGraphicalApi_dispatch
   input GlobalScript.Statements inStatements;
   input GlobalScript.SymbolTable inSymbolTable;
   output String outResult;
-  output GlobalScript.SymbolTable outSymbolTable := inSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable = inSymbolTable;
 protected
   String fn_name, name;
   Absyn.Program old_p, p, p_1;
@@ -5516,7 +5516,7 @@ protected function setComponentSubmodifierInClass
   input Absyn.Class inClass;
   input Absyn.ComponentRef inComponentName;
   input Absyn.Modification inMod;
-  output Absyn.Class outClass := inClass;
+  output Absyn.Class outClass = inClass;
 algorithm
   (outClass, true) := Absyn.traverseClassComponents(inClass,
     function setComponentSubmodifierInCompitems(inComponentName =
@@ -5530,12 +5530,12 @@ protected function setComponentSubmodifierInCompitems
   input Boolean inFound;
   input Absyn.ComponentRef inComponentName;
   input Absyn.Modification inMod;
-  output list<Absyn.ComponentItem> outComponents := {};
+  output list<Absyn.ComponentItem> outComponents = {};
   output Boolean outFound;
   output Boolean outContinue;
 protected
   Absyn.ComponentItem item;
-  list<Absyn.ComponentItem> rest_items := inComponents;
+  list<Absyn.ComponentItem> rest_items = inComponents;
   Absyn.Component comp;
   list<Absyn.ElementArg> args_old, args_new;
   Absyn.EqMod eqmod_old, eqmod_new;
@@ -5612,7 +5612,7 @@ end propagateMod;
 protected function mergeElementArgs
   input list<Absyn.ElementArg> inOldArgs;
   input list<Absyn.ElementArg> inNewArgs;
-  output list<Absyn.ElementArg> outArgs := inOldArgs;
+  output list<Absyn.ElementArg> outArgs = inOldArgs;
 protected
   Boolean found;
 algorithm
@@ -5636,10 +5636,10 @@ protected function propagateMod2
   input Absyn.Path inComponentName;
   input list<Absyn.ElementArg> inSubMods;
   input Absyn.Modification inNewMod;
-  output list<Absyn.ElementArg> outSubMods := {};
+  output list<Absyn.ElementArg> outSubMods = {};
 protected
   Absyn.ElementArg submod;
-  list<Absyn.ElementArg> rest_submods := inSubMods;
+  list<Absyn.ElementArg> rest_submods = inSubMods;
   Absyn.Modification new_mod;
   Absyn.Path comp_name, comp_rest;
 algorithm
@@ -15605,7 +15605,7 @@ protected function removeInnerDiffFiledClasses
    inputs: (Absyn.Program /* package as program. */)
    outputs: Absyn.Program"
   input Absyn.Program inProgram;
-  output Absyn.Program p := inProgram;
+  output Absyn.Program p = inProgram;
 algorithm
   p := match p
     case Absyn.PROGRAM()
@@ -15706,7 +15706,7 @@ protected function getSurroundingPackage
    the outermost package that has the same filename as the class"
   input Absyn.Path classpath;
   input Absyn.Program inProgram;
-  output Absyn.Program p := inProgram;
+  output Absyn.Program p = inProgram;
 algorithm
   p := matchcontinue p
     local
@@ -16915,7 +16915,7 @@ end getDefinitionComponents;
 protected function getDefinitionTypeVars
   input list<String> inTypeVars;
   input list<String> inDefinitions;
-  output list<String> outDefinitions := inDefinitions;
+  output list<String> outDefinitions = inDefinitions;
 algorithm
   for ty_var in listReverse(inTypeVars) loop
     outDefinitions := ("(replaceable type " + ty_var + ")") :: outDefinitions;

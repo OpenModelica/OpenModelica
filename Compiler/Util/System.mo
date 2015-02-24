@@ -304,7 +304,7 @@ end readFile;
 
 public function systemCall
   input String command;
-  input String outFile := "" "empty file means no redirection unless it is part of the command";
+  input String outFile = "" "empty file means no redirection unless it is part of the command";
   output Integer outInteger;
   external "C" outInteger=SystemImpl__systemCall(command,outFile) annotation(Library = "omcruntime");
 end systemCall;
@@ -377,7 +377,7 @@ public function getLoadModelPath
   input String className;
   input list<String> prios;
   input list<String> mps;
-  input Boolean requireExactVersion := false;
+  input Boolean requireExactVersion = false;
   output String dir;
   output String name;
   output Boolean isDir;
@@ -958,7 +958,7 @@ end intRandom0;
 
 public function gettextInit
   "Choose a locale for subsequent gettext calls. Prints warnings on failures."
-  input String locale := "" "Empty string choses automatically from the environment";
+  input String locale = "" "Empty string choses automatically from the environment";
   external "C" SystemImpl__gettextInit(locale) annotation(Library = {"omcruntime"});
 end gettextInit;
 

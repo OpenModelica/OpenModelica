@@ -189,11 +189,11 @@ protected function addOptimizationVarsEqns1
  input String prefConCrefName;
  input BackendDAE.VarKind conKind;
 
- output BackendDAE.Variables outVars := inVars;
- output list<BackendDAE.Equation>  outEqns := inEqns;
+ output BackendDAE.Variables outVars = inVars;
+ output list<BackendDAE.Equation>  outEqns = inEqns;
 
 protected
- Integer i := inI;
+ Integer i = inI;
  BackendDAE.Var dummyVar;
  list<BackendDAE.Equation> conEqn;
  String conCrefName;
@@ -237,14 +237,14 @@ protected function findMayerTerm
 "author: Vitalij Ruge
 find mayer-term from annotation"
 input list<BackendDAE.Var> varlst;
-output Option<DAE.Exp> mayer := findObjTerm(varlst,BackendVariable.hasMayerTermAnno);
+output Option<DAE.Exp> mayer = findObjTerm(varlst,BackendVariable.hasMayerTermAnno);
 end findMayerTerm;
 
 protected function findLagrangeTerm
 "author: Vitalij Ruge
 find lagrange-term from annotation"
 input list<BackendDAE.Var> varlst;
-output Option<DAE.Exp> lagrange := findObjTerm(varlst,BackendVariable.hasLagrangeTermAnno);
+output Option<DAE.Exp> lagrange = findObjTerm(varlst,BackendVariable.hasLagrangeTermAnno);
 end findLagrangeTerm;
 
 
@@ -253,7 +253,7 @@ protected function findObjTerm
 helper findLagrangeTerm, findMayerTerm"
 input list<BackendDAE.Var> InVarlst;
 input MapFunc findObjTermFun;
-output Option<DAE.Exp> objeExp := NONE();
+output Option<DAE.Exp> objeExp = NONE();
 
 partial function MapFunc
   input BackendDAE.Var inVar;
@@ -262,7 +262,7 @@ end MapFunc;
 
 protected
 DAE.Exp e, nom; DAE.ComponentRef cr;
-list<BackendDAE.Var> varlst := List.select(InVarlst, findObjTermFun);
+list<BackendDAE.Var> varlst = List.select(InVarlst, findObjTermFun);
 
 algorithm
   for v in varlst loop
@@ -328,7 +328,7 @@ protected function addConstraints2
 "author: Vitalij Ruge"
 input list< .DAE.Exp> inConstraintLst;
 input list<BackendDAE.Var> inVarlst;
-output list< .DAE.Exp> outConstraintLst := inConstraintLst;
+output list< .DAE.Exp> outConstraintLst = inConstraintLst;
 
 protected
  DAE.ComponentRef cr;
@@ -366,7 +366,7 @@ protected function inputDerivativesForDynOptWork "author: "
   input BackendDAE.Shared inShared;
   input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared outShared := inShared;
+  output BackendDAE.Shared outShared = inShared;
   output Boolean outChanged;
 
 algorithm
@@ -378,12 +378,12 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.Matching matching;
-      list<DAE.ComponentRef> idercr:={}, icr:={};
+      list<DAE.ComponentRef> idercr={}, icr={};
       DAE.ComponentRef cr;
       String s;
       BackendDAE.StateSets stateSets;
       BackendDAE.BaseClockPartitionKind partitionKind;
-      list<BackendDAE.Var> varLst:={};
+      list<BackendDAE.Var> varLst={};
       BackendDAE.Variables vars;
 
     case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets, partitionKind) algorithm

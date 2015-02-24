@@ -64,7 +64,7 @@ end SCodeDumpOptions;
 
 public function programStr
   input SCode.Program inProgram;
-  input SCodeDumpOptions options := defaultOptions;
+  input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
   outString := Tpl.tplString2(SCodeDumpTpl.dumpProgram, inProgram, options);
@@ -72,7 +72,7 @@ end programStr;
 
 public function classDefStr
   input SCode.ClassDef cd;
-  input SCodeDumpOptions options := defaultOptions;
+  input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
   outString := Tpl.tplString2(SCodeDumpTpl.dumpClassDef, cd, options);
@@ -80,7 +80,7 @@ end classDefStr;
 
 public function statementStr
   input SCode.Statement stmt;
-  input SCodeDumpOptions options := defaultOptions;
+  input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
   outString := Tpl.tplString2(SCodeDumpTpl.dumpStatement, stmt, options);
@@ -88,7 +88,7 @@ end statementStr;
 
 public function equationStr
   input SCode.EEquation inEEquation;
-  input SCodeDumpOptions options := defaultOptions;
+  input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
   outString := Tpl.tplString2(SCodeDumpTpl.dumpEEquation, inEEquation, options);
@@ -97,7 +97,7 @@ end equationStr;
 public function printModStr
 "Prints SCode.Mod to a string."
   input SCode.Mod inMod;
-  input SCodeDumpOptions options := defaultOptions;
+  input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
   outString := Tpl.tplString2(SCodeDumpTpl.dumpModifier, inMod, options);
@@ -106,7 +106,7 @@ end printModStr;
 public function printCommentAndAnnotationStr
 "Prints SCode.Comment to a string."
   input SCode.Comment inComment;
-  input SCodeDumpOptions options := defaultOptions;
+  input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
   outString := Tpl.tplString2(SCodeDumpTpl.dumpComment, inComment, options);
@@ -115,7 +115,7 @@ end printCommentAndAnnotationStr;
 public function printCommentStr
 "Prints SCode.Comment.comment to a string."
   input SCode.Comment inComment;
-  input SCodeDumpOptions options := defaultOptions;
+  input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
   outString := match(inComment)
@@ -129,7 +129,7 @@ end printCommentStr;
 public function printAnnotationStr
 "Prints SCode.Comment.annotation to a string."
   input SCode.Comment inComment;
-  input SCodeDumpOptions options := defaultOptions;
+  input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
   outString := match(inComment, options)
@@ -192,7 +192,7 @@ protected constant String noEachStr = "";
 public function unparseElementStr
 "Print SCode.Element to a string."
   input SCode.Element inElement;
-  input SCodeDumpOptions options := defaultOptions;
+  input SCodeDumpOptions options = defaultOptions;
   output String outString;
 algorithm
   outString := Tpl.tplString3(SCodeDumpTpl.dumpElement, inElement, noEachStr, options);

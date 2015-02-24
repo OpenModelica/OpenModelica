@@ -161,29 +161,29 @@ protected function lower2
   input list<DAE.Element> inElements;
   input DAE.FunctionTree inFunctions;
   input HashTableExpToExp.HashTable inInlineHT "Workaround to speed up inlining of array parameters.";
-  input list<BackendDAE.Var> inVars := {};
-  input list<BackendDAE.Var> inKnVars := {};
-  input list<BackendDAE.Var> inExVars := {};
-  input list<BackendDAE.Equation> inEqns := {};
-  input list<BackendDAE.Equation> inREqns := {};
-  input list<BackendDAE.Equation> inIEqns := {};
-  input list<DAE.Constraint> inConstraints := {};
-  input list<DAE.ClassAttributes> inClassAttributes := {};
-  input list<BackendDAE.WhenClause> inWhenClauses := {};
-  input list<BackendDAE.ExternalObjectClass> inExtObjClasses := {};
-  input list<DAE.Element> inAliasEqns := {};
-  output list<BackendDAE.Var> outVars := inVars "Time dependent variables.";
-  output list<BackendDAE.Var> outKnVars := inKnVars "Time independent variables.";
-  output list<BackendDAE.Var> outExVars := inExVars "External variables.";
-  output list<BackendDAE.Equation> outEqns  := inEqns "Dynamic equations/algorithms.";
-  output list<BackendDAE.Equation> outREqns := inREqns "Algebraic equations.";
-  output list<BackendDAE.Equation> outIEqns := inIEqns "Initial equations.";
-  output list<DAE.Constraint> outConstraints := inConstraints;
-  output list<DAE.ClassAttributes> outClassAttributes := inClassAttributes;
-  output list<BackendDAE.WhenClause> outWhenClauses := inWhenClauses;
-  output list<BackendDAE.ExternalObjectClass> outExtObjClasses := inExtObjClasses;
-  output list<DAE.Element> outAliasEqns := inAliasEqns "List with all EqualityEquations.";
-  output HashTableExpToExp.HashTable outInlineHT := inInlineHT;
+  input list<BackendDAE.Var> inVars = {};
+  input list<BackendDAE.Var> inKnVars = {};
+  input list<BackendDAE.Var> inExVars = {};
+  input list<BackendDAE.Equation> inEqns = {};
+  input list<BackendDAE.Equation> inREqns = {};
+  input list<BackendDAE.Equation> inIEqns = {};
+  input list<DAE.Constraint> inConstraints = {};
+  input list<DAE.ClassAttributes> inClassAttributes = {};
+  input list<BackendDAE.WhenClause> inWhenClauses = {};
+  input list<BackendDAE.ExternalObjectClass> inExtObjClasses = {};
+  input list<DAE.Element> inAliasEqns = {};
+  output list<BackendDAE.Var> outVars = inVars "Time dependent variables.";
+  output list<BackendDAE.Var> outKnVars = inKnVars "Time independent variables.";
+  output list<BackendDAE.Var> outExVars = inExVars "External variables.";
+  output list<BackendDAE.Equation> outEqns  = inEqns "Dynamic equations/algorithms.";
+  output list<BackendDAE.Equation> outREqns = inREqns "Algebraic equations.";
+  output list<BackendDAE.Equation> outIEqns = inIEqns "Initial equations.";
+  output list<DAE.Constraint> outConstraints = inConstraints;
+  output list<DAE.ClassAttributes> outClassAttributes = inClassAttributes;
+  output list<BackendDAE.WhenClause> outWhenClauses = inWhenClauses;
+  output list<BackendDAE.ExternalObjectClass> outExtObjClasses = inExtObjClasses;
+  output list<DAE.Element> outAliasEqns = inAliasEqns "List with all EqualityEquations.";
+  output HashTableExpToExp.HashTable outInlineHT = inInlineHT;
 protected
   Absyn.Path path;
   DAE.ElementSource src;
@@ -448,20 +448,20 @@ end transformBuiltinExpression;
 public function lowerVars
   input list<DAE.Element> inElements;
   input DAE.FunctionTree functionTree;
-  input list<BackendDAE.Var> inVars := {} "The time depend Variables";
-  input list<BackendDAE.Var> inKnVars := {} "The time independend Variables";
-  input list<BackendDAE.Var> inExVars := {} "The external Variables";
-  input list<BackendDAE.Equation> inEqns := {} "The dynamic Equations/Algoritms";
-  output list<BackendDAE.Var> outVars := inVars;
-  output list<BackendDAE.Var> outKnVars := inKnVars;
-  output list<BackendDAE.Var> outExVars := inExVars;
-  output list<BackendDAE.Equation> outEqns := inEqns;
+  input list<BackendDAE.Var> inVars = {} "The time depend Variables";
+  input list<BackendDAE.Var> inKnVars = {} "The time independend Variables";
+  input list<BackendDAE.Var> inExVars = {} "The external Variables";
+  input list<BackendDAE.Equation> inEqns = {} "The dynamic Equations/Algoritms";
+  output list<BackendDAE.Var> outVars = inVars;
+  output list<BackendDAE.Var> outKnVars = inKnVars;
+  output list<BackendDAE.Var> outExVars = inExVars;
+  output list<BackendDAE.Equation> outEqns = inEqns;
 protected
   DAE.ComponentRef cr;
   DAE.Type arr_ty;
   list<DAE.ComponentRef> crefs;
   list<DAE.Element> new_vars;
-  HashTableExpToExp.HashTable inline_ht := HashTableExpToExp.emptyHashTable();
+  HashTableExpToExp.HashTable inline_ht = HashTableExpToExp.emptyHashTable();
 algorithm
   for el in inElements loop
     try
@@ -486,11 +486,11 @@ protected function lowerVar
   input list<BackendDAE.Var> inExVars;
   input list<BackendDAE.Equation> inEqns;
   input HashTableExpToExp.HashTable inInlineHT;
-  output list<BackendDAE.Var> outVars := inVars;
-  output list<BackendDAE.Var> outKnVars := inKnVars;
-  output list<BackendDAE.Var> outExVars := inExVars;
-  output list<BackendDAE.Equation> outEqns := inEqns;
-  output HashTableExpToExp.HashTable outInlineHT := inInlineHT;
+  output list<BackendDAE.Var> outVars = inVars;
+  output list<BackendDAE.Var> outKnVars = inKnVars;
+  output list<BackendDAE.Var> outExVars = inExVars;
+  output list<BackendDAE.Equation> outEqns = inEqns;
+  output HashTableExpToExp.HashTable outInlineHT = inInlineHT;
 algorithm
   _ := matchcontinue(inElement)
     local
@@ -692,7 +692,7 @@ author:Waurich TUD 2013-10"
   input list<DAE.Statement> assrtIn;
   input DAE.ElementSource source;
   input list<BackendDAE.Equation> eqIn;
-  output list<BackendDAE.Equation> eqOut := eqIn;
+  output list<BackendDAE.Equation> eqOut = eqIn;
 protected
   BackendDAE.Equation eq;
 algorithm
@@ -3086,7 +3086,7 @@ end detectImplicitDiscreteAlgsStatemensFor;
 public function extendRange
   input DAE.Exp inRangeExp;
   input BackendDAE.Variables inKnVariables;
-  output list<DAE.Exp> outExpLst := {};
+  output list<DAE.Exp> outExpLst = {};
 protected
   DAE.Exp start, stepvalue, stop;
   Option<DAE.Exp> step;

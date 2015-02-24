@@ -1296,12 +1296,12 @@ public function readArgs
   accordingly. Returns a list of arguments that were not consumed, such as the
   model filename."
   input list<String> inArgs;
-  output list<String> outArgs := {};
+  output list<String> outArgs = {};
 protected
   Flags flags;
   Integer numError;
   String arg;
-  list<String> rest_args := inArgs;
+  list<String> rest_args = inArgs;
 algorithm
   numError := Error.getNumErrorMessages();
   flags := loadFlags();

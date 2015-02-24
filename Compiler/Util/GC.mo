@@ -54,7 +54,7 @@ external "C" success=GC_expand_hp_dbl(sz) annotation(Include="#define GC_expand_
 end expandHeap;
 
 function setFreeSpaceDivisor
-  input Integer divisor := 3;
+  input Integer divisor = 3;
 external "C" GC_set_free_space_divisor(divisor) annotation(Include="#define GC_set_free_space_divisor_int(divisor) GC_set_free_space_divisor(divisor)",Library = {"gc"},Documentation(info="<html>
 <p>NOTE: Do not set <3 as that seems to interfere with parallel threads.</p>
 </html>"));
@@ -78,8 +78,8 @@ end ProfStats;
 
 function profStatsStr
   input ProfStats stats;
-  input String head := "GC Profiling Stats: ";
-  input String delimiter := "\n  ";
+  input String head = "GC Profiling Stats: ";
+  input String delimiter = "\n  ";
   output String str;
 algorithm
   str := match stats

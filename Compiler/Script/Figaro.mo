@@ -22,10 +22,10 @@ because of all the side-effects. However, all of them are captured here."
   input String inOptions "Figaro fault tree generation options";
   input String inFigaroProcessorFile "Figaro processor to call";
 protected
-  String bdfFile := System.pwd() + "/BDF.fi" "Figaro code to the Figaro processor";
-  String figaroFile := System.pwd() + "/Figaro0.fi" "Figaro code from the Figaro processor";
-  String argumentFile := System.pwd() + "/figp_commands.xml" "instructions to the Figaro processor";
-  String resultFile := System.pwd() + "/result.xml" "status from the Figaro processor"; // File name cannot be changed.
+  String bdfFile = System.pwd() + "/BDF.fi" "Figaro code to the Figaro processor";
+  String figaroFile = System.pwd() + "/Figaro0.fi" "Figaro code from the Figaro processor";
+  String argumentFile = System.pwd() + "/figp_commands.xml" "instructions to the Figaro processor";
+  String resultFile = System.pwd() + "/result.xml" "status from the Figaro processor"; // File name cannot be changed.
   SCode.Element program;
   String figaro, database, xml, xml2;
   list<String> sl;
@@ -664,7 +664,7 @@ end scanDeclaration;
 
 protected function scanTagName "Scans a tag name."
   input list<String> inStringList "string sequence to scan";
-  input String inTagName := "" "accumulated tag name";
+  input String inTagName = "" "accumulated tag name";
   output list<String> outStringList "string sequence to continue scanning";
   output String outTagName;
 algorithm
@@ -681,7 +681,7 @@ end scanTagName;
 
 protected function scanText "Greedy. Scans text until some kind of tag begins."
   input list<String> inStringList "string sequence to scan";
-  input String inText := "" "accumulated text";
+  input String inText = "" "accumulated text";
   output list<String> outStringList "string sequence to continue scanning";
   output String outText;
 algorithm
@@ -772,7 +772,7 @@ parse for fault analysis."
   input String inTagName;
   output Boolean outBoolean;
 protected
-  list<String> ktl := {"ANSWERS", "ANSWER", "ERROR", "LABEL", "CRITICITY"} "list of tags defining
+  list<String> ktl = {"ANSWERS", "ANSWER", "ERROR", "LABEL", "CRITICITY"} "list of tags defining
   the important structure";
 algorithm
   outBoolean := listMember(inTagName, ktl);
@@ -782,7 +782,7 @@ protected function isInfoTag "Answers whether a tag gives us any concrete inform
   input String inTagName;
   output Boolean outBoolean;
 protected
-  list<String> itl := {"LABEL", "CRITICITY"} "list of tags containing information about an error";
+  list<String> itl = {"LABEL", "CRITICITY"} "list of tags containing information about an error";
 algorithm
   outBoolean := listMember(inTagName, itl);
 end isInfoTag;
@@ -922,7 +922,7 @@ protected function isToBeReported "Answers whether an error should be reported."
   input list<tuple<String, String>> inStringTupleList;
   output Boolean outBoolean;
 protected
-  list<String> errorsToReport := {"FATAL" /*, "MAJOR" */} "list of errors we are interested in";
+  list<String> errorsToReport = {"FATAL" /*, "MAJOR" */} "list of errors we are interested in";
 algorithm
   outBoolean := matchcontinue inStringTupleList
     local

@@ -74,7 +74,7 @@ end parseexp;
 
 function parsestring "Parse a string as if it were a stored definition"
   input String str;
-  input String infoFilename := "<interactive>";
+  input String infoFilename = "<interactive>";
   output Absyn.Program outProgram;
 algorithm
   outProgram := ParserExt.parsestring(str, infoFilename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
@@ -96,7 +96,7 @@ end parsebuiltin;
 
 function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
-  input String infoFilename := "<interactive>";
+  input String infoFilename = "<interactive>";
   output GlobalScript.Statements outStatements;
 algorithm
   outStatements := ParserExt.parsestringexp(str,infoFilename,
@@ -120,7 +120,7 @@ end stringCref;
 function parallelParseFiles
   input list<String> filenames;
   input String encoding;
-  input Integer numThreads := Config.noProc();
+  input Integer numThreads = Config.noProc();
   output HashTableStringToProgram.HashTable ht;
 protected
   list<ParserResult> partialResults;
@@ -140,8 +140,8 @@ end parallelParseFiles;
 function parallelParseFilesToProgramList
   input list<String> filenames;
   input String encoding;
-  input Integer numThreads := Config.noProc();
-  output list<Absyn.Program> result := {};
+  input Integer numThreads = Config.noProc();
+  output list<Absyn.Program> result = {};
 algorithm
   for r in parallelParseFilesWork(filenames, encoding, numThreads) loop
     result := (match r
@@ -168,7 +168,7 @@ function parallelParseFilesWork
   input Integer numThreads;
   output list<ParserResult> partialResults;
 protected
-  list<tuple<String,String>> workList := list((file,encoding) for file in filenames);
+  list<tuple<String,String>> workList = list((file,encoding) for file in filenames);
 algorithm
   if Config.getRunningTestsuiteFile()<>"" or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 then
     partialResults := list(loadFileThread(t) for t in workList);

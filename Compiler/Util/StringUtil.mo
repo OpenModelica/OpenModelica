@@ -43,7 +43,7 @@ protected import System;
 
 protected import MetaModelica.Dangerous.{listReverseInPlace, stringGetNoBoundsChecking};
 
-public constant Integer NO_POS := 0;
+public constant Integer NO_POS = 0;
 protected constant Integer CHAR_SPACE = 32;
 protected constant Integer CHAR_DASH = 45;
 
@@ -54,11 +54,11 @@ public function findChar
    specified they are set to the start and end of the string."
   input String inString;
   input Integer inChar;
-  input Integer inStartPos := 1;
-  input Integer inEndPos := 0;
-  output Integer outIndex := NO_POS;
+  input Integer inStartPos = 1;
+  input Integer inEndPos = 0;
+  output Integer outIndex = NO_POS;
 protected
-  constant Integer len := stringLength(inString);
+  constant Integer len = stringLength(inString);
   Integer start_pos, end_pos;
 algorithm
   start_pos := max(inStartPos, 1);
@@ -79,11 +79,11 @@ public function rfindChar
    specified they are set to the start and end of the string."
   input String inString;
   input Integer inChar;
-  input Integer inStartPos := 0;
-  input Integer inEndPos := 1;
-  output Integer outIndex := NO_POS;
+  input Integer inStartPos = 0;
+  input Integer inEndPos = 1;
+  output Integer outIndex = NO_POS;
 protected
-  constant Integer len := stringLength(inString);
+  constant Integer len = stringLength(inString);
   Integer start_pos, end_pos;
 algorithm
   start_pos := if inStartPos > 0 then min(inStartPos, len) else len;
@@ -105,11 +105,11 @@ public function findCharNot
    string."
   input String inString;
   input Integer inChar;
-  input Integer inStartPos := 1;
-  input Integer inEndPos := 0;
-  output Integer outIndex := NO_POS;
+  input Integer inStartPos = 1;
+  input Integer inEndPos = 0;
+  output Integer outIndex = NO_POS;
 protected
-  constant Integer len := stringLength(inString);
+  constant Integer len = stringLength(inString);
   Integer start_pos, end_pos;
 algorithm
   start_pos := max(inStartPos, 1);
@@ -131,11 +131,11 @@ public function rfindCharNot
    of the string."
   input String inString;
   input Integer inChar;
-  input Integer inStartPos := 0;
-  input Integer inEndPos := 1;
-  output Integer outIndex := NO_POS;
+  input Integer inStartPos = 0;
+  input Integer inEndPos = 1;
+  output Integer outIndex = NO_POS;
 protected
-  constant Integer len := stringLength(inString);
+  constant Integer len = stringLength(inString);
   Integer start_pos, end_pos;
 algorithm
   start_pos := if inStartPos > 0 then min(inStartPos, len) else len;
@@ -153,7 +153,7 @@ public function isAlpha
   "Returns true if the given character represented by it's ASCII decimal number
    is an alphabetic character."
   input Integer inChar;
-  output Boolean outIsAlpha := (inChar >= 65 and inChar <= 90) or
+  output Boolean outIsAlpha = (inChar >= 65 and inChar <= 90) or
                                (inChar >= 97 and inChar <= 122);
 end isAlpha;
 
@@ -180,13 +180,13 @@ public function wordWrap
    correctly."
   input String inString;
   input Integer inWrapLength;
-  input String inDelimiter := "";
-  input Real inRaggedness := 0.3;
-  output list<String> outStrings := {};
+  input String inDelimiter = "";
+  input Real inRaggedness = 0.3;
+  output list<String> outStrings = {};
 protected
-  Integer start_pos := 1, end_pos := inWrapLength;
+  Integer start_pos = 1, end_pos = inWrapLength;
   Integer line_len, pos, next_char, char, gap_size, next_gap_size;
-  String str, delim := "";
+  String str, delim = "";
   list<String> lines;
 algorithm
   // Check that the wrap length is larger than the delimiter, otherwise just

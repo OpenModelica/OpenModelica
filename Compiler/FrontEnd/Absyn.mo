@@ -6253,7 +6253,7 @@ public function traverseClassComponents<ArgT>
   input Class inClass;
   input FuncType inFunc;
   input ArgT inArg;
-  output Class outClass := inClass;
+  output Class outClass = inClass;
   output ArgT outArg;
 
   partial function FuncType
@@ -6283,9 +6283,9 @@ protected function traverseListGeneric<T, ArgT>
   input list<T> inList;
   input FuncType inFunc;
   input ArgT inArg;
-  output list<T> outList := {};
-  output ArgT outArg := inArg;
-  output Boolean outContinue := true;
+  output list<T> outList = {};
+  output ArgT outArg = inArg;
+  output Boolean outContinue = true;
 
   partial function FuncType
     input T inElement;
@@ -6295,9 +6295,9 @@ protected function traverseListGeneric<T, ArgT>
     output Boolean outContinue;
   end FuncType;
 protected
-  Boolean eq, changed := false;
+  Boolean eq, changed = false;
   T e, new_e;
-  list<T> rest_e := inList;
+  list<T> rest_e = inList;
 algorithm
   while not listEmpty(rest_e) loop
     e :: rest_e := rest_e;
@@ -6322,9 +6322,9 @@ protected function traverseClassPartComponents<ArgT>
   input ClassPart inClassPart;
   input FuncType inFunc;
   input ArgT inArg;
-  output ClassPart outClassPart := inClassPart;
-  output ArgT outArg := inArg;
-  output Boolean outContinue := true;
+  output ClassPart outClassPart = inClassPart;
+  output ArgT outArg = inArg;
+  output Boolean outContinue = true;
 
   partial function FuncType
     input list<ComponentItem> inComponents;
@@ -6396,7 +6396,7 @@ protected function traverseElementComponents<ArgT>
   input Element inElement;
   input FuncType inFunc;
   input ArgT inArg;
-  output Element outElement := inElement;
+  output Element outElement = inElement;
   output ArgT outArg;
   output Boolean outContinue;
 
@@ -6431,7 +6431,7 @@ protected function traverseElementSpecComponents<ArgT>
   input ElementSpec inSpec;
   input FuncType inFunc;
   input ArgT inArg;
-  output ElementSpec outSpec := inSpec;
+  output ElementSpec outSpec = inSpec;
   output ArgT outArg;
   output Boolean outContinue;
 
@@ -6465,9 +6465,9 @@ protected function traverseClassDef<ArgT>
   input ClassDef inClassDef;
   input FuncType inFunc;
   input ArgT inArg;
-  output ClassDef outClassDef := inClassDef;
-  output ArgT outArg := inArg;
-  output Boolean outContinue := true;
+  output ClassDef outClassDef = inClassDef;
+  output ArgT outArg = inArg;
+  output Boolean outContinue = true;
 
   partial function FuncType
     input ClassPart inPart;

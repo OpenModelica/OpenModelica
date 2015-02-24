@@ -392,7 +392,7 @@ end hashSetList;
 public function valueArrayList
   "Transforms a ValueArray to a Key list"
   input ValueArray inValueArray;
-  output list<Key> outList := {};
+  output list<Key> outList = {};
 protected
   array<Option<Key>> arr;
   Integer size;

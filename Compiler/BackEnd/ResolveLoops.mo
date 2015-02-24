@@ -92,7 +92,7 @@ protected function resolveLoops_main "author: Waurich TUD 2014-01
   input BackendDAE.Shared inShared "unused";
   input Integer inSysIdx;
   output BackendDAE.EqSystem outEqSys;
-  output BackendDAE.Shared outShared := inShared "unused";
+  output BackendDAE.Shared outShared = inShared "unused";
   output Integer outSysIdx;
 algorithm
   (outEqSys, outSysIdx) := matchcontinue(inEqSys)
@@ -2073,8 +2073,8 @@ public function solveLinearSystem
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
-  Integer maxSize :=  Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM);
-  Boolean b := 1 < maxSize;
+  Integer maxSize =  Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM);
+  Boolean b = 1 < maxSize;
 algorithm
 
   if b then
@@ -2104,13 +2104,13 @@ protected function solveLinearSystem1
   input BackendDAE.Shared ishared;
   input BackendDAE.StrongComponents inComps;
   input tuple<Boolean,Integer,Integer> inTpl;
-  output BackendDAE.EqSystem osyst := isyst;
-  output BackendDAE.Shared oshared := ishared;
+  output BackendDAE.EqSystem osyst = isyst;
+  output BackendDAE.Shared oshared = ishared;
   output tuple<Boolean,Integer,Integer> outTpl;
 protected
   Boolean b;
   Boolean runMatching;
-  list<Integer> ii := {};
+  list<Integer> ii = {};
   Integer offset, maxSize;
 algorithm
   (runMatching, offset, maxSize) := inTpl;
@@ -2235,27 +2235,27 @@ protected function solveLinearSystem4
   input BackendDAE.EquationArray ieqns;
   input BackendDAE.Variables ivars;
   input Integer offset;
-  output BackendDAE.EquationArray oeqns := ieqns;
-  output BackendDAE.Variables ovars := ivars;
-  output Integer offset_ := offset + 1;
+  output BackendDAE.EquationArray oeqns = ieqns;
+  output BackendDAE.Variables ovars = ivars;
+  output Integer offset_ = offset + 1;
 protected
   array<DAE.Exp> R;
-  array<DAE.Exp> Qb := arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> b := arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> A := arrayCreate(n*n,DAE.RCONST(0.0));
-  array<DAE.Exp> ax := arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> Qb = arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> b = arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> A = arrayCreate(n*n,DAE.RCONST(0.0));
+  array<DAE.Exp> ax = arrayCreate(n,DAE.RCONST(0.0));
   DAE.Exp a, x;
   Integer m, ii, jj, mm;
-  list<DAE.Exp> x_lst := List.map(cr_x, Expression.crefExp);
+  list<DAE.Exp> x_lst = List.map(cr_x, Expression.crefExp);
   DAE.ComponentRef cr;
-  list<DAE.ComponentRef> X := cr_x;
+  list<DAE.ComponentRef> X = cr_x;
   DAE.Exp detA, detAb;
   BackendDAE.Var tmpvar;
   String name;
-  list<BackendDAE.Var> vars := var_lst;
+  list<BackendDAE.Var> vars = var_lst;
   BackendDAE.Var var;
   BackendDAE.Equation eqn;
-  list<tuple<Integer, Integer, BackendDAE.Equation>> jac_ := jac;
+  list<tuple<Integer, Integer, BackendDAE.Equation>> jac_ = jac;
 algorithm
   mm := listLength(jac);
   //A
@@ -2311,25 +2311,25 @@ protected function qrDecomposition
   input array<DAE.Exp> ib;
   input BackendDAE.EquationArray ieqns;
   input BackendDAE.Variables ivars;
-  output array<DAE.Exp> R := arrayCreate(n*n,DAE.RCONST(0.0));
-  output array<DAE.Exp> b := arrayCreate(n,DAE.RCONST(0.0));
-  output BackendDAE.EquationArray oeqns := ieqns;
-  output BackendDAE.Variables ovars := ivars;
+  output array<DAE.Exp> R = arrayCreate(n*n,DAE.RCONST(0.0));
+  output array<DAE.Exp> b = arrayCreate(n,DAE.RCONST(0.0));
+  output BackendDAE.EquationArray oeqns = ieqns;
+  output BackendDAE.Variables ovars = ivars;
   input Integer offset;
 protected
-  array<DAE.Exp> Q := arrayCreate(n*n,DAE.RCONST(0.0));
-  array<DAE.Exp> v := arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> u := arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> w := arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> e := arrayCreate(n,DAE.RCONST(0.0));
-  array<DAE.Exp> vv := arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> Q = arrayCreate(n*n,DAE.RCONST(0.0));
+  array<DAE.Exp> v = arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> u = arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> w = arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> e = arrayCreate(n,DAE.RCONST(0.0));
+  array<DAE.Exp> vv = arrayCreate(n,DAE.RCONST(0.0));
   array<DAE.Exp> x,y,p;
   DAE.Exp a, ex;
   BackendDAE.Var tmpvar;
   String name;
   DAE.ComponentRef cr;
-  Integer kk := 1;
-  Integer m := n-1;
+  Integer kk = 1;
+  Integer m = n-1;
   Integer nn;
 algorithm
 //Gram–Schmidt process
@@ -2394,7 +2394,7 @@ protected function qrDecomposition1
   input array<DAE.Exp> A;
   input Integer sizeA;
   input Integer i;
-  output array<DAE.Exp> column := arrayCreate(sizeA,DAE.RCONST(0.0)) "A(:,i)";
+  output array<DAE.Exp> column = arrayCreate(sizeA,DAE.RCONST(0.0)) "A(:,i)";
 algorithm
   for j in 1:sizeA loop
     arrayUpdate(column, j, arrayGet(A,i + (j-1)*sizeA));
@@ -2406,9 +2406,9 @@ protected function qrDecomposition2
   input array<DAE.Exp> A;
   input Integer sizeA;
   input Integer i "row";
-  output array<DAE.Exp> row := arrayCreate(sizeA,DAE.RCONST(0.0)) "A(:,i)";
+  output array<DAE.Exp> row = arrayCreate(sizeA,DAE.RCONST(0.0)) "A(:,i)";
 protected
-  Integer k := i - 1;
+  Integer k = i - 1;
 algorithm
   for j in 1:sizeA loop
     arrayUpdate(row, j, arrayGet(A,j + k*sizeA));
@@ -2422,8 +2422,8 @@ input Integer sizeA;
 input Boolean isMat;
 input String s;
 protected
- Integer n := sizeA;
- Integer m := if isMat then sizeA else 1;
+ Integer n = sizeA;
+ Integer m = if isMat then sizeA else 1;
 algorithm
      print("\n");
   for i in 1:n loop
@@ -2450,8 +2450,8 @@ protected function gramSchmidtProcessHelper
   output BackendDAE.EquationArray oeqns;
   output BackendDAE.Variables ovars;
 protected
-  DAE.Exp h := Expression.makeScalarProduct(w,u);
-  Integer n := arrayLength(w);
+  DAE.Exp h = Expression.makeScalarProduct(w,u);
+  Integer n = arrayLength(w);
 algorithm
   (h,oeqns,ovars) := BackendEquation.makeTmpEqnForExp(h, name + "_h", offset, ieqns, ivars);
   v := Array.map1(u, Expression.expMul, h);

@@ -1526,7 +1526,7 @@ protected function removeUnusedFunctionsSymJacs
   input BackendDAE.SymbolicJacobians inSymJacs;
   input DAE.FunctionTree inFunctions;
   input DAE.FunctionTree inUsedFunctions;
-  output DAE.FunctionTree outUsedFunctions := inUsedFunctions;
+  output DAE.FunctionTree outUsedFunctions = inUsedFunctions;
 algorithm
   for sjac in inSymJacs loop
     _ := match(sjac)
@@ -1563,7 +1563,7 @@ protected function checkUnusedFunctionsExp
   input DAE.Exp inExp;
   input DAE.FunctionTree inFunctions;
   input DAE.FunctionTree inUsedFunctions;
-  output DAE.Exp outExp := inExp;
+  output DAE.Exp outExp = inExp;
   output DAE.FunctionTree outUsedFunctions;
 algorithm
   outUsedFunctions := match(inExp)
@@ -1600,7 +1600,7 @@ protected function addUnusedFunction
   input Absyn.Path inPath;
   input DAE.FunctionTree inFunctions;
   input DAE.FunctionTree inUsedFunctions;
-  output DAE.FunctionTree outUsedFunctions := inUsedFunctions;
+  output DAE.FunctionTree outUsedFunctions = inUsedFunctions;
 protected
   Option<DAE.Function> f;
   list<DAE.Element> body;
@@ -1814,9 +1814,9 @@ protected function countOperations0 "author: Frenkel TUD 2011-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
   input Boolean inChanged;
-  output BackendDAE.EqSystem osyst := isyst;
-  output BackendDAE.Shared outShared := inShared;
-  output Boolean outChanged := inChanged;
+  output BackendDAE.EqSystem osyst = isyst;
+  output BackendDAE.Shared outShared = inShared;
+  output Boolean outChanged = inChanged;
 protected
   list<BackendDAE.compInfo> compInfos;
   BackendDAE.StrongComponents comps;
@@ -3556,7 +3556,7 @@ protected function replaceEdgeChange0 "author: Frenkel TUD 2012-11"
   input BackendDAE.Shared inShared;
   input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared outShared := inShared;
+  output BackendDAE.Shared outShared = inShared;
   output Boolean outChanged;
 algorithm
   (osyst, outChanged) := matchcontinue (isyst)
@@ -4014,7 +4014,7 @@ protected function introduceDerAliasWork
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared := shared;
+  output BackendDAE.Shared oshared = shared;
 protected
   Option<BackendDAE.IncidenceMatrix> m, mT;
   BackendDAE.Variables vars, vars1;
@@ -4141,7 +4141,7 @@ protected function applyRewriteRulesBackend0
   input BackendDAE.Shared inShared;
   input Boolean inChanged;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared outShared := inShared;
+  output BackendDAE.Shared outShared = inShared;
   output Boolean outChanged;
 algorithm
   (osyst, outChanged) := matchcontinue (isyst)

@@ -47,7 +47,7 @@ public function mapNoCopy<T>
    the same type."
   input array<T> inArray;
   input FuncType inFunc;
-  output array<T> outArray := inArray;
+  output array<T> outArray = inArray;
 
   partial function FuncType
     input T inElement;
@@ -65,8 +65,8 @@ public function mapNoCopy_1<T, ArgT>
   input array<T> inArray;
   input FuncType inFunc;
   input ArgT inArg;
-  output array<T> outArray := inArray;
-  output ArgT outArg := inArg;
+  output array<T> outArray = inArray;
+  output ArgT outArg = inArg;
 
   partial function FuncType
     input tuple<T, ArgT> inTuple;
@@ -107,7 +107,7 @@ public function select<T>
   input list<Integer> inIndices;
   output array<T> outArray;
 protected
-  Integer i := 1;
+  Integer i = 1;
 algorithm
   outArray := arrayCreateNoInit(listLength(inIndices), inArray[1]);
 
@@ -130,7 +130,7 @@ public function map<TI, TO>
     output TO outElement;
   end FuncType;
 protected
-  Integer len := arrayLength(inArray);
+  Integer len = arrayLength(inArray);
   TO res;
 algorithm
   // If the array is empty, use list transformations to fix the types!
@@ -163,7 +163,7 @@ public function map1<TI, TO, ArgT>
     output TO outElement;
   end FuncType;
 protected
-  Integer len := arrayLength(inArray);
+  Integer len = arrayLength(inArray);
   TO res;
 algorithm
   // If the array is empty, use list transformations to fix the types!
@@ -206,7 +206,7 @@ public function mapList<TI, TO>
     output TO outElement;
   end FuncType;
 protected
-  Integer i := 2, len := listLength(inList);
+  Integer i = 2, len = listLength(inList);
   TO res;
 algorithm
   if len == 0 then
@@ -230,7 +230,7 @@ public function fold<T, FoldT>
   input array<T> inArray;
   input FoldFunc inFoldFunc;
   input FoldT inStartValue;
-  output FoldT outResult := inStartValue;
+  output FoldT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -251,7 +251,7 @@ public function fold1<T, FoldT, ArgT>
   input FoldFunc inFoldFunc;
   input ArgT inArg;
   input FoldT inStartValue;
-  output FoldT outResult := inStartValue;
+  output FoldT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -274,7 +274,7 @@ public function fold2<T, FoldT, ArgT1, ArgT2>
   input ArgT1 inArg1;
   input ArgT2 inArg2;
   input FoldT inStartValue;
-  output FoldT outResult := inStartValue;
+  output FoldT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -299,7 +299,7 @@ public function fold3<T, FoldT, ArgT1, ArgT2, ArgT3>
   input ArgT2 inArg2;
   input ArgT3 inArg3;
   input FoldT inStartValue;
-  output FoldT outResult := inStartValue;
+  output FoldT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -326,7 +326,7 @@ public function fold4<T, FoldT, ArgT1, ArgT2, ArgT3, ArgT4>
   input ArgT3 inArg3;
   input ArgT4 inArg4;
   input FoldT inStartValue;
-  output FoldT outResult := inStartValue;
+  output FoldT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -355,7 +355,7 @@ public function fold5<T, FoldT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5>
   input ArgT4 inArg4;
   input ArgT5 inArg5;
   input FoldT inStartValue;
-  output FoldT outResult := inStartValue;
+  output FoldT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -386,7 +386,7 @@ public function fold6<T, FoldT, ArgT1, ArgT2, ArgT3, ArgT4, ArgT5, ArgT6>
   input ArgT5 inArg5;
   input ArgT6 inArg6;
   input FoldT inStartValue;
-  output FoldT outResult := inStartValue;
+  output FoldT outResult = inStartValue;
 
   partial function FoldFunc
     input T inElement;
@@ -441,7 +441,7 @@ public function getIndexFirst<T>
   "Like arrayGet, but with the index first so it can used with List.map."
   input Integer inIndex;
   input array<T> inArray;
-  output T outElement := arrayGet(inArray, inIndex);
+  output T outElement = arrayGet(inArray, inIndex);
 end getIndexFirst;
 
 public function updatewithArrayIndexFirst<T>
@@ -540,7 +540,7 @@ public function expandOnDemand<T>
   input T inFillValue "The value to fill the new part of the array.";
   output array<T> outArray "The resulting array.";
 protected
-  Integer new_size, len := arrayLength(inArray);
+  Integer new_size, len = arrayLength(inArray);
 algorithm
   if inNewSize <= len then
     outArray := inArray;
@@ -580,7 +580,7 @@ public function copy<T>
          purpose is only to duplicate an array."
   input array<T> inArraySrc;
   input array<T> inArrayDest;
-  output array<T> outArray := inArrayDest;
+  output array<T> outArray = inArrayDest;
 algorithm
   if arrayLength(inArraySrc) > arrayLength(inArrayDest) then
     fail();
@@ -597,7 +597,7 @@ public function copyN<T>
   input array<T> inArraySrc;
   input array<T> inArrayDest;
   input Integer inN;
-  output array<T> outArray := inArrayDest;
+  output array<T> outArray = inArrayDest;
 algorithm
   if inN > arrayLength(inArrayDest) or inN > arrayLength(inArraySrc) then
     fail();
@@ -614,7 +614,7 @@ public function setRange<T>
   input Integer inEnd;
   input array<T> inArray;
   input T inValue;
-  output array<T> outArray := inArray;
+  output array<T> outArray = inArray;
 algorithm
   if inStart > arrayLength(inArray) then
     fail();
@@ -629,7 +629,7 @@ public function position<T>
   "Returns the index of the given element in the array, or 0 if it wasn't found."
   input array<T> inArray;
   input T inElement;
-  input Integer inFilledSize := arrayLength(inArray) "The filled size of the array.";
+  input Integer inFilledSize = arrayLength(inArray) "The filled size of the array.";
   output Integer outIndex;
 protected
   T e;

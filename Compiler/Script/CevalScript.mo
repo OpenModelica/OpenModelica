@@ -7877,7 +7877,7 @@ end writeModuleDepends;
 
 protected function isNotBuiltinImport
   input String module;
-  output Boolean b := module <> "MetaModelica";
+  output Boolean b = module <> "MetaModelica";
 end isNotBuiltinImport;
 
 protected function findFunctionsToCompile

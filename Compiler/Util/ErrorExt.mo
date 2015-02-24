@@ -88,7 +88,7 @@ function addSourceMessage
 end addSourceMessage;
 
 function printMessagesStr
-  input Boolean warningsAsErrors := false;
+  input Boolean warningsAsErrors = false;
   output String outString;
 
   external "C" outString=Error_printMessagesStr(OpenModelica.threadData(),warningsAsErrors) annotation(Library = "omcruntime");

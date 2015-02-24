@@ -567,10 +567,10 @@ conditional_attribute returns [void* ast] :
         ;
 
 declaration returns [void* ast]
-@init { id = 0; as = 0; mod = 0; } :
+@init { id = 0; as = 0; mod.ast = 0; } :
   ( id=IDENT | id=OPERATOR ) (as=array_subscripts)? (mod=modification)?
     {
-      ast = Absyn__COMPONENT(token_to_scon(id), or_nil(as), mmc_mk_some_or_none(mod));
+      ast = Absyn__COMPONENT(token_to_scon(id), or_nil(as), mmc_mk_some_or_none($mod.ast));
     }
   ;
 
@@ -582,10 +582,12 @@ modification returns [void* ast]
 @init { e.ast = 0; eq = 0; cm = 0; } :
   ( cm=class_modification ( eq=EQUALS e=expression[metamodelica_enabled()] )?
   | eq=EQUALS e=expression[metamodelica_enabled()]
-  // | eq=ASSIGN e=expression[metamodelica_enabled()]
+  | eq=ASSIGN e=expression[metamodelica_enabled()] {c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, ":= in modifiers has been deprecated",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
+              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);}
   )
     {
-      ast = Absyn__CLASSMOD(or_nil(cm), e.ast ? Absyn__EQMOD(e.ast,PARSER_INFO($eq)) : Absyn__NOMOD);
+      $ast = Absyn__CLASSMOD(or_nil(cm), e.ast ? Absyn__EQMOD(e.ast,PARSER_INFO($eq)) : Absyn__NOMOD);
     }
   ;
 
@@ -617,7 +619,7 @@ element_modification_or_replaceable returns [void* ast]
     ;
 
 element_modification [void *each, void *final] returns [void* ast]
-@init { $ast = NULL; mod = 0; cmt = 0; br = 0;} :
+@init { $ast = NULL; mod.ast = 0; cmt = 0; br = 0;} :
   path=name_path2 (br=LBRACK | ((mod=modification)? cmt=string_comment))
   {
     if (br) {
@@ -626,7 +628,7 @@ element_modification [void *each, void *final] returns [void* ast]
               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition,
               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
     }
-    $ast = Absyn__MODIFICATION(final, each, path, mmc_mk_some_or_none(mod), mmc_mk_some_or_none(cmt), PARSER_INFO($start));
+    $ast = Absyn__MODIFICATION(final, each, path, mmc_mk_some_or_none($mod.ast), mmc_mk_some_or_none(cmt), PARSER_INFO($start));
   }
   ;
 
@@ -1557,7 +1559,7 @@ annotation returns [void* ast]
 /* Code quotation mechanism */
 
 code_expression returns [void* ast]
-@init{ initial = 0; eq = 0; constr = 0; alg = 0; e.ast = 0; m = 0; el.ast = 0; name = 0; cr.ast = 0; } :
+@init{ initial = 0; eq = 0; constr = 0; alg = 0; e.ast = 0; m.ast = 0; el.ast = 0; name = 0; cr.ast = 0; } :
   ( CODE LPAR
     ( (initial=INITIAL)?
       ( (EQUATION eq=code_equation_clause)
@@ -1571,8 +1573,8 @@ code_expression returns [void* ast]
       {
         if (e.ast) {
           ast = Absyn__CODE(Absyn__C_5fEXPRESSION(e.ast));
-        } else if (m) {
-          ast = Absyn__CODE(Absyn__C_5fMODIFICATION(m));
+        } else if ($m.ast) {
+          ast = Absyn__CODE(Absyn__C_5fMODIFICATION($m.ast));
         } else if (eq) {
           ast = Absyn__CODE(Absyn__C_5fEQUATIONSECTION(mmc_mk_bcon(initial), eq));
         } else if (constr) {

@@ -1287,7 +1287,7 @@ protected function prefixArrayDimensions
  this function prefixes all the expressions in types to be found by the back-end or code generation!"
   input DAE.Type ty;
   input tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix> tpl;
-  output DAE.Type oty := ty;
+  output DAE.Type oty = ty;
   output tuple<FCore.Cache,FCore.Graph,InnerOuter.InstHierarchy,Prefix.Prefix> otpl;
 algorithm
   (oty,otpl) := match (oty,tpl)

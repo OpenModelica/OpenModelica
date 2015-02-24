@@ -67,7 +67,7 @@ end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"
   input String str;
-  input String infoFilename := "<interactive>";
+  input String infoFilename = "<interactive>";
   input Integer acceptedGram;
   input Integer languageStandardInt;
   input Boolean runningTestsuite;
@@ -77,7 +77,7 @@ end parsestring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
-  input String infoFilename := "<interactive>";
+  input String infoFilename = "<interactive>";
   input Integer acceptedGram;
   input Integer languageStandardInt;
   input Boolean runningTestsuite;

@@ -871,7 +871,7 @@ end getMaxAttrFail;
 public function setVariableAttributes "sets the attributes of a DAE.Element that is VAR"
   input DAE.Element var;
   input Option<DAE.VariableAttributes> varOpt;
-  output DAE.Element v := var;
+  output DAE.Element v = var;
 algorithm
   v := match v
     case DAE.VAR()
@@ -1065,7 +1065,7 @@ public function setElementVarBinding
   "Sets the binding of a VAR DAE.Element."
   input DAE.Element elt;
   input Option<DAE.Exp> binding;
-  output DAE.Element e := elt;
+  output DAE.Element e = elt;
 algorithm
   e := match e
     case DAE.VAR()

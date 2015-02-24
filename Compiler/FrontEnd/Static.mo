@@ -135,15 +135,15 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  input DAE.Type inLastType := DAE.T_UNKNOWN_DEFAULT "The type of the last evaluated expression; used to speed up instantiation of enumeration :)";
-  output FCore.Cache outCache := inCache;
-  output list<DAE.Exp> outExpl := {};
-  output list<DAE.Properties> outProperties := {};
-  output Option<GlobalScript.SymbolTable> outST := inST;
+  input DAE.Type inLastType = DAE.T_UNKNOWN_DEFAULT "The type of the last evaluated expression; used to speed up instantiation of enumeration :)";
+  output FCore.Cache outCache = inCache;
+  output list<DAE.Exp> outExpl = {};
+  output list<DAE.Properties> outProperties = {};
+  output Option<GlobalScript.SymbolTable> outST = inST;
 protected
   DAE.Exp exp;
   DAE.Properties prop;
-  DAE.Type last_ty := inLastType;
+  DAE.Type last_ty = inLastType;
 algorithm
   for e in inExpl loop
     _ := matchcontinue(e, last_ty)
@@ -222,15 +222,15 @@ public function elabExpListList
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  input DAE.Type inLastType := DAE.T_UNKNOWN_DEFAULT "The type of the last evaluated expression; used to speed up instantiation of enumerations :)";
-  output FCore.Cache outCache := inCache;
-  output list<list<DAE.Exp>> outExpl := {};
-  output list<list<DAE.Properties>> outProperties := {};
-  output Option<GlobalScript.SymbolTable> outST := inST;
+  input DAE.Type inLastType = DAE.T_UNKNOWN_DEFAULT "The type of the last evaluated expression; used to speed up instantiation of enumerations :)";
+  output FCore.Cache outCache = inCache;
+  output list<list<DAE.Exp>> outExpl = {};
+  output list<list<DAE.Properties>> outProperties = {};
+  output Option<GlobalScript.SymbolTable> outST = inST;
 protected
   list<DAE.Exp> expl;
   list<DAE.Properties> props;
-  DAE.Type last_ty := inLastType;
+  DAE.Type last_ty = inLastType;
 algorithm
   for lst in inExpl loop
     (outCache, expl, props, outST) := elabExpList(outCache, inEnv, lst,
@@ -255,10 +255,10 @@ protected function elabExpOptAndMatchType "
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output Option<DAE.Exp> outExp;
   output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outST := inST;
+  output Option<GlobalScript.SymbolTable> outST = inST;
 protected
   Absyn.Exp exp;
   DAE.Exp dexp;
@@ -292,10 +292,10 @@ function: elabExp
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outST := inST;
+  output Option<GlobalScript.SymbolTable> outST = inST;
 protected
   Absyn.Exp e;
   Integer num_errmsgs;
@@ -359,10 +359,10 @@ protected partial function PartialElabExpFunc
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outST := inST;
+  output Option<GlobalScript.SymbolTable> outST = inST;
 end PartialElabExpFunc;
 
 protected function elabExp_BuiltinType
@@ -661,9 +661,9 @@ protected
   Absyn.Exp start, step, stop;
   Option<Absyn.Exp> ostep;
   DAE.Exp start_exp, step_exp, stop_exp;
-  Option<DAE.Exp> ostep_exp := NONE();
+  Option<DAE.Exp> ostep_exp = NONE();
   DAE.Type start_ty, step_ty, stop_ty, ety, ty;
-  Option<DAE.Type> ostep_ty := NONE();
+  Option<DAE.Type> ostep_ty = NONE();
   DAE.Const start_c, step_c, stop_c, c;
 algorithm
   Absyn.RANGE(start = start, step = ostep, stop = stop) := inExp;
@@ -954,16 +954,16 @@ public function elabExpCrefNoEvalList
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
-  output list<DAE.Exp> outExpl := {};
-  output list<DAE.Properties> outProperties := {};
-  output list<DAE.Attributes> outAttributes := {};
-  output Option<GlobalScript.SymbolTable> outST := inST;
+  output FCore.Cache outCache = inCache;
+  output list<DAE.Exp> outExpl = {};
+  output list<DAE.Properties> outProperties = {};
+  output list<DAE.Attributes> outAttributes = {};
+  output Option<GlobalScript.SymbolTable> outST = inST;
 protected
-  Integer num_err := Error.getNumErrorMessages();
+  Integer num_err = Error.getNumErrorMessages();
   DAE.Exp exp;
   DAE.Properties prop;
-  list<DAE.Properties> props := {};
+  list<DAE.Properties> props = {};
   DAE.Attributes attr;
   Absyn.ComponentRef cr;
   DAE.Type ty;
@@ -1091,7 +1091,7 @@ protected function fromEquationsToAlgAssignmentsWork
        then
          1;"
   input list<Absyn.EquationItem> eqsIn;
-  output list<Absyn.AlgorithmItem> algsOut := {};
+  output list<Absyn.AlgorithmItem> algsOut = {};
 algorithm
   for ei in eqsIn loop
     _ := match ei
@@ -1118,7 +1118,7 @@ end fromEquationsToAlgAssignmentsWork;
 protected function fromEquationBranchesToAlgBranches
 "Converts equations to algorithm assignments."
   input list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> eqsIn;
-  output list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> algsOut := {};
+  output list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> algsOut = {};
 protected
   Absyn.Exp e;
   list<Absyn.EquationItem> eqs;
@@ -1246,7 +1246,7 @@ protected function matrixConstrMaxDim
   max(2, ndims(A), ndims(B), ndims(C),..) for matrix constructor arguments
   A, B, C, ..."
   input list<DAE.Type> inTypes;
-  output Integer outMaxDim := 2;
+  output Integer outMaxDim = 2;
 algorithm
   for ty in inTypes loop
     outMaxDim := max(Types.numberOfDimensions(ty), outMaxDim);
@@ -1353,13 +1353,13 @@ protected function elabCallReductionIterators
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
-  output FCore.Graph outIteratorsEnv := inEnv;
-  output list<DAE.ReductionIterator> outIterators := {};
-  output list<DAE.Dimension> outDims := {};
-  output DAE.Const outConst := DAE.C_CONST();
-  output Boolean outHasGuard := false;
-  output Option<GlobalScript.SymbolTable> outST := inST;
+  output FCore.Cache outCache = inCache;
+  output FCore.Graph outIteratorsEnv = inEnv;
+  output list<DAE.ReductionIterator> outIterators = {};
+  output list<DAE.Dimension> outDims = {};
+  output DAE.Const outConst = DAE.C_CONST();
+  output Boolean outHasGuard = false;
+  output Option<GlobalScript.SymbolTable> outST = inST;
 protected
   String iter_name;
   Absyn.Exp aiter_exp;
@@ -1433,7 +1433,7 @@ protected function deduceReductionIterationRange
   input Absyn.Info inInfo;
   output DAE.Exp outRange;
   output DAE.Type outType;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
 protected
   list<tuple<Absyn.ComponentRef, Integer>> crefs;
   Absyn.ComponentRef acref;
@@ -1443,7 +1443,7 @@ protected
   list<DAE.Dimension> dims;
   DAE.Dimension dim;
   DAE.Exp range;
-  list<DAE.Exp> ranges := {};
+  list<DAE.Exp> ranges = {};
   String cr_str1, cr_str2;
 algorithm
   // Collect all crefs that are subscripted with the given iterator.
@@ -1529,7 +1529,7 @@ protected function deduceReductionIterationRange_traverser
   input Absyn.Exp inExp;
   input list<tuple<Absyn.ComponentRef, Integer>> inCrefs;
   input String inIterator;
-  output Absyn.Exp outExp := inExp;
+  output Absyn.Exp outExp = inExp;
   output list<tuple<Absyn.ComponentRef, Integer>> outCrefs;
 algorithm
   outCrefs := match inExp
@@ -1553,7 +1553,7 @@ protected function getIteratorIndexedCrefs
   input Absyn.ComponentRef inCref;
   input String inIterator;
   input list<tuple<Absyn.ComponentRef, Integer>> inCrefs;
-  output list<tuple<Absyn.ComponentRef, Integer>> outCrefs := inCrefs;
+  output list<tuple<Absyn.ComponentRef, Integer>> outCrefs = inCrefs;
 protected
   list<tuple<Absyn.ComponentRef, Integer>> crefs;
 algorithm
@@ -1737,7 +1737,7 @@ protected function reductionType
   input DAE.Dimensions dims;
   input Boolean hasGuardExp;
   input SourceInfo info;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output DAE.Type resultType;
@@ -2486,9 +2486,9 @@ protected function elabTuple
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
-  output list<DAE.Exp> outExpl := {};
-  output list<DAE.Properties> outProperties := {};
+  output FCore.Cache outCache = inCache;
+  output list<DAE.Exp> outExpl = {};
+  output list<DAE.Properties> outProperties = {};
 protected
   DAE.Exp exp;
   DAE.Properties prop;
@@ -2513,7 +2513,7 @@ end elabTuple;
 protected function stripExtraArgsFromType
   input list<Slot> slots;
   input DAE.Type inType;
-  output DAE.Type outType := inType;
+  output DAE.Type outType = inType;
 algorithm
   outType := matchcontinue outType
     case DAE.T_FUNCTION()
@@ -2534,7 +2534,7 @@ end stripExtraArgsFromType;
 protected function stripExtraArgsFromType2
   input list<Slot> inSlots;
   input list<DAE.FuncArg> inType;
-  input list<DAE.FuncArg> inAccumType := {};
+  input list<DAE.FuncArg> inAccumType = {};
   output list<DAE.FuncArg> outType;
 algorithm
   outType := match(inSlots, inType)
@@ -2566,9 +2566,9 @@ protected function elabArray
   output list<DAE.Exp> outExpLst;
   output DAE.Properties outProperties;
 protected
-  list<DAE.Type> types := {};
+  list<DAE.Type> types = {};
   DAE.Type ty;
-  DAE.Const c := DAE.C_CONST(), c2;
+  DAE.Const c = DAE.C_CONST(), c2;
   Boolean mixed;
 algorithm
   // Empty array constructors are not allowed in Modelica.
@@ -2602,9 +2602,9 @@ protected function elabArrayHasMixedIntReals
    Integer and Real types, and returns the first Real type if it does."
   input list<DAE.Type> inTypes;
   output DAE.Type outType;
-  output Boolean outIsMixed := true;
+  output Boolean outIsMixed = true;
 protected
-  Boolean has_int := false, has_real := false;
+  Boolean has_int = false, has_real = false;
   DAE.Type ty;
   list<DAE.Type> rest_tys;
 algorithm
@@ -2636,7 +2636,7 @@ end elabArrayHasMixedIntReals;
 protected function elabArrayConst
   "Constructs a const value from a list of properties, using constAnd."
   input list<DAE.Properties> inProperties;
-  output DAE.Const outConst := DAE.C_CONST();
+  output DAE.Const outConst = DAE.C_CONST();
 algorithm
   for prop in inProperties loop
     outConst := Types.constAnd(outConst, Types.getPropConst(prop));
@@ -2649,10 +2649,10 @@ protected function elabArrayReal2
   input list<DAE.Exp> inExpl;
   input list<DAE.Type> inTypes;
   input DAE.Type inExpectedType;
-  output list<DAE.Exp> outExpl := {};
+  output list<DAE.Exp> outExpl = {};
 protected
   DAE.Exp exp;
-  list<DAE.Exp> rest_expl := inExpl;
+  list<DAE.Exp> rest_expl = inExpl;
 algorithm
   for ty in inTypes loop
     exp :: rest_expl := rest_expl;
@@ -2723,11 +2723,11 @@ protected function elabGraphicsArray
   input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
-  output list<DAE.Exp> outExpl := {};
+  output FCore.Cache outCache = inCache;
+  output list<DAE.Exp> outExpl = {};
   output DAE.Properties outProperties;
 protected
-  DAE.Const c := DAE.C_CONST(), c2;
+  DAE.Const c = DAE.C_CONST(), c2;
   DAE.Exp exp;
   DAE.Type ty;
 algorithm
@@ -2761,7 +2761,7 @@ protected function elabMatrixComma "This function is a helper function for elabM
   output DAE.Dimension outDim2;
 protected
   DAE.Exp exp;
-  list<DAE.Exp> rest_expl, accum_expl := {};
+  list<DAE.Exp> rest_expl, accum_expl = {};
   DAE.Properties prop;
   list<DAE.Properties> rest_props;
   DAE.Type ty, sty;
@@ -2941,7 +2941,7 @@ protected function elabMatrixSemi
   input Boolean inDoVectorization;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
   output DAE.Dimension outDim1;
@@ -3692,7 +3692,7 @@ protected function elabBuiltinNone
   input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 protected
@@ -3720,7 +3720,7 @@ protected function elabBuiltinHomotopy
   input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 protected
@@ -3777,7 +3777,7 @@ protected function elabBuiltinDynamicSelect
   input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
@@ -4218,7 +4218,7 @@ protected function elabBuiltinArray2
 protected
   String pre_str;
   list<DAE.Types> types;
-  Boolean have_real := false;
+  Boolean have_real = false;
   DAE.Properties prop;
 algorithm
   if not sameDimensions(inProperties) then
@@ -4237,11 +4237,11 @@ protected function elabBuiltinArray3
   input list<DAE.Exp> inExpl;
   input list<DAE.Properties> inPropertiesLst;
   input DAE.Properties inProperties;
-  output list<DAE.Exp> outExpl := {};
-  output DAE.Properties outProperties := listHead(inPropertiesLst);
+  output list<DAE.Exp> outExpl = {};
+  output DAE.Properties outProperties = listHead(inPropertiesLst);
 protected
   DAE.Properties prop;
-  list<DAE.Properties> rest_props := inPropertiesLst;
+  list<DAE.Properties> rest_props = inPropertiesLst;
 algorithm
   for e in inExpl loop
     prop :: rest_props := rest_props;
@@ -4302,10 +4302,10 @@ protected function sameDimensions2
   "Helper function to sameDimensions. Checks that each list of dimensions has
    the same dimensions as the other lists."
   input list<DAE.Dimensions> inDimensions;
-  output Boolean outSame := true;
+  output Boolean outSame = true;
 protected
   DAE.Dimensions dims;
-  list<DAE.Dimensions> rest_dims := inDimensions;
+  list<DAE.Dimensions> rest_dims = inDimensions;
 algorithm
   if listEmpty(inDimensions) then
     return;
@@ -4331,7 +4331,7 @@ end sameDimensions2;
 protected function sameDimensions3
   "Helper function to sameDimensions2. Check that all dimensions in a list are equal."
   input DAE.Dimensions inDims;
-  output Boolean outSame := true;
+  output Boolean outSame = true;
 protected
   DAE.Dimension dim1;
 algorithm
@@ -5745,7 +5745,7 @@ protected function absynCrefListToInteractiveVarList "
   input list<Absyn.ComponentRef> inCrefs;
   input GlobalScript.SymbolTable inST;
   input DAE.Type inType;
-  output GlobalScript.SymbolTable outST := inST;
+  output GlobalScript.SymbolTable outST = inST;
 protected
   String path_str;
 algorithm
@@ -6315,7 +6315,7 @@ protected
   list<DAE.Exp> args;
   list<DAE.Const> consts;
   Slot val_slot, format_slot;
-  Option<DAE.Exp> format_arg := NONE();
+  Option<DAE.Exp> format_arg = NONE();
   list<Slot> slots;
 algorithm
   try
@@ -6383,7 +6383,7 @@ protected function elabBuiltinGetInstanceName
   input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 protected
@@ -6471,7 +6471,7 @@ protected function checkBuiltinVectorDims
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
 protected
-  Boolean found_dim_sz_one := false;
+  Boolean found_dim_sz_one = false;
   list<Integer> dims;
   String arg_str, scope_str, dim_str, pre_str;
 algorithm
@@ -6965,7 +6965,7 @@ protected function elabCall
   output DAE.Properties outProperties;
   output Option<GlobalScript.SymbolTable> outST;
 protected
-  Integer numErrorMessages := Error.getNumErrorMessages();
+  Integer numErrorMessages = Error.getNumErrorMessages();
 algorithm
   (outCache,outExp,outProperties,outST):=
   matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inST,inPrefix,info)
@@ -7075,7 +7075,7 @@ public function elabVariablenames "This function elaborates variablenames to DAE
   functions that uses variablenames as componentreferences.
 "
   input list<Absyn.Exp> inExpl;
-  output list<DAE.Exp> outExpl := {};
+  output list<DAE.Exp> outExpl = {};
 protected
   DAE.Exp exp;
   Absyn.ComponentRef cr;
@@ -7154,8 +7154,8 @@ public function getOptionalNamedArg
   input DAE.Exp inDefaultExp;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
-  output DAE.Exp outExp := inDefaultExp;
+  output FCore.Cache outCache = inCache;
+  output DAE.Exp outExp = inDefaultExp;
 protected
   String name, exp_str, ty_str, ety_str;
   DAE.Type ty;
@@ -7360,7 +7360,7 @@ end elabCallArgsEvaluateArrayLength;
 protected function elabCallArgsEvaluateArrayLength2
   input DAE.Type ty;
   input tuple<FCore.Cache,FCore.Graph> inTpl;
-  output DAE.Type oty := ty;
+  output DAE.Type oty = ty;
   output tuple<FCore.Cache,FCore.Graph> outTpl;
 algorithm
   (oty,outTpl) := matchcontinue (oty,inTpl)
@@ -8201,8 +8201,8 @@ protected function instantiateDaeFunction2
   output FCore.Cache outCache;
   output Util.Status status;
 protected
-  Integer numError := Error.getNumErrorMessages();
-  Boolean instOnlyForcedFunctions := Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions));
+  Integer numError = Error.getNumErrorMessages();
+  Boolean instOnlyForcedFunctions = Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions));
 algorithm
   (outCache,status) := matchcontinue(builtin, clOpt, instOnlyForcedFunctions, forceFunctionInst)
     local
@@ -8390,7 +8390,7 @@ protected function fillDefaultSlot2
   input array<Slot> inSlotArray;
   input SourceInfo inInfo;
   output DAE.Exp outArg;
-  output Slot outSlot := inSlot;
+  output Slot outSlot = inSlot;
 algorithm
   (outArg, outSlot) := match outSlot
     local
@@ -8676,10 +8676,10 @@ protected function vectorizeCallUnknownDimension
   input list<DAE.Exp> inEs;
   input list<Slot> inSlots;
   input SourceInfo info;
-  output list<DAE.Exp> oes := {};
-  output list<DAE.ReductionIterator> ofound := {};
+  output list<DAE.Exp> oes = {};
+  output list<DAE.ReductionIterator> ofound = {};
 protected
-  list<Slot> rest_slots := inSlots;
+  list<Slot> rest_slots = inSlots;
   list<DAE.Dimension> dims;
   DAE.Type ty, tp;
   String name;
@@ -8783,7 +8783,7 @@ protected function vectorizeCallScalar2
   input DAE.CallAttributes attr;
   input list<Slot> slots;
   input Integer dim;
-  output list<DAE.Exp> res := {};
+  output list<DAE.Exp> res = {};
 protected
   list<DAE.Exp> callargs;
 algorithm
@@ -8799,9 +8799,9 @@ protected function vectorizeCallScalar3
   input list<DAE.Exp> inExpl;
   input list<Slot> inSlots;
   input Integer inIndex;
-  output list<DAE.Exp> outExpl := {};
+  output list<DAE.Exp> outExpl = {};
 protected
-  list<Slot> rest_slots := inSlots;
+  list<Slot> rest_slots = inSlots;
   list<DAE.Dimension> dims;
 algorithm
   for e in inExpl loop
@@ -8879,8 +8879,8 @@ protected
   InstTypes.PolymorphicBindings pb;
   DAE.TypeSource ts;
   Absyn.Path path;
-  Boolean success := false;
-  list<DAE.Type> rest_tys := inTypes;
+  Boolean success = false;
+  list<DAE.Type> rest_tys = inTypes;
 algorithm
   while not success loop
     func_ty :: rest_tys := rest_tys;
@@ -9000,7 +9000,7 @@ end getAllOutputDimensions;
 protected function extractNamesFromDims
   "Extracts a list of unique names referenced by the given list of dimensions."
   input list<DAE.Dimension> inDimensions;
-  input list<String> inAccumNames := {};
+  input list<String> inAccumNames = {};
   output list<String> outNames;
 algorithm
   outNames := match inDimensions
@@ -9196,7 +9196,7 @@ protected function makeDummyFuncEnv
   input FCore.Graph inEnv;
   input list<DAE.Var> inVars;
   input SCode.Element inDummyVar;
-  output FCore.Graph outEnv := inEnv;
+  output FCore.Graph outEnv = inEnv;
 protected
   SCode.Element dummy_var;
 algorithm
@@ -9326,7 +9326,7 @@ protected function createActualFunctype
   input DAE.Type tp;
   input list<Slot> slots;
   input Boolean checkTypes;
-  output DAE.Type outTp := tp;
+  output DAE.Type outTp = tp;
 algorithm
   outTp := match(outTp, checkTypes)
     local
@@ -9580,8 +9580,8 @@ end checkConst;
 protected function splitProps
   "Splits the properties list into the separated types list and const list."
   input list<DAE.Properties> inProperties;
-  output list<DAE.Type> outTypes := {};
-  output list<DAE.TupleConst> outConsts := {};
+  output list<DAE.Type> outTypes = {};
+  output list<DAE.TupleConst> outConsts = {};
 protected
   DAE.Type ty;
   DAE.Const c;
@@ -9629,11 +9629,11 @@ protected function elabInputArgs
   input SourceInfo inInfo;
   input DAE.Type inFuncType "Used to determine which arguments are structural. We will evaluate them later to figure if they are used in dimensions. So we evaluate them here to get a more optimised DAE";
   input Absyn.Path inPath;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output list<DAE.Exp> outExps;
-  output list<Slot> outSlots := inSlots;
+  output list<Slot> outSlots = inSlots;
   output list<DAE.Const> outConsts;
-  output InstTypes.PolymorphicBindings outPolymorphicBindings := {};
+  output InstTypes.PolymorphicBindings outPolymorphicBindings = {};
 protected
   list<DAE.FuncArg> fargs;
   list<DAE.Const> consts1, consts2;
@@ -9707,7 +9707,7 @@ protected function complexTypeFromSlots
 protected
   String id;
   DAE.Type ty;
-  list<DAE.Var> vars := {};
+  list<DAE.Var> vars = {};
 algorithm
   for slot in inSlots loop
     SLOT(defaultArg = DAE.FUNCARG(name = id, ty = ty)) := slot;
@@ -9746,10 +9746,10 @@ protected function fillGraphicsDefaultSlots
   input Boolean inImplicit;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
-  output list<Slot> outSlots := {};
-  output list<DAE.Const> outConsts := {};
-  output InstTypes.PolymorphicBindings outPolymorphicBindings := {};
+  output FCore.Cache outCache = inCache;
+  output list<Slot> outSlots = {};
+  output list<DAE.Const> outConsts = {};
+  output InstTypes.PolymorphicBindings outPolymorphicBindings = {};
 protected
   Boolean filled;
   Absyn.Exp e;
@@ -9898,15 +9898,15 @@ protected function elabPositionalInputArgs
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
   input Absyn.Path inPath;
-  output FCore.Cache outCache := inCache;
-  output list<Slot> outSlots := inSlots;
-  output list<DAE.Const> outConsts := {};
-  output InstTypes.PolymorphicBindings outPolymorphicBindings := inPolymorphicBindings;
+  output FCore.Cache outCache = inCache;
+  output list<Slot> outSlots = inSlots;
+  output list<DAE.Const> outConsts = {};
+  output InstTypes.PolymorphicBindings outPolymorphicBindings = inPolymorphicBindings;
 protected
   DAE.FuncArg farg;
-  list<DAE.FuncArg> farg_rest := inFuncArgs;
+  list<DAE.FuncArg> farg_rest = inFuncArgs;
   DAE.Const c;
-  Integer position := 1;
+  Integer position = 1;
 algorithm
   for arg in inPosArgs loop
     farg :: farg_rest := farg_rest;
@@ -9947,7 +9947,7 @@ protected function elabPositionalInputArg
   output DAE.Const outConst;
   output InstTypes.PolymorphicBindings outPolymorphicBindings;
 protected
-  Integer numErrors := Error.getNumErrorMessages();
+  Integer numErrors = Error.getNumErrorMessages();
 algorithm
   (outCache,outSlotLst,outConst,outPolymorphicBindings):=
   matchcontinue (inCache,inEnv,inExp,farg,position,inSlotLst,onlyOneFunction,checkTypes,impl,isExternalObject,inPolymorphicBindings,st,inPrefix,info,path,numErrors)
@@ -10256,7 +10256,7 @@ protected function fillSlot
   input list<Slot> inSlotLst;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output list<Slot> outSlotLst := {};
+  output list<Slot> outSlotLst = {};
 protected
   String fa1, fa2, exp_str, c_str, pre_str;
   DAE.Type ty1, ty2;
@@ -10266,7 +10266,7 @@ protected
   Boolean filled;
   Integer idx, ses;
   Slot slot;
-  list<Slot> rest_slots := inSlotLst;
+  list<Slot> rest_slots = inSlotLst;
 algorithm
   DAE.FUNCARG(name = fa1, ty = ty1, const = c1) := inFuncArg;
 
@@ -11950,11 +11950,11 @@ protected function elabSubscriptsDims
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inCref;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
-  output list<DAE.Subscript> outSubs := {};
-  output DAE.Const outConst := DAE.C_CONST();
+  output FCore.Cache outCache = inCache;
+  output list<DAE.Subscript> outSubs = {};
+  output DAE.Const outConst = DAE.C_CONST();
 protected
-  list<DAE.Dimension> rest_dims := inDimensions;
+  list<DAE.Dimension> rest_dims = inDimensions;
   DAE.Dimension dim;
   DAE.Subscript dsub;
   DAE.Const const;
@@ -12291,7 +12291,7 @@ protected function makeIfExp
   input Option<GlobalScript.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 protected

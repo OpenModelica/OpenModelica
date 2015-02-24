@@ -77,7 +77,7 @@ public function CSE "authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germ
     - CSE_BINARY: consider duplicate binary expressions
   NOTE: This is currently just an experimental prototype to demonstrate interesting effects."
   input BackendDAE.BackendDAE daeIn;
-  output BackendDAE.BackendDAE daeOut := daeIn;
+  output BackendDAE.BackendDAE daeOut = daeIn;
 algorithm
   if Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL) or Flags.getConfigBool(Flags.CSE_BINARY) then
     try
@@ -93,8 +93,8 @@ public function CSE1
   input BackendDAE.Shared inShared;
   input Integer inStartIndex;
   output BackendDAE.EqSystem outSyst;
-  output BackendDAE.Shared outShared := inShared;
-  output Integer outStartIndex := inStartIndex;
+  output BackendDAE.Shared outShared = inShared;
+  output Integer outStartIndex = inStartIndex;
 algorithm
   outSyst := matchcontinue(inSyst)
     local

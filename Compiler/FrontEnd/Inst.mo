@@ -3208,23 +3208,23 @@ public function instElementList
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
   input Boolean inStopOnError;
-  output FCore.Cache outCache := inCache;
-  output FCore.Graph outEnv := inEnv;
-  output InnerOuter.InstHierarchy outIH := inIH;
-  output UnitAbsyn.InstStore outStore := inStore;
+  output FCore.Cache outCache = inCache;
+  output FCore.Graph outEnv = inEnv;
+  output InnerOuter.InstHierarchy outIH = inIH;
+  output UnitAbsyn.InstStore outStore = inStore;
   output DAE.DAElist outDae;
-  output Connect.Sets outSets := inSets;
-  output ClassInf.State outState := inState;
+  output Connect.Sets outSets = inSets;
+  output ClassInf.State outState = inState;
   output list<DAE.Var> outVars;
-  output ConnectionGraph.ConnectionGraph outGraph := inGraph;
+  output ConnectionGraph.ConnectionGraph outGraph = inGraph;
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
   FCore.Cache cache;
   Integer i1,i2;
   list<DAE.Var> vars;
-  list<list<DAE.Var>> varsl := {};
+  list<list<DAE.Var>> varsl = {};
   list<DAE.Element> dae;
-  list<list<DAE.Element>> dael := {};
+  list<list<DAE.Element>> dael = {};
 algorithm
   // print("push " + PrefixUtil.printPrefixStr(inPrefix) + "\n");
   cache := InstUtil.pushStructuralParameters(inCache);
@@ -3273,14 +3273,14 @@ public function instElement2
   input Connect.Sets inSets;
   input Boolean inStopOnError;
   output FCore.Cache outCache;
-  output FCore.Graph outEnv := inEnv;
-  output InnerOuter.InstHierarchy outIH := inIH;
-  output UnitAbsyn.InstStore outStore := inStore;
-  output list<DAE.Element> outDae := {};
+  output FCore.Graph outEnv = inEnv;
+  output InnerOuter.InstHierarchy outIH = inIH;
+  output UnitAbsyn.InstStore outStore = inStore;
+  output list<DAE.Element> outDae = {};
   output Connect.Sets outSets;
-  output ClassInf.State outState := inState;
-  output list<DAE.Var> outVars := {};
-  output ConnectionGraph.ConnectionGraph outGraph := inGraph;
+  output ClassInf.State outState = inState;
+  output list<DAE.Var> outVars = {};
+  output ConnectionGraph.ConnectionGraph outGraph = inGraph;
 protected
   tuple<SCode.Element, DAE.Mod> elt;
   Boolean is_deleted;
@@ -3328,7 +3328,7 @@ protected function isDeletedComponent
   input Connect.Sets inSets;
   input Boolean inStopOnError;
   output Boolean outIsDeleted;
-  output Connect.Sets outSets := inSets;
+  output Connect.Sets outSets = inSets;
   output FCore.Cache outCache;
 protected
   SCode.Element el;

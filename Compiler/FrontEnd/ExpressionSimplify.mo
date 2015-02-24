@@ -2832,10 +2832,10 @@ public function simplifySumOperatorExpression
   input DAE.Exp iExp;
   output DAE.Exp oExp;
 protected
-  list<DAE.Exp> T := Expression.terms(iSum);
+  list<DAE.Exp> T = Expression.terms(iSum);
   Boolean b "simplifed?";
   DAE.Exp e, newE, sE;
-  DAE.Type tp := Expression.typeofOp(iop);
+  DAE.Type tp = Expression.typeofOp(iop);
 algorithm
   oExp := Expression.makeConstZero(tp);
   sE := oExp;

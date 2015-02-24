@@ -454,7 +454,7 @@ end evaluateConstantFunction;
 
 protected function listLengthStr<T>
   input list<T> inList;
-  output String outLength := intString(listLength(inList));
+  output String outLength = intString(listLength(inList));
 end listLengthStr;
 
 protected function expandComplexEpressions"gets the complex contents or if its not complex, then the exp itself

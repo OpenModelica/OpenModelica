@@ -899,7 +899,7 @@ protected function calculateValueTraverser
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   output BackendDAE.Var outVar;
-  output FCore.Cache outCache := inCache;
+  output FCore.Cache outCache = inCache;
 algorithm
   if BackendVariable.isParam(inVar) then
     outVar := calculateValue(inVar, inCache, inEnv);
@@ -2541,7 +2541,7 @@ public function incidenceMatrixDispatch
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.IndexType inIndexType;
-  input Option<DAE.FunctionTree> functionTree := NONE();
+  input Option<DAE.FunctionTree> functionTree = NONE();
   output BackendDAE.IncidenceMatrix outIncidenceArray;
   output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
 protected
@@ -2573,14 +2573,14 @@ protected function incidenceMatrixDispatchScalar
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
   output BackendDAE.IncidenceMatrix outIncidenceArray;
-  output BackendDAE.IncidenceMatrixT outIncidenceArrayT := outIncidenceArrayT;
+  output BackendDAE.IncidenceMatrixT outIncidenceArrayT = outIncidenceArrayT;
   output array<list<Integer>> omapEqnIncRow;
   output array<Integer> omapIncRowEqn;
 protected
-  Integer num_eqs, num_vars, size, num_rows := 0;
+  Integer num_eqs, num_vars, size, num_rows = 0;
   BackendDAE.Equation eq;
-  list<Integer> row, row_indices, imap := {};
-  list<BackendDAE.IncidenceMatrixElement> iarr := {};
+  list<Integer> row, row_indices, imap = {};
+  list<BackendDAE.IncidenceMatrixElement> iarr = {};
 algorithm
   num_eqs := equationArraySize(inEqns);
   num_vars := BackendVariable.varsSize(inVars);
@@ -2613,7 +2613,7 @@ protected function fillincidenceMatrixT
   input BackendDAE.IncidenceMatrixElement eqns;
   input list<Integer> eqnsindxs;
   input BackendDAE.IncidenceMatrixT inIncidenceArrayT;
-  output BackendDAE.IncidenceMatrixT outIncidenceArrayT := inIncidenceArrayT;
+  output BackendDAE.IncidenceMatrixT outIncidenceArrayT = inIncidenceArrayT;
 protected
   BackendDAE.IncidenceMatrixElement row;
   list<Integer> ei;
@@ -2757,8 +2757,8 @@ protected function incidenceRowLst
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
   input list<Integer> inIntegerLst;
-  output list<Integer> outIntegerLst := inIntegerLst;
-  output Integer rowSize := 0;
+  output list<Integer> outIntegerLst = inIntegerLst;
+  output Integer rowSize = 0;
 protected
   Integer size;
 algorithm
@@ -2778,8 +2778,8 @@ protected function incidenceRowLstLst
   input BackendDAE.IndexType inIndexType;
   input Option<DAE.FunctionTree> functionTree;
   input list<Integer> inIntegerLst;
-  output list<Integer> outIntegerLst := inIntegerLst;
-  output Integer rowSize := 0;
+  output list<Integer> outIntegerLst = inIntegerLst;
+  output Integer rowSize = 0;
 protected
   Integer size;
 algorithm
@@ -6272,8 +6272,8 @@ public function traverseArrayNoCopy<ArrT, ElemT, ArgT>
   input ElemFuncType inElemFunc;
   input ArrayFuncType inArrayFunc;
   input ArgT inArg;
-  input Integer inLength := arrayLength(inArray);
-  output ArgT outArg := inArg;
+  input Integer inLength = arrayLength(inArray);
+  output ArgT outArg = inArg;
 
   partial function ElemFuncType
     input ElemT inElement;
@@ -6303,8 +6303,8 @@ public function traverseArrayNoCopyWithStop<ArrT, ElemT, ArgT>
   input ElemFuncType inElemFunc;
   input ArrayFuncType inArrayFunc;
   input ArgT inArg;
-  input Integer inLength := arrayLength(inArray);
-  output ArgT outArg := inArg;
+  input Integer inLength = arrayLength(inArray);
+  output ArgT outArg = inArg;
 
   partial function ElemFuncType
     input ElemT inElement;
@@ -6337,9 +6337,9 @@ public function traverseArrayNoCopyWithUpdate<ArrT, ElemT, ArgT>
   input ElemFuncType inElemFunc;
   input ArrayFuncType inArrayFunc;
   input ArgT inArg;
-  input Integer inLength := arrayLength(inArray);
-  output array<ArrT> outArray := inArray;
-  output ArgT outArg := inArg;
+  input Integer inLength = arrayLength(inArray);
+  output array<ArrT> outArray = inArray;
+  output ArgT outArg = inArg;
 
   partial function ElemFuncType
     input ElemT inElement;
@@ -6849,10 +6849,10 @@ end traverseZeroCrossingExps;
 public function getSolvedSystem "Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
   input String fileNamePrefix;
-  input Option<list<String>> strPreOptModules := NONE();
-  input Option<String> strmatchingAlgorithm := NONE();
-  input Option<String> strdaeHandler := NONE();
-  input Option<list<String>> strPostOptModules := NONE();
+  input Option<list<String>> strPreOptModules = NONE();
+  input Option<String> strmatchingAlgorithm = NONE();
+  input Option<String> strdaeHandler = NONE();
+  input Option<list<String>> strPostOptModules = NONE();
   output BackendDAE.BackendDAE outSODE;
 protected
   BackendDAE.BackendDAE optdae, sode, sode1, optsode;

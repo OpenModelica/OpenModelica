@@ -176,8 +176,8 @@ protected function tearingSystemWork "author: Frenkel TUD 2012-05"
   input BackendDAE.Shared inShared;
   input TearingMethod inTearingMethod;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared outShared := inShared "unused";
-  output TearingMethod outTearingMethod := inTearingMethod "unused";
+  output BackendDAE.Shared outShared = inShared "unused";
+  output TearingMethod outTearingMethod = inTearingMethod "unused";
 protected
   BackendDAE.StrongComponents comps;
   Boolean b;
@@ -1846,13 +1846,13 @@ protected function tearingSelect
  "collects variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
   author: ptaeuber FHB 2014-05"
   input list<BackendDAE.Var> var_lstIn;
-  output list<Integer> always := {};
-  output list<Integer> prefer := {};
-  output list<Integer> avoid := {};
-  output list<Integer> never := {};
+  output list<Integer> always = {};
+  output list<Integer> prefer = {};
+  output list<Integer> avoid = {};
+  output list<Integer> never = {};
 protected
   BackendDAE.Var var;
-  Integer index := 1;
+  Integer index = 1;
   Option<BackendDAE.TearingSelect> ts;
 algorithm
   for var in var_lstIn loop
@@ -3289,7 +3289,7 @@ protected function markTVars
   author: ptaeuber FHB 2013-10"
   input list<Integer> tVars;
   input array<Integer> ass1In;
-  output array<Integer> ass1Out := ass1In;
+  output array<Integer> ass1Out = ass1In;
 protected
   Integer len;
 algorithm

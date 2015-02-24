@@ -1924,7 +1924,7 @@ end isVarOnTopLevelAndInput;
 
 public function isVarOnTopLevelAndInputNoDerInput
     input BackendDAE.Var inVar;
-    output Boolean outBoolean := isVarOnTopLevelAndInput(inVar) and not isRealOptimizeDerInput(inVar);
+    output Boolean outBoolean = isVarOnTopLevelAndInput(inVar) and not isRealOptimizeDerInput(inVar);
 end isVarOnTopLevelAndInputNoDerInput;
 
 public function topLevelInput "author: PA
@@ -2026,7 +2026,7 @@ end getVarType;
 public function getMinMaxAsserts "author: Frenkel TUD 2011-03"
   input BackendDAE.Var inVar;
   input list<DAE.Algorithm> inAsserts;
-  output BackendDAE.Var outVar := inVar;
+  output BackendDAE.Var outVar = inVar;
   output list<DAE.Algorithm> outAsserts;
 algorithm
   outAsserts := matchcontinue(inVar)
@@ -2089,7 +2089,7 @@ end getMinMaxAsserts1;
 public function getNominalAssert "author: Frenkel TUD 2011-03"
   input BackendDAE.Var inVar;
   input list<DAE.Algorithm> inAsserts;
-  output BackendDAE.Var outVar := inVar;
+  output BackendDAE.Var outVar = inVar;
   output list<DAE.Algorithm> outAsserts;
 algorithm
   outAsserts := matchcontinue(inVar)
@@ -2285,7 +2285,7 @@ end vararrayDelete;
 protected function vararrayList
   "Returns a list of all the variables in the variable array."
   input BackendDAE.VariableArray inArray;
-  output list<BackendDAE.Var> outVars := {};
+  output list<BackendDAE.Var> outVars = {};
 protected
   Integer num_elems;
   array<Option<BackendDAE.Var>> arr;
@@ -2328,7 +2328,7 @@ end copyVariables;
 
 public function emptyVars
   "Creates a new empty Variable structure."
-  input Integer inSize := BaseHashTable.bigBucketSize;
+  input Integer inSize = BaseHashTable.bigBucketSize;
   output BackendDAE.Variables outVariables;
 protected
   array<list<BackendDAE.CrefIndex>> indices;
@@ -2345,7 +2345,7 @@ end emptyVars;
 public function emptyVarsSized
   "Returns a Variable datastructure that is empty."
   input Integer size;
-  output BackendDAE.Variables outVariables := emptyVars(size);
+  output BackendDAE.Variables outVariables = emptyVars(size);
 end emptyVarsSized;
 
 public function varList
@@ -2450,7 +2450,7 @@ end varsSize;
 
 protected function varsLoadFactor
   input BackendDAE.Variables inVariables;
-  input Integer inIncrease := 0;
+  input Integer inIncrease = 0;
   output Real outLoadFactor;
 protected
   Integer buckets, num_vars;
@@ -2764,7 +2764,7 @@ end existsVar;
 
 public function makeVar
  input DAE.ComponentRef cr;
- output BackendDAE.Var v := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+ output BackendDAE.Var v = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
 end makeVar;
 
 public function addVarDAE
@@ -2981,7 +2981,7 @@ public function addVariables
   "Adds the content of one Variables to another."
   input BackendDAE.Variables inSrcVars;
   input BackendDAE.Variables inDestVars;
-  output BackendDAE.Variables outVars := inDestVars;
+  output BackendDAE.Variables outVars = inDestVars;
 protected
   array<Option<BackendDAE.Var>> vars;
   Integer num_vars;
@@ -3017,7 +3017,7 @@ public function setVarAt
   input BackendDAE.Variables inVariables;
   input Integer inIndex;
   input BackendDAE.Var inVar;
-  output BackendDAE.Variables outVariables := inVariables;
+  output BackendDAE.Variables outVariables = inVariables;
 protected
   BackendDAE.VariableArray arr;
 algorithm
@@ -3314,7 +3314,7 @@ end crefIndexEqualCref;
 public function getVarIndexFromVars
   input list<BackendDAE.Var> inVars;
   input BackendDAE.Variables inVariables;
-  output list<Integer> outIndices := {};
+  output list<Integer> outIndices = {};
 algorithm
   for var in inVars loop
     (_, outIndices) := traversingVarIndexFinder(var, inVariables, outIndices);
@@ -3335,7 +3335,7 @@ protected function traversingVarIndexFinder
   input BackendDAE.Var inVar;
   input BackendDAE.Variables inVars;
   input list<Integer> inIndices;
-  output BackendDAE.Var outVar := inVar;
+  output BackendDAE.Var outVar = inVar;
   output list<Integer> outIndices;
 protected
   DAE.ComponentRef cr;
@@ -3378,7 +3378,7 @@ public function rehashVariables
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
 protected
-  Real load := varsLoadFactor(inVariables, 0);
+  Real load = varsLoadFactor(inVariables, 0);
 algorithm
   if load < 0.5 or load > 1.0 then
     outVariables := emptyVarsSized(varsSize(inVariables));

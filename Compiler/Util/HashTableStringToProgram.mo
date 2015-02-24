@@ -106,7 +106,7 @@ protected
 
 function dummyStr
   input Absyn.Program p;
-  output String str := "<dummy Absyn.Program string>";
+  output String str = "<dummy Absyn.Program string>";
 end dummyStr;
 
 annotation(__OpenModelica_Interface="frontend");

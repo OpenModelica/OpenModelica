@@ -276,8 +276,8 @@ protected function solveInitialSystemEqSystem "author: lochel
   This is a helper function of solveInitialSystem and solves the generated system."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem osyst := isyst;
-  output BackendDAE.Shared outShared := inShared "unused";
+  output BackendDAE.EqSystem osyst = isyst;
+  output BackendDAE.Shared outShared = inShared "unused";
 protected
   Integer nVars, nEqns;
 algorithm
@@ -697,7 +697,7 @@ end warnAboutIterationVariablesWithDefaultZeroStartAttribute;
 protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute0 "author: lochel"
   input list<BackendDAE.EqSystem> inEqs;
   input Boolean inShowWarnings;
-  output Boolean outWarning := false;
+  output Boolean outWarning = false;
 protected
   Boolean warn;
 algorithm
@@ -716,11 +716,11 @@ end warnAboutIterationVariablesWithDefaultZeroStartAttribute0;
 protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute1 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   input Boolean inShowWarnings;
-  output Boolean outWarning := false "True if any warnings were printed.";
+  output Boolean outWarning = false "True if any warnings were printed.";
 protected
   BackendDAE.StrongComponents comps;
   BackendDAE.Variables ordered_vars;
-  list<Integer> vlst := {};
+  list<Integer> vlst = {};
   list<BackendDAE.Var> vars;
   String err;
 algorithm
@@ -829,8 +829,8 @@ protected function selectInitializationVariablesDAE "author: lochel
   This function wraps selectInitializationVariables."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.Variables outVars;
-  output list<BackendDAE.Var> outPrimaryParameters := {};
-  output list<BackendDAE.Var> outAllPrimaryParameters := {};
+  output list<BackendDAE.Var> outPrimaryParameters = {};
+  output list<BackendDAE.Var> outAllPrimaryParameters = {};
 protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Variables knownVars, alias, allParameters;
@@ -916,7 +916,7 @@ end selectInitializationVariablesDAE;
 protected function markIndex
   input Integer inIndex;
   input array<Integer> inArray;
-  output array<Integer> outArray := inArray;
+  output array<Integer> outArray = inArray;
 algorithm
   arrayUpdate(outArray, inIndex, 1);
 end markIndex;
@@ -996,7 +996,7 @@ end selectInitializationVariables1;
 protected function selectParameter2 "author: lochel"
   input BackendDAE.Var inVar;
   input tuple<BackendDAE.Variables, BackendDAE.EquationArray> inTpl;
-  output BackendDAE.Var outVar := inVar;
+  output BackendDAE.Var outVar = inVar;
   output tuple<BackendDAE.Variables, BackendDAE.EquationArray> outTpl;
 algorithm
   outTpl := match (inVar, inTpl)
@@ -1283,7 +1283,7 @@ protected function analyzeInitialSystem2 "author: lochel"
   input BackendDAE.Shared inShared;
   input tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> inTpl;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared outShared := inShared;
+  output BackendDAE.Shared outShared = inShared;
   output tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>, list<BackendDAE.Equation>> outTpl;
 algorithm
   (osyst, outTpl) := matchcontinue(isyst, inTpl)

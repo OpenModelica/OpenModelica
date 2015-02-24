@@ -421,7 +421,7 @@ protected
   list<BackendDAE.Var> vars = iParamVarsList;
   list<Integer> varIdc = iParamVarsIdc;
   Integer varIdx;
-  list<Integer> rest := iVarIdc;
+  list<Integer> rest = iVarIdc;
 algorithm
   for var in iVars loop
     varIdx::rest := rest;
@@ -592,8 +592,8 @@ public function traverseExpsOfEquationList<ArgT> "author: Frenkel TUD 2010-11
   input list<BackendDAE.Equation> inEquations;
   input FuncExpType func;
   input ArgT inArg;
-  output list<BackendDAE.Equation> outEquations := {};
-  output ArgT outArg := inArg;
+  output list<BackendDAE.Equation> outEquations = {};
+  output ArgT outArg = inArg;
 
   partial function FuncExpType
     input DAE.Exp inExp;
@@ -1359,7 +1359,7 @@ public function setAtIndexFirst "author: waurich
   input Integer inPos "one-based indexing";
   input BackendDAE.Equation inEquation;
   input BackendDAE.EquationArray inEquationArray;
-  output BackendDAE.EquationArray outEquationArray := setAtIndex(inEquationArray, inPos, inEquation);
+  output BackendDAE.EquationArray outEquationArray = setAtIndex(inEquationArray, inPos, inEquation);
 end setAtIndexFirst;
 
 public function getEqns "author: Frenkel TUD 2011-05
@@ -2210,7 +2210,7 @@ public function makeTmpEqnForExp
 protected
   DAE.ComponentRef cr;
   BackendDAE.Var tmpvar;
-  String name_ := "$TMP$" + intString(offset) + "$" + name;
+  String name_ = "$TMP$" + intString(offset) + "$" + name;
   DAE.Exp x, y;
 algorithm
   if not (Expression.isCref(iExp) or Expression.isConst(iExp)) then
@@ -2243,7 +2243,7 @@ public function normalizationVec
   output BackendDAE.EquationArray oeqns;
   output BackendDAE.Variables ovars;
 protected
-  DAE.Exp len := Expression.lenVec(vec);
+  DAE.Exp len = Expression.lenVec(vec);
 algorithm
   (len,oeqns,ovars) := makeTmpEqnForExp(len, name, offset, ieqns, ivars);
   if Expression.isZero(len) then

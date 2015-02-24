@@ -1036,7 +1036,7 @@ end addMessageOrSourceMessage;
 public function printMessagesStr "Relations for pretty printing.
   function: printMessagesStr
   Prints messages to a string."
-  input Boolean warningsAsErrors := false;
+  input Boolean warningsAsErrors = false;
   output String res;
 algorithm
   res := ErrorExt.printMessagesStr(warningsAsErrors);

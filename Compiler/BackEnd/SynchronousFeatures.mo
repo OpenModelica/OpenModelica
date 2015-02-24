@@ -130,7 +130,7 @@ public function partitionIndependentBlocks0
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
   input array<Integer> ixs;
-  output Integer on := 0;
+  output Integer on = 0;
 algorithm
   for i in arrayLength(m):-1:1 loop
     on := if partitionIndependentBlocks1(i, on + 1, m, mT, ixs) then on + 1 else on;
@@ -444,8 +444,8 @@ end getVariableLists;
 
 protected function getVariableLists2
   input list<BackendDAE.Equation> inEqnLst;
-  output list<DAE.ComponentRef> outContinuousTimeVars := {};
-  output list<DAE.ComponentRef> outClockedVars := {};
+  output list<DAE.ComponentRef> outContinuousTimeVars = {};
+  output list<DAE.ComponentRef> outClockedVars = {};
 protected
   DAE.ComponentRef cr;
   String func_id;
@@ -539,7 +539,7 @@ end getPartitionKind;
 protected function filterVariables
   input BackendDAE.Variables inVars;
   input list<DAE.ComponentRef> inCrefs;
-  output list<DAE.ComponentRef> outCrefs := {};
+  output list<DAE.ComponentRef> outCrefs = {};
 algorithm
   for cr in inCrefs loop
     try

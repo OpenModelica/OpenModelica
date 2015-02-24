@@ -37,7 +37,7 @@ end rewriteBlockCall;
 
 protected function parseProgram
   input Absyn.Program inPg, defs;
-  output Absyn.Program outPg := inPg;
+  output Absyn.Program outPg = inPg;
 algorithm
   outPg := match outPg
     case Absyn.PROGRAM()

@@ -163,7 +163,7 @@ public function differentiateExpSolve
   input Option<DAE.FunctionTree> functions;
   output DAE.Exp outExp;
 protected
-  list<DAE.Exp> fac := Expression.factors(inExp);
+  list<DAE.Exp> fac = Expression.factors(inExp);
 algorithm
   ({},_) := List.split1OnTrue(fac,Expression.expHasCrefInIf,inCref); // check: differentiateExpSolve is allowed
   outExp := matchcontinue(inExp, inCref)
@@ -2659,7 +2659,7 @@ protected
   DAE.derivativeCond dc;
   DAE.Exp e;
   Absyn.Path p1, p2;
-  array<Boolean> ba := inbarr;
+  array<Boolean> ba = inbarr;
   DAE.ComponentRef diffwrtCref;
   BackendDAE.DifferentiateInputData inputData;
   BackendDAE.DifferentiationType diffType;

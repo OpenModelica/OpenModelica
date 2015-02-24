@@ -72,7 +72,7 @@ protected function inlineArrayEqn1
   input BackendDAE.Shared inShared;
   input Boolean inOptimized;
   output BackendDAE.EqSystem outEqSystem;
-  output BackendDAE.Shared outShared := inShared "unused";
+  output BackendDAE.Shared outShared = inShared "unused";
   output Boolean outOptimized;
 algorithm
   (outEqSystem, outOptimized) := matchcontinue(inEqSystem)

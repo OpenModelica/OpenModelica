@@ -106,7 +106,7 @@ end TaskGraphMeta; //TODO: Remove rootNodes from structure
 public function createTaskGraph "author: marcusw,waurich
   Creates a task graph on scc-level."
   input BackendDAE.BackendDAE iDAE;
-  input Boolean iAnalyzeParameters := false; //set this to true if the parameter information of task graph meta should be filled
+  input Boolean iAnalyzeParameters = false; //set this to true if the parameter information of task graph meta should be filled
   output TaskGraph oGraph;
   output TaskGraphMeta oGraphData;
 protected
@@ -1280,9 +1280,9 @@ protected function getVarsByEqns "author: marcusw
   output list<tuple<Integer,Integer>> oIncidenceVars;
   output list<Integer> oParamVars;
 protected
-  list<Integer> incidenceVars := {};
-  list<BackendDAE.Var> paramVars := {};
-  list<BackendDAE.Equation> eqs := {};
+  list<Integer> incidenceVars = {};
+  list<BackendDAE.Var> paramVars = {};
+  list<BackendDAE.Equation> eqs = {};
 algorithm
   for eqIdx in iEqnIdc loop
     incidenceVars := listAppend(arrayGet(iIncidenceMatrix,eqIdx), incidenceVars);
@@ -2770,7 +2770,7 @@ protected
   list<Integer> components;
   GraphML.GraphInfo tmpGraph;
   list<tuple<Integer,Integer>> criticalPathEdges, criticalPathEdgesWoC;
-  String edgeColor := GraphML.COLOR_BLACK;
+  String edgeColor = GraphML.COLOR_BLACK;
   Boolean visualizeCriticalPath;
   Boolean visualizeCommTime;
   list<GraphML.EdgeLabel> edgeLabels;
@@ -3808,7 +3808,7 @@ author: marcusw"
 protected
   Integer task, taskMark, contractedValue;
   list<Integer> childTasks;
-  list<Integer> resultTasks := {};
+  list<Integer> resultTasks = {};
 algorithm
   childTasks := arrayGet(iTaskGraph, iParentTask);
   //print("getContractedNodeChildren: iParentTask '" + intString(iParentTask) + "' with children " + stringDelimitList(List.map(resultTasks, intString), ",") + "\n");

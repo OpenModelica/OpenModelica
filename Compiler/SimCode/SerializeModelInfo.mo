@@ -164,7 +164,7 @@ function serializeVar
   input File.File file;
   input SimCodeVar.SimVar var;
   input Boolean withOperations;
-  input Boolean first := false;
+  input Boolean first = false;
   output Boolean ok;
 algorithm
   ok := match var
@@ -414,8 +414,8 @@ function serializeEquation
   input SimCode.SimEqSystem eq;
   input String section;
   input Boolean withOperations;
-  input Integer parent := 0 "No parent";
-  input Boolean first := false;
+  input Integer parent = 0 "No parent";
+  input Boolean first = false;
   output Boolean success;
 algorithm
   if not first then

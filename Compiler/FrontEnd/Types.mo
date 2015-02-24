@@ -1304,7 +1304,7 @@ end setVarProtected;
 protected function setVarType "Sets a DAE.Var's type"
   input DAE.Var var;
   input DAE.Type ty;
-  output DAE.Var outV := var;
+  output DAE.Var outV = var;
 algorithm
   outV := match outV
     case DAE.TYPES_VAR()
@@ -1375,7 +1375,7 @@ public function subtype "Is the first type a subtype of the second type?
   This function specifies the rules for subtyping in Modelica."
   input DAE.Type inType1;
   input DAE.Type inType2;
-  input Boolean requireRecordNamesEqual := true;
+  input Boolean requireRecordNamesEqual = true;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inType1, inType2)
@@ -1891,7 +1891,7 @@ public function liftArrayListDims "
   This function turns a type into an array of that type."
   input DAE.Type inType;
   input DAE.Dimensions inDimensions;
-  output DAE.Type outType := inType;
+  output DAE.Type outType = inType;
 algorithm
   for dim in listReverse(inDimensions) loop
     outType := DAE.T_ARRAY(outType, {dim}, DAE.emptyTypeSource);
@@ -3382,7 +3382,7 @@ end isVar;
 public function propsContainReal
   "Returns true if any of the given properties contains a Real type."
   input list<DAE.Properties> inProperties;
-  output Boolean outHasReal := false;
+  output Boolean outHasReal = false;
 algorithm
   for prop in inProperties loop
     if isReal(getPropType(prop)) then
@@ -6142,9 +6142,9 @@ protected function getAllInnerTypes
   "Traverses all the types that the input DAE.Type contains, and returns all
    types for which the given function returns true."
   input list<DAE.Type> inTypes;
-  input list<DAE.Type> inAccum := {};
+  input list<DAE.Type> inAccum = {};
   input MatchFunc inFunc;
-  output list<DAE.Type> outTypes := inAccum;
+  output list<DAE.Type> outTypes = inAccum;
 
   partial function MatchFunc
     input DAE.Type inType;
@@ -6960,8 +6960,8 @@ end prefixTraversedPolymorphicType;
 public function makeExpDimensionsUnknown
   input DAE.Type ty;
   input Integer dummy;
-  output DAE.Type oty := ty;
-  output Integer odummy := dummy;
+  output DAE.Type oty = ty;
+  output Integer odummy = dummy;
 algorithm
   oty := match oty
     case DAE.T_ARRAY(dims={DAE.DIM_EXP()})
@@ -6975,8 +6975,8 @@ end makeExpDimensionsUnknown;
 public function makeKnownDimensionsInteger "In binding equations, [Boolean] and [2] match, so we need to convert them"
   input DAE.Type ty;
   input Integer dummy;
-  output DAE.Type oty := ty;
-  output Integer odummy := dummy;
+  output DAE.Type oty = ty;
+  output Integer odummy = dummy;
 algorithm
   oty := match oty
     local
@@ -7002,7 +7002,7 @@ public function traverseType
   input A arg;
   input Func fn;
   output DAE.Type oty;
-  output A a := arg;
+  output A a = arg;
   replaceable type A subtypeof Any;
   partial function Func
     input DAE.Type ty;
@@ -7507,7 +7507,7 @@ protected function replaceIntegerTypeWithReal
   input Type ty;
   input Integer dummy;
   output Type oty;
-  output Integer odummy := dummy;
+  output Integer odummy = dummy;
 algorithm
   oty := match ty
     case DAE.T_INTEGER() then DAE.T_REAL_DEFAULT;
@@ -7814,8 +7814,8 @@ end hasMetaArray;
 protected function hasMetaArrayWork
   input Type ty;
   input Boolean b;
-  output Type oty := ty;
-  output Boolean ob := b;
+  output Type oty = ty;
+  output Boolean ob = b;
 algorithm
   if not b then
     ob := match ty
@@ -8153,7 +8153,7 @@ protected function getUniontypeIfMetarecordTraverse
   input DAE.Type ty;
   input Integer dummy;
   output DAE.Type oty;
-  output Integer odummy := dummy;
+  output Integer odummy = dummy;
 algorithm
   oty := match ty
     case DAE.T_METARECORD() then DAE.T_METAUNIONTYPE({},ty.knownSingleton,{ty.utPath});
@@ -8290,8 +8290,8 @@ end makeDefaultFuncArg;
 public function setIsFunctionPointer
   input DAE.Type ty;
   input Integer dummy;
-  output DAE.Type oty := ty;
-  output Integer odummy := dummy;
+  output DAE.Type oty = ty;
+  output Integer odummy = dummy;
 algorithm
   oty := match oty
     local
@@ -8394,11 +8394,11 @@ public function checkTypeCompat
   input DAE.Type inType1;
   input DAE.Exp inExp2;
   input DAE.Type inType2;
-  input Boolean inAllowUnknown := false;
-  output DAE.Exp outExp1 := inExp1;
-  output DAE.Exp outExp2 := inExp2;
+  input Boolean inAllowUnknown = false;
+  output DAE.Exp outExp1 = inExp1;
+  output DAE.Exp outExp2 = inExp2;
   output DAE.Type outCompatType;
-  output Boolean outCompatible := true;
+  output Boolean outCompatible = true;
 protected
   DAE.Type ty1, ty2;
 algorithm
@@ -8607,11 +8607,11 @@ protected function checkTypeCompatList
   input list<DAE.Type> inTypes1;
   input DAE.Exp inExp2;
   input list<DAE.Type> inTypes2;
-  output list<DAE.Type> outCompatibleTypes := {};
-  output Boolean outCompatible := true;
+  output list<DAE.Type> outCompatibleTypes = {};
+  output Boolean outCompatible = true;
 protected
   DAE.Type ty2;
-  list<DAE.Type> rest_ty2 := inTypes2;
+  list<DAE.Type> rest_ty2 = inTypes2;
   Boolean compat;
 algorithm
   if listLength(inTypes1) <> listLength(inTypes2) then
@@ -8645,10 +8645,10 @@ protected function checkTypeCompat_cast
   input DAE.Exp inExp2;
   input DAE.Type inType2;
   input Boolean inAllowUnknown;
-  output DAE.Exp outExp1 := inExp1;
-  output DAE.Exp outExp2 := inExp2;
+  output DAE.Exp outExp1 = inExp1;
+  output DAE.Exp outExp2 = inExp2;
   output DAE.Type outCompatType;
-  output Boolean outCompatible := true;
+  output Boolean outCompatible = true;
 protected
   DAE.Type ty1, ty2;
   Absyn.Path path;

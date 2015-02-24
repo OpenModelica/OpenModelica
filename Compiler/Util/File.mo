@@ -71,7 +71,7 @@ type Mode = enumeration(Read,Write);
 function open
   input File file;
   input String filename;
-  input Mode mode := Mode.Read;
+  input Mode mode = Mode.Read;
 external "C" om_file_open(file,filename,mode) annotation(Include="
 #ifndef __OMC_FILE_OPEN
 #define __OMC_FILE_OPEN
@@ -199,7 +199,7 @@ type Whence = enumeration(Set "SEEK_SET 0=start of file",Current "SEEK_CUR 0=cur
 function seek
   input File file;
   input Integer offset;
-  input Whence whence := Whence.Set;
+  input Whence whence = Whence.Set;
   output Boolean success;
 external "C" success = om_file_seek(file,offset,whence) annotation(Include="
 #ifndef __OMC_FILE_SEEK

@@ -111,13 +111,13 @@ protected constant list<ReplacePattern> replaceStringPatterns=
 public function isIntGreater "Author: BZ"
   input Integer lhs;
   input Integer rhs;
-  output Boolean b := lhs > rhs;
+  output Boolean b = lhs > rhs;
 end isIntGreater;
 
 public function isRealGreater "Author: BZ"
   input Real lhs;
   input Real rhs;
-  output Boolean b := lhs > rhs;
+  output Boolean b = lhs > rhs;
 end isRealGreater;
 
 public function linuxDotSlash "If operating system is Linux/Unix, return a './', otherwise return empty string"
@@ -135,7 +135,7 @@ public function flagValue "author: x02lucpo
   output String flagVal;
 protected
   String arg;
-  list<String> rest := arguments;
+  list<String> rest = arguments;
 algorithm
   while not listEmpty(rest) loop
     arg :: rest := rest;
@@ -676,7 +676,7 @@ public function boolOrList "Example:
     boolOrList({true,false,false})  => true
     boolOrList({false,false,false}) => false"
   input list<Boolean> inBooleanLst;
-  output Boolean outBoolean := false;
+  output Boolean outBoolean = false;
 algorithm
   for b in inBooleanLst loop
     if b then
@@ -692,7 +692,7 @@ public function boolAndList "Takes a list of boolean values and applies the bool
   boolAndList({true, true}) => true
   boolAndList({false,false,true}) => false"
   input list<Boolean> inBooleanLst;
-  output Boolean outBoolean := true;
+  output Boolean outBoolean = true;
 algorithm
   for b in inBooleanLst loop
     if not b then
@@ -833,14 +833,14 @@ end applyOptionOrDefault2;
 public function makeOption<T>
   "Makes a value into value option, using SOME(value)"
   input T inValue;
-  output Option<T> outOption := SOME(inValue);
+  output Option<T> outOption = SOME(inValue);
   annotation(__OpenModelica_EarlyInline = true);
 end makeOption;
 
 public function makeOptionOnTrue<T>
   input Boolean inCondition;
   input T inValue;
-  output Option<T> outOption := if inCondition then SOME(inValue) else NONE();
+  output Option<T> outOption = if inCondition then SOME(inValue) else NONE();
   annotation(__OpenModelica_EarlyInline = true);
 end makeOptionOnTrue;
 
@@ -884,18 +884,18 @@ end getOptionOrDefault;
 public function intPositive
   "Returns true if integer value is positive (>= 0)"
   input Integer v;
-  output Boolean res := v >= 0;
+  output Boolean res = v >= 0;
 end intPositive;
 
 public function intNegative
   "Returns true if integer value is negative (< 0)"
   input Integer v;
-  output Boolean res := v < 0;
+  output Boolean res = v < 0;
 end intNegative;
 
 public function intSign
   input Integer i;
-  output Integer o := if i == 0 then 0 elseif i > 0 then 1 else -1;
+  output Integer o = if i == 0 then 0 elseif i > 0 then 1 else -1;
 end intSign;
 
 public function intCompare
@@ -903,18 +903,18 @@ public function intCompare
    is smallest, or 0 if they are equal."
   input Integer inN;
   input Integer inM;
-  output Integer outResult := if inN == inM then 0 elseif inN > inM then 1 else -1;
+  output Integer outResult = if inN == inM then 0 elseif inN > inM then 1 else -1;
 end intCompare;
 
 public function isEmptyString
   "Returns true if string is the empty string."
   input String inString;
-  output Boolean outIsEmpty := stringLength(inString) == 0;
+  output Boolean outIsEmpty = stringLength(inString) == 0;
 end isEmptyString;
 
 public function isNotEmptyString "Returns true if string is not the empty string."
   input String inString;
-  output Boolean outIsNotEmpty := stringLength(inString) > 0;
+  output Boolean outIsNotEmpty = stringLength(inString) > 0;
 end isNotEmptyString;
 
 public function writeFileOrErrorMsg "This function tries to write to a file and if it fails then it
@@ -952,7 +952,7 @@ end notStrncmp;
 
 public function tickStr "author: PA
   Returns tick as a string, i.e. an unique number."
-  output String s := intString(tick());
+  output String s = intString(tick());
 end tickStr;
 
 public function replaceWindowsBackSlashWithPathDelimiter
@@ -1020,14 +1020,14 @@ end escapeModelicaStringToXmlString;
 public function makeTuple<T1, T2>
   input T1 inValue1;
   input T2 inValue2;
-  output tuple<T1, T2> outTuple := (inValue1, inValue2);
+  output tuple<T1, T2> outTuple = (inValue1, inValue2);
   annotation(__OpenModelica_EarlyInline = true);
 end makeTuple;
 
 public function makeTupleR<T1, T2>
   input T1 inValue1;
   input T2 inValue2;
-  output tuple<T2, T1> outTuple := (inValue2, inValue1);
+  output tuple<T2, T1> outTuple = (inValue2, inValue1);
   annotation(__OpenModelica_EarlyInline = true);
 end makeTupleR;
 
@@ -1035,13 +1035,13 @@ public function make3Tuple<T1, T2, T3>
   input T1 inValue1;
   input T2 inValue2;
   input T3 inValue3;
-  output tuple<T1, T2, T3> outTuple := (inValue1, inValue2, inValue3);
+  output tuple<T1, T2, T3> outTuple = (inValue1, inValue2, inValue3);
   annotation(__OpenModelica_EarlyInline = true);
 end make3Tuple;
 
 public function mulListIntegerOpt
   input list<Option<Integer>> inList;
-  input Integer inAccum := 1;
+  input Integer inAccum = 1;
   output Integer outResult;
 algorithm
   outResult := match(inList)
@@ -1060,13 +1060,13 @@ public type StatefulBoolean = array<Boolean> "A single boolean value that can be
 public function makeStatefulBoolean
 "Create a boolean with state (that is, it is mutable)"
   input Boolean b;
-  output StatefulBoolean sb := arrayCreate(1, b);
+  output StatefulBoolean sb = arrayCreate(1, b);
 end makeStatefulBoolean;
 
 public function getStatefulBoolean
 "Create a boolean with state (that is, it is mutable)"
   input StatefulBoolean sb;
-  output Boolean b := sb[1];
+  output Boolean b = sb[1];
 end getStatefulBoolean;
 
 public function setStatefulBoolean
@@ -1134,7 +1134,7 @@ public function strcmpBool
   "As strcmp, but has Boolean output as is expected by the sort function"
   input String s1;
   input String s2;
-  output Boolean b := stringCompare(s1, s2) > 0;
+  output Boolean b = stringCompare(s1, s2) > 0;
 end strcmpBool;
 
 public function stringAppendReverse
@@ -1142,7 +1142,7 @@ public function stringAppendReverse
   This function will append the first string to the second string"
   input String str1;
   input String str2;
-  output String str := stringAppend(str2, str1);
+  output String str = stringAppend(str2, str1);
 end stringAppendReverse;
 
 public function stringAppendNonEmpty
@@ -1182,7 +1182,7 @@ end isSuccess;
 
 public function id<T>
   input T inValue;
-  output T outValue := inValue;
+  output T outValue = inValue;
 end id;
 
 public function buildMapStr "Takes two lists of the same type and builds a string like x = val1, y = val2, ....
@@ -1330,13 +1330,13 @@ end allCombinations4;
 public function boolInt
   "Returns 1 if the given boolean is true, otherwise 0."
   input Boolean inBoolean;
-  output Integer outInteger := if inBoolean then 1 else 0;
+  output Integer outInteger = if inBoolean then 1 else 0;
 end boolInt;
 
 public function intBool
   "Returns true if the given integer is larger than 0, otherwise false."
   input Integer inInteger;
-  output Boolean outBoolean := inInteger > 0;
+  output Boolean outBoolean = inInteger > 0;
 end intBool;
 
 public function stringBool
@@ -1433,7 +1433,7 @@ end stringRest;
 
 public function intProduct
   input list<Integer> lst;
-  output Integer i := List.fold(lst, intMul, 1);
+  output Integer i = List.fold(lst, intMul, 1);
 end intProduct;
 
 public function nextPrime
@@ -1465,7 +1465,7 @@ protected function nextPrime_isPrime
   input Integer inN;
   output Boolean outIsPrime;
 protected
-  Integer i := 3, q := intDiv(inN, 3);
+  Integer i = 3, q = intDiv(inN, 3);
 algorithm
   // Check all factors up to sqrt(inN)
   while q >= i loop
@@ -1485,7 +1485,7 @@ end nextPrime_isPrime;
 
 public function anyToEmptyString<T> "Useful if you do not want to write an unparser"
   input T a;
-  output String empty := "";
+  output String empty = "";
 end anyToEmptyString;
 
 public uniontype TranslatableContent
@@ -1520,7 +1520,7 @@ end removeLast3Char;
 public function stringNotEqual
   input String str1;
   input String str2;
-  output Boolean b := not stringEq(str1,str2);
+  output Boolean b = not stringEq(str1,str2);
 end stringNotEqual;
 
 public function swap<T>
@@ -1712,7 +1712,7 @@ end getTempVariableIndex;
 
 public function anyReturnTrue<T>
   input T a;
-  output Boolean b := true;
+  output Boolean b = true;
 end anyReturnTrue;
 
 annotation(__OpenModelica_Interface="util");

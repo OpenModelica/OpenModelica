@@ -90,14 +90,14 @@ protected function findSimpleEquation1
   input BackendDAE.Shared ishared;
   input BackendDAE.StrongComponents inComps;
   input Boolean inchanged;
-  output BackendDAE.EqSystem osyst := isyst;
-  output BackendDAE.Shared oshared := ishared;
-  output Boolean changed := inchanged "not used";
+  output BackendDAE.EqSystem osyst = isyst;
+  output BackendDAE.Shared oshared = ishared;
+  output Boolean changed = inchanged "not used";
 protected
   Boolean b;
   BackendDAE.StrongComponent c;
-  Integer i := 1;
-  list<BackendDAE.Var> newVars := {};
+  Integer i = 1;
+  list<BackendDAE.Var> newVars = {};
 
   BackendDAE.Variables vars;
   BackendDAE.Matching matching;
@@ -213,12 +213,12 @@ public function eqnLst2Alg
   input BackendDAE.EquationAttributes attr;
   output BackendDAE.Equation alg;
 protected
-  Integer len := 0;
-  DAE.ElementSource source_ := DAE.emptyElementSource;
+  Integer len = 0;
+  DAE.ElementSource source_ = DAE.emptyElementSource;
   //EquationAttributes attr_ := BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN;
-  DAE.Expand expand := DAE.NOT_EXPAND();
+  DAE.Expand expand = DAE.NOT_EXPAND();
   DAE.Exp e1,e2,e11,e22;
-  list<DAE.Statement> statementLst := {};
+  list<DAE.Statement> statementLst = {};
   DAE.Type tp;
   DAE.Algorithm alg_;
   DAE.ComponentRef cr;
@@ -404,9 +404,9 @@ protected function solveSimple
   input Integer idepth;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
-  output list<BackendDAE.Equation> eqnForNewVars := {} "eqn for tmp vars";
-  output list<DAE.ComponentRef> newVarsCrefs := {};
-  output Integer odepth := idepth;
+  output list<BackendDAE.Equation> eqnForNewVars = {} "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs = {};
+  output Integer odepth = idepth;
 
 algorithm
 
@@ -592,9 +592,9 @@ preprocessing for solve1,
   input Integer idepth;
   output DAE.Exp h;
   output DAE.Exp k;
-  output list<BackendDAE.Equation> eqnForNewVars := {} "eqn for tmp vars";
-  output list<DAE.ComponentRef> newVarsCrefs := {};
-  output Integer depth := idepth;
+  output list<BackendDAE.Equation> eqnForNewVars = {} "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs = {};
+  output Integer depth = idepth;
 
  protected
   DAE.Exp res;
@@ -602,7 +602,7 @@ preprocessing for solve1,
   list<DAE.Exp> lhsWithX, rhsWithX, lhsWithoutX, rhsWithoutX, eWithX, factorWithX, factorWithoutX;
   DAE.Exp lhsX, rhsX, lhsY, rhsY, x, y, N;
   DAE.ComponentRef cr;
-  DAE.Boolean con, new_x, collect := true, inlineFun := true;
+  DAE.Boolean con, new_x, collect = true, inlineFun = true;
   Integer iter;
 
  algorithm
@@ -1126,7 +1126,7 @@ protected function preprocessingSolve5
   input DAE.Exp inExp1 "lhs";
   input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
   input DAE.Boolean expand;
-  output DAE.Exp outLhs := DAE.RCONST(0.0);
+  output DAE.Exp outLhs = DAE.RCONST(0.0);
   output DAE.Exp outRhs;
 
 protected
@@ -1867,9 +1867,9 @@ protected function solveLinearSystem
   input Integer idepth;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
-  output list<BackendDAE.Equation> eqnForNewVars := {} "eqn for tmp vars";
-  output list<DAE.ComponentRef> newVarsCrefs := {};
-  output Integer odepth := idepth;
+  output list<BackendDAE.Equation> eqnForNewVars = {} "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs = {};
+  output Integer odepth = idepth;
 
 
 algorithm
@@ -2025,7 +2025,7 @@ end makeProductLstSort;
 protected function makeProductLstSort2
   input list<DAE.Exp> inExpLst;
   input DAE.Type tp;
-  output DAE.Exp outExp := Expression.makeConstOne(tp);
+  output DAE.Exp outExp = Expression.makeConstOne(tp);
 protected
   list<DAE.Exp> rest;
 algorithm
@@ -2158,7 +2158,7 @@ protected function helpInvCos
   input Boolean neg;
   output DAE.Exp k;
 protected
-  DAE.Exp pi2 := DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
+  DAE.Exp pi2 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
 algorithm
   k := if neg then
          Expression.expAdd(x,acosy)
@@ -2176,7 +2176,7 @@ protected function helpInvSin
   input Boolean neg;
   output DAE.Exp k;
 protected
-  DAE.Exp pi2 := DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
+  DAE.Exp pi2 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
 algorithm
   k := if neg then
          Expression.expAdd(x,asiny)
@@ -2196,7 +2196,7 @@ protected function helpInvCos2
   input Boolean neg;
   output DAE.Exp x;
 protected
-  DAE.Exp pi2 := DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
+  DAE.Exp pi2 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
 algorithm
 
   x := if neg then Expression.negate(acosy) else acosy;
@@ -2211,8 +2211,8 @@ protected function helpInvSin2
   input Boolean neg;
   output DAE.Exp x;
 protected
-  DAE.Exp pi2 := DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
-  DAE.Exp p := DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
+  DAE.Exp pi2 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
+  DAE.Exp p = DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
   DAE.Exp e;
 algorithm
 
@@ -2229,9 +2229,9 @@ protected function helpInvCos3
   input DAE.Type tp;
   output DAE.Exp y;
 protected
-  DAE.Exp diffx1 := absDiff(x1,x,tp);
-  DAE.Exp diffx2 := absDiff(x2,x,tp);
-  DAE.Exp con := DAE.RELATION(diffx1, DAE.LESS(tp), diffx2, -1, NONE());
+  DAE.Exp diffx1 = absDiff(x1,x,tp);
+  DAE.Exp diffx2 = absDiff(x2,x,tp);
+  DAE.Exp con = DAE.RELATION(diffx1, DAE.LESS(tp), diffx2, -1, NONE());
 algorithm
   con := Expression.makeNoEvent(con);
   y := DAE.IFEXP(con, x1, x2);
