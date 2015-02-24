@@ -72,6 +72,7 @@ public:
   static QString omResultFileTypes;
   static QString exeFileTypes;
   static QString txtFileTypes;
+  static QString figaroFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static QSize buttonIconSize;

@@ -1162,7 +1162,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   */
 
 /*!
-  \param pMainWindow - pointer to GraphicsView
+  \param pMainWindow - pointer to MainWindow
   */
 SaveChangesDialog::SaveChangesDialog(MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
@@ -1267,4 +1267,69 @@ int SaveChangesDialog::exec()
   if (!getUnsavedClasses())
     return 1;
   return QDialog::exec();
+}
+
+/*!
+  \class ExportFigaroDialog
+  \brief Creates a dialog for Figaro export.
+  */
+
+/*!
+  \param pMainWindow - pointer to MainWindow
+  */
+ExportFigaroDialog::ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeNode *pLibraryTreeNode)
+  : QDialog(pMainWindow, Qt::WindowTitleHint)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::exportFigaro));
+  mpMainWindow = pMainWindow;
+  mpLibraryTreeNode = pLibraryTreeNode;
+  // figaro mode
+  mpFigaroModeLabel = new Label(tr("Figaro Mode:"));
+  mpFigaroModeComboBox = new QComboBox;
+  mpFigaroModeComboBox->addItem("figaro0", "figaro0");
+  mpFigaroModeComboBox->addItem("fault-tree", "fault-tree");
+  // create the export button
+  mpExportFigaroButton = new QPushButton(Helper::exportFigaro);
+  mpExportFigaroButton->setAutoDefault(true);
+  connect(mpExportFigaroButton, SIGNAL(clicked()), SLOT(exportModelFigaro()));
+  // create the cancel button
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpExportFigaroButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // layout
+  QGridLayout *pMainGridLayout = new QGridLayout;
+  pMainGridLayout->setAlignment(Qt::AlignTop);
+  pMainGridLayout->addWidget(mpFigaroModeLabel, 0, 0);
+  pMainGridLayout->addWidget(mpFigaroModeComboBox, 0, 1);
+  pMainGridLayout->addWidget(mpButtonBox, 1, 0, 2, Qt::AlignRight);
+  setLayout(pMainGridLayout);
+}
+
+void ExportFigaroDialog::exportModelFigaro()
+{
+  // set the status message.
+  mpMainWindow->getStatusBar()->showMessage(tr("Exporting model as Figaro"));
+  // show the progress bar
+  mpMainWindow->getProgressBar()->setRange(0, 0);
+  mpMainWindow->showProgressBar();
+  FigaroPage *pFigaroPage = mpMainWindow->getOptionsDialog()->getFigaroPage();
+  QString library = pFigaroPage->getFigaroDatabaseFileTextBox()->text();
+  QString mode = mpFigaroModeComboBox->currentText();
+  QString options = pFigaroPage->getFigaroOptionsTextBox()->text();
+  QString processor = pFigaroPage->getFigaroProcessTextBox()->text();
+  if (mpMainWindow->getOMCProxy()->exportToFigaro(mpLibraryTreeNode->getNameStructure(), library, mode, options, processor)) {
+    mpMainWindow->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
+                                                                     GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
+                                                                     Helper::scriptingKind, Helper::notificationLevel, 0));
+  }
+  // hide progress bar
+  mpMainWindow->hideProgressBar();
+  // clear the status bar message
+  mpMainWindow->getStatusBar()->clearMessage();
+  accept();
 }

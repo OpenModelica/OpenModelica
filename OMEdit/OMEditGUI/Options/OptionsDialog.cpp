@@ -414,12 +414,6 @@ void OptionsDialog::readFigaroSettings()
   if (mpSettings->contains("figaro/databasefile")) {
     mpFigaroPage->getFigaroDatabaseFileTextBox()->setText(mpSettings->value("figaro/databasefile").toString());
   }
-  if (mpSettings->contains("figaro/mode")) {
-    int currentIndex = mpFigaroPage->getFigaroModeComboBox()->findData(mpSettings->value("figaro/mode").toString(), Qt::UserRole, Qt::MatchExactly);
-    if (currentIndex > -1) {
-      mpFigaroPage->getFigaroModeComboBox()->setCurrentIndex(currentIndex);
-    }
-  }
   if (mpSettings->contains("figaro/options")) {
     mpFigaroPage->getFigaroOptionsTextBox()->setText(mpSettings->value("figaro/options").toString());
   }
@@ -699,7 +693,6 @@ void OptionsDialog::saveCurveStyleSettings()
 void OptionsDialog::saveFigaroSettings()
 {
   mpSettings->setValue("figaro/databasefile", mpFigaroPage->getFigaroDatabaseFileTextBox()->text());
-  mpSettings->setValue("figaro/mode", mpFigaroPage->getFigaroModeComboBox()->itemData(mpFigaroPage->getFigaroModeComboBox()->currentIndex()).toString());
   mpSettings->setValue("figaro/options", mpFigaroPage->getFigaroOptionsTextBox()->text());
   mpSettings->setValue("figaro/process", mpFigaroPage->getFigaroProcessTextBox()->text());
 }
@@ -773,7 +766,7 @@ void OptionsDialog::setUpDialog()
   horizontalLayout->addWidget(mpOptionsList);
   QScrollArea *pPagesWidgetScrollArea = new QScrollArea;
   pPagesWidgetScrollArea->setWidget(mpPagesWidget);
-  horizontalLayout->addWidget(pPagesWidgetScrollArea, 1);
+  horizontalLayout->addWidget(pPagesWidgetScrollArea);
   // Create a layout
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->addLayout(horizontalLayout, 0, 0, 1, 2);
@@ -3153,11 +3146,6 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
   mpBrowseFigaroDatabaseFileButton = new QPushButton(Helper::browse);
   mpBrowseFigaroDatabaseFileButton->setAutoDefault(false);
   connect(mpBrowseFigaroDatabaseFileButton, SIGNAL(clicked()), SLOT(browseFigaroLibraryFile()));
-  // Figaro model
-  mpFigaroModeLabel = new Label(tr("Figaro Mode:"));
-  mpFigaroModeComboBox = new QComboBox;
-  mpFigaroModeComboBox->addItem("figaro0", "figaro0");
-  mpFigaroModeComboBox->addItem("fault-tree", "fault-tree");
   // Figaro options file
   mpFigaroOptionsFileLabel = new Label(tr("Figaro Options File:"));
   mpFigaroOptionsFileTextBox = new QLineEdit;
@@ -3166,7 +3154,7 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
   connect(mpBrowseFigaroOptionsFileButton, SIGNAL(clicked()), SLOT(browseFigaroOptionsFile()));
   // figaro process
   mpFigaroProcessLabel = new Label(tr("Figaro Process:"));
-  mpFigaroProcessTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append("/share/VisualFigaro/jEdit4.5_VisualFigaro/VisualFigaro/figp.exe"));
+  mpFigaroProcessTextBox = new QLineEdit(QString(Helper::OpenModelicaHome).append("/share/jEdit4.5_VisualFigaro/VisualFigaro/figp.exe"));
   mpBrowseFigaroProcessButton = new QPushButton(Helper::browse);
   mpBrowseFigaroProcessButton->setAutoDefault(false);
   connect(mpBrowseFigaroProcessButton, SIGNAL(clicked()), SLOT(browseFigaroProcessFile()));
@@ -3176,14 +3164,12 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
   pFigaroLayout->addWidget(mpFigaroDatabaseFileLabel, 0, 0);
   pFigaroLayout->addWidget(mpFigaroDatabaseFileTextBox, 0, 1);
   pFigaroLayout->addWidget(mpBrowseFigaroDatabaseFileButton, 0, 2);
-  pFigaroLayout->addWidget(mpFigaroModeLabel, 1, 0);
-  pFigaroLayout->addWidget(mpFigaroModeComboBox, 1, 1, 1, 2);
-  pFigaroLayout->addWidget(mpFigaroOptionsFileLabel, 2, 0);
-  pFigaroLayout->addWidget(mpFigaroOptionsFileTextBox, 2, 1);
-  pFigaroLayout->addWidget(mpBrowseFigaroOptionsFileButton, 2, 2);
-  pFigaroLayout->addWidget(mpFigaroProcessLabel, 3, 0);
-  pFigaroLayout->addWidget(mpFigaroProcessTextBox, 3, 1);
-  pFigaroLayout->addWidget(mpBrowseFigaroProcessButton, 3, 2);
+  pFigaroLayout->addWidget(mpFigaroOptionsFileLabel, 1, 0);
+  pFigaroLayout->addWidget(mpFigaroOptionsFileTextBox, 1, 1);
+  pFigaroLayout->addWidget(mpBrowseFigaroOptionsFileButton, 1, 2);
+  pFigaroLayout->addWidget(mpFigaroProcessLabel, 2, 0);
+  pFigaroLayout->addWidget(mpFigaroProcessTextBox, 2, 1);
+  pFigaroLayout->addWidget(mpBrowseFigaroProcessButton, 2, 2);
   mpFigaroGroupBox->setLayout(pFigaroLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
@@ -3195,7 +3181,7 @@ FigaroPage::FigaroPage(OptionsDialog *pOptionsDialog)
 void FigaroPage::browseFigaroLibraryFile()
 {
   mpFigaroDatabaseFileTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                                      NULL, Helper::xmlFileTypes, NULL));
+                                                                      NULL, Helper::figaroFileTypes, NULL));
 }
 
 void FigaroPage::browseFigaroOptionsFile()

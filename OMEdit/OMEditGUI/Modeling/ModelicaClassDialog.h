@@ -250,4 +250,21 @@ public slots:
   int exec();
 };
 
+class ExportFigaroDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeNode *pLibraryTreeNode);
+private:
+  MainWindow *mpMainWindow;
+  LibraryTreeNode *mpLibraryTreeNode;
+  Label *mpFigaroModeLabel;
+  QComboBox *mpFigaroModeComboBox;
+  QPushButton *mpExportFigaroButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+public slots:
+  void exportModelFigaro();
+};
+
 #endif // MODELICACLASSDIALOG_H

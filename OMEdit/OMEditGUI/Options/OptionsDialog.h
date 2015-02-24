@@ -628,7 +628,6 @@ class FigaroPage : public QWidget
 public:
   FigaroPage(OptionsDialog *pOptionsDialog);
   QLineEdit* getFigaroDatabaseFileTextBox() {return mpFigaroDatabaseFileTextBox;}
-  QComboBox* getFigaroModeComboBox() {return mpFigaroModeComboBox;}
   QLineEdit* getFigaroOptionsTextBox() {return mpFigaroOptionsFileTextBox;}
   QLineEdit* getFigaroProcessTextBox() {return mpFigaroProcessTextBox;}
 private:
@@ -637,8 +636,6 @@ private:
   Label *mpFigaroDatabaseFileLabel;
   QLineEdit *mpFigaroDatabaseFileTextBox;
   QPushButton *mpBrowseFigaroDatabaseFileButton;
-  Label *mpFigaroModeLabel;
-  QComboBox *mpFigaroModeComboBox;
   Label *mpFigaroOptionsFileLabel;
   QLineEdit *mpFigaroOptionsFileTextBox;
   QPushButton *mpBrowseFigaroOptionsFileButton;

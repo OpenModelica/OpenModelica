@@ -871,30 +871,13 @@ void MainWindow::exportModelXML(LibraryTreeNode *pLibraryTreeNode)
 void MainWindow::exportModelFigaro(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeNode->getModelWidget())
-  {
-    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText())
+  if (pLibraryTreeNode->getModelWidget()) {
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextEditor()->validateModelicaText()) {
       return;
+    }
   }
-  // set the status message.
-  mpStatusBar->showMessage(tr("Exporting model as Figaro"));
-  // show the progress bar
-  mpProgressBar->setRange(0, 0);
-  showProgressBar();
-  FigaroPage *pFigaroPage = mpOptionsDialog->getFigaroPage();
-  QString library = pFigaroPage->getFigaroDatabaseFileTextBox()->text();
-  QString mode = pFigaroPage->getFigaroModeComboBox()->itemData(pFigaroPage->getFigaroModeComboBox()->currentIndex()).toString();
-  QString options = pFigaroPage->getFigaroOptionsTextBox()->text();
-  QString processor = pFigaroPage->getFigaroProcessTextBox()->text();
-  if (mpOMCProxy->exportToFigaro(pLibraryTreeNode->getNameStructure(), library, mode, options, processor))
-  {
-    mpMessagesWidget->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
-                                                    Helper::scriptingKind, Helper::notificationLevel, 0));
-  }
-  // hide progress bar
-  hideProgressBar();
-  // clear the status bar message
-  mpStatusBar->clearMessage();
+  ExportFigaroDialog *pExportFigaroDialog = new ExportFigaroDialog(this, pLibraryTreeNode);
+  pExportFigaroDialog->exec();
 }
 
 void MainWindow::exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode)
