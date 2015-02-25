@@ -1573,7 +1573,7 @@ algorithm
         (exp_2, funcs) = differentiateExp(exp_1, inDiffwrtCref, inInputData, inDiffType, inFuncs);
       then
        (exp_2, funcs);
-       
+
     case ("floor",_,_,_,_,_)
       equation
         tp = Expression.typeof(exp);
