@@ -260,10 +260,14 @@ private:
   LibraryTreeNode *mpLibraryTreeNode;
   Label *mpFigaroModeLabel;
   QComboBox *mpFigaroModeComboBox;
+  Label *mpWorkingDirectoryLabel;
+  QLineEdit *mpWorkingDirectoryTextBox;
+  QPushButton *mpWorkingDirectoryBrowseButton;
   QPushButton *mpExportFigaroButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 public slots:
+  void browseWorkingDirectory();
   void exportModelFigaro();
 };
 

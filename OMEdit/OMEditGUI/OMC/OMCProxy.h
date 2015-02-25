@@ -205,7 +205,7 @@ public:
   QString help(QString topic);
   QStringList getConfigFlagValidOptions(QString topic, QString *mainDescription = 0, QStringList *descriptions = 0);
   bool setDebugFlags(QString flags);
-  bool exportToFigaro(QString className, QString database, QString mode, QString options, QString processor);
+  bool exportToFigaro(QString className, QString directory, QString database, QString mode, QString options, QString processor);
   bool copyClass(QString className, QString newClassName, QString withIn);
   QStringList getEnumerationLiterals(QString className);
 signals:

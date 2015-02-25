@@ -1289,6 +1289,11 @@ ExportFigaroDialog::ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeNode 
   mpFigaroModeComboBox = new QComboBox;
   mpFigaroModeComboBox->addItem("figaro0", "figaro0");
   mpFigaroModeComboBox->addItem("fault-tree", "fault-tree");
+  // working directory
+  mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
+  mpWorkingDirectoryTextBox = new QLineEdit(OpenModelica::tempDirectory());
+  mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
+  connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(browseWorkingDirectory()));
   // create the export button
   mpExportFigaroButton = new QPushButton(Helper::exportFigaro);
   mpExportFigaroButton->setAutoDefault(true);
@@ -1305,9 +1310,17 @@ ExportFigaroDialog::ExportFigaroDialog(MainWindow *pMainWindow, LibraryTreeNode 
   QGridLayout *pMainGridLayout = new QGridLayout;
   pMainGridLayout->setAlignment(Qt::AlignTop);
   pMainGridLayout->addWidget(mpFigaroModeLabel, 0, 0);
-  pMainGridLayout->addWidget(mpFigaroModeComboBox, 0, 1);
-  pMainGridLayout->addWidget(mpButtonBox, 1, 0, 2, Qt::AlignRight);
+  pMainGridLayout->addWidget(mpFigaroModeComboBox, 0, 1, 1, 2);
+  pMainGridLayout->addWidget(mpWorkingDirectoryLabel, 1, 0);
+  pMainGridLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
+  pMainGridLayout->addWidget(mpWorkingDirectoryBrowseButton, 1, 2);
+  pMainGridLayout->addWidget(mpButtonBox, 2, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainGridLayout);
+}
+
+void ExportFigaroDialog::browseWorkingDirectory()
+{
+  mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
 }
 
 void ExportFigaroDialog::exportModelFigaro()
@@ -1318,11 +1331,12 @@ void ExportFigaroDialog::exportModelFigaro()
   mpMainWindow->getProgressBar()->setRange(0, 0);
   mpMainWindow->showProgressBar();
   FigaroPage *pFigaroPage = mpMainWindow->getOptionsDialog()->getFigaroPage();
+  QString directory = mpWorkingDirectoryTextBox->text();
   QString library = pFigaroPage->getFigaroDatabaseFileTextBox()->text();
   QString mode = mpFigaroModeComboBox->currentText();
   QString options = pFigaroPage->getFigaroOptionsTextBox()->text();
   QString processor = pFigaroPage->getFigaroProcessTextBox()->text();
-  if (mpMainWindow->getOMCProxy()->exportToFigaro(mpLibraryTreeNode->getNameStructure(), library, mode, options, processor)) {
+  if (mpMainWindow->getOMCProxy()->exportToFigaro(mpLibraryTreeNode->getNameStructure(), directory, library, mode, options, processor)) {
     mpMainWindow->getMessagesWidget()->addGUIMessage(new MessageItem("", false, 0, 0, 0, 0,
                                                                      GUIMessages::getMessage(GUIMessages::FIGARO_GENERATED),
                                                                      Helper::scriptingKind, Helper::notificationLevel, 0));
