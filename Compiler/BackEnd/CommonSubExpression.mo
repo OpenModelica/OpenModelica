@@ -337,7 +337,7 @@ algorithm
           end if;
           i = i+1;
         end if;
-        
+
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
           print("  - cse binary expression: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
         end if;
@@ -368,7 +368,7 @@ algorithm
         HT = BaseHashTable.add((inExp, value), HT);
         HT2 = BaseHashTable.add((value, counter), HT2);
       end if;
-      
+
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("  - cse call expression: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
       end if;
