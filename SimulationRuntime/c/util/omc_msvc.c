@@ -170,35 +170,20 @@ unsigned int alarm (unsigned int seconds)
 #include <direct.h> /* for mkdir */
 #endif
 
-// Do not free the result
-char* _getUUIDStr(void)
-{
-  char uuidStr[37];
-  unsigned char *tmp;
-  UUID uuid;
-  if (UuidCreate(&uuid) == RPC_S_OK)
-    UuidToString(&uuid, &tmp);
-  tmp[36] = '\0';
-  memcpy(uuidStr, strlwr((char*)tmp), 36);
-  RpcStringFree(&tmp);
-  return strdup(uuidStr);
-}
-
 char *mkdtemp(char *tpl)
 {
   int numChars = 0, i, len;
   char tempDirectory[1024], tmpDir[2048];
-  char* uuid = _getUUIDStr();
     //extract the temp path
   numChars = GetTempPath(1024, tempDirectory);
   sprintf(tmpDir, "%s\\%s", tempDirectory, tpl);
   len = strlen(tmpDir);
   for (i = len; i < len - 6; i--)
   {
-    tmpDir[i] = uuid[len-i];
+    /* generate random numbers between 0..9 for the last 6 chars of the temp name */
+    tmpDir[i] = 48 + rand()%9;
   }
   mkdir(tmpDir);
-  free(uuid);
   return strdup(tmpDir);
 }
 #endif
