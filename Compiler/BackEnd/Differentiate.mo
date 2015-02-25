@@ -1573,6 +1573,27 @@ algorithm
         (exp_2, funcs) = differentiateExp(exp_1, inDiffwrtCref, inInputData, inDiffType, inFuncs);
       then
        (exp_2, funcs);
+       
+    case ("floor",_,_,_,_,_)
+      equation
+        tp = Expression.typeof(exp);
+        (exp_1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+       (exp_1, inFuncs);
+
+    case ("ceil",_,_,_,_,_)
+      equation
+        tp = Expression.typeof(exp);
+        (exp_1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+       (exp_1, inFuncs);
+
+    case ("integer",_,_,_,_,_)
+      equation
+        tp = Expression.typeof(exp);
+        (exp_1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+       (exp_1, inFuncs);
   end match;
 end differentiateCallExp1Arg;
 
@@ -1607,7 +1628,7 @@ protected function differentiateCallExpNArg "
 algorithm
   (outDiffedExp,outFunctionTree) := match(name,inExpl,inAttr,inDiffwrtCref,inInputData,inDiffType,inFunctionTree)
     local
-      DAE.Exp e, e1, e2, cond;
+      DAE.Exp e, e1, e2, cond, etmp;
       DAE.Exp res, res1, res2;
       list<DAE.Exp> expl, dexpl;
       DAE.Type tp;
@@ -1684,6 +1705,31 @@ algorithm
         (res2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
       then
         (DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.LESS(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), res1, res2), funcs);
+
+    // diff(div(e1,e2)) =  diff(if noEvent(e1 > 0) then floor(e1/e2) else ceil(e1/e2)) = 0.0;
+    case ("div", {e1,e2}, DAE.CALL_ATTR(ty=tp), _, _, _, _)
+      equation
+        (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+        (res1, inFunctionTree);
+
+    // diff(mod(e1,e2)) =  diff(e1 - e2*floor(e1/e2))
+    case ("mod", {e1,e2}, DAE.CALL_ATTR(ty=tp), _, _, _, _)
+      equation
+        etmp = Expression.makePureBuiltinCall("floor", {DAE.BINARY(e1, DAE.DIV(tp), e2)}, tp);
+        e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(e2, DAE.MUL(tp),  etmp));
+        (res1, funcs) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+      then
+        (res1, funcs);
+
+    // diff(rem(e1,e2)) = diff(e1 -div(e1,e2)*e2)
+    case ("rem", {e1,e2}, DAE.CALL_ATTR(ty=tp), _, _, _, _)
+      equation
+        etmp = Expression.makePureBuiltinCall("div", {e1, e2}, tp);
+        e = DAE.BINARY(e1, DAE.SUB(tp), DAE.BINARY(e2, DAE.MUL(tp),  etmp));
+        (res1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+      then
+        (res1, funcs);
 
   end match;
 end differentiateCallExpNArg;
