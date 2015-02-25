@@ -93,21 +93,22 @@ algorithm
       HashTableExpToIndex.HashTable HT2, HT3;
 
     case BackendDAE.EQSYSTEM(orderedVars, orderedEqs, _, _, _, stateSets, partitionKind) equation
-      // BackendDump.dumpEquationList(eqList, "############## Equation-Liste: ###########");
-      // BackendDump.dumpVarList(varList, "############## Variablen-Liste: ###########");
-      // TODO: merge HT and HT2
+    //if Flags.isSet(Flags.DUMP_CSE) then
+    //  BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
+    //  BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
+    //end if;
       HT = HashTableExpToExp.emptyHashTableSized(49999);  //2053    4013    25343   536870879
       HT2 = HashTableExpToIndex.emptyHashTableSized(49999);
       HT3 = HashTableExpToIndex.emptyHashTableSized(49999);
       (HT, HT2, outStartIndex) = BackendEquation.traverseEquationArray(orderedEqs, foldEq, (HT, HT2, inStartIndex));
-      // BaseHashTable.dumpHashTable(HT);
-      // BaseHashTable.dumpHashTable(HT2);
+    //BaseHashTable.dumpHashTable(HT);
+    //BaseHashTable.dumpHashTable(HT2);
       (orderedEqs, (HT, HT2, _, eqList, varList)) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, foldEq2, (HT, HT2, HT3, {}, {}));
       orderedEqs = BackendEquation.addEquations(eqList, orderedEqs);
       orderedVars = BackendVariable.addVars(varList, orderedVars);
       if Flags.isSet(Flags.DUMP_CSE) then
-        BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List: #########");
-        BackendDump.dumpVariables(orderedVars, "########### Updated Variable List: #########");
+        BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
+        BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
       end if;
     then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 
@@ -272,8 +273,7 @@ algorithm
 
     else equation
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-        print("\n");
-        BackendDump.printEquation(inEq);
+        print("traverse " + BackendDump.equationString(inEq) + "\n");
       end if;
       (eq, tpl) = BackendEquation.traverseExpsOfEquation(inEq, traverseExpsEquation_1, inTuple);
     then (eq, tpl);
@@ -306,7 +306,7 @@ algorithm
       HashTableExpToIndex.HashTable HT2;
       list<BackendDAE.Equation> eqList;
       list<BackendDAE.Var> varList;
-      Integer i, value2;
+      Integer i, counter;
       String str;
       DAE.ComponentRef cr;
       BackendDAE.Var var;
@@ -318,12 +318,17 @@ algorithm
       if checkOp(op) then
         if BaseHashTable.hasKey(inExp, HT) then
           value = BaseHashTable.get(inExp, HT);
-          value2 = BaseHashTable.get(value, HT2);
-          HT2 = BaseHashTable.update((value, value2 + 1), HT2);
+          counter = BaseHashTable.get(value, HT2);
+          HT2 = BaseHashTable.update((value, counter + 1), HT2);
+
+          if commutativeBinaryExp(op) then
+            value = BaseHashTable.get(DAE.BINARY(exp2, op, exp1), HT);
+            HT2 = BaseHashTable.update((value, counter + 1), HT2);
+          end if;
         else
           str = "$cse" + intString(i);
-          cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT, {});
-          value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+          cr = DAE.CREF_IDENT(str, Expression.typeof(inExp), {});
+          value = DAE.CREF(cr, Expression.typeof(inExp));
           HT = BaseHashTable.add((inExp, value), HT);
           HT2 = BaseHashTable.add((value, 1), HT2);
           if commutativeBinaryExp(op) then
@@ -334,9 +339,9 @@ algorithm
       end if;
     then (inExp, true, (HT, HT2, i));
 
+    // skip some kinds of expressions
     case (DAE.IFEXP(), _)
     then (inExp, false, inTuple);
-
     case (DAE.CALL(path=Absyn.IDENT("der")), _)
     then (inExp, false, inTuple);
     case (DAE.CALL(path=Absyn.IDENT("smooth")), _)
@@ -350,10 +355,10 @@ algorithm
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
       if BaseHashTable.hasKey(inExp, HT) then
         value = BaseHashTable.get(inExp, HT);
-        value2 = BaseHashTable.get(value, HT2) + 1;
-        HT2 = BaseHashTable.update((value, value2), HT2);
+        counter = BaseHashTable.get(value, HT2) + 1;
+        HT2 = BaseHashTable.update((value, counter), HT2);
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-          print("Found CSE Expression (count: " + intString(value2) + "): " + ExpressionDump.printExpStr(inExp) + " \n");
+          print("Found CSE Expression (count: " + intString(counter) + "): " + ExpressionDump.printExpStr(inExp) + " \n");
         end if;
       else
         (value, i) = createReturnExp(tp, i);

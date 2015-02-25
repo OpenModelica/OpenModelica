@@ -634,7 +634,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "evalFunc"
     }),
   SOME(STRING_DESC_OPTION({
-    //("CSE", Util.gettext("Common SubExpression Elimination")),
+    ("CSE", Util.gettext("Common Subexpression Elimination")),
     ("unitChecking", Util.gettext("advanced unit checking: 1. calculation of unspecified unit information for variables; 2. unit consistency check for equations")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeAllSimpleEquations", removeSimpleEquationDesc),
@@ -762,7 +762,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("calculateStateSetsJacobians", Util.gettext("Generates analytical jacobian for dynamic state selection sets.")),
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")),
-    ("CSE", Util.gettext("Common SubExpression Elimination"))
+    ("CSE", Util.gettext("Common Subexpression Elimination"))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
 
