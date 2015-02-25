@@ -17,34 +17,38 @@ public function run "The main function to be called from CevalScript. This one i
 because of all the side-effects. However, all of them are captured here."
   input SCode.Program inProgram;
   input Path inPath;
-  input String inDatabaseFile "Figaro database XML file";
+  input String workingDir "working directory";
+  input String inDatabaseFile "Figaro database file";
   input String inMode "Figaro processor mode";
   input String inOptions "Figaro fault tree generation options";
   input String inFigaroProcessorFile "Figaro processor to call";
 protected
-  String bdfFile = System.pwd() + "/BDF.fi" "Figaro code to the Figaro processor";
-  String figaroFile = System.pwd() + "/Figaro0.fi" "Figaro code from the Figaro processor";
-  String argumentFile = System.pwd() + "/figp_commands.xml" "instructions to the Figaro processor";
-  String resultFile = System.pwd() + "/result.xml" "status from the Figaro processor"; // File name cannot be changed.
+  String bdfFile := workingDir + "/FigaroObjects.fi" "Figaro code to the Figaro processor";
+  String figaroFile := workingDir + "/Figaro0.fi" "Figaro code from the Figaro processor";
+  String argumentFile := workingDir + "/figp_commands.xml" "instructions to the Figaro processor";
+  String resultFile := workingDir + "/result.xml" "status from the Figaro processor"; // File name cannot be changed.
   SCode.Element program;
   String figaro, database, xml, xml2;
   list<String> sl;
 algorithm
+  
   program := SCodeUtil.getElementWithPathCheckBuiltin(inProgram, inPath);
 
   // Code for the Figaro objects.
-  figaro := makeFigaro(program);
+  figaro := makeFigaro(inProgram, program);
+  
   if figaro == ""
     then fail();
   end if;
   System.writeFile(bdfFile, figaro);
 
   // Get XML defining the database.
-  database := System.readFile(inDatabaseFile);
-  database := System.trimWhitespace(database);
+  //database := System.readFile(inDatabaseFile);
+  database := inDatabaseFile;
+  //database := System.trimWhitespace(database);
 
   // Instructions for the Figaro processor.
-  xml := makeXml(database, bdfFile, inMode, inOptions, figaroFile);
+  xml := makeXml(workingDir, database, bdfFile, inMode, inOptions, figaroFile);
   System.writeFile(argumentFile, xml);
 
   callFigaroProcessor(inFigaroProcessorFile, argumentFile);
@@ -77,25 +81,26 @@ end FigaroObject;
 
 public function makeFigaro "Translates a program to Figaro. First finds all relevant classes. Then
 finds all instances of those classes."
-  input SCode.Element inProgram;
+  input list<SCode.Element> inProgram;
+  input SCode.Element inModel;
   output String outCode;
 protected
   list<FigaroClass> fcl;
   list<FigaroObject> fol;
 algorithm
   fcl := listAppend(
-    fcElement("Figaro_Object", "", inProgram, NONE(), inProgram),
-    fcElement("Figaro_Object_connector", "", inProgram, NONE(), inProgram)
+    fcElementList("Figaro_Object", "", inModel, NONE(), inProgram),
+    fcElementList("Figaro_Object_connector", "", inModel, NONE(), inProgram)
   );
 
   // Debug.
-  //printFigaroClassList(fcl);
-  //print("\n\n");
+  printFigaroClassList(fcl);
+  print("\n\n"); 
 
-  fol := foElement(fcl, inProgram);
+  fol := foElement(fcl, inModel);
 
-  // Debug.
-  //printFigaroObjectList(fol);
+  // Debug. 
+  printFigaroObjectList(fol);
 
   outCode := figaroObjectListToString(fol);
 end makeFigaro;
@@ -120,7 +125,6 @@ algorithm
       String ft;
       SCode.Element program;
       Ident cn;
-
       Path bcp;
       SCode.Mod m;
       String tn;
@@ -530,6 +534,7 @@ algorithm
 end figaroObjectToString;
 
 protected function makeXml "Makes instructions for the Figaro processor."
+  input String workingDir;
   input String inDatabase "database the Figaro processor will use";
   input String inBdfFile "Figaro code to the Figaro processor";
   input String inMode "Figaro processor mode";
@@ -537,14 +542,26 @@ protected function makeXml "Makes instructions for the Figaro processor."
   input String inFigaroFile "Figaro code from the Figaro processor";
   output String outXml;
 protected
-  String xml;
+  String xml, newName;
+  list<String> sl;
 algorithm
   xml := "<REQUESTS>\n  ";
-  xml := xml + "<LOAD_BDC_FI>" + inDatabase + "\n  </LOAD_BDC_FI>";
+  xml := xml + "\n\n<LOAD_BDC_FI>\n    <FILE>";
+  xml := xml + inDatabase;
+  
+  // In case a dbc file exists  
+  sl := stringListStringChar(inDatabase);
+  newName := truncateExtension(sl);
+  if System.regularFileExists(newName + ".bdc") then
+  xml := xml + "</FILE>\n<FILE> " + newName + ".bdc";
+  end if;
+  
+  xml := xml + "</FILE>\n</LOAD_BDC_FI>\n";
   xml := xml + "\n\n<LOAD_BDF_FI>\n    <FILE>";
   xml := xml + inBdfFile;
   xml := xml + "</FILE>\n</LOAD_BDF_FI>\n";
   xml := xml + "<RUN_TREATMENT>\n";
+  
 
   // In case the fault tree will be needed.
   if inMode == "figaro0" then
@@ -553,7 +570,7 @@ algorithm
     xml := xml + "</FILE>";
   elseif inMode == "fault-tree" then
     xml := xml + "    <TREATMENT>GENERATE_TREE</TREATMENT>\n    <FILE>";
-    xml := xml + System.pwd() + "/FaultTree.xml";
+    xml := xml + workingDir + "/FaultTree.xml";
     xml := xml + "</FILE>\n";
     xml := xml + "    <FILE_MACRO>fiab_ADD.h</FILE_MACRO>";
     xml := xml + "\n    <FILE_TREE_OPTIONS>" + inOptions + "</FILE_TREE_OPTIONS>";
@@ -561,8 +578,23 @@ algorithm
 
   xml := xml + "\n    <RESOLVE_CONST>VRAI</RESOLVE_CONST>\n    <RESOLVE_ATTR>FAUX</RESOLVE_ATTR>\n    <INST_RULE>VRAI</INST_RULE>\n";
   xml := xml + "</RUN_TREATMENT>\n</REQUESTS>";
-  outXml := xml;
+  outXml := xml; 
 end makeXml;
+
+protected function truncateExtension
+   input List<String> name;
+
+   output String newName;
+  algorithm  
+     newName := match name
+      local String c;
+        List<String> rest;
+     case "."::rest
+        then "";
+     case c::rest
+      then stringAppend (c, truncateExtension(rest));
+  end match;        
+end truncateExtension;
 
 protected function callFigaroProcessor "Calls the Figaro processor."
   input String inFigaroProcessorFile "Figaro processor to call";

@@ -2104,6 +2104,7 @@ end list;
 // exportToFigaro added by Alexander Carlqvist
 function exportToFigaro
   input TypeName path;
+  input String directory;
   input String database;
   input String mode;
   input String options;
