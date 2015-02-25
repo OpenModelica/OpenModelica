@@ -161,8 +161,14 @@ unsigned int alarm (unsigned int seconds)
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
+#if defined(__MINGW32__)
 #include <dirent.h>
 #include <unistd.h>
+#endif
+
+#if defined(_MSC_VER)
+#include <direct.h> /* for mkdir */
+#endif
 
 // Do not free the result
 char* _getUUIDStr(void)
