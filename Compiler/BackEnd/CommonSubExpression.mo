@@ -101,10 +101,16 @@ algorithm
       HT = HashTableExpToExp.emptyHashTableSized(49999);  //2053    4013    25343   536870879
       HT2 = HashTableExpToIndex.emptyHashTableSized(49999);
       HT3 = HashTableExpToIndex.emptyHashTableSized(49999);
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("collect statistics\n========================================\n");
+      end if;
       (HT, HT2, outStartIndex) = BackendEquation.traverseEquationArray(orderedEqs, createStatistics, (HT, HT2, inStartIndex));
     //BaseHashTable.dumpHashTable(HT);
     //BaseHashTable.dumpHashTable(HT2);
-      (orderedEqs, (HT, HT2, _, eqList, varList)) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, foldEq2, (HT, HT2, HT3, {}, {}));
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("\nstart substitution\n========================================\n");
+      end if;
+      (orderedEqs, (HT, HT2, _, eqList, varList)) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, substituteCSE, (HT, HT2, HT3, {}, {}));
       orderedEqs = BackendEquation.addEquations(eqList, orderedEqs);
       orderedVars = BackendVariable.addVars(varList, orderedVars);
       if Flags.isSet(Flags.DUMP_CSE) then
@@ -117,7 +123,7 @@ algorithm
   end matchcontinue;
 end CSE1;
 
-protected function foldEq2
+protected function substituteCSE
   input BackendDAE.Equation inEq;
   input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>> inTuple;
   output BackendDAE.Equation outEq;
@@ -135,21 +141,24 @@ algorithm
     case BackendDAE.IF_EQUATION() then (inEq, inTuple);
 
     else equation
-      (eq, (tpl, _)) = BackendEquation.traverseExpsOfEquation(inEq, traverseExpsEquation_2, (inTuple, BackendEquation.equationSource(inEq)));
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("traverse " + BackendDump.equationString(inEq) + "\n");
+      end if;
+      (eq, (tpl, _)) = BackendEquation.traverseExpsOfEquation(inEq, substituteCSE1, (inTuple, BackendEquation.equationSource(inEq)));
     then (eq, tpl);
   end match;
-end foldEq2;
+end substituteCSE;
 
-protected function traverseExpsEquation_2
+protected function substituteCSE1
   input DAE.Exp inExp;
   input tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>, DAE.ElementSource> inTuple;
   output DAE.Exp outExp;
   output tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>, DAE.ElementSource> outTuple;
 algorithm
-  (outExp, outTuple) := Expression.traverseExpTopDown(inExp, traverseSubExp_2, inTuple);
-end traverseExpsEquation_2;
+  (outExp, outTuple) := Expression.traverseExpTopDown(inExp, substituteCSE_main, inTuple);
+end substituteCSE1;
 
-protected function traverseSubExp_2
+protected function substituteCSE_main
   input DAE.Exp inExp;
   input tuple<tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, HashTableExpToIndex.HashTable, list<BackendDAE.Equation>, list<BackendDAE.Var>>, DAE.ElementSource> inTuple;
   output DAE.Exp outExp;
@@ -158,9 +167,7 @@ protected function traverseSubExp_2
 algorithm
   (outExp, cont, outTuple) := matchcontinue(inExp, inTuple)
     local
-      DAE.Exp exp1, exp2, key, value;
-      list<DAE.Exp> expLst;
-      DAE.Operator op;
+      DAE.Exp exp1, value;
       Absyn.Path path;
       DAE.CallAttributes attr;
       HashTableExpToExp.HashTable HT;
@@ -168,67 +175,64 @@ algorithm
       HashTableExpToIndex.HashTable HT3;
       list<BackendDAE.Equation> eqLst, eqLst1;
       list<BackendDAE.Var> varLst, varLst1;
-      Integer value2;
-      DAE.ComponentRef cr;
-      BackendDAE.Var var;
+      Integer counter;
       BackendDAE.Equation eq;
-      DAE.Type tp;
       DAE.Exp expReplaced;
       list<DAE.Exp> expLst;
       DAE.ElementSource source;
 
-    case (key as DAE.BINARY(), ((HT, HT2, HT3, eqLst, varLst), source)) equation
+    case (DAE.BINARY(), ((HT, HT2, HT3, eqLst, varLst), source)) equation
       true = Flags.getConfigBool(Flags.CSE_BINARY);
-      value = BaseHashTable.get(key, HT);
-      value2 = BaseHashTable.get(value, HT2);
-      true = intGt(value2, 1);
+      value = BaseHashTable.get(inExp, HT);
+      counter = BaseHashTable.get(value, HT2);
+      true = intGt(counter, 1);
+
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("  - substitute cse binary: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
+      end if;
+
       if not BaseHashTable.hasKey(value, HT3) then
         HT3 = BaseHashTable.add((value, 1), HT3);
-        varLst1 = createVarsForExp(value, {});
-        varLst = listAppend(varLst1, varLst);
-        eq = BackendEquation.generateEquation(value, key, source /* TODO: Add CSE? */, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+        varLst = createVarsForExp(value, varLst);
+        eq = BackendEquation.generateEquation(value, inExp, source /* TODO: Add CSE? */, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
         eqLst = eq::eqLst;
       end if;
     then (value, true, ((HT, HT2, HT3, eqLst, varLst), source));
 
-    case (key as DAE.CALL(path, expLst, attr), ((HT, HT2, HT3, eqLst, varLst), source)) equation
+    case (DAE.CALL(path, expLst, attr), ((HT, HT2, HT3, eqLst, varLst), source)) equation
       true = Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL);
 
-      value = BaseHashTable.get(key, HT);
-      value2 = BaseHashTable.get(value, HT2);
+      value = BaseHashTable.get(inExp, HT);
+      counter = BaseHashTable.get(value, HT2);
 
       if not Flags.getConfigBool(Flags.CSE_EACHCALL) then
-        true = intGt(value2, 1);
+        true = intGt(counter, 1);
       end if;
 
-      // debug
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-        print("replace :\n " + ExpressionDump.printExpStr(key) + " \n");
-        print("  => " + ExpressionDump.printExpStr(value) + " \n");
+        print("  - substitute cse call: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
       end if;
 
       if not BaseHashTable.hasKey(value, HT3) then
-
         // generate all variables, since this function might fail
         // this need to run before any HashTable is updated
-        varLst1 = createVarsForExp(value, {});
-        varLst = listAppend(varLst1, varLst);
+        varLst = createVarsForExp(value, varLst);
 
         // generate the proper replacement for arrays and records
         // this need to run before any HashTable is updated
         expReplaced = prepareExpForReplace(value);
 
         // traverse all arguments of the function
-        (expLst, ((HT, HT2, HT3, eqLst1, varLst1), source)) = Expression.traverseExpList(expLst, traverseExpsEquation_2, ((HT, HT2, HT3, {}, {}), source));
+        (expLst, ((HT, HT2, HT3, eqLst1, varLst1), source)) = Expression.traverseExpList(expLst, substituteCSE1, ((HT, HT2, HT3, {}, {}), source));
         exp1 = DAE.CALL(path, expLst, attr);
         varLst = listAppend(varLst1, varLst);
         eqLst = listAppend(eqLst1, eqLst);
 
         // debug
-        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-          print("create equation from:\n  LHS: " + ExpressionDump.printExpStr(value) + " \n");
-          print("  RHS: " + ExpressionDump.printExpStr(key) + " \n");
-        end if;
+        //if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        //  print("create equation from:\n  LHS: " + ExpressionDump.printExpStr(value) + " \n");
+        //  print("  RHS: " + ExpressionDump.printExpStr(inExp) + " \n");
+        //end if;
 
         // generate equation
         eq = BackendEquation.generateEquation(expReplaced, exp1, source /* TODO: Add CSE? */, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
@@ -241,10 +245,10 @@ algorithm
         value = expReplaced;
 
         // debug
-        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-          print("Replaced CSE Expression: " + ExpressionDump.printExpStr(key) + " \n");
-          print("by equation:\n" + BackendDump.equationString(eq) + "\n");
-        end if;
+        //if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        //  print("Replaced CSE Expression: " + ExpressionDump.printExpStr(inExp) + " \n");
+        //  print("by equation:\n" + BackendDump.equationString(eq) + "\n");
+        //end if;
       else
         // use replaced expression
         value = prepareExpForReplace(value);
@@ -253,7 +257,7 @@ algorithm
 
     else (inExp, true, inTuple);
   end matchcontinue;
-end traverseSubExp_2;
+end substituteCSE_main;
 
 protected function createStatistics
   input BackendDAE.Equation inEq;
