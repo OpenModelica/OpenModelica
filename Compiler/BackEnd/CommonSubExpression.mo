@@ -100,7 +100,7 @@ algorithm
       HT = HashTableExpToExp.emptyHashTableSized(49999);  //2053    4013    25343   536870879
       HT2 = HashTableExpToIndex.emptyHashTableSized(49999);
       HT3 = HashTableExpToIndex.emptyHashTableSized(49999);
-      (HT, HT2, outStartIndex) = BackendEquation.traverseEquationArray(orderedEqs, foldEq, (HT, HT2, inStartIndex));
+      (HT, HT2, outStartIndex) = BackendEquation.traverseEquationArray(orderedEqs, createStatistics, (HT, HT2, inStartIndex));
     //BaseHashTable.dumpHashTable(HT);
     //BaseHashTable.dumpHashTable(HT2);
       (orderedEqs, (HT, HT2, _, eqList, varList)) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, foldEq2, (HT, HT2, HT3, {}, {}));
@@ -254,7 +254,7 @@ algorithm
   end matchcontinue;
 end traverseSubExp_2;
 
-protected function foldEq
+protected function createStatistics
   input BackendDAE.Equation inEq;
   input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> inTuple;
   output BackendDAE.Equation outEq;
@@ -275,21 +275,21 @@ algorithm
       if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
         print("traverse " + BackendDump.equationString(inEq) + "\n");
       end if;
-      (eq, tpl) = BackendEquation.traverseExpsOfEquation(inEq, traverseExpsEquation_1, inTuple);
+      (eq, tpl) = BackendEquation.traverseExpsOfEquation(inEq, createStatistics1, inTuple);
     then (eq, tpl);
   end match;
-end foldEq;
+end createStatistics;
 
-protected function traverseExpsEquation_1
+protected function createStatistics1
   input DAE.Exp inExp;
   input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> inTuple;
   output DAE.Exp outExp;
   output tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> outTuple;
 algorithm
-  (outExp, outTuple) := Expression.traverseExpTopDown(inExp, traverseSubExp_1, inTuple);
-end traverseExpsEquation_1;
+  (outExp, outTuple) := Expression.traverseExpTopDown(inExp, createStatistics_main, inTuple);
+end createStatistics1;
 
-protected function traverseSubExp_1
+protected function createStatistics_main
   input DAE.Exp inExp;
   input tuple<HashTableExpToExp.HashTable, HashTableExpToIndex.HashTable, Integer> inTuple;
   output DAE.Exp outExp;
@@ -318,23 +318,28 @@ algorithm
       if checkOp(op) then
         if BaseHashTable.hasKey(inExp, HT) then
           value = BaseHashTable.get(inExp, HT);
-          counter = BaseHashTable.get(value, HT2);
-          HT2 = BaseHashTable.update((value, counter + 1), HT2);
+          counter = BaseHashTable.get(value, HT2) + 1;
+          HT2 = BaseHashTable.update((value, counter), HT2);
 
           if commutativeBinaryExp(op) then
             value = BaseHashTable.get(DAE.BINARY(exp2, op, exp1), HT);
-            HT2 = BaseHashTable.update((value, counter + 1), HT2);
+            HT2 = BaseHashTable.update((value, counter), HT2);
           end if;
         else
           str = "$cse" + intString(i);
           cr = DAE.CREF_IDENT(str, Expression.typeof(inExp), {});
           value = DAE.CREF(cr, Expression.typeof(inExp));
+          counter = 1;
           HT = BaseHashTable.add((inExp, value), HT);
-          HT2 = BaseHashTable.add((value, 1), HT2);
+          HT2 = BaseHashTable.add((value, counter), HT2);
           if commutativeBinaryExp(op) then
             HT = BaseHashTable.add((DAE.BINARY(exp2, op, exp1), value), HT);
           end if;
           i = i+1;
+        end if;
+        
+        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+          print("  - cse binary expression: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
         end if;
       end if;
     then (inExp, true, (HT, HT2, i));
@@ -357,23 +362,21 @@ algorithm
         value = BaseHashTable.get(inExp, HT);
         counter = BaseHashTable.get(value, HT2) + 1;
         HT2 = BaseHashTable.update((value, counter), HT2);
-        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-          print("Found CSE Expression (count: " + intString(counter) + "): " + ExpressionDump.printExpStr(inExp) + " \n");
-        end if;
       else
         (value, i) = createReturnExp(tp, i);
+        counter = 1;
         HT = BaseHashTable.add((inExp, value), HT);
-        HT2 = BaseHashTable.add((value, 1), HT2);
-        i = i+1;
-        if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
-          print("Found CSE Expression first time: " + ExpressionDump.printExpStr(inExp) + " \n");
-        end if;
+        HT2 = BaseHashTable.add((value, counter), HT2);
+      end if;
+      
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("  - cse call expression: " + ExpressionDump.printExpStr(inExp) + " (counter: " + intString(counter) + ", id: " + ExpressionDump.printExpStr(value) + ")\n");
       end if;
     then (inExp, true, (HT, HT2, i));
 
     else (inExp, true, inTuple);
   end matchcontinue;
-end traverseSubExp_1;
+end createStatistics_main;
 
 protected function commutativeBinaryExp
   input DAE.Operator inOp;
