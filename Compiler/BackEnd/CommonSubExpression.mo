@@ -58,6 +58,7 @@ protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
 protected import List;
 protected import ResolveLoops;
+protected import Types;
 
 public function CSE "authors: Jan Hagemann and Lennart Ochel (FH Bielefeld, Germany)
   This module eliminates common subexpressions in an acausal environment. Different options are available:
@@ -321,21 +322,18 @@ algorithm
           counter = BaseHashTable.get(value, HT2) + 1;
           HT2 = BaseHashTable.update((value, counter), HT2);
 
-          if commutativeBinaryExp(op) then
+          if isCommutative(op) then
             value = BaseHashTable.get(DAE.BINARY(exp2, op, exp1), HT);
             HT2 = BaseHashTable.update((value, counter), HT2);
           end if;
         else
-          str = "$cse" + intString(i);
-          cr = DAE.CREF_IDENT(str, Expression.typeof(inExp), {});
-          value = DAE.CREF(cr, Expression.typeof(inExp));
+          (value, i) = createReturnExp(Expression.typeof(inExp), i);
           counter = 1;
           HT = BaseHashTable.add((inExp, value), HT);
           HT2 = BaseHashTable.add((value, counter), HT2);
-          if commutativeBinaryExp(op) then
+          if isCommutative(op) then
             HT = BaseHashTable.add((DAE.BINARY(exp2, op, exp1), value), HT);
           end if;
-          i = i+1;
         end if;
 
         if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
@@ -378,16 +376,16 @@ algorithm
   end matchcontinue;
 end createStatistics_main;
 
-protected function commutativeBinaryExp
+protected function isCommutative
   input DAE.Operator inOp;
-  output Boolean outB;
+  output Boolean outCommutative;
 algorithm
-  outB := match(inOp)
+  outCommutative := match(inOp)
     case DAE.MUL() then true;
     case DAE.ADD() then true;
     else false;
   end match;
-end commutativeBinaryExp;
+end isCommutative;
 
 protected function checkOp
   input DAE.Operator inOp;
@@ -406,11 +404,11 @@ end checkOp;
 
 protected function createReturnExp
   input DAE.Type inType;
-  input Integer inUniqueCSEIndex;
+  input Integer inIndex;
   output DAE.Exp outExp;
-  output Integer outUniqueCSEIndex;
+  output Integer outIndex;
 algorithm
-  (outExp, outUniqueCSEIndex) := match(inType)
+  (outExp, outIndex) := match(inType)
     local
       Integer i;
       String str;
@@ -424,60 +422,64 @@ algorithm
       list<String> varNames;
 
     case DAE.T_REAL() equation
-      str = "$cse" + intString(inUniqueCSEIndex);
+      str = "$cse" + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_REAL_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
-    then (value, inUniqueCSEIndex + 1);
+    then (value, inIndex + 1);
 
     case DAE.T_INTEGER() equation
-      str = "$cse" + intString(inUniqueCSEIndex);
+      str = "$cse" + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_INTEGER_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_INTEGER_DEFAULT);
-    then (value, inUniqueCSEIndex + 1);
+    then (value, inIndex + 1);
 
     case DAE.T_STRING() equation
-      str = "$cse" + intString(inUniqueCSEIndex);
+      str = "$cse" + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_STRING_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_STRING_DEFAULT);
-    then (value, inUniqueCSEIndex + 1);
+    then (value, inIndex + 1);
 
     case DAE.T_BOOL() equation
-      str = "$cse" + intString(inUniqueCSEIndex);
+      str = "$cse" + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_BOOL_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_BOOL_DEFAULT);
-    then (value, inUniqueCSEIndex + 1);
+    then (value, inIndex + 1);
 
     case DAE.T_CLOCK() equation
-      str = "$cse" + intString(inUniqueCSEIndex);
+      str = "$cse" + intString(inIndex);
       cr = DAE.CREF_IDENT(str, DAE.T_CLOCK_DEFAULT, {});
       value = DAE.CREF(cr, DAE.T_CLOCK_DEFAULT);
-    then (value, inUniqueCSEIndex + 1);
+    then (value, inIndex + 1);
 
     case DAE.T_TUPLE(types=typeLst) equation
-      (expLst, i) = List.mapFold(typeLst, createReturnExp, inUniqueCSEIndex);
+      (expLst, i) = List.mapFold(typeLst, createReturnExp, inIndex);
       value = DAE.TUPLE(expLst);
     then (value, i+1);
 
     // Expanding
     case DAE.T_ARRAY() equation
-      str = "$cse" + intString(inUniqueCSEIndex);
+      str = "$cse" + intString(inIndex);
       cr = DAE.CREF_IDENT(str, inType, {});
       crefs = ComponentReference.expandCref(cr, false);
       expLst = List.map(crefs, Expression.crefExp);
       value = DAE.ARRAY(inType, true, expLst);
-    then (value, inUniqueCSEIndex + 1);
+    then (value, inIndex + 1);
 
     // record types
     case DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)) equation
-      str = "$cse" + intString(inUniqueCSEIndex);
+      str = "$cse" + intString(inIndex);
       cr = DAE.CREF_IDENT(str, inType, {});
       crefs = ComponentReference.expandCref(cr, true);
       expLst = List.map(crefs, Expression.crefExp);
       varNames = List.map(varLst, Expression.varName);
       value = DAE.RECORD(path, expLst, varNames, inType);
-    then (value, inUniqueCSEIndex + 1);
+    then (value, inIndex + 1);
 
-    else fail();
+    else equation
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("  - createReturnExp failed for " + Types.printTypeStr(inType) + "\n");
+      end if;
+    then fail();
   end match;
 end createReturnExp;
 
