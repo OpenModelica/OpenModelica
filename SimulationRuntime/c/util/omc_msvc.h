@@ -99,6 +99,10 @@ int vasprintf(char **strp, const char *fmt, va_list ap);
 unsigned int alarm (unsigned int seconds);
 #endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+char *mkdtemp(char *tpl);
+#endif
+
 /* for non GNU compilers */
 #ifndef __GNUC__
 #define __attribute__(x)

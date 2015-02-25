@@ -159,6 +159,44 @@ unsigned int alarm (unsigned int seconds)
 
 #endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+
+#include <dirent.h>
+#include <unistd.h>
+
+// Do not free the result
+char* _getUUIDStr(void)
+{
+  char uuidStr[37];
+  unsigned char *tmp;
+  UUID uuid;
+  if (UuidCreate(&uuid) == RPC_S_OK)
+    UuidToString(&uuid, &tmp);
+  tmp[36] = '\0';
+  memcpy(uuidStr, strlwr((char*)tmp), 36);
+  RpcStringFree(&tmp);
+  return strdup(uuidStr);
+}
+
+char *mkdtemp(char *tpl)
+{
+  int numChars = 0, i, len;
+  char tempDirectory[1024], tmpDir[2048];
+  char* uuid = _getUUIDStr();
+    //extract the temp path
+  numChars = GetTempPath(1024, tempDirectory);
+  sprintf(tmpDir, "%s\\%s", tempDirectory, tpl);
+  len = strlen(tmpDir);
+  for (i = len; i < len - 6; i--)
+  {
+    tmpDir[i] = uuid[len-i];
+  }
+  mkdir(tmpDir);
+  free(uuid);
+  return strdup(tmpDir);
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
