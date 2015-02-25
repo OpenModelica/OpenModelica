@@ -32,7 +32,7 @@
 encapsulated package UnitParserExt
 
 public function initSIUnits "initialize the UnitParser with the SI units"
-  external "C" UnitParserExtImpl__initSIUnits() annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExtImpl__initSIUnits() annotation(Library = "omcruntime");
 end initSIUnits;
 
 public function unit2str"Translate a unit to a string"
@@ -44,7 +44,7 @@ public function unit2str"Translate a unit to a string"
   input Real scaleFactor;
   input Real offset;
   output String res;
-  external "C" res=UnitParserExt_unit2str(noms,denoms,tpnoms,tpdenoms,tpstrs,scaleFactor,offset) annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" res=UnitParserExt_unit2str(noms,denoms,tpnoms,tpdenoms,tpstrs,scaleFactor,offset) annotation(Library = "omcruntime");
 end unit2str;
 
 public function str2unit "Translate a unit string to a unit"
@@ -56,49 +56,49 @@ public function str2unit "Translate a unit string to a unit"
   output list<String> tpstrs;
   output Real scaleFactor;
   output Real offset;
-  external "C" UnitParserExt_str2unit(res,noms,denoms,tpnoms,tpdenoms,tpstrs,scaleFactor,offset) annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExt_str2unit(res,noms,denoms,tpnoms,tpdenoms,tpstrs,scaleFactor,offset) annotation(Library = "omcruntime");
 end str2unit;
 
 public function addBase "adds a base unit without weight"
   input String name;
-  external "C" UnitParserExtImpl__addBase(name) annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExtImpl__addBase(name) annotation(Library = "omcruntime");
 end addBase;
 
 public function registerWeight "registers a weight to be multiplied with the weigth factor of a derived unit"
   input String name;
   input Real weight;
-  external "C" UnitParserExtImpl__registerWeight(name,weight) annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExtImpl__registerWeight(name,weight) annotation(Library = "omcruntime");
 end registerWeight;
 
 
 public function addDerived "adds a derived unit without weight"
   input String name;
   input String exp;
-  external "C" UnitParserExtImpl__addDerived(name,exp) annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExtImpl__addDerived(name,exp) annotation(Library = "omcruntime");
 end addDerived;
 
 public function addDerivedWeight "adds a derived unit with weight"
   input String name;
   input String exp;
   input Real weight;
-  external "C" UnitParserExtImpl__addDerivedWeight(name,exp,weight) annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExtImpl__addDerivedWeight(name,exp,weight) annotation(Library = "omcruntime");
 end addDerivedWeight;
 
 public function checkpoint "copies all unitparser information to allow changing unit weights locally for a component"
-   external "C" UnitParserExtImpl__checkpoint() annotation(Library = {"omcruntime","lpsolve55"});
+   external "C" UnitParserExtImpl__checkpoint() annotation(Library = "omcruntime");
 end checkpoint;
 
 public function rollback "rollback the copy made in checkPoint call"
-  external "C" UnitParserExtImpl__rollback() annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExtImpl__rollback() annotation(Library = "omcruntime");
 end rollback;
 
 public function clear "clears the unitparser from stored units"
-  external "C" UnitParserExtImpl__clear() annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExtImpl__clear() annotation(Library = "omcruntime");
 end clear;
 
 public function commit "commits all units, must be run before doing unit checking and after last unit has been added
 with addBase or addDerived."
-  external "C" UnitParserExtImpl__commit() annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExtImpl__commit() annotation(Library = "omcruntime");
 end commit;
 
 annotation(__OpenModelica_Interface="frontend");
