@@ -135,7 +135,7 @@ static inline void optimizationWithIpopt(OptData*optData){
       AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
     else if(!strcmp(cflags,"const") || !strcmp(cflags,"CONST"))
       AddIpoptStrOption(nlp, "hessian_constant", "yes");
-    else
+    else if(!(!strcmp(cflags,"num") || !strcmp(cflags,"NUM")))
       warningStreamPrint(LOG_STDOUT, 0, "not support ipopt_hesse=%s",cflags);
   }
 

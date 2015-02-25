@@ -529,6 +529,7 @@ template simulationFile_opt_header(SimCode simCode, String guid)
       int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short*);
       int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
       int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
+      int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data);
     #if defined(__cplusplus)
     }
     #endif
@@ -650,6 +651,7 @@ template simulationFile(SimCode simCode, String guid)
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
     extern int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short *, short *);
     extern int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt);
+    extern int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data);
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
        (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
@@ -695,7 +697,8 @@ template simulationFile(SimCode simCode, String guid)
        <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
        <%symbolName(modelNamePrefixStr,"mayer")%>,
        <%symbolName(modelNamePrefixStr,"lagrange")%>,
-       <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>
+       <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>,
+       <%symbolName(modelNamePrefixStr,"setInputData")%>
     <%\n%>
     };
 
@@ -1350,6 +1353,7 @@ template functionInput(ModelInfo modelInfo, String modelNamePrefix)
       TRACE_POP
       return 0;
     }
+
     >>
   end match
 end functionInput;
@@ -10996,6 +11000,7 @@ template optimizationComponents( list<DAE.ClassAttributes> classAttributes ,SimC
         int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res,short *i){return -1;}
         int <%symbolName(modelNamePrefixStr,"lagrange")%>(DATA* data, modelica_real** res, short * i1, short*i2){return -1;}
         int <%symbolName(modelNamePrefixStr,"pickUpBoundsForInputsInOptimization")%>(DATA* data, modelica_real* min, modelica_real* max, modelica_real*nominal, modelica_boolean *useNominal, char ** name, modelica_real * start, modelica_real * startTimeOpt){return -1;}
+        int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data){return -1;}
         >>
       else
         (classAttributes |> classAttribute => optimizationComponents1(classAttribute,simCode, modelNamePrefixStr); separator="\n")
@@ -11040,6 +11045,18 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
           #endif
           >>
 
+      let setInput = match simCode
+        case simCode as SIMCODE(__) then
+          match modelInfo
+            case MODELINFO(vars=SIMVARS(__)) then
+            <<
+              <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+              'data->simulationInfo.inputVars[<%i0%>] = <%cref(name)%>;'
+              ;separator="\n"
+              %>
+            >>
+
+
       let inputBounds = match simCode
         case simCode as SIMCODE(__) then
           match modelInfo
@@ -11076,6 +11093,15 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
              <%startTimeOpt%>
              return 0;
            }
+
+           int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data)
+           {
+            TRACE_PUSH
+            <%setInput%>
+            TRACE_POP
+            return 0;
+           }
+
            >>
     else error(sourceInfo(), 'Unknown Constraint List')
 end optimizationComponents1;

@@ -62,6 +62,7 @@ extern "C"
   };
 
   extern int initialization(DATA *data, const char* pInitMethod, const char* pInitFile, double initTime, int lambda_steps);
+  int importStartValues(DATA *data, const char *pInitFile, const double initTime);
 
 #ifdef __cplusplus
 }

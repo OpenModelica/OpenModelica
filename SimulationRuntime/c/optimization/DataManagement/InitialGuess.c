@@ -39,11 +39,12 @@
 #include "simulation/results/simulation_result.h"
 #include "simulation/solver/external_input.h"
 #include "simulation/solver/model_help.h"
+#include "simulation/solver/initialization/initialization.h"
 
 
 static int initial_guess_ipopt_cflag(OptData *optData, char* cflags);
 static inline void smallIntSolverStep(DATA* data, SOLVER_INFO* solverInfo, const double tstop);
-static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo);
+static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, const short o);
 static inline void init_ipopt_data(OptData *optData);
 
 /*!
@@ -72,8 +73,8 @@ inline void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
     opt = initial_guess_ipopt_cflag(optData, cflags);
   }
 
-  if(opt == 1)
-    initial_guess_ipopt_sim(optData, solverInfo);
+  if(opt > 0)
+    initial_guess_ipopt_sim(optData, solverInfo, opt);
 
   init_ipopt_data(optData);
 }
@@ -83,19 +84,20 @@ inline void initial_guess_optimizer(OptData *optData, SOLVER_INFO* solverInfo){
  *  create initial guess dasslColorSymJac
  *  author: Vitalij Ruge
  **/
-static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo)
+static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, const short o)
 {
   double *u0;
   int i,j,k,l;
   modelica_real ***v;
   long double tol;
-  short printGuess;
+  short printGuess, op=1;
 
   const int nx = optData->dim.nx;
   const int nu = optData->dim.nu;
   const int np = optData->dim.np;
   const int nsi = optData->dim.nsi;
   const int nReal = optData->dim.nReal;
+  char *cflags = (char*)omc_flagValue[FLAG_IIF];
 
   DATA* data = optData->data;
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
@@ -170,8 +172,10 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
      }
    }
 
+   if(o == 2 && cflags && strcmp(cflags, ""))
+     op = 2;
 
-   if(printGuess){
+   if(printGuess ){
      printf("\nInitial Guess");
      printf("\n========================================================\n");
      printf("\ndone: time[%i] = %g",0,(double)optData->time.t0);
@@ -180,7 +184,15 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
    for(i = 0, k=1; i < nsi; ++i){
      for(j = 0; j < np; ++j, ++k){
        externalInputUpdate(data);
-       smallIntSolverStep(data, solverInfo, (double)optData->time.t[i][j]);
+       if(op==1)
+         smallIntSolverStep(data, solverInfo, (double)optData->time.t[i][j]);
+       else{
+         rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
+         importStartValues(data, cflags, (double)optData->time.t[i][j]);
+         for(l=0; l<nReal; ++l){
+            data->localData[0]->realVars[l] = data->modelData.realVarsData[l].attribute.start;
+         }
+       }
 
        if(printGuess)
          printf("\ndone: time[%i] = %g", k, (double)optData->time.t[i][j]);
@@ -188,7 +200,7 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
        memcpy(v[i][j], data->localData[0]->realVars, nReal*sizeof(double));
        for(l = 0; l < nx; ++l){
 
-         if( ((double) v[i][j][l] < (double)optData->bounds.vmin[l]*optData->bounds.vnom[l])
+         if(((double) v[i][j][l] < (double)optData->bounds.vmin[l]*optData->bounds.vnom[l])
              || (double) (v[i][j][l] > (double) optData->bounds.vmax[l]*optData->bounds.vnom[l])){
            printf("\n********************************************\n");
            warningStreamPrint(LOG_STDOUT, 0, "Initial guess failure at time %g",(double)optData->time.t[i][j]);
@@ -214,6 +226,7 @@ static inline void initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solver
   sInfo->solverMethod = "optimization";
   data->simulationInfo.tolerance = tol;
 
+  externalInputFree(data);
 }
 
 
@@ -245,6 +258,9 @@ static int initial_guess_ipopt_cflag(OptData *optData, char* cflags)
 
     infoStreamPrint(LOG_IPOPT, 0, "Using simulation as initial guess.");
     return 1;
+  }else if(!strcmp(cflags,"file") || !strcmp(cflags,"FILE")){
+    infoStreamPrint(LOG_STDOUT, 0, "Using values from file as initial guess.");
+    return 2;
   }
 
   warningStreamPrint(LOG_STDOUT, 0, "not support ipopt_init=%s", cflags);
@@ -285,19 +301,16 @@ static inline void init_ipopt_data(OptData *optData){
   for(i = 0, shift = 0; i < nsi; ++i){
     for(j = 0; j < np; ++j, shift+=nv){
       memcpy(data->localData[0]->realVars, optData->v[i][j], nReal*sizeof(double));
-      data->localData[0]->timeValue = (modelica_real) optData->time.t[i][j];
-      externalInputUpdate(data);
-
-      for(l = 0; l<nx; ++l)
+      optData->data->callback->setInputData(optData->data);
+      for(l = 0; l<nx; ++l){
         ipop->vopt[l + shift] = optData->v[i][j][l]*optData->bounds.scalF[l];
-
-      for(; l< nv; ++l)
+      }
+      for(;l<nv;++l){
         ipop->vopt[l + shift] = data->simulationInfo.inputVars[l-nx] * optData->bounds.scalF[l];
-
+      }
     }
   }
 
-  externalInputFree(data);
 
   l = NRes-ncf;
   for(j = 0; j< nc; ++j){

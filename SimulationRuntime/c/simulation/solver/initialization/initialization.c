@@ -330,7 +330,7 @@ static char *mapToDymolaVars(const char *varname)
   return newVarname;
 }
 
-/*! \fn static int importStartValues(DATA *data, const char *pInitFile, double initTime)
+/*! \fn int importStartValues(DATA *data, const char *pInitFile, const double initTime)
  *
  *  \param [ref] [data]
  *  \param [in]  [pInitFile]
@@ -338,7 +338,7 @@ static char *mapToDymolaVars(const char *varname)
  *
  *  \author lochel
  */
-static int importStartValues(DATA *data, const char *pInitFile, double initTime)
+int importStartValues(DATA *data, const char *pInitFile, const double initTime)
 {
   ModelicaMatReader reader;
   ModelicaMatVariable_t *pVar = NULL;
