@@ -107,8 +107,8 @@ algorithm
       orderedEqs = BackendEquation.addEquations(eqList, orderedEqs);
       orderedVars = BackendVariable.addVars(varList, orderedVars);
       if Flags.isSet(Flags.DUMP_CSE) then
-        BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
         BackendDump.dumpVariables(orderedVars, "########### Updated Variable List ###########");
+        BackendDump.dumpEquationArray(orderedEqs, "########### Updated Equation List ###########");
       end if;
     then BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets, partitionKind);
 
