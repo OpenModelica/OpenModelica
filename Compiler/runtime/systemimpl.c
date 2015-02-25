@@ -2839,6 +2839,23 @@ void SystemImpl__dladdr(void *symbol, const char **file, const char **name)
 #endif
 }
 
+const char* SystemImpl__createTemporaryDirectory(const char *templatePrefix)
+{
+  char template[strlen(templatePrefix) + 7];
+  sprintf(template, "%sXXXXXX", templatePrefix);
+  if (template==mkdtemp(template)) {
+    return GC_strdup(template);
+  }
+  const char *c_tokens[2]={strerror(errno),templatePrefix};
+  c_add_message(NULL,85, /* ERROR_OPENING_FILE */
+    ErrorType_scripting,
+    ErrorLevel_error,
+    gettext("Error creating temporary directory %s: %s."),
+    c_tokens,
+    2);
+  MMC_THROW();
+}
+
 #ifdef __cplusplus
 }
 #endif

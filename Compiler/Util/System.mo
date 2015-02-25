@@ -342,6 +342,12 @@ public function createDirectory
   external "C" outBool=SystemImpl__createDirectory(inString) annotation(Library = "omcruntime");
 end createDirectory;
 
+public function createTemporaryDirectory
+  input String inPrefix;
+  output String outName;
+  external "C" outName=SystemImpl__createTemporaryDirectory(inPrefix) annotation(Library = "omcruntime");
+end createTemporaryDirectory;
+
 public function pwd
   output String outString;
   external "C" outString=SystemImpl__pwd() annotation(Library = "omcruntime");

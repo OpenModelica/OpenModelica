@@ -9293,34 +9293,26 @@ algorithm
       SCode.Mod mod;
       Boolean b;
       String target;
-      Option<String> odir;
-      list<String> libNames, fullLibNames;
+      Option<String> odir, resources;
+      list<String> libNames, fullLibNames, dirs;
 
     case (_, _, SOME(SCode.ANNOTATION(mod)))
-      equation
-        b = generateExtFunctionDynamicLoad(mod);
-        target = Flags.getConfigString(Flags.TARGET);
-        (libs,libNames) = generateExtFunctionIncludesLibstr(target,mod);
-        includes = generateExtFunctionIncludesIncludestr(mod);
-        (libs,odir) = generateExtFunctionLibraryDirectoryFlags(program, path, mod, libs);
-        _ = match odir
-          local
-            String dir;
-          case SOME(dir)
-            algorithm
-              for name in libNames loop
-                if target=="msvc" or System.os()=="Windows_NT" then
-                  fullLibNames := {name + System.getDllExt(), "lib" + name + ".a", "lib" + name + ".lib"};
-                else
-                  fullLibNames := {"lib" + name + ".a", "lib" + name + System.getDllExt()};
-                end if;
-                lookForExtFunctionLibrary(fullLibNames, {dir,Settings.getInstallationDirectoryPath() + "/lib/omc"}, name, info);
-              end for;
-            then ();
-          else ();
-        end match;
-        paths = generateExtFunctionLibraryDirectoryPaths(program, path, mod);
-        includeDirs = generateExtFunctionIncludeDirectoryFlags(program, path, mod, includes);
+      algorithm
+        b := generateExtFunctionDynamicLoad(mod);
+        target := Flags.getConfigString(Flags.TARGET);
+        (libs, libNames) := generateExtFunctionIncludesLibstr(target,mod);
+        includes := generateExtFunctionIncludesIncludestr(mod);
+        (libs, dirs, resources) := generateExtFunctionLibraryDirectoryFlags(program, path, mod, libs);
+        for name in libNames loop
+          if target=="msvc" or System.os()=="Windows_NT" then
+            fullLibNames := {name + System.getDllExt(), "lib" + name + ".a", "lib" + name + ".lib"};
+          else
+            fullLibNames := {"lib" + name + ".a", "lib" + name + System.getDllExt()};
+          end if;
+          lookForExtFunctionLibrary(fullLibNames, dirs, name, resources, path, info);
+        end for;
+        paths := generateExtFunctionLibraryDirectoryPaths(program, path, mod);
+        includeDirs := generateExtFunctionIncludeDirectoryFlags(program, path, mod, includes);
       then
         (includes, includeDirs, libs,paths, b);
     case (_, _, NONE()) then ({}, {}, {},{}, false);
@@ -9331,10 +9323,62 @@ protected function lookForExtFunctionLibrary
   input list<String> names;
   input list<String> dirs;
   input String name;
+  input Option<String> resources;
+  input Absyn.Path path;
   input SourceInfo info;
 algorithm
   if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
-    Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d+"/"+n for d in dirs, n in names)}, info);
+    _ := match resources
+      local
+        String resourcesStr, tmpdir, cmd, pwd, contents, found;
+        Integer status;
+        Boolean didFind;
+      case SOME(resourcesStr)
+        algorithm
+          if System.directoryExists(resourcesStr) then
+            didFind := false;
+            for dir in list(dir for dir guard System.regularFileExists(resourcesStr + "/BuildProjects/" + dir + "/autogen.sh") in System.subDirectories(resourcesStr + "/BuildProjects")) loop
+              tmpdir := System.createTemporaryDirectory(Settings.getTempDirectoryPath() + "/omc_compile_" + name + "_");
+              Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Created directory " + tmpdir}, info);
+              cmd := "cp -a \"" + resourcesStr + "\"/* \"" + tmpdir + "\"";
+              Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {cmd}, info);
+              System.systemCall(cmd);
+              pwd := System.pwd();
+              if 0==System.cd(tmpdir + "/BuildProjects/" + dir) then
+                Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Changed directory to " + System.pwd()}, info);
+                // TODO: Add $(host)
+                cmd := "sh ./autogen.sh && ./configure --libdir='"+userCompiledBinariesDirectory(path)+"' && make && make install";
+                status := System.systemCall(cmd, "log");
+                contents := System.readFile("log");
+                if status <> 0 then
+                  Error.addSourceMessage(Error.COMPILER_WARNING, {"Failed to run "+cmd+": " + contents}, info);
+                else
+                  Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Succeeded with compilation and installation of the library using:\ncommand: "+cmd+"\n" + contents}, info);
+                  if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
+                    Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND_DESPITE_COMPILATION_SUCCESS, {cmd, System.pwd()}, info);
+                  else
+                    found := List.first(list(x for x guard System.regularFileExists(x) in List.flatten(list(d+"/"+n for d in dirs, n in names))));
+                    Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Compiled "+found+" by running build project " + resourcesStr + "/BuildProjects/" + dir}, info);
+                    didFind := true;
+                  end if;
+                end if;
+              else
+                Error.addSourceMessage(Error.COMPILER_WARNING, {"Failed to change directory to " + tmpdir + "/BuildProjects/" + dir}, info);
+              end if;
+              System.cd(pwd);
+              System.removeDirectory(tmpdir);
+              Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Removed directory " + tmpdir}, info);
+              if didFind then
+                break;
+              end if;
+            end for;
+          end if;
+        then ();
+      else ();
+    end match;
+    if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
+      Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d+"/"+n for d in dirs, n in names)}, info);
+    end if;
   end if;
 end lookForExtFunctionLibrary;
 
@@ -9375,53 +9419,53 @@ protected function generateExtFunctionLibraryDirectoryFlags
   input SCode.Mod inMod;
   input list<String> inLibs;
   output list<String> outLibs;
-  output Option<String> outDirectory;
+  output list<String> installDirs;
+  output Option<String> resources;
 algorithm
-  (outLibs, outDirectory) := matchcontinue (program, path, inMod, inLibs)
+  (outLibs, installDirs, resources) := matchcontinue (program, path, inMod, inLibs)
     local
-      String str, str1, str2, str3, platform1, platform2, target, dir;
-      list<String> libs;
+      String str, str1, str2, str3, platform1, platform2, target, dir, resourcesStr;
+      list<String> libs, libs2;
       Boolean isLinux;
-    case (_, _, _, {}) then ({}, NONE());
+    case (_, _, _, {}) then ({}, {}, NONE());
     case (_, _, _, libs)
-      equation
-        str = matchcontinue inMod
+      algorithm
+        str := matchcontinue inMod
           case _
             equation
               SCode.MOD(binding = SOME((Absyn.STRING(str), _))) = Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
             then str;
           else "modelica://" + Absyn.pathFirstIdent(path) + "/Resources/Library";
         end matchcontinue;
-        str = CevalScript.getFullPathFromUri(program, str, false);
-        platform1 = System.openModelicaPlatform();
-        platform2 = System.modelicaPlatform();
-        isLinux = stringEq("linux",System.os());
-        target = Flags.getConfigString(Flags.TARGET);
+        str := CevalScript.getFullPathFromUri(program, str, false);
+        resourcesStr := CevalScript.getFullPathFromUri(program, "modelica://" + Absyn.pathFirstIdent(path) + "/Resources", false);
+        platform1 := str + "/" + System.openModelicaPlatform();
+        platform2 := str + "/" + System.modelicaPlatform();
+        isLinux := stringEq("linux",System.os());
+        target := Flags.getConfigString(Flags.TARGET);
         // please, take care about ordering these libraries, the most specific should have the highest priority
-        if platform1 <> "" and System.directoryExists(platform1) then
-          dir = platform1;
-        elseif platform2 <> "" and System.directoryExists(platform2) then
-          dir = platform2;
-        else
-          dir = str;
-        end if;
-        libs = generateExtFunctionLibraryDirectoryFlags2(dir, isLinux, libs, target);
-      then (libs, SOME(dir));
-    else (inLibs, NONE());
+        libs2 := str::platform2::platform1::{};
+        libs := List.fold2(libs2, generateExtFunctionLibraryDirectoryFlags2, isLinux, target, libs);
+      then (libs, listReverse((Settings.getHomeDir(false)+"/.openmodelica/binaries/"+Absyn.pathFirstIdent(path))::(Settings.getInstallationDirectoryPath() + "/lib/omc")::libs2), SOME(resourcesStr));
+    else (inLibs, {}, NONE());
   end matchcontinue;
 end generateExtFunctionLibraryDirectoryFlags;
 
 protected function generateExtFunctionLibraryDirectoryFlags2
   input String dir;
   input Boolean isLinux;
-  input list<String> inLibs;
   input String target;
+  input list<String> inLibs;
   output list<String> libs;
 algorithm
   libs := if isLinux then "-Wl,-rpath=\"" + dir + "\""::inLibs else inLibs;
   libs := (if target=="msvc" then "/LIBPATH:\"" + dir + "\"" else "\"-L" + dir + "\"")::libs;
 end generateExtFunctionLibraryDirectoryFlags2;
 
+protected function userCompiledBinariesDirectory
+  input Absyn.Path path;
+  output String str = Settings.getHomeDir(false)+"/.openmodelica/binaries/"+Absyn.pathFirstIdent(path);
+end userCompiledBinariesDirectory;
 
 protected function generateExtFunctionLibraryDirectoryPaths
   "Process LibraryDirectory and IncludeDirectory"
