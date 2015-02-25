@@ -296,7 +296,7 @@ algorithm
   end matchcontinue;
 end pantelidesIndexReductionMSS;
 
-protected function minimalStructurallySingularSystem "author: Frenkel TUD - 2012-04, 
+protected function minimalStructurallySingularSystem "author: Frenkel TUD - 2012-04,
   checks if the subset of equations is minimal structurally singular. The
   check is done for all equations and variables and for each subset.
   The number of states must be larger or equal to the number of unmatched
@@ -334,7 +334,7 @@ algorithm
 end minimalStructurallySingularSystem;
 
 protected function minimalStructurallySingularSystemMSS
-"author: Frenkel TUD - 2012-11, 
+"author: Frenkel TUD - 2012-11,
   helper for minimalStructurallySingularSystem"
   input list<list<Integer>> inEqnsLst;
   input BackendDAE.EqSystem inSystem;
