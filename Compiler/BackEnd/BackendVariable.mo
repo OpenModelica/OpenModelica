@@ -1616,33 +1616,30 @@ algorithm
                             NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER());
 end createDummyVar;
 
-public function createCSEVar
-"Creates a cse variable with the name of inCref."
+public function createCSEVar "Creates a cse variable with the name of inCref.
+  TODO: discrete real varaibales are not treated correctly"
   input DAE.ComponentRef inCref;
-  input DAE.Type varType;
+  input DAE.Type inType;
   output BackendDAE.Var outVar;
 algorithm
   outVar := match (inCref)
-  local
-    DAE.ElementSource source;
-    list<Absyn.Path> typeLst;
-    Absyn.Path path;
-  case (_) guard(ComponentReference.traverseCref(inCref,ComponentReference.crefIsRec,false)) equation
-    DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path),source=typeLst) = varType;
-    source = DAE.SOURCE(Absyn.dummyInfo,{},NONE(),{},path::typeLst,{},{});
-    outVar = BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
-                           varType, NONE(), NONE(), {}, source,
-                           NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
-  then outVar;
-  case(_) equation
-    outVar = BackendDAE.VAR(inCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
-                            varType, NONE(), NONE(), {}, DAE.emptyElementSource,
-                            NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
-   then outVar;
-  else
-    equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendVariable.createCSEVar failed."});
-   then fail();
+    local
+      DAE.ElementSource source;
+      list<Absyn.Path> typeLst;
+      Absyn.Path path;
+      BackendDAE.VarKind varKind;
+
+    case (_) guard(ComponentReference.traverseCref(inCref, ComponentReference.crefIsRec, false)) equation
+      DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path), source=typeLst) = inType;
+      source = DAE.SOURCE(Absyn.dummyInfo, {}, NONE(), {}, path::typeLst, {}, {});
+      varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+    then outVar;
+
+    case (_) equation
+      varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), SOME(BackendDAE.AVOID()), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER());
+    then outVar;
   end match;
 end createCSEVar;
 
