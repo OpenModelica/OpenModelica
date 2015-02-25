@@ -31,12 +31,12 @@ protected
   String figaro, database, xml, xml2;
   list<String> sl;
 algorithm
-  
+
   program := SCodeUtil.getElementWithPathCheckBuiltin(inProgram, inPath);
 
   // Code for the Figaro objects.
   figaro := makeFigaro(inProgram, program);
-  
+
   if figaro == ""
     then fail();
   end if;
@@ -95,11 +95,11 @@ algorithm
 
   // Debug.
   printFigaroClassList(fcl);
-  print("\n\n"); 
+  print("\n\n");
 
   fol := foElement(fcl, inModel);
 
-  // Debug. 
+  // Debug.
   printFigaroObjectList(fol);
 
   outCode := figaroObjectListToString(fol);
@@ -548,20 +548,20 @@ algorithm
   xml := "<REQUESTS>\n  ";
   xml := xml + "\n\n<LOAD_BDC_FI>\n    <FILE>";
   xml := xml + inDatabase;
-  
-  // In case a dbc file exists  
+
+  // In case a dbc file exists
   sl := stringListStringChar(inDatabase);
   newName := truncateExtension(sl);
   if System.regularFileExists(newName + ".bdc") then
   xml := xml + "</FILE>\n<FILE> " + newName + ".bdc";
   end if;
-  
+
   xml := xml + "</FILE>\n</LOAD_BDC_FI>\n";
   xml := xml + "\n\n<LOAD_BDF_FI>\n    <FILE>";
   xml := xml + inBdfFile;
   xml := xml + "</FILE>\n</LOAD_BDF_FI>\n";
   xml := xml + "<RUN_TREATMENT>\n";
-  
+
 
   // In case the fault tree will be needed.
   if inMode == "figaro0" then
@@ -578,14 +578,14 @@ algorithm
 
   xml := xml + "\n    <RESOLVE_CONST>VRAI</RESOLVE_CONST>\n    <RESOLVE_ATTR>FAUX</RESOLVE_ATTR>\n    <INST_RULE>VRAI</INST_RULE>\n";
   xml := xml + "</RUN_TREATMENT>\n</REQUESTS>";
-  outXml := xml; 
+  outXml := xml;
 end makeXml;
 
 protected function truncateExtension
    input List<String> name;
 
    output String newName;
-  algorithm  
+  algorithm
      newName := match name
       local String c;
         List<String> rest;
@@ -593,7 +593,7 @@ protected function truncateExtension
         then "";
      case c::rest
       then stringAppend (c, truncateExtension(rest));
-  end match;        
+  end match;
 end truncateExtension;
 
 protected function callFigaroProcessor "Calls the Figaro processor."
