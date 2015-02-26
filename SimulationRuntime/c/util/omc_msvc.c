@@ -178,7 +178,7 @@ unsigned int alarm (unsigned int seconds)
   must not be a string constant, but should be declared as a character array.
 
   The mkdtemp() function returns a pointer to the modified template string on
-  success, and NULL on failure, in which case errno is set appropriately. 
+  success, and NULL on failure, in which case errno is set appropriately.
 */
 char *mkdtemp(char *tpl)
 {
