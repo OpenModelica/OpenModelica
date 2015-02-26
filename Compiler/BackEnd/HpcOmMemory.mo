@@ -302,8 +302,8 @@ encapsulated package HpcOmMemory
           end if;
           //print cache map
           if Flags.isSet(Flags.HPCOM_DUMP) then
-            printCacheMap(cacheMap);
-            print("\n");
+            //printCacheMap(cacheMap);
+            //print("\n");
             //evaluateCacheBehaviour(cacheMap, iTaskGraphT, nodeSimCodeVarMapping, scVarCLMapping, iNumberOfThreads, numCL, iSchedulerInfo);
           end if;
         then SOME(tmpMemoryMap);
