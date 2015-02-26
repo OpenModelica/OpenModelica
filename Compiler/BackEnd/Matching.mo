@@ -52,6 +52,7 @@ protected import ClockIndexes;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
+protected import DumpGraphML;
 protected import Error;
 protected import Flags;
 protected import IndexReduction;
@@ -6238,7 +6239,7 @@ algorithm
     BackendDump.dumpMatching(inAssignments1);
     BackendDump.dumpMatching(inAssignments2);
     syst := BackendDAEUtil.setEqSystemMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-    IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"SingularSystem" + intString(n) + ".graphml",false);
+    DumpGraphML.dumpSystem(syst,ishared,NONE(),"SingularSystem" + intString(n) + ".graphml",false);
   */
   // get from scalar eqns indexes the indexes in the equation array
   unmatched := List.flatten(eqns);

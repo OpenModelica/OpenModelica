@@ -111,6 +111,9 @@ algorithm
         print("\nstart substitution\n========================================\n");
       end if;
       (orderedEqs, (HT, HT2, _, eqList, varList)) = BackendEquation.traverseEquationArray_WithUpdate(orderedEqs, substituteCSE, (HT, HT2, HT3, {}, {}));
+      if Flags.isSet(Flags.DUMP_CSE_VERBOSE) then
+        print("\n");
+      end if;
       orderedEqs = BackendEquation.addEquations(eqList, orderedEqs);
       orderedVars = BackendVariable.addVars(varList, orderedVars);
       if Flags.isSet(Flags.DUMP_CSE) then

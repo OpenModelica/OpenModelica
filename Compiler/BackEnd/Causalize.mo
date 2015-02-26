@@ -50,6 +50,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import DAEUtil;
 protected import Debug;
+protected import DumpGraphML;
 protected import Error;
 protected import Flags;
 protected import List;
@@ -161,7 +162,7 @@ algorithm
     BackendDump.printEqSystem(outSyst);
     comps := BackendDAETransform.tarjanAlgorithm(mT,ass2);
     BackendDump.dumpComponentsOLD(comps);
-    IndexReduction.dumpSystemGraphML(outSyst,iShared,NONE(),"SingularSystemCheck" + intString(nVars) + ".graphml",false);
+    DumpGraphML.dumpSystem(outSyst,iShared,NONE(),"SingularSystemCheck" + intString(nVars) + ".graphml",false);
   */
   // free states matching information because there it is unkown if the state or the state derivative was matched
   ((_,ass1,ass2)) := BackendVariable.traverseBackendDAEVars(vars, freeStateAssignments, (1,ass1,ass2));
@@ -241,7 +242,7 @@ algorithm
     BackendDump.dumpMatching(inAssignments1);
     BackendDump.dumpMatching(inAssignments2);
     syst := BackendDAEUtil.setEqSystemMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-  //  IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"SingularSystem" + intString(n) + ".graphml",false);
+  //  DumpGraphML.dumpSystem(syst,ishared,NONE(),"SingularSystem" + intString(n) + ".graphml",false);
   */
   // get from scalar eqns indexes the indexes in the equation array
   unmatched := List.flatten(eqns);

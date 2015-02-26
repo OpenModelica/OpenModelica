@@ -136,6 +136,7 @@ if true then /* Suppress output */
     "../BackEnd/CommonSubExpression.mo",
     "../BackEnd/DAEQuery.mo",
     "../BackEnd/Differentiate.mo",
+    "../BackEnd/DumpGraphML.mo",
     "../BackEnd/DumpHTML.mo",
     "../BackEnd/DynamicOptimization.mo",
     "../BackEnd/EvaluateFunctions.mo",

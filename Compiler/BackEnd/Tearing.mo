@@ -51,6 +51,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import Config;
 protected import Debug;
+protected import DumpGraphML;
 protected import Error;
 protected import Flags;
 protected import List;
@@ -343,7 +344,7 @@ algorithm
   subsyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
   funcs := BackendDAEUtil.getFunctions(ishared);
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs));
-     //  IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System" + intString(size) + ".graphml");
+     //  DumpGraphML.dumpSystem(subsyst,ishared,NONE(),"System" + intString(size) + ".graphml");
   if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
      print("\n\n###BEGIN print Strong Component#####################\n(Function:omcTearing)\n");
      BackendDump.printEqSystem(subsyst);
@@ -394,7 +395,7 @@ algorithm
   // unmatched equations are residual equations
   residual := Matching.getUnassigned(size,ass2,{});
      //  subsyst := BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-     //  IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"TornSystem" + intString(size) + ".graphml");
+     //  DumpGraphML.dumpSystem(subsyst,ishared,NONE(),"TornSystem" + intString(size) + ".graphml");
 
   // check if tearing makes sense
   tornsize := listLength(tvars);

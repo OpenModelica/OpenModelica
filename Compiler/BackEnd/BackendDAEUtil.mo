@@ -76,6 +76,7 @@ protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import Differentiate;
+protected import DumpGraphML;
 protected import DynamicOptimization;
 protected import Error;
 protected import EvaluateFunctions;
@@ -7227,7 +7228,7 @@ algorithm
       equation
         seqNo = System.tmpTickIndex(Global.backendDAE_fileSequence);
         fileName = fileNamePrefix + "_" + intString(seqNo) + "_Comps" + intString(systemSize(isyst)) + ".graphml";
-        IndexReduction.dumpSystemGraphML(isyst,ishared,NONE(),fileName,false);
+        DumpGraphML.dumpSystem(isyst,ishared,NONE(),fileName,false);
       then ();
 
   end matchcontinue;

@@ -50,6 +50,7 @@ protected import BaseHashSet;
 protected import ComponentReference;
 protected import Debug;
 protected import Differentiate;
+protected import DumpGraphML;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -170,7 +171,7 @@ algorithm
         //((_,ass1,ass2)) = List.fold1(eqn_lst,naturalMatching1,vars,(1,ass1,ass2));
         //((_,ass1,ass2)) = List.fold1(eqn_lst,naturalMatching2,vars,(1,ass1,ass2));
         //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemVectorMatching.graphml");
+        //  DumpGraphML.dumpSystem(subsyst,shared,NONE(),intString(size) + "SystemVectorMatching.graphml");
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpMatching(ass2);
 
@@ -189,7 +190,7 @@ algorithm
         arrayUpdate(ass1,128,temp);
         arrayUpdate(ass2,temp,128);
           subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-          IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemHackMatching.graphml");
+          DumpGraphML.dumpSystem(subsyst,shared,NONE(),intString(size) + "SystemHackMatching.graphml");
 */
 
         // Matching based on Enhanced Adiacency Matrix, take care of the solvability - theems to be good but not good enough
@@ -208,7 +209,7 @@ algorithm
         BackendDAEEXT.getAssignment(ass2,ass1);
 
         //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemOneMatching.graphml");
+        //  DumpGraphML.dumpSystem(subsyst,shared,NONE(),intString(size) + "SystemOneMatching.graphml");
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpMatching(ass2);
 
@@ -222,7 +223,7 @@ algorithm
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpMatching(ass2);
         //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemOneFreeMatching.graphml");
+        //  DumpGraphML.dumpSystem(subsyst,shared,NONE(),intString(size) + "SystemOneFreeMatching.graphml");
 
         // hier sollte zur vorsicht noch mal ein matching durchgefuehrt werden
           BackendDAEUtil.profilerstop1();
@@ -262,7 +263,7 @@ algorithm
         (mark,roots,constraints) = prepairOrphansOrder(vorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vorphansarray1,vars,{},{}) "generate cliques for tearing vars";
         mark = prepairOrphansOrder2(vorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vorphansarray1);
         //  subsyst = BackendDAE.EQSYSTEM(vars,eqns,SOME(mc),SOME(mct),BackendDAE.NO_MATCHING(),{});
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemPreIndex.graphml");
+        //  DumpGraphML.dumpSystem(subsyst,shared,NONE(),intString(size) + "SystemPreIndex.graphml");
         //  print("roots:\n");
         //  BackendDump.debuglst((roots,intString,", ","\n"));
         //  print("constraints:\n");
@@ -320,7 +321,7 @@ algorithm
         //  BackendDump.dumpMatching(vec2);
         //  vec3 = arrayCreate(size,-1);
         //  _ = List.fold1(arrayList(vec2),transposeOrphanVec,vec3,1);
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,SOME(vec3),"System.graphml");
+        //  DumpGraphML.dumpSystem(subsyst,shared,SOME(vec3),"System.graphml");
 
         ((_,_,_,eqns,vars)) = Array.fold(vec2,getEqnsinOrder,(eqns,vars,ass22,BackendEquation.listEquation({}),BackendVariable.emptyVars()));
           BackendDAEUtil.profilerstop1();
@@ -333,7 +334,7 @@ algorithm
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{},BackendDAE.UNKNOWN_PARTITION());
         (subsyst,m,_) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
         //  BackendDump.dumpEqSystem(subsyst);
-        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) + "SystemIndexed.graphml");
+        //  DumpGraphML.dumpSystem(subsyst,shared,NONE(),intString(size) + "SystemIndexed.graphml");
         (SOME(jac),_) = SymbolicJacobian.calculateJacobian(vars, eqns, m, true, ishared);
         (beqs,_) = BackendDAEUtil.getEqnSysRhs(eqns,vars,SOME(funcs));
         beqs = listReverse(beqs);
@@ -2694,7 +2695,7 @@ algorithm
        _ = List.fold1r(vorphans,arrayUpdate,{},mT);
 
        //   syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{});
-       //   IndexReduction.dumpSystemGraphML(syst,shared,NONE(),intString(size) + "SystemIndexing" + intString(index) + ".graphml");
+       //   DumpGraphML.dumpSystem(syst,shared,NONE(),intString(size) + "SystemIndexing" + intString(index) + ".graphml");
 
       then
        getIndexesForEqnsAdvanced(rest,index1+1,m,mT,mark+2,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size);
