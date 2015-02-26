@@ -174,15 +174,19 @@ char *mkdtemp(char *tpl)
 {
   int numChars = 0, i, len;
   char tempDirectory[1024], tmpDir[2048];
-    //extract the temp path
+
+  /* extract the temp path */
   numChars = GetTempPath(1024, tempDirectory);
   sprintf(tmpDir, "%s\\%s", tempDirectory, tpl);
   len = strlen(tmpDir);
-  for (i = len; i < len - 6; i--)
+  for (i = len; i < len + 6; i++)
   {
     /* generate random numbers between 0..9 for the last 6 chars of the temp name */
-    tmpDir[i] = 48 + rand()%9;
+    tmpDir[i] = '0' + rand()%10;
   }
+  /* terminate string */
+  tmpDir[i] = 0;
+
   mkdir(tmpDir);
   return strdup(tmpDir);
 }
