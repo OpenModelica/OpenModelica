@@ -853,7 +853,7 @@ algorithm
         for i in listReverse(inAlgorithm.iterators) loop
           (iter_name, iter_range) := translateIterator(i, inInfo);
           body := {SCode.ALG_FOR(iter_name, iter_range, body, inComment, inInfo)};
-        end for; 
+        end for;
       then
         listHead(body);
 
@@ -865,7 +865,7 @@ algorithm
         for i in listReverse(inAlgorithm.iterators) loop
           (iter_name, iter_range) := translateIterator(i, inInfo);
           body := {SCode.ALG_PARFOR(iter_name, iter_range, body, inComment, inInfo)};
-        end for; 
+        end for;
       then
         listHead(body);
 
@@ -929,7 +929,7 @@ algorithm
     case Absyn.ALG_RETURN() then SCode.ALG_RETURN(inComment, inInfo);
     case Absyn.ALG_BREAK() then SCode.ALG_BREAK(inComment, inInfo);
     case Absyn.ALG_CONTINUE() then SCode.ALG_CONTINUE(inComment, inInfo);
-      
+
   end match;
 end translateClassdefAlgorithmItem;
 
@@ -1627,7 +1627,7 @@ algorithm
         else_branch := translateEEquations(inEquation.equationElseItems, inIsInitial);
       then
         SCode.EQ_IF(conditions, body :: bodies, else_branch, inComment, inInfo);
-        
+
     case Absyn.EQ_WHEN_E()
       algorithm
         body := translateEEquations(inEquation.whenEquations, inIsInitial);
@@ -1717,7 +1717,7 @@ protected function translateIterator
 protected
   Option<Absyn.Exp> guard_exp;
 algorithm
-  Absyn.ITERATOR(name = outName, guardExp = guard_exp, range = outRange) := inIterator; 
+  Absyn.ITERATOR(name = outName, guardExp = guard_exp, range = outRange) := inIterator;
 
   if isSome(guard_exp) then
     Error.addSourceMessageAndFail(Error.INTERNAL_ERROR,

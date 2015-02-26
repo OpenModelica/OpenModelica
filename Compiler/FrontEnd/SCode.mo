@@ -2183,7 +2183,7 @@ algorithm
         end if;
       then
         List.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg);
-        
+
     case EQ_WHEN()
       algorithm
         outArg := List.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg);
@@ -2280,9 +2280,9 @@ algorithm
     case ALG_WHILE()
       algorithm
         outArg := inFunc(inStatement.boolExpr, outArg);
-      then 
+      then
         List.fold1(inStatement.whileBody, foldStatementsExps, inFunc, outArg);
-        
+
     case ALG_WHEN_A()
       algorithm
         for branch in inStatement.branches loop

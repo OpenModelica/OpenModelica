@@ -249,7 +249,7 @@ algorithm
         failure(_ := ClassInf.trans(inState,ClassInf.FOUND_EQUATION()));
         s := ClassInf.printStateStr(inState);
         Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
-      then 
+      then
         fail();
 
     // We only want to print a generic error message if no other error message was printed
@@ -339,7 +339,7 @@ algorithm
           Static.elabExp(inCache, inEnv, lhs_aexp, inImpl, NONE(), true, inPrefix, info);
         (outCache, rhs_exp, rhs_prop) :=
           Static.elabExp(inCache, inEnv, rhs_aexp, inImpl, NONE(), true, inPrefix, info);
-        
+
         (outCache, lhs_exp, lhs_prop) :=
           Ceval.cevalIfConstant(outCache, inEnv, lhs_exp, lhs_prop, inImpl, info);
         (outCache, rhs_exp, rhs_prop) :=
@@ -371,7 +371,7 @@ algorithm
         // Check that all conditions are Boolean.
         prop := Types.propsAnd(props);
         checkIfConditionTypes(prop, inEEquation.condition, props, info);
-  
+
         // Try to select one of the branches.
         try
           rest_branches := branches;
@@ -387,7 +387,7 @@ algorithm
             true := Types.isParameterOrConstant(c);
 
             (outCache, val) := Ceval.ceval(outCache, outEnv, cond, inImpl,
-                NONE(), Absyn.NO_MSG(), 0); 
+                NONE(), Absyn.NO_MSG(), 0);
             true := checkIfConditionBinding(val, info);
 
             if ValuesUtil.valueBool(val) then
@@ -428,7 +428,7 @@ algorithm
         end try;
       then
         (outDae, outState);
-         
+
     case SCode.EQ_WHEN(info = info)
       algorithm
         if SCode.isInitial(inInitial) then
@@ -451,7 +451,7 @@ algorithm
         for branch in listReverse(inEEquation.elseBranches) loop
           (outCache, outEnv, outIH, exp, el2, outGraph) :=
             instWhenEqBranch(outCache, outEnv, outIH, inPrefix, inSets, inState,
-              branch, inImpl, alwaysUnroll, outGraph, info); 
+              branch, inImpl, alwaysUnroll, outGraph, info);
 
           crefs2 := DAEUtil.verifyWhenEquation(el2);
           crefs2 := List.unionOnTrue(crefs1, crefs2, ComponentReference.crefEqual);
@@ -511,7 +511,7 @@ algorithm
         (outCache, outDae, outSets, outGraph) := unroll(outCache, env, inIH,
            inPrefix, inSets, inState, inEEquation.index, ty, val,
            inEEquation.eEquationLst, inInitial, inImpl, inGraph);
-        outState := instEquationCommonCiTrans(inState, inInitial); 
+        outState := instEquationCommonCiTrans(inState, inInitial);
       then
         (outDae, outState);
 
@@ -538,7 +538,7 @@ algorithm
         outDae := DAE.DAE({DAE.TERMINATE(msg_exp, source)});
       then
         (outDae, inState);
-        
+
     case SCode.EQ_REINIT(info = info)
       algorithm
         // Elaborate the cref.
@@ -559,7 +559,7 @@ algorithm
           inEnv, Absyn.CREF(inEEquation.cref), inEEquation.expReinit, cr_exp,
           exp, cr_prop, prop, inImpl, inPrefix, info);
         (outCache, cr_exp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, cr_exp, inPrefix);
-        (outCache, exp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, exp, inPrefix); 
+        (outCache, exp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, exp, inPrefix);
 
         source := makeEqSource(info, inEnv, inPrefix, inFlattenOp);
 
@@ -583,7 +583,7 @@ algorithm
           // This is probably an external function call that the user wants to
           // evaluate at runtime, so don't ceval it.
           (outCache, exp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, exp, inPrefix);
-          
+
           source := makeEqSource(info, inEnv, inPrefix, inFlattenOp);
           outDae := instEquationNoRetCallVectorization(exp, inInitial, source);
           outState := inState;
@@ -599,7 +599,7 @@ algorithm
             FGraph.getGraphNameStr(inEnv));
       then
         fail();
-        
+
   end matchcontinue;
 end instEquationCommonWork;
 
@@ -653,7 +653,7 @@ algorithm
 
   end match;
 end checkIfConditionTypes;
-      
+
 protected function checkIfConditionBinding
   "Checks that the condition of an if-branch has a binding."
   input Values.Value inValues;
@@ -697,7 +697,7 @@ algorithm
   (outCache, outArg, props) :=
     Static.elabExp(inCache, inEnv, inArg, inImpl, NONE(), true, inPrefix, inInfo);
   ty := Types.getPropType(props);
-  
+
   if not Types.subtype(ty, inExpectedType) then
     Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
       {intString(inArgIndex), inOperatorName, inArgName,
@@ -710,7 +710,7 @@ algorithm
   (outCache, outArg) :=
     PrefixUtil.prefixExp(outCache, inEnv, inIH, outArg, inPrefix);
 end instOperatorArg;
-   
+
 protected function isConnectionsOperator
   input Absyn.Exp inExp;
   output Boolean yes;
@@ -970,7 +970,7 @@ protected function checkReinitType
   input SourceInfo inInfo;
   output Boolean outSucceeded;
 algorithm
-  outSucceeded := matchcontinue inProperties 
+  outSucceeded := matchcontinue inProperties
     local
       DAE.Type ty;
       String cref_str, ty_str, cnst_str;
@@ -1014,7 +1014,7 @@ algorithm
     local
       list<Absyn.Exp> crefs;
       String left_str, right_str;
-      
+
     case (Absyn.TUPLE(crefs), Absyn.CALL())
       algorithm
         if not List.all(crefs, Absyn.isCref) then
@@ -1039,7 +1039,7 @@ algorithm
   end match;
 end checkTupleCallEquationMessage;
 
-protected function instEquationNoRetCallVectorization 
+protected function instEquationNoRetCallVectorization
   "Creates DAE for NORETCALLs and also performs vectorization if needed."
   input DAE.Exp exp;
   input SCode.Initial initial_;
@@ -1058,14 +1058,14 @@ protected function makeDAEArrayEqToReinitForm
   input DAE.Element inEq;
   output DAE.Element outEqn;
 algorithm
-  outEqn := match inEq 
+  outEqn := match inEq
     local
       DAE.ComponentRef cr1, cr2;
       DAE.Exp e2, e;
       DAE.Type t;
       DAE.ElementSource source "the origin of the element";
 
-    case DAE.EQUATION(DAE.CREF(componentRef=cr1), e, source) 
+    case DAE.EQUATION(DAE.CREF(componentRef=cr1), e, source)
       then DAE.REINIT(cr1, e, source);
 
     case DAE.DEFINE(cr1, e, source)
@@ -1869,7 +1869,7 @@ protected
   SourceInfo info;
   list<Absyn.IteratorIndexedCref> iter_crefs;
 algorithm
-  SCode.ALG_FOR(index = iterator, range = oarange, forBody = body, info = info) := inForStatement; 
+  SCode.ALG_FOR(index = iterator, range = oarange, forBody = body, info = info) := inForStatement;
 
   if isSome(oarange) then
     SOME(arange) := oarange;
@@ -1942,7 +1942,7 @@ algorithm
   source := DAEUtil.addElementSourceFileInfo(inSource, inInfo);
   outStatements :=
     {Algorithm.makeFor(inIterator, range, inRangeProps, outStatements, source)};
-end instForStatement_dispatch; 
+end instForStatement_dispatch;
 
 protected function instComplexEquation "instantiate a comlex equation, i.e. c = Complex(1.0,-1.0) when Complex is a record"
   input DAE.Exp lhs;
@@ -2265,7 +2265,7 @@ algorithm
       DAE.Exp cond_exp, msg_exp, level_exp, exp, cr_exp;
       DAE.Properties cond_prop, msg_prop, level_prop, prop, cr_prop;
       list<DAE.Statement> if_branch, else_branch, branch;
-      list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> else_if_branches; 
+      list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> else_if_branches;
       Absyn.Exp aexp;
       list<SCode.Statement> sstmts;
       DAE.ElementSource source;
@@ -2288,7 +2288,7 @@ algorithm
           inPrefix, inStatement.boolExpr, inImpl, info);
         (outCache, if_branch) := instStatements(outCache, inEnv, inIH, inPrefix,
           inState, inStatement.trueBranch, inSource, inInitial, inImpl, inUnrollLoops);
-        
+
         // Instantiate the elseif branches.
         else_if_branches := {};
         for else_if in inStatement.elseIfBranch loop
@@ -2300,7 +2300,7 @@ algorithm
           else_if_branches := (exp, prop, branch) :: else_if_branches;
         end for;
         else_if_branches := listReverse(else_if_branches);
-        
+
         // Instantiate the else branch.
         (outCache, else_branch) := instStatements(outCache, inEnv, inIH, inPrefix,
           inState, inStatement.elseBranch, inSource, inInitial, inImpl, inUnrollLoops);
@@ -2330,7 +2330,7 @@ algorithm
           inPrefix, inStatement.boolExpr, inImpl, info);
         (outCache, branch) := instStatements(outCache, inEnv, inIH, inPrefix,
           inState, inStatement.whileBody, inSource, inInitial, inImpl, inUnrollLoops);
-      
+
         source := DAEUtil.addElementSourceFileInfo(inSource, info);
       then
         {Algorithm.makeWhile(cond_exp, cond_prop, branch, source)};
@@ -2341,8 +2341,8 @@ algorithm
         if ClassInf.isFunction(inState) then
           Error.addSourceMessageAndFail(Error.FUNCTION_ELEMENT_WRONG_KIND, {"when"}, info);
         end if;
-   
-        checkWhenAlgorithm(inStatement); 
+
+        checkWhenAlgorithm(inStatement);
         source := DAEUtil.addElementSourceFileInfo(inSource, info);
         when_stmt_opt := NONE();
 
@@ -2368,7 +2368,7 @@ algorithm
           inPrefix, inStatement.message, inImpl, info);
         (outCache, level_exp, level_prop) := instExp(outCache, inEnv, inIH,
           inPrefix, inStatement.level, inImpl, info);
-      
+
         source := DAEUtil.addElementSourceFileInfo(inSource, info);
       then
         Algorithm.makeAssert(cond_exp, msg_exp, level_exp, cond_prop, msg_prop, level_prop, source);
@@ -2400,7 +2400,7 @@ algorithm
         source := DAEUtil.addElementSourceFileInfo(inSource, info);
       then
         if Expression.isTuple(exp) then {} else {DAE.STMT_NORETCALL(exp, source)};
-        
+
     case SCode.ALG_BREAK(info = info)
       algorithm
         source := DAEUtil.addElementSourceFileInfo(inSource, info);
@@ -2412,7 +2412,7 @@ algorithm
         source := DAEUtil.addElementSourceFileInfo(inSource, info);
       then
         {DAE.STMT_CONTINUE(source)};
-        
+
     case SCode.ALG_RETURN(info = info)
       algorithm
         if not ClassInf.isFunction(inState) then
@@ -2444,7 +2444,7 @@ algorithm
         (outCache, else_branch) := instStatements(outCache, inEnv, inIH, inPrefix,
           inState, inStatement.elseBody, inSource, inInitial, inImpl, inUnrollLoops);
         source := DAEUtil.addElementSourceFileInfo(inSource, info);
-        
+
         cases := {
           DAE.CASE({}, NONE(), {}, if_branch, SOME(DAE.TUPLE({})), info, 0, info),
           DAE.CASE({}, NONE(), {}, else_branch, SOME(DAE.TUPLE({})), info, 0, info)
@@ -5185,7 +5185,7 @@ protected
   SourceInfo info;
   list<Absyn.IteratorIndexedCref> iter_crefs;
 algorithm
-  SCode.ALG_PARFOR(index = iterator, range = oarange, parforBody = body, info = info) := inForStatement; 
+  SCode.ALG_PARFOR(index = iterator, range = oarange, parforBody = body, info = info) := inForStatement;
 
   if isSome(oarange) then
     SOME(arange) := oarange;
@@ -5273,7 +5273,7 @@ algorithm
   source := DAEUtil.addElementSourceFileInfo(inSource, inInfo);
   outStatements :=
     {Algorithm.makeParFor(inIterator, range, inRangeProps, outStatements, loop_prl_vars, source)};
-end instParForStatement_dispatch; 
+end instParForStatement_dispatch;
 
 protected function isCrefParGlobalOrForIterator
 "Checks if a component reference is referencing a parglobal
