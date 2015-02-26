@@ -5578,7 +5578,7 @@ algorithm
   parTime := HpcOmTaskGraph.roundReal(parTime,2);
   oCriticalPathInfo := HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
   cpCostsWoC := HpcOmTaskGraph.roundReal(cpCostsWoC,2);
-  
+
   if Flags.isSet(Flags.HPCOM_DUMP) then
       print("the serialCosts: "+realString(serTime)+"\n");
       print("the parallelCosts: "+realString(parTime)+"\n");

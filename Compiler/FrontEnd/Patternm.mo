@@ -2755,7 +2755,7 @@ algorithm
     case DAE.STMT_FOR(ty,b,id,index,exp,body,source)
       equation
         // Loops repeat, so check for usage in the whole loop before removing any dead stores.
-        (_, useTree) = List.map1Fold(body, statementFindDeadStore, localsTree, inUseTree); 
+        (_, useTree) = List.map1Fold(body, statementFindDeadStore, localsTree, inUseTree);
         (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree, useTree);
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
         // TODO: We should remove ident from the use-tree in case of shadowing... But our avlTree cannot delete
@@ -2765,7 +2765,7 @@ algorithm
     case DAE.STMT_WHILE(exp=exp,statementLst=body,source=source)
       equation
         // Loops repeat, so check for usage in the whole loop before removing any dead stores.
-        (_, useTree) = List.map1Fold(body, statementFindDeadStore, localsTree, inUseTree); 
+        (_, useTree) = List.map1Fold(body, statementFindDeadStore, localsTree, inUseTree);
         (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body, localsTree, useTree);
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
         // The loop might not be entered just like if. The following should not remove all previous uses:
