@@ -5577,9 +5577,12 @@ algorithm
   parTime := realSum(levelCosts);
   parTime := HpcOmTaskGraph.roundReal(parTime,2);
   oCriticalPathInfo := HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+  cpCostsWoC := HpcOmTaskGraph.roundReal(cpCostsWoC,2);
+  
   if Flags.isSet(Flags.HPCOM_DUMP) then
       print("the serialCosts: "+realString(serTime)+"\n");
       print("the parallelCosts: "+realString(parTime)+"\n");
+       print("the cpCosts: "+realString(cpCostsWoC)+"\n");
       i := 1;
       for levelCost in levelCosts loop
         costShare := intDiv(realInt(levelCost)*100,realInt(parTime));
