@@ -1382,10 +1382,9 @@ algorithm
         elabExpInExpression(outCache, inEnv, aiter_exp, inImpl, outST, inDoVect, inPrefix, inInfo);
     else
       // An implicit iteration range, try to deduce the range based on how the
-      // iterator is used..
-      (iter_exp, full_iter_ty, outCache) :=
-        deduceReductionIterationRange(iter_name, inReductionExp, inEnv, outCache, inInfo);
-      iter_const := DAE.C_CONST();
+      // iterator is used.
+      (iter_exp, DAE.PROP(full_iter_ty, iter_const), outCache) := deduceIterationRange(iter_name,
+        Absyn.findIteratorIndexedCrefs(inReductionExp, iter_name), inEnv, outCache, inInfo);
     end if;
 
     // We need to evaluate the iterator because the rest of the compiler is stupid.
@@ -1421,21 +1420,20 @@ algorithm
   outDims := listReverse(outDims);
 end elabCallReductionIterators;
 
-protected function deduceReductionIterationRange
+public function deduceIterationRange
   "This function tries to deduce the size of an iteration range for a reduction
    based on how an iterator is used. It does this by analysing the reduction
    expression to find out where the iterator is used as a subscript, and uses
    the subscripted components' dimensions to determine the size of the range."
   input String inIterator;
-  input Absyn.Exp inReductionExp;
+  input list<Absyn.IteratorIndexedCref> inCrefs;
   input FCore.Graph inEnv;
   input FCore.Cache inCache;
   input Absyn.Info inInfo;
   output DAE.Exp outRange;
-  output DAE.Type outType;
+  output DAE.Properties outProperties;
   output FCore.Cache outCache = inCache;
 protected
-  list<tuple<Absyn.ComponentRef, Integer>> crefs;
   Absyn.ComponentRef acref;
   DAE.ComponentRef cref;
   Integer idx, i1, i2;
@@ -1446,19 +1444,14 @@ protected
   list<DAE.Exp> ranges = {};
   String cr_str1, cr_str2;
 algorithm
-  // Collect all crefs that are subscripted with the given iterator.
-  (_, crefs) := Absyn.traverseExp(inReductionExp,
-    function deduceReductionIterationRange_traverser(inIterator = inIterator), {});
-  crefs := List.uniqueOnTrue(crefs, iteratorIndexedCrefsEqual);
-
-  // Check that we found some crefs, otherwise we print an error and fail.
-  if listLength(crefs) < 1 then
+  // Check that we have some crefs, otherwise we print an error and fail.
+  if listLength(inCrefs) < 1 then
     Error.addSourceMessageAndFail(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,
       {inIterator}, inInfo);
   end if;
 
   // For each cref-index pair, figure out the range of the subscripted dimension.
-  for cr in crefs loop
+  for cr in inCrefs loop
     (acref, idx) := cr;
     cref := ComponentReference.toExpCref(acref);
 
@@ -1477,14 +1470,14 @@ algorithm
     if idx <= listLength(dims) then
       // Get the indexed dimension and construct a range from it.
       dim := listGet(dims, idx);
-      (range, outType) := deduceReductionIterationRange2(dim, cref, ty, idx);
+      (range, outProperties) := deduceReductionIterationRange2(dim, cref, ty, idx);
     else
       // The indexed dimension doesn't exist, i.e. we have too many subscripts.
       // Return some dummy variables, and let elabCallReduction handle the error
       // reporting since we don't know how many subscripts were used here.
       range := DAE.ICONST(0);
-      outType := DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(0)},
-        DAE.emptyTypeSource);
+      outProperties := DAE.PROP(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(0)},
+        DAE.emptyTypeSource), DAE.C_UNKNOWN());
     end if;
 
     ranges := range :: ranges;
@@ -1498,16 +1491,16 @@ algorithm
 
   for r in ranges loop
     if not Expression.expEqual(r, outRange) then
-      (acref, i1) := listHead(crefs);
+      (acref, i1) := listHead(inCrefs);
       cr_str1 := Dump.printComponentRefStr(acref);
-      (acref, i2) := listGet(crefs, idx);
+      (acref, i2) := listGet(inCrefs, idx);
       cr_str2 := Dump.printComponentRefStr(acref);
       Error.addSourceMessageAndFail(Error.INCOMPATIBLE_IMPLICIT_RANGES,
         {intString(i2), cr_str2, intString(i1), cr_str1}, inInfo);
     end if;
     idx := idx + 1;
   end for;
-end deduceReductionIterationRange;
+end deduceIterationRange;
 
 protected function iteratorIndexedCrefsEqual
   "Checks whether two cref-index pairs are equal."
@@ -1625,9 +1618,10 @@ protected function deduceReductionIterationRange2
   input DAE.Type inType "The type of the subscripted component.";
   input Integer inIndex "The index of the dimension.";
   output DAE.Exp outRange "The range expression.";
-  output DAE.Type outType "The type of the range expression.";
+  output DAE.Properties outProperties "The properties of the range expression.";
 protected
   DAE.Type range_ty;
+  DAE.Const range_const;
   Absyn.Path enum_path, enum_start, enum_end;
   list<String> enum_lits;
   Integer sz;
@@ -1637,6 +1631,7 @@ algorithm
     case DAE.DIM_BOOLEAN()
       algorithm
         range_ty := DAE.T_BOOL_DEFAULT;
+        range_const := DAE.C_CONST();
       then
         DAE.RANGE(range_ty, DAE.BCONST(false), NONE(), DAE.BCONST(true));
 
@@ -1646,6 +1641,7 @@ algorithm
         enum_start := Absyn.suffixPath(enum_path, listHead(enum_lits));
         enum_end := Absyn.suffixPath(enum_path, List.last(enum_lits));
         range_ty := DAE.T_ENUMERATION(NONE(), enum_path, enum_lits, {}, {}, DAE.emptyTypeSource);
+        range_const := DAE.C_CONST();
       then
         DAE.RANGE(range_ty, DAE.ENUM_LITERAL(enum_start, 1), NONE(),
           DAE.ENUM_LITERAL(enum_end, listLength(enum_lits)));
@@ -1654,6 +1650,7 @@ algorithm
     case DAE.DIM_INTEGER(integer = sz)
       algorithm
         range_ty := DAE.T_INTEGER_DEFAULT;
+        range_const := DAE.C_CONST();
       then
         DAE.RANGE(range_ty, DAE.ICONST(1), NONE(), DAE.ICONST(sz));
 
@@ -1661,14 +1658,18 @@ algorithm
     else
       algorithm
         range_ty := DAE.T_INTEGER_DEFAULT;
+        range_const := DAE.C_PARAM();
       then
         DAE.RANGE(range_ty, DAE.ICONST(1), NONE(),
           DAE.SIZE(DAE.CREF(inCref, inType), SOME(DAE.ICONST(inIndex))));
 
   end match;
 
-  // The type of the range expression.
-  outType := DAE.T_ARRAY(range_ty, {inDimension}, DAE.emptyTypeSource);
+  // Set the properties of the range expression.
+  outProperties := DAE.PROP(
+    DAE.T_ARRAY(range_ty, {inDimension}, DAE.emptyTypeSource),
+    range_const
+  );
 end deduceReductionIterationRange2;
 
 protected function makeReductionFoldExp

@@ -429,7 +429,6 @@ algorithm
     else
       equation
         numProcSys = System.numProcessors();
-        _ = if intGt(numProcFlag,numProcSys) then numProcSys else numProcFlag; // the system does not provide so many cores
         if intGt(numProcFlag,numProcSys) and Flags.isSet(Flags.HPCOM_DUMP) then
           print("Warning: Your system provides only "+intString(numProcSys)+" processors!\n");
         end if;

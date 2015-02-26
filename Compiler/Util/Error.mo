@@ -399,6 +399,8 @@ public constant Message CONDITIONAL_EXP_WITHOUT_VALUE = MESSAGE(137, TRANSLATION
   Util.gettext("The conditional expression %s could not be evaluated."));
 public constant Message INCOMPATIBLE_IMPLICIT_RANGES = MESSAGE(138, TRANSLATION(), ERROR(),
   Util.gettext("Dimension %s of %s and %s of %s differs when trying to deduce implicit iteration range."));
+public constant Message INITIAL_WHEN = MESSAGE(139, TRANSLATION(), ERROR(),
+  Util.gettext("when-clause is not allowed in initial section."));
 public constant Message MODIFICATION_INDEX_NOT_FOUND = MESSAGE(140, TRANSLATION(), ERROR(),
   Util.gettext("Instantiation of array component: %s failed because index modification: %s is invalid.\n\tArray component: %s has more dimensions than binding %s."));
 public constant Message DUPLICATE_MODIFICATIONS_WARNING = MESSAGE(141, TRANSLATION(), WARNING(),
@@ -591,95 +593,97 @@ public constant Message LIBRARY_UNEXPECTED_WITHIN = MESSAGE(235, GRAMMAR(), ERRO
   Util.gettext("Expected the package to have %s but got %s."));
 public constant Message LIBRARY_UNEXPECTED_NAME = MESSAGE(236, GRAMMAR(), ERROR(),
   Util.gettext("Expected the package to have name %s, but got %s."));
-public constant Message PACKAGE_MO_NOT_IN_ORDER = MESSAGE(236, GRAMMAR(), ERROR(),
+public constant Message PACKAGE_MO_NOT_IN_ORDER = MESSAGE(237, GRAMMAR(), ERROR(),
   Util.gettext("Elements in the package.mo-file need to be in the same relative order as the package.order file. Got element named %s but it was already added because it was not the next element in the list at that time."));
-public constant Message LIBRARY_EXPECTED_PARTS = MESSAGE(237, GRAMMAR(), ERROR(),
+public constant Message LIBRARY_EXPECTED_PARTS = MESSAGE(238, GRAMMAR(), ERROR(),
   Util.gettext("%s is a package.mo-file and needs to be based on class parts (i.e. not class extends, derived class, or enumeration)."));
-public constant Message PACKAGE_ORDER_FILE_NOT_FOUND = MESSAGE(238, GRAMMAR(), ERROR(),
+public constant Message PACKAGE_ORDER_FILE_NOT_FOUND = MESSAGE(239, GRAMMAR(), ERROR(),
   Util.gettext("%1 was referenced in the package.order file, but was not found in package.mo, %1/package.mo or %1.mo."));
-public constant Message FOUND_ELEMENT_NOT_IN_ORDER_FILE = MESSAGE(239, GRAMMAR(), ERROR(),
+public constant Message FOUND_ELEMENT_NOT_IN_ORDER_FILE = MESSAGE(240, GRAMMAR(), ERROR(),
   Util.gettext("Got element %1 that was not referenced in the package.order file."));
-public constant Message ORDER_FILE_COMPONENTS = MESSAGE(240, GRAMMAR(), ERROR(),
+public constant Message ORDER_FILE_COMPONENTS = MESSAGE(241, GRAMMAR(), ERROR(),
   Util.gettext("Components referenced in the package.order file must be moved in full chunks. Either split the constants to different lines or make them subsequent in the package.order file."));
-public constant Message GUARD_EXPRESSION_TYPE_MISMATCH = MESSAGE(241, GRAMMAR(), ERROR(),
+public constant Message GUARD_EXPRESSION_TYPE_MISMATCH = MESSAGE(242, GRAMMAR(), ERROR(),
   Util.gettext("Guard expressions need to be Boolean, got expression of type %s."));
-public constant Message FUNCTION_RETURNS_META_ARRAY = MESSAGE(242, TRANSLATION(), ERROR(),
+public constant Message FUNCTION_RETURNS_META_ARRAY = MESSAGE(243, TRANSLATION(), ERROR(),
   Util.gettext("User-defined function calls that return Array<...> are not supported: %s."));
-public constant Message ASSIGN_UNKNOWN_ERROR = MESSAGE(243, TRANSLATION(), ERROR(),
+public constant Message ASSIGN_UNKNOWN_ERROR = MESSAGE(244, TRANSLATION(), ERROR(),
   Util.gettext("Failed elaborate assignment for some unknown reason: %1 := %2. File a bug report and we will make sure this error gets a better message in the future."));
-public constant Message WARNING_DEF_USE = MESSAGE(244, TRANSLATION(), WARNING(),
+public constant Message WARNING_DEF_USE = MESSAGE(245, TRANSLATION(), WARNING(),
   Util.gettext("%s was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed."));
-public constant Message EXP_TYPE_MISMATCH = MESSAGE(245, TRANSLATION(), ERROR(),
+public constant Message EXP_TYPE_MISMATCH = MESSAGE(246, TRANSLATION(), ERROR(),
   Util.gettext("Expression %1 has type %3, expected type %2."));
-public constant Message PACKAGE_ORDER_DUPLICATES = MESSAGE(246, TRANSLATION(), ERROR(),
+public constant Message PACKAGE_ORDER_DUPLICATES = MESSAGE(247, TRANSLATION(), ERROR(),
   Util.gettext("Found duplicate names in package.order file: %s."));
-public constant Message ERRONEOUS_TYPE_ERROR = MESSAGE(247, TRANSLATION(), ERROR(),
+public constant Message ERRONEOUS_TYPE_ERROR = MESSAGE(248, TRANSLATION(), ERROR(),
   Util.gettext("Got type mismatch error, but matching types %s.\nThis is a ***COMPILER BUG***, please report it to https://trac.openmodelica.org/OpenModelica."));
-public constant Message REINIT_MUST_BE_VAR_OR_ARRAY = MESSAGE(225, TRANSLATION(), ERROR(),
+public constant Message REINIT_MUST_BE_VAR_OR_ARRAY = MESSAGE(249, TRANSLATION(), ERROR(),
   Util.gettext("The first argument to reinit must be a variable of type Real or an array of such variables."));
-public constant Message SLICE_ASSIGN_NON_ARRAY = MESSAGE(226, SCRIPTING(), ERROR(),
+public constant Message SLICE_ASSIGN_NON_ARRAY = MESSAGE(250, SCRIPTING(), ERROR(),
   Util.gettext("Cannot assign slice to non-initialized array %s."));
-public constant Message EXTERNAL_ARG_WRONG_EXP = MESSAGE(227, TRANSLATION(), ERROR(),
+public constant Message EXTERNAL_ARG_WRONG_EXP = MESSAGE(251, TRANSLATION(), ERROR(),
   Util.gettext("Expression %s cannot be an external argument. Only identifiers, scalar constants, and size-expressions are allowed."));
-public constant Message OPERATOR_FUNCTION_NOT_EXPECTED = MESSAGE(228, TRANSLATION(), ERROR(),
+public constant Message OPERATOR_FUNCTION_NOT_EXPECTED = MESSAGE(252, TRANSLATION(), ERROR(),
   Util.gettext("Only classes of type 'operator record' may contain elements of type 'operator function'; %s was found in a class that has restriction '%s'."));
-public constant Message OPERATOR_FUNCTION_EXPECTED = MESSAGE(229, TRANSLATION(), ERROR(),
+public constant Message OPERATOR_FUNCTION_EXPECTED = MESSAGE(253, TRANSLATION(), ERROR(),
   Util.gettext("'operator record' classes may only contain elements of type 'operator function'; %s has restriction '%s'."));
-public constant Message STRUCTURAL_SINGULAR_INITIAL_SYSTEM = MESSAGE(230, SYMBOLIC(), ERROR(),
+public constant Message STRUCTURAL_SINGULAR_INITIAL_SYSTEM = MESSAGE(254, SYMBOLIC(), ERROR(),
   Util.gettext("Initialization problem is structurally singular, error found sorting equations \n %s for variables \n %s"));
-public constant Message UNFIXED_PARAMETER_WITH_BINDING = MESSAGE(231, SYMBOLIC(), WARNING(),
+public constant Message UNFIXED_PARAMETER_WITH_BINDING = MESSAGE(255, SYMBOLIC(), WARNING(),
   Util.gettext("The parameter %s has fixed = false and a binding equation %s = %s, which is probably redundant.\nSetting fixed = false usually means there is an additional initial equation to determine the parameter value. The binding was ignored by old Modelica tools, but this is not according to the Modelica specification. Please remove the parameter binding, or bind the parameter to another parameter with fixed = false and no binding."));
-public constant Message UNFIXED_PARAMETER_WITH_BINDING_31 = MESSAGE(232, SYMBOLIC(), WARNING(),
+public constant Message UNFIXED_PARAMETER_WITH_BINDING_31 = MESSAGE(256, SYMBOLIC(), WARNING(),
   Util.gettext("The parameter %s has fixed = false and a binding equation %s = %s, which is probably redundant. The binding equation will be ignored, as it is expected for Modelica 3.1."));
-public constant Message UNFIXED_PARAMETER_WITH_BINDING_AND_START_VALUE_31 = MESSAGE(233, SYMBOLIC(), WARNING(),
+public constant Message UNFIXED_PARAMETER_WITH_BINDING_AND_START_VALUE_31 = MESSAGE(257, SYMBOLIC(), WARNING(),
   Util.gettext("The parameter %s has fixed = false, a start value, start = %s and a binding equation %s = %s, which is probably redundant. The binding equation will be ignored, as it is expected for Modelica 3.1."));
-public constant Message BACKENDDAEINFO_LOWER = MESSAGE(234, SYMBOLIC(), NOTIFICATION(),
+public constant Message BACKENDDAEINFO_LOWER = MESSAGE(258, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Model statistics after passing the front-end and creating the data structures used by the back-end:\n * Number of equations: %s\n * Number of variables: %s"));
-public constant Message BACKENDDAEINFO_STATISTICS = MESSAGE(235, SYMBOLIC(), NOTIFICATION(),
+public constant Message BACKENDDAEINFO_STATISTICS = MESSAGE(259, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Model statistics after passing the back-end for %s:\n * Number of independent subsystems: %s\n * Number of states: %s\n * Number of discrete variables: %s\n * Number of discrete states: %s\n * Top-level inputs: %s"));
-public constant Message BACKENDDAEINFO_MIXED = MESSAGE(236, SYMBOLIC(), NOTIFICATION(),
+public constant Message BACKENDDAEINFO_MIXED = MESSAGE(260, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Mixed equation statistics:\n * Mixed systems with single equation: %s\n * Mixed systems with array equation: %s\n * Mixed systems with algorithm: %s\n * Mixed systems with complex equation: %s\n * Mixed systems with constant Jacobian: %s\n * Mixed systems with linear Jacobian: %s\n * Mixed systems with non-linear Jacobian: %s\n * Mixed systems with analytic Jacobian: %s\n * Mixed systems with linear tearing system: %s\n * Mixed systems with nonlinear tearing system: %s"));
-public constant Message BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS = MESSAGE(237, SYMBOLIC(), NOTIFICATION(),
+public constant Message BACKENDDAEINFO_STRONGCOMPONENT_STATISTICS = MESSAGE(261, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Strong component statistics for %s (%s):\n * Single equations (assignments): %s\n * Array equations: %s\n * Algorithm blocks: %s\n * Record equations: %s\n * When equations: %s\n * If-equations: %s\n * Equation systems (linear and non-linear blocks): %s\n * Torn equation systems: %s\n * Mixed (continuous/discrete) equation systems: %s"));
-public constant Message BACKENDDAEINFO_SYSTEMS = MESSAGE(238, SYMBOLIC(), NOTIFICATION(),
+public constant Message BACKENDDAEINFO_SYSTEMS = MESSAGE(262, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Equation system details:\n * Constant Jacobian: %s\n * Linear Jacobian (size,density): %s\n * Non-linear Jacobian: %s\n * Without analytic Jacobian: %s"));
-public constant Message BACKENDDAEINFO_TORN = MESSAGE(239, SYMBOLIC(), NOTIFICATION(),
+public constant Message BACKENDDAEINFO_TORN = MESSAGE(263, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Torn system details:\n * Linear torn systems: %s\n * Non-linear torn systems: %s"));
-public constant Message BACKEND_DAE_TO_MODELICA = MESSAGE(240, SYMBOLIC(), NOTIFICATION(),
+public constant Message BACKEND_DAE_TO_MODELICA = MESSAGE(264, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("The following Modelica-like model represents the back-end DAE for the '%s' stage:\n%s"));
-public constant Message NEGATIVE_DIMENSION_INDEX = MESSAGE(241, TRANSLATION(), ERROR(),
+public constant Message NEGATIVE_DIMENSION_INDEX = MESSAGE(265, TRANSLATION(), ERROR(),
   Util.gettext("Negative dimension index (%s) for component %s."));
-public constant Message GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED = MESSAGE(242, SCRIPTING(), ERROR(),
+public constant Message GENERATE_SEPARATE_CODE_DEPENDENCIES_FAILED = MESSAGE(266, SCRIPTING(), ERROR(),
   Util.gettext("Failed to get dependencies for package %s. Perhaps there is an import to a non-existing package."));
-public constant Message CYCLIC_DEFAULT_VALUE = MESSAGE(243, SCRIPTING(), ERROR(),
+public constant Message CYCLIC_DEFAULT_VALUE = MESSAGE(267, SCRIPTING(), ERROR(),
   Util.gettext("The default value of %s causes a cyclic dependency."));
-public constant Message NAMED_ARG_TYPE_MISMATCH = MESSAGE(244, TRANSLATION(), ERROR(),
+public constant Message NAMED_ARG_TYPE_MISMATCH = MESSAGE(268, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch for named argument in %s(%s=%s). The argument has type:\n  %s\nexpected type:\n  %s"));
-public constant Message ARG_TYPE_MISMATCH = MESSAGE(245, TRANSLATION(), ERROR(),
+public constant Message ARG_TYPE_MISMATCH = MESSAGE(269, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch for positional argument %s in %s(%s=%s). The argument has type:\n  %s\nexpected type:\n  %s"));
-public constant Message OP_OVERLOAD_MULTIPLE_VALID = MESSAGE(246, TRANSLATION(), ERROR(),
+public constant Message OP_OVERLOAD_MULTIPLE_VALID = MESSAGE(270, TRANSLATION(), ERROR(),
   Util.gettext("Operator overloading requires exactly one matching expression, but found %s expressions: %s"));
-public constant Message OP_OVERLOAD_OPERATOR_NOT_INPUT = MESSAGE(247, TRANSLATION(), ERROR(),
+public constant Message OP_OVERLOAD_OPERATOR_NOT_INPUT = MESSAGE(271, TRANSLATION(), ERROR(),
   Util.gettext("Operator %s is not an input to the overloaded function: %s"));
-public constant Message NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS = MESSAGE(248, TRANSLATION(), NOTIFICATION(),
+public constant Message NOTIFY_FRONTEND_STRUCTURAL_PARAMETERS = MESSAGE(272, TRANSLATION(), NOTIFICATION(),
   Util.gettext("The following structural parameters were evaluated in the front-end: %s\nStructural parameters are parameters used to calculate array dimensions or branch selection in certain if-equations or if-expressions among other things."));
-public constant Message SIMPLIFICATION_TYPE = MESSAGE(249, TRANSLATION(), NOTIFICATION(),
+public constant Message SIMPLIFICATION_TYPE = MESSAGE(273, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Expression simplification '%s' → '%s' changed the type from %s to %s."));
-public constant Message VECTORIZE_CALL_DIM_MISMATCH = MESSAGE(250, TRANSLATION(), ERROR(),
+public constant Message VECTORIZE_CALL_DIM_MISMATCH = MESSAGE(274, TRANSLATION(), ERROR(),
   Util.gettext("Failed to vectorize function call because arguments %s=%s and %s=%s have mismatched dimensions %s and %s."));
-public constant Message TCOMPLEX_MULTIPLE_NAMES = MESSAGE(251, TRANSLATION(), NOTIFICATION(),
+public constant Message TCOMPLEX_MULTIPLE_NAMES = MESSAGE(275, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Non-tuple complex type specifiers need to have exactly one type name: %s."));
-public constant Message TCOMPLEX_TUPLE_ONE_NAME = MESSAGE(252, TRANSLATION(), NOTIFICATION(),
+public constant Message TCOMPLEX_TUPLE_ONE_NAME = MESSAGE(276, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Tuple complex type specifiers need to have more than one type name: %s."));
-public constant Message ENUM_DUPLICATES = MESSAGE(253, TRANSLATION(), ERROR(),
+public constant Message ENUM_DUPLICATES = MESSAGE(277, TRANSLATION(), ERROR(),
   Util.gettext("Enumeration has duplicate names: %s in list of names %s."));
-public constant Message RESERVED_IDENTIFIER = MESSAGE(254, TRANSLATION(), ERROR(),
+public constant Message RESERVED_IDENTIFIER = MESSAGE(278, TRANSLATION(), ERROR(),
   Util.gettext("Identifier %s is reserved for the built-in type with the same name."));
-public constant Message NOTIFY_IMPACT_FOUND = MESSAGE(255, SCRIPTING(), NOTIFICATION(),
+public constant Message NOTIFY_IMPACT_FOUND = MESSAGE(279, SCRIPTING(), NOTIFICATION(),
   Util.gettext("The impact package manager downloaded package %s%s to directory %s."));
-public constant Message DERIVATIVE_FUNCTION_CONTEXT = MESSAGE(256, SCRIPTING(), ERROR(),
+public constant Message DERIVATIVE_FUNCTION_CONTEXT = MESSAGE(280, SCRIPTING(), ERROR(),
   Util.gettext("The der() operator is not allowed in function context (possible solutions: pass the derivative as an explicit input; use a block instead of function)."));
-public constant Message EXT_LIBRARY_NOT_FOUND = MESSAGE(257, TRANSLATION(), WARNING(),
+public constant Message RETURN_OUTSIDE_FUNCTION = MESSAGE(281, TRANSLATION(), ERROR(),
+  Util.gettext("'return' may not be used outside function."));
+public constant Message EXT_LIBRARY_NOT_FOUND = MESSAGE(282, TRANSLATION(), WARNING(),
   Util.gettext("Could not find library %s in either of:%s"));
 public constant Message EXT_LIBRARY_NOT_FOUND_DESPITE_COMPILATION_SUCCESS = MESSAGE(258, TRANSLATION(), WARNING(),
   Util.gettext("Could not find library %s despite compilation command %s in directory %s returning success."));

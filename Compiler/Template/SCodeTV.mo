@@ -516,6 +516,7 @@ package SCode
     record EQ_ASSERT
       Absyn.Exp condition;
       Absyn.Exp message;
+      Absyn.Exp level;
       Comment comment;
       SourceInfo info;
     end EQ_ASSERT;
@@ -585,6 +586,27 @@ package SCode
       Comment comment;
       SourceInfo info;
     end ALG_WHEN_A;
+
+    record ALG_ASSERT
+      Absyn.Exp condition;
+      Absyn.Exp message;
+      Absyn.Exp level;
+      Comment comment;
+      SourceInfo info;
+    end ALG_ASSERT;
+
+    record ALG_TERMINATE
+      Absyn.Exp message;
+      Comment comment;
+      SourceInfo info;
+    end ALG_TERMINATE;
+
+    record ALG_REINIT
+      Absyn.ComponentRef cref;
+      Absyn.Exp newValue;
+      Comment comment;
+      SourceInfo info;
+    end ALG_REINIT;
 
     record ALG_NORETCALL
       Absyn.Exp exp;

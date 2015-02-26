@@ -3983,7 +3983,7 @@ algorithm
     case(_,_)
       equation
       _ = SimCodeUtil.eqIndex(eqSysIn);
-      pos = List.positionOnTrue(eqSysIn,eqSysLstIn,SimCodeUtil.equationIndexEqual);
+      pos = List.position1OnTrue(eqSysLstIn,SimCodeUtil.equationIndexEqual,eqSysIn);
       eqSysLst = List.replaceAt(eqSysIn,pos,eqSysLstIn);
     then eqSysLst;
     else

@@ -11862,7 +11862,7 @@ protected function getFileIndexFromFiles
   input SimCode.Files files;
   output Integer index;
 algorithm
-  index := List.positionOnTrue(SimCode.FILEINFO(file, false), files, equalFileInfo)-1 "shift to zero-based index";
+  index := List.position1OnTrue(files, equalFileInfo, SimCode.FILEINFO(file, false))-1 "shift to zero-based index";
 end getFileIndexFromFiles;
 
 public function fileName2fileIndex

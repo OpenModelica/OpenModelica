@@ -391,6 +391,27 @@ public uniontype Statement "The Statement type describes one algorithm statement
     SourceInfo info;
   end ALG_WHEN_A;
 
+  record ALG_ASSERT
+    Absyn.Exp condition;
+    Absyn.Exp message;
+    Absyn.Exp level;
+    Comment comment;
+    SourceInfo info;
+  end ALG_ASSERT;
+
+  record ALG_TERMINATE
+    Absyn.Exp message;
+    Comment comment;
+    SourceInfo info;
+  end ALG_TERMINATE;
+
+  record ALG_REINIT
+    Absyn.ComponentRef cref;
+    Absyn.Exp newValue;
+    Comment comment;
+    SourceInfo info;
+  end ALG_REINIT;
+
   record ALG_NORETCALL
     Absyn.Exp exp;
     Comment comment;
@@ -1772,159 +1793,45 @@ algorithm
   end matchcontinue;
 end setClassPartialPrefix;
 
-protected function findIteratorInEEquation
-  input String inString;
-  input EEquation inEEq;
-  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+public function findIteratorIndexedCrefsInEEquations
+  input list<EEquation> inEqs;
+  input String inIterator;
+  input list<Absyn.IteratorIndexedCref> inCrefs = {};
+  output list<Absyn.IteratorIndexedCref> outCrefs;
 algorithm
-    outLst:=matchcontinue(inString,inEEq)
-    local
-      String id, id_1;
-      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
-      Absyn.Exp e_1,e_2,e_3;
-      list<Absyn.Exp> eLst;
-      Absyn.ComponentRef cr_1, cr_2;
-      list<EEquation> eeqLst;
-      list<list<EEquation>> eeqLstLst;
-      list<tuple<Absyn.Exp, list<EEquation>>> ew;
+  outCrefs := List.fold1(inEqs, findIteratorIndexedCrefsInEEquation, inIterator,
+    inCrefs);
+end findIteratorIndexedCrefsInEEquations;
 
-      case (id,EQ_IF(condition = eLst, thenBranch = eeqLstLst, elseBranch = eeqLst))
-        equation
-          lst_1=Absyn.findIteratorInExpLst(id,eLst);
-          lst_2=findIteratorInEEquationLstLst(id,eeqLstLst);
-          lst_3=findIteratorInEEquationLst(id,eeqLst);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
-      case (id,EQ_EQUALS(expLeft = e_1, expRight = e_2))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=Absyn.findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id,EQ_CONNECT(crefLeft = cr_1, crefRight = cr_2))
-        equation
-          lst_1=Absyn.findIteratorInCRef(id,cr_1);
-          lst_2=Absyn.findIteratorInCRef(id,cr_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id,EQ_FOR(index = id_1, range = SOME(e_1), eEquationLst = eeqLst))
-        equation
-          false = stringEq(id, id_1);
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=findIteratorInEEquationLst(id,eeqLst);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id,EQ_FOR(index = id_1, range = SOME(e_1)))
-        equation
-          true = stringEq(id, id_1);
-          lst=Absyn.findIteratorInExp(id,e_1);
-        then lst;
-      case (id,EQ_FOR(index = id_1, range = NONE(), eEquationLst = eeqLst))
-        equation
-          false = stringEq(id, id_1);
-          lst=findIteratorInEEquationLst(id,eeqLst);
-        then lst;
-      case (id,EQ_FOR(index = id_1, range = NONE()))
-        equation
-          true = stringEq(id, id_1);
-        then {};
-      case (id,EQ_WHEN(condition = e_1, eEquationLst = eeqLst, elseBranches = ew))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=findIteratorInEEquationLst(id,eeqLst);
-          lst_3=findIteratorInElsewhen(id,ew);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
-      case (id,EQ_ASSERT(condition = e_1, message = e_2, level = e_3))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=Absyn.findIteratorInExp(id,e_2);
-          lst_3=Absyn.findIteratorInExp(id,e_3);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
-      case (id,EQ_TERMINATE(message = e_1))
-        equation
-          lst=Absyn.findIteratorInExp(id,e_1);
-        then lst;
-      case (id,EQ_REINIT(cref = cr_1, expReinit = e_2))
-        equation
-          lst_1=Absyn.findIteratorInCRef(id,cr_1);
-          lst_2=Absyn.findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id,EQ_NORETCALL(exp = e_1))
-        then Absyn.findIteratorInExp(id,e_1);
-
-  end matchcontinue;
-end findIteratorInEEquation;
-
-public function findIteratorInEEquationLst "Used by Inst.instEquationCommon for EQ_FOR with implicit range"
-//This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<EEquation> inEEqLst;
-  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+public function findIteratorIndexedCrefsInEEquation
+  input EEquation inEq;
+  input String inIterator;
+  input list<Absyn.IteratorIndexedCref> inCrefs = {};
+  output list<Absyn.IteratorIndexedCref> outCrefs;
 algorithm
-    outLst := match(inString,inEEqLst)
-    local
-      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
-      String id;
-      list<EEquation> rest;
-      EEquation eeq;
-      case (_,{}) then {};
-      case (id,eeq::rest)
-        equation
-          lst_1=findIteratorInEEquation(id,eeq);
-          lst_2=findIteratorInEEquationLst(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-  end match;
-end findIteratorInEEquationLst;
+  outCrefs := SCode.foldEEquationsExps(inEq,
+    function Absyn.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs);
+end findIteratorIndexedCrefsInEEquation;
 
-protected function findIteratorInEEquationLstLst
-//This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<list<EEquation>> inEEqLstLst;
-  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+public function findIteratorIndexedCrefsInStatements
+  input list<Statement> inStatements;
+  input String inIterator;
+  input list<Absyn.IteratorIndexedCref> inCrefs = {};
+  output list<Absyn.IteratorIndexedCref> outCrefs;
 algorithm
-    outLst := match(inString,inEEqLstLst)
-    local
-      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
-      String id;
-      list<list<EEquation>> rest;
-      list<EEquation> eeq;
-      case (_,{}) then {};
-      case (id,eeq::rest)
-        equation
-          lst_1=findIteratorInEEquationLst(id,eeq);
-          lst_2=findIteratorInEEquationLstLst(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-  end match;
-end findIteratorInEEquationLstLst;
+  outCrefs := List.fold1(inStatements, findIteratorIndexedCrefsInStatement,
+      inIterator, inCrefs);
+end findIteratorIndexedCrefsInStatements;
 
-protected function findIteratorInElsewhen
-//This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<tuple<Absyn.Exp, list<EEquation>>> inElsewhen;
-  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+public function findIteratorIndexedCrefsInStatement
+  input Statement inStatement;
+  input String inIterator;
+  input list<Absyn.IteratorIndexedCref> inCrefs = {};
+  output list<Absyn.IteratorIndexedCref> outCrefs;
 algorithm
-    outLst := match(inString,inElsewhen)
-    local
-      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
-      String id;
-      list<tuple<Absyn.Exp, list<EEquation>>> rest;
-      Absyn.Exp e;
-      list<EEquation> eeq;
-      case (_,{}) then {};
-      case (id,(e,eeq)::rest)
-        equation
-          lst_1 = Absyn.findIteratorInExp(id,e);
-          lst_2 = findIteratorInEEquationLst(id,eeq);
-          lst_3 = findIteratorInElsewhen(id,rest);
-          lst = List.flatten({lst_1,lst_2,lst_3});
-        then lst;
-  end match;
-end findIteratorInElsewhen;
+  outCrefs := SCode.foldStatementsExps(inStatement,
+    function Absyn.findIteratorIndexedCrefs(inIterator = inIterator), inCrefs);
+end findIteratorIndexedCrefsInStatement;
 
 protected function filterComponents
   "Filters out the components from the given list of elements, as well as their names."
@@ -2079,6 +1986,18 @@ algorithm
         abranches = List.threadTuple(conditions,algsLst);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr,algs1,abranches),NONE(),info);
 
+    case ALG_ASSERT()
+      then Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("assert", {}),
+        Absyn.FUNCTIONARGS({stmt.condition, stmt.message, stmt.level}, {})), NONE(), stmt.info);
+
+    case ALG_TERMINATE()
+      then Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("terminate", {}),
+        Absyn.FUNCTIONARGS({stmt.message}, {})), NONE(), stmt.info);
+
+    case ALG_REINIT()
+      then Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(Absyn.CREF_IDENT("reinit", {}),
+        Absyn.FUNCTIONARGS({Absyn.CREF(stmt.cref), stmt.newValue}, {})), NONE(), stmt.info);
+
     case ALG_NORETCALL(Absyn.CALL(function_=functionCall,functionArgs=functionArgs),_,info)
     then Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(functionCall,functionArgs),NONE(),info);
 
@@ -2097,131 +2016,6 @@ algorithm
       then Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(algs1),NONE(),info);
   end match;
 end statementToAlgorithmItem;
-
-protected function findIteratorInStatement
-  input String inString;
-  input Statement inAlg;
-  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
-algorithm
-    outLst:=matchcontinue(inString,inAlg)
-    local
-      String id,iter;
-      Option<Absyn.Exp> range;
-      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
-      list<list<tuple<Absyn.ComponentRef, Integer>>> lst_lst;
-      Absyn.Exp e_1,e_2;
-      list<Statement> algLst_1,algLst_2;
-      list<tuple<Absyn.Exp, list<Statement>>> branches, elseIfBranch;
-      list<Absyn.ForIterator> forIterators;
-      Boolean bool;
-
-      case (id,ALG_ASSIGN(assignComponent = e_1, value = e_2))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=Absyn.findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id,ALG_IF(boolExpr = e_1, trueBranch = algLst_1, elseIfBranch = elseIfBranch, elseBranch = algLst_2))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=findIteratorInStatements(id,algLst_1);
-          lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
-          lst_4=findIteratorInStatements(id,algLst_2);
-          lst=List.flatten({lst_1,lst_2,lst_3,lst_4});
-        then lst;
-/*      case (id, ALG_FOR(forIterators,algLst_1))
-        equation
-          true=iteratorPresentAmongIterators(id,forIterators);
-          lst=findIteratorInForIteratorsBounds(id,forIterators);
-        then lst;
-      case (id, ALG_FOR(forIterators,algLst_1))
-        equation
-          false=iteratorPresentAmongIterators(id,forIterators);
-          lst_1=findIteratorInStatements(id,algLst_1);
-          lst_2=findIteratorInForIteratorsBounds(id,forIterators);
-          lst=listAppend(lst_1,lst_2);
-        then lst; */
-      case (id, ALG_FOR(index = iter, range = range, forBody = algLst_1))
-        equation
-          forIterators = {Absyn.ITERATOR(iter,NONE(),range)};
-          lst_1=findIteratorInStatements(id,algLst_1);
-          (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1= if bool then {} else lst_1;
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id, ALG_PARFOR(index = iter, range = range, parforBody = algLst_1))
-        equation
-          forIterators = {Absyn.ITERATOR(iter,NONE(),range)};
-          lst_1=findIteratorInStatements(id,algLst_1);
-          (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1=if bool then {} else lst_1;
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id, ALG_WHILE(boolExpr = e_1, whileBody = algLst_1))
-        equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);
-          lst_2=findIteratorInStatements(id,algLst_1);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (_,ALG_WHEN_A(branches = {})) then {};
-      case (id,ALG_WHEN_A(branches = (_,_)::branches))
-        equation
-          lst_1=Absyn.findIteratorInExpLst(id,List.map(branches,Util.tuple21));
-          lst_lst = List.map1r(List.map(branches,Util.tuple22),findIteratorInStatements,id);
-          lst=List.flatten(lst_1::lst_lst);
-        then lst;
-      case (id,ALG_NORETCALL(exp = e_1))
-        then Absyn.findIteratorInExp(id,e_1);
-      else {};
-  end matchcontinue;
-end findIteratorInStatement;
-
-public function findIteratorInStatements "
-Used by Inst.instForStatement
-"
-//This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<Statement> inAlgItemLst;
-  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
-algorithm
-    outLst := match(inString,inAlgItemLst)
-    local
-      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
-      String id;
-      list<Statement> rest;
-      Statement algItem;
-      case (_,{}) then {};
-      case (id,algItem::rest)
-        equation
-          lst_1=findIteratorInStatement(id,algItem);
-          lst_2=findIteratorInStatements(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-  end match;
-end findIteratorInStatements;
-
-protected function findIteratorInElseIfBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<tuple<Absyn.Exp, list<Statement>>> inElseIfBranch;
-  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
-algorithm
-    outLst := match (inString,inElseIfBranch)
-    local
-      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
-      String id;
-      list<tuple<Absyn.Exp, list<Statement>>> rest;
-      Absyn.Exp exp;
-      list<Statement> algItemLst;
-      case (_,{}) then {};
-      case (id,(exp,algItemLst)::rest)
-        equation
-          lst_1=Absyn.findIteratorInExp(id,exp);
-          lst_2=findIteratorInStatements(id,algItemLst);
-          lst_3=findIteratorInElseIfBranch(id,rest);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
-  end match;
-end findIteratorInElseIfBranch;
 
 public function equationFileInfo
   input EEquation eq;
@@ -2297,6 +2091,243 @@ algorithm
     case COMPONENT() then true;
   end match;
 end isClassOrComponent;
+
+public function foldEEquations<ArgT>
+  "Calls the given function on the equation and all its subequations, and
+   updates the argument for each call."
+  input EEquation inEquation;
+  input FoldFunc inFunc;
+  input ArgT inArg;
+  output ArgT outArg;
+
+  partial function FoldFunc
+    input EEquation inEquation;
+    input ArgT inArg;
+    output ArgT outArg;
+  end FoldFunc;
+algorithm
+  outArg := inFunc(inEquation, inArg);
+
+  outArg := match inEquation
+    local
+      list<EEquation> eql;
+
+    case EQ_IF()
+      algorithm
+        outArg := List.foldList1(inEquation.thenBranch, foldEEquations, inFunc, outArg);
+      then
+        List.fold1(inEquation.elseBranch, foldEEquations, inFunc, outArg);
+
+    case EQ_FOR()
+      then List.fold1(inEquation.eEquationLst, foldEEquations, inFunc, outArg);
+
+    case EQ_WHEN()
+      algorithm
+        outArg := List.fold1(inEquation.eEquationLst, foldEEquations, inFunc, outArg);
+
+        for branch in inEquation.elseBranches loop
+          (_, eql) := branch;
+          outArg := List.fold1(eql, foldEEquations, inFunc, outArg);
+        end for;
+      then
+        outArg;
+
+  end match;
+end foldEEquations;
+
+public function foldEEquationsExps<ArgT>
+  "Calls the given function on all expressions inside the equation, and updates
+   the argument for each call."
+  input EEquation inEquation;
+  input FoldFunc inFunc;
+  input ArgT inArg;
+  output ArgT outArg = inArg;
+
+  partial function FoldFunc
+    input Absyn.Exp inExp;
+    input ArgT inArg;
+    output ArgT outArg;
+  end FoldFunc;
+algorithm
+  outArg := match inEquation
+    local
+      Absyn.Exp exp;
+      list<EEquation> eql;
+
+    case EQ_IF()
+      algorithm
+        outArg := List.fold(inEquation.condition, inFunc, outArg);
+        outArg := List.foldList1(inEquation.thenBranch, foldEEquationsExps, inFunc, outArg);
+      then
+        List.fold1(inEquation.elseBranch, foldEEquationsExps, inFunc, outArg);
+
+    case EQ_EQUALS()
+      algorithm
+        outArg := inFunc(inEquation.expLeft, outArg);
+        outArg := inFunc(inEquation.expRight, outArg);
+      then
+        outArg;
+
+    case EQ_CONNECT()
+      algorithm
+        outArg := inFunc(Absyn.CREF(inEquation.crefLeft), outArg);
+        outArg := inFunc(Absyn.CREF(inEquation.crefRight), outArg);
+      then
+        outArg;
+
+    case EQ_FOR()
+      algorithm
+        if isSome(inEquation.range) then
+          SOME(exp) := inEquation.range;
+          outArg := inFunc(exp, outArg);
+        end if;
+      then
+        List.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg);
+        
+    case EQ_WHEN()
+      algorithm
+        outArg := List.fold1(inEquation.eEquationLst, foldEEquationsExps, inFunc, outArg);
+
+        for branch in inEquation.elseBranches loop
+          (exp, eql) := branch;
+          outArg := inFunc(exp, outArg);
+          outArg := List.fold1(eql, foldEEquationsExps, inFunc, outArg);
+        end for;
+      then
+        outArg;
+
+    case EQ_ASSERT()
+      algorithm
+        outArg := inFunc(inEquation.condition, outArg);
+        outArg := inFunc(inEquation.message, outArg);
+        outArg := inFunc(inEquation.level, outArg);
+      then
+        outArg;
+
+    case EQ_TERMINATE()
+      then inFunc(inEquation.message, outArg);
+
+    case EQ_REINIT()
+      algorithm
+        outArg := inFunc(Absyn.CREF(inEquation.cref), outArg);
+        outArg := inFunc(inEquation.expReinit, outArg);
+      then
+        outArg;
+
+    case EQ_NORETCALL()
+      then inFunc(inEquation.exp, outArg);
+
+  end match;
+end foldEEquationsExps;
+
+public function foldStatementsExps<ArgT>
+  "Calls the given function on all expressions inside the statement, and updates
+   the argument for each call."
+  input Statement inStatement;
+  input FoldFunc inFunc;
+  input ArgT inArg;
+  output ArgT outArg = inArg;
+
+  partial function FoldFunc
+    input Absyn.Exp inExp;
+    input ArgT inArg;
+    output ArgT outArg;
+  end FoldFunc;
+algorithm
+  outArg := match inStatement
+    local
+      Absyn.Exp exp;
+      list<Statement> stmts;
+
+    case ALG_ASSIGN()
+      algorithm
+        outArg := inFunc(inStatement.assignComponent, outArg);
+        outArg := inFunc(inStatement.value, outArg);
+      then
+        outArg;
+
+    case ALG_IF()
+      algorithm
+        outArg := inFunc(inStatement.boolExpr, outArg);
+        outArg := List.fold1(inStatement.trueBranch, foldStatementsExps, inFunc, outArg);
+
+        for branch in inStatement.elseIfBranch loop
+          (exp, stmts) := branch;
+          outArg := inFunc(exp, outArg);
+          outArg := List.fold1(stmts, foldStatementsExps, inFunc, outArg);
+        end for;
+      then
+        outArg;
+
+    case ALG_FOR()
+      algorithm
+        if isSome(inStatement.range) then
+          SOME(exp) := inStatement.range;
+          outArg := inFunc(exp, outArg);
+        end if;
+      then
+        List.fold1(inStatement.forBody, foldStatementsExps, inFunc, outArg);
+
+    case ALG_PARFOR()
+      algorithm
+        if isSome(inStatement.range) then
+          SOME(exp) := inStatement.range;
+          outArg := inFunc(exp, outArg);
+        end if;
+      then
+        List.fold1(inStatement.parforBody, foldStatementsExps, inFunc, outArg);
+
+    case ALG_WHILE()
+      algorithm
+        outArg := inFunc(inStatement.boolExpr, outArg);
+      then 
+        List.fold1(inStatement.whileBody, foldStatementsExps, inFunc, outArg);
+        
+    case ALG_WHEN_A()
+      algorithm
+        for branch in inStatement.branches loop
+          (exp, stmts) := branch;
+          outArg := inFunc(exp, outArg);
+          outArg := List.fold1(stmts, foldStatementsExps, inFunc, outArg);
+        end for;
+      then
+        outArg;
+
+    case ALG_ASSERT()
+      algorithm
+        outArg := inFunc(inStatement.condition, outArg);
+        outArg := inFunc(inStatement.message, outArg);
+        outArg := inFunc(inStatement.level, outArg);
+      then
+        outArg;
+
+    case ALG_TERMINATE()
+      then inFunc(inStatement.message, outArg);
+
+    case ALG_REINIT()
+      algorithm
+        outArg := inFunc(Absyn.CREF(inStatement.cref), outArg);
+      then
+        inFunc(inStatement.newValue, outArg);
+
+    case ALG_NORETCALL()
+      then inFunc(inStatement.exp, outArg);
+
+    case ALG_FAILURE()
+      then List.fold1(inStatement.stmts, foldStatementsExps, inFunc, outArg);
+
+    case ALG_TRY()
+      algorithm
+        outArg := List.fold1(inStatement.body, foldStatementsExps, inFunc, outArg);
+      then
+        List.fold1(inStatement.elseBody, foldStatementsExps, inFunc, outArg);
+
+    // No else case, to make this function break if a new statement is added to SCode.
+    case ALG_RETURN() then outArg;
+    case ALG_BREAK() then outArg;
+    case ALG_CONTINUE() then outArg;
+  end match;
+end foldStatementsExps;
 
 public function traverseEEquationsList
   "Traverses a list of EEquations, calling traverseEEquations on each EEquation
@@ -2913,11 +2944,12 @@ algorithm
       Argument arg;
       tuple<TraverseFunc, Argument> tup;
       String iterator;
-      Absyn.Exp e1, e2;
+      Absyn.Exp e1, e2, e3;
       list<Statement> stmts1, stmts2;
       list<tuple<Absyn.Exp, list<Statement>>> branches;
       Comment comment;
       SourceInfo info;
+      Absyn.ComponentRef cref;
 
     case (ALG_ASSIGN(e1, e2, comment, info), traverser, arg)
       equation
@@ -2957,6 +2989,27 @@ algorithm
         (branches, arg) = List.map1Fold(branches, traverseBranchExps, traverser, arg);
       then
         (ALG_WHEN_A(branches, comment, info), arg);
+
+    case (ALG_ASSERT(), traverser, arg)
+      algorithm
+        (e1, arg) := traverser(inStatement.condition, arg);
+        (e2, arg) := traverser(inStatement.message, arg);
+        (e3, arg) := traverser(inStatement.level, arg);
+      then
+        (ALG_ASSERT(e1, e2, e3, inStatement.comment, inStatement.info), arg);
+
+    case (ALG_TERMINATE(), traverser, arg)
+      algorithm
+        (e1, arg) := traverser(inStatement.message, arg);
+      then
+        (ALG_TERMINATE(e1, inStatement.comment, inStatement.info), arg);
+
+    case (ALG_REINIT(), traverser, arg)
+      algorithm
+        (Absyn.CREF(cref), arg) := traverser(Absyn.CREF(inStatement.cref), arg);
+        (e2, arg) := traverser(inStatement.newValue, arg);
+      then
+        (ALG_REINIT(cref, e2, inStatement.comment, inStatement.info), arg);
 
     case (ALG_NORETCALL(e1, comment, info), traverser, arg)
       equation
@@ -3098,22 +3151,22 @@ public function getStatementInfo
   input Statement inStatement;
   output SourceInfo outInfo;
 algorithm
-  outInfo := match(inStatement)
-    local
-      SourceInfo info;
-
-    case ALG_ASSIGN(info = info) then info;
-    case ALG_IF(info = info) then info;
-    case ALG_FOR(info = info) then info;
-    case ALG_PARFOR(info = info) then info;
-    case ALG_WHILE(info = info) then info;
-    case ALG_WHEN_A(info = info) then info;
-    case ALG_NORETCALL(info = info) then info;
-    case ALG_RETURN(info = info) then info;
-    case ALG_BREAK(info = info) then info;
-    case ALG_FAILURE(info = info) then info;
-    case ALG_TRY(info = info) then info;
-    case ALG_CONTINUE(info = info) then info;
+  outInfo := match inStatement
+    case ALG_ASSIGN() then inStatement.info;
+    case ALG_IF() then inStatement.info;
+    case ALG_FOR() then inStatement.info;
+    case ALG_PARFOR() then inStatement.info;
+    case ALG_WHILE() then inStatement.info;
+    case ALG_WHEN_A() then inStatement.info;
+    case ALG_ASSERT() then inStatement.info;
+    case ALG_TERMINATE() then inStatement.info;
+    case ALG_REINIT() then inStatement.info;
+    case ALG_NORETCALL() then inStatement.info;
+    case ALG_RETURN() then inStatement.info;
+    case ALG_BREAK() then inStatement.info;
+    case ALG_FAILURE() then inStatement.info;
+    case ALG_TRY() then inStatement.info;
+    case ALG_CONTINUE() then inStatement.info;
     else
       equation
         Error.addInternalError("SCode.getStatementInfo failed", sourceInfo());
@@ -4635,7 +4688,7 @@ algorithm
       list<list<Statement>> algs_lst;
       list<tuple<Absyn.Exp, list<Statement>>> tpl_alg;
 
-    case ALG_NORETCALL(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "reinit"))) then true;
+    case ALG_REINIT() then true;
 
     case ALG_WHEN_A(branches = tpl_alg)
       equation

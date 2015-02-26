@@ -4855,19 +4855,14 @@ end addElementSourcePartOfOpt;
 public function addElementSourceFileInfo
   input DAE.ElementSource source;
   input SourceInfo fileInfo;
-  output DAE.ElementSource outSource;
+  output DAE.ElementSource outSource = source;
 algorithm
-  outSource := match (source,fileInfo)
-    local
-      list<Absyn.Path> typeLst "the absyn type of the element" ;
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      Option<DAE.ComponentRef> instanceOpt "the instance this element is part of" ;
-      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
-      SourceInfo info;
-      list<DAE.SymbolicOperation> operations;
-      list<SCode.Comment> comment;
-    case (DAE.SOURCE(_,partOfLst,instanceOpt,connectEquationOptLst,typeLst,operations,comment), info)
-      then DAE.SOURCE(info,partOfLst,instanceOpt,connectEquationOptLst,typeLst,operations,comment);
+  outSource := match outSource
+    case DAE.SOURCE()
+      algorithm
+        outSource.info := fileInfo;
+      then
+        outSource;
   end match;
 end addElementSourceFileInfo;
 
@@ -6491,8 +6486,8 @@ algorithm
 end typeVarIdent;
 
 public function typeVarIdentEqual
-  input String name;
   input DAE.Var var;
+  input String name;
   output Boolean b;
 protected
   String name2;

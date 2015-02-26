@@ -752,23 +752,28 @@ public function makeReinit " creates a reinit statement in an algorithm
   input DAE.Properties inProperties3;
   input DAE.Properties inProperties4;
   input DAE.ElementSource source;
-  output DAE.Statement outStatement;
+  output list<DAE.Statement> outStatement;
 algorithm
-  outStatement:=
-  matchcontinue (inExp1, inExp2, inProperties3, inProperties4, source)
-    local DAE.Exp var, val, var_1, val_1; DAE.Properties prop1, prop2;
+  outStatement := matchcontinue (inExp1, inExp2, inProperties3, inProperties4)
+    local
+      DAE.Exp var, val, var_1, val_1;
+      DAE.Properties prop1, prop2;
       DAE.Type tp1, tp2;
-    case (var as DAE.CREF(_, _), val, DAE.PROP(tp1, _), DAE.PROP(tp2, _), _)
+
+    case (var as DAE.CREF(), val, DAE.PROP(tp1, _), DAE.PROP(tp2, _))
       equation
-        (val_1, _) = Types.matchType(val, tp2, DAE.T_REAL_DEFAULT, true);
-        (var_1, _) = Types.matchType(var, tp1, DAE.T_REAL_DEFAULT, true);
-      then DAE.STMT_REINIT(var_1, val_1, source);
+        val_1 = Types.matchType(val, tp2, DAE.T_REAL_DEFAULT, true);
+        var_1 = Types.matchType(var, tp1, DAE.T_REAL_DEFAULT, true);
+      then
+        {DAE.STMT_REINIT(var_1, val_1, source)};
 
-  else  equation
-      Error.addSourceMessage(Error.INTERNAL_ERROR, {"reinit called with wrong args"}, DAEUtil.getElementSourceFileInfo(source));
-    then fail();
+    else
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"reinit called with wrong args"}, DAEUtil.getElementSourceFileInfo(source));
+      then
+        fail();
 
-    // TODO: Add checks for reinit here. 1. First argument must be variable. 2. Expressions must be real.
+  // TODO: Add checks for reinit here. 1. First argument must be variable. 2. Expressions must be real.
   end matchcontinue;
 end makeReinit;
 
@@ -815,10 +820,10 @@ public function makeTerminate "
   input DAE.Exp msg "message";
   input DAE.Properties props;
   input DAE.ElementSource source;
-  output DAE.Statement outStatement;
+  output list<DAE.Statement> outStatement;
 algorithm
   outStatement := match (msg, props, source)
-    case (_, DAE.PROP(type_ = DAE.T_STRING()), _) then DAE.STMT_TERMINATE(msg, source);
+    case (_, DAE.PROP(type_ = DAE.T_STRING()), _) then {DAE.STMT_TERMINATE(msg, source)};
   end match;
 end makeTerminate;
 

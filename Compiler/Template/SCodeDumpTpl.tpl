@@ -302,8 +302,9 @@ match equation
   case EQ_ASSERT(__) then
     let cond_str = AbsynDumpTpl.dumpExp(condition)
     let msg_str = AbsynDumpTpl.dumpExp(message)
+    let lvl_str = dumpAssertionLevel(level)
     let cmt_str = dumpComment(comment, options)
-    'assert(<%cond_str%>, <%msg_str%>)<%cmt_str%>;'
+    'assert(<%cond_str%>, <%msg_str%><%lvl_str%>)<%cmt_str%>;'
   case EQ_TERMINATE(__) then
     let msg_str = AbsynDumpTpl.dumpExp(message)
     let cmt_str = dumpComment(comment, options)
@@ -403,6 +404,15 @@ match when_equation
     >>
 end dumpWhenEEquation;
 
+template dumpAssertionLevel(Absyn.Exp exp)
+::= match exp
+  case CREF(componentRef = CREF_FULLYQUALIFIED(componentRef = CREF_QUAL(
+    name = "AssertionLevel", componentRef = CREF_IDENT(name = "error")))) then ""
+  case CREF(componentRef = CREF_QUAL(name = "AssertionLevel",
+    componentRef = CREF_IDENT(name = "error"))) then ""
+  else ', <%AbsynDumpTpl.dumpExp(exp)%>'
+end dumpAssertionLevel;
+
 template dumpAlgorithmSections(list<SCode.AlgorithmSection> algorithms,
     String label, SCodeDumpOptions options)
 ::=
@@ -433,6 +443,18 @@ match statement
   case ALG_FOR(__) then dumpForStatement(statement, options)
   case ALG_WHILE(__) then dumpWhileStatement(statement, options)
   case ALG_WHEN_A(__) then dumpWhenStatement(statement, options)
+  case ALG_ASSERT(__) then
+    let cond_str = AbsynDumpTpl.dumpExp(condition)
+    let msg_str = AbsynDumpTpl.dumpExp(message)
+    let lvl_str = dumpAssertionLevel(level)
+    'assert(<%cond_str%>, <%msg_str%><%lvl_str%>);'
+  case ALG_TERMINATE(__) then
+    let msg_str = AbsynDumpTpl.dumpExp(message)
+    'terminate(<%msg_str%>);'
+  case ALG_REINIT(__) then
+    let cr_str = AbsynDumpTpl.dumpCref(cref)
+    let exp_str = AbsynDumpTpl.dumpExp(newValue)
+    'reinit(<%cr_str%>, <%exp_str%>);'
   case ALG_NORETCALL(__) then
     let exp_str = AbsynDumpTpl.dumpExp(exp)
     let cmt_str = dumpComment(comment, options)

@@ -1399,6 +1399,7 @@ algorithm
       FCore.Graph env;
       HashTableStringToPath.HashTable ht;
       SCode.Statement stmt;
+      Absyn.ComponentRef cr;
 
     case (cache,env,SCode.ALG_ASSIGN(exp1,exp2,comment,info),ht)
       equation
@@ -1436,6 +1437,27 @@ algorithm
       equation
         (cache,whenlst) = fixListTuple2(cache,env,whenlst,ht,fixExp,fixListAlgorithmItem);
       then (cache,SCode.ALG_WHEN_A(whenlst,comment,info));
+
+    case (cache, env, SCode.ALG_ASSERT(exp, exp1, exp2, comment, info), ht)
+      algorithm
+        (cache, exp) := fixExp(cache, env, exp, ht);
+        (cache, exp1) := fixExp(cache, env, exp1, ht);
+        (cache, exp2) := fixExp(cache, env, exp2, ht);
+      then
+        (cache, SCode.ALG_ASSERT(exp, exp1, exp2, comment, info));
+
+    case (cache, env, SCode.ALG_TERMINATE(exp, comment, info), ht)
+      algorithm
+        (cache, exp) := fixExp(cache, env, exp, ht);
+      then
+        (cache, SCode.ALG_TERMINATE(exp, comment, info));
+
+    case (cache, env, SCode.ALG_REINIT(cr, exp, comment, info), ht)
+      algorithm
+        (cache, cr) := fixCref(cache, env, cr, ht);
+        (cache, exp) := fixExp(cache, env, exp, ht);
+      then
+        (cache, SCode.ALG_REINIT(cr, exp, comment, info));
 
     case (cache,env,SCode.ALG_NORETCALL(exp,comment,info),ht)
       equation

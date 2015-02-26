@@ -2006,7 +2006,7 @@ algorithm
         (_,env) = traversePatternList(List.threadMap(elabPatterns,inputAliases,addPatternAliases),addEnvKnownAsBindings,env);
         eqAlgs = Static.fromEquationsToAlgAssignments(cp);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
-        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll, {});
+        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll);
         (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
         (cache,dPatternGuard,st) = elabPatternGuard(cache,env,patternGuard,impl,st,performVectorization,pre,patternInfo);
         localsTree = AvlTreeString.joinAvlTrees(matchExpLocalTree, caseLocalTree);

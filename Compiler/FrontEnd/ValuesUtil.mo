@@ -2555,46 +2555,32 @@ algorithm
 end arrayOrListVals;
 
 public function containsEmpty
-"returns true if the values list contains empty values!"
-  input list<Values.Value> inValues;
-  output Option<Values.Value> outOptValue;
+  input Values.Value inValue;
+  output Option<Values.Value> outEmptyVal;
 algorithm
-  outOptValue := match(inValues)
-    local
-      Values.Value v;
-      list<Values.Value> rest, lst;
-      Option<Values.Value> vOpt;
-
-    case ((v as Values.EMPTY())::_) then SOME(v);
-
-    case (Values.ARRAY(valueLst = lst)::_)
-      equation
-        vOpt = containsEmpty(lst);
-      then
-        vOpt;
-
-    case (Values.RECORD(orderd = lst)::_)
-      equation
-        vOpt = containsEmpty(lst);
-      then
-        vOpt;
-
-    case (Values.TUPLE(valueLst = lst)::_)
-      equation
-        vOpt = containsEmpty(lst);
-      then
-        vOpt;
-
-    case (_::rest)
-      equation
-        vOpt = containsEmpty(rest);
-      then
-        vOpt;
-
+  outEmptyVal := match inValue
+    case Values.EMPTY() then SOME(inValue);
+    case Values.ARRAY() then arrayContainsEmpty(inValue.valueLst);
+    case Values.RECORD() then arrayContainsEmpty(inValue.orderd);
+    case Values.TUPLE() then arrayContainsEmpty(inValue.valueLst);
     else NONE();
-
   end match;
 end containsEmpty;
+
+public function arrayContainsEmpty
+  "Searches for an EMPTY value in a list, and returns SOME(value) if found,
+   otherwise NONE()."
+  input list<Values.Value> inValues;
+  output Option<Values.Value> outOptValue = NONE();
+algorithm
+  for val in inValues loop
+    outOptValue := containsEmpty(val);
+
+    if isSome(outOptValue) then
+      break;
+    end if;
+  end for;
+end arrayContainsEmpty;
 
 annotation(__OpenModelica_Interface="frontend");
 end ValuesUtil;

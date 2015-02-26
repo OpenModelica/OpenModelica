@@ -4478,424 +4478,130 @@ algorithm
   CLASS(name=outName) := inClass;
 end getClassName;
 
-protected function findIteratorInElseIfExpBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<tuple<Exp, Exp>> inElseIfBranch;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-    outLst := match(inString,inElseIfBranch)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
-      String id;
-      list<tuple<Exp, Exp>> rest;
-      Exp e_1,e_2;
-      case (_,{}) then {};
-      case (id,(e_1,e_2)::rest)
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst_3=findIteratorInElseIfExpBranch(id,rest);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
-  end match;
-end findIteratorInElseIfExpBranch;
+public type IteratorIndexedCref = tuple<ComponentRef, Integer>;
 
-public function findIteratorInFunctionArgs
-  input String inString;
-  input FunctionArgs inFunctionArgs;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-    outLst := match(inString,inFunctionArgs)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
-      String id;
-      list<Exp> expLst;
-      list<NamedArg> namedArgs;
-      Exp exp;
-      list<ForIterator> forIterators;
-      Boolean bool;
-      case (id,FUNCTIONARGS(expLst,namedArgs))
-        equation
-          lst_1=findIteratorInExpLst(id,expLst);
-          lst_2=findIteratorInNamedArgs(id,namedArgs);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-/*      case (id, FOR_ITER_FARG(exp,forIterators))
-        equation
-          true=iteratorPresentAmongIterators(id,forIterators);
-          lst=findIteratorInForIteratorsBounds(id,forIterators);
-        then lst;
-      case (id, FOR_ITER_FARG(exp,forIterators))
-        equation
-          false=iteratorPresentAmongIterators(id,forIterators);
-          lst_1=findIteratorInExp(id,exp);
-          lst_2=findIteratorInForIteratorsBounds(id,forIterators);
-          lst=listAppend(lst_1,lst_2);
-        then lst;    */
-      case (id, FOR_ITER_FARG(exp,_,forIterators))
-        equation
-          lst_1=findIteratorInExp(id,exp);
-          (bool,lst_2)=findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1=if bool then {} else lst_1;
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-  end match;
-end findIteratorInFunctionArgs;
-
-/*protected function iteratorPresentAmongIterators
-  input String inString;
-  input list<ForIterator> inForIterators;
-  output Boolean outBool;
-algorithm
-    outBool:=matchcontinue(inString,inForIterators)
-    local
-      String id,id1;
-      Boolean bool;
-      list<ForIterator> rest;
-      case (id,{}) then false;
-      case (id,(id1,_)::rest)
-        equation
-          true = stringEq(id, id1);
-        then true;
-      case (id,(id1,_)::rest)
-        equation
-          failure(equality(id=id1));
-          bool=iteratorPresentAmongIterators(id,rest);
-        then bool;
-  end matchcontinue;
-end iteratorPresentAmongIterators;      */
-
-public function findIteratorInExpLst//This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<Exp> inExpLst;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-  outLst := match(inString,inExpLst)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
-      String id;
-      list<Exp> rest;
-      Exp exp;
-    case (_,{}) then {};
-    case (id,exp::rest)
-      equation
-        lst_1=findIteratorInExp(id,exp);
-        lst_2=findIteratorInExpLst(id,rest);
-        lst=listAppend(lst_1,lst_2);
-      then lst;
-  end match;
-end findIteratorInExpLst;
-
-protected function findIteratorInExpLstLst//This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<list<Exp>> inExpLstLst;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-  outLst := match(inString,inExpLstLst)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
-      String id;
-      list<list<Exp>> rest;
-      list<Exp> expLst;
-    case (_,{}) then {};
-    case (id,expLst::rest)
-      equation
-        lst_1=findIteratorInExpLst(id,expLst);
-        lst_2=findIteratorInExpLstLst(id,rest);
-        lst=listAppend(lst_1,lst_2);
-      then lst;
-  end match;
-end findIteratorInExpLstLst;
-
-protected function findIteratorInNamedArgs
-  input String inString;
-  input list<NamedArg> inNamedArgs;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-  outLst := match(inString,inNamedArgs)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
-      String id;
-      list<NamedArg> rest;
-      Exp exp;
-    case (_,{}) then {};
-    case (id,NAMEDARG(_,exp)::rest)
-      equation
-        lst_1=findIteratorInExp(id,exp);
-        lst_2=findIteratorInNamedArgs(id,rest);
-        lst=listAppend(lst_1,lst_2);
-      then lst;
-  end match;
-end findIteratorInNamedArgs;
-
-/*
-protected function findIteratorInForIteratorsBounds
-  input String inString;
-  input list<ForIterator> inForIterators;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-    outLst:=matchcontinue(inString,inForIterators)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
-      String id;
-      list<ForIterator> rest;
-      Exp exp;
-      case (id,{}) then {};
-      case (id,(_,NONE())::rest)
-        equation
-          lst=findIteratorInForIteratorsBounds(id,rest);
-        then lst;
-      case (id,(_,SOME(exp))::rest)
-        equation
-          lst_1=findIteratorInExp(id,exp);
-          lst_2=findIteratorInForIteratorsBounds(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-  end matchcontinue;
-end findIteratorInForIteratorsBounds; */
-
-public function findIteratorInForIteratorsBounds2 "
-This is a fixed version of the function; it stops looking for the iterator when it finds another iterator
-with the same name. It also returns information about whether it has found such an iterator"
-  input String inString;
-  input list<ForIterator> inForIterators;
-  output Boolean outBool;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-  (outBool,outLst) := matchcontinue(inString,inForIterators)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
-      Boolean bool;
-      String id, id_1;
-      list<ForIterator> rest;
-      Exp exp;
-    case (_,{}) then (false,{});
-    case (id,ITERATOR(name=id_1)::_)
-      equation
-        true = stringEq(id, id_1);
-      then
-        (true,{});
-    case (id,ITERATOR(range=NONE())::rest)
-      equation
-        (bool,lst)=findIteratorInForIteratorsBounds2(id,rest);
-      then (bool,lst);
-    case (id,ITERATOR(range=SOME(exp))::rest)
-      equation
-        lst_1=findIteratorInExp(id,exp);
-        (bool,lst_2)=findIteratorInForIteratorsBounds2(id,rest);
-        lst=listAppend(lst_1,lst_2);
-      then (bool,lst);
-  end matchcontinue;
-end findIteratorInForIteratorsBounds2;
-
-public function findIteratorInExp
-  input String inString;
+public function findIteratorIndexedCrefs
+  "Find all crefs in an expression which are subscripted with the given
+   iterator, and return a list of cref-Integer tuples, where the cref is the
+   index of the subscript."
   input Exp inExp;
-  output list<tuple<ComponentRef, Integer>> outLst;
+  input String inIterator;
+  input list<IteratorIndexedCref> inCrefs = {};
+  output list<IteratorIndexedCref> outCrefs;
 algorithm
-    outLst := matchcontinue(inString,inExp)
-      local
-        list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
-        String id;
-        Exp e_1,e_2,e_3;
-        list<Exp> expLst;
-        list<list<Exp>> expLstLst;
-        ComponentRef cref;
-        list<tuple<Exp, Exp>> elseIfBranch;
-        FunctionArgs funcArgs;
-        Option<Exp> expOpt;
+  (_, outCrefs) := traverseExp(inExp,
+    function findIteratorIndexedCrefs_traverser(inIterator = inIterator), {});
+  outCrefs := List.fold(outCrefs,
+    function List.unionEltOnTrue(inCompFunc = iteratorIndexedCrefsEqual), inCrefs);
+end findIteratorIndexedCrefs;
 
-      case(id, CREF(cref))
-        equation
-          lst=findIteratorInCRef(id,cref);
-        then lst;
-      case(id, BINARY(e_1,_,e_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case(id, UNARY(_,e_1))
-        equation
-          lst=findIteratorInExp(id,e_1);
-        then lst;
-      case(id, LBINARY(e_1,_,e_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case(id, LUNARY(_,e_1))
-        equation
-          lst=findIteratorInExp(id,e_1);
-        then lst;
-      case(id, RELATION(e_1,_,e_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case(id, IFEXP(e_1,e_2,e_3,elseIfBranch))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst_3=findIteratorInExp(id,e_3);
-          lst_4=findIteratorInElseIfExpBranch(id,elseIfBranch);
-          lst=List.flatten({lst_1,lst_2,lst_3,lst_4});
-        then lst;
-      case (id,CALL(_,funcArgs))
-        equation
-          lst=findIteratorInFunctionArgs(id,funcArgs);
-        then lst;
-      // stefan
-      case (id, PARTEVALFUNCTION(_,funcArgs))
-        equation
-          lst=findIteratorInFunctionArgs(id,funcArgs);
-        then lst;
-      case (id, ARRAY(expLst))
-        equation
-          lst=findIteratorInExpLst(id,expLst);
-        then lst;
-      case (id, MATRIX(expLstLst))
-        equation
-          lst=findIteratorInExpLstLst(id,expLstLst);
-        then lst;
-      case(id, RANGE(e_1,expOpt,e_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExpOpt(id,expOpt);
-          lst_3=findIteratorInExp(id,e_2);
-          lst=List.flatten({lst_1,lst_2,lst_3});
-        then lst;
-      case (id, TUPLE(expLst))
-        equation
-          lst=findIteratorInExpLst(id,expLst);
-        then lst;
-      case (id, LIST(expLst))
-        equation
-          lst=findIteratorInExpLst(id,expLst);
-        then lst;
-      else {};
-  end matchcontinue;
-end findIteratorInExp;
-
-protected function findIteratorInExpOpt
-  input String inString;
-  input Option<Exp> inExpOpt;
-  output list<tuple<ComponentRef, Integer>> outLst;
+protected function findIteratorIndexedCrefs_traverser
+  "Traversal function used by deduceReductionIterationRange. Used to find crefs
+   which are subscripted by a given iterator."
+  input Exp inExp;
+  input list<IteratorIndexedCref> inCrefs;
+  input String inIterator;
+  output Exp outExp = inExp;
+  output list<IteratorIndexedCref> outCrefs;
 algorithm
-    outLst := match(inString,inExpOpt)
+  outCrefs := match inExp
     local
-      list<tuple<ComponentRef, Integer>> lst;
-      String id;
-      Exp exp;
-      case (_,NONE()) then {};
-      case (id,SOME(exp))
-        equation
-          lst=findIteratorInExp(id,exp);
-        then lst;
-  end match;
-end findIteratorInExpOpt;
+      ComponentRef cref;
 
-public function findIteratorInCRef "
-The most important among \"findIteratorIn...\" functions -- they all use this one in the end
-"
-  input String inString;
+    case CREF(componentRef = cref)
+      then getIteratorIndexedCrefs(cref, inIterator, inCrefs);
+
+    else inCrefs;
+  end match;
+end findIteratorIndexedCrefs_traverser;
+
+protected function iteratorIndexedCrefsEqual
+  "Checks whether two cref-index pairs are equal."
+  input IteratorIndexedCref inCref1;
+  input IteratorIndexedCref inCref2;
+  output Boolean outEqual;
+protected
+  ComponentRef cr1, cr2;
+  Integer idx1, idx2;
+algorithm
+  (cr1, idx1) := inCref1;
+  (cr2, idx2) := inCref2;
+  outEqual := idx1 == idx2 and crefEqual(cr1, cr2);
+end iteratorIndexedCrefsEqual;
+
+protected function getIteratorIndexedCrefs
+  "Checks if the given component reference is subscripted by the given iterator.
+   Only cases where a subscript consists of only the iterator is considered.
+   If so it adds a cref-index pair to the list, where the cref is the subscripted
+   cref without subscripts, and the index is the subscripted dimension. E.g. for
+   iterator i:
+     a[i] => (a, 1), b[1, i] => (b, 2), c[i+1] => (), d[2].e[i] => (d[2].e, 1)"
   input ComponentRef inCref;
-  output list<tuple<ComponentRef, Integer>> outLst;
+  input String inIterator;
+  input list<IteratorIndexedCref> inCrefs;
+  output list<IteratorIndexedCref> outCrefs = inCrefs;
+protected
+  list<tuple<ComponentRef, Integer>> crefs;
 algorithm
-    outLst := match(inString,inCref)
+  outCrefs := match inCref
     local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
-      String id,name;
-      list<Subscript> subLst;
+      list<Subscript> subs;
+      Integer idx;
+      String name, id;
       ComponentRef cref;
-      list<Integer> intLst;
-      case(id, CREF_IDENT(name,subLst))
-        equation
-        intLst=findIteratorInSubscripts(id,subLst,1);
-        lst=combineCRefAndIntLst(CREF_IDENT(name,{}),intLst);
-        then lst;
-      case(id, CREF_QUAL(name,subLst,cref))
-        equation
-        intLst=findIteratorInSubscripts(id,subLst,1);
-        lst_1=combineCRefAndIntLst(CREF_IDENT(name,{}),intLst);
-        lst_2=findIteratorInCRef(id,cref);
-        lst_3=qualifyCRefIntLst(name,subLst,lst_2);
-        lst=listAppend(lst_1,lst_3);
-        then lst;
-      case(id, CREF_FULLYQUALIFIED(cref)) then findIteratorInCRef(id,cref);
-      case (_,ALLWILD()) then {};
-      case (_,WILD()) then {};
-  end match;
-end findIteratorInCRef;
 
-protected function findIteratorInSubscripts
-  input String inString;
-  input list<Subscript> inSubLst;
-  input Integer inInt;
-  output list<Integer> outIntLst;
-algorithm
-  outIntLst := matchcontinue(inString,inSubLst,inInt)
-    local
-      list<Integer> lst;
-      Integer n, n_1;
-      String id,name;
-      list<Subscript> rest;
-    case (_,{},_) then {};
-    case (id,SUBSCRIPT(CREF(CREF_IDENT(name,{})))::rest,n)
-      equation
-        true = stringEq(id, name);
-        n_1=n+1;
-        lst=findIteratorInSubscripts(id,rest,n_1);
-      then n::lst;
-    case (id,_::rest,n)
-      equation
-        n_1=n+1;
-        lst=findIteratorInSubscripts(id,rest,n_1);
-      then lst;
-  end matchcontinue;
-end findIteratorInSubscripts;
+    case CREF_IDENT(name = id, subscripts = subs)
+      algorithm
+        // For each subscript, check if the subscript consists of only the
+        // iterator we're looking for.
+        idx := 1;
+        for sub in subs loop
+          _ := match sub
+            case SUBSCRIPT(subscript = CREF(componentRef =
+                CREF_IDENT(name = name, subscripts = {})))
+              algorithm
+                if name == inIterator then
+                  outCrefs := (CREF_IDENT(id, {}), idx) :: outCrefs;
+                end if;
+              then
+                ();
 
-protected function combineCRefAndIntLst
-  input ComponentRef inCRef;
-  input list<Integer> inIntLst;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-  outLst := match(inCRef,inIntLst)
-    local
-      ComponentRef cref;
-      list<Integer> rest;
-      Integer i;
-      list<tuple<ComponentRef, Integer>> lst;
-    case (_,{}) then {};
-    case (cref,i::rest)
-      equation
-        lst=combineCRefAndIntLst(cref,rest);
-      then (cref,i)::lst;
-  end match;
-end combineCRefAndIntLst;
+            else ();
+          end match;
 
-protected function qualifyCRefIntLst
-  input String inString;
-  input list<Subscript> inSubLst;
-  input list<tuple<ComponentRef, Integer>> inLst;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-  outLst:=match(inString,inSubLst,inLst)
-    local
-      ComponentRef cref;
-      String name;
-      list<Subscript> subLst;
-      list<tuple<ComponentRef, Integer>> rest,lst;
-      Integer i;
-    case (_,_,{}) then {};
-    case (name,subLst,(cref,i)::rest)
-      equation
-        lst=qualifyCRefIntLst(name,subLst,rest);
-      then (CREF_QUAL(name,subLst,cref),i)::lst;
+          idx := idx + 1;
+        end for;
+      then
+        outCrefs;
+
+    case CREF_QUAL(name = id, subscripts = subs, componentRef = cref)
+      algorithm
+        crefs := getIteratorIndexedCrefs(cref, inIterator, {});
+
+        // Append the prefix from the qualified cref to any matches, and add
+        // them to the result list.
+        for cr in crefs loop
+          (cref, idx) := cr;
+          outCrefs := (CREF_QUAL(id, subs, cref), idx) :: outCrefs;
+        end for;
+      then
+        getIteratorIndexedCrefs(CREF_IDENT(id, subs), inIterator, outCrefs);
+
+    case CREF_FULLYQUALIFIED(componentRef = cref)
+      algorithm
+        crefs := getIteratorIndexedCrefs(cref, inIterator, {});
+
+        // Make any matches fully qualified, and add them to the result list.
+        for cr in crefs loop
+          (cref, idx) := cr;
+          outCrefs := (CREF_FULLYQUALIFIED(cref), idx) :: outCrefs;
+        end for;
+      then
+        outCrefs;
+
+    else inCrefs;
   end match;
-end qualifyCRefIntLst;
+end getIteratorIndexedCrefs;
 
 public function pathReplaceIdent
   input Path path;
@@ -6527,7 +6233,7 @@ end isEmptySubMod;
 
 public function elementArgName
   input ElementArg inArg;
-  output Absyn.Path outName;
+  output Path outName;
 algorithm
   outName := match(inArg)
     case MODIFICATION(path = outName) then outName;
@@ -6539,11 +6245,11 @@ public function elementArgEqualName
   input ElementArg inArg2;
   output Boolean outEqual;
 protected
-  Absyn.Path name1, name2;
+  Path name1, name2;
 algorithm
   outEqual := match(inArg1, inArg2)
     case (MODIFICATION(path = name1), MODIFICATION(path = name2))
-      then Absyn.pathEqual(name1, name2);
+      then pathEqual(name1, name2);
 
     else false;
   end match;

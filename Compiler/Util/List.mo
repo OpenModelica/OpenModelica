@@ -3185,6 +3185,46 @@ algorithm
   end for;
 end fold2;
 
+public function foldList<T, FT>
+  input list<list<T>> inList;
+  input FoldFunc inFoldFunc;
+  input FT inStartValue;
+  output FT outResult = inStartValue;
+
+  partial function FoldFunc
+    input T inElement;
+    input FT inFoldArg;
+    output FT outFoldArg;
+  end FoldFunc;
+algorithm
+  for lst in inList loop
+    for e in lst loop
+      outResult := inFoldFunc(e, outResult);
+    end for;
+  end for;
+end foldList;
+
+public function foldList1<T, FT, ArgT1>
+  input list<list<T>> inList;
+  input FoldFunc inFoldFunc;
+  input ArgT1 inExtraArg1;
+  input FT inStartValue;
+  output FT outResult = inStartValue;
+
+  partial function FoldFunc
+    input T inElement;
+    input ArgT1 inConstantArg1;
+    input FT inFoldArg;
+    output FT outFoldArg;
+  end FoldFunc;
+algorithm
+  for lst in inList loop
+    for e in lst loop
+      outResult := inFoldFunc(e, inExtraArg1, outResult);
+    end for;
+  end for;
+end foldList1;
+
 public function foldList2<T, FT, ArgT1, ArgT2>
   "Takes a list and a function operating on list elements having an extra
    argument that is 'updated', thus returned from the function, and two constant
@@ -4640,29 +4680,55 @@ algorithm
   end for;
 end position;
 
-public function positionOnTrue<T, VT>
-  "Takes a value and a list, and returns the position of the first list element
-  that whose value is equal to the given value. The index starts at zero.
-    Example: position(2, {0, 1, 2, 3}) => 3"
-  input VT inValue;
+public function positionOnTrue<T>
+  "Takes a list and a predicate function, and returns the index of the first
+   element for which the function returns true, or -1 if no match is found."
   input list<T> inList;
-  input CompFunc inCompFunc;
-  output Integer outPosition = 1 "one-based index";
+  input PredFunc inPredFunc;
+  output Integer outPosition = 1;
 
-  partial function CompFunc
-    input VT inValue;
+  partial function PredFunc
     input T inElement;
-    output Boolean outIsEqual;
-  end CompFunc;
+    output Boolean outMatch;
+  end PredFunc;
 algorithm
   for e in inList loop
-    if inCompFunc(inValue, e) then
+    if inPredFunc(e) then
       return;
     end if;
 
     outPosition := outPosition + 1;
   end for;
+
+  outPosition := -1;
 end positionOnTrue;
+
+public function position1OnTrue<T, ArgT>
+  "Takes a list, a predicate function and an extra argument, and return the
+   index of the first element for which the function returns true, or -1 if no
+   match is found. The extra argument is passed to the predicate function for
+   each call."
+  input list<T> inList;
+  input PredFunc inPredFunc;
+  input ArgT inArg;
+  output Integer outPosition = 1;
+
+  partial function PredFunc
+    input T inElement;
+    input ArgT inArg;
+    output Boolean outMatch;
+  end PredFunc;
+algorithm
+  for e in inList loop
+    if inPredFunc(e, inArg) then
+      return;
+    end if;
+
+    outPosition := outPosition + 1;
+  end for;
+
+  outPosition := -1;
+end position1OnTrue;
 
 public function positionList<T>
   "Takes a value and a list of lists, and returns the position of the value.
@@ -4687,6 +4753,8 @@ algorithm
 
     outListIndex := outListIndex + 1;
   end for;
+
+  fail();
 end positionList;
 
 public function getMember<T>
@@ -6220,6 +6288,28 @@ public function mkOption<T>
 algorithm
   outOption := if listEmpty(inList) then NONE() else SOME(inList);
 end mkOption;
+
+public function all<T>
+  "Returns true if the given predicate function returns true for all elements in
+   the given list."
+  input list<T> inList;
+  input PredFunc inFunc;
+  output Boolean outResult;
+
+  partial function PredFunc
+    input T inElement;
+    output Boolean outMatch;
+  end PredFunc;
+algorithm
+  for e in inList loop
+    if not inFunc(e) then
+      outResult := false;
+      return;
+    end if;
+  end for;
+
+  outResult := true;
+end all;
 
 annotation(__OpenModelica_Interface="util");
 end List;

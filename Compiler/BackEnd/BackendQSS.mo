@@ -312,35 +312,35 @@ algorithm
 
     case (DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs))
       equation
-      p = List.positionOnTrue(cr,states,ComponentReference.crefEqual);
+      p = List.position1OnTrue(states,ComponentReference.crefEqual,cr);
       ident = stringAppend(stringAppend("x[",intString(p)),"]");
       then (DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs));
     case (DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs))
       equation
-      p = List.positionOnTrue(cr,states,ComponentReference.crefEqual);
+      p = List.position1OnTrue(states,ComponentReference.crefEqual,cr);
       ident = stringAppend(stringAppend("x[",intString(p)),"]");
       then (DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs));
     case (DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs))
       equation
       //p = List.position(cr,disc);
-      p = List.positionOnTrue(cr,disc,ComponentReference.crefEqual);
+      p = List.position1OnTrue(disc,ComponentReference.crefEqual,cr);
       ident = stringAppend(stringAppend("d[",intString(p)),"]");
       then (DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs));
     case (DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs))
       equation
-      p = List.positionOnTrue(cr,disc,ComponentReference.crefEqual);
+      p = List.position1OnTrue(disc,ComponentReference.crefEqual,cr);
       ident = stringAppend(stringAppend("d[",intString(p)),"]");
       then (DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs));
     case (DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),(states,disc,algs))
       equation
       //p = List.position(cr,algs);
-      p = List.positionOnTrue(cr,algs,ComponentReference.crefEqual);
+      p = List.position1OnTrue(algs,ComponentReference.crefEqual,cr);
       ident = stringAppend(stringAppend("a[",intString(p)),"]");
       then (DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs));
     case (DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),(states,disc,algs))
       equation
       //p = List.position(cr,algs);
-      p = List.positionOnTrue(cr,algs,ComponentReference.crefEqual);
+      p = List.position1OnTrue(algs,ComponentReference.crefEqual,cr);
       ident = stringAppend(stringAppend("a[",intString(p)),"]");
       then (DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),(states,disc,algs));
     case (DAE.CREF(cr as DAE.CREF_IDENT(_,t1,subs),t),(states,disc,algs))
@@ -459,19 +459,19 @@ algorithm
         list<DAE.Subscript> subscriptLst;
       case (_,_,_,_)
       equation
-        p = List.positionOnTrue(cr,states,ComponentReference.crefEqual);
+        p = List.position1OnTrue(states,ComponentReference.crefEqual,cr);
         then stringAppend(stringAppend("x[",intString(p)),"]");
       case (DAE.CREF_QUAL(_,_,_,r),_,_,_)
       equation
-        p = List.positionOnTrue(r,states,ComponentReference.crefEqual);
+        p = List.position1OnTrue(states,ComponentReference.crefEqual,r);
         then stringAppend(stringAppend("der(x[",intString(p)),"])");
       case (_,_,_,_)
       equation
-        p = List.positionOnTrue(cr,disc,ComponentReference.crefEqual);
+        p = List.position1OnTrue(disc,ComponentReference.crefEqual,cr);
         then stringAppend(stringAppend("d[",intString(p)),"]");
       case (_,_,_,_)
       equation
-        p = List.positionOnTrue(cr,algs,ComponentReference.crefEqual);
+        p = List.position1OnTrue(algs,ComponentReference.crefEqual,cr);
         then stringAppend(stringAppend("a[",intString(p)),"]");
       case (_,_,_,_)
       then ComponentReference.printComponentRefStr(cr);
@@ -542,7 +542,7 @@ algorithm
          s = stringAppend("/* We are adding a new discrete variable for ","");
          s = stringAppend(s,ExpressionDump.printExpStr(condition));
          s = stringAppend(s,"*/\n");
-         p = List.positionOnTrue(condition,zc_exps,Expression.expEqual);
+         p = List.position1OnTrue(zc_exps,Expression.expEqual,condition);
          s = stringAppend(s,"d[");
          s = stringAppend(s,intString(p+offset));
          s = stringAppend(s,"] := 1.0;\n");
@@ -574,7 +574,7 @@ algorithm
          s = stringAppend("/* We are adding a new discrete variable for ","");
          s = stringAppend(s,ExpressionDump.printExpStr(condition));
          s = stringAppend(s,"*/\n");
-         p = List.positionOnTrue(condition,zc_exps,Expression.expEqual);
+         p = List.position1OnTrue(zc_exps,Expression.expEqual,condition);
          s = stringAppend(s,"d[");
          s = stringAppend(s,intString(p+offset));
          s = stringAppend(s,"] := 0.0;\n");
@@ -846,12 +846,12 @@ algorithm
        DAE.Exp e;
      case (DAE.CREF(componentRef = cr as DAE.CREF_IDENT(_,t1,subs),ty=t),inputs)
       equation
-      p = List.positionOnTrue(cr,inputs,ComponentReference.crefEqual)-1 "shift to zero-based index";
+      p = List.position1OnTrue(inputs,ComponentReference.crefEqual,cr)-1 "shift to zero-based index";
       ident = stringAppend("i",intString(p));
       then (DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),inputs);
     case (DAE.CREF(componentRef = cr as DAE.CREF_QUAL(_,t1,subs,_),ty=t),inputs)
       equation
-      p = List.positionOnTrue(cr,inputs,ComponentReference.crefEqual)-1 "shift to zero-based index";
+      p = List.position1OnTrue(inputs,ComponentReference.crefEqual,cr)-1 "shift to zero-based index";
       ident = stringAppend("i",intString(p));
       then (DAE.CREF(DAE.CREF_IDENT(ident,t1,subs),t),inputs);
     case (e,inputs) then (e,inputs);

@@ -8113,18 +8113,18 @@ public function findVarIndex
   input list<DAE.Var> vars;
   output Integer index;
 algorithm
-  index := List.positionOnTrue(id,vars,selectVar)-1 "shift to zero-based index";
+  index := List.position1OnTrue(vars,selectVar,id)-1 "shift to zero-based index";
 end findVarIndex;
 
 protected function selectVar
-  input String id;
   input DAE.Var var;
+  input String id;
   output Boolean b;
 algorithm
-  b := match (id,var)
+  b := match var
     local
       String id1;
-    case (_,DAE.TYPES_VAR(name=id1)) then stringEq(id,id1);
+    case DAE.TYPES_VAR(name=id1) then stringEq(id,id1);
     else false;
   end match;
 end selectVar;
@@ -8368,7 +8368,7 @@ public function lookupIndexInMetaRecord
   input String name;
   output Integer index;
 algorithm
-  index := List.positionOnTrue(name, vars, DAEUtil.typeVarIdentEqual);
+  index := List.position1OnTrue(vars, DAEUtil.typeVarIdentEqual, name);
 end lookupIndexInMetaRecord;
 
 function checkEnumDuplicateLiterals

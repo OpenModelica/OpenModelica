@@ -59,6 +59,10 @@ protected import SCodeDump;
 protected import System;
 protected import Util;
 
+// Constant expression for AssertionLevel.error.
+protected constant Absyn.Exp ASSERTION_LEVEL_ERROR = Absyn.CREF(Absyn.CREF_FULLYQUALIFIED(
+  Absyn.CREF_QUAL("AssertionLevel", {}, Absyn.CREF_IDENT("error", {}))));
+
 public function translateAbsyn2SCode
 "This function takes an Absyn.Program
   and constructs a SCode.Program from it.
@@ -788,161 +792,161 @@ algorithm
 end translateClassdefInitialalgorithms;
 
 public function translateClassdefAlgorithmitems
-"Filter out comments."
-  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  output list<SCode.Statement> outAbsynAlgorithmLst;
+  input list<Absyn.AlgorithmItem> inStatements;
+  output list<SCode.Statement> outStatements = {};
+protected
+  SCode.Comment cmt;
+  SourceInfo info;
+  SCode.Statement s;
 algorithm
-  outAbsynAlgorithmLst := match (inAbsynAlgorithmItemLst)
-    local
-      list<Absyn.AlgorithmItem> rest;
-      list<SCode.Statement> res;
-      Absyn.Algorithm alg;
-      SCode.Statement stmt;
-      Option<Absyn.Comment> comment;
-      SCode.Comment scomment;
-      SourceInfo info;
-    case {} then {};
-    case (Absyn.ALGORITHMITEM(algorithm_ = alg, comment = comment, info = info) :: rest)
-      equation
-        (scomment,info) = translateCommentWithLineInfoChanges(comment,info);
-        stmt = translateClassdefAlgorithmItem(alg,scomment,info);
-        res = translateClassdefAlgorithmitems(rest);
-      then
-        (stmt :: res);
-    case (_ :: rest)
-      equation
-        res = translateClassdefAlgorithmitems(rest);
-      then
-        res;
-  end match;
+  for stmt in inStatements loop
+    _ := match stmt
+      case Absyn.ALGORITHMITEM(info = info)
+        algorithm
+          (cmt, info) := translateCommentWithLineInfoChanges(stmt.comment, info);
+          s := translateClassdefAlgorithmItem(stmt.algorithm_, cmt, info);
+          outStatements := s :: outStatements;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+
+  outStatements := listReverse(outStatements);
 end translateClassdefAlgorithmitems;
 
 protected function translateClassdefAlgorithmItem
-"Translates an Absyn algorithm (statement) into SCode statement"
-  input Absyn.Algorithm alg;
-  input SCode.Comment comment;
-  input SourceInfo info;
-  output SCode.Statement stmt;
+  "Translates an Absyn algorithm (statement) into SCode statement."
+  input Absyn.Algorithm inAlgorithm;
+  input SCode.Comment inComment;
+  input SourceInfo inInfo;
+  output SCode.Statement outStatement;
 algorithm
-  stmt := match (alg,comment,info)
+  outStatement := match inAlgorithm
     local
-      String i;
-      Option<Absyn.Exp> range;
-      Absyn.ForIterators iterators;
-      Absyn.ComponentRef functionCall;
-      Absyn.FunctionArgs functionArgs;
-      Absyn.Exp assignComponent,value,boolExpr;
-      list<SCode.Statement> stmts,stmts1,stmts2;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> branches;
-      list<tuple<Absyn.Exp, list<SCode.Statement>>> sbranches;
-      list<Absyn.AlgorithmItem> body,elseBody;
+      list<SCode.Statement> body, else_body;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> branches;
+      String iter_name;
+      Option<Absyn.Exp> iter_range;
+      SCode.Statement stmt;
+      Absyn.Exp e1, e2, e3;
+      Absyn.ComponentRef cr;
 
-    case (Absyn.ALG_ASSIGN(assignComponent,value),_,_)
+    case Absyn.ALG_ASSIGN()
+      then SCode.ALG_ASSIGN(inAlgorithm.assignComponent, inAlgorithm.value,
+          inComment, inInfo);
+
+    case Absyn.ALG_IF()
+      algorithm
+        body := translateClassdefAlgorithmitems(inAlgorithm.trueBranch);
+        else_body := translateClassdefAlgorithmitems(inAlgorithm.elseBranch);
+        branches := translateAlgBranches(inAlgorithm.elseIfAlgorithmBranch);
       then
-        SCode.ALG_ASSIGN(assignComponent,value,comment,info);
+        SCode.ALG_IF(inAlgorithm.ifExp, body, branches, else_body, inComment, inInfo);
 
-    case (Absyn.ALG_IF(boolExpr,body,branches,elseBody),_,_)
-      equation
-        stmts1 = translateClassdefAlgorithmitems(body);
-        stmts2 = translateClassdefAlgorithmitems(elseBody);
-        sbranches = translateBranches(branches);
-      then SCode.ALG_IF(boolExpr,stmts1,sbranches,stmts2,comment,info);
+    case Absyn.ALG_FOR()
+      algorithm
+        body := translateClassdefAlgorithmitems(inAlgorithm.forBody);
 
-    // multiple for iterators
-    //  for (i in a, j in b, k in c) loop
-    //      stmts;
-    //  end for;
-    // are translated to equivalent:
-    //  for (i in a) loop
-    //   for (j in b) loop
-    //    for (k in c) loop
-    //      stmts;
-    //    end for;
-    //   end for;
-    //  end for;
-    case (Absyn.ALG_FOR(Absyn.ITERATOR(i,NONE(),range)::(iterators as _::_),body),_,_)
-      equation
-        stmt = translateClassdefAlgorithmItem(Absyn.ALG_FOR(iterators,body),comment,info);
-      then SCode.ALG_FOR(i,range,{stmt},comment,info);
+        // Convert for-loops with multiple iterators into nested for-loops.
+        for i in listReverse(inAlgorithm.iterators) loop
+          (iter_name, iter_range) := translateIterator(i, inInfo);
+          body := {SCode.ALG_FOR(iter_name, iter_range, body, inComment, inInfo)};
+        end for; 
+      then
+        listHead(body);
 
-    case (Absyn.ALG_FOR(Absyn.ITERATOR(i,NONE(),range)::{},body),_,_)
-      equation
-        stmts = translateClassdefAlgorithmitems(body);
-      then SCode.ALG_FOR(i,range,stmts,comment,info);
+    case Absyn.ALG_PARFOR()
+      algorithm
+        body := translateClassdefAlgorithmitems(inAlgorithm.parforBody);
 
-    case (Absyn.ALG_PARFOR(Absyn.ITERATOR(i,NONE(),range)::(iterators as _::_),body),_,_)
-      equation
-        stmt = translateClassdefAlgorithmItem(Absyn.ALG_FOR(iterators,body),comment,info);
-      then SCode.ALG_PARFOR(i,range,{stmt},comment,info);
+        // Convert for-loops with multiple iterators into nested for-loops.
+        for i in listReverse(inAlgorithm.iterators) loop
+          (iter_name, iter_range) := translateIterator(i, inInfo);
+          body := {SCode.ALG_PARFOR(iter_name, iter_range, body, inComment, inInfo)};
+        end for; 
+      then
+        listHead(body);
 
-    case (Absyn.ALG_PARFOR(Absyn.ITERATOR(i,NONE(),range)::{},body),_,_)
-      equation
-        stmts = translateClassdefAlgorithmitems(body);
-      then SCode.ALG_PARFOR(i,range,stmts,comment,info);
+    case Absyn.ALG_WHILE()
+      algorithm
+        body := translateClassdefAlgorithmitems(inAlgorithm.whileBody);
+      then
+        SCode.ALG_WHILE(inAlgorithm.boolExpr, body, inComment, inInfo);
 
-    case (Absyn.ALG_WHILE(boolExpr,body),_,_)
-      equation
-        stmts = translateClassdefAlgorithmitems(body);
-      then SCode.ALG_WHILE(boolExpr,stmts,comment,info);
+    case Absyn.ALG_WHEN_A()
+      algorithm
+        branches := translateAlgBranches((inAlgorithm.boolExpr, inAlgorithm.whenBody)
+          :: inAlgorithm.elseWhenAlgorithmBranch);
+      then
+        SCode.ALG_WHEN_A(branches, inComment, inInfo);
 
-    case (Absyn.ALG_WHEN_A(boolExpr,body,branches),_,_)
-      equation
-        branches = (boolExpr,body)::branches;
-        sbranches = translateBranches(branches);
-      then SCode.ALG_WHEN_A(sbranches,comment,info);
+    // assert(condition, message)
+    case Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1, e2}, argNames = {}))
+      then SCode.ALG_ASSERT(e1, e2, ASSERTION_LEVEL_ERROR, inComment, inInfo);
 
-    case (Absyn.ALG_NORETCALL(functionCall,functionArgs),_,_)
-      then SCode.ALG_NORETCALL(Absyn.CALL(functionCall,functionArgs),comment,info);
+    // assert(condition, message, level)
+    case Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1, e2, e3}, argNames = {}))
+      then SCode.ALG_ASSERT(e1, e2, e3, inComment, inInfo);
 
-    case (Absyn.ALG_RETURN(),_,_)
-    then SCode.ALG_RETURN(comment,info);
+    // assert(condition, message, level = arg)
+    case Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1, e2},
+        argNames = {Absyn.NAMEDARG("level", e3)}))
+      then SCode.ALG_ASSERT(e1, e2, e3, inComment, inInfo);
 
-    case (Absyn.ALG_BREAK(),_,_)
-    then SCode.ALG_BREAK(comment,info);
+    case Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "terminate"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1}, argNames = {}))
+      then SCode.ALG_TERMINATE(e1, inComment, inInfo);
 
-    case (Absyn.ALG_FAILURE(body),_,_)
-      equation
-        stmts = translateClassdefAlgorithmitems(body);
-      then SCode.ALG_FAILURE(stmts,comment,info);
+    case Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr), e2},
+        argNames = {}))
+      then SCode.ALG_REINIT(cr, e2, inComment, inInfo);
 
-    case (Absyn.ALG_TRY(body,elseBody),_,_)
-      equation
-        stmts1 = translateClassdefAlgorithmitems(body);
-        stmts2 = translateClassdefAlgorithmitems(elseBody);
-      then SCode.ALG_TRY(stmts1,stmts2,comment,info);
+    case Absyn.ALG_NORETCALL()
+      algorithm
+        e1 := Absyn.CALL(inAlgorithm.functionCall, inAlgorithm.functionArgs);
+      then
+        SCode.ALG_NORETCALL(e1, inComment, inInfo);
 
-    case (Absyn.ALG_CONTINUE(),_,_)
-    then SCode.ALG_CONTINUE(comment,info);
+    case Absyn.ALG_FAILURE()
+      algorithm
+        body := translateClassdefAlgorithmitems(inAlgorithm.equ);
+      then
+        SCode.ALG_FAILURE(body, inComment, inInfo);
 
-    /*
-    case (_,comment,info)
-      equation
-        debug_print("- translateClassdefAlgorithmItem: ", alg);
-      then fail();
-    */
+    case Absyn.ALG_TRY()
+      algorithm
+        body := translateClassdefAlgorithmitems(inAlgorithm.body);
+        else_body := translateClassdefAlgorithmitems(inAlgorithm.elseBody);
+      then
+        SCode.ALG_TRY(body, else_body, inComment, inInfo);
+
+    case Absyn.ALG_RETURN() then SCode.ALG_RETURN(inComment, inInfo);
+    case Absyn.ALG_BREAK() then SCode.ALG_BREAK(inComment, inInfo);
+    case Absyn.ALG_CONTINUE() then SCode.ALG_CONTINUE(inComment, inInfo);
+      
   end match;
 end translateClassdefAlgorithmItem;
 
-protected function translateBranches
-"Converts the else-if or else-when branches from algorithm statements into SCode form"
-  input list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> branches;
-  output list<tuple<Absyn.Exp,list<SCode.Statement>>> sbranches;
+protected function translateAlgBranches
+  "Translates the elseif or elsewhen branches from Absyn to SCode form."
+  input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inBranches;
+  output list<tuple<Absyn.Exp, list<SCode.Statement>>> outBranches;
+protected
+  Absyn.Exp condition;
+  list<Absyn.AlgorithmItem> body;
 algorithm
-  sbranches := match branches
-    local
-      Absyn.Exp e;
-      list<SCode.Statement> stmts;
-      list<Absyn.AlgorithmItem> al;
-      list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> rest;
-
-    case {} then {};
-    case ((e,al)::rest)
-      equation
-        stmts = translateClassdefAlgorithmitems(al);
-        sbranches = translateBranches(rest);
-      then (e,stmts)::sbranches;
-  end match;
-end translateBranches;
+  outBranches := list(
+    match branch case (condition, body)
+      then (condition, translateClassdefAlgorithmitems(body));
+    end match
+  for branch in inBranches);
+end translateAlgBranches;
 
 protected function translateClassdefExternaldecls
 "Converts an Absyn.ClassPart list to an SCode.ExternalDecl option.
@@ -1574,8 +1578,7 @@ protected function translateCommentSeparate
   output Option<String> outStr;
 algorithm
   (outAnn,outStr) := match (inComment)
-    local
-      Absyn.Annotation absann;
+    local Absyn.Annotation absann;
       SCode.Annotation ann;
       String str;
 
@@ -1596,141 +1599,131 @@ algorithm
 end translateCommentSeparate;
 
 protected function translateEquation
-"The translation of equations are straightforward, with one exception.
-  If clauses are translated so that the SCode only contains simple if-else constructs, and no elseif.
-  PR Arrays seem to keep their Absyn.mo structure."
   input Absyn.Equation inEquation;
   input SCode.Comment inComment;
   input SourceInfo inInfo;
   input Boolean inIsInitial;
   output SCode.EEquation outEEquation;
 algorithm
-  outEEquation := matchcontinue (inEquation,inComment,inInfo,inIsInitial)
+  outEEquation := match inEquation
     local
-      list<SCode.EEquation> tb_1,fb_1,eb_1,l_1;
-      Absyn.Exp e,ee,econd_1,cond,econd,e1,e2,e3;
-      list<Absyn.EquationItem> tb,fb,ei,eb,l;
+      Absyn.Exp exp, e1, e2, e3;
+      list<Absyn.Equation> abody;
+      list<SCode.EEquation> else_branch, body;
+      list<tuple<Absyn.Exp, list<SCode.EEquation>>> branches;
+      String iter_name;
+      Option<Absyn.Exp> iter_range;
       SCode.EEquation eq;
-      list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eis,elsewhen_;
-      list<tuple<Absyn.Exp, list<SCode.EEquation>>> elsewhen_1;
-      Absyn.ComponentRef c1,c2,cr;
-      String i;
-      Absyn.ComponentRef fname;
-      Absyn.FunctionArgs fargs;
-      list<Absyn.ForIterator> restIterators;
-      SCode.Comment com;
       list<Absyn.Exp> conditions;
-      list<list<Absyn.EquationItem>> trueBranches;
-      list<list<SCode.EEquation>> trueEEquations;
-      SourceInfo info;
+      list<list<SCode.EEquation>> bodies;
+      Absyn.ComponentRef cr;
 
-    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb),com,info,_)
-      equation
-        tb_1 = translateEEquations(tb, inIsInitial);
-        fb_1 = translateEEquations(fb, inIsInitial);
+    case Absyn.EQ_IF()
+      algorithm
+        body := translateEEquations(inEquation.equationTrueItems, inIsInitial);
+        (conditions, bodies) :=
+          List.map1_2(inEquation.elseIfBranches, translateEqBranch, inIsInitial);
+        conditions := inEquation.ifExp :: conditions;
+        else_branch := translateEEquations(inEquation.equationElseItems, inIsInitial);
       then
-        SCode.EQ_IF({e},{tb_1},fb_1,com,info);
-
-    /* else-if branches are put as if branches in false branch */
-    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eis,equationElseItems = fb),com,info,_)
-      equation
-        (conditions,trueBranches) = List.unzip((e,tb)::eis);
-        trueEEquations = List.map1(trueBranches,translateEEquations,inIsInitial);
-        fb_1 = translateEEquations(fb, inIsInitial);
+        SCode.EQ_IF(conditions, body :: bodies, else_branch, inComment, inInfo);
+        
+    case Absyn.EQ_WHEN_E()
+      algorithm
+        body := translateEEquations(inEquation.whenEquations, inIsInitial);
+        (conditions, bodies) :=
+          List.map1_2(inEquation.elseWhenEquations, translateEqBranch, inIsInitial);
+        branches := list((c, b) threaded for c in conditions, b in bodies);
       then
-        SCode.EQ_IF(conditions,trueEEquations,fb_1,com,info);
+        SCode.EQ_WHEN(inEquation.whenExp, body, branches, inComment, inInfo);
 
-    case (Absyn.EQ_IF(elseIfBranches = ((_,_) :: _)),_,_,_)
-      equation
-        /* adrpo: we do handle else if clauses in OpenModelica, what do we do with this??!
-        eq = translateEquation(Absyn.EQ_IF(e,tb,{},{Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE())}));
-        then eq;
-        */
-        print(" failure in SCode==> translateEquation IF_EQ\n");
+    case Absyn.EQ_EQUALS()
+      then SCode.EQ_EQUALS(inEquation.leftSide, inEquation.rightSide, inComment, inInfo);
+
+    case Absyn.EQ_CONNECT()
+      algorithm
+        if inIsInitial then
+          Error.addSourceMessageAndFail(Error.CONNECT_IN_INITIAL_EQUATION, {}, inInfo);
+        end if;
       then
-        fail();
+        SCode.EQ_CONNECT(inEquation.connector1, inEquation.connector2, inComment, inInfo);
 
-    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = ((econd,eb) :: elsewhen_)),com,info,_)
-      equation
-        tb_1 = translateEEquations(tb, inIsInitial);
-        SCode.EQ_WHEN(econd_1,eb_1,elsewhen_1,com,info) =
-          translateEquation(Absyn.EQ_WHEN_E(econd,eb,elsewhen_),com,info,inIsInitial);
+    case Absyn.EQ_FOR()
+      algorithm
+        body := translateEEquations(inEquation.forEquations, inIsInitial);
+
+        // Convert for-loops with multiple iterators into nested for-loops.
+        for i in listReverse(inEquation.iterators) loop
+          (iter_name, iter_range) := translateIterator(i, inInfo);
+          body := {SCode.EQ_FOR(iter_name, iter_range, body, inComment, inInfo)};
+        end for;
       then
-        SCode.EQ_WHEN(cond,tb_1,((econd_1,eb_1) :: elsewhen_1),com,info);
+        listHead(body);
 
-    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = {}),com,info,_)
-      equation
-        tb_1 = translateEEquations(tb, inIsInitial);
-      then
-        SCode.EQ_WHEN(cond,tb_1,{},com,info);
+    // assert(condition, message)
+    case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "assert"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1, e2}, argNames = {}))
+      then SCode.EQ_ASSERT(e1, e2, ASSERTION_LEVEL_ERROR, inComment, inInfo);
 
-    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2),com,info,_) then SCode.EQ_EQUALS(e1,e2,com,info);
-    case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),com,info,false) then SCode.EQ_CONNECT(c1,c2,com,info);
+    // assert(condition, message, level)
+    case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "assert"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1, e2, e3}, argNames = {}))
+      then SCode.EQ_ASSERT(e1, e2, e3, inComment, inInfo);
 
-    case (Absyn.EQ_CONNECT(), _, info, true)
-      equation
-        Error.addSourceMessage(Error.CONNECT_IN_INITIAL_EQUATION, {}, info);
-      then
-        fail();
+    // assert(condition, message, level = arg)
+    case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "assert"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1, e2},
+        argNames = {Absyn.NAMEDARG("level", e3)}))
+      then SCode.EQ_ASSERT(e1, e2, e3, inComment, inInfo);
 
-    case (Absyn.EQ_FOR(iterators = {Absyn.ITERATOR(i,NONE(),SOME(e))},forEquations = l),com,info,_) /* for loop with a single iterator with explicit range */
-      equation
-        l_1 = translateEEquations(l, inIsInitial);
-      then
-        SCode.EQ_FOR(i,SOME(e),l_1,com,info);
+    // terminate(message)
+    case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "terminate"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {e1}, argNames = {}))
+      then SCode.EQ_TERMINATE(e1, inComment, inInfo);
 
-    case (Absyn.EQ_FOR(iterators = {Absyn.ITERATOR(i,NONE(),NONE())},forEquations = l),com,info,_) /* for loop with a single iterator with implicit range */
-      equation
-        l_1 = translateEEquations(l, inIsInitial);
-      then
-        SCode.EQ_FOR(i,NONE(),l_1,com,info);
+    // reinit(cref, exp)
+    case Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT(name = "reinit"),
+        functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr), e2},
+        argNames = {}))
+      then SCode.EQ_REINIT(cr, e2, inComment, inInfo);
 
-    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),SOME(e))::(restIterators as _::_),forEquations = l),com,info,_) /* for loop with multiple iterators */
-      equation
-        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info, inIsInitial);
-      then
-        SCode.EQ_FOR(i,SOME(e),{eq},com,info);
+    // Other nonreturning calls. assert, terminate and reinit with the wrong
+    // number of arguments is also turned into a noretcall, since it's
+    // preferable to handle the error during instantation instead of here.
+    case Absyn.EQ_NORETCALL()
+      then SCode.EQ_NORETCALL(Absyn.CALL(inEquation.functionName, inEquation.functionArgs),
+        inComment, inInfo);
 
-    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(i,NONE(),NONE())::(restIterators as _::_),forEquations = l),com,info,_) /* for loop with multiple iterators */
-      equation
-        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info, inIsInitial);
-      then
-        SCode.EQ_FOR(i,NONE(),{eq},com,info);
-
-    case (Absyn.EQ_FOR(iterators = Absyn.ITERATOR(guardExp=SOME(_))::_),_,info,_)
-      equation
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {"For loops with guards not yet implemented"}, info);
-      then
-        fail();
-
-    case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
-                             functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})),com,info,_)
-      then SCode.EQ_ASSERT(e1,e2,Absyn.CREF(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_QUAL("AssertionLevel",{},Absyn.CREF_IDENT("error",{})))),com,info);
-
-    case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
-                              functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2,e3},argNames = {})),com,info,_)
-      then SCode.EQ_ASSERT(e1,e2,e3,com,info);
-
-    case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
-                              functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {Absyn.NAMEDARG("level",e3)})),com,info,_)
-      then SCode.EQ_ASSERT(e1,e2,e3,com,info);
-
-    case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("terminate", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {e1},argNames = {})),com,info,_)
-      then SCode.EQ_TERMINATE(e1,com,info);
-
-    case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("reinit", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),e2},argNames = {})),com,info,_)
-      then SCode.EQ_REINIT(cr,e2,com,info);
-
-    case (Absyn.EQ_NORETCALL(fname,fargs),com,info,_)
-      equation
-        failure(Absyn.CREF_IDENT("reinit", _) = fname);
-        failure(Absyn.CREF_IDENT("assert", _) = fname);
-        failure(Absyn.CREF_IDENT("terminate", _) = fname);
-      then SCode.EQ_NORETCALL(Absyn.CALL(fname,fargs),com,info);
-  end matchcontinue;
+  end match;
 end translateEquation;
+
+protected function translateEqBranch
+  input tuple<Absyn.Exp, list<Absyn.EquationItem>> inBranch;
+  input Boolean inIsInitial;
+  output Absyn.Exp outCondition;
+  output list<SCode.EEquation> outBody;
+protected
+  list<Absyn.EquationItem> body;
+algorithm
+  (outCondition, body) := inBranch;
+  outBody := translateEEquations(body, inIsInitial);
+end translateEqBranch;
+
+protected function translateIterator
+  input Absyn.ForIterator inIterator;
+  input SourceInfo inInfo;
+  output String outName;
+  output Option<Absyn.Exp> outRange;
+protected
+  Option<Absyn.Exp> guard_exp;
+algorithm
+  Absyn.ITERATOR(name = outName, guardExp = guard_exp, range = outRange) := inIterator; 
+
+  if isSome(guard_exp) then
+    Error.addSourceMessageAndFail(Error.INTERNAL_ERROR,
+      {"For loops with guards not yet implemented"}, inInfo);
+  end if;
+end translateIterator;
 
 protected function translateElementAddinfo
 "function: translateElementAddinfo"

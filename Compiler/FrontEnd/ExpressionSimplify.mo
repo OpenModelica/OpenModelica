@@ -5267,7 +5267,7 @@ algorithm
         true = stringEq(name,id);
         true = Absyn.pathEqual(callPath,recordPath);
         true = listLength(varLst) == listLength(exps);
-        i = List.positionOnTrue(id2,varLst,DAEUtil.typeVarIdentEqual);
+        i = List.position1OnTrue(varLst,DAEUtil.typeVarIdentEqual,id2);
         exp = listGet(exps,i);
       then (exp,tpl);
     case (exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id)),(name,iterExp,_))

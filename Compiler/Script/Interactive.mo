@@ -8318,7 +8318,7 @@ algorithm
     case (id1::id2::srest, (GlobalScript.IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp)) :: _))
       equation
         true = stringEq(id1, id3);
-        ix = List.positionOnTrue(id2, comp, stringEq);
+        ix = List.position1OnTrue(comp, stringEq, id2);
         v = listGet(vals, ix);
         v = getVariableValueLst(id2::srest, {GlobalScript.IVAR(id2,v,DAE.T_UNKNOWN_DEFAULT)});
       then
