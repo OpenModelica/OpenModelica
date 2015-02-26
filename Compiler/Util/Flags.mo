@@ -424,6 +424,8 @@ constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(127, "disableComSubExp", false
   Util.gettext("Deactivates module 'comSubExp'"));
 constant DebugFlag NO_START_CALC = DEBUG_FLAG(128, "disableStartCalc", false,
   Util.gettext("Deactivates the pre-calculation of start values during compile-time."));
+constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(129, "disablePartitioning", false,
+  Util.gettext("Deactivates partitioning of entire equation system."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -558,7 +560,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_CSE_VERBOSE,
   ADD_DER_ALIASES,
   DISABLE_COMSUBEXP,
-  NO_START_CALC
+  NO_START_CALC,
+  NO_PARTITIONING
 };
 
 public

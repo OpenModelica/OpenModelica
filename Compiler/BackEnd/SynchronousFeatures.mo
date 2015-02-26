@@ -71,15 +71,17 @@ algorithm
       list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
 
-    case (BackendDAE.DAE({syst}, shared)) equation
+    case (BackendDAE.DAE({syst}, shared)) guard(not Flags.isSet(Flags.NO_PARTITIONING)) equation
       systs = clockPartitioning1(syst, shared);
     then BackendDAE.DAE(systs, shared);
 
     // TODO: Improve support for partitioned systems of equations
-    else equation
+    case _  guard(not Flags.isSet(Flags.NO_PARTITIONING)) equation
       BackendDAE.DAE({syst}, shared) = BackendDAEOptimize.collapseIndependentBlocks(inDAE);
       systs = clockPartitioning1(syst, shared);
     then BackendDAE.DAE(systs, shared);
+    
+    else inDAE;
   end match;
 end clockPartitioning;
 
