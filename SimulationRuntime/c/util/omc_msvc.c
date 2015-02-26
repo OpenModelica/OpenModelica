@@ -170,25 +170,46 @@ unsigned int alarm (unsigned int seconds)
 #include <direct.h> /* for mkdir */
 #endif
 
+/* from "man mkdtemp":
+  The mkdtemp() function generates a uniquely named temporary directory from
+  template. The last six characters of template must be XXXXXX and these are
+  replaced with a string that makes the directory name unique. The directory
+  is then created with permissions 0700. Since it will be modified, template
+  must not be a string constant, but should be declared as a character array.
+
+  The mkdtemp() function returns a pointer to the modified template string on
+  success, and NULL on failure, in which case errno is set appropriately. 
+*/
 char *mkdtemp(char *tpl)
 {
-  int numChars = 0, i, len;
-  char tempDirectory[1024], tmpDir[2048];
+  int i, len, n;
 
-  /* extract the temp path */
-  numChars = GetTempPath(1024, tempDirectory);
-  sprintf(tmpDir, "%s\\%s", tempDirectory, tpl);
-  len = strlen(tmpDir);
-  for (i = len; i < len + 6; i++)
+  len = strlen(tpl);
+  /* check for len>=6 and last 6 characters being all 'X' */
+  if (len>=6)
   {
-    /* generate random numbers between 0..9 for the last 6 chars of the temp name */
-    tmpDir[i-6] = '0' + rand()%10;
+    for (i = len-6; i < len; i++)
+    {
+      if (tpl[i]!='X')
+      {
+          return NULL;
+      }
+    }
+    for (n=0; n < 256; n++) {
+      /* generate random numbers between 0..9 for the last 6 chars of the template name */
+      for (i = len-6; i < len; i++)
+      {
+        tpl[i] = '0' + rand()%10;
+      }
+      /* try to create dir */
+      if (mkdir(tpl) == 0)
+      {
+        return tpl;
+      }
+    }
   }
-  /* terminate string */
-  tmpDir[i-6] = 0;
 
-  mkdir(tmpDir);
-  return strdup(tmpDir);
+  return NULL;
 }
 #endif
 
