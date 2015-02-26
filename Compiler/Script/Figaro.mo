@@ -560,7 +560,7 @@ algorithm
   xml := xml + inBdfFile;
   xml := xml + "</FILE>\n</LOAD_BDF_FI>\n";
   xml := xml + "<RUN_TREATMENT>\n";
-  
+
 
   // In case the fault tree will be needed.
   if inMode == "figaro0" then
@@ -577,7 +577,7 @@ algorithm
 
   xml := xml + "\n    <RESOLVE_CONST>VRAI</RESOLVE_CONST>\n    <RESOLVE_ATTR>FAUX</RESOLVE_ATTR>\n    <INST_RULE>VRAI</INST_RULE>\n";
   xml := xml + "</RUN_TREATMENT>\n</REQUESTS>";
-  outXml := xml; 
+  outXml := xml;
 end makeXml;
 
 protected function truncateExtension
