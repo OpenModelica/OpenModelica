@@ -546,22 +546,21 @@ protected
   list<String> sl;
 algorithm
   xml := "<REQUESTS>\n  ";
-  xml := xml + "\n\n<LOAD_BDC_FI>\n    <FILE>";
-  xml := xml + inDatabase;
+  xml := xml + "\n\n<LOAD_BDC_FI>\n    <FILE_FI>";
+  xml := xml + inDatabase + "</FILE_FI>\n";
 
   // In case a dbc file exists
   sl := stringListStringChar(inDatabase);
   newName := truncateExtension(sl);
   if System.regularFileExists(newName + ".bdc") then
-  xml := xml + "</FILE>\n<FILE> " + newName + ".bdc";
+  xml := xml + "<FILE> " + newName + ".bdc</FILE>\n";
   end if;
-
-  xml := xml + "</FILE>\n</LOAD_BDC_FI>\n";
+  xml := xml + "</LOAD_BDC_FI>\n";
   xml := xml + "\n\n<LOAD_BDF_FI>\n    <FILE>";
   xml := xml + inBdfFile;
   xml := xml + "</FILE>\n</LOAD_BDF_FI>\n";
   xml := xml + "<RUN_TREATMENT>\n";
-
+  
 
   // In case the fault tree will be needed.
   if inMode == "figaro0" then
@@ -578,7 +577,7 @@ algorithm
 
   xml := xml + "\n    <RESOLVE_CONST>VRAI</RESOLVE_CONST>\n    <RESOLVE_ATTR>FAUX</RESOLVE_ATTR>\n    <INST_RULE>VRAI</INST_RULE>\n";
   xml := xml + "</RUN_TREATMENT>\n</REQUESTS>";
-  outXml := xml;
+  outXml := xml; 
 end makeXml;
 
 protected function truncateExtension
