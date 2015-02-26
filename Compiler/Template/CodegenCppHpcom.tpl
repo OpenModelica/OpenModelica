@@ -1168,7 +1168,7 @@ template function_HPCOM_assignThreadLocks(list<Task> iThreadTasks, String iLockP
       else ""
     end match)%>'; separator="\n"
   <<
-  if(threadNum == <%iThreadNum%>)
+  <%if intNe(iThreadNum, 0) then 'else ' else ''%>if(threadNum == <%iThreadNum%>)
   {
     <%lockAssign%>
   }
@@ -1184,7 +1184,7 @@ template function_HPCOM_releaseThreadLocks(list<Task> iThreadTasks, String iLock
       else ""
     end match)%>'; separator="\n"
   <<
-  if(threadNum == <%iThreadNum%>)
+  <%if intNe(iThreadNum, 0) then 'else ' else ''%>if(threadNum == <%iThreadNum%>)
   {
     <%lockAssign%>
   }
@@ -1198,7 +1198,7 @@ template function_HPCOM_Thread0(list<SimEqSystem> allEquationsPlusWhen, list<Tas
   match iType
     case ("openmp") then
       <<
-      if(threadNum == <%iThreadNum%>)
+      <%if intNe(iThreadNum, 0) then 'else ' else ''%>if(threadNum == <%iThreadNum%>)
       {
         <%threadTasks%>
       }

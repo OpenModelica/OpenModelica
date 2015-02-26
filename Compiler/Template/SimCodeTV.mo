@@ -73,6 +73,12 @@ package builtin
     input Integer b;
     output Boolean c;
   end intEq;
+  
+  function intNe
+    input Integer a;
+    input Integer b;
+    output Boolean c;
+  end intNe;
 
   function intGt
     input Integer i1;
