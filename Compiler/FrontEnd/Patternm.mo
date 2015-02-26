@@ -2708,7 +2708,7 @@ protected function statementFindDeadStore
   output DAE.Statement outStatement;
   output AvlTreeString.AvlTree useTree;
 algorithm
-  (outStatement,useTree) := match (inStatement,localsTree,inUseTree)
+  (outStatement,useTree) := match inStatement
     local
       AvlTreeString.AvlTree elseTree;
       list<DAE.Statement> body;
@@ -2722,28 +2722,29 @@ algorithm
       String id;
       Integer index;
       DAE.ElementSource source;
-    case (DAE.STMT_ASSIGN(type_=ty,exp1=lhs,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
+
+    case DAE.STMT_ASSIGN(type_=ty,exp1=lhs,exp=exp,source=source as DAE.SOURCE(info=info))
       equation
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
-        (lhs,_) = Expression.traverseExp(lhs, checkDefUse, (localsTree,useTree,info));
+        lhs = Expression.traverseExp(lhs, checkDefUse, (localsTree,useTree,info));
         outStatement = Algorithm.makeAssignmentNoTypeCheck(ty,lhs,exp,source);
       then (outStatement,useTree);
 
-    case (DAE.STMT_TUPLE_ASSIGN(type_=ty,expExpLst=exps,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
+    case DAE.STMT_TUPLE_ASSIGN(type_=ty,expExpLst=exps,exp=exp,source=source as DAE.SOURCE(info=info))
       equation
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
         (DAE.TUPLE(exps),_) = Expression.traverseExp(DAE.TUPLE(exps), checkDefUse, (localsTree,useTree,info));
         outStatement = Algorithm.makeTupleAssignmentNoTypeCheck(ty,exps,exp,source);
       then (outStatement,useTree);
 
-    case (DAE.STMT_ASSIGN_ARR(type_=ty,componentRef=cr,exp=exp,source=source as DAE.SOURCE(info=info)),_,_)
+    case DAE.STMT_ASSIGN_ARR(type_=ty,componentRef=cr,exp=exp,source=source as DAE.SOURCE(info=info))
       equation
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
         (DAE.CREF(componentRef=cr),_) = Expression.traverseExp(DAE.CREF(cr,DAE.T_REAL_DEFAULT), checkDefUse, (localsTree,useTree,info));
         outStatement = Algorithm.makeArrayAssignmentNoTypeCheck(ty,cr,exp,source);
       then (outStatement,useTree);
 
-    case (DAE.STMT_IF(exp=exp,statementLst=body,else_=else_,source=source),_,_)
+    case DAE.STMT_IF(exp=exp,statementLst=body,else_=else_,source=source)
       equation
         (else_,elseTree) = elseFindDeadStore(else_, localsTree, inUseTree);
         (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
@@ -2751,17 +2752,21 @@ algorithm
         useTree = AvlTreeString.joinAvlTrees(useTree,elseTree);
       then (DAE.STMT_IF(exp,body,else_,source),useTree);
 
-    case (DAE.STMT_FOR(ty,b,id,index,exp,body,source),_,_)
+    case DAE.STMT_FOR(ty,b,id,index,exp,body,source)
       equation
-        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
+        // Loops repeat, so check for usage in the whole loop before removing any dead stores.
+        (_, useTree) = List.map1Fold(body, statementFindDeadStore, localsTree, inUseTree); 
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree, useTree);
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
         // TODO: We should remove ident from the use-tree in case of shadowing... But our avlTree cannot delete
         useTree = AvlTreeString.joinAvlTrees(useTree,inUseTree);
       then (DAE.STMT_FOR(ty,b,id,index,exp,body,source),useTree);
 
-    case (DAE.STMT_WHILE(exp=exp,statementLst=body,source=source),_,_)
+    case DAE.STMT_WHILE(exp=exp,statementLst=body,source=source)
       equation
-        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
+        // Loops repeat, so check for usage in the whole loop before removing any dead stores.
+        (_, useTree) = List.map1Fold(body, statementFindDeadStore, localsTree, inUseTree); 
+        (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body, localsTree, useTree);
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, useTree);
         // The loop might not be entered just like if. The following should not remove all previous uses:
         // while false loop
@@ -2771,9 +2776,9 @@ algorithm
       then (DAE.STMT_WHILE(exp,body,source),useTree);
 
     // No PARFOR in MetaModelica
-    case (DAE.STMT_PARFOR(),_,_) then fail();
+    case DAE.STMT_PARFOR() then fail();
 
-    case (DAE.STMT_ASSERT(cond=cond,msg=msg,level=level),_,_)
+    case DAE.STMT_ASSERT(cond=cond,msg=msg,level=level)
       equation
         (_,useTree) = Expression.traverseExp(cond, useLocalCref, inUseTree);
         (_,useTree) = Expression.traverseExp(msg, useLocalCref, useTree);
@@ -2781,28 +2786,30 @@ algorithm
       then (inStatement,useTree);
 
     // Reset the tree; we do not execute anything after this
-    case (DAE.STMT_TERMINATE(msg=exp),_,_)
+    case DAE.STMT_TERMINATE(msg=exp)
       equation
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, AvlTreeString.avlTreeNew());
       then (inStatement,useTree);
 
     // No when or reinit in functions
-    case (DAE.STMT_WHEN(),_,_) then fail();
-    case (DAE.STMT_REINIT(),_,_) then fail();
+    case DAE.STMT_WHEN() then fail();
+    case DAE.STMT_REINIT() then fail();
 
     // There is no use after this one, so we can reset the tree
-    case (DAE.STMT_NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("fail"))),_,_) then (inStatement,AvlTreeString.avlTreeNew());
-    case (DAE.STMT_RETURN(),_,_) then (inStatement,AvlTreeString.avlTreeNew());
+    case DAE.STMT_NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("fail")))
+      then (inStatement,AvlTreeString.avlTreeNew());
 
-    case (DAE.STMT_NORETCALL(exp=exp),_,_)
+    case DAE.STMT_RETURN() then (inStatement,AvlTreeString.avlTreeNew());
+
+    case DAE.STMT_NORETCALL(exp=exp)
       equation
         (_,useTree) = Expression.traverseExp(exp, useLocalCref, inUseTree);
       then (inStatement,useTree);
 
-    case (DAE.STMT_BREAK(),_,_) then (inStatement,inUseTree);
-    case (DAE.STMT_CONTINUE(),_,_) then (inStatement,inUseTree);
-    case (DAE.STMT_ARRAY_INIT(),_,_) then (inStatement,inUseTree);
-    case (DAE.STMT_FAILURE(body=body,source=source),_,_)
+    case DAE.STMT_BREAK() then (inStatement,inUseTree);
+    case DAE.STMT_CONTINUE() then (inStatement,inUseTree);
+    case DAE.STMT_ARRAY_INIT() then (inStatement,inUseTree);
+    case DAE.STMT_FAILURE(body=body,source=source)
       equation
         (body,useTree) = statementListFindDeadStoreRemoveEmptyStatements(body,localsTree,inUseTree);
       then (DAE.STMT_FAILURE(body,source),useTree);
