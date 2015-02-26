@@ -80,7 +80,7 @@ algorithm
       BackendDAE.DAE({syst}, shared) = BackendDAEOptimize.collapseIndependentBlocks(inDAE);
       systs = clockPartitioning1(syst, shared);
     then BackendDAE.DAE(systs, shared);
-    
+
     else inDAE;
   end match;
 end clockPartitioning;
