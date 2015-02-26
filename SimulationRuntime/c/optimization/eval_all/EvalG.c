@@ -718,15 +718,15 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
 
   if(kk>-1){
     if(kk < nx){
-      printf("\nmax error is %g for the approximation of the state %s(time = %g)\n",
+      infoStreamPrint(LOG_IPOPT_ERROR, 3, "max error is %g for the approximation of the state %s(time = %g)\n",
               gmax, data->modelData.realVarsData[kk].info.name, (double)t[ii][jj]);
     }else if(kk < nJ){
       const int ll = kk - nx + optData->dim.index_con;
-      printf("\nmax violation is %g for the constraint %s(time = %g)\n",
+      infoStreamPrint(LOG_IPOPT_ERROR, 3,"max violation is %g for the constraint %s(time = %g)\n",
               gmax, data->modelData.realVarsData[ll].info.name, (double)t[ii][jj]);
     }else{
       const int ll = kk - nx + optData->dim.index_con;
-      printf("\nmax violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData.realVarsData[ll].info.name, (double)t[ii][jj]);
+      infoStreamPrint(LOG_IPOPT_ERROR, 3,"max violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData.realVarsData[ll].info.name, (double)t[ii][jj]);
     }
   }
 }
