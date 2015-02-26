@@ -182,10 +182,10 @@ char *mkdtemp(char *tpl)
   for (i = len; i < len + 6; i++)
   {
     /* generate random numbers between 0..9 for the last 6 chars of the temp name */
-    tmpDir[i] = '0' + rand()%10;
+    tmpDir[i-6] = '0' + rand()%10;
   }
   /* terminate string */
-  tmpDir[i] = 0;
+  tmpDir[i-6] = 0;
 
   mkdir(tmpDir);
   return strdup(tmpDir);
