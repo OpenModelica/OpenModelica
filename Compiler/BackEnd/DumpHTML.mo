@@ -1,8 +1,8 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
+ * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC), 
+ * c/o Linköpings universitet, Department of Computer and Information Science, 
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
@@ -10,12 +10,12 @@
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
  * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, 
  * ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
+ * from OSMC, either from the above address, 
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
  * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -46,108 +46,102 @@ protected import BackendVariable;
 protected import List;
 protected import System;
 
-/*************************************************
- * types
- ************************************************/
+// =============================================================================
+// types
+//
+// =============================================================================
 
-protected type Style = list<tuple<String,String>>;
+protected
+uniontype Style
+  record STYLE
+    String name;
+    String value;
+  end STYLE;
+end Style;
 
-protected uniontype Tag
+protected
+uniontype Tag
   record HEADING
     Integer stage;
     String text;
   end HEADING;
+
   record HYPERLINK
     String href "#anker or javascript:toggle";
     String title;
     String text;
   end HYPERLINK;
+
   record ANKER
     String name;
   end ANKER;
+
   record LINE
     String text;
   end LINE;
+
   record DIVISION
     String id;
-    Style style;
-    Tags tags;
+    list<Style> style;
+    list<Tag> tags;
   end DIVISION;
+
   record SCRIPT
     String type_;
     String text;
   end SCRIPT;
 end Tag;
 
-protected type Tags = list<Tag>;
-
-protected uniontype Document
+protected
+uniontype Document
   record DOCUMENT
     String docType;
-    Tags head "because of performance issues tags in reverse order";
-    Tags body "because of performance issues tags in reverse order";
+    list<Tag> head "because of performance issues tags in reverse order";
+    list<Tag> body "because of performance issues tags in reverse order";
   end DOCUMENT;
 end Document;
 
-protected constant Document emptyDocument = DOCUMENT("",{},{});
+protected constant Document emptyDocument = DOCUMENT("", {}, {});
 
-protected function emtypDocumentWithToggleFunktion
-"author Frenkel TUD 2012-11"
+protected function emtypDocumentWithToggleFunktion "author Frenkel TUD 2012-11"
   output Document outDoc;
 algorithm
-  outDoc := addScript("text/Javascript",
-    "function toggle(name) {\n   var element = document.getElementById(name);\n   if (element.style.display == \"none\") {\n      // show the div\n      element.style.display = \"block\";   \n   } else {\n      // hide the div\n      element.style.display = \"none\";\n      // reset element\n      element.reset();\n   }\n}\n\nfunction show(name) {\n   var element = document.getElementById(name);\n   if (element.style.display == \"none\") {\n      // show the div\n      element.style.display = \"block\";   \n   }\n   return true;\n}\n",
+  outDoc := addScript("text/Javascript", 
+    "function toggle(name) {\n   var element = document.getElementById(name);\n   if (element.style.display == \"none\") {\n      // show the div\n      element.style.display = \"block\";   \n   } else {\n      // hide the div\n      element.style.display = \"none\";\n      // reset element\n      element.reset();\n   }\n}\n\nfunction show(name) {\n   var element = document.getElementById(name);\n   if (element.style.display == \"none\") {\n      // show the div\n      element.style.display = \"block\";   \n   }\n   return true;\n}\n", 
     emptyDocument);
 end emtypDocumentWithToggleFunktion;
 
-protected function setDocType
-"set the doctype of the document.
-  author Frenkel TUD 2012-11"
-  input String docType;
-  input Document inDoc;
-  output Document outDoc;
-protected
-  Tags head,body;
-algorithm
-  DOCUMENT(head=head,body=body) := inDoc;
-  outDoc := DOCUMENT(docType,head,body);
-end setDocType;
-
-protected function addScript
-"add a script to the head of the document.
+protected function addScript "add a script to the head of the document.
   author Frenkel TUD 2012-11"
   input String type_;
   input String script;
   input Document inDoc;
   output Document outDoc;
 algorithm
-  outDoc := addHeadTag(SCRIPT(type_,script),inDoc);
+  outDoc := addHeadTag(SCRIPT(type_, script), inDoc);
 end addScript;
 
-protected function addHeading
-"add a heading to the body of the document.
+protected function addHeading "add a heading to the body of the document.
   author Frenkel TUD 2012-11"
   input Integer stage;
   input String text;
   input Document inDoc;
   output Document outDoc;
 algorithm
-  outDoc := addBodyTag(HEADING(stage,text),inDoc);
+  outDoc := addBodyTag(HEADING(stage, text), inDoc);
 end addHeading;
 
-protected function addHeadingTag
-"add a heading to the body of the document.
+protected function addHeadingTag "add a heading to the body of the document.
   author Frenkel TUD 2012-11"
   input Integer stage;
   input String text;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
 algorithm
-  outTags := HEADING(stage,text)::inTags;
+  outTags := HEADING(stage, text)::inTags;
 end addHeadingTag;
 
-protected function addHyperLink
-"add a hyperlink to the body of the document.
+protected function addHyperLink "add a hyperlink to the body of the document.
   author Frenkel TUD 2012-11"
   input String href "#anker or javascript:toggle";
   input String title;
@@ -155,199 +149,178 @@ protected function addHyperLink
   input Document inDoc;
   output Document outDoc;
 algorithm
-  outDoc := addBodyTag(HYPERLINK(href,title,text),inDoc);
+  outDoc := addBodyTag(HYPERLINK(href, title, text), inDoc);
 end addHyperLink;
 
-protected function addHyperLinkTag
-"add a hyperlink to the body of the document.
+protected function addHyperLinkTag "add a hyperlink to the body of the document.
   author Frenkel TUD 2012-11"
   input String href "#anker or javascript:toggle";
   input String title;
   input String text;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
 algorithm
-  outTags := HYPERLINK(href,title,text)::inTags;
+  outTags := HYPERLINK(href, title, text)::inTags;
 end addHyperLinkTag;
 
-protected function addAnker
-"add a anker to the body of the document.
+protected function addAnkerTag "add a anker to the body of the document.
   author Frenkel TUD 2012-11"
   input String name;
-  input Document inDoc;
-  output Document outDoc;
-algorithm
-  outDoc := addBodyTag(ANKER(name),inDoc);
-end addAnker;
-
-protected function addAnkerTag
-"add a anker to the body of the document.
-  author Frenkel TUD 2012-11"
-  input String name;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
 algorithm
   outTags := ANKER(name)::inTags;
 end addAnkerTag;
 
-protected function addLine
-"add a line to the body of the document.
+protected function addLine "add a line to the body of the document.
   author Frenkel TUD 2012-11"
   input String text;
   input Document inDoc;
   output Document outDoc;
 algorithm
-  outDoc := addBodyTag(LINE(text),inDoc);
+  outDoc := addBodyTag(LINE(text), inDoc);
 end addLine;
 
-protected function addLineTag
-"add a line to the body of the document.
+protected function addLineTag "add a line to the body of the document.
   author Frenkel TUD 2012-11"
   input String text;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
 algorithm
   outTags := LINE(text)::inTags;
 end addLineTag;
 
-protected function addDivision
-"add a hyperlink to the body of the document.
+protected function addDivision "add a hyper-link to the body of the document.
   author Frenkel TUD 2012-11"
   input String id;
-  input Style style;
-  input Tags tags;
+  input list<Style> style;
+  input list<Tag> tags;
   input Document inDoc;
   output Document outDoc;
 protected
-  Tags t;
+  list<Tag> t;
 algorithm
   t := listReverse(tags);
-  outDoc := addBodyTag(DIVISION(id,style,t),inDoc);
+  outDoc := addBodyTag(DIVISION(id, style, t), inDoc);
 end addDivision;
 
-protected function addDivisionTag
-"add a hyperlink to the body of the document.
+protected function addDivisionTag "add a hyper-link to the body of the document.
   author Frenkel TUD 2012-11"
   input String id;
-  input Style style;
-  input Tags tags;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Style> style;
+  input list<Tag> tags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
 protected
-  Tags t;
+  list<Tag> t;
 algorithm
   t := listReverse(tags);
-  outTags := DIVISION(id,style,t)::inTags;
+  outTags := DIVISION(id, style, t)::inTags;
 end addDivisionTag;
 
-protected function addBodyTags
-"add a body tag in the document.
+protected function addBodyTags "add a body tag in the document.
   author Frenkel TUD 2012-11"
-  input Tags tags;
+  input list<Tag> tags;
   input Document inDoc;
   output Document outDoc;
 protected
   String docType;
-  Tags head,body,t;
+  list<Tag> head, body, t;
 algorithm
   t := listReverse(tags);
-  DOCUMENT(docType=docType,head=head,body=body) := inDoc;
-  body := listAppend(body,t);
-  outDoc := DOCUMENT(docType,head,body);
+  DOCUMENT(docType=docType, head=head, body=body) := inDoc;
+  body := listAppend(body, t);
+  outDoc := DOCUMENT(docType, head, body);
 end addBodyTags;
 
-protected function dumpDocument
-" author: Frenkel TUD 2011-08
- print the dokument to file"
+protected function dumpDocument " author: Frenkel TUD 2011-08
+  print the document to file"
   input Document inDoc;
   input String name;
 protected
   String str;
-  Tags head,body;
+  list<Tag> head, body;
 algorithm
-  DOCUMENT(docType=str,head=head,body=body) := inDoc;
+  DOCUMENT(docType=str, head=head, body=body) := inDoc;
   str := str + "\n<html>\n<head>";
-  str := List.fold(listReverse(head),dumpTag,str);
+  str := List.fold(listReverse(head), dumpTag, str);
   str := str + "\n</head>";
   str := str + "\n<body>";
-  str := List.fold(listReverse(body),dumpTag,str);
+  str := List.fold(listReverse(body), dumpTag, str);
   str := str + "\n</body>\n</html>";
-  System.writeFile(name,str);
+  System.writeFile(name, str);
 end dumpDocument;
 
 /*************************************************
  * protected
  ************************************************/
 
-protected function addHeadTag
-"add a head tag in the document.
+protected function addHeadTag "add a head tag in the document.
   author Frenkel TUD 2012-11"
   input Tag tag;
   input Document inDoc;
   output Document outDoc;
 protected
   String docType;
-  Tags head,body;
+  list<Tag> head, body;
 algorithm
-  DOCUMENT(docType=docType,head=head,body=body) := inDoc;
-  outDoc := DOCUMENT(docType,tag::head,body);
+  DOCUMENT(docType=docType, head=head, body=body) := inDoc;
+  outDoc := DOCUMENT(docType, tag::head, body);
 end addHeadTag;
 
-protected function addBodyTag
-"add a body tag in the document.
+protected function addBodyTag "add a body tag in the document.
   author Frenkel TUD 2012-11"
   input Tag tag;
   input Document inDoc;
   output Document outDoc;
 protected
   String docType;
-  Tags head,body;
+  list<Tag> head, body;
 algorithm
-  DOCUMENT(docType=docType,head=head,body=body) := inDoc;
-  outDoc := DOCUMENT(docType,head,tag::body);
+  DOCUMENT(docType=docType, head=head, body=body) := inDoc;
+  outDoc := DOCUMENT(docType, head, tag::body);
 end addBodyTag;
 
-protected function dumpTag
-"appends a tag to the buffer string.
+protected function dumpTag "appends a tag to the buffer string.
   author Frenkel TUD 2012-11"
-   input Tag tag;
-   input String iBuffer;
-   output String oBuffer;
+  input Tag tag;
+  input String iBuffer;
+  output String oBuffer;
 algorithm
-  oBuffer := match(tag,iBuffer)
+  oBuffer := match(tag, iBuffer)
     local
       Integer i;
-      String t,t1,t2,str;
-      Style style;
-      Tags tags;
-    case (HEADING(stage=i,text=t),_)
+      String t, t1, t2, str;
+      list<Style> style;
+      list<Tag> tags;
+    case (HEADING(stage=i, text=t), _)
       equation
         str = iBuffer + "\n<h" + intString(i) + ">" + t + "</h" + intString(i) + ">";
       then
         str;
-    case (HYPERLINK(href=t,title=t1,text=t2),_)
+    case (HYPERLINK(href=t, title=t1, text=t2), _)
       equation
         str = iBuffer + "\n<a href=\"" + t + "\" title=\"" + t1 + "\">" + t2 + "</a>";
       then
         str;
-    case (ANKER(name=t),_)
+    case (ANKER(name=t), _)
       equation
         str = iBuffer + "\n<a name=\"" + t + "\"/>";
       then
         str;
-    case (LINE(text=t),_)
+    case (LINE(text=t), _)
       equation
         str = iBuffer + "\n" + t + "<br>";
       then
         str;
-    case (DIVISION(id=t,style=style,tags=tags),_)
+    case (DIVISION(id=t, style=style, tags=tags), _)
       equation
-        t1 = stringDelimitList(List.map(style,dumpStyle),"; ");
-        t2 = List.fold(tags,dumpTag,"");
+        t1 = stringDelimitList(List.map(style, dumpStyle), "; ");
+        t2 = List.fold(tags, dumpTag, "");
         str = iBuffer + "\n<div id=\"" + t + "\" style=\"" + t1 + "\">\n" + t2 + "\n</div>";
       then
         str;
-    case (SCRIPT(type_=t1,text=t2),_)
+    case (SCRIPT(type_=t1, text=t2), _)
       equation
         str = iBuffer + "\n<script type=\"" + t1 + "\">\n" + t2 + "\n</script>";
       then
@@ -355,18 +328,16 @@ algorithm
   end match;
 end dumpTag;
 
-protected function dumpStyle
-"appends a style to the buffer string.
+protected function dumpStyle "appends a style to the buffer string.
   author Frenkel TUD 2012-11"
-   input tuple<String,String> st;
-   output String oBuffer;
+  input Style inStyle;
+  output String outBuffer;
 protected
-  String name,value;
+  String name, value;
 algorithm
-  (name,value) := st;
-  oBuffer := name + ": " + value;
+  STYLE(name, value) := inStyle;
+  outBuffer := name + ": " + value;
 end dumpStyle;
-
 
 public function dumpDAE
   input BackendDAE.BackendDAE inDAE;
@@ -385,17 +356,15 @@ algorithm
   dumpDocument(doc, str + inFilename);
 end dumpDAE;
 
-
-protected function dumpEqSystem
-"This function dumps the BackendDAE.EqSystem representation to stdout."
+protected function dumpEqSystem "dumps the BackendDAE.EqSystem"
   input BackendDAE.EqSystem inEqSystem;
   input String inPrefixIdstr;
-  input tuple<Document,Integer> inTpl;
-  output tuple<Document,Integer> outTpl;
+  input tuple<Document, Integer> inTpl;
+  output tuple<Document, Integer> outTpl;
 protected
   list<BackendDAE.Var> vars;
-  Integer eqnlen,eqnssize,i;
-  String varlen_str,eqnlen_str,prefixIdstr,prefixId;
+  Integer eqnlen, eqnssize, i;
+  String varlen_str, eqnlen_str, prefixIdstr, prefixId;
   list<BackendDAE.Equation> eqnsl;
   BackendDAE.Variables vars1;
   BackendDAE.EquationArray eqns;
@@ -403,168 +372,156 @@ protected
   Option<BackendDAE.IncidenceMatrix> mT;
   BackendDAE.Matching matching;
   Document doc;
-  Tags tags;
+  list<Tag> tags;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching) := inEqSystem;
-  (doc,i) := inTpl;
+  BackendDAE.EQSYSTEM(orderedVars=vars1, orderedEqs=eqns, m=m, mT=mT, matching=matching) := inEqSystem;
+  (doc, i) := inTpl;
   prefixId := inPrefixIdstr + "_" + intString(i);
   vars := BackendVariable.varList(vars1);
   varlen_str := "Variables (" + intString(listLength(vars)) + ")";
-  tags := addHeadingTag(2,varlen_str,{});
-  tags := printVarList(vars,prefixId,tags);
+  tags := addHeadingTag(2, varlen_str, {});
+  tags := printVarList(vars, prefixId, tags);
   eqnsl := BackendEquation.equationList(eqns);
-  eqnlen_str := "Equations (" + intString(listLength(eqnsl)) + "," + intString(BackendDAEUtil.equationSize(eqns)) + ")";
-  tags := addHeadingTag(2,eqnlen_str,tags);
-  tags := dumpEqns(eqnsl,prefixId,tags);
-  //dumpOption(m,dumpIncidenceMatrix);
-  //dumpOption(mT,dumpIncidenceMatrixT);
-  tags := dumpFullMatching(matching,prefixId,tags);
-//  doc := addBodyTags(tags,doc);
-  doc := addLine("<hr>",doc);
-  doc := addHyperLink("javascript:toggle('" + prefixId + "system')","System einblenden","System " + intString(i) + " ein/ausblenden",doc);
-  doc := addDivision(prefixId + "system",{("display","none")},tags,doc);
-  outTpl := (doc,i+1);
+  eqnlen_str := "Equations (" + intString(listLength(eqnsl)) + ", " + intString(BackendDAEUtil.equationSize(eqns)) + ")";
+  tags := addHeadingTag(2, eqnlen_str, tags);
+  tags := dumpEqns(eqnsl, prefixId, tags);
+  //dumpOption(m, dumpIncidenceMatrix);
+  //dumpOption(mT, dumpIncidenceMatrixT);
+  tags := dumpFullMatching(matching, prefixId, tags);
+//  doc := addBodyTags(tags, doc);
+  doc := addLine("<hr>", doc);
+  doc := addHyperLink("javascript:toggle('" + prefixId + "system')", "System einblenden", "System " + intString(i) + " ein/ausblenden", doc);
+  doc := addDivision(prefixId + "system", {STYLE("display", "none")}, tags, doc);
+  outTpl := (doc, i+1);
 end dumpEqSystem;
 
 protected function printVarList
-"Helper function to printVarList."
   input list<BackendDAE.Var> vars;
   input String prefixId;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
 protected
-  Tags tags;
+  list<Tag> tags;
 algorithm
-  ((tags,_)) := List.fold1(vars,dumpVar,prefixId,({},1));
-  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "variables')","Variablen einblenden","Variablen ein/ausblenden",inTags);
-  outTags := addDivisionTag(prefixId + "variables",{("background","#FFFFCC"),("display","none")},tags,outTags);
+  ((tags, _)) := List.fold1(vars, dumpVar, prefixId, ({}, 1));
+  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "variables')", "Variablen einblenden", "Variablen ein/ausblenden", inTags);
+  outTags := addDivisionTag(prefixId + "variables", {STYLE("background", "#FFFFCC"), STYLE("display", "none")}, tags, outTags);
 end printVarList;
 
 protected function dumpVar
-"Helper function to printVarList."
   input BackendDAE.Var inVar;
   input String prefixId;
-  input tuple<Tags,Integer> inTpl;
-  output tuple<Tags,Integer> oTpl;
+  input tuple<list<Tag>, Integer> inTpl;
+  output tuple<list<Tag>, Integer> oTpl;
 protected
-  Tags tags;
+  list<Tag> tags;
   Integer i;
-  String ln,istr;
+  String ln, istr;
 algorithm
-  (tags,i) := inTpl;
+  (tags, i) := inTpl;
   istr := intString(i);
   ln := prefixId + "varanker" + istr;
-  tags := addAnkerTag(ln,tags);
+  tags := addAnkerTag(ln, tags);
   ln := istr + ": " + BackendDump.varString(inVar);
-  tags := addLineTag(ln,tags);
-  oTpl := (tags,i+1);
+  tags := addLineTag(ln, tags);
+  oTpl := (tags, i+1);
 end dumpVar;
 
 protected function dumpEqns
-"Helper function to printVarList."
   input list<BackendDAE.Equation> eqns;
   input String prefixId;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
 protected
-  Tags tags;
+  list<Tag> tags;
 algorithm
-  ((tags,_)) := List.fold1(eqns,dumpEqn,prefixId,({},1));
-  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "equations')","Equations einblenden","Equations ein/ausblenden",inTags);
-  outTags := addDivisionTag(prefixId + "equations",{("background","#C0C0C0"),("display","none")},tags,outTags);
+  ((tags, _)) := List.fold1(eqns, dumpEqn, prefixId, ({}, 1));
+  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "equations')", "Equations einblenden", "Equations ein/ausblenden", inTags);
+  outTags := addDivisionTag(prefixId + "equations", {STYLE("background", "#C0C0C0"), STYLE("display", "none")}, tags, outTags);
 end dumpEqns;
 
 protected function dumpEqn
-"Helper function to dump_eqns"
   input BackendDAE.Equation inEquation;
   input String prefixId;
-  input tuple<Tags,Integer> inTpl;
-  output tuple<Tags,Integer> oTpl;
+  input tuple<list<Tag>, Integer> inTpl;
+  output tuple<list<Tag>, Integer> oTpl;
 protected
-  Tags tags;
+  list<Tag> tags;
   Integer i;
-  String ln,istr;
+  String ln, istr;
 algorithm
-  (tags,i) := inTpl;
+  (tags, i) := inTpl;
   istr := intString(i);
   ln := prefixId + "eqanker" + istr;
-  tags := addAnkerTag(ln,tags);
+  tags := addAnkerTag(ln, tags);
   ln := istr + " (" + intString(BackendEquation.equationSize(inEquation)) + "): " + BackendDump.equationString(inEquation);
-  tags := addLineTag(ln,tags);
-  oTpl := (tags,i+1);
+  tags := addLineTag(ln, tags);
+  oTpl := (tags, i+1);
 end dumpEqn;
 
 protected function dumpFullMatching
   input BackendDAE.Matching inMatch;
   input String prefixId;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
 algorithm
-  outTags:= match(inMatch,prefixId,inTags)
+  outTags := match(inMatch)
     local
       array<Integer> ass1;
-      Tags tags;
-      BackendDAE.StrongComponents comps;
-    case (BackendDAE.NO_MATCHING(),_,_) then inTags;
-    case (BackendDAE.MATCHING(ass1,_,_),_,_)
-      equation
-        tags = dumpMatching(ass1,prefixId,inTags);
-        //dumpComponents(comps);
-      then
-        tags;
+      list<Tag> tags;
+      //BackendDAE.StrongComponents comps;
+
+    case (BackendDAE.NO_MATCHING()) then inTags;
+    case (BackendDAE.MATCHING(ass1, _, _)) equation
+      tags = dumpMatching(ass1, prefixId, inTags);
+      //dumpComponents(comps);
+    then tags;
   end match;
 end dumpFullMatching;
 
-protected function dumpMatching
-"author: Frenkel TUD 2012-11
-  prints the matching information on stdout."
+protected function dumpMatching "author: Frenkel TUD 2012-11
+  prints the matching information"
   input array<Integer> v;
   input String prefixId;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
 protected
   Integer len;
   String len_str;
-  Tags tags;
+  list<Tag> tags;
 algorithm
-  outTags := addHeadingTag(2,"Matching",inTags);
+  outTags := addHeadingTag(2, "Matching", inTags);
   len := arrayLength(v);
   len_str := intString(len) + " variables and equations\n";
-  outTags := addLineTag(len_str,outTags);
+  outTags := addLineTag(len_str, outTags);
   tags := dumpMatching2(v, 1, len, prefixId, {});
-  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "matching')","Matching einblenden","Matching ein/ausblenden",outTags);
-  outTags := addDivisionTag(prefixId + "matching",{("background","#339966"),("display","none")},tags,outTags);
+  outTags := addHyperLinkTag("javascript:toggle('" + prefixId + "matching')", "Matching einblenden", "Matching ein/ausblenden", outTags);
+  outTags := addDivisionTag(prefixId + "matching", {STYLE("background", "#339966"), STYLE("display", "none")}, tags, outTags);
 end dumpMatching;
 
-protected function dumpMatching2
-"author: PA
+protected function dumpMatching2 "author: PA
   Helper function to dumpMatching."
   input array<Integer> v;
   input Integer i;
   input Integer len;
   input String prefixId;
-  input Tags inTags;
-  output Tags outTags;
+  input list<Tag> inTags;
+  output list<Tag> outTags;
+protected
+  Integer eqn;
+  String s, s2;
 algorithm
-  outTags := matchcontinue (v,i,len,prefixId,inTags)
-    local
-      Integer eqn;
-      String s,s2;
-    case (_,_,_,_,_)
-      equation
-        true = intLe(i,len);
-        s = intString(i);
-        eqn = v[i];
-        s2 = intString(eqn);
-        s = "Variable <a href=\"#" + prefixId + "varanker" + s + "\" onclick=\"return show('" + prefixId + "variables');\">" + s + "</a> is solved in Equation  <a href=\"#" + prefixId + "eqanker" + s2 + "\" onclick=\"return show('" + prefixId + "equations');\">" + s2 + "</a>";
-      then
-        dumpMatching2(v, i+1, len, prefixId, LINE(s)::inTags);
-    else
-      then
-        inTags;
-  end matchcontinue;
+  try
+    true := intLe(i, len);
+    s := intString(i);
+    eqn := v[i];
+    s2 := intString(eqn);
+    s := "Variable <a href=\"#" + prefixId + "varanker" + s + "\" onclick=\"return show('" + prefixId + "variables');\">" + s + "</a> is solved in Equation  <a href=\"#" + prefixId + "eqanker" + s2 + "\" onclick=\"return show('" + prefixId + "equations');\">" + s2 + "</a>";
+    outTags := dumpMatching2(v, i+1, len, prefixId, LINE(s)::inTags);
+  else
+    outTags := inTags;
+  end try;
 end dumpMatching2;
-
 
 annotation(__OpenModelica_Interface="backend");
 end DumpHTML;
