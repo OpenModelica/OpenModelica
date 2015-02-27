@@ -9309,9 +9309,9 @@ algorithm
 end subscriptEqual;
 
 public function subscriptConstants "
-returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim "
+returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim)"
   input list<DAE.Subscript> inSubs;
-  output Boolean areConstant;
+  output Boolean areConstant = true;
 algorithm
   for sub in inSubs loop
     areConstant := match(sub)
