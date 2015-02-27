@@ -911,6 +911,20 @@ algorithm
   end match;
 end dumpDAEInstDims2;
 
+public function dumpDAEXML "dumps the DAE as xml representation of the current transformation state"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE = inDAE;
+protected
+  String fileNamePrefix;
+algorithm
+  BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(fileNamePrefix=fileNamePrefix))) := inDAE;
+
+  Print.clearBuf();
+  dumpBackendDAE(inDAE, false, false, false, false, false);
+  Print.writeBuf(fileNamePrefix + ".xml");
+  Print.clearBuf();
+end dumpDAEXML;
+
 
 public function dumpBackendDAE "
   This function dumps the BackendDAE representaton to stdout as XML format.

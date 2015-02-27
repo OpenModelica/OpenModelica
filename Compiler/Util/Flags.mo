@@ -666,7 +666,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("resolveLoops", Util.gettext("resolves linear equations in loops")),
     ("evalFunc", Util.gettext("evaluates functions partially")),
     ("comSubExp", Util.gettext("replaces common sub expressions")),
-    ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state"))
+    ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
+    ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state"))
     })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."));
 
@@ -767,7 +768,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs.")),
     ("reshufflePost", Util.gettext("Reshuffles algebraic loops.")),
     ("CSE", Util.gettext("Common Subexpression Elimination")),
-    ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state"))
+    ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
+    ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state"))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See --help=optmodules for more info."));
 

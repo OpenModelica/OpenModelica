@@ -91,9 +91,9 @@ protected import Global;
 protected import HpcOmEqSystems;
 protected import HpcOmTaskGraph;
 protected import IndexReduction;
-protected import InlineArrayEquations;
 protected import Initialization;
 protected import Inline;
+protected import InlineArrayEquations;
 protected import List;
 protected import Matching;
 protected import OnRelaxation;
@@ -101,14 +101,15 @@ protected import RemoveSimpleEquations;
 protected import ResolveLoops;
 protected import SCode;
 protected import SimCodeUtil;
-protected import System;
+protected import StateMachineFeatures;
 protected import SymbolicJacobian;
 protected import SynchronousFeatures;
+protected import System;
 protected import Tearing;
 protected import Types;
 protected import UnitCheck;
 protected import Values;
-protected import StateMachineFeatures;
+protected import XMLDump;
 
 protected
 type Var = BackendDAE.Var;
@@ -7580,7 +7581,8 @@ algorithm
                        (UnitCheck.unitChecking, "unitChecking", true),
                        (CommonSubExpression.commonSubExpressionReplacement, "comSubExp", false),
                        (CommonSubExpression.CSE, "CSE", false),
-                       (BackendDump.dumpDAE, "dumpDAE", false)
+                       (BackendDump.dumpDAE, "dumpDAE", false),
+                       (XMLDump.dumpDAEXML, "dumpDAEXML", false)
                        };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
@@ -7637,7 +7639,8 @@ algorithm
                         (ResolveLoops.reshuffling_post, "reshufflePost", false),
                         (ResolveLoops.solveLinearSystem, "solveLinearSystem", false),
                         (CommonSubExpression.CSE, "CSE", false),
-                        (BackendDump.dumpDAE, "dumpDAE", false)
+                        (BackendDump.dumpDAE, "dumpDAE", false),
+                        (XMLDump.dumpDAEXML, "dumpDAEXML", false)
                         };
 
   strpostOptModules := getPostOptModulesString();
