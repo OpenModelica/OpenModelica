@@ -414,15 +414,20 @@ algorithm
     case(0,_,_)
       equation
         serCosts = HpcOmScheduler.getSerialExecutionTime(taskGraphMetaIn);
-        maxSpeedUp = realDiv(serCosts,cpCosts);
-        numProcSched = realInt(realAdd(maxSpeedUp,1.0));
-        numProcSys = System.numProcessors();
-        numProc = intMin(numProcSched,numProcSys);
-        string1 = "Your system provides only "+intString(numProcSys)+" processors!\n";
-        string2 = intString(numProcSched)+" processors might be a reasonable number of processors.\n";
-        string1 = if intGt(numProcSched,numProcSys) then string1 else string2;
-        print("Please set the number of processors you want to use!\n");
-        print(string1);
+        if realNe(serCosts,0.0) then
+          maxSpeedUp = realDiv(serCosts,cpCosts);  
+          numProcSched = realInt(realAdd(maxSpeedUp,1.0));
+          numProcSys = System.numProcessors();
+          numProc = intMin(numProcSched,numProcSys);
+          string1 = "Your system provides only "+intString(numProcSys)+" processors!\n";
+          string2 = intString(numProcSched)+" processors might be a reasonable number of processors.\n";
+          string1 = if intGt(numProcSched,numProcSys) then string1 else string2;
+          print("Please set the number of processors you want to use!\n");
+          print(string1);
+        else
+          numProc = 1;
+          print("You did not choose a number of cores. Since there is no ODE-System, the number of cores is set to 1!\n");         
+        end if;
         Flags.setConfigInt(Flags.NUM_PROC,numProc);
       then
         (numProc,true);
@@ -1230,6 +1235,9 @@ algorithm
     print("There are simCode-equations multiple times in the graph structure.\n");
   end if;
   targetSize := listLength(List.flatten(iOdeEqs));
+  if (intEq(targetSize,1) and SimCodeUtil.isDummyEq(List.first(List.first(iOdeEqs)))) then
+    targetSize := 0;
+  end if;
   oIsCorrect := intEq(targetSize,actualSize);
   if(oIsCorrect) then
     print("the ODE-system size is correct("+intString(actualSize)+")\n");
