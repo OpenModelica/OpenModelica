@@ -43,7 +43,6 @@ public import BackendDAE;
 public import DAE;
 public import FCore;
 
-protected import BackendDAECreate;
 protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
