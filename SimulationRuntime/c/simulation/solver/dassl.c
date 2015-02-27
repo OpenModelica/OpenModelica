@@ -246,7 +246,7 @@ int dassl_initial(DATA* data, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
   {
     dasslData->rtol[i] = data->simulationInfo.tolerance;
     dasslData->atol[i] = data->simulationInfo.tolerance * fmax(fabs(data->modelData.realVarsData[i].attribute.nominal), 1e-32);
-    infoStreamPrint(LOG_SOLVER, 0, "%d. %s -> %g ", i+1, data->modelData.realVarsData[i].info.name, dasslData->atol[i]);
+    infoStreamPrint(LOG_SOLVER, 0, "%d. %s -> %g", i+1, data->modelData.realVarsData[i].info.name, dasslData->atol[i]);
   }
   messageClose(LOG_SOLVER);
 
@@ -467,21 +467,23 @@ int dassl_deinitial(DASSL_DATA *dasslData)
   return 0;
 }
 
-/* \fn printCurrentStatesVector(int logLevel, double* y, DATA* data)
+/* \fn printCurrentStatesVector(int logLevel, double* y, DATA* data, double time)
  *
  * \param [in] [logLevel]
  * \param [in] [states]
- * \param [ref] [Data]
+ * \param [in] [data]
+ * \param [in] [time]
  *
  * This function outputs states vector.
  *
  */
-int printCurrentStatesVector(int logLevel, double* states, DATA* data){
+int printCurrentStatesVector(int logLevel, double* states, DATA* data, double time)
+{
   int i;
-  infoStreamPrint(logLevel, 1, "States: ");
+  infoStreamPrint(logLevel, 1, "states at time=%g", time);
   for(i=0;i<data->modelData.nStates;++i)
   {
-    infoStreamPrint(logLevel, 0, "%d. %s = %f ", i+1, data->modelData.realVarsData[i].info.name, states[i]);
+    infoStreamPrint(logLevel, 0, "%d. %s = %g", i+1, data->modelData.realVarsData[i].info.name, states[i]);
   }
   messageClose(logLevel);
 
@@ -788,10 +790,11 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   int success = 0;
 
   TRACE_PUSH
-  if (dasslData->currentContext == CONTEXT_UNKNOWN){
+  if (dasslData->currentContext == CONTEXT_UNKNOWN)
+  {
     setDasslContext(dasslData, t, CONTEXT_ODE);
   }
-  printCurrentStatesVector(LOG_DASSL_STATES, y, data);
+  printCurrentStatesVector(LOG_DASSL_STATES, y, data, *t);
 
   timeBackup = data->localData[0]->timeValue;
   data->localData[0]->timeValue = *t;
