@@ -1335,8 +1335,8 @@ algorithm
         print(" number of relations: " + intString(numRelations) + "\n");
       end if;
       stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
-      istart = BackendDAECreate.expInt(startvalue, knvars);
-      istep = BackendDAECreate.expInt(stepvalue, knvars);
+      istart = BackendDAEUtil.expInt(startvalue, knvars);
+      istep = BackendDAEUtil.expInt(stepvalue, knvars);
       e_1 = DAE.RELATION(e1, op, e2, numRelations, SOME((iterator, istart, istep)));
       (explst, itmp) = replaceIteratorWithStaticValues(inExp, iterator, inExpLst, numRelations);
       if Flags.isSet(Flags.RELIDX) then
@@ -1766,7 +1766,7 @@ algorithm
     case (DAE.STMT_FOR(type_=tp, iterIsArray=b1, iter=id1, index=ix, range=e, statementLst=stmts, source=source))::xs equation
       cr = ComponentReference.makeCrefIdent(id1, tp, {});
       iteratorExp = Expression.crefExp(cr);
-      iteratorexps = BackendDAECreate.extendRange(e, inKnvars);
+      iteratorexps = BackendDAEUtil.extendRange(e, inKnvars);
       (stmts2, extraArg) = traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, inExtraArg);
       ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_FOR(tp, b1, id1, ix, e, stmts2, source)::xs_1, extraArg));
@@ -1774,7 +1774,7 @@ algorithm
     case (DAE.STMT_PARFOR(type_=tp, iterIsArray=b1, iter=id1, index=ix, range=e, statementLst=stmts, loopPrlVars= loopPrlVars, source=source))::xs equation
       cr = ComponentReference.makeCrefIdent(id1, tp, {});
       iteratorExp = Expression.crefExp(cr);
-      iteratorexps = BackendDAECreate.extendRange(e, inKnvars);
+      iteratorexps = BackendDAEUtil.extendRange(e, inKnvars);
       (stmts2, extraArg) = traverseStmtsForExps(iteratorExp, iteratorexps, e, stmts, inKnvars, inExtraArg);
       ((xs_1, extraArg)) = traverseStmtsExps(xs, extraArg, inKnvars);
     then ((DAE.STMT_PARFOR(tp, b1, id1, ix, e, stmts2, loopPrlVars, source)::xs_1, extraArg));

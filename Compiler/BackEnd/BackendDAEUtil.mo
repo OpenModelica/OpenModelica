@@ -8118,5 +8118,66 @@ algorithm
   end match;
 end isLinearTornSystem;
 
+public function extendRange
+  input DAE.Exp inRangeExp;
+  input BackendDAE.Variables inKnVariables;
+  output list<DAE.Exp> outExpLst = {};
+protected
+  DAE.Exp start, stepvalue, stop;
+  Option<DAE.Exp> step;
+  Integer istart, istop, istep;
+  list<Integer> ilst;
+algorithm
+  try
+    DAE.RANGE(start=start, step=step, stop=stop) := inRangeExp;
+    stepvalue := Util.getOptionOrDefault(step, DAE.ICONST(1));
+    istart := expInt(start, inKnVariables);
+    istep := expInt(stepvalue, inKnVariables);
+    istop := expInt(stop, inKnVariables);
+    ilst := List.intRange3(istart, istep, istop);
+    outExpLst := List.map(ilst, Expression.makeIntegerExp);
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      Debug.trace("BackendDAECreate.extendRange failed. Maybe some ZeroCrossing are not supported\n");
+    end if;
+  end try;
+end extendRange;
+
+public function expInt "returns the int value of an expression"
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inKnVariables;
+  output Integer i;
+algorithm
+  i := match(inExp)
+    local
+      Integer i1, i2;
+      DAE.ComponentRef cr;
+      DAE.Exp e, e1, e2;
+
+    case DAE.ICONST(integer=i2)
+    then i2;
+
+    case DAE.ENUM_LITERAL(index=i2)
+    then i2;
+
+    case DAE.CREF(componentRef=cr) equation
+      ((BackendDAE.VAR(bindExp=SOME(e)):: _), _) = BackendVariable.getVar(cr, inKnVariables);
+      i2 = expInt(e, inKnVariables);
+    then i2;
+
+    case DAE.BINARY(exp1=e1, operator=DAE.ADD(DAE.T_INTEGER()), exp2=e2) equation
+      i1 = expInt(e1, inKnVariables);
+      i2 = expInt(e2, inKnVariables);
+      i = i1 + i2;
+    then i;
+
+    case DAE.BINARY(exp1=e1, operator=DAE.SUB(DAE.T_INTEGER()), exp2=e2) equation
+      i1 = expInt(e1, inKnVariables);
+      i2 = expInt(e2, inKnVariables);
+      i = i1 - i2;
+    then i;
+  end match;
+end expInt;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendDAEUtil;
