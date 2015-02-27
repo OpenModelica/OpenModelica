@@ -415,7 +415,7 @@ algorithm
       equation
         serCosts = HpcOmScheduler.getSerialExecutionTime(taskGraphMetaIn);
         if realNe(serCosts,0.0) then
-          maxSpeedUp = realDiv(serCosts,cpCosts);  
+          maxSpeedUp = realDiv(serCosts,cpCosts);
           numProcSched = realInt(realAdd(maxSpeedUp,1.0));
           numProcSys = System.numProcessors();
           numProc = intMin(numProcSched,numProcSys);
@@ -426,7 +426,7 @@ algorithm
           print(string1);
         else
           numProc = 1;
-          print("You did not choose a number of cores. Since there is no ODE-System, the number of cores is set to 1!\n");         
+          print("You did not choose a number of cores. Since there is no ODE-System, the number of cores is set to 1!\n");
         end if;
         Flags.setConfigInt(Flags.NUM_PROC,numProc);
       then
